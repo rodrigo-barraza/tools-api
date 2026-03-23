@@ -1,6 +1,7 @@
 import express from "express";
 import CONFIG from "./config.js";
 import { connectDB } from "./db.js";
+import { requestLoggerMiddleware } from "./middleware/RequestLoggerMiddleware.js";
 
 // ─── Model Setup ───────────────────────────────────────────────────
 
@@ -21,6 +22,7 @@ import marketRoutes, { getMarketHealth } from "./routes/MarketRoutes.js";
 import productRoutes, { getProductHealth } from "./routes/ProductRoutes.js";
 import trendRoutes, { getTrendHealth } from "./routes/TrendRoutes.js";
 import weatherRoutes, { getWeatherHealth } from "./routes/WeatherRoutes.js";
+import adminRoutes from "./routes/AdminRoutes.js";
 
 // ─── Collectors ────────────────────────────────────────────────────
 
@@ -41,6 +43,7 @@ app.use((req, res, next) => {
   next();
 });
 app.use(express.json());
+app.use(requestLoggerMiddleware);
 
 // ─── Mount Domain Routers ──────────────────────────────────────────
 
@@ -49,6 +52,7 @@ app.use("/market", marketRoutes);
 app.use("/product", productRoutes);
 app.use("/trend", trendRoutes);
 app.use("/weather", weatherRoutes);
+app.use("/admin", adminRoutes);
 
 // ─── Unified Health ────────────────────────────────────────────────
 
