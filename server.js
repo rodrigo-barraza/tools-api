@@ -18,6 +18,7 @@ import { setupGeomagneticStormCollection } from "./models/GeomagneticStorm.js";
 // ─── Routes ────────────────────────────────────────────────────────
 
 import eventRoutes, { getEventHealth } from "./routes/EventRoutes.js";
+import financeRoutes, { getFinanceHealth } from "./routes/FinanceRoutes.js";
 import marketRoutes, { getMarketHealth } from "./routes/MarketRoutes.js";
 import productRoutes, { getProductHealth } from "./routes/ProductRoutes.js";
 import trendRoutes, { getTrendHealth } from "./routes/TrendRoutes.js";
@@ -27,6 +28,7 @@ import adminRoutes from "./routes/AdminRoutes.js";
 // ─── Collectors ────────────────────────────────────────────────────
 
 import { startEventCollectors } from "./collectors/EventCollector.js";
+import { startFinanceCollectors } from "./collectors/FinanceCollector.js";
 import { startMarketCollectors } from "./collectors/MarketCollector.js";
 import { startProductCollectors } from "./collectors/ProductCollector.js";
 import { startTrendCollectors } from "./collectors/TrendCollector.js";
@@ -48,6 +50,7 @@ app.use(requestLoggerMiddleware);
 // ─── Mount Domain Routers ──────────────────────────────────────────
 
 app.use("/event", eventRoutes);
+app.use("/finance", financeRoutes);
 app.use("/market", marketRoutes);
 app.use("/product", productRoutes);
 app.use("/trend", trendRoutes);
@@ -62,6 +65,7 @@ app.get("/health", (_req, res) => {
     uptime: process.uptime(),
     domains: {
       event: getEventHealth(),
+      finance: getFinanceHealth(),
       market: getMarketHealth(),
       product: getProductHealth(),
       trend: getTrendHealth(),
@@ -93,6 +97,7 @@ async function start() {
 
   // Start all domain collectors
   startEventCollectors();
+  startFinanceCollectors();
   startMarketCollectors();
   startProductCollectors();
   startTrendCollectors();
@@ -102,9 +107,9 @@ async function start() {
   app.listen(port, () => {
     console.log(`🔧 Tools API running on port ${port}`);
     console.log(`   Database: ${CONFIG.MONGODB_URI}`);
-    console.log("   Domains: event, market, product, trend, weather");
+    console.log("   Domains: event, finance, market, product, trend, weather");
     console.log(
-      "   Routes: /event/*, /market/*, /product/*, /trend/*, /weather/*",
+      "   Routes: /event/*, /finance/*, /market/*, /product/*, /trend/*, /weather/*",
     );
   });
 }

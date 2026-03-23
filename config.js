@@ -16,6 +16,9 @@ import {
   TMDB_API_KEY,
   GOOGLE_PLACES_API_KEY,
 
+  // Finance (Finnhub)
+  FINNHUB_API_KEY,
+
   // Product
   BESTBUY_API_KEY,
   PRODUCTHUNT_API_KEY,
@@ -53,6 +56,9 @@ const CONFIG = {
   SEATGEEK_CLIENT_ID,
   TMDB_API_KEY,
   GOOGLE_PLACES_API_KEY,
+
+  // ─── Finance (Finnhub) ────────────────────────────────────────────
+  FINNHUB_API_KEY,
 
   // ─── Product ─────────────────────────────────────────────────────
   BESTBUY_API_KEY,

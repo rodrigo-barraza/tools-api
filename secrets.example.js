@@ -32,6 +32,10 @@ export const GOOGLE_PLACES_API_KEY = "";
 
 // (Uses yahoo-finance2 — no API key needed)
 
+// ─── Finance Domain (Finnhub) ──────────────────────────────────────
+
+export const FINNHUB_API_KEY = "";
+
 // ─── Product Domain ────────────────────────────────────────────────
 
 export const BESTBUY_API_KEY = "";

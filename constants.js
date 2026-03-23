@@ -829,6 +829,25 @@ export const AMAZON_REQUEST_DELAY_MS = 3_000;
 export const AMAZON_MAX_PRODUCTS_PER_CATEGORY = 20;
 
 // ═══════════════════════════════════════════════════════════════
+//  FINANCE DOMAIN (Finnhub)
+// ═══════════════════════════════════════════════════════════════
+
+export const FINNHUB_BASE_URL = "https://finnhub.io/api/v1";
+
+// Polling intervals for general (non-symbol-specific) data
+export const FINNHUB_NEWS_INTERVAL_MS = 1_800_000; // 30 minutes
+export const FINNHUB_EARNINGS_INTERVAL_MS = 21_600_000; // 6 hours
+
+// On-demand cache TTLs (ms) — all symbol-specific data is fetched on request
+export const FINNHUB_QUOTE_TTL_MS = 60_000; // 1 minute
+export const FINNHUB_PROFILE_TTL_MS = 86_400_000; // 24 hours
+export const FINNHUB_RECOMMENDATION_TTL_MS = 3_600_000; // 1 hour
+export const FINNHUB_FINANCIALS_TTL_MS = 3_600_000; // 1 hour
+
+// Request pacing for any sequential batch calls
+export const FINNHUB_REQUEST_DELAY_MS = 200; // 200ms between sequential calls
+
+// ═══════════════════════════════════════════════════════════════
 //  TREND DOMAIN
 // ═══════════════════════════════════════════════════════════════
 
