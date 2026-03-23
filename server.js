@@ -1,0 +1,108 @@
+import express from "express";
+import CONFIG from "./config.js";
+import { connectDB } from "./db.js";
+
+// ─── Model Setup ───────────────────────────────────────────────────
+
+import { setupEventCollection } from "./models/Event.js";
+import { setupCommodityCollection } from "./models/CommoditySnapshot.js";
+import { setupProductCollection } from "./models/Product.js";
+import { setupTrendCollection } from "./models/Trend.js";
+import { setupEarthquakeCollection } from "./models/Earthquake.js";
+import { setupNeoCollection } from "./models/Neo.js";
+import { setupSolarFlareCollection } from "./models/SolarFlare.js";
+import { setupCmeCollection } from "./models/Cme.js";
+import { setupGeomagneticStormCollection } from "./models/GeomagneticStorm.js";
+
+// ─── Routes ────────────────────────────────────────────────────────
+
+import eventRoutes, { getEventHealth } from "./routes/EventRoutes.js";
+import marketRoutes, { getMarketHealth } from "./routes/MarketRoutes.js";
+import productRoutes, { getProductHealth } from "./routes/ProductRoutes.js";
+import trendRoutes, { getTrendHealth } from "./routes/TrendRoutes.js";
+import weatherRoutes, { getWeatherHealth } from "./routes/WeatherRoutes.js";
+
+// ─── Collectors ────────────────────────────────────────────────────
+
+import { startEventCollectors } from "./collectors/EventCollector.js";
+import { startMarketCollectors } from "./collectors/MarketCollector.js";
+import { startProductCollectors } from "./collectors/ProductCollector.js";
+import { startTrendCollectors } from "./collectors/TrendCollector.js";
+import { startWeatherCollectors } from "./collectors/WeatherCollector.js";
+
+// ─── Express App ───────────────────────────────────────────────────
+
+const app = express();
+
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
+app.use(express.json());
+
+// ─── Mount Domain Routers ──────────────────────────────────────────
+
+app.use("/event", eventRoutes);
+app.use("/market", marketRoutes);
+app.use("/product", productRoutes);
+app.use("/trend", trendRoutes);
+app.use("/weather", weatherRoutes);
+
+// ─── Unified Health ────────────────────────────────────────────────
+
+app.get("/health", (_req, res) => {
+  res.json({
+    status: "ok",
+    uptime: process.uptime(),
+    domains: {
+      event: getEventHealth(),
+      market: getMarketHealth(),
+      product: getProductHealth(),
+      trend: getTrendHealth(),
+      weather: getWeatherHealth(),
+    },
+  });
+});
+
+// ─── Startup ───────────────────────────────────────────────────────
+
+async function start() {
+  try {
+    await connectDB(CONFIG.MONGODB_URI);
+    await Promise.all([
+      setupEventCollection(),
+      setupCommodityCollection(),
+      setupProductCollection(),
+      setupTrendCollection(),
+      setupEarthquakeCollection(),
+      setupNeoCollection(),
+      setupSolarFlareCollection(),
+      setupCmeCollection(),
+      setupGeomagneticStormCollection(),
+    ]);
+  } catch (error) {
+    console.error(`Failed to connect to MongoDB: ${error.message}`);
+    process.exit(1);
+  }
+
+  // Start all domain collectors
+  startEventCollectors();
+  startMarketCollectors();
+  startProductCollectors();
+  startTrendCollectors();
+  startWeatherCollectors();
+
+  const port = CONFIG.TOOLS_PORT;
+  app.listen(port, () => {
+    console.log(`🔧 Tools API running on port ${port}`);
+    console.log(`   Database: ${CONFIG.MONGODB_URI}`);
+    console.log("   Domains: event, market, product, trend, weather");
+    console.log(
+      "   Routes: /event/*, /market/*, /product/*, /trend/*, /weather/*",
+    );
+  });
+}
+
+start();
