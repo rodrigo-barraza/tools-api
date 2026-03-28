@@ -938,7 +938,7 @@ const TOOL_DEFINITIONS = [
   {
     name: "search_products",
     description:
-      "Search for products with pricing, ratings, and deal information from Best Buy, Amazon, eBay, Etsy, and Product Hunt.",
+      "Search for products with pricing, ratings, and deal information from Best Buy, Amazon, eBay, Etsy, Product Hunt, Costco US, and Costco Canada.",
     endpoint: {
       path: "/product/products/search",
       queryParams: ["q", "category", "limit"],
@@ -1012,6 +1012,32 @@ const TOOL_DEFINITIONS = [
         ...fieldsParam(FIELDS.PRODUCT_AVAILABILITY),
       },
       required: ["skus", "fields"],
+    },
+  },
+  {
+    name: "get_costco_us_products",
+    description:
+      "Get products from Costco US (costco.com) including laptops, desktops, TVs, phones, tablets, headphones, speakers, cameras, video games, and appliances. Shows name, price (USD), rating, and product URL.",
+    endpoint: {
+      path: "/product/products/source/costco_us",
+    },
+    parameters: {
+      type: "object",
+      properties: { ...fieldsParam(FIELDS.PRODUCTS) },
+      required: ["fields"],
+    },
+  },
+  {
+    name: "get_costco_ca_products",
+    description:
+      "Get products from Costco Canada (costco.ca) including laptops, desktops, TVs, phones, tablets, headphones, speakers, cameras, video games, and appliances. Shows name, price (CAD), rating, and product URL.",
+    endpoint: {
+      path: "/product/products/source/costco_ca",
+    },
+    parameters: {
+      type: "object",
+      properties: { ...fieldsParam(FIELDS.PRODUCTS) },
+      required: ["fields"],
     },
   },
 

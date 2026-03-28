@@ -28,6 +28,16 @@ const store = {
     lastFetch: null,
     error: null,
   },
+  [PRODUCT_SOURCES.COSTCO_US]: {
+    products: [],
+    lastFetch: null,
+    error: null,
+  },
+  [PRODUCT_SOURCES.COSTCO_CA]: {
+    products: [],
+    lastFetch: null,
+    error: null,
+  },
 };
 
 // ─── Update Methods ────────────────────────────────────────────────

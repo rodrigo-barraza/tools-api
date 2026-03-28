@@ -5,6 +5,7 @@ import {
   EBAY_INTERVAL_MS,
   ETSY_INTERVAL_MS,
   BESTBUY_CA_AVAILABILITY_INTERVAL_MS,
+  COSTCO_INTERVAL_MS,
 } from "../constants.js";
 import { upsertProducts } from "../models/Product.js";
 import { fetchAllBestBuyTrending } from "../fetchers/product/BestBuyFetcher.js";
@@ -13,6 +14,7 @@ import { fetchProductHuntTrending } from "../fetchers/product/ProductHuntFetcher
 import { fetchAllEbayTrending } from "../fetchers/product/EbayFetcher.js";
 import { fetchEtsyTrending } from "../fetchers/product/EtsyFetcher.js";
 import { fetchBestBuyCAAvailability } from "../fetchers/product/BestBuyCAAvailabilityFetcher.js";
+import { fetchAllCostcoUS, fetchAllCostcoCA } from "../fetchers/product/CostcoFetcher.js";
 import { updateProducts, setProductError } from "../caches/ProductCache.js";
 import {
   getWatchedSkus,
@@ -116,6 +118,34 @@ async function collectBestBuyCAAvailability() {
   }
 }
 
+async function collectCostcoUS() {
+  try {
+    const products = await fetchAllCostcoUS();
+    updateProducts("costco_us", products);
+    const result = await upsertProducts(products);
+    console.log(
+      `[Costco US] ✅ ${products.length} products | ${result.upserted} new, ${result.modified} updated`,
+    );
+  } catch (error) {
+    setProductError("costco_us", error);
+    console.error(`[Costco US] ❌ ${error.message}`);
+  }
+}
+
+async function collectCostcoCA() {
+  try {
+    const products = await fetchAllCostcoCA();
+    updateProducts("costco_ca", products);
+    const result = await upsertProducts(products);
+    console.log(
+      `[Costco CA] ✅ ${products.length} products | ${result.upserted} new, ${result.modified} updated`,
+    );
+  } catch (error) {
+    setProductError("costco_ca", error);
+    console.error(`[Costco CA] ❌ ${error.message}`);
+  }
+}
+
 export function startProductCollectors() {
   collectBestBuy();
   setTimeout(collectAmazon, 15_000);
@@ -123,6 +153,8 @@ export function startProductCollectors() {
   setTimeout(collectEbay, 25_000);
   setTimeout(collectEtsy, 30_000);
   setTimeout(collectBestBuyCAAvailability, 35_000);
+  setTimeout(collectCostcoUS, 40_000);
+  setTimeout(collectCostcoCA, 45_000);
 
   setInterval(collectBestBuy, BESTBUY_INTERVAL_MS);
   setInterval(collectAmazon, AMAZON_INTERVAL_MS);
@@ -133,6 +165,8 @@ export function startProductCollectors() {
     collectBestBuyCAAvailability,
     BESTBUY_CA_AVAILABILITY_INTERVAL_MS,
   );
+  setInterval(collectCostcoUS, COSTCO_INTERVAL_MS);
+  setInterval(collectCostcoCA, COSTCO_INTERVAL_MS);
 
   console.log("📦 Product collectors started");
 }

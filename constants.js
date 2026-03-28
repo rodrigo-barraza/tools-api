@@ -693,6 +693,8 @@ export const AMAZON_INTERVAL_MS = 7_200_000; // 2 hours
 export const PRODUCTHUNT_PRODUCT_INTERVAL_MS = 3_600_000; // 1 hour
 export const EBAY_INTERVAL_MS = 3_600_000; // 1 hour
 export const ETSY_INTERVAL_MS = 3_600_000; // 1 hour
+export const COSTCO_INTERVAL_MS = 7_200_000; // 2 hours
+export const COSTCO_MAX_PRODUCTS_PER_CATEGORY = 24; // Costco shows 24 per page
 
 // Best Buy Canada — stock availability checker (public ecomm-api, no key required)
 export const BESTBUY_CA_AVAILABILITY_INTERVAL_MS = 300_000; // 5 minutes
@@ -942,7 +944,41 @@ export const PRODUCT_SOURCES = {
   PRODUCTHUNT: "producthunt",
   EBAY: "ebay",
   ETSY: "etsy",
+  COSTCO_US: "costco_us",
+  COSTCO_CA: "costco_ca",
 };
+
+// Costco US — category page slugs
+export const COSTCO_US_CATEGORIES = [
+  { slug: "laptops.html", name: "Laptops", unified: PRODUCT_CATEGORIES.COMPUTERS },
+  { slug: "desktop-computers.html", name: "Desktops", unified: PRODUCT_CATEGORIES.COMPUTERS },
+  { slug: "computer-monitors.html", name: "Monitors", unified: PRODUCT_CATEGORIES.ELECTRONICS },
+  { slug: "tvs.html", name: "TVs", unified: PRODUCT_CATEGORIES.TV_HOME_THEATER },
+  { slug: "cell-phones.html", name: "Cell Phones", unified: PRODUCT_CATEGORIES.PHONES },
+  { slug: "tablets.html", name: "Tablets", unified: PRODUCT_CATEGORIES.COMPUTERS },
+  { slug: "headphones.html", name: "Headphones", unified: PRODUCT_CATEGORIES.AUDIO },
+  { slug: "speakers.html", name: "Speakers", unified: PRODUCT_CATEGORIES.AUDIO },
+  { slug: "cameras-camcorders.html", name: "Cameras", unified: PRODUCT_CATEGORIES.CAMERAS },
+  { slug: "video-games.html", name: "Video Games", unified: PRODUCT_CATEGORIES.GAMING },
+  { slug: "major-appliances.html", name: "Major Appliances", unified: PRODUCT_CATEGORIES.APPLIANCES },
+  { slug: "small-appliances.html", name: "Small Appliances", unified: PRODUCT_CATEGORIES.APPLIANCES },
+];
+
+// Costco CA — category page slugs (same products, Canadian pricing)
+export const COSTCO_CA_CATEGORIES = [
+  { slug: "laptops.html", name: "Laptops", unified: PRODUCT_CATEGORIES.COMPUTERS },
+  { slug: "desktop-computers.html", name: "Desktops", unified: PRODUCT_CATEGORIES.COMPUTERS },
+  { slug: "computer-monitors.html", name: "Monitors", unified: PRODUCT_CATEGORIES.ELECTRONICS },
+  { slug: "tvs.html", name: "TVs", unified: PRODUCT_CATEGORIES.TV_HOME_THEATER },
+  { slug: "cell-phones.html", name: "Cell Phones", unified: PRODUCT_CATEGORIES.PHONES },
+  { slug: "tablets.html", name: "Tablets", unified: PRODUCT_CATEGORIES.COMPUTERS },
+  { slug: "headphones-earbuds.html", name: "Headphones", unified: PRODUCT_CATEGORIES.AUDIO },
+  { slug: "speakers.html", name: "Speakers", unified: PRODUCT_CATEGORIES.AUDIO },
+  { slug: "cameras-camcorders-drones.html", name: "Cameras", unified: PRODUCT_CATEGORIES.CAMERAS },
+  { slug: "video-games.html", name: "Video Games", unified: PRODUCT_CATEGORIES.GAMING },
+  { slug: "major-appliances.html", name: "Major Appliances", unified: PRODUCT_CATEGORIES.APPLIANCES },
+  { slug: "small-appliances.html", name: "Small Appliances", unified: PRODUCT_CATEGORIES.APPLIANCES },
+];
 
 export const AMAZON_REQUEST_DELAY_MS = 3_000;
 export const AMAZON_MAX_PRODUCTS_PER_CATEGORY = 20;
@@ -1248,6 +1284,12 @@ export const API_RATE_LIMITS = {
     qpm: null,
     qpd: null, // scraping, no official API
     requestDelayMs: 3_000, // conservative scrape pacing
+  },
+  COSTCO: {
+    qps: null,
+    qpm: null,
+    qpd: null, // scraping, no official API — Akamai WAF protected
+    requestDelayMs: 5_000, // conservative 5s between requests to avoid blocks
   },
 
   // ─── Trend Domain ─────────────────────────────────────────────────
