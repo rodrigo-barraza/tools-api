@@ -2760,10 +2760,10 @@ const TOOL_DEFINITIONS = [
     },
   },
 
-  // ── Gym Exercises (Free Exercise DB) ────────────────────────────
+  // ── Gym Exercises (Free Exercise DB & Wger) ─────────────────
   {
     name: "search_gym_exercises",
-    dataSource: staticDataset("Free Exercise DB"),
+    dataSource: staticDataset("Free Exercise DB & Wger"),
     description:
       "Search for gym exercises by keyword, category, equipment, target muscle, or difficulty level. Returns detailed instructions and muscle group targets.",
     endpoint: {
@@ -2820,7 +2820,7 @@ const TOOL_DEFINITIONS = [
   },
   {
     name: "get_gym_exercise_categories",
-    dataSource: staticDataset("Free Exercise DB"),
+    dataSource: staticDataset("Free Exercise DB & Wger"),
     description:
       "Get all available gym exercise categories, equipment types, and muscle groups.",
     endpoint: {
@@ -2834,7 +2834,7 @@ const TOOL_DEFINITIONS = [
   },
   {
     name: "get_gym_exercise_by_id",
-    dataSource: staticDataset("Free Exercise DB"),
+    dataSource: staticDataset("Free Exercise DB & Wger"),
     description:
       "Get details for a specific gym exercise by its exact ID.",
     endpoint: {

@@ -261,7 +261,7 @@ export function getHealthDomainHealth() {
     openFda: "on-demand",
     usdaNutrition: "on-demand (in-memory, ~1346 raw whole foods)",
     fdaDrugNdc: "on-demand (in-memory, ~26,000 products)",
-    freeExerciseDb: "on-demand (in-memory, ~873 exercises)",
+    freeExerciseDb: "on-demand (in-memory, ~1700+ exercises from multiple sources)",
   };
 }
 

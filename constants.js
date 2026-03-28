@@ -2363,6 +2363,21 @@ export const DATASET_REGISTRY = [
     notes:
       "Comprehensive list of gym exercises including mechanic, force, level, equipment, and primary/secondary muscles involved. Public Domain.",
   },
+  {
+    id: "wger-exercise-db",
+    name: "Wger Exercise DB",
+    domain: "health",
+    file: "fetchers/health/data/digest_exercises_wger.csv",
+    source: "Wger",
+    url: "https://wger.de",
+    version: "2026-03",
+    dataYear: 2026,
+    ingestedYear: 2026,
+    records: 895,
+    region: "Global",
+    notes:
+      "Extensive community-driven exercise database with translations, category, equipment, and targeted muscles.",
+  },
 ];
 
 // ═══════════════════════════════════════════════════════════════
