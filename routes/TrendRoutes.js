@@ -12,6 +12,7 @@ import {
   searchTrends,
   getHealth,
 } from "../caches/TrendCache.js";
+import { parseIntParam } from "../utilities.js";
 
 const router = Router();
 
@@ -40,16 +41,16 @@ router.get("/trends/search", (req, res) => {
 });
 
 router.get("/trends/recent", async (req, res) => {
-  const hours = parseInt(req.query.hours || "24", 10);
+  const hours = parseIntParam(req.query.hours, 24);
   const category = req.query.category || null;
   const source = req.query.source || null;
-  const limit = parseInt(req.query.limit || "50", 10);
+  const limit = parseIntParam(req.query.limit, 50);
   res.json(await getRecentTrends(hours, category, source, limit));
 });
 
 router.get("/trends/top", async (req, res) => {
-  const hours = parseInt(req.query.hours || "24", 10);
-  const limit = parseInt(req.query.limit || "20", 10);
+  const hours = parseIntParam(req.query.hours, 24);
+  const limit = parseIntParam(req.query.limit, 20);
   res.json(await getTopTrends(hours, limit));
 });
 
@@ -58,7 +59,7 @@ router.get("/trends/db/search", async (req, res) => {
   if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  const limit = parseInt(req.query.limit || "50", 10);
+  const limit = parseIntParam(req.query.limit, 50);
   res.json(await searchTrendsDB(query, limit));
 });
 

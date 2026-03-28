@@ -20,6 +20,7 @@ import {
   getAvailabilityHealth,
 } from "../caches/BestBuyCAAvailabilityCache.js";
 import { fetchBestBuyCAAvailability } from "../fetchers/product/BestBuyCAAvailabilityFetcher.js";
+import { parseIntParam } from "../utilities.js";
 
 const router = Router();
 
@@ -30,7 +31,7 @@ router.get("/products", (_req, res) => {
 });
 
 router.get("/products/trending", (req, res) => {
-  const limit = parseInt(req.query.limit || "50", 10);
+  const limit = parseIntParam(req.query.limit, 50);
   res.json(getTrending(limit));
 });
 
@@ -55,10 +56,10 @@ router.get("/products/search", (req, res) => {
 });
 
 router.get("/products/recent", async (req, res) => {
-  const hours = parseInt(req.query.hours || "24", 10);
+  const hours = parseIntParam(req.query.hours, 24);
   const category = req.query.category || null;
   const source = req.query.source || null;
-  const limit = parseInt(req.query.limit || "50", 10);
+  const limit = parseIntParam(req.query.limit, 50);
   res.json(await getRecentProducts(hours, category, source, limit));
 });
 
@@ -67,7 +68,7 @@ router.get("/products/db/search", async (req, res) => {
   if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  const limit = parseInt(req.query.limit || "50", 10);
+  const limit = parseIntParam(req.query.limit, 50);
   res.json(await searchProducts(query, limit));
 });
 
@@ -166,4 +167,3 @@ export function getProductHealth() {
 }
 
 export default router;
-

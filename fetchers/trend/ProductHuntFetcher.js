@@ -1,8 +1,8 @@
 import {
   TREND_SOURCES as SOURCES,
   TREND_CATEGORIES,
-  USER_AGENTS,
 } from "../../constants.js";
+import { normalizeName, randomUserAgent } from "../../utilities.js";
 
 const PRODUCT_HUNT_URL = "https://www.producthunt.com";
 
@@ -12,10 +12,9 @@ const PRODUCT_HUNT_URL = "https://www.producthunt.com";
  * @returns {Promise<Array>} Normalized trend objects
  */
 export async function fetchProductHuntTrends() {
-  const ua = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
   const res = await fetch(PRODUCT_HUNT_URL, {
     headers: {
-      "User-Agent": ua,
+      "User-Agent": randomUserAgent(),
       Accept: "text/html,application/xhtml+xml",
     },
   });
@@ -51,11 +50,7 @@ function parseProductHunt(html) {
       for (const post of posts.slice(0, 20)) {
         trends.push({
           name: post.name || post.title || "Unknown Product",
-          normalizedName: (post.name || post.title || "")
-            .toLowerCase()
-            .replace(/[^a-z0-9\s]/g, "")
-            .trim()
-            .replace(/\s+/g, " "),
+          normalizedName: normalizeName(post.name || post.title || ""),
           source: SOURCES.PRODUCTHUNT,
           volume: post.votesCount || post.votes_count || 0,
           url: post.url
@@ -91,11 +86,7 @@ function parseProductHunt(html) {
 
       trends.push({
         name,
-        normalizedName: name
-          .toLowerCase()
-          .replace(/[^a-z0-9\s]/g, "")
-          .trim()
-          .replace(/\s+/g, " "),
+        normalizedName: normalizeName(name),
         source: SOURCES.PRODUCTHUNT,
         volume: 0,
         url: PRODUCT_HUNT_URL,

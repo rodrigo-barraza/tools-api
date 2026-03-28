@@ -1,14 +1,13 @@
 import CONFIG from "../../config.js";
-import { PRODUCT_SOURCES } from "../../constants.js";
-import { computeTrendingScore } from "../../utilities.js";
+import { PRODUCT_SOURCES, EBAY_CATEGORIES } from "../../constants.js";
+import { computeTrendingScore, TokenManager } from "../../utilities.js";
 import rateLimiter from "../../services/RateLimiterService.js";
 
 const BASE_URL = "https://api.ebay.com/buy/browse/v1";
 
-/**
- * Get an OAuth token from eBay using client credentials.
- */
-async function getEbayToken() {
+// ─── OAuth2 Token Management ──────────────────────────────────────
+
+const ebayTokenManager = new TokenManager(async () => {
   const credentials = Buffer.from(
     `${CONFIG.EBAY_CLIENT_ID}:${CONFIG.EBAY_CLIENT_SECRET}`,
   ).toString("base64");
@@ -30,35 +29,11 @@ async function getEbayToken() {
   }
 
   const data = await response.json();
-  return data.access_token;
-}
-
-// Cached token
-let cachedToken = null;
-let tokenExpiry = 0;
-
-async function getToken() {
-  if (cachedToken && Date.now() < tokenExpiry) return cachedToken;
-  cachedToken = await getEbayToken();
-  tokenExpiry = Date.now() + 7_000_000; // ~2 hours (eBay tokens last ~2hrs)
-  return cachedToken;
-}
-
-/**
- * eBay category IDs for trending searches.
- */
-const EBAY_CATEGORIES = [
-  { id: "9355", name: "Cell Phones", unified: "phones" },
-  { id: "175673", name: "Computers & Tablets", unified: "computers" },
-  { id: "293", name: "Consumer Electronics", unified: "electronics" },
-  { id: "1249", name: "Video Games & Consoles", unified: "gaming" },
-  { id: "11450", name: "Clothing & Accessories", unified: "fashion" },
-  { id: "26395", name: "Health & Beauty", unified: "beauty" },
-  { id: "11700", name: "Home & Garden", unified: "home" },
-  { id: "888", name: "Sporting Goods", unified: "sports" },
-  { id: "220", name: "Toys & Hobbies", unified: "toys" },
-  { id: "6000", name: "Motors Parts & Accessories", unified: "automotive" },
-];
+  return {
+    token: data.access_token,
+    expiresInMs: 7_000_000, // ~2 hours (eBay tokens last ~2hrs)
+  };
+});
 
 /**
  * Search eBay for popular items in a category, sorted by most watched.
@@ -120,7 +95,7 @@ export async function fetchAllEbayTrending() {
     throw new Error("EBAY_CLIENT_ID and EBAY_CLIENT_SECRET not configured");
   }
 
-  const token = await getToken();
+  const token = await ebayTokenManager.getToken();
   const allProducts = [];
 
   for (const cat of EBAY_CATEGORIES) {

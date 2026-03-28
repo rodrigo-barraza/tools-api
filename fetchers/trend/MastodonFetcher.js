@@ -2,6 +2,7 @@ import {
   TREND_SOURCES as SOURCES,
   MASTODON_INSTANCES,
 } from "../../constants.js";
+import { normalizeName, stripHtml } from "../../utilities.js";
 
 /**
  * Fetches trending tags from a single Mastodon instance.
@@ -27,24 +28,6 @@ async function fetchTrendingStatuses(instance) {
   });
   if (!res.ok) return [];
   return res.json();
-}
-
-/**
- * Strips HTML tags from a string (Mastodon statuses contain HTML).
- * @param {string} html - HTML string
- * @returns {string} Plain text
- */
-function stripHtml(html) {
-  return html
-    .replace(/<br\s*\/?>/gi, " ")
-    .replace(/<[^>]+>/g, "")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\s+/g, " ")
-    .trim();
 }
 
 /**
@@ -119,11 +102,7 @@ export async function fetchMastodonTrends() {
 
         allTrends.push({
           name,
-          normalizedName: name
-            .toLowerCase()
-            .replace(/[^a-z0-9\s]/g, "")
-            .trim()
-            .replace(/\s+/g, " "),
+          normalizedName: normalizeName(name),
           source: SOURCES.MASTODON,
           volume: engagement,
           url: status.url || status.uri,

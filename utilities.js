@@ -28,6 +28,178 @@ export function parsePrice(priceStr) {
   return isNaN(num) ? null : num;
 }
 
+// ─── Text Utilities ────────────────────────────────────────────────
+
+/**
+ * Normalize a name/title for deduplication and matching.
+ * Strips non-alphanumeric chars, lowercases, collapses whitespace.
+ * @param {string} str
+ * @returns {string}
+ */
+export function normalizeName(str) {
+  if (!str) return "";
+  return str
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, "")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+/**
+ * Strip HTML tags from a string and decode common HTML entities.
+ * @param {string} html
+ * @returns {string}
+ */
+export function stripHtml(html) {
+  if (!html) return "";
+  return html
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// ─── XML Utilities ─────────────────────────────────────────────────
+
+/**
+ * Extract the text content of an XML tag (supports CDATA, namespaced tags).
+ * @param {string} xml - XML string to search
+ * @param {string} tag - Tag name (e.g. "title", "ht:approx_traffic")
+ * @returns {string|null} Tag content or null
+ */
+export function extractXmlTag(xml, tag) {
+  const escapedTag = tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(
+    `<${escapedTag}><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${escapedTag}>|<${escapedTag}>([\\s\\S]*?)<\\/${escapedTag}>`,
+  );
+  const match = xml.match(regex);
+  if (!match) return null;
+  return (match[1] || match[2] || "").trim();
+}
+
+/**
+ * Extract all occurrences of an XML element from a string.
+ * @param {string} xml - Full XML body
+ * @param {string} tag - Element tag name (e.g. "item")
+ * @returns {string[]} Array of raw element blocks
+ */
+export function extractXmlItems(xml, tag) {
+  const items = [];
+  const openTag = `<${tag}>`;
+  const closeTag = `</${tag}>`;
+  let cursor = 0;
+
+  while (true) {
+    const start = xml.indexOf(openTag, cursor);
+    if (start === -1) break;
+    const end = xml.indexOf(closeTag, start);
+    if (end === -1) break;
+    items.push(xml.slice(start, end + closeTag.length));
+    cursor = end + closeTag.length;
+  }
+
+  return items;
+}
+
+// ─── Array Utilities ───────────────────────────────────────────────
+
+/**
+ * Batch an array into chunks of a given size.
+ * @param {Array} array
+ * @param {number} size
+ * @returns {Array[]}
+ */
+export function chunk(array, size) {
+  const chunks = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size));
+  }
+  return chunks;
+}
+
+// ─── Route Utilities ───────────────────────────────────────────────
+
+/**
+ * Parse an integer query param with a default fallback.
+ * @param {string|undefined} value - Raw query string value
+ * @param {number} defaultValue
+ * @returns {number}
+ */
+export function parseIntParam(value, defaultValue) {
+  if (value == null) return defaultValue;
+  const parsed = parseInt(value, 10);
+  return isNaN(parsed) ? defaultValue : parsed;
+}
+
+// ─── Scraping Utilities ────────────────────────────────────────────
+
+/**
+ * Build browser-like headers for web scraping requests.
+ * @param {string} [referer] - Optional Referer header
+ * @returns {object}
+ */
+export function buildScraperHeaders(referer) {
+  const headers = {
+    "User-Agent": randomUserAgent(),
+    Accept:
+      "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Cache-Control": "no-cache",
+    Pragma: "no-cache",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
+    "Upgrade-Insecure-Requests": "1",
+    DNT: "1",
+  };
+  if (referer) headers.Referer = referer;
+  return headers;
+}
+
+// ─── OAuth Token Manager ───────────────────────────────────────────
+
+/**
+ * Reusable OAuth2 client-credentials token manager with caching.
+ * Handles token expiry and automatic refresh.
+ */
+export class TokenManager {
+  #token = null;
+  #expiry = 0;
+  #fetchFn;
+
+  /**
+   * @param {Function} fetchFn - Async function that returns { token, expiresInMs }
+   */
+  constructor(fetchFn) {
+    this.#fetchFn = fetchFn;
+  }
+
+  /**
+   * Get a valid token, refreshing if expired.
+   * @returns {Promise<string>}
+   */
+  async getToken() {
+    if (this.#token && Date.now() < this.#expiry) return this.#token;
+    const { token, expiresInMs } = await this.#fetchFn();
+    this.#token = token;
+    this.#expiry = Date.now() + expiresInMs;
+    return this.#token;
+  }
+
+  /** Invalidate the cached token (e.g. on 401). */
+  invalidate() {
+    this.#token = null;
+    this.#expiry = 0;
+  }
+}
+
 // ─── Event Utilities ───────────────────────────────────────────────
 
 /**

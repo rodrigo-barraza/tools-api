@@ -23,76 +23,41 @@ import {
   setAvailabilityError,
 } from "../caches/BestBuyCAAvailabilityCache.js";
 
-async function collectBestBuy() {
-  try {
-    const products = await fetchAllBestBuyTrending();
-    updateProducts("bestbuy", products);
-    const result = await upsertProducts(products);
-    console.log(
-      `[BestBuy] ✅ ${products.length} products | ${result.upserted} new, ${result.modified} updated`,
-    );
-  } catch (error) {
-    setProductError("bestbuy", error);
-    console.error(`[BestBuy] ❌ ${error.message}`);
-  }
+// ─── Collector Factory ─────────────────────────────────────────────
+
+/**
+ * Create a standard product collector that fetches, caches, and persists.
+ * @param {string} label - Log label (e.g. "[BestBuy]")
+ * @param {string} source - Cache source key (e.g. "bestbuy")
+ * @param {Function} fetchFn - Async function returning product array
+ */
+function createProductCollector(label, source, fetchFn) {
+  return async function () {
+    try {
+      const products = await fetchFn();
+      updateProducts(source, products);
+      const result = await upsertProducts(products);
+      console.log(
+        `[${label}] ✅ ${products.length} products | ${result.upserted} new, ${result.modified} updated`,
+      );
+    } catch (error) {
+      setProductError(source, error);
+      console.error(`[${label}] ❌ ${error.message}`);
+    }
+  };
 }
 
-async function collectAmazon() {
-  try {
-    const products = await fetchAllAmazonBestSellers();
-    updateProducts("amazon", products);
-    const result = await upsertProducts(products);
-    console.log(
-      `[Amazon] ✅ ${products.length} products | ${result.upserted} new, ${result.modified} updated`,
-    );
-  } catch (error) {
-    setProductError("amazon", error);
-    console.error(`[Amazon] ❌ ${error.message}`);
-  }
-}
+// ─── Collectors ────────────────────────────────────────────────────
 
-async function collectProductHunt() {
-  try {
-    const products = await fetchProductHuntTrending();
-    updateProducts("producthunt", products);
-    const result = await upsertProducts(products);
-    console.log(
-      `[ProductHunt] ✅ ${products.length} products | ${result.upserted} new, ${result.modified} updated`,
-    );
-  } catch (error) {
-    setProductError("producthunt", error);
-    console.error(`[ProductHunt] ❌ ${error.message}`);
-  }
-}
+const collectBestBuy = createProductCollector("BestBuy", "bestbuy", fetchAllBestBuyTrending);
+const collectAmazon = createProductCollector("Amazon", "amazon", fetchAllAmazonBestSellers);
+const collectProductHunt = createProductCollector("ProductHunt", "producthunt", fetchProductHuntTrending);
+const collectEbay = createProductCollector("eBay", "ebay", fetchAllEbayTrending);
+const collectEtsy = createProductCollector("Etsy", "etsy", fetchEtsyTrending);
+const collectCostcoUS = createProductCollector("Costco US", "costco_us", fetchAllCostcoUS);
+const collectCostcoCA = createProductCollector("Costco CA", "costco_ca", fetchAllCostcoCA);
 
-async function collectEbay() {
-  try {
-    const products = await fetchAllEbayTrending();
-    updateProducts("ebay", products);
-    const result = await upsertProducts(products);
-    console.log(
-      `[eBay] ✅ ${products.length} products | ${result.upserted} new, ${result.modified} updated`,
-    );
-  } catch (error) {
-    setProductError("ebay", error);
-    console.error(`[eBay] ❌ ${error.message}`);
-  }
-}
-
-async function collectEtsy() {
-  try {
-    const products = await fetchEtsyTrending();
-    updateProducts("etsy", products);
-    const result = await upsertProducts(products);
-    console.log(
-      `[Etsy] ✅ ${products.length} products | ${result.upserted} new, ${result.modified} updated`,
-    );
-  } catch (error) {
-    setProductError("etsy", error);
-    console.error(`[Etsy] ❌ ${error.message}`);
-  }
-}
-
+// Best Buy CA Availability — unique pattern (watchlist-driven, not standard product flow)
 async function collectBestBuyCAAvailability() {
   try {
     const skus = getWatchedSkus();
@@ -115,34 +80,6 @@ async function collectBestBuyCAAvailability() {
   } catch (error) {
     setAvailabilityError(error);
     console.error(`[BestBuy CA] ❌ ${error.message}`);
-  }
-}
-
-async function collectCostcoUS() {
-  try {
-    const products = await fetchAllCostcoUS();
-    updateProducts("costco_us", products);
-    const result = await upsertProducts(products);
-    console.log(
-      `[Costco US] ✅ ${products.length} products | ${result.upserted} new, ${result.modified} updated`,
-    );
-  } catch (error) {
-    setProductError("costco_us", error);
-    console.error(`[Costco US] ❌ ${error.message}`);
-  }
-}
-
-async function collectCostcoCA() {
-  try {
-    const products = await fetchAllCostcoCA();
-    updateProducts("costco_ca", products);
-    const result = await upsertProducts(products);
-    console.log(
-      `[Costco CA] ✅ ${products.length} products | ${result.upserted} new, ${result.modified} updated`,
-    );
-  } catch (error) {
-    setProductError("costco_ca", error);
-    console.error(`[Costco CA] ❌ ${error.message}`);
   }
 }
 

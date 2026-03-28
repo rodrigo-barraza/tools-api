@@ -6,9 +6,9 @@ import {
   COSTCO_MAX_PRODUCTS_PER_CATEGORY,
 } from "../../constants.js";
 import {
-  randomUserAgent,
   parsePrice,
   computeTrendingScore,
+  buildScraperHeaders,
 } from "../../utilities.js";
 import rateLimiter from "../../services/RateLimiterService.js";
 
@@ -16,27 +16,6 @@ import rateLimiter from "../../services/RateLimiterService.js";
 
 const COSTCO_US_BASE = "https://www.costco.com";
 const COSTCO_CA_BASE = "https://www.costco.ca";
-
-// ─── Headers ───────────────────────────────────────────────────────
-
-function buildHeaders(baseUrl) {
-  return {
-    "User-Agent": randomUserAgent(),
-    Accept:
-      "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-    "Accept-Language": "en-US,en;q=0.9",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Cache-Control": "no-cache",
-    Pragma: "no-cache",
-    "Sec-Fetch-Dest": "document",
-    "Sec-Fetch-Mode": "navigate",
-    "Sec-Fetch-Site": "none",
-    "Sec-Fetch-User": "?1",
-    "Upgrade-Insecure-Requests": "1",
-    Referer: `${baseUrl}/`,
-    DNT: "1",
-  };
-}
 
 // ─── Parsers ───────────────────────────────────────────────────────
 
@@ -95,7 +74,7 @@ async function scrapeCategory(
   const url = `${baseUrl}/${slug}`;
 
   const response = await fetch(url, {
-    headers: buildHeaders(baseUrl),
+    headers: buildScraperHeaders(`${baseUrl}/`),
     redirect: "follow",
   });
 

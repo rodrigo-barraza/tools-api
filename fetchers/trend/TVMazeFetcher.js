@@ -1,4 +1,5 @@
 import { TREND_SOURCES as SOURCES, TREND_CATEGORIES } from "../../constants.js";
+import { normalizeName, stripHtml } from "../../utilities.js";
 
 const TVMAZE_SCHEDULE_URL = "https://api.tvmaze.com/schedule";
 
@@ -59,11 +60,7 @@ export async function fetchTVMazeTrends() {
 
     return {
       name: show.name,
-      normalizedName: show.name
-        .toLowerCase()
-        .replace(/[^a-z0-9\s]/g, "")
-        .trim()
-        .replace(/\s+/g, " "),
+      normalizedName: normalizeName(show.name),
       source: SOURCES.TVMAZE,
       volume: entry.weight,
       url:
@@ -87,7 +84,7 @@ export async function fetchTVMazeTrends() {
           : null,
         image: show.image?.medium || null,
         summary: show.summary
-          ? show.summary.replace(/<[^>]+>/g, "").substring(0, 200)
+          ? stripHtml(show.summary).substring(0, 200)
           : null,
       },
       category: TREND_CATEGORIES.ENTERTAINMENT,

@@ -4,20 +4,10 @@ import {
   REDDIT_SUBREDDITS,
   REDDIT_POSTS_PER_SUBREDDIT,
 } from "../../constants.js";
+import { normalizeName, TokenManager } from "../../utilities.js";
 import rateLimiter from "../../services/RateLimiterService.js";
 
-let accessToken = null;
-let tokenExpiry = 0;
-
-/**
- * Obtain an OAuth2 access token from Reddit (client credentials grant).
- * @returns {Promise<string>} Bearer access token
- */
-async function authenticate() {
-  if (accessToken && Date.now() < tokenExpiry) {
-    return accessToken;
-  }
-
+const redditTokenManager = new TokenManager(async () => {
   const credentials = Buffer.from(
     `${CONFIG.REDDIT_CLIENT_ID}:${CONFIG.REDDIT_CLIENT_SECRET}`,
   ).toString("base64");
@@ -37,10 +27,11 @@ async function authenticate() {
   }
 
   const data = await res.json();
-  accessToken = data.access_token;
-  tokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
-  return accessToken;
-}
+  return {
+    token: data.access_token,
+    expiresInMs: (data.expires_in - 60) * 1000,
+  };
+});
 
 /**
  * Fetches hot posts from a given subreddit.
@@ -76,11 +67,7 @@ function normalizeTrend(post, defaultCategory) {
   const d = post.data;
   return {
     name: d.title,
-    normalizedName: d.title
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, "")
-      .trim()
-      .replace(/\s+/g, " "),
+    normalizedName: normalizeName(d.title),
     source: SOURCES.REDDIT,
     volume: d.score || 0,
     url: `https://reddit.com${d.permalink}`,
@@ -110,7 +97,7 @@ export async function fetchRedditTrends() {
     throw new Error("REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET not configured");
   }
 
-  const token = await authenticate();
+  const token = await redditTokenManager.getToken();
   const allTrends = [];
 
   for (const sub of REDDIT_SUBREDDITS) {

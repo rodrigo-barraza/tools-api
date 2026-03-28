@@ -2,57 +2,9 @@ import {
   TREND_SOURCES as SOURCES,
   GOOGLE_NEWS_ARTICLE_LIMIT,
 } from "../../constants.js";
+import { extractXmlTag, extractXmlItems, normalizeName } from "../../utilities.js";
 
 const GOOGLE_NEWS_RSS_URL = "https://news.google.com/rss";
-
-/**
- * Lightweight XML text extractor — pulls the text content between
- * an opening and closing tag. Not a full parser, but sufficient for
- * well-formed RSS feeds.
- * @param {string} xml - Raw XML string
- * @param {string} tag - Tag name to extract
- * @returns {string|null} Text content or null
- */
-function extractTag(xml, tag) {
-  const open = `<${tag}>`;
-  const close = `</${tag}>`;
-
-  const start = xml.indexOf(open);
-  if (start === -1) return null;
-
-  const end = xml.indexOf(close, start);
-  if (end === -1) return null;
-
-  let content = xml.slice(start + open.length, end).trim();
-
-  // Strip CDATA wrapper if present
-  if (content.startsWith("<![CDATA[") && content.endsWith("]]>")) {
-    content = content.slice(9, -3);
-  }
-
-  return content;
-}
-
-/**
- * Extracts all occurrences of <item> blocks from RSS XML.
- * @param {string} xml - Full RSS XML body
- * @returns {string[]} Array of raw <item>…</item> blocks
- */
-function extractItems(xml) {
-  const items = [];
-  let cursor = 0;
-
-  while (true) {
-    const start = xml.indexOf("<item>", cursor);
-    if (start === -1) break;
-    const end = xml.indexOf("</item>", start);
-    if (end === -1) break;
-    items.push(xml.slice(start, end + 7));
-    cursor = end + 7;
-  }
-
-  return items;
-}
 
 /**
  * Categorize a Google News article based on its source tag or section.
@@ -120,13 +72,13 @@ export async function fetchGoogleNews() {
       }
 
       const xml = await res.text();
-      const items = extractItems(xml);
+      const items = extractXmlItems(xml, "item");
 
       for (const item of items) {
-        const title = extractTag(item, "title");
-        const link = extractTag(item, "link");
-        const pubDate = extractTag(item, "pubDate");
-        const source = extractTag(item, "source");
+        const title = extractXmlTag(item, "title");
+        const link = extractXmlTag(item, "link");
+        const pubDate = extractXmlTag(item, "pubDate");
+        const source = extractXmlTag(item, "source");
 
         if (!title || seen.has(title)) continue;
         seen.add(title);
@@ -150,11 +102,7 @@ export async function fetchGoogleNews() {
     .slice(0, GOOGLE_NEWS_ARTICLE_LIMIT)
     .map((article, index) => ({
       name: article.title,
-      normalizedName: article.title
-        .toLowerCase()
-        .replace(/[^a-z0-9\s]/g, "")
-        .trim()
-        .replace(/\s+/g, " "),
+      normalizedName: normalizeName(article.title),
       source: SOURCES.GOOGLE_NEWS,
       volume: GOOGLE_NEWS_ARTICLE_LIMIT - index,
       url: article.link,

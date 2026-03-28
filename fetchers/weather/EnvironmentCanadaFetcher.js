@@ -4,6 +4,7 @@
  * are currently unreliable (404/500).
  * Free, no key required.
  */
+import { stripHtml } from "../../utilities.js";
 const EC_WARNINGS_PAGE = "https://weather.gc.ca/warnings/report_e.html?bc74";
 
 // Backup: the city forecast page which includes warning banners
@@ -73,8 +74,8 @@ function parseWarningsHtml(html) {
   let match;
 
   while ((match = sectionRegex.exec(html)) !== null) {
-    const title = cleanHtml(match[1]);
-    const content = cleanHtml(match[2]);
+    const title = stripHtml(match[1]);
+    const content = stripHtml(match[2]);
 
     if (isWarningTitle(title)) {
       warnings.push({
@@ -92,7 +93,7 @@ function parseWarningsHtml(html) {
     /class="[^"]*alert[^"]*"[^>]*>([\s\S]*?)<\/(?:div|section)>/gi;
 
   while ((match = alertRegex.exec(html)) !== null) {
-    const content = cleanHtml(match[1]);
+    const content = stripHtml(match[1]);
     if (content.length > 10 && isWarningContent(content)) {
       const existing = warnings.find((w) => content.includes(w.title));
       if (!existing) {
@@ -120,7 +121,7 @@ function parseCityWarnings(html) {
   let match;
 
   while ((match = warningRegex.exec(html)) !== null) {
-    const content = cleanHtml(match[1]);
+    const content = stripHtml(match[1]);
     if (content.length > 5 && isWarningContent(content)) {
       warnings.push({
         title: content.substring(0, 100),
@@ -133,17 +134,6 @@ function parseCityWarnings(html) {
   }
 
   return warnings;
-}
-
-function cleanHtml(str) {
-  return str
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&#\d+;/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
 }
 
 function classifyWarning(text) {

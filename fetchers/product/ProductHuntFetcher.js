@@ -1,30 +1,24 @@
 import CONFIG from "../../config.js";
 import { PRODUCT_SOURCES } from "../../constants.js";
-import { computeTrendingScore } from "../../utilities.js";
+import { computeTrendingScore, TokenManager } from "../../utilities.js";
 
 const GRAPHQL_URL = "https://api.producthunt.com/v2/api/graphql";
-const TOKEN_URL = "https://api.producthunt.com/v2/oauth/token";
 
 // ─── OAuth2 Token Management ──────────────────────────────────────
 
-let cachedToken = null;
-let tokenExpiry = 0;
-
-/**
- * Get an OAuth2 access token using client credentials grant.
- */
-async function getAccessToken() {
-  if (cachedToken && Date.now() < tokenExpiry) return cachedToken;
-
-  const response = await fetch(TOKEN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      client_id: CONFIG.PRODUCTHUNT_API_KEY,
-      client_secret: CONFIG.PRODUCTHUNT_API_SECRET,
-      grant_type: "client_credentials",
-    }),
-  });
+const phTokenManager = new TokenManager(async () => {
+  const response = await fetch(
+    "https://api.producthunt.com/v2/oauth/token",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        client_id: CONFIG.PRODUCTHUNT_API_KEY,
+        client_secret: CONFIG.PRODUCTHUNT_API_SECRET,
+        grant_type: "client_credentials",
+      }),
+    },
+  );
 
   if (!response.ok) {
     const text = await response.text();
@@ -32,11 +26,12 @@ async function getAccessToken() {
   }
 
   const data = await response.json();
-  cachedToken = data.access_token;
-  // Token typically lasts ~2 weeks, refresh at 24h to be safe
-  tokenExpiry = Date.now() + 86_400_000;
-  return cachedToken;
-}
+  return {
+    token: data.access_token,
+    // Token typically lasts ~2 weeks, refresh at 24h to be safe
+    expiresInMs: 86_400_000,
+  };
+});
 
 // ─── GraphQL Query ────────────────────────────────────────────────
 
@@ -102,7 +97,7 @@ export async function fetchProductHuntTrending() {
     );
   }
 
-  const token = await getAccessToken();
+  const token = await phTokenManager.getToken();
 
   const response = await fetch(GRAPHQL_URL, {
     method: "POST",
@@ -116,8 +111,7 @@ export async function fetchProductHuntTrending() {
   if (!response.ok) {
     // Invalidate cached token on auth failure
     if (response.status === 401) {
-      cachedToken = null;
-      tokenExpiry = 0;
+      phTokenManager.invalidate();
     }
     throw new Error(
       `Product Hunt API returned ${response.status}: ${await response.text()}`,

@@ -1,5 +1,6 @@
 import CONFIG from "../../config.js";
 import { TREND_SOURCES as SOURCES, X_WOEIDS } from "../../constants.js";
+import { normalizeName } from "../../utilities.js";
 
 /**
  * Fetches trending topics from X (Twitter) for a given WOEID.
@@ -38,12 +39,7 @@ export async function fetchXTrends(woeid = X_WOEIDS.WORLDWIDE) {
 
   return (trendData.trends || []).map((trend) => ({
     name: trend.name,
-    normalizedName: trend.name
-      .toLowerCase()
-      .replace(/^#/, "")
-      .replace(/[^a-z0-9\s]/g, "")
-      .trim()
-      .replace(/\s+/g, " "),
+    normalizedName: normalizeName(trend.name.replace(/^#/, "")),
     source: SOURCES.X,
     volume: trend.tweet_volume || 0,
     url:

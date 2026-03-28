@@ -1,8 +1,8 @@
 import {
   TREND_SOURCES as SOURCES,
   TREND_CATEGORIES,
-  USER_AGENTS,
 } from "../../constants.js";
+import { stripHtml, randomUserAgent } from "../../utilities.js";
 
 const GITHUB_TRENDING_URL = "https://github.com/trending";
 
@@ -12,10 +12,9 @@ const GITHUB_TRENDING_URL = "https://github.com/trending";
  * @returns {Promise<Array>} Normalized trend objects
  */
 export async function fetchGitHubTrending() {
-  const ua = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
   const res = await fetch(`${GITHUB_TRENDING_URL}?since=daily`, {
     headers: {
-      "User-Agent": ua,
+      "User-Agent": randomUserAgent(),
       Accept: "text/html",
     },
   });
@@ -59,7 +58,7 @@ function parseGitHubTrending(html) {
     // Extract description
     const descMatch = article.match(/<p class="[^"]*">([\s\S]*?)<\/p>/);
     const description = descMatch
-      ? descMatch[1].replace(/<[^>]+>/g, "").trim()
+      ? stripHtml(descMatch[1])
       : null;
 
     // Extract programming language

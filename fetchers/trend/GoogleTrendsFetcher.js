@@ -1,4 +1,8 @@
-import { TREND_SOURCES as SOURCES } from "../../constants.js";
+import {
+  TREND_SOURCES as SOURCES,
+  GOOGLE_TRENDS_GEOS,
+} from "../../constants.js";
+import { extractXmlTag, randomUserAgent } from "../../utilities.js";
 
 const TRENDS_RSS_URL = "https://trends.google.com/trending/rss";
 
@@ -12,8 +16,7 @@ export async function fetchGoogleDailyTrends(geo = "US") {
   const url = `${TRENDS_RSS_URL}?geo=${geo}`;
   const res = await fetch(url, {
     headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+      "User-Agent": randomUserAgent(),
       Accept: "application/rss+xml, application/xml, text/xml",
     },
   });
@@ -41,14 +44,14 @@ function parseRssTrends(xml, geo) {
   while ((match = itemRegex.exec(xml)) !== null) {
     const item = match[1];
 
-    const title = extractTag(item, "title");
+    const title = extractXmlTag(item, "title");
     if (!title) continue;
 
-    const traffic = extractTag(item, "ht:approx_traffic");
-    const newsUrl = extractTag(item, "ht:news_item_url");
-    const newsTitle = extractTag(item, "ht:news_item_title");
-    const newsSource = extractTag(item, "ht:news_item_source");
-    const pubDate = extractTag(item, "pubDate");
+    const traffic = extractXmlTag(item, "ht:approx_traffic");
+    const newsUrl = extractXmlTag(item, "ht:news_item_url");
+    const newsTitle = extractXmlTag(item, "ht:news_item_title");
+    const newsSource = extractXmlTag(item, "ht:news_item_source");
+    const pubDate = extractXmlTag(item, "pubDate");
 
     const volume = traffic ? parseInt(traffic.replace(/[^0-9]/g, "")) || 0 : 0;
 
@@ -74,30 +77,13 @@ function parseRssTrends(xml, geo) {
 }
 
 /**
- * Extracts the text content of an XML tag.
- * @param {string} xml - XML string to search
- * @param {string} tag - Tag name (supports namespaced tags like ht:approx_traffic)
- * @returns {string|null} Tag content or null
- */
-function extractTag(xml, tag) {
-  const escapedTag = tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const regex = new RegExp(
-    `<${escapedTag}><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${escapedTag}>|<${escapedTag}>([\\s\\S]*?)<\\/${escapedTag}>`,
-  );
-  const match = xml.match(regex);
-  if (!match) return null;
-  return (match[1] || match[2] || "").trim();
-}
-
-/**
  * Fetches daily trends from multiple geos and deduplicates.
  * @returns {Promise<Array>} Combined normalized trend objects
  */
 export async function fetchGoogleTrends() {
-  const geos = ["US", "CA", "GB", "AU", "IN", "DE", "JP", "FR", "BR"];
   const allTrends = [];
 
-  for (const geo of geos) {
+  for (const geo of GOOGLE_TRENDS_GEOS) {
     try {
       const trends = await fetchGoogleDailyTrends(geo);
       allTrends.push(...trends);

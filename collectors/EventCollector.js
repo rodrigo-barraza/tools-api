@@ -19,46 +19,39 @@ import { fetchMovieEvents } from "../fetchers/event/MovieFetcher.js";
 import { fetchGooglePlacesEvents } from "../fetchers/event/GooglePlacesFetcher.js";
 import { updateEvents, setError } from "../caches/EventCache.js";
 
-// ─── Individual Collectors ─────────────────────────────────────────
+// ─── Collector Factory ─────────────────────────────────────────────
 
-async function collectTicketmaster() {
-  try {
-    const events = await fetchTicketmasterEvents();
-    const result = await updateEvents(EVENT_SOURCES.TICKETMASTER, events);
-    console.log(
-      `[Ticketmaster] ✅ ${events.length} events | ${result?.upserted || 0} new, ${result?.modified || 0} updated`,
-    );
-  } catch (error) {
-    setError(EVENT_SOURCES.TICKETMASTER, error);
-    console.error(`[Ticketmaster] ❌ ${error.message}`);
-  }
+/**
+ * Create a standard event collector that fetches, caches, and persists.
+ * @param {string} label - Log label (e.g. "Ticketmaster")
+ * @param {string} source - EVENT_SOURCES key
+ * @param {Function} fetchFn - Async function returning event array
+ */
+function createEventCollector(label, source, fetchFn) {
+  return async function () {
+    try {
+      const events = await fetchFn();
+      const result = await updateEvents(source, events);
+      console.log(
+        `[${label}] ✅ ${events.length} events | ${result?.upserted || 0} new, ${result?.modified || 0} updated`,
+      );
+    } catch (error) {
+      setError(source, error);
+      console.error(`[${label}] ❌ ${error.message}`);
+    }
+  };
 }
 
-async function collectSeatGeek() {
-  try {
-    const events = await fetchSeatGeekEvents();
-    const result = await updateEvents(EVENT_SOURCES.SEATGEEK, events);
-    console.log(
-      `[SeatGeek] ✅ ${events.length} events | ${result?.upserted || 0} new, ${result?.modified || 0} updated`,
-    );
-  } catch (error) {
-    setError(EVENT_SOURCES.SEATGEEK, error);
-    console.error(`[SeatGeek] ❌ ${error.message}`);
-  }
-}
+// ─── Simple Collectors (factory-generated) ─────────────────────────
 
-async function collectCraigslist() {
-  try {
-    const events = await fetchCraigslistEvents();
-    const result = await updateEvents(EVENT_SOURCES.CRAIGSLIST, events);
-    console.log(
-      `[Craigslist] ✅ ${events.length} events | ${result?.upserted || 0} new, ${result?.modified || 0} updated`,
-    );
-  } catch (error) {
-    setError(EVENT_SOURCES.CRAIGSLIST, error);
-    console.error(`[Craigslist] ❌ ${error.message}`);
-  }
-}
+const collectTicketmaster = createEventCollector("Ticketmaster", EVENT_SOURCES.TICKETMASTER, fetchTicketmasterEvents);
+const collectSeatGeek = createEventCollector("SeatGeek", EVENT_SOURCES.SEATGEEK, fetchSeatGeekEvents);
+const collectCraigslist = createEventCollector("Craigslist", EVENT_SOURCES.CRAIGSLIST, fetchCraigslistEvents);
+const collectCityOfVancouver = createEventCollector("City of Vancouver", EVENT_SOURCES.CITY_OF_VANCOUVER, fetchCityOfVancouverEvents);
+const collectMovies = createEventCollector("Movies", EVENT_SOURCES.TMDB, fetchMovieEvents);
+const collectGooglePlaces = createEventCollector("Google Places", EVENT_SOURCES.GOOGLE_PLACES, fetchGooglePlacesEvents);
+
+// ─── Multi-Source Collectors (custom logic) ────────────────────────
 
 async function collectUniversities() {
   try {
@@ -85,19 +78,6 @@ async function collectUniversities() {
     setError(EVENT_SOURCES.UBC, error);
     setError(EVENT_SOURCES.SFU, error);
     console.error(`[Universities] ❌ ${error.message}`);
-  }
-}
-
-async function collectCityOfVancouver() {
-  try {
-    const events = await fetchCityOfVancouverEvents();
-    const result = await updateEvents(EVENT_SOURCES.CITY_OF_VANCOUVER, events);
-    console.log(
-      `[City of Vancouver] ✅ ${events.length} events | ${result?.upserted || 0} new`,
-    );
-  } catch (error) {
-    setError(EVENT_SOURCES.CITY_OF_VANCOUVER, error);
-    console.error(`[City of Vancouver] ❌ ${error.message}`);
   }
 }
 
@@ -132,32 +112,6 @@ async function collectSports() {
     setError(EVENT_SOURCES.WHITECAPS, error);
     setError(EVENT_SOURCES.BC_LIONS, error);
     console.error(`[Sports] ❌ ${error.message}`);
-  }
-}
-
-async function collectMovies() {
-  try {
-    const events = await fetchMovieEvents();
-    const result = await updateEvents(EVENT_SOURCES.TMDB, events);
-    console.log(
-      `[Movies] ✅ ${events.length} films | ${result?.upserted || 0} new, ${result?.modified || 0} updated`,
-    );
-  } catch (error) {
-    setError(EVENT_SOURCES.TMDB, error);
-    console.error(`[Movies] ❌ ${error.message}`);
-  }
-}
-
-async function collectGooglePlaces() {
-  try {
-    const events = await fetchGooglePlacesEvents();
-    const result = await updateEvents(EVENT_SOURCES.GOOGLE_PLACES, events);
-    console.log(
-      `[Google Places] ✅ ${events.length} venues | ${result?.upserted || 0} new`,
-    );
-  } catch (error) {
-    setError(EVENT_SOURCES.GOOGLE_PLACES, error);
-    console.error(`[Google Places] ❌ ${error.message}`);
   }
 }
 

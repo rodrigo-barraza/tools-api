@@ -12,6 +12,7 @@ import {
   getEventSummary,
   getHealth,
 } from "../caches/EventCache.js";
+import { parseIntParam } from "../utilities.js";
 
 const router = Router();
 
@@ -23,22 +24,22 @@ router.get("/today", async (_req, res) => {
 });
 
 router.get("/upcoming", async (req, res) => {
-  const days = parseInt(req.query.days || "30", 10);
-  const limit = parseInt(req.query.limit || "200", 10);
+  const days = parseIntParam(req.query.days, 30);
+  const limit = parseIntParam(req.query.limit, 200);
   const events = await getEventsUpcoming(days, limit);
   res.json({ count: events.length, days, events });
 });
 
 router.get("/past", async (req, res) => {
-  const days = parseInt(req.query.days || "30", 10);
-  const limit = parseInt(req.query.limit || "200", 10);
+  const days = parseIntParam(req.query.days, 30);
+  const limit = parseIntParam(req.query.limit, 200);
   const events = await getEventsPast(days, limit);
   res.json({ count: events.length, days, events });
 });
 
 router.get("/search", async (req, res) => {
   const { q, category, city, source } = req.query;
-  const limit = parseInt(req.query.limit || "100", 10);
+  const limit = parseIntParam(req.query.limit, 100);
   const events = await searchEvents({ q, category, city, source, limit });
   res.json({
     count: events.length,

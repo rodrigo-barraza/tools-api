@@ -3,6 +3,7 @@ import {
   HACKERNEWS_TOP_STORY_LIMIT,
   TREND_CATEGORIES,
 } from "../../constants.js";
+import { normalizeName } from "../../utilities.js";
 
 const HN_API_BASE = "https://hacker-news.firebaseio.com/v0";
 
@@ -38,11 +39,7 @@ export async function fetchHackerNewsTrends() {
     .filter((s) => s && s.title)
     .map((story, index) => ({
       name: story.title,
-      normalizedName: story.title
-        .toLowerCase()
-        .replace(/[^a-z0-9\s]/g, "")
-        .trim()
-        .replace(/\s+/g, " "),
+      normalizedName: normalizeName(story.title),
       source: SOURCES.HACKERNEWS,
       volume: story.score || 0,
       url: story.url || `https://news.ycombinator.com/item?id=${story.id}`,

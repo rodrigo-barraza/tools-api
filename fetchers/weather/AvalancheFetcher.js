@@ -1,3 +1,5 @@
+import { stripHtml } from "../../utilities.js";
+
 const AVCAN_PRODUCTS_URL = "https://api.avalanche.ca/forecasts/en/products";
 
 /**
@@ -59,7 +61,7 @@ export async function fetchAvalancheForecast() {
         dateIssued: report.dateIssued || null,
         validUntil: report.validUntil || null,
         highlights: report.highlights
-          ? report.highlights.replace(/<[^>]+>/g, "").trim()
+          ? stripHtml(report.highlights)
           : null,
         confidence: report.confidence?.rating?.display || null,
         dangerRatings: (report.dangerRatings || []).map((dr) => ({
@@ -70,7 +72,7 @@ export async function fetchAvalancheForecast() {
         })),
         problems: (report.problems || []).map((p) => ({
           type: p.type?.display || null,
-          comment: p.comment ? p.comment.replace(/<[^>]+>/g, "").trim() : null,
+          comment: p.comment ? stripHtml(p.comment) : null,
         })),
         url:
           product.url ||
@@ -89,7 +91,7 @@ export async function fetchAvalancheForecast() {
         dateIssued: report.dateIssued || null,
         validUntil: report.validUntil || null,
         highlights: report.highlights
-          ? report.highlights.replace(/<[^>]+>/g, "").trim()
+          ? stripHtml(report.highlights)
           : null,
         confidence: report.confidence?.rating?.display || null,
         dangerRatings: (report.dangerRatings || []).map((dr) => ({
@@ -100,7 +102,7 @@ export async function fetchAvalancheForecast() {
         })),
         problems: (report.problems || []).map((p) => ({
           type: p.type?.display || null,
-          comment: p.comment ? p.comment.replace(/<[^>]+>/g, "").trim() : null,
+          comment: p.comment ? stripHtml(p.comment) : null,
         })),
         url:
           product.url || `https://avalanche.ca/forecasts/${product.id || ""}`,

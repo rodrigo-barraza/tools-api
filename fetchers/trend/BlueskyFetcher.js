@@ -1,4 +1,5 @@
 import { TREND_SOURCES as SOURCES, TREND_CATEGORIES } from "../../constants.js";
+import { normalizeName } from "../../utilities.js";
 
 const BLUESKY_API = "https://public.api.bsky.app/xrpc";
 
@@ -31,11 +32,7 @@ export async function fetchBlueskyTrends() {
       for (const feed of feeds) {
         trends.push({
           name: feed.displayName || feed.name || "Unknown Feed",
-          normalizedName: (feed.displayName || feed.name || "")
-            .toLowerCase()
-            .replace(/[^a-z0-9\s]/g, "")
-            .trim()
-            .replace(/\s+/g, " "),
+          normalizedName: normalizeName(feed.displayName || feed.name || ""),
           source: SOURCES.BLUESKY,
           volume: feed.likeCount || 0,
           url: `https://bsky.app/profile/${feed.creator?.handle || "unknown"}/feed/${feed.uri?.split("/").pop() || ""}`,
@@ -77,11 +74,9 @@ export async function fetchBlueskyTrends() {
         if (suggestion.tag === "feed" || suggestion.tag === "user") continue;
         trends.push({
           name: suggestion.subject || suggestion.tag || "Unknown",
-          normalizedName: (suggestion.subject || suggestion.tag || "")
-            .toLowerCase()
-            .replace(/[^a-z0-9\s]/g, "")
-            .trim()
-            .replace(/\s+/g, " "),
+          normalizedName: normalizeName(
+            suggestion.subject || suggestion.tag || "",
+          ),
           source: SOURCES.BLUESKY,
           volume: 0,
           url: `https://bsky.app/search?q=${encodeURIComponent(suggestion.subject || suggestion.tag || "")}`,

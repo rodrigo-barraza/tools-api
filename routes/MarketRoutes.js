@@ -8,6 +8,7 @@ import {
   getCommodityHealth,
 } from "../caches/CommodityCache.js";
 import { COMMODITY_CATEGORIES } from "../constants.js";
+import { parseIntParam } from "../utilities.js";
 
 const router = Router();
 
@@ -45,7 +46,7 @@ router.get("/commodities/ticker/:ticker", (req, res) => {
 
 router.get("/commodities/history/:ticker", async (req, res) => {
   const ticker = req.params.ticker.toUpperCase();
-  const hours = parseInt(req.query.hours || "24", 10);
+  const hours = parseIntParam(req.query.hours, 24);
   const history = await getHistory(ticker, hours);
   res.json({ ticker, hours, count: history.length, snapshots: history });
 });

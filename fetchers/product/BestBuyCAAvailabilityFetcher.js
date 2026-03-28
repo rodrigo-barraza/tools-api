@@ -2,19 +2,8 @@ import {
   BESTBUY_CA_AVAILABILITY_BASE_URL,
   BESTBUY_CA_MAX_SKUS_PER_REQUEST,
 } from "../../constants.js";
-import { randomUserAgent } from "../../utilities.js";
+import { randomUserAgent, chunk } from "../../utilities.js";
 import rateLimiter from "../../services/RateLimiterService.js";
-
-/**
- * Batch an array into chunks of a given size.
- */
-function chunk(array, size) {
-  const chunks = [];
-  for (let i = 0; i < array.length; i += size) {
-    chunks.push(array.slice(i, i + size));
-  }
-  return chunks;
-}
 
 /**
  * Build the Best Buy CA availability URL for a batch of SKUs.

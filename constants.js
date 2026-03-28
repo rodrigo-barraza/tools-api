@@ -1412,6 +1412,56 @@ export const API_RATE_LIMITS = {
 };
 
 // ═══════════════════════════════════════════════════════════════
+//  EBAY — Category Mappings
+// ═══════════════════════════════════════════════════════════════
+
+export const EBAY_CATEGORIES = [
+  { id: "9355", name: "Cell Phones", unified: "phones" },
+  { id: "175673", name: "Computers & Tablets", unified: "computers" },
+  { id: "293", name: "Consumer Electronics", unified: "electronics" },
+  { id: "1249", name: "Video Games & Consoles", unified: "gaming" },
+  { id: "11450", name: "Clothing & Accessories", unified: "fashion" },
+  { id: "26395", name: "Health & Beauty", unified: "beauty" },
+  { id: "11700", name: "Home & Garden", unified: "home" },
+  { id: "888", name: "Sporting Goods", unified: "sports" },
+  { id: "220", name: "Toys & Hobbies", unified: "toys" },
+  { id: "6000", name: "Motors Parts & Accessories", unified: "automotive" },
+];
+
+// ═══════════════════════════════════════════════════════════════
+//  ETSY — Taxonomy → Unified Category Mapping
+// ═══════════════════════════════════════════════════════════════
+
+export const ETSY_CATEGORY_MAP = {
+  electronics_and_accessories: "electronics",
+  computers_and_peripherals: "computers",
+  video_games: "gaming",
+  home_and_living: "home",
+  kitchen_and_dining: "kitchen",
+  clothing: "fashion",
+  jewelry: "fashion",
+  bath_and_beauty: "beauty",
+  toys_and_games: "toys",
+  books_movies_and_music: "books",
+  sports_and_outdoors: "sports",
+  craft_supplies_and_tools: "other",
+  art_and_collectibles: "other",
+  bags_and_purses: "fashion",
+  shoes: "fashion",
+  accessories: "fashion",
+  pet_supplies: "other",
+  weddings: "other",
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  GOOGLE TRENDS — Geographic Regions
+// ═══════════════════════════════════════════════════════════════
+
+export const GOOGLE_TRENDS_GEOS = [
+  "US", "CA", "GB", "AU", "IN", "DE", "JP", "FR", "BR",
+];
+
+// ═══════════════════════════════════════════════════════════════
 //  SHARED
 // ═══════════════════════════════════════════════════════════════
 
@@ -1422,3 +1472,4 @@ export const USER_AGENTS = [
   "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
 ];
+

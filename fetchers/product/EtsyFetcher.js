@@ -1,33 +1,9 @@
 import CONFIG from "../../config.js";
-import { PRODUCT_SOURCES } from "../../constants.js";
+import { PRODUCT_SOURCES, ETSY_CATEGORY_MAP } from "../../constants.js";
 import { computeTrendingScore } from "../../utilities.js";
 import rateLimiter from "../../services/RateLimiterService.js";
 
 const BASE_URL = "https://openapi.etsy.com/v3/application";
-
-/**
- * Etsy category mappings → unified categories.
- */
-const ETSY_CATEGORY_MAP = {
-  electronics_and_accessories: "electronics",
-  computers_and_peripherals: "computers",
-  video_games: "gaming",
-  home_and_living: "home",
-  kitchen_and_dining: "kitchen",
-  clothing: "fashion",
-  jewelry: "fashion",
-  bath_and_beauty: "beauty",
-  toys_and_games: "toys",
-  books_movies_and_music: "books",
-  sports_and_outdoors: "sports",
-  craft_supplies_and_tools: "other",
-  art_and_collectibles: "other",
-  bags_and_purses: "fashion",
-  shoes: "fashion",
-  accessories: "fashion",
-  pet_supplies: "other",
-  weddings: "other",
-};
 
 /**
  * Map an Etsy taxonomy tag to a unified category.
