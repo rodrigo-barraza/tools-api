@@ -2198,6 +2198,36 @@ export const DATASET_REGISTRY = [
     notes:
       "Maps internal nutrient IDs to human-readable names, units, categories, and types.",
   },
+  {
+    id: "uk-cofid",
+    name: "UK CoFID (McCance & Widdowson)",
+    domain: "nutrition",
+    file: "fetchers/health/data/digest_food_uk.csv",
+    source: "Public Health England",
+    url: "https://www.gov.uk/government/publications/composition-of-foods-integrated-dataset-cofid",
+    version: "CoFID 2021",
+    dataYear: 2021,
+    ingestedYear: 2026,
+    foods: 1334,
+    region: "United Kingdom",
+    notes:
+      "Multi-sheet Excel joined by food code (Proximates + Inorganics + Vitamins + Vitamin Fractions). Filtered to exclude recipes, beverages, and confectionery.",
+  },
+  {
+    id: "india-ifct",
+    name: "India IFCT",
+    domain: "nutrition",
+    file: "fetchers/health/data/digest_food_india.csv",
+    source: "National Institute of Nutrition, India",
+    url: "https://ifct2017.com/",
+    version: "IFCT 2017",
+    dataYear: 2017,
+    ingestedYear: 2026,
+    foods: 538,
+    region: "India",
+    notes:
+      "528 key Indian foods with 151 nutrients. Includes names in 14+ Indian languages. Energy converted from kJ, amino acids from mg to g.",
+  },
 ];
 
 // ═══════════════════════════════════════════════════════════════

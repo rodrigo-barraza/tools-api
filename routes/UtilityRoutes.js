@@ -8,6 +8,10 @@ import {
   listTimezones,
 } from "../fetchers/utility/TimezoneFetcher.js";
 import { lookupIp, batchLookupIps } from "../fetchers/utility/IpInfoFetcher.js";
+import {
+  searchNearbyPlaces,
+  searchPlacesByText,
+} from "../fetchers/utility/PlacesFetcher.js";
 
 const router = Router();
 
@@ -84,13 +88,70 @@ router.get("/ip/batch", async (req, res) => {
   }
 });
 
+router.get("/ip", async (_req, res) => {
+  try {
+    const result = await lookupIp("");
+    res.json(result);
+  } catch (err) {
+    res.status(502).json({ error: `IP lookup failed: ${err.message}` });
+  }
+});
+
 router.get("/ip/:ip", async (req, res) => {
   try {
-    const ip = req.params.ip === "self" ? "" : req.params.ip;
+    // Detect literal ":ip" (unresolved path template) or "self" → self-lookup
+    const raw = req.params.ip;
+    const ip = raw === "self" || raw === ":ip" ? "" : raw;
     const result = await lookupIp(ip);
     res.json(result);
   } catch (err) {
     res.status(502).json({ error: `IP lookup failed: ${err.message}` });
+  }
+});
+
+// ─── Places — Nearby Search (Google Places API New) ────────────────
+
+router.get("/places/nearby", async (req, res) => {
+  const { type, latitude, longitude, radius, limit } = req.query;
+  if (!type) {
+    return res
+      .status(400)
+      .json({ error: "Query parameter 'type' is required (e.g. restaurant, cafe, gas_station)" });
+  }
+  try {
+    const result = await searchNearbyPlaces({
+      type,
+      latitude: latitude ? parseFloat(latitude) : undefined,
+      longitude: longitude ? parseFloat(longitude) : undefined,
+      radius: radius ? parseInt(radius) : undefined,
+      limit: limit ? parseInt(limit) : undefined,
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(502).json({ error: `Places nearby search failed: ${err.message}` });
+  }
+});
+
+// ─── Places — Text Search (Google Places API New) ──────────────────
+
+router.get("/places/search", async (req, res) => {
+  const { q, latitude, longitude, radius, limit } = req.query;
+  if (!q) {
+    return res
+      .status(400)
+      .json({ error: "Query parameter 'q' is required" });
+  }
+  try {
+    const result = await searchPlacesByText({
+      query: q,
+      latitude: latitude ? parseFloat(latitude) : undefined,
+      longitude: longitude ? parseFloat(longitude) : undefined,
+      radius: radius ? parseInt(radius) : undefined,
+      limit: limit ? parseInt(limit) : undefined,
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(502).json({ error: `Places text search failed: ${err.message}` });
   }
 });
 
@@ -101,7 +162,9 @@ export function getUtilityHealth() {
     currency: "on-demand",
     timezone: "on-demand",
     ipinfo: "on-demand",
+    places: "on-demand",
   };
 }
 
 export default router;
+

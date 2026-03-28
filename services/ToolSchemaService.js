@@ -916,6 +916,26 @@ const FIELDS = {
     "postal",
     "timezone",
   ],
+
+  // Places: from PlacesFetcher
+  PLACES: [
+    "id",
+    "name",
+    "type",
+    "types",
+    "address",
+    "shortAddress",
+    "latitude",
+    "longitude",
+    "rating",
+    "reviewCount",
+    "priceLevel",
+    "phone",
+    "website",
+    "googleMapsUrl",
+    "description",
+    "openNow",
+  ],
 };
 
 // ────────────────────────────────────────────────────────────
@@ -3127,6 +3147,79 @@ const TOOL_DEFINITIONS = [
         },
         ...fieldsParam(FIELDS.IP_GEOLOCATION),
       },
+    },
+  },
+  {
+    name: "search_nearby_places",
+    description:
+      "Search for nearby places/businesses by type (e.g. restaurant, cafe, pharmacy, gas_station, grocery_store, gym, hospital, park, shopping_mall, bar, hotel, bank, library). Returns name, address, rating, reviews, price level, phone, website, and whether currently open. Great for finding nearby restaurants, shops, services, and points of interest.",
+    endpoint: {
+      path: "/utility/places/nearby",
+      queryParams: ["type", "latitude", "longitude", "radius", "limit"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        type: {
+          type: "string",
+          description:
+            "Google Places type to search for. Common types: restaurant, cafe, bar, bakery, pharmacy, gas_station, grocery_store, supermarket, gym, hospital, dentist, park, shopping_mall, hotel, bank, library, museum, movie_theater, night_club, spa, car_repair, car_wash, laundry, post_office, veterinary_care",
+        },
+        latitude: {
+          type: "number",
+          description: "Center latitude for the search (defaults to server location)",
+        },
+        longitude: {
+          type: "number",
+          description: "Center longitude for the search (defaults to server location)",
+        },
+        radius: {
+          type: "number",
+          description: "Search radius in meters (default: 5000, max: 50000)",
+        },
+        limit: {
+          type: "number",
+          description: "Maximum results to return (default: 20, max: 20)",
+        },
+        ...fieldsParam(FIELDS.PLACES),
+      },
+      required: ["type"],
+    },
+  },
+  {
+    name: "search_places",
+    description:
+      "Search for places using a natural language text query (e.g. 'best sushi near downtown', 'coffee shops with wifi', '24 hour pharmacy'). More flexible than nearby search — supports descriptive queries. Returns name, address, rating, reviews, price level, phone, website, and whether currently open.",
+    endpoint: {
+      path: "/utility/places/search",
+      queryParams: ["q", "latitude", "longitude", "radius", "limit"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        q: {
+          type: "string",
+          description: "Natural language search query (e.g. 'italian restaurants', 'best coffee shops', '24 hour pharmacy near me')",
+        },
+        latitude: {
+          type: "number",
+          description: "Bias latitude for the search (defaults to server location)",
+        },
+        longitude: {
+          type: "number",
+          description: "Bias longitude for the search (defaults to server location)",
+        },
+        radius: {
+          type: "number",
+          description: "Bias radius in meters (default: 10000, max: 50000)",
+        },
+        limit: {
+          type: "number",
+          description: "Maximum results to return (default: 10, max: 20)",
+        },
+        ...fieldsParam(FIELDS.PLACES),
+      },
+      required: ["q"],
     },
   },
 ];

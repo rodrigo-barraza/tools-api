@@ -24,6 +24,9 @@ const ARRAY_WRAPPER_KEYS = new Set([
   "requests",
   "foods",
   "comparison",
+  "places",
+  "results",
+  "stops",
 ]);
 
 /**

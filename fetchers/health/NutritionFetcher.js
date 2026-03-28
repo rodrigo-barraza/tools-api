@@ -61,7 +61,11 @@ const FOOD_DATA_FILES = [
   { file: "digest_food.csv", source: "USDA" },
   { file: "digest_food_canada.csv", source: "Health Canada CNF" },
   { file: "digest_food_fao.csv", source: "FAO/INFOODS BioFoodComp" },
+  { file: "digest_food_uk.csv", source: "UK CoFID" },
+  { file: "digest_food_india.csv", source: "India IFCT" },
 ];
+
+const SOURCES_NOTE = `All nutrient values per 100g edible portion. Sources: ${FOOD_DATA_FILES.map((f) => f.source).join(", ")}.`;
 
 function loadFoodCSV(filename, source) {
   const foodPath = join(__dirname, "data", filename);
@@ -372,7 +376,7 @@ export function searchFoods(query, opts = {}) {
   return {
     count: scored.length,
     query,
-    note: "All nutrient values are per 100g of edible portion. Sources: USDA, Health Canada CNF, FAO/INFOODS BioFoodComp.",
+    note: SOURCES_NOTE,
     foods: scored.map((s) => formatFood(s.food, nutrientTypes)),
   };
 }
@@ -447,7 +451,7 @@ export function rankByNutrient(nutrient, opts = {}) {
     nutrientName: nutrientMeta?.nutrient_name || nutrient,
     type: nutrientMeta?.nutrient_type || "unknown",
     count: ranked.length,
-    note: "All values per 100g edible portion. Sources: USDA, Health Canada CNF, FAO/INFOODS BioFoodComp.",
+    note: SOURCES_NOTE,
     foods: ranked.map((f) => ({
       name: f.food_name,
       description: f.description_long,
@@ -542,7 +546,7 @@ export function compareFoods(foodNames, nutrientTypes = null) {
 
   return {
     count: results.filter((r) => r.found).length,
-    note: "All nutrient values per 100g edible portion. Sources: USDA, Health Canada CNF, FAO/INFOODS BioFoodComp.",
+    note: SOURCES_NOTE,
     comparison: results,
   };
 }
@@ -662,7 +666,7 @@ export function getTopFoodsByCategory(category, nutrient, opts = {}) {
     nutrientName: nutrientMeta?.nutrient_name || resolved.column,
     unit: nutrientMeta?.unit || null,
     count: ranked.length,
-    note: "All values per 100g edible portion. Sources: USDA, Health Canada CNF, FAO/INFOODS BioFoodComp.",
+    note: SOURCES_NOTE,
     foods: ranked.map((f) => ({
       name: f.food_name,
       description: f.description_long,
@@ -759,7 +763,7 @@ export function searchByTaxonomy(rank, value, opts = {}) {
     rank: normalizedRank,
     value,
     count: matched.length,
-    note: "All nutrient values per 100g edible portion. Sources: USDA, Health Canada CNF, FAO/INFOODS BioFoodComp.",
+    note: SOURCES_NOTE,
     foods: matched.map((f) => formatFood(f, nutrientTypes)),
   };
 }
