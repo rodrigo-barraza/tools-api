@@ -10,6 +10,13 @@
 // Consumed by:
 //   - tools-api: GET /admin/tool-schemas
 //   - retina: fetches schemas and builds a generic executor
+//
+// CRITICAL CONVENTION:
+//   Property keys in parameters.properties MUST exactly match
+//   the names in endpoint.queryParams / endpoint.pathParams.
+//   Retina sends the AI's parameter names directly as URL
+//   query params — e.g. if the property is "q", the URL gets
+//   ?q=value. A mismatch (e.g. "query" vs "q") causes 400s.
 // ============================================================
 
 // ────────────────────────────────────────────────────────────
@@ -1147,7 +1154,7 @@ const TOOL_DEFINITIONS = [
     parameters: {
       type: "object",
       properties: {
-        query: {
+        q: {
           type: "string",
           description: "Text search query for event names or descriptions",
         },
@@ -1396,7 +1403,7 @@ const TOOL_DEFINITIONS = [
     parameters: {
       type: "object",
       properties: {
-        query: {
+        q: {
           type: "string",
           description: "Product search query",
         },
@@ -1740,7 +1747,7 @@ const TOOL_DEFINITIONS = [
     parameters: {
       type: "object",
       properties: {
-        query: {
+        q: {
           type: "string",
           description: "Search query (title, author, or keywords)",
         },
@@ -1750,7 +1757,7 @@ const TOOL_DEFINITIONS = [
         },
         ...fieldsParam(FIELDS.BOOKS),
       },
-      required: ["query"],
+      required: ["q"],
     },
   },
   {
@@ -1846,7 +1853,7 @@ const TOOL_DEFINITIONS = [
     parameters: {
       type: "object",
       properties: {
-        query: {
+        q: {
           type: "string",
           description: "Search query for paper titles/abstracts",
         },
@@ -1866,7 +1873,7 @@ const TOOL_DEFINITIONS = [
         },
         ...fieldsParam(FIELDS.PAPERS),
       },
-      required: ["query"],
+      required: ["q"],
     },
   },
   {
@@ -2343,7 +2350,7 @@ const TOOL_DEFINITIONS = [
     parameters: {
       type: "object",
       properties: {
-        query: {
+        q: {
           type: "string",
           description: "Food product name to search for",
         },
@@ -2353,7 +2360,7 @@ const TOOL_DEFINITIONS = [
         },
         ...fieldsParam(FIELDS.FOOD_PRODUCT),
       },
-      required: ["query"],
+      required: ["q"],
     },
   },
   {
@@ -2387,7 +2394,7 @@ const TOOL_DEFINITIONS = [
     parameters: {
       type: "object",
       properties: {
-        query: {
+        q: {
           type: "string",
           description:
             "Drug name (brand or generic, e.g. 'Tylenol', 'Acetaminophen')",
@@ -2398,7 +2405,7 @@ const TOOL_DEFINITIONS = [
         },
         ...fieldsParam(FIELDS.DRUG_LABEL),
       },
-      required: ["query"],
+      required: ["q"],
     },
   },
   {
@@ -2436,7 +2443,7 @@ const TOOL_DEFINITIONS = [
     parameters: {
       type: "object",
       properties: {
-        query: {
+        q: {
           type: "string",
           description:
             "Optional search term for recalls (drug name or keyword)",
@@ -2462,7 +2469,7 @@ const TOOL_DEFINITIONS = [
     parameters: {
       type: "object",
       properties: {
-        query: {
+        q: {
           type: "string",
           description:
             "Food name to search (e.g. 'chicken', 'spinach', 'salmon', 'almond')",
@@ -2488,7 +2495,7 @@ const TOOL_DEFINITIONS = [
         },
         ...fieldsParam(FIELDS.USDA_NUTRITION),
       },
-      required: ["query"],
+      required: ["q"],
     },
   },
   {
