@@ -449,6 +449,39 @@ const FIELDS = {
     "metric.3MonthAverageTradingVolume",
   ],
 
+  // ── Macroeconomics (FRED) ────────────────────────────────────
+
+  // Macro Indicators: from FredFetcher
+  MACRO_INDICATORS: ["id", "name", "category", "value", "date", "unit"],
+
+  // Macro Series Info: from FredFetcher
+  MACRO_SERIES_INFO: [
+    "id",
+    "title",
+    "frequency",
+    "units",
+    "seasonalAdjustment",
+    "lastUpdated",
+    "observationStart",
+    "observationEnd",
+    "notes",
+  ],
+
+  // Macro Series Search: from FredFetcher
+  MACRO_SERIES_SEARCH: [
+    "id",
+    "title",
+    "frequency",
+    "units",
+    "seasonalAdjustment",
+    "lastUpdated",
+    "popularity",
+    "notes",
+  ],
+
+  // Macro Observations: from FredFetcher
+  MACRO_OBSERVATIONS: ["date", "value"],
+
   // ── Knowledge Domain ──────────────────────────────────────────
 
   // Dictionary: from DictionaryFetcher.fetchDefinition()
@@ -824,6 +857,20 @@ const FIELDS = {
     "isDst",
     "dstFrom",
     "dstUntil",
+  ],
+
+  // IP Geolocation: from IpInfoFetcher
+  IP_GEOLOCATION: [
+    "ip",
+    "hostname",
+    "city",
+    "region",
+    "country",
+    "latitude",
+    "longitude",
+    "org",
+    "postal",
+    "timezone",
   ],
 };
 
@@ -1521,6 +1568,109 @@ const TOOL_DEFINITIONS = [
     },
   },
 
+  // ── Finance (FRED Macroeconomics) ──────────────────────────────
+  {
+    name: "get_macro_indicators",
+    description:
+      "Get the latest snapshot of key macroeconomic indicators including inflation (CPI, PCE), interest rates (Fed Funds, 10Y Yield), unemployment, GDP, and consumer sentiment from the St. Louis Fed (FRED).",
+    endpoint: {
+      path: "/finance/macro/indicators",
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        ...fieldsParam(FIELDS.MACRO_INDICATORS),
+      },
+    },
+  },
+  {
+    name: "search_macro_series",
+    description:
+      "Search for macroeconomic data series by keywords (e.g. 'housing prices', 'credit card debt', 'wheat prices') from FRED. Returns series IDs required for fetching specific observations.",
+    endpoint: {
+      path: "/finance/macro/search",
+      queryParams: ["q", "limit", "orderBy"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        q: {
+          type: "string",
+          description: "Search keywords (e.g. 'inflation')",
+        },
+        limit: {
+          type: "number",
+          description: "Max number of results to return (default: 10)",
+        },
+        orderBy: {
+          type: "string",
+          description:
+            "Sort order: search_rank, series_id, title, frequency, popularity, observation_start, observation_end. Default is search_rank.",
+        },
+        ...fieldsParam(FIELDS.MACRO_SERIES_SEARCH),
+      },
+      required: ["q"],
+    },
+  },
+  {
+    name: "get_macro_series_info",
+    description:
+      "Get detailed metadata about a specific FRED macroeconomic data series by its ID, including unit description, frequency, and notes.",
+    endpoint: {
+      path: "/finance/macro/series/:seriesId",
+      pathParams: ["seriesId"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        seriesId: {
+          type: "string",
+          description: "The FRED series ID (e.g., 'UNRATE', 'CPIAUCSL')",
+        },
+        ...fieldsParam(FIELDS.MACRO_SERIES_INFO),
+      },
+      required: ["seriesId"],
+    },
+  },
+  {
+    name: "get_macro_observations",
+    description:
+      "Get historical observations (data points) for a specific FRED macroeconomic data series by its ID.",
+    endpoint: {
+      path: "/finance/macro/series/:seriesId/observations",
+      pathParams: ["seriesId"],
+      queryParams: ["limit", "sortOrder", "observationStart", "observationEnd"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        seriesId: {
+          type: "string",
+          description: "The FRED series ID (e.g., 'UNRATE', 'CPIAUCSL')",
+        },
+        limit: {
+          type: "number",
+          description: "Maximum number of observations to return (default 50)",
+        },
+        sortOrder: {
+          type: "string",
+          description: "Sort direction: 'asc' or 'desc' (default: 'desc')",
+          enum: ["asc", "desc"],
+        },
+        observationStart: {
+          type: "string",
+          description: "Start date for filtering in YYYY-MM-DD format",
+        },
+        observationEnd: {
+          type: "string",
+          description: "End date for filtering in YYYY-MM-DD format",
+        },
+        ...fieldsParam(FIELDS.MACRO_OBSERVATIONS),
+      },
+      required: ["seriesId"],
+    },
+  },
+
   // ── Knowledge ──────────────────────────────────────────────────
   {
     name: "define_word",
@@ -1912,14 +2062,22 @@ const TOOL_DEFINITIONS = [
       "Discover movies using filters like genre, year, minimum rating, and sort order. Good for 'best sci-fi movies of 2024' type queries.",
     endpoint: {
       path: "/knowledge/movies/discover",
-      queryParams: ["genreId", "year", "sortBy", "page", "minVoteAverage", "minVoteCount"],
+      queryParams: [
+        "genreId",
+        "year",
+        "sortBy",
+        "page",
+        "minVoteAverage",
+        "minVoteCount",
+      ],
     },
     parameters: {
       type: "object",
       properties: {
         genreId: {
           type: "number",
-          description: "TMDb genre ID to filter by (use get_movie_genres to find IDs)",
+          description:
+            "TMDb genre ID to filter by (use get_movie_genres to find IDs)",
         },
         year: {
           type: "number",
@@ -2082,7 +2240,14 @@ const TOOL_DEFINITIONS = [
       "Discover TV series using filters like genre, year, minimum rating, and sort order. Good for 'best drama series of 2025' type queries.",
     endpoint: {
       path: "/knowledge/tv/discover",
-      queryParams: ["genreId", "firstAirDateYear", "sortBy", "page", "minVoteAverage", "minVoteCount"],
+      queryParams: [
+        "genreId",
+        "firstAirDateYear",
+        "sortBy",
+        "page",
+        "minVoteAverage",
+        "minVoteCount",
+      ],
     },
     parameters: {
       type: "object",
@@ -2395,6 +2560,26 @@ const TOOL_DEFINITIONS = [
         ...fieldsParam(FIELDS.TIMEZONE),
       },
       required: ["area", "location"],
+    },
+  },
+  {
+    name: "lookup_ip",
+    description:
+      "Look up geolocation and network information for an IP address. Returns city, region, country, coordinates, and ISP/organization info. For your own server IP, omit the ip parameter or use 'self'.",
+    endpoint: {
+      path: "/utility/ip/:ip",
+      pathParams: ["ip"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        ip: {
+          type: "string",
+          description:
+            "The IP address to look up (e.g. '8.8.8.8'). Leave empty or use 'self' for the caller's IP.",
+        },
+        ...fieldsParam(FIELDS.IP_GEOLOCATION),
+      },
     },
   },
 ];

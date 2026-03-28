@@ -19,6 +19,12 @@ import {
   fetchRecommendationTrends,
   fetchBasicFinancials,
 } from "../fetchers/finance/FinnhubFetcher.js";
+import {
+  getSeriesInfo,
+  getSeriesObservations,
+  searchSeries,
+  getKeyIndicators,
+} from "../fetchers/finance/FredFetcher.js";
 
 const router = Router();
 
@@ -136,10 +142,71 @@ router.get("/financials/:symbol", async (req, res) => {
   }
 });
 
+// ─── Macroeconomics (FRED) ─────────────────────────────────────────
+
+router.get("/macro/indicators", async (_req, res) => {
+  try {
+    const data = await getKeyIndicators();
+    res.json(data);
+  } catch (err) {
+    res
+      .status(502)
+      .json({ error: `Failed to fetch key indicators: ${err.message}` });
+  }
+});
+
+router.get("/macro/search", async (req, res) => {
+  const { q, limit, orderBy } = req.query;
+  if (!q) {
+    return res.status(400).json({ error: "Query parameter 'q' is required" });
+  }
+  try {
+    const data = await searchSeries(q, {
+      limit: parseInt(limit, 10) || 10,
+      orderBy,
+    });
+    res.json(data);
+  } catch (err) {
+    res
+      .status(502)
+      .json({ error: `Failed to search macro series: ${err.message}` });
+  }
+});
+
+router.get("/macro/series/:seriesId/observations", async (req, res) => {
+  const { limit, sortOrder, observationStart, observationEnd } = req.query;
+  try {
+    const data = await getSeriesObservations(req.params.seriesId, {
+      limit: parseInt(limit, 10) || 50,
+      sortOrder,
+      observationStart,
+      observationEnd,
+    });
+    res.json(data);
+  } catch (err) {
+    res
+      .status(502)
+      .json({ error: `Failed to fetch series observations: ${err.message}` });
+  }
+});
+
+router.get("/macro/series/:seriesId", async (req, res) => {
+  try {
+    const data = await getSeriesInfo(req.params.seriesId);
+    res.json(data);
+  } catch (err) {
+    res
+      .status(502)
+      .json({ error: `Failed to fetch series info: ${err.message}` });
+  }
+});
+
 // ─── Health ────────────────────────────────────────────────────────
 
 export function getFinanceHealth() {
-  return getHealth();
+  const health = getHealth();
+  health.fred = "on-demand";
+  return health;
 }
 
 export default router;

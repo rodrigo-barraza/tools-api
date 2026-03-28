@@ -55,9 +55,7 @@ export async function lookupIp(ip) {
     return cached.data;
   }
 
-  const tokenParam = CONFIG.IPINFO_TOKEN
-    ? `?token=${CONFIG.IPINFO_TOKEN}`
-    : "";
+  const tokenParam = CONFIG.IPINFO_TOKEN ? `?token=${CONFIG.IPINFO_TOKEN}` : "";
   const url = `${IPINFO_BASE_URL}/${targetIp}/json${tokenParam}`;
 
   const res = await fetch(url);

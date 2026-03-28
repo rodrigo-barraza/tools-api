@@ -135,7 +135,13 @@ export async function searchMovies(query, { page = 1, year } = {}) {
 
   const data = await fetchTMDb(endpoint);
   if (!data || !data.results) {
-    return { found: false, results: [], totalResults: 0, page: 1, totalPages: 0 };
+    return {
+      found: false,
+      results: [],
+      totalResults: 0,
+      page: 1,
+      totalPages: 0,
+    };
   }
 
   return {
@@ -170,7 +176,14 @@ export async function getMovieCredits(id) {
     cast: (data.cast || []).slice(0, 20).map(normalizeCast),
     crew: (data.crew || [])
       .filter((c) =>
-        ["Director", "Writer", "Screenplay", "Producer", "Director of Photography", "Original Music Composer"].includes(c.job),
+        [
+          "Director",
+          "Writer",
+          "Screenplay",
+          "Producer",
+          "Director of Photography",
+          "Original Music Composer",
+        ].includes(c.job),
       )
       .map(normalizeCrew),
   };
@@ -210,7 +223,13 @@ export async function discoverMovies({
 
   const data = await fetchTMDb(endpoint);
   if (!data || !data.results) {
-    return { found: false, results: [], totalResults: 0, page: 1, totalPages: 0 };
+    return {
+      found: false,
+      results: [],
+      totalResults: 0,
+      page: 1,
+      totalPages: 0,
+    };
   }
 
   return {
@@ -228,13 +247,22 @@ export async function discoverMovies({
 /**
  * Search TV series by name
  */
-export async function searchTvShows(query, { page = 1, firstAirDateYear } = {}) {
+export async function searchTvShows(
+  query,
+  { page = 1, firstAirDateYear } = {},
+) {
   let endpoint = `/search/tv?query=${encodeURIComponent(query)}&page=${page}&language=en-US`;
   if (firstAirDateYear) endpoint += `&first_air_date_year=${firstAirDateYear}`;
 
   const data = await fetchTMDb(endpoint);
   if (!data || !data.results) {
-    return { found: false, results: [], totalResults: 0, page: 1, totalPages: 0 };
+    return {
+      found: false,
+      results: [],
+      totalResults: 0,
+      page: 1,
+      totalPages: 0,
+    };
   }
 
   return {
@@ -270,7 +298,13 @@ export async function getTvShowCredits(id) {
     crew: (data.crew || [])
       .filter((c) => {
         const job = c.jobs?.[0]?.job || c.job || "";
-        return ["Creator", "Director", "Executive Producer", "Writer", "Showrunner"].includes(job);
+        return [
+          "Creator",
+          "Director",
+          "Executive Producer",
+          "Writer",
+          "Showrunner",
+        ].includes(job);
       })
       .map(normalizeCrew),
   };
@@ -280,7 +314,9 @@ export async function getTvShowCredits(id) {
  * Get TV season details
  */
 export async function getTvSeasonDetails(tvId, seasonNumber) {
-  const data = await fetchTMDb(`/tv/${tvId}/season/${seasonNumber}?language=en-US`);
+  const data = await fetchTMDb(
+    `/tv/${tvId}/season/${seasonNumber}?language=en-US`,
+  );
   if (!data) return { found: false, season: null };
 
   return {
@@ -339,7 +375,13 @@ export async function discoverTvShows({
 
   const data = await fetchTMDb(endpoint);
   if (!data || !data.results) {
-    return { found: false, results: [], totalResults: 0, page: 1, totalPages: 0 };
+    return {
+      found: false,
+      results: [],
+      totalResults: 0,
+      page: 1,
+      totalPages: 0,
+    };
   }
 
   return {

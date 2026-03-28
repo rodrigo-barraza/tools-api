@@ -7,6 +7,7 @@ import {
   getTimeInTimezone,
   listTimezones,
 } from "../fetchers/utility/TimezoneFetcher.js";
+import { lookupIp, batchLookupIps } from "../fetchers/utility/IpInfoFetcher.js";
 
 const router = Router();
 
@@ -62,12 +63,44 @@ router.get("/timezone/list", async (req, res) => {
   }
 });
 
+// ─── IP Geolocation (IPinfo) ───────────────────────────────────────
+
+router.get("/ip/batch", async (req, res) => {
+  const ips = req.query.ips;
+  if (!ips) {
+    return res
+      .status(400)
+      .json({ error: "Query parameter 'ips' (comma-separated) is required" });
+  }
+  try {
+    const ipArray = ips
+      .split(",")
+      .map((ip) => ip.trim())
+      .filter(Boolean);
+    const result = await batchLookupIps(ipArray);
+    res.json({ count: result.length, results: result });
+  } catch (err) {
+    res.status(502).json({ error: `Batch IP lookup failed: ${err.message}` });
+  }
+});
+
+router.get("/ip/:ip", async (req, res) => {
+  try {
+    const ip = req.params.ip === "self" ? "" : req.params.ip;
+    const result = await lookupIp(ip);
+    res.json(result);
+  } catch (err) {
+    res.status(502).json({ error: `IP lookup failed: ${err.message}` });
+  }
+});
+
 // ─── Health ────────────────────────────────────────────────────────
 
 export function getUtilityHealth() {
   return {
     currency: "on-demand",
     timezone: "on-demand",
+    ipinfo: "on-demand",
   };
 }
 

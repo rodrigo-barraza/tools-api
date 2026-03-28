@@ -225,7 +225,8 @@ router.get("/movies/trending", async (req, res) => {
 });
 
 router.get("/movies/discover", async (req, res) => {
-  const { genreId, year, sortBy, page, minVoteAverage, minVoteCount } = req.query;
+  const { genreId, year, sortBy, page, minVoteAverage, minVoteCount } =
+    req.query;
   try {
     const result = await discoverMovies({
       genreId: genreId ? parseInt(genreId, 10) : undefined,
@@ -278,7 +279,9 @@ router.get("/tv/search", async (req, res) => {
   try {
     const result = await searchTvShows(q, {
       page: parseIntParam(page, 1),
-      firstAirDateYear: firstAirDateYear ? parseInt(firstAirDateYear, 10) : undefined,
+      firstAirDateYear: firstAirDateYear
+        ? parseInt(firstAirDateYear, 10)
+        : undefined,
     });
     res.json(result);
   } catch (err) {
@@ -300,11 +303,20 @@ router.get("/tv/trending", async (req, res) => {
 });
 
 router.get("/tv/discover", async (req, res) => {
-  const { genreId, firstAirDateYear, sortBy, page, minVoteAverage, minVoteCount } = req.query;
+  const {
+    genreId,
+    firstAirDateYear,
+    sortBy,
+    page,
+    minVoteAverage,
+    minVoteCount,
+  } = req.query;
   try {
     const result = await discoverTvShows({
       genreId: genreId ? parseInt(genreId, 10) : undefined,
-      firstAirDateYear: firstAirDateYear ? parseInt(firstAirDateYear, 10) : undefined,
+      firstAirDateYear: firstAirDateYear
+        ? parseInt(firstAirDateYear, 10)
+        : undefined,
       sortBy,
       page: parseIntParam(page, 1),
       minVoteAverage: minVoteAverage ? parseFloat(minVoteAverage) : undefined,
@@ -354,7 +366,6 @@ router.get("/tv/:id", async (req, res) => {
     res.status(502).json({ error: `TV show details failed: ${err.message}` });
   }
 });
-
 
 // ─── Health ────────────────────────────────────────────────────────
 

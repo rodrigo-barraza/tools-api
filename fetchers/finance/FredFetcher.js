@@ -1,8 +1,5 @@
 import CONFIG from "../../config.js";
-import {
-  FRED_BASE_URL,
-  FRED_DEFAULT_SERIES,
-} from "../../constants.js";
+import { FRED_BASE_URL, FRED_DEFAULT_SERIES } from "../../constants.js";
 
 /**
  * FRED (Federal Reserve Economic Data) API fetcher.

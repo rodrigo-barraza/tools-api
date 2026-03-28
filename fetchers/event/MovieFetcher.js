@@ -1,5 +1,9 @@
 import CONFIG from "../../config.js";
-import { EVENT_SOURCES, EVENT_CATEGORIES, TMDB_BASE_URL } from "../../constants.js";
+import {
+  EVENT_SOURCES,
+  EVENT_CATEGORIES,
+  TMDB_BASE_URL,
+} from "../../constants.js";
 
 const BASE_URL = TMDB_BASE_URL;
 
