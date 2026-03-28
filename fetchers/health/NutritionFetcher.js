@@ -2,6 +2,7 @@ import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import {
+  DATASET_REGISTRY,
   NUTRITION_NUTRIENT_TYPES,
   NUTRITION_MACRO_FIELDS,
   NUTRITION_MINERAL_FIELDS,
@@ -465,11 +466,22 @@ export function rankByNutrient(nutrient, opts = {}) {
 export function getNutrientTypes() {
   ensureLoaded();
 
+  const nutritionDatasets = DATASET_REGISTRY.filter(
+    (d) => d.domain === "nutrition" && d.foods,
+  );
+
   return {
     types: NUTRITION_NUTRIENT_TYPES,
     totalFoods: FOOD_DB.length,
     totalNutrients: NUTRIENT_DB.length,
-    source: "USDA + Health Canada CNF + FAO/INFOODS BioFoodComp (curated whole foods)",
+    sources: nutritionDatasets.map((d) => ({
+      id: d.id,
+      name: d.name,
+      region: d.region,
+      version: d.version,
+      dataYear: d.dataYear,
+      foods: d.foods,
+    })),
   };
 }
 

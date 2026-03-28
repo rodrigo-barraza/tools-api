@@ -2131,7 +2131,77 @@ export const NEW_API_RATE_LIMITS = {
 };
 
 // ═══════════════════════════════════════════════════════════════
-//  NUTRITION DOMAIN — USDA Raw Whole Foods Database
+//  DATASET REGISTRY — Static Data Manifests
+// ═══════════════════════════════════════════════════════════════
+// Tracks provenance for all static datasets loaded into memory.
+// Every new dataset (CSV, XLSX, JSON, etc.) must be registered
+// here with its source, version, year, and file path.
+// ═══════════════════════════════════════════════════════════════
+
+export const DATASET_REGISTRY = [
+  {
+    id: "usda-sr-legacy",
+    name: "USDA SR Legacy",
+    domain: "nutrition",
+    file: "fetchers/health/data/digest_food.csv",
+    source: "U.S. Department of Agriculture",
+    url: "https://fdc.nal.usda.gov/",
+    version: "SR Legacy (April 2018)",
+    dataYear: 2018,
+    ingestedYear: 2026,
+    foods: 1346,
+    region: "USA",
+    notes: "Curated raw whole foods subset from USDA SR legacy release.",
+  },
+  {
+    id: "health-canada-cnf",
+    name: "Health Canada CNF",
+    domain: "nutrition",
+    file: "fetchers/health/data/digest_food_canada.csv",
+    source: "Health Canada",
+    url: "https://www.canada.ca/en/health-canada/services/food-nutrition/healthy-eating/nutrient-data.html",
+    version: "Canadian Nutrient File (CNF 2015)",
+    dataYear: 2015,
+    ingestedYear: 2026,
+    foods: 3570,
+    region: "Canada",
+    notes:
+      "Filtered to 13 real-food groups. Includes French food names. ETL from relational CSV.",
+  },
+  {
+    id: "fao-infoods-biofoodcomp",
+    name: "FAO/INFOODS BioFoodComp",
+    domain: "nutrition",
+    file: "fetchers/health/data/digest_food_fao.csv",
+    source: "Food and Agriculture Organization of the United Nations",
+    url: "https://www.fao.org/infoods/infoods/tables-and-databases/en/",
+    version: "BioFoodComp v4.0",
+    dataYear: 2017,
+    ingestedYear: 2026,
+    foods: 5849,
+    region: "Global",
+    notes:
+      "Biodiversity food composition database. Filtered to raw foods only. Includes local/indigenous names and per-row country/region provenance.",
+  },
+  {
+    id: "digest-nutrient-metadata",
+    name: "Digest Nutrient Metadata",
+    domain: "nutrition",
+    file: "fetchers/health/data/digest_nutrient.csv",
+    source: "Internal (derived from USDA tagnames)",
+    url: null,
+    version: "1.0",
+    dataYear: 2026,
+    ingestedYear: 2026,
+    foods: null,
+    region: null,
+    notes:
+      "Maps internal nutrient IDs to human-readable names, units, categories, and types.",
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════
+//  NUTRITION DOMAIN — Multi-Source Whole Foods Database
 // ═══════════════════════════════════════════════════════════════
 
 /** Nutrient type categories for filtering */
