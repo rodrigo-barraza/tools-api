@@ -701,15 +701,25 @@ export const BESTBUY_CA_AVAILABILITY_BASE_URL =
 export const BESTBUY_CA_MAX_SKUS_PER_REQUEST = 100;
 export const BESTBUY_CA_REQUEST_DELAY_MS = 2_000; // 2 seconds between batches
 export const BESTBUY_CA_DEFAULT_SKUS = {
-  // ─── GPUs ────────────────────────────────────────────────────────
-  18931348: { name: "GeForce RTX 5090 32GB", brand: "NVIDIA", category: "gpu" },
-  18931347: { name: "GeForce RTX 5080 16GB", brand: "NVIDIA", category: "gpu" },
+  // ─── GPUs (Current Gen — RTX 50 Series) ──────────────────────────
+  18931348: { name: "GeForce RTX 5090 32GB FE", brand: "NVIDIA", category: "gpu" },
+  18931347: { name: "GeForce RTX 5080 16GB FE", brand: "NVIDIA", category: "gpu" },
   18934178: { name: "GeForce RTX 5080 16GB", brand: "PNY", category: "gpu" },
   18931628: { name: "GeForce RTX 5080 Solid 16GB", brand: "ZOTAC", category: "gpu" },
-  19193219: { name: "GeForce RTX 5070 12GB", brand: "NVIDIA", category: "gpu" },
+  19193219: { name: "GeForce RTX 5070 12GB FE", brand: "NVIDIA", category: "gpu" },
   18934180: { name: "GeForce RTX 5070 Ti OC 16GB", brand: "PNY", category: "gpu" },
   18934179: { name: "GeForce RTX 5070 Ti ARGB 16GB", brand: "PNY", category: "gpu" },
-  19183867: { name: "GeForce RTX 5070 Ti Ventus 3X OC 16GB", brand: "MSI", category: "gpu" },
+  19183867: { name: "GeForce RTX 5070 Ti Ventus 3X OC", brand: "MSI", category: "gpu" },
+  6632193: { name: "GeForce RTX 5060 8GB PRIME", brand: "ASUS", category: "gpu" },
+
+  // ─── GPUs (Previous Gen) ─────────────────────────────────────────
+  6548653: { name: "GeForce RTX 4060 Ventus 2X OC 8GB", brand: "MSI", category: "gpu" },
+  6562422: { name: "GeForce RTX 4060 OC 8GB", brand: "PNY", category: "gpu" },
+  6528730: { name: "Radeon RX 7900 XTX 24GB", brand: "Gigabyte", category: "gpu" },
+
+  // ─── CPUs ────────────────────────────────────────────────────────
+  12339550: { name: "Ryzen 9 9950X 16-Core", brand: "AMD", category: "cpu" },
+  6602200: { name: "Core Ultra 9 285K 24-Core", brand: "Intel", category: "cpu" },
 
   // ─── Consoles ────────────────────────────────────────────────────
   11028232: { name: "PlayStation 5 Pro Console", brand: "Sony", category: "console" },
@@ -722,30 +732,85 @@ export const BESTBUY_CA_DEFAULT_SKUS = {
   18925577: { name: "Galaxy S25 Ultra 256GB Titanium Silverblue", brand: "Samsung", category: "phone" },
   18925578: { name: "Galaxy S25 Ultra 256GB Titanium Silverwhite", brand: "Samsung", category: "phone" },
   18925580: { name: "Galaxy S25 Ultra 512GB Titanium Grey", brand: "Samsung", category: "phone" },
+  17906300: { name: "Galaxy S24 128GB Onyx Black", brand: "Samsung", category: "phone" },
   19321527: { name: "Pixel 9 Pro XL 256GB Obsidian", brand: "Google", category: "phone" },
+  17306965: { name: "Pixel 8 128GB Hazel", brand: "Google", category: "phone" },
+  18911504: { name: "OnePlus 13 512GB Black Eclipse", brand: "OnePlus", category: "phone" },
+  19659711: { name: "OnePlus 12R 256GB Iron Grey", brand: "OnePlus", category: "phone" },
 
-  // ─── Laptops ─────────────────────────────────────────────────────
+  // ─── Laptops (Apple) ─────────────────────────────────────────────
   15952669: { name: "MacBook Pro 16\" M4 Max 36GB/1TB", brand: "Apple", category: "laptop" },
   18619913: { name: "MacBook Pro 14\" M4 Pro 24GB/512GB", brand: "Apple", category: "laptop" },
   18619927: { name: "MacBook Pro 16\" M4 Pro 24GB/512GB", brand: "Apple", category: "laptop" },
+  16556743: { name: "MacBook Air 13\" M4 16GB/256GB Sky Blue", brand: "Apple", category: "laptop" },
+  19205126: { name: "MacBook Air 15\" M4 24GB/512GB Silver", brand: "Apple", category: "laptop" },
+  19205151: { name: "MacBook Air 15\" M4 16GB/256GB Midnight", brand: "Apple", category: "laptop" },
+  19205116: { name: "MacBook Air 13\" M4 16GB/512GB Silver", brand: "Apple", category: "laptop" },
+  19205135: { name: "MacBook Air 15\" M4 16GB/512GB Sky Blue", brand: "Apple", category: "laptop" },
+
+  // ─── Laptops (Windows) ───────────────────────────────────────────
+  19350687: { name: "Galaxy Book4 Pro 16\" AMOLED i7/16GB/1TB", brand: "Samsung", category: "laptop" },
+  19186485: { name: "Zenbook DUO 14\" OLED Ultra 9/16GB/1TB", brand: "ASUS", category: "laptop" },
+  17721198: { name: "Swift Go 16\" OLED Ultra 7/16GB/1TB", brand: "Acer", category: "laptop" },
+  17862174: { name: "Inspiron 16\" Core 7/16GB/1TB", brand: "Dell", category: "laptop" },
 
   // ─── Tablets ─────────────────────────────────────────────────────
   17978053: { name: "iPad Pro 13\" M4 256GB Wi-Fi+5G", brand: "Apple", category: "tablet" },
+  19204241: { name: "iPad Air 11\" M3 128GB Wi-Fi Space Grey", brand: "Apple", category: "tablet" },
+  19204243: { name: "iPad Air 11\" M3 128GB Wi-Fi Blue", brand: "Apple", category: "tablet" },
+  17933203: { name: "iPad Air 11\" 256GB Wi-Fi Blue (6th Gen)", brand: "Apple", category: "tablet" },
+  17167495: { name: "Galaxy Tab S9 11\" 256GB", brand: "Samsung", category: "tablet" },
 
-  // ─── Headphones & Audio ──────────────────────────────────────────
+  // ─── Headphones ──────────────────────────────────────────────────
   16162187: { name: "WH-1000XM5 Over-Ear NC Black", brand: "Sony", category: "audio" },
   16162186: { name: "WH-1000XM5 Over-Ear NC Silver", brand: "Sony", category: "audio" },
   17543757: { name: "AirPods Pro 2nd Gen USB-C", brand: "Apple", category: "audio" },
+  18885243: { name: "QuietComfort Ultra Earbuds White Smoke", brand: "Bose", category: "audio" },
+  18189367: { name: "QuietComfort Ultra Over-Ear Lunar Blue", brand: "Bose", category: "audio" },
+
+  // ─── Speakers ────────────────────────────────────────────────────
+  19185706: { name: "Charge 5 Portable Bluetooth Speaker", brand: "JBL", category: "speaker" },
+  16688928: { name: "Era 300 Spatial Audio Speaker Black", brand: "Sonos", category: "speaker" },
+  17064533: { name: "Stanmore III Bluetooth Speaker Black", brand: "Marshall", category: "speaker" },
+  17064532: { name: "Acton III Bluetooth Speaker Black", brand: "Marshall", category: "speaker" },
+
+  // ─── Wearables ───────────────────────────────────────────────────
+  18470943: { name: "Apple Watch Ultra 2 49mm Tan Alpine", brand: "Apple", category: "wearable" },
+  19399851: { name: "Galaxy Watch Ultra 47mm LTE Silver", brand: "Samsung", category: "wearable" },
+  18245819: { name: "fēnix 8 43mm Sapphire AMOLED", brand: "Garmin", category: "wearable" },
+  18245812: { name: "fēnix 8 51mm Sapphire AMOLED Black", brand: "Garmin", category: "wearable" },
 
   // ─── VR ──────────────────────────────────────────────────────────
   18473493: { name: "Quest 3 512GB VR Headset", brand: "Meta", category: "vr" },
   17162202: { name: "Quest 3 128GB VR Headset", brand: "Meta", category: "vr" },
 
-  // ─── Monitors & TVs ──────────────────────────────────────────────
+  // ─── Monitors ────────────────────────────────────────────────────
   10924894: { name: "32\" Odyssey OLED G8 4K 240Hz", brand: "Samsung", category: "monitor" },
+
+  // ─── TVs ─────────────────────────────────────────────────────────
+  17921979: { name: "C4 65\" 4K OLED evo Smart TV (2024)", brand: "LG", category: "tv" },
+  17921980: { name: "C4 77\" 4K OLED evo Smart TV (2024)", brand: "LG", category: "tv" },
+  17729155: { name: "S95D 65\" 4K OLED Smart TV (2024)", brand: "Samsung", category: "tv" },
+  17230339: { name: "A95L 65\" 4K QD-OLED Smart TV", brand: "Sony", category: "tv" },
+  17230341: { name: "A95L 77\" 4K QD-OLED Smart TV", brand: "Sony", category: "tv" },
+
+  // ─── Cameras & Drones ────────────────────────────────────────────
+  18622226: { name: "HERO13 Black Essential Bundle", brand: "GoPro", category: "camera" },
+  19741372: { name: "Mini 4 Pro Drone with RC2", brand: "DJI", category: "drone" },
+  19457080: { name: "Mavic 3 Cine Premium Combo", brand: "DJI", category: "drone" },
+
+  // ─── E-Readers ───────────────────────────────────────────────────
+  18596809: { name: "Kindle Scribe 16GB 10.2\"", brand: "Amazon", category: "e-reader" },
+  18596812: { name: "Kindle Scribe 32GB 10.2\"", brand: "Amazon", category: "e-reader" },
+  19377032: { name: "reMarkable 2 Paper Tablet + Marker Plus", brand: "reMarkable", category: "e-reader" },
+
+  // ─── Home & Appliances ───────────────────────────────────────────
+  17183862: { name: "V15 Detect Cordless Stick Vacuum", brand: "Dyson", category: "appliance" },
 
   // ─── Gaming Accessories ──────────────────────────────────────────
   17668451: { name: "DualSense Wireless Controller White", brand: "Sony", category: "gaming-accessory" },
+  16571772: { name: "DualSense Edge Wireless Controller", brand: "Sony", category: "gaming-accessory" },
+  13702316: { name: "Elite Series 2 Wireless Controller Black", brand: "Xbox", category: "gaming-accessory" },
 };
 
 export const PRODUCT_CATEGORIES = {
