@@ -4,6 +4,7 @@ import {
   TICKETMASTER_CATEGORY_MAP,
   EVENT_CATEGORIES,
 } from "../../constants.js";
+import rateLimiter from "../../services/RateLimiterService.js";
 
 const BASE_URL = "https://app.ticketmaster.com/discovery/v2/events.json";
 
@@ -171,9 +172,9 @@ export async function fetchTicketmasterEvents() {
     totalPages = data.page?.totalPages || 1;
     page++;
 
-    // Respect rate limit: 5 req/sec
+    // Respect rate limit via centralized rate limiter
     if (page < totalPages) {
-      await new Promise((r) => setTimeout(r, 250));
+      await rateLimiter.wait("TICKETMASTER");
     }
   }
 

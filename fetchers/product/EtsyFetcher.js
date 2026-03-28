@@ -1,6 +1,7 @@
 import CONFIG from "../../config.js";
 import { PRODUCT_SOURCES } from "../../constants.js";
 import { computeTrendingScore } from "../../utilities.js";
+import rateLimiter from "../../services/RateLimiterService.js";
 
 const BASE_URL = "https://openapi.etsy.com/v3/application";
 
@@ -51,6 +52,11 @@ export async function fetchEtsyTrending() {
   if (!CONFIG.ETSY_API_KEY) {
     throw new Error("ETSY_API_KEY not configured");
   }
+  if (!CONFIG.ETSY_SHARED_SECRET) {
+    throw new Error("ETSY_SHARED_SECRET not configured");
+  }
+
+  const apiKey = `${CONFIG.ETSY_API_KEY}:${CONFIG.ETSY_SHARED_SECRET}`;
 
   const trendingKeywords = [
     "trending",
@@ -63,6 +69,7 @@ export async function fetchEtsyTrending() {
   const allProducts = [];
 
   for (const keyword of trendingKeywords) {
+    await rateLimiter.wait("ETSY");
     try {
       const params = new URLSearchParams({
         keywords: keyword,
@@ -73,7 +80,7 @@ export async function fetchEtsyTrending() {
 
       const response = await fetch(`${BASE_URL}/listings/active?${params}`, {
         headers: {
-          "x-api-key": CONFIG.ETSY_API_KEY,
+          "x-api-key": apiKey,
         },
       });
 

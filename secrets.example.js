@@ -44,6 +44,7 @@ export const PRODUCTHUNT_API_SECRET = "";
 export const EBAY_CLIENT_ID = "";
 export const EBAY_CLIENT_SECRET = "";
 export const ETSY_API_KEY = "";
+export const ETSY_SHARED_SECRET = "";
 
 // ─── Trend Domain ──────────────────────────────────────────────────
 

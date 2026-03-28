@@ -1,8 +1,6 @@
 import CONFIG from "../../config.js";
-import {
-  FINNHUB_BASE_URL,
-  FINNHUB_REQUEST_DELAY_MS,
-} from "../../constants.js";
+import { FINNHUB_BASE_URL } from "../../constants.js";
+import rateLimiter from "../../services/RateLimiterService.js";
 
 /**
  * Finnhub REST API fetcher.
@@ -25,9 +23,7 @@ async function get(path) {
   return res.json();
 }
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+// Rate limiting handled by RateLimiterService
 
 // ─── Quote ─────────────────────────────────────────────────────────
 
@@ -62,9 +58,9 @@ export async function fetchStockQuotes(symbols) {
         `[FinnhubFetcher] ⚠️ Quote failed for ${symbols[i]}: ${err.message}`,
       );
     }
-    // Pace requests (skip delay on last item)
+    // Pace requests via centralized rate limiter
     if (i < symbols.length - 1) {
-      await sleep(FINNHUB_REQUEST_DELAY_MS);
+      await rateLimiter.wait("FINNHUB");
     }
   }
   return results;

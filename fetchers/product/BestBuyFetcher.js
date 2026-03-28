@@ -1,9 +1,9 @@
 import CONFIG from "../../config.js";
 import { BESTBUY_CATEGORIES, PRODUCT_SOURCES } from "../../constants.js";
-import { computeTrendingScore, sleep } from "../../utilities.js";
+import { computeTrendingScore } from "../../utilities.js";
+import rateLimiter from "../../services/RateLimiterService.js";
 
 const BASE_URL = "https://api.bestbuy.com/beta/products";
-const BESTBUY_REQUEST_DELAY_MS = 1_000; // 1 second between requests
 
 /**
  * Normalize a Best Buy product into the unified schema.
@@ -101,7 +101,7 @@ export async function fetchAllBestBuyTrending() {
 
   // Fetch per-category trending with rate limiting
   for (const cat of BESTBUY_CATEGORIES) {
-    await sleep(BESTBUY_REQUEST_DELAY_MS);
+    await rateLimiter.wait("BESTBUY");
     try {
       const result = await fetchBestBuyTrending(cat.id);
       allProducts.push(...result.products);

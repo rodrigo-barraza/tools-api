@@ -1,9 +1,9 @@
 import {
   BESTBUY_CA_AVAILABILITY_BASE_URL,
   BESTBUY_CA_MAX_SKUS_PER_REQUEST,
-  BESTBUY_CA_REQUEST_DELAY_MS,
 } from "../../constants.js";
-import { sleep, randomUserAgent } from "../../utilities.js";
+import { randomUserAgent } from "../../utilities.js";
+import rateLimiter from "../../services/RateLimiterService.js";
 
 /**
  * Batch an array into chunks of a given size.
@@ -83,7 +83,7 @@ export async function fetchBestBuyCAAvailability(
   const errors = [];
 
   for (let i = 0; i < batches.length; i++) {
-    if (i > 0) await sleep(BESTBUY_CA_REQUEST_DELAY_MS);
+    if (i > 0) await rateLimiter.wait("BESTBUY_CA");
 
     const batch = batches[i];
     const url = buildAvailabilityUrl(batch);

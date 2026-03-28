@@ -1161,6 +1161,215 @@ export const TOMORROWIO_WEATHER_CODES = {
 };
 
 // ═══════════════════════════════════════════════════════════════
+//  API RATE LIMITS
+// ═══════════════════════════════════════════════════════════════
+// Single source of truth for all external API rate limits.
+// qps = queries per second, qpm = queries per minute, qpd = queries per day.
+// requestDelayMs = minimum ms between sequential requests (derived from qps/qpm).
+// null = unlimited or not documented.
+// ═══════════════════════════════════════════════════════════════
+
+export const API_RATE_LIMITS = {
+  // ─── Event Domain ──────────────────────────────────────────────────
+  TICKETMASTER: {
+    qps: 5,
+    qpm: null,
+    qpd: 5_000,
+    requestDelayMs: 200, // 1000 / 5 QPS
+  },
+  SEATGEEK: {
+    qps: null,
+    qpm: null,
+    qpd: 1_000,
+    requestDelayMs: 100,
+  },
+  TMDB: {
+    qps: null,
+    qpm: 40,
+    qpd: null,
+    requestDelayMs: 1_500, // 60000 / 40 QPM
+  },
+  GOOGLE_PLACES: {
+    qps: 10,
+    qpm: null,
+    qpd: null,
+    requestDelayMs: 100, // 1000 / 10 QPS
+  },
+
+  // ─── Market Domain ────────────────────────────────────────────────
+  YAHOO_FINANCE: {
+    qps: null,
+    qpm: null,
+    qpd: null, // yahoo-finance2 library, no official rate limit
+    requestDelayMs: 500, // conservative
+  },
+
+  // ─── Finance Domain ───────────────────────────────────────────────
+  FINNHUB: {
+    qps: 1,
+    qpm: 60,
+    qpd: null,
+    requestDelayMs: 200, // padded from 1000 / 1 QPS
+  },
+
+  // ─── Product Domain ───────────────────────────────────────────────
+  BESTBUY: {
+    qps: 5,
+    qpm: null,
+    qpd: 50_000,
+    requestDelayMs: 1_000, // conservative 1s between requests
+  },
+  BESTBUY_CA: {
+    qps: null,
+    qpm: null,
+    qpd: null, // public ecomm-api, no documented limit
+    requestDelayMs: 2_000, // polite 2s between batches
+  },
+  PRODUCTHUNT: {
+    qps: null,
+    qpm: null,
+    qpd: null, // GraphQL, undocumented
+    requestDelayMs: 1_000,
+  },
+  EBAY: {
+    qps: 5,
+    qpm: null,
+    qpd: 5_000,
+    requestDelayMs: 200, // 1000 / 5 QPS
+  },
+  ETSY: {
+    qps: 5,
+    qpm: null,
+    qpd: 5_000,
+    requestDelayMs: 200, // 1000 / 5 QPS
+  },
+  AMAZON: {
+    qps: null,
+    qpm: null,
+    qpd: null, // scraping, no official API
+    requestDelayMs: 3_000, // conservative scrape pacing
+  },
+
+  // ─── Trend Domain ─────────────────────────────────────────────────
+  REDDIT: {
+    qps: null,
+    qpm: 100,
+    qpd: null,
+    requestDelayMs: 600, // 60000 / 100 QPM
+  },
+  HACKERNEWS: {
+    qps: null,
+    qpm: null,
+    qpd: null, // public API, generous
+    requestDelayMs: 100,
+  },
+  WIKIPEDIA: {
+    qps: null,
+    qpm: null,
+    qpd: null, // public API
+    requestDelayMs: 100,
+  },
+  MASTODON: {
+    qps: null,
+    qpm: 300,
+    qpd: null,
+    requestDelayMs: 200, // 60000 / 300 QPM
+  },
+  BLUESKY: {
+    qps: null,
+    qpm: 300,
+    qpd: null,
+    requestDelayMs: 200,
+  },
+  GITHUB: {
+    qps: null,
+    qpm: 60,
+    qpd: null,
+    requestDelayMs: 1_000, // 60000 / 60 QPM
+  },
+  X: {
+    qps: null,
+    qpm: 450,
+    qpd: null,
+    requestDelayMs: 150,
+  },
+  GOOGLE_TRENDS: {
+    qps: null,
+    qpm: null,
+    qpd: null, // scraping
+    requestDelayMs: 2_000,
+  },
+  GOOGLE_NEWS: {
+    qps: null,
+    qpm: null,
+    qpd: null, // RSS scraping
+    requestDelayMs: 1_000,
+  },
+  TVMAZE: {
+    qps: 20,
+    qpm: null,
+    qpd: null,
+    requestDelayMs: 50,
+  },
+
+  // ─── Weather Domain ───────────────────────────────────────────────
+  OPEN_METEO: {
+    qps: null,
+    qpm: null,
+    qpd: 10_000,
+    requestDelayMs: 500,
+  },
+  TOMORROWIO: {
+    qps: 3,
+    qpm: 25,
+    qpd: 500,
+    requestDelayMs: 2_400, // 60000 / 25 QPM
+  },
+  NASA: {
+    qps: null,
+    qpm: null,
+    qpd: 1_000,
+    requestDelayMs: 500,
+  },
+  USGS: {
+    qps: null,
+    qpm: null,
+    qpd: null, // public API
+    requestDelayMs: 200,
+  },
+  NOAA: {
+    qps: null,
+    qpm: null,
+    qpd: null, // public API
+    requestDelayMs: 200,
+  },
+  GOOGLE_AIR_QUALITY: {
+    qps: null,
+    qpm: null,
+    qpd: 500,
+    requestDelayMs: 1_000,
+  },
+  GOOGLE_POLLEN: {
+    qps: null,
+    qpm: null,
+    qpd: 500,
+    requestDelayMs: 1_000,
+  },
+  ENV_CANADA: {
+    qps: null,
+    qpm: null,
+    qpd: null, // public RSS
+    requestDelayMs: 1_000,
+  },
+  LAUNCH_LIBRARY: {
+    qps: null,
+    qpm: 15,
+    qpd: null,
+    requestDelayMs: 4_000, // 60000 / 15 QPM
+  },
+};
+
+// ═══════════════════════════════════════════════════════════════
 //  SHARED
 // ═══════════════════════════════════════════════════════════════
 

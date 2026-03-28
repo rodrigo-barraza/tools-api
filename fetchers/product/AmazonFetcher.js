@@ -2,15 +2,14 @@ import * as cheerio from "cheerio";
 import {
   AMAZON_CATEGORIES,
   PRODUCT_SOURCES,
-  AMAZON_REQUEST_DELAY_MS,
   AMAZON_MAX_PRODUCTS_PER_CATEGORY,
 } from "../../constants.js";
 import {
-  sleep,
   randomUserAgent,
   parsePrice,
   computeTrendingScore,
 } from "../../utilities.js";
+import rateLimiter from "../../services/RateLimiterService.js";
 
 const BASE_URL = "https://www.amazon.com/Best-Sellers/zgbs";
 
@@ -139,7 +138,7 @@ export async function fetchAllAmazonBestSellers() {
     }
 
     // Rate limit between category requests
-    await sleep(AMAZON_REQUEST_DELAY_MS);
+    await rateLimiter.wait("AMAZON");
   }
 
   return allProducts;

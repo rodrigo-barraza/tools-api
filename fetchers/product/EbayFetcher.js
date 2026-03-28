@@ -1,6 +1,7 @@
 import CONFIG from "../../config.js";
 import { PRODUCT_SOURCES } from "../../constants.js";
 import { computeTrendingScore } from "../../utilities.js";
+import rateLimiter from "../../services/RateLimiterService.js";
 
 const BASE_URL = "https://api.ebay.com/buy/browse/v1";
 
@@ -123,6 +124,7 @@ export async function fetchAllEbayTrending() {
   const allProducts = [];
 
   for (const cat of EBAY_CATEGORIES) {
+    await rateLimiter.wait("EBAY");
     try {
       const products = await fetchEbayCategoryTrending(token, cat);
       allProducts.push(...products);

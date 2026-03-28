@@ -4,6 +4,7 @@ import {
   REDDIT_SUBREDDITS,
   REDDIT_POSTS_PER_SUBREDDIT,
 } from "../../constants.js";
+import rateLimiter from "../../services/RateLimiterService.js";
 
 let accessToken = null;
 let tokenExpiry = 0;
@@ -113,6 +114,7 @@ export async function fetchRedditTrends() {
   const allTrends = [];
 
   for (const sub of REDDIT_SUBREDDITS) {
+    await rateLimiter.wait("REDDIT");
     try {
       const posts = await fetchSubreddit(
         sub.name,

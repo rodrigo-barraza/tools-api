@@ -26,6 +26,7 @@ import {
   EBAY_CLIENT_ID,
   EBAY_CLIENT_SECRET,
   ETSY_API_KEY,
+  ETSY_SHARED_SECRET,
 
   // Trend
   REDDIT_CLIENT_ID,
@@ -67,6 +68,7 @@ const CONFIG = {
   EBAY_CLIENT_ID,
   EBAY_CLIENT_SECRET,
   ETSY_API_KEY,
+  ETSY_SHARED_SECRET,
 
   // ─── Trend ───────────────────────────────────────────────────────
   REDDIT_CLIENT_ID,
