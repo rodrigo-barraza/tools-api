@@ -694,6 +694,22 @@ export const PRODUCTHUNT_PRODUCT_INTERVAL_MS = 3_600_000; // 1 hour
 export const EBAY_INTERVAL_MS = 3_600_000; // 1 hour
 export const ETSY_INTERVAL_MS = 3_600_000; // 1 hour
 
+// Best Buy Canada — stock availability checker (public ecomm-api, no key required)
+export const BESTBUY_CA_AVAILABILITY_INTERVAL_MS = 300_000; // 5 minutes
+export const BESTBUY_CA_AVAILABILITY_BASE_URL =
+  "https://www.bestbuy.ca/ecomm-api/availability/products";
+export const BESTBUY_CA_MAX_SKUS_PER_REQUEST = 100;
+export const BESTBUY_CA_REQUEST_DELAY_MS = 2_000; // 2 seconds between batches
+export const BESTBUY_CA_DEFAULT_SKUS = {
+  18931348: { name: "RTX 5090", brand: "NVIDIA", category: "gpu" },
+  18931347: { name: "RTX 5080", brand: "NVIDIA", category: "gpu" },
+  18934178: { name: "RTX 5080", brand: "PNY", category: "gpu" },
+  18931628: { name: "RTX 5080", brand: "ZOTAC", category: "gpu" },
+  18934180: { name: "RTX 5070 Ti", brand: "PNY", category: "gpu" },
+  18934179: { name: "RTX 5070 Ti", brand: "PNY", category: "gpu" },
+  19183867: { name: "RTX 5070 Ti", brand: "MSI", category: "gpu" },
+};
+
 export const PRODUCT_CATEGORIES = {
   ELECTRONICS: "electronics",
   COMPUTERS: "computers",
