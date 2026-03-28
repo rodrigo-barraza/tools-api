@@ -125,6 +125,25 @@ export function buildStaticMapUrl(places, center, { size = "800x400", zoom, mapt
   return `${STATIC_MAP_URL}?${params.toString()}&${markerParams}`;
 }
 
+/**
+ * Build the embed URL for the interactive map served by UtilityRoutes.
+ * @param {object[]} places - Array of normalized place objects
+ * @returns {string|null}
+ */
+export function buildMapEmbedUrl(places) {
+  if (!places.length || !CONFIG.GOOGLE_API_KEY) return null;
+  const markers = places
+    .filter((p) => p.latitude != null && p.longitude != null)
+    .map((p) => ({
+      latitude: p.latitude,
+      longitude: p.longitude,
+      name: p.name || null,
+      address: p.shortAddress || p.address || null,
+    }));
+  const embedParams = new URLSearchParams({ markers: JSON.stringify(markers) });
+  return `http://localhost:${CONFIG.TOOLS_PORT}/utility/map/embed?${embedParams.toString()}`;
+}
+
 // ─── Nearby Search ────────────────────────────────────────────────
 
 /**
@@ -199,7 +218,7 @@ export async function searchNearbyPlaces({
     type,
     center: { latitude: lat, longitude: lng },
     radiusMeters: rad,
-    staticMapUrl: buildStaticMapUrl(places, { latitude: lat, longitude: lng }),
+    mapEmbedUrl: buildMapEmbedUrl(places),
     places,
     fetchedAt: new Date().toISOString(),
   };
@@ -283,7 +302,7 @@ export async function searchPlacesByText({
     query,
     center: { latitude: lat, longitude: lng },
     radiusMeters: rad,
-    staticMapUrl: buildStaticMapUrl(places, { latitude: lat, longitude: lng }),
+    mapEmbedUrl: buildMapEmbedUrl(places),
     places,
     fetchedAt: new Date().toISOString(),
   };

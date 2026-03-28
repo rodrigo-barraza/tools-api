@@ -35,6 +35,12 @@ import {
   discoverTvShows,
   getTvGenres,
 } from "../fetchers/knowledge/TMDbFetcher.js";
+import {
+  searchElements,
+  getElementBySymbol,
+  rankElementsByProperty,
+  getElementCategories,
+} from "../fetchers/knowledge/PeriodicTableFetcher.js";
 import { parseIntParam } from "../utilities.js";
 
 const router = Router();
@@ -367,6 +373,73 @@ router.get("/tv/:id", async (req, res) => {
   }
 });
 
+// ─── Periodic Table (in-memory) ────────────────────────────────────
+
+router.get("/elements/search", (req, res) => {
+  const { q, limit, category, block } = req.query;
+  if (!q) {
+    return res.status(400).json({ error: "Query parameter 'q' is required" });
+  }
+  try {
+    const result = searchElements(q, {
+      limit: parseIntParam(limit, 10),
+      category,
+      block,
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: `Element search failed: ${err.message}` });
+  }
+});
+
+router.get("/elements/rank", (req, res) => {
+  const { property, limit, order, category, block } = req.query;
+  if (!property) {
+    return res
+      .status(400)
+      .json({ error: "Query parameter 'property' is required" });
+  }
+  try {
+    const result = rankElementsByProperty(property, {
+      limit: parseIntParam(limit, 10),
+      order: order || "desc",
+      category,
+      block,
+    });
+    if (result.error) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: `Element ranking failed: ${err.message}` });
+  }
+});
+
+router.get("/elements/categories", (_req, res) => {
+  try {
+    const result = getElementCategories();
+    res.json(result);
+  } catch (err) {
+    res
+      .status(500)
+      .json({ error: `Element categories failed: ${err.message}` });
+  }
+});
+
+router.get("/elements/:symbol", (req, res) => {
+  try {
+    const result = getElementBySymbol(req.params.symbol);
+    if (!result) {
+      return res
+        .status(404)
+        .json({ error: `Element not found: ${req.params.symbol}` });
+    }
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: `Element lookup failed: ${err.message}` });
+  }
+});
+
 // ─── Health ────────────────────────────────────────────────────────
 
 export function getKnowledgeHealth() {
@@ -379,6 +452,7 @@ export function getKnowledgeHealth() {
     jikan: "on-demand",
     tmdbMovies: "on-demand",
     tmdbTvShows: "on-demand",
+    periodicTable: "on-demand (in-memory, 119 elements)",
   };
 }
 

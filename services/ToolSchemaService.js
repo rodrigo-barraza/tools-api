@@ -935,7 +935,45 @@ const FIELDS = {
     "googleMapsUrl",
     "description",
     "openNow",
-    "staticMapUrl",
+    "mapEmbedUrl",
+  ],
+
+  // Periodic Table: from PeriodicTableFetcher
+  ELEMENTS: [
+    "atomicNumber",
+    "symbol",
+    "name",
+    "atomicMass",
+    "category",
+    "groupNumber",
+    "period",
+    "block",
+    "electronConfiguration",
+    "electronegativity",
+    "density",
+    "molarHeat",
+    "electronAffinity",
+    "firstIonizationEnergy",
+    "phaseAtSTP",
+    "meltingPoint",
+    "boilingPoint",
+    "appearance",
+    "discoveredBy",
+    "cpkHexColor",
+    "summary",
+  ],
+
+  // Element Ranking: from PeriodicTableFetcher.rankElementsByProperty()
+  ELEMENT_RANKING: [
+    "property",
+    "propertyLabel",
+    "order",
+    "count",
+    "elements.atomicNumber",
+    "elements.symbol",
+    "elements.name",
+    "elements.value",
+    "elements.category",
   ],
 };
 
@@ -3153,7 +3191,7 @@ const TOOL_DEFINITIONS = [
   {
     name: "search_nearby_places",
     description:
-      "Search for nearby places/businesses by type (e.g. restaurant, cafe, pharmacy, gas_station, grocery_store, gym, hospital, park, shopping_mall, bar, hotel, bank, library). Returns name, address, rating, reviews, price level, phone, website, and whether currently open. Also returns a staticMapUrl — a Google Maps image with numbered markers for all results. Always include staticMapUrl in fields and render it as an embedded image in your response using ![Map](url) markdown syntax.",
+      "Search for nearby places/businesses by type (e.g. restaurant, cafe, pharmacy, gas_station, grocery_store, gym, hospital, park, shopping_mall, bar, hotel, bank, library). Returns name, address, rating, reviews, price level, phone, website, and whether currently open. An interactive map with numbered markers is automatically rendered in the chat UI.",
     endpoint: {
       path: "/utility/places/nearby",
       queryParams: ["type", "latitude", "longitude", "radius", "limit"],
@@ -3190,7 +3228,7 @@ const TOOL_DEFINITIONS = [
   {
     name: "search_places",
     description:
-      "Search for places using a natural language text query (e.g. 'best sushi near downtown', 'coffee shops with wifi', '24 hour pharmacy'). More flexible than nearby search — supports descriptive queries. Returns name, address, rating, reviews, price level, phone, website, and whether currently open. Also returns a staticMapUrl — a Google Maps image with numbered markers for all results. Always include staticMapUrl in fields and render it as an embedded image in your response using ![Map](url) markdown syntax.",
+      "Search for places using a natural language text query (e.g. 'best sushi near downtown', 'coffee shops with wifi', '24 hour pharmacy'). More flexible than nearby search — supports descriptive queries. Returns name, address, rating, reviews, price level, phone, website, and whether currently open. An interactive map with numbered markers is automatically rendered in the chat UI.",
     endpoint: {
       path: "/utility/places/search",
       queryParams: ["q", "latitude", "longitude", "radius", "limit"],
@@ -3259,6 +3297,112 @@ const TOOL_DEFINITIONS = [
         },
       },
       required: ["markers"],
+    },
+  },
+
+  // ── Periodic Table ─────────────────────────────────────────
+  {
+    name: "search_elements",
+    description:
+      "Search the periodic table by element name, symbol, or atomic number. Returns full element data including atomic mass, density, melting/boiling points, electronegativity, electron configuration, and more. Optionally filter by category (e.g. 'noble gas', 'transition metal') or block (s, p, d, f).",
+    endpoint: {
+      path: "/knowledge/elements/search",
+      queryParams: ["q", "limit", "category", "block"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        q: {
+          type: "string",
+          description:
+            "Search query — element name (e.g. 'iron'), symbol (e.g. 'Fe'), or atomic number (e.g. '26')",
+        },
+        limit: { type: "number", description: "Max results (default: 10)" },
+        category: {
+          type: "string",
+          description:
+            "Filter by element category (e.g. 'noble gas', 'transition metal', 'alkali metal', 'metalloid')",
+        },
+        block: {
+          type: "string",
+          description: "Filter by electron block",
+          enum: ["s", "p", "d", "f"],
+        },
+        ...fieldsParam(FIELDS.ELEMENTS),
+      },
+      required: ["q"],
+    },
+  },
+  {
+    name: "get_element",
+    description:
+      "Get full details of a specific chemical element by its symbol (e.g. 'Fe' for Iron, 'Au' for Gold). Returns atomic mass, density, melting/boiling points, electron configuration, discovery info, and a summary.",
+    endpoint: {
+      path: "/knowledge/elements/:symbol",
+      pathParams: ["symbol"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        symbol: {
+          type: "string",
+          description: "Element symbol (e.g. 'Fe', 'Au', 'H', 'O')",
+        },
+        ...fieldsParam(FIELDS.ELEMENTS),
+      },
+      required: ["symbol"],
+    },
+  },
+  {
+    name: "rank_elements",
+    description:
+      "Rank chemical elements by a numeric property — atomic mass, density, melting point, boiling point, electronegativity, ionization energy, or electron affinity. Example: 'densest elements' → property='density_g_cm3'.",
+    endpoint: {
+      path: "/knowledge/elements/rank",
+      queryParams: ["property", "limit", "order", "category", "block"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        property: {
+          type: "string",
+          description: "Which property to rank by",
+          enum: [
+            "atomic_mass",
+            "electronegativity",
+            "density_g_cm3",
+            "molar_heat_j_mol_k",
+            "electron_affinity_kj_mol",
+            "first_ionization_energy_kj_mol",
+            "melting_point_k",
+            "boiling_point_k",
+          ],
+        },
+        limit: { type: "number", description: "Max results (default: 10)" },
+        order: {
+          type: "string",
+          description: "Sort order",
+          enum: ["asc", "desc"],
+        },
+        category: { type: "string", description: "Filter by element category" },
+        block: {
+          type: "string",
+          description: "Filter by block",
+          enum: ["s", "p", "d", "f"],
+        },
+        ...fieldsParam(FIELDS.ELEMENT_RANKING),
+      },
+      required: ["property"],
+    },
+  },
+  {
+    name: "get_element_categories",
+    description:
+      "List all element categories (noble gas, transition metal, etc.), blocks (s, p, d, f), phases at STP, and available rankable properties. Use this for discovery before searching or ranking.",
+    endpoint: { path: "/knowledge/elements/categories" },
+    parameters: {
+      type: "object",
+      properties: {},
     },
   },
 ];

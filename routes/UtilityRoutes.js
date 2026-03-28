@@ -1,4 +1,5 @@
 import { Router } from "express";
+import CONFIG from "../config.js";
 import {
   convertCurrency,
   listCurrencies,
@@ -156,7 +157,117 @@ router.get("/places/search", async (req, res) => {
   }
 });
 
-// ─── Map Generation (Google Maps Static API) ──────────────────────
+// ─── Map Generation ───────────────────────────────────────────────
+
+/**
+ * Build the interactive embed HTML for Google Maps JS API.
+ * Renders numbered markers with info windows showing name + address.
+ */
+function buildMapEmbedHtml(markerList, apiKey, { zoom, maptype = "roadmap" } = {}) {
+  const markersJson = JSON.stringify(
+    markerList.map((m, i) => ({
+      lat: m.latitude,
+      lng: m.longitude,
+      label: String(i + 1),
+      name: m.name || m.label || `Location ${i + 1}`,
+      address: m.address || m.shortAddress || "",
+    })),
+  );
+
+  return `<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body,#map{width:100%;height:100%}
+</style>
+</head><body>
+<div id="map"></div>
+<script>
+const MARKERS=${markersJson};
+const ZOOM=${zoom != null ? zoom : "null"};
+const MAPTYPE="${maptype}";
+
+function initMap(){
+  const bounds=new google.maps.LatLngBounds();
+  const map=new google.maps.Map(document.getElementById("map"),{
+    mapTypeId:MAPTYPE,
+    disableDefaultUI:false,
+    zoomControl:true,
+    mapTypeControl:false,
+    streetViewControl:false,
+    fullscreenControl:false,
+    styles:[
+      {featureType:"poi",stylers:[{visibility:"off"}]},
+      {featureType:"transit",stylers:[{visibility:"off"}]}
+    ]
+  });
+  const COLORS=["#e74c3c","#3498db","#2ecc71","#9b59b6","#e67e22","#f1c40f","#1abc9c","#e91e63","#00bcd4","#ff5722"];
+  const infoWindow=new google.maps.InfoWindow();
+
+  MARKERS.forEach((m,i)=>{
+    const pos={lat:m.lat,lng:m.lng};
+    bounds.extend(pos);
+
+    const marker=new google.maps.Marker({
+      position:pos,
+      map,
+      label:{text:m.label,color:"#fff",fontWeight:"700",fontSize:"12px"},
+      icon:{
+        path:google.maps.SymbolPath.CIRCLE,
+        scale:14,
+        fillColor:COLORS[i%COLORS.length],
+        fillOpacity:1,
+        strokeColor:"#fff",
+        strokeWeight:2
+      },
+      title:m.name
+    });
+
+    marker.addListener("click",()=>{
+      infoWindow.setContent(
+        '<div style="font-family:system-ui;min-width:140px;padding:2px">'+
+        '<strong style="font-size:13px">'+m.name+'</strong>'+
+        (m.address?'<div style="font-size:11px;color:#666;margin-top:3px">'+m.address+'</div>':'')+
+        '</div>'
+      );
+      infoWindow.open(map,marker);
+    });
+  });
+
+  if(ZOOM!=null){
+    map.setCenter(bounds.getCenter());
+    map.setZoom(ZOOM);
+  }else{
+    map.fitBounds(bounds,{top:30,right:30,bottom:30,left:30});
+  }
+}
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap" async defer></script>
+</body></html>`;
+}
+
+router.get("/map/embed", (req, res) => {
+  const { markers, zoom, maptype } = req.query;
+  if (!markers || !CONFIG.GOOGLE_API_KEY) {
+    return res.status(400).send("Missing markers or API key");
+  }
+  try {
+    const markerList = JSON.parse(markers);
+    if (!Array.isArray(markerList) || markerList.length === 0) {
+      return res.status(400).send("markers must be a non-empty array");
+    }
+    const html = buildMapEmbedHtml(markerList, CONFIG.GOOGLE_API_KEY, {
+      zoom: zoom ? parseInt(zoom) : undefined,
+      maptype: maptype || "roadmap",
+    });
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.send(html);
+  } catch (err) {
+    res.status(500).send(`Map embed failed: ${err.message}`);
+  }
+});
 
 router.get("/map", async (req, res) => {
   const { markers, center, zoom, size, maptype } = req.query;
@@ -190,20 +301,21 @@ router.get("/map", async (req, res) => {
       }
     }
 
-    const mapUrl = buildStaticMapUrl(markerList, centerObj || {}, {
+    const staticMapUrl = buildStaticMapUrl(markerList, centerObj || {}, {
       size: size || "800x400",
       zoom: zoom ? parseInt(zoom) : undefined,
       maptype: maptype || "roadmap",
     });
 
-    if (!mapUrl) {
-      return res
-        .status(500)
-        .json({ error: "GOOGLE_API_KEY is not configured" });
-    }
+    // Build embed URL with the same markers param
+    const embedParams = new URLSearchParams({ markers });
+    if (zoom) embedParams.set("zoom", zoom);
+    if (maptype) embedParams.set("maptype", maptype);
+    const mapEmbedUrl = `http://localhost:${CONFIG.TOOLS_PORT}/utility/map/embed?${embedParams.toString()}`;
 
     res.json({
-      staticMapUrl: mapUrl,
+      staticMapUrl,
+      mapEmbedUrl,
       markerCount: markerList.length,
     });
   } catch (err) {

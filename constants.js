@@ -2258,6 +2258,24 @@ export const DATASET_REGISTRY = [
     notes:
       "2,490 foods with 65 nutrient columns. Food names in Japanese. INFOODS tagnames used for column mapping. Filtered to exclude confectionery, beverages, condiments, and ready meals.",
   },
+
+  // ─── Chemistry ──────────────────────────────────────────────────
+
+  {
+    id: "periodic-table",
+    name: "Periodic Table of Elements",
+    domain: "chemistry",
+    file: "fetchers/knowledge/data/digest_elements.csv",
+    source: "Bowserinator/Periodic-Table-JSON (IUPAC data)",
+    url: "https://github.com/Bowserinator/Periodic-Table-JSON",
+    version: "2024",
+    dataYear: 2024,
+    ingestedYear: 2026,
+    records: 119,
+    region: null,
+    notes:
+      "All 118 confirmed elements + Oganesson. Includes atomic mass, density, melting/boiling points, electronegativity, electron configuration, ionization energy, discovery info, and summaries. CC BY-SA 3.0.",
+  },
 ];
 
 // ═══════════════════════════════════════════════════════════════
