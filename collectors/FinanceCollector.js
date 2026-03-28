@@ -12,7 +12,7 @@ import {
   updateEarnings,
   setEarningsError,
 } from "../caches/FinnhubCache.js";
-import { collectIfStale, saveState } from "../services/FreshnessService.js";
+import { saveState, startCollectorLoop } from "../services/FreshnessService.js";
 
 // ─── News Collector ────────────────────────────────────────────────
 
@@ -51,30 +51,30 @@ async function collectEarnings() {
   }
 }
 
+// ─── Startup Definitions ──────────────────────────────────────────
+
+const STARTUP_TASKS = [
+  {
+    label: "Finnhub/News",
+    collection: "market_news",
+    ttl: FINNHUB_NEWS_INTERVAL_MS,
+    collectFn: collectMarketNews,
+    restoreFn: updateMarketNews,
+    delay: 0,
+  },
+  {
+    label: "Finnhub/Earnings",
+    collection: "earnings_calendar",
+    ttl: FINNHUB_EARNINGS_INTERVAL_MS,
+    collectFn: collectEarnings,
+    restoreFn: updateEarnings,
+    delay: 2_000,
+  },
+];
+
 // ─── Start Finance Collectors ──────────────────────────────────────
 
 export function startFinanceCollectors() {
-  collectIfStale(
-    "Finnhub/News",
-    "market_news",
-    FINNHUB_NEWS_INTERVAL_MS,
-    collectMarketNews,
-    updateMarketNews,
-  );
-  setTimeout(
-    () =>
-      collectIfStale(
-        "Finnhub/Earnings",
-        "earnings_calendar",
-        FINNHUB_EARNINGS_INTERVAL_MS,
-        collectEarnings,
-        updateEarnings,
-      ),
-    2_000,
-  );
-
-  setInterval(collectMarketNews, FINNHUB_NEWS_INTERVAL_MS);
-  setInterval(collectEarnings, FINNHUB_EARNINGS_INTERVAL_MS);
-
+  startCollectorLoop(STARTUP_TASKS);
   console.log("📈 Finance collectors started (Finnhub — on-demand quotes)");
 }

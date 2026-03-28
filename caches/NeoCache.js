@@ -27,7 +27,7 @@ export function restoreNeos(neos) {
 }
 
 export function setNeoError(error) {
-  cache.error = { message: error.message, time: new Date() };
+  cache.error = { message: error.message, time: new Date().toISOString() };
 }
 
 /**

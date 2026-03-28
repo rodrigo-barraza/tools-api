@@ -42,7 +42,7 @@ export function restoreCommodities(quotes) {
 export function setCommodityError(error) {
   cache.error = {
     message: error.message,
-    time: new Date(),
+    time: new Date().toISOString(),
   };
 }
 

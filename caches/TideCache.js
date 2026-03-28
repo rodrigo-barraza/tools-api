@@ -1,38 +1,19 @@
-let tides = [];
-let lastFetch = null;
-let lastError = null;
+import { createSimpleCache } from "./createSimpleCache.js";
 
-export function updateTides(predictions) {
-  tides = predictions;
-  lastFetch = new Date().toISOString();
-  lastError = null;
-}
+const cache = createSimpleCache({ type: "array", itemsKey: "predictions" });
 
-export function setTideError(error) {
-  lastError = { message: error.message, time: new Date().toISOString() };
-}
+export const updateTides = cache.update;
+export const setTideError = cache.setError;
+export const getTides = cache.get;
+export const getTideHealth = cache.getHealth;
 
-export function getTides() {
-  return {
-    count: tides.length,
-    predictions: tides,
-    lastFetch,
-  };
-}
-
+/** Get the next upcoming tide prediction. */
 export function getNextTide() {
+  const tides = cache.getData();
   const now = new Date();
   const upcoming = tides.find((t) => new Date(t.time) > now);
   return {
     next: upcoming || null,
-    lastFetch,
-  };
-}
-
-export function getTideHealth() {
-  return {
-    lastFetch,
-    error: lastError,
-    count: tides.length,
+    lastFetch: cache.getLastFetch(),
   };
 }

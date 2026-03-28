@@ -278,3 +278,25 @@ export function computeTrendingScore(product) {
     Math.round((rankScore + ratingScore + reviewScore + recencyScore) * 10) / 10
   );
 }
+
+// ─── Route Handler Wrapper ────────────────────────────────────────
+
+/**
+ * Wrap an async route handler with standard error catching.
+ * The wrapped function should return the JSON payload (or call res directly for non-standard flows).
+ *
+ * @param {Function} fn - (req, res) => Promise<any> — return value is sent as JSON
+ * @param {string} label - Error context label (e.g. "Dictionary lookup")
+ * @param {number} [errorStatus=502] - HTTP status on error (502 for upstream, 500 for internal)
+ * @returns {Function} Express middleware
+ */
+export function asyncHandler(fn, label, errorStatus = 502) {
+  return async (req, res) => {
+    try {
+      const result = await fn(req, res);
+      if (result !== undefined) res.json(result);
+    } catch (err) {
+      res.status(errorStatus).json({ error: `${label} failed: ${err.message}` });
+    }
+  };
+}

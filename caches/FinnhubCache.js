@@ -108,7 +108,7 @@ export function updateMarketNews(articles) {
 }
 
 export function setNewsError(error) {
-  cache.newsError = { message: error.message, time: new Date() };
+  cache.newsError = { message: error.message, time: new Date().toISOString() };
 }
 
 // ─── Earnings Calendar (polled) ────────────────────────────────────
@@ -124,7 +124,7 @@ export function updateEarnings(earningsData) {
 }
 
 export function setEarningsError(error) {
-  cache.earningsError = { message: error.message, time: new Date() };
+  cache.earningsError = { message: error.message, time: new Date().toISOString() };
 }
 
 // ─── Health ────────────────────────────────────────────────────────

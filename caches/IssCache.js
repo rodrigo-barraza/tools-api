@@ -29,7 +29,7 @@ export function updateIssPosition(position) {
 }
 
 export function setIssPositionError(error) {
-  cache.positionError = { message: error.message, time: new Date() };
+  cache.positionError = { message: error.message, time: new Date().toISOString() };
 }
 
 /**
@@ -42,7 +42,7 @@ export function updateAstronauts(data) {
 }
 
 export function setAstronautsError(error) {
-  cache.astrosError = { message: error.message, time: new Date() };
+  cache.astrosError = { message: error.message, time: new Date().toISOString() };
 }
 
 /**

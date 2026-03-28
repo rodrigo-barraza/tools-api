@@ -1,52 +1,10 @@
-/**
- * In-memory cache for Google Air Quality data.
- * Stored separately from WeatherCache since Google AQ provides
- * richer data (health recs, color codes) than Open-Meteo AQ.
- */
+import { createSimpleCache } from "./createSimpleCache.js";
 
-const cache = {
-  data: null,
-  lastFetch: null,
-  error: null,
+const { update, setError, get, getHealth } = createSimpleCache();
+
+export {
+  update as updateGoogleAirQuality,
+  setError as setGoogleAirQualityError,
+  get as getGoogleAirQuality,
+  getHealth as getGoogleAirQualityHealth,
 };
-
-/**
- * Update cache with fresh Google Air Quality data.
- */
-export function updateGoogleAirQuality(data) {
-  cache.data = data;
-  cache.lastFetch = new Date();
-  cache.error = null;
-}
-
-/**
- * Record a fetch error.
- */
-export function setGoogleAirQualityError(error) {
-  cache.error = {
-    message: error.message,
-    time: new Date(),
-  };
-}
-
-/**
- * Get full Google Air Quality data.
- */
-export function getGoogleAirQuality() {
-  if (!cache.data) return { status: "no_data", lastFetch: null };
-  return {
-    ...cache.data,
-    lastFetch: cache.lastFetch,
-  };
-}
-
-/**
- * Get health status.
- */
-export function getGoogleAirQualityHealth() {
-  return {
-    lastFetch: cache.lastFetch,
-    error: cache.error,
-    hasData: cache.data !== null,
-  };
-}

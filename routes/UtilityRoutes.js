@@ -19,6 +19,7 @@ import {
   getAirportsByCountry,
   getNearestAirports,
 } from "../fetchers/utility/AirportFetcher.js";
+import { asyncHandler } from "../utilities.js";
 
 const router = Router();
 
@@ -31,48 +32,34 @@ router.get("/currency/convert", async (req, res) => {
       .status(400)
       .json({ error: "Query parameters 'from' and 'to' are required" });
   }
-  try {
-    const result = await convertCurrency(parseFloat(amount) || 1, from, to);
-    res.json(result);
-  } catch (err) {
-    res
-      .status(502)
-      .json({ error: `Currency conversion failed: ${err.message}` });
-  }
+  res.json(await convertCurrency(parseFloat(amount) || 1, from, to));
 });
 
-router.get("/currency/list", async (_req, res) => {
-  try {
+router.get("/currency/list", asyncHandler(
+  async () => {
     const currencies = await listCurrencies();
-    res.json({ count: currencies.length, currencies });
-  } catch (err) {
-    res.status(502).json({ error: `Currency list failed: ${err.message}` });
-  }
-});
+    return { count: currencies.length, currencies };
+  },
+  "Currency list",
+));
 
 // ─── Timezone ──────────────────────────────────────────────────────
 
-router.get("/timezone/:area/:location", async (req, res) => {
-  const timezone = `${req.params.area}/${req.params.location}`;
-  try {
-    const result = await getTimeInTimezone(timezone);
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `Timezone lookup failed: ${err.message}` });
-  }
-});
+router.get("/timezone/:area/:location", asyncHandler(
+  (req) => getTimeInTimezone(`${req.params.area}/${req.params.location}`),
+  "Timezone lookup",
+));
 
-router.get("/timezone/list", async (req, res) => {
-  try {
+router.get("/timezone/list", asyncHandler(
+  async (req) => {
     const timezones = await listTimezones(req.query.area);
-    res.json({
+    return {
       count: Array.isArray(timezones) ? timezones.length : 0,
       timezones,
-    });
-  } catch (err) {
-    res.status(502).json({ error: `Timezone list failed: ${err.message}` });
-  }
-});
+    };
+  },
+  "Timezone list",
+));
 
 // ─── IP Geolocation (IPinfo) ───────────────────────────────────────
 
@@ -83,38 +70,27 @@ router.get("/ip/batch", async (req, res) => {
       .status(400)
       .json({ error: "Query parameter 'ips' (comma-separated) is required" });
   }
-  try {
-    const ipArray = ips
-      .split(",")
-      .map((ip) => ip.trim())
-      .filter(Boolean);
-    const result = await batchLookupIps(ipArray);
-    res.json({ count: result.length, results: result });
-  } catch (err) {
-    res.status(502).json({ error: `Batch IP lookup failed: ${err.message}` });
-  }
+  const ipArray = ips
+    .split(",")
+    .map((ip) => ip.trim())
+    .filter(Boolean);
+  const result = await batchLookupIps(ipArray);
+  res.json({ count: result.length, results: result });
 });
 
-router.get("/ip", async (_req, res) => {
-  try {
-    const result = await lookupIp("");
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `IP lookup failed: ${err.message}` });
-  }
-});
+router.get("/ip", asyncHandler(
+  () => lookupIp(""),
+  "IP lookup",
+));
 
-router.get("/ip/:ip", async (req, res) => {
-  try {
-    // Detect literal ":ip" (unresolved path template) or "self" → self-lookup
+router.get("/ip/:ip", asyncHandler(
+  (req) => {
     const raw = req.params.ip;
     const ip = raw === "self" || raw === ":ip" ? "" : raw;
-    const result = await lookupIp(ip);
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `IP lookup failed: ${err.message}` });
-  }
-});
+    return lookupIp(ip);
+  },
+  "IP lookup",
+));
 
 // ─── Places — Nearby Search (Google Places API New) ────────────────
 
@@ -125,18 +101,13 @@ router.get("/places/nearby", async (req, res) => {
       .status(400)
       .json({ error: "Query parameter 'type' is required (e.g. restaurant, cafe, gas_station)" });
   }
-  try {
-    const result = await searchNearbyPlaces({
-      type,
-      latitude: latitude ? parseFloat(latitude) : undefined,
-      longitude: longitude ? parseFloat(longitude) : undefined,
-      radius: radius ? parseInt(radius) : undefined,
-      limit: limit ? parseInt(limit) : undefined,
-    });
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `Places nearby search failed: ${err.message}` });
-  }
+  res.json(await searchNearbyPlaces({
+    type,
+    latitude: latitude ? parseFloat(latitude) : undefined,
+    longitude: longitude ? parseFloat(longitude) : undefined,
+    radius: radius ? parseInt(radius) : undefined,
+    limit: limit ? parseInt(limit) : undefined,
+  }));
 });
 
 // ─── Places — Text Search (Google Places API New) ──────────────────
@@ -148,18 +119,13 @@ router.get("/places/search", async (req, res) => {
       .status(400)
       .json({ error: "Query parameter 'q' is required" });
   }
-  try {
-    const result = await searchPlacesByText({
-      query: q,
-      latitude: latitude ? parseFloat(latitude) : undefined,
-      longitude: longitude ? parseFloat(longitude) : undefined,
-      radius: radius ? parseInt(radius) : undefined,
-      limit: limit ? parseInt(limit) : undefined,
-    });
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `Places text search failed: ${err.message}` });
-  }
+  res.json(await searchPlacesByText({
+    query: q,
+    latitude: latitude ? parseFloat(latitude) : undefined,
+    longitude: longitude ? parseFloat(longitude) : undefined,
+    radius: radius ? parseInt(radius) : undefined,
+    limit: limit ? parseInt(limit) : undefined,
+  }));
 });
 
 // ─── Map Generation ───────────────────────────────────────────────
@@ -297,8 +263,6 @@ router.get("/map", async (req, res) => {
         .json({ error: "'markers' must be a non-empty array" });
     }
 
-
-    // Build embed URL with the same markers param
     const embedParams = new URLSearchParams({ markers });
     if (zoom) embedParams.set("zoom", zoom);
     if (maptype) embedParams.set("maptype", maptype);
@@ -320,64 +284,38 @@ router.get("/airports/search", (req, res) => {
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  try {
-    const result = searchAirports(q, {
-      limit: parseInt(limit) || 10,
-      country,
-    });
-    res.json(result);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: `Airport search failed: ${err.message}` });
-  }
+  res.json(searchAirports(q, {
+    limit: parseInt(limit) || 10,
+    country,
+  }));
 });
 
 router.get("/airports/code/:code", (req, res) => {
-  try {
-    const result = getAirportByCode(req.params.code);
-    if (!result) {
-      return res.status(404).json({ error: `Airport not found: ${req.params.code}` });
-    }
-    res.json(result);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: `Airport lookup failed: ${err.message}` });
+  const result = getAirportByCode(req.params.code);
+  if (!result) {
+    return res.status(404).json({ error: `Airport not found: ${req.params.code}` });
   }
+  res.json(result);
 });
 
-router.get("/airports/country/:code", (req, res) => {
-  const { limit } = req.query;
-  try {
-    const result = getAirportsByCountry(req.params.code, {
-      limit: parseInt(limit) || 50,
-    });
-    res.json(result);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: `Country airports lookup failed: ${err.message}` });
-  }
-});
+router.get("/airports/country/:code", asyncHandler(
+  (req) => getAirportsByCountry(req.params.code, {
+    limit: parseInt(req.query.limit) || 50,
+  }),
+  "Country airports lookup",
+  500,
+));
 
 router.get("/airports/nearest", (req, res) => {
   const { lat, lng, limit } = req.query;
   if (!lat || !lng) {
     return res.status(400).json({ error: "Query parameters 'lat' and 'lng' are required" });
   }
-  try {
-    const result = getNearestAirports(
-      parseFloat(lat),
-      parseFloat(lng),
-      { limit: parseInt(limit) || 5 },
-    );
-    res.json(result);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: `Nearest airports lookup failed: ${err.message}` });
-  }
+  res.json(getNearestAirports(
+    parseFloat(lat),
+    parseFloat(lng),
+    { limit: parseInt(limit) || 5 },
+  ));
 });
 
 // ─── Health ────────────────────────────────────────────────────────
@@ -393,4 +331,3 @@ export function getUtilityHealth() {
 }
 
 export default router;
-

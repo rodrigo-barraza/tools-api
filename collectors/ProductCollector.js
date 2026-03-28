@@ -26,7 +26,7 @@ import {
   updateStatuses,
   setAvailabilityError,
 } from "../caches/BestBuyCAAvailabilityCache.js";
-import { collectIfStale, saveState } from "../services/FreshnessService.js";
+import { saveState, startCollectorLoop } from "../services/FreshnessService.js";
 
 // ─── Collector Factory ─────────────────────────────────────────────
 
@@ -98,35 +98,14 @@ const STARTUP_TASKS = [
 ];
 
 export function startProductCollectors() {
-  for (const task of STARTUP_TASKS) {
-    const restoreFn =
+  // Set default restoreFn for standard product tasks
+  const tasks = STARTUP_TASKS.map((task) => ({
+    ...task,
+    restoreFn:
       task.restoreFn ||
-      ((data) => updateProducts(data.source, data.products));
+      ((data) => updateProducts(data.source, data.products)),
+  }));
 
-    setTimeout(
-      () =>
-        collectIfStale(
-          task.label,
-          task.collection,
-          task.ttl,
-          task.collectFn,
-          restoreFn,
-        ),
-      task.delay,
-    );
-  }
-
-  setInterval(collectBestBuy, BESTBUY_INTERVAL_MS);
-  setInterval(collectAmazon, AMAZON_INTERVAL_MS);
-  setInterval(collectProductHunt, PRODUCTHUNT_PRODUCT_INTERVAL_MS);
-  setInterval(collectEbay, EBAY_INTERVAL_MS);
-  setInterval(collectEtsy, ETSY_INTERVAL_MS);
-  setInterval(
-    collectBestBuyCAAvailability,
-    BESTBUY_CA_AVAILABILITY_INTERVAL_MS,
-  );
-  setInterval(collectCostcoUS, COSTCO_INTERVAL_MS);
-  setInterval(collectCostcoCA, COSTCO_INTERVAL_MS);
-
+  startCollectorLoop(tasks);
   console.log("📦 Product collectors started");
 }

@@ -25,7 +25,7 @@ import { fetchBlueskyTrends } from "../fetchers/trend/BlueskyFetcher.js";
 import { fetchGitHubTrending } from "../fetchers/trend/GitHubTrendingFetcher.js";
 import { fetchProductHuntTrends } from "../fetchers/trend/ProductHuntFetcher.js";
 import { updateTrends, setTrendError } from "../caches/TrendCache.js";
-import { collectIfStale, saveState } from "../services/FreshnessService.js";
+import { saveState, startCollectorLoop } from "../services/FreshnessService.js";
 
 // ─── Collector Factory ─────────────────────────────────────────────
 
@@ -63,41 +63,20 @@ const collectProductHunt = createTrendCollector("trends_producthunt", TREND_SOUR
 // ─── Startup Definitions ──────────────────────────────────────────
 
 const STARTUP_TASKS = [
-  { label: "Google Trends", collection: "trends_google", ttl: GOOGLE_TRENDS_INTERVAL_MS, collectFn: collectGoogleTrends, delay: 0 },
-  { label: "Wikipedia", collection: "trends_wikipedia", ttl: WIKIPEDIA_INTERVAL_MS, collectFn: collectWikipedia, delay: 3_000 },
-  { label: "Hacker News", collection: "trends_hackernews", ttl: HACKERNEWS_INTERVAL_MS, collectFn: collectHackerNews, delay: 6_000 },
-  { label: "Reddit", collection: "trends_reddit", ttl: REDDIT_INTERVAL_MS, collectFn: collectReddit, delay: 9_000 },
-  { label: "X", collection: "trends_x", ttl: X_TRENDS_INTERVAL_MS, collectFn: collectXTrends, delay: 12_000 },
-  { label: "Google News", collection: "trends_google_news", ttl: GOOGLE_NEWS_INTERVAL_MS, collectFn: collectGoogleNews, delay: 15_000 },
-  { label: "Mastodon", collection: "trends_mastodon", ttl: MASTODON_INTERVAL_MS, collectFn: collectMastodon, delay: 18_000 },
-  { label: "TVMaze", collection: "trends_tvmaze", ttl: TVMAZE_INTERVAL_MS, collectFn: collectTVMaze, delay: 21_000 },
-  { label: "Bluesky", collection: "trends_bluesky", ttl: BLUESKY_INTERVAL_MS, collectFn: collectBluesky, delay: 24_000 },
-  { label: "GitHub Trending", collection: "trends_github", ttl: GITHUB_TRENDING_INTERVAL_MS, collectFn: collectGitHubTrending, delay: 27_000 },
-  { label: "Product Hunt", collection: "trends_producthunt", ttl: PRODUCTHUNT_TREND_INTERVAL_MS, collectFn: collectProductHunt, delay: 30_000 },
+  { label: "Google Trends", collection: "trends_google", ttl: GOOGLE_TRENDS_INTERVAL_MS, collectFn: collectGoogleTrends, restoreFn: (data) => updateTrends(data.source, data.trends), delay: 0 },
+  { label: "Wikipedia", collection: "trends_wikipedia", ttl: WIKIPEDIA_INTERVAL_MS, collectFn: collectWikipedia, restoreFn: (data) => updateTrends(data.source, data.trends), delay: 3_000 },
+  { label: "Hacker News", collection: "trends_hackernews", ttl: HACKERNEWS_INTERVAL_MS, collectFn: collectHackerNews, restoreFn: (data) => updateTrends(data.source, data.trends), delay: 6_000 },
+  { label: "Reddit", collection: "trends_reddit", ttl: REDDIT_INTERVAL_MS, collectFn: collectReddit, restoreFn: (data) => updateTrends(data.source, data.trends), delay: 9_000 },
+  { label: "X", collection: "trends_x", ttl: X_TRENDS_INTERVAL_MS, collectFn: collectXTrends, restoreFn: (data) => updateTrends(data.source, data.trends), delay: 12_000 },
+  { label: "Google News", collection: "trends_google_news", ttl: GOOGLE_NEWS_INTERVAL_MS, collectFn: collectGoogleNews, restoreFn: (data) => updateTrends(data.source, data.trends), delay: 15_000 },
+  { label: "Mastodon", collection: "trends_mastodon", ttl: MASTODON_INTERVAL_MS, collectFn: collectMastodon, restoreFn: (data) => updateTrends(data.source, data.trends), delay: 18_000 },
+  { label: "TVMaze", collection: "trends_tvmaze", ttl: TVMAZE_INTERVAL_MS, collectFn: collectTVMaze, restoreFn: (data) => updateTrends(data.source, data.trends), delay: 21_000 },
+  { label: "Bluesky", collection: "trends_bluesky", ttl: BLUESKY_INTERVAL_MS, collectFn: collectBluesky, restoreFn: (data) => updateTrends(data.source, data.trends), delay: 24_000 },
+  { label: "GitHub Trending", collection: "trends_github", ttl: GITHUB_TRENDING_INTERVAL_MS, collectFn: collectGitHubTrending, restoreFn: (data) => updateTrends(data.source, data.trends), delay: 27_000 },
+  { label: "Product Hunt", collection: "trends_producthunt", ttl: PRODUCTHUNT_TREND_INTERVAL_MS, collectFn: collectProductHunt, restoreFn: (data) => updateTrends(data.source, data.trends), delay: 30_000 },
 ];
 
 export function startTrendCollectors() {
-  for (const task of STARTUP_TASKS) {
-    setTimeout(
-      () =>
-        collectIfStale(task.label, task.collection, task.ttl, task.collectFn, (data) =>
-          updateTrends(data.source, data.trends),
-        ),
-      task.delay,
-    );
-  }
-
-  setInterval(collectGoogleTrends, GOOGLE_TRENDS_INTERVAL_MS);
-  setInterval(collectWikipedia, WIKIPEDIA_INTERVAL_MS);
-  setInterval(collectHackerNews, HACKERNEWS_INTERVAL_MS);
-  setInterval(collectReddit, REDDIT_INTERVAL_MS);
-  setInterval(collectXTrends, X_TRENDS_INTERVAL_MS);
-  setInterval(collectGoogleNews, GOOGLE_NEWS_INTERVAL_MS);
-  setInterval(collectMastodon, MASTODON_INTERVAL_MS);
-  setInterval(collectTVMaze, TVMAZE_INTERVAL_MS);
-  setInterval(collectBluesky, BLUESKY_INTERVAL_MS);
-  setInterval(collectGitHubTrending, GITHUB_TRENDING_INTERVAL_MS);
-  setInterval(collectProductHunt, PRODUCTHUNT_TREND_INTERVAL_MS);
-
+  startCollectorLoop(STARTUP_TASKS);
   console.log("📈 Trend collectors started");
 }

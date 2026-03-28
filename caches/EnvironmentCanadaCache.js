@@ -1,26 +1,15 @@
-let warnings = [];
-let lastFetch = null;
-let lastError = null;
+import { createSimpleCache } from "./createSimpleCache.js";
 
-export function updateWarnings(data) {
-  warnings = data;
-  lastFetch = new Date().toISOString();
-  lastError = null;
-}
+const cache = createSimpleCache({ type: "array", itemsKey: "warnings" });
 
-export function setWarningError(error) {
-  lastError = { message: error.message, time: new Date().toISOString() };
-}
+export const updateWarnings = cache.update;
+export const setWarningError = cache.setError;
+export const getWarnings = cache.get;
+export const getWarningHealth = cache.getHealth;
 
-export function getWarnings() {
-  return {
-    count: warnings.length,
-    warnings,
-    lastFetch,
-  };
-}
-
+/** Get warning counts broken down by type. */
 export function getWarningCount() {
+  const warnings = cache.getData();
   return {
     total: warnings.length,
     byType: {
@@ -29,14 +18,6 @@ export function getWarningCount() {
       advisory: warnings.filter((w) => w.type === "advisory").length,
       statement: warnings.filter((w) => w.type === "statement").length,
     },
-    lastFetch,
-  };
-}
-
-export function getWarningHealth() {
-  return {
-    lastFetch,
-    error: lastError,
-    count: warnings.length,
+    lastFetch: cache.getLastFetch(),
   };
 }

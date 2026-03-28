@@ -25,6 +25,7 @@ import {
   searchSeries,
   getKeyIndicators,
 } from "../fetchers/finance/FredFetcher.js";
+import { asyncHandler } from "../utilities.js";
 
 const router = Router();
 
@@ -144,62 +145,39 @@ router.get("/financials/:symbol", async (req, res) => {
 
 // ─── Macroeconomics (FRED) ─────────────────────────────────────────
 
-router.get("/macro/indicators", async (_req, res) => {
-  try {
-    const data = await getKeyIndicators();
-    res.json(data);
-  } catch (err) {
-    res
-      .status(502)
-      .json({ error: `Failed to fetch key indicators: ${err.message}` });
-  }
-});
+router.get("/macro/indicators", asyncHandler(
+  () => getKeyIndicators(),
+  "Key indicators fetch",
+));
 
 router.get("/macro/search", async (req, res) => {
   const { q, limit, orderBy } = req.query;
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  try {
-    const data = await searchSeries(q, {
-      limit: parseInt(limit, 10) || 10,
-      orderBy,
-    });
-    res.json(data);
-  } catch (err) {
-    res
-      .status(502)
-      .json({ error: `Failed to search macro series: ${err.message}` });
-  }
+  res.json(await searchSeries(q, {
+    limit: parseInt(limit, 10) || 10,
+    orderBy,
+  }));
 });
 
-router.get("/macro/series/:seriesId/observations", async (req, res) => {
-  const { limit, sortOrder, observationStart, observationEnd } = req.query;
-  try {
-    const data = await getSeriesObservations(req.params.seriesId, {
+router.get("/macro/series/:seriesId/observations", asyncHandler(
+  (req) => {
+    const { limit, sortOrder, observationStart, observationEnd } = req.query;
+    return getSeriesObservations(req.params.seriesId, {
       limit: parseInt(limit, 10) || 50,
       sortOrder,
       observationStart,
       observationEnd,
     });
-    res.json(data);
-  } catch (err) {
-    res
-      .status(502)
-      .json({ error: `Failed to fetch series observations: ${err.message}` });
-  }
-});
+  },
+  "Series observations fetch",
+));
 
-router.get("/macro/series/:seriesId", async (req, res) => {
-  try {
-    const data = await getSeriesInfo(req.params.seriesId);
-    res.json(data);
-  } catch (err) {
-    res
-      .status(502)
-      .json({ error: `Failed to fetch series info: ${err.message}` });
-  }
-});
+router.get("/macro/series/:seriesId", asyncHandler(
+  (req) => getSeriesInfo(req.params.seriesId),
+  "Series info fetch",
+));
 
 // ─── Health ────────────────────────────────────────────────────────
 

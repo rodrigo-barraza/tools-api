@@ -18,7 +18,7 @@ import { fetchSportsEvents } from "../fetchers/event/SportsFetcher.js";
 import { fetchMovieEvents } from "../fetchers/event/MovieFetcher.js";
 import { fetchGooglePlacesEvents } from "../fetchers/event/GooglePlacesFetcher.js";
 import { updateEvents, setError, restoreEvents } from "../caches/EventCache.js";
-import { collectIfStale, saveState } from "../services/FreshnessService.js";
+import { saveState, startCollectorLoop } from "../services/FreshnessService.js";
 
 // ─── Collector Factory ─────────────────────────────────────────────
 
@@ -223,31 +223,13 @@ const STARTUP_TASKS = [
 // ─── Start All Event Collectors ────────────────────────────────────
 
 export function startEventCollectors() {
-  for (const task of STARTUP_TASKS) {
-    const restoreFn =
-      task.restoreFn || ((data) => restoreEvents(task.source, data));
+  // Set default restoreFn for simple event tasks (those with a source key)
+  const tasks = STARTUP_TASKS.map((task) => ({
+    ...task,
+    restoreFn: task.restoreFn || ((data) => restoreEvents(task.source, data)),
+  }));
 
-    setTimeout(
-      () =>
-        collectIfStale(
-          task.label,
-          task.collection,
-          task.ttl,
-          task.collectFn,
-          restoreFn,
-        ),
-      task.delay,
-    );
-  }
-
-  setInterval(collectTicketmaster, TICKETMASTER_INTERVAL_MS);
-  setInterval(collectSeatGeek, SEATGEEK_INTERVAL_MS);
-  setInterval(collectCraigslist, CRAIGSLIST_INTERVAL_MS);
-  setInterval(collectUniversities, UNIVERSITY_INTERVAL_MS);
-  setInterval(collectCityOfVancouver, CITY_OF_VANCOUVER_INTERVAL_MS);
-  setInterval(collectSports, SPORTS_INTERVAL_MS);
-  setInterval(collectMovies, MOVIE_INTERVAL_MS);
-  setInterval(collectGooglePlaces, GOOGLE_PLACES_INTERVAL_MS);
-
+  startCollectorLoop(tasks);
   console.log("📅 Event collectors started");
 }
+

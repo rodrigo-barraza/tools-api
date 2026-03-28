@@ -31,7 +31,7 @@ export async function updateSpaceWeather({ flares, cmes, storms }) {
 }
 
 export function setSpaceWeatherError(error) {
-  cache.error = { message: error.message, time: new Date() };
+  cache.error = { message: error.message, time: new Date().toISOString() };
 }
 
 /**

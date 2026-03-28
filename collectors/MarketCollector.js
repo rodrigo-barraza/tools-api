@@ -5,7 +5,7 @@ import {
   setCommodityError,
   restoreCommodities,
 } from "../caches/CommodityCache.js";
-import { collectIfStale, saveState } from "../services/FreshnessService.js";
+import { saveState, startCollectorLoop } from "../services/FreshnessService.js";
 
 async function collectCommodities() {
   try {
@@ -28,14 +28,18 @@ async function collectCommodities() {
   }
 }
 
+const STARTUP_TASKS = [
+  {
+    label: "Commodities",
+    collection: "commodities",
+    ttl: COMMODITIES_INTERVAL_MS,
+    collectFn: collectCommodities,
+    restoreFn: restoreCommodities,
+    delay: 0,
+  },
+];
+
 export function startMarketCollectors() {
-  collectIfStale(
-    "Commodities",
-    "commodities",
-    COMMODITIES_INTERVAL_MS,
-    collectCommodities,
-    restoreCommodities,
-  );
-  setInterval(collectCommodities, COMMODITIES_INTERVAL_MS);
+  startCollectorLoop(STARTUP_TASKS);
   console.log("💰 Market collectors started");
 }

@@ -85,7 +85,7 @@ import {
   updateAvalanche,
   setAvalancheError,
 } from "../caches/AvalancheCache.js";
-import { collectIfStale, saveState } from "../services/FreshnessService.js";
+import { saveState, startCollectorLoop } from "../services/FreshnessService.js";
 
 // ─── Individual Collectors ─────────────────────────────────────────
 
@@ -417,40 +417,6 @@ const STARTUP_TASKS = [
 // ─── Start All Weather Collectors ──────────────────────────────────
 
 export function startWeatherCollectors() {
-  for (const task of STARTUP_TASKS) {
-    setTimeout(
-      () =>
-        collectIfStale(
-          task.label,
-          task.collection,
-          task.ttl,
-          task.collectFn,
-          task.restoreFn,
-        ),
-      task.delay,
-    );
-  }
-
-  setInterval(collectOpenMeteo, OPEN_METEO_INTERVAL_MS);
-  setInterval(collectAirQuality, AIR_QUALITY_INTERVAL_MS);
-  setInterval(collectTomorrowIORealtime, TOMORROWIO_REALTIME_INTERVAL_MS);
-  setInterval(collectTomorrowIODaily, TOMORROWIO_FORECAST_INTERVAL_MS);
-  setInterval(collectEarthquakes, EARTHQUAKE_INTERVAL_MS);
-  setInterval(collectNeos, NEO_INTERVAL_MS);
-  setInterval(collectDonki, DONKI_INTERVAL_MS);
-  setInterval(collectIssPosition, ISS_POSITION_INTERVAL_MS);
-  setInterval(collectAstronauts, ISS_ASTROS_INTERVAL_MS);
-  setInterval(collectKpIndex, KP_INDEX_INTERVAL_MS);
-  setInterval(collectWildfires, WILDFIRE_INTERVAL_MS);
-  setInterval(collectTides, TIDE_INTERVAL_MS);
-  setInterval(collectSolarWind, SOLAR_WIND_INTERVAL_MS);
-  setInterval(collectGoogleAirQuality, GOOGLE_AIR_QUALITY_INTERVAL_MS);
-  setInterval(collectPollen, GOOGLE_POLLEN_INTERVAL_MS);
-  setInterval(collectApod, APOD_INTERVAL_MS);
-  setInterval(collectLaunches, LAUNCH_INTERVAL_MS);
-  setInterval(collectTwilight, TWILIGHT_INTERVAL_MS);
-  setInterval(collectEnvironmentCanada, ENV_CANADA_INTERVAL_MS);
-  setInterval(collectAvalanche, AVALANCHE_INTERVAL_MS);
-
+  startCollectorLoop(STARTUP_TASKS);
   console.log("☁️  Weather collectors started");
 }

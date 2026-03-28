@@ -1,26 +1,15 @@
-let wildfires = [];
-let lastFetch = null;
-let lastError = null;
+import { createSimpleCache } from "./createSimpleCache.js";
 
-export function updateWildfires(events) {
-  wildfires = events;
-  lastFetch = new Date().toISOString();
-  lastError = null;
-}
+const cache = createSimpleCache({ type: "array", itemsKey: "events" });
 
-export function setWildfireError(error) {
-  lastError = { message: error.message, time: new Date().toISOString() };
-}
+export const updateWildfires = cache.update;
+export const setWildfireError = cache.setError;
+export const getWildfires = cache.get;
+export const getWildfireHealth = cache.getHealth;
 
-export function getWildfires() {
-  return {
-    count: wildfires.length,
-    events: wildfires,
-    lastFetch,
-  };
-}
-
+/** Get a summary with the largest active fire. */
 export function getWildfireSummary() {
+  const wildfires = cache.getData();
   const sorted = [...wildfires]
     .filter((w) => w.magnitudeValue != null)
     .sort((a, b) => b.magnitudeValue - a.magnitudeValue);
@@ -29,14 +18,6 @@ export function getWildfireSummary() {
     count: wildfires.length,
     largest: sorted[0] || null,
     openCount: wildfires.filter((w) => w.status === "open").length,
-    lastFetch,
-  };
-}
-
-export function getWildfireHealth() {
-  return {
-    lastFetch,
-    error: lastError,
-    count: wildfires.length,
+    lastFetch: cache.getLastFetch(),
   };
 }

@@ -1,65 +1,28 @@
-/**
- * In-memory cache for pollen data.
- * Stored separately from WeatherCache since pollen is a distinct domain.
- */
+import { createSimpleCache } from "./createSimpleCache.js";
 
-const cache = {
-  data: null,
-  lastFetch: null,
-  error: null,
+const cache = createSimpleCache();
+
+export const updatePollen = cache.update;
+export const setPollenError = cache.setError;
+export const getPollen = cache.get;
+export const getPollenHealth = () => {
+  const data = cache.getData();
+  return {
+    lastFetch: cache.getLastFetch(),
+    error: cache.getHealth().error,
+    hasForecast: data?.daily?.length > 0,
+    forecastDays: data?.daily?.length || 0,
+  };
 };
 
-/**
- * Update pollen cache with fresh data.
- */
-export function updatePollen(data) {
-  cache.data = data;
-  cache.lastFetch = new Date();
-  cache.error = null;
-}
-
-/**
- * Record a fetch error.
- */
-export function setPollenError(error) {
-  cache.error = {
-    message: error.message,
-    time: new Date(),
-  };
-}
-
-/**
- * Get full pollen data.
- */
-export function getPollen() {
-  if (!cache.data) return { status: "no_data", lastFetch: null };
-  return {
-    ...cache.data,
-    lastFetch: cache.lastFetch,
-  };
-}
-
-/**
- * Get today's pollen only.
- */
+/** Get today's pollen only. */
 export function getPollenToday() {
-  if (!cache.data?.daily?.length) return { status: "no_data" };
-  const today = cache.data.daily[0];
+  const data = cache.getData();
+  if (!data?.daily?.length) return { status: "no_data" };
+  const today = data.daily[0];
   return {
     ...today,
-    regionCode: cache.data.regionCode,
-    lastFetch: cache.lastFetch,
-  };
-}
-
-/**
- * Get health status.
- */
-export function getPollenHealth() {
-  return {
-    lastFetch: cache.lastFetch,
-    error: cache.error,
-    hasForecast: cache.data?.daily?.length > 0,
-    forecastDays: cache.data?.daily?.length || 0,
+    regionCode: data.regionCode,
+    lastFetch: cache.getLastFetch(),
   };
 }

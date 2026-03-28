@@ -78,7 +78,7 @@ export function setError(source, error) {
   }
   cache[source].error = {
     message: error.message,
-    time: new Date(),
+    time: new Date().toISOString(),
   };
 }
 

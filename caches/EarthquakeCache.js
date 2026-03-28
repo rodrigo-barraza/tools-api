@@ -42,7 +42,7 @@ export function restoreEarthquakes(events) {
 export function setEarthquakeError(error) {
   cache.error = {
     message: error.message,
-    time: new Date(),
+    time: new Date().toISOString(),
   };
 }
 

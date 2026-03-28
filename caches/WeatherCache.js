@@ -93,7 +93,7 @@ export function restore(source, data) {
 export function setError(source, error) {
   cache.errors[source] = {
     message: error.message,
-    time: new Date(),
+    time: new Date().toISOString(),
   };
 }
 

@@ -1,35 +1,26 @@
-let launches = [];
-let lastFetch = null;
-let lastError = null;
+import { createSimpleCache } from "./createSimpleCache.js";
 
-export function updateLaunches(data) {
-  launches = data;
-  lastFetch = new Date().toISOString();
-  lastError = null;
-}
+const cache = createSimpleCache({ type: "array", itemsKey: "launches" });
 
-export function setLaunchError(error) {
-  lastError = { message: error.message, time: new Date().toISOString() };
-}
+export const updateLaunches = cache.update;
+export const setLaunchError = cache.setError;
+export const getLaunches = cache.get;
+export const getLaunchHealth = cache.getHealth;
 
-export function getLaunches() {
-  return {
-    count: launches.length,
-    launches,
-    lastFetch,
-  };
-}
-
+/** Get the next upcoming launch. */
 export function getNextLaunch() {
+  const launches = cache.getData();
   const now = new Date();
   const next = launches.find((l) => new Date(l.net) > now) || launches[0];
   return {
     next: next || null,
-    lastFetch,
+    lastFetch: cache.getLastFetch(),
   };
 }
 
+/** Get a summary with upcoming count and providers. */
 export function getLaunchSummary() {
+  const launches = cache.getData();
   const now = new Date();
   const upcoming = launches.filter((l) => new Date(l.net) > now);
   const providers = [
@@ -41,14 +32,6 @@ export function getLaunchSummary() {
     upcomingCount: upcoming.length,
     next: upcoming[0] || null,
     providers,
-    lastFetch,
-  };
-}
-
-export function getLaunchHealth() {
-  return {
-    lastFetch,
-    error: lastError,
-    count: launches.length,
+    lastFetch: cache.getLastFetch(),
   };
 }

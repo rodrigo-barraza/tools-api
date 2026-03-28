@@ -1,29 +1,8 @@
-let forecasts = [];
-let lastFetch = null;
-let lastError = null;
+import { createSimpleCache } from "./createSimpleCache.js";
 
-export function updateAvalanche(data) {
-  forecasts = data;
-  lastFetch = new Date().toISOString();
-  lastError = null;
-}
+const cache = createSimpleCache({ type: "array", itemsKey: "forecasts" });
 
-export function setAvalancheError(error) {
-  lastError = { message: error.message, time: new Date().toISOString() };
-}
-
-export function getAvalanche() {
-  return {
-    count: forecasts.length,
-    forecasts,
-    lastFetch,
-  };
-}
-
-export function getAvalancheHealth() {
-  return {
-    lastFetch,
-    error: lastError,
-    count: forecasts.length,
-  };
-}
+export const updateAvalanche = cache.update;
+export const setAvalancheError = cache.setError;
+export const getAvalanche = cache.get;
+export const getAvalancheHealth = cache.getHealth;

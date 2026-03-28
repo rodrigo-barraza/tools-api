@@ -54,20 +54,16 @@ import {
   getDiscoveryStats,
   getHabitableZonePlanets,
 } from "../fetchers/knowledge/ExoplanetFetcher.js";
-import { parseIntParam } from "../utilities.js";
+import { parseIntParam, asyncHandler } from "../utilities.js";
 
 const router = Router();
 
 // ─── Dictionary ────────────────────────────────────────────────────
 
-router.get("/dictionary/:word", async (req, res) => {
-  try {
-    const result = await fetchDefinition(req.params.word);
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `Dictionary lookup failed: ${err.message}` });
-  }
-});
+router.get("/dictionary/:word", asyncHandler(
+  (req) => fetchDefinition(req.params.word),
+  "Dictionary lookup",
+));
 
 // ─── Books ─────────────────────────────────────────────────────────
 
@@ -76,51 +72,30 @@ router.get("/books/search", async (req, res) => {
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  try {
-    const result = await searchBooks(q, parseIntParam(limit, 10));
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `Book search failed: ${err.message}` });
-  }
+  res.json(await searchBooks(q, parseIntParam(limit, 10)));
 });
 
-router.get("/books/work/:workKey", async (req, res) => {
-  try {
-    const result = await getBookDetails(req.params.workKey);
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `Book details failed: ${err.message}` });
-  }
-});
+router.get("/books/work/:workKey", asyncHandler(
+  (req) => getBookDetails(req.params.workKey),
+  "Book details",
+));
 
-router.get("/books/author/:authorKey", async (req, res) => {
-  try {
-    const result = await getAuthorInfo(req.params.authorKey);
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `Author info failed: ${err.message}` });
-  }
-});
+router.get("/books/author/:authorKey", asyncHandler(
+  (req) => getAuthorInfo(req.params.authorKey),
+  "Author info",
+));
 
 // ─── Countries ─────────────────────────────────────────────────────
 
-router.get("/countries/search/:name", async (req, res) => {
-  try {
-    const result = await searchCountries(req.params.name);
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `Country search failed: ${err.message}` });
-  }
-});
+router.get("/countries/search/:name", asyncHandler(
+  (req) => searchCountries(req.params.name),
+  "Country search",
+));
 
-router.get("/countries/code/:code", async (req, res) => {
-  try {
-    const result = await getCountryByCode(req.params.code);
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `Country lookup failed: ${err.message}` });
-  }
-});
+router.get("/countries/code/:code", asyncHandler(
+  (req) => getCountryByCode(req.params.code),
+  "Country lookup",
+));
 
 // ─── Papers (arXiv) ────────────────────────────────────────────────
 
@@ -129,42 +104,28 @@ router.get("/papers/search", async (req, res) => {
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  try {
-    const result = await searchPapers(q, {
-      category,
-      limit: parseIntParam(limit, 10),
-      sortBy: sortBy || "relevance",
-    });
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `Paper search failed: ${err.message}` });
-  }
+  res.json(await searchPapers(q, {
+    category,
+    limit: parseIntParam(limit, 10),
+    sortBy: sortBy || "relevance",
+  }));
 });
 
 // ─── Wikipedia Summaries ───────────────────────────────────────────
 
-router.get("/wikipedia/summary/:title", async (req, res) => {
-  try {
-    const result = await getArticleSummary(req.params.title);
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `Wikipedia summary failed: ${err.message}` });
-  }
-});
+router.get("/wikipedia/summary/:title", asyncHandler(
+  (req) => getArticleSummary(req.params.title),
+  "Wikipedia summary",
+));
 
-router.get("/wikipedia/onthisday", async (req, res) => {
-  const { type, month, day } = req.query;
-  try {
-    const result = await getOnThisDay(
-      type || "selected",
-      month ? parseInt(month, 10) : undefined,
-      day ? parseInt(day, 10) : undefined,
-    );
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `On This Day failed: ${err.message}` });
-  }
-});
+router.get("/wikipedia/onthisday", asyncHandler(
+  (req) => getOnThisDay(
+    req.query.type || "selected",
+    req.query.month ? parseInt(req.query.month, 10) : undefined,
+    req.query.day ? parseInt(req.query.day, 10) : undefined,
+  ),
+  "On This Day",
+));
 
 // ─── Anime (Jikan / MyAnimeList) ───────────────────────────────────
 
@@ -173,44 +134,23 @@ router.get("/anime/search", async (req, res) => {
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  try {
-    const result = await searchAnime(q, parseIntParam(limit, 10));
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `Anime search failed: ${err.message}` });
-  }
+  res.json(await searchAnime(q, parseIntParam(limit, 10)));
 });
 
-router.get("/anime/top", async (req, res) => {
-  const { limit } = req.query;
-  try {
-    const result = await getTopAnime(parseIntParam(limit, 10));
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `Top anime fetch failed: ${err.message}` });
-  }
-});
+router.get("/anime/top", asyncHandler(
+  (req) => getTopAnime(parseIntParam(req.query.limit, 10)),
+  "Top anime fetch",
+));
 
-router.get("/anime/season/now", async (req, res) => {
-  const { limit } = req.query;
-  try {
-    const result = await getCurrentSeasonAnime(parseIntParam(limit, 10));
-    res.json(result);
-  } catch (err) {
-    res
-      .status(502)
-      .json({ error: `Seasonal anime fetch failed: ${err.message}` });
-  }
-});
+router.get("/anime/season/now", asyncHandler(
+  (req) => getCurrentSeasonAnime(parseIntParam(req.query.limit, 10)),
+  "Seasonal anime fetch",
+));
 
-router.get("/anime/:id", async (req, res) => {
-  try {
-    const result = await getAnimeDetails(req.params.id);
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `Anime details failed: ${err.message}` });
-  }
-});
+router.get("/anime/:id", asyncHandler(
+  (req) => getAnimeDetails(req.params.id),
+  "Anime details",
+));
 
 // ─── Movies (TMDb) ─────────────────────────────────────────────────
 
@@ -219,35 +159,24 @@ router.get("/movies/search", async (req, res) => {
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  try {
-    const result = await searchMovies(q, {
-      page: parseIntParam(page, 1),
-      year: year ? parseInt(year, 10) : undefined,
-    });
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `Movie search failed: ${err.message}` });
-  }
+  res.json(await searchMovies(q, {
+    page: parseIntParam(page, 1),
+    year: year ? parseInt(year, 10) : undefined,
+  }));
 });
 
-router.get("/movies/trending", async (req, res) => {
-  const { timeWindow, limit } = req.query;
-  try {
-    const result = await getTrendingMovies(
-      timeWindow || "day",
-      parseIntParam(limit, 10),
-    );
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `Trending movies failed: ${err.message}` });
-  }
-});
+router.get("/movies/trending", asyncHandler(
+  (req) => getTrendingMovies(
+    req.query.timeWindow || "day",
+    parseIntParam(req.query.limit, 10),
+  ),
+  "Trending movies",
+));
 
-router.get("/movies/discover", async (req, res) => {
-  const { genreId, year, sortBy, page, minVoteAverage, minVoteCount } =
-    req.query;
-  try {
-    const result = await discoverMovies({
+router.get("/movies/discover", asyncHandler(
+  (req) => {
+    const { genreId, year, sortBy, page, minVoteAverage, minVoteCount } = req.query;
+    return discoverMovies({
       genreId: genreId ? parseInt(genreId, 10) : undefined,
       year: year ? parseInt(year, 10) : undefined,
       sortBy,
@@ -255,38 +184,24 @@ router.get("/movies/discover", async (req, res) => {
       minVoteAverage: minVoteAverage ? parseFloat(minVoteAverage) : undefined,
       minVoteCount: minVoteCount ? parseInt(minVoteCount, 10) : undefined,
     });
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `Discover movies failed: ${err.message}` });
-  }
-});
+  },
+  "Discover movies",
+));
 
-router.get("/movies/genres", async (_req, res) => {
-  try {
-    const result = await getMovieGenres();
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `Movie genres failed: ${err.message}` });
-  }
-});
+router.get("/movies/genres", asyncHandler(
+  () => getMovieGenres(),
+  "Movie genres",
+));
 
-router.get("/movies/:id/credits", async (req, res) => {
-  try {
-    const result = await getMovieCredits(req.params.id);
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `Movie credits failed: ${err.message}` });
-  }
-});
+router.get("/movies/:id/credits", asyncHandler(
+  (req) => getMovieCredits(req.params.id),
+  "Movie credits",
+));
 
-router.get("/movies/:id", async (req, res) => {
-  try {
-    const result = await getMovieDetails(req.params.id);
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `Movie details failed: ${err.message}` });
-  }
-});
+router.get("/movies/:id", asyncHandler(
+  (req) => getMovieDetails(req.params.id),
+  "Movie details",
+));
 
 // ─── TV Series (TMDb) ──────────────────────────────────────────────
 
@@ -295,43 +210,26 @@ router.get("/tv/search", async (req, res) => {
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  try {
-    const result = await searchTvShows(q, {
-      page: parseIntParam(page, 1),
-      firstAirDateYear: firstAirDateYear
-        ? parseInt(firstAirDateYear, 10)
-        : undefined,
-    });
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `TV search failed: ${err.message}` });
-  }
+  res.json(await searchTvShows(q, {
+    page: parseIntParam(page, 1),
+    firstAirDateYear: firstAirDateYear
+      ? parseInt(firstAirDateYear, 10)
+      : undefined,
+  }));
 });
 
-router.get("/tv/trending", async (req, res) => {
-  const { timeWindow, limit } = req.query;
-  try {
-    const result = await getTrendingTvShows(
-      timeWindow || "day",
-      parseIntParam(limit, 10),
-    );
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `Trending TV shows failed: ${err.message}` });
-  }
-});
+router.get("/tv/trending", asyncHandler(
+  (req) => getTrendingTvShows(
+    req.query.timeWindow || "day",
+    parseIntParam(req.query.limit, 10),
+  ),
+  "Trending TV shows",
+));
 
-router.get("/tv/discover", async (req, res) => {
-  const {
-    genreId,
-    firstAirDateYear,
-    sortBy,
-    page,
-    minVoteAverage,
-    minVoteCount,
-  } = req.query;
-  try {
-    const result = await discoverTvShows({
+router.get("/tv/discover", asyncHandler(
+  (req) => {
+    const { genreId, firstAirDateYear, sortBy, page, minVoteAverage, minVoteCount } = req.query;
+    return discoverTvShows({
       genreId: genreId ? parseInt(genreId, 10) : undefined,
       firstAirDateYear: firstAirDateYear
         ? parseInt(firstAirDateYear, 10)
@@ -341,50 +239,32 @@ router.get("/tv/discover", async (req, res) => {
       minVoteAverage: minVoteAverage ? parseFloat(minVoteAverage) : undefined,
       minVoteCount: minVoteCount ? parseInt(minVoteCount, 10) : undefined,
     });
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `Discover TV shows failed: ${err.message}` });
-  }
-});
+  },
+  "Discover TV shows",
+));
 
-router.get("/tv/genres", async (_req, res) => {
-  try {
-    const result = await getTvGenres();
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `TV genres failed: ${err.message}` });
-  }
-});
+router.get("/tv/genres", asyncHandler(
+  () => getTvGenres(),
+  "TV genres",
+));
 
-router.get("/tv/:id/credits", async (req, res) => {
-  try {
-    const result = await getTvShowCredits(req.params.id);
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `TV credits failed: ${err.message}` });
-  }
-});
+router.get("/tv/:id/credits", asyncHandler(
+  (req) => getTvShowCredits(req.params.id),
+  "TV credits",
+));
 
-router.get("/tv/:id/season/:seasonNumber", async (req, res) => {
-  try {
-    const result = await getTvSeasonDetails(
-      req.params.id,
-      parseInt(req.params.seasonNumber, 10),
-    );
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `TV season details failed: ${err.message}` });
-  }
-});
+router.get("/tv/:id/season/:seasonNumber", asyncHandler(
+  (req) => getTvSeasonDetails(
+    req.params.id,
+    parseInt(req.params.seasonNumber, 10),
+  ),
+  "TV season details",
+));
 
-router.get("/tv/:id", async (req, res) => {
-  try {
-    const result = await getTvShowDetails(req.params.id);
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `TV show details failed: ${err.message}` });
-  }
-});
+router.get("/tv/:id", asyncHandler(
+  (req) => getTvShowDetails(req.params.id),
+  "TV show details",
+));
 
 // ─── Periodic Table (in-memory) ────────────────────────────────────
 
@@ -393,16 +273,11 @@ router.get("/elements/search", (req, res) => {
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  try {
-    const result = searchElements(q, {
-      limit: parseIntParam(limit, 10),
-      category,
-      block,
-    });
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: `Element search failed: ${err.message}` });
-  }
+  res.json(searchElements(q, {
+    limit: parseIntParam(limit, 10),
+    category,
+    block,
+  }));
 });
 
 router.get("/elements/rank", (req, res) => {
@@ -412,63 +287,44 @@ router.get("/elements/rank", (req, res) => {
       .status(400)
       .json({ error: "Query parameter 'property' is required" });
   }
-  try {
-    const result = rankElementsByProperty(property, {
-      limit: parseIntParam(limit, 10),
-      order: order || "desc",
-      category,
-      block,
-    });
-    if (result.error) {
-      return res.status(400).json(result);
-    }
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: `Element ranking failed: ${err.message}` });
+  const result = rankElementsByProperty(property, {
+    limit: parseIntParam(limit, 10),
+    order: order || "desc",
+    category,
+    block,
+  });
+  if (result.error) {
+    return res.status(400).json(result);
   }
+  res.json(result);
 });
 
-router.get("/elements/categories", (_req, res) => {
-  try {
-    const result = getElementCategories();
-    res.json(result);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: `Element categories failed: ${err.message}` });
-  }
-});
+router.get("/elements/categories", asyncHandler(
+  () => getElementCategories(),
+  "Element categories",
+  500,
+));
 
 router.get("/elements/:symbol", (req, res) => {
-  try {
-    const result = getElementBySymbol(req.params.symbol);
-    if (!result) {
-      return res
-        .status(404)
-        .json({ error: `Element not found: ${req.params.symbol}` });
-    }
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: `Element lookup failed: ${err.message}` });
+  const result = getElementBySymbol(req.params.symbol);
+  if (!result) {
+    return res
+      .status(404)
+      .json({ error: `Element not found: ${req.params.symbol}` });
   }
+  res.json(result);
 });
 
 // ─── World Bank Indicators (in-memory) ─────────────────────────────
 
 router.get("/indicators/country/:code", (req, res) => {
-  try {
-    const result = getCountryIndicators(req.params.code);
-    if (!result) {
-      return res
-        .status(404)
-        .json({ error: `Country not found: ${req.params.code}` });
-    }
-    res.json(result);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: `Country indicators failed: ${err.message}` });
+  const result = getCountryIndicators(req.params.code);
+  if (!result) {
+    return res
+      .status(404)
+      .json({ error: `Country not found: ${req.params.code}` });
   }
+  res.json(result);
 });
 
 router.get("/indicators/rank", (req, res) => {
@@ -478,20 +334,14 @@ router.get("/indicators/rank", (req, res) => {
       .status(400)
       .json({ error: "Query parameter 'indicator' is required" });
   }
-  try {
-    const result = rankCountriesByIndicator(indicator, {
-      limit: parseIntParam(limit, 10),
-      order: order || "desc",
-    });
-    if (result.error) {
-      return res.status(400).json(result);
-    }
-    res.json(result);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: `Indicator ranking failed: ${err.message}` });
+  const result = rankCountriesByIndicator(indicator, {
+    limit: parseIntParam(limit, 10),
+    order: order || "desc",
+  });
+  if (result.error) {
+    return res.status(400).json(result);
   }
+  res.json(result);
 });
 
 router.get("/indicators/compare", (req, res) => {
@@ -502,38 +352,27 @@ router.get("/indicators/compare", (req, res) => {
         "Query parameter 'countries' is required (comma-separated ISO alpha-3 codes)",
     });
   }
-  try {
-    const codes = countries
-      .split(",")
-      .map((c) => c.trim())
-      .filter(Boolean);
-    if (codes.length < 2) {
-      return res
-        .status(400)
-        .json({ error: "At least 2 country codes required for comparison" });
-    }
-    const result = compareCountries(codes, indicator || null);
-    if (result.error) {
-      return res.status(400).json(result);
-    }
-    res.json(result);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: `Country comparison failed: ${err.message}` });
+  const codes = countries
+    .split(",")
+    .map((c) => c.trim())
+    .filter(Boolean);
+  if (codes.length < 2) {
+    return res
+      .status(400)
+      .json({ error: "At least 2 country codes required for comparison" });
   }
+  const result = compareCountries(codes, indicator || null);
+  if (result.error) {
+    return res.status(400).json(result);
+  }
+  res.json(result);
 });
 
-router.get("/indicators/list", (_req, res) => {
-  try {
-    const result = getAvailableIndicators();
-    res.json(result);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: `Indicator list failed: ${err.message}` });
-  }
-});
+router.get("/indicators/list", asyncHandler(
+  () => getAvailableIndicators(),
+  "Indicator list",
+  500,
+));
 
 // ─── Exoplanets ────────────────────────────────────────────────────
 
@@ -542,31 +381,18 @@ router.get("/exoplanets/search", (req, res) => {
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  try {
-    const result = searchExoplanets(q, {
-      limit: parseIntParam(limit, 10),
-      method,
-    });
-    res.json(result);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: `Exoplanet search failed: ${err.message}` });
-  }
+  res.json(searchExoplanets(q, {
+    limit: parseIntParam(limit, 10),
+    method,
+  }));
 });
 
 router.get("/exoplanets/lookup/:name", (req, res) => {
-  try {
-    const result = getExoplanetByName(req.params.name);
-    if (!result) {
-      return res.status(404).json({ error: `Exoplanet not found: ${req.params.name}` });
-    }
-    res.json(result);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: `Exoplanet lookup failed: ${err.message}` });
+  const result = getExoplanetByName(req.params.name);
+  if (!result) {
+    return res.status(404).json({ error: `Exoplanet not found: ${req.params.name}` });
   }
+  res.json(result);
 });
 
 router.get("/exoplanets/rank", (req, res) => {
@@ -574,43 +400,25 @@ router.get("/exoplanets/rank", (req, res) => {
   if (!field) {
     return res.status(400).json({ error: "Query parameter 'field' is required" });
   }
-  try {
-    const result = rankExoplanets(field, {
-      limit: parseIntParam(limit, 10),
-      order: order || "desc",
-    });
-    res.json(result);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: `Exoplanet ranking failed: ${err.message}` });
-  }
+  res.json(rankExoplanets(field, {
+    limit: parseIntParam(limit, 10),
+    order: order || "desc",
+  }));
 });
 
-router.get("/exoplanets/stats", (_req, res) => {
-  try {
-    const result = getDiscoveryStats();
-    res.json(result);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: `Exoplanet stats failed: ${err.message}` });
-  }
-});
+router.get("/exoplanets/stats", asyncHandler(
+  () => getDiscoveryStats(),
+  "Exoplanet stats",
+  500,
+));
 
-router.get("/exoplanets/habitable", (req, res) => {
-  const { limit } = req.query;
-  try {
-    const result = getHabitableZonePlanets({
-      limit: parseIntParam(limit, 20),
-    });
-    res.json(result);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: `Habitable zone query failed: ${err.message}` });
-  }
-});
+router.get("/exoplanets/habitable", asyncHandler(
+  (req) => getHabitableZonePlanets({
+    limit: parseIntParam(req.query.limit, 20),
+  }),
+  "Habitable zone query",
+  500,
+));
 
 // ─── Health ────────────────────────────────────────────────────────
 

@@ -6,7 +6,7 @@ import {
   findStopsNearby,
   getRouteInfo,
 } from "../fetchers/transit/TransLinkFetcher.js";
-import { parseIntParam } from "../utilities.js";
+import { parseIntParam, asyncHandler } from "../utilities.js";
 
 const router = Router();
 
@@ -17,12 +17,7 @@ router.get("/nextbus/:stopNo", async (req, res) => {
   if (isNaN(stopNo)) {
     return res.status(400).json({ error: "Invalid stop number" });
   }
-  try {
-    const result = await getNextBus(stopNo, req.query.route);
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `Next bus failed: ${err.message}` });
-  }
+  res.json(await getNextBus(stopNo, req.query.route));
 });
 
 // ─── Stop Info ─────────────────────────────────────────────────────
@@ -32,39 +27,27 @@ router.get("/stops/:stopNo", async (req, res) => {
   if (isNaN(stopNo)) {
     return res.status(400).json({ error: "Invalid stop number" });
   }
-  try {
-    const result = await getStopInfo(stopNo);
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `Stop info failed: ${err.message}` });
-  }
+  res.json(await getStopInfo(stopNo));
 });
 
 // ─── Find Nearby Stops ────────────────────────────────────────────
 
-router.get("/stops/nearby", async (req, res) => {
-  const lat = parseFloat(req.query.lat || CONFIG.LATITUDE);
-  const lng = parseFloat(req.query.lng || CONFIG.LONGITUDE);
-  const radius = parseIntParam(req.query.radius, 500);
-
-  try {
-    const result = await findStopsNearby(lat, lng, radius);
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `Nearby stops failed: ${err.message}` });
-  }
-});
+router.get("/stops/nearby", asyncHandler(
+  (req) => {
+    const lat = parseFloat(req.query.lat || CONFIG.LATITUDE);
+    const lng = parseFloat(req.query.lng || CONFIG.LONGITUDE);
+    const radius = parseIntParam(req.query.radius, 500);
+    return findStopsNearby(lat, lng, radius);
+  },
+  "Nearby stops",
+));
 
 // ─── Route Info ────────────────────────────────────────────────────
 
-router.get("/routes/:routeNo", async (req, res) => {
-  try {
-    const result = await getRouteInfo(req.params.routeNo);
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `Route info failed: ${err.message}` });
-  }
-});
+router.get("/routes/:routeNo", asyncHandler(
+  (req) => getRouteInfo(req.params.routeNo),
+  "Route info",
+));
 
 // ─── Health ────────────────────────────────────────────────────────
 

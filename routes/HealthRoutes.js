@@ -22,7 +22,7 @@ import {
   searchByIngredient,
   searchByPharmClass,
 } from "../fetchers/health/FdaDrugFetcher.js";
-import { parseIntParam } from "../utilities.js";
+import { parseIntParam, asyncHandler } from "../utilities.js";
 
 const router = Router();
 
@@ -33,17 +33,12 @@ router.get("/nutrition/search", (req, res) => {
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  try {
-    const result = searchFoods(q, {
-      limit: parseIntParam(limit, 10),
-      kingdom,
-      foodType,
-      nutrientTypes,
-    });
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: `Nutrition search failed: ${err.message}` });
-  }
+  res.json(searchFoods(q, {
+    limit: parseIntParam(limit, 10),
+    kingdom,
+    foodType,
+    nutrientTypes,
+  }));
 });
 
 router.get("/nutrition/rank", (req, res) => {
@@ -53,19 +48,15 @@ router.get("/nutrition/rank", (req, res) => {
       .status(400)
       .json({ error: "Query parameter 'nutrient' is required" });
   }
-  try {
-    const result = rankByNutrient(nutrient, {
-      limit: parseIntParam(limit, 10),
-      kingdom,
-      foodType,
-    });
-    if (result.error) {
-      return res.status(400).json(result);
-    }
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: `Nutrient ranking failed: ${err.message}` });
+  const result = rankByNutrient(nutrient, {
+    limit: parseIntParam(limit, 10),
+    kingdom,
+    foodType,
+  });
+  if (result.error) {
+    return res.status(400).json(result);
   }
+  res.json(result);
 });
 
 router.get("/nutrition/compare", (req, res) => {
@@ -78,42 +69,29 @@ router.get("/nutrition/compare", (req, res) => {
           "Query parameter 'foods' is required (comma-separated food names)",
       });
   }
-  try {
-    const foodList = foods
-      .split(",")
-      .map((f) => f.trim())
-      .filter(Boolean);
-    if (foodList.length < 2) {
-      return res
-        .status(400)
-        .json({ error: "At least 2 food names are required for comparison" });
-    }
-    const result = compareFoods(foodList, nutrientTypes);
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: `Food comparison failed: ${err.message}` });
+  const foodList = foods
+    .split(",")
+    .map((f) => f.trim())
+    .filter(Boolean);
+  if (foodList.length < 2) {
+    return res
+      .status(400)
+      .json({ error: "At least 2 food names are required for comparison" });
   }
+  res.json(compareFoods(foodList, nutrientTypes));
 });
 
-router.get("/nutrition/categories", (_req, res) => {
-  try {
-    const result = getFoodCategories();
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: `Categories lookup failed: ${err.message}` });
-  }
-});
+router.get("/nutrition/categories", asyncHandler(
+  () => getFoodCategories(),
+  "Categories lookup",
+  500,
+));
 
-router.get("/nutrition/nutrient-types", (_req, res) => {
-  try {
-    const result = getNutrientTypes();
-    res.json(result);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: `Nutrient types lookup failed: ${err.message}` });
-  }
-});
+router.get("/nutrition/nutrient-types", asyncHandler(
+  () => getNutrientTypes(),
+  "Nutrient types lookup",
+  500,
+));
 
 router.get("/nutrition/top", (req, res) => {
   const { category, nutrient, limit, kingdom, foodType } = req.query;
@@ -123,35 +101,23 @@ router.get("/nutrition/top", (req, res) => {
         "Query parameters 'category' and 'nutrient' are required. Categories: macros, minerals, vitamins, amino_acids, lipids, carbs, sterols.",
     });
   }
-  try {
-    const result = getTopFoodsByCategory(category, nutrient, {
-      limit: parseIntParam(limit, 10),
-      kingdom,
-      foodType,
-    });
-    if (result.error) {
-      return res.status(400).json(result);
-    }
-    res.json(result);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: `Top foods lookup failed: ${err.message}` });
+  const result = getTopFoodsByCategory(category, nutrient, {
+    limit: parseIntParam(limit, 10),
+    kingdom,
+    foodType,
+  });
+  if (result.error) {
+    return res.status(400).json(result);
   }
+  res.json(result);
 });
 
 router.get("/nutrition/nutrients/:category", (req, res) => {
-  try {
-    const result = listCategoryNutrients(req.params.category);
-    if (result.error) {
-      return res.status(400).json(result);
-    }
-    res.json(result);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: `Category nutrients lookup failed: ${err.message}` });
+  const result = listCategoryNutrients(req.params.category);
+  if (result.error) {
+    return res.status(400).json(result);
   }
+  res.json(result);
 });
 
 router.get("/nutrition/taxonomy/search", (req, res) => {
@@ -162,35 +128,23 @@ router.get("/nutrition/taxonomy/search", (req, res) => {
         "Query parameters 'rank' and 'value' are required. Ranks: kingdom, phylum, class, order, family, genus, species, etc.",
     });
   }
-  try {
-    const result = searchByTaxonomy(rank, value, {
-      limit: parseIntParam(limit, 25),
-      nutrientTypes,
-    });
-    if (result.error) {
-      return res.status(400).json(result);
-    }
-    res.json(result);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: `Taxonomy search failed: ${err.message}` });
+  const result = searchByTaxonomy(rank, value, {
+    limit: parseIntParam(limit, 25),
+    nutrientTypes,
+  });
+  if (result.error) {
+    return res.status(400).json(result);
   }
+  res.json(result);
 });
 
 router.get("/nutrition/taxonomy/tree", (req, res) => {
   const { rank, parentRank, parentValue } = req.query;
-  try {
-    const result = getTaxonomyTree(rank || null, parentRank || null, parentValue || null);
-    if (result.error) {
-      return res.status(400).json(result);
-    }
-    res.json(result);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: `Taxonomy tree lookup failed: ${err.message}` });
+  const result = getTaxonomyTree(rank || null, parentRank || null, parentValue || null);
+  if (result.error) {
+    return res.status(400).json(result);
   }
+  res.json(result);
 });
 
 // ─── Drug Info (openFDA) ───────────────────────────────────────────
@@ -200,12 +154,7 @@ router.get("/drugs/search", async (req, res) => {
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  try {
-    const result = await searchDrugLabels(q, parseIntParam(limit, 5));
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `Drug search failed: ${err.message}` });
-  }
+  res.json(await searchDrugLabels(q, parseIntParam(limit, 5)));
 });
 
 router.get("/drugs/adverse-events", async (req, res) => {
@@ -215,27 +164,13 @@ router.get("/drugs/adverse-events", async (req, res) => {
       .status(400)
       .json({ error: "Query parameter 'drug' is required" });
   }
-  try {
-    const result = await getDrugAdverseEvents(drug, parseIntParam(limit, 10));
-    res.json(result);
-  } catch (err) {
-    res
-      .status(502)
-      .json({ error: `Adverse events lookup failed: ${err.message}` });
-  }
+  res.json(await getDrugAdverseEvents(drug, parseIntParam(limit, 10)));
 });
 
-router.get("/drugs/recalls", async (req, res) => {
-  const { q, limit } = req.query;
-  try {
-    const result = await getDrugRecalls(q, parseIntParam(limit, 10));
-    res.json(result);
-  } catch (err) {
-    res
-      .status(502)
-      .json({ error: `Drug recalls lookup failed: ${err.message}` });
-  }
-});
+router.get("/drugs/recalls", asyncHandler(
+  (req) => getDrugRecalls(req.query.q, parseIntParam(req.query.limit, 10)),
+  "Drug recalls lookup",
+));
 
 // ─── FDA Drug NDC Database (In-Memory) ──────────────────────────────
 
@@ -244,60 +179,35 @@ router.get("/drugs/ndc/search", (req, res) => {
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  try {
-    const result = searchDrugs(q, {
-      limit: parseIntParam(limit, 10),
-      dosageForm,
-      productType,
-    });
-    res.json(result);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: `Drug search failed: ${err.message}` });
-  }
+  res.json(searchDrugs(q, {
+    limit: parseIntParam(limit, 10),
+    dosageForm,
+    productType,
+  }));
 });
 
 router.get("/drugs/ndc/lookup/:ndc", (req, res) => {
-  try {
-    const result = getDrugByNdc(req.params.ndc);
-    if (!result) {
-      return res.status(404).json({ error: `Drug not found: ${req.params.ndc}` });
-    }
-    res.json(result);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: `Drug lookup failed: ${err.message}` });
+  const result = getDrugByNdc(req.params.ndc);
+  if (!result) {
+    return res.status(404).json({ error: `Drug not found: ${req.params.ndc}` });
   }
+  res.json(result);
 });
 
-router.get("/drugs/ndc/dosage-forms", (_req, res) => {
-  try {
-    const result = getDosageForms();
-    res.json(result);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: `Dosage forms lookup failed: ${err.message}` });
-  }
-});
+router.get("/drugs/ndc/dosage-forms", asyncHandler(
+  () => getDosageForms(),
+  "Dosage forms lookup",
+  500,
+));
 
 router.get("/drugs/ndc/ingredient", (req, res) => {
   const { q, limit } = req.query;
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  try {
-    const result = searchByIngredient(q, {
-      limit: parseIntParam(limit, 20),
-    });
-    res.json(result);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: `Ingredient search failed: ${err.message}` });
-  }
+  res.json(searchByIngredient(q, {
+    limit: parseIntParam(limit, 20),
+  }));
 });
 
 router.get("/drugs/ndc/pharm-class", (req, res) => {
@@ -305,16 +215,9 @@ router.get("/drugs/ndc/pharm-class", (req, res) => {
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  try {
-    const result = searchByPharmClass(q, {
-      limit: parseIntParam(limit, 20),
-    });
-    res.json(result);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: `Pharm class search failed: ${err.message}` });
-  }
+  res.json(searchByPharmClass(q, {
+    limit: parseIntParam(limit, 20),
+  }));
 });
 
 // ─── Health ────────────────────────────────────────────────────────
