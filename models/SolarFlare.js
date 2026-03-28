@@ -6,7 +6,7 @@ export async function setupSolarFlareCollection() {
   const db = getDB();
   if (!db) throw new Error("Database not connected");
 
-  collection = db.collection("solarFlares");
+  collection = db.collection("solar_flares");
 
   await collection.createIndex({ flrId: 1 }, { unique: true });
   await collection.createIndex({ peakTime: -1 });

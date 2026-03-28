@@ -3,26 +3,29 @@ import { getDB } from "../db.js";
 // ═══════════════════════════════════════════════════════════════
 //  Collector State — Per-Collection Persistence
 // ═══════════════════════════════════════════════════════════════
-// Each data type is stored in its own MongoDB collection
-// (e.g., "wildfires", "tides", "apod") as a single document
-// representing the latest state. No generic blob store.
+// Each data type is stored in its own MongoDB collection.
+// Documents are flat — fields at the top level, no `data` wrapper.
+//   Objects: { _id: "current", fieldA, fieldB, ..., updatedAt }
+//   Arrays:  { _id: "current", items: [...], updatedAt }
 // ═══════════════════════════════════════════════════════════════
 
 /**
  * Save the latest collector state to a dedicated collection.
- * Uses a fixed _id so each collection only ever has one "current" document.
+ * Objects are spread at the top level. Arrays are stored under `items`.
  *
- * @param {string} collectionName - MongoDB collection name (e.g. "wildfires", "apod")
- * @param {*} data - The full payload to persist
+ * @param {string} collectionName - MongoDB collection name
+ * @param {*} data - The payload to persist (object or array)
  */
 export async function saveState(collectionName, data) {
   try {
     const db = getDB();
-    await db.collection(collectionName).updateOne(
-      { _id: "current" },
-      { $set: { _id: "current", data, updatedAt: new Date() } },
-      { upsert: true },
-    );
+    const doc = Array.isArray(data)
+      ? { _id: "current", items: data, updatedAt: new Date() }
+      : { _id: "current", ...data, updatedAt: new Date() };
+
+    await db
+      .collection(collectionName)
+      .replaceOne({ _id: "current" }, doc, { upsert: true });
   } catch (error) {
     console.error(
       `[State] ⚠️ Failed to save "${collectionName}": ${error.message}`,
@@ -32,6 +35,7 @@ export async function saveState(collectionName, data) {
 
 /**
  * Load the latest state from a dedicated collection.
+ * Reconstructs the original payload shape (object or array).
  *
  * @param {string} collectionName - MongoDB collection name
  * @returns {Promise<{ data: *, updatedAt: Date } | null>}
@@ -43,7 +47,16 @@ export async function loadState(collectionName) {
       .collection(collectionName)
       .findOne({ _id: "current" });
     if (!doc) return null;
-    return { data: doc.data, updatedAt: doc.updatedAt };
+
+    const { _id, updatedAt, items, ...rest } = doc;
+
+    // Array data stored under `items`
+    if (items !== undefined && Object.keys(rest).length === 0) {
+      return { data: items, updatedAt };
+    }
+
+    // Object data spread at top level
+    return { data: rest, updatedAt };
   } catch (error) {
     console.error(
       `[State] ⚠️ Failed to load "${collectionName}": ${error.message}`,

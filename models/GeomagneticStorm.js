@@ -6,7 +6,7 @@ export async function setupGeomagneticStormCollection() {
   const db = getDB();
   if (!db) throw new Error("Database not connected");
 
-  collection = db.collection("geomagneticStorms");
+  collection = db.collection("geomagnetic_storms");
 
   await collection.createIndex({ gstId: 1 }, { unique: true });
   await collection.createIndex({ startTime: -1 });
