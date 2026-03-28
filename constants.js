@@ -1375,6 +1375,140 @@ export const FINNHUB_FINANCIALS_TTL_MS = 3_600_000; // 1 hour
 export const FINNHUB_REQUEST_DELAY_MS = 200; // 200ms between sequential calls
 
 // ═══════════════════════════════════════════════════════════════
+//  FINANCE DOMAIN (FRED — Federal Reserve Economic Data)
+// ═══════════════════════════════════════════════════════════════
+
+export const FRED_BASE_URL = "https://api.stlouisfed.org/fred";
+
+// Curated default series for the key indicators snapshot.
+// These cover the core macroeconomic metrics an LLM might reference.
+export const FRED_DEFAULT_SERIES = {
+  // ─── Inflation ────────────────────────────────────────────────
+  CPIAUCSL: {
+    name: "CPI (All Urban Consumers)",
+    category: "inflation",
+    unit: "index (1982-84=100)",
+  },
+  CPILFESL: {
+    name: "Core CPI (Ex Food & Energy)",
+    category: "inflation",
+    unit: "index (1982-84=100)",
+  },
+  PCEPI: {
+    name: "PCE Price Index",
+    category: "inflation",
+    unit: "index (2017=100)",
+  },
+  T10YIE: {
+    name: "10-Year Breakeven Inflation Rate",
+    category: "inflation",
+    unit: "%",
+  },
+
+  // ─── Interest Rates ──────────────────────────────────────────
+  FEDFUNDS: {
+    name: "Federal Funds Rate",
+    category: "interest_rates",
+    unit: "%",
+  },
+  DFF: {
+    name: "Effective Federal Funds Rate (Daily)",
+    category: "interest_rates",
+    unit: "%",
+  },
+  DGS10: {
+    name: "10-Year Treasury Yield",
+    category: "interest_rates",
+    unit: "%",
+  },
+  DGS2: {
+    name: "2-Year Treasury Yield",
+    category: "interest_rates",
+    unit: "%",
+  },
+  T10Y2Y: {
+    name: "10Y-2Y Treasury Spread",
+    category: "interest_rates",
+    unit: "%",
+  },
+  SOFR: {
+    name: "Secured Overnight Financing Rate",
+    category: "interest_rates",
+    unit: "%",
+  },
+
+  // ─── Employment ──────────────────────────────────────────────
+  UNRATE: {
+    name: "Unemployment Rate",
+    category: "employment",
+    unit: "%",
+  },
+  PAYEMS: {
+    name: "Total Nonfarm Payrolls",
+    category: "employment",
+    unit: "thousands of persons",
+  },
+  ICSA: {
+    name: "Initial Jobless Claims",
+    category: "employment",
+    unit: "number",
+  },
+
+  // ─── GDP & Output ────────────────────────────────────────────
+  GDP: {
+    name: "Gross Domestic Product",
+    category: "gdp",
+    unit: "billions of dollars",
+  },
+  GDPC1: {
+    name: "Real GDP",
+    category: "gdp",
+    unit: "billions of chained 2017 dollars",
+  },
+  A191RL1Q225SBEA: {
+    name: "Real GDP Growth Rate",
+    category: "gdp",
+    unit: "% change (annualized)",
+  },
+
+  // ─── Money Supply & Debt ─────────────────────────────────────
+  M2SL: {
+    name: "M2 Money Supply",
+    category: "money_supply",
+    unit: "billions of dollars",
+  },
+  GFDEBTN: {
+    name: "Federal Debt: Total Public Debt",
+    category: "fiscal",
+    unit: "millions of dollars",
+  },
+
+  // ─── Housing ─────────────────────────────────────────────────
+  MORTGAGE30US: {
+    name: "30-Year Fixed Mortgage Rate",
+    category: "housing",
+    unit: "%",
+  },
+  CSUSHPINSA: {
+    name: "Case-Shiller Home Price Index",
+    category: "housing",
+    unit: "index (Jan 2000=100)",
+  },
+
+  // ─── Consumer & Sentiment ────────────────────────────────────
+  UMCSENT: {
+    name: "Consumer Sentiment",
+    category: "sentiment",
+    unit: "index (1966 Q1=100)",
+  },
+  RSAFS: {
+    name: "Retail Sales",
+    category: "consumer",
+    unit: "millions of dollars",
+  },
+};
+
+// ═══════════════════════════════════════════════════════════════
 //  TREND DOMAIN
 // ═══════════════════════════════════════════════════════════════
 
@@ -1864,6 +1998,9 @@ export const REST_COUNTRIES_BASE_URL = "https://restcountries.com/v3.1";
 export const ARXIV_BASE_URL = "http://export.arxiv.org/api/query";
 export const WIKIPEDIA_SUMMARY_BASE_URL =
   "https://en.wikipedia.org/api/rest_v1";
+export const JIKAN_BASE_URL = "https://api.jikan.moe/v4";
+export const TMDB_BASE_URL = "https://api.themoviedb.org/3";
+export const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p";
 
 export const ARXIV_CATEGORIES = [
   { id: "cs.AI", name: "Artificial Intelligence" },
@@ -1900,6 +2037,7 @@ export const TRANSLINK_BASE_URL = "https://api.translink.ca/rttiapi/v1";
 
 export const EXCHANGE_RATE_BASE_URL = "https://open.er-api.com/v6/latest";
 export const TIMEZONE_BASE_URL = "https://worldtimeapi.org/api";
+export const IPINFO_BASE_URL = "https://ipinfo.io";
 
 // ═══════════════════════════════════════════════════════════════
 //  API RATE LIMITS — New Domains
@@ -1937,6 +2075,12 @@ export const NEW_API_RATE_LIMITS = {
     qpd: null, // REST API, very generous
     requestDelayMs: 100,
   },
+  JIKAN: {
+    qps: 3,
+    qpm: 60,
+    qpd: null, // strict 3/sec, 60/min limit
+    requestDelayMs: 350,
+  },
 
   // ─── Health Domain ────────────────────────────────────────────────
   OPEN_FOOD_FACTS: {
@@ -1972,5 +2116,21 @@ export const NEW_API_RATE_LIMITS = {
     qpm: null,
     qpd: null,
     requestDelayMs: 1_000,
+  },
+
+  // ─── Finance Domain (FRED) ────────────────────────────────────────
+  FRED: {
+    qps: 2,
+    qpm: 120,
+    qpd: null, // no daily limit
+    requestDelayMs: 500, // 60000 / 120 QPM
+  },
+
+  // ─── Utility Domain (IPinfo) ──────────────────────────────────────
+  IPINFO: {
+    qps: null,
+    qpm: null,
+    qpd: 1_666, // 50000/month ≈ 1666/day
+    requestDelayMs: 200,
   },
 };

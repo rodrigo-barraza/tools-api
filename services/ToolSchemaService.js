@@ -551,11 +551,172 @@ const FIELDS = {
   ],
 
   // On This Day: from WikipediaSummaryFetcher.getOnThisDay()
-  ON_THIS_DAY: [
-    "date",
+  ON_THIS_DAY: ["date", "type", "count", "events"],
+
+  // Anime: from JikanFetcher
+  ANIME: [
+    "malId",
+    "title",
+    "titleEnglish",
+    "titleJapanese",
+    "imageUrl",
+    "trailerUrl",
+    "synopsis",
     "type",
-    "count",
-    "events",
+    "source",
+    "episodes",
+    "status",
+    "airing",
+    "airedString",
+    "duration",
+    "rating",
+    "score",
+    "scoredBy",
+    "rank",
+    "popularity",
+    "season",
+    "year",
+    "studios",
+    "genres",
+    "themes",
+  ],
+
+  // Movies: from TMDbFetcher
+  MOVIES: [
+    "tmdbId",
+    "title",
+    "originalTitle",
+    "tagline",
+    "overview",
+    "releaseDate",
+    "status",
+    "runtime",
+    "voteAverage",
+    "voteCount",
+    "popularity",
+    "posterUrl",
+    "backdropUrl",
+    "genres",
+    "originalLanguage",
+    "url",
+  ],
+
+  // Movie Details: from TMDbFetcher.getMovieDetails()
+  MOVIE_DETAILS: [
+    "tmdbId",
+    "title",
+    "originalTitle",
+    "tagline",
+    "overview",
+    "releaseDate",
+    "status",
+    "runtime",
+    "budget",
+    "revenue",
+    "voteAverage",
+    "voteCount",
+    "popularity",
+    "posterUrl",
+    "backdropUrl",
+    "genres",
+    "originalLanguage",
+    "spokenLanguages",
+    "productionCompanies",
+    "productionCountries",
+    "homepage",
+    "imdbId",
+    "url",
+  ],
+
+  // Movie Credits: from TMDbFetcher.getMovieCredits()
+  MOVIE_CREDITS: [
+    "cast.name",
+    "cast.character",
+    "cast.profileUrl",
+    "cast.order",
+    "crew.name",
+    "crew.job",
+    "crew.department",
+  ],
+
+  // TV Shows: from TMDbFetcher
+  TV_SHOWS: [
+    "tmdbId",
+    "name",
+    "originalName",
+    "tagline",
+    "overview",
+    "firstAirDate",
+    "lastAirDate",
+    "status",
+    "type",
+    "numberOfSeasons",
+    "numberOfEpisodes",
+    "voteAverage",
+    "voteCount",
+    "popularity",
+    "posterUrl",
+    "backdropUrl",
+    "genres",
+    "networks",
+    "url",
+  ],
+
+  // TV Show Details: from TMDbFetcher.getTvShowDetails()
+  TV_SHOW_DETAILS: [
+    "tmdbId",
+    "name",
+    "originalName",
+    "tagline",
+    "overview",
+    "firstAirDate",
+    "lastAirDate",
+    "status",
+    "type",
+    "numberOfSeasons",
+    "numberOfEpisodes",
+    "episodeRuntime",
+    "voteAverage",
+    "voteCount",
+    "popularity",
+    "posterUrl",
+    "backdropUrl",
+    "genres",
+    "networks",
+    "productionCompanies",
+    "createdBy",
+    "originCountry",
+    "originalLanguage",
+    "homepage",
+    "inProduction",
+    "url",
+  ],
+
+  // TV Credits: from TMDbFetcher.getTvShowCredits()
+  TV_CREDITS: [
+    "cast.name",
+    "cast.character",
+    "cast.profileUrl",
+    "cast.order",
+    "crew.name",
+    "crew.job",
+    "crew.department",
+  ],
+
+  // TV Season: from TMDbFetcher.getTvSeasonDetails()
+  TV_SEASON: [
+    "seasonNumber",
+    "name",
+    "overview",
+    "airDate",
+    "posterUrl",
+    "episodeCount",
+    "episodes.episodeNumber",
+    "episodes.name",
+    "episodes.overview",
+    "episodes.airDate",
+    "episodes.runtime",
+    "episodes.voteAverage",
   ],
 
   // ── Health Domain ─────────────────────────────────────────────
@@ -626,11 +787,7 @@ const FIELDS = {
   // ── Transit Domain ────────────────────────────────────────────
 
   // Next Bus: from TransLinkFetcher
-  NEXT_BUS: [
-    "stopNo",
-    "count",
-    "routes",
-  ],
+  NEXT_BUS: ["stopNo", "count", "routes"],
 
   // Stop Info: from TransLinkFetcher
   STOP_INFO: [
@@ -646,30 +803,15 @@ const FIELDS = {
   ],
 
   // Nearby Stops: from TransLinkFetcher
-  NEARBY_STOPS: [
-    "count",
-    "stops",
-  ],
+  NEARBY_STOPS: ["count", "stops"],
 
   // Route Info: from TransLinkFetcher
-  ROUTE_INFO: [
-    "routeNo",
-    "name",
-    "operatingCompany",
-    "patterns",
-  ],
+  ROUTE_INFO: ["routeNo", "name", "operatingCompany", "patterns"],
 
   // ── Utility Domain ────────────────────────────────────────────
 
   // Currency Conversion: from CurrencyFetcher
-  CURRENCY_CONVERT: [
-    "from",
-    "to",
-    "amount",
-    "rate",
-    "converted",
-    "lastUpdate",
-  ],
+  CURRENCY_CONVERT: ["from", "to", "amount", "rate", "converted", "lastUpdate"],
 
   // Timezone: from TimezoneFetcher
   TIMEZONE: [
@@ -1477,7 +1619,8 @@ const TOOL_DEFINITIONS = [
       properties: {
         name: {
           type: "string",
-          description: "Country name (partial match supported, e.g. 'Canada', 'Japan')",
+          description:
+            "Country name (partial match supported, e.g. 'Canada', 'Japan')",
         },
         ...fieldsParam(FIELDS.COUNTRIES),
       },
@@ -1497,7 +1640,8 @@ const TOOL_DEFINITIONS = [
       properties: {
         code: {
           type: "string",
-          description: "ISO 3166-1 alpha-2 or alpha-3 code (e.g. 'CA', 'CAN', 'US', 'JP')",
+          description:
+            "ISO 3166-1 alpha-2 or alpha-3 code (e.g. 'CA', 'CAN', 'US', 'JP')",
         },
         ...fieldsParam(FIELDS.COUNTRIES),
       },
@@ -1551,7 +1695,8 @@ const TOOL_DEFINITIONS = [
       properties: {
         title: {
           type: "string",
-          description: "Wikipedia article title (e.g. 'Albert Einstein', 'Machine learning')",
+          description:
+            "Wikipedia article title (e.g. 'Albert Einstein', 'Machine learning')",
         },
         ...fieldsParam(FIELDS.WIKIPEDIA_SUMMARY),
       },
@@ -1571,7 +1716,8 @@ const TOOL_DEFINITIONS = [
       properties: {
         type: {
           type: "string",
-          description: "Type of events: selected, births, deaths, events, holidays",
+          description:
+            "Type of events: selected, births, deaths, events, holidays",
           enum: ["selected", "births", "deaths", "events", "holidays"],
         },
         month: {
@@ -1584,6 +1730,402 @@ const TOOL_DEFINITIONS = [
         },
         ...fieldsParam(FIELDS.ON_THIS_DAY),
       },
+    },
+  },
+  {
+    name: "search_anime",
+    description: "Search for anime titles on MyAnimeList (via Jikan API).",
+    endpoint: {
+      path: "/knowledge/anime/search",
+      queryParams: ["q", "limit"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        q: {
+          type: "string",
+          description: "Anime title or keyword to search for",
+        },
+        limit: {
+          type: "number",
+          description: "Max number of results to return (default: 10)",
+        },
+        ...fieldsParam(FIELDS.ANIME),
+      },
+      required: ["q"],
+    },
+  },
+  {
+    name: "get_top_anime",
+    description: "Get the top-ranked anime from MyAnimeList (via Jikan API).",
+    endpoint: {
+      path: "/knowledge/anime/top",
+      queryParams: ["limit"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        limit: {
+          type: "number",
+          description: "Max number of results to return (default: 10)",
+        },
+        ...fieldsParam(FIELDS.ANIME),
+      },
+    },
+  },
+  {
+    name: "get_current_season_anime",
+    description:
+      "Get currently airing seasonal anime from MyAnimeList (via Jikan API).",
+    endpoint: {
+      path: "/knowledge/anime/season/now",
+      queryParams: ["limit"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        limit: {
+          type: "number",
+          description: "Max number of results to return (default: 10)",
+        },
+        ...fieldsParam(FIELDS.ANIME),
+      },
+    },
+  },
+  {
+    name: "get_anime_details",
+    description:
+      "Get comprehensive details for a specific anime by its MyAnimeList ID.",
+    endpoint: {
+      path: "/knowledge/anime/:id",
+      pathParams: ["id"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        id: {
+          type: "number",
+          description: "The MyAnimeList ID of the anime",
+        },
+        ...fieldsParam(FIELDS.ANIME),
+      },
+      required: ["id"],
+    },
+  },
+
+  // ── Movies (TMDb) ──────────────────────────────────────────────
+  {
+    name: "search_movies",
+    description:
+      "Search for movies by title. Returns matching movies with posters, ratings, release dates, and overviews from TMDb.",
+    endpoint: {
+      path: "/knowledge/movies/search",
+      queryParams: ["q", "page", "year"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        q: {
+          type: "string",
+          description: "Movie title or keyword to search for",
+        },
+        year: {
+          type: "number",
+          description: "Filter by release year",
+        },
+        page: {
+          type: "number",
+          description: "Page number for paginated results (default: 1)",
+        },
+        ...fieldsParam(FIELDS.MOVIES),
+      },
+      required: ["q"],
+    },
+  },
+  {
+    name: "get_movie_details",
+    description:
+      "Get comprehensive details for a specific movie by its TMDb ID, including budget, revenue, runtime, production companies, and IMDB link.",
+    endpoint: {
+      path: "/knowledge/movies/:id",
+      pathParams: ["id"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        id: {
+          type: "number",
+          description: "The TMDb ID of the movie",
+        },
+        ...fieldsParam(FIELDS.MOVIE_DETAILS),
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "get_movie_credits",
+    description:
+      "Get the cast and key crew (director, writer, producer, cinematographer, composer) for a movie by its TMDb ID.",
+    endpoint: {
+      path: "/knowledge/movies/:id/credits",
+      pathParams: ["id"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        id: {
+          type: "number",
+          description: "The TMDb ID of the movie",
+        },
+        ...fieldsParam(FIELDS.MOVIE_CREDITS),
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "get_trending_movies",
+    description:
+      "Get currently trending movies. Reflects real-time popularity across TMDb users.",
+    endpoint: {
+      path: "/knowledge/movies/trending",
+      queryParams: ["timeWindow", "limit"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        timeWindow: {
+          type: "string",
+          description: "Time window: 'day' or 'week' (default: 'day')",
+          enum: ["day", "week"],
+        },
+        limit: {
+          type: "number",
+          description: "Max number of results (default: 10)",
+        },
+        ...fieldsParam(FIELDS.MOVIES),
+      },
+    },
+  },
+  {
+    name: "discover_movies",
+    description:
+      "Discover movies using filters like genre, year, minimum rating, and sort order. Good for 'best sci-fi movies of 2024' type queries.",
+    endpoint: {
+      path: "/knowledge/movies/discover",
+      queryParams: ["genreId", "year", "sortBy", "page", "minVoteAverage", "minVoteCount"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        genreId: {
+          type: "number",
+          description: "TMDb genre ID to filter by (use get_movie_genres to find IDs)",
+        },
+        year: {
+          type: "number",
+          description: "Filter by release year",
+        },
+        sortBy: {
+          type: "string",
+          description:
+            "Sort order: popularity.desc, revenue.desc, vote_average.desc, primary_release_date.desc (default: popularity.desc)",
+        },
+        minVoteAverage: {
+          type: "number",
+          description: "Minimum vote average (e.g. 7.0)",
+        },
+        minVoteCount: {
+          type: "number",
+          description: "Minimum number of votes (e.g. 100)",
+        },
+        page: {
+          type: "number",
+          description: "Page number (default: 1)",
+        },
+        ...fieldsParam(FIELDS.MOVIES),
+      },
+    },
+  },
+  {
+    name: "get_movie_genres",
+    description:
+      "Get the list of official TMDb movie genres with their IDs. Use this to find genre IDs for the discover_movies tool.",
+    endpoint: {
+      path: "/knowledge/movies/genres",
+    },
+    parameters: {
+      type: "object",
+      properties: {},
+    },
+  },
+
+  // ── TV Series (TMDb) ───────────────────────────────────────────
+  {
+    name: "search_tv_shows",
+    description:
+      "Search for TV series by name. Returns matching shows with posters, ratings, air dates, and overviews from TMDb.",
+    endpoint: {
+      path: "/knowledge/tv/search",
+      queryParams: ["q", "page", "firstAirDateYear"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        q: {
+          type: "string",
+          description: "TV show name or keyword to search for",
+        },
+        firstAirDateYear: {
+          type: "number",
+          description: "Filter by first air date year",
+        },
+        page: {
+          type: "number",
+          description: "Page number (default: 1)",
+        },
+        ...fieldsParam(FIELDS.TV_SHOWS),
+      },
+      required: ["q"],
+    },
+  },
+  {
+    name: "get_tv_show_details",
+    description:
+      "Get comprehensive details for a TV series by its TMDb ID, including seasons, episodes, networks, creators, and production info.",
+    endpoint: {
+      path: "/knowledge/tv/:id",
+      pathParams: ["id"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        id: {
+          type: "number",
+          description: "The TMDb ID of the TV show",
+        },
+        ...fieldsParam(FIELDS.TV_SHOW_DETAILS),
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "get_tv_show_credits",
+    description:
+      "Get the aggregate cast and key crew for a TV series across all seasons.",
+    endpoint: {
+      path: "/knowledge/tv/:id/credits",
+      pathParams: ["id"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        id: {
+          type: "number",
+          description: "The TMDb ID of the TV show",
+        },
+        ...fieldsParam(FIELDS.TV_CREDITS),
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "get_tv_season_details",
+    description:
+      "Get details for a specific TV season including all episodes with names, air dates, runtimes, and ratings.",
+    endpoint: {
+      path: "/knowledge/tv/:id/season/:seasonNumber",
+      pathParams: ["id", "seasonNumber"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        id: {
+          type: "number",
+          description: "The TMDb ID of the TV show",
+        },
+        seasonNumber: {
+          type: "number",
+          description: "Season number (0 for specials)",
+        },
+        ...fieldsParam(FIELDS.TV_SEASON),
+      },
+      required: ["id", "seasonNumber"],
+    },
+  },
+  {
+    name: "get_trending_tv_shows",
+    description:
+      "Get currently trending TV series. Reflects real-time popularity across TMDb users.",
+    endpoint: {
+      path: "/knowledge/tv/trending",
+      queryParams: ["timeWindow", "limit"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        timeWindow: {
+          type: "string",
+          description: "Time window: 'day' or 'week' (default: 'day')",
+          enum: ["day", "week"],
+        },
+        limit: {
+          type: "number",
+          description: "Max number of results (default: 10)",
+        },
+        ...fieldsParam(FIELDS.TV_SHOWS),
+      },
+    },
+  },
+  {
+    name: "discover_tv_shows",
+    description:
+      "Discover TV series using filters like genre, year, minimum rating, and sort order. Good for 'best drama series of 2025' type queries.",
+    endpoint: {
+      path: "/knowledge/tv/discover",
+      queryParams: ["genreId", "firstAirDateYear", "sortBy", "page", "minVoteAverage", "minVoteCount"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        genreId: {
+          type: "number",
+          description: "TMDb genre ID (use get_tv_genres to find IDs)",
+        },
+        firstAirDateYear: {
+          type: "number",
+          description: "Filter by first air date year",
+        },
+        sortBy: {
+          type: "string",
+          description:
+            "Sort order: popularity.desc, vote_average.desc, first_air_date.desc (default: popularity.desc)",
+        },
+        minVoteAverage: {
+          type: "number",
+          description: "Minimum vote average (e.g. 7.0)",
+        },
+        minVoteCount: {
+          type: "number",
+          description: "Minimum number of votes (e.g. 100)",
+        },
+        page: {
+          type: "number",
+          description: "Page number (default: 1)",
+        },
+        ...fieldsParam(FIELDS.TV_SHOWS),
+      },
+    },
+  },
+  {
+    name: "get_tv_genres",
+    description:
+      "Get the list of official TMDb TV genres with their IDs. Use this to find genre IDs for the discover_tv_shows tool.",
+    endpoint: {
+      path: "/knowledge/tv/genres",
+    },
+    parameters: {
+      type: "object",
+      properties: {},
     },
   },
 
@@ -1645,7 +2187,8 @@ const TOOL_DEFINITIONS = [
       properties: {
         query: {
           type: "string",
-          description: "Drug name (brand or generic, e.g. 'Tylenol', 'Acetaminophen')",
+          description:
+            "Drug name (brand or generic, e.g. 'Tylenol', 'Acetaminophen')",
         },
         limit: {
           type: "number",
@@ -1693,7 +2236,8 @@ const TOOL_DEFINITIONS = [
       properties: {
         query: {
           type: "string",
-          description: "Optional search term for recalls (drug name or keyword)",
+          description:
+            "Optional search term for recalls (drug name or keyword)",
         },
         limit: {
           type: "number",
@@ -1840,11 +2384,13 @@ const TOOL_DEFINITIONS = [
       properties: {
         area: {
           type: "string",
-          description: "Timezone area (e.g. 'America', 'Europe', 'Asia', 'Pacific')",
+          description:
+            "Timezone area (e.g. 'America', 'Europe', 'Asia', 'Pacific')",
         },
         location: {
           type: "string",
-          description: "Timezone location (e.g. 'Vancouver', 'Tokyo', 'London', 'New_York')",
+          description:
+            "Timezone location (e.g. 'Vancouver', 'Tokyo', 'London', 'New_York')",
         },
         ...fieldsParam(FIELDS.TIMEZONE),
       },

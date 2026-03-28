@@ -36,6 +36,12 @@ export const GOOGLE_PLACES_API_KEY = "";
 
 export const FINNHUB_API_KEY = "";
 
+// ─── Finance Domain (FRED — Federal Reserve Economic Data) ─────────
+//    Register at https://fred.stlouisfed.org/docs/api/api_key.html
+//    Free — 120 requests/minute.
+
+export const FRED_API_KEY = "";
+
 // ─── Product Domain ────────────────────────────────────────────────
 
 export const BESTBUY_API_KEY = "";
@@ -63,3 +69,9 @@ export const GOOGLE_API_KEY = "";
 //    Register at https://developer.translink.ca/ for a free key.
 
 export const TRANSLINK_API_KEY = "";
+
+// ─── Utility Domain (IPinfo) ──────────────────────────────────────
+//    Register at https://ipinfo.io/signup for a free token.
+//    Free tier: 50,000 requests/month.
+
+export const IPINFO_TOKEN = "";

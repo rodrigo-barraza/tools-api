@@ -19,6 +19,9 @@ import {
   // Finance (Finnhub)
   FINNHUB_API_KEY,
 
+  // Finance (FRED)
+  FRED_API_KEY,
+
   // Product
   BESTBUY_API_KEY,
   PRODUCTHUNT_API_KEY,
@@ -41,6 +44,9 @@ import {
 
   // Transit
   TRANSLINK_API_KEY,
+
+  // Utility
+  IPINFO_TOKEN,
 } from "./secrets.js";
 
 const CONFIG = {
@@ -64,6 +70,9 @@ const CONFIG = {
   // ─── Finance (Finnhub) ────────────────────────────────────────────
   FINNHUB_API_KEY,
 
+  // ─── Finance (FRED) ──────────────────────────────────────────────
+  FRED_API_KEY,
+
   // ─── Product ─────────────────────────────────────────────────────
   BESTBUY_API_KEY,
   PRODUCTHUNT_API_KEY,
@@ -86,6 +95,9 @@ const CONFIG = {
 
   // ─── Transit ─────────────────────────────────────────────────────
   TRANSLINK_API_KEY,
+
+  // ─── Utility ─────────────────────────────────────────────────────
+  IPINFO_TOKEN,
 };
 
 export default CONFIG;
