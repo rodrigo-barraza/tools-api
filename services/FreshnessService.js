@@ -73,7 +73,17 @@ export function startCollectorLoop(tasks) {
         ),
       task.delay || 0,
     );
-    setInterval(task.collectFn, task.ttl);
+    setInterval(
+      () =>
+        collectIfStale(
+          task.label,
+          task.collection,
+          task.ttl,
+          task.collectFn,
+          task.restoreFn,
+        ),
+      task.ttl,
+    );
   }
 }
 
