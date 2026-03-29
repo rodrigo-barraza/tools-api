@@ -3025,7 +3025,7 @@ const TOOL_DEFINITIONS = [
     parameters: {
       type: "object",
       properties: {
-        category: { type: "string", const: "macros" },
+        category: { type: "string", enum: ["macros"], description: "Fixed category — always 'macros'" },
         nutrient: {
           type: "string",
           description: "Which macronutrient to rank by",
@@ -3063,7 +3063,7 @@ const TOOL_DEFINITIONS = [
     parameters: {
       type: "object",
       properties: {
-        category: { type: "string", const: "minerals" },
+        category: { type: "string", enum: ["minerals"], description: "Fixed category — always 'minerals'" },
         nutrient: {
           type: "string",
           description: "Which mineral to rank by",
@@ -3104,7 +3104,7 @@ const TOOL_DEFINITIONS = [
     parameters: {
       type: "object",
       properties: {
-        category: { type: "string", const: "vitamins" },
+        category: { type: "string", enum: ["vitamins"], description: "Fixed category — always 'vitamins'" },
         nutrient: {
           type: "string",
           description: "Which vitamin to rank by",
@@ -3151,7 +3151,7 @@ const TOOL_DEFINITIONS = [
     parameters: {
       type: "object",
       properties: {
-        category: { type: "string", const: "amino_acids" },
+        category: { type: "string", enum: ["amino_acids"], description: "Fixed category — always 'amino_acids'" },
         nutrient: {
           type: "string",
           description: "Which amino acid to rank by",
@@ -3199,7 +3199,7 @@ const TOOL_DEFINITIONS = [
     parameters: {
       type: "object",
       properties: {
-        category: { type: "string", const: "lipids" },
+        category: { type: "string", enum: ["lipids"], description: "Fixed category — always 'lipids'" },
         nutrient: {
           type: "string",
           description: "Which lipid/fat to rank by",
@@ -3240,7 +3240,7 @@ const TOOL_DEFINITIONS = [
     parameters: {
       type: "object",
       properties: {
-        category: { type: "string", const: "carbs" },
+        category: { type: "string", enum: ["carbs"], description: "Fixed category — always 'carbs'" },
         nutrient: {
           type: "string",
           description: "Which carbohydrate type to rank by",
@@ -3279,7 +3279,7 @@ const TOOL_DEFINITIONS = [
     parameters: {
       type: "object",
       properties: {
-        category: { type: "string", const: "sterols" },
+        category: { type: "string", enum: ["sterols"], description: "Fixed category — always 'sterols'" },
         nutrient: {
           type: "string",
           description: "Which sterol to rank by",
