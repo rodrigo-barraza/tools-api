@@ -203,6 +203,8 @@ const DiscordDataService = {
         "author.defaultAvatarURL": 1,
         "member.displayName": 1,
         "member.displayHexColor": 1,
+        // Enhanced Role Styles (gradient/holographic)
+        "member.roleColors": 1,
         channelId: 1,
         "channel.name": 1,
         guildId: 1,
@@ -217,6 +219,14 @@ const DiscordDataService = {
         embeds: 1,
         // Stickers
         stickers: 1,
+        // Reactions (emoji reactions on the message)
+        reactions: 1,
+        // Member roles (for badge detection — e.g. Nitro Booster)
+        "member.premiumSince": 1,
+        "member.premiumSinceTimestamp": 1,
+        "member.roles": 1,
+        // Author flags (public_flags bitfield for profile badges)
+        "author.flags": 1,
         // Archived media URLs (MinIO permanent URLs)
         mediaArchive: 1,
       })
@@ -243,7 +253,8 @@ const DiscordDataService = {
         })
         : undefined;
 
-      // Build rich embed objects — preserve image/thumbnail/video for rendering
+      // Build rich embed objects — preserve image/thumbnail/video for rendering.
+      // Resolve archived URLs for embed media as well (belt-and-suspenders).
       const embeds = Array.isArray(m.embeds) && m.embeds.length > 0
         ? m.embeds
           .map((e) => {
@@ -253,9 +264,27 @@ const DiscordDataService = {
               ...(e.title && { title: e.title }),
               ...(e.description && { description: e.description }),
               ...(e.url && { url: e.url }),
-              ...(e.image && { image: e.image }),
-              ...(e.thumbnail && { thumbnail: e.thumbnail }),
-              ...(e.video && { video: e.video }),
+              ...(e.image && {
+                image: {
+                  ...e.image,
+                  url: resolveArchivedUrl(e.image.url, archive),
+                  proxyURL: resolveArchivedUrl(e.image.proxyURL, archive),
+                },
+              }),
+              ...(e.thumbnail && {
+                thumbnail: {
+                  ...e.thumbnail,
+                  url: resolveArchivedUrl(e.thumbnail.url, archive),
+                  proxyURL: resolveArchivedUrl(e.thumbnail.proxyURL, archive),
+                },
+              }),
+              ...(e.video && {
+                video: {
+                  ...e.video,
+                  ...(e.video.url && { url: resolveArchivedUrl(e.video.url, archive) }),
+                  ...(e.video.proxyURL && { proxyURL: resolveArchivedUrl(e.video.proxyURL, archive) }),
+                },
+              }),
               ...(e.provider && { provider: e.provider }),
               ...(e.color != null && { color: e.color }),
             };
@@ -280,6 +309,8 @@ const DiscordDataService = {
           avatarUrl: buildAvatarUrl(m.author),
           isBot: m.author?.bot === true,
           roleColor,
+          // Enhanced Role Styles — gradient (secondary) / holographic (tertiary)
+          ...(m.member?.roleColors?.secondary && { roleColors: m.member.roleColors }),
         },
         channelId: m.channelId,
         channelName: m.channel?.name || null,
@@ -294,6 +325,17 @@ const DiscordDataService = {
           : null,
         // Reply reference — so Lupos can follow conversation threads
         replyTo: m.reference?.messageId || null,
+        // Emoji reactions (array of { emoji, count })
+        ...(Array.isArray(m.reactions) && m.reactions.length > 0 && {
+          reactions: m.reactions.map((r) => ({
+            emoji: {
+              id: r.emoji?.id || null,
+              name: r.emoji?.name || null,
+              animated: r.emoji?.animated || false,
+            },
+            count: r.count || r.countDetails?.normal || 0,
+          })),
+        }),
         // Media indicators
         ...(attachments && { attachments }),
         ...(embeds && { embeds }),
