@@ -51,6 +51,23 @@ router.get("/messages/stream", (req, res) => {
   let closed = false;
   // Track known message IDs so we can detect deletions
   let knownIds = new Set();
+  // Track per-message reaction fingerprints to detect reaction changes
+  // on existing messages (reactions don't change the message ID, so
+  // the old poll missed them entirely).
+  let reactionFingerprints = new Map();
+
+  /**
+   * Build a lightweight fingerprint of a message's reactions array.
+   * Used to detect when someone adds/removes a reaction on Discord
+   * without the message ID itself changing.
+   */
+  function reactionHash(msg) {
+    if (!msg.reactions?.length) return "";
+    return msg.reactions
+      .map((r) => `${r.emoji?.id || r.emoji?.name}:${r.count}`)
+      .join(",");
+  }
+
   // ── Initial load ──────────────────────────────────────────────
   async function init() {
     try {
@@ -60,6 +77,7 @@ router.get("/messages/stream", (req, res) => {
       if (closed) return;
       const messages = data.messages || [];
       knownIds = new Set(messages.map((m) => m.id));
+      reactionFingerprints = new Map(messages.map((m) => [m.id, reactionHash(m)]));
       res.write(`event: init\ndata: ${JSON.stringify({ messages })}\n\n`);
       health.markSuccess();
     } catch (err) {
@@ -70,7 +88,7 @@ router.get("/messages/stream", (req, res) => {
       }
     }
   }
-  // ── Poll for changes (new messages + deletions) ──────────────
+  // ── Poll for changes (new messages + deletions + reaction changes) ──
   async function poll() {
     if (closed) return;
     try {
@@ -96,8 +114,21 @@ router.get("/messages/stream", (req, res) => {
       if (deletedIds.length > 0) {
         res.write(`event: delete\ndata: ${JSON.stringify({ ids: deletedIds })}\n\n`);
       }
-      // Update tracked set
+      // ── Detect reaction changes on existing messages ─────────
+      // Compare reaction fingerprints — if they differ, the message's
+      // reactions were added/removed since the last poll.
+      const updatedMessages = messages.filter((m) => {
+        if (!knownIds.has(m.id)) return false; // new messages handled above
+        const oldHash = reactionFingerprints.get(m.id);
+        const newHash = reactionHash(m);
+        return oldHash !== newHash;
+      });
+      if (updatedMessages.length > 0) {
+        res.write(`event: update\ndata: ${JSON.stringify({ messages: updatedMessages })}\n\n`);
+      }
+      // Update tracked sets
       knownIds = currentIds;
+      reactionFingerprints = new Map(messages.map((m) => [m.id, reactionHash(m)]));
     } catch (err) {
       logger.error("[discord/stream] Poll error:", err.message);
       health.markError(err);

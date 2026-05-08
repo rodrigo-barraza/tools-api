@@ -207,8 +207,13 @@ const DiscordDataService = {
         "member.roleColors": 1,
         channelId: 1,
         "channel.name": 1,
+        "channel.parentName": 1,
         guildId: 1,
         "channel.guild.name": 1,
+        // Guild icon/banner/splash hashes for CDN URL reconstruction
+        "channel.guild.icon": 1,
+        "channel.guild.banner": 1,
+        "channel.guild.splash": 1,
         createdTimestamp: 1,
         createdAt: 1,
         // Reply context
@@ -314,8 +319,14 @@ const DiscordDataService = {
         },
         channelId: m.channelId,
         channelName: m.channel?.name || null,
+        parentName: m.channel?.parentName || null,
         guildId: m.guildId,
         guildName: m.channel?.guild?.name || null,
+        // Guild icon/banner/splash hashes — lets clients build CDN URLs
+        // e.g. https://cdn.discordapp.com/icons/{guildId}/{hash}.png
+        ...(m.channel?.guild?.icon && { guildIcon: m.channel.guild.icon }),
+        ...(m.channel?.guild?.banner && { guildBanner: m.channel.guild.banner }),
+        ...(m.channel?.guild?.splash && { guildSplash: m.channel.guild.splash }),
         createdAtISO: m.createdTimestamp
           ? new Date(m.createdTimestamp).toISOString()
           : m.createdAt,
