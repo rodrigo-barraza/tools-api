@@ -1,7 +1,7 @@
 // ============================================================
 // Agent Connection Manager — Remote Workspace Agent Registry
 // ============================================================
-// Manages WebSocket connections from workspace-agent CLI
+// Manages WebSocket connections from workspace-service CLI
 // instances. Each agent registers the workspace roots it
 // serves, enabling tools-service to route file/git/shell
 // operations to the correct agent.
