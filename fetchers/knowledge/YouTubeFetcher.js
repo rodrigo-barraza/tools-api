@@ -9,7 +9,7 @@
 // oEmbed docs: https://oembed.com/
 // ============================================================
 
-import { YoutubeTranscript } from "youtube-transcript/dist/youtube-transcript.esm.js";
+import { YoutubeTranscript } from "youtube-transcript";
 
 // ─── URL Parsing ───────────────────────────────────────────────────
 
