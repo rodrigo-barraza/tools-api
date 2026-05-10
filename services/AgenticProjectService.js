@@ -1,10 +1,4 @@
-// ============================================================
-// Agentic Project Service — Workspace Intelligence
-// ============================================================
-// Extracts project metadata from workspace directories so
-// the agent can understand project structure, framework,
-// and configuration in a single tool call.
-// ============================================================
+// ─── Workspace Intelligence ─────────────────────────────────
 
 import { readFile, stat, readdir } from "node:fs/promises";
 import { resolve, join, relative } from "node:path";
@@ -18,7 +12,6 @@ import { routeForPath, sendRpc } from "./AgentConnectionManager.js";
 const README_MAX_CHARS = 800;
 const MAX_SCAN_DEPTH = 3;
 const MAX_SCAN_ENTRIES = 200;
-
 
 // ────────────────────────────────────────────────────────────
 // Project Summary

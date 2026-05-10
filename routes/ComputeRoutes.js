@@ -1,14 +1,6 @@
 import { setupStreamingSSE, lazyImport } from "@rodrigo-barraza/utilities-library/node";
 import { validateMaxLength } from "@rodrigo-barraza/utilities-library";
-// ============================================================
-// Compute Routes — Process-Based Tool Endpoints
-// ============================================================
-// All compute-type tools that run calculations, transformations,
-// or rendering on-demand. No external API calls — pure local
-// processing.
-//
-// Mounted at: /compute
-// ============================================================
+// ─── Process-Based Tool Endpoints ───────────────────────────
 import { Router } from "express";
 import {
   executeJavaScript,
@@ -32,9 +24,7 @@ const getJSONPath = lazyImport("jsonpath-plus", (m) => m.JSONPath);
 const getQRCode = lazyImport("qrcode");
 const getDiff = lazyImport("diff", (m) => m);
 const router = Router();
-// ═══════════════════════════════════════════════════════════════
-// 1. JavaScript Interpreter (vm sandbox)
-// ═══════════════════════════════════════════════════════════════
+// ─── 1. JavaScript Interpreter (vm sandbox) ─────────────────
 router.post("/js/execute", (req, res) => {
   const { code, timeout } = req.body;
   if (!code || typeof code !== "string") {
@@ -77,9 +67,7 @@ router.post("/js/stream", (req, res) => {
   send({ event: "exit", exitCode: result.error ? 1 : 0, executionTimeMs: result.executionTimeMs, success: result.success });
   res.end();
 });
-// ═══════════════════════════════════════════════════════════════
-// 2. Shell Executor (allowlisted commands)
-// ═══════════════════════════════════════════════════════════════
+// ─── 2. Shell Executor (allowlisted commands) ───────────────
 router.post("/shell/execute", async (req, res) => {
   const { command, stdin, timeout } = req.body;
   if (!command || typeof command !== "string") {
@@ -119,9 +107,7 @@ router.post("/shell/stream", async (req, res) => {
   send({ event: "exit", exitCode: result.exitCode, executionTimeMs: result.executionTimeMs, success: result.success, timedOut: result.timedOut, error: result.error || undefined });
   res.end();
 });
-// ═══════════════════════════════════════════════════════════════
-// 3. Unit Conversion
-// ═══════════════════════════════════════════════════════════════
+// ─── 3. Unit Conversion ─────────────────────────────────────
 router.get("/units/convert", async (req, res) => {
   const { value, from, to } = req.query;
   if (!value || !from || !to) {
@@ -174,9 +160,7 @@ router.get("/units/list", async (req, res) => {
     res.status(400).json({ error: `Unit listing failed: ${err.message}` });
   }
 });
-// ═══════════════════════════════════════════════════════════════
-// 4. DateTime Parsing & Arithmetic
-// ═══════════════════════════════════════════════════════════════
+// ─── 4. DateTime Parsing & Arithmetic ───────────────────────
 router.post("/datetime/parse", async (req, res) => {
   const { operation, date, date2, amount, unit, format, timezone } = req.body;
   if (!operation) {
@@ -339,9 +323,7 @@ router.post("/datetime/parse", async (req, res) => {
     res.status(400).json({ error: `DateTime operation failed: ${err.message}` });
   }
 });
-// ═══════════════════════════════════════════════════════════════
-// 5. JSON Transform (JSONPath)
-// ═══════════════════════════════════════════════════════════════
+// ─── 5. JSON Transform (JSONPath) ───────────────────────────
 router.post("/json/transform", async (req, res) => {
   const { data, expression, operations } = req.body;
   if (!data) {
@@ -468,9 +450,7 @@ router.post("/json/transform", async (req, res) => {
     res.status(400).json({ error: `JSON transform failed: ${err.message}` });
   }
 });
-// ═══════════════════════════════════════════════════════════════
-// 6. CSV Generation
-// ═══════════════════════════════════════════════════════════════
+// ─── 6. CSV Generation ──────────────────────────────────────
 const csvStore = new EphemeralStore();
 router.post("/csv", (req, res) => {
   const { data, columns, filename, delimiter } = req.body;
@@ -518,9 +498,7 @@ router.get("/csv/download", (req, res) => {
   res.setHeader("Content-Disposition", `attachment; filename="${entry.filename}"`);
   res.send(entry.csv);
 });
-// ═══════════════════════════════════════════════════════════════
-// 7. QR Code Generation
-// ═══════════════════════════════════════════════════════════════
+// ─── 7. QR Code Generation ──────────────────────────────────
 const qrStore = new EphemeralStore();
 router.post("/qr", async (req, res) => {
   const { data, size, errorCorrection, darkColor, lightColor } = req.body;
@@ -559,9 +537,7 @@ router.get("/qr/render", (req, res) => {
   res.setHeader("Cache-Control", "public, max-age=3600");
   res.send(entry.buffer);
 });
-// ═══════════════════════════════════════════════════════════════
-// 8. LaTeX Rendering (KaTeX CDN embed)
-// ═══════════════════════════════════════════════════════════════
+// ─── 8. LaTeX Rendering (KaTeX CDN embed) ───────────────────
 const latexStore = new EphemeralStore();
 function buildLatexEmbedHtml(latex, displayMode = true) {
   return buildEmbedHtml({
@@ -617,9 +593,7 @@ router.get("/latex/embed", (req, res) => {
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(buildLatexEmbedHtml(entry.latex, entry.displayMode));
 });
-// ═══════════════════════════════════════════════════════════════
-// 9. Mermaid Diagram Rendering (CDN embed)
-// ═══════════════════════════════════════════════════════════════
+// ─── 9. Mermaid Diagram Rendering (CDN embed) ───────────────
 const diagramStore = new EphemeralStore();
 function buildMermaidEmbedHtml(definition, theme = "dark") {
   return buildEmbedHtml({
@@ -674,9 +648,7 @@ router.get("/diagram/embed", (req, res) => {
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(buildMermaidEmbedHtml(entry.definition, entry.theme));
 });
-// ═══════════════════════════════════════════════════════════════
-// 10. Text Diff
-// ═══════════════════════════════════════════════════════════════
+// ─── 10. Text Diff ──────────────────────────────────────────
 router.post("/diff", async (req, res) => {
   const { textA, textB, mode } = req.body;
   if (textA === undefined || textB === undefined) {
@@ -737,9 +709,7 @@ router.post("/diff", async (req, res) => {
     res.status(400).json({ error: `Diff failed: ${err.message}` });
   }
 });
-// ═══════════════════════════════════════════════════════════════
-// 11. Cryptographic Hashing
-// ═══════════════════════════════════════════════════════════════
+// ─── 11. Cryptographic Hashing ──────────────────────────────
 router.get("/hash", (req, res) => {
   const { data, algorithm, encoding, key } = req.query;
   if (!data) {
@@ -784,9 +754,7 @@ router.get("/uuid", (_req, res) => {
     base64: crypto.randomBytes(16).toString("base64"),
   });
 });
-// ═══════════════════════════════════════════════════════════════
-// 12. Regex Tester
-// ═══════════════════════════════════════════════════════════════
+// ─── 12. Regex Tester ───────────────────────────────────────
 router.post("/regex", (req, res) => {
   const { pattern, flags, text } = req.body;
   if (!pattern || text === undefined) {
@@ -839,9 +807,7 @@ router.post("/regex", (req, res) => {
     });
   }
 });
-// ═══════════════════════════════════════════════════════════════
-// 13. Encode / Decode
-// ═══════════════════════════════════════════════════════════════
+// ─── 13. Encode / Decode ────────────────────────────────────
 router.get("/encode", (req, res) => {
   const { data, format, direction } = req.query;
   if (!data || !format) {
@@ -938,9 +904,7 @@ router.get("/encode", (req, res) => {
     res.status(400).json({ error: `Encoding failed: ${err.message}` });
   }
 });
-// ═══════════════════════════════════════════════════════════════
-// 14. Color Converter
-// ═══════════════════════════════════════════════════════════════
+// ─── 14. Color Converter ────────────────────────────────────
 // ─── Color Math ────────────────────────────────────────────────
 function hexToRgb(hex) {
   const clean = hex.replace("#", "");
@@ -1160,9 +1124,7 @@ router.get("/color/convert", (req, res) => {
     res.status(400).json({ error: err.message });
   }
 });
-// ═══════════════════════════════════════════════════════════════
-// 15. LOGO Turtle Graphics
-// ═══════════════════════════════════════════════════════════════
+// ─── 15. LOGO Turtle Graphics ───────────────────────────────
 const turtleStore = new EphemeralStore();
 const VALID_TURTLE_COMMANDS = new Set([
   "forward", "fd", "backward", "bk", "back",
@@ -1608,18 +1570,14 @@ router.get("/turtle/embed", (req, res) => {
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(buildTurtleEmbedHtml(entry.commands, entry.options));
 });
-// ═══════════════════════════════════════════════════════════════
-// Agentic: Think (Echo Scratchpad)
-// ═══════════════════════════════════════════════════════════════
+// ─── Agentic: Think (Echo Scratchpad) ───────────────────────
 // No-op tool — the LLM uses this to write private reasoning.
 // We simply acknowledge receipt; the thought is already captured
 // in the tool_result appended to the conversation context.
 router.post("/think", (req, res) => {
   res.json({ acknowledged: true });
 });
-// ═══════════════════════════════════════════════════════════════
-// Cron Expression Parser
-// ═══════════════════════════════════════════════════════════════
+// ─── Cron Expression Parser ─────────────────────────────────
 // Pure-compute — no external dependencies.
 // Parses standard 5-field cron expressions, explains them in
 // human-readable English, and computes next N execution times.
@@ -1746,9 +1704,7 @@ router.get("/cron/parse", (req, res) => {
     res.status(400).json({ error: `Cron parse failed: ${err.message}` });
   }
 });
-// ═══════════════════════════════════════════════════════════════
-// Agentic: Sleep (Timed Pause)
-// ═══════════════════════════════════════════════════════════════
+// ─── Agentic: Sleep (Timed Pause) ───────────────────────────
 // Blocks for `duration_seconds` before responding.
 // Max 120s. AbortSignal from upstream will short-circuit.
 router.post("/sleep", async (req, res) => {
@@ -1769,9 +1725,7 @@ router.post("/sleep", async (req, res) => {
     reason: reason || null,
   });
 });
-// ═══════════════════════════════════════════════════════════════
-// Agentic: Synthetic Output (Structured JSON Response)
-// ═══════════════════════════════════════════════════════════════
+// ─── Agentic: Synthetic Output (Structured JSON Response) ───
 // Validates `data` against an optional JSON Schema and returns it.
 // Lightweight validator — handles type, required, enum, nested objects/arrays.
 function validateJsonSchema(data, schema, path = "", errors = []) {
@@ -1842,9 +1796,7 @@ router.post("/synthetic-output", (req, res) => {
   }
   res.json(result);
 });
-// ═══════════════════════════════════════════════════════════════
-// Image Processing (Sharp + ImageMagick)
-// ═══════════════════════════════════════════════════════════════
+// ─── Image Processing (Sharp + ImageMagick) ─────────────────
 const imageStore = new EphemeralStore();
 router.post("/image/process", async (req, res) => {
   const { input, operations, outputFormat, outputQuality } = req.body;
@@ -1894,9 +1846,7 @@ router.get("/image/render", (req, res) => {
   res.setHeader("Cache-Control", "public, max-age=3600");
   res.send(entry.buffer);
 });
-// ═══════════════════════════════════════════════════════════════
-// Health
-// ═══════════════════════════════════════════════════════════════
+// ─── Health ─────────────────────────────────────────────────
 export function getComputeHealth() {
   return {
     jsInterpreter: "on-demand (Node.js vm)",

@@ -3,13 +3,6 @@ import { createTestApp } from "./testApp.js";
 import healthRoutes from "../routes/HealthRoutes.js";
 
 // ─── Unit Tests for Nutrition HTTP Endpoints ────────────────────
-//
-// Uses supertest to mount HealthRoutes in-process.
-// All nutrition endpoints are backed by in-memory USDA/Health
-// Canada CSV data — no network calls or MongoDB required.
-// Tests validate response shapes, data integrity, field projection,
-// and error handling for all /health/nutrition/* routes.
-// ────────────────────────────────────────────────────────────────
 
 const app = createTestApp("/health", healthRoutes);
 

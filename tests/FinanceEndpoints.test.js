@@ -3,11 +3,6 @@ import { createTestApp } from "./testApp.js";
 import financeRoutes from "../routes/FinanceRoutes.js";
 
 // ─── Unit Tests for Finance Domain Endpoints ────────────────────
-//
-// Uses supertest to mount FinanceRoutes in-process.
-// Cache-backed endpoints return empty defaults. Tests validate
-// route logic, validation, and response shapes.
-// ─────────────────────────────────────────────────────────────────
 
 const app = createTestApp("/finance", financeRoutes);
 

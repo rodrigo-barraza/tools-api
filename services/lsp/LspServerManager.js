@@ -1,15 +1,4 @@
-// ============================================================
-// LSP Server Manager — Multi-Server Router
-// ============================================================
-// Routes LSP requests to the appropriate language server based
-// on file extension. Manages lazy initialization, file open
-// tracking, and graceful shutdown of all server instances.
-//
-// Singleton per workspace — created via createLspServerManager()
-// and shared across all tool invocations.
-//
-// Adapted from Claude Code's LSPServerManager.ts.
-// ============================================================
+// ─── Multi-Server Router ────────────────────────────────────
 
 import { extname, resolve, basename } from "node:path";
 import { pathToFileURL } from "node:url";

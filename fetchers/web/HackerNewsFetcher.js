@@ -1,9 +1,4 @@
-// ============================================================
-// Hacker News Fetcher — Post + Comment Thread
-// ============================================================
-// Uses the official HN Firebase API. Fully public, no auth.
-// Docs: https://github.com/HackerNewsAPI/API
-// ============================================================
+// ─── Post + Comment Thread ──────────────────────────────────
 
 const HN_API = "https://hacker-news.firebaseio.com/v0";
 const MAX_COMMENTS = 25;

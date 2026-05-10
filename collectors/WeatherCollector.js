@@ -88,9 +88,6 @@ import {
 import { saveState, startCollectorLoop } from "../services/FreshnessService.js";
 
 // ─── Collector Factory ─────────────────────────────────────────────
-// Standardizes the try/catch + saveState + error-logging boilerplate.
-// Each entry provides: label, collection, fetchFn, updateFn, setErrorFn,
-// and an optional logFn for domain-specific success messages.
 
 function makeCollector({ label, collection, fetchFn, updateFn, setErrorFn, logFn }) {
   return async () => {

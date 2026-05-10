@@ -1,9 +1,4 @@
-// ============================================================
-// WaybackFetcher — Internet Archive Wayback Machine API
-// ============================================================
-// Free API, no key required.
-// Docs: https://archive.org/help/wayback_api.php
-// ============================================================
+// ─── Internet Archive Wayback Machine API ───────────────────
 
 const AVAILABILITY_URL = "https://archive.org/wayback/available";
 const CDX_URL = "https://web.archive.org/cdx/search/cdx";

@@ -1,32 +1,4 @@
-// ============================================================
-// Crawler Service — Crawlee + Playwright Orchestration
-// ============================================================
-// Production-grade web crawling infrastructure powered by Crawlee.
-//
-// Features:
-//   - PlaywrightCrawler with configurable concurrency
-//   - Automatic request queuing, deduplication, and retries
-//   - Session management with anti-blocking heuristics
-//   - Proxy rotation (Bright Data integration ready)
-//   - Cheerio-first mode for static pages (no browser overhead)
-//   - Crash recovery via persistent request queue state
-//
-// Usage:
-//   import { crawlPages, crawlSingle } from "./CrawlerService.js";
-//
-//   // Single page extraction
-//   const result = await crawlSingle("https://example.com", {
-//     extractFn: ($) => ({ title: $("h1").text() }),
-//   });
-//
-//   // Batch crawl with link discovery
-//   const results = await crawlPages({
-//     startUrls: ["https://example.com/users"],
-//     extractFn: ($, request) => ({ ... }),
-//     linkSelector: "a.next-page",
-//     maxRequests: 100,
-//   });
-// ============================================================
+// ─── Crawlee + Playwright Orchestration ─────────────────────
 
 import {
   PlaywrightCrawler,

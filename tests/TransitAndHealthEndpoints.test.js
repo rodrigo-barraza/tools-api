@@ -3,10 +3,6 @@ import { createTestApp } from "./testApp.js";
 import transitRoutes from "../routes/TransitRoutes.js";
 
 // ─── Unit Tests for Transit Domain Endpoints ────────────────────
-//
-// Uses supertest to mount TransitRoutes in-process.
-// TransLink API endpoints are external — validation-only tests.
-// ─────────────────────────────────────────────────────────────────
 
 const app = createTestApp("/transit", transitRoutes);
 

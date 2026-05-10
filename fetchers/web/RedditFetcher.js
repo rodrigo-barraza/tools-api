@@ -1,9 +1,4 @@
-// ============================================================
-// Reddit Fetcher — Thread Content + Top Comments
-// ============================================================
-// Uses Reddit's public .json suffix API. No auth needed.
-// Rate limit: ~10 requests/minute unauthenticated.
-// ============================================================
+// ─── Thread Content + Top Comments ──────────────────────────
 
 import { USER_AGENT } from "../../constants.js";
 

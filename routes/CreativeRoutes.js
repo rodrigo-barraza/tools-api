@@ -1,14 +1,4 @@
-// ============================================================
-// Creative Routes — Image Generation & Vision
-// ============================================================
-// Centralized creative tool endpoints. These proxy LLM calls
-// through Prism's /chat endpoint via PrismService for actual
-// model execution (Google Gemini for both generation and vision).
-//
-// Any consumer (Prism, Lupos, Prism Client, future agents) can call
-// these endpoints. Telemetry is automatically captured by the
-// ToolCallLoggerMiddleware — no manual reporting needed.
-// ============================================================
+// ─── Image Generation & Vision ──────────────────────────────
 
 import { Router } from "express";
 import PrismService from "../services/PrismService.js";

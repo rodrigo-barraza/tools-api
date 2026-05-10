@@ -1,13 +1,4 @@
-// ============================================================
-// Agentic Web Service — URL Fetching & Web Search
-// ============================================================
-// Provides web interaction primitives for AI agentic loops.
-//
-// - fetch_url: Fetch a web page and convert HTML to clean
-//   markdown. Uses cheerio (already a dependency) for parsing.
-// - web_search: Google Custom Search JSON API (100 queries/day
-//   free, $5/1000 after that).
-// ============================================================
+// ─── URL Fetching & Web Search ──────────────────────────────
 
 import * as cheerio from "cheerio";
 import CONFIG from "../config.js";

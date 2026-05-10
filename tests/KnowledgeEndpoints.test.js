@@ -3,14 +3,6 @@ import { createTestApp } from "./testApp.js";
 import knowledgeRoutes from "../routes/KnowledgeRoutes.js";
 
 // ─── Unit Tests for Knowledge Domain Endpoints ──────────────────
-//
-// Uses supertest to mount KnowledgeRoutes in-process.
-// Only tests in-memory dataset endpoints (elements, indicators,
-// exoplanets) that load from CSV at import time.
-// External API endpoints (dictionary, books, countries, papers,
-// wikipedia, anime, movies, TV, web extraction) are excluded —
-// they live in tests/live/ as integration tests.
-// ─────────────────────────────────────────────────────────────────
 
 const app = createTestApp("/knowledge", knowledgeRoutes);
 

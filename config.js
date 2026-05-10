@@ -1,12 +1,4 @@
-// ============================================================
-// Tools API — Configuration
-// ============================================================
-// Typed accessor layer over process.env. The Vault service is
-// the single source of truth — boot.js hydrates process.env
-// from the Vault before any module imports run.
-//
-// This file contains NO defaults and NO secrets.
-// ============================================================
+// ─── Configuration ──────────────────────────────────────────
 
 /**
  * Parse a comma-separated env var into an array of strings.
@@ -17,12 +9,10 @@ function parseCommaSeparated(envKey) {
   return raw ? raw.split(",").map((s) => s.trim()).filter(Boolean) : [];
 }
 
-
 // ── Workspace / Agentic ────────────────────────────────────────────
 // Exported individually for AgenticFileService, AgenticGitService, etc.
 export const WORKSPACE_ROOTS = parseCommaSeparated("WORKSPACE_ROOTS");
 export const WORKTREE_DIR = process.env.WORKTREE_DIR;
-
 
 const CONFIG = {
   // ─── Server ──────────────────────────────────────────────────────

@@ -1,9 +1,4 @@
-// ============================================================
-// Package Fetcher — Unified NPM / PyPI Lookup
-// ============================================================
-// Consolidates NPM and PyPI package lookups into a single tool.
-// The agent specifies the registry explicitly.
-// ============================================================
+// ─── Unified NPM / PyPI Lookup ──────────────────────────────
 
 import { getNpmPackage } from "./NpmFetcher.js";
 import { getPyPiPackage } from "./PyPiFetcher.js";

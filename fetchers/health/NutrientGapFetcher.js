@@ -25,9 +25,6 @@ import {
 } from "../../constants.js";
 
 // ─── Mapping: requirement nutrient_id → food CSV column ────────
-// The requirement CSV uses IDs like "protein", "calcium", "vitamin_a"
-// The food CSV uses column names like "protein", "calcium", "vitamin_a_rae"
-// This maps requirement IDs to food DB column names where they differ.
 
 const REQUIREMENT_TO_FOOD_COLUMN = {
   // Direct matches (most nutrients share the same ID)

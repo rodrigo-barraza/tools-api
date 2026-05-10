@@ -1,14 +1,4 @@
-// ============================================================
-// Agentic Browser Service — Headless Playwright Automation
-// ============================================================
-// Manages a singleton Chromium browser with per-session pages.
-// Each session is a unique page context with auto-cleanup.
-//
-// Actions: navigate, screenshot, click, type, scroll,
-//          evaluate, get_content, get_elements, wait, close,
-//          snapshot, click_ref, type_ref, hover_ref, select_ref,
-//          run_script
-// ============================================================
+// ─── Headless Playwright Automation ─────────────────────────
 
 import { chromium } from "playwright";
 import { writeFile, unlink, mkdtemp } from "node:fs/promises";
@@ -119,7 +109,6 @@ async function getSession(sessionId) {
   logger.info(`[AgenticBrowser] Session "${sessionId}" created (${sessions.size}/${MAX_SESSIONS})`);
   return session;
 }
-
 
 /**
  * Close and clean up a session.

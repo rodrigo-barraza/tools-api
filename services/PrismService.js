@@ -1,12 +1,4 @@
-// ============================================================
-// Prism Service — HTTP Client for Prism LLM Gateway
-// ============================================================
-// Enables tools-api → Prism communication so any tools-api
-// service that needs LLM capabilities (text generation, image
-// generation, vision) can call Prism's /chat endpoint.
-//
-// Prism runs on CONFIG.PRISM_SERVICE_URL (default: localhost:7777).
-// ============================================================
+// ─── HTTP Client for Prism LLM Gateway ──────────────────────
 
 import CONFIG from "../config.js";
 import logger from "../logger.js";

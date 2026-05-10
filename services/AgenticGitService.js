@@ -1,10 +1,4 @@
-// ============================================================
-// Agentic Git Service — VCS Introspection for AI Coding Loops
-// ============================================================
-// Provides read-only Git operations (status, diff, log) for
-// agentic coding tools. All operations are scoped to allowed
-// workspace roots and run as subprocesses with timeouts.
-// ============================================================
+// ─── VCS Introspection for AI Coding Loops ──────────────────
 
 import { spawn } from "node:child_process";
 import { validatePath } from "./AgenticFileService.js";

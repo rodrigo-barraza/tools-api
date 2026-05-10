@@ -1,11 +1,4 @@
-// ============================================================
-// Field Projection Middleware (Sparse Fieldsets)
-// ============================================================
-// Intercepts JSON responses and filters them to only include
-// fields specified via ?fields=a,b,c.d query parameter.
-// Supports dot-notation for nested paths (e.g. venue.name).
-// When absent, the full response is returned unchanged.
-// ============================================================
+// ─── Field Projection Middleware (Sparse Fieldsets) ─────────
 
 /**
  * Known wrapper keys that contain arrays of domain objects.

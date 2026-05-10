@@ -3,11 +3,6 @@ import { createTestApp } from "./testApp.js";
 import weatherRoutes from "../routes/WeatherRoutes.js";
 
 // ─── Unit Tests for Weather Domain Endpoints ────────────────────
-//
-// Uses supertest to mount WeatherRoutes in-process.
-// All caches return empty/default data when no collector has run.
-// Tests validate route logic, status codes, and response shapes.
-// ─────────────────────────────────────────────────────────────────
 
 const app = createTestApp("/weather", weatherRoutes);
 

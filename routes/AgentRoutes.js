@@ -1,6 +1,4 @@
-// ============================================================
-// Agent Routes — Workspace Agent Status Endpoints
-// ============================================================
+// ─── Workspace Agent Status Endpoints ───────────────────────
 
 import { Router } from "express";
 import { getConnectedAgents } from "../services/AgentConnectionManager.js";

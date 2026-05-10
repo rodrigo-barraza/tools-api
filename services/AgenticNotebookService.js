@@ -1,16 +1,4 @@
-// ============================================================
-// Agentic Notebook Service — Jupyter .ipynb Editing
-// ============================================================
-// Provides structured editing of Jupyter Notebook files:
-//   - list_cells: enumerate all cells with type/content preview
-//   - get_cell: read a specific cell's full content
-//   - insert_cell: add a new cell at a position
-//   - replace_cell: update an existing cell's content/type
-//   - delete_cell: remove a cell
-//
-// All operations respect the same ALLOWED_ROOTS sandbox as
-// AgenticFileService. Notebooks are JSON (nbformat v4).
-// ============================================================
+// ─── Jupyter .ipynb Editing ─────────────────────────────────
 
 import { readFile, writeFile } from "node:fs/promises";
 import { validatePath } from "./AgenticFileService.js";

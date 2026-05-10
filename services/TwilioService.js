@@ -1,14 +1,4 @@
-// ============================================================
-// Twilio Service — Programmable SMS & Phone Lookup
-// ============================================================
-// Wraps the Twilio REST API via the official Node SDK.
-// Exposes:
-//   - sendSms(to, body, from?)
-//   - listMessages(filters?)
-//   - getAccountInfo()
-//   - lookupPhone(phone)
-//   - listPhoneNumbers()
-// ============================================================
+// ─── Programmable SMS & Phone Lookup ────────────────────────
 
 import twilio from "twilio";
 import CONFIG from "../config.js";

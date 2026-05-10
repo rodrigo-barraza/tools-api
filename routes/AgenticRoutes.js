@@ -1,14 +1,6 @@
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/node";
 import { parseIntParam } from "@rodrigo-barraza/utilities-library";
-// ============================================================
-// Agentic Routes — File System & Web Interaction Endpoints
-// ============================================================
-// Exposes sandboxed file operations and web fetching for
-// AI agentic loops. All file operations are restricted to
-// configured allowed directories.
-//
-// Mounted at: /agentic
-// ============================================================
+// ─── File System & Web Interaction Endpoints ────────────────
 import { Router } from "express";
 import CONFIG from "../config.js";
 import { agenticHandler } from "../utilities.js";
@@ -77,9 +69,7 @@ import {
 } from "../services/AgenticSchedulerService.js";
 import { agenticNotebookEdit } from "../services/AgenticNotebookService.js";
 const router = Router();
-// ═══════════════════════════════════════════════════════════════
-// 1. File Operations
-// ═══════════════════════════════════════════════════════════════
+// ─── 1. File Operations ─────────────────────────────────────
 // ── Read File ─────────────────────────────────────────────────
 router.post("/file/read", agenticHandler(async (req) => {
   const { path, startLine, endLine } = req.body;
@@ -131,9 +121,7 @@ router.post("/file/patch", agenticHandler(async (req) => {
   }
   return agenticPatchFile(path, patch);
 }));
-// ═══════════════════════════════════════════════════════════════
-// 2. Directory Operations
-// ═══════════════════════════════════════════════════════════════
+// ─── 2. Directory Operations ────────────────────────────────
 router.post("/directory/list", agenticHandler(async (req) => {
   const { path, recursive, maxDepth } = req.body;
   if (!path || typeof path !== "string") {
@@ -144,9 +132,7 @@ router.post("/directory/list", agenticHandler(async (req) => {
     maxDepth: maxDepth ? Math.min(parseInt(maxDepth, 10), 5) : 3,
   });
 }));
-// ═══════════════════════════════════════════════════════════════
-// 3. Search Operations
-// ═══════════════════════════════════════════════════════════════
+// ─── 3. Search Operations ───────────────────────────────────
 // ── Grep Search ───────────────────────────────────────────────
 router.post("/search/grep", agenticHandler(async (req) => {
   const { pattern, searchPath, isRegex, includes, caseInsensitive, matchPerLine } = req.body;
@@ -174,9 +160,7 @@ router.post("/search/glob", agenticHandler(async (req) => {
   }
   return agenticGlobFiles(pattern, searchPath);
 }));
-// ═══════════════════════════════════════════════════════════════
-// 4. Web Operations
-// ═══════════════════════════════════════════════════════════════
+// ─── 4. Web Operations ──────────────────────────────────────
 // ── Fetch URL ─────────────────────────────────────────────────
 router.post("/web/fetch", agenticHandler(async (req) => {
   const { url, selector } = req.body;
@@ -197,9 +181,7 @@ router.post("/web/search", agenticHandler(async (req) => {
     siteSearch,
   });
 }));
-// ═══════════════════════════════════════════════════════════════
-// 5. Extended File Operations
-// ═══════════════════════════════════════════════════════════════
+// ─── 5. Extended File Operations ────────────────────────────
 // ── Multi-File Read ───────────────────────────────────────────
 router.post("/file/read-multi", agenticHandler(async (req) => {
   const { files } = req.body;
@@ -247,9 +229,7 @@ router.post("/file/delete", agenticHandler(async (req) => {
   }
   return agenticDeleteFile(path);
 }));
-// ═══════════════════════════════════════════════════════════════
-// 6. Command Execution
-// ═══════════════════════════════════════════════════════════════
+// ─── 6. Command Execution ───────────────────────────────────
 router.post("/command/run", async (req, res) => {
   const { command, cwd, timeout } = req.body;
   if (!command || typeof command !== "string") {
@@ -310,9 +290,7 @@ router.post("/command/kill", async (req, res) => {
   }
   res.json(result);
 });
-// ═══════════════════════════════════════════════════════════════
-// 7. Git Operations
-// ═══════════════════════════════════════════════════════════════
+// ─── 7. Git Operations ──────────────────────────────────────
 router.post("/git/status", agenticHandler(async (req) => {
   const { path } = req.body;
   if (!path || typeof path !== "string") {
@@ -382,9 +360,7 @@ router.post("/git/worktree/cleanup", agenticHandler(async (req) => {
   }
   return agenticGitWorktreeCleanup(path);
 }));
-// ═══════════════════════════════════════════════════════════════
-// 8. Project Intelligence
-// ═══════════════════════════════════════════════════════════════
+// ─── 8. Project Intelligence ────────────────────────────────
 router.post("/project/summary", agenticHandler(async (req) => {
   const { path } = req.body;
   if (!path || typeof path !== "string") {
@@ -392,9 +368,7 @@ router.post("/project/summary", agenticHandler(async (req) => {
   }
   return agenticProjectSummary(path);
 }));
-// ═══════════════════════════════════════════════════════════════
-// 9. Browser Automation
-// ═══════════════════════════════════════════════════════════════
+// ─── 9. Browser Automation ──────────────────────────────────
 router.post("/browser/action", agenticHandler(async (req) => {
   const { action } = req.body;
   if (!action || typeof action !== "string") {
@@ -415,9 +389,7 @@ router.post("/browser/script", agenticHandler(async (req) => {
     timeout,
   });
 }));
-// ═══════════════════════════════════════════════════════════════
-// 10. LSP Code Intelligence
-// ═══════════════════════════════════════════════════════════════
+// ─── 10. LSP Code Intelligence ──────────────────────────────
 // ── LSP Action ────────────────────────────────────────────────
 router.post("/lsp/action", agenticHandler(async (req) => {
   const { operation, filePath, line, character, workspacePath } = req.body;
@@ -448,9 +420,7 @@ router.post("/lsp/shutdown", async (_req, res) => {
     res.status(500).json({ error: `LSP shutdown failed: ${error.message}` });
   }
 });
-// ═══════════════════════════════════════════════════════════════
-// Health
-// ═══════════════════════════════════════════════════════════════
+// ─── Health ─────────────────────────────────────────────────
 export function getAgenticHealth() {
   return {
     readFile: "on-demand (sandboxed fs)",
@@ -499,9 +469,7 @@ router.post("/git", async (req, res) => {
   req.body = params;
   return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
 });
-// ═══════════════════════════════════════════════════════════════
-// 12. Task Management
-// ═══════════════════════════════════════════════════════════════
+// ─── 12. Task Management ────────────────────────────────────
 // ── Create Task ───────────────────────────────────────────────
 router.post("/task/create", async (req, res) => {
   const { project, subject, description, status, activeForm, metadata } = req.body;
@@ -598,9 +566,7 @@ router.post("/task/delete", agenticHandler(async (req) => {
   }
   return agenticTaskDelete(project, taskId);
 }));
-// ═══════════════════════════════════════════════════════════════
-// 13. Tool Smoke Tests
-// ═══════════════════════════════════════════════════════════════
+// ─── 13. Tool Smoke Tests ───────────────────────────────────
 // ── Single tool test ──────────────────────────────────────────
 router.post("/test-tool", async (req, res) => {
   const { toolName } = req.body;
@@ -629,9 +595,7 @@ router.post("/test-all-tools", async (req, res) => {
 router.get("/testable-tools", (_req, res) => {
   res.json(getTestableTools());
 });
-// ═══════════════════════════════════════════════════════════════
-// 14. Memory Persistence
-// ═══════════════════════════════════════════════════════════════
+// ─── 14. Memory Persistence ─────────────────────────────────
 /**
  * POST /agentic/memory/upsert
  *
@@ -676,9 +640,7 @@ router.post("/memory/upsert", async (req, res) => {
     res.status(500).json({ error: `Memory storage failed: ${err.message}` });
   }
 });
-// ═══════════════════════════════════════════════════════════════
-// 15. Custom Agent Creation
-// ═══════════════════════════════════════════════════════════════
+// ─── 15. Custom Agent Creation ──────────────────────────────
 /**
  * POST /agentic/custom-agent/create
  *
@@ -735,9 +697,7 @@ router.post("/custom-agent/create", async (req, res) => {
     res.status(500).json({ error: `Custom agent creation failed: ${err.message}` });
   }
 });
-// ═══════════════════════════════════════════════════════════════
-// 16. Tool Search (Meta-Tool)
-// ═══════════════════════════════════════════════════════════════
+// ─── 16. Tool Search (Meta-Tool) ────────────────────────────
 router.post("/tool/search", agenticHandler(async (req) => {
   const { query, domain, label, limit } = req.body;
   if (!query && !domain && !label) {
@@ -749,9 +709,7 @@ router.post("/tool/search", agenticHandler(async (req) => {
     limit: limit ? Math.min(parseInt(limit, 10), 50) : 20,
   });
 }));
-// ═══════════════════════════════════════════════════════════════
-// 17. Scheduling (Cron + Remote Trigger)
-// ═══════════════════════════════════════════════════════════════
+// ─── 17. Scheduling (Cron + Remote Trigger) ─────────────────
 // ── Create Schedule ───────────────────────────────────────────
 router.post("/schedule/create", agenticHandler(async (req) => {
   const { project, name, schedule, prompt, type, agent, model } = req.body;
@@ -799,9 +757,7 @@ router.post("/trigger/fire", agenticHandler(async (req) => {
   }
   return agenticTriggerFire(project, triggerName, payload || {});
 }));
-// ═══════════════════════════════════════════════════════════════
-// 18. Notebook Editing
-// ═══════════════════════════════════════════════════════════════
+// ─── 18. Notebook Editing ───────────────────────────────────
 router.post("/notebook/edit", agenticHandler(async (req) => {
   const { path, action, cellIndex, content, cellType } = req.body;
   if (!path || typeof path !== "string") {

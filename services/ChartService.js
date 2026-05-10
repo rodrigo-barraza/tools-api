@@ -1,10 +1,4 @@
-// ============================================================
-// Chart Service — Server-Side PNG Chart Rendering
-// ============================================================
-// Uses chartjs-node-canvas to render Chart.js charts as PNG
-// buffers server-side. Returns image/png so markdown ![](url)
-// embeds work correctly.
-// ============================================================
+// ─── Server-Side PNG Chart Rendering ────────────────────────
 
 import { MS_PER_HOUR } from "@rodrigo-barraza/utilities-library";
 import crypto from "node:crypto";

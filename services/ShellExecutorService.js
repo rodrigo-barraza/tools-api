@@ -1,16 +1,4 @@
-// ============================================================
-// Shell Executor Service — Allowlisted Command Execution
-// ============================================================
-// Executes a restricted set of safe shell commands via
-// subprocess. Input is piped through stdin, output captured
-// from stdout/stderr.
-//
-// ONLY allowlisted binaries are permitted — no filesystem
-// mutation, no network, no traversal.
-//
-// Used by the `execute_shell` tool so LLMs can leverage classic
-// Unix text-processing pipelines (awk, sed, jq, sort, etc.)
-// ============================================================
+// ─── Allowlisted Command Execution ──────────────────────────
 
 import { spawn } from "node:child_process";
 

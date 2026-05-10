@@ -1,25 +1,4 @@
-// ============================================================
-// Tool Schema Service — Single Source of Truth
-// ============================================================
-// Defines all AI-callable tool schemas.
-// Each tool includes:
-//   - name, description, parameters (JSON Schema for LLM)
-//   - endpoint metadata (path, pathParams, queryParams)
-//     so clients can build executors dynamically.
-//   - dataSource metadata (type, provider, intervalSeconds)
-//     describing where data comes from and how it's refreshed.
-//
-// Consumed by:
-//   - tools-api: GET /admin/tool-schemas
-//   - prism-client: fetches schemas and builds a generic executor
-//
-// CRITICAL CONVENTION:
-//   Property keys in parameters.properties MUST exactly match
-//   the names in endpoint.queryParams / endpoint.pathParams.
-//   Prism Client sends the AI's parameter names directly as URL
-//   query params — e.g. if the property is "q", the URL gets
-//   ?q=value. A mismatch (e.g. "query" vs "q") causes 400s.
-// ============================================================
+// ─── Single Source of Truth ─────────────────────────────────
 
 // ────────────────────────────────────────────────────────────
 // Interval Constants — imported as single source of truth
@@ -4661,7 +4640,6 @@ const TOOL_DEFINITIONS = [
   },
 
   // ── Exoplanet Tools ────────────────────────────────────────────
-
 
   // ── FDA Drug NDC Tools ─────────────────────────────────────────
 

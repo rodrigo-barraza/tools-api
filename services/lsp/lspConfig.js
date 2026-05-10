@@ -1,13 +1,4 @@
-// ============================================================
-// LSP Server Configuration — Language Server Registry
-// ============================================================
-// Hardcoded configurations for supported language servers.
-// Each entry defines the binary, arguments, and file extension
-// mappings for a specific language server.
-//
-// Servers are spawned via npx --yes for zero-install setup.
-// First invocation downloads from npm; subsequent runs use cache.
-// ============================================================
+// ─── Language Server Registry ───────────────────────────────
 
 /**
  * @typedef {object} LspServerConfig

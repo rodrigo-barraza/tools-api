@@ -1,11 +1,4 @@
-// ============================================================
-// Rate Limiter Service
-// ============================================================
-// Token-bucket-style rate limiter that enforces minimum delay
-// between sequential requests to each external API provider.
-// Uses API_RATE_LIMITS from constants.js as the single source
-// of truth for all rate limit values.
-// ============================================================
+// ─── Rate Limiter Service ───────────────────────────────────
 
 import { API_RATE_LIMITS } from "../constants.js";
 

@@ -6,14 +6,6 @@ import healthRoutes from "../routes/HealthRoutes.js";
 import utilityRoutes from "../routes/UtilityRoutes.js";
 
 // ─── Schema Regression Tests for Static In-Memory Datasets ──────
-//
-// Uses supertest to mount domain routers in-process.
-// All tested endpoints load CSV data at import time — no network
-// calls, no MongoDB, no external APIs required.
-//
-// Tests deeper schema assertions than KnowledgeEndpoints/etc.
-// to catch field renames, missing properties, and data regressions.
-// ──────────────────────────────────────────────────────────────────
 
 const app = express();
 app.use(express.json());

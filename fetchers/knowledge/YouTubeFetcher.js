@@ -1,13 +1,4 @@
-// ============================================================
-// YouTube Fetcher — Video Metadata + Transcript Extraction
-// ============================================================
-// Combines YouTube's public oEmbed API (no API key required)
-// with the youtube-transcript package for caption/subtitle
-// extraction. Supports standard watch URLs, short URLs,
-// shorts, and live streams.
-//
-// oEmbed docs: https://oembed.com/
-// ============================================================
+// ─── Video Metadata + Transcript Extraction ─────────────────
 
 import { YoutubeTranscript } from "youtube-transcript";
 

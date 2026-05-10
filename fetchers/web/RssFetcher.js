@@ -1,10 +1,4 @@
-// ============================================================
-// RSS Fetcher — Parse RSS/Atom Feeds into Structured JSON
-// ============================================================
-// Uses the existing xml2js dependency to parse RSS 2.0 and
-// Atom feeds into clean structured data. Works with blogs,
-// news sites, changelogs, podcasts, and any URL serving XML.
-// ============================================================
+// ─── Parse RSS/Atom Feeds into Structured JSON ──────────────
 
 import xml2js from "xml2js";
 import { USER_AGENT } from "../../constants.js";

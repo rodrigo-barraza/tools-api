@@ -1,10 +1,4 @@
-// ============================================================
-// GitHub Fetcher — Repository Metadata + README
-// ============================================================
-// Uses the GitHub REST API v3 (no auth needed for public repos).
-// Rate limit: 60 requests/hour unauthenticated.
-// Docs: https://docs.github.com/en/rest
-// ============================================================
+// ─── Repository Metadata + README ───────────────────────────
 
 import { USER_AGENT } from "../../constants.js";
 

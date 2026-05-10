@@ -1,10 +1,4 @@
-// ============================================================
-// Stack Overflow Fetcher — Question + Answers
-// ============================================================
-// Uses the Stack Exchange API v2.3. No auth needed.
-// Rate limit: 300 requests/day without a key, 10,000 with.
-// Docs: https://api.stackexchange.com/docs
-// ============================================================
+// ─── Question + Answers ─────────────────────────────────────
 
 const SE_API = "https://api.stackexchange.com/2.3";
 const MAX_ANSWERS = 10;

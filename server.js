@@ -170,8 +170,6 @@ async function start() {
       setupAgenticScheduleCollection(),
     ]);
 
-
-
     // Connect to separate Lupos database (Discord message archive)
     await connectLuposDB(CONFIG.MONGODB_URI);
     await setupLuposCollections();

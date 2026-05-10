@@ -1,9 +1,4 @@
-// ============================================================
-// PyPI Fetcher — Python Package Metadata
-// ============================================================
-// Uses the public PyPI JSON API. No auth needed.
-// Docs: https://warehouse.pypa.io/api-reference/json.html
-// ============================================================
+// ─── Python Package Metadata ────────────────────────────────
 
 const PYPI_API = "https://pypi.org/pypi";
 

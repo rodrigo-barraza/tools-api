@@ -1,13 +1,4 @@
-// ============================================================
-// Agentic Tool Test Service — Smoke Tests for Agent Tools
-// ============================================================
-// Provides predefined, non-destructive smoke tests for each
-// agentic tool with the "coding" label. Tests run in the
-// configured workspace root using temporary fixtures that are
-// automatically cleaned up.
-//
-// Each test returns { success, duration, message, details }.
-// ============================================================
+// ─── Smoke Tests for Agent Tools ────────────────────────────
 
 import { writeFile, unlink, mkdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
@@ -261,8 +252,6 @@ const TESTS = {
         timeout: 5000,
       }),
     ),
-
-
 
   // ── Tool Discovery (meta) ────────────────────────────────
 

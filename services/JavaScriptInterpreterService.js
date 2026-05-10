@@ -1,17 +1,4 @@
-// ============================================================
-// JavaScript Interpreter Service — Sandboxed Code Execution
-// ============================================================
-// Executes arbitrary JavaScript code in Node's vm module with:
-//   - Configurable timeout (default 5s, max 30s)
-//   - No access to process, require, import, fetch, etc.
-//   - Separate stdout capture via console.log override
-//   - Execution time measurement
-//
-// Much faster than spawning a Python subprocess (~0ms spawn
-// vs ~100ms subprocess). Use for quick data transforms, JSON
-// manipulation, regex, and math that the LLM can naturally
-// express in JavaScript.
-// ============================================================
+// ─── Sandboxed Code Execution ───────────────────────────────
 
 import vm from "node:vm";
 

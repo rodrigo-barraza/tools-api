@@ -1,19 +1,4 @@
-// ============================================================
-// Agent Connection Manager — Remote Workspace Agent Registry
-// ============================================================
-// Manages WebSocket connections from workspace-service CLI
-// instances. Each agent registers the workspace roots it
-// serves, enabling tools-service to route file/git/shell
-// operations to the correct agent.
-//
-// Key responsibilities:
-//   - Accept WebSocket connections on /ws/agent
-//   - Authenticate agents via x-api-secret header
-//   - Register/deregister agent roots
-//   - Route operations by path prefix
-//   - JSON-RPC 2.0 request/response with timeout
-//   - Health monitoring via ping/pong
-// ============================================================
+// ─── Remote Workspace Agent Registry ────────────────────────
 
 import { WebSocketServer } from "ws";
 import crypto from "node:crypto";

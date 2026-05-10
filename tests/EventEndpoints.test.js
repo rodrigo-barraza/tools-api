@@ -3,11 +3,6 @@ import { createTestApp } from "./testApp.js";
 import eventRoutes from "../routes/EventRoutes.js";
 
 // ─── Unit Tests for Event Domain Endpoints ──────────────────────
-//
-// Uses supertest to mount EventRoutes in-process.
-// EventCache returns empty defaults, DB-backed routes (today,
-// upcoming, past, search) require MongoDB but test validation.
-// ─────────────────────────────────────────────────────────────────
 
 const app = createTestApp("/event", eventRoutes);
 

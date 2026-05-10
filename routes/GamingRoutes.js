@@ -1,9 +1,4 @@
-// ============================================================
-// Gaming Routes — Video Game Data Endpoints
-// ============================================================
-// Currently: Dota 2 via OpenDota API (free, no key).
-// Mounted at: /gaming
-// ============================================================
+// ─── Video Game Data Endpoints ──────────────────────────────
 
 import { Router } from "express";
 import {
@@ -18,9 +13,7 @@ import {
 
 const router = Router();
 
-// ═══════════════════════════════════════════════════════════════
-// 1. Dota 2 — Hero Data
-// ═══════════════════════════════════════════════════════════════
+// ─── 1. Dota 2 — Hero Data ──────────────────────────────────
 
 router.get("/dota/heroes", async (req, res) => {
   try {
@@ -91,9 +84,7 @@ router.get("/dota/heroes/:heroId/matchups", async (req, res) => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════════
-// 2. Dota 2 — Player Data
-// ═══════════════════════════════════════════════════════════════
+// ─── 2. Dota 2 — Player Data ────────────────────────────────
 
 router.get("/dota/players/:accountId", async (req, res) => {
   try {
@@ -133,9 +124,7 @@ router.get("/dota/players/:accountId/matches", async (req, res) => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════════
-// 3. Dota 2 — Match Data
-// ═══════════════════════════════════════════════════════════════
+// ─── 3. Dota 2 — Match Data ─────────────────────────────────
 
 router.get("/dota/matches/:matchId", async (req, res) => {
   try {
@@ -161,9 +150,7 @@ router.get("/dota/matches/:matchId", async (req, res) => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════════
-// 4. Dota 2 — Pro Scene
-// ═══════════════════════════════════════════════════════════════
+// ─── 4. Dota 2 — Pro Scene ──────────────────────────────────
 
 router.get("/dota/pro-matches", async (req, res) => {
   try {
@@ -175,9 +162,7 @@ router.get("/dota/pro-matches", async (req, res) => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════════
-// Unified Dota Dispatcher (for AI tool schema)
-// ═══════════════════════════════════════════════════════════════
+// ─── Unified Dota Dispatcher (for AI tool schema) ───────────
 
 router.get("/dota", async (req, res) => {
   const { action, query, heroId, accountId, matchId, limit, role, attr } = req.query;
@@ -238,9 +223,7 @@ router.get("/dota", async (req, res) => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════════
-// Health
-// ═══════════════════════════════════════════════════════════════
+// ─── Health ─────────────────────────────────────────────────
 
 export function getGamingHealth() {
   return {

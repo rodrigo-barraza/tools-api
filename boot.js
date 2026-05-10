@@ -1,6 +1,4 @@
-// ============================================================
-// Tools API — Boot Sequence
-// ============================================================
+// ─── Boot Sequence ──────────────────────────────────────────
 
 import { bootstrapEnv } from "@rodrigo-barraza/utilities-library/vault";
 

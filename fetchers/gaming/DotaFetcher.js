@@ -1,9 +1,4 @@
-// ============================================================
-// DotaFetcher — OpenDota API Client
-// ============================================================
-// Free API, no key required. Rate-limited to 60 req/min.
-// Docs: https://docs.opendota.com/
-// ============================================================
+// ─── OpenDota API Client ────────────────────────────────────
 
 import { MS_PER_DAY } from "@rodrigo-barraza/utilities-library";
 

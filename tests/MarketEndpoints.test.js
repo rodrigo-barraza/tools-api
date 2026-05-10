@@ -3,12 +3,6 @@ import { createTestApp } from "./testApp.js";
 import marketRoutes from "../routes/MarketRoutes.js";
 
 // ─── Unit Tests for Market Domain Endpoints ─────────────────────
-//
-// Uses supertest to mount the MarketRoutes router in-process.
-// CommodityCache functions return empty/default data when no
-// collector has run — tests validate route logic, status codes,
-// and response shapes without requiring a live server.
-// ─────────────────────────────────────────────────────────────────
 
 const app = createTestApp("/market", marketRoutes);
 

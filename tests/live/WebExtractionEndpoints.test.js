@@ -3,15 +3,6 @@ import assert from "node:assert/strict";
 import { BASE_URL } from "./helpers.js";
 
 // ─── Integration Tests for Web Extraction Endpoints ─────────────
-//
-// Tests for:
-// 1. Individual platform fetchers (YouTube, GitHub, Reddit, etc.)
-// 2. Unified get_web_content dispatcher
-// 3. Unified get_package_info dispatcher
-// 4. PDF and RSS extraction
-//
-// All hit the live tools-api server on localhost:5590.
-// ────────────────────────────────────────────────────────────────
 
 const BASE = `${BASE_URL}/knowledge`;
 

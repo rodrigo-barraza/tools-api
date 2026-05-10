@@ -1,18 +1,4 @@
-// ============================================================
-// Agentic LSP Service — Code Intelligence Operations
-// ============================================================
-// Exposes high-level code navigation operations to the agent:
-//   - goToDefinition    → Jump to where a symbol is defined
-//   - findReferences    → Find all usages of a symbol
-//   - hover             → Get type info and documentation
-//   - documentSymbol    → Outline symbols in a file
-//   - goToImplementation → Find concrete implementations
-//
-// Handles input normalization (1-based → 0-based), automatic
-// file opening, result formatting, and gitignore filtering.
-//
-// Follows the same pattern as AgenticFileService, AgenticGitService.
-// ============================================================
+// ─── Code Intelligence Operations ───────────────────────────
 
 import { readFile, stat } from "node:fs/promises";
 import { resolve, extname, relative, dirname } from "node:path";
@@ -23,8 +9,6 @@ import { ALLOWED_ROOTS } from "./AgenticFileService.js";
 // ────────────────────────────────────────────────────────────
 // Configuration
 // ────────────────────────────────────────────────────────────
-
-
 
 const MAX_FILE_SIZE_FOR_OPEN = 1_048_576; // 1 MB — don't send huge files to LSP
 const MAX_LOCATIONS_RETURNED = 30;        // Cap locations in results

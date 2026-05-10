@@ -21,9 +21,6 @@ import {
 } from "../../constants.js";
 
 // ─── Internal access to raw FOOD_DB ────────────────────────────
-// We need direct FOOD_DB access for vector operations.
-// NutritionFetcher doesn't export it, so we re-import the same data.
-// This is a hot path — lazy-loaded and cached.
 
 import { readFileSync, readdirSync } from "fs";
 import { fileURLToPath } from "url";

@@ -3,12 +3,6 @@ import { createTestApp } from "./testApp.js";
 import healthRoutes from "../routes/HealthRoutes.js";
 
 // ─── Unit Tests for Health/Drug Endpoints ───────────────────────
-//
-// Uses supertest to mount HealthRoutes in-process.
-// FDA NDC drug endpoints use in-memory CSV data.
-// openFDA endpoints (drugs/search, drugs/adverse-events,
-// drugs/recalls) hit external APIs — only validation tested.
-// ─────────────────────────────────────────────────────────────────
 
 const app = createTestApp("/health", healthRoutes);
 

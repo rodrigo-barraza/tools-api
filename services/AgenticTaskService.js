@@ -1,19 +1,4 @@
-// ============================================================
-// Agentic Task Service — Persistent Task State Management
-// ============================================================
-// Provides a MongoDB-backed scratchpad for AI agents to track
-// multi-step work items across context window boundaries.
-//
-// Tasks survive context truncation and memory consolidation,
-// giving agents a reliable "working memory" for complex,
-// multi-stage coding workflows.
-//
-// Schema is pre-wired for future multi-agent (swarm) support
-// with owner/blocks/blockedBy fields, but single-agent CRUD
-// is the current scope.
-//
-// Collection: agent_tasks
-// ============================================================
+// ─── Persistent Task State Management ───────────────────────
 
 import { getDB } from "../db.js";
 

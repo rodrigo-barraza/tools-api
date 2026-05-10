@@ -1,9 +1,4 @@
-// ============================================================
-// NPM Fetcher — Package Metadata + README
-// ============================================================
-// Uses the public NPM Registry API. No auth needed.
-// Docs: https://github.com/npm/registry/blob/main/docs/REGISTRY-API.md
-// ============================================================
+// ─── Package Metadata + README ──────────────────────────────
 
 const NPM_REGISTRY = "https://registry.npmjs.org";
 const NPM_DOWNLOADS = "https://api.npmjs.org/downloads/point/last-week";

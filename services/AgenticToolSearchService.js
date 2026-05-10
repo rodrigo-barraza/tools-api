@@ -1,14 +1,4 @@
-// ============================================================
-// Agentic Tool Search Service — Meta-Tool for Tool Discovery
-// ============================================================
-// Provides keyword/domain/label-based search across all
-// registered tool schemas. Returns matching tool names and
-// descriptions without executing anything.
-//
-// This enables deferred tool discovery — agents can start with
-// a reduced tool set and discover additional capabilities
-// on demand, reducing initial prompt token overhead.
-// ============================================================
+// ─── Meta-Tool for Tool Discovery ───────────────────────────
 
 import { getToolSchemas } from "./ToolSchemaService.js";
 

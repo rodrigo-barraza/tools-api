@@ -1,9 +1,4 @@
 // ─── Unit Tests for ToolSchemaService ───────────────────────────
-//
-// Validates tool schema integrity: required fields, no duplicates,
-// labels, and unified tool schema correctness.
-// No network calls or live server required.
-// ────────────────────────────────────────────────────────────────
 
 describe("ToolSchemaService", () => {
   let getToolSchemas;

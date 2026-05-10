@@ -3,11 +3,6 @@ import { createTestApp } from "./testApp.js";
 import productRoutes from "../routes/ProductRoutes.js";
 
 // ─── Unit Tests for Product Domain Endpoints ────────────────────
-//
-// Uses supertest to mount ProductRoutes in-process.
-// ProductCache/BestBuyCAAvailabilityCache return empty defaults
-// when no collector has run — tests validate route logic.
-// ─────────────────────────────────────────────────────────────────
 
 const app = createTestApp("/product", productRoutes);
 

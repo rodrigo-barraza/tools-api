@@ -1,17 +1,5 @@
 import { sleep } from "@rodrigo-barraza/utilities-library";
-// ============================================================
-// LSP Server Instance — Single Server Lifecycle Manager
-// ============================================================
-// Manages the lifecycle of a single LSP server process with
-// state machine tracking, health monitoring, and retry logic.
-//
-// State transitions:
-//   stopped → starting → running → stopping → stopped
-//                     ↘ error ↗ (crash/timeout)
-//   error → starting (on retry, if maxRestarts not exceeded)
-//
-// Adapted from Claude Code's LSPServerInstance.ts.
-// ============================================================
+// ─── Single Server Lifecycle Manager ────────────────────────
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createLspClient } from "./LspClient.js";

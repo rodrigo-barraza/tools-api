@@ -1,17 +1,4 @@
-// ============================================================
-// Tool Call Logger Middleware
-// ============================================================
-// Tracks individual tool-call-level telemetry to the
-// `tool_calls` collection in MongoDB. Similar pattern to
-// Prism's RequestLogger but focused on tool execution
-// performance, args, results, and caller context.
-//
-// This middleware intercepts JSON responses on routes that
-// correspond to registered tool endpoints. It builds a
-// reverse map from endpoint path → tool name using the
-// ToolSchemaService definitions, so every tool invocation
-// is automatically captured with zero per-route boilerplate.
-// ============================================================
+// ─── Tool Call Logger Middleware ────────────────────────────
 
 import { performance } from "node:perf_hooks";
 import logger from "../logger.js";

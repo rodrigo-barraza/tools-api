@@ -3,12 +3,6 @@ import { createTestApp } from "./testApp.js";
 import utilityRoutes from "../routes/UtilityRoutes.js";
 
 // ─── Unit Tests for Utility Domain Endpoints ────────────────────
-//
-// Uses supertest to mount UtilityRoutes in-process.
-// Airport endpoints use in-memory CSV data — full tests.
-// External API endpoints (currency, timezone, IP, places)
-// are tested for input validation only.
-// ─────────────────────────────────────────────────────────────────
 
 const app = createTestApp("/utility", utilityRoutes);
 

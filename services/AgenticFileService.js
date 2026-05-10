@@ -1,20 +1,5 @@
 import { escapeRegex } from "@rodrigo-barraza/utilities-library";
-// ============================================================
-// Agentic File Service — Sandboxed File Operations
-// ============================================================
-// Provides file system primitives (read, write, edit, search,
-// list) for AI-driven agentic coding loops.
-//
-// Security model:
-//   - All paths are resolved to absolute canonical paths
-//   - Only paths within ALLOWED_ROOTS are permitted
-//   - Blocked patterns prevent access to sensitive files
-//   - Size limits prevent resource exhaustion
-//
-// Remote workspace agent:
-//   - If a connected agent serves the target path, the
-//     operation is proxied via JSON-RPC over WebSocket.
-// ============================================================
+// ─── Sandboxed File Operations ──────────────────────────────
 
 import { readFile, writeFile, stat, readdir, mkdir, rename, unlink } from "node:fs/promises";
 import { resolve, relative, extname, dirname } from "node:path";

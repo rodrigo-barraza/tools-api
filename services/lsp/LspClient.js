@@ -1,20 +1,4 @@
-// ============================================================
-// LSP Client — JSON-RPC 2.0 over stdio
-// ============================================================
-// Low-level transport layer for communicating with Language
-// Server Protocol (LSP) servers via stdio pipes.
-//
-// Uses vscode-jsonrpc for the JSON-RPC 2.0 message framing.
-// Each client wraps a single child process and exposes
-// request/notification/handler methods.
-//
-// Usage:
-//   const client = createLspClient('typescript');
-//   await client.start('npx', ['typescript-language-server', '--stdio']);
-//   await client.initialize(initParams);
-//   const result = await client.sendRequest('textDocument/definition', params);
-//   await client.stop();
-// ============================================================
+// ─── JSON-RPC 2.0 over stdio ────────────────────────────────
 
 import { spawn } from "node:child_process";
 import {

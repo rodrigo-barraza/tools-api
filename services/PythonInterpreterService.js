@@ -1,16 +1,4 @@
-// ============================================================
-// Python Interpreter Service — Sandboxed Code Execution
-// ============================================================
-// Executes arbitrary Python code in a subprocess with:
-//   - Configurable timeout (default 30s, max 60s)
-//   - Memory limit (256 MB via ulimit)
-//   - Separate stdout/stderr capture
-//   - Execution time measurement
-//   - Temporary file-based execution (avoids shell injection)
-//
-// Used by the `execute_python` tool so LLMs can run
-// calculations, data transformations, and analysis on-demand.
-// ============================================================
+// ─── Sandboxed Code Execution ───────────────────────────────
 
 import { spawn } from "node:child_process";
 import { writeFile, unlink, mkdtemp, rm } from "node:fs/promises";

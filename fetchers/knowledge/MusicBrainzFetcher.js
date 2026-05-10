@@ -1,10 +1,4 @@
-// ============================================================
-// MusicBrainzFetcher — Music Metadata API Client
-// ============================================================
-// Free API, no key required. Rate-limited to 1 req/sec.
-// Must include a User-Agent identifying the application.
-// Docs: https://musicbrainz.org/doc/MusicBrainz_API
-// ============================================================
+// ─── Music Metadata API Client ──────────────────────────────
 
 const BASE_URL = "https://musicbrainz.org/ws/2";
 const USER_AGENT = "SunToolsService/1.0 (rodrigo@rod.dev)";

@@ -1,15 +1,9 @@
-// ============================================================
-// Tools API — Unified Constants
-// ============================================================
-// Merged from event-api, market-api, product-api, trend-api, weather-api.
-// ============================================================
+// ─── Unified Constants ──────────────────────────────────────
 
 /** Standardized user-agent for all outbound HTTP fetchers. */
 export const USER_AGENT = "SunTools/1.0 (https://rod.dev)";
 
-// ═══════════════════════════════════════════════════════════════
-//  EVENT DOMAIN
-// ═══════════════════════════════════════════════════════════════
+// ─── EVENT DOMAIN ───────────────────────────────────────────
 
 // Fetch intervals
 export const TICKETMASTER_INTERVAL_MS = 3_600_000; // 1 hour
@@ -82,9 +76,7 @@ export const EVENT_STATUSES = {
   RESCHEDULED: "rescheduled",
 };
 
-// ═══════════════════════════════════════════════════════════════
-//  MARKET DOMAIN
-// ═══════════════════════════════════════════════════════════════
+// ─── MARKET DOMAIN ──────────────────────────────────────────
 
 export const ASSET_CATEGORIES = {
   ENERGY: "energy",
@@ -685,9 +677,7 @@ export const COMMODITY_TICKERS = {
 export const COMMODITIES_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
 export const SNAPSHOT_TTL_SECONDS = 90 * 24 * 60 * 60; // 90 days
 
-// ═══════════════════════════════════════════════════════════════
-//  PRODUCT DOMAIN
-// ═══════════════════════════════════════════════════════════════
+// ─── PRODUCT DOMAIN ─────────────────────────────────────────
 
 export const BESTBUY_INTERVAL_MS = 1_800_000; // 30 minutes
 export const AMAZON_INTERVAL_MS = 7_200_000; // 2 hours
@@ -1257,9 +1247,7 @@ export const COSTCO_CA_CATEGORIES = COSTCO_BASE_CATEGORIES.map((cat) => ({
 export const AMAZON_REQUEST_DELAY_MS = 3_000;
 export const AMAZON_MAX_PRODUCTS_PER_CATEGORY = 20;
 
-// ═══════════════════════════════════════════════════════════════
-//  FINANCE DOMAIN (Finnhub)
-// ═══════════════════════════════════════════════════════════════
+// ─── FINANCE DOMAIN (Finnhub) ───────────────────────────────
 
 export const FINNHUB_BASE_URL = "https://finnhub.io/api/v1";
 
@@ -1276,9 +1264,7 @@ export const FINNHUB_FINANCIALS_TTL_MS = 3_600_000; // 1 hour
 // Request pacing for any sequential batch calls
 export const FINNHUB_REQUEST_DELAY_MS = 200; // 200ms between sequential calls
 
-// ═══════════════════════════════════════════════════════════════
-//  FINANCE DOMAIN (FRED — Federal Reserve Economic Data)
-// ═══════════════════════════════════════════════════════════════
+// ─── FINANCE DOMAIN (FRED — Federal Reserve Economic Data) ──
 
 export const FRED_BASE_URL = "https://api.stlouisfed.org/fred";
 
@@ -1410,9 +1396,7 @@ export const FRED_DEFAULT_SERIES = {
   },
 };
 
-// ═══════════════════════════════════════════════════════════════
-//  TREND DOMAIN
-// ═══════════════════════════════════════════════════════════════
+// ─── TREND DOMAIN ───────────────────────────────────────────
 
 export const GOOGLE_TRENDS_INTERVAL_MS = 900_000; // 15 minutes
 export const REDDIT_INTERVAL_MS = 600_000; // 10 minutes
@@ -1492,9 +1476,7 @@ export const MASTODON_INSTANCES = [
   "https://fosstodon.org",
 ];
 
-// ═══════════════════════════════════════════════════════════════
-//  WEATHER DOMAIN
-// ═══════════════════════════════════════════════════════════════
+// ─── WEATHER DOMAIN ─────────────────────────────────────────
 
 export const OPEN_METEO_INTERVAL_MS = 300_000; // 5 minutes
 export const AIR_QUALITY_INTERVAL_MS = 300_000; // 5 minutes
@@ -1604,14 +1586,11 @@ export const TOMORROWIO_WEATHER_CODES = {
   8000: "Thunderstorm",
 };
 
-// ═══════════════════════════════════════════════════════════════
-//  API RATE LIMITS
-// ═══════════════════════════════════════════════════════════════
+// ─── API RATE LIMITS ────────────────────────────────────────
 // Single source of truth for all external API rate limits.
 // qps = queries per second, qpm = queries per minute, qpd = queries per day.
 // requestDelayMs = minimum ms between sequential requests (derived from qps/qpm).
 // null = unlimited or not documented.
-// ═══════════════════════════════════════════════════════════════
 
 export const API_RATE_LIMITS = {
   // ─── Event Domain ──────────────────────────────────────────────────
@@ -1917,9 +1896,7 @@ export const API_RATE_LIMITS = {
   },
 };
 
-// ═══════════════════════════════════════════════════════════════
-//  EBAY — Category Mappings
-// ═══════════════════════════════════════════════════════════════
+// ─── Category Mappings ──────────────────────────────────────
 
 export const EBAY_CATEGORIES = [
   { id: "9355", name: "Cell Phones", unified: "phones" },
@@ -1934,9 +1911,7 @@ export const EBAY_CATEGORIES = [
   { id: "6000", name: "Motors Parts & Accessories", unified: "automotive" },
 ];
 
-// ═══════════════════════════════════════════════════════════════
-//  ETSY — Taxonomy → Unified Category Mapping
-// ═══════════════════════════════════════════════════════════════
+// ─── Taxonomy → Unified Category Mapping ────────────────────
 
 export const ETSY_CATEGORY_MAP = {
   electronics_and_accessories: "electronics",
@@ -1959,9 +1934,7 @@ export const ETSY_CATEGORY_MAP = {
   weddings: "other",
 };
 
-// ═══════════════════════════════════════════════════════════════
-//  GOOGLE TRENDS — Geographic Regions
-// ═══════════════════════════════════════════════════════════════
+// ─── Geographic Regions ─────────────────────────────────────
 
 export const GOOGLE_TRENDS_GEOS = [
   "US",
@@ -1975,9 +1948,7 @@ export const GOOGLE_TRENDS_GEOS = [
   "BR",
 ];
 
-// ═══════════════════════════════════════════════════════════════
-//  SHARED
-// ═══════════════════════════════════════════════════════════════
+// ─── SHARED ─────────────────────────────────────────────────
 
 export const USER_AGENTS = [
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
@@ -1987,9 +1958,7 @@ export const USER_AGENTS = [
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
 ];
 
-// ═══════════════════════════════════════════════════════════════
-//  KNOWLEDGE DOMAIN
-// ═══════════════════════════════════════════════════════════════
+// ─── KNOWLEDGE DOMAIN ───────────────────────────────────────
 
 export const DICTIONARY_BASE_URL =
   "https://api.dictionaryapi.dev/api/v2/entries/en";
@@ -2018,31 +1987,21 @@ export const ARXIV_CATEGORIES = [
   { id: "stat", name: "Statistics" },
 ];
 
-// ═══════════════════════════════════════════════════════════════
-//  HEALTH DOMAIN
-// ═══════════════════════════════════════════════════════════════
-
+// ─── HEALTH DOMAIN ──────────────────────────────────────────
 
 export const OPEN_FDA_BASE_URL = "https://api.fda.gov";
 
-// ═══════════════════════════════════════════════════════════════
-//  TRANSIT DOMAIN
-// ═══════════════════════════════════════════════════════════════
+// ─── TRANSIT DOMAIN ─────────────────────────────────────────
 
 export const TRANSLINK_BASE_URL = "https://api.translink.ca/rttiapi/v1";
 
-// ═══════════════════════════════════════════════════════════════
-//  UTILITY DOMAIN
-// ═══════════════════════════════════════════════════════════════
+// ─── UTILITY DOMAIN ─────────────────────────────────────────
 
 export const EXCHANGE_RATE_BASE_URL = "https://open.er-api.com/v6/latest";
 export const TIMEZONE_BASE_URL = "https://worldtimeapi.org/api";
 export const IPINFO_BASE_URL = "https://ipinfo.io";
 
-
-// ═══════════════════════════════════════════════════════════════
-//  MARITIME DOMAIN (AIS Stream)
-// ═══════════════════════════════════════════════════════════════
+// ─── MARITIME DOMAIN (AIS Stream) ───────────────────────────
 
 export const AIS_STREAM_WS_URL = "wss://stream.aisstream.io/v0/stream";
 export const AIS_STREAM_MAX_BUFFER_SIZE = 5_000; // ring buffer of recent messages
@@ -2060,9 +2019,7 @@ export const AIS_STREAM_MESSAGE_TYPES = [
   "BaseStationReport",
 ];
 
-// ═══════════════════════════════════════════════════════════════
-//  ENERGY DOMAIN (EIA — U.S. Energy Information Administration)
-// ═══════════════════════════════════════════════════════════════
+// ─── ENERGY DOMAIN (EIA — U.S. Energy Information Administration) ─
 
 export const EIA_BASE_URL = "https://api.eia.gov";
 
@@ -2156,13 +2113,10 @@ export const EIA_DEFAULT_SERIES = {
   },
 };
 
-// ═══════════════════════════════════════════════════════════════
-//  DATASET REGISTRY — Static Data Manifests
-// ═══════════════════════════════════════════════════════════════
+// ─── Static Data Manifests ──────────────────────────────────
 // Tracks provenance for all static datasets loaded into memory.
 // Every new dataset (CSV, XLSX, JSON, etc.) must be registered
 // here with its source, version, year, and file path.
-// ═══════════════════════════════════════════════════════════════
 
 export const DATASET_REGISTRY = [
   {
@@ -2406,9 +2360,7 @@ export const DATASET_REGISTRY = [
   },
 ];
 
-// ═══════════════════════════════════════════════════════════════
-//  NUTRITION DOMAIN — Multi-Source Whole Foods Database
-// ═══════════════════════════════════════════════════════════════
+// ─── Multi-Source Whole Foods Database ──────────────────────
 
 /** Nutrient type categories for filtering */
 export const NUTRITION_NUTRIENT_TYPES = [
@@ -2565,9 +2517,7 @@ export const NUTRITION_STEROL_FIELDS = {
   beta_sitosterol: "betaSitosterol_mg",
 };
 
-// ═══════════════════════════════════════════════════════════════
-//  SHARED COMPUTE / ROUTE CONSTANTS
-// ═══════════════════════════════════════════════════════════════
+// ─── SHARED COMPUTE / ROUTE CONSTANTS ───────────────────────
 
 /** Default TTL for in-memory ephemeral stores (CSV, QR, LaTeX, Diagrams, Maps). */
 export const EPHEMERAL_TTL_MS = 60 * 60 * 1000; // 1 hour

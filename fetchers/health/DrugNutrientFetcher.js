@@ -12,8 +12,6 @@
  */
 
 // ─── Drug-Nutrient Interaction Database ────────────────────────
-// Curated from pharmacological literature and FDA labeling data.
-// Each entry: { drug pattern, nutrient, effect, severity, recommendation }
 
 const INTERACTION_DB = [
   // ── Statins ──────────────────────────────────────────────────

@@ -1,16 +1,4 @@
-// ============================================================
-// Agentic Scheduler Service — Cron + Remote Trigger System
-// ============================================================
-// Provides persistent scheduling for AI agent tasks.
-// Schedules are stored in MongoDB and checked by a poller
-// that fires due entries via Prism's /agent endpoint.
-//
-// Two modes:
-//   1. Cron — recurring or one-shot timed schedules
-//   2. Remote Trigger — named triggers fired by external events
-//
-// Collection: agent_schedules
-// ============================================================
+// ─── Cron + Remote Trigger System ───────────────────────────
 
 import { getDB } from "../db.js";
 import CONFIG from "../config.js";

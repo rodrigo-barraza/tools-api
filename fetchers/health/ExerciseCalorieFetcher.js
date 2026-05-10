@@ -12,8 +12,6 @@
  */
 
 // ─── MET Value Lookup Table ────────────────────────────────────
-// Maps exercise categories/types to MET values at different intensities.
-// Source: Compendium of Physical Activities (Ainsworth et al. 2011)
 
 const MET_TABLE = {
   // ── Strength Training ────────────────────────────────────────

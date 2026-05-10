@@ -1,17 +1,4 @@
-// ============================================================
-// Agentic Command Service — Sandboxed Project Command Execution
-// ============================================================
-// Executes project-scoped commands (npm, git, eslint, etc.) in
-// a subprocess with:
-//   - Allowlisted command prefixes (not arbitrary shell)
-//   - CWD scoped to ALLOWED_ROOTS
-//   - Configurable timeout (default 60s, max 120s)
-//   - Stdout/stderr capture with truncation
-//   - SSE streaming variant for real-time output
-//
-// Unlike ShellExecutorService (restricted text-processing),
-// this is designed for build/test/lint/VCS project commands.
-// ============================================================
+// ─── Sandboxed Project Command Execution ────────────────────
 
 import { spawn } from "node:child_process";
 import { validatePath } from "./AgenticFileService.js";

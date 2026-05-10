@@ -1,19 +1,4 @@
-// ============================================================
-// Generic Page Fetcher — Lightweight Article Extraction
-// ============================================================
-// Fetches any URL via HTTP and extracts readable content using
-// Cheerio (no Puppeteer / no headless browser overhead).
-//
-// Extracts:
-//   - Title, description, keywords, og:image (meta tags)
-//   - Main article text (readability heuristics)
-//   - Author, publish date, site name
-//   - Canonical URL
-//
-// For JS-rendered SPAs this will get limited content, but for
-// the vast majority of news articles, blogs, and static pages
-// it's vastly superior to Puppeteer in speed and reliability.
-// ============================================================
+// ─── Lightweight Article Extraction ─────────────────────────
 
 import * as cheerio from "cheerio";
 

@@ -1,10 +1,4 @@
-// ============================================================
-// PDF Fetcher — Download and Extract Text from PDF URLs
-// ============================================================
-// Downloads a PDF from a URL and extracts text content using
-// pdf-parse v2. Useful for reading research papers, docs,
-// invoices, and other PDF documents the agent encounters.
-// ============================================================
+// ─── Download and Extract Text from PDF URLs ────────────────
 
 import { PDFParse } from "pdf-parse";
 

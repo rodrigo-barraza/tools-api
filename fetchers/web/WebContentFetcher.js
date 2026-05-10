@@ -1,14 +1,4 @@
-// ============================================================
-// Web Content Fetcher — Unified URL → Structured Content
-// ============================================================
-// Auto-detects the platform from a URL and delegates to the
-// specialized fetcher. One tool replaces six individual ones,
-// saving system prompt space for the agent.
-//
-// Supported platforms:
-//   GitHub, Reddit, Twitter/X, Hacker News, Stack Overflow,
-//   YouTube, and any generic web page (fallback)
-// ============================================================
+// ─── Unified URL → Structured Content ───────────────────────
 
 import { getRedditThread } from "./RedditFetcher.js";
 import { getTwitterPost } from "./TwitterFetcher.js";

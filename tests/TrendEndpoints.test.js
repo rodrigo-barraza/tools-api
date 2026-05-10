@@ -3,11 +3,6 @@ import { createTestApp } from "./testApp.js";
 import trendRoutes from "../routes/TrendRoutes.js";
 
 // ─── Unit Tests for Trend Domain Endpoints ──────────────────────
-//
-// Uses supertest to mount TrendRoutes in-process.
-// TrendCache returns empty defaults when no collector has run —
-// tests validate route logic, status codes, and response shapes.
-// ─────────────────────────────────────────────────────────────────
 
 const app = createTestApp("/trend", trendRoutes);
 

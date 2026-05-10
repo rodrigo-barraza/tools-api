@@ -1,10 +1,4 @@
-// ============================================================
-// Twitter/X Fetcher — Post Content Extraction
-// ============================================================
-// Uses the fxtwitter.com open API as primary source and
-// publish.twitter.com/oembed as fallback. No auth needed.
-// fxtwitter: https://github.com/FixTweet/FxTwitter
-// ============================================================
+// ─── Twitter/X Fetcher — Post Content Extraction ────────────
 
 import { USER_AGENT } from "../../constants.js";
 

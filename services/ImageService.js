@@ -1,15 +1,4 @@
-// ============================================================
-// Image Service — Hybrid Sharp + ImageMagick Engine
-// ============================================================
-// Uses Sharp (libvips) for fast, common operations and falls
-// back to ImageMagick (convert CLI) for advanced features
-// Sharp doesn't support natively.
-//
-// Sharp  → resize, crop, rotate, flip, blur, sharpen, tint,
-//          grayscale, negate, adjust, gamma, trim, extend,
-//          composite, format conversion, metadata
-// Magick → text overlay, distort, border, ICO output
-// ============================================================
+// ─── Hybrid Sharp + ImageMagick Engine ──────────────────────
 
 import sharp from "sharp";
 import { execFile } from "node:child_process";
@@ -18,7 +7,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { writeFile, readFile, unlink } from "node:fs/promises";
 import crypto from "node:crypto";
-
 
 const execFileAsync = promisify(execFile);
 
