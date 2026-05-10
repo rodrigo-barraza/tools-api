@@ -6,10 +6,12 @@
 // Docs: https://docs.github.com/en/rest
 // ============================================================
 
+import { USER_AGENT } from "../../constants.js";
+
 const GITHUB_API = "https://api.github.com";
 const GITHUB_HEADERS = {
   Accept: "application/vnd.github.v3+json",
-  "User-Agent": "SunTools/1.0",
+  "User-Agent": USER_AGENT,
 };
 
 const MAX_README_CHARS = 15_000;

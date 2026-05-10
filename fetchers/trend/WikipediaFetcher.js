@@ -1,5 +1,6 @@
 import {
   TREND_SOURCES as SOURCES,
+  USER_AGENT,
   WIKIPEDIA_EXCLUDED_PAGES,
   WIKIPEDIA_TOP_ARTICLES_LIMIT,
 } from "../../constants.js";
@@ -21,7 +22,7 @@ export async function fetchWikipediaTrends(date = null) {
 
   const res = await fetch(url, {
     headers: {
-      "User-Agent": "sun:trends:v0.1.0 (rodrigo@sun.dev)",
+      "User-Agent": USER_AGENT,
       Accept: "application/json",
     },
   });

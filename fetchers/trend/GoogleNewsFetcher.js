@@ -2,6 +2,7 @@ import { normalizeName } from "@rodrigo-barraza/utilities-library";
 import {
   TREND_SOURCES as SOURCES,
   GOOGLE_NEWS_ARTICLE_LIMIT,
+  USER_AGENT,
 } from "../../constants.js";
 import {
   extractXmlTag,
@@ -65,7 +66,7 @@ export async function fetchGoogleNews() {
     try {
       const res = await fetch(url, {
         headers: {
-          "User-Agent": "sun:trends:v0.1.0 (rodrigo@sun.dev)",
+          "User-Agent": USER_AGENT,
           Accept: "application/rss+xml, application/xml, text/xml",
         },
       });

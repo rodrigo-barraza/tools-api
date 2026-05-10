@@ -6,6 +6,8 @@
 // fxtwitter: https://github.com/FixTweet/FxTwitter
 // ============================================================
 
+import { USER_AGENT } from "../../constants.js";
+
 const FXTWITTER_API = "https://api.fxtwitter.com";
 const OEMBED_API = "https://publish.twitter.com/oembed";
 
@@ -63,7 +65,7 @@ export async function getTwitterPost(input) {
 async function fetchFxTwitter(username, tweetId) {
   try {
     const res = await fetch(`${FXTWITTER_API}/${username}/status/${tweetId}`, {
-      headers: { "User-Agent": "SunTools/1.0" },
+      headers: { "User-Agent": USER_AGENT },
     });
 
     if (!res.ok) {

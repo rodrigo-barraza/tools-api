@@ -5,6 +5,8 @@
 // Rate limit: ~10 requests/minute unauthenticated.
 // ============================================================
 
+import { USER_AGENT } from "../../constants.js";
+
 const MAX_COMMENTS = 20;
 const MAX_BODY_CHARS = 10_000;
 
@@ -97,7 +99,7 @@ export async function getRedditThread(input, options = {}) {
   try {
     const res = await fetch(jsonUrl, {
       headers: {
-        "User-Agent": "SunTools/1.0 (web content extraction)",
+        "User-Agent": USER_AGENT,
       },
     });
 

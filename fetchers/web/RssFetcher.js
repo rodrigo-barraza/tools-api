@@ -7,6 +7,7 @@
 // ============================================================
 
 import xml2js from "xml2js";
+import { USER_AGENT } from "../../constants.js";
 
 const FETCH_TIMEOUT_MS = 15_000;
 const MAX_ITEMS = 50;
@@ -35,7 +36,7 @@ export async function readRssFeed(url, options = {}) {
     const res = await fetch(url, {
       signal: controller.signal,
       headers: {
-        "User-Agent": "SunTools/1.0 (RSS reader)",
+        "User-Agent": USER_AGENT,
         Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
       },
     });

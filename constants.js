@@ -4,6 +4,9 @@
 // Merged from event-api, market-api, product-api, trend-api, weather-api.
 // ============================================================
 
+/** Standardized user-agent for all outbound HTTP fetchers. */
+export const USER_AGENT = "SunTools/1.0 (https://rod.dev)";
+
 // ═══════════════════════════════════════════════════════════════
 //  EVENT DOMAIN
 // ═══════════════════════════════════════════════════════════════
