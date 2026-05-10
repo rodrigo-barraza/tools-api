@@ -36,6 +36,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     wget \
     git \
+    imagemagick \
     && rm -rf /var/lib/apt/lists/*
 
 # Point Playwright to system Chromium

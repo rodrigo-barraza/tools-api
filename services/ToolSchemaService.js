@@ -4150,6 +4150,120 @@ const TOOL_DEFINITIONS = [
     },
   },
 
+  // ── Image Manipulation (Sharp + ImageMagick) ───────────────
+  {
+    name: "manipulate_image",
+    dataSource: compute("sharp + imagemagick"),
+    description:
+      "Manipulate, transform, and process images using a hybrid Sharp + ImageMagick engine. " +
+      "Accepts an image from a URL, base64 data URI, or a previous imageId (for chaining operations). " +
+      "Supports resize, crop, rotate, flip, blur, sharpen, grayscale, negate, tint, brightness/saturation/hue adjustments, " +
+      "gamma correction, trim whitespace, extend canvas, composite/overlay images, format conversion " +
+      "(PNG, JPEG, WebP, AVIF, TIFF), text overlay with font control, distortion effects (swirl, wave, implode, barrel), " +
+      "and border addition. Multiple operations can be chained in a single call. " +
+      "Returns an imageUrl — render it with ![Image](imageUrl) markdown syntax so the user sees the result inline. " +
+      "Use the 'metadata' operation to inspect image dimensions, format, color space, and channel info without transforming it.",
+    endpoint: {
+      method: "POST",
+      path: "/compute/image/process",
+      bodyParams: ["input", "operations", "outputFormat", "outputQuality"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        input: {
+          type: "string",
+          description:
+            "Image source: a public URL (http/https), a base64 data URI (data:image/png;base64,...), " +
+            "or an imageId returned from a previous manipulate_image call (for chaining operations on the same image).",
+        },
+        operations: {
+          type: "array",
+          description:
+            "Array of operations to apply sequentially. Each operation is an object with a 'type' field and type-specific parameters. " +
+            "Operations are applied in order, enabling pipelines like resize → blur → format conversion in one call.",
+          items: {
+            type: "object",
+            properties: {
+              type: {
+                type: "string",
+                enum: [
+                  "resize", "crop", "rotate", "flip", "blur", "sharpen",
+                  "grayscale", "negate", "tint", "adjust", "gamma", "trim",
+                  "extend", "composite", "metadata",
+                  "text", "distort", "border",
+                ],
+                description:
+                  "The operation type. " +
+                  "Sharp operations (fast): resize, crop, rotate, flip, blur, sharpen, grayscale, negate, tint, adjust, gamma, trim, extend, composite, metadata. " +
+                  "ImageMagick operations (advanced): text (rich text overlay), distort (swirl/wave/implode/barrel), border.",
+              },
+              width: { type: "integer", description: "Width in pixels (resize, crop, extend)" },
+              height: { type: "integer", description: "Height in pixels (resize, crop, extend)" },
+              fit: {
+                type: "string",
+                enum: ["cover", "contain", "fill", "inside", "outside"],
+                description: "Resize fit strategy (resize only, default: 'cover')",
+              },
+              left: { type: "integer", description: "Left offset in pixels (crop, extend, composite)" },
+              top: { type: "integer", description: "Top offset in pixels (crop, extend, composite)" },
+              right: { type: "integer", description: "Right padding in pixels (extend)" },
+              bottom: { type: "integer", description: "Bottom padding in pixels (extend)" },
+              angle: { type: "number", description: "Rotation angle in degrees (rotate)" },
+              direction: {
+                type: "string",
+                enum: ["horizontal", "vertical"],
+                description: "Flip direction (flip only, default: 'vertical')",
+              },
+              sigma: { type: "number", description: "Blur/sharpen sigma (blur: 0.3-100, sharpen: default 1)" },
+              color: { type: "string", description: "Color as hex string, e.g. '#ff6347' (tint, border, text)" },
+              background: { type: "string", description: "Background color as hex (rotate, resize, extend)" },
+              brightness: { type: "number", description: "Brightness multiplier (adjust, default: 1.0)" },
+              saturation: { type: "number", description: "Saturation multiplier (adjust, default: 1.0)" },
+              hue: { type: "number", description: "Hue rotation in degrees (adjust)" },
+              value: { type: "number", description: "Gamma value (gamma, default: 2.2)" },
+              threshold: { type: "integer", description: "Trim threshold (trim, default: 10)" },
+              overlayUrl: { type: "string", description: "URL of overlay image (composite)" },
+              gravity: {
+                type: "string",
+                description: "Placement gravity (composite, text): north, south, east, west, center, northeast, northwest, southeast, southwest",
+              },
+              blend: { type: "string", description: "Blend mode (composite): over, multiply, screen, etc." },
+              content: { type: "string", description: "Text content to render (text)" },
+              font: { type: "string", description: "Font family name (text, default: 'Liberation-Sans')" },
+              fontSize: { type: "integer", description: "Font size in points (text, default: 32)" },
+              strokeColor: { type: "string", description: "Text stroke/outline color (text)" },
+              strokeWidth: { type: "integer", description: "Text stroke width in pixels (text, default: 2)" },
+              x: { type: "integer", description: "X offset for text positioning (text)" },
+              y: { type: "integer", description: "Y offset for text positioning (text)" },
+              effect: {
+                type: "string",
+                enum: ["swirl", "wave", "implode", "barrel"],
+                description: "Distortion effect type (distort)",
+              },
+              degrees: { type: "number", description: "Swirl degrees (distort swirl, default: 90)" },
+              amplitude: { type: "number", description: "Wave amplitude (distort wave, default: 10)" },
+              wavelength: { type: "number", description: "Wave wavelength (distort wave, default: 100)" },
+              factor: { type: "number", description: "Implode factor (distort implode, default: 0.5)" },
+              params: { type: "string", description: "Raw distort params string (distort barrel)" },
+            },
+            required: ["type"],
+          },
+        },
+        outputFormat: {
+          type: "string",
+          enum: ["png", "jpeg", "webp", "avif", "tiff"],
+          description: "Output image format (default: 'png'). JPEG/WebP/AVIF use lossy compression controlled by outputQuality.",
+        },
+        outputQuality: {
+          type: "integer",
+          description: "Output quality 1-100 for lossy formats (JPEG/WebP/AVIF). Default: 80. Ignored for PNG.",
+        },
+      },
+      required: ["input", "operations"],
+    },
+  },
+
   // ── LOGO Turtle Graphics ───────────────────────────────────
   {
     name: "turtle_draw",
@@ -7448,6 +7562,7 @@ const TOOL_DOMAINS = {
   regex_tester: "Compute",
   encode_decode: "Compute",
   convert_color: "Compute",
+  manipulate_image: "Compute",
   parse_cron_expression: "Compute",
   turtle_draw: "Compute",
   think: "Reasoning",
@@ -7828,6 +7943,7 @@ const TOOL_LABELS = {
   regex_tester: ["coding"],
   encode_decode: ["coding", "data"],
   convert_color: ["data"],
+  manipulate_image: ["data", "creative"],
   parse_cron_expression: ["coding", "automation", "data"],
   turtle_draw: ["coding", "creative", "data"],
   think: ["coding"],

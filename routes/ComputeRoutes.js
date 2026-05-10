@@ -22,6 +22,7 @@ import {
 import { MAX_CODE_LENGTH, MAX_COMMAND_LENGTH } from "../constants.js";
 import crypto from "node:crypto";
 import { EphemeralStore, buildLocalUrl, buildEmbedHtml } from "../utilities.js";
+import { processImage } from "../services/ImageService.js";
 // ─── Lazy-loaded dependencies ──────────────────────────────────────
 // These are loaded on first use to avoid blocking startup.
 const getConvertUnits = lazyImport("convert-units");
@@ -1842,6 +1843,58 @@ router.post("/synthetic-output", (req, res) => {
   res.json(result);
 });
 // ═══════════════════════════════════════════════════════════════
+// Image Processing (Sharp + ImageMagick)
+// ═══════════════════════════════════════════════════════════════
+const imageStore = new EphemeralStore();
+router.post("/image/process", async (req, res) => {
+  const { input, operations, outputFormat, outputQuality } = req.body;
+  if (!input) {
+    return res.status(400).json({ error: "'input' is required (URL, base64 data URI, or previous imageId)" });
+  }
+  if (!operations || !Array.isArray(operations) || operations.length === 0) {
+    return res.status(400).json({ error: "'operations' must be a non-empty array of operation objects" });
+  }
+  try {
+    const result = await processImage({
+      input,
+      operations,
+      outputFormat: outputFormat || "png",
+      outputQuality: outputQuality || 80,
+      store: imageStore,
+    });
+    // Metadata-only request
+    if (result.metadata && !result.buffer) {
+      return res.json({
+        success: true,
+        metadata: result.metadata,
+      });
+    }
+    const id = imageStore.set({ buffer: result.buffer, mimeType: result.mimeType });
+    const imageUrl = buildLocalUrl("compute/image/render", { id });
+    const response = {
+      success: true,
+      imageUrl,
+      imageId: id,
+      mimeType: result.mimeType,
+    };
+    if (result.metadata) response.metadata = result.metadata;
+    res.json(response);
+  } catch (err) {
+    res.status(400).json({ error: `Image processing failed: ${err.message}` });
+  }
+});
+router.get("/image/render", (req, res) => {
+  const { id } = req.query;
+  if (!id) return res.status(400).send("Missing 'id' parameter");
+  const entry = imageStore.get(id);
+  if (!entry) {
+    return res.status(404).send("Image not found or expired");
+  }
+  res.setHeader("Content-Type", entry.mimeType || "image/png");
+  res.setHeader("Cache-Control", "public, max-age=3600");
+  res.send(entry.buffer);
+});
+// ═══════════════════════════════════════════════════════════════
 // Health
 // ═══════════════════════════════════════════════════════════════
 export function getComputeHealth() {
@@ -1865,6 +1918,7 @@ export function getComputeHealth() {
     think: "on-demand (echo)",
     sleep: "on-demand (timer)",
     syntheticOutput: "on-demand (json-schema)",
+    imageProcessor: "on-demand (sharp + imagemagick)",
   };
 }
 export default router;
