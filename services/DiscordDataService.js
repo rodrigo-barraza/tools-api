@@ -17,6 +17,68 @@ const EXCLUDED_CATEGORY_IDS = [
   "665736600042340352", // Staff/admin channels
 ];
 
+// ── Discord User Badge Flags ─────────────────────────────────
+// Maps UserFlags bitfield values to badge identifiers used by the
+// client to render inline badge icons next to usernames.
+const BADGE_FLAGS = [
+  { bit: 1,       id: "staff",                label: "Discord Staff" },
+  { bit: 2,       id: "partner",              label: "Partnered Server Owner" },
+  { bit: 4,       id: "hypesquad",            label: "HypeSquad Events" },
+  { bit: 8,       id: "bug_hunter_1",         label: "Bug Hunter Level 1" },
+  { bit: 64,      id: "hypesquad_bravery",    label: "HypeSquad Bravery" },
+  { bit: 128,     id: "hypesquad_brilliance", label: "HypeSquad Brilliance" },
+  { bit: 256,     id: "hypesquad_balance",    label: "HypeSquad Balance" },
+  { bit: 512,     id: "early_supporter",      label: "Early Supporter" },
+  { bit: 16384,   id: "bug_hunter_2",         label: "Bug Hunter Level 2" },
+  { bit: 65536,   id: "verified_bot",         label: "Verified Bot" },
+  { bit: 131072,  id: "verified_developer",   label: "Early Verified Bot Developer" },
+  { bit: 262144,  id: "certified_moderator",  label: "Moderator Programs Alumni" },
+  { bit: 4194304, id: "active_developer",     label: "Active Developer" },
+];
+
+/**
+ * Extract badge identifiers from a UserFlags bitfield.
+ * The bitfield can be a number, a string-encoded number, or a
+ * discord.js BitField object with a `.bitfield` property.
+ *
+ * @param {number|string|object} flags
+ * @returns {Array<{id: string, label: string}>}
+ */
+function extractBadges(flags) {
+  if (!flags) return [];
+  // discord.js stores BitField as { bitfield: <number> }
+  const bits = typeof flags === "object" && flags.bitfield != null
+    ? Number(flags.bitfield)
+    : Number(flags);
+  if (!bits || isNaN(bits)) return [];
+  return BADGE_FLAGS
+    .filter((f) => (bits & f.bit) === f.bit)
+    .map((f) => ({ id: f.id, label: f.label }));
+}
+
+/**
+ * Extract visible role tags from a member's roles array.
+ * Returns the top non-@everyone roles (sorted by position desc),
+ * limited to the top 3 for UI space — matching Discord's inline
+ * role badge behavior.
+ *
+ * @param {Array} roles - Stored role objects from transformRole()
+ * @param {string} guildId - Guild ID (to exclude @everyone)
+ * @returns {Array<{name: string, color: string|null, iconUrl: string|null}>}
+ */
+function extractRoleTags(roles, guildId) {
+  if (!Array.isArray(roles) || roles.length === 0) return [];
+  return roles
+    .filter((r) => r.id !== guildId && r.name !== "@everyone")
+    .sort((a, b) => (b.position ?? 0) - (a.position ?? 0))
+    .slice(0, 3)
+    .map((r) => ({
+      name: r.name,
+      color: r.hexColor && r.hexColor !== "#000000" ? r.hexColor : null,
+      iconUrl: r.iconURL || null,
+    }));
+}
+
 /**
  * Build a Discord CDN avatar URL from raw author data stored in MongoDB.
  * Falls back to the default avatar URL (e.g. blue/green Wumpus silhouette).
@@ -316,6 +378,10 @@ const DiscordDataService = {
           roleColor,
           // Enhanced Role Styles — gradient (secondary) / holographic (tertiary)
           ...(m.member?.roleColors?.secondary && { roleColors: m.member.roleColors }),
+          // Profile badges (HypeSquad, Active Developer, Nitro Early Supporter, etc.)
+          badges: extractBadges(m.author?.flags),
+          // Top role tags displayed to the right of the username (colored pill badges)
+          roleTags: extractRoleTags(m.member?.roles, m.guildId),
         },
         channelId: m.channelId,
         channelName: m.channel?.name || null,
