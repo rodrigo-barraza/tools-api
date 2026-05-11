@@ -1,4 +1,4 @@
-import { asyncHandler } from "@rodrigo-barraza/utilities-library/node";
+import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { Router } from "express";
 import {
   sendSms,

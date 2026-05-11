@@ -1,4 +1,4 @@
-import { asyncHandler, HealthTracker, setupStreamingSSE } from "@rodrigo-barraza/utilities-library/node";
+import { asyncHandler, HealthTracker, setupStreamingSSE } from "@rodrigo-barraza/utilities-library/express";
 import { parseIntParam } from "@rodrigo-barraza/utilities-library";
 import { Router } from "express";
 import DiscordDataService from "../services/DiscordDataService.js";

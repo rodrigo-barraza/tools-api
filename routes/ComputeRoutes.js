@@ -1,4 +1,4 @@
-import { setupStreamingSSE, lazyImport } from "@rodrigo-barraza/utilities-library/node";
+import { setupStreamingSSE, lazyImport } from "@rodrigo-barraza/utilities-library/express";
 import { validateMaxLength } from "@rodrigo-barraza/utilities-library";
 // ─── Process-Based Tool Endpoints ───────────────────────────
 import { Router } from "express";
