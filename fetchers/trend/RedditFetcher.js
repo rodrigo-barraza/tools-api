@@ -8,6 +8,7 @@ import {
 } from "../../constants.js";
 
 import rateLimiter from "../../services/RateLimiterService.js";
+import logger from "../../logger.js";
 const redditTokenManager = new TokenManager(async () => {
   const credentials = Buffer.from(
     `${CONFIG.REDDIT_CLIENT_ID}:${CONFIG.REDDIT_CLIENT_SECRET}`,
@@ -104,7 +105,7 @@ export async function fetchRedditTrends() {
         .map((p) => normalizeTrend(p, sub.category));
       allTrends.push(...trends);
     } catch (error) {
-      console.error(`[Reddit] ❌ /r/${sub.name}: ${error.message}`);
+      logger.error(`[Reddit] ❌ /r/${sub.name}: ${error.message}`);
     }
   }
   return allTrends;

@@ -1,4 +1,5 @@
 import { MongoClient } from "mongodb";
+import logger from "../logger.js";
 
 // ═══════════════════════════════════════════════════════════════
 //  Lupos Discord — MongoDB Connection (separate database)
@@ -30,7 +31,7 @@ export async function connectLuposDB(baseUri) {
   client = new MongoClient(luposUri);
   await client.connect();
   luposDb = client.db("lupos");
-  console.log(`🐺 Connected to Lupos DB: ${luposDb.databaseName}`);
+  logger.info(`🐺 Connected to Lupos DB: ${luposDb.databaseName}`);
   return luposDb;
 }
 
@@ -60,7 +61,7 @@ export async function setupLuposCollections() {
       await messagesCol.createIndex({ guildId: 1, channelId: 1, createdTimestamp: -1 }, { background: true });
       await messagesCol.createIndex({ guildId: 1, createdTimestamp: -1 }, { background: true });
     } catch (err) {
-      console.warn(`🐺 Lupos index creation warning: ${err.message}`);
+      logger.warn(`🐺 Lupos index creation warning: ${err.message}`);
     }
 
     try {
@@ -70,13 +71,13 @@ export async function setupLuposCollections() {
       );
     } catch (err) {
       // Text index may already exist with different fields — non-fatal
-      console.warn(`🐺 Lupos text index skipped: ${err.message}`);
+      logger.warn(`🐺 Lupos text index skipped: ${err.message}`);
     }
   };
 
   // Don't block startup on index creation
   ensureIndexes().then(() => {
-    console.log("🐺 Lupos collections & indexes ready");
+    logger.info("🐺 Lupos collections & indexes ready");
   });
 }
 

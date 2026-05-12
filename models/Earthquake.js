@@ -1,5 +1,6 @@
 import { hours as hoursToMs } from "@rodrigo-barraza/utilities-library";
 import { getDB } from "../db.js";
+import logger from "../logger.js";
 
 let collection = null;
 
@@ -17,7 +18,7 @@ export async function setupEarthquakeCollection() {
   await collection.createIndex({ time: -1 });
   await collection.createIndex({ magnitude: -1 });
 
-  console.log("🌍 Earthquake collection indexes ready");
+  logger.info("🌍 Earthquake collection indexes ready");
 }
 
 /**
@@ -45,7 +46,7 @@ export async function upsertEarthquakes(events) {
       modified: result.modifiedCount,
     };
   } catch (error) {
-    console.error("Failed to upsert earthquakes:", error.message);
+    logger.error("Failed to upsert earthquakes:", error.message);
     return { upserted: 0, modified: 0 };
   }
 }

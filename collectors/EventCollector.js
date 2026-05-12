@@ -19,6 +19,7 @@ import { fetchMovieEvents } from "../fetchers/event/MovieFetcher.js";
 import { fetchGooglePlacesEvents } from "../fetchers/event/GooglePlacesFetcher.js";
 import { updateEvents, setError, restoreEvents } from "../caches/EventCache.js";
 import { saveState, startCollectorLoop } from "../services/FreshnessService.js";
+import logger from "../logger.js";
 
 // ─── Collector Factory ─────────────────────────────────────────────
 
@@ -28,12 +29,12 @@ function createEventCollector(collection, source, fetchFn) {
       const events = await fetchFn();
       const result = await updateEvents(source, events);
       await saveState(collection, events);
-      console.log(
+      logger.info(
         `[${collection}] ✅ ${events.length} events | ${result?.upserted || 0} new, ${result?.modified || 0} updated`,
       );
     } catch (error) {
       setError(source, error);
-      console.error(`[${collection}] ❌ ${error.message}`);
+      logger.error(`[${collection}] ❌ ${error.message}`);
     }
   };
 }
@@ -81,25 +82,25 @@ async function collectUniversities() {
 
     if (ubcEvents.length > 0) {
       const r = await updateEvents(EVENT_SOURCES.UBC, ubcEvents);
-      console.log(
+      logger.info(
         `[events_universities/UBC] ✅ ${ubcEvents.length} events | ${r?.upserted || 0} new`,
       );
     }
     if (sfuEvents.length > 0) {
       const r = await updateEvents(EVENT_SOURCES.SFU, sfuEvents);
-      console.log(
+      logger.info(
         `[events_universities/SFU] ✅ ${sfuEvents.length} events | ${r?.upserted || 0} new`,
       );
     }
     if (ubcEvents.length === 0 && sfuEvents.length === 0) {
-      console.log("[events_universities] ✅ 0 events parsed");
+      logger.info("[events_universities] ✅ 0 events parsed");
     }
 
     await saveState("events_universities", { ubcEvents, sfuEvents });
   } catch (error) {
     setError(EVENT_SOURCES.UBC, error);
     setError(EVENT_SOURCES.SFU, error);
-    console.error(`[events_universities] ❌ ${error.message}`);
+    logger.error(`[events_universities] ❌ ${error.message}`);
   }
 }
 
@@ -112,24 +113,24 @@ async function collectSports() {
 
     if (nhl.length > 0) {
       const r = await updateEvents(EVENT_SOURCES.NHL, nhl);
-      console.log(
+      logger.info(
         `[events_sports/NHL] ✅ ${nhl.length} games | ${r?.upserted || 0} new`,
       );
     }
     if (caps.length > 0) {
       const r = await updateEvents(EVENT_SOURCES.WHITECAPS, caps);
-      console.log(
+      logger.info(
         `[events_sports/Whitecaps] ✅ ${caps.length} games | ${r?.upserted || 0} new`,
       );
     }
     if (lions.length > 0) {
       const r = await updateEvents(EVENT_SOURCES.BC_LIONS, lions);
-      console.log(
+      logger.info(
         `[events_sports/Lions] ✅ ${lions.length} games | ${r?.upserted || 0} new`,
       );
     }
     if (events.length === 0) {
-      console.log("[events_sports] ✅ No upcoming games found");
+      logger.info("[events_sports] ✅ No upcoming games found");
     }
 
     await saveState("events_sports", { nhl, caps, lions });
@@ -137,7 +138,7 @@ async function collectSports() {
     setError(EVENT_SOURCES.NHL, error);
     setError(EVENT_SOURCES.WHITECAPS, error);
     setError(EVENT_SOURCES.BC_LIONS, error);
-    console.error(`[events_sports] ❌ ${error.message}`);
+    logger.error(`[events_sports] ❌ ${error.message}`);
   }
 }
 
@@ -230,6 +231,6 @@ export function startEventCollectors() {
   }));
 
   startCollectorLoop(tasks);
-  console.log("📅 Event collectors started");
+  logger.info("📅 Event collectors started");
 }
 

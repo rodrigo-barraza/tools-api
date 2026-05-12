@@ -1,4 +1,5 @@
 import { getDB } from "../db.js";
+import logger from "../logger.js";
 
 // ═══════════════════════════════════════════════════════════════
 //  Collector State — Per-Collection Persistence
@@ -27,7 +28,7 @@ export async function saveState(collectionName, data) {
       .collection(collectionName)
       .replaceOne({ _id: "current" }, doc, { upsert: true });
   } catch (error) {
-    console.error(
+    logger.error(
       `[State] ⚠️ Failed to save "${collectionName}": ${error.message}`,
     );
   }
@@ -58,7 +59,7 @@ export async function loadState(collectionName) {
     // Object data spread at top level
     return { data: rest, updatedAt };
   } catch (error) {
-    console.error(
+    logger.error(
       `[State] ⚠️ Failed to load "${collectionName}": ${error.message}`,
     );
     return null;

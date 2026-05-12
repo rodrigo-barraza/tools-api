@@ -1,4 +1,5 @@
 import { getDB } from "../db.js";
+import logger from "../logger.js";
 
 let collection = null;
 
@@ -12,7 +13,7 @@ export async function setupSolarFlareCollection() {
   await collection.createIndex({ peakTime: -1 });
   await collection.createIndex({ classType: 1 });
 
-  console.log("☀️  Solar flare collection indexes ready");
+  logger.info("☀️  Solar flare collection indexes ready");
 }
 
 export async function upsertSolarFlares(flares) {
@@ -33,7 +34,7 @@ export async function upsertSolarFlares(flares) {
     const result = await collection.bulkWrite(operations, { ordered: false });
     return { upserted: result.upsertedCount, modified: result.modifiedCount };
   } catch (error) {
-    console.error("Failed to upsert solar flares:", error.message);
+    logger.error("Failed to upsert solar flares:", error.message);
     return { upserted: 0, modified: 0 };
   }
 }

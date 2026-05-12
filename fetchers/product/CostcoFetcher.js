@@ -11,6 +11,7 @@ import {
   buildScraperHeaders,
 } from "../../utilities.js";
 import rateLimiter from "../../services/RateLimiterService.js";
+import logger from "../../logger.js";
 
 // ─── Base URLs ─────────────────────────────────────────────────────
 
@@ -234,9 +235,9 @@ export async function fetchAllCostcoUS() {
         "USD",
       );
       allProducts.push(...products);
-      console.log(`[Costco US] ✅ ${cat.name}: ${products.length} products`);
+      logger.info(`[Costco US] ✅ ${cat.name}: ${products.length} products`);
     } catch (error) {
-      console.error(`[Costco US] ❌ ${cat.name}: ${error.message}`);
+      logger.error(`[Costco US] ❌ ${cat.name}: ${error.message}`);
     }
 
     await rateLimiter.wait("COSTCO");
@@ -262,9 +263,9 @@ export async function fetchAllCostcoCA() {
         "CAD",
       );
       allProducts.push(...products);
-      console.log(`[Costco CA] ✅ ${cat.name}: ${products.length} products`);
+      logger.info(`[Costco CA] ✅ ${cat.name}: ${products.length} products`);
     } catch (error) {
-      console.error(`[Costco CA] ❌ ${cat.name}: ${error.message}`);
+      logger.error(`[Costco CA] ❌ ${cat.name}: ${error.message}`);
     }
 
     await rateLimiter.wait("COSTCO");

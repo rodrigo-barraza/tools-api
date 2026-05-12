@@ -1,4 +1,5 @@
 import { getDB } from "../db.js";
+import logger from "../logger.js";
 
 let productCollection;
 
@@ -21,7 +22,7 @@ export async function setupProductCollection() {
     { name: "text", description: "text" },
     { weights: { name: 10, description: 1 } },
   );
-  console.log("📦 Product collection indexes ready");
+  logger.info("📦 Product collection indexes ready");
 }
 
 /**

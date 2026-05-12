@@ -1,4 +1,5 @@
 import { saveState, loadState } from "../models/CollectorSnapshot.js";
+import logger from "../logger.js";
 
 // ═══════════════════════════════════════════════════════════════
 //  Freshness Service — Cache-Aside Staleness Check
@@ -35,18 +36,18 @@ export async function collectIfStale(
       const ageMinutes = Math.round(ageMs / 60_000);
       const ttlMinutes = Math.round(ttlMs / 60_000);
       restoreFn(state.data);
-      console.log(
+      logger.info(
         `[${label}] ♻️  Restored from DB (${ageMinutes}m old, TTL: ${ttlMinutes}m)`,
       );
       return false;
     }
 
     const ageMinutes = Math.round(ageMs / 60_000);
-    console.log(
+    logger.info(
       `[${label}] 🔄 Stale data in DB (${ageMinutes}m old) — refreshing`,
     );
   } else {
-    console.log(`[${label}] 🆕 No data in DB — initial fetch`);
+    logger.info(`[${label}] 🆕 No data in DB — initial fetch`);
   }
 
   await collectFn();

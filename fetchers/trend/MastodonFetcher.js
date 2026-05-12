@@ -1,5 +1,6 @@
 import { stripHtml, normalizeName } from "@rodrigo-barraza/utilities-library";
 import {
+import logger from "../../logger.js";
   TREND_SOURCES as SOURCES,
   MASTODON_INSTANCES,
 } from "../../constants.js";
@@ -70,7 +71,7 @@ export async function fetchMastodonTrends() {
         });
       }
     } catch (error) {
-      console.warn(
+      logger.warn(
         `[Mastodon] ⚠️ Tags from ${instance} failed: ${error.message}`,
       );
     }
@@ -108,7 +109,7 @@ export async function fetchMastodonTrends() {
         });
       }
     } catch (error) {
-      console.warn(
+      logger.warn(
         `[Mastodon] ⚠️ Statuses from ${instance} failed: ${error.message}`,
       );
     }

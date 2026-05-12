@@ -2,6 +2,7 @@ import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import {
+import logger from "../../logger.js";
   DATASET_REGISTRY,
   NUTRITION_NUTRIENT_TYPES,
   NUTRITION_MACRO_FIELDS,
@@ -128,7 +129,7 @@ function ensureLoaded() {
     NUTRIENT_DB.push(row);
   }
 
-  console.log(
+  logger.info(
     `🥦 Nutrition DB loaded: ${FOOD_DB.length} foods (${counts.join(", ")}), ${NUTRIENT_DB.length} nutrients`,
   );
 }

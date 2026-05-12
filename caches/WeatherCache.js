@@ -1,5 +1,6 @@
 import { createHash } from "crypto";
 import { insertSnapshot } from "../models/WeatherSnapshot.js";
+import logger from "../logger.js";
 
 /**
  * In-memory cache for the latest weather data.
@@ -64,14 +65,14 @@ export function update(source, data) {
       cache.pendingSources.clear();
       lastPersistedHash = hashSnapshot(cache.current);
       persist();
-      console.log("[Nimbus] 📸 Initial snapshot persisted");
+      logger.info("[Nimbus] 📸 Initial snapshot persisted");
     }
   } else {
     const currentHash = hashSnapshot(cache.current);
     if (currentHash !== lastPersistedHash) {
       lastPersistedHash = currentHash;
       persist();
-      console.log("[Nimbus] 📸 Data changed — snapshot persisted");
+      logger.info("[Nimbus] 📸 Data changed — snapshot persisted");
     }
   }
 }

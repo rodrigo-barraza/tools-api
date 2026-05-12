@@ -1,5 +1,6 @@
 import { getDB } from "../db.js";
 import { lookupIp } from "../fetchers/utility/IpInfoFetcher.js";
+import logger from "../logger.js";
 
 // ═══════════════════════════════════════════════════════════════
 //  Location Service — Dynamic Geolocation Resolution
@@ -36,7 +37,7 @@ async function findNearestTideStation(latitude, longitude) {
   try {
     const res = await fetch(NOAA_STATIONS_URL);
     if (!res.ok) {
-      console.warn(`[Location] ⚠️ NOAA stations API → ${res.status}`);
+      logger.warn(`[Location] ⚠️ NOAA stations API → ${res.status}`);
       return null;
     }
 
@@ -65,7 +66,7 @@ async function findNearestTideStation(latitude, longitude) {
 
     return closest;
   } catch (err) {
-    console.warn(`[Location] ⚠️ NOAA station lookup failed: ${err.message}`);
+    logger.warn(`[Location] ⚠️ NOAA station lookup failed: ${err.message}`);
     return null;
   }
 }
@@ -73,7 +74,7 @@ async function findNearestTideStation(latitude, longitude) {
 // ─── Resolve Location from IP ──────────────────────────────────
 
 async function resolveLocationFromIp() {
-  console.log("[Location] 🌍 Resolving server location from public IP…");
+  logger.info("[Location] 🌍 Resolving server location from public IP…");
   const ipData = await lookupIp("self");
 
   if (!ipData.latitude || !ipData.longitude) {
@@ -82,7 +83,7 @@ async function resolveLocationFromIp() {
     );
   }
 
-  console.log(
+  logger.info(
     `[Location] 📍 IP resolved → ${ipData.city || "Unknown"}, ${ipData.region || ""} ` +
       `(${ipData.latitude}, ${ipData.longitude}) tz=${ipData.timezone}`,
   );
@@ -94,12 +95,12 @@ async function resolveLocationFromIp() {
   );
 
   if (tideStation) {
-    console.log(
+    logger.info(
       `[Location] 🌊 Nearest tide station → ${tideStation.name} ` +
         `(${tideStation.id}) — ${tideStation.distanceKm} km away`,
     );
   } else {
-    console.warn("[Location] ⚠️ No NOAA tide station found nearby");
+    logger.warn("[Location] ⚠️ No NOAA tide station found nearby");
   }
 
   return {
@@ -142,7 +143,7 @@ async function saveCachedLocation(location) {
       .collection(COLLECTION)
       .replaceOne({ _id: "current" }, doc, { upsert: true });
   } catch (err) {
-    console.error(`[Location] ⚠️ Failed to persist: ${err.message}`);
+    logger.error(`[Location] ⚠️ Failed to persist: ${err.message}`);
   }
 }
 
@@ -168,28 +169,28 @@ export async function initLocation() {
       const { _id, updatedAt: _updatedAt, ...rest } = cached;
       resolvedLocation = rest;
       const ageHours = Math.round(ageMs / 3_600_000 * 10) / 10;
-      console.log(
+      logger.info(
         `[Location] ✅ Using cached location (${ageHours}h old) → ` +
           `${rest.source?.city || "Unknown"} ` +
           `(${rest.latitude}, ${rest.longitude})`,
       );
       return resolvedLocation;
     }
-    console.log("[Location] 🔄 Cached location expired — refreshing…");
+    logger.info("[Location] 🔄 Cached location expired — refreshing…");
   }
 
   try {
     const fresh = await resolveLocationFromIp();
     await saveCachedLocation(fresh);
     resolvedLocation = fresh;
-    console.log("[Location] ✅ Location resolved and persisted");
+    logger.info("[Location] ✅ Location resolved and persisted");
     return resolvedLocation;
   } catch (err) {
     // Fall back to cached data even if expired (better than nothing)
     if (cached) {
       const { _id, updatedAt: _updatedAt, ...rest } = cached;
       resolvedLocation = rest;
-      console.warn(
+      logger.warn(
         `[Location] ⚠️ Refresh failed (${err.message}), using stale cache`,
       );
       return resolvedLocation;

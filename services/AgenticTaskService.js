@@ -1,6 +1,7 @@
 // ─── Persistent Task State Management ───────────────────────
 
 import { getDB } from "../db.js";
+import logger from "../logger.js";
 
 // ────────────────────────────────────────────────────────────
 // Constants
@@ -25,7 +26,7 @@ export async function setupAgenticTaskCollection() {
   await col.createIndex({ project: 1, status: 1 });
   await col.createIndex({ project: 1, createdAt: -1 });
 
-  console.log(`   ✅ ${COLLECTION} indexes ensured`);
+  logger.info(`   ✅ ${COLLECTION} indexes ensured`);
 }
 
 // ────────────────────────────────────────────────────────────

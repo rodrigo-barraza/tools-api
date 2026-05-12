@@ -14,6 +14,7 @@ import {
   setEarningsError,
 } from "../caches/FinnhubCache.js";
 import { saveState, startCollectorLoop } from "../services/FreshnessService.js";
+import logger from "../logger.js";
 // ─── News Collector ────────────────────────────────────────────────
 async function collectMarketNews() {
   try {
@@ -21,10 +22,10 @@ async function collectMarketNews() {
     const sliced = Array.isArray(articles) ? articles.slice(0, 50) : [];
     updateMarketNews(sliced);
     await saveState("market_news", sliced);
-    console.log(`[Finnhub/News] ✅ ${sliced.length} articles`);
+    logger.info(`[Finnhub/News] ✅ ${sliced.length} articles`);
   } catch (error) {
     setNewsError(error);
-    console.error(`[Finnhub/News] ❌ ${error.message}`);
+    logger.error(`[Finnhub/News] ❌ ${error.message}`);
   }
 }
 // ─── Earnings Calendar Collector ───────────────────────────────────
@@ -37,12 +38,12 @@ async function collectEarnings() {
     const earnings = result?.earningsCalendar || [];
     updateEarnings(earnings);
     await saveState("earnings_calendar", earnings);
-    console.log(
+    logger.info(
       `[Finnhub/Earnings] ✅ ${earnings.length} upcoming (${from} → ${to})`,
     );
   } catch (error) {
     setEarningsError(error);
-    console.error(`[Finnhub/Earnings] ❌ ${error.message}`);
+    logger.error(`[Finnhub/Earnings] ❌ ${error.message}`);
   }
 }
 // ─── Startup Definitions ──────────────────────────────────────────
@@ -67,5 +68,5 @@ const STARTUP_TASKS = [
 // ─── Start Finance Collectors ──────────────────────────────────────
 export function startFinanceCollectors() {
   startCollectorLoop(STARTUP_TASKS);
-  console.log("📈 Finance collectors started (Finnhub — on-demand quotes)");
+  logger.info("📈 Finance collectors started (Finnhub — on-demand quotes)");
 }

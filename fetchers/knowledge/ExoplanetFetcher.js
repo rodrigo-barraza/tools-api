@@ -1,6 +1,7 @@
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
+import logger from "../../logger.js";
 
 /**
  * Exoplanet Fetcher — Static In-Memory NASA Exoplanet Archive Database
@@ -105,7 +106,7 @@ function ensureLoaded() {
     PLANET_DB.push(row);
   }
 
-  console.log(`🪐 Exoplanet database loaded: ${PLANET_DB.length} planets`);
+  logger.info(`🪐 Exoplanet database loaded: ${PLANET_DB.length} planets`);
 }
 
 // ─── Helpers ───────────────────────────────────────────────────

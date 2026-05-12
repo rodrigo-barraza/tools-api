@@ -1,5 +1,6 @@
 import { stripHtml, normalizeName } from "@rodrigo-barraza/utilities-library";
 import { TREND_SOURCES as SOURCES, TREND_CATEGORIES } from "../../constants.js";
+import logger from "../../logger.js";
 const TVMAZE_SCHEDULE_URL = "https://api.tvmaze.com/schedule";
 /**
  * Fetches today's TV schedule from TVMaze for US and CA.
@@ -15,13 +16,13 @@ export async function fetchTVMazeTrends() {
       const url = `${TVMAZE_SCHEDULE_URL}?country=${country}&date=${today}`;
       const res = await fetch(url);
       if (!res.ok) {
-        console.error(`[TVMaze] ❌ ${country}: ${res.status}`);
+        logger.error(`[TVMaze] ❌ ${country}: ${res.status}`);
         continue;
       }
       const episodes = await res.json();
       allShows.push(...episodes.map((ep) => ({ ...ep, country })));
     } catch (error) {
-      console.error(`[TVMaze] ❌ ${country}: ${error.message}`);
+      logger.error(`[TVMaze] ❌ ${country}: ${error.message}`);
     }
   }
   // Deduplicate shows by show ID (same show airs in both countries)

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import LightsDataService from "../services/LightsDataService.js";
+import logger from "../logger.js";
 
 const router = Router();
 
@@ -24,7 +25,7 @@ router.get("/list", async (req, res) => {
     res.json(result);
   } catch (error) {
     state.error = error.message;
-    console.error("[LightsRoutes] /list error:", error.message);
+    logger.error("[LightsRoutes] /list error:", error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -48,7 +49,7 @@ router.post("/state", async (req, res) => {
     res.json(result);
   } catch (error) {
     state.error = error.message;
-    console.error("[LightsRoutes] /state error:", error.message);
+    logger.error("[LightsRoutes] /state error:", error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -72,7 +73,7 @@ router.post("/state/delta", async (req, res) => {
     res.json(result);
   } catch (error) {
     state.error = error.message;
-    console.error("[LightsRoutes] /state/delta error:", error.message);
+    logger.error("[LightsRoutes] /state/delta error:", error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -92,7 +93,7 @@ router.put("/states", async (req, res) => {
     res.json(result);
   } catch (error) {
     state.error = error.message;
-    console.error("[LightsRoutes] /states error:", error.message);
+    logger.error("[LightsRoutes] /states error:", error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -109,7 +110,7 @@ router.post("/toggle", async (req, res) => {
     res.json(result);
   } catch (error) {
     state.error = error.message;
-    console.error("[LightsRoutes] /toggle error:", error.message);
+    logger.error("[LightsRoutes] /toggle error:", error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -135,7 +136,7 @@ router.post("/effects/breathe", async (req, res) => {
     res.json(result);
   } catch (error) {
     state.error = error.message;
-    console.error("[LightsRoutes] /effects/breathe error:", error.message);
+    logger.error("[LightsRoutes] /effects/breathe error:", error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -160,7 +161,7 @@ router.post("/effects/pulse", async (req, res) => {
     res.json(result);
   } catch (error) {
     state.error = error.message;
-    console.error("[LightsRoutes] /effects/pulse error:", error.message);
+    logger.error("[LightsRoutes] /effects/pulse error:", error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -183,7 +184,7 @@ router.post("/effects/move", async (req, res) => {
     res.json(result);
   } catch (error) {
     state.error = error.message;
-    console.error("[LightsRoutes] /effects/move error:", error.message);
+    logger.error("[LightsRoutes] /effects/move error:", error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -205,7 +206,7 @@ router.post("/effects/flame", async (req, res) => {
     res.json(result);
   } catch (error) {
     state.error = error.message;
-    console.error("[LightsRoutes] /effects/flame error:", error.message);
+    logger.error("[LightsRoutes] /effects/flame error:", error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -228,7 +229,7 @@ router.post("/effects/morph", async (req, res) => {
     res.json(result);
   } catch (error) {
     state.error = error.message;
-    console.error("[LightsRoutes] /effects/morph error:", error.message);
+    logger.error("[LightsRoutes] /effects/morph error:", error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -245,7 +246,7 @@ router.post("/effects/off", async (req, res) => {
     res.json(result);
   } catch (error) {
     state.error = error.message;
-    console.error("[LightsRoutes] /effects/off error:", error.message);
+    logger.error("[LightsRoutes] /effects/off error:", error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -261,7 +262,7 @@ router.get("/scenes", async (_req, res) => {
     res.json(result);
   } catch (error) {
     state.error = error.message;
-    console.error("[LightsRoutes] /scenes error:", error.message);
+    logger.error("[LightsRoutes] /scenes error:", error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -281,7 +282,7 @@ router.post("/scenes/activate", async (req, res) => {
     res.json(result);
   } catch (error) {
     state.error = error.message;
-    console.error("[LightsRoutes] /scenes/activate error:", error.message);
+    logger.error("[LightsRoutes] /scenes/activate error:", error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -314,7 +315,7 @@ router.post("/nightlock", async (req, res) => {
     res.json(result);
   } catch (error) {
     state.error = error.message;
-    console.error("[LightsRoutes] /nightlock error:", error.message);
+    logger.error("[LightsRoutes] /nightlock error:", error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -330,7 +331,7 @@ router.get("/nightlock", async (_req, res) => {
     res.json(result);
   } catch (error) {
     state.error = error.message;
-    console.error("[LightsRoutes] /nightlock error:", error.message);
+    logger.error("[LightsRoutes] /nightlock error:", error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -346,7 +347,7 @@ router.post("/nightlock/toggle", async (_req, res) => {
     res.json(result);
   } catch (error) {
     state.error = error.message;
-    console.error("[LightsRoutes] /nightlock/toggle error:", error.message);
+    logger.error("[LightsRoutes] /nightlock/toggle error:", error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -366,7 +367,7 @@ router.post("/nightlock/set", async (req, res) => {
     res.json(result);
   } catch (error) {
     state.error = error.message;
-    console.error("[LightsRoutes] /nightlock/set error:", error.message);
+    logger.error("[LightsRoutes] /nightlock/set error:", error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -382,7 +383,7 @@ router.get("/health", async (_req, res) => {
     res.json(result);
   } catch (error) {
     state.error = error.message;
-    console.error("[LightsRoutes] /health error:", error.message);
+    logger.error("[LightsRoutes] /health error:", error.message);
     res.status(500).json({ error: error.message });
   }
 });

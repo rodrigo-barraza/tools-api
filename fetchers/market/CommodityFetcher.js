@@ -1,5 +1,6 @@
 import YahooFinance from "yahoo-finance2";
 import { COMMODITY_TICKERS } from "../../constants.js";
+import logger from "../../logger.js";
 
 const yahooFinance = new YahooFinance();
 
@@ -75,14 +76,14 @@ export async function fetchCommodities() {
         batch: batch.slice(0, 3).join(", ") + "…",
         error: err.message,
       });
-      console.warn(
+      logger.warn(
         `[CommodityFetcher] ⚠️ Batch ${i / BATCH_SIZE + 1} failed: ${err.message}`,
       );
     }
   }
 
   if (errors.length > 0) {
-    console.warn(
+    logger.warn(
       `[CommodityFetcher] ${errors.length} batch(es) failed, ${results.length} tickers OK`,
     );
   }

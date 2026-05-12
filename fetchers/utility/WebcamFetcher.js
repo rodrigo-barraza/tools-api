@@ -1,6 +1,7 @@
 import { MS_PER_DAY } from "@rodrigo-barraza/utilities-library";
 import { getWebcamsByCity, getWebcamsLastUpdated } from "../../models/Webcam.js";
 import { WEBCAM_REGISTRY, getSupportedCities } from "./webcams/WebcamRegistry.js";
+import logger from "../../logger.js";
 
 export async function getPublicWebcams({ city = "vancouver", limit = 100 } = {}) {
   const normalizedCity = city.toLowerCase();
@@ -16,14 +17,14 @@ export async function getPublicWebcams({ city = "vancouver", limit = 100 } = {})
   const isStale = !lastUpdated || (Date.now() - lastUpdated.getTime()) > MS_PER_DAY;
 
   if (isStale) {
-    console.log(`📷 Refreshing webcam data for ${capitalizedCity}`);
+    logger.info(`📷 Refreshing webcam data for ${capitalizedCity}`);
     try {
       const refreshFunction = WEBCAM_REGISTRY[normalizedCity];
       if (refreshFunction) {
         await refreshFunction();
       }
     } catch (e) {
-      console.error(`Failed to refresh webcams for ${capitalizedCity}:`, e.message);
+      logger.error(`Failed to refresh webcams for ${capitalizedCity}:`, e.message);
       // If we never had them, we can't fallback to DB, so we throw
       if (!lastUpdated) throw e;
     }

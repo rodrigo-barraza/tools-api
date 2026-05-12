@@ -1,5 +1,6 @@
 import CONFIG from "../../config.js";
 import { FRED_BASE_URL, FRED_DEFAULT_SERIES } from "../../constants.js";
+import logger from "../../logger.js";
 
 /**
  * FRED (Federal Reserve Economic Data) API fetcher.
@@ -222,7 +223,7 @@ export async function getKeyIndicators() {
     .map((r, i) => ({ seriesId: entries[i][0], error: r.reason.message }));
 
   if (failed.length > 0) {
-    console.warn(
+    logger.warn(
       `[FredFetcher] ⚠️ ${failed.length} indicator(s) failed:`,
       failed.map((f) => f.seriesId).join(", "),
     );

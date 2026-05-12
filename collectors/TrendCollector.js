@@ -26,6 +26,7 @@ import { fetchGitHubTrending } from "../fetchers/trend/GitHubTrendingFetcher.js"
 import { fetchProductHuntTrends } from "../fetchers/trend/ProductHuntFetcher.js";
 import { updateTrends, setTrendError } from "../caches/TrendCache.js";
 import { saveState, startCollectorLoop } from "../services/FreshnessService.js";
+import logger from "../logger.js";
 
 // ─── Collector Factory ─────────────────────────────────────────────
 
@@ -36,12 +37,12 @@ function createTrendCollector(collection, source, fetchFn, noun = "trends") {
       updateTrends(source, trends);
       const result = await upsertTrends(trends);
       await saveState(collection, { source, trends });
-      console.log(
+      logger.info(
         `[${collection}] ✅ ${trends.length} ${noun} | ${result.upserted} new, ${result.modified} updated`,
       );
     } catch (error) {
       setTrendError(source, error);
-      console.error(`[${collection}] ❌ ${error.message}`);
+      logger.error(`[${collection}] ❌ ${error.message}`);
     }
   };
 }
@@ -78,5 +79,5 @@ const STARTUP_TASKS = [
 
 export function startTrendCollectors() {
   startCollectorLoop(STARTUP_TASKS);
-  console.log("📈 Trend collectors started");
+  logger.info("📈 Trend collectors started");
 }

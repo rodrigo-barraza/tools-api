@@ -1,5 +1,6 @@
 import http from "node:http";
 import express from "express";
+import logger from "./logger.js";
 import CONFIG, { applyLocation } from "./config.js";
 import { connectDB } from "./db.js";
 import { initLocation } from "./services/LocationService.js";
@@ -151,11 +152,11 @@ async function start() {
     const location = await initLocation();
     applyLocation(location);
 
-    console.log(`   📍 LATITUDE ........... ${CONFIG.LATITUDE}`);
-    console.log(`   📍 LONGITUDE .......... ${CONFIG.LONGITUDE}`);
-    console.log(`   🌐 TIMEZONE ........... ${CONFIG.TIMEZONE}`);
-    console.log(`   📏 RADIUS_MILES ....... ${CONFIG.RADIUS_MILES}`);
-    console.log(`   🌊 TIDE_STATION_ID .... ${CONFIG.TIDE_STATION_ID}`);
+    logger.info(`LATITUDE ........... ${CONFIG.LATITUDE}`);
+    logger.info(`LONGITUDE .......... ${CONFIG.LONGITUDE}`);
+    logger.info(`TIMEZONE ........... ${CONFIG.TIMEZONE}`);
+    logger.info(`RADIUS_MILES ....... ${CONFIG.RADIUS_MILES}`);
+    logger.info(`TIDE_STATION_ID .... ${CONFIG.TIDE_STATION_ID}`);
 
     await Promise.all([
       setupEventCollection(),
@@ -180,7 +181,7 @@ async function start() {
     // Load user-configured workspace roots from MongoDB
     await loadUserWorkspaceRoots();
   } catch (error) {
-    console.error(`Failed to connect to MongoDB: ${error.message}`);
+    logger.error(`Failed to connect to MongoDB: ${error.message}`);
     process.exit(1);
   }
 
@@ -205,15 +206,15 @@ async function start() {
   initAgentWebSocket(httpServer);
 
   httpServer.listen(port, () => {
-    console.log(`🔧 Tools API running on port ${port}`);
-    console.log(`   Database: ${CONFIG.MONGODB_URI}`);
-    console.log(
-      "   Domains: event, finance, market, product, trend, weather, knowledge, health, transit, utility, compute, maritime, energy, agentic, communication, creative, gaming, discord, lights",
+    logger.success(`Tools API running on port ${port}`);
+    logger.info(`Database: ${CONFIG.MONGODB_URI}`);
+    logger.info(
+      "Domains: event, finance, market, product, trend, weather, knowledge, health, transit, utility, compute, maritime, energy, agentic, communication, creative, gaming, discord, lights",
     );
-    console.log(
-      "   Routes: /event/*, /finance/*, /market/*, /product/*, /trend/*, /weather/*, /knowledge/*, /health/*, /transit/*, /utility/*, /compute/*, /maritime/*, /energy/*, /agentic/*, /communication/*, /creative/*, /gaming/*, /discord/*, /lights/*",
+    logger.info(
+      "Routes: /event/*, /finance/*, /market/*, /product/*, /trend/*, /weather/*, /knowledge/*, /health/*, /transit/*, /utility/*, /compute/*, /maritime/*, /energy/*, /agentic/*, /communication/*, /creative/*, /gaming/*, /discord/*, /lights/*",
     );
-    console.log("   🔌 Agent WebSocket: /ws/agent");
+    logger.info("Agent WebSocket: /ws/agent");
   });
 }
 

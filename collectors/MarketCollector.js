@@ -6,6 +6,7 @@ import {
   restoreCommodities,
 } from "../caches/CommodityCache.js";
 import { saveState, startCollectorLoop } from "../services/FreshnessService.js";
+import logger from "../logger.js";
 
 async function collectCommodities() {
   try {
@@ -17,14 +18,14 @@ async function collectCommodities() {
       .filter((q) => q.changePercent != null)
       .sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent))[0];
 
-    console.log(
+    logger.info(
       `[Commodities] ✅ ${quotes.length} tickers | ` +
         `${result?.inserted || 0} snapshots saved | ` +
         `Top mover: ${topMover?.name ?? "?"} (${topMover?.changePercent >= 0 ? "+" : ""}${topMover?.changePercent ?? "?"}%)`,
     );
   } catch (error) {
     setCommodityError(error);
-    console.error(`[Commodities] ❌ ${error.message}`);
+    logger.error(`[Commodities] ❌ ${error.message}`);
   }
 }
 
@@ -41,5 +42,5 @@ const STARTUP_TASKS = [
 
 export function startMarketCollectors() {
   startCollectorLoop(STARTUP_TASKS);
-  console.log("💰 Market collectors started");
+  logger.info("💰 Market collectors started");
 }

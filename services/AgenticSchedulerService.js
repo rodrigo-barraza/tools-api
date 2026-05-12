@@ -2,6 +2,7 @@
 
 import { getDB } from "../db.js";
 import CONFIG from "../config.js";
+import logger from "../logger.js";
 
 // ────────────────────────────────────────────────────────────
 // Constants
@@ -29,7 +30,7 @@ export async function setupAgenticScheduleCollection() {
   await col.createIndex({ nextRunAt: 1 });
   await col.createIndex({ type: 1, name: 1 });
 
-  console.log(`   ✅ ${COLLECTION} indexes ensured`);
+  logger.info(`   ✅ ${COLLECTION} indexes ensured`);
 }
 
 // ────────────────────────────────────────────────────────────
@@ -294,7 +295,7 @@ export function startSchedulePoller() {
 
       for (const schedule of dueSchedules) {
         try {
-          console.log(`[Scheduler] Firing schedule #${schedule.scheduleId} '${schedule.name}'`);
+          logger.info(`[Scheduler] Firing schedule #${schedule.scheduleId} '${schedule.name}'`);
 
           await firePrismAgent(schedule);
 
@@ -320,15 +321,15 @@ export function startSchedulePoller() {
             { $set: updates, $inc: { runCount: 1 } },
           );
         } catch (err) {
-          console.error(`[Scheduler] Failed to fire schedule #${schedule.scheduleId}: ${err.message}`);
+          logger.error(`[Scheduler] Failed to fire schedule #${schedule.scheduleId}: ${err.message}`);
         }
       }
     } catch (err) {
-      console.error(`[Scheduler] Poller error: ${err.message}`);
+      logger.error(`[Scheduler] Poller error: ${err.message}`);
     }
   }, POLLER_INTERVAL_MS);
 
-  console.log(`   ⏰ Schedule poller started (interval: ${POLLER_INTERVAL_MS / 1000}s)`);
+  logger.info(`   ⏰ Schedule poller started (interval: ${POLLER_INTERVAL_MS / 1000}s)`);
 }
 
 // ────────────────────────────────────────────────────────────
@@ -339,7 +340,7 @@ async function firePrismAgent(schedule, payload = {}) {
   try {
     const prismUrl = CONFIG.PRISM_SERVICE_URL;
     if (!prismUrl) {
-      console.error("[Scheduler] PRISM_SERVICE_URL not configured — cannot fire schedule");
+      logger.error("[Scheduler] PRISM_SERVICE_URL not configured — cannot fire schedule");
       return null;
     }
 
@@ -367,13 +368,13 @@ async function firePrismAgent(schedule, payload = {}) {
 
     if (!res.ok) {
       const errBody = await res.json().catch(() => ({}));
-      console.error(`[Scheduler] Prism returned ${res.status}: ${errBody.error || res.statusText}`);
+      logger.error(`[Scheduler] Prism returned ${res.status}: ${errBody.error || res.statusText}`);
       return { error: errBody.error || `Prism returned ${res.status}` };
     }
 
     return await res.json().catch(() => ({ acknowledged: true }));
   } catch (err) {
-    console.error(`[Scheduler] Failed to reach Prism: ${err.message}`);
+    logger.error(`[Scheduler] Failed to reach Prism: ${err.message}`);
     return { error: err.message };
   }
 }

@@ -35,6 +35,7 @@ const EXERCISE_DB = [];
 let loaded = false;
 
 import { readdirSync } from "fs";
+import logger from "../../logger.js";
 
 function ensureLoaded() {
   if (loaded) return;
@@ -78,7 +79,7 @@ function ensureLoaded() {
     }
   }
 
-  console.log(`🏋️ Exercises DB loaded: ${totalCount} exercises from ${files.length} sources`);
+  logger.info(`🏋️ Exercises DB loaded: ${totalCount} exercises from ${files.length} sources`);
 }
 
 function normalizeSearch(str) {

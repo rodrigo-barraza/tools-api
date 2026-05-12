@@ -5,6 +5,7 @@ import {
   USER_AGENT,
 } from "../../constants.js";
 import {
+import logger from "../../logger.js";
   extractXmlTag,
   extractXmlItems,
 } from "../../utilities.js";
@@ -72,7 +73,7 @@ export async function fetchGoogleNews() {
       });
 
       if (!res.ok) {
-        console.warn(`[Google News] ⚠️ ${section} returned ${res.status}`);
+        logger.warn(`[Google News] ⚠️ ${section} returned ${res.status}`);
         continue;
       }
 
@@ -97,7 +98,7 @@ export async function fetchGoogleNews() {
         });
       }
     } catch (error) {
-      console.warn(
+      logger.warn(
         `[Google News] ⚠️ ${section} fetch failed: ${error.message}`,
       );
     }

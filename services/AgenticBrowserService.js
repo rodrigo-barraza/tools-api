@@ -693,7 +693,7 @@ const { chromium } = require('playwright');
     ${script}
     // ── User Script End ──
   } catch (err) {
-    console.error('Script error:', err.message);
+    logger.error('Script error:', err.message);
     process.exit(1);
   } finally {
     if (!BROWSER_WS) await browser.close();

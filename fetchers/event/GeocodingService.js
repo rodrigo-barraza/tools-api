@@ -1,4 +1,5 @@
 import CONFIG from "../../config.js";
+import logger from "../../logger.js";
 
 const GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json";
 
@@ -30,7 +31,7 @@ export async function geocodeAddress(address) {
     const response = await fetch(`${GEOCODE_URL}?${params}`);
 
     if (!response.ok) {
-      console.warn(`[Geocoding] ⚠️ API returned ${response.status}`);
+      logger.warn(`[Geocoding] ⚠️ API returned ${response.status}`);
       return null;
     }
 
@@ -53,7 +54,7 @@ export async function geocodeAddress(address) {
     geocodeCache.set(cacheKey, geocoded);
     return geocoded;
   } catch (error) {
-    console.warn(`[Geocoding] ⚠️ ${error.message}`);
+    logger.warn(`[Geocoding] ⚠️ ${error.message}`);
     return null;
   }
 }

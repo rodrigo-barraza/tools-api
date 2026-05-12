@@ -1,4 +1,5 @@
 import { getDB } from "../db.js";
+import logger from "../logger.js";
 
 let collection = null;
 
@@ -12,7 +13,7 @@ export async function setupCmeCollection() {
   await collection.createIndex({ startTime: -1 });
   await collection.createIndex({ isEarthDirected: 1 });
 
-  console.log("💥 CME collection indexes ready");
+  logger.info("💥 CME collection indexes ready");
 }
 
 export async function upsertCmes(cmes) {
@@ -33,7 +34,7 @@ export async function upsertCmes(cmes) {
     const result = await collection.bulkWrite(operations, { ordered: false });
     return { upserted: result.upsertedCount, modified: result.modifiedCount };
   } catch (error) {
-    console.error("Failed to upsert CMEs:", error.message);
+    logger.error("Failed to upsert CMEs:", error.message);
     return { upserted: 0, modified: 0 };
   }
 }

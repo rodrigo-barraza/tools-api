@@ -1,5 +1,6 @@
 import { normalizeName } from "@rodrigo-barraza/utilities-library";
 import { TREND_SOURCES as SOURCES, TREND_CATEGORIES } from "../../constants.js";
+import logger from "../../logger.js";
 
 const BLUESKY_API = "https://public.api.bsky.app/xrpc";
 
@@ -50,7 +51,7 @@ export async function fetchBlueskyTrends() {
       }
     }
   } catch (error) {
-    console.error(`[Bluesky] ❌ Feeds: ${error.message}`);
+    logger.error(`[Bluesky] ❌ Feeds: ${error.message}`);
   }
 
   // Also try to get trending search terms
@@ -90,7 +91,7 @@ export async function fetchBlueskyTrends() {
       }
     }
   } catch (error) {
-    console.error(`[Bluesky] ❌ Suggestions: ${error.message}`);
+    logger.error(`[Bluesky] ❌ Suggestions: ${error.message}`);
   }
 
   return trends;

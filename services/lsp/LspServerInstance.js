@@ -3,6 +3,7 @@ import { sleep } from "@rodrigo-barraza/utilities-library";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createLspClient } from "./LspClient.js";
+import logger from "../../logger.js";
 
 // ── Constants ────────────────────────────────────────────────
 /** LSP error code for "content modified" — transient, safe to retry */
@@ -51,7 +52,7 @@ export function createLspServerInstance(name, config) {
     let initPromise;
     try {
       state = "starting";
-      console.log(`[LSP:${name}] Starting server instance...`);
+      logger.info(`[LSP:${name}] Starting server instance...`);
       await client.start(config.command, config.args || [], {
         env: config.env,
         cwd: config.workspaceFolder,
@@ -131,14 +132,14 @@ export function createLspServerInstance(name, config) {
       state = "running";
       startTime = new Date();
       crashRecoveryCount = 0;
-      console.log(`[LSP:${name}] Server running`);
+      logger.info(`[LSP:${name}] Server running`);
     } catch (error) {
       // Clean up on failure
       client.stop().catch(() => {});
       initPromise?.catch(() => {});
       state = "error";
       lastError = error;
-      console.error(`[LSP:${name}] Start failed: ${error.message}`);
+      logger.error(`[LSP:${name}] Start failed: ${error.message}`);
       throw error;
     }
   }
@@ -148,11 +149,11 @@ export function createLspServerInstance(name, config) {
       state = "stopping";
       await client.stop();
       state = "stopped";
-      console.log(`[LSP:${name}] Server stopped`);
+      logger.info(`[LSP:${name}] Server stopped`);
     } catch (error) {
       state = "error";
       lastError = error;
-      console.error(`[LSP:${name}] Stop failed: ${error.message}`);
+      logger.error(`[LSP:${name}] Stop failed: ${error.message}`);
       throw error;
     }
   }
@@ -160,7 +161,7 @@ export function createLspServerInstance(name, config) {
     try {
       await stop();
     } catch (error) {
-      console.error(`[LSP:${name}] Stop during restart failed: ${error.message}`);
+      logger.error(`[LSP:${name}] Stop during restart failed: ${error.message}`);
       throw error;
     }
     restartCount++;
@@ -171,7 +172,7 @@ export function createLspServerInstance(name, config) {
     try {
       await start();
     } catch (error) {
-      console.error(`[LSP:${name}] Start during restart failed (attempt ${restartCount}/${maxRestarts}): ${error.message}`);
+      logger.error(`[LSP:${name}] Start during restart failed (attempt ${restartCount}/${maxRestarts}): ${error.message}`);
       throw error;
     }
   }
@@ -198,7 +199,7 @@ export function createLspServerInstance(name, config) {
         const isTransient = typeof errorCode === "number" && errorCode === LSP_ERROR_CONTENT_MODIFIED;
         if (isTransient && attempt < MAX_RETRIES_FOR_TRANSIENT) {
           const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
-          console.log(`[LSP:${name}] ${method} got ContentModified, retrying in ${delay}ms (${attempt + 1}/${MAX_RETRIES_FOR_TRANSIENT})...`);
+          logger.info(`[LSP:${name}] ${method} got ContentModified, retrying in ${delay}ms (${attempt + 1}/${MAX_RETRIES_FOR_TRANSIENT})...`);
           await sleep(delay);
           continue;
         }

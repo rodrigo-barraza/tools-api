@@ -2,6 +2,7 @@ import CONFIG from "../../config.js";
 import { BESTBUY_CATEGORIES, PRODUCT_SOURCES } from "../../constants.js";
 import { computeTrendingScore } from "../../utilities.js";
 import rateLimiter from "../../services/RateLimiterService.js";
+import logger from "../../logger.js";
 
 const BASE_URL = "https://api.bestbuy.com/beta/products";
 
@@ -96,7 +97,7 @@ export async function fetchAllBestBuyTrending() {
     const general = await fetchBestBuyTrending();
     allProducts.push(...general.products);
   } catch (error) {
-    console.error(`[BestBuy] ❌ General trending: ${error.message}`);
+    logger.error(`[BestBuy] ❌ General trending: ${error.message}`);
   }
 
   // Fetch per-category trending with rate limiting
@@ -106,7 +107,7 @@ export async function fetchAllBestBuyTrending() {
       const result = await fetchBestBuyTrending(cat.id);
       allProducts.push(...result.products);
     } catch (error) {
-      console.error(`[BestBuy] ❌ ${cat.name}: ${error.message}`);
+      logger.error(`[BestBuy] ❌ ${cat.name}: ${error.message}`);
     }
   }
 

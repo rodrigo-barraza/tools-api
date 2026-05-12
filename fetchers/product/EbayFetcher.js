@@ -3,6 +3,7 @@ import CONFIG from "../../config.js";
 import { PRODUCT_SOURCES, EBAY_CATEGORIES } from "../../constants.js";
 import { computeTrendingScore } from "../../utilities.js";
 import rateLimiter from "../../services/RateLimiterService.js";
+import logger from "../../logger.js";
 const BASE_URL = "https://api.ebay.com/buy/browse/v1";
 // ─── OAuth2 Token Management ──────────────────────────────────────
 const ebayTokenManager = new TokenManager(async () => {
@@ -90,9 +91,9 @@ export async function fetchAllEbayTrending() {
     try {
       const products = await fetchEbayCategoryTrending(token, cat);
       allProducts.push(...products);
-      console.log(`[eBay] ✅ ${cat.name}: ${products.length} products`);
+      logger.info(`[eBay] ✅ ${cat.name}: ${products.length} products`);
     } catch (error) {
-      console.error(`[eBay] ❌ ${cat.name}: ${error.message}`);
+      logger.error(`[eBay] ❌ ${cat.name}: ${error.message}`);
     }
   }
   return allProducts;

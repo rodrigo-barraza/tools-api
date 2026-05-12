@@ -22,6 +22,7 @@ import {
 } from "../services/AgenticFileService.js";
 import { getConnectedAgents } from "../services/AgentConnectionManager.js";
 import { getDB } from "../db.js";
+import logger from "../logger.js";
 const router = Router();
 // ─── Path Translation ─────────────────────────────────────────────
 const WORKSPACE_COLLECTION = "workspace_config";
@@ -262,10 +263,10 @@ export async function loadUserWorkspaceRoots() {
     const doc = await collection.findOne({ _key: "user_roots" });
     if (doc?.roots?.length > 0) {
       refreshAllowedRoots(doc.roots);
-      console.log(`   📂 User workspace roots: ${doc.roots.join(", ")}`);
+      logger.info(`   📂 User workspace roots: ${doc.roots.join(", ")}`);
     }
   } catch (err) {
-    console.warn(`   ⚠️  Could not load user workspace roots: ${err.message}`);
+    logger.warn(`   ⚠️  Could not load user workspace roots: ${err.message}`);
   }
 }
 export default router;

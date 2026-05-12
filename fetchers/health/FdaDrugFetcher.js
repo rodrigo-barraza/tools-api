@@ -1,6 +1,7 @@
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
+import logger from "../../logger.js";
 
 /**
  * FDA Drug Fetcher — Static In-Memory FDA NDC Drug Database
@@ -68,7 +69,7 @@ function ensureLoaded() {
     DRUG_DB.push(row);
   }
 
-  console.log(`💊 FDA drug database loaded: ${DRUG_DB.length} products`);
+  logger.info(`💊 FDA drug database loaded: ${DRUG_DB.length} products`);
 }
 
 // ─── Helpers ───────────────────────────────────────────────────

@@ -1,6 +1,7 @@
 import { normalizeName } from "@rodrigo-barraza/utilities-library";
 import CONFIG from "../../config.js";
 import { TREND_SOURCES as SOURCES, X_WOEIDS } from "../../constants.js";
+import logger from "../../logger.js";
 
 /**
  * Fetches trending topics from X (Twitter) for a given WOEID.
@@ -71,7 +72,7 @@ export async function fetchAllXTrends() {
     const trends = await fetchXTrends(X_WOEIDS.WORLDWIDE);
     allTrends.push(...trends);
   } catch (error) {
-    console.error(`[X] ❌ Worldwide: ${error.message}`);
+    logger.error(`[X] ❌ Worldwide: ${error.message}`);
   }
 
   return allTrends;

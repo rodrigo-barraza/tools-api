@@ -4,6 +4,7 @@ import { extname, resolve, basename } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createLspServerInstance } from "./LspServerInstance.js";
 import { getLspServerConfigs } from "./lspConfig.js";
+import logger from "../../logger.js";
 
 /**
  * Creates an LSP server manager instance.
@@ -38,11 +39,11 @@ export function createLspServerManager(workspaceFolder) {
     for (const [serverName, config] of Object.entries(configs)) {
       try {
         if (!config.command) {
-          console.warn(`[LSP Manager] Server '${serverName}' missing 'command' — skipping`);
+          logger.warn(`[LSP Manager] Server '${serverName}' missing 'command' — skipping`);
           continue;
         }
         if (!config.extensionToLanguage || Object.keys(config.extensionToLanguage).length === 0) {
-          console.warn(`[LSP Manager] Server '${serverName}' missing 'extensionToLanguage' — skipping`);
+          logger.warn(`[LSP Manager] Server '${serverName}' missing 'extensionToLanguage' — skipping`);
           continue;
         }
 
@@ -66,12 +67,12 @@ export function createLspServerManager(workspaceFolder) {
 
         servers.set(serverName, instance);
       } catch (error) {
-        console.error(`[LSP Manager] Failed to create server '${serverName}': ${error.message}`);
+        logger.error(`[LSP Manager] Failed to create server '${serverName}': ${error.message}`);
       }
     }
 
     initialized = true;
-    console.log(`[LSP Manager] Initialized with ${servers.size} server(s): ${[...servers.keys()].join(", ")}`);
+    logger.info(`[LSP Manager] Initialized with ${servers.size} server(s): ${[...servers.keys()].join(", ")}`);
   }
 
   // ── Routing ────────────────────────────────────────────────
@@ -104,7 +105,7 @@ export function createLspServerManager(workspaceFolder) {
       try {
         await server.start();
       } catch (error) {
-        console.error(`[LSP Manager] Failed to start server for ${basename(filePath)}: ${error.message}`);
+        logger.error(`[LSP Manager] Failed to start server for ${basename(filePath)}: ${error.message}`);
         throw error;
       }
     }
@@ -129,7 +130,7 @@ export function createLspServerManager(workspaceFolder) {
     try {
       return await server.sendRequest(method, params);
     } catch (error) {
-      console.error(`[LSP Manager] Request '${method}' failed for ${basename(filePath)}: ${error.message}`);
+      logger.error(`[LSP Manager] Request '${method}' failed for ${basename(filePath)}: ${error.message}`);
       throw error;
     }
   }
@@ -166,7 +167,7 @@ export function createLspServerManager(workspaceFolder) {
       });
       openedFiles.set(fileUri, server.name);
     } catch (error) {
-      console.error(`[LSP Manager] didOpen failed for ${basename(filePath)}: ${error.message}`);
+      logger.error(`[LSP Manager] didOpen failed for ${basename(filePath)}: ${error.message}`);
       throw error;
     }
   }
@@ -196,7 +197,7 @@ export function createLspServerManager(workspaceFolder) {
         contentChanges: [{ text: content }],
       });
     } catch (error) {
-      console.error(`[LSP Manager] didChange failed for ${basename(filePath)}: ${error.message}`);
+      logger.error(`[LSP Manager] didChange failed for ${basename(filePath)}: ${error.message}`);
       throw error;
     }
   }
@@ -218,7 +219,7 @@ export function createLspServerManager(workspaceFolder) {
       });
       openedFiles.delete(fileUri);
     } catch (error) {
-      console.error(`[LSP Manager] didClose failed for ${basename(filePath)}: ${error.message}`);
+      logger.error(`[LSP Manager] didClose failed for ${basename(filePath)}: ${error.message}`);
     }
   }
 
@@ -279,9 +280,9 @@ export function createLspServerManager(workspaceFolder) {
     initialized = false;
 
     if (errors.length > 0) {
-      console.error(`[LSP Manager] Shutdown errors: ${errors.join("; ")}`);
+      logger.error(`[LSP Manager] Shutdown errors: ${errors.join("; ")}`);
     } else {
-      console.log("[LSP Manager] All servers shut down");
+      logger.info("[LSP Manager] All servers shut down");
     }
   }
 
@@ -333,7 +334,7 @@ export async function shutdownAllLspManagers() {
   const all = [...managers.values()];
   managers.clear();
   await Promise.allSettled(all.map((m) => m.shutdown()));
-  console.log("[LSP Manager] All managers shut down");
+  logger.info("[LSP Manager] All managers shut down");
 }
 
 /**

@@ -6,6 +6,7 @@ import { resolve, relative, extname, dirname } from "node:path";
 import { existsSync } from "node:fs";
 import { WORKSPACE_ROOTS as WORKSPACE_ROOTS_RAW } from "../config.js";
 import { routeForPath, sendRpc } from "./AgentConnectionManager.js";
+import logger from "../logger.js";
 
 // ────────────────────────────────────────────────────────────
 // Agent Routing Helper
@@ -40,7 +41,7 @@ async function tryAgentRoute(method, params, targetPath) {
 // add workspaces via Settings UI or set the WORKSPACE_ROOTS env var to
 // match their Docker volume mounts.
 if (!Array.isArray(WORKSPACE_ROOTS_RAW) || WORKSPACE_ROOTS_RAW.length === 0) {
-  console.warn("[AgenticFileService] WORKSPACE_ROOTS is empty — no static workspace roots configured. Users must add workspaces via the Settings UI.");
+  logger.warn("[AgenticFileService] WORKSPACE_ROOTS is empty — no static workspace roots configured. Users must add workspaces via the Settings UI.");
 }
 
 // Static roots — immutable baseline from config.js

@@ -1,5 +1,6 @@
 import { hours as hoursToMs } from "@rodrigo-barraza/utilities-library";
 import { getDB } from "../db.js";
+import logger from "../logger.js";
 
 /**
  * Sets up the trends collection with indexes.
@@ -12,7 +13,7 @@ export async function setupTrendCollection() {
   await collection.createIndex({ category: 1 });
   await collection.createIndex({ source: 1 });
   await collection.createIndex({ volume: -1 });
-  console.log("📈 Trend collection indexes ready");
+  logger.info("📈 Trend collection indexes ready");
 }
 
 /**

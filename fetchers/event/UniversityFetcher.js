@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
 import { EVENT_SOURCES, EVENT_CATEGORIES } from "../../constants.js";
+import logger from "../../logger.js";
 
 const UBC_EVENTS_URL = "https://events.ubc.ca/";
 const SFU_EVENTS_URL = "https://www.sfu.ca/sfunews/events.html";
@@ -176,7 +177,7 @@ export async function fetchUniversityEvents() {
     if (result.status === "fulfilled") {
       events.push(...result.value);
     } else {
-      console.warn(
+      logger.warn(
         `[University] ⚠️ Partial failure: ${result.reason?.message}`,
       );
     }

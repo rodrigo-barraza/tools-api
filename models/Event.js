@@ -1,5 +1,6 @@
 import { days as daysToMs } from "@rodrigo-barraza/utilities-library";
 import { getDB } from "../db.js";
+import logger from "../logger.js";
 
 let collection = null;
 
@@ -21,7 +22,7 @@ export async function setupEventCollection() {
     { name: "event_text_search" },
   );
 
-  console.log("📅 Event collection indexes ready");
+  logger.info("📅 Event collection indexes ready");
 }
 
 /**
@@ -48,7 +49,7 @@ export async function upsertEvents(events) {
       modified: result.modifiedCount,
     };
   } catch (error) {
-    console.error("Failed to upsert events:", error.message);
+    logger.error("Failed to upsert events:", error.message);
     return { upserted: 0, modified: 0 };
   }
 }

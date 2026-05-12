@@ -1,4 +1,5 @@
 import { getDB } from "../db.js";
+import logger from "../logger.js";
 
 let collection = null;
 
@@ -11,7 +12,7 @@ export async function setupGeomagneticStormCollection() {
   await collection.createIndex({ gstId: 1 }, { unique: true });
   await collection.createIndex({ startTime: -1 });
 
-  console.log("🧲 Geomagnetic storm collection indexes ready");
+  logger.info("🧲 Geomagnetic storm collection indexes ready");
 }
 
 export async function upsertGeomagneticStorms(storms) {
@@ -32,7 +33,7 @@ export async function upsertGeomagneticStorms(storms) {
     const result = await collection.bulkWrite(operations, { ordered: false });
     return { upserted: result.upsertedCount, modified: result.modifiedCount };
   } catch (error) {
-    console.error("Failed to upsert geomagnetic storms:", error.message);
+    logger.error("Failed to upsert geomagnetic storms:", error.message);
     return { upserted: 0, modified: 0 };
   }
 }

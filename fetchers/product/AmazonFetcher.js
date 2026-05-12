@@ -10,6 +10,7 @@ import {
   computeTrendingScore,
 } from "../../utilities.js";
 import rateLimiter from "../../services/RateLimiterService.js";
+import logger from "../../logger.js";
 
 const BASE_URL = "https://www.amazon.com/Best-Sellers/zgbs";
 
@@ -132,9 +133,9 @@ export async function fetchAllAmazonBestSellers() {
     try {
       const products = await scrapeCategory(cat.slug, cat.name, cat.unified);
       allProducts.push(...products);
-      console.log(`[Amazon] ✅ ${cat.name}: ${products.length} products`);
+      logger.info(`[Amazon] ✅ ${cat.name}: ${products.length} products`);
     } catch (error) {
-      console.error(`[Amazon] ❌ ${cat.name}: ${error.message}`);
+      logger.error(`[Amazon] ❌ ${cat.name}: ${error.message}`);
     }
 
     // Rate limit between category requests

@@ -1,6 +1,7 @@
 import WebSocket from "ws";
 import CONFIG from "../../config.js";
 import {
+import logger from "../../logger.js";
   AIS_STREAM_WS_URL,
   AIS_STREAM_MAX_BUFFER_SIZE,
   AIS_STREAM_RECONNECT_DELAY_MS,
@@ -57,7 +58,7 @@ const stats = {
  */
 export function startAisStream(options = {}) {
   if (!CONFIG.AIS_STREAM_API_KEY) {
-    console.warn("[AisStream] ⚠️ AIS_STREAM_API_KEY not configured, skipping");
+    logger.warn("[AisStream] ⚠️ AIS_STREAM_API_KEY not configured, skipping");
     return;
   }
 
@@ -79,12 +80,12 @@ function connect(options = {}) {
   socket.onopen = () => {
     stats.connected = true;
     stats.lastError = null;
-    console.log("[AisStream] ✅ WebSocket connected");
+    logger.info("[AisStream] ✅ WebSocket connected");
 
     // Build subscription message — must be sent within 3 seconds
     const subscription = buildSubscription(options);
     socket.send(JSON.stringify(subscription));
-    console.log(
+    logger.info(
       `[AisStream]    Subscribed to ${subscription.BoundingBoxes.length} bounding box(es)`,
     );
   };
@@ -96,7 +97,7 @@ function connect(options = {}) {
       // Check for error messages
       if (msg.error) {
         stats.lastError = msg.error;
-        console.error(`[AisStream] ❌ Error: ${msg.error}`);
+        logger.error(`[AisStream] ❌ Error: ${msg.error}`);
         return;
       }
 
@@ -120,22 +121,22 @@ function connect(options = {}) {
         }
       }
     } catch (err) {
-      console.warn(`[AisStream] ⚠️ Parse error: ${err.message}`);
+      logger.warn(`[AisStream] ⚠️ Parse error: ${err.message}`);
     }
   };
 
   socket.onerror = (err) => {
     stats.lastError = err.message || "WebSocket error";
-    console.error(`[AisStream] ❌ WebSocket error: ${stats.lastError}`);
+    logger.error(`[AisStream] ❌ WebSocket error: ${stats.lastError}`);
   };
 
   socket.onclose = () => {
     stats.connected = false;
-    console.log("[AisStream] 🔌 WebSocket closed");
+    logger.info("[AisStream] 🔌 WebSocket closed");
 
     if (!intentionalClose) {
       stats.reconnectCount++;
-      console.log(
+      logger.info(
         `[AisStream]    Reconnecting in ${AIS_STREAM_RECONNECT_DELAY_MS / 1000}s (attempt #${stats.reconnectCount})`,
       );
       setTimeout(() => connect(options), AIS_STREAM_RECONNECT_DELAY_MS);

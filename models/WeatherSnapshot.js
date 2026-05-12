@@ -1,4 +1,5 @@
 import { getDB } from "../db.js";
+import logger from "../logger.js";
 
 /**
  * Insert a weather snapshot document.
@@ -12,6 +13,6 @@ export async function insertSnapshot(data) {
       createdAt: new Date(),
     });
   } catch (error) {
-    console.error("Failed to persist weather snapshot:", error.message);
+    logger.error("Failed to persist weather snapshot:", error.message);
   }
 }

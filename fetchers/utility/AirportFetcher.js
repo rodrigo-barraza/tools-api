@@ -1,6 +1,7 @@
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
+import logger from "../../logger.js";
 
 /**
  * Airport Fetcher — Static In-Memory Airport Database
@@ -93,7 +94,7 @@ function ensureLoaded() {
     AIRPORT_DB.push(row);
   }
 
-  console.log(`✈️  Airport database loaded: ${AIRPORT_DB.length} airports`);
+  logger.info(`✈️  Airport database loaded: ${AIRPORT_DB.length} airports`);
 }
 
 // ─── Helpers ───────────────────────────────────────────────────

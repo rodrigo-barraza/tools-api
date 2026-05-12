@@ -86,6 +86,7 @@ import {
   setAvalancheError,
 } from "../caches/AvalancheCache.js";
 import { saveState, startCollectorLoop } from "../services/FreshnessService.js";
+import logger from "../logger.js";
 
 // ─── Collector Factory ─────────────────────────────────────────────
 
@@ -96,13 +97,13 @@ function makeCollector({ label, collection, fetchFn, updateFn, setErrorFn, logFn
       updateFn(data);
       await saveState(collection, data);
       if (logFn) {
-        console.log(`[${label}] ✅ ${logFn(data)}`);
+        logger.info(`[${label}] ✅ ${logFn(data)}`);
       } else {
-        console.log(`[${label}] ✅ Collected`);
+        logger.info(`[${label}] ✅ Collected`);
       }
     } catch (error) {
       setErrorFn(error);
-      console.error(`[${label}] ❌ ${error.message}`);
+      logger.error(`[${label}] ❌ ${error.message}`);
     }
   };
 }
@@ -268,14 +269,14 @@ async function collectEarthquakes() {
       (max, e) => ((e.magnitude ?? -1) > (max.magnitude ?? -1) ? e : max),
       events[0] || {},
     );
-    console.log(
+    logger.info(
       `[Earthquake] ✅ ${events.length} events | ` +
         `${result?.upserted || 0} new, ${result?.modified || 0} updated | ` +
         `Strongest: M${strongest?.magnitude ?? "?"} ${strongest?.place ?? ""}`,
     );
   } catch (error) {
     setEarthquakeError(error);
-    console.error(`[Earthquake] ❌ ${error.message}`);
+    logger.error(`[Earthquake] ❌ ${error.message}`);
   }
 }
 
@@ -285,14 +286,14 @@ async function collectNeos() {
     const result = await updateNeos(neos);
     await saveState("neos_cache", neos);
     const closest = neos[0];
-    console.log(
+    logger.info(
       `[NEO] ✅ ${neos.length} objects | ` +
         `${result?.upserted || 0} new | ` +
         `Closest: ${closest?.name ?? "?"} at ${Math.round(closest?.missDistanceKm ?? 0)} km`,
     );
   } catch (error) {
     setNeoError(error);
-    console.error(`[NEO] ❌ ${error.message}`);
+    logger.error(`[NEO] ❌ ${error.message}`);
   }
 }
 
@@ -301,14 +302,14 @@ async function collectDonki() {
     const data = await fetchAllDonki();
     const result = await updateSpaceWeather(data);
     await saveState("space_weather", data);
-    console.log(
+    logger.info(
       `[DONKI] ✅ ${data.flares.length} flares (${result.flares.upserted} new) | ` +
         `${data.cmes.length} CMEs (${result.cmes.upserted} new) | ` +
         `${data.storms.length} storms (${result.storms.upserted} new)`,
     );
   } catch (error) {
     setSpaceWeatherError(error);
-    console.error(`[DONKI] ❌ ${error.message}`);
+    logger.error(`[DONKI] ❌ ${error.message}`);
   }
 }
 
@@ -341,5 +342,5 @@ const STARTUP_TASKS = [
 
 export function startWeatherCollectors() {
   startCollectorLoop(STARTUP_TASKS);
-  console.log("☁️  Weather collectors started");
+  logger.info("☁️  Weather collectors started");
 }

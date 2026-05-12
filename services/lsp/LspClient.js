@@ -2,6 +2,7 @@
 
 import { spawn } from "node:child_process";
 import {
+import logger from "../../logger.js";
   createMessageConnection,
   StreamMessageReader,
   StreamMessageWriter,
@@ -84,7 +85,7 @@ export function createLspClient(serverName, onCrash) {
           proc.stderr.on("data", (data) => {
             const output = data.toString().trim();
             if (output) {
-              console.log(`[LSP:${serverName}:stderr] ${output}`);
+              logger.info(`[LSP:${serverName}:stderr] ${output}`);
             }
           });
         }
@@ -94,7 +95,7 @@ export function createLspClient(serverName, onCrash) {
           if (!isStopping) {
             startFailed = true;
             startError = error;
-            console.error(`[LSP:${serverName}] Process error: ${error.message}`);
+            logger.error(`[LSP:${serverName}] Process error: ${error.message}`);
           }
         });
 
@@ -104,7 +105,7 @@ export function createLspClient(serverName, onCrash) {
             startFailed = false;
             startError = null;
             const crashError = new Error(`LSP server ${serverName} crashed with exit code ${code}`);
-            console.error(`[LSP:${serverName}] ${crashError.message}`);
+            logger.error(`[LSP:${serverName}] ${crashError.message}`);
             onCrash?.(crashError);
           }
         });
@@ -112,7 +113,7 @@ export function createLspClient(serverName, onCrash) {
         // Handle stdin errors (process exits before we finish writing)
         proc.stdin.on("error", (error) => {
           if (!isStopping) {
-            console.warn(`[LSP:${serverName}] stdin error: ${error.message}`);
+            logger.warn(`[LSP:${serverName}] stdin error: ${error.message}`);
           }
         });
 
@@ -126,14 +127,14 @@ export function createLspClient(serverName, onCrash) {
           if (!isStopping) {
             startFailed = true;
             startError = error;
-            console.error(`[LSP:${serverName}] Connection error: ${error.message}`);
+            logger.error(`[LSP:${serverName}] Connection error: ${error.message}`);
           }
         });
 
         connection.onClose(() => {
           if (!isStopping) {
             isInitialized = false;
-            console.log(`[LSP:${serverName}] Connection closed`);
+            logger.info(`[LSP:${serverName}] Connection closed`);
           }
         });
 
@@ -151,9 +152,9 @@ export function createLspClient(serverName, onCrash) {
         }
         pendingRequestHandlers.length = 0;
 
-        console.log(`[LSP:${serverName}] Client started`);
+        logger.info(`[LSP:${serverName}] Client started`);
       } catch (error) {
-        console.error(`[LSP:${serverName}] Failed to start: ${error.message}`);
+        logger.error(`[LSP:${serverName}] Failed to start: ${error.message}`);
         throw error;
       }
     },
@@ -176,10 +177,10 @@ export function createLspClient(serverName, onCrash) {
         await connection.sendNotification("initialized", {});
 
         isInitialized = true;
-        console.log(`[LSP:${serverName}] Initialized`);
+        logger.info(`[LSP:${serverName}] Initialized`);
         return result;
       } catch (error) {
-        console.error(`[LSP:${serverName}] Initialize failed: ${error.message}`);
+        logger.error(`[LSP:${serverName}] Initialize failed: ${error.message}`);
         throw error;
       }
     },
@@ -199,7 +200,7 @@ export function createLspClient(serverName, onCrash) {
       try {
         return await connection.sendRequest(method, params);
       } catch (error) {
-        console.error(`[LSP:${serverName}] Request ${method} failed: ${error.message}`);
+        logger.error(`[LSP:${serverName}] Request ${method} failed: ${error.message}`);
         throw error;
       }
     },
@@ -217,7 +218,7 @@ export function createLspClient(serverName, onCrash) {
       try {
         await connection.sendNotification(method, params);
       } catch (error) {
-        console.warn(`[LSP:${serverName}] Notification ${method} failed: ${error.message}`);
+        logger.warn(`[LSP:${serverName}] Notification ${method} failed: ${error.message}`);
         // Don't re-throw — notifications are fire-and-forget
       }
     },
@@ -265,7 +266,7 @@ export function createLspClient(serverName, onCrash) {
           await connection.sendNotification("exit", {});
         }
       } catch (error) {
-        console.warn(`[LSP:${serverName}] Shutdown error: ${error.message}`);
+        logger.warn(`[LSP:${serverName}] Shutdown error: ${error.message}`);
         shutdownError = error;
       } finally {
         // Always cleanup regardless of shutdown success
@@ -293,7 +294,7 @@ export function createLspClient(serverName, onCrash) {
           startError = shutdownError;
         }
 
-        console.log(`[LSP:${serverName}] Client stopped`);
+        logger.info(`[LSP:${serverName}] Client stopped`);
       }
 
       if (shutdownError) throw shutdownError;

@@ -1,6 +1,7 @@
 import { hours as hoursToMs } from "@rodrigo-barraza/utilities-library";
 import { getDB } from "../db.js";
 import { SNAPSHOT_TTL_SECONDS } from "../constants.js";
+import logger from "../logger.js";
 
 /**
  * Set up the commodity_snapshots collection with a TTL index.
@@ -15,7 +16,7 @@ export async function setupCommodityCollection() {
   );
   await collection.createIndex({ ticker: 1, fetchedAt: -1 });
 
-  console.log("💰 commodity_snapshots collection ready");
+  logger.info("💰 commodity_snapshots collection ready");
 }
 
 /**

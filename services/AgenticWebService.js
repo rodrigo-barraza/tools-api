@@ -2,6 +2,7 @@
 
 import * as cheerio from "cheerio";
 import CONFIG from "../config.js";
+import logger from "../logger.js";
 
 // ────────────────────────────────────────────────────────────
 // Constants
@@ -165,9 +166,9 @@ export async function agenticWebSearch(query, { limit = 5, dateRestrict, siteSea
       const result = await _searchBrave(effectiveQuery, { limit: clampedLimit, dateRestrict });
       if (!result.error) return result;
       // If Brave fails, fall through to Google CSE
-      console.warn(`[AgenticWebService] Brave Search failed, trying Google CSE: ${result.error}`);
+      logger.warn(`[AgenticWebService] Brave Search failed, trying Google CSE: ${result.error}`);
     } catch (err) {
-      console.warn(`[AgenticWebService] Brave Search exception: ${err.message}`);
+      logger.warn(`[AgenticWebService] Brave Search exception: ${err.message}`);
     }
   }
 

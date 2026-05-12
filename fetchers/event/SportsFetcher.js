@@ -1,4 +1,5 @@
 import { EVENT_SOURCES, EVENT_CATEGORIES } from "../../constants.js";
+import logger from "../../logger.js";
 
 // NHL unofficial API — no auth needed
 const NHL_SCHEDULE_URL =
@@ -139,7 +140,7 @@ export async function fetchSportsEvents() {
     if (result.status === "fulfilled") {
       events.push(...result.value);
     } else {
-      console.warn(`[Sports] ⚠️ ${labels[i]}: ${result.reason?.message}`);
+      logger.warn(`[Sports] ⚠️ ${labels[i]}: ${result.reason?.message}`);
     }
   });
 

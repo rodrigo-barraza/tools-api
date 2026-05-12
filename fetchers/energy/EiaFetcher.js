@@ -1,6 +1,7 @@
 import CONFIG from "../../config.js";
 import { EIA_BASE_URL, EIA_DEFAULT_SERIES } from "../../constants.js";
 import rateLimiter from "../../services/RateLimiterService.js";
+import logger from "../../logger.js";
 
 /**
  * EIA (U.S. Energy Information Administration) APIv2 Fetcher.
@@ -290,7 +291,7 @@ export async function getEnergyIndicators() {
     .map((r, i) => ({ series: entries[i][0], error: r.reason.message }));
 
   if (failed.length > 0) {
-    console.warn(
+    logger.warn(
       `[EiaFetcher] ⚠️ ${failed.length} indicator(s) failed:`,
       failed.map((f) => f.series).join(", "),
     );

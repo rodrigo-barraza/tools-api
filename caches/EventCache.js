@@ -2,6 +2,7 @@ import { upsertEvents } from "../models/Event.js";
 import { EVENT_SOURCES, EVENT_CATEGORIES } from "../constants.js";
 import { batchGeocodeEvents } from "../fetchers/event/GeocodingService.js";
 import { enrichEventWithMapUrl } from "../utilities.js";
+import logger from "../logger.js";
 
 /**
  * In-memory cache for the latest event data from each source.
@@ -41,7 +42,7 @@ export async function updateEvents(source, events) {
   if (GEOCODE_SOURCES.has(source) && events.length > 0) {
     const geocoded = await batchGeocodeEvents(events);
     if (geocoded > 0) {
-      console.log(`[Geocoding] 📍 Enriched ${geocoded} ${source} events`);
+      logger.info(`[Geocoding] 📍 Enriched ${geocoded} ${source} events`);
     }
   }
 

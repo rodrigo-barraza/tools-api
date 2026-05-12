@@ -1,4 +1,5 @@
 import { getDB } from "../db.js";
+import logger from "../logger.js";
 
 let collection = null;
 
@@ -15,7 +16,7 @@ export async function setupNeoCollection() {
   await collection.createIndex({ closeApproachDate: -1 });
   await collection.createIndex({ isPotentiallyHazardous: 1 });
 
-  console.log("☄️  NEO collection indexes ready");
+  logger.info("☄️  NEO collection indexes ready");
 }
 
 /**
@@ -39,7 +40,7 @@ export async function upsertNeos(neos) {
     const result = await collection.bulkWrite(operations, { ordered: false });
     return { upserted: result.upsertedCount, modified: result.modifiedCount };
   } catch (error) {
-    console.error("Failed to upsert NEOs:", error.message);
+    logger.error("Failed to upsert NEOs:", error.message);
     return { upserted: 0, modified: 0 };
   }
 }

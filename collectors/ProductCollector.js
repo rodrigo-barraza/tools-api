@@ -27,6 +27,7 @@ import {
   setAvailabilityError,
 } from "../caches/BestBuyCAAvailabilityCache.js";
 import { saveState, startCollectorLoop } from "../services/FreshnessService.js";
+import logger from "../logger.js";
 
 // ─── Collector Factory ─────────────────────────────────────────────
 
@@ -37,12 +38,12 @@ function createProductCollector(collection, source, fetchFn) {
       updateProducts(source, products);
       const result = await upsertProducts(products);
       await saveState(collection, { source, products });
-      console.log(
+      logger.info(
         `[${collection}] ✅ ${products.length} products | ${result.upserted} new, ${result.modified} updated`,
       );
     } catch (error) {
       setProductError(source, error);
-      console.error(`[${collection}] ❌ ${error.message}`);
+      logger.error(`[${collection}] ❌ ${error.message}`);
     }
   };
 }
@@ -70,17 +71,17 @@ async function collectBestBuyCAAvailability() {
     updateStatuses(results);
     await saveState("bestbuy_ca_availability", results);
     const inStock = results.filter((r) => r.inStock).length;
-    console.log(
+    logger.info(
       `[bestbuy_ca_availability] ✅ ${results.length} SKUs checked | ${inStock} in stock`,
     );
     if (errors.length) {
-      console.warn(
+      logger.warn(
         `[bestbuy_ca_availability] ⚠️ ${errors.length} batch error(s): ${errors[0]}`,
       );
     }
   } catch (error) {
     setAvailabilityError(error);
-    console.error(`[bestbuy_ca_availability] ❌ ${error.message}`);
+    logger.error(`[bestbuy_ca_availability] ❌ ${error.message}`);
   }
 }
 
@@ -107,5 +108,5 @@ export function startProductCollectors() {
   }));
 
   startCollectorLoop(tasks);
-  console.log("📦 Product collectors started");
+  logger.info("📦 Product collectors started");
 }

@@ -1,6 +1,7 @@
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
+import logger from "../../logger.js";
 
 /**
  * Periodic Table Fetcher — Static In-Memory Element Database
@@ -88,7 +89,7 @@ function ensureLoaded() {
     ELEMENT_DB.push(row);
   }
 
-  console.log(`⚛️  Periodic Table loaded: ${ELEMENT_DB.length} elements`);
+  logger.info(`⚛️  Periodic Table loaded: ${ELEMENT_DB.length} elements`);
 }
 
 // ─── Helpers ───────────────────────────────────────────────────

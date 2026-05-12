@@ -1,6 +1,7 @@
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
+import logger from "../../logger.js";
 
 /**
  * World Bank Fetcher — Static In-Memory Country Indicators Database
@@ -106,7 +107,7 @@ function ensureLoaded() {
     COUNTRY_DB.push(row);
   }
 
-  console.log(
+  logger.info(
     `🌍 World Bank indicators loaded: ${COUNTRY_DB.length} countries, ${INDICATOR_KEYS.length} indicators`,
   );
 }

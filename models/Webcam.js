@@ -1,4 +1,5 @@
 import { getDB } from "../db.js";
+import logger from "../logger.js";
 
 let collection = null;
 
@@ -12,7 +13,7 @@ export async function setupWebcamCollection() {
   await collection.createIndex({ city: 1 });
   await collection.createIndex({ lastUpdated: -1 });
 
-  console.log("📷 Webcam collection indexes ready");
+  logger.info("📷 Webcam collection indexes ready");
 }
 
 export async function upsertWebcams(webcams) {
@@ -34,7 +35,7 @@ export async function upsertWebcams(webcams) {
     const result = await collection.bulkWrite(operations, { ordered: false });
     return result;
   } catch (error) {
-    console.error("Failed to upsert webcams:", error.message);
+    logger.error("Failed to upsert webcams:", error.message);
     return null;
   }
 }

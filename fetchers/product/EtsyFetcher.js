@@ -2,6 +2,7 @@ import CONFIG from "../../config.js";
 import { PRODUCT_SOURCES, ETSY_CATEGORY_MAP } from "../../constants.js";
 import { computeTrendingScore } from "../../utilities.js";
 import rateLimiter from "../../services/RateLimiterService.js";
+import logger from "../../logger.js";
 
 const BASE_URL = "https://openapi.etsy.com/v3/application";
 
@@ -95,7 +96,7 @@ export async function fetchEtsyTrending() {
 
       allProducts.push(...products);
     } catch (error) {
-      console.error(`[Etsy] ❌ "${keyword}": ${error.message}`);
+      logger.error(`[Etsy] ❌ "${keyword}": ${error.message}`);
     }
   }
 

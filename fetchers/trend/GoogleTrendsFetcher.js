@@ -3,6 +3,7 @@ import {
   GOOGLE_TRENDS_GEOS,
 } from "../../constants.js";
 import { extractXmlTag, randomUserAgent } from "../../utilities.js";
+import logger from "../../logger.js";
 
 const TRENDS_RSS_URL = "https://trends.google.com/trending/rss";
 
@@ -88,7 +89,7 @@ export async function fetchGoogleTrends() {
       const trends = await fetchGoogleDailyTrends(geo);
       allTrends.push(...trends);
     } catch (error) {
-      console.error(`[Google Trends] ❌ ${geo}: ${error.message}`);
+      logger.error(`[Google Trends] ❌ ${geo}: ${error.message}`);
     }
   }
 

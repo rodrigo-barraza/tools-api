@@ -1,6 +1,7 @@
 // ─── Rate Limiter Service ───────────────────────────────────
 
 import { API_RATE_LIMITS } from "../constants.js";
+import logger from "../logger.js";
 
 /**
  * Per-provider rate limiter.
@@ -25,7 +26,7 @@ class RateLimiterService {
   async wait(provider) {
     const limits = API_RATE_LIMITS[provider];
     if (!limits) {
-      console.warn(`[RateLimiter] ⚠️ Unknown provider: ${provider}`);
+      logger.warn(`[RateLimiter] ⚠️ Unknown provider: ${provider}`);
       return;
     }
 

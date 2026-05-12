@@ -25,6 +25,7 @@ import {
   getToolSchemasForAI,
 } from "./ToolSchemaService.js";
 import CONFIG from "../config.js";
+import logger from "../logger.js";
 
 // ── Build tool executor URL from endpoint metadata ──────────
 function buildUrl(endpoint, args = {}) {
@@ -233,5 +234,5 @@ export function mountMcpRoutes(app) {
     await session.transport.handlePostMessage(req, res, req.body);
   });
 
-  console.log("   🔌 MCP adapter mounted at /mcp/sse");
+  logger.info("   🔌 MCP adapter mounted at /mcp/sse");
 }
