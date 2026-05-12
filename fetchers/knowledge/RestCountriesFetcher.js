@@ -100,28 +100,3 @@ export async function getCountryByCode(code) {
   return { found: true, ...normalizeCountry(country) };
 }
 
-// ─── Get All Countries (summary) ──────────────────────────────────
-
-/**
- * Get summary data for all countries (useful for "largest by population" etc.).
- * Returns a lighter payload.
- * @returns {Promise<object[]>}
- */
-export async function getAllCountries() {
-  const url = `${REST_COUNTRIES_BASE_URL}/all?fields=name,cca2,population,region,capital,flags`;
-  const res = await fetch(url);
-
-  if (!res.ok) {
-    throw new Error(`Rest Countries API → ${res.status} ${res.statusText}`);
-  }
-
-  const data = await res.json();
-  return data.map((c) => ({
-    name: c.name?.common || null,
-    cca2: c.cca2 || null,
-    population: c.population || 0,
-    region: c.region || null,
-    capital: c.capital?.[0] || null,
-    flag: c.flags?.png || null,
-  }));
-}

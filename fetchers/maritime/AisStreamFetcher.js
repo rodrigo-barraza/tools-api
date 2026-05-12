@@ -65,18 +65,6 @@ export function startAisStream(options = {}) {
   connect(options);
 }
 
-/**
- * Stop the AIS Stream WebSocket connection.
- */
-export function stopAisStream() {
-  intentionalClose = true;
-  if (socket) {
-    socket.close();
-    socket = null;
-  }
-  stats.connected = false;
-}
-
 function connect(options = {}) {
   if (socket) {
     try {

@@ -7,7 +7,6 @@ import CONFIG from "../config.js";
 // Constants
 // ────────────────────────────────────────────────────────────
 
-const MAX_FETCH_BYTES = 2_097_152;     // 2 MB max download
 const FETCH_TIMEOUT_MS = 15_000;       // 15 second timeout
 const MAX_OUTPUT_CHARS = 100_000;      // Truncate final markdown output
 
@@ -479,17 +478,3 @@ function processTable($, $table, lines) {
   lines.push("");
 }
 
-/**
- * Get the web service health info.
- */
-export function getAgenticWebHealth() {
-  const brave = !!CONFIG.BRAVE_SEARCH_API_KEY;
-  const googleCse = !!(CONFIG.GOOGLE_API_KEY && CONFIG.GOOGLE_CSE_CX);
-  const providers = [brave && "brave", googleCse && "google_cse"].filter(Boolean);
-  return {
-    fetchUrl: "on-demand (cheerio HTML→markdown)",
-    webSearch: providers.length ? `${providers.join(" → ")} (active)` : "not configured",
-    maxFetchBytes: MAX_FETCH_BYTES,
-    fetchTimeoutMs: FETCH_TIMEOUT_MS,
-  };
-}

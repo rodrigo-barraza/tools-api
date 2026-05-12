@@ -1,6 +1,5 @@
 import CONFIG from "../../config.js";
 import { FINNHUB_BASE_URL } from "../../constants.js";
-import rateLimiter from "../../services/RateLimiterService.js";
 
 /**
  * Finnhub REST API fetcher.
@@ -41,29 +40,6 @@ async function get(path) {
  */
 export async function fetchStockQuote(symbol) {
   return get(`/quote?symbol=${encodeURIComponent(symbol)}`);
-}
-
-/**
- * Fetch quotes for multiple symbols sequentially with pacing.
- * Returns an array of { symbol, ...quoteData }.
- */
-export async function fetchStockQuotes(symbols) {
-  const results = [];
-  for (let i = 0; i < symbols.length; i++) {
-    try {
-      const quote = await fetchStockQuote(symbols[i]);
-      results.push({ symbol: symbols[i], ...quote });
-    } catch (err) {
-      console.warn(
-        `[FinnhubFetcher] ⚠️ Quote failed for ${symbols[i]}: ${err.message}`,
-      );
-    }
-    // Pace requests via centralized rate limiter
-    if (i < symbols.length - 1) {
-      await rateLimiter.wait("FINNHUB");
-    }
-  }
-  return results;
 }
 
 // ─── Company Profile ───────────────────────────────────────────────

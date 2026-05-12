@@ -1,5 +1,4 @@
 import CONFIG from "../../config.js";
-import { buildLocalUrl } from "../../utilities.js";
 
 const NEARBY_URL = "https://places.googleapis.com/v1/places:searchNearby";
 const TEXT_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText";
@@ -124,24 +123,6 @@ export function buildStaticMapUrl(places, center, { size = "800x400", zoom, mapt
     .join("&");
 
   return `${STATIC_MAP_URL}?${params.toString()}&${markerParams}`;
-}
-
-/**
- * Build the embed URL for the interactive map served by UtilityRoutes.
- * @param {object[]} places - Array of normalized place objects
- * @returns {string|null}
- */
-export function buildMapEmbedUrl(places) {
-  if (!places.length || !CONFIG.GOOGLE_API_KEY) return null;
-  const markers = places
-    .filter((p) => p.latitude != null && p.longitude != null)
-    .map((p) => ({
-      latitude: p.latitude,
-      longitude: p.longitude,
-      name: p.name || null,
-      address: p.shortAddress || p.address || null,
-    }));
-  return buildLocalUrl("utility/map/embed", { markers: JSON.stringify(markers) });
 }
 
 // ─── Nearby Search ────────────────────────────────────────────────

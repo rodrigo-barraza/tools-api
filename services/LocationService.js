@@ -198,13 +198,3 @@ export async function initLocation() {
   }
 }
 
-/**
- * Get the currently resolved location.
- * @returns {object}
- */
-export function getLocation() {
-  if (!resolvedLocation) {
-    throw new Error("Location not initialised — call initLocation() first");
-  }
-  return resolvedLocation;
-}

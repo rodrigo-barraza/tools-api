@@ -62,28 +62,3 @@ export async function listTimezones(area) {
   return res.json();
 }
 
-// ─── Get Time by IP ────────────────────────────────────────────────
-
-/**
- * Get current time based on the server's public IP.
- * @returns {Promise<object>}
- */
-export async function getTimeByIP() {
-  const url = `${TIMEZONE_BASE_URL}/ip`;
-  const res = await fetch(url);
-
-  if (!res.ok) {
-    throw new Error(`World Time API (IP) → ${res.status} ${res.statusText}`);
-  }
-
-  const data = await res.json();
-
-  return {
-    timezone: data.timezone,
-    datetime: data.datetime,
-    abbreviation: data.abbreviation,
-    utcOffset: data.utc_offset,
-    clientIp: data.client_ip,
-    isDst: data.dst,
-  };
-}
