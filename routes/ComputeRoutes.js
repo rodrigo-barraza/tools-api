@@ -1,5 +1,11 @@
 import { setupStreamingSSE, lazyImport } from "@rodrigo-barraza/utilities-library/express";
 import { validateMaxLength } from "@rodrigo-barraza/utilities-library";
+import {
+  parseHex as hexToRgb,
+  toHex as rgbToHex,
+  rgbToHsl,
+  hslToRgb,
+} from "@rodrigo-barraza/utilities-library/color";
 // ─── Process-Based Tool Endpoints ───────────────────────────
 import { Router } from "express";
 import {
@@ -905,70 +911,7 @@ router.get("/encode", (req, res) => {
   }
 });
 // ─── 14. Color Converter ────────────────────────────────────
-// ─── Color Math ────────────────────────────────────────────────
-function hexToRgb(hex) {
-  const clean = hex.replace("#", "");
-  const full = clean.length === 3
-    ? clean.split("").map((c) => c + c).join("")
-    : clean;
-  return {
-    r: parseInt(full.slice(0, 2), 16),
-    g: parseInt(full.slice(2, 4), 16),
-    b: parseInt(full.slice(4, 6), 16),
-  };
-}
-function rgbToHex({ r, g, b }) {
-  return `#${[r, g, b].map((c) => Math.round(c).toString(16).padStart(2, "0")).join("")}`;
-}
-function rgbToHsl({ r, g, b }) {
-  const rn = r / 255;
-  const gn = g / 255;
-  const bn = b / 255;
-  const max = Math.max(rn, gn, bn);
-  const min = Math.min(rn, gn, bn);
-  const l = (max + min) / 2;
-  let h = 0;
-  let s = 0;
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case rn: h = ((gn - bn) / d + (gn < bn ? 6 : 0)) / 6; break;
-      case gn: h = ((bn - rn) / d + 2) / 6; break;
-      case bn: h = ((rn - gn) / d + 4) / 6; break;
-    }
-  }
-  return {
-    h: Math.round(h * 360),
-    s: Math.round(s * 100),
-    l: Math.round(l * 100),
-  };
-}
-function hslToRgb({ h, s, l }) {
-  const hn = h / 360;
-  const sn = s / 100;
-  const ln = l / 100;
-  if (sn === 0) {
-    const v = Math.round(ln * 255);
-    return { r: v, g: v, b: v };
-  }
-  const hue2rgb = (p, q, t) => {
-    let tn = t;
-    if (tn < 0) tn += 1;
-    if (tn > 1) tn -= 1;
-    if (tn < 1 / 6) return p + (q - p) * 6 * tn;
-    if (tn < 1 / 2) return q;
-    if (tn < 2 / 3) return p + (q - p) * (2 / 3 - tn) * 6;
-    return p;
-  };
-  const q = ln < 0.5 ? ln * (1 + sn) : ln + sn - ln * sn;
-  const p = 2 * ln - q;
-  return {
-    r: Math.round(hue2rgb(p, q, hn + 1 / 3) * 255),
-    g: Math.round(hue2rgb(p, q, hn) * 255),
-    b: Math.round(hue2rgb(p, q, hn - 1 / 3) * 255),
-  };
-}
+// ─── Color Math (service-specific — not in shared library) ──
 function rgbToHsv({ r, g, b }) {
   const rn = r / 255;
   const gn = g / 255;

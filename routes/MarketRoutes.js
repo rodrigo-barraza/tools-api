@@ -1,4 +1,5 @@
 import { parseIntParam } from "@rodrigo-barraza/utilities-library";
+import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { Router } from "express";
 import { getHistory } from "../models/CommoditySnapshot.js";
 import {
@@ -37,17 +38,17 @@ router.get("/commodities/ticker/:ticker", (req, res) => {
   }
   res.json(commodity);
 });
-router.get("/commodities/history/:ticker", async (req, res) => {
+router.get("/commodities/history/:ticker", asyncHandler(async (req, res) => {
   const ticker = req.params.ticker.toUpperCase();
   const hours = parseIntParam(req.query.hours, 24);
   const history = await getHistory(ticker, hours);
   res.json({ ticker, hours, count: history.length, snapshots: history });
-});
+}));
 export function getMarketHealth() {
   return { commodities: getCommodityHealth() };
 }
 // ── Unified Commodities Dispatcher ─────────────────────────────────
-router.get("/commodities/data", async (req, res) => {
+router.get("/commodities/data", asyncHandler(async (req, res) => {
   const { action, category, ticker, hours: rawHours } = req.query;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["summary", "category", "ticker", "categories", "history"] });
   switch (action) {
@@ -75,5 +76,5 @@ router.get("/commodities/data", async (req, res) => {
     default:
       return res.status(400).json({ error: `Unknown action: ${action}`, actions: ["summary", "category", "ticker", "categories", "history"] });
   }
-});
+}));
 export default router;

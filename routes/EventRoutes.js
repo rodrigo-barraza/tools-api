@@ -1,4 +1,5 @@
 import { parseIntParam } from "@rodrigo-barraza/utilities-library";
+import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { Router } from "express";
 import CONFIG from "../config.js";
 import {
@@ -15,23 +16,23 @@ import {
 } from "../caches/EventCache.js";
 const router = Router();
 // ─── Event Endpoints ───────────────────────────────────────────────
-router.get("/today", async (_req, res) => {
+router.get("/today", asyncHandler(async (_req, res) => {
   const events = await getEventsToday(CONFIG.TIMEZONE);
   res.json({ count: events.length, timezone: CONFIG.TIMEZONE, events });
-});
-router.get("/upcoming", async (req, res) => {
+}));
+router.get("/upcoming", asyncHandler(async (req, res) => {
   const days = parseIntParam(req.query.days, 30);
   const limit = parseIntParam(req.query.limit, 200);
   const events = await getEventsUpcoming(days, limit);
   res.json({ count: events.length, days, events });
-});
-router.get("/past", async (req, res) => {
+}));
+router.get("/past", asyncHandler(async (req, res) => {
   const days = parseIntParam(req.query.days, 30);
   const limit = parseIntParam(req.query.limit, 200);
   const events = await getEventsPast(days, limit);
   res.json({ count: events.length, days, events });
-});
-router.get("/search", async (req, res) => {
+}));
+router.get("/search", asyncHandler(async (req, res) => {
   const { q, category, city, source } = req.query;
   const limit = parseIntParam(req.query.limit, 100);
   const events = await searchEvents({ q, category, city, source, limit });
@@ -40,7 +41,7 @@ router.get("/search", async (req, res) => {
     query: { q, category, city, source },
     events,
   });
-});
+}));
 router.get("/summary", (_req, res) => {
   res.json(getEventSummary());
 });
@@ -48,13 +49,13 @@ router.get("/cached", (_req, res) => {
   const events = getLatestEvents();
   res.json({ count: events.length, events });
 });
-router.get("/:source/:id", async (req, res) => {
+router.get("/:source/:id", asyncHandler(async (req, res) => {
   const event = await getEventBySourceId(req.params.source, req.params.id);
   if (!event) return res.status(404).json({ error: "Event not found" });
   res.json(event);
-});
+}));
 // ── Unified Events Dispatcher ──────────────────────────────────────
-router.get("/events", async (req, res) => {
+router.get("/events", asyncHandler(async (req, res) => {
   const { action, q, source, category, days, limit: rawLimit } = req.query;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["search", "upcoming", "today", "summary"] });
   const limit = parseIntParam(rawLimit, undefined);
@@ -77,7 +78,7 @@ router.get("/events", async (req, res) => {
     default:
       return res.status(400).json({ error: `Unknown action: ${action}`, actions: ["search", "upcoming", "today", "summary"] });
   }
-});
+}));
 // ─── Domain Health ─────────────────────────────────────────────────
 export function getEventHealth() {
   return getHealth();

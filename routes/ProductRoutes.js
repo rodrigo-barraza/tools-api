@@ -1,5 +1,6 @@
 import { parseIntParam } from "@rodrigo-barraza/utilities-library";
 import { Router } from "express";
+import logger from "../logger.js";
 import { getRecentProducts, searchProducts } from "../models/Product.js";
 import {
   getAll,
@@ -107,7 +108,8 @@ router.get("/products/availability/check", async (req, res) => {
       errors: errors.length ? errors : undefined,
     });
   } catch (error) {
-    res.status(502).json({ error: error.message });
+    logger.error(`Product availability check failed: ${error.message}`);
+    res.status(502).json({ error: "Product search failed" });
   }
 });
 // ─── Watchlist Management ──────────────────────────────────────────

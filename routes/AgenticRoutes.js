@@ -3,6 +3,7 @@ import { parseIntParam } from "@rodrigo-barraza/utilities-library";
 // ─── File System & Web Interaction Endpoints ────────────────
 import { Router } from "express";
 import CONFIG from "../config.js";
+import logger from "../logger.js";
 import { agenticHandler } from "../utilities.js";
 import {
   agenticReadFile,
@@ -417,7 +418,8 @@ router.post("/lsp/shutdown", async (_req, res) => {
     await agenticLspShutdown();
     res.json({ success: true, message: "All LSP servers shut down" });
   } catch (error) {
-    res.status(500).json({ error: `LSP shutdown failed: ${error.message}` });
+    logger.error(`LSP shutdown failed: ${error.message}`);
+    res.status(500).json({ error: "LSP shutdown failed" });
   }
 });
 // ─── Health ─────────────────────────────────────────────────

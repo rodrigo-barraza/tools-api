@@ -1,4 +1,5 @@
 import { parseIntParam } from "@rodrigo-barraza/utilities-library";
+import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { Router } from "express";
 import {
   getRecentTrends,
@@ -33,31 +34,31 @@ router.get("/trends/search", (req, res) => {
   }
   res.json(searchTrends(query));
 });
-router.get("/trends/recent", async (req, res) => {
+router.get("/trends/recent", asyncHandler(async (req, res) => {
   const hours = parseIntParam(req.query.hours, 24);
   const category = req.query.category || null;
   const source = req.query.source || null;
   const limit = parseIntParam(req.query.limit, 50);
   res.json(await getRecentTrends(hours, category, source, limit));
-});
-router.get("/trends/top", async (req, res) => {
+}));
+router.get("/trends/top", asyncHandler(async (req, res) => {
   const hours = parseIntParam(req.query.hours, 24);
   const limit = parseIntParam(req.query.limit, 20);
   res.json(await getTopTrends(hours, limit));
-});
-router.get("/trends/db/search", async (req, res) => {
+}));
+router.get("/trends/db/search", asyncHandler(async (req, res) => {
   const query = req.query.q;
   if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
   const limit = parseIntParam(req.query.limit, 50);
   res.json(await searchTrendsDB(query, limit));
-});
+}));
 export function getTrendHealth() {
   return getHealth();
 }
 // ── Unified Trends Dispatcher ──────────────────────────────────────
-router.get("/data", async (req, res) => {
+router.get("/data", asyncHandler(async (req, res) => {
   const { action, source, hours, limit: rawLimit } = req.query;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["current", "hot", "top"] });
   const limit = parseIntParam(rawLimit, undefined);
@@ -75,5 +76,5 @@ router.get("/data", async (req, res) => {
     default:
       return res.status(400).json({ error: `Unknown action: ${action}`, actions: ["current", "hot", "top"] });
   }
-});
+}));
 export default router;
