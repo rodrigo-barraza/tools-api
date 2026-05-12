@@ -1,8 +1,8 @@
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-import {
 import logger from "../../logger.js";
+import {
   DATASET_REGISTRY,
   NUTRITION_NUTRIENT_TYPES,
   NUTRITION_MACRO_FIELDS,
