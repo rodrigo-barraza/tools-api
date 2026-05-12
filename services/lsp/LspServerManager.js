@@ -3,7 +3,7 @@
 import { extname, resolve, basename } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createLspServerInstance } from "./LspServerInstance.js";
-import { getLspServerConfigs } from "./lspConfig.js";
+import { getLspServerConfigs } from "./LspConfig.js";
 import logger from "../../logger.js";
 
 /**
