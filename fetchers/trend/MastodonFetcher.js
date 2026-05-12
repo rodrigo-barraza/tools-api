@@ -1,6 +1,6 @@
 import { stripHtml, normalizeName } from "@rodrigo-barraza/utilities-library";
-import {
 import logger from "../../logger.js";
+import {
   TREND_SOURCES as SOURCES,
   MASTODON_INSTANCES,
 } from "../../constants.js";

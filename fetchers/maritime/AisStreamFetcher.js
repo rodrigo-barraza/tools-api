@@ -1,7 +1,7 @@
 import WebSocket from "ws";
 import CONFIG from "../../config.js";
-import {
 import logger from "../../logger.js";
+import {
   AIS_STREAM_WS_URL,
   AIS_STREAM_MAX_BUFFER_SIZE,
   AIS_STREAM_RECONNECT_DELAY_MS,

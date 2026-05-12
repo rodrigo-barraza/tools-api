@@ -4,8 +4,8 @@ import {
   GOOGLE_NEWS_ARTICLE_LIMIT,
   USER_AGENT,
 } from "../../constants.js";
-import {
 import logger from "../../logger.js";
+import {
   extractXmlTag,
   extractXmlItems,
 } from "../../utilities.js";

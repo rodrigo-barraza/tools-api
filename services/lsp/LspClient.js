@@ -1,8 +1,8 @@
 // ─── JSON-RPC 2.0 over stdio ────────────────────────────────
 
 import { spawn } from "node:child_process";
-import {
 import logger from "../../logger.js";
+import {
   createMessageConnection,
   StreamMessageReader,
   StreamMessageWriter,
