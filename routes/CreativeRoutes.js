@@ -1,3 +1,4 @@
+import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 // ─── Image Generation & Vision ──────────────────────────────
 
 import { Router } from "express";
@@ -127,7 +128,7 @@ const VISION_CACHE_TTL_MS = 5 * 60 * 1000;
 // POST /creative/generate-image
 // ────────────────────────────────────────────────────────────
 
-router.post("/generate-image", async (req, res) => {
+router.post("/generate-image", asyncHandler(async (req, res) => {
   const { prompt, referenceImages } = req.body;
 
   if (!prompt) {
@@ -255,13 +256,13 @@ router.post("/generate-image", async (req, res) => {
     logger.error(`[CreativeRoutes] generate-image failed: ${err.message}`);
     res.status(500).json({ error: `Image generation failed: ${err.message}` });
   }
-});
+}));
 
 // ────────────────────────────────────────────────────────────
 // POST /creative/describe-image
 // ────────────────────────────────────────────────────────────
 
-router.post("/describe-image", async (req, res) => {
+router.post("/describe-image", asyncHandler(async (req, res) => {
   const { imageUrls, context = "general" } = req.body;
 
   if (!imageUrls || !Array.isArray(imageUrls) || imageUrls.length === 0) {
@@ -350,13 +351,13 @@ router.post("/describe-image", async (req, res) => {
     logger.error(`[CreativeRoutes] describe-image failed: ${err.message}`);
     res.status(500).json({ error: `Image description failed: ${err.message}` });
   }
-});
+}));
 
 // ────────────────────────────────────────────────────────────
 // POST /creative/text-to-speech
 // ────────────────────────────────────────────────────────────
 
-router.post("/text-to-speech", async (req, res) => {
+router.post("/text-to-speech", asyncHandler(async (req, res) => {
   const { text, voice, provider, model } = req.body;
 
   if (!text) {
@@ -388,13 +389,13 @@ router.post("/text-to-speech", async (req, res) => {
     logger.error(`[CreativeRoutes] text-to-speech failed: ${err.message}`);
     res.status(500).json({ error: `Text-to-speech failed: ${err.message}` });
   }
-});
+}));
 
 // ────────────────────────────────────────────────────────────
 // POST /creative/speech-to-text
 // ────────────────────────────────────────────────────────────
 
-router.post("/speech-to-text", async (req, res) => {
+router.post("/speech-to-text", asyncHandler(async (req, res) => {
   const { audioUrl, audio, provider, model, language } = req.body;
 
   // Accept either a URL (we fetch it) or raw base64 audio
@@ -440,7 +441,7 @@ router.post("/speech-to-text", async (req, res) => {
     logger.error(`[CreativeRoutes] speech-to-text failed: ${err.message}`);
     res.status(500).json({ error: `Speech-to-text failed: ${err.message}` });
   }
-});
+}));
 
 // ────────────────────────────────────────────────────────────
 // Health

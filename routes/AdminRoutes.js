@@ -147,7 +147,7 @@ router.get("/config", (_req, res) => {
  *
  * Body: { roots: string[] }
  */
-router.put("/config/workspaces", async (req, res) => {
+router.put("/config/workspaces", asyncHandler(async (req, res) => {
   const { roots } = req.body || {};
   if (!Array.isArray(roots)) {
     return res.status(400).json({ error: "'roots' must be an array of path strings" });
@@ -208,7 +208,7 @@ router.put("/config/workspaces", async (req, res) => {
     userRoots: validRoots,
     errors: errors.length > 0 ? errors : undefined,
   });
-});
+}));
 /**
  * POST /admin/config/workspaces/validate
  * Validate a single workspace path without persisting.
@@ -216,7 +216,7 @@ router.put("/config/workspaces", async (req, res) => {
  *
  * Body: { path: string }
  */
-router.post("/config/workspaces/validate", async (req, res) => {
+router.post("/config/workspaces/validate", asyncHandler(async (req, res) => {
   const { path: rawPath } = req.body || {};
   if (!rawPath || typeof rawPath !== "string") {
     return res.status(400).json({ error: "'path' is required (string)" });
@@ -251,7 +251,7 @@ router.post("/config/workspaces/validate", async (req, res) => {
     alreadyRegistered,
     error: !exists ? "Directory does not exist" : !isDirectory ? "Path is not a directory" : alreadyRegistered ? "Already registered as a workspace" : undefined,
   });
-});
+}));
 /**
  * Load user-configured workspace roots from MongoDB and merge into ALLOWED_ROOTS.
  * Called at boot time from server.js.

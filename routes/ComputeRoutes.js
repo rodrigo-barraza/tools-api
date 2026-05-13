@@ -1,3 +1,4 @@
+import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { setupStreamingSSE, lazyImport } from "@rodrigo-barraza/utilities-library/express";
 import { validateMaxLength } from "@rodrigo-barraza/utilities-library";
 import {
@@ -74,7 +75,7 @@ router.post("/js/stream", (req, res) => {
   res.end();
 });
 // ─── 2. Shell Executor (allowlisted commands) ───────────────
-router.post("/shell/execute", async (req, res) => {
+router.post("/shell/execute", asyncHandler(async (req, res) => {
   const { command, stdin, timeout } = req.body;
   if (!command || typeof command !== "string") {
     return res
@@ -90,13 +91,13 @@ router.post("/shell/execute", async (req, res) => {
       : undefined,
   });
   res.json(result);
-});
+}));
 router.get("/shell/binaries", (_req, res) => {
   const binaries = getAllowedBinaries();
   res.json({ count: binaries.length, binaries });
 });
 // ── Shell Streaming (SSE) ─────────────────────────────────────
-router.post("/shell/stream", async (req, res) => {
+router.post("/shell/stream", asyncHandler(async (req, res) => {
   const { command, stdin, timeout } = req.body;
   if (!command || typeof command !== "string") {
     return res.status(400).json({ error: "Request body must include 'command' (string)" });
@@ -112,9 +113,9 @@ router.post("/shell/stream", async (req, res) => {
   });
   send({ event: "exit", exitCode: result.exitCode, executionTimeMs: result.executionTimeMs, success: result.success, timedOut: result.timedOut, error: result.error || undefined });
   res.end();
-});
+}));
 // ─── 3. Unit Conversion ─────────────────────────────────────
-router.get("/units/convert", async (req, res) => {
+router.get("/units/convert", asyncHandler(async (req, res) => {
   const { value, from, to } = req.query;
   if (!value || !from || !to) {
     return res
@@ -139,8 +140,8 @@ router.get("/units/convert", async (req, res) => {
   } catch (err) {
     res.status(400).json({ error: `Conversion failed: ${err.message}` });
   }
-});
-router.get("/units/list", async (req, res) => {
+}));
+router.get("/units/list", asyncHandler(async (req, res) => {
   const { measure } = req.query;
   try {
     const convert = await getConvertUnits();
@@ -165,9 +166,9 @@ router.get("/units/list", async (req, res) => {
   } catch (err) {
     res.status(400).json({ error: `Unit listing failed: ${err.message}` });
   }
-});
+}));
 // ─── 4. DateTime Parsing & Arithmetic ───────────────────────
-router.post("/datetime/parse", async (req, res) => {
+router.post("/datetime/parse", asyncHandler(async (req, res) => {
   const { operation, date, date2, amount, unit, format, timezone } = req.body;
   if (!operation) {
     return res.status(400).json({
@@ -328,9 +329,9 @@ router.post("/datetime/parse", async (req, res) => {
   } catch (err) {
     res.status(400).json({ error: `DateTime operation failed: ${err.message}` });
   }
-});
+}));
 // ─── 5. JSON Transform (JSONPath) ───────────────────────────
-router.post("/json/transform", async (req, res) => {
+router.post("/json/transform", asyncHandler(async (req, res) => {
   const { data, expression, operations } = req.body;
   if (!data) {
     return res.status(400).json({ error: "Request body must include 'data' (object or array)" });
@@ -455,7 +456,7 @@ router.post("/json/transform", async (req, res) => {
   } catch (err) {
     res.status(400).json({ error: `JSON transform failed: ${err.message}` });
   }
-});
+}));
 // ─── 6. CSV Generation ──────────────────────────────────────
 const csvStore = new EphemeralStore();
 router.post("/csv", (req, res) => {
@@ -506,7 +507,7 @@ router.get("/csv/download", (req, res) => {
 });
 // ─── 7. QR Code Generation ──────────────────────────────────
 const qrStore = new EphemeralStore();
-router.post("/qr", async (req, res) => {
+router.post("/qr", asyncHandler(async (req, res) => {
   const { data, size, errorCorrection, darkColor, lightColor } = req.body;
   if (!data || typeof data !== "string") {
     return res.status(400).json({ error: "'data' (string) is required — URL, text, WiFi config, etc." });
@@ -531,7 +532,7 @@ router.post("/qr", async (req, res) => {
   } catch (err) {
     res.status(400).json({ error: `QR code generation failed: ${err.message}` });
   }
-});
+}));
 router.get("/qr/render", (req, res) => {
   const { id } = req.query;
   if (!id) return res.status(400).send("Missing 'id' parameter");
@@ -655,7 +656,7 @@ router.get("/diagram/embed", (req, res) => {
   res.send(buildMermaidEmbedHtml(entry.definition, entry.theme));
 });
 // ─── 10. Text Diff ──────────────────────────────────────────
-router.post("/diff", async (req, res) => {
+router.post("/diff", asyncHandler(async (req, res) => {
   const { textA, textB, mode } = req.body;
   if (textA === undefined || textB === undefined) {
     return res.status(400).json({ error: "'textA' and 'textB' are required" });
@@ -714,7 +715,7 @@ router.post("/diff", async (req, res) => {
   } catch (err) {
     res.status(400).json({ error: `Diff failed: ${err.message}` });
   }
-});
+}));
 // ─── 11. Cryptographic Hashing ──────────────────────────────
 router.get("/hash", (req, res) => {
   const { data, algorithm, encoding, key } = req.query;
@@ -1650,7 +1651,7 @@ router.get("/cron/parse", (req, res) => {
 // ─── Agentic: Sleep (Timed Pause) ───────────────────────────
 // Blocks for `duration_seconds` before responding.
 // Max 120s. AbortSignal from upstream will short-circuit.
-router.post("/sleep", async (req, res) => {
+router.post("/sleep", asyncHandler(async (req, res) => {
   const { duration_seconds, reason } = req.body;
   const duration = Math.max(1, Math.min(120, duration_seconds || 5));
   const durationMs = duration * 1000;
@@ -1667,7 +1668,7 @@ router.post("/sleep", async (req, res) => {
     slept_seconds: duration,
     reason: reason || null,
   });
-});
+}));
 // ─── Agentic: Synthetic Output (Structured JSON Response) ───
 // Validates `data` against an optional JSON Schema and returns it.
 // Lightweight validator — handles type, required, enum, nested objects/arrays.
@@ -1741,7 +1742,7 @@ router.post("/synthetic-output", (req, res) => {
 });
 // ─── Image Processing (Sharp + ImageMagick) ─────────────────
 const imageStore = new EphemeralStore();
-router.post("/image/process", async (req, res) => {
+router.post("/image/process", asyncHandler(async (req, res) => {
   const { input, operations, outputFormat, outputQuality } = req.body;
   if (!input) {
     return res.status(400).json({ error: "'input' is required (URL, base64 data URI, or previous imageId)" });
@@ -1777,7 +1778,7 @@ router.post("/image/process", async (req, res) => {
   } catch (err) {
     res.status(400).json({ error: `Image processing failed: ${err.message}` });
   }
-});
+}));
 router.get("/image/render", (req, res) => {
   const { id } = req.query;
   if (!id) return res.status(400).send("Missing 'id' parameter");

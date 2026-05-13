@@ -1,3 +1,4 @@
+import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { parseIntParam } from "@rodrigo-barraza/utilities-library";
 import { Router } from "express";
 import logger from "../logger.js";
@@ -47,21 +48,21 @@ router.get("/products/search", (req, res) => {
   }
   res.json(searchByName(query));
 });
-router.get("/products/recent", async (req, res) => {
+router.get("/products/recent", asyncHandler(async (req, res) => {
   const hours = parseIntParam(req.query.hours, 24);
   const category = req.query.category || null;
   const source = req.query.source || null;
   const limit = parseIntParam(req.query.limit, 50);
   res.json(await getRecentProducts(hours, category, source, limit));
-});
-router.get("/products/db/search", async (req, res) => {
+}));
+router.get("/products/db/search", asyncHandler(async (req, res) => {
   const query = req.query.q;
   if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
   const limit = parseIntParam(req.query.limit, 50);
   res.json(await searchProducts(query, limit));
-});
+}));
 // ─── Best Buy CA Availability Routes ───────────────────────────────
 router.get("/products/availability", (_req, res) => {
   res.json(getAvailabilityAll());
@@ -85,7 +86,7 @@ router.get("/products/availability/sku/:sku", (req, res) => {
  * On-demand availability check for arbitrary SKUs (not watchlist-dependent).
  * GET /products/availability/check?skus=SKU1,SKU2,SKU3
  */
-router.get("/products/availability/check", async (req, res) => {
+router.get("/products/availability/check", asyncHandler(async (req, res) => {
   const skusParam = req.query.skus;
   if (!skusParam) {
     return res
@@ -111,7 +112,7 @@ router.get("/products/availability/check", async (req, res) => {
     logger.error(`Product availability check failed: ${error.message}`);
     res.status(502).json({ error: "Product search failed" });
   }
-});
+}));
 // ─── Watchlist Management ──────────────────────────────────────────
 router.get("/products/availability/watchlist", (_req, res) => {
   res.json(getWatchlist());

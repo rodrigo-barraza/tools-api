@@ -53,7 +53,7 @@ router.get("/profile/:symbol", asyncHandler(async (req, res) => {
   return profile;
 }, "Company profile"));
 // ─── News (general = cached poll, company-specific = on-demand) ────
-router.get("/news", async (req, res) => {
+router.get("/news", asyncHandler(async (req, res) => {
   const symbol = req.query.symbol;
   if (symbol) {
     try {
@@ -74,7 +74,7 @@ router.get("/news", async (req, res) => {
   }
   const articles = getMarketNews();
   res.json({ count: articles.length, articles });
-});
+}));
 // ─── Earnings Calendar (cached poll) ───────────────────────────────
 router.get("/earnings", (_req, res) => {
   const earnings = getEarnings();
@@ -109,7 +109,7 @@ router.get("/macro/indicators", asyncHandler(
   () => getKeyIndicators(),
   "Key indicators fetch",
 ));
-router.get("/macro/search", async (req, res) => {
+router.get("/macro/search", asyncHandler(async (req, res) => {
   const { q, limit, orderBy } = req.query;
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
@@ -118,7 +118,7 @@ router.get("/macro/search", async (req, res) => {
     limit: parseInt(limit, 10) || 10,
     orderBy,
   }));
-});
+}));
 router.get("/macro/series/:seriesId/observations", asyncHandler(
   (req) => {
     const { limit, sortOrder, observationStart, observationEnd } = req.query;
@@ -142,7 +142,7 @@ export function getFinanceHealth() {
   return health;
 }
 // ── Unified Stock Data Dispatcher ──────────────────────────────────
-router.get("/stock/data", async (req, res) => {
+router.get("/stock/data", asyncHandler(async (req, res) => {
   const { action, symbol } = req.query;
   if (!action || !symbol) return res.status(400).json({ error: "'action' and 'symbol' are required", actions: ["quote", "profile", "recommendation", "financials"] });
   const pathMap = {
@@ -156,9 +156,9 @@ router.get("/stock/data", async (req, res) => {
   req.url = pathMap[action];
   req.params.symbol = symbol;
   return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-});
+}));
 // ── Unified Macro Data Dispatcher ──────────────────────────────────
-router.get("/macro/data", async (req, res) => {
+router.get("/macro/data", asyncHandler(async (req, res) => {
   const { action, q, seriesId, limit, orderBy, sortOrder, observationStart, observationEnd } = req.query;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["indicators", "search", "series", "observations"] });
   const pathMap = {
@@ -171,5 +171,5 @@ router.get("/macro/data", async (req, res) => {
   req.url = pathMap[action];
   if (seriesId) req.params.seriesId = seriesId;
   return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-});
+}));
 export default router;

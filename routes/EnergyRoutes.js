@@ -18,7 +18,7 @@ router.get("/browse", asyncHandler((req) => {
   return browseRoute(route);
 }, "EIA browse"));
 // ─── Facet Values ──────────────────────────────────────────────────
-router.get("/facets", async (req, res) => {
+router.get("/facets", asyncHandler(async (req, res) => {
   const { route, facetId } = req.query;
   if (!route || !facetId) {
     return res
@@ -32,7 +32,7 @@ router.get("/facets", async (req, res) => {
       .status(502)
       .json({ error: `Facet fetch failed: ${err.message}` });
   }
-});
+}));
 // ─── Data Query ────────────────────────────────────────────────────
 router.get("/data", asyncHandler(async (req) => {
   const { route, frequency, start, end, sort, length, offset, ...rest } =

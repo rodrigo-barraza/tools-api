@@ -95,7 +95,7 @@ router.get("/calculate", (req, res) => {
   }
 });
 // ─── Currency Conversion ───────────────────────────────────────────
-router.get("/currency/convert", async (req, res) => {
+router.get("/currency/convert", asyncHandler(async (req, res) => {
   const { amount, from, to } = req.query;
   if (!from || !to) {
     return res
@@ -103,7 +103,7 @@ router.get("/currency/convert", async (req, res) => {
       .json({ error: "Query parameters 'from' and 'to' are required" });
   }
   res.json(await convertCurrency(parseFloat(amount) || 1, from, to));
-});
+}));
 router.get("/currency/list", asyncHandler(
   async () => {
     const currencies = await listCurrencies();
@@ -127,7 +127,7 @@ router.get("/timezone/list", asyncHandler(
   "Timezone list",
 ));
 // ─── IP Geolocation (IPinfo) ───────────────────────────────────────
-router.get("/ip/batch", async (req, res) => {
+router.get("/ip/batch", asyncHandler(async (req, res) => {
   const ips = req.query.ips;
   if (!ips) {
     return res
@@ -140,7 +140,7 @@ router.get("/ip/batch", async (req, res) => {
     .filter(Boolean);
   const result = await batchLookupIps(ipArray);
   res.json({ count: result.length, results: result });
-});
+}));
 router.get("/ip", asyncHandler(
   () => lookupIp(""),
   "IP lookup",
@@ -154,7 +154,7 @@ router.get("/ip/:ip", asyncHandler(
   "IP lookup",
 ));
 // ─── Places — Nearby Search (Google Places API New) ────────────────
-router.get("/places/nearby", async (req, res) => {
+router.get("/places/nearby", asyncHandler(async (req, res) => {
   const { type, latitude, longitude, radius, limit } = req.query;
   if (!type) {
     return res
@@ -168,9 +168,9 @@ router.get("/places/nearby", async (req, res) => {
     radius: radius ? parseInt(radius) : undefined,
     limit: limit ? parseInt(limit) : undefined,
   }));
-});
+}));
 // ─── Places — Text Search (Google Places API New) ──────────────────
-router.get("/places/search", async (req, res) => {
+router.get("/places/search", asyncHandler(async (req, res) => {
   const { q, latitude, longitude, radius, limit } = req.query;
   if (!q) {
     return res
@@ -184,7 +184,7 @@ router.get("/places/search", async (req, res) => {
     radius: radius ? parseInt(radius) : undefined,
     limit: limit ? parseInt(limit) : undefined,
   }));
-});
+}));
 // ─── Map Generation ───────────────────────────────────────────────
 /**
  * In-memory map marker store — avoids multi-kb query-param URLs.
@@ -306,7 +306,7 @@ router.get("/map/embed", (req, res) => {
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(html);
 });
-router.get("/map", async (req, res) => {
+router.get("/map", asyncHandler(async (req, res) => {
   const { markers, zoom, maptype } = req.query;
   if (!markers) {
     return res
@@ -340,7 +340,7 @@ router.get("/map", async (req, res) => {
   } catch (err) {
     res.status(502).json({ error: `Map generation failed: ${err.message}` });
   }
-});
+}));
 // ─── Webcams ───────────────────────────────────────────────────────
 router.get("/webcams", asyncHandler(
   async (req) => {
@@ -390,7 +390,7 @@ router.get("/airports/nearest", (req, res) => {
   ));
 });
 // ─── Python Code Interpreter ───────────────────────────────────────
-router.post("/python/execute", async (req, res) => {
+router.post("/python/execute", asyncHandler(async (req, res) => {
   const { code, timeout } = req.body;
   if (!code || typeof code !== "string") {
     return res
@@ -405,13 +405,13 @@ router.post("/python/execute", async (req, res) => {
     timeout: timeout ? Math.min(Math.max(parseInt(timeout), 1000), 60_000) : undefined,
   });
   res.json(result);
-});
+}));
 router.get("/python/info", asyncHandler(
   () => getInterpreterInfo(),
   "Python interpreter info",
 ));
 // ── Python Streaming (SSE) ────────────────────────────────────
-router.post("/python/stream", async (req, res) => {
+router.post("/python/stream", asyncHandler(async (req, res) => {
   const { code, timeout } = req.body;
   if (!code || typeof code !== "string") {
     return res.status(400).json({ error: "Request body must include 'code' (string)" });
@@ -426,7 +426,7 @@ router.post("/python/stream", async (req, res) => {
   });
   send({ event: "exit", exitCode: result.exitCode, executionTimeMs: result.executionTimeMs, success: result.success, timedOut: result.timedOut, error: result.error || undefined });
   res.end();
-});
+}));
 // ─── Chart Generation ──────────────────────────────────────────────
 const VALID_CHART_TYPES = ["bar", "line", "pie"];
 router.post("/chart", (req, res) => {
@@ -471,7 +471,7 @@ router.post("/chart", (req, res) => {
     datasetCount: datasets.length,
   });
 });
-router.get("/chart/render", async (req, res) => {
+router.get("/chart/render", asyncHandler(async (req, res) => {
   const { id } = req.query;
   if (!id) {
     return res.status(400).send("Missing 'id' parameter");
@@ -488,7 +488,7 @@ router.get("/chart/render", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: `Chart render failed: ${err.message}` });
   }
-});
+}));
 // ─── Page Metadata Scraper (Crawlee) ───────────────────────────────
 router.get("/scrape/metadata", asyncHandler(
   async (req) => {
@@ -568,7 +568,7 @@ export function getUtilityHealth() {
   };
 }
 // ── Unified Airport Lookup Dispatcher ──────────────────────────────
-router.get("/airports/lookup", async (req, res) => {
+router.get("/airports/lookup", asyncHandler(async (req, res) => {
   const { action, q, code, country, lat, lng, limit } = req.query;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["search", "code", "country", "nearest"] });
   switch (action) {
@@ -587,5 +587,5 @@ router.get("/airports/lookup", async (req, res) => {
     default:
       return res.status(400).json({ error: `Unknown action: ${action}`, actions: ["search", "code", "country", "nearest"] });
   }
-});
+}));
 export default router;

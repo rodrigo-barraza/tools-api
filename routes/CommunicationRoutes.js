@@ -9,7 +9,7 @@ import {
 } from "../services/TwilioService.js";
 const router = Router();
 // ─── Send SMS ──────────────────────────────────────────────────────
-router.post("/sms/send", async (req, res) => {
+router.post("/sms/send", asyncHandler(async (req, res) => {
   const { to, body, from } = req.body;
   if (!to || !body) {
     return res
@@ -27,7 +27,7 @@ router.post("/sms/send", async (req, res) => {
   } catch (err) {
     res.status(502).json({ error: `SMS send failed: ${err.message}` });
   }
-});
+}));
 // ─── List Messages ─────────────────────────────────────────────────
 router.get("/sms/messages", asyncHandler(
   async (req) => {

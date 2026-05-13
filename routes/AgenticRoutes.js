@@ -231,7 +231,7 @@ router.post("/file/delete", agenticHandler(async (req) => {
   return agenticDeleteFile(path);
 }));
 // ─── 6. Command Execution ───────────────────────────────────
-router.post("/command/run", async (req, res) => {
+router.post("/command/run", asyncHandler(async (req, res) => {
   const { command, cwd, timeout } = req.body;
   if (!command || typeof command !== "string") {
     return res.status(400).json({ error: "Request body must include 'command' (string)" });
@@ -251,8 +251,8 @@ router.post("/command/run", async (req, res) => {
     return res.status(400).json(result);
   }
   res.json(result);
-});
-router.post("/command/stream", async (req, res) => {
+}));
+router.post("/command/stream", asyncHandler(async (req, res) => {
   const { command, cwd, timeout } = req.body;
   if (!command || typeof command !== "string") {
     return res.status(400).json({ error: "Request body must include 'command' (string)" });
@@ -275,12 +275,12 @@ router.post("/command/stream", async (req, res) => {
     send({ event: "exit", exitCode: result.exitCode, executionTimeMs: result.executionTimeMs, success: result.success, timedOut: result.timedOut, aborted: result.aborted || undefined, error: result.error || undefined });
     res.end();
   }
-});
+}));
 router.get("/command/allowed", (_req, res) => {
   res.json({ commands: getAllowedCommands() });
 });
 // ── Kill Process ───────────────────────────────────────────
-router.post("/command/kill", async (req, res) => {
+router.post("/command/kill", asyncHandler(async (req, res) => {
   const { pid } = req.body;
   if (!pid || typeof pid !== "number") {
     return res.status(400).json({ error: "Request body must include 'pid' (positive integer)" });
@@ -290,7 +290,7 @@ router.post("/command/kill", async (req, res) => {
     return res.status(400).json(result);
   }
   res.json(result);
-});
+}));
 // ─── 7. Git Operations ──────────────────────────────────────
 router.post("/git/status", agenticHandler(async (req) => {
   const { path } = req.body;
@@ -413,7 +413,7 @@ router.get("/lsp/health", (_req, res) => {
   res.json(agenticLspHealth());
 });
 // ── LSP Shutdown ──────────────────────────────────────────────
-router.post("/lsp/shutdown", async (_req, res) => {
+router.post("/lsp/shutdown", asyncHandler(async (_req, res) => {
   try {
     await agenticLspShutdown();
     res.json({ success: true, message: "All LSP servers shut down" });
@@ -421,7 +421,7 @@ router.post("/lsp/shutdown", async (_req, res) => {
     logger.error(`LSP shutdown failed: ${error.message}`);
     res.status(500).json({ error: "LSP shutdown failed" });
   }
-});
+}));
 // ─── Health ─────────────────────────────────────────────────
 export function getAgenticHealth() {
   return {
@@ -462,7 +462,7 @@ export function getAgenticHealth() {
   };
 }
 // ── Unified Git Dispatcher ─────────────────────────────────────────
-router.post("/git", async (req, res) => {
+router.post("/git", asyncHandler(async (req, res) => {
   const { action, ...params } = req.body;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["status", "diff", "log"] });
   const pathMap = { status: "/git/status", diff: "/git/diff", log: "/git/log" };
@@ -470,10 +470,10 @@ router.post("/git", async (req, res) => {
   req.url = pathMap[action];
   req.body = params;
   return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-});
+}));
 // ─── 12. Task Management ────────────────────────────────────
 // ── Create Task ───────────────────────────────────────────────
-router.post("/task/create", async (req, res) => {
+router.post("/task/create", asyncHandler(async (req, res) => {
   const { project, subject, description, status, activeForm, metadata } = req.body;
   if (!project || typeof project !== "string") {
     return res.status(400).json({ error: "Request body must include 'project' (string)" });
@@ -489,7 +489,7 @@ router.post("/task/create", async (req, res) => {
   const result = await agenticTaskCreate(project, { subject, description, status, activeForm, metadata, agentSessionId });
   if (result.error) return res.status(400).json(result);
   res.json(result);
-});
+}));
 // ── List Tasks ────────────────────────────────────────────────
 router.post("/task/list", agenticHandler(async (req) => {
   const { project, status, limit } = req.body;
@@ -570,7 +570,7 @@ router.post("/task/delete", agenticHandler(async (req) => {
 }));
 // ─── 13. Tool Smoke Tests ───────────────────────────────────
 // ── Single tool test ──────────────────────────────────────────
-router.post("/test-tool", async (req, res) => {
+router.post("/test-tool", asyncHandler(async (req, res) => {
   const { toolName } = req.body;
   if (!toolName || typeof toolName !== "string") {
     return res.status(400).json({
@@ -580,9 +580,9 @@ router.post("/test-tool", async (req, res) => {
   }
   const result = await testTool(toolName);
   res.json(result);
-});
+}));
 // ── Test all tools ────────────────────────────────────────────
-router.post("/test-all-tools", async (req, res) => {
+router.post("/test-all-tools", asyncHandler(async (req, res) => {
   const { toolNames } = req.body;
   const results = await testAllTools(toolNames || undefined);
   const passed = results.filter((r) => r.success).length;
@@ -592,7 +592,7 @@ router.post("/test-all-tools", async (req, res) => {
     failed: results.length - passed,
     results,
   });
-});
+}));
 // ── List testable tools ───────────────────────────────────────
 router.get("/testable-tools", (_req, res) => {
   res.json(getTestableTools());
@@ -606,7 +606,7 @@ router.get("/testable-tools", (_req, res) => {
  * cosine-similarity deduplication, and MongoDB persistence.
  * Same cross-service pattern as generate_image → Prism.
  */
-router.post("/memory/upsert", async (req, res) => {
+router.post("/memory/upsert", asyncHandler(async (req, res) => {
   const { content, type, title } = req.body;
   if (!content || typeof content !== "string") {
     return res.status(400).json({ error: "Request body must include 'content' (string)" });
@@ -641,7 +641,7 @@ router.post("/memory/upsert", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: `Memory storage failed: ${err.message}` });
   }
-});
+}));
 // ─── 15. Custom Agent Creation ──────────────────────────────
 /**
  * POST /agentic/custom-agent/create
@@ -652,7 +652,7 @@ router.post("/memory/upsert", async (req, res) => {
  *
  * Same cross-service pattern as memory/upsert → Prism.
  */
-router.post("/custom-agent/create", async (req, res) => {
+router.post("/custom-agent/create", asyncHandler(async (req, res) => {
   const {
     name,
     description,
@@ -698,7 +698,7 @@ router.post("/custom-agent/create", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: `Custom agent creation failed: ${err.message}` });
   }
-});
+}));
 // ─── 16. Tool Search (Meta-Tool) ────────────────────────────
 router.post("/tool/search", agenticHandler(async (req) => {
   const { query, domain, label, limit } = req.body;

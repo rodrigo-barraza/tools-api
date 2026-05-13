@@ -174,14 +174,14 @@ router.get("/nutrition/requirements", (req, res) => {
   res.json(result);
 });
 // ─── Drug Info (openFDA) ───────────────────────────────────────────
-router.get("/drugs/search", async (req, res) => {
+router.get("/drugs/search", asyncHandler(async (req, res) => {
   const { q, limit } = req.query;
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
   res.json(await searchDrugLabels(q, parseIntParam(limit, 5)));
-});
-router.get("/drugs/adverse-events", async (req, res) => {
+}));
+router.get("/drugs/adverse-events", asyncHandler(async (req, res) => {
   const { drug, limit } = req.query;
   if (!drug) {
     return res
@@ -189,7 +189,7 @@ router.get("/drugs/adverse-events", async (req, res) => {
       .json({ error: "Query parameter 'drug' is required" });
   }
   res.json(await getDrugAdverseEvents(drug, parseIntParam(limit, 10)));
-});
+}));
 router.get("/drugs/recalls", asyncHandler(
   (req) => getDrugRecalls(req.query.q, parseIntParam(req.query.limit, 10)),
   "Drug recalls lookup",
@@ -447,7 +447,7 @@ export function getHealthDomainHealth() {
   };
 }
 // ── Unified Drug Search Dispatcher ─────────────────────────────────
-router.get("/drugs/unified", async (req, res) => {
+router.get("/drugs/unified", asyncHandler(async (req, res) => {
   const { q, searchBy, limit, dosageForm, productType } = req.query;
   if (!q) return res.status(400).json({ error: "'q' is required" });
   const mode = searchBy || "name";
@@ -470,5 +470,5 @@ router.get("/drugs/unified", async (req, res) => {
     default:
       return res.status(400).json({ error: `Unknown searchBy: ${mode}`, validModes: ["name", "ndc_search", "ndc_lookup", "ingredient", "pharm_class"] });
   }
-});
+}));
 export default router;

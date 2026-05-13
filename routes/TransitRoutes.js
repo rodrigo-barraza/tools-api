@@ -10,21 +10,21 @@ import {
 } from "../fetchers/transit/TransLinkFetcher.js";
 const router = Router();
 // ─── Next Bus ──────────────────────────────────────────────────────
-router.get("/nextbus/:stopNo", async (req, res) => {
+router.get("/nextbus/:stopNo", asyncHandler(async (req, res) => {
   const stopNo = parseInt(req.params.stopNo, 10);
   if (isNaN(stopNo)) {
     return res.status(400).json({ error: "Invalid stop number" });
   }
   res.json(await getNextBus(stopNo, req.query.route));
-});
+}));
 // ─── Stop Info ─────────────────────────────────────────────────────
-router.get("/stops/:stopNo", async (req, res) => {
+router.get("/stops/:stopNo", asyncHandler(async (req, res) => {
   const stopNo = parseInt(req.params.stopNo, 10);
   if (isNaN(stopNo)) {
     return res.status(400).json({ error: "Invalid stop number" });
   }
   res.json(await getStopInfo(stopNo));
-});
+}));
 // ─── Find Nearby Stops ────────────────────────────────────────────
 router.get("/stops/nearby", asyncHandler(
   (req) => {
