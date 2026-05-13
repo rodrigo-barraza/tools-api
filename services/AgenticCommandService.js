@@ -3,6 +3,8 @@
 import { spawn } from "node:child_process";
 import { validatePath } from "./AgenticFileService.js";
 import { routeForPath, sendRpc, sendRpcStreaming } from "./AgentConnectionManager.js";
+import * as BackgroundProcessRegistry from "./BackgroundProcessRegistry.js";
+import logger from "../logger.js";
 
 // Agent routing helper
 async function tryAgentRouteCommand(method, params, cwd) {
@@ -23,6 +25,7 @@ async function tryAgentRouteCommand(method, params, cwd) {
 const DEFAULT_TIMEOUT_MS = 60_000;
 const MAX_TIMEOUT_MS = 120_000;
 const MAX_OUTPUT_BYTES = 512 * 1024;
+const BACKGROUND_WARMUP_MS = 2_500; // Collect initial output before returning in background mode
 
 // Only these command prefixes are allowed as the first token.
 const ALLOWED_COMMANDS = new Set([
@@ -127,15 +130,22 @@ function validateCommand(command) {
 /**
  * Execute a project-scoped command.
  *
+ * Supports two non-blocking strategies for long-running processes:
+ *   1. **Explicit `runInBackground`** — model sets this to true; the command
+ *      spawns, collects warmup output (~2.5s), then returns with a `pid`.
+ *   2. **Auto-background on timeout** — instead of killing the process,
+ *      it's promoted to the background registry and returns what we have.
+ *
  * @param {string} command - Shell command to execute
  * @param {object} [options]
  * @param {string} [options.cwd] - Working directory (must be within ALLOWED_ROOTS)
  * @param {number} [options.timeout=60000] - Timeout in ms (max 120000)
+ * @param {boolean} [options.runInBackground=false] - Immediately background the command
  * @returns {Promise<object>}
  */
-export async function executeCommand(command, { cwd, timeout = DEFAULT_TIMEOUT_MS, signal } = {}) {
+export async function executeCommand(command, { cwd, timeout = DEFAULT_TIMEOUT_MS, signal, runInBackground = false } = {}) {
   // Agent routing — if CWD is served by a remote agent, proxy the command
-  const agentResult = await tryAgentRouteCommand("command.run", { command, cwd, timeout }, cwd);
+  const agentResult = await tryAgentRouteCommand("command.run", { command, cwd, timeout, runInBackground }, cwd);
   if (agentResult) return agentResult;
 
   const clampedTimeout = Math.min(Math.max(timeout, 1000), MAX_TIMEOUT_MS);
@@ -164,7 +174,7 @@ export async function executeCommand(command, { cwd, timeout = DEFAULT_TIMEOUT_M
     const stderrChunks = [];
     let stdoutLen = 0;
     let stderrLen = 0;
-    let timedOut = false;
+    const timedOut = false;
     let aborted = false;
     let settled = false;
 
@@ -183,6 +193,33 @@ export async function executeCommand(command, { cwd, timeout = DEFAULT_TIMEOUT_M
 
     child.stdin.end();
 
+    // ── Helper: background the process and resolve immediately ────
+    function backgroundAndResolve(reason) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (signal) signal.removeEventListener("abort", onAbort);
+
+      const stdout = Buffer.concat(stdoutChunks).toString("utf-8");
+      const stderr = Buffer.concat(stderrChunks).toString("utf-8");
+      const executionTimeMs = Math.round(performance.now() - startTime);
+
+      // Register in the background process registry
+      BackgroundProcessRegistry.register(child, { command, cwd: cwdValidation.resolved });
+      logger.info(`[AgenticCommandService] Backgrounded PID ${child.pid}: ${reason} (${command.slice(0, 60)})`);
+
+      resolve({
+        success: true,
+        stdout: stdoutLen > MAX_OUTPUT_BYTES ? stdout + "\n... [output truncated]" : stdout,
+        stderr: stderrLen > MAX_OUTPUT_BYTES ? stderr + "\n... [output truncated]" : stderr,
+        exitCode: null,
+        executionTimeMs,
+        backgrounded: true,
+        pid: child.pid,
+        backgroundReason: reason,
+      });
+    }
+
     child.stdout.on("data", (chunk) => {
       if (stdoutLen < MAX_OUTPUT_BYTES) {
         stdoutChunks.push(chunk);
@@ -197,9 +234,13 @@ export async function executeCommand(command, { cwd, timeout = DEFAULT_TIMEOUT_M
       }
     });
 
+    // Tier 3: On timeout, auto-background instead of killing
     const timer = setTimeout(() => {
-      timedOut = true;
-      child.kill("SIGKILL");
+      if (!settled) {
+        // If the process is still alive and producing output, background it
+        // instead of killing it. This handles unexpected long-running commands.
+        backgroundAndResolve("auto_backgrounded_timeout");
+      }
     }, clampedTimeout);
 
     // Kill child process when upstream abort signal fires (user pressed Stop)
@@ -211,6 +252,15 @@ export async function executeCommand(command, { cwd, timeout = DEFAULT_TIMEOUT_M
     };
     if (signal && !signal.aborted) {
       signal.addEventListener("abort", onAbort, { once: true });
+    }
+
+    // Tier 1: Explicit run_in_background — warmup then return
+    if (runInBackground) {
+      setTimeout(() => {
+        if (!settled) {
+          backgroundAndResolve("run_in_background");
+        }
+      }, BACKGROUND_WARMUP_MS);
     }
 
     function finish(exitCode) {
@@ -388,6 +438,23 @@ export async function executeCommandStreaming(command, { cwd, timeout = DEFAULT_
  */
 export function getAllowedCommands() {
   return [...ALLOWED_COMMANDS].sort();
+}
+
+/**
+ * List all background processes.
+ * @returns {Array<object>}
+ */
+export function listBackgroundProcesses() {
+  return BackgroundProcessRegistry.list();
+}
+
+/**
+ * Get a specific background process by PID.
+ * @param {number} pid
+ * @returns {object|null}
+ */
+export function getBackgroundProcess(pid) {
+  return BackgroundProcessRegistry.getProcess(pid);
 }
 
 /**

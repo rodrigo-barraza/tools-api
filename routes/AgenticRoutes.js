@@ -27,6 +27,8 @@ import {
   executeCommand,
   executeCommandStreaming,
   getAllowedCommands,
+  listBackgroundProcesses,
+  getBackgroundProcess,
   killProcessTree,
 } from "../services/AgenticCommandService.js";
 import {
@@ -62,6 +64,7 @@ import {
   agenticTaskDelete,
 } from "../services/AgenticTaskService.js";
 import { agenticToolSearch } from "../services/AgenticToolSearchService.js";
+import * as BackgroundProcessRegistry from "../services/BackgroundProcessRegistry.js";
 import {
   agenticScheduleCreate,
   agenticScheduleList,
@@ -232,7 +235,7 @@ router.post("/file/delete", agenticHandler(async (req) => {
 }));
 // ─── 6. Command Execution ───────────────────────────────────
 router.post("/command/run", asyncHandler(async (req, res) => {
-  const { command, cwd, timeout } = req.body;
+  const { command, cwd, timeout, run_in_background } = req.body;
   if (!command || typeof command !== "string") {
     return res.status(400).json({ error: "Request body must include 'command' (string)" });
   }
@@ -244,6 +247,7 @@ router.post("/command/run", asyncHandler(async (req, res) => {
     cwd: cwd || undefined,
     timeout: timeout ? Math.min(parseInt(timeout, 10), 120_000) : undefined,
     signal: ac.signal,
+    runInBackground: run_in_background === true,
   });
   // Guard: response may already be closed if the client disconnected
   if (res.headersSent || res.writableEnded) return;
@@ -291,6 +295,17 @@ router.post("/command/kill", asyncHandler(async (req, res) => {
   }
   res.json(result);
 }));
+// ── Background Process Management ─────────────────────────
+router.get("/command/background/list", (_req, res) => {
+  res.json({ processes: listBackgroundProcesses() });
+});
+router.get("/command/background/:pid", (req, res) => {
+  const pid = parseInt(req.params.pid, 10);
+  if (isNaN(pid)) return res.status(400).json({ error: "Invalid PID" });
+  const proc = getBackgroundProcess(pid);
+  if (!proc) return res.status(404).json({ error: `PID ${pid} not found in background registry` });
+  res.json(proc);
+});
 // ─── 7. Git Operations ──────────────────────────────────────
 router.post("/git/status", agenticHandler(async (req) => {
   const { path } = req.body;
@@ -440,6 +455,7 @@ export function getAgenticHealth() {
     moveFile: "on-demand (sandboxed fs)",
     deleteFile: "on-demand (sandboxed fs)",
     runCommand: "on-demand (sandboxed subprocess)",
+    backgroundProcesses: BackgroundProcessRegistry.activeCount(),
     gitStatus: "on-demand (git subprocess)",
     gitDiff: "on-demand (git subprocess)",
     gitLog: "on-demand (git subprocess)",

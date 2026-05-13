@@ -5445,11 +5445,11 @@ const TOOL_DEFINITIONS = [
     name: "run_command",
     dataSource: compute("sandboxed subprocess"),
     description:
-      "Execute a project-scoped command in a sandboxed subprocess. Supports common development commands: npm, npx, node, git, eslint, prettier, tsc, python3, pip, and read-only filesystem tools (cat, ls, find, etc.). The working directory must be within the allowed workspace. Use this to run tests, lint code, build projects, check dependencies, or any development workflow. Timeout default: 60s, max: 120s.",
+      "Execute a project-scoped command in a sandboxed subprocess. Supports common development commands: npm, npx, node, git, eslint, prettier, tsc, python3, pip, and read-only filesystem tools (cat, ls, find, etc.). The working directory must be within the allowed workspace. Use this to run tests, lint code, build projects, check dependencies, or any development workflow. Timeout default: 60s, max: 120s. For dev servers and long-running watchers, set run_in_background: true — the command will start, collect ~2.5s of initial output, then return immediately with a process ID while the server continues running. Commands that exceed the timeout without run_in_background are also auto-backgrounded instead of killed.",
     endpoint: {
       method: "POST",
       path: "/agentic/command/run",
-      bodyParams: ["command", "cwd", "timeout"],
+      bodyParams: ["command", "cwd", "timeout", "run_in_background"],
     },
     parameters: {
       type: "object",
@@ -5465,6 +5465,11 @@ const TOOL_DEFINITIONS = [
         timeout: {
           type: "integer",
           description: "Timeout in milliseconds (default: 60000, max: 120000).",
+        },
+        run_in_background: {
+          type: "boolean",
+          description:
+            "Set to true to run this command in the background. The command starts, collects ~2.5 seconds of initial output (so you can verify it started correctly), then returns immediately with a process ID while the command continues running. Use this for dev servers (npm run dev, next dev, vite), watchers, or any long-running process that doesn't terminate on its own.",
         },
       },
       required: ["command", "cwd"],
