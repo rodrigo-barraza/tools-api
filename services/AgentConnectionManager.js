@@ -3,6 +3,8 @@
 import { WebSocketServer } from "ws";
 import crypto from "node:crypto";
 import logger from "../logger.js";
+// NOTE: AgenticFileService imports from this module → circular dependency.
+// We use dynamic import() in rebuildAllowedRootsFromAgents() to break the cycle.
 import CONFIG from "../config.js";
 
 // ────────────────────────────────────────────────────────────
@@ -179,6 +181,9 @@ function handleAgentMessage(ws, msg, clientIp) {
       rootToAgent.set(root, agentId);
     }
 
+    // Merge agent roots into ALLOWED_ROOTS so they appear in the workspace list
+    rebuildAllowedRootsFromAgents();
+
     logger.success(`[AgentWS] Agent registered: "${entry.name}" (${agentId.slice(0, 8)}) — roots: ${roots.join(", ")}`);
 
     // Confirm registration
@@ -258,6 +263,10 @@ function deregisterAgent(agentId, reason) {
   }
 
   agents.delete(agentId);
+
+  // Rebuild ALLOWED_ROOTS without the disconnected agent's roots
+  rebuildAllowedRootsFromAgents();
+
   logger.info(`[AgentWS] Agent deregistered: "${agent.name}" (${reason})`);
 }
 
@@ -443,6 +452,43 @@ function startHealthCheck(wss) {
 function sendJson(ws, obj) {
   if (ws.readyState === 1) {
     ws.send(JSON.stringify(obj));
+  }
+}
+
+/**
+ * Rebuild ALLOWED_ROOTS by collecting all connected agent roots and merging
+ * them as extra roots alongside the static + user-configured roots.
+ * Uses refreshAllowedRoots() which preserves static roots and de-dups.
+ *
+ * Uses dynamic import() to avoid circular dependency with AgenticFileService
+ * (which imports routeForPath/sendRpc from this module).
+ */
+async function rebuildAllowedRootsFromAgents() {
+  try {
+    const { ALLOWED_ROOTS, refreshAllowedRoots, getStaticRoots } = await import("./AgenticFileService.js");
+
+    // Collect all agent roots
+    const agentRoots = [];
+    for (const [, agent] of agents) {
+      for (const root of agent.roots) {
+        if (!agentRoots.includes(root)) {
+          agentRoots.push(root);
+        }
+      }
+    }
+
+    // refreshAllowedRoots merges: STATIC_ROOTS + extraRoots (de-duped)
+    // We need to also preserve any user-configured roots from MongoDB.
+    // Since ALLOWED_ROOTS may contain user roots not in agents or static,
+    // collect the non-static, non-agent roots to preserve them.
+    const staticRoots = getStaticRoots();
+    const staticSet = new Set(staticRoots);
+    const agentSet = new Set(agentRoots);
+    const userRoots = ALLOWED_ROOTS.filter((r) => !staticSet.has(r) && !agentSet.has(r));
+
+    refreshAllowedRoots([...userRoots, ...agentRoots]);
+  } catch (err) {
+    logger.warn(`[AgentWS] Failed to rebuild allowed roots: ${err.message}`);
   }
 }
 
