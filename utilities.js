@@ -1,5 +1,6 @@
 import CONFIG from "./config.js";
 import crypto from "node:crypto";
+import logger from "./logger.js";
 import { USER_AGENTS, EPHEMERAL_TTL_MS, EPHEMERAL_MAX_SIZE } from "./constants.js";
 
 // ─── Shared Utilities ──────────────────────────────────────────────
@@ -172,14 +173,19 @@ export function computeTrendingScore(product) {
  */
 export function agenticHandler(fn) {
   return async (req, res) => {
-    const result = await fn(req);
-    if (result.error) {
-      const isForbidden =
-        result.error.includes("outside allowed") ||
-        result.error.includes("blocked");
-      return res.status(isForbidden ? 403 : 400).json(result);
+    try {
+      const result = await fn(req);
+      if (result.error) {
+        const isForbidden =
+          result.error.includes("outside allowed") ||
+          result.error.includes("blocked");
+        return res.status(isForbidden ? 403 : 400).json(result);
+      }
+      res.json(result);
+    } catch (error) {
+      logger.error(`Agentic handler error: ${error.message}`);
+      res.status(500).json({ error: "Internal agentic tool error" });
     }
-    res.json(result);
   };
 }
 

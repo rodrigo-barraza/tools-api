@@ -1,5 +1,7 @@
 // ─── Music Metadata API Client ──────────────────────────────
 
+import { formatMediaTimestamp } from "@rodrigo-barraza/utilities-library";
+
 const BASE_URL = "https://musicbrainz.org/ws/2";
 const USER_AGENT = "SunToolsService/1.0 (rodrigo@rod.dev)";
 
@@ -174,7 +176,7 @@ export async function getAlbum(mbid) {
           position: t.position,
           title: t.title,
           durationMs: t.length || null,
-          duration: t.length ? formatDuration(t.length) : null,
+          duration: t.length ? formatMediaTimestamp(Math.round(t.length / 1000)) : null,
         })),
       );
     } catch {
@@ -220,7 +222,7 @@ export async function searchTracks(query, artist, limit = 10) {
       id: r.id,
       title: r.title,
       durationMs: r.length || null,
-      duration: r.length ? formatDuration(r.length) : null,
+      duration: r.length ? formatMediaTimestamp(Math.round(r.length / 1000)) : null,
       artists: (r["artist-credit"] || []).map((ac) => ({
         id: ac.artist?.id,
         name: ac.artist?.name,
@@ -233,13 +235,4 @@ export async function searchTracks(query, artist, limit = 10) {
       score: r.score,
     })),
   };
-}
-
-// ── Helpers ─────────────────────────────────────────────────────
-
-function formatDuration(ms) {
-  const totalSeconds = Math.round(ms / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
