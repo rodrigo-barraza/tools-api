@@ -39,6 +39,9 @@ const TIMEOUT_MAP = {
   "command.run": RPC_TIMEOUT_COMMAND_MS,
   "command.stream": RPC_TIMEOUT_COMMAND_MS,
   "project.summary": RPC_TIMEOUT_FILE_MS * 3,
+  "directory.create": RPC_TIMEOUT_FILE_MS,
+  "watch.subscribe": RPC_TIMEOUT_FILE_MS,
+  "watch.unsubscribe": RPC_TIMEOUT_FILE_MS,
 };
 
 // ────────────────────────────────────────────────────────────
@@ -78,12 +81,12 @@ let healthCheckTimer = null;
  */
 export function initAgentWebSocket(httpServer) {
   const wss = new WebSocketServer({ noServer: true });
+  const clientWss = new WebSocketServer({ noServer: true });
 
   httpServer.on("upgrade", (req, socket, head) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
-    if (url.pathname !== "/ws/agent") return;
 
-    // Auth check
+    // Auth check (shared across both endpoints)
     const secret = req.headers["x-api-secret"];
     const expectedSecret = CONFIG.AGENT_SECRET || CONFIG.API_SECRET;
 
@@ -94,10 +97,24 @@ export function initAgentWebSocket(httpServer) {
       return;
     }
 
-    wss.handleUpgrade(req, socket, head, (ws) => {
-      wss.emit("connection", ws, req);
-    });
+    // Agent connections (workspace-service sidecar → tools-service)
+    if (url.pathname === "/ws/agent") {
+      wss.handleUpgrade(req, socket, head, (ws) => {
+        wss.emit("connection", ws, req);
+      });
+      return;
+    }
+
+    // Client connections (VS Code extension → tools-service → agent)
+    if (url.pathname === "/ws/workspace") {
+      clientWss.handleUpgrade(req, socket, head, (ws) => {
+        clientWss.emit("connection", ws, req);
+      });
+      return;
+    }
   });
+
+  // ── Agent WebSocket (workspace-service sidecar) ──────────
 
   wss.on("connection", (ws, req) => {
     const clientIp = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
@@ -118,7 +135,6 @@ export function initAgentWebSocket(httpServer) {
     });
 
     ws.on("close", () => {
-      // Find and remove this agent
       for (const [agentId, agent] of agents) {
         if (agent.ws === ws) {
           deregisterAgent(agentId, "disconnected");
@@ -132,10 +148,79 @@ export function initAgentWebSocket(httpServer) {
     });
   });
 
+  // ── Client WebSocket (VS Code extension proxy) ──────────
+
+  clientWss.on("connection", (ws, req) => {
+    const clientIp = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
+      req.socket.remoteAddress?.replace(/^::ffff:/, "");
+
+    logger.info(`[ClientWS] New client connection from ${clientIp}`);
+
+    ws.isAlive = true;
+    ws.on("pong", () => { ws.isAlive = true; });
+
+    ws.on("message", async (raw) => {
+      try {
+        const msg = JSON.parse(raw.toString());
+
+        // Only handle RPC requests (has id + method)
+        if (!msg.id || !msg.method) return;
+
+        // Meta-methods (no path routing needed)
+        if (msg.method === "agents.list") {
+          sendJson(ws, { jsonrpc: "2.0", id: msg.id, result: getConnectedAgents() });
+          return;
+        }
+
+        // Extract the target path from params
+        const targetPath = msg.params?.path ||
+          msg.params?.paths ||
+          msg.params?.searchPath ||
+          msg.params?.source ||
+          msg.params?.pathA ||
+          msg.params?.cwd;
+
+        // Resolve target path to a string for routing
+        const routePath = Array.isArray(targetPath) ? targetPath[0] : targetPath;
+
+        if (!routePath) {
+          sendJson(ws, { jsonrpc: "2.0", id: msg.id, error: { code: -32602, message: "No routable path found in params" } });
+          return;
+        }
+
+        // Find the agent that serves this path
+        const route = routeForPath(routePath);
+        if (!route) {
+          sendJson(ws, { jsonrpc: "2.0", id: msg.id, error: { code: -32001, message: `No agent found for path: ${routePath}` } });
+          return;
+        }
+
+        // Proxy the RPC to the agent
+        try {
+          const result = await sendRpc(route.id, msg.method, msg.params);
+          sendJson(ws, { jsonrpc: "2.0", id: msg.id, result });
+        } catch (err) {
+          sendJson(ws, { jsonrpc: "2.0", id: msg.id, error: { code: -32000, message: err.message } });
+        }
+      } catch (err) {
+        logger.error(`[ClientWS] Invalid message: ${err.message}`);
+      }
+    });
+
+    ws.on("close", () => {
+      logger.info(`[ClientWS] Client disconnected (${clientIp})`);
+    });
+
+    ws.on("error", (err) => {
+      logger.error(`[ClientWS] Connection error: ${err.message}`);
+    });
+  });
+
   // Start health check interval
   startHealthCheck(wss);
 
-  logger.info(`[AgentWS] Agent WebSocket server initialized on /ws/agent`);
+  logger.info(`[AgentWS] Agent WebSocket initialized on /ws/agent`);
+  logger.info(`[ClientWS] Client WebSocket initialized on /ws/workspace`);
 }
 
 // ────────────────────────────────────────────────────────────
