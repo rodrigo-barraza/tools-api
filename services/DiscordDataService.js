@@ -402,7 +402,7 @@ const DiscordDataService = {
           : null,
         // Reply reference — so Lupos can follow conversation threads
         replyTo: m.reference?.messageId || null,
-        // Emoji reactions (array of { emoji, count })
+        // Emoji reactions (array of { emoji, count, me })
         ...(Array.isArray(m.reactions) && m.reactions.length > 0 && {
           reactions: m.reactions.map((r) => ({
             emoji: {
@@ -411,6 +411,10 @@ const DiscordDataService = {
               animated: r.emoji?.animated || false,
             },
             count: r.count || r.countDetails?.normal || 0,
+            // `me` = true when the bot (Lupos) has this reaction — used by
+            // the client to render the pill as "already reacted" (blurple,
+            // unclickable) since all website reactions go through Lupos.
+            me: r.me === true,
           })),
         }),
         // Media indicators
