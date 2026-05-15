@@ -2,7 +2,6 @@
 
 import {
   CheerioCrawler,
-  // ProxyConfiguration, // Uncomment when Bright Data proxy is enabled
   Configuration,
 } from "crawlee";
 import logger from "../logger.js";
