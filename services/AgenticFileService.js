@@ -77,7 +77,7 @@ const BLOCKED_PATTERNS = [
 
 // Binary file extensions — return metadata only, no content
 const BINARY_EXTENSIONS = new Set([
-  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".ico", ".svg",
+  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".ico",
   ".mp3", ".mp4", ".wav", ".ogg", ".webm", ".avi", ".mov",
   ".zip", ".tar", ".gz", ".bz2", ".7z", ".rar",
   ".woff", ".woff2", ".ttf", ".otf", ".eot",
