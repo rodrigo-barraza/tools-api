@@ -5,6 +5,9 @@ import { Router } from "express";
 import CONFIG from "../config.js";
 import logger from "../logger.js";
 import { agenticHandler } from "../utilities.js";
+import { createReadStream } from "node:fs";
+import { stat as fsStat } from "node:fs/promises";
+import { extname } from "node:path";
 import {
   agenticReadFile,
   agenticWriteFile,
@@ -18,6 +21,7 @@ import {
   agenticFileDiff,
   agenticMoveFile,
   agenticDeleteFile,
+  validatePath,
 } from "../services/AgenticFileService.js";
 import {
   agenticFetchUrl,
@@ -85,6 +89,83 @@ router.post("/file/read", agenticHandler(async (req) => {
     endLine: endLine ? parseInt(endLine, 10) : undefined,
   });
 }));
+
+// ── Raw File Stream (binary files: images, audio, video) ──────
+// Serves file content directly with correct Content-Type.
+// Used by the FileViewerPanelComponent for media preview.
+const EXT_TO_MIME = {
+  // Images
+  ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+  ".gif": "image/gif", ".webp": "image/webp", ".bmp": "image/bmp",
+  ".ico": "image/x-icon", ".svg": "image/svg+xml", ".avif": "image/avif",
+  ".tiff": "image/tiff", ".tif": "image/tiff",
+  // Audio
+  ".mp3": "audio/mpeg", ".wav": "audio/wav", ".ogg": "audio/ogg",
+  ".flac": "audio/flac", ".aac": "audio/aac", ".m4a": "audio/mp4",
+  ".wma": "audio/x-ms-wma", ".webm": "audio/webm", ".opus": "audio/opus",
+  // Video
+  ".mp4": "video/mp4", ".avi": "video/x-msvideo", ".mov": "video/quicktime",
+  ".mkv": "video/x-matroska", ".wmv": "video/x-ms-wmv", ".flv": "video/x-flv",
+  ".ts": "video/mp2t",
+  // PDF
+  ".pdf": "application/pdf",
+};
+
+router.get("/file/raw", asyncHandler(async (req, res) => {
+  const filePath = req.query.path;
+  if (!filePath || typeof filePath !== "string") {
+    return res.status(400).json({ error: "Query param 'path' is required" });
+  }
+
+  const validation = validatePath(filePath);
+  if (!validation.safe) {
+    return res.status(403).json({ error: validation.error });
+  }
+
+  const resolved = validation.resolved;
+  const ext = extname(resolved).toLowerCase();
+  const mime = EXT_TO_MIME[ext];
+  if (!mime) {
+    return res.status(415).json({ error: `Unsupported file type: ${ext}` });
+  }
+
+  try {
+    const stats = await fsStat(resolved);
+    if (stats.isDirectory()) {
+      return res.status(400).json({ error: "Path is a directory, not a file" });
+    }
+
+    // Set appropriate headers for media streaming
+    res.setHeader("Content-Type", mime);
+    res.setHeader("Content-Length", stats.size);
+    res.setHeader("Accept-Ranges", "bytes");
+    res.setHeader("Cache-Control", "private, max-age=60");
+
+    // Support HTTP Range requests for video/audio seeking
+    const range = req.headers.range;
+    if (range) {
+      const parts = range.replace(/bytes=/, "").split("-");
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : stats.size - 1;
+      const chunkSize = end - start + 1;
+
+      res.status(206);
+      res.setHeader("Content-Range", `bytes ${start}-${end}/${stats.size}`);
+      res.setHeader("Content-Length", chunkSize);
+
+      createReadStream(resolved, { start, end }).pipe(res);
+    } else {
+      createReadStream(resolved).pipe(res);
+    }
+  } catch (err) {
+    if (err.code === "ENOENT") {
+      return res.status(404).json({ error: `File not found: ${resolved}` });
+    }
+    logger.error(`[file/raw] Stream failed: ${err.message}`);
+    res.status(500).json({ error: `Failed to stream file: ${err.message}` });
+  }
+}));
+
 // ── Write File ────────────────────────────────────────────────
 router.post("/file/write", agenticHandler(async (req) => {
   const { path, content, createDirs } = req.body;
