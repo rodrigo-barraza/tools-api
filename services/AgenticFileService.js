@@ -86,6 +86,12 @@ const BINARY_EXTENSIONS = new Set([
   ".wasm", ".pyc", ".class",
 ]);
 
+// Image extensions eligible for inline base64 preview (avoids /file/raw round-trip)
+const PREVIEW_IMAGE_EXTENSIONS = new Set([
+  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".ico", ".avif", ".tiff", ".tif",
+]);
+const MAX_PREVIEW_BYTES = 2_097_152; // 2 MB
+
 // ────────────────────────────────────────────────────────────
 // Path Validation
 // ────────────────────────────────────────────────────────────
@@ -174,13 +180,22 @@ export async function agenticReadFile(filePath, { startLine, endLine } = {}) {
     // Binary detection
     const ext = extname(resolved).toLowerCase();
     if (BINARY_EXTENSIONS.has(ext)) {
-      return {
+      const result = {
         filePath: resolved,
         isBinary: true,
         extension: ext,
         sizeBytes: stats.size,
-        message: `Binary file detected (${ext}). Content not returned.`,
       };
+
+      // Auto-include base64 for previewable image files under threshold
+      if (PREVIEW_IMAGE_EXTENSIONS.has(ext) && stats.size <= MAX_PREVIEW_BYTES) {
+        const buffer = await readFile(resolved);
+        result.contentBase64 = buffer.toString("base64");
+      } else {
+        result.message = `Binary file detected (${ext}). Content not returned.`;
+      }
+
+      return result;
     }
 
     const raw = await readFile(resolved, "utf-8");
