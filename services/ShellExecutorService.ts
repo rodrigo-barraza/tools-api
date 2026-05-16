@@ -4,7 +4,7 @@ import { spawn } from "node:child_process";
 import {
   SHELL_DEFAULT_TIMEOUT_MS as DEFAULT_TIMEOUT_MS,
   SHELL_MAX_TIMEOUT_MS as MAX_TIMEOUT_MS,
-} from "../constants.js";
+} from "../constants.ts";
 
 // ────────────────────────────────────────────────────────────
 // Constants
@@ -148,7 +148,7 @@ function validateCommand(command) {
  *   error?: string
  * }>}
  */
-export async function executeShell(command, { stdin = "", timeout = DEFAULT_TIMEOUT_MS } = {}) {
+export async function executeShell(command, { stdin = "", timeout = DEFAULT_TIMEOUT_MS }: Record<string, any> = {}) {
   const clampedTimeout = Math.min(Math.max(timeout, 500), MAX_TIMEOUT_MS);
 
   // Validate command
@@ -180,7 +180,7 @@ export async function executeShell(command, { stdin = "", timeout = DEFAULT_TIME
 
   const startTime = performance.now();
 
-  return new Promise((resolve) => {
+  return new Promise<any>((resolve) => {
     const stdoutChunks = [];
     const stderrChunks = [];
     let stdoutLen = 0;
@@ -286,7 +286,7 @@ export async function executeShell(command, { stdin = "", timeout = DEFAULT_TIME
  * @param {function} [options.onChunk]   - (event: "stdout"|"stderr", data: string) => void
  * @returns {Promise<{ success, stdout, stderr, exitCode, executionTimeMs, timedOut, error? }>}
  */
-export async function executeShellStreaming(command, { stdin = "", timeout = DEFAULT_TIMEOUT_MS, onChunk } = {}) {
+export async function executeShellStreaming(command, { stdin = "", timeout = DEFAULT_TIMEOUT_MS, onChunk }: Record<string, any> = {}) {
   const clampedTimeout = Math.min(Math.max(timeout, 500), MAX_TIMEOUT_MS);
 
   const validation = validateCommand(command);
@@ -307,7 +307,7 @@ export async function executeShellStreaming(command, { stdin = "", timeout = DEF
 
   const startTime = performance.now();
 
-  return new Promise((resolve) => {
+  return new Promise<any>((resolve) => {
     const stdoutChunks = [];
     const stderrChunks = [];
     let stdoutLen = 0;

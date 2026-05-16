@@ -13,8 +13,8 @@
  *   - AAFCO Dog & Cat Food Nutrient Profiles (2023)
  */
 
-import { searchFoods } from "./NutritionFetcher.js";
-import { calculateTargetProfile } from "./NutritionRequirementFetcher.js";
+import { searchFoods } from "./NutritionFetcher.ts";
+import { calculateTargetProfile } from "./NutritionRequirementFetcher.ts";
 import {
   NUTRITION_MACRO_FIELDS,
   NUTRITION_MINERAL_FIELDS,
@@ -22,7 +22,7 @@ import {
   NUTRITION_AMINO_ACID_FIELDS,
   NUTRITION_LIPID_FIELDS,
   NUTRITION_STEROL_FIELDS,
-} from "../../constants.js";
+} from "../../constants.ts";
 
 // ─── Mapping: requirement nutrient_id → food CSV column ────────
 
@@ -94,7 +94,7 @@ const REQUIREMENT_TO_FOOD_COLUMN = {
 // Food data is always per 100g. We need to know what units
 // the food DB uses for each nutrient.
 
-const FOOD_COLUMN_UNITS = {};
+const FOOD_COLUMN_UNITS: Record<string, any> = {};
 
 // Build from all field maps
 for (const [col, label] of Object.entries(NUTRITION_MACRO_FIELDS)) {
@@ -220,7 +220,7 @@ export function analyzeNutrientGaps({
 
   // ── Aggregate consumed nutrients ─────────────────────────────
   // Food data is per 100g, scale by (grams / 100)
-  const consumed = {};
+  const consumed: Record<string, any> = {};
 
   for (const { grams, food } of resolvedFoods) {
     const scale = grams / 100;
@@ -250,8 +250,8 @@ export function analyzeNutrientGaps({
     includeCompositional: false,
   });
 
-  if (requirements.error) {
-    return { error: `Requirement calculation failed: ${requirements.error}` };
+  if ((requirements as any).error) {
+    return { error: `Requirement calculation failed: ${(requirements as any).error}` };
   }
 
   // ── Build reverse label→column map for matching ──────────────
@@ -264,7 +264,7 @@ export function analyzeNutrientGaps({
     ...NUTRITION_STEROL_FIELDS,
   };
 
-  const labelToColumn = {};
+  const labelToColumn: Record<string, any> = {};
   for (const [col, label] of Object.entries(ALL_FIELD_MAPS)) {
     labelToColumn[label] = col;
   }
@@ -296,7 +296,7 @@ export function analyzeNutrientGaps({
 
       const metricLower = metric.toLowerCase();
       if (metricLower === "ul") {
-        ulValue = data.value;
+        ulValue = (data as any).value;
         continue;
       }
       if (metricLower.includes("max")) continue;
@@ -304,9 +304,9 @@ export function analyzeNutrientGaps({
 
       // Priority: RDA > RDA_multiplier_per_kg > AI > MIN_per_1000kcal > RECOMMENDATION
       if (!targetValue || priorityOf(metric) > priorityOf(targetMetric)) {
-        targetValue = data.value;
+        targetValue = (data as any).value;
         targetMetric = metric;
-        targetUnit = data.unit;
+        targetUnit = (data as any).unit;
       }
     }
 

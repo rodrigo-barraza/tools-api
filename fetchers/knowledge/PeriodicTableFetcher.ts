@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-import logger from "../../logger.js";
+import logger from "../../logger.ts";
 
 /**
  * Periodic Table Fetcher — Static In-Memory Element Database
@@ -75,7 +75,7 @@ function ensureLoaded() {
     const values = parseCSVLine(lines[i]);
     if (values.length < 5) continue;
 
-    const row = {};
+    const row: Record<string, any> = {};
     headers.forEach((h, idx) => {
       const val = values[idx] || "";
       if (NUMERIC_FIELDS.has(h)) {
@@ -149,7 +149,7 @@ const RANKABLE_PROPERTIES = {
  * @param {string} [opts.block] - Filter by block (s, p, d, f)
  * @returns {object} Search results
  */
-export function searchElements(query, opts = {}) {
+export function searchElements(query, opts: Record<string, any> = {}) {
   ensureLoaded();
 
   const { limit = 10, category, block } = opts;
@@ -244,7 +244,7 @@ export function getElementBySymbol(symbol) {
  * @param {string} [opts.block] - Filter by block
  * @returns {object} Ranked results
  */
-export function rankElementsByProperty(property, opts = {}) {
+export function rankElementsByProperty(property, opts: Record<string, any> = {}) {
   ensureLoaded();
 
   const { limit = 10, order = "desc", category, block } = opts;

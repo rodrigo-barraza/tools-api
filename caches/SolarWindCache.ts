@@ -1,6 +1,6 @@
-import { createSimpleCache } from "./createSimpleCache.js";
+import { createSimpleCache } from "./createSimpleCache.ts";
 
-const cache = createSimpleCache();
+const cache = createSimpleCache<any>();
 
 // Default data shape for solar wind
 cache.update({ plasma: [], magnetic: [], latest: {}, counts: {} });

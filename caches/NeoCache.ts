@@ -1,4 +1,4 @@
-import { upsertNeos } from "../models/Neo.js";
+import { upsertNeos } from "../models/Neo.ts";
 
 const cache = {
   neos: [],

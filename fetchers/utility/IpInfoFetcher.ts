@@ -1,5 +1,5 @@
-import CONFIG from "../../config.js";
-import { IPINFO_BASE_URL } from "../../constants.js";
+import CONFIG from "../../config.ts";
+import { IPINFO_BASE_URL } from "../../constants.ts";
 
 /**
  * IPinfo.io IP Geolocation fetcher.

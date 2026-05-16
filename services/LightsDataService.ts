@@ -1,4 +1,4 @@
-import CONFIG from "../config.js";
+import CONFIG from "../config.ts";
 
 // ═══════════════════════════════════════════════════════════════
 //  Lights Data Service
@@ -19,7 +19,7 @@ const TIMEOUT_MS = 10_000;
  */
 async function lightsApiFetch(method, path, body = null) {
   const url = `${CONFIG.LIGHTS_SERVICE_URL}${path}`;
-  const options = {
+  const options: Record<string, any> = {
     method,
     headers: { "Content-Type": "application/json" },
     signal: AbortSignal.timeout(TIMEOUT_MS),
@@ -85,7 +85,7 @@ const LightsDataService = {
    * @returns {Promise<object>}
    */
   async setState({ selector = "all", power, color, brightness, duration, kelvin }) {
-    const body = {};
+    const body: Record<string, any> = {};
     if (power !== undefined) body.power = power;
     if (color !== undefined) body.color = color;
     if (brightness !== undefined) body.brightness = brightness;
@@ -107,7 +107,7 @@ const LightsDataService = {
    * @returns {Promise<object>}
    */
   async setStateDelta({ selector = "all", hue, saturation, brightness, kelvin, duration }) {
-    const body = {};
+    const body: Record<string, any> = {};
     if (hue !== undefined) body.hue = hue;
     if (saturation !== undefined) body.saturation = saturation;
     if (brightness !== undefined) body.brightness = brightness;
@@ -124,7 +124,7 @@ const LightsDataService = {
    * @returns {Promise<object>}
    */
   async setStates(states, defaults = null) {
-    const body = { states };
+    const body: Record<string, any> = { states };
     if (defaults) body.defaults = defaults;
     return lightsApiFetch("PUT", "/lights/states", body);
   },
@@ -153,7 +153,7 @@ const LightsDataService = {
    * @returns {Promise<object>}
    */
   async breatheEffect({ selector = "all", color, fromColor, period, cycles, persist, powerOn, peak }) {
-    const body = {};
+    const body: Record<string, any> = {};
     if (color !== undefined) body.color = color;
     if (fromColor !== undefined) body.fromColor = fromColor;
     if (period !== undefined) body.period = period;
@@ -178,7 +178,7 @@ const LightsDataService = {
    * @returns {Promise<object>}
    */
   async pulseEffect({ selector = "all", color, fromColor, period, cycles, persist, powerOn }) {
-    const body = {};
+    const body: Record<string, any> = {};
     if (color !== undefined) body.color = color;
     if (fromColor !== undefined) body.fromColor = fromColor;
     if (period !== undefined) body.period = period;
@@ -200,7 +200,7 @@ const LightsDataService = {
    * @returns {Promise<object>}
    */
   async moveEffect({ selector = "all", direction, period, cycles, powerOn }) {
-    const body = {};
+    const body: Record<string, any> = {};
     if (direction !== undefined) body.direction = direction;
     if (period !== undefined) body.period = period;
     if (cycles !== undefined) body.cycles = cycles;
@@ -219,7 +219,7 @@ const LightsDataService = {
    * @returns {Promise<object>}
    */
   async flameEffect({ selector = "all", period, duration, powerOn }) {
-    const body = {};
+    const body: Record<string, any> = {};
     if (period !== undefined) body.period = period;
     if (duration !== undefined) body.duration = duration;
     if (powerOn !== undefined) body.powerOn = powerOn;
@@ -238,7 +238,7 @@ const LightsDataService = {
    * @returns {Promise<object>}
    */
   async morphEffect({ selector = "all", palette, period, duration, powerOn }) {
-    const body = {};
+    const body: Record<string, any> = {};
     if (palette !== undefined) body.palette = palette;
     if (period !== undefined) body.period = period;
     if (duration !== undefined) body.duration = duration;
@@ -254,7 +254,7 @@ const LightsDataService = {
    * @returns {Promise<object>}
    */
   async effectsOff(selector = "all", powerOff = false) {
-    const body = {};
+    const body: Record<string, any> = {};
     if (powerOff) body.powerOff = true;
 
     return lightsApiFetch("POST", `/lights/${encodeURIComponent(selector)}/effects/off`, body);
@@ -286,7 +286,7 @@ const LightsDataService = {
    * @returns {Promise<object>}
    */
   async activateScene(sceneId, duration = 1, ignore = null) {
-    const body = {};
+    const body: Record<string, any> = {};
     if (duration !== undefined) body.duration = duration;
     if (ignore) body.ignore = ignore;
 

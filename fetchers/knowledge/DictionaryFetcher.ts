@@ -1,5 +1,5 @@
 import { stripHtml } from "@rodrigo-barraza/utilities-library";
-import { DICTIONARY_BASE_URL } from "../../constants.js";
+import { DICTIONARY_BASE_URL } from "../../constants.ts";
 
 /**
  * Free Dictionary API fetcher.

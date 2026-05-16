@@ -19,7 +19,7 @@ router.get("/browse", asyncHandler((req) => {
 }, "EIA browse"));
 // ─── Facet Values ──────────────────────────────────────────────────
 router.get("/facets", asyncHandler(async (req, res) => {
-  const { route, facetId } = req.query;
+  const { route, facetId } = req.query as any;
   if (!route || !facetId) {
     return res
       .status(400)
@@ -51,7 +51,7 @@ router.get("/data", asyncHandler(async (req) => {
         : [req.query.data]
       : undefined;
   // Parse facets from query string — facets[stateid][]=CO format
-  const facets = {};
+  const facets: Record<string, any> = {};
   for (const key of Object.keys(rest)) {
     const match = key.match(/^facets\[(\w+)\]\[\]$/);
     if (match) {
@@ -74,8 +74,8 @@ router.get("/data", asyncHandler(async (req) => {
 router.get(
   "/electricity/retail-sales",
   asyncHandler((req) => {
-    const { state, sector, frequency, start, end, length } = req.query;
-    const facets = {};
+    const { state, sector, frequency, start, end, length } = req.query as any;
+    const facets: Record<string, any> = {};
     if (state) facets.stateid = Array.isArray(state) ? state : [state];
     if (sector) facets.sectorid = Array.isArray(sector) ? sector : [sector];
     return getData("electricity/retail-sales", {
@@ -93,8 +93,8 @@ router.get(
 router.get(
   "/petroleum/prices",
   asyncHandler((req) => {
-    const { product, area, frequency, start, end, length } = req.query;
-    const facets = {};
+    const { product, area, frequency, start, end, length } = req.query as any;
+    const facets: Record<string, any> = {};
     if (product) facets.product = Array.isArray(product) ? product : [product];
     if (area) facets.duoarea = Array.isArray(area) ? area : [area];
     return getData("petroleum/pri/gnd", {
@@ -112,8 +112,8 @@ router.get(
 router.get(
   "/natural-gas/prices",
   asyncHandler((req) => {
-    const { process: process_, area, frequency, start, end, length } = req.query;
-    const facets = {};
+    const { process: process_, area, frequency, start, end, length } = req.query as any;
+    const facets: Record<string, any> = {};
     if (process_) facets.process = Array.isArray(process_) ? process_ : [process_];
     if (area) facets.duoarea = Array.isArray(area) ? area : [area];
     return getData("natural-gas/pri/sum", {

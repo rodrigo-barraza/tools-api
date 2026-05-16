@@ -11,7 +11,7 @@
  * protein/carb/fat targets per meal.
  */
 
-import { calculateTargetProfile } from "./NutritionRequirementFetcher.js";
+import { calculateTargetProfile } from "./NutritionRequirementFetcher.ts";
 import { readFileSync, readdirSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
@@ -60,7 +60,7 @@ function ensureFoodCache() {
       const values = parseCSVLine(lines[i]);
       if (values.length < 40) continue;
 
-      const row = {};
+      const row: Record<string, any> = {};
       headers.forEach((h, idx) => {
         row[h] = values[idx] || "";
       });
@@ -173,17 +173,17 @@ export function buildMealPlan({
     lifeStage,
     weightKg,
     caloricIntake: caloricTarget,
-  });
+  } as any);
 
   // ── Set up nutrient targets ──────────────────────────────────
-  const targets = {};
+  const targets: Record<string, any> = {};
   for (const nutrient of SCORING_NUTRIENTS) {
     if (requirements.requirements && requirements.requirements[nutrient]) {
       const metrics = requirements.requirements[nutrient];
       // Get the primary target value
       for (const [metric, data] of Object.entries(metrics)) {
         if (metric !== "UL" && metric !== "NO_DRI" && !metric.includes("MAX")) {
-          targets[nutrient] = data.value;
+          targets[nutrient] = (data as any).value;
           break;
         }
       }
@@ -328,7 +328,7 @@ export function buildMealPlan({
   }
 
   // ── Coverage analysis ────────────────────────────────────────
-  const coverage = {};
+  const coverage: Record<string, any> = {};
   for (const [nutrient, target] of Object.entries(targets)) {
     if (target <= 0) continue;
     const remaining = remainingGaps[nutrient] || 0;

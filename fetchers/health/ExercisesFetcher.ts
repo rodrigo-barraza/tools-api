@@ -35,7 +35,7 @@ const EXERCISE_DB = [];
 let loaded = false;
 
 import { readdirSync } from "fs";
-import logger from "../../logger.js";
+import logger from "../../logger.ts";
 
 function ensureLoaded() {
   if (loaded) return;
@@ -58,7 +58,7 @@ function ensureLoaded() {
       const values = parseCSVLine(lines[i]);
       if (values.length < headers.length) continue;
 
-      const row = {};
+      const row: Record<string, any> = {};
       // Infer source from filename (e.g. digest_exercises.csv -> Free Exercise DB, digest_exercises_wger.csv -> WGER)
       const isWger = file.includes("wger");
       row._source = isWger ? "Wger" : "Free Exercise DB";
@@ -90,7 +90,7 @@ function normalizeQuery(str) {
   return str ? str.toLowerCase().trim() : "";
 }
 
-export function searchExercises(query, opts = {}) {
+export function searchExercises(query, opts: Record<string, any> = {}) {
   ensureLoaded();
 
   const {

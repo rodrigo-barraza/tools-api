@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-import logger from "../../logger.js";
+import logger from "../../logger.ts";
 
 /**
  * Exoplanet Fetcher — Static In-Memory NASA Exoplanet Archive Database
@@ -92,7 +92,7 @@ function ensureLoaded() {
     const values = parseCSVLine(lines[i]);
     if (values.length < 5) continue;
 
-    const row = {};
+    const row: Record<string, any> = {};
     headers.forEach((h, idx) => {
       const val = values[idx] || "";
       if (NUMERIC_FIELDS.has(h)) {
@@ -140,7 +140,7 @@ function formatPlanet(p) {
 /**
  * Search exoplanets by name or host star.
  */
-export function searchExoplanets(query, opts = {}) {
+export function searchExoplanets(query, opts: Record<string, any> = {}) {
   ensureLoaded();
 
   const { limit = 10, method } = opts;
@@ -200,7 +200,7 @@ export function getExoplanetByName(name) {
 /**
  * Rank exoplanets by a specific field.
  */
-export function rankExoplanets(field, opts = {}) {
+export function rankExoplanets(field, opts: Record<string, any> = {}) {
   ensureLoaded();
 
   const { limit = 10, order = "desc" } = opts;
@@ -247,9 +247,9 @@ export function rankExoplanets(field, opts = {}) {
 export function getDiscoveryStats() {
   ensureLoaded();
 
-  const methods = {};
+  const methods: Record<string, any> = {};
   const yearRange = { min: Infinity, max: -Infinity };
-  const facilities = {};
+  const facilities: Record<string, any> = {};
 
   for (const p of PLANET_DB) {
     const m = p.discoverymethod || "Unknown";
@@ -288,7 +288,7 @@ export function getDiscoveryStats() {
 /**
  * Find potentially habitable exoplanets (conservative habitable zone).
  */
-export function getHabitableZonePlanets(opts = {}) {
+export function getHabitableZonePlanets(opts: Record<string, any> = {}) {
   ensureLoaded();
 
   const { limit = 20 } = opts;

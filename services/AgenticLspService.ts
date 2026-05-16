@@ -3,8 +3,8 @@
 import { readFile, stat } from "node:fs/promises";
 import { resolve, extname, relative, dirname } from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
-import { getLspManager, shutdownAllLspManagers, getAllLspHealth } from "./lsp/LspServerManager.js";
-import { ALLOWED_ROOTS } from "./AgenticFileService.js";
+import { getLspManager, shutdownAllLspManagers, getAllLspHealth } from "./lsp/LspServerManager.ts";
+import { ALLOWED_ROOTS } from "./AgenticFileService.ts";
 
 // ────────────────────────────────────────────────────────────
 // Configuration

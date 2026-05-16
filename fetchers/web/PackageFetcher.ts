@@ -1,7 +1,7 @@
 // ─── Unified NPM / PyPI Lookup ──────────────────────────────
 
-import { getNpmPackage } from "./NpmFetcher.js";
-import { getPyPiPackage } from "./PyPiFetcher.js";
+import { getNpmPackage } from "./NpmFetcher.ts";
+import { getPyPiPackage } from "./PyPiFetcher.ts";
 
 // ─── Public API ───────────────────────────────────────────────────
 
@@ -14,7 +14,7 @@ import { getPyPiPackage } from "./PyPiFetcher.js";
  * @param {string} [options.readme] - "true"/"false" — include README (NPM only, default: true)
  * @returns {Promise<object>} Package metadata with "registry" field
  */
-export async function getPackageInfo(name, registry, options = {}) {
+export async function getPackageInfo(name, registry, options: Record<string, any> = {}) {
   if (!name || typeof name !== "string") {
     return { error: "Package name is required" };
   }

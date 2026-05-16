@@ -1,9 +1,9 @@
 import { stripHtml, normalizeName } from "@rodrigo-barraza/utilities-library";
-import logger from "../../logger.js";
+import logger from "../../logger.ts";
 import {
   TREND_SOURCES as SOURCES,
   MASTODON_INSTANCES,
-} from "../../constants.js";
+} from "../../constants.ts";
 /**
  * Fetches trending tags from a single Mastodon instance.
  * @param {string} instance - Instance base URL (e.g. "https://mastodon.social")

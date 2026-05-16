@@ -1,8 +1,8 @@
 // ─── Cron + Remote Trigger System ───────────────────────────
 
-import { getDB } from "../db.js";
-import CONFIG from "../config.js";
-import logger from "../logger.js";
+import { getDB } from "../db.ts";
+import CONFIG from "../config.ts";
+import logger from "../logger.ts";
 
 // ────────────────────────────────────────────────────────────
 // Constants
@@ -169,7 +169,7 @@ export async function agenticScheduleCreate(data) {
 /**
  * List schedules for a project.
  */
-export async function agenticScheduleList(project, { type, limit = 50 } = {}) {
+export async function agenticScheduleList(project, { type, limit = 50 }: Record<string, any> = {}) {
   if (!project || typeof project !== "string") {
     return { error: "'project' is required (string)" };
   }
@@ -177,7 +177,7 @@ export async function agenticScheduleList(project, { type, limit = 50 } = {}) {
   const db = getDB();
   const col = db.collection(COLLECTION);
 
-  const filter = { project };
+  const filter: Record<string, any> = { project };
   if (type) filter.type = type;
 
   const schedules = await col
@@ -226,7 +226,7 @@ export async function agenticScheduleDelete(project, scheduleId) {
 /**
  * Fire a named remote trigger.
  */
-export async function agenticTriggerFire(project, triggerName, payload = {}) {
+export async function agenticTriggerFire(project, triggerName, payload: Record<string, any> = {}) {
   if (!project || typeof project !== "string") {
     return { error: "'project' is required (string)" };
   }
@@ -300,7 +300,7 @@ export function startSchedulePoller() {
           await firePrismAgent(schedule);
 
           // Update run stats
-          const updates = {
+          const updates: Record<string, any> = {
             lastRunAt: now,
             updatedAt: now,
           };
@@ -336,7 +336,7 @@ export function startSchedulePoller() {
 // Fire a schedule/trigger via Prism's /agent endpoint
 // ────────────────────────────────────────────────────────────
 
-async function firePrismAgent(schedule, payload = {}) {
+async function firePrismAgent(schedule, payload: Record<string, any> = {}) {
   try {
     const prismUrl = CONFIG.PRISM_SERVICE_URL;
     if (!prismUrl) {

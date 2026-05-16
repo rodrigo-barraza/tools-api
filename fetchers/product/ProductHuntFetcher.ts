@@ -1,7 +1,7 @@
 import { TokenManager } from "@rodrigo-barraza/utilities-library/node";
-import CONFIG from "../../config.js";
-import { PRODUCT_SOURCES } from "../../constants.js";
-import { computeTrendingScore } from "../../utilities.js";
+import CONFIG from "../../config.ts";
+import { PRODUCT_SOURCES } from "../../constants.ts";
+import { computeTrendingScore } from "../../utilities.ts";
 const GRAPHQL_URL = "https://api.producthunt.com/v2/api/graphql";
 // ─── OAuth2 Token Management ──────────────────────────────────────
 const phTokenManager = new TokenManager(async () => {

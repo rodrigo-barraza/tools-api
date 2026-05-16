@@ -1,5 +1,5 @@
-import { getDB } from "../db.js";
-import logger from "../logger.js";
+import { getDB } from "../db.ts";
+import logger from "../logger.ts";
 
 let collection = null;
 
@@ -47,7 +47,7 @@ export async function getRecentCmes(
   if (!collection) return [];
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
-  const query = { startTime: { $gte: cutoff } };
+  const query: Record<string, any> = { startTime: { $gte: cutoff } };
   if (earthDirectedOnly) query.isEarthDirected = true;
   return collection.find(query).sort({ startTime: -1 }).limit(limit).toArray();
 }

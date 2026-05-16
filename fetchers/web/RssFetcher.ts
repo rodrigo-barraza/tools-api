@@ -1,7 +1,7 @@
 // ─── Parse RSS/Atom Feeds into Structured JSON ──────────────
 
 import xml2js from "xml2js";
-import { USER_AGENT } from "../../constants.js";
+import { USER_AGENT } from "../../constants.ts";
 
 const FETCH_TIMEOUT_MS = 15_000;
 const MAX_ITEMS = 50;
@@ -15,7 +15,7 @@ const MAX_ITEMS = 50;
  * @param {number} [options.limit=20] - Max items to return
  * @returns {Promise<object>}
  */
-export async function readRssFeed(url, options = {}) {
+export async function readRssFeed(url, options: Record<string, any> = {}) {
   if (!url || typeof url !== "string") {
     return { error: "Feed URL is required" };
   }

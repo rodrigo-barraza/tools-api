@@ -8,18 +8,18 @@ import {
   SPORTS_INTERVAL_MS,
   MOVIE_INTERVAL_MS,
   GOOGLE_PLACES_INTERVAL_MS,
-} from "../constants.js";
-import { fetchTicketmasterEvents } from "../fetchers/event/TicketmasterFetcher.js";
-import { fetchSeatGeekEvents } from "../fetchers/event/SeatGeekFetcher.js";
-import { fetchCraigslistEvents } from "../fetchers/event/CraigslistFetcher.js";
-import { fetchUniversityEvents } from "../fetchers/event/UniversityFetcher.js";
-import { fetchCityOfVancouverEvents } from "../fetchers/event/CityOfVancouverFetcher.js";
-import { fetchSportsEvents } from "../fetchers/event/SportsFetcher.js";
-import { fetchMovieEvents } from "../fetchers/event/MovieFetcher.js";
-import { fetchGooglePlacesEvents } from "../fetchers/event/GooglePlacesFetcher.js";
-import { updateEvents, setError, restoreEvents } from "../caches/EventCache.js";
-import { saveState, startCollectorLoop } from "../services/FreshnessService.js";
-import logger from "../logger.js";
+} from "../constants.ts";
+import { fetchTicketmasterEvents } from "../fetchers/event/TicketmasterFetcher.ts";
+import { fetchSeatGeekEvents } from "../fetchers/event/SeatGeekFetcher.ts";
+import { fetchCraigslistEvents } from "../fetchers/event/CraigslistFetcher.ts";
+import { fetchUniversityEvents } from "../fetchers/event/UniversityFetcher.ts";
+import { fetchCityOfVancouverEvents } from "../fetchers/event/CityOfVancouverFetcher.ts";
+import { fetchSportsEvents } from "../fetchers/event/SportsFetcher.ts";
+import { fetchMovieEvents } from "../fetchers/event/MovieFetcher.ts";
+import { fetchGooglePlacesEvents } from "../fetchers/event/GooglePlacesFetcher.ts";
+import { updateEvents, setError, restoreEvents } from "../caches/EventCache.ts";
+import { saveState, startCollectorLoop } from "../services/FreshnessService.ts";
+import logger from "../logger.ts";
 
 // ─── Collector Factory ─────────────────────────────────────────────
 

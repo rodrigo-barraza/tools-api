@@ -1,5 +1,5 @@
 import { MongoClient } from "mongodb";
-import logger from "../logger.js";
+import logger from "../logger.ts";
 
 // ═══════════════════════════════════════════════════════════════
 //  Lupos Discord — MongoDB Connection (separate database)

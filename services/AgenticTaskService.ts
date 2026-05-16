@@ -1,7 +1,7 @@
 // ─── Persistent Task State Management ───────────────────────
 
-import { getDB } from "../db.js";
-import logger from "../logger.js";
+import { getDB } from "../db.ts";
+import logger from "../logger.ts";
 
 // ────────────────────────────────────────────────────────────
 // Constants
@@ -124,7 +124,7 @@ export async function agenticTaskCreate(project, data) {
  * @param {number} [options.limit=50]
  * @returns {Promise<object>}
  */
-export async function agenticTaskList(project, { status, limit = 50 } = {}) {
+export async function agenticTaskList(project, { status, limit = 50 }: Record<string, any> = {}) {
   if (!project || typeof project !== "string") {
     return { error: "'project' is required (string)" };
   }
@@ -136,7 +136,7 @@ export async function agenticTaskList(project, { status, limit = 50 } = {}) {
   const db = getDB();
   const col = db.collection(COLLECTION);
 
-  const filter = { project };
+  const filter: Record<string, any> = { project };
   if (status) filter.status = status;
 
   const tasks = await col
@@ -238,7 +238,7 @@ export async function agenticTaskUpdate(project, taskId, updates) {
     };
   }
 
-  const $set = { updatedAt: new Date() };
+  const $set: Record<string, any> = { updatedAt: new Date() };
 
   if (updates.status) $set.status = updates.status;
   if (updates.subject) $set.subject = updates.subject;

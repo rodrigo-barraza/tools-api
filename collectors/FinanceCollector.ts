@@ -2,19 +2,19 @@ import { toISODate } from "@rodrigo-barraza/utilities-library";
 import {
   FINNHUB_NEWS_INTERVAL_MS,
   FINNHUB_EARNINGS_INTERVAL_MS,
-} from "../constants.js";
+} from "../constants.ts";
 import {
   fetchMarketNews,
   fetchEarningsCalendar,
-} from "../fetchers/finance/FinnhubFetcher.js";
+} from "../fetchers/finance/FinnhubFetcher.ts";
 import {
   updateMarketNews,
   setNewsError,
   updateEarnings,
   setEarningsError,
-} from "../caches/FinnhubCache.js";
-import { saveState, startCollectorLoop } from "../services/FreshnessService.js";
-import logger from "../logger.js";
+} from "../caches/FinnhubCache.ts";
+import { saveState, startCollectorLoop } from "../services/FreshnessService.ts";
+import logger from "../logger.ts";
 // ─── News Collector ────────────────────────────────────────────────
 async function collectMarketNews() {
   try {

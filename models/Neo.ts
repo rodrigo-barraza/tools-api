@@ -1,5 +1,5 @@
-import { getDB } from "../db.js";
-import logger from "../logger.js";
+import { getDB } from "../db.ts";
+import logger from "../logger.ts";
 
 let collection = null;
 
@@ -58,7 +58,7 @@ export async function getRecentNeos(
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
 
-  const query = { lastSeen: { $gte: cutoff } };
+  const query: Record<string, any> = { lastSeen: { $gte: cutoff } };
   if (hazardousOnly) query.isPotentiallyHazardous = true;
 
   return collection

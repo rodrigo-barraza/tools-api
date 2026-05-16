@@ -1,5 +1,5 @@
-import { buildScraperHeaders } from "../../../../utilities.js";
-import { upsertWebcams } from "../../../../models/Webcam.js";
+import { buildScraperHeaders } from "../../../../utilities.ts";
+import { upsertWebcams } from "../../../../models/Webcam.ts";
 
 export async function refreshVancouverWebcams() {
   // Vancouver opendata caps at 100 per request. Paginate until we get all.

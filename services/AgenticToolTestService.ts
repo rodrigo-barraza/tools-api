@@ -15,12 +15,12 @@ import {
   agenticPatchFile,
   agenticFileDiff,
   agenticMoveFile,
-} from "./AgenticFileService.js";
-import { agenticFetchUrl, agenticWebSearch } from "./AgenticWebService.js";
-import { executeCommand } from "./AgenticCommandService.js";
-import { agenticProjectSummary } from "./AgenticProjectService.js";
-import { agenticToolSearch } from "./AgenticToolSearchService.js";
-import { WORKSPACE_ROOTS } from "../config.js";
+} from "./AgenticFileService.ts";
+import { agenticFetchUrl, agenticWebSearch } from "./AgenticWebService.ts";
+import { executeCommand } from "./AgenticCommandService.ts";
+import { agenticProjectSummary } from "./AgenticProjectService.ts";
+import { agenticToolSearch } from "./AgenticToolSearchService.ts";
+import { WORKSPACE_ROOTS } from "../config.ts";
 
 // ── Test Fixture ─────────────────────────────────────────────
 // Lazily resolved — WORKSPACE_ROOTS may be empty at import time

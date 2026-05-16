@@ -1,4 +1,4 @@
-import { OPEN_FDA_BASE_URL } from "../../constants.js";
+import { OPEN_FDA_BASE_URL } from "../../constants.ts";
 
 /**
  * openFDA API fetcher.

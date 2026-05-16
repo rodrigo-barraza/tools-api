@@ -1,4 +1,4 @@
-import CONFIG from "../../config.js";
+import CONFIG from "../../config.ts";
 
 const { NASA_API_KEY } = CONFIG;
 const DONKI_BASE = "https://api.nasa.gov/DONKI";

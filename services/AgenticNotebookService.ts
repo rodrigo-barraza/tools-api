@@ -1,7 +1,7 @@
 // ─── Jupyter .ipynb Editing ─────────────────────────────────
 
 import { readFile, writeFile } from "node:fs/promises";
-import { validatePath } from "./AgenticFileService.js";
+import { validatePath } from "./AgenticFileService.ts";
 
 // ────────────────────────────────────────────────────────────
 // Constants
@@ -26,7 +26,7 @@ const MAX_NOTEBOOK_SIZE = 10_485_760; // 10 MB
  * @param {string} [options.cellType] - Cell type: "code", "markdown", "raw" (for insert/replace)
  * @returns {Promise<object>}
  */
-export async function agenticNotebookEdit(path, { action, cellIndex, content, cellType } = {}) {
+export async function agenticNotebookEdit(path, { action, cellIndex, content, cellType }: Record<string, any> = {}) {
   // Validate path
   const validation = validatePath(path);
   if (!validation.safe) {
@@ -140,7 +140,7 @@ function getCell(filePath, notebook, cellIndex) {
     ? cell.source.join("")
     : (cell.source || "");
 
-  const result = {
+  const result: Record<string, any> = {
     filePath,
     cellIndex,
     cellType: cell.cell_type,
@@ -304,7 +304,7 @@ function createBlankNotebook() {
  * Strips large binary data (images, etc.) and truncates long text.
  */
 function summarizeOutput(output) {
-  const summary = { output_type: output.output_type };
+  const summary: Record<string, any> = { output_type: output.output_type };
 
   if (output.output_type === "stream") {
     const text = Array.isArray(output.text) ? output.text.join("") : (output.text || "");

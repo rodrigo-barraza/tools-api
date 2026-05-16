@@ -1,7 +1,7 @@
-import CONFIG from "./config.js";
+import CONFIG from "./config.ts";
 import crypto from "node:crypto";
-import logger from "./logger.js";
-import { USER_AGENTS, EPHEMERAL_TTL_MS, EPHEMERAL_MAX_SIZE } from "./constants.js";
+import logger from "./logger.ts";
+import { USER_AGENTS, EPHEMERAL_TTL_MS, EPHEMERAL_MAX_SIZE } from "./constants.ts";
 
 // ─── Shared Utilities ──────────────────────────────────────────────
 
@@ -61,8 +61,8 @@ export function extractXmlItems(xml, tag) {
  * @param {string} [referer] - Optional Referer header
  * @returns {object}
  */
-export function buildScraperHeaders(referer) {
-  const headers = {
+export function buildScraperHeaders(referer?: string): Record<string, string> {
+  const headers: Record<string, string> = {
     "User-Agent": randomUserAgent(),
     Accept:
       "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",

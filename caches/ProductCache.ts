@@ -1,4 +1,4 @@
-import { PRODUCT_SOURCES, PRODUCT_CATEGORIES } from "../constants.js";
+import { PRODUCT_SOURCES, PRODUCT_CATEGORIES } from "../constants.ts";
 
 // ─── In-Memory Store ───────────────────────────────────────────────
 
@@ -118,7 +118,7 @@ export function getTrending(limit = 50) {
  */
 export function getCategories() {
   const allProducts = Object.values(store).flatMap((s) => s.products);
-  const categoryMap = {};
+  const categoryMap: Record<string, any> = {};
 
   for (const product of allProducts) {
     const cat = product.category || "other";
@@ -168,7 +168,7 @@ export function searchByName(query) {
 // ─── Health ────────────────────────────────────────────────────────
 
 export function getHealth() {
-  const health = {};
+  const health: Record<string, any> = {};
   for (const [source, entry] of Object.entries(store)) {
     health[source] = {
       productCount: entry.products.length,

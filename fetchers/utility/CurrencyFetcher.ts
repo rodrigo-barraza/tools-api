@@ -1,4 +1,4 @@
-import { EXCHANGE_RATE_BASE_URL } from "../../constants.js";
+import { EXCHANGE_RATE_BASE_URL } from "../../constants.ts";
 
 /**
  * Exchange Rate API fetcher.

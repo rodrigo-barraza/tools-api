@@ -19,74 +19,74 @@ import {
   TWILIGHT_INTERVAL_MS,
   ENV_CANADA_INTERVAL_MS,
   AVALANCHE_INTERVAL_MS,
-} from "../constants.js";
-import { fetchOpenMeteoWeather } from "../fetchers/weather/OpenMeteoFetcher.js";
-import { fetchAirQuality } from "../fetchers/weather/AirQualityFetcher.js";
+} from "../constants.ts";
+import { fetchOpenMeteoWeather } from "../fetchers/weather/OpenMeteoFetcher.ts";
+import { fetchAirQuality } from "../fetchers/weather/AirQualityFetcher.ts";
 import {
   fetchTomorrowIORealtime,
   fetchTomorrowIODailyForecast,
-} from "../fetchers/weather/TomorrowIOFetcher.js";
-import { fetchEarthquakes } from "../fetchers/weather/EarthquakeFetcher.js";
-import { fetchNeos } from "../fetchers/weather/NeoFetcher.js";
-import { fetchAllDonki } from "../fetchers/weather/DonkiFetcher.js";
+} from "../fetchers/weather/TomorrowIOFetcher.ts";
+import { fetchEarthquakes } from "../fetchers/weather/EarthquakeFetcher.ts";
+import { fetchNeos } from "../fetchers/weather/NeoFetcher.ts";
+import { fetchAllDonki } from "../fetchers/weather/DonkiFetcher.ts";
 import {
   fetchIssPosition,
   fetchAstronauts,
-} from "../fetchers/weather/IssFetcher.js";
-import { fetchKpIndex } from "../fetchers/weather/KpIndexFetcher.js";
-import { fetchWildfires } from "../fetchers/weather/WildfireFetcher.js";
-import { fetchTides } from "../fetchers/weather/TideFetcher.js";
-import { fetchSolarWind } from "../fetchers/weather/SolarWindFetcher.js";
-import { fetchGoogleAirQuality } from "../fetchers/weather/GoogleAirQualityFetcher.js";
-import { fetchApod } from "../fetchers/weather/ApodFetcher.js";
-import { fetchUpcomingLaunches } from "../fetchers/weather/LaunchFetcher.js";
-import { fetchTwilight } from "../fetchers/weather/TwilightFetcher.js";
-import { fetchEnvironmentCanadaWarnings } from "../fetchers/weather/EnvironmentCanadaFetcher.js";
-import { fetchAvalancheForecast } from "../fetchers/weather/AvalancheFetcher.js";
-import { fetchPollen } from "../fetchers/weather/GooglePollenFetcher.js";
-import { update, restore, setError } from "../caches/WeatherCache.js";
+} from "../fetchers/weather/IssFetcher.ts";
+import { fetchKpIndex } from "../fetchers/weather/KpIndexFetcher.ts";
+import { fetchWildfires } from "../fetchers/weather/WildfireFetcher.ts";
+import { fetchTides } from "../fetchers/weather/TideFetcher.ts";
+import { fetchSolarWind } from "../fetchers/weather/SolarWindFetcher.ts";
+import { fetchGoogleAirQuality } from "../fetchers/weather/GoogleAirQualityFetcher.ts";
+import { fetchApod } from "../fetchers/weather/ApodFetcher.ts";
+import { fetchUpcomingLaunches } from "../fetchers/weather/LaunchFetcher.ts";
+import { fetchTwilight } from "../fetchers/weather/TwilightFetcher.ts";
+import { fetchEnvironmentCanadaWarnings } from "../fetchers/weather/EnvironmentCanadaFetcher.ts";
+import { fetchAvalancheForecast } from "../fetchers/weather/AvalancheFetcher.ts";
+import { fetchPollen } from "../fetchers/weather/GooglePollenFetcher.ts";
+import { update, restore, setError } from "../caches/WeatherCache.ts";
 import {
   updateEarthquakes,
   restoreEarthquakes,
   setEarthquakeError,
-} from "../caches/EarthquakeCache.js";
-import { updateNeos, restoreNeos, setNeoError } from "../caches/NeoCache.js";
+} from "../caches/EarthquakeCache.ts";
+import { updateNeos, restoreNeos, setNeoError } from "../caches/NeoCache.ts";
 import {
   updateSpaceWeather,
   restoreSpaceWeather,
   setSpaceWeatherError,
-} from "../caches/SpaceWeatherCache.js";
+} from "../caches/SpaceWeatherCache.ts";
 import {
   updateIssPosition,
   setIssPositionError,
   updateAstronauts,
   setAstronautsError,
-} from "../caches/IssCache.js";
-import { updateKpIndex, setKpIndexError } from "../caches/KpIndexCache.js";
-import { updateWildfires, setWildfireError } from "../caches/WildfireCache.js";
-import { updateTides, setTideError } from "../caches/TideCache.js";
+} from "../caches/IssCache.ts";
+import { updateKpIndex, setKpIndexError } from "../caches/KpIndexCache.ts";
+import { updateWildfires, setWildfireError } from "../caches/WildfireCache.ts";
+import { updateTides, setTideError } from "../caches/TideCache.ts";
 import {
   updateSolarWind,
   setSolarWindError,
-} from "../caches/SolarWindCache.js";
+} from "../caches/SolarWindCache.ts";
 import {
   updateGoogleAirQuality,
   setGoogleAirQualityError,
-} from "../caches/GoogleAirQualityCache.js";
-import { updatePollen, setPollenError } from "../caches/PollenCache.js";
-import { updateApod, setApodError } from "../caches/ApodCache.js";
-import { updateLaunches, setLaunchError } from "../caches/LaunchCache.js";
-import { updateTwilight, setTwilightError } from "../caches/TwilightCache.js";
+} from "../caches/GoogleAirQualityCache.ts";
+import { updatePollen, setPollenError } from "../caches/PollenCache.ts";
+import { updateApod, setApodError } from "../caches/ApodCache.ts";
+import { updateLaunches, setLaunchError } from "../caches/LaunchCache.ts";
+import { updateTwilight, setTwilightError } from "../caches/TwilightCache.ts";
 import {
   updateWarnings,
   setWarningError,
-} from "../caches/EnvironmentCanadaCache.js";
+} from "../caches/EnvironmentCanadaCache.ts";
 import {
   updateAvalanche,
   setAvalancheError,
-} from "../caches/AvalancheCache.js";
-import { saveState, startCollectorLoop } from "../services/FreshnessService.js";
-import logger from "../logger.js";
+} from "../caches/AvalancheCache.ts";
+import { saveState, startCollectorLoop } from "../services/FreshnessService.ts";
+import logger from "../logger.ts";
 
 // ─── Collector Factory ─────────────────────────────────────────────
 

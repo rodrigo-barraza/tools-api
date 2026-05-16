@@ -1,4 +1,4 @@
-import { TIMEZONE_BASE_URL } from "../../constants.js";
+import { TIMEZONE_BASE_URL } from "../../constants.ts";
 
 /**
  * World Time API fetcher.

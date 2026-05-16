@@ -1,71 +1,71 @@
 import http from "node:http";
 import express from "express";
-import logger from "./logger.js";
-import CONFIG, { applyLocation } from "./config.js";
-import { connectDB } from "./db.js";
-import { initLocation } from "./services/LocationService.js";
-import { requestLoggerMiddleware } from "./middleware/RequestLoggerMiddleware.js";
-import { toolCallLoggerMiddleware } from "./middleware/ToolCallLoggerMiddleware.js";
-import { fieldProjectionMiddleware } from "./middleware/FieldProjectionMiddleware.js";
-import { headerPropagationMiddleware } from "./middleware/HeaderPropagationMiddleware.js";
+import logger from "./logger.ts";
+import CONFIG, { applyLocation } from "./config.ts";
+import { connectDB } from "./db.ts";
+import { initLocation } from "./services/LocationService.ts";
+import { requestLoggerMiddleware } from "./middleware/RequestLoggerMiddleware.ts";
+import { toolCallLoggerMiddleware } from "./middleware/ToolCallLoggerMiddleware.ts";
+import { fieldProjectionMiddleware } from "./middleware/FieldProjectionMiddleware.ts";
+import { headerPropagationMiddleware } from "./middleware/HeaderPropagationMiddleware.ts";
 
 // ─── Model Setup ───────────────────────────────────────────────────
 
-import { setupEventCollection } from "./models/Event.js";
-import { setupCommodityCollection } from "./models/CommoditySnapshot.js";
-import { setupProductCollection } from "./models/Product.js";
-import { setupTrendCollection } from "./models/Trend.js";
-import { setupEarthquakeCollection } from "./models/Earthquake.js";
-import { setupNeoCollection } from "./models/Neo.js";
-import { setupSolarFlareCollection } from "./models/SolarFlare.js";
-import { setupCmeCollection } from "./models/Cme.js";
-import { setupGeomagneticStormCollection } from "./models/GeomagneticStorm.js";
-import { setupWebcamCollection } from "./models/Webcam.js";
+import { setupEventCollection } from "./models/Event.ts";
+import { setupCommodityCollection } from "./models/CommoditySnapshot.ts";
+import { setupProductCollection } from "./models/Product.ts";
+import { setupTrendCollection } from "./models/Trend.ts";
+import { setupEarthquakeCollection } from "./models/Earthquake.ts";
+import { setupNeoCollection } from "./models/Neo.ts";
+import { setupSolarFlareCollection } from "./models/SolarFlare.ts";
+import { setupCmeCollection } from "./models/Cme.ts";
+import { setupGeomagneticStormCollection } from "./models/GeomagneticStorm.ts";
+import { setupWebcamCollection } from "./models/Webcam.ts";
 
-import { connectLuposDB, setupLuposCollections } from "./models/LuposMessage.js";
-import { setupToolCallsCollection } from "./middleware/ToolCallLoggerMiddleware.js";
-import { setupAgenticTaskCollection } from "./services/AgenticTaskService.js";
-import { setupAgenticScheduleCollection, startSchedulePoller } from "./services/AgenticSchedulerService.js";
+import { connectLuposDB, setupLuposCollections } from "./models/LuposMessage.ts";
+import { setupToolCallsCollection } from "./middleware/ToolCallLoggerMiddleware.ts";
+import { setupAgenticTaskCollection } from "./services/AgenticTaskService.ts";
+import { setupAgenticScheduleCollection, startSchedulePoller } from "./services/AgenticSchedulerService.ts";
 
 // ─── Routes ────────────────────────────────────────────────────────
 
-import eventRoutes, { getEventHealth } from "./routes/EventRoutes.js";
-import financeRoutes, { getFinanceHealth } from "./routes/FinanceRoutes.js";
-import marketRoutes, { getMarketHealth } from "./routes/MarketRoutes.js";
-import productRoutes, { getProductHealth } from "./routes/ProductRoutes.js";
-import trendRoutes, { getTrendHealth } from "./routes/TrendRoutes.js";
-import weatherRoutes, { getWeatherHealth } from "./routes/WeatherRoutes.js";
+import eventRoutes, { getEventHealth } from "./routes/EventRoutes.ts";
+import financeRoutes, { getFinanceHealth } from "./routes/FinanceRoutes.ts";
+import marketRoutes, { getMarketHealth } from "./routes/MarketRoutes.ts";
+import productRoutes, { getProductHealth } from "./routes/ProductRoutes.ts";
+import trendRoutes, { getTrendHealth } from "./routes/TrendRoutes.ts";
+import weatherRoutes, { getWeatherHealth } from "./routes/WeatherRoutes.ts";
 import knowledgeRoutes, {
   getKnowledgeHealth,
-} from "./routes/KnowledgeRoutes.js";
-import healthRoutes, { getHealthDomainHealth } from "./routes/HealthRoutes.js";
-import transitRoutes, { getTransitHealth } from "./routes/TransitRoutes.js";
-import utilityRoutes, { getUtilityHealth } from "./routes/UtilityRoutes.js";
-import computeRoutes, { getComputeHealth } from "./routes/ComputeRoutes.js";
-import maritimeRoutes, { getMaritimeHealth } from "./routes/MaritimeRoutes.js";
-import energyRoutes, { getEnergyHealth } from "./routes/EnergyRoutes.js";
-import agenticRoutes, { getAgenticHealth } from "./routes/AgenticRoutes.js";
-import communicationRoutes, { getCommunicationHealth } from "./routes/CommunicationRoutes.js";
-import creativeRoutes, { getCreativeHealth } from "./routes/CreativeRoutes.js";
-import gamingRoutes, { getGamingHealth } from "./routes/GamingRoutes.js";
-import torrentRoutes, { getTorrentHealth } from "./routes/TorrentRoutes.js";
+} from "./routes/KnowledgeRoutes.ts";
+import healthRoutes, { getHealthDomainHealth } from "./routes/HealthRoutes.ts";
+import transitRoutes, { getTransitHealth } from "./routes/TransitRoutes.ts";
+import utilityRoutes, { getUtilityHealth } from "./routes/UtilityRoutes.ts";
+import computeRoutes, { getComputeHealth } from "./routes/ComputeRoutes.ts";
+import maritimeRoutes, { getMaritimeHealth } from "./routes/MaritimeRoutes.ts";
+import energyRoutes, { getEnergyHealth } from "./routes/EnergyRoutes.ts";
+import agenticRoutes, { getAgenticHealth } from "./routes/AgenticRoutes.ts";
+import communicationRoutes, { getCommunicationHealth } from "./routes/CommunicationRoutes.ts";
+import creativeRoutes, { getCreativeHealth } from "./routes/CreativeRoutes.ts";
+import gamingRoutes, { getGamingHealth } from "./routes/GamingRoutes.ts";
+import torrentRoutes, { getTorrentHealth } from "./routes/TorrentRoutes.ts";
 
-import discordRoutes, { getDiscordHealth } from "./routes/DiscordRoutes.js";
-import lightsRoutes, { getLightsHealth } from "./routes/LightsRoutes.js";
-import adminRoutes, { loadUserWorkspaceRoots } from "./routes/AdminRoutes.js";
-import agentStatusRoutes from "./routes/AgentRoutes.js";
-import { mountMcpRoutes } from "./services/McpAdapter.js";
-import { initAgentWebSocket } from "./services/AgentConnectionManager.js";
+import discordRoutes, { getDiscordHealth } from "./routes/DiscordRoutes.ts";
+import lightsRoutes, { getLightsHealth } from "./routes/LightsRoutes.ts";
+import adminRoutes, { loadUserWorkspaceRoots } from "./routes/AdminRoutes.ts";
+import agentStatusRoutes from "./routes/AgentRoutes.ts";
+import { mountMcpRoutes } from "./services/McpAdapter.ts";
+import { initAgentWebSocket } from "./services/AgentConnectionManager.ts";
 
 // ─── Collectors ────────────────────────────────────────────────────
 
-import { startEventCollectors } from "./collectors/EventCollector.js";
-import { startFinanceCollectors } from "./collectors/FinanceCollector.js";
-import { startMarketCollectors } from "./collectors/MarketCollector.js";
-import { startProductCollectors } from "./collectors/ProductCollector.js";
-import { startTrendCollectors } from "./collectors/TrendCollector.js";
-import { startWeatherCollectors } from "./collectors/WeatherCollector.js";
-import { startAisStream } from "./fetchers/maritime/AisStreamFetcher.js";
+import { startEventCollectors } from "./collectors/EventCollector.ts";
+import { startFinanceCollectors } from "./collectors/FinanceCollector.ts";
+import { startMarketCollectors } from "./collectors/MarketCollector.ts";
+import { startProductCollectors } from "./collectors/ProductCollector.ts";
+import { startTrendCollectors } from "./collectors/TrendCollector.ts";
+import { startWeatherCollectors } from "./collectors/WeatherCollector.ts";
+import { startAisStream } from "./fetchers/maritime/AisStreamFetcher.ts";
 
 // ─── Express App ───────────────────────────────────────────────────
 

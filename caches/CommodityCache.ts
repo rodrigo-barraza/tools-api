@@ -1,4 +1,4 @@
-import { insertSnapshots } from "../models/CommoditySnapshot.js";
+import { insertSnapshots } from "../models/CommoditySnapshot.ts";
 
 /**
  * In-memory cache for the latest commodity quotes.
@@ -91,7 +91,7 @@ export function getCommoditySummary() {
   const losers = sorted.slice(-5).reverse().map(summarize);
 
   // Group by category
-  const byCategory = {};
+  const byCategory: Record<string, any> = {};
   for (const c of commodities) {
     if (!byCategory[c.category]) {
       byCategory[c.category] = [];

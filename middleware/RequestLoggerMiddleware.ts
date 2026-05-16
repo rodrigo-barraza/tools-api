@@ -1,7 +1,7 @@
 import { performance } from "node:perf_hooks";
 import { formatFileSize } from "@rodrigo-barraza/utilities-library";
-import logger from "../logger.js";
-import { getDB } from "../db.js";
+import logger from "../logger.ts";
+import { getDB } from "../db.ts";
 
 const COLLECTION = "requests";
 
@@ -86,9 +86,9 @@ async function persistRequest(entry) {
  * @param {number} [filters.skip] - Offset for pagination
  * @returns {Promise<{ count: number, requests: object[] }>}
  */
-export async function queryRequestLogs(filters = {}) {
+export async function queryRequestLogs(filters: Record<string, any> = {}) {
   const db = getDB();
-  const query = {};
+  const query: Record<string, any> = {};
 
   if (filters.method) query.method = filters.method.toUpperCase();
   if (filters.path) query.path = { $regex: `^${filters.path}` };

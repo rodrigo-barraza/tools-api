@@ -1,8 +1,8 @@
-import { createSimpleCache } from "./createSimpleCache.js";
+import { createSimpleCache } from "./createSimpleCache.ts";
 import { MS_PER_DAY } from "@rodrigo-barraza/utilities-library";
-import { KP_STORM_SCALE } from "../constants.js";
+import { KP_STORM_SCALE } from "../constants.ts";
 
-const cache = createSimpleCache({ type: "array", itemsKey: "readings" });
+const cache = createSimpleCache<any>({ type: "array", itemsKey: "readings" });
 
 export const updateKpIndex = cache.update;
 export const setKpIndexError = cache.setError;

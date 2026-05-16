@@ -1,5 +1,5 @@
-import CONFIG from "../../config.js";
-import { TOMORROWIO_WEATHER_CODES } from "../../constants.js";
+import CONFIG from "../../config.ts";
+import { TOMORROWIO_WEATHER_CODES } from "../../constants.ts";
 
 const { LATITUDE, LONGITUDE, TOMORROWIO_API_KEY } = CONFIG;
 

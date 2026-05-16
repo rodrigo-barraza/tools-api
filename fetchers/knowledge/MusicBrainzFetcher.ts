@@ -8,7 +8,7 @@ const USER_AGENT = "SunToolsService/1.0 (rodrigo@rod.dev)";
 // Cover art from Cover Art Archive (free, no auth)
 const COVER_ART_BASE = "https://coverartarchive.org";
 
-async function fetchMB(path, params = {}) {
+async function fetchMB(path, params: Record<string, any> = {}) {
   const url = new URL(`${BASE_URL}${path}`);
   url.searchParams.set("fmt", "json");
   for (const [key, val] of Object.entries(params)) {
@@ -68,7 +68,7 @@ export async function getArtist(mbid) {
   });
 
   // Extract useful URLs
-  const urls = {};
+  const urls: Record<string, any> = {};
   for (const rel of a.relations || []) {
     if (rel.type === "wikipedia") urls.wikipedia = rel.url?.resource;
     if (rel.type === "wikidata") urls.wikidata = rel.url?.resource;
@@ -95,7 +95,7 @@ export async function getArtist(mbid) {
     firstReleaseDate: rg["first-release-date"] || null,
   }));
 
-  const byType = {};
+  const byType: Record<string, any> = {};
   for (const rg of releaseGroups) {
     const type = rg.type;
     if (!byType[type]) byType[type] = [];

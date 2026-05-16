@@ -1,45 +1,45 @@
-import { refreshVancouverWebcams } from "./sources/vancouver.js";
-import { refreshSeattleWebcams } from "./sources/seattle.js";
-import { refreshTorontoWebcams } from "./sources/toronto.js";
-import { refreshCalgaryWebcams } from "./sources/calgary.js";
-import { refreshAustinWebcams } from "./sources/austin.js";
+import { refreshVancouverWebcams } from "./sources/vancouver.ts";
+import { refreshSeattleWebcams } from "./sources/seattle.ts";
+import { refreshTorontoWebcams } from "./sources/toronto.ts";
+import { refreshCalgaryWebcams } from "./sources/calgary.ts";
+import { refreshAustinWebcams } from "./sources/austin.ts";
 
 // Ontario 511 cities
-import { refreshOttawaWebcams } from "./sources/ottawa.js";
-import { refreshHamiltonWebcams } from "./sources/hamilton.js";
-import { refreshLondonONWebcams } from "./sources/london_on.js";
-import { refreshKingstonWebcams } from "./sources/kingston.js";
-import { refreshWindsorONWebcams } from "./sources/windsor_on.js";
-import { refreshKitchenerWebcams } from "./sources/kitchener.js";
-import { refreshBarrieWebcams } from "./sources/barrie.js";
-import { refreshThunderBayWebcams } from "./sources/thunder_bay.js";
-import { refreshSudburyWebcams } from "./sources/sudbury.js";
-import { refreshNiagaraWebcams } from "./sources/niagara.js";
-import { refreshMississaugaWebcams } from "./sources/mississauga.js";
+import { refreshOttawaWebcams } from "./sources/ottawa.ts";
+import { refreshHamiltonWebcams } from "./sources/hamilton.ts";
+import { refreshLondonONWebcams } from "./sources/london_on.ts";
+import { refreshKingstonWebcams } from "./sources/kingston.ts";
+import { refreshWindsorONWebcams } from "./sources/windsor_on.ts";
+import { refreshKitchenerWebcams } from "./sources/kitchener.ts";
+import { refreshBarrieWebcams } from "./sources/barrie.ts";
+import { refreshThunderBayWebcams } from "./sources/thunder_bay.ts";
+import { refreshSudburyWebcams } from "./sources/sudbury.ts";
+import { refreshNiagaraWebcams } from "./sources/niagara.ts";
+import { refreshMississaugaWebcams } from "./sources/mississauga.ts";
 
 // Alberta 511 cities
-import { refreshEdmontonWebcams } from "./sources/edmonton.js";
-import { refreshRedDeerWebcams } from "./sources/red_deer.js";
-import { refreshLethbridgeWebcams } from "./sources/lethbridge.js";
-import { refreshMedicineHatWebcams } from "./sources/medicine_hat.js";
-import { refreshGrandePrairieWebcams } from "./sources/grande_prairie.js";
-import { refreshBanffWebcams } from "./sources/banff.js";
-import { refreshFortMcMurrayWebcams } from "./sources/fort_mcmurray.js";
+import { refreshEdmontonWebcams } from "./sources/edmonton.ts";
+import { refreshRedDeerWebcams } from "./sources/red_deer.ts";
+import { refreshLethbridgeWebcams } from "./sources/lethbridge.ts";
+import { refreshMedicineHatWebcams } from "./sources/medicine_hat.ts";
+import { refreshGrandePrairieWebcams } from "./sources/grande_prairie.ts";
+import { refreshBanffWebcams } from "./sources/banff.ts";
+import { refreshFortMcMurrayWebcams } from "./sources/fort_mcmurray.ts";
 
 // US Socrata
-import { refreshBatonRougeWebcams } from "./sources/baton_rouge.js";
+import { refreshBatonRougeWebcams } from "./sources/baton_rouge.ts";
 
 // New York 511 cities
-import { refreshNYCWebcams } from "./sources/nyc.js";
-import { refreshBuffaloWebcams } from "./sources/buffalo.js";
-import { refreshSyracuseWebcams } from "./sources/syracuse.js";
-import { refreshAlbanyWebcams } from "./sources/albany.js";
-import { refreshRochesterWebcams } from "./sources/rochester.js";
-import { refreshLongIslandWebcams } from "./sources/long_island.js";
-import { refreshWestchesterWebcams } from "./sources/westchester.js";
-import { refreshUticaWebcams } from "./sources/utica.js";
-import { refreshBinghamtonWebcams } from "./sources/binghamton.js";
-import { refreshIthacaWebcams } from "./sources/ithaca.js";
+import { refreshNYCWebcams } from "./sources/nyc.ts";
+import { refreshBuffaloWebcams } from "./sources/buffalo.ts";
+import { refreshSyracuseWebcams } from "./sources/syracuse.ts";
+import { refreshAlbanyWebcams } from "./sources/albany.ts";
+import { refreshRochesterWebcams } from "./sources/rochester.ts";
+import { refreshLongIslandWebcams } from "./sources/long_island.ts";
+import { refreshWestchesterWebcams } from "./sources/westchester.ts";
+import { refreshUticaWebcams } from "./sources/utica.ts";
+import { refreshBinghamtonWebcams } from "./sources/binghamton.ts";
+import { refreshIthacaWebcams } from "./sources/ithaca.ts";
 
 /**
  * Registry mapping normalized city names to their specific

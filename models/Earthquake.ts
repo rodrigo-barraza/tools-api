@@ -1,6 +1,6 @@
 import { hours as hoursToMs } from "@rodrigo-barraza/utilities-library";
-import { getDB } from "../db.js";
-import logger from "../logger.js";
+import { getDB } from "../db.ts";
+import logger from "../logger.ts";
 
 let collection = null;
 
@@ -65,7 +65,7 @@ export async function getRecentEarthquakes(
   if (!collection) return [];
 
   const cutoff = new Date(Date.now() - hoursToMs(hours));
-  const query = { time: { $gte: cutoff } };
+  const query: Record<string, any> = { time: { $gte: cutoff } };
 
   if (minMagnitude !== null) {
     query.magnitude = { $gte: minMagnitude };

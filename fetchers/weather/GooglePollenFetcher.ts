@@ -1,4 +1,4 @@
-import CONFIG from "../../config.js";
+import CONFIG from "../../config.ts";
 
 const API_URL = "https://pollen.googleapis.com/v1/forecast:lookup";
 
@@ -41,7 +41,7 @@ export async function fetchPollen() {
       const plantInfo = day.plantInfo || [];
 
       // Extract index for each pollen type
-      const byType = {};
+      const byType: Record<string, any> = {};
       for (const pt of pollenTypes) {
         byType[pt.code?.toLowerCase() || pt.displayName?.toLowerCase()] = {
           displayName: pt.displayName,

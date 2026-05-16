@@ -1,14 +1,14 @@
 import { TokenManager } from "@rodrigo-barraza/utilities-library/node";
 import { normalizeName } from "@rodrigo-barraza/utilities-library";
-import CONFIG from "../../config.js";
+import CONFIG from "../../config.ts";
 import {
   TREND_SOURCES as SOURCES,
   REDDIT_SUBREDDITS,
   REDDIT_POSTS_PER_SUBREDDIT,
-} from "../../constants.js";
+} from "../../constants.ts";
 
-import rateLimiter from "../../services/RateLimiterService.js";
-import logger from "../../logger.js";
+import rateLimiter from "../../services/RateLimiterService.ts";
+import logger from "../../logger.ts";
 const redditTokenManager = new TokenManager(async () => {
   const credentials = Buffer.from(
     `${CONFIG.REDDIT_CLIENT_ID}:${CONFIG.REDDIT_CLIENT_SECRET}`,

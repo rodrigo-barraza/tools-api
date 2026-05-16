@@ -4,7 +4,7 @@ import {
   CheerioCrawler,
   Configuration,
 } from "crawlee";
-import logger from "../logger.js";
+import logger from "../logger.ts";
 
 // ────────────────────────────────────────────────────────────
 // Constants
@@ -39,12 +39,12 @@ const USER_AGENT =
  * @param {"datacenter"|"residential"|"isp"} [options.zone="datacenter"]
  * @returns {ProxyConfiguration|null}
  */
-function buildProxyConfig(_options = {}) {
+function buildProxyConfig(_options: Record<string, any> = {}) {
   // ──────────────────────────────────────────────────────────
   // BRIGHT DATA PROXY — UNCOMMENT WHEN READY
   // ──────────────────────────────────────────────────────────
   //
-  // import CONFIG from "../config.js";
+  // import CONFIG from "../config.ts";
   //
   // const {
   //   BRIGHTDATA_CUSTOMER_ID,
@@ -103,7 +103,7 @@ crawleeConfig.set("persistStorage", false);
  * @param {string}  [options.proxyZone] - Bright Data zone
  * @returns {Promise<object>} Extracted data or error
  */
-export async function crawlSingleStatic(url, options = {}) {
+export async function crawlSingleStatic(url, options: Record<string, any> = {}) {
   const { extractFn, proxyZone } = options;
 
   if (!extractFn) {
@@ -135,7 +135,7 @@ export async function crawlSingleStatic(url, options = {}) {
       try {
         result = await extractFn($, request);
       } catch (error) {
-        crawlError = err;
+        crawlError = error;
         logger.error(`[Crawler] Extract failed for ${request.url}: ${error.message}`);
       }
     },
@@ -144,7 +144,7 @@ export async function crawlSingleStatic(url, options = {}) {
       crawlError = error;
       logger.error(`[Crawler] Failed after retries: ${request.url} — ${error.message}`);
     },
-  });
+  } as any);
 
   try {
     await crawler.run([url]);

@@ -197,7 +197,7 @@ async function fetchTranscript(videoId, lang) {
  * @param {boolean} [options.includeTimestamps=true] - Include timestamps in transcript
  * @returns {Promise<object>}
  */
-export async function getYouTubeVideoInfo(input, options = {}) {
+export async function getYouTubeVideoInfo(input, options: Record<string, any> = {}) {
   const videoId = extractVideoId(input);
   if (!videoId) {
     return { error: `Invalid YouTube URL or video ID: "${input}"` };
@@ -212,7 +212,7 @@ export async function getYouTubeVideoInfo(input, options = {}) {
   const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
   // Fetch metadata and transcript concurrently
-  const tasks = [
+  const tasks: Promise<any>[] = [
     fetchOembedMetadata(videoId),
     fetchPageMetadata(videoId),
   ];
@@ -221,9 +221,9 @@ export async function getYouTubeVideoInfo(input, options = {}) {
     tasks.push(fetchTranscript(videoId, lang));
   }
 
-  const [oembed, page, transcript] = await Promise.all(tasks);
+  const [oembed, page, transcript] = await Promise.all(tasks) as any[];
 
-  const result = {
+  const result: Record<string, any> = {
     videoId,
     url: videoUrl,
     title: oembed?.title || null,

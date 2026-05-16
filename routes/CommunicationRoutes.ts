@@ -31,7 +31,7 @@ router.post("/sms/send", asyncHandler(async (req, res) => {
 // ─── List Messages ─────────────────────────────────────────────────
 router.get("/sms/messages", asyncHandler(
   async (req) => {
-    const { to, from, limit, dateSent } = req.query;
+    const { to, from, limit, dateSent } = req.query as any;
     return listMessages({ to, from, limit, dateSent });
   },
   "SMS message list",

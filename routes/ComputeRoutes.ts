@@ -116,7 +116,7 @@ router.post("/shell/stream", asyncHandler(async (req, res) => {
 }));
 // ─── 3. Unit Conversion ─────────────────────────────────────
 router.get("/units/convert", asyncHandler(async (req, res) => {
-  const { value, from, to } = req.query;
+  const { value, from, to } = req.query as any;
   if (!value || !from || !to) {
     return res
       .status(400)
@@ -142,7 +142,7 @@ router.get("/units/convert", asyncHandler(async (req, res) => {
   }
 }));
 router.get("/units/list", asyncHandler(async (req, res) => {
-  const { measure } = req.query;
+  const { measure } = req.query as any;
   try {
     const convert = await getConvertUnits();
     if (measure) {
@@ -154,7 +154,7 @@ router.get("/units/list", asyncHandler(async (req, res) => {
       return res.json({ measure, count: described.length, units: described });
     }
     const measures = convert().measures();
-    const all = {};
+    const all: Record<string, any> = {};
     for (const m of measures) {
       const units = convert().possibilities(m);
       all[m] = units.map((u) => {
@@ -387,14 +387,14 @@ router.post("/json/transform", asyncHandler(async (req, res) => {
           case "pick":
             if (Array.isArray(result) && Array.isArray(op.keys)) {
               result = result.map((item) => {
-                const picked = {};
+                const picked: Record<string, any> = {};
                 for (const k of op.keys) {
                   if (k in item) picked[k] = item[k];
                 }
                 return picked;
               });
             } else if (typeof result === "object" && Array.isArray(op.keys)) {
-              const picked = {};
+              const picked: Record<string, any> = {};
               for (const k of op.keys) {
                 if (k in result) picked[k] = result[k];
               }
@@ -415,7 +415,7 @@ router.post("/json/transform", asyncHandler(async (req, res) => {
             break;
           case "groupBy":
             if (Array.isArray(result) && op.key) {
-              const groups = {};
+              const groups: Record<string, any> = {};
               for (const item of result) {
                 const k = String(item?.[op.key] ?? "undefined");
                 if (!groups[k]) groups[k] = [];
@@ -495,7 +495,7 @@ router.post("/csv", (req, res) => {
   }
 });
 router.get("/csv/download", (req, res) => {
-  const { id } = req.query;
+  const { id } = req.query as any;
   if (!id) return res.status(400).send("Missing 'id' parameter");
   const entry = csvStore.get(id);
   if (!entry) {
@@ -534,7 +534,7 @@ router.post("/qr", asyncHandler(async (req, res) => {
   }
 }));
 router.get("/qr/render", (req, res) => {
-  const { id } = req.query;
+  const { id } = req.query as any;
   if (!id) return res.status(400).send("Missing 'id' parameter");
   const entry = qrStore.get(id);
   if (!entry) {
@@ -591,7 +591,7 @@ router.post("/latex", (req, res) => {
   res.json({ latexEmbedUrl, latexId: id });
 });
 router.get("/latex/embed", (req, res) => {
-  const { id } = req.query;
+  const { id } = req.query as any;
   if (!id) return res.status(400).send("Missing 'id' parameter");
   const entry = latexStore.get(id);
   if (!entry) {
@@ -646,7 +646,7 @@ router.post("/diagram", (req, res) => {
   res.json({ diagramEmbedUrl, diagramId: id });
 });
 router.get("/diagram/embed", (req, res) => {
-  const { id } = req.query;
+  const { id } = req.query as any;
   if (!id) return res.status(400).send("Missing 'id' parameter");
   const entry = diagramStore.get(id);
   if (!entry) {
@@ -718,7 +718,7 @@ router.post("/diff", asyncHandler(async (req, res) => {
 }));
 // ─── 11. Cryptographic Hashing ──────────────────────────────
 router.get("/hash", (req, res) => {
-  const { data, algorithm, encoding, key } = req.query;
+  const { data, algorithm, encoding, key } = req.query as any;
   if (!data) {
     return res.status(400).json({ error: "Query parameter 'data' is required" });
   }
@@ -816,7 +816,7 @@ router.post("/regex", (req, res) => {
 });
 // ─── 13. Encode / Decode ────────────────────────────────────
 router.get("/encode", (req, res) => {
-  const { data, format, direction } = req.query;
+  const { data, format, direction } = req.query as any;
   if (!data || !format) {
     return res.status(400).json({ error: "Query parameters 'data' and 'format' are required" });
   }
@@ -1034,7 +1034,7 @@ function generatePalette(hsl, type) {
   });
 }
 router.get("/color/convert", (req, res) => {
-  const { color, palette } = req.query;
+  const { color, palette } = req.query as any;
   if (!color) {
     return res.status(400).json({ error: "Query parameter 'color' is required" });
   }
@@ -1044,7 +1044,7 @@ router.get("/color/convert", (req, res) => {
     const hsl = rgbToHsl(rgb);
     const hsv = rgbToHsv(rgb);
     const cmyk = rgbToCmyk(rgb);
-    const result = {
+    const result: Record<string, any> = {
       input: color,
       hex,
       rgb: `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`,
@@ -1087,7 +1087,7 @@ const VALID_TURTLE_COMMANDS = new Set([
   "hideturtle", "ht", "showturtle", "st",
   "home",
 ]);
-function buildTurtleEmbedHtml(commands, options = {}) {
+function buildTurtleEmbedHtml(commands: any, options: Record<string, any> = {}) {
   const {
     canvasWidth = 800,
     canvasHeight = 600,
@@ -1505,7 +1505,7 @@ router.post("/turtle", (req, res) => {
   });
 });
 router.get("/turtle/embed", (req, res) => {
-  const { id } = req.query;
+  const { id } = req.query as any;
   if (!id) return res.status(400).send("Missing 'id' parameter");
   const entry = turtleStore.get(id);
   if (!entry) {
@@ -1535,8 +1535,8 @@ const CRON_FIELD_RANGES = [
 ];
 const MONTH_NAMES = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-function parseCronField(field, { min, max }) {
-  const values = new Set();
+function parseCronField(field: any, { min, max }: any) {
+  const values = new Set<number>();
   for (const part of field.split(",")) {
     // Handle step syntax: */5, 1-10/2
     const [rangePart, stepStr] = part.split("/");
@@ -1617,7 +1617,7 @@ function getNextCronExecutions(parsed, count, fromDate) {
   return results;
 }
 router.get("/cron/parse", (req, res) => {
-  const { expression, count, from } = req.query;
+  const { expression, count, from } = req.query as any;
   if (!expression) {
     return res.status(400).json({ error: "Query parameter 'expression' is required (e.g. '*/5 * * * *')" });
   }
@@ -1655,7 +1655,7 @@ router.post("/sleep", asyncHandler(async (req, res) => {
   const { duration_seconds, reason } = req.body;
   const duration = Math.max(1, Math.min(120, duration_seconds || 5));
   const durationMs = duration * 1000;
-  await new Promise((resolve) => {
+  await new Promise<void>((resolve) => {
     const timer = setTimeout(resolve, durationMs);
     // If the request is aborted (client disconnect), resolve immediately
     req.on("close", () => {
@@ -1729,7 +1729,7 @@ router.post("/synthetic-output", (req, res) => {
       validationErrors.push(`Validation error: ${error.message}`);
     }
   }
-  const result = {
+  const result: Record<string, any> = {
     acknowledged: true,
     label: label || null,
     data,
@@ -1751,7 +1751,7 @@ router.post("/image/process", asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "'operations' must be a non-empty array of operation objects" });
   }
   try {
-    const result = await processImage({
+    const result: any = await processImage({
       input,
       operations,
       outputFormat: outputFormat || "png",
@@ -1767,7 +1767,7 @@ router.post("/image/process", asyncHandler(async (req, res) => {
     }
     const id = imageStore.set({ buffer: result.buffer, mimeType: result.mimeType });
     const imageUrl = buildLocalUrl("compute/image/render", { id });
-    const response = {
+    const response: Record<string, any> = {
       success: true,
       imageUrl,
       imageId: id,
@@ -1780,7 +1780,7 @@ router.post("/image/process", asyncHandler(async (req, res) => {
   }
 }));
 router.get("/image/render", (req, res) => {
-  const { id } = req.query;
+  const { id } = req.query as any;
   if (!id) return res.status(400).send("Missing 'id' parameter");
   const entry = imageStore.get(id);
   if (!entry) {

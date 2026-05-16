@@ -1,10 +1,10 @@
 import { days } from "@rodrigo-barraza/utilities-library";
-import CONFIG from "../../config.js";
+import CONFIG from "../../config.ts";
 import {
   EVENT_SOURCES,
   SEATGEEK_CATEGORY_MAP,
   EVENT_CATEGORIES,
-} from "../../constants.js";
+} from "../../constants.ts";
 
 const BASE_URL = "https://api.seatgeek.com/2/events";
 

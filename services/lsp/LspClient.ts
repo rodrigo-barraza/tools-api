@@ -1,7 +1,7 @@
 // ─── JSON-RPC 2.0 over stdio ────────────────────────────────
 
 import { spawn } from "node:child_process";
-import logger from "../../logger.js";
+import logger from "../../logger.ts";
 import {
   createMessageConnection,
   StreamMessageReader,
@@ -53,7 +53,7 @@ export function createLspClient(serverName, onCrash) {
      * @param {string[]} args — arguments (e.g. ['typescript-language-server', '--stdio'])
      * @param {{ env?: Record<string,string>, cwd?: string }} [options]
      */
-    async start(command, args, options = {}) {
+    async start(command, args, options: Record<string, any> = {}) {
       try {
         // 1. Spawn process
         proc = spawn(command, args, {
@@ -69,9 +69,9 @@ export function createLspClient(serverName, onCrash) {
 
         // 2. Wait for successful spawn (catch ENOENT for missing binaries)
         const spawnedProc = proc;
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
           const onSpawn = () => { cleanup(); resolve(); };
-          const onError = (err) => { cleanup(); reject(error); };
+          const onError = (err) => { cleanup(); reject(err); };
           const cleanup = () => {
             spawnedProc.removeListener("spawn", onSpawn);
             spawnedProc.removeListener("error", onError);

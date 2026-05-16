@@ -1,5 +1,5 @@
-import CONFIG from "../../config.js";
-import { TRANSLINK_BASE_URL } from "../../constants.js";
+import CONFIG from "../../config.ts";
+import { TRANSLINK_BASE_URL } from "../../constants.ts";
 
 /**
  * TransLink RTTI API fetcher.

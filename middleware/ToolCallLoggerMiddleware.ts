@@ -1,9 +1,9 @@
 // ─── Tool Call Logger Middleware ────────────────────────────
 
 import { performance } from "node:perf_hooks";
-import logger from "../logger.js";
-import { getDB } from "../db.js";
-import { getToolSchemas } from "../services/ToolSchemaService.js";
+import logger from "../logger.ts";
+import { getDB } from "../db.ts";
+import { getToolSchemas } from "../services/ToolSchemaService.ts";
 
 const COLLECTION = "tool_calls";
 
@@ -215,7 +215,7 @@ const MAX_RESULT_ITEMS = 3;
 function sanitizeArgs(args) {
   if (!args || typeof args !== "object") return args;
 
-  const sanitized = {};
+  const sanitized: Record<string, any> = {};
   for (const [key, value] of Object.entries(args)) {
     if (typeof value === "string" && value.length > MAX_ARG_LENGTH) {
       sanitized[key] = value.slice(0, MAX_ARG_LENGTH) + `… [${value.length} chars]`;
@@ -235,7 +235,7 @@ function sanitizeArgs(args) {
 function sanitizeResult(body) {
   if (!body || typeof body !== "object") return body;
 
-  const result = {};
+  const result: Record<string, any> = {};
 
   for (const [key, value] of Object.entries(body)) {
     if (Array.isArray(value)) {
@@ -248,7 +248,7 @@ function sanitizeResult(body) {
       result[key] = value;
     } else if (typeof value === "object" && value !== null) {
       // Keep shallow objects, but cap nested arrays
-      const nested = {};
+      const nested: Record<string, any> = {};
       for (const [nk, nv] of Object.entries(value)) {
         if (Array.isArray(nv)) {
           nested[nk] = { _type: "array", _count: nv.length };
@@ -301,9 +301,9 @@ export async function persistToolCall(entry) {
  * @param {number} [filters.skip] - Offset for pagination
  * @returns {Promise<{ total: number, count: number, toolCalls: object[] }>}
  */
-export async function queryToolCallLogs(filters = {}) {
+export async function queryToolCallLogs(filters: Record<string, any> = {}) {
   const db = getDB();
-  const query = {};
+  const query: Record<string, any> = {};
 
   if (filters.toolName) query.toolName = filters.toolName;
   if (filters.domain) query.domain = filters.domain;

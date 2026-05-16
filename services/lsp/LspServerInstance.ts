@@ -2,8 +2,8 @@ import { sleep } from "@rodrigo-barraza/utilities-library";
 // ─── Single Server Lifecycle Manager ────────────────────────
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { createLspClient } from "./LspClient.js";
-import logger from "../../logger.js";
+import { createLspClient } from "./LspClient.ts";
+import logger from "../../logger.ts";
 
 // ── Constants ────────────────────────────────────────────────
 /** LSP error code for "content modified" — transient, safe to retry */

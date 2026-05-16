@@ -1,6 +1,6 @@
 import { normalizeName } from "@rodrigo-barraza/utilities-library";
-import { TREND_SOURCES as SOURCES, TREND_CATEGORIES } from "../../constants.js";
-import logger from "../../logger.js";
+import { TREND_SOURCES as SOURCES, TREND_CATEGORIES } from "../../constants.ts";
+import logger from "../../logger.ts";
 
 const BLUESKY_API = "https://public.api.bsky.app/xrpc";
 

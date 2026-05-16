@@ -1,10 +1,10 @@
 // ─── Sandboxed Project Command Execution ────────────────────
 
 import { spawn } from "node:child_process";
-import { validatePath } from "./AgenticFileService.js";
-import { routeForPath, sendRpc, sendRpcStreaming } from "./AgentConnectionManager.js";
-import * as BackgroundProcessRegistry from "./BackgroundProcessRegistry.js";
-import logger from "../logger.js";
+import { validatePath } from "./AgenticFileService.ts";
+import { routeForPath, sendRpc, sendRpcStreaming } from "./AgentConnectionManager.ts";
+import * as BackgroundProcessRegistry from "./BackgroundProcessRegistry.ts";
+import logger from "../logger.ts";
 
 // Agent routing helper
 async function tryAgentRouteCommand(method, params, cwd) {
@@ -143,7 +143,7 @@ function validateCommand(command) {
  * @param {boolean} [options.runInBackground=false] - Immediately background the command
  * @returns {Promise<object>}
  */
-export async function executeCommand(command, { cwd, timeout = DEFAULT_TIMEOUT_MS, signal, runInBackground = false } = {}) {
+export async function executeCommand(command, { cwd, timeout = DEFAULT_TIMEOUT_MS, signal, runInBackground = false }: Record<string, any> = {}) {
   // Agent routing — if CWD is served by a remote agent, proxy the command
   const agentResult = await tryAgentRouteCommand("command.run", { command, cwd, timeout, runInBackground }, cwd);
   if (agentResult) return agentResult;
@@ -169,7 +169,7 @@ export async function executeCommand(command, { cwd, timeout = DEFAULT_TIMEOUT_M
 
   const startTime = performance.now();
 
-  return new Promise((resolve) => {
+  return new Promise<any>((resolve) => {
     const stdoutChunks = [];
     const stderrChunks = [];
     let stdoutLen = 0;
@@ -280,8 +280,8 @@ export async function executeCommand(command, { cwd, timeout = DEFAULT_TIMEOUT_M
         exitCode: (timedOut || aborted) ? null : exitCode,
         executionTimeMs,
         timedOut,
-        ...(aborted && { aborted: true, error: "Command aborted (session stopped)" }),
-        ...(timedOut && !aborted && { error: `Command timed out after ${clampedTimeout}ms` }),
+        ...(aborted ? { aborted: true, error: "Command aborted (session stopped)" } : {}),
+        ...((timedOut && !aborted) ? { error: `Command timed out after ${clampedTimeout}ms` } : {}),
       });
     }
 
@@ -311,7 +311,7 @@ export async function executeCommand(command, { cwd, timeout = DEFAULT_TIMEOUT_M
  * @param {function} [options.onChunk] - (event: "stdout"|"stderr", data: string) => void
  * @returns {Promise<object>}
  */
-export async function executeCommandStreaming(command, { cwd, timeout = DEFAULT_TIMEOUT_MS, onChunk, signal } = {}) {
+export async function executeCommandStreaming(command, { cwd, timeout = DEFAULT_TIMEOUT_MS, onChunk, signal }: Record<string, any> = {}) {
   // Agent routing for streaming commands
   if (cwd) {
     const agent = routeForPath(cwd);
@@ -346,7 +346,7 @@ export async function executeCommandStreaming(command, { cwd, timeout = DEFAULT_
 
   const startTime = performance.now();
 
-  return new Promise((resolve) => {
+  return new Promise<any>((resolve) => {
     const stdoutChunks = [];
     const stderrChunks = [];
     let stdoutLen = 0;
@@ -412,8 +412,8 @@ export async function executeCommandStreaming(command, { cwd, timeout = DEFAULT_
         exitCode: (timedOut || aborted) ? null : exitCode,
         executionTimeMs: Math.round(performance.now() - startTime),
         timedOut,
-        ...(aborted && { aborted: true, error: "Command aborted (session stopped)" }),
-        ...(timedOut && !aborted && { error: `Command timed out after ${clampedTimeout}ms` }),
+        ...(aborted ? { aborted: true, error: "Command aborted (session stopped)" } : {}),
+        ...((timedOut && !aborted) ? { error: `Command timed out after ${clampedTimeout}ms` } : {}),
       });
     }
 
@@ -466,7 +466,7 @@ export function getBackgroundProcess(pid) {
  * @param {number} [options.gracePeriodMs=3000] - Time to wait before escalating to SIGKILL
  * @returns {Promise<object>} Result with killed status
  */
-export async function killProcessTree(pid, { gracePeriodMs = 3000 } = {}) {
+export async function killProcessTree(pid, { gracePeriodMs = 3000 }: Record<string, any> = {}) {
   if (!pid || typeof pid !== "number" || pid <= 0) {
     return { success: false, error: "Valid PID is required (positive integer)" };
   }
@@ -494,7 +494,7 @@ export async function killProcessTree(pid, { gracePeriodMs = 3000 } = {}) {
     }
 
     // Wait for grace period then check if still alive
-    await new Promise((resolve) => setTimeout(resolve, gracePeriodMs));
+    await new Promise<any>((resolve) => setTimeout(resolve, gracePeriodMs));
 
     try {
       process.kill(pid, 0); // Still alive?

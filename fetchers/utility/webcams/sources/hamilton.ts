@@ -1,4 +1,4 @@
-import { fetch511Cameras } from "./_511_helper.js";
+import { fetch511Cameras } from "./_511_helper.ts";
 
 export async function refreshHamiltonWebcams() {
   await fetch511Cameras({

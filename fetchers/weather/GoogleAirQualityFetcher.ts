@@ -1,4 +1,4 @@
-import CONFIG from "../../config.js";
+import CONFIG from "../../config.ts";
 
 const API_URL = "https://airquality.googleapis.com/v1/currentConditions:lookup";
 
@@ -46,7 +46,7 @@ export async function fetchGoogleAirQuality() {
   const usAqi = indexes.find((i) => i.code === "usa_epa");
 
   // Build pollutant map
-  const pollutantMap = {};
+  const pollutantMap: Record<string, any> = {};
   for (const p of pollutants) {
     pollutantMap[p.code] = {
       displayName: p.displayName,

@@ -13,7 +13,7 @@ const router = Router();
 // ─── 1. Search — Full lifecycle (start → poll → results) ───
 
 router.get("/search", asyncHandler(async (req, res) => {
-  const { q, query, category, plugins, limit, timeout } = req.query;
+  const { q, query, category, plugins, limit, timeout } = req.query as any;
   const searchQuery = q || query;
   if (!searchQuery) {
     return res.status(400).json({
@@ -62,7 +62,7 @@ router.post("/download", asyncHandler(async (req, res) => {
 // ─── 3. Status — List active torrents ───────────────────────
 
 router.get("/status", asyncHandler(async (req, res) => {
-  const { filter, category, tag, sort, limit, offset } = req.query;
+  const { filter, category, tag, sort, limit, offset } = req.query as any;
 
   try {
     const torrents = await qbt.listTorrents({
@@ -175,7 +175,7 @@ router.get("/transfer", asyncHandler(async (_req, res) => {
 // ─── Unified Dispatcher (for AI tool schema) ────────────────
 
 router.get("/", asyncHandler(async (req, res) => {
-  const { action, q, query, category, plugins, limit, filter, sort, timeout, hashes } = req.query;
+  const { action, q, query, category, plugins, limit, filter, sort, timeout, hashes } = req.query as any;
   if (!action) {
     return res.status(400).json({
       error: "'action' is required",
@@ -233,8 +233,8 @@ router.get("/", asyncHandler(async (req, res) => {
 export async function getTorrentHealth() {
   const health = await qbt.isHealthy();
   return {
-    qbittorrent: health.healthy
-      ? `connected (v${health.version})`
+    qbittorrent: (health as any).healthy
+      ? `connected (v${(health as any).version})`
       : "unavailable — QBITTORRENT_URL not configured or unreachable",
   };
 }

@@ -1,5 +1,5 @@
-import { EVENT_SOURCES, EVENT_CATEGORIES } from "../../constants.js";
-import logger from "../../logger.js";
+import { EVENT_SOURCES, EVENT_CATEGORIES } from "../../constants.ts";
+import logger from "../../logger.ts";
 
 // NHL unofficial API — no auth needed
 const NHL_SCHEDULE_URL =

@@ -1,5 +1,5 @@
 import { stripHtml } from "@rodrigo-barraza/utilities-library";
-import { OPEN_LIBRARY_BASE_URL } from "../../constants.js";
+import { OPEN_LIBRARY_BASE_URL } from "../../constants.ts";
 
 /**
  * Open Library API fetcher.

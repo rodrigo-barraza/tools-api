@@ -1,6 +1,6 @@
-import { createSimpleCache } from "./createSimpleCache.js";
+import { createSimpleCache } from "./createSimpleCache.ts";
 
-const { update, setError, get, getHealth } = createSimpleCache();
+const { update, setError, get, getHealth } = createSimpleCache<any>();
 
 export {
   update as updateApod,

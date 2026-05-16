@@ -1,5 +1,5 @@
-import CONFIG from "../../config.js";
-import { EVENT_SOURCES, EVENT_CATEGORIES } from "../../constants.js";
+import CONFIG from "../../config.ts";
+import { EVENT_SOURCES, EVENT_CATEGORIES } from "../../constants.ts";
 
 const BASE_URL = "https://places.googleapis.com/v1/places:searchNearby";
 

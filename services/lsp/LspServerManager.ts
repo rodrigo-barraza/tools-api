@@ -2,9 +2,9 @@
 
 import { extname, resolve, basename } from "node:path";
 import { pathToFileURL } from "node:url";
-import { createLspServerInstance } from "./LspServerInstance.js";
-import { getLspServerConfigs } from "./LspConfig.js";
-import logger from "../../logger.js";
+import { createLspServerInstance } from "./LspServerInstance.ts";
+import { getLspServerConfigs } from "./LspConfig.ts";
+import logger from "../../logger.ts";
 
 /**
  * Creates an LSP server manager instance.
@@ -242,7 +242,7 @@ export function createLspServerManager(workspaceFolder) {
    * @returns {Record<string, string>} name → state
    */
   function getHealth() {
-    const health = {};
+    const health: Record<string, any> = {};
     for (const [name, server] of servers) {
       health[name] = server.state;
     }
@@ -343,7 +343,7 @@ export async function shutdownAllLspManagers() {
  * @returns {Record<string, Record<string, string>>}
  */
 export function getAllLspHealth() {
-  const health = {};
+  const health: Record<string, any> = {};
   for (const [key, manager] of managers) {
     health[key] = manager.getHealth();
   }

@@ -15,7 +15,7 @@ const FETCH_TIMEOUT_MS = 30_000;
  * @param {number} [options.maxPages] - Only extract first N pages
  * @returns {Promise<object>}
  */
-export async function readPdfUrl(url, options = {}) {
+export async function readPdfUrl(url, options: Record<string, any> = {}) {
   if (!url || typeof url !== "string") {
     return { error: "URL is required" };
   }
@@ -65,7 +65,7 @@ export async function readPdfUrl(url, options = {}) {
     const info = await parser.getInfo();
 
     // Build text extraction params
-    const textParams = {};
+    const textParams: Record<string, any> = {};
     if (options.maxPages) {
       textParams.last = parseInt(options.maxPages, 10);
     }

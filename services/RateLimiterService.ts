@@ -1,7 +1,7 @@
 // ─── Rate Limiter Service ───────────────────────────────────
 
-import { API_RATE_LIMITS } from "../constants.js";
-import logger from "../logger.js";
+import { API_RATE_LIMITS } from "../constants.ts";
+import logger from "../logger.ts";
 
 /**
  * Per-provider rate limiter.
@@ -52,7 +52,7 @@ class RateLimiterService {
     const remaining = delayMs - elapsed;
 
     if (remaining > 0) {
-      await new Promise((resolve) => setTimeout(resolve, remaining));
+      await new Promise<any>((resolve) => setTimeout(resolve, remaining));
     }
 
     this.#lastRequestAt.set(provider, Date.now());

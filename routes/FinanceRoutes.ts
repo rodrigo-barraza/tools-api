@@ -59,7 +59,7 @@ router.get("/news", asyncHandler(async (req, res) => {
     try {
       const now = new Date();
       const to = toISODate(now);
-      const from = toISODate(new Date(now - 7 * 86_400_000));
+      const from = toISODate(new Date(now.getTime() - 7 * 86_400_000));
       const news = await fetchCompanyNews(symbol.toUpperCase(), from, to);
       return res.json({
         symbol: symbol.toUpperCase(),
@@ -110,7 +110,7 @@ router.get("/macro/indicators", asyncHandler(
   "Key indicators fetch",
 ));
 router.get("/macro/search", asyncHandler(async (req, res) => {
-  const { q, limit, orderBy } = req.query;
+  const { q, limit, orderBy } = req.query as any;
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
@@ -121,7 +121,7 @@ router.get("/macro/search", asyncHandler(async (req, res) => {
 }));
 router.get("/macro/series/:seriesId/observations", asyncHandler(
   (req) => {
-    const { limit, sortOrder, observationStart, observationEnd } = req.query;
+    const { limit, sortOrder, observationStart, observationEnd } = req.query as any;
     return getSeriesObservations(req.params.seriesId, {
       limit: parseInt(limit, 10) || 50,
       sortOrder,
@@ -138,12 +138,12 @@ router.get("/macro/series/:seriesId", asyncHandler(
 // ─── Health ────────────────────────────────────────────────────────
 export function getFinanceHealth() {
   const health = getHealth();
-  health.fred = "on-demand";
+  (health as any).fred = "on-demand";
   return health;
 }
 // ── Unified Stock Data Dispatcher ──────────────────────────────────
 router.get("/stock/data", asyncHandler(async (req, res) => {
-  const { action, symbol } = req.query;
+  const { action, symbol } = req.query as any;
   if (!action || !symbol) return res.status(400).json({ error: "'action' and 'symbol' are required", actions: ["quote", "profile", "recommendation", "financials"] });
   const pathMap = {
     quote: `/quote/${symbol}`,
@@ -159,7 +159,7 @@ router.get("/stock/data", asyncHandler(async (req, res) => {
 }));
 // ── Unified Macro Data Dispatcher ──────────────────────────────────
 router.get("/macro/data", asyncHandler(async (req, res) => {
-  const { action, q, seriesId, limit, orderBy, sortOrder, observationStart, observationEnd } = req.query;
+  const { action, q, seriesId, limit, orderBy, sortOrder, observationStart, observationEnd } = req.query as any;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["indicators", "search", "series", "observations"] });
   const pathMap = {
     indicators: "/macro/indicators",

@@ -1,5 +1,5 @@
-import { WMO_WEATHER_CODES } from "../../constants.js";
-import rateLimiter from "../../services/RateLimiterService.js";
+import { WMO_WEATHER_CODES } from "../../constants.ts";
+import rateLimiter from "../../services/RateLimiterService.ts";
 
 // ─── Open-Meteo Geocoding API ──────────────────────────────────────
 const GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search";

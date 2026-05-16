@@ -1,6 +1,6 @@
-import { createSimpleCache } from "./createSimpleCache.js";
+import { createSimpleCache } from "./createSimpleCache.ts";
 
-const cache = createSimpleCache({ type: "array", itemsKey: "forecasts" });
+const cache = createSimpleCache<any>({ type: "array", itemsKey: "forecasts" });
 
 export const updateAvalanche = cache.update;
 export const setAvalancheError = cache.setError;

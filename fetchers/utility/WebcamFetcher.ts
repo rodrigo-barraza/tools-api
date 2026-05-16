@@ -1,9 +1,9 @@
 import { MS_PER_DAY } from "@rodrigo-barraza/utilities-library";
-import { getWebcamsByCity, getWebcamsLastUpdated } from "../../models/Webcam.js";
-import { WEBCAM_REGISTRY, getSupportedCities } from "./webcams/WebcamRegistry.js";
-import logger from "../../logger.js";
+import { getWebcamsByCity, getWebcamsLastUpdated } from "../../models/Webcam.ts";
+import { WEBCAM_REGISTRY, getSupportedCities } from "./webcams/WebcamRegistry.ts";
+import logger from "../../logger.ts";
 
-export async function getPublicWebcams({ city = "vancouver", limit = 100 } = {}) {
+export async function getPublicWebcams({ city = "vancouver", limit = 100 }: Record<string, any> = {}) {
   const normalizedCity = city.toLowerCase();
 
   const supportedCities = getSupportedCities();
@@ -24,9 +24,9 @@ export async function getPublicWebcams({ city = "vancouver", limit = 100 } = {})
         await refreshFunction();
       }
     } catch (error) {
-      logger.error(`Failed to refresh webcams for ${capitalizedCity}:`, e.message);
+      logger.error(`Failed to refresh webcams for ${capitalizedCity}:`, error.message);
       // If we never had them, we can't fallback to DB, so we throw
-      if (!lastUpdated) throw e;
+      if (!lastUpdated) throw error;
     }
   }
 

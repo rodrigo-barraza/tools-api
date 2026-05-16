@@ -1,4 +1,4 @@
-import CONFIG from "../../config.js";
+import CONFIG from "../../config.ts";
 
 const APOD_URL = "https://api.nasa.gov/planetary/apod";
 

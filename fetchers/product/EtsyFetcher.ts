@@ -1,8 +1,8 @@
-import CONFIG from "../../config.js";
-import { PRODUCT_SOURCES, ETSY_CATEGORY_MAP } from "../../constants.js";
-import { computeTrendingScore } from "../../utilities.js";
-import rateLimiter from "../../services/RateLimiterService.js";
-import logger from "../../logger.js";
+import CONFIG from "../../config.ts";
+import { PRODUCT_SOURCES, ETSY_CATEGORY_MAP } from "../../constants.ts";
+import { computeTrendingScore } from "../../utilities.ts";
+import rateLimiter from "../../services/RateLimiterService.ts";
+import logger from "../../logger.ts";
 
 const BASE_URL = "https://openapi.etsy.com/v3/application";
 

@@ -1,6 +1,6 @@
 import { stripHtml } from "@rodrigo-barraza/utilities-library";
-import { ARXIV_BASE_URL } from "../../constants.js";
-import { extractXmlTag, extractXmlItems } from "../../utilities.js";
+import { ARXIV_BASE_URL } from "../../constants.ts";
+import { extractXmlTag, extractXmlItems } from "../../utilities.ts";
 /**
  * arXiv API fetcher.
  * https://info.arxiv.org/help/api/ — no auth, fully open.
@@ -59,8 +59,8 @@ function parseEntry(entryXml) {
  * @returns {Promise<object>}
  */
 export async function searchPapers(
-  query,
-  { category, limit = 10, sortBy = "relevance" } = {},
+  query: any,
+  { category, limit = 10, sortBy = "relevance" }: any = {},
 ) {
   // Build the search query
   let searchQuery = `all:${query}`;

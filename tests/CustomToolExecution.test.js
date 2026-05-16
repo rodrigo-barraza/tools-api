@@ -258,4 +258,117 @@ describe("POST /agentic/custom-tool/execute — route integration", () => {
     expect(res.body.success).toBe(false);
     expect(res.body.error).toBeTruthy();
   });
+
+  it("defaults to sandboxed execution tier", async () => {
+    await setup();
+    const res = await request(app)
+      .post("/agentic/custom-tool/execute")
+      .send({ code: "return 1;", args: {} });
+
+    expect(res.status).toBe(200);
+    expect(res.body.execution).toBe("sandboxed");
+  });
+
+  it("accepts privileged execution tier", async () => {
+    await setup();
+    const res = await request(app)
+      .post("/agentic/custom-tool/execute")
+      .send({ code: "return 1;", args: {}, execution: "privileged" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.execution).toBe("privileged");
+  });
+
+  it("executes require() in privileged mode", async () => {
+    await setup();
+    const res = await request(app)
+      .post("/agentic/custom-tool/execute")
+      .send({
+        code: "const path = require('path'); return path.basename('/foo/bar.js');",
+        args: {},
+        execution: "privileged",
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.result).toBe("bar.js");
+  });
+
+  it("blocks require() in sandboxed mode (explicit)", async () => {
+    await setup();
+    const res = await request(app)
+      .post("/agentic/custom-tool/execute")
+      .send({
+        code: "const path = require('path'); return path.basename('/foo/bar.js');",
+        args: {},
+        execution: "sandboxed",
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error).toMatch(/TypeError|require is not a function|undefined/);
+  });
+});
+
+// ── Unit: Privileged Execution Tier ─────────────────────────
+
+describe("JavaScriptInterpreterService — privileged execution tier", () => {
+
+  it("allows require() in privileged mode", () => {
+    const code = `const path = require("path"); path.basename("/foo/bar.txt")`;
+    const { success, result } = executeJavaScript(code, { execution: "privileged" });
+    expect(success).toBe(true);
+    expect(result).toBe("bar.txt");
+  });
+
+  it("allows process access in privileged mode", () => {
+    const code = `process.version`;
+    const { success, result } = executeJavaScript(code, { execution: "privileged" });
+    expect(success).toBe(true);
+    expect(result).toMatch(/^v\d+/);
+  });
+
+  it("allows Buffer in privileged mode", () => {
+    const code = `Buffer.from("hello").toString("base64")`;
+    const { success, result } = executeJavaScript(code, { execution: "privileged" });
+    expect(success).toBe(true);
+    expect(result).toBe("aGVsbG8=");
+  });
+
+  it("allows URL in privileged mode", () => {
+    const code = `new URL("https://example.com/path?q=test").hostname`;
+    const { success, result } = executeJavaScript(code, { execution: "privileged" });
+    expect(success).toBe(true);
+    expect(result).toBe("example.com");
+  });
+
+  it("includes execution tier in the response", () => {
+    const sandboxed = executeJavaScript("1 + 1", { execution: "sandboxed" });
+    const privileged = executeJavaScript("1 + 1", { execution: "privileged" });
+    expect(sandboxed.execution).toBe("sandboxed");
+    expect(privileged.execution).toBe("privileged");
+  });
+
+  it("defaults to sandboxed when execution is not specified", () => {
+    const result = executeJavaScript("1 + 1");
+    expect(result.execution).toBe("sandboxed");
+  });
+
+  it("still respects timeout in privileged mode", () => {
+    const { success, timedOut } = executeJavaScript("while(true) {}", {
+      timeout: 200,
+      execution: "privileged",
+    });
+    expect(success).toBe(false);
+    expect(timedOut).toBe(true);
+  });
+
+  it("still captures console output in privileged mode", () => {
+    const code = `console.log("privileged output"); 99`;
+    const { success, output, result } = executeJavaScript(code, { execution: "privileged" });
+    expect(success).toBe(true);
+    expect(output).toBe("privileged output");
+    expect(result).toBe(99);
+  });
 });

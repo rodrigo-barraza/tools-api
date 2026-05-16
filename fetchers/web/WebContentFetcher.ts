@@ -1,12 +1,12 @@
 // ─── Unified URL → Structured Content ───────────────────────
 
-import { getRedditThread } from "./RedditFetcher.js";
-import { getTwitterPost } from "./TwitterFetcher.js";
-import { getHackerNewsThread } from "./HackerNewsFetcher.js";
-import { getStackOverflowQuestion } from "./StackOverflowFetcher.js";
-import { getGitHubRepo } from "./GitHubFetcher.js";
-import { getYouTubeVideoInfo } from "../knowledge/YouTubeFetcher.js";
-import { fetchGenericPage } from "./GenericPageFetcher.js";
+import { getRedditThread } from "./RedditFetcher.ts";
+import { getTwitterPost } from "./TwitterFetcher.ts";
+import { getHackerNewsThread } from "./HackerNewsFetcher.ts";
+import { getStackOverflowQuestion } from "./StackOverflowFetcher.ts";
+import { getGitHubRepo } from "./GitHubFetcher.ts";
+import { getYouTubeVideoInfo } from "../knowledge/YouTubeFetcher.ts";
+import { fetchGenericPage } from "./GenericPageFetcher.ts";
 
 // ─── Platform Detection ──────────────────────────────────────────
 // Order matters: more specific patterns first, catch-alls last.
@@ -81,7 +81,7 @@ function detectPlatform(url) {
  * @param {number}  [options.maxChars]      - Max body text chars (generic, default: 15000)
  * @returns {Promise<object>} Platform-specific result with "platform" field
  */
-export async function getWebContent(url, options = {}) {
+export async function getWebContent(url, options: Record<string, any> = {}) {
   const platform = detectPlatform(url);
 
   let result;

@@ -1,6 +1,6 @@
-import { createSimpleCache } from "./createSimpleCache.js";
+import { createSimpleCache } from "./createSimpleCache.ts";
 
-const cache = createSimpleCache({ type: "array", itemsKey: "events" });
+const cache = createSimpleCache<any>({ type: "array", itemsKey: "events" });
 
 export const updateWildfires = cache.update;
 export const setWildfireError = cache.setError;

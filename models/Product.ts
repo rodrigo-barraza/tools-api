@@ -1,5 +1,5 @@
-import { getDB } from "../db.js";
-import logger from "../logger.js";
+import { getDB } from "../db.ts";
+import logger from "../logger.ts";
 
 let productCollection;
 
@@ -74,7 +74,7 @@ export async function getRecentProducts(
   limit = 50,
 ) {
   const cutoff = new Date(Date.now() - hours * 3_600_000);
-  const filter = { lastSeenAt: { $gte: cutoff } };
+  const filter: Record<string, any> = { lastSeenAt: { $gte: cutoff } };
   if (category) filter.category = category;
   if (source) filter.source = source;
 

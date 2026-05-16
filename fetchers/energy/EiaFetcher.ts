@@ -1,7 +1,7 @@
-import CONFIG from "../../config.js";
-import { EIA_BASE_URL, EIA_DEFAULT_SERIES } from "../../constants.js";
-import rateLimiter from "../../services/RateLimiterService.js";
-import logger from "../../logger.js";
+import CONFIG from "../../config.ts";
+import { EIA_BASE_URL, EIA_DEFAULT_SERIES } from "../../constants.ts";
+import rateLimiter from "../../services/RateLimiterService.ts";
+import logger from "../../logger.ts";
 
 /**
  * EIA (U.S. Energy Information Administration) APIv2 Fetcher.
@@ -27,7 +27,7 @@ const META_CACHE_TTL_MS = 86_400_000; // 24 hours — routes/metadata rarely cha
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
-function buildUrl(route, params = {}) {
+function buildUrl(route, params: Record<string, any> = {}) {
   const url = new URL(`${EIA_BASE_URL}/${route}`);
   url.searchParams.set("api_key", CONFIG.EIA_API_KEY);
   for (const [key, value] of Object.entries(params)) {
@@ -42,7 +42,7 @@ function buildUrl(route, params = {}) {
   return url.toString();
 }
 
-async function eiaFetch(route, params = {}) {
+async function eiaFetch(route, params: Record<string, any> = {}) {
   if (!CONFIG.EIA_API_KEY) {
     throw new Error("EIA_API_KEY is not configured");
   }
@@ -156,7 +156,7 @@ export async function getFacetValues(route, facetId) {
  * @param {number} [options.offset=0] - Pagination offset
  * @returns {Promise<object>}
  */
-export async function getData(route, options = {}) {
+export async function getData(route, options: Record<string, any> = {}) {
   const {
     data: dataColumns,
     facets,
@@ -176,7 +176,7 @@ export async function getData(route, options = {}) {
   }
 
   // Build query params
-  const params = {
+  const params: Record<string, any> = {
     length: Math.min(length, 5000),
     offset,
   };
@@ -259,7 +259,7 @@ export async function getEnergyIndicators() {
 
   const entries = Object.entries(EIA_DEFAULT_SERIES);
   const results = await Promise.allSettled(
-    entries.map(async ([key, meta]) => {
+    entries.map(async ([key, meta]: any) => {
       const seriesData = await getData(meta.route, {
         data: [meta.dataColumn],
         facets: meta.facets || undefined,

@@ -1,4 +1,4 @@
-import { fetchNY511Cameras } from "./_ny511_helper.js";
+import { fetchNY511Cameras } from "./_ny511_helper.ts";
 
 export async function refreshBinghamtonWebcams() {
   await fetchNY511Cameras({

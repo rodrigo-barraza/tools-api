@@ -1,4 +1,4 @@
-import CONFIG from "../../config.js";
+import CONFIG from "../../config.ts";
 
 const BASE_URL = "https://tidesandcurrents.noaa.gov/api/datagetter";
 

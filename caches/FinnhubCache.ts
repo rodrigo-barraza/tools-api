@@ -3,7 +3,7 @@ import {
   FINNHUB_PROFILE_TTL_MS,
   FINNHUB_RECOMMENDATION_TTL_MS,
   FINNHUB_FINANCIALS_TTL_MS,
-} from "../constants.js";
+} from "../constants.ts";
 
 /**
  * In-memory cache for Finnhub finance data.

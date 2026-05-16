@@ -1,5 +1,5 @@
 import * as cheerio from "cheerio";
-import { EVENT_SOURCES, EVENT_CATEGORIES } from "../../constants.js";
+import { EVENT_SOURCES, EVENT_CATEGORIES } from "../../constants.ts";
 
 const BASE_URL = "https://vancouver.craigslist.org/search/eee";
 

@@ -1,5 +1,5 @@
 import * as cheerio from "cheerio";
-import { EVENT_SOURCES, EVENT_CATEGORIES } from "../../constants.js";
+import { EVENT_SOURCES, EVENT_CATEGORIES } from "../../constants.ts";
 
 const EVENTS_URL = "https://vancouver.ca/news-calendar/upcoming-events.aspx";
 

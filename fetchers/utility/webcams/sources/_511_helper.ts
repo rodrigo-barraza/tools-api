@@ -1,5 +1,5 @@
-import { buildScraperHeaders } from "../../../../utilities.js";
-import { upsertWebcams } from "../../../../models/Webcam.js";
+import { buildScraperHeaders } from "../../../../utilities.ts";
+import { upsertWebcams } from "../../../../models/Webcam.ts";
 
 /**
  * Shared fetcher for 511-style camera APIs (Ontario, Alberta, etc.).

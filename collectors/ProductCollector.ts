@@ -7,27 +7,27 @@ import {
   BESTBUY_CA_AVAILABILITY_INTERVAL_MS,
   COSTCO_INTERVAL_MS,
   PRODUCT_SOURCES,
-} from "../constants.js";
-import { upsertProducts } from "../models/Product.js";
-import { fetchAllBestBuyTrending } from "../fetchers/product/BestBuyFetcher.js";
-import { fetchAllAmazonBestSellers } from "../fetchers/product/AmazonFetcher.js";
-import { fetchProductHuntTrending } from "../fetchers/product/ProductHuntFetcher.js";
-import { fetchAllEbayTrending } from "../fetchers/product/EbayFetcher.js";
-import { fetchEtsyTrending } from "../fetchers/product/EtsyFetcher.js";
-import { fetchBestBuyCAAvailability } from "../fetchers/product/BestBuyCAAvailabilityFetcher.js";
+} from "../constants.ts";
+import { upsertProducts } from "../models/Product.ts";
+import { fetchAllBestBuyTrending } from "../fetchers/product/BestBuyFetcher.ts";
+import { fetchAllAmazonBestSellers } from "../fetchers/product/AmazonFetcher.ts";
+import { fetchProductHuntTrending } from "../fetchers/product/ProductHuntFetcher.ts";
+import { fetchAllEbayTrending } from "../fetchers/product/EbayFetcher.ts";
+import { fetchEtsyTrending } from "../fetchers/product/EtsyFetcher.ts";
+import { fetchBestBuyCAAvailability } from "../fetchers/product/BestBuyCAAvailabilityFetcher.ts";
 import {
   fetchAllCostcoUS,
   fetchAllCostcoCA,
-} from "../fetchers/product/CostcoFetcher.js";
-import { updateProducts, setProductError } from "../caches/ProductCache.js";
+} from "../fetchers/product/CostcoFetcher.ts";
+import { updateProducts, setProductError } from "../caches/ProductCache.ts";
 import {
   getWatchedSkus,
   getWatchlistMetadata,
   updateStatuses,
   setAvailabilityError,
-} from "../caches/BestBuyCAAvailabilityCache.js";
-import { saveState, startCollectorLoop } from "../services/FreshnessService.js";
-import logger from "../logger.js";
+} from "../caches/BestBuyCAAvailabilityCache.ts";
+import { saveState, startCollectorLoop } from "../services/FreshnessService.ts";
+import logger from "../logger.ts";
 
 // ─── Collector Factory ─────────────────────────────────────────────
 

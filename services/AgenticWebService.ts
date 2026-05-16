@@ -1,8 +1,8 @@
 // ─── URL Fetching & Web Search ──────────────────────────────
 
 import * as cheerio from "cheerio";
-import CONFIG from "../config.js";
-import logger from "../logger.js";
+import CONFIG from "../config.ts";
+import logger from "../logger.ts";
 
 // ────────────────────────────────────────────────────────────
 // Constants
@@ -37,7 +37,7 @@ const GOOGLE_CSE_BASE = "https://www.googleapis.com/customsearch/v1";
  * @param {string} [options.selector] - CSS selector to extract specific content
  * @returns {Promise<object>}
  */
-export async function agenticFetchUrl(url, { selector } = {}) {
+export async function agenticFetchUrl(url, { selector }: Record<string, any> = {}) {
   if (!url || typeof url !== "string") {
     return { error: "'url' is required and must be a string" };
   }
@@ -151,7 +151,7 @@ const BRAVE_SEARCH_BASE = "https://api.search.brave.com/res/v1/web/search";
  * @param {string} [options.siteSearch] - Restrict to a specific site domain
  * @returns {Promise<object>}
  */
-export async function agenticWebSearch(query, { limit = 5, dateRestrict, siteSearch } = {}) {
+export async function agenticWebSearch(query, { limit = 5, dateRestrict, siteSearch }: Record<string, any> = {}) {
   if (!query || typeof query !== "string") {
     return { error: "'query' is required and must be a non-empty string" };
   }
@@ -302,7 +302,7 @@ async function _searchGoogleCSE(query, { limit, dateRestrict, siteSearch }) {
  * @param {string} [options.selector] - CSS selector for content extraction
  * @returns {string} Clean markdown
  */
-function htmlToMarkdown(html, { selector } = {}) {
+function htmlToMarkdown(html, { selector }: Record<string, any> = {}) {
   const $ = cheerio.load(html);
 
   // Remove non-content elements

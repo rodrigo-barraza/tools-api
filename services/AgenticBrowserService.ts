@@ -5,7 +5,7 @@ import { writeFile, unlink, mkdtemp } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { spawn } from "node:child_process";
-import logger from "../logger.js";
+import logger from "../logger.ts";
 
 // ────────────────────────────────────────────────────────────
 // Session Management
@@ -425,7 +425,7 @@ async function actionGetElements(page, { selector, limit }) {
 
           const text = (el.innerText || el.textContent || "").trim().slice(0, 80);
           const tag = el.tagName.toLowerCase();
-          const entry = { tag, selector: cssSelector };
+          const entry: Record<string, any> = { tag, selector: cssSelector };
 
           if (text) entry.text = text;
           if (el.getAttribute("type")) entry.type = el.getAttribute("type");
@@ -735,7 +735,7 @@ const { chromium } = require('playwright');
  * Execute a Playwright script file in a subprocess.
  */
 function executeScript(scriptPath, wsEndpoint, timeoutMs) {
-  return new Promise((resolve) => {
+  return new Promise<any>((resolve) => {
     const stdoutChunks = [];
     const stderrChunks = [];
     let stdoutLen = 0;

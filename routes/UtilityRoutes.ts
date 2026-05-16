@@ -39,7 +39,7 @@ import { crawlSingleStatic } from "../services/CrawlerService.js";
 const router = Router();
 // ─── Calculator (BigNumber) ────────────────────────────────────────
 router.get("/calculate", (req, res) => {
-  const { operation, a, b } = req.query;
+  const { operation, a, b } = req.query as any;
   if (!operation || !a) {
     return res.status(400).json({ error: "Query parameters 'operation' and 'a' are required" });
   }
@@ -96,7 +96,7 @@ router.get("/calculate", (req, res) => {
 });
 // ─── Currency Conversion ───────────────────────────────────────────
 router.get("/currency/convert", asyncHandler(async (req, res) => {
-  const { amount, from, to } = req.query;
+  const { amount, from, to } = req.query as any;
   if (!from || !to) {
     return res
       .status(400)
@@ -155,7 +155,7 @@ router.get("/ip/:ip", asyncHandler(
 ));
 // ─── Places — Nearby Search (Google Places API New) ────────────────
 router.get("/places/nearby", asyncHandler(async (req, res) => {
-  const { type, latitude, longitude, radius, limit } = req.query;
+  const { type, latitude, longitude, radius, limit } = req.query as any;
   if (!type) {
     return res
       .status(400)
@@ -171,7 +171,7 @@ router.get("/places/nearby", asyncHandler(async (req, res) => {
 }));
 // ─── Places — Text Search (Google Places API New) ──────────────────
 router.get("/places/search", asyncHandler(async (req, res) => {
-  const { q, latitude, longitude, radius, limit } = req.query;
+  const { q, latitude, longitude, radius, limit } = req.query as any;
   if (!q) {
     return res
       .status(400)
@@ -198,7 +198,7 @@ function storeMarkers(markerList) {
  * Build the interactive embed HTML for Google Maps JS API.
  * Renders numbered markers with info windows showing name + address.
  */
-function buildMapEmbedHtml(markerList, apiKey, { zoom, maptype = "roadmap" } = {}) {
+function buildMapEmbedHtml(markerList, apiKey, { zoom, maptype = "roadmap" }: Record<string, any> = {}) {
   const markersJson = JSON.stringify(
     markerList.map((m, i) => ({
       lat: m.latitude,
@@ -277,7 +277,7 @@ function initMap(){
 </body></html>`;
 }
 router.get("/map/embed", (req, res) => {
-  const { id, markers, zoom, maptype } = req.query;
+  const { id, markers, zoom, maptype } = req.query as any;
   if (!CONFIG.GOOGLE_API_KEY) {
     return res.status(400).send("Missing API key");
   }
@@ -307,7 +307,7 @@ router.get("/map/embed", (req, res) => {
   res.send(html);
 });
 router.get("/map", asyncHandler(async (req, res) => {
-  const { markers, zoom, maptype } = req.query;
+  const { markers, zoom, maptype } = req.query as any;
   if (!markers) {
     return res
       .status(400)
@@ -344,7 +344,7 @@ router.get("/map", asyncHandler(async (req, res) => {
 // ─── Webcams ───────────────────────────────────────────────────────
 router.get("/webcams", asyncHandler(
   async (req) => {
-    const { city, limit } = req.query;
+    const { city, limit } = req.query as any;
     const webcams = await getPublicWebcams({ 
       city: city || "vancouver", 
       limit: parseInt(limit, 10) || 100 
@@ -355,7 +355,7 @@ router.get("/webcams", asyncHandler(
 ));
 // ─── Airports ──────────────────────────────────────────────────────
 router.get("/airports/search", (req, res) => {
-  const { q, limit, country } = req.query;
+  const { q, limit, country } = req.query as any;
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
@@ -379,7 +379,7 @@ router.get("/airports/country/:code", asyncHandler(
   500,
 ));
 router.get("/airports/nearest", (req, res) => {
-  const { lat, lng, limit } = req.query;
+  const { lat, lng, limit } = req.query as any;
   if (!lat || !lng) {
     return res.status(400).json({ error: "Query parameters 'lat' and 'lng' are required" });
   }
@@ -472,7 +472,7 @@ router.post("/chart", (req, res) => {
   });
 });
 router.get("/chart/render", asyncHandler(async (req, res) => {
-  const { id } = req.query;
+  const { id } = req.query as any;
   if (!id) {
     return res.status(400).send("Missing 'id' parameter");
   }
@@ -492,13 +492,13 @@ router.get("/chart/render", asyncHandler(async (req, res) => {
 // ─── Page Metadata Scraper (Crawlee) ───────────────────────────────
 router.get("/scrape/metadata", asyncHandler(
   async (req) => {
-    const { url } = req.query;
+    const { url } = req.query as any;
     if (!url) {
       throw Object.assign(new Error("Query parameter 'url' is required"), { status: 400 });
     }
     const result = await crawlSingleStatic(url, {
       extractFn: ($) => {
-        const meta = {};
+        const meta: Record<string, any> = {};
         // Title
         meta.title =
           $('meta[property="og:title"]').attr("content") ||
@@ -569,7 +569,7 @@ export function getUtilityHealth() {
 }
 // ── Unified Airport Lookup Dispatcher ──────────────────────────────
 router.get("/airports/lookup", asyncHandler(async (req, res) => {
-  const { action, q, code, country, lat, lng, limit } = req.query;
+  const { action, q, code, country, lat, lng, limit } = req.query as any;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["search", "code", "country", "nearest"] });
   switch (action) {
     case "search":

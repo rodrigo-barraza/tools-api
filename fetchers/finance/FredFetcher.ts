@@ -1,6 +1,6 @@
-import CONFIG from "../../config.js";
-import { FRED_BASE_URL, FRED_DEFAULT_SERIES } from "../../constants.js";
-import logger from "../../logger.js";
+import CONFIG from "../../config.ts";
+import { FRED_BASE_URL, FRED_DEFAULT_SERIES } from "../../constants.ts";
+import logger from "../../logger.ts";
 
 /**
  * FRED (Federal Reserve Economic Data) API fetcher.
@@ -22,7 +22,7 @@ const SEARCH_CACHE_TTL_MS = 1_800_000; // 30 minutes
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
-function buildUrl(endpoint, params = {}) {
+function buildUrl(endpoint, params: Record<string, any> = {}) {
   const url = new URL(`${FRED_BASE_URL}/${endpoint}`);
   url.searchParams.set("api_key", CONFIG.FRED_API_KEY);
   url.searchParams.set("file_type", "json");
@@ -32,7 +32,7 @@ function buildUrl(endpoint, params = {}) {
   return url.toString();
 }
 
-async function fredFetch(endpoint, params = {}) {
+async function fredFetch(endpoint, params: Record<string, any> = {}) {
   if (!CONFIG.FRED_API_KEY) {
     throw new Error("FRED_API_KEY is not configured");
   }
@@ -85,7 +85,7 @@ export async function getSeriesInfo(seriesId) {
  * @param {string} [options.observationEnd] - End date (YYYY-MM-DD)
  * @returns {Promise<object>}
  */
-export async function getSeriesObservations(seriesId, options = {}) {
+export async function getSeriesObservations(seriesId, options: Record<string, any> = {}) {
   const {
     limit = 50,
     sortOrder = "desc",
@@ -100,7 +100,7 @@ export async function getSeriesObservations(seriesId, options = {}) {
     return cached.data;
   }
 
-  const params = {
+  const params: Record<string, any> = {
     series_id: seriesId,
     limit,
     sort_order: sortOrder,
@@ -141,7 +141,7 @@ export async function getSeriesObservations(seriesId, options = {}) {
  * @param {string} [options.orderBy="search_rank"] - Sort: search_rank, series_id, title, frequency, popularity
  * @returns {Promise<object>}
  */
-export async function searchSeries(query, options = {}) {
+export async function searchSeries(query, options: Record<string, any> = {}) {
   const { limit = 10, orderBy = "search_rank" } = options;
 
   const cacheKey = `search:${query}:${limit}:${orderBy}`;

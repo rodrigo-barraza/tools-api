@@ -42,7 +42,7 @@ const INTERNAL_FIELDS = new Set(["_id", "__v", "firstSeen", "lastSeen"]);
 function pickFields(obj, fieldPaths) {
   if (!obj || typeof obj !== "object" || Array.isArray(obj)) return obj;
 
-  const result = {};
+  const result: Record<string, any> = {};
 
   for (const path of fieldPaths) {
     const parts = path.split(".");
@@ -81,7 +81,7 @@ function pickFields(obj, fieldPaths) {
 function stripInternal(obj) {
   if (!obj || typeof obj !== "object" || Array.isArray(obj)) return obj;
 
-  const result = {};
+  const result: Record<string, any> = {};
   for (const [key, value] of Object.entries(obj)) {
     if (!INTERNAL_FIELDS.has(key)) {
       result[key] = value;

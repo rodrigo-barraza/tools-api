@@ -6,53 +6,79 @@
 // Domain-specific getters can use getData() for custom logic.
 // ═══════════════════════════════════════════════════════════════
 
+interface CacheError {
+  message: string;
+  time: string;
+}
+
+interface CacheHealth {
+  lastFetch: string | null;
+  error: CacheError | null;
+  count?: number;
+  hasData?: boolean;
+}
+
+interface SimpleCacheOptions {
+  type?: "object" | "array";
+  itemsKey?: string;
+}
+
+interface SimpleCache<T> {
+  update: (data: T) => void;
+  setError: (error: Error) => void;
+  get: () => Record<string, unknown>;
+  getHealth: () => CacheHealth;
+  getData: () => T;
+  getLastFetch: () => string | null;
+}
+
 /**
  * Create a standard in-memory cache with update/error/get/health lifecycle.
- *
- * @param {object} [options]
- * @param {"object"|"array"} [options.type="object"] - Default shape: null (object) or [] (array)
- * @param {string} [options.itemsKey="items"] - Key name for the array in the getter response
- * @returns {{ update: Function, setError: Function, get: Function, getHealth: Function, getData: Function }}
  */
-export function createSimpleCache({ type = "object", itemsKey = "items" } = {}) {
-  const cache = {
-    data: type === "array" ? [] : null,
+export function createSimpleCache<T = unknown>({
+  type = "object",
+  itemsKey = "items",
+}: SimpleCacheOptions = {}): SimpleCache<T> {
+  const cache: { data: T; lastFetch: string | null; error: CacheError | null } = {
+    data: (type === "array" ? [] : null) as T,
     lastFetch: null,
     error: null,
   };
 
   /** Replace cached data and reset error state. */
-  function update(data) {
+  function update(data: T): void {
     cache.data = data;
     cache.lastFetch = new Date().toISOString();
     cache.error = null;
   }
 
   /** Record a fetch error. */
-  function setError(error) {
+  function setError(error: Error): void {
     cache.error = { message: error.message, time: new Date().toISOString() };
   }
 
   /** Get the cached data with metadata. */
-  function get() {
+  function get(): Record<string, unknown> {
     if (type === "array") {
+      const arr = cache.data as unknown as unknown[];
       return {
-        count: cache.data.length,
+        count: arr.length,
         [itemsKey]: cache.data,
         lastFetch: cache.lastFetch,
       };
     }
     if (!cache.data) return { status: "no_data", lastFetch: null };
-    return { ...cache.data, lastFetch: cache.lastFetch };
+    return { ...(cache.data as Record<string, unknown>), lastFetch: cache.lastFetch };
   }
 
   /** Get health/status info for admin endpoints. */
-  function getHealth() {
+  function getHealth(): CacheHealth {
     if (type === "array") {
+      const arr = cache.data as unknown as unknown[];
       return {
         lastFetch: cache.lastFetch,
         error: cache.error,
-        count: cache.data.length,
+        count: arr.length,
       };
     }
     return {
@@ -63,12 +89,12 @@ export function createSimpleCache({ type = "object", itemsKey = "items" } = {}) 
   }
 
   /** Direct access to raw data for domain-specific extra getters. */
-  function getData() {
+  function getData(): T {
     return cache.data;
   }
 
   /** Get lastFetch timestamp. */
-  function getLastFetch() {
+  function getLastFetch(): string | null {
     return cache.lastFetch;
   }
 

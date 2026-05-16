@@ -4,7 +4,7 @@
  * Parse a comma-separated env var into an array of strings.
  * Returns empty array if not set.
  */
-function parseCommaSeparated(envKey) {
+function parseCommaSeparated(envKey: string): string[] {
   const raw = process.env[envKey];
   return raw ? raw.split(",").map((s) => s.trim()).filter(Boolean) : [];
 }
@@ -14,7 +14,104 @@ function parseCommaSeparated(envKey) {
 export const WORKSPACE_ROOTS = parseCommaSeparated("WORKSPACE_ROOTS");
 export const WORKTREE_DIR = process.env.WORKTREE_DIR;
 
-const CONFIG = {
+// ── Location (mutable — populated dynamically by LocationService) ──
+interface LocationData {
+  latitude: number;
+  longitude: number;
+  radiusMiles: number;
+  timezone: string;
+  tideStationId: string | null;
+}
+
+// ── Config Shape ───────────────────────────────────────────────────
+interface ToolsServiceConfig {
+  // Server
+  TOOLS_SERVICE_PORT: string | undefined;
+  TOOLS_SERVICE_URL: string | undefined;
+  MONGODB_URI: string | undefined;
+
+  // Location (mutable)
+  LATITUDE: number;
+  LONGITUDE: number;
+  RADIUS_MILES: number;
+  TIMEZONE: string;
+  TIDE_STATION_ID: string | null;
+
+  // Event
+  TICKETMASTER_API_KEY: string | undefined;
+  SEATGEEK_CLIENT_ID: string | undefined;
+  TMDB_API_KEY: string | undefined;
+  GOOGLE_PLACES_API_KEY: string | undefined;
+
+  // Finance
+  FINNHUB_API_KEY: string | undefined;
+  FRED_API_KEY: string | undefined;
+
+  // Product
+  BESTBUY_API_KEY: string | undefined;
+  PRODUCTHUNT_API_KEY: string | undefined;
+  PRODUCTHUNT_API_SECRET: string | undefined;
+  EBAY_CLIENT_ID: string | undefined;
+  EBAY_CLIENT_SECRET: string | undefined;
+  ETSY_API_KEY: string | undefined;
+  ETSY_SHARED_SECRET: string | undefined;
+
+  // Trend
+  REDDIT_CLIENT_ID: string | undefined;
+  REDDIT_CLIENT_SECRET: string | undefined;
+  REDDIT_USER_AGENT: string | undefined;
+  X_BEARER_TOKEN: string | undefined;
+
+  // Weather / Search
+  TOMORROWIO_API_KEY: string | undefined;
+  NASA_API_KEY: string | undefined;
+  GOOGLE_API_KEY: string | undefined;
+  GOOGLE_CSE_CX: string | undefined;
+  BRAVE_SEARCH_API_KEY: string | undefined;
+
+  // Transit
+  TRANSLINK_API_KEY: string | undefined;
+
+  // Utility
+  IPINFO_TOKEN: string | undefined;
+
+  // Maritime
+  AIS_STREAM_API_KEY: string | undefined;
+
+  // Energy
+  EIA_API_KEY: string | undefined;
+
+  // Communication (Twilio)
+  TWILIO_ACCOUNT_SID: string | undefined;
+  TWILIO_AUTH_TOKEN: string | undefined;
+
+  // Prism (LLM Gateway)
+  PRISM_SERVICE_URL: string | undefined;
+
+  // Default AI Models
+  TOOLS_IMAGE_MODEL: string | undefined;
+  TOOLS_VISION_MODEL: string | undefined;
+
+  // Smart Home
+  LIGHTS_SERVICE_URL: string | undefined;
+
+  // MinIO
+  MINIO_ENDPOINT: string | undefined;
+  MINIO_ACCESS_KEY: string | undefined;
+  MINIO_SECRET_KEY: string | undefined;
+
+  // Workspace Agent
+  AGENT_SECRET: string | undefined;
+  AGENT_MAX_CONNECTIONS: string;
+  API_SECRET: string | undefined;
+
+  // qBittorrent
+  QBITTORRENT_URL: string | undefined;
+  QBITTORRENT_USERNAME: string;
+  QBITTORRENT_PASSWORD: string | undefined;
+}
+
+const CONFIG: ToolsServiceConfig = {
   // ─── Server ──────────────────────────────────────────────────────
   TOOLS_SERVICE_PORT: process.env.TOOLS_SERVICE_PORT,
   TOOLS_SERVICE_URL: process.env.TOOLS_SERVICE_URL,
@@ -108,10 +205,9 @@ const CONFIG = {
 
 /**
  * Apply resolved location data onto the CONFIG singleton.
- * Called by server.js after LocationService.initLocation() completes.
- * @param {object} loc - Output from initLocation()
+ * Called by server.ts after LocationService.initLocation() completes.
  */
-export function applyLocation(loc) {
+export function applyLocation(loc: LocationData): void {
   CONFIG.LATITUDE = loc.latitude;
   CONFIG.LONGITUDE = loc.longitude;
   CONFIG.RADIUS_MILES = loc.radiusMiles;
@@ -119,4 +215,5 @@ export function applyLocation(loc) {
   CONFIG.TIDE_STATION_ID = loc.tideStationId;
 }
 
+export type { ToolsServiceConfig, LocationData };
 export default CONFIG;

@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-import logger from "../../logger.js";
+import logger from "../../logger.ts";
 
 /**
  * World Bank Fetcher — Static In-Memory Country Indicators Database
@@ -93,7 +93,7 @@ function ensureLoaded() {
     const values = parseCSVLine(lines[i]);
     if (values.length < 3) continue;
 
-    const row = {};
+    const row: Record<string, any> = {};
     headers.forEach((h, idx) => {
       const val = values[idx] || "";
       if (SKIP_NUMERIC.has(h)) {
@@ -170,7 +170,7 @@ export function getCountryIndicators(code) {
  * @param {string} [opts.order="desc"] - "asc" or "desc"
  * @returns {object} Ranked results
  */
-export function rankCountriesByIndicator(indicator, opts = {}) {
+export function rankCountriesByIndicator(indicator, opts: Record<string, any> = {}) {
   ensureLoaded();
 
   const { limit = 10, order = "desc" } = opts;

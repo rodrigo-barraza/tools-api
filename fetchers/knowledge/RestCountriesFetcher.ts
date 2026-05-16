@@ -1,4 +1,4 @@
-import { REST_COUNTRIES_BASE_URL } from "../../constants.js";
+import { REST_COUNTRIES_BASE_URL } from "../../constants.ts";
 
 /**
  * Rest Countries API fetcher.
@@ -8,13 +8,13 @@ import { REST_COUNTRIES_BASE_URL } from "../../constants.js";
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
-function normalizeCountry(c) {
+function normalizeCountry(c: any) {
   return {
     name: c.name?.common || null,
     officialName: c.name?.official || null,
     nativeNames: c.name?.nativeName
       ? Object.values(c.name.nativeName)
-          .map((n) => n.common)
+          .map((n: any) => n.common)
           .slice(0, 3)
       : [],
     cca2: c.cca2 || null,
@@ -26,7 +26,7 @@ function normalizeCountry(c) {
     area: c.area || null,
     languages: c.languages ? Object.values(c.languages) : [],
     currencies: c.currencies
-      ? Object.entries(c.currencies).map(([code, info]) => ({
+      ? Object.entries(c.currencies).map(([code, info]: any) => ({
           code,
           name: info.name,
           symbol: info.symbol,

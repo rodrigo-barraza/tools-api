@@ -1,5 +1,5 @@
 import { days as daysToMs } from "@rodrigo-barraza/utilities-library";
-import { getMessagesCollection } from "../models/LuposMessage.js";
+import { getMessagesCollection } from "../models/LuposMessage.ts";
 
 // ═══════════════════════════════════════════════════════════════
 //  Discord Data Service
@@ -127,8 +127,8 @@ function buildBaseFilter({
   before,
   after,
   includeBots = false,
-} = {}) {
-  const filter = {};
+}: Record<string, any> = {}) {
+  const filter: Record<string, any> = {};
 
   if (guildId) filter.guildId = guildId;
   if (channelId) filter.channelId = channelId;
@@ -197,7 +197,7 @@ const DiscordDataService = {
     limit = 50,
     mode = "messages",
     includeBots = false,
-  } = {}) {
+  }: Record<string, any> = {}) {
     const col = getMessagesCollection();
     const filter = buildBaseFilter({ guildId, channelId, userId, username, query, before, after, includeBots });
     const cappedLimit = Math.min(limit, 500);
@@ -463,7 +463,7 @@ const DiscordDataService = {
     groupBy = "user",
     topN = 25,
     includeBots = false,
-  } = {}) {
+  }: Record<string, any> = {}) {
     const col = getMessagesCollection();
     const filter = buildBaseFilter({ guildId, channelId, userId, username, query, before, after, includeBots });
     const cappedTopN = Math.min(topN, 100);
@@ -550,7 +550,7 @@ const DiscordDataService = {
 
     // ── Format results with human-readable labels ─────────────
     const groups = results.map((r) => {
-      const base = { count: r.count };
+      const base: Record<string, any> = { count: r.count };
 
       switch (groupBy) {
         case "user":
@@ -613,12 +613,12 @@ const DiscordDataService = {
     channelId,
     days = 7,
     topN = 15,
-  } = {}) {
+  }: Record<string, any> = {}) {
     const col = getMessagesCollection();
     const cappedDays = Math.min(days, 365);
     const sinceTimestamp = Date.now() - daysToMs(cappedDays);
 
-    const match = {
+    const match: Record<string, any> = {
       guildId,
       createdTimestamp: { $gte: sinceTimestamp },
       "author.bot": { $ne: true },

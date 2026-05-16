@@ -1,5 +1,5 @@
-import { saveState, loadState } from "../models/CollectorSnapshot.js";
-import logger from "../logger.js";
+import { saveState, loadState } from "../models/CollectorSnapshot.ts";
+import logger from "../logger.ts";
 
 // ═══════════════════════════════════════════════════════════════
 //  Freshness Service — Cache-Aside Staleness Check

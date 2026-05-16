@@ -1,5 +1,5 @@
-import { upsertEarthquakes } from "../models/Earthquake.js";
-import { EARTHQUAKE_MAGNITUDE_SCALE } from "../constants.js";
+import { upsertEarthquakes } from "../models/Earthquake.ts";
+import { EARTHQUAKE_MAGNITUDE_SCALE } from "../constants.ts";
 
 /**
  * In-memory cache for the latest earthquake feed.
@@ -57,7 +57,7 @@ export function getLatestEarthquakes() {
  * Get a summary of the latest feed — counts by magnitude bracket + strongest event.
  */
 export function getEarthquakeSummary() {
-  const counts = {};
+  const counts: Record<string, any> = {};
   for (const scale of EARTHQUAKE_MAGNITUDE_SCALE) {
     counts[scale.label] = 0;
   }

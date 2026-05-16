@@ -1,6 +1,6 @@
 // ─── Meta-Tool for Tool Discovery ───────────────────────────
 
-import { getToolSchemas } from "./ToolSchemaService.js";
+import { getToolSchemas } from "./ToolSchemaService.ts";
 
 /**
  * Search all registered tool schemas by keyword, domain, or label.
@@ -12,7 +12,7 @@ import { getToolSchemas } from "./ToolSchemaService.js";
  * @param {number} [options.limit=20] - Max results
  * @returns {{ matches: Array, total: number, query: string }}
  */
-export function agenticToolSearch(query, { domain, label, limit = 20 } = {}) {
+export function agenticToolSearch(query, { domain, label, limit = 20 }: Record<string, any> = {}) {
   const allSchemas = getToolSchemas();
 
   if (!allSchemas || allSchemas.length === 0) {

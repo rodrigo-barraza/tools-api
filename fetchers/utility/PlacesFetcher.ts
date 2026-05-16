@@ -1,4 +1,4 @@
-import CONFIG from "../../config.js";
+import CONFIG from "../../config.ts";
 
 const NEARBY_URL = "https://places.googleapis.com/v1/places:searchNearby";
 const TEXT_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText";
@@ -98,7 +98,7 @@ const MARKER_COLORS = ["red", "blue", "green", "purple", "orange", "yellow"];
  * @param {string}  [opts.maptype] - roadmap | satellite | terrain | hybrid
  * @returns {string|null} Static map URL or null if no places
  */
-export function buildStaticMapUrl(places, center, { size = "800x400", zoom, maptype = "roadmap" } = {}) {
+export function buildStaticMapUrl(places, center, { size = "800x400", zoom, maptype = "roadmap" }: Record<string, any> = {}) {
   if (!places.length || !CONFIG.GOOGLE_API_KEY) return null;
 
   const params = new URLSearchParams({
@@ -143,7 +143,7 @@ export async function searchNearbyPlaces({
   longitude,
   radius = 5000,
   limit = 20,
-} = {}) {
+}: Record<string, any> = {}) {
   if (!CONFIG.GOOGLE_PLACES_API_KEY) {
     throw new Error("GOOGLE_PLACES_API_KEY is not configured");
   }
@@ -226,7 +226,7 @@ export async function searchPlacesByText({
   longitude,
   radius = 10000,
   limit = 10,
-} = {}) {
+}: Record<string, any> = {}) {
   if (!CONFIG.GOOGLE_PLACES_API_KEY) {
     throw new Error("GOOGLE_PLACES_API_KEY is not configured");
   }

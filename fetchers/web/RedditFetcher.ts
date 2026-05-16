@@ -1,6 +1,6 @@
 // ─── Thread Content + Top Comments ──────────────────────────
 
-import { USER_AGENT } from "../../constants.js";
+import { USER_AGENT } from "../../constants.ts";
 
 const MAX_COMMENTS = 20;
 const MAX_BODY_CHARS = 10_000;
@@ -83,7 +83,7 @@ function extractComments(children, limit) {
  * @param {number} [options.commentLimit=20]
  * @returns {Promise<object>}
  */
-export async function getRedditThread(input, options = {}) {
+export async function getRedditThread(input, options: Record<string, any> = {}) {
   const jsonUrl = buildRedditJsonUrl(input);
   if (!jsonUrl) {
     return { error: `Invalid Reddit URL: "${input}"` };

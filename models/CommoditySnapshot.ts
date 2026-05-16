@@ -1,7 +1,7 @@
 import { hours as hoursToMs } from "@rodrigo-barraza/utilities-library";
-import { getDB } from "../db.js";
-import { SNAPSHOT_TTL_SECONDS } from "../constants.js";
-import logger from "../logger.js";
+import { getDB } from "../db.ts";
+import { SNAPSHOT_TTL_SECONDS } from "../constants.ts";
+import logger from "../logger.ts";
 
 /**
  * Set up the commodity_snapshots collection with a TTL index.

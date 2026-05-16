@@ -1,5 +1,5 @@
-import { buildScraperHeaders } from "../../../../utilities.js";
-import { upsertWebcams } from "../../../../models/Webcam.js";
+import { buildScraperHeaders } from "../../../../utilities.ts";
+import { upsertWebcams } from "../../../../models/Webcam.ts";
 
 export async function refreshAustinWebcams() {
   // City of Austin Open Data (Socrata SODA API)

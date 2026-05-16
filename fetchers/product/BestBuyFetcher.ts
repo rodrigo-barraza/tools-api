@@ -1,8 +1,8 @@
-import CONFIG from "../../config.js";
-import { BESTBUY_CATEGORIES, PRODUCT_SOURCES } from "../../constants.js";
-import { computeTrendingScore } from "../../utilities.js";
-import rateLimiter from "../../services/RateLimiterService.js";
-import logger from "../../logger.js";
+import CONFIG from "../../config.ts";
+import { BESTBUY_CATEGORIES, PRODUCT_SOURCES } from "../../constants.ts";
+import { computeTrendingScore } from "../../utilities.ts";
+import rateLimiter from "../../services/RateLimiterService.ts";
+import logger from "../../logger.ts";
 
 const BASE_URL = "https://api.bestbuy.com/beta/products";
 

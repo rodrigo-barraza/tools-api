@@ -3,12 +3,12 @@ import {
   TREND_SOURCES as SOURCES,
   GOOGLE_NEWS_ARTICLE_LIMIT,
   USER_AGENT,
-} from "../../constants.js";
-import logger from "../../logger.js";
+} from "../../constants.ts";
+import logger from "../../logger.ts";
 import {
   extractXmlTag,
   extractXmlItems,
-} from "../../utilities.js";
+} from "../../utilities.ts";
 
 const GOOGLE_NEWS_RSS_URL = "https://news.google.com/rss";
 

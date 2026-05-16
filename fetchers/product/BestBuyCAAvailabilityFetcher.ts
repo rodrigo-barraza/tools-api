@@ -2,9 +2,9 @@ import { chunk } from "@rodrigo-barraza/utilities-library";
 import {
   BESTBUY_CA_AVAILABILITY_BASE_URL,
   BESTBUY_CA_MAX_SKUS_PER_REQUEST,
-} from "../../constants.js";
-import { randomUserAgent } from "../../utilities.js";
-import rateLimiter from "../../services/RateLimiterService.js";
+} from "../../constants.ts";
+import { randomUserAgent } from "../../utilities.ts";
+import rateLimiter from "../../services/RateLimiterService.ts";
 /**
  * Build the Best Buy CA availability URL for a batch of SKUs.
  * SKUs are pipe-delimited and URL-encoded.
@@ -55,7 +55,7 @@ function normalizeAvailability(availability, metadata = null) {
  * @param {object} skuMetadata - Map of SKU → { name, brand, category }
  * @returns {{ results: object[], errors: string[] }}
  */
-export async function fetchBestBuyCAAvailability(skus, skuMetadata = {}) {
+export async function fetchBestBuyCAAvailability(skus, skuMetadata: Record<string, any> = {}) {
   if (!skus.length) return { results: [], errors: [] };
   const batches = chunk(skus, BESTBUY_CA_MAX_SKUS_PER_REQUEST);
   const allResults = [];

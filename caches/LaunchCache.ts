@@ -1,6 +1,6 @@
-import { createSimpleCache } from "./createSimpleCache.js";
+import { createSimpleCache } from "./createSimpleCache.ts";
 
-const cache = createSimpleCache({ type: "array", itemsKey: "launches" });
+const cache = createSimpleCache<any>({ type: "array", itemsKey: "launches" });
 
 export const updateLaunches = cache.update;
 export const setLaunchError = cache.setError;

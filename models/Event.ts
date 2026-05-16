@@ -1,15 +1,54 @@
+import type { Collection, Db } from "mongodb";
 import { days as daysToMs } from "@rodrigo-barraza/utilities-library";
-import { getDB } from "../db.js";
-import logger from "../logger.js";
+import { getDB } from "../db.ts";
+import logger from "../logger.ts";
 
-let collection = null;
+// ─── Types ──────────────────────────────────────────────────────
+export interface EventVenue {
+  name?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  latitude?: number;
+  longitude?: number;
+  address?: string;
+}
+
+export interface EventDocument {
+  sourceId: string;
+  source: string;
+  name: string;
+  category?: string;
+  startDate?: Date;
+  endDate?: Date;
+  venue?: EventVenue;
+  url?: string;
+  imageUrl?: string;
+  mapImageUrl?: string;
+  priceRange?: string;
+  status?: string;
+  description?: string;
+  firstSeen?: Date;
+  lastSeen?: Date;
+}
+
+interface SearchOptions {
+  q?: string;
+  category?: string;
+  city?: string;
+  source?: string;
+  limit?: number;
+}
+
+// ─── Collection Reference ───────────────────────────────────────
+let collection: Collection<EventDocument> | null = null;
 
 /**
  * Initialize the events collection with required indexes.
  */
-export async function setupEventCollection() {
-  const db = getDB();
-  collection = db.collection("events");
+export async function setupEventCollection(): Promise<void> {
+  const db: Db = getDB();
+  collection = db.collection<EventDocument>("events");
 
   await collection.createIndex({ sourceId: 1, source: 1 }, { unique: true });
   await collection.createIndex({ startDate: -1 });
@@ -28,7 +67,7 @@ export async function setupEventCollection() {
 /**
  * Bulk upsert events by sourceId + source.
  */
-export async function upsertEvents(events) {
+export async function upsertEvents(events: EventDocument[]): Promise<{ upserted: number; modified: number }> {
   if (!collection || events.length === 0) return { upserted: 0, modified: 0 };
 
   const operations = events.map((event) => ({
@@ -49,7 +88,7 @@ export async function upsertEvents(events) {
       modified: result.modifiedCount,
     };
   } catch (error) {
-    logger.error("Failed to upsert events:", error.message);
+    logger.error("Failed to upsert events:", (error as Error).message);
     return { upserted: 0, modified: 0 };
   }
 }
@@ -57,7 +96,7 @@ export async function upsertEvents(events) {
 /**
  * Get events happening today (local time boundaries).
  */
-export async function getEventsToday(timezone) {
+export async function getEventsToday(timezone: string): Promise<EventDocument[]> {
   if (!collection) return [];
 
   const now = new Date();
@@ -80,7 +119,7 @@ export async function getEventsToday(timezone) {
 /**
  * Get upcoming events (next N days from now).
  */
-export async function getEventsUpcoming(days = 30, limit = 200) {
+export async function getEventsUpcoming(days = 30, limit = 200): Promise<EventDocument[]> {
   if (!collection) return [];
 
   const now = new Date();
@@ -96,7 +135,7 @@ export async function getEventsUpcoming(days = 30, limit = 200) {
 /**
  * Get past events (last N days).
  */
-export async function getEventsPast(days = 30, limit = 200) {
+export async function getEventsPast(days = 30, limit = 200): Promise<EventDocument[]> {
   if (!collection) return [];
 
   const now = new Date();
@@ -118,10 +157,10 @@ export async function searchEvents({
   city,
   source,
   limit = 100,
-} = {}) {
+}: SearchOptions = {}): Promise<EventDocument[]> {
   if (!collection) return [];
 
-  const query = {};
+  const query: Record<string, unknown> = {};
 
   if (q) query.$text = { $search: q };
   if (category) query.category = category;
@@ -134,7 +173,7 @@ export async function searchEvents({
 
   const cursor = q
     ? collection
-        .find(query, { score: { $meta: "textScore" } })
+        .find(query, { score: { $meta: "textScore" } } as Record<string, unknown>)
         .sort({ score: { $meta: "textScore" } })
     : collection.find(query).sort({ startDate: 1 });
 
@@ -144,7 +183,7 @@ export async function searchEvents({
 /**
  * Get a single event by source and sourceId.
  */
-export async function getEventBySourceId(source, sourceId) {
+export async function getEventBySourceId(source: string, sourceId: string): Promise<EventDocument | null> {
   if (!collection) return null;
   return collection.findOne({ source, sourceId });
 }

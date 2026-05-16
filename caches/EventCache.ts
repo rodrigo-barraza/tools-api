@@ -1,15 +1,15 @@
-import { upsertEvents } from "../models/Event.js";
-import { EVENT_SOURCES, EVENT_CATEGORIES } from "../constants.js";
-import { batchGeocodeEvents } from "../fetchers/event/GeocodingService.js";
-import { enrichEventWithMapUrl } from "../utilities.js";
-import logger from "../logger.js";
+import { upsertEvents } from "../models/Event.ts";
+import { EVENT_SOURCES, EVENT_CATEGORIES } from "../constants.ts";
+import { batchGeocodeEvents } from "../fetchers/event/GeocodingService.ts";
+import { enrichEventWithMapUrl } from "../utilities.ts";
+import logger from "../logger.ts";
 
 /**
  * In-memory cache for the latest event data from each source.
  * Dynamically initializes entries for all EVENT_SOURCES.
  */
 
-const cache = {};
+const cache: Record<string, any> = {};
 
 // Initialize cache for all sources
 for (const source of Object.values(EVENT_SOURCES)) {
@@ -109,12 +109,12 @@ export function getEventSummary() {
   const todayEnd = new Date(now);
   todayEnd.setHours(23, 59, 59, 999);
 
-  const byCategoryCount = {};
+  const byCategoryCount: Record<string, any> = {};
   for (const cat of Object.values(EVENT_CATEGORIES)) {
     byCategoryCount[cat] = 0;
   }
 
-  const bySource = {};
+  const bySource: Record<string, any> = {};
   for (const source of Object.values(EVENT_SOURCES)) {
     bySource[source] = cache[source]?.events.length || 0;
   }
@@ -138,7 +138,7 @@ export function getEventSummary() {
     }
   }
 
-  const lastFetch = {};
+  const lastFetch: Record<string, any> = {};
   for (const source of Object.values(EVENT_SOURCES)) {
     lastFetch[source] = cache[source]?.lastFetch || null;
   }
@@ -157,7 +157,7 @@ export function getEventSummary() {
  * Get health info for the /health endpoint.
  */
 export function getHealth() {
-  const health = {};
+  const health: Record<string, any> = {};
   for (const source of Object.values(EVENT_SOURCES)) {
     health[source] = {
       lastFetch: cache[source]?.lastFetch || null,

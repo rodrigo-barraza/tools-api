@@ -2,10 +2,10 @@
 
 import { WebSocketServer } from "ws";
 import crypto from "node:crypto";
-import logger from "../logger.js";
+import logger from "../logger.ts";
 // NOTE: AgenticFileService imports from this module → circular dependency.
 // We use dynamic import() in rebuildAllowedRootsFromAgents() to break the cycle.
-import CONFIG from "../config.js";
+import CONFIG from "../config.ts";
 
 // ────────────────────────────────────────────────────────────
 // Constants
@@ -117,13 +117,13 @@ export function initAgentWebSocket(httpServer) {
   // ── Agent WebSocket (workspace-service sidecar) ──────────
 
   wss.on("connection", (ws, req) => {
-    const clientIp = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
+    const clientIp = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
       req.socket.remoteAddress?.replace(/^::ffff:/, "");
 
     logger.info(`[AgentWS] New connection from ${clientIp}`);
 
-    ws.isAlive = true;
-    ws.on("pong", () => { ws.isAlive = true; });
+    (ws as any).isAlive = true;
+    ws.on("pong", () => { (ws as any).isAlive = true; });
 
     ws.on("message", (raw) => {
       try {
@@ -151,13 +151,13 @@ export function initAgentWebSocket(httpServer) {
   // ── Client WebSocket (VS Code extension proxy) ──────────
 
   clientWss.on("connection", (ws, req) => {
-    const clientIp = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
+    const clientIp = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
       req.socket.remoteAddress?.replace(/^::ffff:/, "");
 
     logger.info(`[ClientWS] New client connection from ${clientIp}`);
 
-    ws.isAlive = true;
-    ws.on("pong", () => { ws.isAlive = true; });
+    (ws as any).isAlive = true;
+    ws.on("pong", () => { (ws as any).isAlive = true; });
 
     ws.on("message", async (raw) => {
       try {
@@ -367,8 +367,8 @@ function deregisterAgent(agentId, reason) {
  * @param {object} params - RPC parameters
  * @returns {Promise<object>} Result from the agent
  */
-export function sendRpc(agentId, method, params = {}) {
-  return new Promise((resolve, reject) => {
+export function sendRpc(agentId: string, method: string, params: Record<string, any> = {}): Promise<any> {
+  return new Promise<any>((resolve, reject) => {
     const agent = agents.get(agentId);
     if (!agent) {
       reject(new Error("Agent not found"));
@@ -409,7 +409,7 @@ export function sendRpc(agentId, method, params = {}) {
  * @param {function} onNotification - (method, params) => void
  * @returns {Promise<object>}
  */
-export function sendRpcStreaming(agentId, method, params = {}, onNotification) {
+export function sendRpcStreaming(agentId, method, params: Record<string, any> = {}, onNotification) {
   const agent = agents.get(agentId);
   if (!agent) return Promise.reject(new Error("Agent not found"));
 
@@ -520,11 +520,11 @@ function startHealthCheck(wss) {
 
     // WebSocket-level ping for all connections
     wss.clients.forEach((ws) => {
-      if (!ws.isAlive) {
+      if (!(ws as any).isAlive) {
         ws.terminate();
         return;
       }
-      ws.isAlive = false;
+      (ws as any).isAlive = false;
       ws.ping();
     });
   }, HEALTH_CHECK_INTERVAL_MS);
@@ -550,7 +550,7 @@ function sendJson(ws, obj) {
  */
 async function rebuildAllowedRootsFromAgents() {
   try {
-    const { ALLOWED_ROOTS, refreshAllowedRoots, getStaticRoots } = await import("./AgenticFileService.js");
+    const { ALLOWED_ROOTS, refreshAllowedRoots, getStaticRoots } = await import("./AgenticFileService.ts");
 
     // Collect all agent roots
     const agentRoots = [];

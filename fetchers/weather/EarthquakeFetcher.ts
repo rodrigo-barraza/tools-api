@@ -1,4 +1,4 @@
-import { EARTHQUAKE_MAGNITUDE_SCALE } from "../../constants.js";
+import { EARTHQUAKE_MAGNITUDE_SCALE } from "../../constants.ts";
 
 const EARTHQUAKE_FEED_URL =
   "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson";

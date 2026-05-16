@@ -1,6 +1,6 @@
 import { stripHtml, normalizeName } from "@rodrigo-barraza/utilities-library";
-import { TREND_SOURCES as SOURCES, TREND_CATEGORIES } from "../../constants.js";
-import logger from "../../logger.js";
+import { TREND_SOURCES as SOURCES, TREND_CATEGORIES } from "../../constants.ts";
+import logger from "../../logger.ts";
 const TVMAZE_SCHEDULE_URL = "https://api.tvmaze.com/schedule";
 /**
  * Fetches today's TV schedule from TVMaze for US and CA.

@@ -1,6 +1,6 @@
-import { createSimpleCache } from "./createSimpleCache.js";
+import { createSimpleCache } from "./createSimpleCache.ts";
 
-const cache = createSimpleCache({ type: "array", itemsKey: "predictions" });
+const cache = createSimpleCache<any>({ type: "array", itemsKey: "predictions" });
 
 export const updateTides = cache.update;
 export const setTideError = cache.setError;

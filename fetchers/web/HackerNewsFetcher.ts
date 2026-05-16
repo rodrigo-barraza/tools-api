@@ -85,7 +85,7 @@ async function fetchComments(ids, remaining, depth = 0) {
  * @param {number} [options.commentLimit=25]
  * @returns {Promise<object>}
  */
-export async function getHackerNewsThread(input, options = {}) {
+export async function getHackerNewsThread(input, options: Record<string, any> = {}) {
   const itemId = parseHnInput(input);
   if (!itemId) {
     return { error: `Invalid Hacker News URL or ID: "${input}"` };
@@ -104,7 +104,7 @@ export async function getHackerNewsThread(input, options = {}) {
       return { error: `Item not found: ${itemId}` };
     }
 
-    const result = {
+    const result: Record<string, any> = {
       id: item.id,
       type: item.type,
       title: item.title || null,

@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-import logger from "../../logger.js";
+import logger from "../../logger.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -57,7 +57,7 @@ function ensureLoaded() {
       const values = parseCSVLine(lines[i]);
       if (values.length < headers.length) continue;
 
-      const row = {};
+      const row: Record<string, any> = {};
       headers.forEach((h, idx) => {
         row[h] = values[idx] || "";
       });
@@ -67,7 +67,7 @@ function ensureLoaded() {
     }
     logger.info(`📊 Nutrition Requirement DB loaded: ${REQUIREMENTS_DB.length} rules.`);
   } catch (error) {
-    logger.error("Failed to load digest_nutrient_requirement.csv", err);
+    logger.error("Failed to load digest_nutrient_requirement.csv", error);
   }
 }
 
@@ -106,7 +106,7 @@ export function calculateTargetProfile({
       r.authority.toUpperCase() === targetAuth,
   );
 
-  const requirements = {};
+  const requirements: Record<string, any> = {};
   const compositional = [];
   const kcalMult = caloricIntake ? caloricIntake / 1000.0 : 1;
 

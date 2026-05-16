@@ -3,7 +3,7 @@
 // (dev servers, watchers, etc.) so the agent can return
 // immediately while the process continues running.
 
-import logger from "../logger.js";
+import logger from "../logger.ts";
 
 // ────────────────────────────────────────────────────────────
 // Constants

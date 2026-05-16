@@ -1,6 +1,6 @@
 // ─── Repository Metadata + README ───────────────────────────
 
-import { USER_AGENT } from "../../constants.js";
+import { USER_AGENT } from "../../constants.ts";
 
 const GITHUB_API = "https://api.github.com";
 const GITHUB_HEADERS = {
@@ -46,7 +46,7 @@ function parseGitHubInput(input) {
  * @param {boolean} [options.includeLanguages=true]
  * @returns {Promise<object>}
  */
-export async function getGitHubRepo(input, options = {}) {
+export async function getGitHubRepo(input, options: Record<string, any> = {}) {
   const parsed = parseGitHubInput(input);
   if (!parsed) {
     return { error: `Invalid GitHub URL or owner/repo: "${input}"` };
@@ -94,7 +94,7 @@ export async function getGitHubRepo(input, options = {}) {
 
   const data = await repoRes.json();
 
-  const result = {
+  const result: Record<string, any> = {
     fullName: data.full_name,
     description: data.description,
     url: data.html_url,

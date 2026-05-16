@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-import logger from "../../logger.js";
+import logger from "../../logger.ts";
 
 /**
  * Airport Fetcher — Static In-Memory Airport Database
@@ -80,7 +80,7 @@ function ensureLoaded() {
     const values = parseCSVLine(lines[i]);
     if (values.length < 5) continue;
 
-    const row = {};
+    const row: Record<string, any> = {};
     headers.forEach((h, idx) => {
       const val = values[idx] || "";
       if (NUMERIC_FIELDS.has(h)) {
@@ -124,7 +124,7 @@ function formatAirport(ap) {
 /**
  * Search airports by name, IATA code, city, or country.
  */
-export function searchAirports(query, opts = {}) {
+export function searchAirports(query, opts: Record<string, any> = {}) {
   ensureLoaded();
 
   const { limit = 10, country } = opts;
@@ -196,7 +196,7 @@ export function getAirportByCode(code) {
 /**
  * Get all airports in a country.
  */
-export function getAirportsByCountry(countryCode, opts = {}) {
+export function getAirportsByCountry(countryCode, opts: Record<string, any> = {}) {
   ensureLoaded();
 
   const { limit = 50 } = opts;
@@ -224,7 +224,7 @@ export function getAirportsByCountry(countryCode, opts = {}) {
 /**
  * Find nearest airports to a coordinate.
  */
-export function getNearestAirports(lat, lng, opts = {}) {
+export function getNearestAirports(lat, lng, opts: Record<string, any> = {}) {
   ensureLoaded();
 
   const { limit = 5 } = opts;

@@ -3,14 +3,14 @@ import {
   AMAZON_CATEGORIES,
   PRODUCT_SOURCES,
   AMAZON_MAX_PRODUCTS_PER_CATEGORY,
-} from "../../constants.js";
+} from "../../constants.ts";
 import { parsePrice } from "@rodrigo-barraza/utilities-library";
 import {
   randomUserAgent,
   computeTrendingScore,
-} from "../../utilities.js";
-import rateLimiter from "../../services/RateLimiterService.js";
-import logger from "../../logger.js";
+} from "../../utilities.ts";
+import rateLimiter from "../../services/RateLimiterService.ts";
+import logger from "../../logger.ts";
 
 const BASE_URL = "https://www.amazon.com/Best-Sellers/zgbs";
 

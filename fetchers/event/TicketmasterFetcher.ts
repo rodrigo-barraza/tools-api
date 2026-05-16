@@ -1,11 +1,11 @@
 import { days } from "@rodrigo-barraza/utilities-library";
-import CONFIG from "../../config.js";
+import CONFIG from "../../config.ts";
 import {
   EVENT_SOURCES,
   TICKETMASTER_CATEGORY_MAP,
   EVENT_CATEGORIES,
-} from "../../constants.js";
-import rateLimiter from "../../services/RateLimiterService.js";
+} from "../../constants.ts";
+import rateLimiter from "../../services/RateLimiterService.ts";
 
 const BASE_URL = "https://app.ticketmaster.com/discovery/v2/events.json";
 

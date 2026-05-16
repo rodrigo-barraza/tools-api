@@ -1,5 +1,5 @@
-import { buildScraperHeaders } from "../../../../utilities.js";
-import { upsertWebcams } from "../../../../models/Webcam.js";
+import { buildScraperHeaders } from "../../../../utilities.ts";
+import { upsertWebcams } from "../../../../models/Webcam.ts";
 
 export async function refreshSeattleWebcams() {
   // SDOT Travelers API (Seattle Live Webcams)

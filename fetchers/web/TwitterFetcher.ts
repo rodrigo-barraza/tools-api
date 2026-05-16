@@ -1,6 +1,6 @@
 // ─── Twitter/X Fetcher — Post Content Extraction ────────────
 
-import { USER_AGENT } from "../../constants.js";
+import { USER_AGENT } from "../../constants.ts";
 
 const FXTWITTER_API = "https://api.fxtwitter.com";
 const OEMBED_API = "https://publish.twitter.com/oembed";
@@ -70,7 +70,7 @@ async function fetchFxTwitter(username, tweetId) {
     const tweet = data.tweet;
     if (!tweet) return { error: "Tweet not found in response" };
 
-    const result = {
+    const result: Record<string, any> = {
       tweetId: tweet.id || tweetId,
       url: tweet.url || `https://x.com/${username}/status/${tweetId}`,
       author: tweet.author?.name || null,

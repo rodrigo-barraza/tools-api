@@ -1,7 +1,7 @@
 import { normalizeName } from "@rodrigo-barraza/utilities-library";
-import CONFIG from "../../config.js";
-import { TREND_SOURCES as SOURCES, X_WOEIDS } from "../../constants.js";
-import logger from "../../logger.js";
+import CONFIG from "../../config.ts";
+import { TREND_SOURCES as SOURCES, X_WOEIDS } from "../../constants.ts";
+import logger from "../../logger.ts";
 
 /**
  * Fetches trending topics from X (Twitter) for a given WOEID.

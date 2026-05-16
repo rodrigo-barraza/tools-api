@@ -3,8 +3,8 @@
 // search, download, and management via installed search plugins.
 // ─────────────────────────────────────────────────────────────
 
-import CONFIG from "../config.js";
-import logger from "../logger.js";
+import CONFIG from "../config.ts";
+import logger from "../logger.ts";
 
 const LOG_PREFIX = "🧲 QBittorrent";
 
@@ -66,7 +66,7 @@ async function authenticate() {
 /**
  * Make an authenticated request to the qBittorrent API.
  */
-async function qbtFetch(path, { method = "GET", body, params } = {}) {
+async function qbtFetch(path, { method = "GET", body, params }: Record<string, any> = {}) {
   const sid = await authenticate();
   const baseUrl = getBaseUrl();
 
@@ -76,7 +76,7 @@ async function qbtFetch(path, { method = "GET", body, params } = {}) {
     if (qs) url += `?${qs}`;
   }
 
-  const opts = {
+  const opts: Record<string, any> = {
     method,
     headers: { Cookie: `SID=${sid}` },
   };
@@ -181,7 +181,7 @@ export async function deleteSearch(id) {
  * Run a complete search lifecycle: start → poll → get results → cleanup.
  * This is the primary method used by the route handler.
  */
-export async function search(pattern, { plugins = "enabled", category = "all", limit = 50, timeoutMs = 30000 } = {}) {
+export async function search(pattern, { plugins = "enabled", category = "all", limit = 50, timeoutMs = 30000 }: Record<string, any> = {}) {
   const { id } = await startSearch(pattern, plugins, category);
   const deadline = Date.now() + timeoutMs;
 
@@ -279,8 +279,8 @@ export async function updatePlugins() {
  * @param {string} urls - Magnet URIs or torrent URLs (one per line or pipe-separated)
  * @param {object} opts - savepath, category, tags, paused, etc.
  */
-export async function addTorrent(urls, opts = {}) {
-  const body = { urls: urls.replace(/\|/g, "\n") };
+export async function addTorrent(urls, opts: Record<string, any> = {}) {
+  const body: Record<string, any> = { urls: urls.replace(/\|/g, "\n") };
   if (opts.savePath) body.savepath = opts.savePath;
   if (opts.category) body.category = opts.category;
   if (opts.tags) body.tags = opts.tags;
@@ -300,8 +300,8 @@ export async function addTorrent(urls, opts = {}) {
  * List torrents with optional filter.
  * @param {object} opts - filter, category, tag, sort, limit
  */
-export async function listTorrents(opts = {}) {
-  const params = {};
+export async function listTorrents(opts: Record<string, any> = {}) {
+  const params: Record<string, any> = {};
   if (opts.filter) params.filter = opts.filter; // all|downloading|seeding|completed|paused|active|inactive|resumed|stalled|errored
   if (opts.category) params.category = opts.category;
   if (opts.tag) params.tag = opts.tag;

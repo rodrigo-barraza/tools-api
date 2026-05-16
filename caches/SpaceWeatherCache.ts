@@ -1,7 +1,7 @@
-import { upsertSolarFlares } from "../models/SolarFlare.js";
-import { upsertCmes } from "../models/Cme.js";
-import { upsertGeomagneticStorms } from "../models/GeomagneticStorm.js";
-import { SOLAR_FLARE_CLASSES } from "../constants.js";
+import { upsertSolarFlares } from "../models/SolarFlare.ts";
+import { upsertCmes } from "../models/Cme.ts";
+import { upsertGeomagneticStorms } from "../models/GeomagneticStorm.ts";
+import { SOLAR_FLARE_CLASSES } from "../constants.ts";
 
 const cache = {
   flares: [],

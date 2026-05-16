@@ -23,15 +23,15 @@ import {
 import {
   getToolSchemas,
   getToolSchemasForAI,
-} from "./ToolSchemaService.js";
-import CONFIG from "../config.js";
-import logger from "../logger.js";
+} from "./ToolSchemaService.ts";
+import CONFIG from "../config.ts";
+import logger from "../logger.ts";
 
 // ── Self base URL (vault-resolved, localhost fallback) ───────
 const SELF_BASE_URL = CONFIG.TOOLS_SERVICE_URL || `http://localhost:${CONFIG.TOOLS_SERVICE_PORT}`;
 
 // ── Build tool executor URL from endpoint metadata ──────────
-function buildUrl(endpoint, args = {}) {
+function buildUrl(endpoint: Record<string, any>, args: Record<string, any> = {}) {
   let path = endpoint.path;
 
   // Handle conditional paths
@@ -43,8 +43,8 @@ function buildUrl(endpoint, args = {}) {
   }
 
   // Replace path params
-  const pathParams = new Set(endpoint.pathParams || []);
-  for (const param of pathParams) {
+  const pathParams = new Set<string>(endpoint.pathParams || []);
+  for (const param of pathParams as any) {
     if (args[param] !== undefined && args[param] !== null) {
       path = path.replace(`:${param}`, encodeURIComponent(String(args[param])));
     }
@@ -79,12 +79,12 @@ const ARG_REMAPS = {
 };
 
 // ── Execute tool via internal HTTP ──────────────────────────
-async function executeTool(toolName, endpoint, args = {}, context = {}) {
+async function executeTool(toolName: string, endpoint: Record<string, any>, args: Record<string, any> = {}, context: Record<string, any> = {}) {
   const remaps = ARG_REMAPS[toolName];
   let resolvedArgs = args;
   if (remaps) {
     resolvedArgs = { ...args };
-    for (const [from, to] of Object.entries(remaps)) {
+    for (const [from, to] of Object.entries(remaps as Record<string, string>)) {
       if (resolvedArgs[from] !== undefined) {
         resolvedArgs[to] = resolvedArgs[from];
         delete resolvedArgs[from];
@@ -123,7 +123,7 @@ async function executeTool(toolName, endpoint, args = {}, context = {}) {
     }
 
     const url = buildUrl(endpoint, resolvedArgs);
-    const headers = {};
+    const headers: Record<string, any> = {};
     if (context.project) headers["X-Project"] = context.project;
     if (context.agent) headers["X-Agent"] = context.agent;
     if (context.username) headers["X-Username"] = context.username;
@@ -139,7 +139,7 @@ async function executeTool(toolName, endpoint, args = {}, context = {}) {
 }
 
 // ── Create the MCP Server ───────────────────────────────────
-function createMcpServer(context = {}) {
+function createMcpServer(context: Record<string, any> = {}) {
   const server = new Server(
     { name: "sun-tools", version: "1.0.0" },
     { capabilities: { tools: {} } },

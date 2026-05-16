@@ -33,7 +33,7 @@ router.get("/past", asyncHandler(async (req, res) => {
   res.json({ count: events.length, days, events });
 }));
 router.get("/search", asyncHandler(async (req, res) => {
-  const { q, category, city, source } = req.query;
+  const { q, category, city, source } = req.query as any;
   const limit = parseIntParam(req.query.limit, 100);
   const events = await searchEvents({ q, category, city, source, limit });
   res.json({
@@ -56,7 +56,7 @@ router.get("/:source/:id", asyncHandler(async (req, res) => {
 }));
 // ── Unified Events Dispatcher ──────────────────────────────────────
 router.get("/events", asyncHandler(async (req, res) => {
-  const { action, q, source, category, days, limit: rawLimit } = req.query;
+  const { action, q, source, category, days, limit: rawLimit } = req.query as any;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["search", "upcoming", "today", "summary"] });
   const limit = parseIntParam(rawLimit, undefined);
   switch (action) {

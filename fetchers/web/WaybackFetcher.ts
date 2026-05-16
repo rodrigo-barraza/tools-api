@@ -46,7 +46,7 @@ export async function getSnapshot(url, timestamp) {
  * @param {string} from Start date (YYYYMMDD)
  * @param {string} to End date (YYYYMMDD)
  */
-export async function getSnapshotHistory(url, { limit = 20, from, to } = {}) {
+export async function getSnapshotHistory(url, { limit = 20, from, to }: Record<string, any> = {}) {
   const params = new URLSearchParams({
     url,
     output: "json",
@@ -70,7 +70,7 @@ export async function getSnapshotHistory(url, { limit = 20, from, to } = {}) {
   const rows = data.slice(1);
 
   const snapshots = rows.map((row) => {
-    const obj = {};
+    const obj: Record<string, any> = {};
     headers.forEach((h, i) => { obj[h] = row[i]; });
     return {
       timestamp: obj.timestamp,

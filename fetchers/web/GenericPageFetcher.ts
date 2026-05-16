@@ -144,7 +144,7 @@ function extractText($, container) {
 // ─── Metadata Extraction ────────────────────────────────────────────
 
 function extractMetadata($, url) {
-  const meta = {};
+  const meta: Record<string, any> = {};
 
   // Title: og:title > twitter:title > <title>
   meta.title =
@@ -218,7 +218,7 @@ function extractMetadata($, url) {
  * @param {number} [options.maxChars=15000] - Max characters of body text
  * @returns {Promise<object>}
  */
-export async function fetchGenericPage(url, options = {}) {
+export async function fetchGenericPage(url, options: Record<string, any> = {}) {
   const maxChars = options.maxChars ? parseInt(options.maxChars, 10) : MAX_BODY_CHARS;
 
   let response;

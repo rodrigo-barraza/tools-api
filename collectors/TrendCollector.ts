@@ -11,22 +11,22 @@ import {
   BLUESKY_INTERVAL_MS,
   GITHUB_TRENDING_INTERVAL_MS,
   PRODUCTHUNT_TREND_INTERVAL_MS,
-} from "../constants.js";
-import { upsertTrends } from "../models/Trend.js";
-import { fetchGoogleTrends } from "../fetchers/trend/GoogleTrendsFetcher.js";
-import { fetchRedditTrends } from "../fetchers/trend/RedditFetcher.js";
-import { fetchWikipediaTrends } from "../fetchers/trend/WikipediaFetcher.js";
-import { fetchHackerNewsTrends } from "../fetchers/trend/HackerNewsFetcher.js";
-import { fetchAllXTrends } from "../fetchers/trend/XTrendsFetcher.js";
-import { fetchGoogleNews } from "../fetchers/trend/GoogleNewsFetcher.js";
-import { fetchMastodonTrends } from "../fetchers/trend/MastodonFetcher.js";
-import { fetchTVMazeTrends } from "../fetchers/trend/TVMazeFetcher.js";
-import { fetchBlueskyTrends } from "../fetchers/trend/BlueskyFetcher.js";
-import { fetchGitHubTrending } from "../fetchers/trend/GitHubTrendingFetcher.js";
-import { fetchProductHuntTrends } from "../fetchers/trend/ProductHuntFetcher.js";
-import { updateTrends, setTrendError } from "../caches/TrendCache.js";
-import { saveState, startCollectorLoop } from "../services/FreshnessService.js";
-import logger from "../logger.js";
+} from "../constants.ts";
+import { upsertTrends } from "../models/Trend.ts";
+import { fetchGoogleTrends } from "../fetchers/trend/GoogleTrendsFetcher.ts";
+import { fetchRedditTrends } from "../fetchers/trend/RedditFetcher.ts";
+import { fetchWikipediaTrends } from "../fetchers/trend/WikipediaFetcher.ts";
+import { fetchHackerNewsTrends } from "../fetchers/trend/HackerNewsFetcher.ts";
+import { fetchAllXTrends } from "../fetchers/trend/XTrendsFetcher.ts";
+import { fetchGoogleNews } from "../fetchers/trend/GoogleNewsFetcher.ts";
+import { fetchMastodonTrends } from "../fetchers/trend/MastodonFetcher.ts";
+import { fetchTVMazeTrends } from "../fetchers/trend/TVMazeFetcher.ts";
+import { fetchBlueskyTrends } from "../fetchers/trend/BlueskyFetcher.ts";
+import { fetchGitHubTrending } from "../fetchers/trend/GitHubTrendingFetcher.ts";
+import { fetchProductHuntTrends } from "../fetchers/trend/ProductHuntFetcher.ts";
+import { updateTrends, setTrendError } from "../caches/TrendCache.ts";
+import { saveState, startCollectorLoop } from "../services/FreshnessService.ts";
+import logger from "../logger.ts";
 
 // ─── Collector Factory ─────────────────────────────────────────────
 

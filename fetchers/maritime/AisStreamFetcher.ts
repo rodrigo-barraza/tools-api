@@ -1,13 +1,13 @@
 import WebSocket from "ws";
-import CONFIG from "../../config.js";
-import logger from "../../logger.js";
+import CONFIG from "../../config.ts";
+import logger from "../../logger.ts";
 import {
   AIS_STREAM_WS_URL,
   AIS_STREAM_MAX_BUFFER_SIZE,
   AIS_STREAM_RECONNECT_DELAY_MS,
   AIS_STREAM_BBOX_RADIUS_DEG,
   AIS_STREAM_MESSAGE_TYPES,
-} from "../../constants.js";
+} from "../../constants.ts";
 
 /**
  * AIS Stream WebSocket Fetcher.
@@ -56,7 +56,7 @@ const stats = {
  * @param {string[]} [options.mmsiFilter] - Filter by MMSI (max 50)
  * @param {string[]} [options.messageTypes] - Filter message types
  */
-export function startAisStream(options = {}) {
+export function startAisStream(options: Record<string, any> = {}) {
   if (!CONFIG.AIS_STREAM_API_KEY) {
     logger.warn("[AisStream] ⚠️ AIS_STREAM_API_KEY not configured, skipping");
     return;
@@ -66,7 +66,7 @@ export function startAisStream(options = {}) {
   connect(options);
 }
 
-function connect(options = {}) {
+function connect(options: Record<string, any> = {}) {
   if (socket) {
     try {
       socket.close();
@@ -126,7 +126,7 @@ function connect(options = {}) {
   };
 
   socket.onerror = (err) => {
-    stats.lastError = error.message || "WebSocket error";
+    stats.lastError = err.message || "WebSocket error";
     logger.error(`[AisStream] ❌ WebSocket error: ${stats.lastError}`);
   };
 
@@ -147,7 +147,7 @@ function connect(options = {}) {
 // ─── Subscription Builder ──────────────────────────────────────────
 
 function buildSubscription(options) {
-  const sub = {
+  const sub: Record<string, any> = {
     APIKey: CONFIG.AIS_STREAM_API_KEY,
     BoundingBoxes: options.boundingBoxes || buildDefaultBbox(),
   };
@@ -274,7 +274,7 @@ function processMessage(raw) {
  */
 export function getTrackedVessels(limit = 100) {
   const vessels = Array.from(vesselMap.values())
-    .sort((a, b) => new Date(b.receivedAt) - new Date(a.receivedAt))
+    .sort((a: any, b: any) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime())
     .slice(0, limit);
 
   return vessels;
@@ -321,7 +321,7 @@ export function getVesselsInArea(minLat, maxLat, minLng, maxLng, limit = 100) {
         v.longitude >= minLng &&
         v.longitude <= maxLng,
     )
-    .sort((a, b) => new Date(b.receivedAt) - new Date(a.receivedAt))
+    .sort((a: any, b: any) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime())
     .slice(0, limit);
 }
 
@@ -335,7 +335,7 @@ export function searchVessels(query, limit = 20) {
   const q = query.toLowerCase();
   return Array.from(vesselMap.values())
     .filter((v) => v.shipName?.toLowerCase().includes(q))
-    .sort((a, b) => new Date(b.receivedAt) - new Date(a.receivedAt))
+    .sort((a: any, b: any) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime())
     .slice(0, limit);
 }
 

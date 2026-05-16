@@ -116,7 +116,7 @@ export function calculateHydrationNeeds({
 
   // ── Timing distribution ──────────────────────────────────────
   const waking = totalIntake - exerciseAdj;
-  const timing = {
+  const timing: Record<string, any> = {
     morning: Math.round(waking * 0.25),
     midday: Math.round(waking * 0.30),
     afternoon: Math.round(waking * 0.25),

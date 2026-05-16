@@ -1,9 +1,9 @@
 import { TokenManager } from "@rodrigo-barraza/utilities-library/node";
-import CONFIG from "../../config.js";
-import { PRODUCT_SOURCES, EBAY_CATEGORIES } from "../../constants.js";
-import { computeTrendingScore } from "../../utilities.js";
-import rateLimiter from "../../services/RateLimiterService.js";
-import logger from "../../logger.js";
+import CONFIG from "../../config.ts";
+import { PRODUCT_SOURCES, EBAY_CATEGORIES } from "../../constants.ts";
+import { computeTrendingScore } from "../../utilities.ts";
+import rateLimiter from "../../services/RateLimiterService.ts";
+import logger from "../../logger.ts";
 const BASE_URL = "https://api.ebay.com/buy/browse/v1";
 // ─── OAuth2 Token Management ──────────────────────────────────────
 const ebayTokenManager = new TokenManager(async () => {

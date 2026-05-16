@@ -605,10 +605,10 @@ router.post("/task/list", agenticHandler(async (req) => {
   });
 }));
 router.get("/task/list-all", asyncHandler(async (req) => {
-  const { status, limit, agentSessionId } = req.query;
+  const { status, limit, agentSessionId } = req.query as any;
   const db = (await import("../db.js")).getDB();
   const col = db.collection("agent_tasks");
-  const filter = {};
+  const filter: Record<string, any> = {};
   if (status) filter.status = status;
   if (agentSessionId) filter.agentSessionId = agentSessionId;
   const tasks = await col
@@ -649,7 +649,7 @@ router.post("/task/update", agenticHandler(async (req) => {
   if (taskId == null) {
     return { error: "Request body must include 'taskId' (number)" };
   }
-  const updates = {};
+  const updates: Record<string, any> = {};
   if (status) updates.status = status;
   if (subject) updates.subject = subject;
   if (description) updates.description = description;

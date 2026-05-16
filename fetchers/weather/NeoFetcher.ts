@@ -1,4 +1,4 @@
-import CONFIG from "../../config.js";
+import CONFIG from "../../config.ts";
 
 const { NASA_API_KEY } = CONFIG;
 
@@ -22,7 +22,7 @@ export async function fetchNeos() {
   const neos = [];
 
   for (const [date, objects] of Object.entries(data.near_earth_objects)) {
-    for (const neo of objects) {
+    for (const neo of (objects as any)) {
       const approach = neo.close_approach_data?.[0];
 
       neos.push({

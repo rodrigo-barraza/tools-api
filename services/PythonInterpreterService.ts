@@ -71,7 +71,7 @@ del _BLOCKED, _orig_import, _safe_import, builtins
  *   error?: string
  * }>}
  */
-export async function executePython(code, { timeout = DEFAULT_TIMEOUT_MS } = {}) {
+export async function executePython(code, { timeout = DEFAULT_TIMEOUT_MS }: Record<string, any> = {}) {
   const clampedTimeout = Math.min(Math.max(timeout, 1000), MAX_TIMEOUT_MS);
   const startTime = performance.now();
 
@@ -94,7 +94,7 @@ export async function executePython(code, { timeout = DEFAULT_TIMEOUT_MS } = {})
     };
   }
 
-  return new Promise((resolve) => {
+  return new Promise<any>((resolve) => {
     const stdoutChunks = [];
     const stderrChunks = [];
     let stdoutLen = 0;
@@ -203,7 +203,7 @@ export async function executePython(code, { timeout = DEFAULT_TIMEOUT_MS } = {})
  * @param {function} [options.onChunk]  - (event: "stdout"|"stderr", data: string) => void
  * @returns {Promise<{ success, stdout, stderr, exitCode, executionTimeMs, timedOut, error? }>}
  */
-export async function executePythonStreaming(code, { timeout = DEFAULT_TIMEOUT_MS, onChunk } = {}) {
+export async function executePythonStreaming(code, { timeout = DEFAULT_TIMEOUT_MS, onChunk }: Record<string, any> = {}) {
   const clampedTimeout = Math.min(Math.max(timeout, 1000), MAX_TIMEOUT_MS);
   const startTime = performance.now();
 
@@ -221,7 +221,7 @@ export async function executePythonStreaming(code, { timeout = DEFAULT_TIMEOUT_M
     };
   }
 
-  return new Promise((resolve) => {
+  return new Promise<any>((resolve) => {
     const stdoutChunks = [];
     const stderrChunks = [];
     let stdoutLen = 0;

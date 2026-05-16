@@ -1,6 +1,6 @@
 import { createHash } from "crypto";
-import { insertSnapshot } from "../models/WeatherSnapshot.js";
-import logger from "../logger.js";
+import { insertSnapshot } from "../models/WeatherSnapshot.ts";
+import logger from "../logger.ts";
 
 /**
  * In-memory cache for the latest weather data.
@@ -10,7 +10,7 @@ import logger from "../logger.js";
 
 const cache = {
   // Merged current snapshot
-  current: {},
+  current: {} as Record<string, any>,
 
   // Last fetch timestamps per source
   lastFetch: {

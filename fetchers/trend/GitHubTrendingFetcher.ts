@@ -1,6 +1,6 @@
 import { stripHtml } from "@rodrigo-barraza/utilities-library";
-import { TREND_SOURCES as SOURCES, TREND_CATEGORIES } from "../../constants.js";
-import { randomUserAgent } from "../../utilities.js";
+import { TREND_SOURCES as SOURCES, TREND_CATEGORIES } from "../../constants.ts";
+import { randomUserAgent } from "../../utilities.ts";
 const GITHUB_TRENDING_URL = "https://github.com/trending";
 /**
  * Scrapes GitHub's trending page for today's top repositories.

@@ -1,5 +1,5 @@
-import CONFIG from "../../config.js";
-import { FINNHUB_BASE_URL } from "../../constants.js";
+import CONFIG from "../../config.ts";
+import { FINNHUB_BASE_URL } from "../../constants.ts";
 
 /**
  * Finnhub REST API fetcher.

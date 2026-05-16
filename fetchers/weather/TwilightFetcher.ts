@@ -1,4 +1,4 @@
-import CONFIG from "../../config.js";
+import CONFIG from "../../config.ts";
 
 const SUNRISE_SUNSET_URL = "https://api.sunrise-sunset.org/json";
 

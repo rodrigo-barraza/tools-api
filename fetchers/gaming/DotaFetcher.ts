@@ -9,7 +9,7 @@ let heroCache = null;
 let heroCacheTime = 0;
 const HERO_CACHE_TTL = MS_PER_DAY;
 
-async function fetchJson(path) {
+async function fetchJson(path: string): Promise<any> {
   const res = await fetch(`${BASE_URL}${path}`);
   if (!res.ok) {
     const text = await res.text();
@@ -36,7 +36,7 @@ export async function getHeroes() {
   // Merge stats into hero objects
   const statsMap = new Map(stats.map((s) => [s.id, s]));
   heroCache = heroes.map((h) => {
-    const s = statsMap.get(h.id) || {};
+    const s: any = statsMap.get(h.id) || {};
     return {
       id: h.id,
       name: h.localized_name,

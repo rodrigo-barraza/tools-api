@@ -1,6 +1,6 @@
 import YahooFinance from "yahoo-finance2";
-import { COMMODITY_TICKERS } from "../../constants.js";
-import logger from "../../logger.js";
+import { COMMODITY_TICKERS } from "../../constants.ts";
+import logger from "../../logger.ts";
 
 const yahooFinance = new YahooFinance();
 

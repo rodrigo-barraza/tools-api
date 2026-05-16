@@ -1,6 +1,6 @@
-import { createSimpleCache } from "./createSimpleCache.js";
+import { createSimpleCache } from "./createSimpleCache.ts";
 
-const cache = createSimpleCache();
+const cache = createSimpleCache<any>();
 
 export const updatePollen = cache.update;
 export const setPollenError = cache.setError;

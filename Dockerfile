@@ -51,6 +51,9 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copy application source
 COPY . .
 
+# Build TypeScript
+RUN npm run build
+
 # Non-root user for security
 RUN groupadd --system --gid 1001 toolsapi && \
     useradd --system --uid 1001 --gid toolsapi toolsapi && \
@@ -62,4 +65,4 @@ EXPOSE 5590
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD wget --no-verbose --tries=1 -O /dev/null http://127.0.0.1:5590/health || exit 1
 
-CMD ["node", "boot.js"]
+CMD ["node", "dist/boot.js"]

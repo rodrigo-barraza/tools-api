@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-import logger from "../../logger.js";
+import logger from "../../logger.ts";
 
 /**
  * FDA Drug Fetcher — Static In-Memory FDA NDC Drug Database
@@ -61,7 +61,7 @@ function ensureLoaded() {
     const values = parseCSVLine(lines[i]);
     if (values.length < 3) continue;
 
-    const row = {};
+    const row: Record<string, any> = {};
     headers.forEach((h, idx) => {
       row[h] = values[idx] || null;
     });
@@ -98,7 +98,7 @@ function formatDrug(d) {
 /**
  * Search drugs by name, ingredient, or manufacturer.
  */
-export function searchDrugs(query, opts = {}) {
+export function searchDrugs(query, opts: Record<string, any> = {}) {
   ensureLoaded();
 
   const { limit = 10, dosageForm, productType } = opts;
@@ -172,7 +172,7 @@ export function getDrugByNdc(ndc) {
 export function getDosageForms() {
   ensureLoaded();
 
-  const forms = {};
+  const forms: Record<string, any> = {};
   for (const d of DRUG_DB) {
     const f = d.dosage_form || "Unknown";
     forms[f] = (forms[f] || 0) + 1;
@@ -190,7 +190,7 @@ export function getDosageForms() {
 /**
  * Search drugs by active ingredient.
  */
-export function searchByIngredient(ingredient, opts = {}) {
+export function searchByIngredient(ingredient, opts: Record<string, any> = {}) {
   ensureLoaded();
 
   const { limit = 20 } = opts;
@@ -212,7 +212,7 @@ export function searchByIngredient(ingredient, opts = {}) {
 /**
  * Search drugs by pharmacological class.
  */
-export function searchByPharmClass(pharmClass, opts = {}) {
+export function searchByPharmClass(pharmClass, opts: Record<string, any> = {}) {
   ensureLoaded();
 
   const { limit = 20 } = opts;

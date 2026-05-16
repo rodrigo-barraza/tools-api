@@ -1,12 +1,12 @@
-import { COMMODITIES_INTERVAL_MS } from "../constants.js";
-import { fetchCommodities } from "../fetchers/market/CommodityFetcher.js";
+import { COMMODITIES_INTERVAL_MS } from "../constants.ts";
+import { fetchCommodities } from "../fetchers/market/CommodityFetcher.ts";
 import {
   updateCommodities,
   setCommodityError,
   restoreCommodities,
-} from "../caches/CommodityCache.js";
-import { saveState, startCollectorLoop } from "../services/FreshnessService.js";
-import logger from "../logger.js";
+} from "../caches/CommodityCache.ts";
+import { saveState, startCollectorLoop } from "../services/FreshnessService.ts";
+import logger from "../logger.ts";
 
 async function collectCommodities() {
   try {

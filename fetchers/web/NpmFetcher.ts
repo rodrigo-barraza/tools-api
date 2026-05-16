@@ -13,7 +13,7 @@ const MAX_README_CHARS = 15_000;
  * @param {boolean} [options.includeReadme=true]
  * @returns {Promise<object>}
  */
-export async function getNpmPackage(packageName, options = {}) {
+export async function getNpmPackage(packageName, options: Record<string, any> = {}) {
   if (!packageName || typeof packageName !== "string") {
     return { error: "Package name is required" };
   }
@@ -40,7 +40,7 @@ export async function getNpmPackage(packageName, options = {}) {
   const latest = data["dist-tags"]?.latest;
   const version = data.versions?.[latest] || {};
 
-  const result = {
+  const result: Record<string, any> = {
     name: data.name,
     version: latest,
     description: data.description || version.description || null,

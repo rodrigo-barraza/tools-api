@@ -49,7 +49,7 @@ export function getMarketHealth() {
 }
 // ── Unified Commodities Dispatcher ─────────────────────────────────
 router.get("/commodities/data", asyncHandler(async (req, res) => {
-  const { action, category, ticker, hours: rawHours } = req.query;
+  const { action, category, ticker, hours: rawHours } = req.query as any;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["summary", "category", "ticker", "categories", "history"] });
   switch (action) {
     case "summary":

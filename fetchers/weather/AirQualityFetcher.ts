@@ -1,4 +1,4 @@
-import CONFIG from "../../config.js";
+import CONFIG from "../../config.ts";
 
 const { LATITUDE, LONGITUDE, TIMEZONE } = CONFIG;
 

@@ -1,5 +1,5 @@
-import { getDB } from "../db.js";
-import logger from "../logger.js";
+import { getDB } from "../db.ts";
+import logger from "../logger.ts";
 
 /**
  * Insert a weather snapshot document.

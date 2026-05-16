@@ -1,4 +1,4 @@
-import { JIKAN_BASE_URL } from "../../constants.js";
+import { JIKAN_BASE_URL } from "../../constants.ts";
 
 /**
  * Jikan API Fetcher (MyAnimeList unofficial API v4)

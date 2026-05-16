@@ -1,5 +1,5 @@
-import CONFIG from "../../config.js";
-import { TMDB_BASE_URL, TMDB_IMAGE_BASE_URL } from "../../constants.js";
+import CONFIG from "../../config.ts";
+import { TMDB_BASE_URL, TMDB_IMAGE_BASE_URL } from "../../constants.ts";
 
 /**
  * TMDb Fetcher — Movies & TV Series
@@ -129,7 +129,7 @@ function normalizeCrew(person) {
 /**
  * Search movies by title
  */
-export async function searchMovies(query, { page = 1, year } = {}) {
+export async function searchMovies(query, { page = 1, year }: Record<string, any> = {}) {
   let endpoint = `/search/movie?query=${encodeURIComponent(query)}&page=${page}&language=en-US`;
   if (year) endpoint += `&year=${year}`;
 
@@ -214,7 +214,7 @@ export async function discoverMovies({
   page = 1,
   minVoteAverage,
   minVoteCount,
-} = {}) {
+}: Record<string, any> = {}) {
   let endpoint = `/discover/movie?language=en-US&sort_by=${sortBy}&page=${page}`;
   if (genreId) endpoint += `&with_genres=${genreId}`;
   if (year) endpoint += `&primary_release_year=${year}`;
@@ -248,8 +248,8 @@ export async function discoverMovies({
  * Search TV series by name
  */
 export async function searchTvShows(
-  query,
-  { page = 1, firstAirDateYear } = {},
+  query: any,
+  { page = 1, firstAirDateYear }: any = {},
 ) {
   let endpoint = `/search/tv?query=${encodeURIComponent(query)}&page=${page}&language=en-US`;
   if (firstAirDateYear) endpoint += `&first_air_date_year=${firstAirDateYear}`;
@@ -366,7 +366,7 @@ export async function discoverTvShows({
   page = 1,
   minVoteAverage,
   minVoteCount,
-} = {}) {
+}: Record<string, any> = {}) {
   let endpoint = `/discover/tv?language=en-US&sort_by=${sortBy}&page=${page}`;
   if (genreId) endpoint += `&with_genres=${genreId}`;
   if (firstAirDateYear) endpoint += `&first_air_date_year=${firstAirDateYear}`;

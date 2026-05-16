@@ -1,6 +1,6 @@
 import { hours as hoursToMs } from "@rodrigo-barraza/utilities-library";
-import { getDB } from "../db.js";
-import logger from "../logger.js";
+import { getDB } from "../db.ts";
+import logger from "../logger.ts";
 
 /**
  * Sets up the trends collection with indexes.
@@ -75,7 +75,7 @@ export async function getRecentTrends(
   const collection = db.collection("trends");
   const since = new Date(Date.now() - hoursToMs(hours));
 
-  const filter = { lastSeen: { $gte: since } };
+  const filter: Record<string, any> = { lastSeen: { $gte: since } };
   if (category) filter.category = category;
   if (source) filter.source = source;
 

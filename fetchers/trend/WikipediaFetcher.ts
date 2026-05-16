@@ -3,7 +3,7 @@ import {
   USER_AGENT,
   WIKIPEDIA_EXCLUDED_PAGES,
   WIKIPEDIA_TOP_ARTICLES_LIMIT,
-} from "../../constants.js";
+} from "../../constants.ts";
 
 /**
  * Fetches the most-viewed Wikipedia articles for a given date.

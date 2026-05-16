@@ -1,4 +1,4 @@
-import { WIKIPEDIA_SUMMARY_BASE_URL } from "../../constants.js";
+import { WIKIPEDIA_SUMMARY_BASE_URL } from "../../constants.ts";
 
 /**
  * Wikipedia REST API fetcher (on-demand summaries).

@@ -1,5 +1,5 @@
-import CONFIG from "../../config.js";
-import logger from "../../logger.js";
+import CONFIG from "../../config.ts";
+import logger from "../../logger.ts";
 
 const GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json";
 

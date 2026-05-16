@@ -79,7 +79,7 @@ function decodeHtmlEntities(str) {
  * @param {number} [options.answerLimit=5]
  * @returns {Promise<object>}
  */
-export async function getStackOverflowQuestion(input, options = {}) {
+export async function getStackOverflowQuestion(input, options: Record<string, any> = {}) {
   const parsed = parseStackOverflowInput(input);
   if (!parsed) {
     return { error: `Invalid Stack Overflow URL or question ID: "${input}"` };
@@ -118,7 +118,7 @@ export async function getStackOverflowQuestion(input, options = {}) {
       return { error: `Question not found: ${questionId}` };
     }
 
-    const result = {
+    const result: Record<string, any> = {
       questionId: question.question_id,
       title: question.title || null,
       url: question.link || `https://stackoverflow.com/questions/${questionId}`,

@@ -1,7 +1,7 @@
 // ─── Programmable SMS & Phone Lookup ────────────────────────
 
 import twilio from "twilio";
-import CONFIG from "../config.js";
+import CONFIG from "../config.ts";
 
 // ─── Lazy Client ───────────────────────────────────────────────────
 
@@ -66,10 +66,10 @@ export async function sendSms(to, body, from) {
  * @param {number} [filters.limit] - Max results (default 20, max 100)
  * @returns {Promise<object>}
  */
-export async function listMessages(filters = {}) {
+export async function listMessages(filters: Record<string, any> = {}) {
   const c = getClient();
 
-  const opts = {
+  const opts: Record<string, any> = {
     limit: Math.min(parseInt(filters.limit) || 20, 100),
   };
   if (filters.to) opts.to = filters.to;

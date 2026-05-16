@@ -1,6 +1,6 @@
-import { getDB } from "../db.js";
-import { lookupIp } from "../fetchers/utility/IpInfoFetcher.js";
-import logger from "../logger.js";
+import { getDB } from "../db.ts";
+import { lookupIp } from "../fetchers/utility/IpInfoFetcher.ts";
+import logger from "../logger.ts";
 
 // ═══════════════════════════════════════════════════════════════
 //  Location Service — Dynamic Geolocation Resolution

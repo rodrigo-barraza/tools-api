@@ -4,14 +4,14 @@ import {
   COSTCO_CA_CATEGORIES,
   PRODUCT_SOURCES,
   COSTCO_MAX_PRODUCTS_PER_CATEGORY,
-} from "../../constants.js";
+} from "../../constants.ts";
 import { parsePrice } from "@rodrigo-barraza/utilities-library";
 import {
   computeTrendingScore,
   buildScraperHeaders,
-} from "../../utilities.js";
-import rateLimiter from "../../services/RateLimiterService.js";
-import logger from "../../logger.js";
+} from "../../utilities.ts";
+import rateLimiter from "../../services/RateLimiterService.ts";
+import logger from "../../logger.ts";
 
 // ─── Base URLs ─────────────────────────────────────────────────────
 

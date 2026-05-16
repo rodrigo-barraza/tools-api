@@ -1,4 +1,4 @@
-import { BESTBUY_CA_DEFAULT_SKUS } from "../constants.js";
+import { BESTBUY_CA_DEFAULT_SKUS } from "../constants.ts";
 
 // ─── In-Memory Store ───────────────────────────────────────────────
 
@@ -6,7 +6,7 @@ const store = {
   /** @type {Object<string, { name: string, brand: string, category: string }>} */
   watchlist: { ...BESTBUY_CA_DEFAULT_SKUS },
   /** @type {Object<string, object>} */
-  statuses: {},
+  statuses: {} as Record<string, any>,
   lastCheck: null,
   error: null,
 };

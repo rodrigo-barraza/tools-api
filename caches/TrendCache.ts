@@ -1,8 +1,8 @@
-import { TREND_SOURCES } from "../constants.js";
+import { TREND_SOURCES } from "../constants.ts";
 
 // ─── In-Memory Cache ───────────────────────────────────────────────
 
-const cache = {};
+const cache: Record<string, any> = {};
 
 // Initialize cache slots for each source
 for (const source of Object.values(TREND_SOURCES)) {
@@ -50,7 +50,7 @@ export function setTrendError(source, error) {
  */
 export function getAll() {
   const allTrends = [];
-  const sourceSummary = {};
+  const sourceSummary: Record<string, any> = {};
 
   for (const [source, data] of Object.entries(cache)) {
     allTrends.push(...data.trends);
@@ -186,7 +186,7 @@ export function searchTrends(query) {
  * @returns {object} Per-source health info
  */
 export function getHealth() {
-  const health = {};
+  const health: Record<string, any> = {};
   for (const [source, data] of Object.entries(cache)) {
     health[source] = {
       trendCount: data.trends.length,

@@ -102,7 +102,7 @@ export const LSP_SERVER_CONFIGS = {
  * @returns {Record<string, LspServerConfig>}
  */
 export function getLspServerConfigs(workspaceFolder) {
-  const configs = {};
+  const configs: Record<string, any> = {};
 
   for (const [name, config] of Object.entries(LSP_SERVER_CONFIGS)) {
     configs[name] = {

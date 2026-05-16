@@ -2,8 +2,8 @@
 
 import { readFile, stat, readdir } from "node:fs/promises";
 import { resolve, join, relative } from "node:path";
-import { validatePath } from "./AgenticFileService.js";
-import { routeForPath, sendRpc } from "./AgentConnectionManager.js";
+import { validatePath } from "./AgenticFileService.ts";
+import { routeForPath, sendRpc } from "./AgentConnectionManager.ts";
 
 // ────────────────────────────────────────────────────────────
 // Constants
@@ -50,7 +50,7 @@ export async function agenticProjectSummary(projectPath) {
     return { error: `Directory not found: ${root}` };
   }
 
-  const result = {
+  const result: Record<string, any> = {
     path: root,
     name: root.split("/").pop(),
   };
@@ -110,7 +110,7 @@ export async function agenticProjectSummary(projectPath) {
   }
 
   // ── Directory Structure ──────────────────────────────────
-  const structure = {};
+  const structure: Record<string, any> = {};
   let totalFiles = 0;
   let totalDirs = 0;
 

@@ -19,7 +19,7 @@ const router = Router();
 router.get("/dota/heroes", asyncHandler(async (req, res) => {
   try {
     const heroes = await getHeroes();
-    const { role, attr, q } = req.query;
+    const { role, attr, q } = req.query as any;
 
     let filtered = heroes;
 
@@ -166,7 +166,7 @@ router.get("/dota/pro-matches", asyncHandler(async (req, res) => {
 // ─── Unified Dota Dispatcher (for AI tool schema) ───────────
 
 router.get("/dota", asyncHandler(async (req, res) => {
-  const { action, query, heroId, accountId, matchId, limit, role, attr } = req.query;
+  const { action, query, heroId, accountId, matchId, limit, role, attr } = req.query as any;
   if (!action) {
     return res.status(400).json({
       error: "'action' is required",
@@ -178,7 +178,7 @@ router.get("/dota", asyncHandler(async (req, res) => {
   const qs = (params) => {
     const p = new URLSearchParams();
     for (const [k, v] of Object.entries(params)) {
-      if (v !== undefined && v !== null) p.set(k, v);
+      if (v !== undefined && v !== null) p.set(k, String(v));
     }
     const s = p.toString();
     return s ? `?${s}` : "";

@@ -4,9 +4,9 @@ import { escapeRegex } from "@rodrigo-barraza/utilities-library";
 import { readFile, writeFile, stat, readdir, mkdir, rename, unlink } from "node:fs/promises";
 import { resolve, relative, extname, dirname } from "node:path";
 import { existsSync } from "node:fs";
-import { WORKSPACE_ROOTS as WORKSPACE_ROOTS_RAW } from "../config.js";
-import { routeForPath, sendRpc } from "./AgentConnectionManager.js";
-import logger from "../logger.js";
+import { WORKSPACE_ROOTS as WORKSPACE_ROOTS_RAW } from "../config.ts";
+import { routeForPath, sendRpc } from "./AgentConnectionManager.ts";
+import logger from "../logger.ts";
 
 // ────────────────────────────────────────────────────────────
 // Agent Routing Helper
@@ -154,7 +154,7 @@ function validatePath(inputPath) {
  * @param {number} [options.endLine] - 1-indexed end line (inclusive)
  * @returns {Promise<object>}
  */
-export async function agenticReadFile(filePath, { startLine, endLine } = {}) {
+export async function agenticReadFile(filePath, { startLine, endLine }: Record<string, any> = {}) {
   // Agent routing — proxy to remote agent if path is served by one
   const agentResult = await tryAgentRoute("file.read", { path: filePath, startLine, endLine }, filePath);
   if (agentResult) return agentResult;
@@ -180,7 +180,7 @@ export async function agenticReadFile(filePath, { startLine, endLine } = {}) {
     // Binary detection
     const ext = extname(resolved).toLowerCase();
     if (BINARY_EXTENSIONS.has(ext)) {
-      const result = {
+      const result: Record<string, any> = {
         filePath: resolved,
         isBinary: true,
         extension: ext,
@@ -243,7 +243,7 @@ export async function agenticReadFile(filePath, { startLine, endLine } = {}) {
  * @param {boolean} [options.createDirs=true] - Create parent directories if missing
  * @returns {Promise<object>}
  */
-export async function agenticWriteFile(filePath, content, { createDirs = true } = {}) {
+export async function agenticWriteFile(filePath, content, { createDirs = true }: Record<string, any> = {}) {
   // Agent routing
   const agentResult = await tryAgentRoute("file.write", { path: filePath, content, createDirs }, filePath);
   if (agentResult) return agentResult;
@@ -300,7 +300,7 @@ export async function agenticWriteFile(filePath, content, { createDirs = true } 
  * @param {boolean} [options.allowMultiple=false] - Replace all occurrences
  * @returns {Promise<object>}
  */
-export async function agenticStrReplace(filePath, oldStr, newStr, { allowMultiple = false } = {}) {
+export async function agenticStrReplace(filePath, oldStr, newStr, { allowMultiple = false }: Record<string, any> = {}) {
   // Agent routing
   const agentResult = await tryAgentRoute("file.strReplace", { path: filePath, oldStr, newStr, allowMultiple }, filePath);
   if (agentResult) return agentResult;
@@ -439,7 +439,7 @@ export async function agenticPatchFile(filePath, patch) {
  * @param {number} [options.maxDepth=3] - Max recursion depth
  * @returns {Promise<object>}
  */
-export async function agenticListDirectory(dirPath, { recursive = false, maxDepth = 3 } = {}) {
+export async function agenticListDirectory(dirPath, { recursive = false, maxDepth = 3 }: Record<string, any> = {}) {
   // Agent routing
   const agentResult = await tryAgentRoute("directory.list", { path: dirPath, recursive, maxDepth }, dirPath);
   if (agentResult) return agentResult;
@@ -537,7 +537,7 @@ export async function agenticGrepSearch(pattern, searchPath, {
   includes = [],
   caseInsensitive = false,
   matchPerLine = true,
-} = {}) {
+}: Record<string, any> = {}) {
   // Agent routing
   const agentResult = await tryAgentRoute("search.grep", { pattern, searchPath, isRegex, includes, caseInsensitive, matchPerLine }, searchPath);
   if (agentResult) return agentResult;
@@ -827,7 +827,7 @@ export async function agenticFileInfo(paths) {
       try {
         const stats = await stat(resolved);
         const ext = extname(resolved).toLowerCase();
-        const info = {
+        const info: Record<string, any> = {
           path: resolved,
           exists: true,
           isFile: stats.isFile(),
@@ -882,7 +882,7 @@ export async function agenticFileInfo(paths) {
  * @param {number} [options.contextLines=3] - Number of context lines in diff
  * @returns {Promise<object>}
  */
-export async function agenticFileDiff(pathA, { pathB, content, contextLines = 3 } = {}) {
+export async function agenticFileDiff(pathA, { pathB, content, contextLines = 3 }: Record<string, any> = {}) {
   // Agent routing
   const agentResult = await tryAgentRoute("file.diff", { pathA, pathB, content, contextLines }, pathA);
   if (agentResult) return agentResult;
@@ -941,7 +941,7 @@ export async function agenticFileDiff(pathA, { pathB, content, contextLines = 3 
     };
   } catch (error) {
     if (error.code === "ENOENT") {
-      return { error: `File not found: ${err.path || pathA}` };
+      return { error: `File not found: ${(error as any).path || pathA}` };
     }
     return { error: `file_diff failed: ${error.message}` };
   }
@@ -960,7 +960,7 @@ export async function agenticFileDiff(pathA, { pathB, content, contextLines = 3 
  * @param {boolean} [options.createDirs=true] - Create destination parent dirs
  * @returns {Promise<object>}
  */
-export async function agenticMoveFile(source, destination, { createDirs = true } = {}) {
+export async function agenticMoveFile(source, destination, { createDirs = true }: Record<string, any> = {}) {
   // Agent routing
   const agentResult = await tryAgentRoute("file.move", { source, destination, createDirs }, source);
   if (agentResult) return agentResult;

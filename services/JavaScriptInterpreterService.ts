@@ -1,6 +1,11 @@
-// ─── Sandboxed Code Execution ───────────────────────────────
+// ─── Sandboxed / Privileged Code Execution ─────────────────
 
 import vm from "node:vm";
+import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const nodeRequire = createRequire(__filename);
 
 // ────────────────────────────────────────────────────────────
 // Constants
@@ -14,7 +19,14 @@ const MAX_OUTPUT_BYTES = 512 * 1024; // 512 KB max stdout
 // Safe Globals — what the sandbox can access
 // ────────────────────────────────────────────────────────────
 
-function buildSafeGlobals(outputBuffer) {
+/**
+ * Build the globals object injected into the vm context.
+ *
+ * @param {string[]} outputBuffer - Mutable array that captures console output
+ * @param {"sandboxed"|"privileged"} execution - Execution tier
+ * @returns {object} Globals for vm.createContext
+ */
+function buildGlobals(outputBuffer, execution = "sandboxed") {
   let outputLen = 0;
 
   const safePrint = (...args) => {
@@ -28,8 +40,8 @@ function buildSafeGlobals(outputBuffer) {
     outputLen += line.length;
   };
 
-  return {
-    // Console — only log/warn/error (all go to output buffer)
+  // ── Shared globals (both tiers) ────────────────────────────
+  const shared = {
     console: {
       log: safePrint,
       warn: safePrint,
@@ -104,8 +116,38 @@ function buildSafeGlobals(outputBuffer) {
 
     // Timing (useful for perf measurement)
     performance: { now: () => performance.now() },
+  };
 
-    // Explicitly blocked (so errors are clear)
+  // ── Privileged tier — inject real Node.js globals ──────────
+  if (execution === "privileged") {
+    return {
+      ...shared,
+      require: nodeRequire,
+      process,
+      globalThis,
+      global: globalThis,
+      fetch,
+      setTimeout,
+      setInterval,
+      setImmediate,
+      clearTimeout,
+      clearInterval,
+      clearImmediate,
+      Buffer,
+      URL,
+      URLSearchParams,
+      AbortController,
+      AbortSignal,
+      Headers,
+      Request,
+      Response,
+      FormData,
+    };
+  }
+
+  // ── Sandboxed tier — explicitly block dangerous globals ────
+  return {
+    ...shared,
     require: undefined,
     process: undefined,
     globalThis: undefined,
@@ -125,27 +167,29 @@ function buildSafeGlobals(outputBuffer) {
 // ────────────────────────────────────────────────────────────
 
 /**
- * Execute JavaScript code in a sandboxed vm context.
+ * Execute JavaScript code in a vm context.
  *
  * @param {string} code - JavaScript source code to execute
  * @param {object} [options]
- * @param {number} [options.timeout=5000] - Execution timeout in ms (max 30000)
+ * @param {number}  [options.timeout=5000]       - Execution timeout in ms (max 30 000)
+ * @param {"sandboxed"|"privileged"} [options.execution="sandboxed"] - Execution tier
  * @returns {{
  *   success: boolean,
  *   output: string,
  *   result: *,
  *   executionTimeMs: number,
  *   timedOut: boolean,
+ *   execution: string,
  *   error?: string
  * }}
  */
-export function executeJavaScript(code, { timeout = DEFAULT_TIMEOUT_MS } = {}) {
+export function executeJavaScript(code, { timeout = DEFAULT_TIMEOUT_MS, execution = "sandboxed" }: Record<string, any> = {}) {
   const clampedTimeout = Math.min(Math.max(timeout, 100), MAX_TIMEOUT_MS);
   const startTime = performance.now();
   const outputBuffer = [];
 
   try {
-    const sandbox = buildSafeGlobals(outputBuffer);
+    const sandbox = buildGlobals(outputBuffer, execution);
     const context = vm.createContext(sandbox);
 
     const result = vm.runInContext(code, context, {
@@ -181,6 +225,7 @@ export function executeJavaScript(code, { timeout = DEFAULT_TIMEOUT_MS } = {}) {
       result: serializedResult,
       executionTimeMs,
       timedOut: false,
+      execution,
     };
   } catch (error) {
     const executionTimeMs = Math.round(performance.now() - startTime);
@@ -196,7 +241,7 @@ export function executeJavaScript(code, { timeout = DEFAULT_TIMEOUT_MS } = {}) {
       timedOut,
       error: timedOut
         ? `Execution timed out after ${clampedTimeout}ms`
-        : `${err.constructor.name}: ${error.message}`,
+        : `${error.constructor.name}: ${error.message}`,
     };
   }
 }

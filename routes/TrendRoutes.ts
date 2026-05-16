@@ -59,7 +59,7 @@ export function getTrendHealth() {
 }
 // ── Unified Trends Dispatcher ──────────────────────────────────────
 router.get("/data", asyncHandler(async (req, res) => {
-  const { action, source, hours, limit: rawLimit } = req.query;
+  const { action, source, hours, limit: rawLimit } = req.query as any;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["current", "hot", "top"] });
   const limit = parseIntParam(rawLimit, undefined);
   switch (action) {

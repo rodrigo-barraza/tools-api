@@ -87,7 +87,7 @@ async function processWithSharp(inputBuffer, operations, outputFormat, outputQua
   for (const op of operations) {
     switch (op.type) {
       case "resize": {
-        const opts = {};
+        const opts: Record<string, any> = {};
         if (op.width) opts.width = Math.min(op.width, MAX_DIMENSION);
         if (op.height) opts.height = Math.min(op.height, MAX_DIMENSION);
         if (op.fit) opts.fit = op.fit;
@@ -166,7 +166,7 @@ async function processWithSharp(inputBuffer, operations, outputFormat, outputQua
         break;
 
       case "extend": {
-        const ext = {
+        const ext: Record<string, any> = {
           top: op.top || 0,
           right: op.right || 0,
           bottom: op.bottom || 0,
@@ -180,7 +180,7 @@ async function processWithSharp(inputBuffer, operations, outputFormat, outputQua
       case "composite": {
         if (!op.overlayUrl) throw new Error("composite requires 'overlayUrl'");
         const overlayBuf = await resolveInput(op.overlayUrl, null);
-        const compositeOpts = { input: overlayBuf };
+        const compositeOpts: Record<string, any> = { input: overlayBuf };
         if (op.gravity) compositeOpts.gravity = op.gravity;
         if (op.blend) compositeOpts.blend = op.blend;
         if (op.left !== undefined && op.top !== undefined) {
@@ -215,7 +215,7 @@ async function processWithSharp(inputBuffer, operations, outputFormat, outputQua
 
   // Apply output format
   const format = outputFormat || "png";
-  const formatOpts = {};
+  const formatOpts: Record<string, any> = {};
   if (outputQuality && ["jpeg", "webp", "avif", "tiff"].includes(format)) {
     formatOpts.quality = Math.min(Math.max(outputQuality, 1), 100);
   }

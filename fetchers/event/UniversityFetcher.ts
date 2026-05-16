@@ -1,6 +1,6 @@
 import * as cheerio from "cheerio";
-import { EVENT_SOURCES, EVENT_CATEGORIES } from "../../constants.js";
-import logger from "../../logger.js";
+import { EVENT_SOURCES, EVENT_CATEGORIES } from "../../constants.ts";
+import logger from "../../logger.ts";
 
 const UBC_EVENTS_URL = "https://events.ubc.ca/";
 const SFU_EVENTS_URL = "https://www.sfu.ca/sfunews/events.html";

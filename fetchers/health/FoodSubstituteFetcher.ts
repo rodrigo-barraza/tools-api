@@ -11,14 +11,14 @@
  * (weighted Euclidean distance as fallback for sparse vectors).
  */
 
-import { searchFoods } from "./NutritionFetcher.js";
+import { searchFoods } from "./NutritionFetcher.ts";
 import {
   NUTRITION_MACRO_FIELDS,
   NUTRITION_MINERAL_FIELDS,
   NUTRITION_VITAMIN_FIELDS,
   NUTRITION_AMINO_ACID_FIELDS,
   NUTRITION_LIPID_FIELDS,
-} from "../../constants.js";
+} from "../../constants.ts";
 
 // ─── Internal access to raw FOOD_DB ────────────────────────────
 
@@ -68,7 +68,7 @@ function ensureFoodCache() {
       const values = parseCSVLine(lines[i]);
       if (values.length < 40) continue;
 
-      const row = {};
+      const row: Record<string, any> = {};
       headers.forEach((h, idx) => {
         row[h] = values[idx] || "";
       });

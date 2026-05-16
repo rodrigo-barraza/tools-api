@@ -1,9 +1,9 @@
 import {
   TREND_SOURCES as SOURCES,
   GOOGLE_TRENDS_GEOS,
-} from "../../constants.js";
-import { extractXmlTag, randomUserAgent } from "../../utilities.js";
-import logger from "../../logger.js";
+} from "../../constants.ts";
+import { extractXmlTag, randomUserAgent } from "../../utilities.ts";
+import logger from "../../logger.ts";
 
 const TRENDS_RSS_URL = "https://trends.google.com/trending/rss";
 

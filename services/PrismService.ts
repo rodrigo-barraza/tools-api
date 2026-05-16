@@ -1,7 +1,7 @@
 // ─── HTTP Client for Prism LLM Gateway ──────────────────────
 
-import CONFIG from "../config.js";
-import logger from "../logger.js";
+import CONFIG from "../config.ts";
+import logger from "../logger.ts";
 
 const PRISM_SERVICE_URL = CONFIG.PRISM_SERVICE_URL;
 

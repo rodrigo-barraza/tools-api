@@ -1,9 +1,9 @@
 // ─── VCS Introspection for AI Coding Loops ──────────────────
 
 import { spawn } from "node:child_process";
-import { validatePath } from "./AgenticFileService.js";
-import { WORKTREE_DIR } from "../config.js";
-import { routeForPath, sendRpc } from "./AgentConnectionManager.js";
+import { validatePath } from "./AgenticFileService.ts";
+import { WORKTREE_DIR } from "../config.ts";
+import { routeForPath, sendRpc } from "./AgentConnectionManager.ts";
 
 // Agent routing helper
 async function tryAgentRoute(method, params, targetPath) {
@@ -27,8 +27,8 @@ const MAX_OUTPUT_BYTES = 512 * 1024;
 // Internal Git Runner
 // ────────────────────────────────────────────────────────────
 
-async function runGit(args, cwd) {
-  return new Promise((resolve) => {
+async function runGit(args: string[], cwd: string): Promise<any> {
+  return new Promise<any>((resolve) => {
     const stdoutChunks = [];
     const stderrChunks = [];
     let stdoutLen = 0;
@@ -196,7 +196,7 @@ export async function agenticGitStatus(repoPath) {
  * @param {string} [options.ref] - Diff against a specific reference (commit, branch)
  * @returns {Promise<object>}
  */
-export async function agenticGitDiff(repoPath, { staged = false, path: filePath, ref } = {}) {
+export async function agenticGitDiff(repoPath, { staged = false, path: filePath, ref }: Record<string, any> = {}) {
   // Agent routing
   const agentResult = await tryAgentRoute("git.diff", { path: repoPath, staged, filePath, ref }, repoPath);
   if (agentResult) return agentResult;
@@ -260,7 +260,7 @@ export async function agenticGitDiff(repoPath, { staged = false, path: filePath,
  * @param {string} [options.path] - Show commits affecting specific file
  * @returns {Promise<object>}
  */
-export async function agenticGitLog(repoPath, { limit = 20, author, since, path: filePath } = {}) {
+export async function agenticGitLog(repoPath, { limit = 20, author, since, path: filePath }: Record<string, any> = {}) {
   // Agent routing
   const agentResult = await tryAgentRoute("git.log", { path: repoPath, limit, author, since, filePath }, repoPath);
   if (agentResult) return agentResult;
@@ -378,7 +378,7 @@ export async function agenticGitWorktreeCreate(repoPath, branchName) {
  * @param {boolean} [options.deleteBranch=true] - Also delete the local branch
  * @returns {Promise<object>}
  */
-export async function agenticGitWorktreeRemove(repoPath, worktreePath, { deleteBranch = true } = {}) {
+export async function agenticGitWorktreeRemove(repoPath, worktreePath, { deleteBranch = true }: Record<string, any> = {}) {
   const validation = validatePath(repoPath);
   if (!validation.safe) {
     return { error: validation.error };
@@ -426,7 +426,7 @@ export async function agenticGitWorktreeRemove(repoPath, worktreePath, { deleteB
  * @param {string} [options.message] - Custom merge commit message
  * @returns {Promise<object>}
  */
-export async function agenticGitWorktreeMerge(repoPath, branch, { message } = {}) {
+export async function agenticGitWorktreeMerge(repoPath, branch, { message }: Record<string, any> = {}) {
   const validation = validatePath(repoPath);
   if (!validation.safe) {
     return { error: validation.error };

@@ -172,7 +172,7 @@ router.get("/warnings/count", (_req, res) => res.json(getWarningCount()));
 router.get("/avalanche", (_req, res) => res.json(getAvalanche()));
 // ── Live Weather (on-demand, any location) ────────────────────────
 router.get("/live", asyncHandler(async (req, res) => {
-  const { location, latitude, longitude, units } = req.query;
+  const { location, latitude, longitude, units } = req.query as any;
   if (!location && (latitude == null || longitude == null)) {
     return res.status(400).json({
       error: "Query parameter 'location' (city name) or 'latitude' + 'longitude' are required",
@@ -191,7 +191,7 @@ router.get("/live", asyncHandler(async (req, res) => {
       longitude: longitude != null ? parseFloat(longitude) : undefined,
       units: units || "metric",
     });
-    if (result.error) {
+    if ((result as any).error) {
       return res.status(404).json(result);
     }
     res.json(result);
@@ -219,7 +219,7 @@ const SOURCE_MAP = {
   air_quality_google: () => getGoogleAirQuality(),
 };
 router.get("/environment", (req, res) => {
-  const { source } = req.query;
+  const { source } = req.query as any;
   if (!source) {
     return res.status(400).json({
       error: "Query parameter 'source' is required",

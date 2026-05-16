@@ -1,5 +1,5 @@
-import CONFIG from "../../config.js";
-import { WMO_WEATHER_CODES } from "../../constants.js";
+import CONFIG from "../../config.ts";
+import { WMO_WEATHER_CODES } from "../../constants.ts";
 
 const { LATITUDE, LONGITUDE, TIMEZONE } = CONFIG;
 
