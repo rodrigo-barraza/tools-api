@@ -98,6 +98,11 @@ const CONFIG = {
   AGENT_SECRET: process.env.AGENT_SECRET,
   AGENT_MAX_CONNECTIONS: process.env.AGENT_MAX_CONNECTIONS || "5",
   API_SECRET: process.env.API_SECRET,
+
+  // ─── qBittorrent (Torrent Search & Download) ────────────────────
+  QBITTORRENT_URL: process.env.QBITTORRENT_URL,
+  QBITTORRENT_USERNAME: process.env.QBITTORRENT_USERNAME || "admin",
+  QBITTORRENT_PASSWORD: process.env.QBITTORRENT_PASSWORD,
 };
 
 /**

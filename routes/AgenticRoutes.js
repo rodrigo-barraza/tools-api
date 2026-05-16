@@ -553,6 +553,7 @@ export function getAgenticHealth() {
     taskManagement: "on-demand (MongoDB agent_tasks)",
     memoryUpsert: "on-demand (Prism MemoryService post-processing)",
     customAgentCreate: "on-demand (Prism CustomAgentService)",
+    customAgentList: "on-demand (Prism CustomAgentService)",
     toolSearch: "on-demand (ToolSchemaService keyword search)",
     scheduling: "on-demand (MongoDB agent_schedules + 60s poller)",
     notebookEdit: "on-demand (sandboxed ipynb JSON editing)",
@@ -794,6 +795,26 @@ router.post("/custom-agent/create", asyncHandler(async (req, res) => {
     res.status(201).json(created);
   } catch (err) {
     res.status(500).json({ error: `Custom agent creation failed: ${err.message}` });
+  }
+}));
+// ── List Custom Agents ────────────────────────────────────────
+/**
+ * GET /agentic/custom-agent/list
+ *
+ * Returns all custom agent personas by proxying to Prism's
+ * GET /custom-agents. Read-only discovery for the agentic loop.
+ */
+router.get("/custom-agent/list", asyncHandler(async (_req, res) => {
+  try {
+    const prismRes = await fetch(`${CONFIG.PRISM_SERVICE_URL}/custom-agents`);
+    if (!prismRes.ok) {
+      const err = await prismRes.json().catch(() => ({}));
+      return res.status(prismRes.status).json({ error: err.error || `Prism returned ${prismRes.status}` });
+    }
+    const agents = await prismRes.json();
+    res.json({ agents, count: agents.length });
+  } catch (err) {
+    res.status(500).json({ error: `Custom agent list failed: ${err.message}` });
   }
 }));
 // ─── 16. Tool Search (Meta-Tool) ────────────────────────────

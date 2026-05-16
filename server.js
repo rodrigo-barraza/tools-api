@@ -48,6 +48,7 @@ import agenticRoutes, { getAgenticHealth } from "./routes/AgenticRoutes.js";
 import communicationRoutes, { getCommunicationHealth } from "./routes/CommunicationRoutes.js";
 import creativeRoutes, { getCreativeHealth } from "./routes/CreativeRoutes.js";
 import gamingRoutes, { getGamingHealth } from "./routes/GamingRoutes.js";
+import torrentRoutes, { getTorrentHealth } from "./routes/TorrentRoutes.js";
 
 import discordRoutes, { getDiscordHealth } from "./routes/DiscordRoutes.js";
 import lightsRoutes, { getLightsHealth } from "./routes/LightsRoutes.js";
@@ -104,6 +105,7 @@ app.use("/agentic", agenticRoutes);
 app.use("/communication", communicationRoutes);
 app.use("/creative", express.json({ limit: "50mb" }), creativeRoutes);
 app.use("/gaming", gamingRoutes);
+app.use("/torrent", torrentRoutes);
 
 app.use("/discord", discordRoutes);
 app.use("/lights", lightsRoutes);
@@ -113,7 +115,7 @@ mountMcpRoutes(app);
 
 // ─── Unified Health ────────────────────────────────────────────────
 
-app.get("/health", (_req, res) => {
+app.get("/health", async (_req, res) => {
   res.json({
     status: "ok",
     uptime: process.uptime(),
@@ -135,6 +137,7 @@ app.get("/health", (_req, res) => {
       communication: getCommunicationHealth(),
       creative: getCreativeHealth(),
       gaming: getGamingHealth(),
+      torrent: await getTorrentHealth(),
 
       discord: getDiscordHealth(),
       lights: getLightsHealth(),
@@ -209,10 +212,10 @@ async function start() {
     logger.success(`Tools API running on port ${port}`);
     logger.info(`Database: ${CONFIG.MONGODB_URI}`);
     logger.info(
-      "Domains: event, finance, market, product, trend, weather, knowledge, health, transit, utility, compute, maritime, energy, agentic, communication, creative, gaming, discord, lights",
+      "Domains: event, finance, market, product, trend, weather, knowledge, health, transit, utility, compute, maritime, energy, agentic, communication, creative, gaming, torrent, discord, lights",
     );
     logger.info(
-      "Routes: /event/*, /finance/*, /market/*, /product/*, /trend/*, /weather/*, /knowledge/*, /health/*, /transit/*, /utility/*, /compute/*, /maritime/*, /energy/*, /agentic/*, /communication/*, /creative/*, /gaming/*, /discord/*, /lights/*",
+      "Routes: /event/*, /finance/*, /market/*, /product/*, /trend/*, /weather/*, /knowledge/*, /health/*, /transit/*, /utility/*, /compute/*, /maritime/*, /energy/*, /agentic/*, /communication/*, /creative/*, /gaming/*, /torrent/*, /discord/*, /lights/*",
     );
     logger.info("Agent WebSocket: /ws/agent");
   });

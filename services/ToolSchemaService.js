@@ -6941,6 +6941,23 @@ const TOOL_DEFINITIONS = [
       required: ["name", "identity"],
     },
   },
+  {
+    name: "list_custom_agents",
+    dataSource: onDemand("Prism CustomAgentService"),
+    description:
+      "List all custom AI agent personas. Returns every custom agent registered in the system " +
+      "with their name, agentId, description, icon, color, identity prompt, guidelines, tool policy, " +
+      "enabled tools, and timestamps. Use this to discover which custom agents exist before creating " +
+      "a new one (to avoid duplicates), or when the user asks to see, review, or pick from available agents.",
+    endpoint: {
+      path: "/agentic/custom-agent/list",
+    },
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
 
   // ── Tool Discovery (Meta-Tool) ────────────────────────────
   {
@@ -7393,6 +7410,150 @@ const TOOL_DEFINITIONS = [
       required: ["action", "url"],
     },
   },
+
+  // ── Torrent Search & Download (qBittorrent) ────────────────────
+  {
+    name: "torrent_search",
+    dataSource: onDemand("qBittorrent"),
+    description:
+      "Search for torrents across multiple public torrent indexers via qBittorrent's search plugin " +
+      "system. Searches run against all enabled plugins (60+ public sites including ThePirateBay, " +
+      "EZTV, Nyaa, YTS, 1337x, TorrentGalaxy, etc.). Returns a list of results with name, size, " +
+      "seeds, leechers, magnet link, and source site. Results are sorted by seed count (most popular first). " +
+      "Use category filters to narrow results. After finding a torrent, use torrent_download to add it.",
+    endpoint: {
+      path: "/torrent",
+      queryParams: ["action", "q", "category", "plugins", "limit", "timeout"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        action: {
+          type: "string",
+          enum: ["search"],
+          description: "Must be 'search'",
+        },
+        q: {
+          type: "string",
+          description:
+            "Search query. Use descriptive terms for best results. " +
+            "Examples: 'Ubuntu 24.04 LTS', 'Blender 4.0', 'linux iso', 'public domain film'.",
+        },
+        category: {
+          type: "string",
+          enum: ["all", "movies", "tv", "music", "games", "anime", "software", "pictures", "books"],
+          description: "Category filter to narrow results. Default: 'all'.",
+        },
+        plugins: {
+          type: "string",
+          description:
+            "Specific search plugins to use (pipe-separated names) or 'enabled' for all active plugins. " +
+            "Use torrent_status action=plugins to see installed plugins. Default: 'enabled'.",
+        },
+        limit: {
+          type: "number",
+          description: "Max results to return (1–100). Default: 50.",
+        },
+        timeout: {
+          type: "number",
+          description: "Search timeout in milliseconds (max 60000). Default: 30000.",
+        },
+      },
+      required: ["action", "q"],
+    },
+  },
+  {
+    name: "torrent_download",
+    dataSource: onDemand("qBittorrent"),
+    description:
+      "Add a torrent for download via qBittorrent. Accepts magnet links or .torrent file URLs. " +
+      "The torrent is added to the qBittorrent instance and begins downloading immediately " +
+      "(unless paused=true). Optionally specify a save path, category, and tags for organization. " +
+      "Use torrent_search first to find magnet links, then pass the 'link' field here.",
+    endpoint: {
+      method: "POST",
+      path: "/torrent/download",
+      bodyParams: ["url", "savePath", "category", "tags", "paused"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        url: {
+          type: "string",
+          description:
+            "Magnet link or .torrent file URL. " +
+            "Example: 'magnet:?xt=urn:btih:...' or 'https://example.com/file.torrent'.",
+        },
+        savePath: {
+          type: "string",
+          description:
+            "Directory path where the torrent should be saved. " +
+            "Example: '/downloads/movies'. Uses qBittorrent default if not specified.",
+        },
+        category: {
+          type: "string",
+          description: "Category label for the torrent (e.g. 'movies', 'software', 'linux-isos').",
+        },
+        tags: {
+          type: "string",
+          description: "Comma-separated tags (e.g. 'hd,remux,2024').",
+        },
+        paused: {
+          type: "boolean",
+          description: "If true, add the torrent in paused state. Default: false (starts immediately).",
+        },
+      },
+      required: ["url"],
+    },
+  },
+  {
+    name: "torrent_status",
+    dataSource: onDemand("qBittorrent"),
+    description:
+      "Check torrent download status, list active/completed torrents, view transfer speeds, " +
+      "manage installed search plugins, or pause/resume torrents. Actions: " +
+      "'status' lists torrents (filterable by state), " +
+      "'plugins' lists installed search plugins, " +
+      "'transfer' shows global upload/download speeds, " +
+      "'pause' pauses torrents by hash, " +
+      "'resume' resumes paused torrents.",
+    endpoint: {
+      path: "/torrent",
+      queryParams: ["action", "filter", "category", "sort", "limit", "hashes"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        action: {
+          type: "string",
+          enum: ["status", "plugins", "transfer", "pause", "resume"],
+          description: "What to do.",
+        },
+        filter: {
+          type: "string",
+          enum: ["all", "downloading", "seeding", "completed", "paused", "active", "inactive", "errored"],
+          description: "For action=status: filter torrents by state. Default: 'all'.",
+        },
+        category: {
+          type: "string",
+          description: "For action=status: filter by category label.",
+        },
+        sort: {
+          type: "string",
+          description: "For action=status: sort field (e.g. 'name', 'size', 'progress', 'added_on'). Default: 'added_on'.",
+        },
+        limit: {
+          type: "number",
+          description: "For action=status: max torrents to return (1–200). Default: 50.",
+        },
+        hashes: {
+          type: "string",
+          description: "For action=pause/resume: pipe-separated torrent hashes, or 'all'.",
+        },
+      },
+      required: ["action"],
+    },
+  },
 ];
 
 // ────────────────────────────────────────────────────────────
@@ -7561,6 +7722,11 @@ const TOOL_DOMAINS = {
   // Wayback Machine
   get_wayback_snapshot: "Knowledge",
 
+  // Torrent
+  torrent_search: "Torrent",
+  torrent_download: "Torrent",
+  torrent_status: "Torrent",
+
   // Maritime
   get_tracked_vessels: "Maritime",
   get_vessel_by_mmsi: "Maritime",
@@ -7622,6 +7788,7 @@ const TOOL_DOMAINS = {
 
   // Agentic — Agent Management
   create_custom_agent: "Agentic: Agent Management",
+  list_custom_agents: "Agentic: Agent Management",
 
   // Agentic — Tool Discovery
   tool_search: "Agentic: Meta",
@@ -7760,6 +7927,12 @@ const TOOL_REQUIRED_KEYS = {
 
   // Agent Management (require Prism for CustomAgentService)
   create_custom_agent: ["PRISM_SERVICE_URL"],
+  list_custom_agents: ["PRISM_SERVICE_URL"],
+
+  // Torrent (all require qBittorrent connection)
+  torrent_search: ["QBITTORRENT_URL"],
+  torrent_download: ["QBITTORRENT_URL"],
+  torrent_status: ["QBITTORRENT_URL"],
 };
 
 /**
@@ -7943,6 +8116,11 @@ const TOOL_LABELS = {
   // ── Wayback Machine ──────────────────────────────────────
   get_wayback_snapshot: ["web", "reference"],
 
+  // ── Torrent ──────────────────────────────────────────────
+  torrent_search: ["media", "download"],
+  torrent_download: ["media", "download"],
+  torrent_status: ["media", "download"],
+
   // ── Maritime ─────────────────────────────────────────────
   get_tracked_vessels: ["maritime"],
   get_vessel_by_mmsi: ["maritime"],
@@ -8003,6 +8181,7 @@ const TOOL_LABELS = {
 
   // ── Agentic: Agent Management ────────────────────────────
   create_custom_agent: ["coding"],
+  list_custom_agents: ["coding"],
 
   // ── Agentic: Tool Discovery ──────────────────────────────
   tool_search: ["coding", "meta"],
