@@ -1131,7 +1131,7 @@ router.post("/custom-tool/delete", asyncHandler(async (req, res) => {
  * It is NOT a tool schema — it's an internal execution endpoint.
  */
 router.post("/custom-tool/execute", asyncHandler(async (req, res) => {
-  const { code, args } = req.body;
+  const { code, args, execution } = req.body;
   if (!code || typeof code !== "string") {
     return res.status(400).json({ error: "Request body must include 'code' (string)" });
   }
@@ -1142,7 +1142,7 @@ router.post("/custom-tool/execute", asyncHandler(async (req, res) => {
   // value becomes the expression result captured by the vm.
   const wrappedCode = `const args = ${JSON.stringify(args || {})};\n(function() {\n${code}\n})()`;
 
-  const result = executeJavaScript(wrappedCode, { timeout: 30_000 });
+  const result = executeJavaScript(wrappedCode, { timeout: 30_000, execution });
 
   if (!result.success) {
     return res.status(200).json({
@@ -1150,6 +1150,7 @@ router.post("/custom-tool/execute", asyncHandler(async (req, res) => {
       error: result.error,
       output: result.output || "",
       executionTimeMs: result.executionTimeMs,
+      execution: result.execution,
     });
   }
 
@@ -1158,6 +1159,7 @@ router.post("/custom-tool/execute", asyncHandler(async (req, res) => {
     output: result.output || "",
     result: result.result,
     executionTimeMs: result.executionTimeMs,
+    execution: result.execution,
   });
 }));
 export default router;
