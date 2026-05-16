@@ -834,6 +834,74 @@ router.get("/custom-agent/list", asyncHandler(async (_req, res) => {
     res.status(500).json({ error: `Custom agent list failed: ${err.message}` });
   }
 }));
+// ── Update Custom Agent ───────────────────────────────────────
+/**
+ * POST /agentic/custom-agent/update
+ *
+ * Updates an existing custom agent by proxying to Prism's
+ * PUT /custom-agents/:id. Accepts partial updates — only
+ * the fields you provide will be changed.
+ */
+router.post("/custom-agent/update", asyncHandler(async (req, res) => {
+  const {
+    id,
+    name,
+    description,
+    project,
+    icon,
+    color,
+    backgroundImage,
+    identity,
+    guidelines,
+    toolPolicy,
+    enabledTools,
+    usesDirectoryTree,
+    usesCodingGuidelines,
+  } = req.body;
+  if (!id || typeof id !== "string") {
+    return res.status(400).json({ error: "Request body must include 'id' (string — the agent's MongoDB ObjectId)" });
+  }
+  // ── Validate enabledTools against the tool registry ──────────
+  if (Array.isArray(enabledTools) && enabledTools.length > 0) {
+    const knownToolNames = new Set(TOOL_DEFINITIONS.map((t) => t.name));
+    const unknownTools = enabledTools.filter((t) => !knownToolNames.has(t));
+    if (unknownTools.length > 0) {
+      return res.status(400).json({
+        error: `Unknown tool(s) in enabledTools: ${unknownTools.join(", ")}. ` +
+          `Use the tool_search tool or list_custom_agents to discover valid tool names.`,
+        unknownTools,
+      });
+    }
+  }
+  try {
+    const prismRes = await fetch(`${CONFIG.PRISM_SERVICE_URL}/custom-agents/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+        ...(project !== undefined && { project }),
+        ...(icon !== undefined && { icon }),
+        ...(color !== undefined && { color }),
+        ...(backgroundImage !== undefined && { backgroundImage }),
+        ...(identity !== undefined && { identity }),
+        ...(guidelines !== undefined && { guidelines }),
+        ...(toolPolicy !== undefined && { toolPolicy }),
+        ...(enabledTools !== undefined && { enabledTools }),
+        ...(usesDirectoryTree !== undefined && { usesDirectoryTree }),
+        ...(usesCodingGuidelines !== undefined && { usesCodingGuidelines }),
+      }),
+    });
+    if (!prismRes.ok) {
+      const err = await prismRes.json().catch(() => ({}));
+      return res.status(prismRes.status).json({ error: err.error || `Prism returned ${prismRes.status}` });
+    }
+    const updated = await prismRes.json();
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: `Custom agent update failed: ${err.message}` });
+  }
+}));
 // ─── 16. Tool Search (Meta-Tool) ────────────────────────────
 router.post("/tool/search", agenticHandler(async (req) => {
   const { query, domain, label, limit } = req.body;
@@ -910,31 +978,30 @@ router.post("/notebook/edit", agenticHandler(async (req) => {
     cellType,
   });
 }));
-// ─── 19. Custom Tool Management ─────────────────────────────
+// ─── 19. Custom Tool Management (Tool Factory) ──────────────
+import { executeJavaScript } from "../services/JavaScriptInterpreterService.js";
 /**
  * POST /agentic/custom-tool/create
  *
- * Creates a new custom tool definition by proxying to Prism's
- * POST /custom-tools. Custom tools are user-defined HTTP endpoints
- * that the agent can invoke like built-in tools. Each tool specifies
- * a name, description, endpoint URL, HTTP method, and parameter schema.
+ * Creates a new custom tool definition with executable JavaScript code.
+ * The code runs in a sandboxed vm context when the tool is invoked.
+ * Tool arguments are injected as a global `args` object in the sandbox.
  *
- * Same cross-service proxy pattern as custom-agent/create → Prism.
+ * Persisted to Prism's custom_tools MongoDB collection via cross-service proxy.
  */
 router.post("/custom-tool/create", asyncHandler(async (req, res) => {
   const {
     name,
     description,
-    endpoint,
-    method,
+    code,
     parameters,
     enabled,
   } = req.body;
   if (!name || typeof name !== "string" || !name.trim()) {
     return res.status(400).json({ error: "Request body must include 'name' (non-empty string)" });
   }
-  if (!endpoint || typeof endpoint !== "string" || !endpoint.trim()) {
-    return res.status(400).json({ error: "Request body must include 'endpoint' (non-empty string — the URL the tool calls)" });
+  if (!code || typeof code !== "string" || !code.trim()) {
+    return res.status(400).json({ error: "Request body must include 'code' (non-empty string — JavaScript to execute)" });
   }
   // Inject trusted context from session headers
   const project = req.headers["x-project"] || req.body.project || "default";
@@ -950,8 +1017,7 @@ router.post("/custom-tool/create", asyncHandler(async (req, res) => {
       body: JSON.stringify({
         name: name.trim(),
         description: description || "",
-        endpoint: endpoint.trim(),
-        method: method || "GET",
+        code: code.trim(),
         parameters: Array.isArray(parameters) ? parameters : [],
         enabled: enabled !== false,
       }),
@@ -1001,7 +1067,7 @@ router.get("/custom-tool/list", asyncHandler(async (req, res) => {
  * PUT /custom-tools/:id. Accepts partial updates.
  */
 router.post("/custom-tool/update", asyncHandler(async (req, res) => {
-  const { id, name, description, endpoint, method, parameters, enabled } = req.body;
+  const { id, name, description, code, parameters, enabled } = req.body;
   if (!id || typeof id !== "string") {
     return res.status(400).json({ error: "Request body must include 'id' (string — the tool's MongoDB ObjectId)" });
   }
@@ -1012,8 +1078,7 @@ router.post("/custom-tool/update", asyncHandler(async (req, res) => {
       body: JSON.stringify({
         ...(name !== undefined && { name }),
         ...(description !== undefined && { description }),
-        ...(endpoint !== undefined && { endpoint }),
-        ...(method !== undefined && { method }),
+        ...(code !== undefined && { code }),
         ...(parameters !== undefined && { parameters }),
         ...(enabled !== undefined && { enabled }),
       }),
@@ -1053,5 +1118,44 @@ router.post("/custom-tool/delete", asyncHandler(async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: `Custom tool deletion failed: ${err.message}` });
   }
+}));
+// ── Execute Custom Tool Code ──────────────────────────────────
+/**
+ * POST /agentic/custom-tool/execute
+ *
+ * Executes custom tool JavaScript code in a sandboxed vm context.
+ * The tool's arguments are injected as a global `args` object.
+ *
+ * This endpoint is called by Prism's ToolOrchestratorService when
+ * a code-based custom tool is invoked during an agentic loop.
+ * It is NOT a tool schema — it's an internal execution endpoint.
+ */
+router.post("/custom-tool/execute", asyncHandler(async (req, res) => {
+  const { code, args } = req.body;
+  if (!code || typeof code !== "string") {
+    return res.status(400).json({ error: "Request body must include 'code' (string)" });
+  }
+
+  // Wrap the user's code so `args` is available as a global
+  // and the last expression's value becomes the result.
+  const wrappedCode = `const args = ${JSON.stringify(args || {})};\n${code}`;
+
+  const result = executeJavaScript(wrappedCode, { timeout: 30_000 });
+
+  if (!result.success) {
+    return res.status(200).json({
+      success: false,
+      error: result.error,
+      output: result.output || "",
+      executionTimeMs: result.executionTimeMs,
+    });
+  }
+
+  res.json({
+    success: true,
+    output: result.output || "",
+    result: result.result,
+    executionTimeMs: result.executionTimeMs,
+  });
 }));
 export default router;

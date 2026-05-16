@@ -6958,22 +6958,103 @@ const TOOL_DEFINITIONS = [
       required: [],
     },
   },
+  {
+    name: "update_custom_agent",
+    dataSource: onDemand("Prism CustomAgentService"),
+    description:
+      "Update an existing custom agent persona. Accepts partial updates — only the fields " +
+      "you provide will be changed. Use list_custom_agents first to find the agent's ID. " +
+      "Common updates include adding new tools to enabledTools (e.g. after creating a custom tool), " +
+      "modifying the identity prompt, changing guidelines, or updating visual branding.",
+    endpoint: {
+      method: "POST",
+      path: "/agentic/custom-agent/update",
+      bodyParams: [
+        "id", "name", "description", "project", "icon", "color", "backgroundImage",
+        "identity", "guidelines", "toolPolicy", "enabledTools",
+        "usesDirectoryTree", "usesCodingGuidelines",
+      ],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        id: {
+          type: "string",
+          description: "MongoDB ObjectId of the agent to update (from list_custom_agents).",
+        },
+        name: {
+          type: "string",
+          description: "Updated display name. Leave unset to keep the current name.",
+        },
+        description: {
+          type: "string",
+          description: "Updated description shown in the agent picker.",
+        },
+        project: {
+          type: "string",
+          description: "Updated project scope (e.g. 'coding', 'writing').",
+        },
+        icon: {
+          type: "string",
+          description: "Updated Lucide icon name (e.g. 'Brain', 'Rocket', 'Code2').",
+        },
+        color: {
+          type: "string",
+          description: "Updated hex color code for accent theming.",
+        },
+        backgroundImage: {
+          type: "string",
+          description: "Updated background image URL.",
+        },
+        identity: {
+          type: "string",
+          description: "Updated core personality and role prompt.",
+        },
+        guidelines: {
+          type: "string",
+          description: "Updated behavioral instructions.",
+        },
+        toolPolicy: {
+          type: "string",
+          description: "Updated tool usage instructions.",
+        },
+        enabledTools: {
+          type: "array",
+          items: { type: "string" },
+          description:
+            "Updated array of tool names this agent can use. Replaces the entire list. " +
+            "Include both built-in tool names (e.g. 'read_file', 'web_search') and " +
+            "custom tool names (created via create_custom_tool). " +
+            "Use list_custom_tools to find custom tool names.",
+        },
+        usesDirectoryTree: {
+          type: "boolean",
+          description: "Whether to inject workspace structure into the agent's context.",
+        },
+        usesCodingGuidelines: {
+          type: "boolean",
+          description: "Whether to inject coding conventions into the system prompt.",
+        },
+      },
+      required: ["id"],
+    },
+  },
 
-  // ── Custom Tool Management (Tool Factory) ──────────────────
   {
     name: "create_custom_tool",
     dataSource: onDemand("Prism custom_tools collection"),
     description:
-      "Create a new custom tool definition. Custom tools are user-defined HTTP endpoints " +
-      "that become available as callable tools in the agent's tool suite. Each tool specifies " +
-      "a name, description, target endpoint URL, HTTP method (GET or POST), and a parameter schema. " +
-      "Once created, the tool is persisted to the database and available in future agent sessions. " +
-      "Use this when the user wants to integrate an external API, webhook, or service as a tool " +
-      "the agent can invoke autonomously.",
+      "Create a new custom tool with executable JavaScript code. The code runs in a sandboxed " +
+      "vm context when the tool is invoked — no network access, no filesystem, no require(). " +
+      "Tool arguments from the LLM are injected as a global `args` object. " +
+      "Use console.log() to produce output and return a value as the last expression. " +
+      "Once created, the tool is persisted and available in future agent sessions. " +
+      "Use this when the user wants a reusable computation, formatter, converter, validator, " +
+      "or any deterministic logic the agent can call by name.",
     endpoint: {
       method: "POST",
       path: "/agentic/custom-tool/create",
-      bodyParams: ["name", "description", "endpoint", "method", "parameters", "enabled"],
+      bodyParams: ["name", "description", "code", "parameters", "enabled"],
     },
     parameters: {
       type: "object",
@@ -6982,7 +7063,7 @@ const TOOL_DEFINITIONS = [
           type: "string",
           description:
             "Unique tool name (snake_case). This becomes the function name the LLM calls. " +
-            "Example: 'check_server_status', 'lookup_inventory', 'notify_team'.",
+            "Example: 'celsius_to_fahrenheit', 'format_currency', 'validate_email'.",
         },
         description: {
           type: "string",
@@ -6990,28 +7071,26 @@ const TOOL_DEFINITIONS = [
             "Human-readable description of what the tool does. This is shown to the LLM to " +
             "decide when to call the tool. Be specific about inputs, outputs, and use cases.",
         },
-        endpoint: {
+        code: {
           type: "string",
           description:
-            "The full URL the tool will call when invoked. For GET tools, arguments are " +
-            "appended as query parameters. For POST tools, arguments are sent as JSON body. " +
-            "Example: 'https://api.example.com/v1/status'.",
-        },
-        method: {
-          type: "string",
-          description: "HTTP method to use. Default: 'GET'.",
-          enum: ["GET", "POST"],
+            "JavaScript source code to execute. Runs in a sandboxed vm with no network, " +
+            "filesystem, or require() access. Available globals: args (tool arguments), " +
+            "console.log/warn/error, JSON, Math, Date, RegExp, Array, Object, Map, Set, " +
+            "String, Number, Boolean, Promise, TextEncoder, TextDecoder. " +
+            "The last expression's value becomes the tool's return value. " +
+            "Example: 'const { celsius } = args; (celsius * 9/5) + 32'",
         },
         parameters: {
           type: "array",
           description:
             "Array of parameter definitions. Each parameter has a name, type, description, " +
-            "whether it's required, and optional enum values for constrained inputs.",
+            "and whether it's required. These become the args the LLM passes when calling the tool.",
           items: {
             type: "object",
             properties: {
-              name: { type: "string", description: "Parameter name (the key sent to the API)" },
-              type: { type: "string", description: "JSON Schema type: 'string', 'number', 'boolean', 'integer'", enum: ["string", "number", "boolean", "integer"] },
+              name: { type: "string", description: "Parameter name (becomes a key on the `args` object)" },
+              type: { type: "string", description: "JSON Schema type", enum: ["string", "number", "boolean", "integer"] },
               description: { type: "string", description: "Description shown to the LLM for this parameter" },
               required: { type: "boolean", description: "Whether this parameter is required. Default: false" },
               enum: { type: "array", items: { type: "string" }, description: "Optional array of allowed values" },
@@ -7024,7 +7103,7 @@ const TOOL_DEFINITIONS = [
           description: "Whether the tool is active and available for use. Default: true.",
         },
       },
-      required: ["name", "description", "endpoint"],
+      required: ["name", "description", "code"],
     },
   },
   {
@@ -7032,7 +7111,7 @@ const TOOL_DEFINITIONS = [
     dataSource: onDemand("Prism custom_tools collection"),
     description:
       "List all custom tools defined for the current project and user. Returns each tool's " +
-      "name, description, endpoint, method, parameters, enabled status, and MongoDB ID. " +
+      "name, description, code, parameters, enabled status, and MongoDB ID. " +
       "Use this to discover existing custom tools before creating new ones (to avoid duplicates), " +
       "or when the user asks to see, review, or manage their custom tool definitions.",
     endpoint: {
@@ -7050,12 +7129,12 @@ const TOOL_DEFINITIONS = [
     description:
       "Update an existing custom tool definition. Accepts partial updates — only the fields " +
       "you provide will be changed. Use list_custom_tools first to find the tool's ID. " +
-      "Common updates include changing the endpoint URL, modifying parameters, updating the " +
+      "Common updates include fixing bugs in the code, modifying parameters, updating the " +
       "description, or enabling/disabling the tool.",
     endpoint: {
       method: "POST",
       path: "/agentic/custom-tool/update",
-      bodyParams: ["id", "name", "description", "endpoint", "method", "parameters", "enabled"],
+      bodyParams: ["id", "name", "description", "code", "parameters", "enabled"],
     },
     parameters: {
       type: "object",
@@ -7072,14 +7151,9 @@ const TOOL_DEFINITIONS = [
           type: "string",
           description: "Updated description. Leave unset to keep the current description.",
         },
-        endpoint: {
+        code: {
           type: "string",
-          description: "Updated endpoint URL. Leave unset to keep the current endpoint.",
-        },
-        method: {
-          type: "string",
-          description: "Updated HTTP method.",
-          enum: ["GET", "POST"],
+          description: "Updated JavaScript code. Leave unset to keep the current code.",
         },
         parameters: {
           type: "array",
@@ -7958,6 +8032,7 @@ const TOOL_DOMAINS = {
   // Agentic — Agent Management
   create_custom_agent: "Agentic: Agent Management",
   list_custom_agents: "Agentic: Agent Management",
+  update_custom_agent: "Agentic: Agent Management",
 
   // Agentic — Custom Tool Management
   create_custom_tool: "Agentic: Tool Management",
@@ -8103,6 +8178,7 @@ const TOOL_REQUIRED_KEYS = {
   // Agent Management (require Prism for CustomAgentService)
   create_custom_agent: ["PRISM_SERVICE_URL"],
   list_custom_agents: ["PRISM_SERVICE_URL"],
+  update_custom_agent: ["PRISM_SERVICE_URL"],
 
   // Custom Tool Management (require Prism for custom_tools collection)
   create_custom_tool: ["PRISM_SERVICE_URL"],
@@ -8363,6 +8439,7 @@ const TOOL_LABELS = {
   // ── Agentic: Agent Management ────────────────────────────
   create_custom_agent: ["coding"],
   list_custom_agents: ["coding"],
+  update_custom_agent: ["coding"],
 
   // ── Agentic: Tool Management ──────────────────────────────
   create_custom_tool: ["coding", "meta"],
