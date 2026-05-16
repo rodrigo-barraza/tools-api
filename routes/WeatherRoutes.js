@@ -195,8 +195,8 @@ router.get("/live", asyncHandler(async (req, res) => {
       return res.status(404).json(result);
     }
     res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: `Weather fetch failed: ${err.message}` });
+  } catch (error) {
+    res.status(500).json({ error: `Weather fetch failed: ${error.message}` });
   }
 }));
 // ── Unified Environment Dispatcher ─────────────────────────────────

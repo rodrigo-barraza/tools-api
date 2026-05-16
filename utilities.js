@@ -252,13 +252,14 @@ export class EphemeralStore {
 
 /**
  * Build a full local URL for this server (embed/download endpoints).
- * Replaces the repeated `http://localhost:${CONFIG.TOOLS_SERVICE_PORT}/...` pattern.
+ * Uses TOOLS_SERVICE_URL from vault when available, falling back to localhost.
  * @param {string} routePath - Path after the port, e.g. "compute/csv/download"
  * @param {object} [params] - Query parameters as key-value pairs
  * @returns {string}
  */
 export function buildLocalUrl(routePath, params) {
-  const base = `http://localhost:${CONFIG.TOOLS_SERVICE_PORT}/${routePath}`;
+  const selfBaseUrl = CONFIG.TOOLS_SERVICE_URL || `http://localhost:${CONFIG.TOOLS_SERVICE_PORT}`;
+  const base = `${selfBaseUrl}/${routePath}`;
   if (!params || Object.keys(params).length === 0) return base;
   const qs = new URLSearchParams(params).toString();
   return `${base}?${qs}`;

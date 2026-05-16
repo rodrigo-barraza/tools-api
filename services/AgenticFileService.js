@@ -27,8 +27,8 @@ async function tryAgentRoute(method, params, targetPath) {
   if (!agent) return null;
   try {
     return await sendRpc(agent.id, method, params);
-  } catch (err) {
-    return { error: `Agent RPC failed: ${err.message}` };
+  } catch (error) {
+    return { error: `Agent RPC failed: ${error.message}` };
   }
 }
 
@@ -226,11 +226,11 @@ export async function agenticReadFile(filePath, { startLine, endLine } = {}) {
       truncated: end < totalLines,
       content: numberedContent,
     };
-  } catch (err) {
-    if (err.code === "ENOENT") {
+  } catch (error) {
+    if (error.code === "ENOENT") {
       return { error: `File not found: ${resolved}` };
     }
-    return { error: `Read failed: ${err.message}` };
+    return { error: `Read failed: ${error.message}` };
   }
 }
 
@@ -284,8 +284,8 @@ export async function agenticWriteFile(filePath, content, { createDirs = true } 
       bytesWritten: bytes,
       linesWritten: lines,
     };
-  } catch (err) {
-    return { error: `Write failed: ${err.message}` };
+  } catch (error) {
+    return { error: `Write failed: ${error.message}` };
   }
 }
 
@@ -367,11 +367,11 @@ export async function agenticStrReplace(filePath, oldStr, newStr, { allowMultipl
       newLines,
       lineDelta: newLines - oldLines,
     };
-  } catch (err) {
-    if (err.code === "ENOENT") {
+  } catch (error) {
+    if (error.code === "ENOENT") {
       return { error: `File not found: ${resolved}` };
     }
-    return { error: `str_replace failed: ${err.message}` };
+    return { error: `str_replace failed: ${error.message}` };
   }
 }
 
@@ -422,11 +422,11 @@ export async function agenticPatchFile(filePath, patch) {
       newLines,
       lineDelta: newLines - oldLines,
     };
-  } catch (err) {
-    if (err.code === "ENOENT") {
+  } catch (error) {
+    if (error.code === "ENOENT") {
       return { error: `File not found: ${resolved}` };
     }
-    return { error: `patch_file failed: ${err.message}` };
+    return { error: `patch_file failed: ${error.message}` };
   }
 }
 
@@ -512,11 +512,11 @@ export async function agenticListDirectory(dirPath, { recursive = false, maxDept
       truncated: entries.length >= MAX_DIR_ENTRIES,
       entries,
     };
-  } catch (err) {
-    if (err.code === "ENOENT") {
+  } catch (error) {
+    if (error.code === "ENOENT") {
       return { error: `Directory not found: ${resolved}` };
     }
-    return { error: `list_directory failed: ${err.message}` };
+    return { error: `list_directory failed: ${error.message}` };
   }
 }
 
@@ -559,8 +559,8 @@ export async function agenticGrepSearch(pattern, searchPath, {
       regex = isRegex
         ? new RegExp(pattern, caseInsensitive ? "gi" : "g")
         : new RegExp(escapeRegex(pattern), caseInsensitive ? "gi" : "g");
-    } catch (err) {
-      return { error: `Invalid regex pattern: ${err.message}` };
+    } catch (error) {
+      return { error: `Invalid regex pattern: ${error.message}` };
     }
 
     const results = [];
@@ -662,8 +662,8 @@ export async function agenticGrepSearch(pattern, searchPath, {
       truncated: results.length >= MAX_GREP_RESULTS,
       results,
     };
-  } catch (err) {
-    return { error: `grep_search failed: ${err.message}` };
+  } catch (error) {
+    return { error: `grep_search failed: ${error.message}` };
   }
 }
 
@@ -747,8 +747,8 @@ export async function agenticGlobFiles(pattern, searchPath) {
       truncated: matches.length >= MAX_GLOB_RESULTS,
       matches,
     };
-  } catch (err) {
-    return { error: `glob_files failed: ${err.message}` };
+  } catch (error) {
+    return { error: `glob_files failed: ${error.message}` };
   }
 }
 
@@ -849,11 +849,11 @@ export async function agenticFileInfo(paths) {
         }
 
         return info;
-      } catch (err) {
-        if (err.code === "ENOENT") {
+      } catch (error) {
+        if (error.code === "ENOENT") {
           return { path: resolved, exists: false };
         }
-        return { path: resolved, exists: false, error: err.message };
+        return { path: resolved, exists: false, error: error.message };
       }
     }),
   );
@@ -939,11 +939,11 @@ export async function agenticFileDiff(pathA, { pathB, content, contextLines = 3 
       deletions,
       diff: hasChanges ? diff : "(files are identical)",
     };
-  } catch (err) {
-    if (err.code === "ENOENT") {
+  } catch (error) {
+    if (error.code === "ENOENT") {
       return { error: `File not found: ${err.path || pathA}` };
     }
-    return { error: `file_diff failed: ${err.message}` };
+    return { error: `file_diff failed: ${error.message}` };
   }
 }
 
@@ -993,8 +993,8 @@ export async function agenticMoveFile(source, destination, { createDirs = true }
       destination: validDst.resolved,
       success: true,
     };
-  } catch (err) {
-    return { error: `move_file failed: ${err.message}` };
+  } catch (error) {
+    return { error: `move_file failed: ${error.message}` };
   }
 }
 
@@ -1032,11 +1032,11 @@ export async function agenticDeleteFile(filePath) {
       deleted: true,
       sizeBytes,
     };
-  } catch (err) {
-    if (err.code === "ENOENT") {
+  } catch (error) {
+    if (error.code === "ENOENT") {
       return { error: `File not found: ${validation.resolved}` };
     }
-    return { error: `delete_file failed: ${err.message}` };
+    return { error: `delete_file failed: ${error.message}` };
   }
 }
 

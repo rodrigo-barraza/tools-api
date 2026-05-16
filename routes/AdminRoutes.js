@@ -265,8 +265,8 @@ export async function loadUserWorkspaceRoots() {
       refreshAllowedRoots(doc.roots);
       logger.info(`   📂 User workspace roots: ${doc.roots.join(", ")}`);
     }
-  } catch (err) {
-    logger.warn(`   ⚠️  Could not load user workspace roots: ${err.message}`);
+  } catch (error) {
+    logger.warn(`   ⚠️  Could not load user workspace roots: ${error.message}`);
   }
 }
 export default router;

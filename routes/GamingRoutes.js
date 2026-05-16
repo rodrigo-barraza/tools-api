@@ -42,8 +42,8 @@ router.get("/dota/heroes", asyncHandler(async (req, res) => {
     }
 
     res.json({ count: filtered.length, heroes: filtered });
-  } catch (err) {
-    res.status(500).json({ error: `Failed to fetch heroes: ${err.message}` });
+  } catch (error) {
+    res.status(500).json({ error: `Failed to fetch heroes: ${error.message}` });
   }
 }));
 
@@ -54,8 +54,8 @@ router.get("/dota/heroes/:query", asyncHandler(async (req, res) => {
       return res.status(404).json({ error: `Hero not found: ${req.params.query}` });
     }
     res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: `Failed to fetch hero: ${err.message}` });
+  } catch (error) {
+    res.status(500).json({ error: `Failed to fetch hero: ${error.message}` });
   }
 }));
 
@@ -80,8 +80,8 @@ router.get("/dota/heroes/:heroId/matchups", asyncHandler(async (req, res) => {
       bestAgainst: matchups.bestAgainst.map(enrichMatchup),
       worstAgainst: matchups.worstAgainst.map(enrichMatchup),
     });
-  } catch (err) {
-    res.status(500).json({ error: `Failed to fetch matchups: ${err.message}` });
+  } catch (error) {
+    res.status(500).json({ error: `Failed to fetch matchups: ${error.message}` });
   }
 }));
 
@@ -95,8 +95,8 @@ router.get("/dota/players/:accountId", asyncHandler(async (req, res) => {
     }
     const player = await getPlayer(accountId);
     res.json(player);
-  } catch (err) {
-    res.status(500).json({ error: `Failed to fetch player: ${err.message}` });
+  } catch (error) {
+    res.status(500).json({ error: `Failed to fetch player: ${error.message}` });
   }
 }));
 
@@ -120,8 +120,8 @@ router.get("/dota/players/:accountId/matches", asyncHandler(async (req, res) => 
     }));
 
     res.json({ count: enriched.length, matches: enriched });
-  } catch (err) {
-    res.status(500).json({ error: `Failed to fetch matches: ${err.message}` });
+  } catch (error) {
+    res.status(500).json({ error: `Failed to fetch matches: ${error.message}` });
   }
 }));
 
@@ -146,8 +146,8 @@ router.get("/dota/matches/:matchId", asyncHandler(async (req, res) => {
     }));
 
     res.json(match);
-  } catch (err) {
-    res.status(500).json({ error: `Failed to fetch match: ${err.message}` });
+  } catch (error) {
+    res.status(500).json({ error: `Failed to fetch match: ${error.message}` });
   }
 }));
 
@@ -158,8 +158,8 @@ router.get("/dota/pro-matches", asyncHandler(async (req, res) => {
     const limit = Math.min(parseInt(req.query.limit) || 10, 50);
     const matches = await getProMatches(limit);
     res.json({ count: matches.length, matches });
-  } catch (err) {
-    res.status(500).json({ error: `Failed to fetch pro matches: ${err.message}` });
+  } catch (error) {
+    res.status(500).json({ error: `Failed to fetch pro matches: ${error.message}` });
   }
 }));
 

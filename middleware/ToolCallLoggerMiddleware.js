@@ -501,7 +501,7 @@ export async function setupToolCallsCollection() {
     ]);
 
     logger.info(`📊 tool_calls collection indexes ensured`);
-  } catch (err) {
-    logger.error(`Failed to setup tool_calls indexes: ${err.message}`);
+  } catch (error) {
+    logger.error(`Failed to setup tool_calls indexes: ${error.message}`);
   }
 }

@@ -27,10 +27,10 @@ router.get("/facets", asyncHandler(async (req, res) => {
   }
   try {
     res.json(await getFacetValues(route, facetId));
-  } catch (err) {
+  } catch (error) {
     res
       .status(502)
-      .json({ error: `Facet fetch failed: ${err.message}` });
+      .json({ error: `Facet fetch failed: ${error.message}` });
   }
 }));
 // ─── Data Query ────────────────────────────────────────────────────

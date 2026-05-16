@@ -17,6 +17,7 @@ export const WORKTREE_DIR = process.env.WORKTREE_DIR;
 const CONFIG = {
   // ─── Server ──────────────────────────────────────────────────────
   TOOLS_SERVICE_PORT: process.env.TOOLS_SERVICE_PORT,
+  TOOLS_SERVICE_URL: process.env.TOOLS_SERVICE_URL,
   MONGODB_URI: process.env.MONGO_URI,
 
   // ─── Location (populated dynamically by LocationService.initLocation()) ───

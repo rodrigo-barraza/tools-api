@@ -60,8 +60,8 @@ export async function setupLuposCollections() {
       await messagesCol.createIndex({ "author.id": 1, createdTimestamp: -1 }, { background: true });
       await messagesCol.createIndex({ guildId: 1, channelId: 1, createdTimestamp: -1 }, { background: true });
       await messagesCol.createIndex({ guildId: 1, createdTimestamp: -1 }, { background: true });
-    } catch (err) {
-      logger.warn(`🐺 Lupos index creation warning: ${err.message}`);
+    } catch (error) {
+      logger.warn(`🐺 Lupos index creation warning: ${error.message}`);
     }
 
     try {
@@ -69,9 +69,9 @@ export async function setupLuposCollections() {
         { content: "text" },
         { name: "lupos_message_text_search", background: true },
       );
-    } catch (err) {
+    } catch (error) {
       // Text index may already exist with different fields — non-fatal
-      logger.warn(`🐺 Lupos text index skipped: ${err.message}`);
+      logger.warn(`🐺 Lupos text index skipped: ${error.message}`);
     }
   };
 

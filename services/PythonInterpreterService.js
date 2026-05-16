@@ -82,7 +82,7 @@ export async function executePython(code, { timeout = DEFAULT_TIMEOUT_MS } = {})
     tmpDir = await mkdtemp(join(tmpdir(), "pyexec-"));
     scriptPath = join(tmpDir, "script.py");
     await writeFile(scriptPath, PREAMBLE + "\n" + code, "utf-8");
-  } catch (err) {
+  } catch (error) {
     return {
       success: false,
       stdout: "",
@@ -90,7 +90,7 @@ export async function executePython(code, { timeout = DEFAULT_TIMEOUT_MS } = {})
       exitCode: null,
       executionTimeMs: Math.round(performance.now() - startTime),
       timedOut: false,
-      error: `Failed to stage script: ${err.message}`,
+      error: `Failed to stage script: ${error.message}`,
     };
   }
 
@@ -170,7 +170,7 @@ export async function executePython(code, { timeout = DEFAULT_TIMEOUT_MS } = {})
     }
 
     child.on("close", (code) => finish(code));
-    child.on("error", (err) => {
+    child.on("error", (error) => {
       if (!settled) {
         settled = true;
         clearTimeout(timer);
@@ -185,7 +185,7 @@ export async function executePython(code, { timeout = DEFAULT_TIMEOUT_MS } = {})
           exitCode: null,
           executionTimeMs: Math.round(performance.now() - startTime),
           timedOut: false,
-          error: `Process error: ${err.message}`,
+          error: `Process error: ${error.message}`,
         });
       }
     });
@@ -213,11 +213,11 @@ export async function executePythonStreaming(code, { timeout = DEFAULT_TIMEOUT_M
     tmpDir = await mkdtemp(join(tmpdir(), "pyexec-"));
     scriptPath = join(tmpDir, "script.py");
     await writeFile(scriptPath, PREAMBLE + "\n" + code, "utf-8");
-  } catch (err) {
+  } catch (error) {
     return {
       success: false, stdout: "", stderr: "", exitCode: null,
       executionTimeMs: Math.round(performance.now() - startTime),
-      timedOut: false, error: `Failed to stage script: ${err.message}`,
+      timedOut: false, error: `Failed to stage script: ${error.message}`,
     };
   }
 
@@ -277,7 +277,7 @@ export async function executePythonStreaming(code, { timeout = DEFAULT_TIMEOUT_M
     }
 
     child.on("close", (code) => finish(code));
-    child.on("error", (err) => {
+    child.on("error", (error) => {
       if (!settled) {
         settled = true;
         clearTimeout(timer);
@@ -285,7 +285,7 @@ export async function executePythonStreaming(code, { timeout = DEFAULT_TIMEOUT_M
         resolve({
           success: false, stdout: "", stderr: "", exitCode: null,
           executionTimeMs: Math.round(performance.now() - startTime),
-          timedOut: false, error: `Process error: ${err.message}`,
+          timedOut: false, error: `Process error: ${error.message}`,
         });
       }
     });

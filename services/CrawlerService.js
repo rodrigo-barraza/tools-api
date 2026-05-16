@@ -134,9 +134,9 @@ export async function crawlSingleStatic(url, options = {}) {
 
       try {
         result = await extractFn($, request);
-      } catch (err) {
+      } catch (error) {
         crawlError = err;
-        logger.error(`[Crawler] Extract failed for ${request.url}: ${err.message}`);
+        logger.error(`[Crawler] Extract failed for ${request.url}: ${error.message}`);
       }
     },
 
@@ -148,8 +148,8 @@ export async function crawlSingleStatic(url, options = {}) {
 
   try {
     await crawler.run([url]);
-  } catch (err) {
-    return { error: `Crawler failed: ${err.message}`, url };
+  } catch (error) {
+    return { error: `Crawler failed: ${error.message}`, url };
   }
 
   if (crawlError) {

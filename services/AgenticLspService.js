@@ -139,11 +139,11 @@ export async function agenticLspAction({ operation, filePath, line, character, w
       return { error: `File is too large (${(stats.size / 1024).toFixed(0)} KB). Maximum: ${MAX_FILE_SIZE_FOR_OPEN / 1024} KB` };
     }
     fileContent = await readFile(resolvedPath, "utf-8");
-  } catch (err) {
-    if (err.code === "ENOENT") {
+  } catch (error) {
+    if (error.code === "ENOENT") {
       return { error: `File not found: ${resolvedPath}` };
     }
-    return { error: `Cannot read file: ${err.message}` };
+    return { error: `Cannot read file: ${error.message}` };
   }
 
   // ── 5. Determine workspace root ────────────────────────────
@@ -154,9 +154,9 @@ export async function agenticLspAction({ operation, filePath, line, character, w
   try {
     manager = getLspManager(wsRoot);
     await manager.openFile(resolvedPath, fileContent);
-  } catch (err) {
+  } catch (error) {
     return {
-      error: `LSP server failed to start for '${ext}' files: ${err.message}`,
+      error: `LSP server failed to start for '${ext}' files: ${error.message}`,
       hint: "The language server may not be installed. Check that npx can find the server binary.",
     };
   }
@@ -190,15 +190,15 @@ export async function agenticLspAction({ operation, filePath, line, character, w
   let result;
   try {
     result = await manager.sendRequest(resolvedPath, opDef.method, lspParams);
-  } catch (err) {
-    return { error: `LSP request '${opDef.method}' failed: ${err.message}` };
+  } catch (error) {
+    return { error: `LSP request '${opDef.method}' failed: ${error.message}` };
   }
 
   // ── 9. Format & return ─────────────────────────────────────
   try {
     return formatResult(operation, result, resolvedPath, wsRoot);
-  } catch (err) {
-    return { error: `Failed to format result: ${err.message}` };
+  } catch (error) {
+    return { error: `Failed to format result: ${error.message}` };
   }
 }
 

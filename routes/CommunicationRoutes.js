@@ -24,8 +24,8 @@ router.post("/sms/send", asyncHandler(async (req, res) => {
   try {
     const result = await sendSms(to, body, from);
     res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `SMS send failed: ${err.message}` });
+  } catch (error) {
+    res.status(502).json({ error: `SMS send failed: ${error.message}` });
   }
 }));
 // ─── List Messages ─────────────────────────────────────────────────

@@ -2530,3 +2530,29 @@ export const MAX_CODE_LENGTH = 100_000;
 
 /** Maximum length for user-submitted shell commands. */
 export const MAX_COMMAND_LENGTH = 10_000;
+
+// ─── AGENTIC EXECUTION TIMEOUTS ─────────────────────────────
+
+/** Default shell command execution timeout. */
+export const SHELL_DEFAULT_TIMEOUT_MS = 10_000;
+
+/** Maximum shell command execution timeout. */
+export const SHELL_MAX_TIMEOUT_MS = 30_000;
+
+/** Default JavaScript sandbox execution timeout. */
+export const JS_DEFAULT_TIMEOUT_MS = 5_000;
+
+/** Maximum JavaScript sandbox execution timeout. */
+export const JS_MAX_TIMEOUT_MS = 30_000;
+
+/** Default HTTP fetch timeout for external API calls. */
+export const FETCH_TIMEOUT_MS = 30_000;
+
+/** Default timeout for torrent search operations. */
+export const TORRENT_SEARCH_TIMEOUT_MS = 30_000;
+
+/** Maximum torrent search timeout. */
+export const TORRENT_MAX_TIMEOUT_MS = 60_000;
+
+/** Default radius for Google Places location bias (meters). */
+export const PLACES_DEFAULT_RADIUS_M = 10_000;

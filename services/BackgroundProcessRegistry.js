@@ -94,10 +94,10 @@ export function register(child, meta) {
     logger.info(`[BackgroundProcessRegistry] PID ${pid} exited with code ${code} (${meta.command.slice(0, 60)})`);
   });
 
-  child.on("error", (err) => {
+  child.on("error", (error) => {
     entry.exited = true;
-    entry.exitReason = `error: ${err.message}`;
-    logger.warn(`[BackgroundProcessRegistry] PID ${pid} error: ${err.message}`);
+    entry.exitReason = `error: ${error.message}`;
+    logger.warn(`[BackgroundProcessRegistry] PID ${pid} error: ${error.message}`);
   });
 
   registry.set(pid, entry);
@@ -163,8 +163,8 @@ export function kill(pid, signal = "SIGTERM") {
     }
     registry.delete(pid);
     return { success: true, pid, signal, message: `Sent ${signal} to PID ${pid}` };
-  } catch (err) {
-    return { success: false, pid, error: `Failed to kill: ${err.message}` };
+  } catch (error) {
+    return { success: false, pid, error: `Failed to kill: ${error.message}` };
   }
 }
 

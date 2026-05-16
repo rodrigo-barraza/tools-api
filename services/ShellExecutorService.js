@@ -1,13 +1,15 @@
 // ─── Allowlisted Command Execution ──────────────────────────
 
 import { spawn } from "node:child_process";
+import {
+  SHELL_DEFAULT_TIMEOUT_MS as DEFAULT_TIMEOUT_MS,
+  SHELL_MAX_TIMEOUT_MS as MAX_TIMEOUT_MS,
+} from "../constants.js";
 
 // ────────────────────────────────────────────────────────────
 // Constants
 // ────────────────────────────────────────────────────────────
 
-const DEFAULT_TIMEOUT_MS = 10_000;
-const MAX_TIMEOUT_MS = 30_000;
 const MAX_OUTPUT_BYTES = 512 * 1024;
 const MAX_INPUT_BYTES = 1024 * 1024; // 1 MB max stdin
 
@@ -254,7 +256,7 @@ export async function executeShell(command, { stdin = "", timeout = DEFAULT_TIME
     }
 
     child.on("close", (code) => finish(code));
-    child.on("error", (err) => {
+    child.on("error", (error) => {
       if (!settled) {
         settled = true;
         clearTimeout(timer);
@@ -265,7 +267,7 @@ export async function executeShell(command, { stdin = "", timeout = DEFAULT_TIME
           exitCode: null,
           executionTimeMs: Math.round(performance.now() - startTime),
           timedOut: false,
-          error: `Process error: ${err.message}`,
+          error: `Process error: ${error.message}`,
         });
       }
     });
@@ -359,14 +361,14 @@ export async function executeShellStreaming(command, { stdin = "", timeout = DEF
     }
 
     child.on("close", (code) => finish(code));
-    child.on("error", (err) => {
+    child.on("error", (error) => {
       if (!settled) {
         settled = true;
         clearTimeout(timer);
         resolve({
           success: false, stdout: "", stderr: "", exitCode: null,
           executionTimeMs: Math.round(performance.now() - startTime),
-          timedOut: false, error: `Process error: ${err.message}`,
+          timedOut: false, error: `Process error: ${error.message}`,
         });
       }
     });

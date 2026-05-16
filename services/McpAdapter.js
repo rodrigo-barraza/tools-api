@@ -10,7 +10,7 @@
 //   "integrations": [{
 //     "type": "ephemeral_mcp",
 //     "server_label": "tools",
-//     "server_url": "http://localhost:5590/mcp"
+//     "server_url": "<TOOLS_SERVICE_URL>/mcp"
 //   }]
 // ────────────────────────────────────────────────────────────
 
@@ -26,6 +26,9 @@ import {
 } from "./ToolSchemaService.js";
 import CONFIG from "../config.js";
 import logger from "../logger.js";
+
+// ── Self base URL (vault-resolved, localhost fallback) ───────
+const SELF_BASE_URL = CONFIG.TOOLS_SERVICE_URL || `http://localhost:${CONFIG.TOOLS_SERVICE_PORT}`;
 
 // ── Build tool executor URL from endpoint metadata ──────────
 function buildUrl(endpoint, args = {}) {
@@ -66,7 +69,7 @@ function buildUrl(endpoint, args = {}) {
   }
 
   const qs = params.toString();
-  return `http://localhost:${CONFIG.TOOLS_SERVICE_PORT}${path}${qs ? `?${qs}` : ""}`;
+  return `${SELF_BASE_URL}${path}${qs ? `?${qs}` : ""}`;
 }
 
 // ── Arg remaps (same as Prism's ToolOrchestratorService) ────
@@ -91,7 +94,7 @@ async function executeTool(toolName, endpoint, args = {}, context = {}) {
 
   try {
     if (endpoint.method === "POST") {
-      const url = `http://localhost:${CONFIG.TOOLS_SERVICE_PORT}${endpoint.path}`;
+      const url = `${SELF_BASE_URL}${endpoint.path}`;
       const headers = { "Content-Type": "application/json" };
       if (context.project) headers["X-Project"] = context.project;
       if (context.agent) headers["X-Agent"] = context.agent;
@@ -130,8 +133,8 @@ async function executeTool(toolName, endpoint, args = {}, context = {}) {
       return { error: `API returned ${res.status}: ${res.statusText}` };
     }
     return await res.json();
-  } catch (err) {
-    return { error: `Tool execution failed: ${err.message}` };
+  } catch (error) {
+    return { error: `Tool execution failed: ${error.message}` };
   }
 }
 
@@ -185,9 +188,9 @@ function createMcpServer(context = {}) {
           content: [{ type: "text", text }],
           isError: !!result?.error,
         };
-      } catch (err) {
+      } catch (error) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: err.message }) }],
+          content: [{ type: "text", text: JSON.stringify({ error: error.message }) }],
           isError: true,
         };
       }

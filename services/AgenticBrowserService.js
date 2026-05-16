@@ -165,8 +165,8 @@ async function actionNavigate(page, { url }) {
       title: await page.title(),
       status: response?.status() || null,
     };
-  } catch (err) {
-    return { error: `Navigation failed: ${err.message}` };
+  } catch (error) {
+    return { error: `Navigation failed: ${error.message}` };
   }
 }
 
@@ -191,8 +191,8 @@ async function actionScreenshot(page, { fullPage, selector }) {
       screenshot: screenshotBuffer.toString("base64"),
       mimeType: "image/png",
     };
-  } catch (err) {
-    return { error: `Screenshot failed: ${err.message}` };
+  } catch (error) {
+    return { error: `Screenshot failed: ${error.message}` };
   }
 }
 
@@ -211,8 +211,8 @@ async function actionClick(page, { selector }) {
       url: page.url(),
       title: await page.title(),
     };
-  } catch (err) {
-    return { error: `Click failed on "${selector}": ${err.message}` };
+  } catch (error) {
+    return { error: `Click failed on "${selector}": ${error.message}` };
   }
 }
 
@@ -238,8 +238,8 @@ async function actionType(page, { selector, text, pressEnter }) {
       url: page.url(),
       title: await page.title(),
     };
-  } catch (err) {
-    return { error: `Type failed on "${selector}": ${err.message}` };
+  } catch (error) {
+    return { error: `Type failed on "${selector}": ${error.message}` };
   }
 }
 
@@ -269,8 +269,8 @@ async function actionScroll(page, { direction, selector, amount }) {
       direction: selector ? "to element" : (direction || "down"),
       url: page.url(),
     };
-  } catch (err) {
-    return { error: `Scroll failed: ${err.message}` };
+  } catch (error) {
+    return { error: `Scroll failed: ${error.message}` };
   }
 }
 
@@ -285,8 +285,8 @@ async function actionEvaluate(page, { expression }) {
       result: typeof result === "object" ? JSON.stringify(result, null, 2) : String(result),
       url: page.url(),
     };
-  } catch (err) {
-    return { error: `Evaluate failed: ${err.message}` };
+  } catch (error) {
+    return { error: `Evaluate failed: ${error.message}` };
   }
 }
 
@@ -324,8 +324,8 @@ async function actionGetContent(page, { selector, format }) {
       length: content.length,
       truncated,
     };
-  } catch (err) {
-    return { error: `Content extraction failed: ${err.message}` };
+  } catch (error) {
+    return { error: `Content extraction failed: ${error.message}` };
   }
 }
 
@@ -351,8 +351,8 @@ async function actionWait(page, { selector, timeout, state }) {
       waited_for: `${waitMs}ms`,
       url: page.url(),
     };
-  } catch (err) {
-    return { error: `Wait failed: ${err.message}` };
+  } catch (error) {
+    return { error: `Wait failed: ${error.message}` };
   }
 }
 
@@ -451,8 +451,8 @@ async function actionGetElements(page, { selector, limit }) {
       count: elements.length,
       elements,
     };
-  } catch (err) {
-    return { error: `Get elements failed: ${err.message}` };
+  } catch (error) {
+    return { error: `Get elements failed: ${error.message}` };
   }
 }
 
@@ -495,8 +495,8 @@ async function actionSnapshot(page, { selector }) {
       snapshot: formatted,
       format: "a11y-tree",
     };
-  } catch (err) {
-    return { error: `Snapshot failed: ${err.message}` };
+  } catch (error) {
+    return { error: `Snapshot failed: ${error.message}` };
   }
 }
 
@@ -580,8 +580,8 @@ async function actionClickRef(page, { ref }) {
       url: page.url(),
       title: await page.title(),
     };
-  } catch (err) {
-    return { error: `click_ref failed for "${ref}": ${err.message}` };
+  } catch (error) {
+    return { error: `click_ref failed for "${ref}": ${error.message}` };
   }
 }
 
@@ -607,8 +607,8 @@ async function actionTypeRef(page, { ref, text, pressEnter }) {
       url: page.url(),
       title: await page.title(),
     };
-  } catch (err) {
-    return { error: `type_ref failed for "${ref}": ${err.message}` };
+  } catch (error) {
+    return { error: `type_ref failed for "${ref}": ${error.message}` };
   }
 }
 
@@ -624,8 +624,8 @@ async function actionHoverRef(page, { ref }) {
       ref,
       url: page.url(),
     };
-  } catch (err) {
-    return { error: `hover_ref failed for "${ref}": ${err.message}` };
+  } catch (error) {
+    return { error: `hover_ref failed for "${ref}": ${error.message}` };
   }
 }
 
@@ -644,8 +644,8 @@ async function actionSelectRef(page, { ref, value }) {
       url: page.url(),
       title: await page.title(),
     };
-  } catch (err) {
-    return { error: `select_ref failed for "${ref}": ${err.message}` };
+  } catch (error) {
+    return { error: `select_ref failed for "${ref}": ${error.message}` };
   }
 }
 
@@ -692,8 +692,8 @@ const { chromium } = require('playwright');
     // ── User Script Start ──
     ${script}
     // ── User Script End ──
-  } catch (err) {
-    logger.error('Script error:', err.message);
+  } catch (error) {
+    logger.error('Script error:', error.message);
     process.exit(1);
   } finally {
     if (!BROWSER_WS) await browser.close();
@@ -718,8 +718,8 @@ const { chromium } = require('playwright');
       action: "run_script",
       ...result,
     };
-  } catch (err) {
-    return { error: `run_script failed: ${err.message}` };
+  } catch (error) {
+    return { error: `run_script failed: ${error.message}` };
   } finally {
     // Cleanup
     if (scriptPath) {
@@ -795,7 +795,7 @@ function executeScript(scriptPath, wsEndpoint, timeoutMs) {
     }
 
     child.on("close", (code) => finish(code));
-    child.on("error", (err) => {
+    child.on("error", (error) => {
       if (!settled) {
         settled = true;
         clearTimeout(timer);
@@ -804,7 +804,7 @@ function executeScript(scriptPath, wsEndpoint, timeoutMs) {
           stdout: "",
           stderr: "",
           exitCode: null,
-          error: `Process error: ${err.message}`,
+          error: `Process error: ${error.message}`,
         });
       }
     });
@@ -873,9 +873,9 @@ export async function agenticBrowserAction(params) {
       ...result,
       sessionId,
     };
-  } catch (err) {
+  } catch (error) {
     return {
-      error: `Browser action "${action}" failed: ${err.message}`,
+      error: `Browser action "${action}" failed: ${error.message}`,
       sessionId,
     };
   }

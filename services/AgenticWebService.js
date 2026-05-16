@@ -125,11 +125,11 @@ export async function agenticFetchUrl(url, { selector } = {}) {
       charCount: markdown.length,
       truncated: markdown.length > MAX_OUTPUT_CHARS,
     };
-  } catch (err) {
-    if (err.name === "AbortError") {
+  } catch (error) {
+    if (error.name === "AbortError") {
       return { error: `Request timed out after ${FETCH_TIMEOUT_MS}ms`, url };
     }
-    return { error: `Fetch failed: ${err.message}`, url };
+    return { error: `Fetch failed: ${error.message}`, url };
   }
 }
 
@@ -167,8 +167,8 @@ export async function agenticWebSearch(query, { limit = 5, dateRestrict, siteSea
       if (!result.error) return result;
       // If Brave fails, fall through to Google CSE
       logger.warn(`[AgenticWebService] Brave Search failed, trying Google CSE: ${result.error}`);
-    } catch (err) {
-      logger.warn(`[AgenticWebService] Brave Search exception: ${err.message}`);
+    } catch (error) {
+      logger.warn(`[AgenticWebService] Brave Search exception: ${error.message}`);
     }
   }
 

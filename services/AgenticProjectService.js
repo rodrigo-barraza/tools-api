@@ -29,8 +29,8 @@ export async function agenticProjectSummary(projectPath) {
   if (agent) {
     try {
       return await sendRpc(agent.id, "project.summary", { path: projectPath });
-    } catch (err) {
-      return { error: `Agent RPC failed: ${err.message}` };
+    } catch (error) {
+      return { error: `Agent RPC failed: ${error.message}` };
     }
   }
 

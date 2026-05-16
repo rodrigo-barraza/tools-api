@@ -581,8 +581,8 @@ router.get("/wayback/snapshot", asyncHandler(async (req, res) => {
   if (!url) return res.status(400).json({ error: "Query parameter 'url' is required" });
   try {
     res.json(await getWaybackSnapshot(url, timestamp));
-  } catch (err) {
-    res.status(500).json({ error: `Wayback lookup failed: ${err.message}` });
+  } catch (error) {
+    res.status(500).json({ error: `Wayback lookup failed: ${error.message}` });
   }
 }));
 router.get("/wayback/history", asyncHandler(async (req, res) => {
@@ -594,8 +594,8 @@ router.get("/wayback/history", asyncHandler(async (req, res) => {
       from,
       to,
     }));
-  } catch (err) {
-    res.status(500).json({ error: `Wayback history failed: ${err.message}` });
+  } catch (error) {
+    res.status(500).json({ error: `Wayback history failed: ${error.message}` });
   }
 }));
 // ─── Health ────────────────────────────────────────────────────────

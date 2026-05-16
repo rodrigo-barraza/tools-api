@@ -90,8 +90,8 @@ router.get("/calculate", (req, res) => {
       b: b || null,
       result: result.toFixed(),
     });
-  } catch (err) {
-    res.status(400).json({ error: `Calculation failed: ${err.message}` });
+  } catch (error) {
+    res.status(400).json({ error: `Calculation failed: ${error.message}` });
   }
 });
 // ─── Currency Conversion ───────────────────────────────────────────
@@ -337,8 +337,8 @@ router.get("/map", asyncHandler(async (req, res) => {
       mapEmbedUrl,
       markerCount: markerList.length,
     });
-  } catch (err) {
-    res.status(502).json({ error: `Map generation failed: ${err.message}` });
+  } catch (error) {
+    res.status(502).json({ error: `Map generation failed: ${error.message}` });
   }
 }));
 // ─── Webcams ───────────────────────────────────────────────────────
@@ -485,8 +485,8 @@ router.get("/chart/render", asyncHandler(async (req, res) => {
     res.setHeader("Content-Type", "image/png");
     res.setHeader("Cache-Control", "public, max-age=3600");
     res.send(pngBuffer);
-  } catch (err) {
-    res.status(500).json({ error: `Chart render failed: ${err.message}` });
+  } catch (error) {
+    res.status(500).json({ error: `Chart render failed: ${error.message}` });
   }
 }));
 // ─── Page Metadata Scraper (Crawlee) ───────────────────────────────

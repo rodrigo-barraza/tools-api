@@ -80,11 +80,11 @@ router.get("/messages/stream", (req, res) => {
       reactionFingerprints = new Map(messages.map((m) => [m.id, reactionHash(m)]));
       res.write(`event: init\ndata: ${JSON.stringify({ messages })}\n\n`);
       health.markSuccess();
-    } catch (err) {
-      logger.error("[discord/stream] Init error:", err.message);
-      health.markError(err);
+    } catch (error) {
+      logger.error("[discord/stream] Init error:", error.message);
+      health.markError(error);
       if (!closed) {
-        res.write(`event: error\ndata: ${JSON.stringify({ error: err.message })}\n\n`);
+        res.write(`event: error\ndata: ${JSON.stringify({ error: error.message })}\n\n`);
       }
     }
   }
@@ -129,9 +129,9 @@ router.get("/messages/stream", (req, res) => {
       // Update tracked sets
       knownIds = currentIds;
       reactionFingerprints = new Map(messages.map((m) => [m.id, reactionHash(m)]));
-    } catch (err) {
-      logger.error("[discord/stream] Poll error:", err.message);
-      health.markError(err);
+    } catch (error) {
+      logger.error("[discord/stream] Poll error:", error.message);
+      health.markError(error);
     }
   }
   // ── Heartbeat — keeps the connection alive through proxies ────

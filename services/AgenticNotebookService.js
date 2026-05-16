@@ -52,8 +52,8 @@ export async function agenticNotebookEdit(path, { action, cellIndex, content, ce
       return { error: `Notebook is too large (max ${MAX_NOTEBOOK_SIZE / 1024 / 1024} MB)` };
     }
     notebook = JSON.parse(raw);
-  } catch (err) {
-    if (err.code === "ENOENT") {
+  } catch (error) {
+    if (error.code === "ENOENT") {
       // For insert_cell on a non-existent file, create a blank notebook
       if (action === "insert_cell") {
         notebook = createBlankNotebook();
@@ -61,7 +61,7 @@ export async function agenticNotebookEdit(path, { action, cellIndex, content, ce
         return { error: `Notebook not found: ${resolved}` };
       }
     } else {
-      return { error: `Failed to parse notebook: ${err.message}` };
+      return { error: `Failed to parse notebook: ${error.message}` };
     }
   }
 

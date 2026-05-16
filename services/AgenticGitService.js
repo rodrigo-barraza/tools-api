@@ -11,8 +11,8 @@ async function tryAgentRoute(method, params, targetPath) {
   if (!agent) return null;
   try {
     return await sendRpc(agent.id, method, params);
-  } catch (err) {
-    return { error: `Agent RPC failed: ${err.message}` };
+  } catch (error) {
+    return { error: `Agent RPC failed: ${error.message}` };
   }
 }
 
@@ -87,11 +87,11 @@ async function runGit(args, cwd) {
       resolve({ stdout, stderr: stderr.trim() });
     });
 
-    child.on("error", (err) => {
+    child.on("error", (error) => {
       if (!settled) {
         settled = true;
         clearTimeout(timer);
-        resolve({ error: `Git process error: ${err.message}` });
+        resolve({ error: `Git process error: ${error.message}` });
       }
     });
   });

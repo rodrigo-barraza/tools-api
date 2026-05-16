@@ -66,10 +66,10 @@ router.get("/news", asyncHandler(async (req, res) => {
         count: news.length,
         articles: news.slice(0, 50),
       });
-    } catch (err) {
+    } catch (error) {
       return res
         .status(502)
-        .json({ error: `Failed to fetch company news: ${err.message}` });
+        .json({ error: `Failed to fetch company news: ${error.message}` });
     }
   }
   const articles = getMarketNews();

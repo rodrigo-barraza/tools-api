@@ -120,13 +120,13 @@ function connect(options = {}) {
           vesselMap.set(mmsi, { ...existing, ...processed });
         }
       }
-    } catch (err) {
-      logger.warn(`[AisStream] ⚠️ Parse error: ${err.message}`);
+    } catch (error) {
+      logger.warn(`[AisStream] ⚠️ Parse error: ${error.message}`);
     }
   };
 
   socket.onerror = (err) => {
-    stats.lastError = err.message || "WebSocket error";
+    stats.lastError = error.message || "WebSocket error";
     logger.error(`[AisStream] ❌ WebSocket error: ${stats.lastError}`);
   };
 

@@ -175,10 +175,10 @@ router.post("/generate-image", asyncHandler(async (req, res) => {
           skipConversation: true,
           ...(systemPrompt && { systemPrompt }),
         });
-      } catch (err) {
-        logger.error(`[CreativeRoutes] Prism chat failed: ${err.message}`);
+      } catch (error) {
+        logger.error(`[CreativeRoutes] Prism chat failed: ${error.message}`);
         return res.status(502).json({
-          error: `Image generation failed: ${err.message}`,
+          error: `Image generation failed: ${error.message}`,
         });
       }
 
@@ -252,9 +252,9 @@ router.post("/generate-image", asyncHandler(async (req, res) => {
         softenedPrompt: currentPrompt.slice(0, 200),
       }),
     });
-  } catch (err) {
-    logger.error(`[CreativeRoutes] generate-image failed: ${err.message}`);
-    res.status(500).json({ error: `Image generation failed: ${err.message}` });
+  } catch (error) {
+    logger.error(`[CreativeRoutes] generate-image failed: ${error.message}`);
+    res.status(500).json({ error: `Image generation failed: ${error.message}` });
   }
 }));
 
@@ -327,9 +327,9 @@ router.post("/describe-image", asyncHandler(async (req, res) => {
           });
 
           return result.text || "Unable to describe this image.";
-        } catch (err) {
-          logger.error(`[CreativeRoutes] describe-image vision call failed: ${err.message}`);
-          return `Failed to describe image: ${err.message}`;
+        } catch (error) {
+          logger.error(`[CreativeRoutes] describe-image vision call failed: ${error.message}`);
+          return `Failed to describe image: ${error.message}`;
         }
       })();
 
@@ -347,9 +347,9 @@ router.post("/describe-image", asyncHandler(async (req, res) => {
       success: true,
       descriptions,
     });
-  } catch (err) {
-    logger.error(`[CreativeRoutes] describe-image failed: ${err.message}`);
-    res.status(500).json({ error: `Image description failed: ${err.message}` });
+  } catch (error) {
+    logger.error(`[CreativeRoutes] describe-image failed: ${error.message}`);
+    res.status(500).json({ error: `Image description failed: ${error.message}` });
   }
 }));
 
@@ -385,9 +385,9 @@ router.post("/text-to-speech", asyncHandler(async (req, res) => {
       },
       textLength: text.length,
     });
-  } catch (err) {
-    logger.error(`[CreativeRoutes] text-to-speech failed: ${err.message}`);
-    res.status(500).json({ error: `Text-to-speech failed: ${err.message}` });
+  } catch (error) {
+    logger.error(`[CreativeRoutes] text-to-speech failed: ${error.message}`);
+    res.status(500).json({ error: `Text-to-speech failed: ${error.message}` });
   }
 }));
 
@@ -409,8 +409,8 @@ router.post("/speech-to-text", asyncHandler(async (req, res) => {
       const buffer = await response.arrayBuffer();
       const mimeType = response.headers.get("content-type") || "audio/mpeg";
       audioData = `data:${mimeType};base64,${Buffer.from(buffer).toString("base64")}`;
-    } catch (err) {
-      return res.status(400).json({ error: `Failed to fetch audio URL: ${err.message}` });
+    } catch (error) {
+      return res.status(400).json({ error: `Failed to fetch audio URL: ${error.message}` });
     }
   }
 
@@ -437,9 +437,9 @@ router.post("/speech-to-text", asyncHandler(async (req, res) => {
       text: result.text,
       usage: result.usage || {},
     });
-  } catch (err) {
-    logger.error(`[CreativeRoutes] speech-to-text failed: ${err.message}`);
-    res.status(500).json({ error: `Speech-to-text failed: ${err.message}` });
+  } catch (error) {
+    logger.error(`[CreativeRoutes] speech-to-text failed: ${error.message}`);
+    res.status(500).json({ error: `Speech-to-text failed: ${error.message}` });
   }
 }));
 

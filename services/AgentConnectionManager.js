@@ -129,8 +129,8 @@ export function initAgentWebSocket(httpServer) {
       try {
         const msg = JSON.parse(raw.toString());
         handleAgentMessage(ws, msg, clientIp);
-      } catch (err) {
-        logger.error(`[AgentWS] Invalid message: ${err.message}`);
+      } catch (error) {
+        logger.error(`[AgentWS] Invalid message: ${error.message}`);
       }
     });
 
@@ -143,8 +143,8 @@ export function initAgentWebSocket(httpServer) {
       }
     });
 
-    ws.on("error", (err) => {
-      logger.error(`[AgentWS] Connection error: ${err.message}`);
+    ws.on("error", (error) => {
+      logger.error(`[AgentWS] Connection error: ${error.message}`);
     });
   });
 
@@ -199,11 +199,11 @@ export function initAgentWebSocket(httpServer) {
         try {
           const result = await sendRpc(route.id, msg.method, msg.params);
           sendJson(ws, { jsonrpc: "2.0", id: msg.id, result });
-        } catch (err) {
-          sendJson(ws, { jsonrpc: "2.0", id: msg.id, error: { code: -32000, message: err.message } });
+        } catch (error) {
+          sendJson(ws, { jsonrpc: "2.0", id: msg.id, error: { code: -32000, message: error.message } });
         }
-      } catch (err) {
-        logger.error(`[ClientWS] Invalid message: ${err.message}`);
+      } catch (error) {
+        logger.error(`[ClientWS] Invalid message: ${error.message}`);
       }
     });
 
@@ -211,8 +211,8 @@ export function initAgentWebSocket(httpServer) {
       logger.info(`[ClientWS] Client disconnected (${clientIp})`);
     });
 
-    ws.on("error", (err) => {
-      logger.error(`[ClientWS] Connection error: ${err.message}`);
+    ws.on("error", (error) => {
+      logger.error(`[ClientWS] Connection error: ${error.message}`);
     });
   });
 
@@ -572,8 +572,8 @@ async function rebuildAllowedRootsFromAgents() {
     const userRoots = ALLOWED_ROOTS.filter((r) => !staticSet.has(r) && !agentSet.has(r));
 
     refreshAllowedRoots([...userRoots, ...agentRoots]);
-  } catch (err) {
-    logger.warn(`[AgentWS] Failed to rebuild allowed roots: ${err.message}`);
+  } catch (error) {
+    logger.warn(`[AgentWS] Failed to rebuild allowed roots: ${error.message}`);
   }
 }
 

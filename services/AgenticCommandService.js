@@ -13,8 +13,8 @@ async function tryAgentRouteCommand(method, params, cwd) {
   if (!agent) return null;
   try {
     return await sendRpc(agent.id, method, params);
-  } catch (err) {
-    return { success: false, stdout: "", stderr: "", exitCode: null, executionTimeMs: 0, error: `Agent RPC failed: ${err.message}` };
+  } catch (error) {
+    return { success: false, stdout: "", stderr: "", exitCode: null, executionTimeMs: 0, error: `Agent RPC failed: ${error.message}` };
   }
 }
 
@@ -286,7 +286,7 @@ export async function executeCommand(command, { cwd, timeout = DEFAULT_TIMEOUT_M
     }
 
     child.on("close", (code) => finish(code));
-    child.on("error", (err) => {
+    child.on("error", (error) => {
       if (!settled) {
         settled = true;
         clearTimeout(timer);
@@ -294,7 +294,7 @@ export async function executeCommand(command, { cwd, timeout = DEFAULT_TIMEOUT_M
         resolve({
           success: false, stdout: "", stderr: "", exitCode: null,
           executionTimeMs: Math.round(performance.now() - startTime),
-          error: `Process error: ${err.message}`,
+          error: `Process error: ${error.message}`,
         });
       }
     });
@@ -321,8 +321,8 @@ export async function executeCommandStreaming(command, { cwd, timeout = DEFAULT_
           if (method === "command.stdout") onChunk?.("stdout", params.data);
           else if (method === "command.stderr") onChunk?.("stderr", params.data);
         });
-      } catch (err) {
-        return { success: false, stdout: "", stderr: "", exitCode: null, executionTimeMs: 0, error: `Agent RPC failed: ${err.message}` };
+      } catch (error) {
+        return { success: false, stdout: "", stderr: "", exitCode: null, executionTimeMs: 0, error: `Agent RPC failed: ${error.message}` };
       }
     }
   }
@@ -418,7 +418,7 @@ export async function executeCommandStreaming(command, { cwd, timeout = DEFAULT_
     }
 
     child.on("close", (code) => finish(code));
-    child.on("error", (err) => {
+    child.on("error", (error) => {
       if (!settled) {
         settled = true;
         clearTimeout(timer);
@@ -426,7 +426,7 @@ export async function executeCommandStreaming(command, { cwd, timeout = DEFAULT_
         resolve({
           success: false, stdout: "", stderr: "", exitCode: null,
           executionTimeMs: Math.round(performance.now() - startTime),
-          error: `Process error: ${err.message}`,
+          error: `Process error: ${error.message}`,
         });
       }
     });
@@ -509,7 +509,7 @@ export async function killProcessTree(pid, { gracePeriodMs = 3000 } = {}) {
       // Process is gone — SIGTERM was sufficient
       return { success: true, pid, signal: "SIGTERM", escalated: false };
     }
-  } catch (err) {
-    return { success: false, pid, error: `Failed to kill process: ${err.message}` };
+  } catch (error) {
+    return { success: false, pid, error: `Failed to kill process: ${error.message}` };
   }
 }

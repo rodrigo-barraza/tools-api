@@ -137,8 +137,8 @@ router.get("/units/convert", asyncHandler(async (req, res) => {
       to: { abbr: to, singular: toUnit.singular, plural: toUnit.plural },
       result,
     });
-  } catch (err) {
-    res.status(400).json({ error: `Conversion failed: ${err.message}` });
+  } catch (error) {
+    res.status(400).json({ error: `Conversion failed: ${error.message}` });
   }
 }));
 router.get("/units/list", asyncHandler(async (req, res) => {
@@ -163,8 +163,8 @@ router.get("/units/list", asyncHandler(async (req, res) => {
       });
     }
     res.json({ measureCount: measures.length, measures: all });
-  } catch (err) {
-    res.status(400).json({ error: `Unit listing failed: ${err.message}` });
+  } catch (error) {
+    res.status(400).json({ error: `Unit listing failed: ${error.message}` });
   }
 }));
 // ─── 4. DateTime Parsing & Arithmetic ───────────────────────
@@ -326,8 +326,8 @@ router.post("/datetime/parse", asyncHandler(async (req, res) => {
         });
     }
     res.json({ operation, ...result });
-  } catch (err) {
-    res.status(400).json({ error: `DateTime operation failed: ${err.message}` });
+  } catch (error) {
+    res.status(400).json({ error: `DateTime operation failed: ${error.message}` });
   }
 }));
 // ─── 5. JSON Transform (JSONPath) ───────────────────────────
@@ -453,8 +453,8 @@ router.post("/json/transform", asyncHandler(async (req, res) => {
     }
     const count = Array.isArray(result) ? result.length : typeof result === "object" ? Object.keys(result).length : 1;
     res.json({ count, result });
-  } catch (err) {
-    res.status(400).json({ error: `JSON transform failed: ${err.message}` });
+  } catch (error) {
+    res.status(400).json({ error: `JSON transform failed: ${error.message}` });
   }
 }));
 // ─── 6. CSV Generation ──────────────────────────────────────
@@ -490,8 +490,8 @@ router.post("/csv", (req, res) => {
       rows: data.length,
       columns: cols.length,
     });
-  } catch (err) {
-    res.status(400).json({ error: `CSV generation failed: ${err.message}` });
+  } catch (error) {
+    res.status(400).json({ error: `CSV generation failed: ${error.message}` });
   }
 });
 router.get("/csv/download", (req, res) => {
@@ -529,8 +529,8 @@ router.post("/qr", asyncHandler(async (req, res) => {
     const id = qrStore.set({ buffer: pngBuffer });
     const qrImageUrl = buildLocalUrl("compute/qr/render", { id });
     res.json({ qrImageUrl, qrId: id, dataLength: data.length });
-  } catch (err) {
-    res.status(400).json({ error: `QR code generation failed: ${err.message}` });
+  } catch (error) {
+    res.status(400).json({ error: `QR code generation failed: ${error.message}` });
   }
 }));
 router.get("/qr/render", (req, res) => {
@@ -569,7 +569,7 @@ function buildLatexEmbedHtml(latex, displayMode = true) {
       strict: false,
       trust: true,
     });
-  } catch(e) {
+  } catch (error) {
     document.getElementById("math").textContent = "LaTeX error: " + e.message;
   }
 </${"script"}>`,
@@ -624,7 +624,7 @@ function buildMermaidEmbedHtml(definition, theme = "dark") {
   try {
     const { svg } = await mermaid.render('mermaid-svg', ${JSON.stringify(definition)});
     document.getElementById('diagram').innerHTML = svg;
-  } catch(e) {
+  } catch (error) {
     document.getElementById('diagram').textContent = 'Diagram error: ' + e.message;
   }
 </${"script"}>`,
@@ -712,8 +712,8 @@ router.post("/diff", asyncHandler(async (req, res) => {
       })),
       patch,
     });
-  } catch (err) {
-    res.status(400).json({ error: `Diff failed: ${err.message}` });
+  } catch (error) {
+    res.status(400).json({ error: `Diff failed: ${error.message}` });
   }
 }));
 // ─── 11. Cryptographic Hashing ──────────────────────────────
@@ -744,10 +744,10 @@ router.get("/hash", (req, res) => {
       hash,
       dataLength: data.length,
     });
-  } catch (err) {
+  } catch (error) {
     const algos = crypto.getHashes().filter((h) => !h.includes("RSA"));
     res.status(400).json({
-      error: `Hashing failed: ${err.message}`,
+      error: `Hashing failed: ${error.message}`,
       supportedAlgorithms: algos.slice(0, 20),
     });
   }
@@ -803,14 +803,14 @@ router.post("/regex", (req, res) => {
       matches,
       valid: true,
     });
-  } catch (err) {
+  } catch (error) {
     res.json({
       pattern,
       flags: flags || "g",
       matchCount: 0,
       matches: [],
       valid: false,
-      error: err.message,
+      error: error.message,
     });
   }
 });
@@ -907,8 +907,8 @@ router.get("/encode", (req, res) => {
       inputLength: data.length,
       outputLength: typeof result === "string" ? result.length : undefined,
     });
-  } catch (err) {
-    res.status(400).json({ error: `Encoding failed: ${err.message}` });
+  } catch (error) {
+    res.status(400).json({ error: `Encoding failed: ${error.message}` });
   }
 });
 // ─── 14. Color Converter ────────────────────────────────────
@@ -1064,8 +1064,8 @@ router.get("/color/convert", (req, res) => {
       };
     }
     res.json(result);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
 });
 // ─── 15. LOGO Turtle Graphics ───────────────────────────────
@@ -1644,8 +1644,8 @@ router.get("/cron/parse", (req, res) => {
       nextExecutionCount: nextExecutions.length,
       fromDate: fromDate.toISOString(),
     });
-  } catch (err) {
-    res.status(400).json({ error: `Cron parse failed: ${err.message}` });
+  } catch (error) {
+    res.status(400).json({ error: `Cron parse failed: ${error.message}` });
   }
 });
 // ─── Agentic: Sleep (Timed Pause) ───────────────────────────
@@ -1725,8 +1725,8 @@ router.post("/synthetic-output", (req, res) => {
   if (schema && typeof schema === "object") {
     try {
       validateJsonSchema(data, schema, "", validationErrors);
-    } catch (err) {
-      validationErrors.push(`Validation error: ${err.message}`);
+    } catch (error) {
+      validationErrors.push(`Validation error: ${error.message}`);
     }
   }
   const result = {
@@ -1775,8 +1775,8 @@ router.post("/image/process", asyncHandler(async (req, res) => {
     };
     if (result.metadata) response.metadata = result.metadata;
     res.json(response);
-  } catch (err) {
-    res.status(400).json({ error: `Image processing failed: ${err.message}` });
+  } catch (error) {
+    res.status(400).json({ error: `Image processing failed: ${error.message}` });
   }
 }));
 router.get("/image/render", (req, res) => {

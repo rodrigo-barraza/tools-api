@@ -158,12 +158,12 @@ router.get("/file/raw", asyncHandler(async (req, res) => {
     } else {
       createReadStream(resolved).pipe(res);
     }
-  } catch (err) {
-    if (err.code === "ENOENT") {
+  } catch (error) {
+    if (error.code === "ENOENT") {
       return res.status(404).json({ error: `File not found: ${resolved}` });
     }
-    logger.error(`[file/raw] Stream failed: ${err.message}`);
-    res.status(500).json({ error: `Failed to stream file: ${err.message}` });
+    logger.error(`[file/raw] Stream failed: ${error.message}`);
+    res.status(500).json({ error: `Failed to stream file: ${error.message}` });
   }
 }));
 
@@ -736,13 +736,13 @@ router.post("/memory/upsert", asyncHandler(async (req, res) => {
       }),
     });
     if (!prismRes.ok) {
-      const err = await prismRes.json().catch(() => ({}));
-      return res.status(prismRes.status).json({ error: err.error || `Prism returned ${prismRes.status}` });
+      const errorBody = await prismRes.json().catch(() => ({}));
+      return res.status(prismRes.status).json({ error: errorBody.error || `Prism returned ${prismRes.status}` });
     }
     const result = await prismRes.json();
     res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: `Memory storage failed: ${err.message}` });
+  } catch (error) {
+    res.status(500).json({ error: `Memory storage failed: ${error.message}` });
   }
 }));
 // ─── 15. Custom Agent Creation ──────────────────────────────
@@ -805,13 +805,13 @@ router.post("/custom-agent/create", asyncHandler(async (req, res) => {
       }),
     });
     if (!prismRes.ok) {
-      const err = await prismRes.json().catch(() => ({}));
-      return res.status(prismRes.status).json({ error: err.error || `Prism returned ${prismRes.status}` });
+      const errorBody = await prismRes.json().catch(() => ({}));
+      return res.status(prismRes.status).json({ error: errorBody.error || `Prism returned ${prismRes.status}` });
     }
     const created = await prismRes.json();
     res.status(201).json(created);
-  } catch (err) {
-    res.status(500).json({ error: `Custom agent creation failed: ${err.message}` });
+  } catch (error) {
+    res.status(500).json({ error: `Custom agent creation failed: ${error.message}` });
   }
 }));
 // ── List Custom Agents ────────────────────────────────────────
@@ -825,13 +825,13 @@ router.get("/custom-agent/list", asyncHandler(async (_req, res) => {
   try {
     const prismRes = await fetch(`${CONFIG.PRISM_SERVICE_URL}/custom-agents`);
     if (!prismRes.ok) {
-      const err = await prismRes.json().catch(() => ({}));
-      return res.status(prismRes.status).json({ error: err.error || `Prism returned ${prismRes.status}` });
+      const errorBody = await prismRes.json().catch(() => ({}));
+      return res.status(prismRes.status).json({ error: errorBody.error || `Prism returned ${prismRes.status}` });
     }
     const agents = await prismRes.json();
     res.json({ agents, count: agents.length });
-  } catch (err) {
-    res.status(500).json({ error: `Custom agent list failed: ${err.message}` });
+  } catch (error) {
+    res.status(500).json({ error: `Custom agent list failed: ${error.message}` });
   }
 }));
 // ── Update Custom Agent ───────────────────────────────────────
@@ -893,13 +893,13 @@ router.post("/custom-agent/update", asyncHandler(async (req, res) => {
       }),
     });
     if (!prismRes.ok) {
-      const err = await prismRes.json().catch(() => ({}));
-      return res.status(prismRes.status).json({ error: err.error || `Prism returned ${prismRes.status}` });
+      const errorBody = await prismRes.json().catch(() => ({}));
+      return res.status(prismRes.status).json({ error: errorBody.error || `Prism returned ${prismRes.status}` });
     }
     const updated = await prismRes.json();
     res.json(updated);
-  } catch (err) {
-    res.status(500).json({ error: `Custom agent update failed: ${err.message}` });
+  } catch (error) {
+    res.status(500).json({ error: `Custom agent update failed: ${error.message}` });
   }
 }));
 // ─── 16. Tool Search (Meta-Tool) ────────────────────────────
@@ -1023,13 +1023,13 @@ router.post("/custom-tool/create", asyncHandler(async (req, res) => {
       }),
     });
     if (!prismRes.ok) {
-      const err = await prismRes.json().catch(() => ({}));
-      return res.status(prismRes.status).json({ error: err.error || `Prism returned ${prismRes.status}` });
+      const errorBody = await prismRes.json().catch(() => ({}));
+      return res.status(prismRes.status).json({ error: errorBody.error || `Prism returned ${prismRes.status}` });
     }
     const created = await prismRes.json();
     res.status(201).json(created);
-  } catch (err) {
-    res.status(500).json({ error: `Custom tool creation failed: ${err.message}` });
+  } catch (error) {
+    res.status(500).json({ error: `Custom tool creation failed: ${error.message}` });
   }
 }));
 // ── List Custom Tools ─────────────────────────────────────────
@@ -1050,13 +1050,13 @@ router.get("/custom-tool/list", asyncHandler(async (req, res) => {
       },
     });
     if (!prismRes.ok) {
-      const err = await prismRes.json().catch(() => ({}));
-      return res.status(prismRes.status).json({ error: err.error || `Prism returned ${prismRes.status}` });
+      const errorBody = await prismRes.json().catch(() => ({}));
+      return res.status(prismRes.status).json({ error: errorBody.error || `Prism returned ${prismRes.status}` });
     }
     const tools = await prismRes.json();
     res.json({ tools, count: tools.length });
-  } catch (err) {
-    res.status(500).json({ error: `Custom tool list failed: ${err.message}` });
+  } catch (error) {
+    res.status(500).json({ error: `Custom tool list failed: ${error.message}` });
   }
 }));
 // ── Update Custom Tool ────────────────────────────────────────
@@ -1084,13 +1084,13 @@ router.post("/custom-tool/update", asyncHandler(async (req, res) => {
       }),
     });
     if (!prismRes.ok) {
-      const err = await prismRes.json().catch(() => ({}));
-      return res.status(prismRes.status).json({ error: err.error || `Prism returned ${prismRes.status}` });
+      const errorBody = await prismRes.json().catch(() => ({}));
+      return res.status(prismRes.status).json({ error: errorBody.error || `Prism returned ${prismRes.status}` });
     }
     const updated = await prismRes.json();
     res.json(updated);
-  } catch (err) {
-    res.status(500).json({ error: `Custom tool update failed: ${err.message}` });
+  } catch (error) {
+    res.status(500).json({ error: `Custom tool update failed: ${error.message}` });
   }
 }));
 // ── Delete Custom Tool ────────────────────────────────────────
@@ -1110,13 +1110,13 @@ router.post("/custom-tool/delete", asyncHandler(async (req, res) => {
       method: "DELETE",
     });
     if (!prismRes.ok) {
-      const err = await prismRes.json().catch(() => ({}));
-      return res.status(prismRes.status).json({ error: err.error || `Prism returned ${prismRes.status}` });
+      const errorBody = await prismRes.json().catch(() => ({}));
+      return res.status(prismRes.status).json({ error: errorBody.error || `Prism returned ${prismRes.status}` });
     }
     const result = await prismRes.json();
     res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: `Custom tool deletion failed: ${err.message}` });
+  } catch (error) {
+    res.status(500).json({ error: `Custom tool deletion failed: ${error.message}` });
   }
 }));
 // ── Execute Custom Tool Code ──────────────────────────────────

@@ -39,9 +39,9 @@ export async function chat(params) {
     }
 
     return await res.json();
-  } catch (err) {
-    logger.error(`[PrismService] chat failed: ${err.message}`);
-    throw err;
+  } catch (error) {
+    logger.error(`[PrismService] chat failed: ${error.message}`);
+    throw error;
   }
 }
 
@@ -107,9 +107,9 @@ export async function textToSpeech(params) {
     const audioBase64 = Buffer.from(arrayBuffer).toString("base64");
 
     return { audioBase64, contentType };
-  } catch (err) {
-    logger.error(`[PrismService] textToSpeech failed: ${err.message}`);
-    throw err;
+  } catch (error) {
+    logger.error(`[PrismService] textToSpeech failed: ${error.message}`);
+    throw error;
   }
 }
 
@@ -152,9 +152,9 @@ export async function speechToText(params) {
     }
 
     return await res.json();
-  } catch (err) {
-    logger.error(`[PrismService] speechToText failed: ${err.message}`);
-    throw err;
+  } catch (error) {
+    logger.error(`[PrismService] speechToText failed: ${error.message}`);
+    throw error;
   }
 }
 
