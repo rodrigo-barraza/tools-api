@@ -1,0 +1,261 @@
+// ────────────────────────────────────────────────────────────
+// Custom Tool Execution Tests
+// ────────────────────────────────────────────────────────────
+// Validates the custom tool sandbox execution:
+//   1. Expression-based tools (last expression is the result)
+//   2. Return-based tools (IIFE wrapping supports `return`)
+//   3. Args injection (args object available in sandbox)
+//   4. Error handling (syntax errors, runtime errors, timeouts)
+//   5. Security (no fs, require, fetch, etc.)
+//   6. Route-level integration (POST /agentic/custom-tool/execute)
+// ────────────────────────────────────────────────────────────
+
+import { describe, it, expect } from "vitest";
+import { executeJavaScript } from "../services/JavaScriptInterpreterService.js";
+import { createTestApp } from "./testApp.js";
+import request from "supertest";
+
+// ── Unit: JavaScriptInterpreterService ──────────────────────
+
+describe("JavaScriptInterpreterService — custom tool patterns", () => {
+
+  // ── Expression-based tools ────────────────────────────────
+
+  it("captures the last expression as the result", () => {
+    const { success, result } = executeJavaScript("2 + 2");
+    expect(success).toBe(true);
+    expect(result).toBe(4);
+  });
+
+  it("captures a complex object as the last expression", () => {
+    const code = `
+      const x = 42;
+      const y = "hello";
+      ({ value: x, label: y })
+    `;
+    const { success, result } = executeJavaScript(code);
+    expect(success).toBe(true);
+    expect(result).toEqual({ value: 42, label: "hello" });
+  });
+
+  it("captures undefined when there is no last expression value", () => {
+    const { success, result } = executeJavaScript("const x = 5;");
+    expect(success).toBe(true);
+    expect(result).toBeUndefined();
+  });
+
+  // ── Return-based tools (IIFE-wrapped) ─────────────────────
+
+  it("supports return statements inside an IIFE wrapper", () => {
+    // This mirrors how the /custom-tool/execute endpoint wraps code
+    const code = `(function() {
+      const week = 20;
+      return { week, year: 2026 };
+    })()`;
+    const { success, result } = executeJavaScript(code);
+    expect(success).toBe(true);
+    expect(result).toEqual({ week: 20, year: 2026 });
+  });
+
+  it("supports early return in IIFE for conditional logic", () => {
+    const code = `(function() {
+      const args = { value: 5 };
+      if (args.value > 10) return { status: "high" };
+      return { status: "low" };
+    })()`;
+    const { success, result } = executeJavaScript(code);
+    expect(success).toBe(true);
+    expect(result).toEqual({ status: "low" });
+  });
+
+  it("fails with SyntaxError when return is used at top level (no IIFE)", () => {
+    const { success, error } = executeJavaScript("return 42;");
+    expect(success).toBe(false);
+    expect(error).toMatch(/SyntaxError/);
+  });
+
+  // ── Args injection ────────────────────────────────────────
+
+  it("injects args as a global variable via JSON.stringify", () => {
+    const args = { name: "world", count: 3 };
+    const code = `const args = ${JSON.stringify(args)};\nargs.name + " " + args.count`;
+    const { success, result } = executeJavaScript(code);
+    expect(success).toBe(true);
+    expect(result).toBe("world 3");
+  });
+
+  it("handles empty args object", () => {
+    const code = `const args = {};\nObject.keys(args).length`;
+    const { success, result } = executeJavaScript(code);
+    expect(success).toBe(true);
+    expect(result).toBe(0);
+  });
+
+  // ── Real-world custom tool: get_week_of_year ──────────────
+
+  it("executes a real custom tool (get_week_of_year) with IIFE wrapper", () => {
+    const args = { date: "2026-05-16T12:00:00Z" };
+    const toolCode = `
+const { date } = args;
+const d = date ? new Date(date) : new Date();
+const target = new Date(d);
+target.setDate(target.getDate() + (4 - target.getDay()));
+const jan4 = new Date(target.getFullYear(), 0, 4);
+const diff = target - jan4;
+const oneWeek = 7 * 24 * 60 * 60 * 1000;
+const weekNum = Math.floor(diff / oneWeek) + 1;
+return { week: weekNum, year: d.getFullYear() };
+    `;
+    // Wrap exactly as the execute endpoint does
+    const wrappedCode = `const args = ${JSON.stringify(args)};\n(function() {\n${toolCode}\n})()`;
+    const { success, result } = executeJavaScript(wrappedCode);
+    expect(success).toBe(true);
+    expect(typeof result.week).toBe("number");
+    expect(result.week).toBeGreaterThanOrEqual(1);
+    expect(result.week).toBeLessThanOrEqual(53);
+    expect(result.year).toBe(2026);
+  });
+
+  it("executes a real custom tool (celsius_to_fahrenheit) with return", () => {
+    const args = { celsius: 100 };
+    const toolCode = `return args.celsius * 9/5 + 32;`;
+    const wrappedCode = `const args = ${JSON.stringify(args)};\n(function() {\n${toolCode}\n})()`;
+    const { success, result } = executeJavaScript(wrappedCode);
+    expect(success).toBe(true);
+    expect(result).toBe(212);
+  });
+
+  // ── Console output capture ────────────────────────────────
+
+  it("captures console.log output in the output field", () => {
+    const code = `console.log("hello"); console.log("world"); 42`;
+    const { success, output, result } = executeJavaScript(code);
+    expect(success).toBe(true);
+    expect(output).toBe("hello\nworld");
+    expect(result).toBe(42);
+  });
+
+  // ── Error handling ────────────────────────────────────────
+
+  it("returns error for syntax errors", () => {
+    const { success, error } = executeJavaScript("function { bad }");
+    expect(success).toBe(false);
+    expect(error).toMatch(/SyntaxError/);
+  });
+
+  it("returns error for runtime errors (undefined variable)", () => {
+    const { success, error } = executeJavaScript("nonExistentVariable.foo");
+    expect(success).toBe(false);
+    expect(error).toMatch(/ReferenceError|TypeError/);
+  });
+
+  it("returns error for division by zero edge case (Infinity is valid)", () => {
+    const { success, result } = executeJavaScript("1 / 0");
+    expect(success).toBe(true);
+    expect(result).toBe(Infinity);
+  });
+
+  // ── Security: blocked globals ─────────────────────────────
+
+  it("blocks require()", () => {
+    const { success, error } = executeJavaScript("require('fs')");
+    expect(success).toBe(false);
+    expect(error).toMatch(/TypeError|require is not a function|undefined/);
+  });
+
+  it("blocks fetch()", () => {
+    const { success, error } = executeJavaScript("fetch('http://evil.com')");
+    expect(success).toBe(false);
+    expect(error).toMatch(/TypeError|fetch is not a function|undefined/);
+  });
+
+  it("blocks process access", () => {
+    const { success, error } = executeJavaScript("process.exit(1)");
+    expect(success).toBe(false);
+    expect(error).toMatch(/TypeError|Cannot read/);
+  });
+
+  it("blocks setTimeout", () => {
+    const { success, error } = executeJavaScript("setTimeout(() => {}, 100)");
+    expect(success).toBe(false);
+    expect(error).toMatch(/TypeError|setTimeout is not a function|undefined/);
+  });
+
+  // ── Timeout ───────────────────────────────────────────────
+
+  it("times out on infinite loops", () => {
+    const { success, timedOut } = executeJavaScript("while(true) {}", { timeout: 200 });
+    expect(success).toBe(false);
+    expect(timedOut).toBe(true);
+  });
+});
+
+// ── Integration: POST /agentic/custom-tool/execute ──────────
+
+describe("POST /agentic/custom-tool/execute — route integration", () => {
+  let app;
+
+  // Dynamically import the router (it has many deps, only mount what we need)
+  // We use a minimal approach: import the execute handler logic via the route
+  const setup = async () => {
+    const { default: router } = await import("../routes/AgenticRoutes.js");
+    app = createTestApp("/agentic", router);
+  };
+
+  it("executes return-based code and returns result", async () => {
+    await setup();
+    const res = await request(app)
+      .post("/agentic/custom-tool/execute")
+      .send({ code: "return 2 + 2;", args: {} });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.result).toBe(4);
+  });
+
+  it("executes return-based code with object result (IIFE-wrapped by route)", async () => {
+    await setup();
+    const code = `
+      return { greeting: "hello", count: 42 };
+    `;
+    const res = await request(app)
+      .post("/agentic/custom-tool/execute")
+      .send({ code, args: {} });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.result).toEqual({ greeting: "hello", count: 42 });
+  });
+
+  it("injects args into the sandbox", async () => {
+    await setup();
+    const res = await request(app)
+      .post("/agentic/custom-tool/execute")
+      .send({ code: "return args.x * 2;", args: { x: 21 } });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.result).toBe(42);
+  });
+
+  it("returns 400 when code is missing", async () => {
+    await setup();
+    const res = await request(app)
+      .post("/agentic/custom-tool/execute")
+      .send({ args: {} });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/code/);
+  });
+
+  it("returns success=false for runtime errors", async () => {
+    await setup();
+    const res = await request(app)
+      .post("/agentic/custom-tool/execute")
+      .send({ code: "undefinedVar.foo", args: {} });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error).toBeTruthy();
+  });
+});
