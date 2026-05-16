@@ -76,6 +76,7 @@ import {
   agenticTriggerFire,
 } from "../services/AgenticSchedulerService.js";
 import { agenticNotebookEdit } from "../services/AgenticNotebookService.js";
+import { TOOL_DEFINITIONS } from "../services/ToolSchemaService.js";
 const router = Router();
 // ─── 1. File Operations ─────────────────────────────────────
 // ── Read File ─────────────────────────────────────────────────
@@ -554,6 +555,10 @@ export function getAgenticHealth() {
     memoryUpsert: "on-demand (Prism MemoryService post-processing)",
     customAgentCreate: "on-demand (Prism CustomAgentService)",
     customAgentList: "on-demand (Prism CustomAgentService)",
+    customToolCreate: "on-demand (Prism custom_tools collection)",
+    customToolList: "on-demand (Prism custom_tools collection)",
+    customToolUpdate: "on-demand (Prism custom_tools collection)",
+    customToolDelete: "on-demand (Prism custom_tools collection)",
     toolSearch: "on-demand (ToolSchemaService keyword search)",
     scheduling: "on-demand (MongoDB agent_schedules + 60s poller)",
     notebookEdit: "on-demand (sandboxed ipynb JSON editing)",
@@ -768,6 +773,18 @@ router.post("/custom-agent/create", asyncHandler(async (req, res) => {
   if (!name || typeof name !== "string" || !name.trim()) {
     return res.status(400).json({ error: "Request body must include 'name' (non-empty string)" });
   }
+  // ── Validate enabledTools against the tool registry ──────────
+  if (Array.isArray(enabledTools) && enabledTools.length > 0) {
+    const knownToolNames = new Set(TOOL_DEFINITIONS.map((t) => t.name));
+    const unknownTools = enabledTools.filter((t) => !knownToolNames.has(t));
+    if (unknownTools.length > 0) {
+      return res.status(400).json({
+        error: `Unknown tool(s) in enabledTools: ${unknownTools.join(", ")}. ` +
+          `Use the tool_search tool or list_custom_agents to discover valid tool names.`,
+        unknownTools,
+      });
+    }
+  }
   try {
     const prismRes = await fetch(`${CONFIG.PRISM_SERVICE_URL}/custom-agents`, {
       method: "POST",
@@ -892,5 +909,149 @@ router.post("/notebook/edit", agenticHandler(async (req) => {
     content,
     cellType,
   });
+}));
+// ─── 19. Custom Tool Management ─────────────────────────────
+/**
+ * POST /agentic/custom-tool/create
+ *
+ * Creates a new custom tool definition by proxying to Prism's
+ * POST /custom-tools. Custom tools are user-defined HTTP endpoints
+ * that the agent can invoke like built-in tools. Each tool specifies
+ * a name, description, endpoint URL, HTTP method, and parameter schema.
+ *
+ * Same cross-service proxy pattern as custom-agent/create → Prism.
+ */
+router.post("/custom-tool/create", asyncHandler(async (req, res) => {
+  const {
+    name,
+    description,
+    endpoint,
+    method,
+    parameters,
+    enabled,
+  } = req.body;
+  if (!name || typeof name !== "string" || !name.trim()) {
+    return res.status(400).json({ error: "Request body must include 'name' (non-empty string)" });
+  }
+  if (!endpoint || typeof endpoint !== "string" || !endpoint.trim()) {
+    return res.status(400).json({ error: "Request body must include 'endpoint' (non-empty string — the URL the tool calls)" });
+  }
+  // Inject trusted context from session headers
+  const project = req.headers["x-project"] || req.body.project || "default";
+  const username = req.headers["x-username"] || req.body.username || null;
+  try {
+    const prismRes = await fetch(`${CONFIG.PRISM_SERVICE_URL}/custom-tools`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(project && { "x-project": project }),
+        ...(username && { "x-username": username }),
+      },
+      body: JSON.stringify({
+        name: name.trim(),
+        description: description || "",
+        endpoint: endpoint.trim(),
+        method: method || "GET",
+        parameters: Array.isArray(parameters) ? parameters : [],
+        enabled: enabled !== false,
+      }),
+    });
+    if (!prismRes.ok) {
+      const err = await prismRes.json().catch(() => ({}));
+      return res.status(prismRes.status).json({ error: err.error || `Prism returned ${prismRes.status}` });
+    }
+    const created = await prismRes.json();
+    res.status(201).json(created);
+  } catch (err) {
+    res.status(500).json({ error: `Custom tool creation failed: ${err.message}` });
+  }
+}));
+// ── List Custom Tools ─────────────────────────────────────────
+/**
+ * GET /agentic/custom-tool/list
+ *
+ * Returns all custom tools for the current project + username
+ * by proxying to Prism's GET /custom-tools.
+ */
+router.get("/custom-tool/list", asyncHandler(async (req, res) => {
+  const project = req.headers["x-project"] || req.query.project || "default";
+  const username = req.headers["x-username"] || req.query.username || null;
+  try {
+    const prismRes = await fetch(`${CONFIG.PRISM_SERVICE_URL}/custom-tools`, {
+      headers: {
+        ...(project && { "x-project": project }),
+        ...(username && { "x-username": username }),
+      },
+    });
+    if (!prismRes.ok) {
+      const err = await prismRes.json().catch(() => ({}));
+      return res.status(prismRes.status).json({ error: err.error || `Prism returned ${prismRes.status}` });
+    }
+    const tools = await prismRes.json();
+    res.json({ tools, count: tools.length });
+  } catch (err) {
+    res.status(500).json({ error: `Custom tool list failed: ${err.message}` });
+  }
+}));
+// ── Update Custom Tool ────────────────────────────────────────
+/**
+ * POST /agentic/custom-tool/update
+ *
+ * Updates an existing custom tool by proxying to Prism's
+ * PUT /custom-tools/:id. Accepts partial updates.
+ */
+router.post("/custom-tool/update", asyncHandler(async (req, res) => {
+  const { id, name, description, endpoint, method, parameters, enabled } = req.body;
+  if (!id || typeof id !== "string") {
+    return res.status(400).json({ error: "Request body must include 'id' (string — the tool's MongoDB ObjectId)" });
+  }
+  try {
+    const prismRes = await fetch(`${CONFIG.PRISM_SERVICE_URL}/custom-tools/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+        ...(endpoint !== undefined && { endpoint }),
+        ...(method !== undefined && { method }),
+        ...(parameters !== undefined && { parameters }),
+        ...(enabled !== undefined && { enabled }),
+      }),
+    });
+    if (!prismRes.ok) {
+      const err = await prismRes.json().catch(() => ({}));
+      return res.status(prismRes.status).json({ error: err.error || `Prism returned ${prismRes.status}` });
+    }
+    const updated = await prismRes.json();
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: `Custom tool update failed: ${err.message}` });
+  }
+}));
+// ── Delete Custom Tool ────────────────────────────────────────
+/**
+ * POST /agentic/custom-tool/delete
+ *
+ * Deletes a custom tool by proxying to Prism's
+ * DELETE /custom-tools/:id.
+ */
+router.post("/custom-tool/delete", asyncHandler(async (req, res) => {
+  const { id } = req.body;
+  if (!id || typeof id !== "string") {
+    return res.status(400).json({ error: "Request body must include 'id' (string — the tool's MongoDB ObjectId)" });
+  }
+  try {
+    const prismRes = await fetch(`${CONFIG.PRISM_SERVICE_URL}/custom-tools/${id}`, {
+      method: "DELETE",
+    });
+    if (!prismRes.ok) {
+      const err = await prismRes.json().catch(() => ({}));
+      return res.status(prismRes.status).json({ error: err.error || `Prism returned ${prismRes.status}` });
+    }
+    const result = await prismRes.json();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: `Custom tool deletion failed: ${err.message}` });
+  }
 }));
 export default router;

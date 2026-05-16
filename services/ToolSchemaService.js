@@ -6959,6 +6959,175 @@ const TOOL_DEFINITIONS = [
     },
   },
 
+  // ── Custom Tool Management (Tool Factory) ──────────────────
+  {
+    name: "create_custom_tool",
+    dataSource: onDemand("Prism custom_tools collection"),
+    description:
+      "Create a new custom tool definition. Custom tools are user-defined HTTP endpoints " +
+      "that become available as callable tools in the agent's tool suite. Each tool specifies " +
+      "a name, description, target endpoint URL, HTTP method (GET or POST), and a parameter schema. " +
+      "Once created, the tool is persisted to the database and available in future agent sessions. " +
+      "Use this when the user wants to integrate an external API, webhook, or service as a tool " +
+      "the agent can invoke autonomously.",
+    endpoint: {
+      method: "POST",
+      path: "/agentic/custom-tool/create",
+      bodyParams: ["name", "description", "endpoint", "method", "parameters", "enabled"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        name: {
+          type: "string",
+          description:
+            "Unique tool name (snake_case). This becomes the function name the LLM calls. " +
+            "Example: 'check_server_status', 'lookup_inventory', 'notify_team'.",
+        },
+        description: {
+          type: "string",
+          description:
+            "Human-readable description of what the tool does. This is shown to the LLM to " +
+            "decide when to call the tool. Be specific about inputs, outputs, and use cases.",
+        },
+        endpoint: {
+          type: "string",
+          description:
+            "The full URL the tool will call when invoked. For GET tools, arguments are " +
+            "appended as query parameters. For POST tools, arguments are sent as JSON body. " +
+            "Example: 'https://api.example.com/v1/status'.",
+        },
+        method: {
+          type: "string",
+          description: "HTTP method to use. Default: 'GET'.",
+          enum: ["GET", "POST"],
+        },
+        parameters: {
+          type: "array",
+          description:
+            "Array of parameter definitions. Each parameter has a name, type, description, " +
+            "whether it's required, and optional enum values for constrained inputs.",
+          items: {
+            type: "object",
+            properties: {
+              name: { type: "string", description: "Parameter name (the key sent to the API)" },
+              type: { type: "string", description: "JSON Schema type: 'string', 'number', 'boolean', 'integer'", enum: ["string", "number", "boolean", "integer"] },
+              description: { type: "string", description: "Description shown to the LLM for this parameter" },
+              required: { type: "boolean", description: "Whether this parameter is required. Default: false" },
+              enum: { type: "array", items: { type: "string" }, description: "Optional array of allowed values" },
+            },
+            required: ["name", "type", "description"],
+          },
+        },
+        enabled: {
+          type: "boolean",
+          description: "Whether the tool is active and available for use. Default: true.",
+        },
+      },
+      required: ["name", "description", "endpoint"],
+    },
+  },
+  {
+    name: "list_custom_tools",
+    dataSource: onDemand("Prism custom_tools collection"),
+    description:
+      "List all custom tools defined for the current project and user. Returns each tool's " +
+      "name, description, endpoint, method, parameters, enabled status, and MongoDB ID. " +
+      "Use this to discover existing custom tools before creating new ones (to avoid duplicates), " +
+      "or when the user asks to see, review, or manage their custom tool definitions.",
+    endpoint: {
+      path: "/agentic/custom-tool/list",
+    },
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: "update_custom_tool",
+    dataSource: onDemand("Prism custom_tools collection"),
+    description:
+      "Update an existing custom tool definition. Accepts partial updates — only the fields " +
+      "you provide will be changed. Use list_custom_tools first to find the tool's ID. " +
+      "Common updates include changing the endpoint URL, modifying parameters, updating the " +
+      "description, or enabling/disabling the tool.",
+    endpoint: {
+      method: "POST",
+      path: "/agentic/custom-tool/update",
+      bodyParams: ["id", "name", "description", "endpoint", "method", "parameters", "enabled"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        id: {
+          type: "string",
+          description: "MongoDB ObjectId of the tool to update (from list_custom_tools).",
+        },
+        name: {
+          type: "string",
+          description: "New tool name (snake_case). Leave unset to keep the current name.",
+        },
+        description: {
+          type: "string",
+          description: "Updated description. Leave unset to keep the current description.",
+        },
+        endpoint: {
+          type: "string",
+          description: "Updated endpoint URL. Leave unset to keep the current endpoint.",
+        },
+        method: {
+          type: "string",
+          description: "Updated HTTP method.",
+          enum: ["GET", "POST"],
+        },
+        parameters: {
+          type: "array",
+          description: "Updated parameter definitions (replaces existing parameters entirely).",
+          items: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              type: { type: "string", enum: ["string", "number", "boolean", "integer"] },
+              description: { type: "string" },
+              required: { type: "boolean" },
+              enum: { type: "array", items: { type: "string" } },
+            },
+            required: ["name", "type", "description"],
+          },
+        },
+        enabled: {
+          type: "boolean",
+          description: "Set to false to disable the tool without deleting it.",
+        },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "delete_custom_tool",
+    dataSource: onDemand("Prism custom_tools collection"),
+    description:
+      "Permanently delete a custom tool definition. The tool will no longer appear in the " +
+      "agent's tool suite. Use list_custom_tools first to find the tool's ID. " +
+      "This action cannot be undone.",
+    endpoint: {
+      method: "POST",
+      path: "/agentic/custom-tool/delete",
+      bodyParams: ["id"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        id: {
+          type: "string",
+          description: "MongoDB ObjectId of the tool to delete (from list_custom_tools).",
+        },
+      },
+      required: ["id"],
+    },
+  },
+
   // ── Tool Discovery (Meta-Tool) ────────────────────────────
   {
     name: "tool_search",
@@ -7790,6 +7959,12 @@ const TOOL_DOMAINS = {
   create_custom_agent: "Agentic: Agent Management",
   list_custom_agents: "Agentic: Agent Management",
 
+  // Agentic — Custom Tool Management
+  create_custom_tool: "Agentic: Tool Management",
+  list_custom_tools: "Agentic: Tool Management",
+  update_custom_tool: "Agentic: Tool Management",
+  delete_custom_tool: "Agentic: Tool Management",
+
   // Agentic — Tool Discovery
   tool_search: "Agentic: Meta",
 
@@ -7928,6 +8103,12 @@ const TOOL_REQUIRED_KEYS = {
   // Agent Management (require Prism for CustomAgentService)
   create_custom_agent: ["PRISM_SERVICE_URL"],
   list_custom_agents: ["PRISM_SERVICE_URL"],
+
+  // Custom Tool Management (require Prism for custom_tools collection)
+  create_custom_tool: ["PRISM_SERVICE_URL"],
+  list_custom_tools: ["PRISM_SERVICE_URL"],
+  update_custom_tool: ["PRISM_SERVICE_URL"],
+  delete_custom_tool: ["PRISM_SERVICE_URL"],
 
   // Torrent (all require qBittorrent connection)
   torrent_search: ["QBITTORRENT_URL"],
@@ -8182,6 +8363,12 @@ const TOOL_LABELS = {
   // ── Agentic: Agent Management ────────────────────────────
   create_custom_agent: ["coding"],
   list_custom_agents: ["coding"],
+
+  // ── Agentic: Tool Management ──────────────────────────────
+  create_custom_tool: ["coding", "meta"],
+  list_custom_tools: ["coding", "meta"],
+  update_custom_tool: ["coding", "meta"],
+  delete_custom_tool: ["coding", "meta"],
 
   // ── Agentic: Tool Discovery ──────────────────────────────
   tool_search: ["coding", "meta"],
