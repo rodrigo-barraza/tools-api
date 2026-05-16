@@ -1136,9 +1136,11 @@ router.post("/custom-tool/execute", asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "Request body must include 'code' (string)" });
   }
 
-  // Wrap the user's code so `args` is available as a global
-  // and the last expression's value becomes the result.
-  const wrappedCode = `const args = ${JSON.stringify(args || {})};\n${code}`;
+  // Wrap the user's code in an IIFE so `return` statements work.
+  // vm.runInContext runs code as a top-level script where `return` is
+  // a SyntaxError. The IIFE creates a function scope, and its return
+  // value becomes the expression result captured by the vm.
+  const wrappedCode = `const args = ${JSON.stringify(args || {})};\n(function() {\n${code}\n})()`;
 
   const result = executeJavaScript(wrappedCode, { timeout: 30_000 });
 
