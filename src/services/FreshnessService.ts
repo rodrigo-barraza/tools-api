@@ -13,11 +13,8 @@ import logger from "../logger.ts";
  * Conditionally execute a collector function only if the data is stale.
  * If data is fresh, restores the in-memory cache from the DB.
  *
- * @param {string} label - Human-readable log label (e.g. "Ticketmaster")
- * @param {string} collection - MongoDB collection name (e.g. "wildfires", "apod")
- * @param {number} ttlMs - Maximum age in milliseconds before data is considered stale
- * @param {Function} collectFn - Async function to fetch from API + update cache + save to DB
- * @param {Function} restoreFn - Function(data) to populate in-memory cache from DB data
+
+
  * @returns {Promise<boolean>} Whether the collector ran (true = fetched, false = restored from DB)
  */
 export async function collectIfStale(

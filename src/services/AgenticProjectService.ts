@@ -20,8 +20,8 @@ const MAX_SCAN_ENTRIES = 200;
 /**
  * Scan a project root and return structured metadata.
  *
- * @param {string} projectPath - Absolute path to the project root
- * @returns {Promise<object>}
+
+
  */
 export async function agenticProjectSummary(projectPath) {
   // Agent routing

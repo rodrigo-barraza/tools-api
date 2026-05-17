@@ -55,7 +55,7 @@ export async function fetchCompanyProfile(symbol) {
 
 /**
  * Fetch general market news.
- * @param {string} category - "general", "forex", "crypto", "merger" (default: "general")
+
  */
 export async function fetchMarketNews(category = "general") {
   return get(`/news?category=${encodeURIComponent(category)}`);
@@ -63,9 +63,8 @@ export async function fetchMarketNews(category = "general") {
 
 /**
  * Fetch company-specific news.
- * @param {string} symbol - Stock symbol
- * @param {string} from - Start date YYYY-MM-DD
- * @param {string} to   - End date YYYY-MM-DD
+
+
  */
 export async function fetchCompanyNews(symbol, from, to) {
   return get(
@@ -77,8 +76,8 @@ export async function fetchCompanyNews(symbol, from, to) {
 
 /**
  * Fetch earnings calendar.
- * @param {string} from - Start date YYYY-MM-DD
- * @param {string} to   - End date YYYY-MM-DD
+
+
  */
 export async function fetchEarningsCalendar(from, to) {
   return get(`/calendar/earnings?from=${from}&to=${to}`);

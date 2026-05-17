@@ -9,9 +9,8 @@ import { OPEN_LIBRARY_BASE_URL } from "../../constants.ts";
 // ─── Search Books ──────────────────────────────────────────────────
 /**
  * Search for books by title, author, or general query.
- * @param {string} query - Search query
- * @param {number} [limit=10] - Max results
- * @returns {Promise<object>}
+
+
  */
 export async function searchBooks(query, limit = 10) {
   const params = new URLSearchParams({
@@ -50,8 +49,8 @@ export async function searchBooks(query, limit = 10) {
 // ─── Get Book Details ──────────────────────────────────────────────
 /**
  * Get detailed book info by Open Library work key (e.g., "/works/OL45883W").
- * @param {string} workKey - e.g. "OL45883W"
- * @returns {Promise<object>}
+
+
  */
 export async function getBookDetails(workKey) {
   const key = workKey.startsWith("/works/") ? workKey : `/works/${workKey}`;
@@ -85,8 +84,8 @@ export async function getBookDetails(workKey) {
 // ─── Get Author Info ───────────────────────────────────────────────
 /**
  * Get author info by Open Library author key (e.g., "OL23919A").
- * @param {string} authorKey
- * @returns {Promise<object>}
+
+
  */
 export async function getAuthorInfo(authorKey) {
   const key = authorKey.startsWith("/authors/")

@@ -51,12 +51,8 @@ function parseEntry(entryXml) {
 // ─── Search Papers ─────────────────────────────────────────────────
 /**
  * Search arXiv for papers matching a query.
- * @param {string} query - Search terms
- * @param {object} options
- * @param {string} [options.category] - arXiv category (e.g. "cs.AI")
- * @param {number} [options.limit=10] - Max results
- * @param {string} [options.sortBy="relevance"] - "relevance", "lastUpdatedDate", "submittedDate"
- * @returns {Promise<object>}
+
+
  */
 export async function searchPapers(
   query: any,

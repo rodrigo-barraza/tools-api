@@ -1,4 +1,3 @@
-// @ts-nocheck
 import request from "supertest";
 import { createTestApp } from "./testApp.js";
 import adminRoutes from "../src/routes/AdminRoutes.js";

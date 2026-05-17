@@ -189,8 +189,8 @@ export function createLspClient(serverName, onCrash) {
      * Send an LSP request and return the result.
      *
      * @param {string} method — e.g. 'textDocument/definition'
-     * @param {unknown} params
-     * @returns {Promise<unknown>}
+
+
      */
     async sendRequest(method, params) {
       if (!connection) throw new Error("LSP client not started");
@@ -209,7 +209,7 @@ export function createLspClient(serverName, onCrash) {
      * Send an LSP notification (fire-and-forget).
      *
      * @param {string} method — e.g. 'textDocument/didOpen'
-     * @param {unknown} params
+
      */
     async sendNotification(method, params) {
       if (!connection) throw new Error("LSP client not started");
@@ -226,8 +226,8 @@ export function createLspClient(serverName, onCrash) {
     /**
      * Register a handler for notifications FROM the server.
      *
-     * @param {string} method
-     * @param {(params: unknown) => void} handler
+
+
      */
     onNotification(method, handler) {
       if (!connection) {
@@ -241,8 +241,8 @@ export function createLspClient(serverName, onCrash) {
     /**
      * Register a handler for requests FROM the server (reverse direction).
      *
-     * @param {string} method
-     * @param {(params: unknown) => unknown} handler
+
+
      */
     onRequest(method, handler) {
       if (!connection) {

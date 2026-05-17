@@ -109,9 +109,9 @@ function normalizeSearch(str) {
 /**
  * Check for drug-nutrient interactions.
  *
- * @param {object} params
+
  * @param {string} params.drug - Drug name (brand or generic)
- * @param {string} [params.nutrients] - Comma-separated nutrients to check (optional — all if omitted)
+
  * @returns {object} Interaction report
  */
 export function checkDrugNutrientInteractions({ drug, nutrients }) {

@@ -161,13 +161,10 @@ function statusEmoji(status) {
 /**
  * Analyze nutrient gaps between consumed foods and requirements.
  *
- * @param {object} params
+
  * @param {Array<{name: string, grams: number}>} params.foods - Foods consumed with amounts
- * @param {string} [params.species="human"] - Target species
- * @param {string} [params.lifeStage="adult_male"] - Life stage
- * @param {string} [params.authority] - Authority (auto-detected from species)
- * @param {number} [params.weightKg] - Body weight in kg
- * @param {number} [params.caloricIntake] - Daily caloric intake target
+
+
  * @returns {object} Gap analysis with per-nutrient status
  */
 export function analyzeNutrientGaps({

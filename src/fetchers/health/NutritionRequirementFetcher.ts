@@ -76,13 +76,13 @@ function ensureLoaded() {
 /**
  * Dynamically compile the nutritional requirement checklist for an agent context.
  *
- * @param {object} params
+
  * @param {string} params.species - enum: human, canine, feline
  * @param {string} params.lifeStage - enum: adult_male, adult_female, adult_maintenance, puppy
  * @param {string} params.authority - enum: US_DRI, AAFCO, EFSA, NRC
  * @param {number} params.weightKg - User/Pet body weight in kg (critical for amino acid scales)
- * @param {number} [params.caloricIntake] - Daily kcal intake (used to stretch per-1000kcal boundaries)
- * @param {boolean} [params.includeCompositional] - If true, include NO_DRI compositional nutrients
+
+
  * @returns {object} Compiled requirements map
  */
 export function calculateTargetProfile({

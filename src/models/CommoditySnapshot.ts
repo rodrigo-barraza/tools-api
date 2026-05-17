@@ -1,6 +1,5 @@
 import { hours as hoursToMs } from "@rodrigo-barraza/utilities-library";
 import { getDB } from "../db.ts";
-import { SNAPSHOT_TTL_SECONDS } from "../constants.ts";
 import logger from "../logger.ts";
 
 /**
@@ -10,10 +9,7 @@ export async function setupCommodityCollection() {
   const db = getDB();
   const collection = db.collection("commodity_snapshots");
 
-  await collection.createIndex(
-    { fetchedAt: 1 },
-    { expireAfterSeconds: SNAPSHOT_TTL_SECONDS },
-  );
+  await collection.createIndex({ fetchedAt: -1 });
   await collection.createIndex({ ticker: 1, fetchedAt: -1 });
 
   logger.info("💰 commodity_snapshots collection ready");

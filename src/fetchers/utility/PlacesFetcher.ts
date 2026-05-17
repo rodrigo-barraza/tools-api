@@ -90,12 +90,8 @@ const MARKER_COLORS = ["red", "blue", "green", "purple", "orange", "yellow"];
  * Build a Google Maps Static API URL with labeled markers for each place.
  * https://developers.google.com/maps/documentation/maps-static/start
  *
- * @param {object[]} places - Array of normalized place objects
- * @param {object}   center - { latitude, longitude }
- * @param {object}  [opts]
- * @param {string}  [opts.size]    - Image dimensions (default: "800x400")
- * @param {number}  [opts.zoom]    - Zoom level (omit to let Google auto-fit)
- * @param {string}  [opts.maptype] - roadmap | satellite | terrain | hybrid
+
+
  * @returns {string|null} Static map URL or null if no places
  */
 export function buildStaticMapUrl(places, center, { size = "800x400", zoom, maptype = "roadmap" }: Record<string, any> = {}) {
@@ -129,13 +125,10 @@ export function buildStaticMapUrl(places, center, { size = "800x400", zoom, mapt
 
 /**
  * Search for nearby places by type.
- * @param {object} opts
+
  * @param {string}   opts.type     - Google Places type (e.g. "restaurant", "cafe", "gas_station")
- * @param {number}  [opts.latitude]  - Center latitude (defaults to CONFIG)
- * @param {number}  [opts.longitude] - Center longitude (defaults to CONFIG)
- * @param {number}  [opts.radius]    - Radius in meters (default: 5000, max: 50000)
- * @param {number}  [opts.limit]     - Max results (default: 20, max: 20)
- * @returns {Promise<object>}
+
+
  */
 export async function searchNearbyPlaces({
   type,
@@ -212,13 +205,10 @@ export async function searchNearbyPlaces({
 
 /**
  * Search for places using a natural language text query.
- * @param {object} opts
+
  * @param {string}   opts.query      - Text query (e.g. "best sushi in Vancouver")
- * @param {number}  [opts.latitude]  - Bias towards this lat (defaults to CONFIG)
- * @param {number}  [opts.longitude] - Bias towards this lng (defaults to CONFIG)
- * @param {number}  [opts.radius]    - Bias radius in meters (default: 10000)
- * @param {number}  [opts.limit]     - Max results (default: 10, max: 20)
- * @returns {Promise<object>}
+
+
  */
 export async function searchPlacesByText({
   query,

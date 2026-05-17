@@ -8,10 +8,8 @@ import { getPyPiPackage } from "./PyPiFetcher.ts";
 /**
  * Look up a package on NPM or PyPI.
  *
- * @param {string} name - Package name
- * @param {string} registry - "npm" or "pypi"
- * @param {object} [options]
- * @param {string} [options.readme] - "true"/"false" — include README (NPM only, default: true)
+
+
  * @returns {Promise<object>} Package metadata with "registry" field
  */
 export async function getPackageInfo(name, registry, options: Record<string, any> = {}) {

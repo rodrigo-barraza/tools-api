@@ -144,16 +144,16 @@ export function searchExoplanets(query, opts: Record<string, any> = {}) {
   ensureLoaded();
 
   const { limit = 10, method } = opts;
-  const q = normalizeSearch(query);
+  const normalizedQuery = normalizeSearch(query);
 
-  if (!q) return { count: 0, query, planets: [] };
+  if (!normalizedQuery) return { count: 0, query, planets: [] };
 
   let candidates = PLANET_DB;
   if (method) {
-    const m = method.toLowerCase();
+    const normalizedMethod = method.toLowerCase();
     candidates = candidates.filter(
       (p) =>
-        p.discoverymethod && p.discoverymethod.toLowerCase().includes(m),
+        p.discoverymethod && p.discoverymethod.toLowerCase().includes(normalizedMethod),
     );
   }
 
@@ -163,12 +163,12 @@ export function searchExoplanets(query, opts: Record<string, any> = {}) {
       const name = normalizeSearch(p.pl_name || "");
       const host = normalizeSearch(p.hostname || "");
 
-      if (name === q) score += 100;
-      else if (host === q) score += 80;
-      else if (name.startsWith(q)) score += 60;
-      else if (host.startsWith(q)) score += 50;
-      else if (name.includes(q)) score += 30;
-      else if (host.includes(q)) score += 25;
+      if (name === normalizedQuery) score += 100;
+      else if (host === normalizedQuery) score += 80;
+      else if (name.startsWith(normalizedQuery)) score += 60;
+      else if (host.startsWith(normalizedQuery)) score += 50;
+      else if (name.includes(normalizedQuery)) score += 30;
+      else if (host.includes(normalizedQuery)) score += 25;
 
       return { p, score };
     })
@@ -190,11 +190,11 @@ export function searchExoplanets(query, opts: Record<string, any> = {}) {
 export function getExoplanetByName(name) {
   ensureLoaded();
 
-  const q = normalizeSearch(name);
-  const p = PLANET_DB.find((p) => normalizeSearch(p.pl_name || "") === q);
+  const normalizedQuery = normalizeSearch(name);
+  const planet = PLANET_DB.find((p) => normalizeSearch(p.pl_name || "") === normalizedQuery);
 
-  if (!p) return null;
-  return formatPlanet(p);
+  if (!planet) return null;
+  return formatPlanet(planet);
 }
 
 /**
@@ -252,16 +252,16 @@ export function getDiscoveryStats() {
   const facilities: Record<string, any> = {};
 
   for (const p of PLANET_DB) {
-    const m = p.discoverymethod || "Unknown";
-    methods[m] = (methods[m] || 0) + 1;
+    const methodName = p.discoverymethod || "Unknown";
+    methods[methodName] = (methods[methodName] || 0) + 1;
 
     if (p.disc_year) {
       yearRange.min = Math.min(yearRange.min, p.disc_year);
       yearRange.max = Math.max(yearRange.max, p.disc_year);
     }
 
-    const f = p.disc_facility || "Unknown";
-    facilities[f] = (facilities[f] || 0) + 1;
+    const facilityName = p.disc_facility || "Unknown";
+    facilities[facilityName] = (facilities[facilityName] || 0) + 1;
   }
 
   const sortedMethods = Object.entries(methods)

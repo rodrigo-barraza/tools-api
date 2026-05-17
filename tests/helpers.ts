@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Shared test helpers for tools-service unit tests.
  *

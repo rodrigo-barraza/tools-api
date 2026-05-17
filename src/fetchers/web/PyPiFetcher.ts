@@ -6,8 +6,8 @@ const PYPI_API = "https://pypi.org/pypi";
 
 /**
  * Fetch Python package info from PyPI.
- * @param {string} packageName - PyPI package name (e.g. "requests", "numpy")
- * @returns {Promise<object>}
+
+
  */
 export async function getPyPiPackage(packageName) {
   if (!packageName || typeof packageName !== "string") {

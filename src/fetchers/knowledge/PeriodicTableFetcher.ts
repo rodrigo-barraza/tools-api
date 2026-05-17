@@ -142,11 +142,8 @@ const RANKABLE_PROPERTIES = {
 
 /**
  * Search elements by name, symbol, or atomic number.
- * @param {string} query - Search term (e.g. "iron", "Fe", "26")
- * @param {object} opts
- * @param {number} [opts.limit=10] - Max results
- * @param {string} [opts.category] - Filter by category (e.g. "noble gas", "transition metal")
- * @param {string} [opts.block] - Filter by block (s, p, d, f)
+
+
  * @returns {object} Search results
  */
 export function searchElements(query, opts: Record<string, any> = {}) {
@@ -219,8 +216,8 @@ export function searchElements(query, opts: Record<string, any> = {}) {
 
 /**
  * Get element by exact symbol.
- * @param {string} symbol - Element symbol (e.g. "Fe", "Au", "H")
- * @returns {object|null}
+
+
  */
 export function getElementBySymbol(symbol) {
   ensureLoaded();
@@ -236,12 +233,8 @@ export function getElementBySymbol(symbol) {
 
 /**
  * Rank elements by a numeric property (highest first by default).
- * @param {string} property - Property to rank by
- * @param {object} opts
- * @param {number} [opts.limit=10] - Max results
- * @param {string} [opts.order="desc"] - "asc" or "desc"
- * @param {string} [opts.category] - Filter by category
- * @param {string} [opts.block] - Filter by block
+
+
  * @returns {object} Ranked results
  */
 export function rankElementsByProperty(property, opts: Record<string, any> = {}) {

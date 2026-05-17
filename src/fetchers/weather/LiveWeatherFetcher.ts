@@ -38,7 +38,7 @@ const DAILY_VARIABLES = [
 
 /**
  * Geocode a location string to lat/lon using Open-Meteo's free geocoding API.
- * @param {string} location - City name, optionally with country (e.g. "Tokyo", "Paris, FR")
+
  * @returns {Promise<{ name: string, country: string, countryCode: string, latitude: number, longitude: number, timezone: string, population: number|null } | null>}
  */
 async function geocodeLocation(location) {
@@ -78,7 +78,7 @@ async function geocodeLocation(location) {
  *   - Direct latitude/longitude coordinates
  *
  * @param {{ location?: string, latitude?: number, longitude?: number, units?: string }} params
- * @returns {Promise<object>}
+
  */
 export async function fetchLiveWeather({ location, latitude, longitude, units = "metric" }) {
   let geo = null;

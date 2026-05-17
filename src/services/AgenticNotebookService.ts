@@ -18,13 +18,11 @@ const MAX_NOTEBOOK_SIZE = 10_485_760; // 10 MB
 /**
  * Edit a Jupyter notebook file.
  *
- * @param {string} path - Absolute path to .ipynb file
- * @param {object} options
+
+
  * @param {string} options.action - One of VALID_ACTIONS
- * @param {number} [options.cellIndex] - 0-based cell index (required for get/replace/delete/insert)
- * @param {string} [options.content] - Cell source content (for insert/replace)
- * @param {string} [options.cellType] - Cell type: "code", "markdown", "raw" (for insert/replace)
- * @returns {Promise<object>}
+
+
  */
 export async function agenticNotebookEdit(path, { action, cellIndex, content, cellType }: Record<string, any> = {}) {
   // Validate path

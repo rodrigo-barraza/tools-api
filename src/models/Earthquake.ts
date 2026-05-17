@@ -53,9 +53,8 @@ export async function upsertEarthquakes(events) {
 
 /**
  * Query recent earthquakes from the database.
- * @param {number} hours - How many hours back to look (default 24)
- * @param {number|null} minMagnitude - Minimum magnitude filter (optional)
- * @param {number} limit - Max results (default 100)
+
+
  */
 export async function getRecentEarthquakes(
   hours = 24,

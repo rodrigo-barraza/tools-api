@@ -41,7 +41,7 @@ const BADGE_FLAGS = [
  * The bitfield can be a number, a string-encoded number, or a
  * discord.js BitField object with a `.bitfield` property.
  *
- * @param {number|string|object} flags
+
  * @returns {Array<{id: string, label: string}>}
  */
 function extractBadges(flags) {
@@ -62,8 +62,8 @@ function extractBadges(flags) {
  * limited to the top 3 for UI space — matching Discord's inline
  * role badge behavior.
  *
- * @param {Array} roles - Stored role objects from transformRole()
- * @param {string} guildId - Guild ID (to exclude @everyone)
+
+
  * @returns {Array<{name: string, color: string|null, iconUrl: string|null}>}
  */
 function extractRoleTags(roles, guildId) {
@@ -83,8 +83,8 @@ function extractRoleTags(roles, guildId) {
  * Build a Discord CDN avatar URL from raw author data stored in MongoDB.
  * Falls back to the default avatar URL (e.g. blue/green Wumpus silhouette).
  *
- * @param {object} author - Raw author subdocument { id, avatar, defaultAvatarURL }
- * @returns {string|null}
+
+
  */
 function buildAvatarUrl(author) {
   if (!author) return null;
@@ -100,9 +100,8 @@ function buildAvatarUrl(author) {
  * Prefers the permanent MinIO URL when the original URL was archived.
  * Falls back to the original URL otherwise.
  *
- * @param {string} url - Original URL (potentially expired Discord CDN)
- * @param {object} [archiveMap] - mediaArchive map: { originalUrl → { publicUrl, ... } }
- * @returns {string}
+
+
  */
 function resolveArchivedUrl(url, archiveMap) {
   if (!url || !archiveMap) return url;
@@ -115,7 +114,7 @@ function resolveArchivedUrl(url, archiveMap) {
 /**
  * Build the common MongoDB filter used by search and analytics.
  *
- * @param {object} opts - Filter options
+
  * @returns {object} MongoDB filter document
  */
 function buildBaseFilter({
@@ -171,16 +170,10 @@ const DiscordDataService = {
   /**
    * Search Discord messages with flexible filters.
    *
-   * @param {object} opts
+
    * @param {string} opts.guildId    - Filter by guild (required)
-   * @param {string} [opts.channelId] - Filter by channel
-   * @param {string} [opts.userId]    - Filter by author ID
-   * @param {string} [opts.username]  - Filter by username/display name (case-insensitive)
-   * @param {string} [opts.query]     - Text search query
-   * @param {string} [opts.before]    - ISO date string — messages before this date
-   * @param {string} [opts.after]     - ISO date string — messages after this date
-   * @param {number} [opts.limit=50]  - Max results (capped at 200)
-   * @param {string} [opts.mode="messages"] - Response mode:
+
+
    *   "messages" — full message objects (default)
    *   "count"    — only the matching count, zero message bodies
    *   "compact"  — minimal per-message data (author, timestamp, truncated content)
@@ -434,23 +427,18 @@ const DiscordDataService = {
    * results, sorted by count descending. Supports all the same
    * filters as searchMessages.
    *
-   * @param {object} opts
+
    * @param {string} opts.guildId     - Guild to analyze (required)
-   * @param {string} [opts.channelId] - Filter by channel
-   * @param {string} [opts.userId]    - Filter by author ID
-   * @param {string} [opts.username]  - Filter by username/display name
-   * @param {string} [opts.query]     - Text search — count only messages matching this text
-   * @param {string} [opts.before]    - ISO date string
-   * @param {string} [opts.after]     - ISO date string
-   * @param {string} [opts.groupBy="user"] - Dimension to group by:
+
+
    *   "user"    — group by author
    *   "channel" — group by channel
    *   "day"     — group by calendar day (YYYY-MM-DD)
    *   "hour"    — group by hour of day (0–23, UTC)
    *   "weekday" — group by day of week (Mon–Sun)
    *   "month"   — group by month (YYYY-MM)
-   * @param {number} [opts.topN=25]   - Max groups to return (capped at 100)
-   * @returns {Promise<object>}
+
+
    */
   async analyzeMessages({
     guildId,
@@ -601,12 +589,10 @@ const DiscordDataService = {
   /**
    * Get server activity stats for a guild.
    *
-   * @param {object} opts
+
    * @param {string} opts.guildId      - Guild to analyze (required)
-   * @param {string} [opts.channelId]  - Narrow to a specific channel
-   * @param {number} [opts.days=7]     - Lookback period in days (max 365)
-   * @param {number} [opts.topN=15]    - Number of top users to return
-   * @returns {Promise<object>}
+
+
    */
   async getServerActivity({
     guildId,

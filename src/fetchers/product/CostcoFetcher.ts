@@ -57,12 +57,8 @@ function extractReviewCount(text) {
  * Scrape a single Costco category page.
  * Uses multiple selector strategies to handle Costco's MUI-based layout.
  *
- * @param {string} baseUrl - COSTCO_US_BASE or COSTCO_CA_BASE
- * @param {string} slug - Category URL slug (e.g. "laptops.html")
- * @param {string} categoryName - Human category name
- * @param {string} unifiedCategory - Unified product category
- * @param {string} source - PRODUCT_SOURCES key
- * @param {string} currency - "USD" or "CAD"
+
+
  */
 async function scrapeCategory(
   baseUrl,

@@ -59,15 +59,13 @@ function calculateBMR(sex, weightKg, heightCm, ageYears) {
 /**
  * Calculate BMR, TDEE, and macronutrient targets.
  *
- * @param {object} params
+
  * @param {string} params.sex - "male" or "female"
  * @param {number} params.weightKg - Body weight in kilograms
  * @param {number} params.heightCm - Height in centimeters
  * @param {number} params.ageYears - Age in years
- * @param {string} [params.activityLevel="moderate"] - Activity level
- * @param {string} [params.goal="maintain"] - Caloric goal
- * @param {string} [params.macroSplit="balanced"] - Macronutrient split preset
- * @param {number} [params.bodyFatPct] - Optional body fat % for lean mass calc
+
+
  * @returns {object} Complete caloric and macro analysis
  */
 export function calculateCaloricNeeds({

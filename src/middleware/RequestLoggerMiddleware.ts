@@ -56,7 +56,7 @@ export function requestLoggerMiddleware(req, res, next) {
 
 /**
  * Persist a request log entry to MongoDB.
- * @param {object} entry
+
  */
 async function persistRequest(entry) {
   try {
@@ -72,16 +72,8 @@ async function persistRequest(entry) {
 
 /**
  * Query persisted request logs with optional filters.
- * @param {object} [filters]
- * @param {string} [filters.method] - HTTP method filter
- * @param {string} [filters.path] - Path prefix filter
- * @param {number} [filters.status] - Exact status code
- * @param {number} [filters.minStatus] - Minimum status code
- * @param {number} [filters.maxStatus] - Maximum status code
- * @param {string} [filters.since] - ISO date string (lower bound)
- * @param {string} [filters.until] - ISO date string (upper bound)
- * @param {number} [filters.limit] - Max results (default 100)
- * @param {number} [filters.skip] - Offset for pagination
+
+
  * @returns {Promise<{ count: number, requests: object[] }>}
  */
 export async function queryRequestLogs(filters: Record<string, any> = {}) {
@@ -121,8 +113,8 @@ export async function queryRequestLogs(filters: Record<string, any> = {}) {
 
 /**
  * Get aggregated request stats.
- * @param {string} [since] - ISO date string for time window
- * @returns {Promise<object>}
+
+
  */
 export async function getRequestStats(since) {
   const db = getDB();
@@ -182,4 +174,30 @@ export async function getRequestStats(since) {
       avgMs: Math.round(d.avgMs * 100) / 100,
     })),
   };
+}
+
+// ────────────────────────────────────────────────────────────
+// Collection Setup — indexes for efficient querying
+// ────────────────────────────────────────────────────────────
+
+/**
+ * Create indexes on the requests collection.
+ * Called during server startup alongside other model setups.
+ */
+export async function setupRequestsCollection() {
+  try {
+    const db = getDB();
+    const col = db.collection(COLLECTION);
+
+    await Promise.all([
+      col.createIndex({ timestamp: -1 }),
+      col.createIndex({ method: 1, timestamp: -1 }),
+      col.createIndex({ status: 1, timestamp: -1 }),
+      col.createIndex({ path: 1, timestamp: -1 }),
+    ]);
+
+    logger.info(`📊 requests collection indexes ensured`);
+  } catch (error) {
+    logger.error(`Failed to setup requests indexes: ${error.message}`);
+  }
 }

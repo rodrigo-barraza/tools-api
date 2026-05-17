@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 // ─── Image Generation & Vision ──────────────────────────────
 
@@ -103,8 +102,8 @@ const SAFETY_SOFTENING_TIERS = [
 
 /**
  * Apply cumulative softening tiers to a prompt string.
- * @param {string} prompt - The original prompt
- * @param {number} tier - 0-indexed tier to apply up to (inclusive)
+
+
  * @returns {string} Softened prompt
  */
 function softenPrompt(prompt, tier) {

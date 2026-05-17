@@ -1,4 +1,3 @@
-// @ts-nocheck
 import request from "supertest";
 import { createTestApp } from "./testApp.js";
 import discordRoutes from "../src/routes/DiscordRoutes.js";

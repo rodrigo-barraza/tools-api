@@ -82,7 +82,7 @@ function validateLspPath(inputPath) {
 /**
  * Execute an LSP code intelligence operation.
  *
- * @param {object} params
+
  * @param {string} params.operation — one of the OPERATIONS keys
  * @param {string} params.filePath — absolute path to the file
  * @param {number} [params.line] — 1-based line number

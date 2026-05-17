@@ -88,7 +88,7 @@ const BLOCKED_PATTERNS = [
 
 /**
  * Validate that a command string only uses allowed binaries.
- * @param {string} command - Shell command string (pipes allowed)
+
  * @returns {{ valid: boolean, error?: string }}
  */
 function validateCommand(command) {
@@ -129,10 +129,8 @@ function validateCommand(command) {
 /**
  * Execute an allowlisted shell command.
  *
- * @param {string} command - Shell command (pipes allowed)
- * @param {object} [options]
- * @param {string} [options.stdin] - Optional input piped to stdin
- * @param {number} [options.timeout=10000] - Execution timeout (max 30000)
+
+
  * @returns {Promise<{
  *   success: boolean,
  *   stdout: string,
@@ -274,11 +272,8 @@ export async function executeShell(command, { stdin = "", timeout = DEFAULT_TIME
  * Same security model as executeShell, but invokes `onChunk` for each
  * stdout/stderr data event as it arrives.
  *
- * @param {string} command - Shell command (pipes allowed)
- * @param {object} [options]
- * @param {string}   [options.stdin]     - Optional input piped to stdin
- * @param {number}   [options.timeout]   - Execution timeout (max 30000)
- * @param {function} [options.onChunk]   - (event: "stdout"|"stderr", data: string) => void
+
+
  * @returns {Promise<{ success, stdout, stderr, exitCode, executionTimeMs, timedOut, error? }>}
  */
 export async function executeShellStreaming(command, { stdin = "", timeout = DEFAULT_TIMEOUT_MS, onChunk }: Record<string, any> = {}) {

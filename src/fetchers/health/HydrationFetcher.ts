@@ -61,16 +61,10 @@ function exerciseFluid(durationMinutes, intensity) {
 /**
  * Calculate daily water intake recommendation.
  *
- * @param {object} params
+
  * @param {number} params.weightKg - Body weight in kilograms
- * @param {string} [params.activityLevel="moderate"] - Activity level
- * @param {number} [params.climateTemp] - Ambient temperature in °C
- * @param {number} [params.exerciseMinutes] - Daily exercise duration in minutes
- * @param {string} [params.exerciseIntensity="moderate"] - Exercise intensity
- * @param {number} [params.altitudeM] - Altitude in meters above sea level
- * @param {boolean} [params.pregnant=false] - Pregnancy
- * @param {boolean} [params.breastfeeding=false] - Breastfeeding
- * @param {number} [params.caffeineIntakeMg] - Caffeine consumed (mild diuretic)
+
+
  * @returns {object} Detailed hydration recommendation
  */
 export function calculateHydrationNeeds({

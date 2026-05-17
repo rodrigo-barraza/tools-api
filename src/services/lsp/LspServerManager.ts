@@ -94,7 +94,7 @@ export function createLspServerManager(workspaceFolder) {
    * Ensure the appropriate server is started for a file.
    * Lazy-starts the server on first request for that language.
    *
-   * @param {string} filePath
+
    * @returns {Promise<object|undefined>} LspServerInstance or undefined
    */
   async function ensureServerStarted(filePath) {
@@ -175,7 +175,7 @@ export function createLspServerManager(workspaceFolder) {
   /**
    * Notify the server of file content changes.
    *
-   * @param {string} filePath
+
    * @param {string} content — new full content
    */
   async function changeFile(filePath, content) {
@@ -205,7 +205,7 @@ export function createLspServerManager(workspaceFolder) {
   /**
    * Close a file in the LSP server (sends didClose).
    *
-   * @param {string} filePath
+
    */
   async function closeFile(filePath) {
     const server = getServerForFile(filePath);
@@ -226,8 +226,8 @@ export function createLspServerManager(workspaceFolder) {
   /**
    * Check if a file is currently open on a compatible server.
    *
-   * @param {string} filePath
-   * @returns {boolean}
+
+
    */
   function isFileOpen(filePath) {
     const fileUri = pathToFileURL(resolve(filePath)).href;
@@ -252,7 +252,7 @@ export function createLspServerManager(workspaceFolder) {
   /**
    * Get all server instances.
    *
-   * @returns {Map<string, object>}
+
    */
   function getAllServers() {
     return servers;
@@ -312,7 +312,7 @@ const managers = new Map();
 /**
  * Get or create the LSP server manager for a workspace.
  *
- * @param {string} [workspaceFolder]
+
  * @returns {object} LspServerManager
  */
 export function getLspManager(workspaceFolder) {
@@ -340,7 +340,7 @@ export async function shutdownAllLspManagers() {
 /**
  * Get health of all managers.
  *
- * @returns {Record<string, Record<string, string>>}
+
  */
 export function getAllLspHealth() {
   const health: Record<string, any> = {};

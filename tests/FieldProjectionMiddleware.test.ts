@@ -1,4 +1,3 @@
-// @ts-nocheck
 import express from "express";
 import { fieldProjectionMiddleware } from "../src/middleware/FieldProjectionMiddleware.js";
 

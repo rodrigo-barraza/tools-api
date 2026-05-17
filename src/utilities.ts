@@ -16,8 +16,8 @@ export function randomUserAgent() {
 
 /**
  * Extract the text content of an XML tag (supports CDATA, namespaced tags).
- * @param {string} xml - XML string to search
- * @param {string} tag - Tag name (e.g. "title", "ht:approx_traffic")
+
+
  * @returns {string|null} Tag content or null
  */
 export function extractXmlTag(xml, tag) {
@@ -32,8 +32,8 @@ export function extractXmlTag(xml, tag) {
 
 /**
  * Extract all occurrences of an XML element from a string.
- * @param {string} xml - Full XML body
- * @param {string} tag - Element tag name (e.g. "item")
+
+
  * @returns {string[]} Array of raw element blocks
  */
 export function extractXmlItems(xml, tag) {
@@ -58,8 +58,8 @@ export function extractXmlItems(xml, tag) {
 
 /**
  * Build browser-like headers for web scraping requests.
- * @param {string} [referer] - Optional Referer header
- * @returns {object}
+
+
  */
 export function buildScraperHeaders(referer?: string): Record<string, string> {
   const headers: Record<string, string> = {
@@ -168,7 +168,7 @@ export function computeTrendingScore(product) {
  * maps "outside allowed"/"blocked" errors to 403, other errors to 400,
  * and sends the result as JSON on success.
  *
- * @param {(req: import("express").Request) => Promise<object>} fn
+
  * @returns {Function} Express middleware
  */
 export function agenticHandler(fn) {
@@ -202,10 +202,6 @@ export class EphemeralStore {
   #ttlMs;
   #maxSize;
 
-  /**
-   * @param {number} [ttlMs=EPHEMERAL_TTL_MS] - Entry time-to-live in milliseconds
-   * @param {number} [maxSize=EPHEMERAL_MAX_SIZE] - Max entries before lazy cleanup
-   */
   constructor(ttlMs = EPHEMERAL_TTL_MS, maxSize = EPHEMERAL_MAX_SIZE) {
     this.#ttlMs = ttlMs;
     this.#maxSize = maxSize;
@@ -213,7 +209,7 @@ export class EphemeralStore {
 
   /**
    * Store a value and return its generated ID.
-   * @param {*} value - The data to store
+
    * @returns {string} A 12-character UUID prefix
    */
   set(value) {
@@ -225,8 +221,8 @@ export class EphemeralStore {
 
   /**
    * Retrieve a stored value by ID. Returns null if expired or not found.
-   * @param {string} id
-   * @returns {*|null}
+
+
    */
   get(id) {
     const entry = this.#map.get(id);
@@ -253,9 +249,8 @@ export class EphemeralStore {
 /**
  * Build a full local URL for this server (embed/download endpoints).
  * Uses TOOLS_SERVICE_URL from vault when available, falling back to localhost.
- * @param {string} routePath - Path after the port, e.g. "compute/csv/download"
- * @param {object} [params] - Query parameters as key-value pairs
- * @returns {string}
+
+
  */
 export function buildLocalUrl(routePath, params) {
   const selfBaseUrl = CONFIG.TOOLS_SERVICE_URL;
@@ -270,8 +265,8 @@ export function buildLocalUrl(routePath, params) {
 /**
  * Build a standard HTML embed page shell. Used by LaTeX, Mermaid,
  * and future embed renderers to avoid duplicating the HTML boilerplate.
- * @param {object} options
- * @param {string} [options.headExtra] - Extra tags for <head> (stylesheets, etc.)
+
+
  * @param {string} options.styles - CSS to inject into a <style> block
  * @param {string} options.bodyContent - Inner HTML for <body>
  * @param {string} options.scripts - Script tags or inline scripts
@@ -320,7 +315,7 @@ ${scripts}
  * Extract caller identity context from request headers.
  * Replaces the duplicated 5-line header extraction block in
  * CreativeRoutes (4 occurrences) and AgenticRoutes.
- * @param {import("express").Request} req
+
  * @returns {{ project: string, username: string, agent: string|null, traceId: string|null, agentSessionId: string|null }}
  */
 export function extractCallerContext(req) {

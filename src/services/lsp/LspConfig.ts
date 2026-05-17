@@ -11,7 +11,7 @@
  * @property {object} [initializationOptions] — server-specific init options
  */
 
-/** @type {Record<string, LspServerConfig>} */
+
 export const LSP_SERVER_CONFIGS = {
   // ── TypeScript / JavaScript ──────────────────────────────
   typescript: {
@@ -99,7 +99,7 @@ export const LSP_SERVER_CONFIGS = {
  * Get all configured LSP servers, optionally scoped to a workspace folder.
  *
  * @param {string} [workspaceFolder] — project root path (injected into each config)
- * @returns {Record<string, LspServerConfig>}
+
  */
 export function getLspServerConfigs(workspaceFolder) {
   const configs: Record<string, any> = {};

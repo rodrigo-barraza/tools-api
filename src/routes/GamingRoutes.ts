@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 // ─── Video Game Data Endpoints ──────────────────────────────
 
@@ -177,12 +176,12 @@ router.get("/dota", asyncHandler(async (req, res) => {
 
   // Build query string for sub-routes
   const qs = (params) => {
-    const p = new URLSearchParams();
+    const searchParams = new URLSearchParams();
     for (const [k, v] of Object.entries(params)) {
-      if (v !== undefined && v !== null) p.set(k, String(v));
+      if (v !== undefined && v !== null) searchParams.set(k, String(v));
     }
-    const s = p.toString();
-    return s ? `?${s}` : "";
+    const queryString = searchParams.toString();
+    return queryString ? `?${queryString}` : "";
   };
 
   switch (action) {

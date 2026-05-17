@@ -9,7 +9,7 @@ const HN_API_BASE = "https://hacker-news.firebaseio.com/v0";
 
 /**
  * Fetches a single Hacker News item by ID.
- * @param {number} id - Item ID
+
  * @returns {Promise<object|null>} Item data or null
  */
 async function fetchItem(id) {

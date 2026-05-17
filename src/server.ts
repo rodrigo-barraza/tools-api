@@ -4,7 +4,7 @@ import logger from "./logger.ts";
 import CONFIG, { applyLocation } from "./config.ts";
 import { connectDB } from "./db.ts";
 import { initLocation } from "./services/LocationService.ts";
-import { requestLoggerMiddleware } from "./middleware/RequestLoggerMiddleware.ts";
+import { requestLoggerMiddleware, setupRequestsCollection } from "./middleware/RequestLoggerMiddleware.ts";
 import { toolCallLoggerMiddleware } from "./middleware/ToolCallLoggerMiddleware.ts";
 import { fieldProjectionMiddleware } from "./middleware/FieldProjectionMiddleware.ts";
 import { headerPropagationMiddleware } from "./middleware/HeaderPropagationMiddleware.ts";
@@ -173,6 +173,7 @@ async function start() {
       setupGeomagneticStormCollection(),
       setupWebcamCollection(),
       setupToolCallsCollection(),
+      setupRequestsCollection(),
       setupAgenticTaskCollection(),
       setupAgenticScheduleCollection(),
     ]);

@@ -17,7 +17,7 @@ const GITHUB_REPO_REGEX =
 
 /**
  * Parse a GitHub repo URL or "owner/repo" shorthand.
- * @param {string} input
+
  * @returns {{ owner: string, repo: string } | null}
  */
 function parseGitHubInput(input) {
@@ -40,11 +40,8 @@ function parseGitHubInput(input) {
 
 /**
  * Fetch GitHub repository info, README, and language breakdown.
- * @param {string} input - GitHub URL or "owner/repo"
- * @param {object} [options]
- * @param {boolean} [options.includeReadme=true]
- * @param {boolean} [options.includeLanguages=true]
- * @returns {Promise<object>}
+
+
  */
 export async function getGitHubRepo(input, options: Record<string, any> = {}) {
   const parsed = parseGitHubInput(input);

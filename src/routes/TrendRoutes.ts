@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { parseIntParam } from "@rodrigo-barraza/utilities-library";
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { Router } from "express";
@@ -71,8 +70,8 @@ router.get("/data", asyncHandler(async (req, res) => {
     case "hot":
       return res.json({ action, ...getCorrelatedTrends() });
     case "top": {
-      const h = parseIntParam(hours, 24);
-      return res.json({ action, ...(await getTopTrends(h, limit || 20)) });
+      const hoursBack = parseIntParam(hours, 24);
+      return res.json({ action, ...(await getTopTrends(hoursBack, limit || 20)) });
     }
     default:
       return res.status(400).json({ error: `Unknown action: ${action}`, actions: ["current", "hot", "top"] });

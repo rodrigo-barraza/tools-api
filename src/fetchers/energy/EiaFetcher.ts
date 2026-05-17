@@ -73,8 +73,8 @@ async function eiaFetch(route, params: Record<string, any> = {}) {
  * Browse the EIA data tree at a given route path.
  * Returns child routes, available facets, frequencies, and data columns.
  *
- * @param {string} [route=""] - Route path (e.g. "electricity", "petroleum/pri")
- * @returns {Promise<object>}
+
+
  */
 export async function browseRoute(route = "") {
   const cacheKey = `meta:${route}`;
@@ -110,9 +110,8 @@ export async function browseRoute(route = "") {
 /**
  * Get available facet values for a route + facet.
  *
- * @param {string} route - e.g. "electricity/retail-sales"
- * @param {string} facetId - e.g. "stateid", "sectorid"
- * @returns {Promise<object>}
+
+
  */
 export async function getFacetValues(route, facetId) {
   const cacheKey = `facet:${route}:${facetId}`;
@@ -144,17 +143,8 @@ export async function getFacetValues(route, facetId) {
 /**
  * Fetch data from the EIA API for a given route.
  *
- * @param {string} route - e.g. "electricity/retail-sales"
- * @param {object} [options]
- * @param {string[]} [options.data] - Data columns to retrieve (e.g. ["price", "revenue"])
- * @param {object} [options.facets] - Facet filters (e.g. { stateid: ["CO"], sectorid: ["RES"] })
- * @param {string} [options.frequency] - "monthly", "quarterly", "annual"
- * @param {string} [options.start] - Start period (e.g. "2020-01", "2020")
- * @param {string} [options.end] - End period
- * @param {string} [options.sort] - Sort column and direction (e.g. "period:desc")
- * @param {number} [options.length=100] - Max rows (max 5000)
- * @param {number} [options.offset=0] - Pagination offset
- * @returns {Promise<object>}
+
+
  */
 export async function getData(route, options: Record<string, any> = {}) {
   const {
@@ -248,7 +238,7 @@ export async function getData(route, options: Record<string, any> = {}) {
  * Get the latest values for a curated set of key energy indicators.
  * Fetches the most recent data point for each series in EIA_DEFAULT_SERIES.
  *
- * @returns {Promise<object>}
+
  */
 export async function getEnergyIndicators() {
   const cacheKey = "energy-indicators";

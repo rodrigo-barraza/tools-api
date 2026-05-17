@@ -335,12 +335,8 @@ function formatFood(food, nutrientTypes = null) {
 
 /**
  * Search for foods by name/keyword.
- * @param {string} query - Search term (e.g. "chicken", "spinach", "salmon")
- * @param {object} opts
- * @param {number} [opts.limit=10] - Max results
- * @param {string} [opts.kingdom] - Filter by kingdom (animalia, plantae, fungi)
- * @param {string} [opts.foodType] - Filter by food type (animal, plant, fungus)
- * @param {string} [opts.nutrientTypes] - Comma-separated nutrient categories to include
+
+
  * @returns {object} Search results
  */
 export function searchFoods(query, opts: Record<string, any> = {}) {
@@ -386,8 +382,8 @@ export function searchFoods(query, opts: Record<string, any> = {}) {
 
 /**
  * Get detailed nutrition for a specific food by exact name.
- * @param {string} name - Food name (e.g. "chicken", "salmon")
- * @param {string} [nutrientTypes] - Comma-separated nutrient types to return
+
+
  * @returns {object|null} Food nutrition data or null
  */
 export function getFoodByName(name, nutrientTypes = null) {
@@ -402,11 +398,8 @@ export function getFoodByName(name, nutrientTypes = null) {
 
 /**
  * Get all foods ranked by a specific nutrient (highest first).
- * @param {string} nutrient - Nutrient column name (e.g. "protein", "calcium", "vitamin_b6")
- * @param {object} opts
- * @param {number} [opts.limit=10] - Max results
- * @param {string} [opts.kingdom] - Filter by kingdom
- * @param {string} [opts.foodType] - Filter by food type
+
+
  * @returns {object} Ranked results
  */
 export function rankByNutrient(nutrient, opts: Record<string, any> = {}) {
@@ -519,8 +512,8 @@ export function getFoodCategories() {
 
 /**
  * Compare nutrition between two or more foods.
- * @param {string[]} foodNames - Array of food names to compare
- * @param {string} [nutrientTypes] - Comma-separated nutrient types
+
+
  * @returns {object} Comparison results
  */
 export function compareFoods(foodNames, nutrientTypes = null) {
@@ -569,8 +562,8 @@ const CATEGORY_FIELD_MAP = {
 /**
  * Resolve a human-friendly nutrient name to its CSV column name.
  * Accepts: CSV column name, human label, or partial match.
- * @param {string} category - Nutrient category key
- * @param {string} nutrient - Human-friendly or CSV column name
+
+
  * @returns {{ column: string, label: string } | null}
  */
 function resolveNutrientColumn(category, nutrient) {
@@ -606,12 +599,8 @@ function resolveNutrientColumn(category, nutrient) {
 /**
  * Get top foods ranked by a specific nutrient within a category.
  * Accepts human-friendly nutrient names (e.g. "calcium", "omega3", "vitamin C").
- * @param {string} category - One of: macros, minerals, vitamins, amino_acids, lipids, carbs, sterols
- * @param {string} nutrient - Nutrient name (flexible: column name, label, or partial)
- * @param {object} opts
- * @param {number} [opts.limit=10] - Max results
- * @param {string} [opts.kingdom] - Filter by kingdom
- * @param {string} [opts.foodType] - Filter by food type
+
+
  * @returns {object} Ranked results
  */
 export function getTopFoodsByCategory(category, nutrient, opts: Record<string, any> = {}) {
@@ -683,7 +672,7 @@ export function getTopFoodsByCategory(category, nutrient, opts: Record<string, a
 
 /**
  * List available nutrients within a specific category.
- * @param {string} category - One of: macros, minerals, vitamins, amino_acids, lipids, carbs, sterols
+
  * @returns {object} Available nutrients with column names and labels
  */
 export function listCategoryNutrients(category) {
@@ -736,11 +725,8 @@ const TAXONOMY_RANKS = [
 /**
  * Search / browse foods by taxonomic rank and value.
  * Example: rank="family", value="Rosaceae" → all rose-family foods.
- * @param {string} rank - Taxonomic rank to filter on
- * @param {string} value - Value to match (case-insensitive)
- * @param {object} opts
- * @param {number} [opts.limit=25] - Max results
- * @param {string} [opts.nutrientTypes] - Comma-separated nutrient categories to include
+
+
  * @returns {object} Matched foods
  */
 export function searchByTaxonomy(rank, value, opts: Record<string, any> = {}) {
@@ -774,9 +760,8 @@ export function searchByTaxonomy(rank, value, opts: Record<string, any> = {}) {
 /**
  * Get all unique values at each taxonomic rank — the full taxonomy tree.
  * Useful for discovery: "what families exist?", "what genera are in Rosaceae?"
- * @param {string} [rank] - Optional: return only values for a specific rank
- * @param {string} [parentRank] - Optional: filter by a parent rank
- * @param {string} [parentValue] - Optional: filter by a parent rank value
+
+
  * @returns {object} Taxonomy tree or single-rank listing
  */
 export function getTaxonomyTree(

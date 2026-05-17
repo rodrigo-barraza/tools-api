@@ -35,9 +35,8 @@ const USER_AGENT =
  * Build a ProxyConfiguration for Bright Data.
  * Supports datacenter and residential zones.
  *
- * @param {object} [options]
- * @param {"datacenter"|"residential"|"isp"} [options.zone="datacenter"]
- * @returns {ProxyConfiguration|null}
+
+
  */
 function buildProxyConfig(_options: Record<string, any> = {}) {
   // ──────────────────────────────────────────────────────────
@@ -97,10 +96,10 @@ crawleeConfig.set("persistStorage", false);
  * Crawl a single URL using Cheerio (static HTML parsing).
  * Best for: Static pages, forums, blogs — much faster than Playwright.
  *
- * @param {string} url - Target URL
- * @param {object} options
+
+
  * @param {function} options.extractFn - ($, request) => data. Receives Cheerio root.
- * @param {string}  [options.proxyZone] - Bright Data zone
+
  * @returns {Promise<object>} Extracted data or error
  */
 export async function crawlSingleStatic(url, options: Record<string, any> = {}) {

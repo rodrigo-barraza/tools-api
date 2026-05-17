@@ -25,9 +25,8 @@ const MAGICK_OPERATIONS = new Set(["text", "distort", "border", "ico"]);
  * Resolve an input source to a Sharp-compatible buffer.
  * Supports: URL, base64 data URI, or EphemeralStore ID.
  *
- * @param {string} input - URL, data URI, or ephemeral ID
- * @param {import("../utilities.js").EphemeralStore} store - Store for ID lookups
- * @returns {Promise<Buffer>}
+
+
  */
 async function resolveInput(input, store) {
   if (!input || typeof input !== "string") {
@@ -74,10 +73,8 @@ async function resolveInput(input, store) {
 
 /**
  * Apply a pipeline of Sharp-based operations to an image buffer.
- * @param {Buffer} inputBuffer
- * @param {Array<object>} operations
- * @param {string} outputFormat
- * @param {number} outputQuality
+
+
  * @returns {Promise<{buffer: Buffer, metadata?: object, mimeType: string}>}
  */
 async function processWithSharp(inputBuffer, operations, outputFormat, outputQuality) {
@@ -246,10 +243,8 @@ async function processWithSharp(inputBuffer, operations, outputFormat, outputQua
  * Apply ImageMagick-based operations via the `convert` CLI.
  * Used for operations Sharp can't handle natively.
  *
- * @param {Buffer} inputBuffer
- * @param {Array<object>} operations
- * @param {string} outputFormat
- * @param {number} outputQuality
+
+
  * @returns {Promise<{buffer: Buffer, mimeType: string}>}
  */
 async function processWithMagick(inputBuffer, operations, outputFormat, outputQuality) {
@@ -361,11 +356,11 @@ async function processWithMagick(inputBuffer, operations, outputFormat, outputQu
  * Automatically routes to Sharp or ImageMagick based on the
  * operation types requested.
  *
- * @param {object} params
+
  * @param {string} params.input - URL, base64 data URI, or ephemeral store ID
  * @param {Array<object>} params.operations - Array of operations to apply
- * @param {string} [params.outputFormat="png"] - Output format
- * @param {number} [params.outputQuality=80] - Output quality (1-100, lossy formats)
+
+
  * @param {import("../utilities.js").EphemeralStore} params.store - Ephemeral store for ID lookups
  * @returns {Promise<{buffer: Buffer|null, mimeType: string|null, metadata?: object}>}
  */

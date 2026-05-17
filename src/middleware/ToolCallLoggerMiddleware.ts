@@ -61,8 +61,8 @@ function rebuildPathMap() {
 
 /**
  * Resolve a request to its tool metadata.
- * @param {string} method - HTTP method
- * @param {string} path - Request path
+
+
  * @returns {{ toolName: string, domain: string } | null}
  */
 function resolveToolFromRequest(method, path) {
@@ -287,18 +287,8 @@ export async function persistToolCall(entry) {
 
 /**
  * Query tool-call logs with optional filters.
- * @param {object} [filters]
- * @param {string} [filters.toolName] - Exact tool name
- * @param {string} [filters.domain] - Domain filter
- * @param {boolean} [filters.success] - Success/failure filter
- * @param {string} [filters.callerAgent] - Agent name filter
- * @param {string} [filters.callerProject] - Project name filter
- * @param {number} [filters.minMs] - Minimum elapsed ms
- * @param {number} [filters.maxMs] - Maximum elapsed ms
- * @param {string} [filters.since] - ISO date lower bound
- * @param {string} [filters.until] - ISO date upper bound
- * @param {number} [filters.limit] - Max results (default 100)
- * @param {number} [filters.skip] - Offset for pagination
+
+
  * @returns {Promise<{ total: number, count: number, toolCalls: object[] }>}
  */
 export async function queryToolCallLogs(filters: Record<string, any> = {}) {
@@ -342,8 +332,8 @@ export async function queryToolCallLogs(filters: Record<string, any> = {}) {
 
 /**
  * Get aggregated tool-call statistics.
- * @param {string} [since] - ISO date string for time window
- * @returns {Promise<object>}
+
+
  */
 export async function getToolCallStats(since) {
   const db = getDB();

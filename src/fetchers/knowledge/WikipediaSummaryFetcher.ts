@@ -12,8 +12,8 @@ import { WIKIPEDIA_SUMMARY_BASE_URL } from "../../constants.ts";
 /**
  * Get a summary of a Wikipedia article by title.
  * Returns the lead section with extract text, thumbnail, and content URLs.
- * @param {string} title - Article title (spaces or underscores)
- * @returns {Promise<object>}
+
+
  */
 export async function getArticleSummary(title) {
   const encoded = encodeURIComponent(title.replace(/\s+/g, "_"));
@@ -50,10 +50,8 @@ export async function getArticleSummary(title) {
 
 /**
  * Get historical events that happened on this day.
- * @param {string} [type="selected"] - "selected", "births", "deaths", "events", "holidays"
- * @param {number} [month] - Month (1-12), defaults to today
- * @param {number} [day] - Day (1-31), defaults to today
- * @returns {Promise<object>}
+
+
  */
 export async function getOnThisDay(type = "selected", month, day) {
   const now = new Date();

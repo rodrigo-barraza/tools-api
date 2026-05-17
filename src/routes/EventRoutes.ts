@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { parseIntParam } from "@rodrigo-barraza/utilities-library";
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { Router } from "express";
@@ -66,9 +65,9 @@ router.get("/events", asyncHandler(async (req, res) => {
       return res.json({ action, count: events.length, query: { q, category, source }, events });
     }
     case "upcoming": {
-      const d = parseIntParam(days, 30);
-      const events = await getEventsUpcoming(d, limit || 200);
-      return res.json({ action, count: events.length, days: d, events });
+      const daysAhead = parseIntParam(days, 30);
+      const events = await getEventsUpcoming(daysAhead, limit || 200);
+      return res.json({ action, count: events.length, days: daysAhead, events });
     }
     case "today": {
       const events = await getEventsToday(CONFIG.TIMEZONE);

@@ -32,9 +32,8 @@ function normalizeDrugLabel(r) {
 
 /**
  * Search FDA drug labels by name (brand or generic).
- * @param {string} query - Drug name
- * @param {number} [limit=5]
- * @returns {Promise<object>}
+
+
  */
 export async function searchDrugLabels(query, limit = 5) {
   const searchTerm = encodeURIComponent(
@@ -63,9 +62,8 @@ export async function searchDrugLabels(query, limit = 5) {
 
 /**
  * Get adverse event reports for a drug.
- * @param {string} drugName - Brand or generic name
- * @param {number} [limit=10]
- * @returns {Promise<object>}
+
+
  */
 export async function getDrugAdverseEvents(drugName, limit = 10) {
   const searchTerm = encodeURIComponent(
@@ -115,9 +113,8 @@ export async function getDrugAdverseEvents(drugName, limit = 10) {
 
 /**
  * Get FDA drug recall enforcement actions.
- * @param {string} [query] - Optional search term
- * @param {number} [limit=10]
- * @returns {Promise<object>}
+
+
  */
 export async function getDrugRecalls(query, limit = 10) {
   let url = `${OPEN_FDA_BASE_URL}/drug/enforcement.json?`;

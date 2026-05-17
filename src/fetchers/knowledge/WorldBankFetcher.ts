@@ -144,7 +144,7 @@ function formatCountry(country) {
 
 /**
  * Get all indicators for a specific country.
- * @param {string} code - ISO 3166-1 alpha-3 country code (e.g. "USA", "CAN", "JPN")
+
  * @returns {object|null} Country indicators or null
  */
 export function getCountryIndicators(code) {
@@ -164,10 +164,8 @@ export function getCountryIndicators(code) {
 
 /**
  * Rank countries by a specific indicator (highest first by default).
- * @param {string} indicator - Indicator key (e.g. "gdp_usd", "life_expectancy")
- * @param {object} opts
- * @param {number} [opts.limit=10] - Max results
- * @param {string} [opts.order="desc"] - "asc" or "desc"
+
+
  * @returns {object} Ranked results
  */
 export function rankCountriesByIndicator(indicator, opts: Record<string, any> = {}) {
@@ -216,8 +214,8 @@ export function rankCountriesByIndicator(indicator, opts: Record<string, any> = 
 
 /**
  * Compare indicators between multiple countries.
- * @param {string[]} countryCodes - Array of ISO 3166-1 alpha-3 codes
- * @param {string} [indicator] - Specific indicator to compare (null = all)
+
+
  * @returns {object} Comparison results
  */
 export function compareCountries(countryCodes, indicator = null) {

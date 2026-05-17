@@ -31,9 +31,8 @@ async function get(path) {
 
 /**
  * Get real-time arrival estimates for a bus stop.
- * @param {number} stopNo - 5-digit TransLink stop number
- * @param {string} [routeNo] - Optional route filter (e.g. "99")
- * @returns {Promise<object>}
+
+
  */
 export async function getNextBus(stopNo, routeNo) {
   let path = `/stops/${stopNo}/estimates`;
@@ -69,8 +68,8 @@ export async function getNextBus(stopNo, routeNo) {
 
 /**
  * Get stop details by stop number.
- * @param {number} stopNo
- * @returns {Promise<object>}
+
+
  */
 export async function getStopInfo(stopNo) {
   const data = await get(`/stops/${stopNo}`);
@@ -98,10 +97,8 @@ export async function getStopInfo(stopNo) {
 
 /**
  * Find transit stops near a lat/lng coordinate.
- * @param {number} lat
- * @param {number} lng
- * @param {number} [radius=500] - Radius in meters (max 2000)
- * @returns {Promise<object>}
+
+
  */
 export async function findStopsNearby(lat, lng, radius = 500) {
   const path = `/stops?lat=${lat}&long=${lng}&radius=${Math.min(radius, 2000)}`;
@@ -132,8 +129,8 @@ export async function findStopsNearby(lat, lng, radius = 500) {
 
 /**
  * Get details about a specific transit route.
- * @param {string} routeNo - Route number (e.g. "99", "SkyTrain" etc.)
- * @returns {Promise<object>}
+
+
  */
 export async function getRouteInfo(routeNo) {
   const data = await get(`/routes/${encodeURIComponent(routeNo)}`);

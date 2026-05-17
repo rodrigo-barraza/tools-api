@@ -17,7 +17,7 @@ let messagesCol = null;
  * Connect to the Lupos database.
  * Uses the same MongoDB host but targets the `lupos` database.
  *
- * @param {string} baseUri - MongoDB connection string (will switch to `lupos` db)
+
  */
 export async function connectLuposDB(baseUri) {
   if (luposDb) return luposDb;

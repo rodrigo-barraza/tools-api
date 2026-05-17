@@ -10,10 +10,8 @@ const FETCH_TIMEOUT_MS = 30_000;
 
 /**
  * Download a PDF from a URL and extract its text content.
- * @param {string} url - URL pointing to a PDF file
- * @param {object} [options]
- * @param {number} [options.maxPages] - Only extract first N pages
- * @returns {Promise<object>}
+
+
  */
 export async function readPdfUrl(url, options: Record<string, any> = {}) {
   if (!url || typeof url !== "string") {

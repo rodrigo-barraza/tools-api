@@ -102,8 +102,8 @@ async function runGit(args: string[], cwd: string): Promise<any> {
 /**
  * Get git status for a repository.
  *
- * @param {string} repoPath - Absolute path to a directory inside a git repo
- * @returns {Promise<object>}
+
+
  */
 export async function agenticGitStatus(repoPath) {
   // Agent routing
@@ -187,12 +187,8 @@ export async function agenticGitStatus(repoPath) {
 /**
  * Get git diff output.
  *
- * @param {string} repoPath - Absolute path to a directory inside a git repo
- * @param {object} [options]
- * @param {boolean} [options.staged=false] - Show staged (cached) changes
- * @param {string} [options.path] - Specific file path to diff
- * @param {string} [options.ref] - Diff against a specific reference (commit, branch)
- * @returns {Promise<object>}
+
+
  */
 export async function agenticGitDiff(repoPath, { staged = false, path: filePath, ref }: Record<string, any> = {}) {
   // Agent routing
@@ -250,13 +246,8 @@ export async function agenticGitDiff(repoPath, { staged = false, path: filePath,
 /**
  * Get git log.
  *
- * @param {string} repoPath - Absolute path to a directory inside a git repo
- * @param {object} [options]
- * @param {number} [options.limit=20] - Number of commits to show
- * @param {string} [options.author] - Filter by author
- * @param {string} [options.since] - Show commits after date (e.g. "2024-01-01", "1 week ago")
- * @param {string} [options.path] - Show commits affecting specific file
- * @returns {Promise<object>}
+
+
  */
 export async function agenticGitLog(repoPath, { limit = 20, author, since, path: filePath }: Record<string, any> = {}) {
   // Agent routing
@@ -329,8 +320,8 @@ const WORKTREE_BASE = WORKTREE_DIR?.trim() || "/tmp/prism-worktrees";
 /**
  * Create a git worktree with its own branch.
  *
- * @param {string} repoPath - Absolute path to the main git repo
- * @param {string} branchName - Name for the new branch
+
+
  * @returns {Promise<object>} { worktreePath, branch }
  */
 export async function agenticGitWorktreeCreate(repoPath, branchName) {
@@ -370,11 +361,8 @@ export async function agenticGitWorktreeCreate(repoPath, branchName) {
 /**
  * Remove a git worktree and optionally delete the branch.
  *
- * @param {string} repoPath - Absolute path to the main git repo
- * @param {string} worktreePath - Absolute path to the worktree to remove
- * @param {object} [options]
- * @param {boolean} [options.deleteBranch=true] - Also delete the local branch
- * @returns {Promise<object>}
+
+
  */
 export async function agenticGitWorktreeRemove(repoPath, worktreePath, { deleteBranch = true }: Record<string, any> = {}) {
   const validation = validatePath(repoPath);
@@ -418,11 +406,8 @@ export async function agenticGitWorktreeRemove(repoPath, worktreePath, { deleteB
 /**
  * Merge a worktree branch back into the current branch.
  *
- * @param {string} repoPath - Absolute path to the main git repo
- * @param {string} branch - Branch name to merge
- * @param {object} [options]
- * @param {string} [options.message] - Custom merge commit message
- * @returns {Promise<object>}
+
+
  */
 export async function agenticGitWorktreeMerge(repoPath, branch, { message }: Record<string, any> = {}) {
   const validation = validatePath(repoPath);
@@ -451,9 +436,8 @@ export async function agenticGitWorktreeMerge(repoPath, branch, { message }: Rec
 /**
  * Get the diff between a worktree branch and the main branch.
  *
- * @param {string} repoPath - Absolute path to the main git repo
- * @param {string} branch - Branch name to diff
- * @returns {Promise<object>}
+
+
  */
 export async function agenticGitWorktreeDiff(repoPath, branch) {
   const validation = validatePath(repoPath);
@@ -495,8 +479,8 @@ export async function agenticGitWorktreeDiff(repoPath, branch) {
  * Clean up any orphaned worktrees from previous runs.
  * Should be called on server startup.
  *
- * @param {string} repoPath - Absolute path to the main git repo
- * @returns {Promise<object>}
+
+
  */
 export async function agenticGitWorktreeCleanup(repoPath) {
   const validation = validatePath(repoPath);

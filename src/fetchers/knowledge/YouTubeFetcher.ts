@@ -19,7 +19,7 @@ const YOUTUBE_ID_REGEX =
 
 /**
  * Extract a YouTube video ID from a URL or raw ID string.
- * @param {string} input - URL or video ID
+
  * @returns {string|null} 11-character video ID or null
  */
 export function extractVideoId(input) {
@@ -37,8 +37,8 @@ const OEMBED_URL = "https://www.youtube.com/oembed";
 /**
  * Fetch video metadata via YouTube's public oEmbed endpoint.
  * Returns title, author, thumbnail — no API key needed.
- * @param {string} videoId
- * @returns {Promise<object|null>}
+
+
  */
 async function fetchOembedMetadata(videoId) {
   const url = `${OEMBED_URL}?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
@@ -62,8 +62,8 @@ async function fetchOembedMetadata(videoId) {
 /**
  * Scrape additional metadata from the YouTube video page HTML.
  * Gets description and other OG tags not available via oEmbed.
- * @param {string} videoId
- * @returns {Promise<object>}
+
+
  */
 async function fetchPageMetadata(videoId) {
   const url = `https://www.youtube.com/watch?v=${videoId}`;
@@ -136,9 +136,8 @@ async function fetchPageMetadata(videoId) {
 
 /**
  * Fetch the transcript/captions for a YouTube video.
- * @param {string} videoId
- * @param {string} [lang] - Preferred language code (e.g. "en", "es")
- * @returns {Promise<object>}
+
+
  */
 async function fetchTranscript(videoId, lang) {
   try {
@@ -190,12 +189,8 @@ async function fetchTranscript(videoId, lang) {
 /**
  * Full YouTube video info: metadata + transcript.
  * The primary endpoint for the agentic YouTube tool.
- * @param {string} input - YouTube URL or video ID
- * @param {object} [options]
- * @param {string} [options.lang] - Preferred transcript language
- * @param {boolean} [options.includeTranscript=true] - Whether to fetch transcript
- * @param {boolean} [options.includeTimestamps=true] - Include timestamps in transcript
- * @returns {Promise<object>}
+
+
  */
 export async function getYouTubeVideoInfo(input, options: Record<string, any> = {}) {
   const videoId = extractVideoId(input);

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 // ─── Torrent Search & Download Routes ──────────────────────
 // Wraps qBittorrent WebUI API for search, download, and

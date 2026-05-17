@@ -14,11 +14,11 @@ const PRISM_SERVICE_URL = CONFIG.PRISM_SERVICE_URL;
 /**
  * Call Prism's /chat endpoint for text/image generation.
  *
- * @param {object} params - Request payload matching Prism's /chat contract
+
  * @param {string} params.provider - Provider name (e.g. "google", "openai")
  * @param {string} params.model - Model name
  * @param {Array}  params.messages - Messages array
- * @param {object} [params.options] - Generation options (temperature, etc.)
+
  * @returns {Promise<object>} Parsed JSON response from Prism
  */
 export async function chat(params) {
@@ -73,13 +73,10 @@ export async function health() {
  * Call Prism's /text-to-audio endpoint to generate speech.
  * Collects the streamed binary response into a base64-encoded buffer.
  *
- * @param {object} params
+
  * @param {string} params.text - Text to synthesize
- * @param {string} [params.provider="elevenlabs"] - TTS provider
- * @param {string} [params.voice] - Voice identifier
- * @param {string} [params.model] - Model name
- * @param {string} [params.project] - Project identifier
- * @param {string} [params.username] - Username identifier
+
+
  * @returns {Promise<{ audioBase64: string, contentType: string }>}
  */
 export async function textToSpeech(params) {
@@ -122,13 +119,10 @@ export async function textToSpeech(params) {
 /**
  * Call Prism's /audio-to-text endpoint to transcribe audio.
  *
- * @param {object} params
+
  * @param {string} params.audio - Base64-encoded audio or data URL
- * @param {string} [params.provider="openai"] - STT provider
- * @param {string} [params.model] - Model name
- * @param {string} [params.language] - Language hint (ISO 639-1)
- * @param {string} [params.project] - Project identifier
- * @param {string} [params.username] - Username identifier
+
+
  * @returns {Promise<{ text: string, usage?: object }>}
  */
 export async function speechToText(params) {

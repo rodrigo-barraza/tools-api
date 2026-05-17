@@ -32,10 +32,8 @@ const GOOGLE_CSE_BASE = "https://www.googleapis.com/customsearch/v1";
 /**
  * Fetch a URL and convert its HTML content to clean markdown.
  *
- * @param {string} url - URL to fetch
- * @param {object} [options]
- * @param {string} [options.selector] - CSS selector to extract specific content
- * @returns {Promise<object>}
+
+
  */
 export async function agenticFetchUrl(url, { selector }: Record<string, any> = {}) {
   if (!url || typeof url !== "string") {
@@ -144,12 +142,8 @@ const BRAVE_SEARCH_BASE = "https://api.search.brave.com/res/v1/web/search";
  *   1. Brave Search API (whole-web, 2000 queries/month free)
  *   2. Google Custom Search (site-restricted, 100 queries/day free)
  *
- * @param {string} query - Search query
- * @param {object} [options]
- * @param {number} [options.limit=5] - Number of results (max 10)
- * @param {string} [options.dateRestrict] - e.g. "d7" (past 7 days), "m1" (past month)
- * @param {string} [options.siteSearch] - Restrict to a specific site domain
- * @returns {Promise<object>}
+
+
  */
 export async function agenticWebSearch(query, { limit = 5, dateRestrict, siteSearch }: Record<string, any> = {}) {
   if (!query || typeof query !== "string") {
@@ -297,9 +291,8 @@ async function _searchGoogleCSE(query, { limit, dateRestrict, siteSearch }) {
  * Convert HTML to clean markdown using cheerio.
  * Strips scripts, styles, nav, and other non-content elements.
  *
- * @param {string} html - Raw HTML
- * @param {object} [options]
- * @param {string} [options.selector] - CSS selector for content extraction
+
+
  * @returns {string} Clean markdown
  */
 function htmlToMarkdown(html, { selector }: Record<string, any> = {}) {

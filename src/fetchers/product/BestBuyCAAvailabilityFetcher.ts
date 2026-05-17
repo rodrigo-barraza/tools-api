@@ -15,8 +15,8 @@ function buildAvailabilityUrl(skus) {
 }
 /**
  * Normalize a single availability entry from the Best Buy CA API.
- * @param {object} availability - Raw availability object from the API
- * @param {object|null} metadata - Optional SKU metadata { name, brand, category }
+
+
  */
 function normalizeAvailability(availability, metadata = null) {
   const sku = availability.sku;
@@ -51,8 +51,8 @@ function normalizeAvailability(availability, metadata = null) {
 /**
  * Fetch availability for an array of SKUs from Best Buy Canada.
  * Automatically batches to stay within URL / request limits.
- * @param {string[]} skus - Array of SKU strings
- * @param {object} skuMetadata - Map of SKU → { name, brand, category }
+
+
  * @returns {{ results: object[], errors: string[] }}
  */
 export async function fetchBestBuyCAAvailability(skus, skuMetadata: Record<string, any> = {}) {

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import express from "express";
 import { fieldProjectionMiddleware } from "../src/middleware/FieldProjectionMiddleware.js";
 
@@ -7,9 +6,8 @@ import { fieldProjectionMiddleware } from "../src/middleware/FieldProjectionMidd
  * Mounts the given router at `path` with only essential middleware —
  * no MongoDB, no collectors, no cron.
  *
- * @param {string} path  - Mount point, e.g. "/market"
- * @param {Router} router - The Express router to test
- * @returns {express.Application}
+
+
  */
 export function createTestApp(path, router) {
   const app = express();

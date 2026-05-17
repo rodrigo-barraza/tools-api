@@ -55,8 +55,8 @@ function normalizeCountry(c: any) {
 
 /**
  * Search for a country by name (partial match).
- * @param {string} name
- * @returns {Promise<object[]>}
+
+
  */
 export async function searchCountries(name) {
   const url = `${REST_COUNTRIES_BASE_URL}/name/${encodeURIComponent(name)}`;
@@ -81,8 +81,8 @@ export async function searchCountries(name) {
 
 /**
  * Get a single country by ISO 3166-1 alpha-2 or alpha-3 code.
- * @param {string} code - e.g. "CA", "CAN", "US"
- * @returns {Promise<object>}
+
+
  */
 export async function getCountryByCode(code) {
   const url = `${REST_COUNTRIES_BASE_URL}/alpha/${encodeURIComponent(code.toUpperCase())}`;

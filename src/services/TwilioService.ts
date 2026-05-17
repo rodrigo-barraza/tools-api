@@ -21,10 +21,8 @@ function getClient() {
 
 /**
  * Send an SMS message.
- * @param {string} to    - Destination phone number (E.164 format)
- * @param {string} body  - Message body (max 1,600 chars)
- * @param {string} [from] - Sender phone number (defaults to first available Twilio number)
- * @returns {Promise<object>}
+
+
  */
 export async function sendSms(to, body, from) {
   const c = getClient();
@@ -60,11 +58,8 @@ export async function sendSms(to, body, from) {
 
 /**
  * List recent messages on the account.
- * @param {object} [filters]
- * @param {string} [filters.to]    - Filter by destination number
- * @param {string} [filters.from]  - Filter by sender number
- * @param {number} [filters.limit] - Max results (default 20, max 100)
- * @returns {Promise<object>}
+
+
  */
 export async function listMessages(filters: Record<string, any> = {}) {
   const c = getClient();
@@ -101,7 +96,7 @@ export async function listMessages(filters: Record<string, any> = {}) {
 
 /**
  * Get account info (balance, status, friendly name).
- * @returns {Promise<object>}
+
  */
 export async function getAccountInfo() {
   const c = getClient();
@@ -123,8 +118,8 @@ export async function getAccountInfo() {
 
 /**
  * Look up information about a phone number via Twilio Lookup API v2.
- * @param {string} phone - Phone number in E.164 format
- * @returns {Promise<object>}
+
+
  */
 export async function lookupPhone(phone) {
   const c = getClient();
@@ -148,7 +143,7 @@ export async function lookupPhone(phone) {
 
 /**
  * List Twilio phone numbers on the account.
- * @returns {Promise<object>}
+
  */
 export async function listPhoneNumbers() {
   const c = getClient();

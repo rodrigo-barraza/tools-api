@@ -52,24 +52,24 @@ async function fredFetch(endpoint, params: Record<string, any> = {}) {
 
 /**
  * Get metadata for a FRED series.
- * @param {string} seriesId - e.g. "CPIAUCSL", "FEDFUNDS", "UNRATE"
- * @returns {Promise<object>}
+
+
  */
 export async function getSeriesInfo(seriesId) {
   const data = await fredFetch("series", { series_id: seriesId });
-  const s = data.seriess?.[0];
-  if (!s) throw new Error(`Series "${seriesId}" not found`);
+  const series = data.seriess?.[0];
+  if (!series) throw new Error(`Series "${seriesId}" not found`);
 
   return {
-    id: s.id,
-    title: s.title,
-    frequency: s.frequency_short,
-    units: s.units_short,
-    seasonalAdjustment: s.seasonal_adjustment_short,
-    lastUpdated: s.last_updated,
-    observationStart: s.observation_start,
-    observationEnd: s.observation_end,
-    notes: s.notes || null,
+    id: series.id,
+    title: series.title,
+    frequency: series.frequency_short,
+    units: series.units_short,
+    seasonalAdjustment: series.seasonal_adjustment_short,
+    lastUpdated: series.last_updated,
+    observationStart: series.observation_start,
+    observationEnd: series.observation_end,
+    notes: series.notes || null,
   };
 }
 
@@ -77,13 +77,8 @@ export async function getSeriesInfo(seriesId) {
 
 /**
  * Get observations (data points) for a FRED series.
- * @param {string} seriesId - FRED series ID
- * @param {object} [options]
- * @param {number} [options.limit=50] - Max observations to return
- * @param {string} [options.sortOrder="desc"] - "asc" or "desc"
- * @param {string} [options.observationStart] - Start date (YYYY-MM-DD)
- * @param {string} [options.observationEnd] - End date (YYYY-MM-DD)
- * @returns {Promise<object>}
+
+
  */
 export async function getSeriesObservations(seriesId, options: Record<string, any> = {}) {
   const {
@@ -135,11 +130,8 @@ export async function getSeriesObservations(seriesId, options: Record<string, an
 
 /**
  * Search for FRED series by keywords.
- * @param {string} query - Search terms
- * @param {object} [options]
- * @param {number} [options.limit=10] - Max results
- * @param {string} [options.orderBy="search_rank"] - Sort: search_rank, series_id, title, frequency, popularity
- * @returns {Promise<object>}
+
+
  */
 export async function searchSeries(query, options: Record<string, any> = {}) {
   const { limit = 10, orderBy = "search_rank" } = options;
@@ -183,7 +175,7 @@ export async function searchSeries(query, options: Record<string, any> = {}) {
 /**
  * Get the latest values for a curated set of key economic indicators.
  * Returns the most recent observation for each default series.
- * @returns {Promise<object>}
+
  */
 export async function getKeyIndicators() {
   const cacheKey = "key-indicators";

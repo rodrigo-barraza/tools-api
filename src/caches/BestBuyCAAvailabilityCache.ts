@@ -5,7 +5,7 @@ import { BESTBUY_CA_DEFAULT_SKUS } from "../constants.ts";
 const store = {
   /** @type {Object<string, { name: string, brand: string, category: string }>} */
   watchlist: { ...BESTBUY_CA_DEFAULT_SKUS },
-  /** @type {Object<string, object>} */
+
   statuses: {} as Record<string, any>,
   lastCheck: null,
   error: null,

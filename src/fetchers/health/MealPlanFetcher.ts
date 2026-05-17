@@ -134,16 +134,10 @@ function normalizeSearch(str) {
 /**
  * Generate a meal plan that covers nutritional targets.
  *
- * @param {object} params
+
  * @param {number} params.caloricTarget - Daily caloric target
- * @param {number} [params.mealsPerDay=3] - Number of meals
- * @param {string} [params.dietaryPreference="omnivore"] - Diet type
- * @param {string} [params.excludeFoods] - Comma-separated foods to exclude
- * @param {string} [params.emphasizeNutrients] - Comma-separated nutrients to prioritize
- * @param {string} [params.species="human"] - Target species
- * @param {string} [params.lifeStage="adult_male"] - Life stage
- * @param {number} [params.weightKg] - Body weight in kg
- * @param {number} [params.itemsPerMeal=4] - Foods per meal
+
+
  * @returns {object} Meal plan with coverage analysis
  */
 export function buildMealPlan({

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { setupStreamingSSE, lazyImport } from "@rodrigo-barraza/utilities-library/express";
 import { validateMaxLength } from "@rodrigo-barraza/utilities-library";
@@ -954,18 +953,18 @@ function rgbToCmyk({ r, g, b }) {
  * Parse any common color format into RGB.
  */
 function parseColorToRgb(color) {
-  const c = color.trim();
+  const trimmedColor = color.trim();
   // HEX
-  if (/^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(c)) {
-    return hexToRgb(c);
+  if (/^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(trimmedColor)) {
+    return hexToRgb(trimmedColor);
   }
   // rgb(r, g, b)
-  const rgbMatch = c.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  const rgbMatch = trimmedColor.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
   if (rgbMatch) {
     return { r: parseInt(rgbMatch[1]), g: parseInt(rgbMatch[2]), b: parseInt(rgbMatch[3]) };
   }
   // hsl(h, s%, l%)
-  const hslMatch = c.match(/^hsla?\((\d+),\s*(\d+)%?,\s*(\d+)%?/);
+  const hslMatch = trimmedColor.match(/^hsla?\((\d+),\s*(\d+)%?,\s*(\d+)%?/);
   if (hslMatch) {
     return hslToRgb({
       h: parseInt(hslMatch[1]),
@@ -984,7 +983,7 @@ function parseColorToRgb(color) {
     coral: "#ff7f50", salmon: "#fa8072", khaki: "#f0e68c", tomato: "#ff6347",
     turquoise: "#40e0d0", plum: "#dda0dd",
   };
-  const named = NAMED[c.toLowerCase()];
+  const named = NAMED[trimmedColor.toLowerCase()];
   if (named) return hexToRgb(named);
   throw new Error(`Cannot parse color: ${color}. Use HEX (#ff0000), rgb(255,0,0), hsl(0,100%,50%), or CSS named colors.`);
 }

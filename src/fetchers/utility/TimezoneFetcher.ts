@@ -10,8 +10,8 @@ import { TIMEZONE_BASE_URL } from "../../constants.ts";
 
 /**
  * Get current time in a specific timezone.
- * @param {string} timezone - IANA timezone (e.g. "America/Vancouver", "Asia/Tokyo")
- * @returns {Promise<object>}
+
+
  */
 export async function getTimeInTimezone(timezone) {
   const url = `${TIMEZONE_BASE_URL}/timezone/${encodeURIComponent(timezone)}`;
@@ -47,8 +47,8 @@ export async function getTimeInTimezone(timezone) {
 
 /**
  * Get all available IANA timezone identifiers.
- * @param {string} [area] - Optional area filter (e.g. "America", "Europe", "Asia")
- * @returns {Promise<string[]>}
+
+
  */
 export async function listTimezones(area) {
   const path = area ? `/timezone/${encodeURIComponent(area)}` : "/timezone";

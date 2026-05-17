@@ -43,7 +43,7 @@ const registry = new Map();
  * Register a child process in the background registry.
  * Attaches output listeners and tracks the process lifecycle.
  *
- * @param {import("child_process").ChildProcess} child
+
  * @param {{ command: string, cwd: string }} meta
  * @returns {{ pid: number }}
  */
@@ -109,8 +109,8 @@ export function register(child, meta) {
  * Get the current state of a background process.
  * Updates lastReadAt to extend the TTL.
  *
- * @param {number} pid
- * @returns {object|null}
+
+
  */
 export function getProcess(pid) {
   const entry = registry.get(pid);
@@ -135,8 +135,8 @@ export function getProcess(pid) {
 /**
  * Kill a background process and remove it from the registry.
  *
- * @param {number} pid
- * @param {string} [signal="SIGTERM"]
+
+
  * @returns {{ success: boolean, pid: number, message?: string, error?: string }}
  */
 export function kill(pid, signal = "SIGTERM") {
@@ -170,7 +170,7 @@ export function kill(pid, signal = "SIGTERM") {
 /**
  * List all tracked background processes.
  *
- * @returns {Array<object>}
+
  */
 export function list() {
   const result = [];

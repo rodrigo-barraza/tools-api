@@ -51,7 +51,7 @@ const PLATFORM_PATTERNS = [
 
 /**
  * Detect which platform a URL belongs to.
- * @param {string} url
+
  * @returns {string|null} Platform name, or null for generic pages
  */
 function detectPlatform(url) {
@@ -70,15 +70,8 @@ function detectPlatform(url) {
  * Auto-detects GitHub, Reddit, Twitter/X, Hacker News, Stack Overflow,
  * or YouTube. Falls back to generic HTML extraction for unknown sites.
  *
- * @param {string} url - Any URL
- * @param {object} [options]
- * @param {number}  [options.commentLimit]  - Max comments (Reddit/HN, default: 20/25)
- * @param {number}  [options.answerLimit]   - Max answers (Stack Overflow, default: 5)
- * @param {string}  [options.readme]        - "true"/"false" — include README (GitHub, default: true)
- * @param {string}  [options.languages]     - "true"/"false" — include language breakdown (GitHub, default: true)
- * @param {string}  [options.transcript]    - "true"/"false" — include transcript (YouTube, default: true)
- * @param {string}  [options.lang]          - Transcript language (YouTube, default: "en")
- * @param {number}  [options.maxChars]      - Max body text chars (generic, default: 15000)
+
+
  * @returns {Promise<object>} Platform-specific result with "platform" field
  */
 export async function getWebContent(url, options: Record<string, any> = {}) {

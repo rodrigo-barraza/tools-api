@@ -8,7 +8,7 @@ import logger from "../../logger.ts";
  * Uses X API v1.1 trends/place endpoint (available on free tier, 100 reads/month).
  * Called once per day to stay within free tier limits.
  *
- * @param {number} woeid - Where On Earth ID (default: worldwide)
+
  * @returns {Promise<Array>} Normalized trend objects
  */
 export async function fetchXTrends(woeid = X_WOEIDS.WORLDWIDE) {

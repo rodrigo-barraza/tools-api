@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { getDB } from "../db.ts";
 import { lookupIp } from "../fetchers/utility/IpInfoFetcher.ts";
 import logger from "../logger.ts";

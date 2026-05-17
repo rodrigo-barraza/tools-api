@@ -10,8 +10,8 @@ const HN_URL_REGEX =
 
 /**
  * Extract a HN item ID from a URL or raw ID.
- * @param {string} input
- * @returns {string|null}
+
+
  */
 function parseHnInput(input) {
   if (!input || typeof input !== "string") return null;
@@ -30,10 +30,8 @@ function parseHnInput(input) {
 
 /**
  * Recursively fetch comment tree (breadth-first, limited depth).
- * @param {number[]} ids - Comment IDs
- * @param {number} remaining - How many more comments to fetch
- * @param {number} depth - Current depth
- * @returns {Promise<object[]>}
+
+
  */
 async function fetchComments(ids, remaining, depth = 0) {
   if (!ids?.length || remaining <= 0 || depth > 3) return [];
@@ -80,10 +78,8 @@ async function fetchComments(ids, remaining, depth = 0) {
 
 /**
  * Fetch a Hacker News post with top comments.
- * @param {string} input - HN URL or item ID
- * @param {object} [options]
- * @param {number} [options.commentLimit=25]
- * @returns {Promise<object>}
+
+
  */
 export async function getHackerNewsThread(input, options: Record<string, any> = {}) {
   const itemId = parseHnInput(input);

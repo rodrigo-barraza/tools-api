@@ -42,8 +42,8 @@ function evictStaleEntries() {
 
 /**
  * Look up geolocation data for an IP address.
- * @param {string} ip - IPv4 or IPv6 address. Pass "self" or omit for server's own IP.
- * @returns {Promise<object>}
+
+
  */
 export async function lookupIp(ip) {
   const targetIp = ip && ip !== "self" ? ip : "";
@@ -103,8 +103,8 @@ export async function lookupIp(ip) {
 
 /**
  * Look up geolocation data for multiple IPs.
- * @param {string[]} ips - Array of IP addresses
- * @returns {Promise<object[]>}
+
+
  */
 export async function batchLookupIps(ips) {
   const results = await Promise.allSettled(

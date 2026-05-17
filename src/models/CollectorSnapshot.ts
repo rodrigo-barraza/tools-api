@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { getDB } from "../db.ts";
 import logger from "../logger.ts";
 
@@ -15,8 +14,8 @@ import logger from "../logger.ts";
  * Save the latest collector state to a dedicated collection.
  * Objects are spread at the top level. Arrays are stored under `items`.
  *
- * @param {string} collectionName - MongoDB collection name
- * @param {*} data - The payload to persist (object or array)
+
+
  */
 export async function saveState(collectionName, data) {
   try {
@@ -39,7 +38,7 @@ export async function saveState(collectionName, data) {
  * Load the latest state from a dedicated collection.
  * Reconstructs the original payload shape (object or array).
  *
- * @param {string} collectionName - MongoDB collection name
+
  * @returns {Promise<{ data: *, updatedAt: Date } | null>}
  */
 export async function loadState(collectionName) {

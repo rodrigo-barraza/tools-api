@@ -22,8 +22,8 @@ const MAX_OUTPUT_BYTES = 512 * 1024; // 512 KB max stdout
 /**
  * Build the globals object injected into the vm context.
  *
- * @param {string[]} outputBuffer - Mutable array that captures console output
- * @param {"sandboxed"|"privileged"} execution - Execution tier
+
+
  * @returns {object} Globals for vm.createContext
  */
 function buildGlobals(outputBuffer, execution = "sandboxed") {
@@ -169,10 +169,8 @@ function buildGlobals(outputBuffer, execution = "sandboxed") {
 /**
  * Execute JavaScript code in a vm context.
  *
- * @param {string} code - JavaScript source code to execute
- * @param {object} [options]
- * @param {number}  [options.timeout=5000]       - Execution timeout in ms (max 30 000)
- * @param {"sandboxed"|"privileged"} [options.execution="sandboxed"] - Execution tier
+
+
  * @returns {{
  *   success: boolean,
  *   output: string,

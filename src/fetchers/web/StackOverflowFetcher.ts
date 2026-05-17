@@ -10,7 +10,7 @@ const SO_URL_REGEX =
 
 /**
  * Extract question ID and site from a Stack Overflow URL or raw ID.
- * @param {string} input
+
  * @returns {{ questionId: string, site: string } | null}
  */
 function parseStackOverflowInput(input) {
@@ -74,10 +74,8 @@ function decodeHtmlEntities(str) {
 
 /**
  * Fetch a Stack Overflow question with accepted and top answers.
- * @param {string} input - Stack Overflow URL or question ID
- * @param {object} [options]
- * @param {number} [options.answerLimit=5]
- * @returns {Promise<object>}
+
+
  */
 export async function getStackOverflowQuestion(input, options: Record<string, any> = {}) {
   const parsed = parseStackOverflowInput(input);

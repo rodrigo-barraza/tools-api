@@ -8,10 +8,8 @@ const MAX_README_CHARS = 15_000;
 
 /**
  * Fetch NPM package info including version, deps, and README.
- * @param {string} packageName - NPM package name (e.g. "express", "@types/node")
- * @param {object} [options]
- * @param {boolean} [options.includeReadme=true]
- * @returns {Promise<object>}
+
+
  */
 export async function getNpmPackage(packageName, options: Record<string, any> = {}) {
   if (!packageName || typeof packageName !== "string") {

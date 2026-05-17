@@ -12,7 +12,7 @@ const TWITTER_URL_REGEX =
 
 /**
  * Extract username and tweet ID from a Twitter/X URL.
- * @param {string} input
+
  * @returns {{ username: string, tweetId: string } | null}
  */
 function parseTwitterUrl(input) {
@@ -32,8 +32,8 @@ function parseTwitterUrl(input) {
 
 /**
  * Fetch a Twitter/X post with text, media, and engagement metrics.
- * @param {string} input - Twitter/X URL or tweet ID
- * @returns {Promise<object>}
+
+
  */
 export async function getTwitterPost(input) {
   const parsed = parseTwitterUrl(input);

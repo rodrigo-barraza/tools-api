@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ─── Persistent Task State Management ───────────────────────
 
 import { getDB } from "../db.ts";
@@ -51,14 +50,12 @@ async function nextTaskId(project) {
 /**
  * Create a new task.
  *
- * @param {string} project - Project scope (e.g. "prism", "lupos")
- * @param {object} data
+
+
  * @param {string} data.subject - Brief title
  * @param {string} data.description - What needs to be done
- * @param {string} [data.status="pending"] - Initial status
- * @param {string} [data.activeForm] - Present continuous form for in_progress spinner (e.g. "Running tests")
- * @param {string} [data.agentSessionId] - Agent session that created this task
- * @param {object} [data.metadata] - Arbitrary key/value metadata
+
+
  * @returns {Promise<object>} Created task document
  */
 export async function agenticTaskCreate(project, data) {
@@ -119,11 +116,8 @@ export async function agenticTaskCreate(project, data) {
 /**
  * List tasks for a project, optionally filtered by status.
  *
- * @param {string} project
- * @param {object} [options]
- * @param {string} [options.status] - Filter by status
- * @param {number} [options.limit=50]
- * @returns {Promise<object>}
+
+
  */
 export async function agenticTaskList(project, { status, limit = 50 }: Record<string, any> = {}) {
   if (!project || typeof project !== "string") {
@@ -165,9 +159,8 @@ export async function agenticTaskList(project, { status, limit = 50 }: Record<st
 /**
  * Get a single task by ID.
  *
- * @param {string} project
- * @param {number} taskId
- * @returns {Promise<object>}
+
+
  */
 export async function agenticTaskGet(project, taskId) {
   if (!project || typeof project !== "string") {
@@ -192,16 +185,8 @@ export async function agenticTaskGet(project, taskId) {
 /**
  * Update a task's status, description, or metadata.
  *
- * @param {string} project
- * @param {number} taskId
- * @param {object} updates
- * @param {string} [updates.status]
- * @param {string} [updates.subject]
- * @param {string} [updates.description]
- * @param {string} [updates.activeForm] - Present continuous form for spinner
- * @param {string} [updates.agentSessionId] - Agent session performing the update
- * @param {object} [updates.metadata] - Merged with existing metadata
- * @returns {Promise<object>}
+
+
  */
 export async function agenticTaskUpdate(project, taskId, updates) {
   if (!project || typeof project !== "string") {
@@ -270,9 +255,8 @@ export async function agenticTaskUpdate(project, taskId, updates) {
 /**
  * Delete a task.
  *
- * @param {string} project
- * @param {number} taskId
- * @returns {Promise<object>}
+
+
  */
 export async function agenticTaskDelete(project, taskId) {
   if (!project || typeof project !== "string") {

@@ -33,9 +33,8 @@ const redditTokenManager = new TokenManager(async () => {
 });
 /**
  * Fetches hot posts from a given subreddit.
- * @param {string} subreddit - Subreddit name (without r/)
- * @param {string} token - OAuth2 bearer token
- * @param {number} limit - Number of posts to fetch
+
+
  * @returns {Promise<Array>} Raw post data
  */
 async function fetchSubreddit(subreddit, token, limit) {
@@ -54,28 +53,28 @@ async function fetchSubreddit(subreddit, token, limit) {
 }
 /**
  * Normalizes a Reddit post into a trend object.
- * @param {object} post - Reddit post data
- * @param {string|null} defaultCategory - Category from subreddit config
+
+
  * @returns {object} Normalized trend object
  */
 function normalizeTrend(post, defaultCategory) {
-  const d = post.data;
+  const postData = post.data;
   return {
-    name: d.title,
-    normalizedName: normalizeName(d.title),
+    name: postData.title,
+    normalizedName: normalizeName(postData.title),
     source: SOURCES.REDDIT,
-    volume: d.score || 0,
-    url: `https://reddit.com${d.permalink}`,
+    volume: postData.score || 0,
+    url: `https://reddit.com${postData.permalink}`,
     context: {
-      subreddit: d.subreddit,
-      author: d.author,
-      commentCount: d.num_comments || 0,
-      upvoteRatio: d.upvote_ratio || 0,
-      flair: d.link_flair_text || null,
+      subreddit: postData.subreddit,
+      author: postData.author,
+      commentCount: postData.num_comments || 0,
+      upvoteRatio: postData.upvote_ratio || 0,
+      flair: postData.link_flair_text || null,
       thumbnail:
-        d.thumbnail && d.thumbnail.startsWith("http") ? d.thumbnail : null,
-      isVideo: d.is_video || false,
-      created: new Date(d.created_utc * 1000).toISOString(),
+        postData.thumbnail && postData.thumbnail.startsWith("http") ? postData.thumbnail : null,
+      isVideo: postData.is_video || false,
+      created: new Date(postData.created_utc * 1000).toISOString(),
     },
     category: defaultCategory,
     timestamp: new Date().toISOString(),

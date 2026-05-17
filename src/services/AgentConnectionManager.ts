@@ -57,7 +57,7 @@ const TIMEOUT_MAP = {
  * @property {Map<string, { resolve, reject, timer }>} pendingRpc
  */
 
-/** @type {Map<string, AgentEntry>} */
+
 const agents = new Map();
 
 /** @type {Map<string, string>} rootPath → agentId (for fast routing) */
@@ -73,7 +73,7 @@ let healthCheckTimer = null;
  * Initialize the agent WebSocket server on an existing HTTP server.
  * Handles upgrade requests on /ws/agent path.
  *
- * @param {import("http").Server} httpServer
+
  */
 export function initAgentWebSocket(httpServer) {
   const wss = new WebSocketServer({ noServer: true });
@@ -358,9 +358,8 @@ function deregisterAgent(agentId, reason) {
 /**
  * Send an RPC request to an agent and wait for the response.
  *
- * @param {string} agentId - Target agent ID
- * @param {string} method - RPC method name
- * @param {object} params - RPC parameters
+
+
  * @returns {Promise<object>} Result from the agent
  */
 export function sendRpc(agentId: string, method: string, params: Record<string, any> = {}): Promise<any> {
@@ -399,11 +398,8 @@ export function sendRpc(agentId: string, method: string, params: Record<string, 
  * Send an RPC request to an agent with a streaming callback for notifications.
  * Used for command.stream where stdout/stderr arrive as notifications.
  *
- * @param {string} agentId
- * @param {string} method
- * @param {object} params
- * @param {function} onNotification - (method, params) => void
- * @returns {Promise<object>}
+
+
  */
 export function sendRpcStreaming(agentId, method, params: Record<string, any> = {}, onNotification) {
   const agent = agents.get(agentId);
@@ -425,7 +421,7 @@ export function sendRpcStreaming(agentId, method, params: Record<string, any> = 
  * Find the agent that serves a given file system path.
  * Returns null if the path should be handled locally.
  *
- * @param {string} absolutePath - Absolute file path to route
+
  * @returns {{ id: string, name: string, roots: string[] } | null}
  */
 export function routeForPath(absolutePath) {
@@ -450,7 +446,7 @@ export function routeForPath(absolutePath) {
 
 /**
  * Get the list of connected agents with metadata.
- * @returns {object[]}
+
  */
 export function getConnectedAgents() {
   return [...agents.values()].map((a) => ({
@@ -468,8 +464,8 @@ export function getConnectedAgents() {
 
 /**
  * Check if a specific path is served by a connected agent.
- * @param {string} path
- * @returns {boolean}
+
+
  */
 export function isAgentPath(path) {
   return routeForPath(path) !== null;
@@ -477,7 +473,7 @@ export function isAgentPath(path) {
 
 /**
  * Get agent info for a root path (for workspace metadata).
- * @param {string} rootPath
+
  * @returns {{ agentName: string, agentId: string } | null}
  */
 export function getAgentInfoForRoot(rootPath) {

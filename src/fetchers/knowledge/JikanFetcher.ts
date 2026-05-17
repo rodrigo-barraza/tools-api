@@ -62,9 +62,8 @@ async function fetchJikan(endpoint) {
 
 /**
  * Search anime by title
- * @param {string} q
- * @param {number} limit
- * @returns {Promise<object>}
+
+
  */
 export async function searchAnime(q, limit = 10) {
   const endpoint = `/anime?q=${encodeURIComponent(q)}&limit=${limit}`;
@@ -83,8 +82,8 @@ export async function searchAnime(q, limit = 10) {
 
 /**
  * Get top ranking anime
- * @param {number} limit
- * @returns {Promise<object>}
+
+
  */
 export async function getTopAnime(limit = 10) {
   const endpoint = `/top/anime?limit=${limit}`;
@@ -103,8 +102,8 @@ export async function getTopAnime(limit = 10) {
 
 /**
  * Get current season anime
- * @param {number} limit
- * @returns {Promise<object>}
+
+
  */
 export async function getCurrentSeasonAnime(limit = 10) {
   const endpoint = `/seasons/now?limit=${limit}`;
@@ -123,8 +122,8 @@ export async function getCurrentSeasonAnime(limit = 10) {
 
 /**
  * Get specific anime details by ID
- * @param {string|number} id
- * @returns {Promise<object>}
+
+
  */
 export async function getAnimeDetails(id) {
   const endpoint = `/anime/${encodeURIComponent(id)}/full`;

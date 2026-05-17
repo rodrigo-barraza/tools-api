@@ -267,7 +267,7 @@ const TESTS = {
 /**
  * Run a smoke test for a single tool.
  *
- * @param {string} toolName
+
  * @returns {Promise<object>} { tool, success, duration, message, details? }
  */
 export async function testTool(toolName) {
@@ -328,7 +328,7 @@ export async function testAllTools(toolNames) {
 /**
  * Get list of tools that have smoke tests.
  *
- * @returns {string[]}
+
  */
 export function getTestableTools() {
   return Object.keys(TESTS);

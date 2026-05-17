@@ -6,7 +6,7 @@ import { upsertWebcams } from "../../../../models/Webcam.ts";
  * These APIs return JSON arrays of camera objects with Views arrays
  * containing CCTV page URLs.
  *
- * @param {Object} options
+
  * @param {string} options.apiUrl       - Base API URL (e.g. https://511on.ca/api/v2/get/cameras)
  * @param {string} options.city         - City name for tagging (e.g. "Ottawa")
  * @param {string} options.country      - Country code (e.g. "CA")

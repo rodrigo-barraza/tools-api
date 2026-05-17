@@ -14,8 +14,8 @@ const REDD_IT_REGEX = /(?:https?:\/\/)?redd\.it\/([a-z0-9]+)/i;
 
 /**
  * Normalize a Reddit URL to its .json endpoint.
- * @param {string} input
- * @returns {string|null}
+
+
  */
 function buildRedditJsonUrl(input) {
   if (!input || typeof input !== "string") return null;
@@ -78,10 +78,8 @@ function extractComments(children, limit) {
 
 /**
  * Fetch a Reddit thread with post content and top comments.
- * @param {string} input - Reddit URL (full, short, or path)
- * @param {object} [options]
- * @param {number} [options.commentLimit=20]
- * @returns {Promise<object>}
+
+
  */
 export async function getRedditThread(input, options: Record<string, any> = {}) {
   const jsonUrl = buildRedditJsonUrl(input);

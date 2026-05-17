@@ -5,11 +5,8 @@ import { getToolSchemas } from "./ToolSchemaService.ts";
 /**
  * Search all registered tool schemas by keyword, domain, or label.
  *
- * @param {string} query - Search query (matched against name + description)
- * @param {object} [options]
- * @param {string} [options.domain] - Filter by domain (e.g. "Weather", "Agentic: File Operations")
- * @param {string} [options.label] - Filter by label category
- * @param {number} [options.limit=20] - Max results
+
+
  * @returns {{ matches: Array, total: number, query: string }}
  */
 export function agenticToolSearch(query, { domain, label, limit = 20 }: Record<string, any> = {}) {

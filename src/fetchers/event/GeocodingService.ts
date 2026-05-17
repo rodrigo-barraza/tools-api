@@ -9,7 +9,7 @@ const geocodeCache = new Map();
 /**
  * Geocode an address string into lat/lng coordinates.
  * Results are cached in-memory to reduce API calls.
- * @param {string} address - Full or partial address string
+
  * @returns {{ latitude: number, longitude: number, formattedAddress: string } | null}
  */
 export async function geocodeAddress(address) {
@@ -96,8 +96,8 @@ export async function enrichEventWithGeocode(event) {
 /**
  * Batch geocode multiple events (rate-limited).
  * Only geocodes events that are missing coordinates.
- * @param {Array} events - Array of event objects
- * @param {number} maxPerBatch - Max concurrent geocoding calls (default 5)
+
+
  */
 export async function batchGeocodeEvents(events, maxPerBatch = 5) {
   const needsGeocode = events.filter(

@@ -153,13 +153,10 @@ const DIETARY_FILTERS = {
 /**
  * Find nutritionally similar substitutes for a given food.
  *
- * @param {object} params
+
  * @param {string} params.food - Source food name
- * @param {string} [params.targetNutrients] - Comma-separated nutrients to prioritize
- * @param {string} [params.dietaryPreference] - vegetarian, vegan, pescatarian, plant_only
- * @param {string} [params.excludeKingdom] - Exclude kingdom (animalia, plantae, fungi)
- * @param {string} [params.excludeFoods] - Comma-separated foods to exclude from results
- * @param {number} [params.limit=10] - Max results
+
+
  * @returns {object} Ranked substitutes with similarity scores
  */
 export function findFoodSubstitutes({

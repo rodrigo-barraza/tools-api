@@ -14,7 +14,7 @@ const GOOGLE_NEWS_RSS_URL = "https://news.google.com/rss";
 
 /**
  * Categorize a Google News article based on its source tag or section.
- * @param {string} section - RSS topic/section if present
+
  * @returns {string} Category string
  */
 function categorizeArticle(section) {

@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ─── Cron + Remote Trigger System ───────────────────────────
 
 import { getDB } from "../db.ts";
@@ -61,7 +60,7 @@ async function nextScheduleId(project) {
  * Also supports full cron expressions (basic 5-field) — but for
  * v1 we use delay-based scheduling with repeat support.
  *
- * @param {string} schedule - Delay expression (e.g. "30m", "2h", "1d")
+
  * @returns {number|null} Delay in milliseconds, or null if invalid
  */
 function parseDelay(schedule) {
@@ -84,15 +83,13 @@ function parseDelay(schedule) {
 /**
  * Create a new schedule.
  *
- * @param {object} data
+
  * @param {string} data.project - Project scope
  * @param {string} data.name - Human-readable schedule name
  * @param {string} data.schedule - Delay expression (e.g. "30m", "2h")
  * @param {string} data.prompt - The prompt to send to Prism when fired
- * @param {string} [data.type="once"] - "once", "cron", or "trigger"
- * @param {string} [data.agent] - Agent persona to use
- * @param {string} [data.model] - Model override
- * @returns {Promise<object>}
+
+
  */
 export async function agenticScheduleCreate(data) {
   const {

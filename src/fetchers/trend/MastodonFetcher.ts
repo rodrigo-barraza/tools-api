@@ -6,7 +6,7 @@ import {
 } from "../../constants.ts";
 /**
  * Fetches trending tags from a single Mastodon instance.
- * @param {string} instance - Instance base URL (e.g. "https://mastodon.social")
+
  * @returns {Promise<Array>} Trending tag objects
  */
 async function fetchTrendingTags(instance) {
@@ -18,7 +18,7 @@ async function fetchTrendingTags(instance) {
 }
 /**
  * Fetches trending statuses (posts) from a single Mastodon instance.
- * @param {string} instance - Instance base URL
+
  * @returns {Promise<Array>} Trending status objects
  */
 async function fetchTrendingStatuses(instance) {

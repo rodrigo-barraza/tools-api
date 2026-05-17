@@ -20,8 +20,8 @@ class RateLimiterService {
    * Multiple concurrent callers for the same provider are serialized
    * via a promise chain to prevent thundering herd.
    *
-   * @param {string} provider - Key in API_RATE_LIMITS (e.g. "ETSY", "TICKETMASTER")
-   * @returns {Promise<void>}
+
+
    */
   async wait(provider) {
     const limits = API_RATE_LIMITS[provider];
@@ -43,8 +43,8 @@ class RateLimiterService {
 
   /**
    * Internal: sleep if needed to enforce minimum delay since last request.
-   * @param {string} provider
-   * @param {number} delayMs
+
+
    */
   async #enforce(provider, delayMs) {
     const last = this.#lastRequestAt.get(provider) || 0;
@@ -60,7 +60,7 @@ class RateLimiterService {
 
   /**
    * Get the configured delay for a provider (useful for logging/diagnostics).
-   * @param {string} provider - Key in API_RATE_LIMITS
+
    * @returns {number|null} requestDelayMs or null if unknown
    */
   getDelay(provider) {
@@ -69,7 +69,7 @@ class RateLimiterService {
 
   /**
    * Get current usage stats for a provider.
-   * @param {string} provider
+
    * @returns {{ lastRequestAt: number|null, delayMs: number|null }}
    */
   getStats(provider) {
@@ -81,7 +81,7 @@ class RateLimiterService {
 
   /**
    * Get all rate limit definitions (for admin/status endpoints).
-   * @returns {object}
+
    */
   getAllLimits() {
     return { ...API_RATE_LIMITS };

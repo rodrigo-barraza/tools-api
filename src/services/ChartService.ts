@@ -22,7 +22,7 @@ const CHART_TTL_MS = MS_PER_HOUR;
 
 /**
  * Store chart config and return a short ID.
- * @param {object} chartConfig - { type, title, labels, datasets, options }
+
  * @returns {string} Short UUID key
  */
 export function storeChart(chartConfig) {
@@ -41,8 +41,8 @@ export function storeChart(chartConfig) {
 
 /**
  * Retrieve a stored chart config by ID.
- * @param {string} id
- * @returns {object|null}
+
+
  */
 export function getStoredChart(id) {
   const entry = CHART_STORE.get(id);
@@ -118,7 +118,7 @@ function assignColors(datasets, chartType) {
 
 /**
  * Render a chart config to a PNG buffer.
- * @param {object} chartConfig - { type, title, labels, datasets, options }
+
  * @returns {Promise<Buffer>} PNG buffer
  */
 export async function renderChartPng(chartConfig) {

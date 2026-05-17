@@ -119,9 +119,8 @@ async function qbtFetch(path, { method = "GET", body, params }: Record<string, a
 
 /**
  * Start a torrent search across installed plugins.
- * @param {string} pattern - Search query
- * @param {string} plugins - Plugin names (pipe-separated) or "all" or "enabled"
- * @param {string} category - Category filter: all|movies|tv|music|games|anime|software|pictures|books
+
+
  * @returns {{ id: number }} Search job ID
  */
 export async function startSearch(pattern, plugins = "enabled", category = "all") {
@@ -135,7 +134,7 @@ export async function startSearch(pattern, plugins = "enabled", category = "all"
 
 /**
  * Get the status of a search job.
- * @param {number} id - Search job ID
+
  */
 export async function getSearchStatus(id) {
   return qbtFetch("/api/v2/search/status", {
@@ -146,9 +145,8 @@ export async function getSearchStatus(id) {
 
 /**
  * Get search results.
- * @param {number} id - Search job ID
- * @param {number} limit - Max results
- * @param {number} offset - Result offset
+
+
  */
 export async function getSearchResults(id, limit = 50, offset = 0) {
   return qbtFetch("/api/v2/search/results", {
@@ -242,7 +240,7 @@ export async function getPlugins() {
 
 /**
  * Install search plugins from URLs.
- * @param {string} sources - Pipe-separated URLs to plugin .py files
+
  */
 export async function installPlugin(sources) {
   await qbtFetch("/api/v2/search/installPlugin", {
@@ -276,8 +274,8 @@ export async function updatePlugins() {
 
 /**
  * Add a torrent via magnet link or URL.
- * @param {string} urls - Magnet URIs or torrent URLs (one per line or pipe-separated)
- * @param {object} opts - savepath, category, tags, paused, etc.
+
+
  */
 export async function addTorrent(urls, opts: Record<string, any> = {}) {
   const body: Record<string, any> = { urls: urls.replace(/\|/g, "\n") };
@@ -298,7 +296,7 @@ export async function addTorrent(urls, opts: Record<string, any> = {}) {
 
 /**
  * List torrents with optional filter.
- * @param {object} opts - filter, category, tag, sort, limit
+
  */
 export async function listTorrents(opts: Record<string, any> = {}) {
   const params: Record<string, any> = {};
@@ -334,7 +332,7 @@ export async function listTorrents(opts: Record<string, any> = {}) {
 
 /**
  * Pause one or more torrents.
- * @param {string} hashes - Pipe-separated hashes, or "all"
+
  */
 export async function pauseTorrents(hashes = "all") {
   await qbtFetch("/api/v2/torrents/pause", {
@@ -357,8 +355,8 @@ export async function resumeTorrents(hashes = "all") {
 
 /**
  * Delete one or more torrents.
- * @param {string} hashes - Pipe-separated hashes
- * @param {boolean} deleteFiles - Also delete downloaded data
+
+
  */
 export async function deleteTorrents(hashes, deleteFiles = false) {
   await qbtFetch("/api/v2/torrents/delete", {

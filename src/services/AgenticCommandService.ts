@@ -134,12 +134,8 @@ async function tryAgentRouteCommand(method, params, cwd) {
  *   2. **Auto-background on timeout** — instead of killing the process,
  *      it's promoted to the background registry and returns what we have.
  *
- * @param {string} command - Shell command to execute
- * @param {object} [options]
- * @param {string} [options.cwd] - Working directory (must be within ALLOWED_ROOTS)
- * @param {number} [options.timeout=60000] - Timeout in ms (max 120000)
- * @param {boolean} [options.runInBackground=false] - Immediately background the command
- * @returns {Promise<object>}
+
+
  */
 export async function executeCommand(command, { cwd, timeout = DEFAULT_TIMEOUT_MS, signal, runInBackground = false }: Record<string, any> = {}) {
   // Agent routing — if CWD is served by a remote agent, proxy the command
@@ -302,12 +298,8 @@ export async function executeCommand(command, { cwd, timeout = DEFAULT_TIMEOUT_M
 /**
  * Execute a command with SSE streaming output.
  *
- * @param {string} command - Shell command to execute
- * @param {object} [options]
- * @param {string} [options.cwd] - Working directory
- * @param {number} [options.timeout=60000] - Timeout in ms
- * @param {function} [options.onChunk] - (event: "stdout"|"stderr", data: string) => void
- * @returns {Promise<object>}
+
+
  */
 export async function executeCommandStreaming(command, { cwd, timeout = DEFAULT_TIMEOUT_MS, onChunk, signal }: Record<string, any> = {}) {
   // Agent routing for streaming commands
@@ -440,7 +432,7 @@ export function getAllowedCommands() {
 
 /**
  * List all background processes.
- * @returns {Array<object>}
+
  */
 export function listBackgroundProcesses() {
   return BackgroundProcessRegistry.list();
@@ -448,8 +440,8 @@ export function listBackgroundProcesses() {
 
 /**
  * Get a specific background process by PID.
- * @param {number} pid
- * @returns {object|null}
+
+
  */
 export function getBackgroundProcess(pid) {
   return BackgroundProcessRegistry.getProcess(pid);
@@ -459,9 +451,8 @@ export function getBackgroundProcess(pid) {
  * Kill a process tree by PID.
  * Attempts SIGTERM first, then SIGKILL after a grace period.
  *
- * @param {number} pid - Process ID to kill
- * @param {object} [options]
- * @param {number} [options.gracePeriodMs=3000] - Time to wait before escalating to SIGKILL
+
+
  * @returns {Promise<object>} Result with killed status
  */
 export async function killProcessTree(pid, { gracePeriodMs = KILL_GRACE_PERIOD_MS }: Record<string, any> = {}) {

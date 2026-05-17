@@ -57,9 +57,8 @@ del _BLOCKED, _orig_import, _safe_import, builtins
 /**
  * Execute Python code in a sandboxed subprocess.
  *
- * @param {string} code - Python source code to execute
- * @param {object} [options]
- * @param {number} [options.timeout=30000] - Execution timeout in ms (max 60000)
+
+
  * @returns {Promise<{
  *   success: boolean,
  *   stdout: string,
@@ -196,10 +195,8 @@ export async function executePython(code, { timeout = DEFAULT_TIMEOUT_MS }: Reco
  * Same sandbox as executePython, but invokes `onChunk` for each
  * stdout/stderr data event as it arrives.
  *
- * @param {string} code - Python source code
- * @param {object} [options]
- * @param {number}   [options.timeout]  - Execution timeout in ms (max 60000)
- * @param {function} [options.onChunk]  - (event: "stdout"|"stderr", data: string) => void
+
+
  * @returns {Promise<{ success, stdout, stderr, exitCode, executionTimeMs, timedOut, error? }>}
  */
 export async function executePythonStreaming(code, { timeout = DEFAULT_TIMEOUT_MS, onChunk }: Record<string, any> = {}) {

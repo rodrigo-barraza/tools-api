@@ -17,8 +17,8 @@ for (const source of Object.values(TREND_SOURCES)) {
 
 /**
  * Updates the cache for a given source with fresh trend data.
- * @param {string} source - Source identifier from SOURCES
- * @param {Array} trends - Array of normalized trend objects
+
+
  */
 export function updateTrends(source, trends) {
   cache[source] = {
@@ -30,8 +30,8 @@ export function updateTrends(source, trends) {
 
 /**
  * Records an error for the given source.
- * @param {string} source - Source identifier
- * @param {Error} error - The error object
+
+
  */
 export function setTrendError(source, error) {
   if (cache[source]) {
@@ -69,7 +69,7 @@ export function getAll() {
 
 /**
  * Returns cached trends from a specific source.
- * @param {string} source - Source identifier
+
  * @returns {object} { count, source, lastFetch, trends }
  */
 export function getBySource(source) {
@@ -87,7 +87,7 @@ export function getBySource(source) {
 
 /**
  * Returns cached trends filtered by category.
- * @param {string} category - Category to filter by
+
  * @returns {object} { count, category, trends }
  */
 export function getByCategory(category) {
@@ -159,17 +159,17 @@ export function getCorrelatedTrends() {
 
 /**
  * Searches cached trends by keyword (case-insensitive).
- * @param {string} query - Search query
+
  * @returns {object} { count, query, trends }
  */
 export function searchTrends(query) {
-  const q = query.toLowerCase();
+  const normalizedQuery = query.toLowerCase();
   const allTrends = [];
 
   for (const data of Object.values(cache)) {
     allTrends.push(
       ...data.trends.filter(
-        (t) => t.name.toLowerCase().includes(q) || t.normalizedName.includes(q),
+        (t) => t.name.toLowerCase().includes(normalizedQuery) || t.normalizedName.includes(normalizedQuery),
       ),
     );
   }

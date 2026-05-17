@@ -21,7 +21,7 @@ import {
 // Session Management
 // ────────────────────────────────────────────────────────────
 
-/** @type {import('playwright').Browser | null} */
+
 let browser = null;
 
 /** @type {Map<string, { page: import('playwright').Page, lastUsed: number }>} */
@@ -842,10 +842,10 @@ const ACTION_HANDLERS = {
 /**
  * Execute a browser action.
  *
- * @param {object} params
+
  * @param {string} params.action - Action name
- * @param {string} [params.sessionId] - Reuse a session (auto-generated if omitted)
- * @param {object} [params.*] - Action-specific parameters
+
+
  * @returns {Promise<object>} Result with action-specific fields + sessionId
  */
 export async function agenticBrowserAction(params) {

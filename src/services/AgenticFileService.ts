@@ -17,10 +17,8 @@ import logger from "../logger.ts";
  * If so, sends an RPC request and returns the result.
  * Returns null if the path should be handled locally.
  *
- * @param {string} method - RPC method name
- * @param {object} params - RPC parameters
- * @param {string} targetPath - The path to check for agent routing
- * @returns {Promise<object|null>}
+
+
  */
 async function tryAgentRoute(method, params, targetPath) {
   const agent = routeForPath(targetPath);
@@ -100,7 +98,7 @@ const PREVIEW_IMAGE_EXTENSIONS = new Set([
 
 /**
  * Validate and resolve a path against the sandbox.
- * @param {string} inputPath - User-provided path
+
  * @returns {{ safe: boolean, resolved: string, error?: string }}
  */
 function validatePath(inputPath) {
@@ -150,11 +148,8 @@ function validatePath(inputPath) {
 /**
  * Read file contents with optional line range.
  *
- * @param {string} filePath - Absolute path to file
- * @param {object} [options]
- * @param {number} [options.startLine] - 1-indexed start line (inclusive)
- * @param {number} [options.endLine] - 1-indexed end line (inclusive)
- * @returns {Promise<object>}
+
+
  */
 export async function agenticReadFile(filePath, { startLine, endLine }: Record<string, any> = {}) {
   // Agent routing — proxy to remote agent if path is served by one
@@ -239,11 +234,8 @@ export async function agenticReadFile(filePath, { startLine, endLine }: Record<s
 /**
  * Write (create or overwrite) a file.
  *
- * @param {string} filePath - Absolute path to file
- * @param {string} content - File contents
- * @param {object} [options]
- * @param {boolean} [options.createDirs=true] - Create parent directories if missing
- * @returns {Promise<object>}
+
+
  */
 export async function agenticWriteFile(filePath, content, { createDirs = true }: Record<string, any> = {}) {
   // Agent routing
@@ -295,12 +287,8 @@ export async function agenticWriteFile(filePath, content, { createDirs = true }:
  * Perform a targeted string replacement in a file.
  * The `oldStr` must match exactly (including whitespace).
  *
- * @param {string} filePath - Absolute path to file
- * @param {string} oldStr - Exact string to find and replace
- * @param {string} newStr - Replacement string
- * @param {object} [options]
- * @param {boolean} [options.allowMultiple=false] - Replace all occurrences
- * @returns {Promise<object>}
+
+
  */
 export async function agenticStrReplace(filePath, oldStr, newStr, { allowMultiple = false }: Record<string, any> = {}) {
   // Agent routing
@@ -380,9 +368,8 @@ export async function agenticStrReplace(filePath, oldStr, newStr, { allowMultipl
 /**
  * Apply a unified diff patch to a file.
  *
- * @param {string} filePath - Absolute path to file
- * @param {string} patch - Unified diff string
- * @returns {Promise<object>}
+
+
  */
 export async function agenticPatchFile(filePath, patch) {
   // Agent routing
@@ -435,11 +422,8 @@ export async function agenticPatchFile(filePath, patch) {
 /**
  * List directory contents with metadata.
  *
- * @param {string} dirPath - Absolute path to directory
- * @param {object} [options]
- * @param {boolean} [options.recursive=false] - List recursively
- * @param {number} [options.maxDepth=3] - Max recursion depth
- * @returns {Promise<object>}
+
+
  */
 export async function agenticListDirectory(dirPath, { recursive = false, maxDepth = 3 }: Record<string, any> = {}) {
   // Agent routing
@@ -525,14 +509,8 @@ export async function agenticListDirectory(dirPath, { recursive = false, maxDept
 /**
  * Search for pattern matches within files (ripgrep-style).
  *
- * @param {string} pattern - Search pattern (literal or regex)
- * @param {string} searchPath - Directory or file to search
- * @param {object} [options]
- * @param {boolean} [options.isRegex=false] - Treat pattern as regex
- * @param {string[]} [options.includes] - Glob patterns to filter files (e.g. "*.js")
- * @param {boolean} [options.caseInsensitive=false]
- * @param {boolean} [options.matchPerLine=true] - Return line matches vs file-only
- * @returns {Promise<object>}
+
+
  */
 export async function agenticGrepSearch(pattern, searchPath, {
   isRegex = false,
@@ -672,9 +650,8 @@ export async function agenticGrepSearch(pattern, searchPath, {
 /**
  * Find files by glob pattern.
  *
- * @param {string} pattern - Glob pattern (e.g. "**\/*.test.js")
- * @param {string} searchPath - Root directory to search
- * @returns {Promise<object>}
+
+
  */
 export async function agenticGlobFiles(pattern, searchPath) {
   // Agent routing
@@ -762,7 +739,7 @@ export async function agenticGlobFiles(pattern, searchPath) {
  * Read multiple files in a single call.
  *
  * @param {Array<{ path: string, startLine?: number, endLine?: number }>} files
- * @returns {Promise<object>}
+
  */
 export async function agenticMultiFileRead(files) {
   if (!Array.isArray(files) || files.length === 0) {
@@ -800,8 +777,8 @@ export async function agenticMultiFileRead(files) {
 /**
  * Get metadata for one or more files without reading content.
  *
- * @param {string|string[]} paths - Single path or array of paths
- * @returns {Promise<object>}
+
+
  */
 export async function agenticFileInfo(paths) {
   const pathList = Array.isArray(paths) ? paths : [paths];
@@ -877,12 +854,8 @@ export async function agenticFileInfo(paths) {
 /**
  * Generate a unified diff between two files or between a file and provided content.
  *
- * @param {string} pathA - Path to the first file ("old" side)
- * @param {object} options
- * @param {string} [options.pathB] - Path to the second file ("new" side)
- * @param {string} [options.content] - Content to compare against (alternative to pathB)
- * @param {number} [options.contextLines=3] - Number of context lines in diff
- * @returns {Promise<object>}
+
+
  */
 export async function agenticFileDiff(pathA, { pathB, content, contextLines = 3 }: Record<string, any> = {}) {
   // Agent routing
@@ -956,11 +929,8 @@ export async function agenticFileDiff(pathA, { pathB, content, contextLines = 3 
 /**
  * Move or rename a file within allowed roots.
  *
- * @param {string} source - Absolute path of the source file
- * @param {string} destination - Absolute path of the destination
- * @param {object} [options]
- * @param {boolean} [options.createDirs=true] - Create destination parent dirs
- * @returns {Promise<object>}
+
+
  */
 export async function agenticMoveFile(source, destination, { createDirs = true }: Record<string, any> = {}) {
   // Agent routing
@@ -1007,8 +977,8 @@ export async function agenticMoveFile(source, destination, { createDirs = true }
 /**
  * Delete a file within allowed roots.
  *
- * @param {string} filePath - Absolute path to the file to delete
- * @returns {Promise<object>}
+
+
  */
 export async function agenticDeleteFile(filePath) {
   // Agent routing
@@ -1066,7 +1036,7 @@ export { validatePath, ALLOWED_ROOTS };
 
 /**
  * Return only the immutable roots from config.js (for UI "pinned" distinction).
- * @returns {string[]}
+
  */
 export function getStaticRoots() {
   return [...STATIC_ROOTS];
@@ -1076,7 +1046,7 @@ export function getStaticRoots() {
  * Merge extra roots (from MongoDB user config) into ALLOWED_ROOTS.
  * Static roots are always preserved. Duplicates are de-duped.
  * Mutates the array in-place so all importers see the update.
- * @param {string[]} extraRoots - Additional absolute paths to allow
+
  */
 export function refreshAllowedRoots(extraRoots = []) {
   const resolved = extraRoots

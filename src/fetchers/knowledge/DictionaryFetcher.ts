@@ -9,7 +9,7 @@ import { DICTIONARY_BASE_URL } from "../../constants.ts";
 // ─── Define Word ───────────────────────────────────────────────────
 /**
  * Look up a word and return structured definition data.
- * @param {string} word
+
  * @returns {Promise<object>} Normalized definition result
  */
 export async function fetchDefinition(word) {

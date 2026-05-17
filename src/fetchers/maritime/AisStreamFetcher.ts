@@ -24,10 +24,10 @@ import {
 
 // ─── State ─────────────────────────────────────────────────────────
 
-/** @type {WebSocket|null} */
+
 let socket = null;
 
-/** @type {boolean} */
+
 let intentionalClose = false;
 
 /** Ring buffer of recent AIS messages */
@@ -51,10 +51,8 @@ const stats = {
  * Start the AIS Stream WebSocket connection.
  * Automatically subscribes to a bounding box around the configured location.
  *
- * @param {object} [options]
- * @param {number[][]} [options.boundingBoxes] - Override default bbox
- * @param {string[]} [options.mmsiFilter] - Filter by MMSI (max 50)
- * @param {string[]} [options.messageTypes] - Filter message types
+
+
  */
 export function startAisStream(options: Record<string, any> = {}) {
   if (!CONFIG.AIS_STREAM_API_KEY) {
@@ -269,7 +267,7 @@ function processMessage(raw) {
 
 /**
  * Get the latest known positions for all tracked vessels.
- * @param {number} [limit=100] - Max vessels to return
+
  * @returns {object[]} Array of vessel data objects
  */
 export function getTrackedVessels(limit = 100) {
@@ -282,8 +280,8 @@ export function getTrackedVessels(limit = 100) {
 
 /**
  * Get a specific vessel by MMSI.
- * @param {string|number} mmsi
- * @returns {object|null}
+
+
  */
 export function getVesselByMmsi(mmsi) {
   return vesselMap.get(Number(mmsi)) || null;
@@ -291,9 +289,8 @@ export function getVesselByMmsi(mmsi) {
 
 /**
  * Get recent AIS messages from the ring buffer.
- * @param {number} [limit=50] - Max messages to return
- * @param {string} [messageType] - Optional filter by message type
- * @returns {object[]}
+
+
  */
 export function getRecentMessages(limit = 50, messageType = null) {
   let messages = [...vesselBuffer];
@@ -305,12 +302,8 @@ export function getRecentMessages(limit = 50, messageType = null) {
 
 /**
  * Get vessels within a bounding box from the current buffer.
- * @param {number} minLat
- * @param {number} maxLat
- * @param {number} minLng
- * @param {number} maxLng
- * @param {number} [limit=100]
- * @returns {object[]}
+
+
  */
 export function getVesselsInArea(minLat, maxLat, minLng, maxLng, limit = 100) {
   return Array.from(vesselMap.values())
@@ -327,9 +320,8 @@ export function getVesselsInArea(minLat, maxLat, minLng, maxLng, limit = 100) {
 
 /**
  * Search vessels by name (case-insensitive partial match).
- * @param {string} query
- * @param {number} [limit=20]
- * @returns {object[]}
+
+
  */
 export function searchVessels(query, limit = 20) {
   const q = query.toLowerCase();
@@ -341,7 +333,7 @@ export function searchVessels(query, limit = 20) {
 
 /**
  * Get connection stats and health info.
- * @returns {object}
+
  */
 export function getAisStreamHealth() {
   return {

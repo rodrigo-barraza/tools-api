@@ -15,8 +15,8 @@ const RATE_CACHE_TTL_MS = 3_600_000; // 1 hour — rates update daily on free ti
 
 /**
  * Get latest exchange rates for a base currency.
- * @param {string} [base="USD"]
- * @returns {Promise<object>}
+
+
  */
 async function fetchRates(base = "USD") {
   const upperBase = base.toUpperCase();
@@ -57,10 +57,8 @@ async function fetchRates(base = "USD") {
 
 /**
  * Convert an amount from one currency to another.
- * @param {number} amount
- * @param {string} from - Source currency code (e.g. "USD")
- * @param {string} to - Target currency code (e.g. "CAD")
- * @returns {Promise<object>}
+
+
  */
 export async function convertCurrency(amount, from, to) {
   const upperFrom = from.toUpperCase();
@@ -89,7 +87,7 @@ export async function convertCurrency(amount, from, to) {
 
 /**
  * Get all available currency codes.
- * @returns {Promise<string[]>}
+
  */
 export async function listCurrencies() {
   const rateData = await fetchRates("USD");

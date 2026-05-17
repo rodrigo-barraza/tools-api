@@ -10,10 +10,8 @@ const MAX_ITEMS = 50;
 
 /**
  * Fetch and parse an RSS or Atom feed.
- * @param {string} url - URL of the RSS/Atom feed
- * @param {object} [options]
- * @param {number} [options.limit=20] - Max items to return
- * @returns {Promise<object>}
+
+
  */
 export async function readRssFeed(url, options: Record<string, any> = {}) {
   if (!url || typeof url !== "string") {
