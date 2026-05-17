@@ -258,7 +258,7 @@ export class EphemeralStore {
  * @returns {string}
  */
 export function buildLocalUrl(routePath, params) {
-  const selfBaseUrl = CONFIG.TOOLS_SERVICE_URL || `http://localhost:${CONFIG.TOOLS_SERVICE_PORT}`;
+  const selfBaseUrl = CONFIG.TOOLS_SERVICE_URL;
   const base = `${selfBaseUrl}/${routePath}`;
   if (!params || Object.keys(params).length === 0) return base;
   const qs = new URLSearchParams(params).toString();

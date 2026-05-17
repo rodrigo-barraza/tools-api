@@ -4,14 +4,13 @@
 // immediately while the process continues running.
 
 import logger from "../logger.ts";
-
-// ────────────────────────────────────────────────────────────
-// Constants
-// ────────────────────────────────────────────────────────────
-
-const MAX_TTL_MS = 30 * 60 * 1000; // 30 minutes — auto-kill if no reads
-const CLEANUP_INTERVAL_MS = 60 * 1000; // Check every minute
-const MAX_BUFFERED_BYTES = 256 * 1024; // 256KB ring buffer per process
+import {
+  BACKGROUND_PROCESS_MAX_TTL_MS as MAX_TTL_MS,
+  BACKGROUND_PROCESS_CLEANUP_INTERVAL_MS as CLEANUP_INTERVAL_MS,
+  BACKGROUND_PROCESS_MAX_BUFFERED_BYTES as MAX_BUFFERED_BYTES,
+  BACKGROUND_PROCESS_EXIT_TTL_MS as EXIT_TTL_MS,
+  BACKGROUND_PROCESS_FORCE_KILL_DELAY_MS as FORCE_KILL_DELAY_MS,
+} from "../constants.ts";
 
 // ────────────────────────────────────────────────────────────
 // Registry Store
@@ -159,7 +158,7 @@ export function kill(pid, signal = "SIGTERM") {
         try {
           if (!entry.exited) entry.child.kill("SIGKILL");
         } catch { /* already dead */ }
-      }, 3000);
+      }, FORCE_KILL_DELAY_MS);
     }
     registry.delete(pid);
     return { success: true, pid, signal, message: `Sent ${signal} to PID ${pid}` };
@@ -219,7 +218,7 @@ function cleanupStale() {
   const now = Date.now();
   for (const [pid, entry] of registry) {
     // Remove exited processes after 5 minutes (their output has been drained)
-    if (entry.exited && now - entry.lastReadAt > 5 * 60 * 1000) {
+    if (entry.exited && now - entry.lastReadAt > EXIT_TTL_MS) {
       registry.delete(pid);
       logger.info(`[BackgroundProcessRegistry] Cleaned up exited PID ${pid}`);
       continue;

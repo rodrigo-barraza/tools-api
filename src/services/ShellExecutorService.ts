@@ -4,14 +4,9 @@ import { spawn } from "node:child_process";
 import {
   SHELL_DEFAULT_TIMEOUT_MS as DEFAULT_TIMEOUT_MS,
   SHELL_MAX_TIMEOUT_MS as MAX_TIMEOUT_MS,
+  SHELL_MAX_OUTPUT_BYTES as MAX_OUTPUT_BYTES,
+  SHELL_MAX_INPUT_BYTES as MAX_INPUT_BYTES,
 } from "../constants.ts";
-
-// ────────────────────────────────────────────────────────────
-// Constants
-// ────────────────────────────────────────────────────────────
-
-const MAX_OUTPUT_BYTES = 512 * 1024;
-const MAX_INPUT_BYTES = 1024 * 1024; // 1 MB max stdin
 
 // Only these binaries may be invoked as the first command.
 // Pipes (|) connect them. No shell expansion or globbing.

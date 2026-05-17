@@ -16,12 +16,10 @@ async function tryAgentRoute(method, params, targetPath) {
   }
 }
 
-// ────────────────────────────────────────────────────────────
-// Constants
-// ────────────────────────────────────────────────────────────
-
-const GIT_TIMEOUT_MS = 10_000;
-const MAX_OUTPUT_BYTES = 512 * 1024;
+import {
+  AGENT_GIT_TIMEOUT_MS as GIT_TIMEOUT_MS,
+  AGENT_GIT_MAX_OUTPUT_BYTES as MAX_OUTPUT_BYTES,
+} from "../constants.ts";
 
 // ────────────────────────────────────────────────────────────
 // Internal Git Runner

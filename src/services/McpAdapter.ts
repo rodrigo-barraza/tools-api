@@ -28,7 +28,7 @@ import CONFIG from "../config.ts";
 import logger from "../logger.ts";
 
 // ── Self base URL (vault-resolved, localhost fallback) ───────
-const SELF_BASE_URL = CONFIG.TOOLS_SERVICE_URL || `http://localhost:${CONFIG.TOOLS_SERVICE_PORT}`;
+const SELF_BASE_URL = CONFIG.TOOLS_SERVICE_URL;
 
 // ── Build tool executor URL from endpoint metadata ──────────
 function buildUrl(endpoint: Record<string, any>, args: Record<string, any> = {}) {

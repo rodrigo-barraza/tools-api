@@ -55,12 +55,15 @@ const STATIC_ROOTS = Object.freeze(
 // Mutated in-place so all importers automatically see updates.
 const ALLOWED_ROOTS = [...STATIC_ROOTS];
 
-const MAX_READ_BYTES = 1_048_576;      // 1 MB
-const MAX_WRITE_BYTES = 5_242_880;     // 5 MB
-const MAX_LINES_PER_READ = 800;        // Industry standard (Claude Code pattern)
-const MAX_GREP_RESULTS = 50;           // Cap search results
-const MAX_GLOB_RESULTS = 200;          // Cap glob results
-const MAX_DIR_ENTRIES = 500;           // Cap directory listing
+import {
+  AGENT_FILE_MAX_READ_BYTES as MAX_READ_BYTES,
+  AGENT_FILE_MAX_WRITE_BYTES as MAX_WRITE_BYTES,
+  AGENT_FILE_MAX_LINES_PER_READ as MAX_LINES_PER_READ,
+  AGENT_FILE_MAX_GREP_RESULTS as MAX_GREP_RESULTS,
+  AGENT_FILE_MAX_GLOB_RESULTS as MAX_GLOB_RESULTS,
+  AGENT_FILE_MAX_DIR_ENTRIES as MAX_DIR_ENTRIES,
+  AGENT_FILE_MAX_PREVIEW_BYTES as MAX_PREVIEW_BYTES,
+} from "../constants.ts";
 
 // Patterns that are always blocked — even within allowed roots
 const BLOCKED_PATTERNS = [
@@ -90,7 +93,6 @@ const BINARY_EXTENSIONS = new Set([
 const PREVIEW_IMAGE_EXTENSIONS = new Set([
   ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".ico", ".avif", ".tiff", ".tif",
 ]);
-const MAX_PREVIEW_BYTES = 2_097_152; // 2 MB
 
 // ────────────────────────────────────────────────────────────
 // Path Validation

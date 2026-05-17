@@ -4,15 +4,14 @@ import { spawn } from "node:child_process";
 import { writeFile, unlink, mkdtemp, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import {
+  PYTHON_DEFAULT_TIMEOUT_MS as DEFAULT_TIMEOUT_MS,
+  PYTHON_MAX_TIMEOUT_MS as MAX_TIMEOUT_MS,
+  PYTHON_MAX_OUTPUT_BYTES as MAX_OUTPUT_BYTES,
+  PYTHON_MEMORY_LIMIT_MB as MEMORY_LIMIT_MB,
+  PYTHON_HEALTH_CHECK_TIMEOUT_MS as HEALTH_CHECK_TIMEOUT_MS,
+} from "../constants.ts";
 
-// ────────────────────────────────────────────────────────────
-// Constants
-// ────────────────────────────────────────────────────────────
-
-const DEFAULT_TIMEOUT_MS = 30_000;
-const MAX_TIMEOUT_MS = 60_000;
-const MAX_OUTPUT_BYTES = 512 * 1024; // 512 KB max stdout/stderr
-const MEMORY_LIMIT_MB = 256;
 const PYTHON_BIN = "python3";
 
 // Pre-injected preamble that sets resource limits from within Python
@@ -299,7 +298,7 @@ export async function getInterpreterInfo() {
   try {
     const result = await executePython(
       "import sys; print(f'{sys.version}')",
-      { timeout: 5000 },
+      { timeout: HEALTH_CHECK_TIMEOUT_MS },
     );
     return {
       available: result.success,

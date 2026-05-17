@@ -3,6 +3,16 @@
 /** Standardized user-agent for all outbound HTTP fetchers. */
 export const USER_AGENT = "SunTools/1.0 (https://rod.dev)";
 
+// ─── PLAYWRIGHT / BROWSER AUTOMATION ────────────────────────
+export const BROWSER_SESSION_IDLE_MS = 5 * 60_000;
+export const BROWSER_LOAD_TIMEOUT_MS = 30_000;
+export const BROWSER_NETWORK_IDLE_TIMEOUT_MS = 10_000;
+export const BROWSER_ACTION_TIMEOUT_MS = 10_000;
+export const BROWSER_DOM_TIMEOUT_MS = 5_000;
+export const BROWSER_SCRIPT_TIMEOUT_MS = 60_000;
+export const BROWSER_MAX_SCRIPT_OUTPUT = 256 * 1024;
+export const BROWSER_MAX_CONTENT_LENGTH = 100_000;
+
 // ─── EVENT DOMAIN ───────────────────────────────────────────
 
 // Fetch intervals
@@ -2535,14 +2545,30 @@ export const MAX_COMMAND_LENGTH = 10_000;
 
 /** Default shell command execution timeout. */
 export const SHELL_DEFAULT_TIMEOUT_MS = 10_000;
-
-/** Maximum shell command execution timeout. */
 export const SHELL_MAX_TIMEOUT_MS = 30_000;
+export const SHELL_MAX_OUTPUT_BYTES = 512 * 1024;
+export const SHELL_MAX_INPUT_BYTES = 1024 * 1024;
+
+export const AGENTIC_COMMAND_DEFAULT_TIMEOUT_MS = 60_000;
+export const AGENTIC_COMMAND_MAX_TIMEOUT_MS = 120_000;
+export const AGENTIC_COMMAND_MAX_OUTPUT_BYTES = 512 * 1024;
+export const AGENTIC_COMMAND_BACKGROUND_WARMUP_MS = 2_500;
+export const AGENTIC_COMMAND_KILL_GRACE_PERIOD_MS = 3_000;
+
+export const BACKGROUND_PROCESS_MAX_TTL_MS = 30 * 60 * 1000;
+export const BACKGROUND_PROCESS_CLEANUP_INTERVAL_MS = 60 * 1000;
+export const BACKGROUND_PROCESS_MAX_BUFFERED_BYTES = 256 * 1024;
+export const BACKGROUND_PROCESS_EXIT_TTL_MS = 5 * 60 * 1000;
+export const BACKGROUND_PROCESS_FORCE_KILL_DELAY_MS = 3_000;
+
+export const PYTHON_DEFAULT_TIMEOUT_MS = 30_000;
+export const PYTHON_MAX_TIMEOUT_MS = 60_000;
+export const PYTHON_MAX_OUTPUT_BYTES = 512 * 1024;
+export const PYTHON_MEMORY_LIMIT_MB = 256;
+export const PYTHON_HEALTH_CHECK_TIMEOUT_MS = 5_000;
 
 /** Default JavaScript sandbox execution timeout. */
 export const JS_DEFAULT_TIMEOUT_MS = 5_000;
-
-/** Maximum JavaScript sandbox execution timeout. */
 export const JS_MAX_TIMEOUT_MS = 30_000;
 
 /** Default HTTP fetch timeout for external API calls. */
@@ -2553,6 +2579,33 @@ export const TORRENT_SEARCH_TIMEOUT_MS = 30_000;
 
 /** Maximum torrent search timeout. */
 export const TORRENT_MAX_TIMEOUT_MS = 60_000;
+
+export const PRISM_CHAT_TIMEOUT_MS = 120_000;
+export const PRISM_HEALTH_TIMEOUT_MS = 3_000;
+export const PRISM_TTS_TIMEOUT_MS = 60_000;
+export const PRISM_STT_TIMEOUT_MS = 120_000;
+
+export const AGENT_RPC_TIMEOUT_FILE_MS = 10_000;
+export const AGENT_RPC_TIMEOUT_GIT_MS = 15_000;
+export const AGENT_RPC_TIMEOUT_COMMAND_MS = 130_000;
+export const AGENT_RPC_TIMEOUT_DEFAULT_MS = 15_000;
+
+export const AGENT_HEALTH_CHECK_INTERVAL_MS = 45_000;
+export const AGENT_STALE_TIMEOUT_MS = 90_000;
+
+export const SCHEDULER_MAX_PER_PROJECT = 50;
+export const SCHEDULER_POLLER_INTERVAL_MS = 60_000;
+
+export const AGENT_GIT_TIMEOUT_MS = 10_000;
+export const AGENT_GIT_MAX_OUTPUT_BYTES = 512 * 1024;
+
+export const AGENT_FILE_MAX_READ_BYTES = 1_048_576;
+export const AGENT_FILE_MAX_WRITE_BYTES = 5_242_880;
+export const AGENT_FILE_MAX_LINES_PER_READ = 800;
+export const AGENT_FILE_MAX_GREP_RESULTS = 50;
+export const AGENT_FILE_MAX_GLOB_RESULTS = 200;
+export const AGENT_FILE_MAX_DIR_ENTRIES = 500;
+export const AGENT_FILE_MAX_PREVIEW_BYTES = 2_097_152;
 
 /** Default radius for Google Places location bias (meters). */
 export const PLACES_DEFAULT_RADIUS_M = 10_000;

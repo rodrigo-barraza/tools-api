@@ -1,11 +1,9 @@
 import { performance } from "node:perf_hooks";
-import { formatFileSize } from "@rodrigo-barraza/utilities-library";
+import { formatBytes } from "@rodrigo-barraza/utilities-library";
 import logger from "../logger.ts";
 import { getDB } from "../db.ts";
 
 const COLLECTION = "requests";
-
-const formatBytes = (bytes) => formatFileSize(bytes, { compact: true });
 
 /**
  * Express middleware that logs every completed request to:

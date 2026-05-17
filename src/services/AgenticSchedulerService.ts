@@ -12,9 +12,12 @@ import logger from "../logger.ts";
 const COLLECTION = "agent_schedules";
 const COUNTER_COLLECTION = "agent_schedule_counters";
 
+import {
+  SCHEDULER_MAX_PER_PROJECT as MAX_SCHEDULES_PER_PROJECT,
+  SCHEDULER_POLLER_INTERVAL_MS as POLLER_INTERVAL_MS,
+} from "../constants.ts";
+
 const VALID_TYPES = ["cron", "once", "trigger"];
-const MAX_SCHEDULES_PER_PROJECT = 50;
-const POLLER_INTERVAL_MS = 60_000; // Check every 60 seconds
 
 let pollerInterval = null;
 

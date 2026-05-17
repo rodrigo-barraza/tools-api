@@ -6,6 +6,16 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { spawn } from "node:child_process";
 import logger from "../logger.ts";
+import {
+  BROWSER_SESSION_IDLE_MS,
+  BROWSER_LOAD_TIMEOUT_MS,
+  BROWSER_NETWORK_IDLE_TIMEOUT_MS,
+  BROWSER_ACTION_TIMEOUT_MS,
+  BROWSER_DOM_TIMEOUT_MS,
+  BROWSER_SCRIPT_TIMEOUT_MS,
+  BROWSER_MAX_SCRIPT_OUTPUT,
+  BROWSER_MAX_CONTENT_LENGTH
+} from "../constants.ts";
 
 // ────────────────────────────────────────────────────────────
 // Session Management
@@ -18,7 +28,6 @@ let browser = null;
 const sessions = new Map();
 
 const MAX_SESSIONS = 3;
-const SESSION_IDLE_MS = 5 * 60_000; // 5 minutes
 const VIEWPORT = { width: 1280, height: 720 };
 
 let cleanupInterval = null;
@@ -131,7 +140,7 @@ async function closeSession(sessionId) {
 function cleanupIdleSessions() {
   const now = Date.now();
   for (const [id, session] of sessions) {
-    if (now - session.lastUsed > SESSION_IDLE_MS) {
+    if (now - session.lastUsed > BROWSER_SESSION_IDLE_MS) {
       logger.info(`[AgenticBrowser] Evicting idle session "${id}"`);
       closeSession(id);
     }
@@ -153,11 +162,11 @@ async function actionNavigate(page, { url }) {
   try {
     const response = await page.goto(url, {
       waitUntil: "domcontentloaded",
-      timeout: 30_000,
+      timeout: BROWSER_LOAD_TIMEOUT_MS,
     });
 
     // Wait a bit more for dynamic content
-    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+    await page.waitForLoadState("networkidle", { timeout: BROWSER_NETWORK_IDLE_TIMEOUT_MS }).catch(() => {});
 
     return {
       action: "navigate",
@@ -200,10 +209,10 @@ async function actionClick(page, { selector }) {
   if (!selector) return { error: "Missing required parameter: selector" };
 
   try {
-    await page.click(selector, { timeout: 10_000 });
+    await page.click(selector, { timeout: BROWSER_ACTION_TIMEOUT_MS });
 
     // Wait for potential navigation or re-render
-    await page.waitForLoadState("domcontentloaded", { timeout: 5_000 }).catch(() => {});
+    await page.waitForLoadState("domcontentloaded", { timeout: BROWSER_DOM_TIMEOUT_MS }).catch(() => {});
 
     return {
       action: "click",
@@ -222,12 +231,12 @@ async function actionType(page, { selector, text, pressEnter }) {
 
   try {
     // Clear existing content and type new text
-    await page.fill(selector, "", { timeout: 10_000 });
-    await page.fill(selector, text, { timeout: 10_000 });
+    await page.fill(selector, "", { timeout: BROWSER_ACTION_TIMEOUT_MS });
+    await page.fill(selector, text, { timeout: BROWSER_ACTION_TIMEOUT_MS });
 
     if (pressEnter) {
       await page.press(selector, "Enter");
-      await page.waitForLoadState("domcontentloaded", { timeout: 5_000 }).catch(() => {});
+      await page.waitForLoadState("domcontentloaded", { timeout: BROWSER_DOM_TIMEOUT_MS }).catch(() => {});
     }
 
     return {
@@ -248,7 +257,7 @@ async function actionScroll(page, { direction, selector, amount }) {
     if (selector) {
       await page.evaluate(
         ({ sel }) => {
-          // eslint-disable-next-line no-undef
+           
           const el = document.querySelector(sel);
           if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
         },
@@ -257,7 +266,7 @@ async function actionScroll(page, { direction, selector, amount }) {
     } else {
       const pixels = amount || 500;
       const delta = direction === "up" ? -pixels : pixels;
-      // eslint-disable-next-line no-undef
+       
       await page.evaluate((d) => window.scrollBy(0, d), delta);
     }
 
@@ -302,7 +311,7 @@ async function actionGetContent(page, { selector, format }) {
       // Default: extract text content
       content = selector
         ? await page.$eval(selector, (el) => el.innerText).catch(() => null)
-        // eslint-disable-next-line no-undef
+         
         : await page.evaluate(() => document.body.innerText);
     }
 
@@ -310,8 +319,8 @@ async function actionGetContent(page, { selector, format }) {
       return { error: `Element not found: ${selector}` };
     }
 
-    // Truncate to 100k chars (same as fetch_url)
-    const maxLen = 100_000;
+    // Truncate to max content length (same as fetch_url)
+    const maxLen = BROWSER_MAX_CONTENT_LENGTH;
     const truncated = content.length > maxLen;
     if (truncated) content = content.slice(0, maxLen);
 
@@ -333,7 +342,7 @@ async function actionWait(page, { selector, timeout, state }) {
   try {
     if (selector) {
       await page.waitForSelector(selector, {
-        timeout: timeout || 10_000,
+        timeout: timeout || BROWSER_ACTION_TIMEOUT_MS,
         state: state || "visible",
       });
       return {
@@ -363,7 +372,7 @@ async function actionGetElements(page, { selector, limit }) {
 
     const elements = await page.evaluate(
       ({ scope, max }) => {
-        // eslint-disable-next-line no-undef
+         
         const root = document.querySelector(scope) || document.body;
 
         // All interactive elements worth reporting to an LLM
@@ -394,7 +403,7 @@ async function actionGetElements(page, { selector, limit }) {
 
           // Skip invisible elements
           const rect = el.getBoundingClientRect();
-          // eslint-disable-next-line no-undef
+           
           const style = window.getComputedStyle(el);
           if (
             style.display === "none" ||
@@ -571,8 +580,8 @@ async function actionClickRef(page, { ref }) {
 
   try {
     const locator = resolveRef(page, ref);
-    await locator.click({ timeout: 10_000 });
-    await page.waitForLoadState("domcontentloaded", { timeout: 5_000 }).catch(() => {});
+    await locator.click({ timeout: BROWSER_ACTION_TIMEOUT_MS });
+    await page.waitForLoadState("domcontentloaded", { timeout: BROWSER_DOM_TIMEOUT_MS }).catch(() => {});
 
     return {
       action: "click_ref",
@@ -591,12 +600,12 @@ async function actionTypeRef(page, { ref, text, pressEnter }) {
 
   try {
     const locator = resolveRef(page, ref);
-    await locator.fill("", { timeout: 10_000 });
-    await locator.fill(text, { timeout: 10_000 });
+    await locator.fill("", { timeout: BROWSER_ACTION_TIMEOUT_MS });
+    await locator.fill(text, { timeout: BROWSER_ACTION_TIMEOUT_MS });
 
     if (pressEnter) {
       await locator.press("Enter");
-      await page.waitForLoadState("domcontentloaded", { timeout: 5_000 }).catch(() => {});
+      await page.waitForLoadState("domcontentloaded", { timeout: BROWSER_DOM_TIMEOUT_MS }).catch(() => {});
     }
 
     return {
@@ -617,7 +626,7 @@ async function actionHoverRef(page, { ref }) {
 
   try {
     const locator = resolveRef(page, ref);
-    await locator.hover({ timeout: 10_000 });
+    await locator.hover({ timeout: BROWSER_ACTION_TIMEOUT_MS });
 
     return {
       action: "hover_ref",
@@ -635,7 +644,7 @@ async function actionSelectRef(page, { ref, value }) {
 
   try {
     const locator = resolveRef(page, ref);
-    await locator.selectOption(value, { timeout: 10_000 });
+    await locator.selectOption(value, { timeout: BROWSER_ACTION_TIMEOUT_MS });
 
     return {
       action: "select_ref",
@@ -652,9 +661,6 @@ async function actionSelectRef(page, { ref, value }) {
 // ────────────────────────────────────────────────────────────
 // Playwright Script Execution
 // ────────────────────────────────────────────────────────────
-
-const SCRIPT_TIMEOUT_MS = 60_000;
-const MAX_SCRIPT_OUTPUT = 256 * 1024;
 
 /**
  * Execute an arbitrary Playwright script in a subprocess.
@@ -711,7 +717,7 @@ const { chromium } = require('playwright');
     await writeFile(scriptPath, wrappedScript, "utf-8");
 
     // Execute in subprocess
-    const clampedTimeout = Math.min(Math.max(timeout || SCRIPT_TIMEOUT_MS, 5_000), 120_000);
+    const clampedTimeout = Math.min(Math.max(timeout || BROWSER_SCRIPT_TIMEOUT_MS, 5_000), 120_000);
     const result = await executeScript(scriptPath, wsEndpoint, clampedTimeout);
 
     return {
@@ -758,14 +764,14 @@ function executeScript(scriptPath, wsEndpoint, timeoutMs) {
     child.stdin.end();
 
     child.stdout.on("data", (chunk) => {
-      if (stdoutLen < MAX_SCRIPT_OUTPUT) {
+      if (stdoutLen < BROWSER_MAX_SCRIPT_OUTPUT) {
         stdoutChunks.push(chunk);
         stdoutLen += chunk.length;
       }
     });
 
     child.stderr.on("data", (chunk) => {
-      if (stderrLen < MAX_SCRIPT_OUTPUT) {
+      if (stderrLen < BROWSER_MAX_SCRIPT_OUTPUT) {
         stderrChunks.push(chunk);
         stderrLen += chunk.length;
       }
@@ -786,8 +792,8 @@ function executeScript(scriptPath, wsEndpoint, timeoutMs) {
 
       resolve({
         success: exitCode === 0 && !timedOut,
-        stdout: stdoutLen > MAX_SCRIPT_OUTPUT ? stdout + "\n... [output truncated]" : stdout,
-        stderr: stderrLen > MAX_SCRIPT_OUTPUT ? stderr + "\n... [output truncated]" : stderr,
+        stdout: stdoutLen > BROWSER_MAX_SCRIPT_OUTPUT ? stdout + "\n... [output truncated]" : stdout,
+        stderr: stderrLen > BROWSER_MAX_SCRIPT_OUTPUT ? stderr + "\n... [output truncated]" : stderr,
         exitCode: timedOut ? null : exitCode,
         timedOut,
         ...(timedOut && { error: `Script timed out after ${timeoutMs}ms` }),

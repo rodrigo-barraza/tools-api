@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require('fs');
 
 const csv = fs.readFileSync('/home/rodrigo/development/sun/digest/database/data/digest_nutrient.csv', 'utf8');

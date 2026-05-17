@@ -2,6 +2,12 @@
 
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
+import {
+  PRISM_CHAT_TIMEOUT_MS,
+  PRISM_HEALTH_TIMEOUT_MS,
+  PRISM_TTS_TIMEOUT_MS,
+  PRISM_STT_TIMEOUT_MS,
+} from "../constants.ts";
 
 const PRISM_SERVICE_URL = CONFIG.PRISM_SERVICE_URL;
 
@@ -18,7 +24,7 @@ const PRISM_SERVICE_URL = CONFIG.PRISM_SERVICE_URL;
 export async function chat(params) {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 120_000);
+    const timeout = setTimeout(() => controller.abort(), PRISM_CHAT_TIMEOUT_MS);
 
     const res = await fetch(`${PRISM_SERVICE_URL}/chat?stream=false`, {
       method: "POST",
@@ -52,7 +58,7 @@ export async function chat(params) {
 export async function health() {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
+    const timeout = setTimeout(() => controller.abort(), PRISM_HEALTH_TIMEOUT_MS);
     const res = await fetch(`${PRISM_SERVICE_URL}/health`, {
       signal: controller.signal,
     });
@@ -79,7 +85,7 @@ export async function health() {
 export async function textToSpeech(params) {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 60_000);
+    const timeout = setTimeout(() => controller.abort(), PRISM_TTS_TIMEOUT_MS);
 
     const res = await fetch(`${PRISM_SERVICE_URL}/text-to-audio`, {
       method: "POST",
@@ -128,7 +134,7 @@ export async function textToSpeech(params) {
 export async function speechToText(params) {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 120_000);
+    const timeout = setTimeout(() => controller.abort(), PRISM_STT_TIMEOUT_MS);
 
     const res = await fetch(`${PRISM_SERVICE_URL}/audio-to-text`, {
       method: "POST",

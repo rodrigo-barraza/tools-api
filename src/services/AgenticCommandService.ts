@@ -5,27 +5,13 @@ import { validatePath } from "./AgenticFileService.ts";
 import { routeForPath, sendRpc, sendRpcStreaming } from "./AgentConnectionManager.ts";
 import * as BackgroundProcessRegistry from "./BackgroundProcessRegistry.ts";
 import logger from "../logger.ts";
-
-// Agent routing helper
-async function tryAgentRouteCommand(method, params, cwd) {
-  if (!cwd) return null;
-  const agent = routeForPath(cwd);
-  if (!agent) return null;
-  try {
-    return await sendRpc(agent.id, method, params);
-  } catch (error) {
-    return { success: false, stdout: "", stderr: "", exitCode: null, executionTimeMs: 0, error: `Agent RPC failed: ${error.message}` };
-  }
-}
-
-// ────────────────────────────────────────────────────────────
-// Constants
-// ────────────────────────────────────────────────────────────
-
-const DEFAULT_TIMEOUT_MS = 60_000;
-const MAX_TIMEOUT_MS = 120_000;
-const MAX_OUTPUT_BYTES = 512 * 1024;
-const BACKGROUND_WARMUP_MS = 2_500; // Collect initial output before returning in background mode
+import {
+  AGENTIC_COMMAND_DEFAULT_TIMEOUT_MS as DEFAULT_TIMEOUT_MS,
+  AGENTIC_COMMAND_MAX_TIMEOUT_MS as MAX_TIMEOUT_MS,
+  AGENTIC_COMMAND_MAX_OUTPUT_BYTES as MAX_OUTPUT_BYTES,
+  AGENTIC_COMMAND_BACKGROUND_WARMUP_MS as BACKGROUND_WARMUP_MS,
+  AGENTIC_COMMAND_KILL_GRACE_PERIOD_MS as KILL_GRACE_PERIOD_MS,
+} from "../constants.ts";
 
 // Only these command prefixes are allowed as the first token.
 const ALLOWED_COMMANDS = new Set([
@@ -126,6 +112,18 @@ function validateCommand(command) {
 // ────────────────────────────────────────────────────────────
 // Execution Engine
 // ────────────────────────────────────────────────────────────
+
+// Agent routing helper
+async function tryAgentRouteCommand(method, params, cwd) {
+  if (!cwd) return null;
+  const agent = routeForPath(cwd);
+  if (!agent) return null;
+  try {
+    return await sendRpc(agent.id, method, params);
+  } catch (error) {
+    return { success: false, stdout: "", stderr: "", exitCode: null, executionTimeMs: 0, error: `Agent RPC failed: ${error.message}` };
+  }
+}
 
 /**
  * Execute a project-scoped command.
@@ -466,7 +464,7 @@ export function getBackgroundProcess(pid) {
  * @param {number} [options.gracePeriodMs=3000] - Time to wait before escalating to SIGKILL
  * @returns {Promise<object>} Result with killed status
  */
-export async function killProcessTree(pid, { gracePeriodMs = 3000 }: Record<string, any> = {}) {
+export async function killProcessTree(pid, { gracePeriodMs = KILL_GRACE_PERIOD_MS }: Record<string, any> = {}) {
   if (!pid || typeof pid !== "number" || pid <= 0) {
     return { success: false, error: "Valid PID is required (positive integer)" };
   }

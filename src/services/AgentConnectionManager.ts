@@ -6,18 +6,14 @@ import logger from "../logger.ts";
 // NOTE: AgenticFileService imports from this module → circular dependency.
 // We use dynamic import() in rebuildAllowedRootsFromAgents() to break the cycle.
 import CONFIG from "../config.ts";
-
-// ────────────────────────────────────────────────────────────
-// Constants
-// ────────────────────────────────────────────────────────────
-
-const RPC_TIMEOUT_FILE_MS = 10_000;
-const RPC_TIMEOUT_GIT_MS = 15_000;
-const RPC_TIMEOUT_COMMAND_MS = 130_000; // 120s max command + 10s buffer
-const RPC_TIMEOUT_DEFAULT_MS = 15_000;
-
-const HEALTH_CHECK_INTERVAL_MS = 45_000;
-const STALE_AGENT_TIMEOUT_MS = 90_000;
+import {
+  AGENT_RPC_TIMEOUT_FILE_MS as RPC_TIMEOUT_FILE_MS,
+  AGENT_RPC_TIMEOUT_GIT_MS as RPC_TIMEOUT_GIT_MS,
+  AGENT_RPC_TIMEOUT_COMMAND_MS as RPC_TIMEOUT_COMMAND_MS,
+  AGENT_RPC_TIMEOUT_DEFAULT_MS as RPC_TIMEOUT_DEFAULT_MS,
+  AGENT_HEALTH_CHECK_INTERVAL_MS as HEALTH_CHECK_INTERVAL_MS,
+  AGENT_STALE_TIMEOUT_MS as STALE_AGENT_TIMEOUT_MS,
+} from "../constants.ts";
 
 // RPC method → timeout category
 const TIMEOUT_MAP = {

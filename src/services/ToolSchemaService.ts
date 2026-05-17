@@ -8174,7 +8174,6 @@ const TOOL_DOMAINS = {
 // ────────────────────────────────────────────────────────────
 
 import CONFIG from "../config.ts";
-import logger from "../logger.ts";
 
 const TOOL_REQUIRED_KEYS = {
   // Movies & TV (all require TMDb API key)
