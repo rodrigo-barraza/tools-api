@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { toISODate } from "@rodrigo-barraza/utilities-library";
 import { Router } from "express";

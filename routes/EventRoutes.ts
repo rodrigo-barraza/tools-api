@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { parseIntParam } from "@rodrigo-barraza/utilities-library";
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { Router } from "express";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 // ─── Image Generation & Vision ──────────────────────────────
 

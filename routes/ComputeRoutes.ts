@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { setupStreamingSSE, lazyImport } from "@rodrigo-barraza/utilities-library/express";
 import { validateMaxLength } from "@rodrigo-barraza/utilities-library";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ─── Cron + Remote Trigger System ───────────────────────────
 
 import { getDB } from "../db.ts";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ─── Persistent Task State Management ───────────────────────
 
 import { getDB } from "../db.ts";

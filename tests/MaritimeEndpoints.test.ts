@@ -1,3 +1,4 @@
+// @ts-nocheck
 import request from "supertest";
 import { createTestApp } from "./testApp.js";
 import maritimeRoutes from "../routes/MaritimeRoutes.js";

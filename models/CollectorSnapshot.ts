@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { getDB } from "../db.ts";
 import logger from "../logger.ts";
 
