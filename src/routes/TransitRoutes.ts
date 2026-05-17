@@ -11,15 +11,15 @@ import {
 const router = Router();
 // ─── Next Bus ──────────────────────────────────────────────────────
 router.get("/nextbus/:stopNo", asyncHandler(async (req, res) => {
-  const stopNo = parseInt(req.params.stopNo, 10);
+  const stopNo = parseInt(req.params.stopNo as string, 10);
   if (isNaN(stopNo)) {
     return res.status(400).json({ error: "Invalid stop number" });
   }
-  res.json(await getNextBus(stopNo, req.query.route));
+  res.json(await getNextBus(stopNo, req.query.route as string));
 }));
 // ─── Stop Info ─────────────────────────────────────────────────────
 router.get("/stops/:stopNo", asyncHandler(async (req, res) => {
-  const stopNo = parseInt(req.params.stopNo, 10);
+  const stopNo = parseInt(req.params.stopNo as string, 10);
   if (isNaN(stopNo)) {
     return res.status(400).json({ error: "Invalid stop number" });
   }
@@ -28,16 +28,16 @@ router.get("/stops/:stopNo", asyncHandler(async (req, res) => {
 // ─── Find Nearby Stops ────────────────────────────────────────────
 router.get("/stops/nearby", asyncHandler(
   (req) => {
-    const lat = parseFloat(req.query.lat || CONFIG.LATITUDE);
-    const lng = parseFloat(req.query.lng || CONFIG.LONGITUDE);
-    const radius = parseIntParam(req.query.radius, 500);
+    const lat = parseFloat(req.query.lat as string || String(CONFIG.LATITUDE));
+    const lng = parseFloat(req.query.lng as string || String(CONFIG.LONGITUDE));
+    const radius = parseIntParam(req.query.radius as string, 500);
     return findStopsNearby(lat, lng, radius);
   },
   "Nearby stops",
 ));
 // ─── Route Info ────────────────────────────────────────────────────
 router.get("/routes/:routeNo", asyncHandler(
-  (req) => getRouteInfo(req.params.routeNo),
+  (req) => getRouteInfo(req.params.routeNo as string),
   "Route info",
 ));
 // ─── Health ────────────────────────────────────────────────────────

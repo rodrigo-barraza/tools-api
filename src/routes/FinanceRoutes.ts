@@ -30,7 +30,7 @@ import {
 const router = Router();
 // ─── Stock Quote (on-demand with 1-min TTL cache) ──────────────────
 router.get("/quote/:symbol", asyncHandler(async (req, res) => {
-  const symbol = req.params.symbol.toUpperCase();
+  const symbol = (req.params.symbol as string).toUpperCase();
   const cached = getCachedQuote(symbol);
   if (cached) {
     res.json({ symbol, ...cached, cached: true });
@@ -42,7 +42,7 @@ router.get("/quote/:symbol", asyncHandler(async (req, res) => {
 }, "Stock quote"));
 // ─── Company Profile (on-demand with 24h TTL cache) ────────────────
 router.get("/profile/:symbol", asyncHandler(async (req, res) => {
-  const symbol = req.params.symbol.toUpperCase();
+  const symbol = (req.params.symbol as string).toUpperCase();
   const cached = getCachedProfile(symbol);
   if (cached) {
     res.json(cached);
@@ -54,7 +54,7 @@ router.get("/profile/:symbol", asyncHandler(async (req, res) => {
 }, "Company profile"));
 // ─── News (general = cached poll, company-specific = on-demand) ────
 router.get("/news", asyncHandler(async (req, res) => {
-  const symbol = req.query.symbol;
+  const symbol = req.query.symbol as string;
   if (symbol) {
     try {
       const now = new Date();
@@ -82,7 +82,7 @@ router.get("/earnings", (_req, res) => {
 });
 // ─── Analyst Recommendations (on-demand with 1h TTL cache) ─────────
 router.get("/recommendation/:symbol", asyncHandler(async (req, res) => {
-  const symbol = req.params.symbol.toUpperCase();
+  const symbol = (req.params.symbol as string).toUpperCase();
   const cached = getCachedRecommendation(symbol);
   if (cached) {
     res.json(cached);
@@ -94,7 +94,7 @@ router.get("/recommendation/:symbol", asyncHandler(async (req, res) => {
 }, "Analyst recommendations"));
 // ─── Basic Financials (on-demand with 1h TTL cache) ────────────────
 router.get("/financials/:symbol", asyncHandler(async (req, res) => {
-  const symbol = req.params.symbol.toUpperCase();
+  const symbol = (req.params.symbol as string).toUpperCase();
   const cached = getCachedFinancials(symbol);
   if (cached) {
     res.json(cached);
@@ -122,7 +122,7 @@ router.get("/macro/search", asyncHandler(async (req, res) => {
 router.get("/macro/series/:seriesId/observations", asyncHandler(
   (req) => {
     const { limit, sortOrder, observationStart, observationEnd } = req.query as any;
-    return getSeriesObservations(req.params.seriesId, {
+    return getSeriesObservations(req.params.seriesId as string, {
       limit: parseInt(limit, 10) || 50,
       sortOrder,
       observationStart,
@@ -132,7 +132,7 @@ router.get("/macro/series/:seriesId/observations", asyncHandler(
   "Series observations fetch",
 ));
 router.get("/macro/series/:seriesId", asyncHandler(
-  (req) => getSeriesInfo(req.params.seriesId),
+  (req) => getSeriesInfo(req.params.seriesId as string),
   "Series info fetch",
 ));
 // ─── Health ────────────────────────────────────────────────────────

@@ -96,7 +96,7 @@ router.get("/requests", asyncHandler(
  * Query params: since (ISO date for time window)
  */
 router.get("/requests/stats", asyncHandler(
-  (req) => getRequestStats(req.query.since),
+  (req) => getRequestStats(req.query.since as string),
   "Request stats",
   500,
 ));
@@ -120,7 +120,7 @@ router.get("/tool-calls", asyncHandler(
  * Query params: since (ISO date for time window)
  */
 router.get("/tool-calls/stats", asyncHandler(
-  (req) => getToolCallStats(req.query.since),
+  (req) => getToolCallStats(req.query.since as string),
   "Tool call stats",
   500,
 ));

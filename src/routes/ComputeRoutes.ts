@@ -24,12 +24,12 @@ import { EphemeralStore, buildLocalUrl, buildEmbedHtml } from "../utilities.js";
 import { processImage } from "../services/ImageService.js";
 // ─── Lazy-loaded dependencies ──────────────────────────────────────
 // These are loaded on first use to avoid blocking startup.
-const getConvertUnits = lazyImport("convert-units");
-const getDateFns = lazyImport("date-fns", (m) => m);
-const getDateFnsTz = lazyImport("date-fns-tz", (m) => m);
-const getJSONPath = lazyImport("jsonpath-plus", (m) => m.JSONPath);
-const getQRCode = lazyImport("qrcode");
-const getDiff = lazyImport("diff", (m) => m);
+const getConvertUnits = lazyImport<any>("convert-units");
+const getDateFns = lazyImport<any>("date-fns", (m) => m);
+const getDateFnsTz = lazyImport<any>("date-fns-tz", (m) => m);
+const getJSONPath = lazyImport<any>("jsonpath-plus", (m) => m.JSONPath);
+const getQRCode = lazyImport<any>("qrcode");
+const getDiff = lazyImport<any>("diff", (m) => m);
 const router = Router();
 // ─── 1. JavaScript Interpreter (vm sandbox) ─────────────────
 router.post("/js/execute", (req, res) => {

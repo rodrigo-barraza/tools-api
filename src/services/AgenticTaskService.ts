@@ -36,8 +36,8 @@ export async function setupAgenticTaskCollection() {
 async function nextTaskId(project) {
   const db = getDB();
   const result = await db.collection(COUNTER_COLLECTION).findOneAndUpdate(
-    { _id: `task_${project}` },
-    { $inc: { seq: 1 } },
+    { _id: `task_${project}` as any },
+    { $inc: { seq: 1 } } as any,
     { upsert: true, returnDocument: "after" },
   );
   return result.seq;
@@ -278,12 +278,12 @@ export async function agenticTaskDelete(project, taskId) {
 
   // Clean up references in other tasks
   await col.updateMany(
-    { project, blocks: id },
-    { $pull: { blocks: id } },
+    { project, blocks: id } as any,
+    { $pull: { blocks: id } } as any,
   );
   await col.updateMany(
-    { project, blockedBy: id },
-    { $pull: { blockedBy: id } },
+    { project, blockedBy: id } as any,
+    { $pull: { blockedBy: id } } as any,
   );
 
   await col.deleteOne({ project, taskId: id });

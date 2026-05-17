@@ -17,7 +17,7 @@ export function getLightsHealth() {
 // Query: ?selector=all (default: all)
 
 router.get("/list", asyncHandler(async (req) => {
-  const selector = req.query.selector || "all";
+  const selector = req.query.selector as string || "all";
   return await LightsDataService.listLights(selector);
 }, "List lights", { errorStatus: 502, health }));
 

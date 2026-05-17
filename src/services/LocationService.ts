@@ -125,7 +125,7 @@ async function resolveLocationFromIp() {
 async function loadCachedLocation() {
   try {
     const db = getDB();
-    return await db.collection(COLLECTION).findOne({ _id: "current" });
+    return await db.collection(COLLECTION).findOne({ _id: "current" as any });
   } catch {
     return null;
   }
@@ -141,7 +141,7 @@ async function saveCachedLocation(location) {
     };
     await db
       .collection(COLLECTION)
-      .replaceOne({ _id: "current" }, document, { upsert: true });
+      .replaceOne({ _id: "current" as any }, document, { upsert: true });
   } catch (error) {
     logger.error(`[Location] ⚠️ Failed to persist: ${error.message}`);
   }

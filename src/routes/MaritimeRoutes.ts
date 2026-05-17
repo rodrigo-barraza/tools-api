@@ -21,11 +21,11 @@ router.get("/vessels", (_req, res) => {
 // ─── Vessel by MMSI ────────────────────────────────────────────────
 
 router.get("/vessels/:mmsi", (req, res) => {
-  const vessel = getVesselByMmsi(req.params.mmsi);
+  const vessel = getVesselByMmsi(req.params.mmsi as string);
   if (!vessel) {
     return res
       .status(404)
-      .json({ error: `Vessel MMSI ${req.params.mmsi} not found in buffer` });
+      .json({ error: `Vessel MMSI ${req.params.mmsi as string} not found in buffer` });
   }
   res.json(vessel);
 });

@@ -21,20 +21,20 @@ router.get("/today", asyncHandler(async (_req, res) => {
   res.json({ count: events.length, timezone: CONFIG.TIMEZONE, events });
 }));
 router.get("/upcoming", asyncHandler(async (req, res) => {
-  const days = parseIntParam(req.query.days, 30);
-  const limit = parseIntParam(req.query.limit, 200);
+  const days = parseIntParam(req.query.days as string, 30);
+  const limit = parseIntParam(req.query.limit as string, 200);
   const events = await getEventsUpcoming(days, limit);
   res.json({ count: events.length, days, events });
 }));
 router.get("/past", asyncHandler(async (req, res) => {
-  const days = parseIntParam(req.query.days, 30);
-  const limit = parseIntParam(req.query.limit, 200);
+  const days = parseIntParam(req.query.days as string, 30);
+  const limit = parseIntParam(req.query.limit as string, 200);
   const events = await getEventsPast(days, limit);
   res.json({ count: events.length, days, events });
 }));
 router.get("/search", asyncHandler(async (req, res) => {
   const { q, category, city, source } = req.query as any;
-  const limit = parseIntParam(req.query.limit, 100);
+  const limit = parseIntParam(req.query.limit as string, 100);
   const events = await searchEvents({ q, category, city, source, limit });
   res.json({
     count: events.length,
@@ -50,7 +50,7 @@ router.get("/cached", (_req, res) => {
   res.json({ count: events.length, events });
 });
 router.get("/:source/:id", asyncHandler(async (req, res) => {
-  const event = await getEventBySourceId(req.params.source, req.params.id);
+  const event = await getEventBySourceId(req.params.source as string, req.params.id as string);
   if (!event) return res.status(404).json({ error: "Event not found" });
   res.json(event);
 }));

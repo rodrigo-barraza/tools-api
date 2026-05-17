@@ -14,7 +14,7 @@ router.get(
 );
 // ─── Browse Data Tree ──────────────────────────────────────────────
 router.get("/browse", asyncHandler((req) => {
-  const route = req.query.route || "";
+  const route = req.query.route as string || "";
   return browseRoute(route);
 }, "EIA browse"));
 // ─── Facet Values ──────────────────────────────────────────────────
@@ -36,7 +36,7 @@ router.get("/facets", asyncHandler(async (req, res) => {
 // ─── Data Query ────────────────────────────────────────────────────
 router.get("/data", asyncHandler(async (req) => {
   const { route, frequency, start, end, sort, length, offset, ...rest } =
-    req.query;
+    req.query as any;
   if (!route) {
     return { error: "Parameter 'route' is required" };
   }
@@ -45,10 +45,10 @@ router.get("/data", asyncHandler(async (req) => {
     ? Array.isArray(req.query["data[]"])
       ? req.query["data[]"]
       : [req.query["data[]"]]
-    : req.query.data
-      ? Array.isArray(req.query.data)
-        ? req.query.data
-        : [req.query.data]
+    : req.query.data as string
+      ? Array.isArray(req.query.data as string)
+        ? req.query.data as string
+        : [req.query.data as string]
       : undefined;
   // Parse facets from query string — facets[stateid][]=CO format
   const facets: Record<string, any> = {};

@@ -113,7 +113,7 @@ const EXT_TO_MIME = {
 };
 
 router.get("/file/raw", asyncHandler(async (req, res) => {
-  const filePath = req.query.path;
+  const filePath = req.query.path as string;
   if (!filePath || typeof filePath !== "string") {
     return res.status(400).json({ error: "Query param 'path' is required" });
   }
@@ -382,7 +382,7 @@ router.get("/command/background/list", (_req, res) => {
   res.json({ processes: listBackgroundProcesses() });
 });
 router.get("/command/background/:pid", (req, res) => {
-  const pid = parseInt(req.params.pid, 10);
+  const pid = parseInt(req.params.pid as string, 10);
   if (isNaN(pid)) return res.status(400).json({ error: "Invalid PID" });
   const proc = getBackgroundProcess(pid);
   if (!proc) return res.status(404).json({ error: `PID ${pid} not found in background registry` });
@@ -1040,8 +1040,8 @@ router.post("/custom-tool/create", asyncHandler(async (req, res) => {
  * by proxying to Prism's GET /custom-tools.
  */
 router.get("/custom-tool/list", asyncHandler(async (req, res) => {
-  const project = req.headers["x-project"] || req.query.project || "default";
-  const username = req.headers["x-username"] || req.query.username || null;
+  const project = (req.headers["x-project"] || req.query.project || "default") as string;
+  const username = (req.headers["x-username"] || req.query.username || null) as string;
   try {
     const prismRes = await fetch(`${CONFIG.PRISM_SERVICE_URL}/custom-tools`, {
       headers: {

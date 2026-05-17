@@ -21,7 +21,7 @@ router.get("/commodities/categories", (_req, res) => {
   res.json(Object.values(ASSET_CATEGORIES));
 });
 router.get("/commodities/category/:category", (req, res) => {
-  const category = req.params.category.toLowerCase();
+  const category = (req.params.category as string).toLowerCase();
   const valid = Object.values(ASSET_CATEGORIES);
   if (!valid.includes(category)) {
     return res.status(400).json({
@@ -31,7 +31,7 @@ router.get("/commodities/category/:category", (req, res) => {
   res.json(getCommoditiesByCategory(category));
 });
 router.get("/commodities/ticker/:ticker", (req, res) => {
-  const ticker = req.params.ticker.toUpperCase();
+  const ticker = (req.params.ticker as string).toUpperCase();
   const commodity = getCommodityByTicker(ticker);
   if (!commodity) {
     return res.status(404).json({ error: `Ticker ${ticker} not found` });
@@ -39,8 +39,8 @@ router.get("/commodities/ticker/:ticker", (req, res) => {
   res.json(commodity);
 });
 router.get("/commodities/history/:ticker", asyncHandler(async (req, res) => {
-  const ticker = req.params.ticker.toUpperCase();
-  const hours = parseIntParam(req.query.hours, 24);
+  const ticker = (req.params.ticker as string).toUpperCase();
+  const hours = parseIntParam(req.query.hours as string, 24);
   const history = await getHistory(ticker, hours);
   res.json({ ticker, hours, count: history.length, snapshots: history });
 }));

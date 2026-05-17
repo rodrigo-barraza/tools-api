@@ -49,9 +49,9 @@ router.get("/dota/heroes", asyncHandler(async (req, res) => {
 
 router.get("/dota/heroes/:query", asyncHandler(async (req, res) => {
   try {
-    const result = await getHero(req.params.query);
+    const result = await getHero(req.params.query as string);
     if (!result) {
-      return res.status(404).json({ error: `Hero not found: ${req.params.query}` });
+      return res.status(404).json({ error: `Hero not found: ${req.params.query as string}` });
     }
     res.json(result);
   } catch (error) {
@@ -61,7 +61,7 @@ router.get("/dota/heroes/:query", asyncHandler(async (req, res) => {
 
 router.get("/dota/heroes/:heroId/matchups", asyncHandler(async (req, res) => {
   try {
-    const heroId = parseInt(req.params.heroId);
+    const heroId = parseInt(req.params.heroId as string);
     if (isNaN(heroId)) {
       return res.status(400).json({ error: "heroId must be a number" });
     }
@@ -89,7 +89,7 @@ router.get("/dota/heroes/:heroId/matchups", asyncHandler(async (req, res) => {
 
 router.get("/dota/players/:accountId", asyncHandler(async (req, res) => {
   try {
-    const accountId = parseInt(req.params.accountId);
+    const accountId = parseInt(req.params.accountId as string);
     if (isNaN(accountId)) {
       return res.status(400).json({ error: "accountId must be a number (Steam32 ID)" });
     }
@@ -102,8 +102,8 @@ router.get("/dota/players/:accountId", asyncHandler(async (req, res) => {
 
 router.get("/dota/players/:accountId/matches", asyncHandler(async (req, res) => {
   try {
-    const accountId = parseInt(req.params.accountId);
-    const limit = Math.min(parseInt(req.query.limit) || 10, 50);
+    const accountId = parseInt(req.params.accountId as string);
+    const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
     if (isNaN(accountId)) {
       return res.status(400).json({ error: "accountId must be a number (Steam32 ID)" });
     }
@@ -129,7 +129,7 @@ router.get("/dota/players/:accountId/matches", asyncHandler(async (req, res) => 
 
 router.get("/dota/matches/:matchId", asyncHandler(async (req, res) => {
   try {
-    const matchId = parseInt(req.params.matchId);
+    const matchId = parseInt(req.params.matchId as string);
     if (isNaN(matchId)) {
       return res.status(400).json({ error: "matchId must be a number" });
     }
@@ -155,7 +155,7 @@ router.get("/dota/matches/:matchId", asyncHandler(async (req, res) => {
 
 router.get("/dota/pro-matches", asyncHandler(async (req, res) => {
   try {
-    const limit = Math.min(parseInt(req.query.limit) || 10, 50);
+    const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
     const matches = await getProMatches(limit);
     res.json({ count: matches.length, matches });
   } catch (error) {

@@ -93,13 +93,13 @@ router.get("/earthquakes/summary", (_req, res) =>
   res.json(getEarthquakeSummary()),
 );
 router.get("/earthquakes/recent", asyncHandler(async (req, res) => {
-  const hours = parseIntParam(req.query.hours, 24);
-  const minMag = req.query.minMag ? parseFloat(req.query.minMag) : null;
-  const limit = parseIntParam(req.query.limit, 100);
+  const hours = parseIntParam(req.query.hours as string, 24);
+  const minMag = req.query.minMag as string ? parseFloat(req.query.minMag as string) : null;
+  const limit = parseIntParam(req.query.limit as string, 100);
   res.json(await getRecentEarthquakes(hours, minMag, limit));
 }));
 router.get("/earthquakes/:id", asyncHandler(async (req, res) => {
-  const event = await getEarthquakeById(req.params.id);
+  const event = await getEarthquakeById(req.params.id as string);
   if (!event) return res.status(404).json({ error: "Earthquake not found" });
   res.json(event);
 }));
@@ -107,30 +107,30 @@ router.get("/earthquakes/:id", asyncHandler(async (req, res) => {
 router.get("/neo", (_req, res) => res.json(getLatestNeos()));
 router.get("/neo/summary", (_req, res) => res.json(getNeoSummary()));
 router.get("/neo/recent", asyncHandler(async (req, res) => {
-  const days = parseIntParam(req.query.days, 7);
-  const hazardousOnly = req.query.hazardousOnly === "true";
-  const limit = parseIntParam(req.query.limit, 100);
+  const days = parseIntParam(req.query.days as string, 7);
+  const hazardousOnly = req.query.hazardousOnly as string === "true";
+  const limit = parseIntParam(req.query.limit as string, 100);
   res.json(await getRecentNeos(days, hazardousOnly, limit));
 }));
 // ─── Space Weather ─────────────────────────────────────────────────
 router.get("/space-weather", (_req, res) => res.json(getLatestSpaceWeather()));
 router.get("/space-weather/flares", (_req, res) => res.json(getLatestFlares()));
 router.get("/space-weather/flares/recent", asyncHandler(async (req, res) => {
-  const days = parseIntParam(req.query.days, 7);
-  const limit = parseIntParam(req.query.limit, 50);
+  const days = parseIntParam(req.query.days as string, 7);
+  const limit = parseIntParam(req.query.limit as string, 50);
   res.json(await getRecentSolarFlares(days, limit));
 }));
 router.get("/space-weather/cmes", (_req, res) => res.json(getLatestCmes()));
 router.get("/space-weather/cmes/recent", asyncHandler(async (req, res) => {
-  const days = parseIntParam(req.query.days, 7);
-  const earthDirectedOnly = req.query.earthDirected === "true";
-  const limit = parseIntParam(req.query.limit, 50);
+  const days = parseIntParam(req.query.days as string, 7);
+  const earthDirectedOnly = req.query.earthDirected as string === "true";
+  const limit = parseIntParam(req.query.limit as string, 50);
   res.json(await getRecentCmes(days, earthDirectedOnly, limit));
 }));
 router.get("/space-weather/storms", (_req, res) => res.json(getLatestStorms()));
 router.get("/space-weather/storms/recent", asyncHandler(async (req, res) => {
-  const days = parseIntParam(req.query.days, 30);
-  const limit = parseIntParam(req.query.limit, 20);
+  const days = parseIntParam(req.query.days as string, 30);
+  const limit = parseIntParam(req.query.limit as string, 20);
   res.json(await getRecentStorms(days, limit));
 }));
 router.get("/space-weather/summary", (_req, res) =>

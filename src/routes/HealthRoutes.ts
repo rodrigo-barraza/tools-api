@@ -102,12 +102,12 @@ router.get("/nutrition/compare", (req, res) => {
   res.json(compareFoods(foodList, nutrientTypes));
 });
 router.get("/nutrition/categories", asyncHandler(
-  () => getFoodCategories(),
+  async () => getFoodCategories(),
   "Categories lookup",
   500,
 ));
 router.get("/nutrition/nutrient-types", asyncHandler(
-  () => getNutrientTypes(),
+  async () => getNutrientTypes(),
   "Nutrient types lookup",
   500,
 ));
@@ -130,7 +130,7 @@ router.get("/nutrition/top", (req, res) => {
   res.json(result);
 });
 router.get("/nutrition/nutrients/:category", (req, res) => {
-  const result = listCategoryNutrients(req.params.category);
+  const result = listCategoryNutrients(req.params.category as string);
   if (result.error) {
     return res.status(400).json(result);
   }
@@ -191,7 +191,7 @@ router.get("/drugs/adverse-events", asyncHandler(async (req, res) => {
   res.json(await getDrugAdverseEvents(drug, parseIntParam(limit, 10)));
 }));
 router.get("/drugs/recalls", asyncHandler(
-  (req) => getDrugRecalls(req.query.q, parseIntParam(req.query.limit, 10)),
+  (req) => getDrugRecalls(req.query.q as string, parseIntParam(req.query.limit as string, 10)),
   "Drug recalls lookup",
 ));
 // ─── FDA Drug NDC Database (In-Memory) ──────────────────────────────
@@ -207,14 +207,14 @@ router.get("/drugs/ndc/search", (req, res) => {
   }));
 });
 router.get("/drugs/ndc/lookup/:ndc", (req, res) => {
-  const result = getDrugByNdc(req.params.ndc);
+  const result = getDrugByNdc(req.params.ndc as string);
   if (!result) {
-    return res.status(404).json({ error: `Drug not found: ${req.params.ndc}` });
+    return res.status(404).json({ error: `Drug not found: ${req.params.ndc as string}` });
   }
   res.json(result);
 });
 router.get("/drugs/ndc/dosage-forms", asyncHandler(
-  () => getDosageForms(),
+  async () => getDosageForms(),
   "Dosage forms lookup",
   500,
 ));
@@ -250,14 +250,14 @@ router.get("/exercises/search", (req, res) => {
   }));
 });
 router.get("/exercises/categories", asyncHandler(
-  () => getExerciseCategories(),
+  async () => getExerciseCategories(),
   "Exercise categories lookup",
   500,
 ));
 router.get("/exercises/:id", (req, res) => {
-  const result = getExerciseById(req.params.id);
+  const result = getExerciseById(req.params.id as string);
   if (!result) {
-    return res.status(404).json({ error: `Exercise not found: ${req.params.id}` });
+    return res.status(404).json({ error: `Exercise not found: ${req.params.id as string}` });
   }
   res.json(result);
 });
@@ -283,7 +283,7 @@ router.get("/calories/calculate", (req, res) => {
   res.json(result);
 });
 router.get("/calories/options", asyncHandler(
-  () => getCaloricNeedsOptions(),
+  async () => getCaloricNeedsOptions(),
   "Caloric options lookup",
   500,
 ));
@@ -344,7 +344,7 @@ router.get("/nutrition/substitutes", (req, res) => {
   res.json(result);
 });
 router.get("/nutrition/substitutes/preferences", asyncHandler(
-  () => getDietaryPreferences(),
+  async () => getDietaryPreferences(),
   "Dietary preferences lookup",
   500,
 ));
@@ -367,7 +367,7 @@ router.get("/exercises/calories", (req, res) => {
   res.json(result);
 });
 router.get("/exercises/met-categories", asyncHandler(
-  () => getMetCategories(),
+  async () => getMetCategories(),
   "MET categories lookup",
   500,
 ));
@@ -426,7 +426,7 @@ router.get("/drugs/nutrient-interactions", (req, res) => {
   res.json(checkDrugNutrientInteractions({ drug, nutrients }));
 });
 router.get("/drugs/nutrient-interactions/categories", asyncHandler(
-  () => getDrugInteractionCategories(),
+  async () => getDrugInteractionCategories(),
   "Drug-nutrient interaction categories",
   500,
 ));

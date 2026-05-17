@@ -43,8 +43,8 @@ export async function setupAgenticScheduleCollection() {
 async function nextScheduleId(project) {
   const db = getDB();
   const result = await db.collection(COUNTER_COLLECTION).findOneAndUpdate(
-    { _id: `schedule_${project}` },
-    { $inc: { seq: 1 } },
+    { _id: `schedule_${project}` as any },
+    { $inc: { seq: 1 } } as any,
     { upsert: true, returnDocument: "after" },
   );
   return result.seq;

@@ -26,7 +26,7 @@ export async function saveState(collectionName, data) {
 
     await db
       .collection(collectionName)
-      .replaceOne({ _id: "current" }, document, { upsert: true });
+      .replaceOne({ _id: "current" as any }, document, { upsert: true });
   } catch (error) {
     logger.error(
       `[State] ⚠️ Failed to save "${collectionName}": ${error.message}`,
@@ -46,7 +46,7 @@ export async function loadState(collectionName) {
     const db = getDB();
     const document = await db
       .collection(collectionName)
-      .findOne({ _id: "current" });
+      .findOne({ _id: "current" as any });
     if (!document) return null;
 
     const { _id, updatedAt, items, ...rest } = document;

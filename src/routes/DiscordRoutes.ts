@@ -17,16 +17,16 @@ router.get(
   "/messages/search",
   asyncHandler((req) => {
     return DiscordDataService.searchMessages({
-      guildId: req.query.guildId,
-      channelId: req.query.channelId,
-      userId: req.query.userId,
-      username: req.query.username,
-      query: req.query.query,
-      before: req.query.before,
-      after: req.query.after,
-      limit: parseIntParam(req.query.limit, 50),
-      mode: req.query.mode || "messages",
-      includeBots: req.query.includeBots === "true",
+      guildId: req.query.guildId as string,
+      channelId: req.query.channelId as string,
+      userId: req.query.userId as string,
+      username: req.query.username as string,
+      query: req.query.query as string,
+      before: req.query.before as string,
+      after: req.query.after as string,
+      limit: parseIntParam(req.query.limit as string, 50),
+      mode: req.query.mode as string || "messages",
+      includeBots: req.query.includeBots as string === "true",
     });
   }, "Message search", opts),
 );
@@ -39,10 +39,10 @@ router.get(
 //   `heartbeat` — keep-alive ping every 15s
 // Query: ?guildId=...&channelId=...&limit=50
 router.get("/messages/stream", (req, res) => {
-  const guildId = req.query.guildId;
-  const channelId = req.query.channelId;
-  const limit = parseIntParam(req.query.limit, 50, 500);
-  const includeBots = req.query.includeBots === "true";
+  const guildId = req.query.guildId as string;
+  const channelId = req.query.channelId as string;
+  const limit = parseIntParam(req.query.limit as string, 50, 500);
+  const includeBots = req.query.includeBots as string === "true";
   if (!guildId) {
     return res.status(400).json({ error: "guildId is required" });
   }
@@ -160,16 +160,16 @@ router.get(
   "/messages/analytics",
   asyncHandler((req) => {
     return DiscordDataService.analyzeMessages({
-      guildId: req.query.guildId,
-      channelId: req.query.channelId,
-      userId: req.query.userId,
-      username: req.query.username,
-      query: req.query.query,
-      before: req.query.before,
-      after: req.query.after,
-      groupBy: req.query.groupBy || "user",
-      topN: parseIntParam(req.query.topN, 25),
-      includeBots: req.query.includeBots === "true",
+      guildId: req.query.guildId as string,
+      channelId: req.query.channelId as string,
+      userId: req.query.userId as string,
+      username: req.query.username as string,
+      query: req.query.query as string,
+      before: req.query.before as string,
+      after: req.query.after as string,
+      groupBy: req.query.groupBy as string || "user",
+      topN: parseIntParam(req.query.topN as string, 25),
+      includeBots: req.query.includeBots as string === "true",
     });
   }, "Message analytics", opts),
 );
@@ -180,10 +180,10 @@ router.get(
   "/activity",
   asyncHandler((req) => {
     return DiscordDataService.getServerActivity({
-      guildId: req.query.guildId,
-      channelId: req.query.channelId,
-      days: parseIntParam(req.query.days, 7),
-      topN: parseIntParam(req.query.topN, 15),
+      guildId: req.query.guildId as string,
+      channelId: req.query.channelId as string,
+      days: parseIntParam(req.query.days as string, 7),
+      topN: parseIntParam(req.query.topN as string, 15),
     });
   }, "Server activity", opts),
 );

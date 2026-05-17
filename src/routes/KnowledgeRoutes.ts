@@ -82,7 +82,7 @@ import {
 const router = Router();
 // ─── Dictionary ────────────────────────────────────────────────────
 router.get("/dictionary/:word", asyncHandler(
-  (req) => fetchDefinition(req.params.word),
+  (req) => fetchDefinition(req.params.word as string),
   "Dictionary lookup",
 ));
 // ─── Books ─────────────────────────────────────────────────────────
@@ -94,20 +94,20 @@ router.get("/books/search", asyncHandler(async (req, res) => {
   res.json(await searchBooks(q, parseIntParam(limit, 10)));
 }));
 router.get("/books/work/:workKey", asyncHandler(
-  (req) => getBookDetails(req.params.workKey),
+  (req) => getBookDetails(req.params.workKey as string),
   "Book details",
 ));
 router.get("/books/author/:authorKey", asyncHandler(
-  (req) => getAuthorInfo(req.params.authorKey),
+  (req) => getAuthorInfo(req.params.authorKey as string),
   "Author info",
 ));
 // ─── Countries ─────────────────────────────────────────────────────
 router.get("/countries/search/:name", asyncHandler(
-  (req) => searchCountries(req.params.name),
+  (req) => searchCountries(req.params.name as string),
   "Country search",
 ));
 router.get("/countries/code/:code", asyncHandler(
-  (req) => getCountryByCode(req.params.code),
+  (req) => getCountryByCode(req.params.code as string),
   "Country lookup",
 ));
 // ─── Papers (arXiv) ────────────────────────────────────────────────
@@ -124,14 +124,14 @@ router.get("/papers/search", asyncHandler(async (req, res) => {
 }));
 // ─── Wikipedia Summaries ───────────────────────────────────────────
 router.get("/wikipedia/summary/:title", asyncHandler(
-  (req) => getArticleSummary(req.params.title),
+  (req) => getArticleSummary(req.params.title as string),
   "Wikipedia summary",
 ));
 router.get("/wikipedia/onthisday", asyncHandler(
   (req) => getOnThisDay(
-    req.query.type || "selected",
-    req.query.month ? parseInt(req.query.month, 10) : undefined,
-    req.query.day ? parseInt(req.query.day, 10) : undefined,
+    req.query.type as string || "selected",
+    req.query.month as string ? parseInt(req.query.month as string, 10) : undefined,
+    req.query.day as string ? parseInt(req.query.day as string, 10) : undefined,
   ),
   "On This Day",
 ));
@@ -144,15 +144,15 @@ router.get("/anime/search", asyncHandler(async (req, res) => {
   res.json(await searchAnime(q, parseIntParam(limit, 10)));
 }));
 router.get("/anime/top", asyncHandler(
-  (req) => getTopAnime(parseIntParam(req.query.limit, 10)),
+  (req) => getTopAnime(parseIntParam(req.query.limit as string, 10)),
   "Top anime fetch",
 ));
 router.get("/anime/season/now", asyncHandler(
-  (req) => getCurrentSeasonAnime(parseIntParam(req.query.limit, 10)),
+  (req) => getCurrentSeasonAnime(parseIntParam(req.query.limit as string, 10)),
   "Seasonal anime fetch",
 ));
 router.get("/anime/:id", asyncHandler(
-  (req) => getAnimeDetails(req.params.id),
+  (req) => getAnimeDetails(req.params.id as string),
   "Anime details",
 ));
 // ─── Movies (TMDb) ─────────────────────────────────────────────────
@@ -168,8 +168,8 @@ router.get("/movies/search", asyncHandler(async (req, res) => {
 }));
 router.get("/movies/trending", asyncHandler(
   (req) => getTrendingMovies(
-    req.query.timeWindow || "day",
-    parseIntParam(req.query.limit, 10),
+    req.query.timeWindow as string || "day",
+    parseIntParam(req.query.limit as string, 10),
   ),
   "Trending movies",
 ));
@@ -188,15 +188,15 @@ router.get("/movies/discover", asyncHandler(
   "Discover movies",
 ));
 router.get("/movies/genres", asyncHandler(
-  () => getMovieGenres(),
+  async () => getMovieGenres(),
   "Movie genres",
 ));
 router.get("/movies/:id/credits", asyncHandler(
-  (req) => getMovieCredits(req.params.id),
+  (req) => getMovieCredits(req.params.id as string),
   "Movie credits",
 ));
 router.get("/movies/:id", asyncHandler(
-  (req) => getMovieDetails(req.params.id),
+  (req) => getMovieDetails(req.params.id as string),
   "Movie details",
 ));
 // ─── TV Series (TMDb) ──────────────────────────────────────────────
@@ -214,8 +214,8 @@ router.get("/tv/search", asyncHandler(async (req, res) => {
 }));
 router.get("/tv/trending", asyncHandler(
   (req) => getTrendingTvShows(
-    req.query.timeWindow || "day",
-    parseIntParam(req.query.limit, 10),
+    req.query.timeWindow as string || "day",
+    parseIntParam(req.query.limit as string, 10),
   ),
   "Trending TV shows",
 ));
@@ -236,22 +236,22 @@ router.get("/tv/discover", asyncHandler(
   "Discover TV shows",
 ));
 router.get("/tv/genres", asyncHandler(
-  () => getTvGenres(),
+  async () => getTvGenres(),
   "TV genres",
 ));
 router.get("/tv/:id/credits", asyncHandler(
-  (req) => getTvShowCredits(req.params.id),
+  (req) => getTvShowCredits(req.params.id as string),
   "TV credits",
 ));
 router.get("/tv/:id/season/:seasonNumber", asyncHandler(
   (req) => getTvSeasonDetails(
-    req.params.id,
-    parseInt(req.params.seasonNumber, 10),
+    req.params.id as string,
+    parseInt(req.params.seasonNumber as string, 10),
   ),
   "TV season details",
 ));
 router.get("/tv/:id", asyncHandler(
-  (req) => getTvShowDetails(req.params.id),
+  (req) => getTvShowDetails(req.params.id as string),
   "TV show details",
 ));
 // ─── Periodic Table (in-memory) ────────────────────────────────────
@@ -285,26 +285,26 @@ router.get("/elements/rank", (req, res) => {
   res.json(result);
 });
 router.get("/elements/categories", asyncHandler(
-  () => getElementCategories(),
+  async () => getElementCategories(),
   "Element categories",
   500,
 ));
 router.get("/elements/:symbol", (req, res) => {
-  const result = getElementBySymbol(req.params.symbol);
+  const result = getElementBySymbol(req.params.symbol as string);
   if (!result) {
     return res
       .status(404)
-      .json({ error: `Element not found: ${req.params.symbol}` });
+      .json({ error: `Element not found: ${req.params.symbol as string}` });
   }
   res.json(result);
 });
 // ─── World Bank Indicators (in-memory) ─────────────────────────────
 router.get("/indicators/country/:code", (req, res) => {
-  const result = getCountryIndicators(req.params.code);
+  const result = getCountryIndicators(req.params.code as string);
   if (!result) {
     return res
       .status(404)
-      .json({ error: `Country not found: ${req.params.code}` });
+      .json({ error: `Country not found: ${req.params.code as string}` });
   }
   res.json(result);
 });
@@ -348,7 +348,7 @@ router.get("/indicators/compare", (req, res) => {
   res.json(result);
 });
 router.get("/indicators/list", asyncHandler(
-  () => getAvailableIndicators(),
+  async () => getAvailableIndicators(),
   "Indicator list",
   500,
 ));
@@ -364,9 +364,9 @@ router.get("/exoplanets/search", (req, res) => {
   }));
 });
 router.get("/exoplanets/lookup/:name", (req, res) => {
-  const result = getExoplanetByName(req.params.name);
+  const result = getExoplanetByName(req.params.name as string);
   if (!result) {
-    return res.status(404).json({ error: `Exoplanet not found: ${req.params.name}` });
+    return res.status(404).json({ error: `Exoplanet not found: ${req.params.name as string}` });
   }
   res.json(result);
 });
@@ -381,13 +381,13 @@ router.get("/exoplanets/rank", (req, res) => {
   }));
 });
 router.get("/exoplanets/stats", asyncHandler(
-  () => getDiscoveryStats(),
+  async () => getDiscoveryStats(),
   "Exoplanet stats",
   500,
 ));
 router.get("/exoplanets/habitable", asyncHandler(
-  (req) => getHabitableZonePlanets({
-    limit: parseIntParam(req.query.limit, 20),
+  async (req) => getHabitableZonePlanets({
+    limit: parseIntParam(req.query.limit as string, 20),
   }),
   "Habitable zone query",
   500,
@@ -453,7 +453,7 @@ router.get("/npm/package", asyncHandler(async (req, res) => {
 }));
 // ─── PyPI ──────────────────────────────────────────────────────────
 router.get("/pypi/package", asyncHandler(
-  (req) => getPyPiPackage(req.query.name),
+  (req) => getPyPiPackage(req.query.name as string),
   "PyPI lookup",
 ));
 // ─── PDF ───────────────────────────────────────────────────────────
@@ -558,7 +558,7 @@ router.get("/music/artists/search", asyncHandler(async (req, res) => {
   res.json(await searchArtists(q, parseIntParam(limit, 10)));
 }));
 router.get("/music/artists/:mbid", asyncHandler(
-  (req) => getArtist(req.params.mbid),
+  (req) => getArtist(req.params.mbid as string),
   "Artist details",
 ));
 router.get("/music/albums/search", asyncHandler(async (req, res) => {
@@ -567,7 +567,7 @@ router.get("/music/albums/search", asyncHandler(async (req, res) => {
   res.json(await searchAlbums(q, artist, parseIntParam(limit, 10)));
 }));
 router.get("/music/albums/:mbid", asyncHandler(
-  (req) => getAlbum(req.params.mbid),
+  (req) => getAlbum(req.params.mbid as string),
   "Album details",
 ));
 router.get("/music/tracks/search", asyncHandler(async (req, res) => {
@@ -775,13 +775,13 @@ router.get("/media/genres", asyncHandler(async (req, res) => {
 router.get("/media/:id/credits", asyncHandler(async (req, res) => {
   const { type } = req.query as any;
   if (!type) return res.status(400).json({ error: "'type' is required" });
-  req.url = `/${type === "tv" ? "tv" : "movies"}/${req.params.id}/credits`;
+  req.url = `/${type === "tv" ? "tv" : "movies"}/${req.params.id as string}/credits`;
   return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
 }));
 router.get("/media/:id", asyncHandler(async (req, res) => {
   const { type } = req.query as any;
   if (!type) return res.status(400).json({ error: "'type' is required" });
-  req.url = `/${type === "tv" ? "tv" : "movies"}/${req.params.id}`;
+  req.url = `/${type === "tv" ? "tv" : "movies"}/${req.params.id as string}`;
   return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
 }));
 // ── Unified Music Data ─────────────────────────────────────────────

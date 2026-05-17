@@ -22,36 +22,36 @@ router.get("/trends/hot", (_req, res) => {
   res.json(getCorrelatedTrends());
 });
 router.get("/trends/source/:source", (req, res) => {
-  res.json(getBySource(req.params.source));
+  res.json(getBySource(req.params.source as string));
 });
 router.get("/trends/category/:category", (req, res) => {
-  res.json(getByCategory(req.params.category));
+  res.json(getByCategory(req.params.category as string));
 });
 router.get("/trends/search", (req, res) => {
-  const query = req.query.q;
+  const query = req.query.q as string;
   if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
   res.json(searchTrends(query));
 });
 router.get("/trends/recent", asyncHandler(async (req, res) => {
-  const hours = parseIntParam(req.query.hours, 24);
-  const category = req.query.category || null;
-  const source = req.query.source || null;
-  const limit = parseIntParam(req.query.limit, 50);
+  const hours = parseIntParam(req.query.hours as string, 24);
+  const category = req.query.category as string || null;
+  const source = req.query.source as string || null;
+  const limit = parseIntParam(req.query.limit as string, 50);
   res.json(await getRecentTrends(hours, category, source, limit));
 }));
 router.get("/trends/top", asyncHandler(async (req, res) => {
-  const hours = parseIntParam(req.query.hours, 24);
-  const limit = parseIntParam(req.query.limit, 20);
+  const hours = parseIntParam(req.query.hours as string, 24);
+  const limit = parseIntParam(req.query.limit as string, 20);
   res.json(await getTopTrends(hours, limit));
 }));
 router.get("/trends/db/search", asyncHandler(async (req, res) => {
-  const query = req.query.q;
+  const query = req.query.q as string;
   if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  const limit = parseIntParam(req.query.limit, 50);
+  const limit = parseIntParam(req.query.limit as string, 50);
   res.json(await searchTrendsDB(query, limit));
 }));
 export function getTrendHealth() {

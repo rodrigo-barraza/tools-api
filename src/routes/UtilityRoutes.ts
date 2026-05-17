@@ -113,12 +113,12 @@ router.get("/currency/list", asyncHandler(
 ));
 // ─── Timezone ──────────────────────────────────────────────────────
 router.get("/timezone/:area/:location", asyncHandler(
-  (req) => getTimeInTimezone(`${req.params.area}/${req.params.location}`),
+  (req) => getTimeInTimezone(`${req.params.area as string}/${req.params.location as string}`),
   "Timezone lookup",
 ));
 router.get("/timezone/list", asyncHandler(
   async (req) => {
-    const timezones = await listTimezones(req.query.area);
+    const timezones = await listTimezones(req.query.area as string);
     return {
       count: Array.isArray(timezones) ? timezones.length : 0,
       timezones,
@@ -128,7 +128,7 @@ router.get("/timezone/list", asyncHandler(
 ));
 // ─── IP Geolocation (IPinfo) ───────────────────────────────────────
 router.get("/ip/batch", asyncHandler(async (req, res) => {
-  const ips = req.query.ips;
+  const ips = req.query.ips as string;
   if (!ips) {
     return res
       .status(400)
@@ -142,12 +142,12 @@ router.get("/ip/batch", asyncHandler(async (req, res) => {
   res.json({ count: result.length, results: result });
 }));
 router.get("/ip", asyncHandler(
-  () => lookupIp(""),
+  async () => lookupIp(""),
   "IP lookup",
 ));
 router.get("/ip/:ip", asyncHandler(
   (req) => {
-    const raw = req.params.ip;
+    const raw = req.params.ip as string;
     const ip = raw === "self" || raw === ":ip" ? "" : raw;
     return lookupIp(ip);
   },
@@ -365,15 +365,15 @@ router.get("/airports/search", (req, res) => {
   }));
 });
 router.get("/airports/code/:code", (req, res) => {
-  const result = getAirportByCode(req.params.code);
+  const result = getAirportByCode(req.params.code as string);
   if (!result) {
-    return res.status(404).json({ error: `Airport not found: ${req.params.code}` });
+    return res.status(404).json({ error: `Airport not found: ${req.params.code as string}` });
   }
   res.json(result);
 });
 router.get("/airports/country/:code", asyncHandler(
-  (req) => getAirportsByCountry(req.params.code, {
-    limit: parseInt(req.query.limit) || 50,
+  async (req) => getAirportsByCountry(req.params.code as string, {
+    limit: parseInt(req.query.limit as string) || 50,
   }),
   "Country airports lookup",
   500,
@@ -407,7 +407,7 @@ router.post("/python/execute", asyncHandler(async (req, res) => {
   res.json(result);
 }));
 router.get("/python/info", asyncHandler(
-  () => getInterpreterInfo(),
+  async () => getInterpreterInfo(),
   "Python interpreter info",
 ));
 // ── Python Streaming (SSE) ────────────────────────────────────

@@ -29,38 +29,38 @@ router.get("/products", (_req, res) => {
   res.json(getAll());
 });
 router.get("/products/trending", (req, res) => {
-  const limit = parseIntParam(req.query.limit, 50);
+  const limit = parseIntParam(req.query.limit as string, 50);
   res.json(getTrending(limit));
 });
 router.get("/products/categories", (_req, res) => {
   res.json(getCategories());
 });
 router.get("/products/category/:category", (req, res) => {
-  res.json(getByCategory(req.params.category));
+  res.json(getByCategory(req.params.category as string));
 });
 router.get("/products/source/:source", (req, res) => {
-  res.json(getBySource(req.params.source));
+  res.json(getBySource(req.params.source as string));
 });
 router.get("/products/search", (req, res) => {
-  const query = req.query.q;
+  const query = req.query.q as string;
   if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
   res.json(searchByName(query));
 });
 router.get("/products/recent", asyncHandler(async (req, res) => {
-  const hours = parseIntParam(req.query.hours, 24);
-  const category = req.query.category || null;
-  const source = req.query.source || null;
-  const limit = parseIntParam(req.query.limit, 50);
+  const hours = parseIntParam(req.query.hours as string, 24);
+  const category = req.query.category as string || null;
+  const source = req.query.source as string || null;
+  const limit = parseIntParam(req.query.limit as string, 50);
   res.json(await getRecentProducts(hours, category, source, limit));
 }));
 router.get("/products/db/search", asyncHandler(async (req, res) => {
-  const query = req.query.q;
+  const query = req.query.q as string;
   if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  const limit = parseIntParam(req.query.limit, 50);
+  const limit = parseIntParam(req.query.limit as string, 50);
   res.json(await searchProducts(query, limit));
 }));
 // ─── Best Buy CA Availability Routes ───────────────────────────────
@@ -74,11 +74,11 @@ router.get("/products/availability/out-of-stock", (_req, res) => {
   res.json(getOutOfStock());
 });
 router.get("/products/availability/sku/:sku", (req, res) => {
-  const result = getBySku(req.params.sku);
+  const result = getBySku(req.params.sku as string);
   if (!result) {
     return res
       .status(404)
-      .json({ error: `SKU ${req.params.sku} not found in cache` });
+      .json({ error: `SKU ${req.params.sku as string} not found in cache` });
   }
   res.json(result);
 });
@@ -87,7 +87,7 @@ router.get("/products/availability/sku/:sku", (req, res) => {
  * GET /products/availability/check?skus=SKU1,SKU2,SKU3
  */
 router.get("/products/availability/check", asyncHandler(async (req, res) => {
-  const skusParam = req.query.skus;
+  const skusParam = req.query.skus as string;
   if (!skusParam) {
     return res
       .status(400)
@@ -133,7 +133,7 @@ router.post("/products/availability/watchlist", (req, res) => {
   res.json({ ...result, watchlist: getWatchlist() });
 });
 router.delete("/products/availability/watchlist/:sku", (req, res) => {
-  const result = removeFromWatchlist(req.params.sku);
+  const result = removeFromWatchlist(req.params.sku as string);
   res.json({ ...result, watchlist: getWatchlist() });
 });
 // ─── Health ────────────────────────────────────────────────────────

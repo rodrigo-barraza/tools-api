@@ -43,7 +43,7 @@ router.get("/account", asyncHandler(
 ));
 // ─── Phone Lookup ──────────────────────────────────────────────────
 router.get("/lookup/:phone", asyncHandler(
-  (req) => lookupPhone(req.params.phone),
+  (req) => lookupPhone(req.params.phone as string),
   "Phone lookup",
 ));
 // ─── List Numbers ──────────────────────────────────────────────────
