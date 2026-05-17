@@ -213,7 +213,7 @@ export function searchElements(query, opts: Record<string, any> = {}) {
     count: scored.length,
     query,
     note: "Data from Bowserinator Periodic Table JSON (CC BY-SA 3.0). Temperatures in Kelvin, densities in g/cm³.",
-    elements: scored.map((s) => formatElement(s.el)),
+    elements: scored.map((s) => formatElement(s.element)),
   };
 }
 
