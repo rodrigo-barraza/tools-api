@@ -6,7 +6,7 @@
   "main": "dist/boot.js",
   "scripts": {
     "start": "node dist/boot.js",
-    "dev": "nodemon --legacy-watch --exec tsx boot.ts",
+    "dev": "nodemon --legacy-watch --ext ts --exec 'node --import tsx src/boot.ts'",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
@@ -54,6 +54,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@types/cors": "^2.8.19",
     "@types/diff": "^8.0.0",
     "@types/express": "^5.0.6",
     "@types/node": "^22.15.21",
