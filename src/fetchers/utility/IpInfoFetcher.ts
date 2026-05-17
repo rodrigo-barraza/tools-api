@@ -58,16 +58,16 @@ export async function lookupIp(ip) {
   const tokenParam = CONFIG.IPINFO_TOKEN ? `?token=${CONFIG.IPINFO_TOKEN}` : "";
   const url = `${IPINFO_BASE_URL}/${targetIp}/json${tokenParam}`;
 
-  const res = await fetch(url);
+  const response = await fetch(url);
 
-  if (res.status === 429) {
+  if (response.status === 429) {
     throw new Error("IPinfo rate limit exceeded");
   }
-  if (!res.ok) {
-    throw new Error(`IPinfo API → ${res.status} ${res.statusText}`);
+  if (!response.ok) {
+    throw new Error(`IPinfo API → ${response.status} ${response.statusText}`);
   }
 
-  const data = await res.json();
+  const data = await response.json();
 
   // Parse lat/lng from "loc" field (format: "49.2827,-123.1207")
   let latitude = null;

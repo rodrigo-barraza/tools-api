@@ -22,14 +22,14 @@ async function fetchTMDb(endpoint) {
 
   const separator = endpoint.includes("?") ? "&" : "?";
   const url = `${TMDB_BASE_URL}${endpoint}${separator}api_key=${CONFIG.TMDB_API_KEY}`;
-  const res = await fetch(url);
+  const response = await fetch(url);
 
-  if (res.status === 404) return null;
-  if (!res.ok) {
-    throw new Error(`TMDb API → ${res.status} ${res.statusText}`);
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    throw new Error(`TMDb API → ${response.status} ${response.statusText}`);
   }
 
-  return res.json();
+  return response.json();
 }
 
 // ─── Normalizers ───────────────────────────────────────────────────

@@ -38,8 +38,8 @@ export async function fetchCityOfVancouverEvents() {
   for (const selector of selectors) {
     if (events.length > 0) break;
 
-    $(selector).each((_i, el) => {
-      const $el = $(el);
+    $(selector).each((_i, element) => {
+      const $el = $(element);
       const $link = $el.find("a").first();
       const title =
         $el

@@ -92,19 +92,19 @@ export async function getRedditThread(input, options: Record<string, any> = {}) 
   const { commentLimit = MAX_COMMENTS } = options;
 
   try {
-    const res = await fetch(jsonUrl, {
+    const response = await fetch(jsonUrl, {
       headers: {
         "User-Agent": USER_AGENT,
       },
     });
 
-    if (!res.ok) {
-      if (res.status === 404) return { error: "Reddit thread not found" };
-      if (res.status === 429) return { error: "Reddit rate limit exceeded" };
-      return { error: `Reddit API error: ${res.status}` };
+    if (!response.ok) {
+      if (response.status === 404) return { error: "Reddit thread not found" };
+      if (response.status === 429) return { error: "Reddit rate limit exceeded" };
+      return { error: `Reddit API error: ${response.status}` };
     }
 
-    const data = await res.json();
+    const data = await response.json();
 
     // Reddit returns [post_listing, comment_listing]
     const post = data[0]?.data?.children?.[0]?.data;

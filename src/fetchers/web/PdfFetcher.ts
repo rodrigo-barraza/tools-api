@@ -25,7 +25,7 @@ export async function readPdfUrl(url, options: Record<string, any> = {}) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
-    const res = await fetch(url, {
+    const response = await fetch(url, {
       signal: controller.signal,
       headers: {
         "User-Agent":
@@ -35,23 +35,23 @@ export async function readPdfUrl(url, options: Record<string, any> = {}) {
     });
     clearTimeout(timeout);
 
-    if (!res.ok) {
-      return { error: `HTTP ${res.status}: ${res.statusText}`, url };
+    if (!response.ok) {
+      return { error: `HTTP ${response.status}: ${response.statusText}`, url };
     }
 
     // Verify content type
-    const contentType = res.headers.get("content-type") || "";
+    const contentType = response.headers.get("content-type") || "";
     if (!contentType.includes("pdf") && !contentType.includes("octet-stream")) {
       return { error: `URL does not point to a PDF (content-type: ${contentType})`, url };
     }
 
     // Check content length
-    const contentLength = parseInt(res.headers.get("content-length") || "0", 10);
+    const contentLength = parseInt(response.headers.get("content-length") || "0", 10);
     if (contentLength > MAX_PDF_BYTES) {
       return { error: `PDF too large: ${(contentLength / 1_048_576).toFixed(1)} MB (max: 10 MB)`, url };
     }
 
-    const arrayBuffer = await res.arrayBuffer();
+    const arrayBuffer = await response.arrayBuffer();
     const data = new Uint8Array(arrayBuffer);
 
     if (data.length > MAX_PDF_BYTES) {

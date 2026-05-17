@@ -20,7 +20,7 @@ export async function fetchEnvironmentCanadaWarnings() {
 }
 async function tryWarningsPage() {
   try {
-    const res = await fetch(EC_WARNINGS_PAGE, {
+    const response = await fetch(EC_WARNINGS_PAGE, {
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
@@ -28,8 +28,8 @@ async function tryWarningsPage() {
       },
       redirect: "follow",
     });
-    if (!res.ok) return [];
-    const html = await res.text();
+    if (!response.ok) return [];
+    const html = await response.text();
     return parseWarningsHtml(html);
   } catch {
     return [];
@@ -37,7 +37,7 @@ async function tryWarningsPage() {
 }
 async function tryCityPage() {
   try {
-    const res = await fetch(EC_CITY_PAGE, {
+    const response = await fetch(EC_CITY_PAGE, {
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
@@ -45,8 +45,8 @@ async function tryCityPage() {
       },
       redirect: "follow",
     });
-    if (!res.ok) return [];
-    const html = await res.text();
+    if (!response.ok) return [];
+    const html = await response.text();
     return parseCityWarnings(html);
   } catch {
     return [];

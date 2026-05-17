@@ -80,11 +80,11 @@ export async function searchPapers(
     sortOrder: "descending",
   });
   const url = `${ARXIV_BASE_URL}?${params}`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`arXiv API → ${res.status} ${res.statusText}`);
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`arXiv API → ${response.status} ${response.statusText}`);
   }
-  const xml = await res.text();
+  const xml = await response.text();
   // Parse total results from feed
   const totalResults =
     parseInt(extractXmlTag(xml, "opensearch:totalResults"), 10) || 0;

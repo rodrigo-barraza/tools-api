@@ -71,7 +71,7 @@ export function createLspClient(serverName, onCrash) {
         const spawnedProc = proc;
         await new Promise<void>((resolve, reject) => {
           const onSpawn = () => { cleanup(); resolve(); };
-          const onError = (err) => { cleanup(); reject(err); };
+          const onError = (error) => { cleanup(); reject(error); };
           const cleanup = () => {
             spawnedProc.removeListener("spawn", onSpawn);
             spawnedProc.removeListener("error", onError);

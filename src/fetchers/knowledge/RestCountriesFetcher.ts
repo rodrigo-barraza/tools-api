@@ -60,16 +60,16 @@ function normalizeCountry(c: any) {
  */
 export async function searchCountries(name) {
   const url = `${REST_COUNTRIES_BASE_URL}/name/${encodeURIComponent(name)}`;
-  const res = await fetch(url);
+  const response = await fetch(url);
 
-  if (res.status === 404) {
+  if (response.status === 404) {
     return { found: false, countries: [] };
   }
-  if (!res.ok) {
-    throw new Error(`Rest Countries API → ${res.status} ${res.statusText}`);
+  if (!response.ok) {
+    throw new Error(`Rest Countries API → ${response.status} ${response.statusText}`);
   }
 
-  const data = await res.json();
+  const data = await response.json();
   return {
     found: true,
     count: data.length,
@@ -86,16 +86,16 @@ export async function searchCountries(name) {
  */
 export async function getCountryByCode(code) {
   const url = `${REST_COUNTRIES_BASE_URL}/alpha/${encodeURIComponent(code.toUpperCase())}`;
-  const res = await fetch(url);
+  const response = await fetch(url);
 
-  if (res.status === 404) {
+  if (response.status === 404) {
     return { found: false, code };
   }
-  if (!res.ok) {
-    throw new Error(`Rest Countries API → ${res.status} ${res.statusText}`);
+  if (!response.ok) {
+    throw new Error(`Rest Countries API → ${response.status} ${response.statusText}`);
   }
 
-  const data = await res.json();
+  const data = await response.json();
   const country = Array.isArray(data) ? data[0] : data;
   return { found: true, ...normalizeCountry(country) };
 }

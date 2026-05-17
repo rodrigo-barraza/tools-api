@@ -13,9 +13,9 @@ export async function fetchTides() {
     "&product=predictions&datum=MLLW&time_zone=lst_ldt" +
     "&units=metric&format=json&interval=hilo";
 
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`NOAA CO-OPS ${res.status}: ${res.statusText}`);
-  const json = await res.json();
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`NOAA CO-OPS ${response.status}: ${response.statusText}`);
+  const json = await response.json();
 
   if (json.error) {
     throw new Error(

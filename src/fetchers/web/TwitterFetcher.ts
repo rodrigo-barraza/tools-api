@@ -58,15 +58,15 @@ export async function getTwitterPost(input) {
 
 async function fetchFxTwitter(username, tweetId) {
   try {
-    const res = await fetch(`${FXTWITTER_API}/${username}/status/${tweetId}`, {
+    const response = await fetch(`${FXTWITTER_API}/${username}/status/${tweetId}`, {
       headers: { "User-Agent": USER_AGENT },
     });
 
-    if (!res.ok) {
-      return { error: `fxtwitter API error: ${res.status}` };
+    if (!response.ok) {
+      return { error: `fxtwitter API error: ${response.status}` };
     }
 
-    const data = await res.json();
+    const data = await response.json();
     const tweet = data.tweet;
     if (!tweet) return { error: "Tweet not found in response" };
 
@@ -124,16 +124,16 @@ async function fetchFxTwitter(username, tweetId) {
 async function fetchOembed(tweetId) {
   try {
     const tweetUrl = `https://twitter.com/i/status/${tweetId}`;
-    const res = await fetch(
+    const response = await fetch(
       `${OEMBED_API}?url=${encodeURIComponent(tweetUrl)}&omit_script=true`,
       { headers: { Accept: "application/json" } },
     );
 
-    if (!res.ok) {
-      return { error: `oembed error: ${res.status}` };
+    if (!response.ok) {
+      return { error: `oembed error: ${response.status}` };
     }
 
-    const data = await res.json();
+    const data = await response.json();
 
     // Extract clean text from the HTML embed
     const text = data.html

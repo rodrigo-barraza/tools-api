@@ -35,18 +35,18 @@ const INTERNAL_FIELDS = new Set(["_id", "__v", "firstSeen", "lastSeen"]);
  * Pick only the specified field paths from an object.
  * Supports dot-notation paths (e.g. "venue.name").
  *
- * @param {object} obj - Source object
+ * @param {object} object - Source object
  * @param {string[]} fieldPaths - Array of dot-notation field paths
  * @returns {object} New object with only the requested fields
  */
-function pickFields(obj, fieldPaths) {
-  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return obj;
+function pickFields(object, fieldPaths) {
+  if (!object || typeof object !== "object" || Array.isArray(object)) return object;
 
   const result: Record<string, any> = {};
 
   for (const path of fieldPaths) {
     const parts = path.split(".");
-    let source = obj;
+    let source = object;
     let target = result;
 
     for (let i = 0; i < parts.length; i++) {
@@ -75,14 +75,14 @@ function pickFields(obj, fieldPaths) {
 /**
  * Strip internal/MongoDB fields from an object (shallow).
  *
- * @param {object} obj - Source object
+ * @param {object} object - Source object
  * @returns {object} Cleaned object
  */
-function stripInternal(obj) {
-  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return obj;
+function stripInternal(object) {
+  if (!object || typeof object !== "object" || Array.isArray(object)) return object;
 
   const result: Record<string, any> = {};
-  for (const [key, value] of Object.entries(obj)) {
+  for (const [key, value] of Object.entries(object)) {
     if (!INTERNAL_FIELDS.has(key)) {
       result[key] = value;
     }

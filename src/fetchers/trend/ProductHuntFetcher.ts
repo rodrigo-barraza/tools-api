@@ -10,18 +10,18 @@ const PRODUCT_HUNT_URL = "https://www.producthunt.com";
  * @returns {Promise<Array>} Normalized trend objects
  */
 export async function fetchProductHuntTrends() {
-  const res = await fetch(PRODUCT_HUNT_URL, {
+  const response = await fetch(PRODUCT_HUNT_URL, {
     headers: {
       "User-Agent": randomUserAgent(),
       Accept: "text/html,application/xhtml+xml",
     },
   });
 
-  if (!res.ok) {
-    throw new Error(`Product Hunt returned ${res.status}: ${res.statusText}`);
+  if (!response.ok) {
+    throw new Error(`Product Hunt returned ${response.status}: ${response.statusText}`);
   }
 
-  const html = await res.text();
+  const html = await response.text();
   return parseProductHunt(html);
 }
 

@@ -26,7 +26,7 @@ export async function chat(params) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), PRISM_CHAT_TIMEOUT_MS);
 
-    const res = await fetch(`${PRISM_SERVICE_URL}/chat?stream=false`, {
+    const response = await fetch(`${PRISM_SERVICE_URL}/chat?stream=false`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -39,12 +39,12 @@ export async function chat(params) {
     });
     clearTimeout(timeout);
 
-    if (!res.ok) {
-      const errText = await res.text().catch(() => "");
-      throw new Error(`Prism returned ${res.status}: ${errText.slice(0, 200)}`);
+    if (!response.ok) {
+      const errText = await response.text().catch(() => "");
+      throw new Error(`Prism returned ${response.status}: ${errText.slice(0, 200)}`);
     }
 
-    return await res.json();
+    return await response.json();
   } catch (error) {
     logger.error(`[PrismService] chat failed: ${error.message}`);
     throw error;
@@ -59,11 +59,11 @@ export async function health() {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), PRISM_HEALTH_TIMEOUT_MS);
-    const res = await fetch(`${PRISM_SERVICE_URL}/health`, {
+    const response = await fetch(`${PRISM_SERVICE_URL}/health`, {
       signal: controller.signal,
     });
     clearTimeout(timeout);
-    return res.ok;
+    return response.ok;
   } catch {
     return false;
   }
@@ -87,7 +87,7 @@ export async function textToSpeech(params) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), PRISM_TTS_TIMEOUT_MS);
 
-    const res = await fetch(`${PRISM_SERVICE_URL}/text-to-audio`, {
+    const response = await fetch(`${PRISM_SERVICE_URL}/text-to-audio`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -103,13 +103,13 @@ export async function textToSpeech(params) {
     });
     clearTimeout(timeout);
 
-    if (!res.ok) {
-      const errText = await res.text().catch(() => "");
-      throw new Error(`Prism TTS returned ${res.status}: ${errText.slice(0, 200)}`);
+    if (!response.ok) {
+      const errText = await response.text().catch(() => "");
+      throw new Error(`Prism TTS returned ${response.status}: ${errText.slice(0, 200)}`);
     }
 
-    const contentType = res.headers.get("content-type") || "audio/mpeg";
-    const arrayBuffer = await res.arrayBuffer();
+    const contentType = response.headers.get("content-type") || "audio/mpeg";
+    const arrayBuffer = await response.arrayBuffer();
     const audioBase64 = Buffer.from(arrayBuffer).toString("base64");
 
     return { audioBase64, contentType };
@@ -136,7 +136,7 @@ export async function speechToText(params) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), PRISM_STT_TIMEOUT_MS);
 
-    const res = await fetch(`${PRISM_SERVICE_URL}/audio-to-text`, {
+    const response = await fetch(`${PRISM_SERVICE_URL}/audio-to-text`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -152,12 +152,12 @@ export async function speechToText(params) {
     });
     clearTimeout(timeout);
 
-    if (!res.ok) {
-      const errText = await res.text().catch(() => "");
-      throw new Error(`Prism STT returned ${res.status}: ${errText.slice(0, 200)}`);
+    if (!response.ok) {
+      const errText = await response.text().catch(() => "");
+      throw new Error(`Prism STT returned ${response.status}: ${errText.slice(0, 200)}`);
     }
 
-    return await res.json();
+    return await response.json();
   } catch (error) {
     logger.error(`[PrismService] speechToText failed: ${error.message}`);
     throw error;

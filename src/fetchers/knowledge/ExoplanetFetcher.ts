@@ -93,13 +93,13 @@ function ensureLoaded() {
     if (values.length < 5) continue;
 
     const row: Record<string, any> = {};
-    headers.forEach((h, idx) => {
-      const val = values[idx] || "";
+    headers.forEach((h, index) => {
+      const value = values[index] || "";
       if (NUMERIC_FIELDS.has(h)) {
-        const num = parseFloat(val);
+        const num = parseFloat(value);
         row[h] = isNaN(num) ? null : num;
       } else {
-        row[h] = val || null;
+        row[h] = value || null;
       }
     });
 

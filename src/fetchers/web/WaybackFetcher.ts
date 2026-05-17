@@ -12,10 +12,10 @@ export async function getSnapshot(url, timestamp) {
   const params = new URLSearchParams({ url });
   if (timestamp) params.set("timestamp", timestamp);
 
-  const res = await fetch(`${AVAILABILITY_URL}?${params}`);
-  if (!res.ok) throw new Error(`Wayback API error ${res.status}`);
+  const response = await fetch(`${AVAILABILITY_URL}?${params}`);
+  if (!response.ok) throw new Error(`Wayback API error ${response.status}`);
 
-  const data = await res.json();
+  const data = await response.json();
   const snap = data.archived_snapshots?.closest;
 
   if (!snap) {
@@ -57,10 +57,10 @@ export async function getSnapshotHistory(url, { limit = 20, from, to }: Record<s
   if (from) params.set("from", from);
   if (to) params.set("to", to);
 
-  const res = await fetch(`${CDX_URL}?${params}`);
-  if (!res.ok) throw new Error(`Wayback CDX API error ${res.status}`);
+  const response = await fetch(`${CDX_URL}?${params}`);
+  if (!response.ok) throw new Error(`Wayback CDX API error ${response.status}`);
 
-  const data = await res.json();
+  const data = await response.json();
   if (!data || data.length < 2) {
     return { url, count: 0, snapshots: [] };
   }
@@ -70,15 +70,15 @@ export async function getSnapshotHistory(url, { limit = 20, from, to }: Record<s
   const rows = data.slice(1);
 
   const snapshots = rows.map((row) => {
-    const obj: Record<string, any> = {};
-    headers.forEach((h, i) => { obj[h] = row[i]; });
+    const object: Record<string, any> = {};
+    headers.forEach((h, i) => { object[h] = row[i]; });
     return {
-      timestamp: obj.timestamp,
-      date: formatWaybackTimestamp(obj.timestamp),
-      archiveUrl: `https://web.archive.org/web/${obj.timestamp}/${url}`,
-      statusCode: parseInt(obj.statuscode) || null,
-      mimeType: obj.mimetype,
-      sizeBytes: parseInt(obj.length) || null,
+      timestamp: object.timestamp,
+      date: formatWaybackTimestamp(object.timestamp),
+      archiveUrl: `https://web.archive.org/web/${object.timestamp}/${url}`,
+      statusCode: parseInt(object.statuscode) || null,
+      mimeType: object.mimetype,
+      sizeBytes: parseInt(object.length) || null,
     };
   });
 

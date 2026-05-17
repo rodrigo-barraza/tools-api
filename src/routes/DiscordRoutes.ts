@@ -62,9 +62,9 @@ router.get("/messages/stream", (req, res) => {
    * Used to detect when someone adds/removes a reaction on Discord
    * without the message ID itself changing.
    */
-  function reactionHash(msg) {
-    if (!msg.reactions?.length) return "";
-    return msg.reactions
+  function reactionHash(message) {
+    if (!message.reactions?.length) return "";
+    return message.reactions
       .map((r) => `${r.emoji?.id || r.emoji?.name}:${r.count}`)
       .join(",");
   }

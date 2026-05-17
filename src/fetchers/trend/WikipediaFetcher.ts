@@ -20,18 +20,18 @@ export async function fetchWikipediaTrends(date = null) {
 
   const url = `https://wikimedia.org/api/rest_v1/metrics/pageviews/top/en.wikipedia/all-access/${year}/${month}/${day}`;
 
-  const res = await fetch(url, {
+  const response = await fetch(url, {
     headers: {
       "User-Agent": USER_AGENT,
       Accept: "application/json",
     },
   });
 
-  if (!res.ok) {
-    throw new Error(`Wikipedia API returned ${res.status}: ${res.statusText}`);
+  if (!response.ok) {
+    throw new Error(`Wikipedia API returned ${response.status}: ${response.statusText}`);
   }
 
-  const data = await res.json();
+  const data = await response.json();
   const articles = data?.items?.[0]?.articles || [];
 
   return articles

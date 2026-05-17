@@ -123,8 +123,8 @@ export function initAgentWebSocket(httpServer) {
 
     ws.on("message", (raw) => {
       try {
-        const msg = JSON.parse(raw.toString());
-        handleAgentMessage(ws, msg, clientIp);
+        const message = JSON.parse(raw.toString());
+        handleAgentMessage(ws, message, clientIp);
       } catch (error) {
         logger.error(`[AgentWS] Invalid message: ${error.message}`);
       }
@@ -157,46 +157,46 @@ export function initAgentWebSocket(httpServer) {
 
     ws.on("message", async (raw) => {
       try {
-        const msg = JSON.parse(raw.toString());
+        const message = JSON.parse(raw.toString());
 
         // Only handle RPC requests (has id + method)
-        if (!msg.id || !msg.method) return;
+        if (!message.id || !message.method) return;
 
         // Meta-methods (no path routing needed)
-        if (msg.method === "agents.list") {
-          sendJson(ws, { jsonrpc: "2.0", id: msg.id, result: getConnectedAgents() });
+        if (message.method === "agents.list") {
+          sendJson(ws, { jsonrpc: "2.0", id: message.id, result: getConnectedAgents() });
           return;
         }
 
         // Extract the target path from params
-        const targetPath = msg.params?.path ||
-          msg.params?.paths ||
-          msg.params?.searchPath ||
-          msg.params?.source ||
-          msg.params?.pathA ||
-          msg.params?.cwd;
+        const targetPath = message.params?.path ||
+          message.params?.paths ||
+          message.params?.searchPath ||
+          message.params?.source ||
+          message.params?.pathA ||
+          message.params?.cwd;
 
         // Resolve target path to a string for routing
         const routePath = Array.isArray(targetPath) ? targetPath[0] : targetPath;
 
         if (!routePath) {
-          sendJson(ws, { jsonrpc: "2.0", id: msg.id, error: { code: -32602, message: "No routable path found in params" } });
+          sendJson(ws, { jsonrpc: "2.0", id: message.id, error: { code: -32602, message: "No routable path found in params" } });
           return;
         }
 
         // Find the agent that serves this path
         const route = routeForPath(routePath);
         if (!route) {
-          sendJson(ws, { jsonrpc: "2.0", id: msg.id, error: { code: -32001, message: `No agent found for path: ${routePath}` } });
+          sendJson(ws, { jsonrpc: "2.0", id: message.id, error: { code: -32001, message: `No agent found for path: ${routePath}` } });
           return;
         }
 
         // Proxy the RPC to the agent
         try {
-          const result = await sendRpc(route.id, msg.method, msg.params);
-          sendJson(ws, { jsonrpc: "2.0", id: msg.id, result });
+          const result = await sendRpc(route.id, message.method, message.params);
+          sendJson(ws, { jsonrpc: "2.0", id: message.id, result });
         } catch (error) {
-          sendJson(ws, { jsonrpc: "2.0", id: msg.id, error: { code: -32000, message: error.message } });
+          sendJson(ws, { jsonrpc: "2.0", id: message.id, error: { code: -32000, message: error.message } });
         }
       } catch (error) {
         logger.error(`[ClientWS] Invalid message: ${error.message}`);
@@ -223,10 +223,10 @@ export function initAgentWebSocket(httpServer) {
 // Message Handling
 // ────────────────────────────────────────────────────────────
 
-function handleAgentMessage(ws, msg, clientIp) {
+function handleAgentMessage(ws, message, clientIp) {
   // Registration
-  if (msg.method === "agent.register") {
-    const { agentId, name, roots, capabilities, version } = msg.params || {};
+  if (message.method === "agent.register") {
+    const { agentId, name, roots, capabilities, version } = message.params || {};
 
     if (!agentId || !Array.isArray(roots) || roots.length === 0) {
       sendJson(ws, { jsonrpc: "2.0", method: "agent.error", params: { error: "Invalid registration: agentId and roots required" } });
@@ -273,8 +273,8 @@ function handleAgentMessage(ws, msg, clientIp) {
   }
 
   // Deregistration
-  if (msg.method === "agent.deregister") {
-    const { agentId } = msg.params || {};
+  if (message.method === "agent.deregister") {
+    const { agentId } = message.params || {};
     if (agentId && agents.has(agentId)) {
       deregisterAgent(agentId, "graceful");
     }
@@ -282,8 +282,8 @@ function handleAgentMessage(ws, msg, clientIp) {
   }
 
   // Pong (application-level)
-  if (msg.method === "agent.pong") {
-    const { agentId } = msg.params || {};
+  if (message.method === "agent.pong") {
+    const { agentId } = message.params || {};
     if (agentId && agents.has(agentId)) {
       agents.get(agentId).lastPong = new Date();
     }
@@ -291,17 +291,17 @@ function handleAgentMessage(ws, msg, clientIp) {
   }
 
   // RPC response — resolve pending request
-  if (msg.id && (msg.result !== undefined || msg.error)) {
+  if (message.id && (message.result !== undefined || message.error)) {
     for (const [, agent] of agents) {
-      if (agent.ws === ws && agent.pendingRpc.has(msg.id)) {
-        const pending = agent.pendingRpc.get(msg.id);
-        agent.pendingRpc.delete(msg.id);
+      if (agent.ws === ws && agent.pendingRpc.has(message.id)) {
+        const pending = agent.pendingRpc.get(message.id);
+        agent.pendingRpc.delete(message.id);
         clearTimeout(pending.timer);
 
-        if (msg.error) {
-          pending.reject(new Error(msg.error.message || "RPC error"));
+        if (message.error) {
+          pending.reject(new Error(message.error.message || "RPC error"));
         } else {
-          pending.resolve(msg.result);
+          pending.resolve(message.result);
         }
         return;
       }
@@ -310,12 +310,12 @@ function handleAgentMessage(ws, msg, clientIp) {
   }
 
   // Streaming notification from agent (command.stdout, command.stderr)
-  if (msg.method && !msg.id) {
+  if (message.method && !message.id) {
     // These are forwarded to the appropriate SSE response
     // by the caller who set up the streaming RPC
     for (const [, agent] of agents) {
       if (agent.ws === ws && agent._streamCallback) {
-        agent._streamCallback(msg.method, msg.params);
+        agent._streamCallback(message.method, message.params);
       }
     }
     return;
@@ -530,9 +530,9 @@ function startHealthCheck(wss) {
 // Helpers
 // ────────────────────────────────────────────────────────────
 
-function sendJson(ws, obj) {
+function sendJson(ws, object) {
   if (ws.readyState === 1) {
-    ws.send(JSON.stringify(obj));
+    ws.send(JSON.stringify(object));
   }
 }
 

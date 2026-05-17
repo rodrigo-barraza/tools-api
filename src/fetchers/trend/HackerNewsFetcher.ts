@@ -13,9 +13,9 @@ const HN_API_BASE = "https://hacker-news.firebaseio.com/v0";
  * @returns {Promise<object|null>} Item data or null
  */
 async function fetchItem(id) {
-  const res = await fetch(`${HN_API_BASE}/item/${id}.json`);
-  if (!res.ok) return null;
-  return res.json();
+  const response = await fetch(`${HN_API_BASE}/item/${id}.json`);
+  if (!response.ok) return null;
+  return response.json();
 }
 
 /**
@@ -24,12 +24,12 @@ async function fetchItem(id) {
  * @returns {Promise<Array>} Normalized trend objects
  */
 export async function fetchHackerNewsTrends() {
-  const res = await fetch(`${HN_API_BASE}/topstories.json`);
-  if (!res.ok) {
-    throw new Error(`HN API returned ${res.status}: ${res.statusText}`);
+  const response = await fetch(`${HN_API_BASE}/topstories.json`);
+  if (!response.ok) {
+    throw new Error(`HN API returned ${response.status}: ${response.statusText}`);
   }
 
-  const storyIds = await res.json();
+  const storyIds = await response.json();
   const topIds = storyIds.slice(0, HACKERNEWS_TOP_STORY_LIMIT);
 
   // Fetch all stories in parallel

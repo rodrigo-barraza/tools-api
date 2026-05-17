@@ -21,13 +21,13 @@ import logger from "../logger.ts";
 export async function saveState(collectionName, data) {
   try {
     const db = getDB();
-    const doc = Array.isArray(data)
+    const document = Array.isArray(data)
       ? { _id: "current", items: data, updatedAt: new Date() }
       : { _id: "current", ...data, updatedAt: new Date() };
 
     await db
       .collection(collectionName)
-      .replaceOne({ _id: "current" }, doc, { upsert: true });
+      .replaceOne({ _id: "current" }, document, { upsert: true });
   } catch (error) {
     logger.error(
       `[State] ⚠️ Failed to save "${collectionName}": ${error.message}`,
@@ -45,12 +45,12 @@ export async function saveState(collectionName, data) {
 export async function loadState(collectionName) {
   try {
     const db = getDB();
-    const doc = await db
+    const document = await db
       .collection(collectionName)
       .findOne({ _id: "current" });
-    if (!doc) return null;
+    if (!document) return null;
 
-    const { _id, updatedAt, items, ...rest } = doc;
+    const { _id, updatedAt, items, ...rest } = document;
 
     // Array data stored under `items`
     if (items !== undefined && Object.keys(rest).length === 0) {

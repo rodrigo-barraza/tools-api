@@ -261,10 +261,10 @@ export async function loadUserWorkspaceRoots() {
   try {
     const db = getDB();
     const collection = db.collection(WORKSPACE_COLLECTION);
-    const doc = await collection.findOne({ _key: "user_roots" });
-    if (doc?.roots?.length > 0) {
-      refreshAllowedRoots(doc.roots);
-      logger.info(`   📂 User workspace roots: ${doc.roots.join(", ")}`);
+    const document = await collection.findOne({ _key: "user_roots" });
+    if (document?.roots?.length > 0) {
+      refreshAllowedRoots(document.roots);
+      logger.info(`   📂 User workspace roots: ${document.roots.join(", ")}`);
     }
   } catch (error) {
     logger.warn(`   ⚠️  Could not load user workspace roots: ${error.message}`);

@@ -29,16 +29,16 @@ async function lightsApiFetch(method, path, body = null) {
     options.body = JSON.stringify(body);
   }
 
-  const res = await fetch(url, options);
+  const response = await fetch(url, options);
 
-  if (!res.ok) {
-    const errBody = await res.json().catch(() => ({}));
+  if (!response.ok) {
+    const errBody = await response.json().catch(() => ({}));
     throw new Error(
-      errBody.error || `Lights API returned ${res.status}: ${res.statusText}`,
+      errBody.error || `Lights API returned ${response.status}: ${response.statusText}`,
     );
   }
 
-  return res.json();
+  return response.json();
 }
 
 const LightsDataService = {

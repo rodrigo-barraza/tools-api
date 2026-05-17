@@ -82,15 +82,15 @@ function loadFoodCSV(filename, source) {
     if (values.length < 40) continue;
 
     const row: Record<string, any> = {};
-    foodHeaders.forEach((h, idx) => {
-      row[h] = values[idx] || "";
+    foodHeaders.forEach((h, index) => {
+      row[h] = values[index] || "";
     });
 
     // Parse numeric nutrient fields (columns 36 onward are numeric)
     const numericStart = 35; // protein is index 35 (0-based)
     for (let n = numericStart; n < foodHeaders.length; n++) {
-      const val = parseFloat(row[foodHeaders[n]]);
-      row[foodHeaders[n]] = isNaN(val) ? null : val;
+      const value = parseFloat(row[foodHeaders[n]]);
+      row[foodHeaders[n]] = isNaN(value) ? null : value;
     }
 
     // Tag the data source for provenance
@@ -123,8 +123,8 @@ function ensureLoaded() {
   for (let i = 1; i < nutrientLines.length; i++) {
     const values = parseCSVLine(nutrientLines[i]);
     const row: Record<string, any> = {};
-    nutrientHeaders.forEach((h, idx) => {
-      row[h] = values[idx] || "";
+    nutrientHeaders.forEach((h, index) => {
+      row[h] = values[index] || "";
     });
     NUTRIENT_DB.push(row);
   }

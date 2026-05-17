@@ -27,7 +27,7 @@ export async function readRssFeed(url, options: Record<string, any> = {}) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
-    const res = await fetch(url, {
+    const response = await fetch(url, {
       signal: controller.signal,
       headers: {
         "User-Agent": USER_AGENT,
@@ -36,11 +36,11 @@ export async function readRssFeed(url, options: Record<string, any> = {}) {
     });
     clearTimeout(timeout);
 
-    if (!res.ok) {
-      return { error: `HTTP ${res.status}: ${res.statusText}`, url };
+    if (!response.ok) {
+      return { error: `HTTP ${response.status}: ${response.statusText}`, url };
     }
 
-    const xml = await res.text();
+    const xml = await response.text();
 
     const parser = new xml2js.Parser({
       explicitArray: false,
@@ -149,10 +149,10 @@ function extractLink(link) {
   return link.href || null;
 }
 
-function normalizeArray(val) {
-  if (!val) return [];
-  if (Array.isArray(val)) return val;
-  return [val];
+function normalizeArray(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
+  return [value];
 }
 
 function stripCdata(str) {

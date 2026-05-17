@@ -15,11 +15,11 @@ const HEADERS = () => ({
 
 async function get(path) {
   const url = `${FINNHUB_BASE_URL}${path}`;
-  const res = await fetch(url, { headers: HEADERS() });
-  if (!res.ok) {
-    throw new Error(`Finnhub ${path} → ${res.status} ${res.statusText}`);
+  const response = await fetch(url, { headers: HEADERS() });
+  if (!response.ok) {
+    throw new Error(`Finnhub ${path} → ${response.status} ${response.statusText}`);
   }
-  return res.json();
+  return response.json();
 }
 
 // Rate limiting handled by RateLimiterService

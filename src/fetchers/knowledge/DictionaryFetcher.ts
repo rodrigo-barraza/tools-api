@@ -14,14 +14,14 @@ import { DICTIONARY_BASE_URL } from "../../constants.ts";
  */
 export async function fetchDefinition(word) {
   const url = `${DICTIONARY_BASE_URL}/${encodeURIComponent(word.toLowerCase().trim())}`;
-  const res = await fetch(url);
-  if (res.status === 404) {
+  const response = await fetch(url);
+  if (response.status === 404) {
     return { word, found: false, message: "Word not found" };
   }
-  if (!res.ok) {
-    throw new Error(`Dictionary API → ${res.status} ${res.statusText}`);
+  if (!response.ok) {
+    throw new Error(`Dictionary API → ${response.status} ${response.statusText}`);
   }
-  const data = await res.json();
+  const data = await response.json();
   const entry = data[0];
   // Extract phonetics with audio
   const phonetics = (entry.phonetics || [])

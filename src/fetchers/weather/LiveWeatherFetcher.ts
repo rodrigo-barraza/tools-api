@@ -45,13 +45,13 @@ async function geocodeLocation(location) {
   await rateLimiter.wait("OPEN_METEO");
 
   const url = `${GEOCODING_URL}?name=${encodeURIComponent(location)}&count=1&language=en&format=json`;
-  const res = await fetch(url);
+  const response = await fetch(url);
 
-  if (!res.ok) {
-    throw new Error(`Geocoding API returned ${res.status}`);
+  if (!response.ok) {
+    throw new Error(`Geocoding API returned ${response.status}`);
   }
 
-  const data = await res.json();
+  const data = await response.json();
   if (!data.results || data.results.length === 0) {
     return null;
   }
@@ -112,13 +112,13 @@ export async function fetchLiveWeather({ location, latitude, longitude, units = 
     `&forecast_days=3`;
 
   await rateLimiter.wait("OPEN_METEO");
-  const res = await fetch(url);
+  const response = await fetch(url);
 
-  if (!res.ok) {
-    throw new Error(`Open-Meteo forecast API returned ${res.status}`);
+  if (!response.ok) {
+    throw new Error(`Open-Meteo forecast API returned ${response.status}`);
   }
 
-  const data = await res.json();
+  const data = await response.json();
   const current = data.current;
   const daily = data.daily;
   const weatherDescription = WMO_WEATHER_CODES[current.weather_code] || "Unknown";

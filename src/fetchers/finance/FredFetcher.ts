@@ -38,14 +38,14 @@ async function fredFetch(endpoint, params: Record<string, any> = {}) {
   }
 
   const url = buildUrl(endpoint, params);
-  const res = await fetch(url);
+  const response = await fetch(url);
 
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`FRED API → ${res.status} ${res.statusText}: ${body}`);
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`FRED API → ${response.status} ${response.statusText}: ${body}`);
   }
 
-  return res.json();
+  return response.json();
 }
 
 // ─── Series Info ───────────────────────────────────────────────────

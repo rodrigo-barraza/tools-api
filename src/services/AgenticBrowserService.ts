@@ -258,8 +258,8 @@ async function actionScroll(page, { direction, selector, amount }) {
       await page.evaluate(
         ({ sel }) => {
            
-          const el = document.querySelector(sel);
-          if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+          const element = document.querySelector(sel);
+          if (element) element.scrollIntoView({ behavior: "smooth", block: "center" });
         },
         { sel: selector },
       );
@@ -305,12 +305,12 @@ async function actionGetContent(page, { selector, format }) {
 
     if (format === "html") {
       content = selector
-        ? await page.$eval(selector, (el) => el.innerHTML).catch(() => null)
+        ? await page.$eval(selector, (element) => element.innerHTML).catch(() => null)
         : await page.content();
     } else {
       // Default: extract text content
       content = selector
-        ? await page.$eval(selector, (el) => el.innerText).catch(() => null)
+        ? await page.$eval(selector, (element) => element.innerText).catch(() => null)
          
         : await page.evaluate(() => document.body.innerText);
     }
@@ -398,13 +398,13 @@ async function actionGetElements(page, { selector, limit }) {
         const allElements = root.querySelectorAll(interactiveSelectors.join(", "));
         const results = [];
 
-        for (const el of allElements) {
+        for (const element of allElements) {
           if (results.length >= max) break;
 
           // Skip invisible elements
-          const rect = el.getBoundingClientRect();
+          const rect = element.getBoundingClientRect();
            
-          const style = window.getComputedStyle(el);
+          const style = window.getComputedStyle(element);
           if (
             style.display === "none" ||
             style.visibility === "hidden" ||
@@ -413,37 +413,37 @@ async function actionGetElements(page, { selector, limit }) {
 
           // Build the best CSS selector for this element
           let cssSelector = "";
-          if (el.id) {
-            cssSelector = `#${el.id}`;
-          } else if (el.getAttribute("data-testid")) {
-            cssSelector = `[data-testid="${el.getAttribute("data-testid")}"]`;
-          } else if (el.getAttribute("name")) {
-            cssSelector = `${el.tagName.toLowerCase()}[name="${el.getAttribute("name")}"]`;
-          } else if (el.getAttribute("aria-label")) {
-            cssSelector = `[aria-label="${el.getAttribute("aria-label")}"]`;
-          } else if (el.className && typeof el.className === "string") {
+          if (element.id) {
+            cssSelector = `#${element.id}`;
+          } else if (element.getAttribute("data-testid")) {
+            cssSelector = `[data-testid="${element.getAttribute("data-testid")}"]`;
+          } else if (element.getAttribute("name")) {
+            cssSelector = `${element.tagName.toLowerCase()}[name="${element.getAttribute("name")}"]`;
+          } else if (element.getAttribute("aria-label")) {
+            cssSelector = `[aria-label="${element.getAttribute("aria-label")}"]`;
+          } else if (element.className && typeof element.className === "string") {
             // Use first meaningful class
-            const cls = el.className.trim().split(/\s+/)[0];
-            if (cls) cssSelector = `${el.tagName.toLowerCase()}.${cls}`;
+            const cls = element.className.trim().split(/\s+/)[0];
+            if (cls) cssSelector = `${element.tagName.toLowerCase()}.${cls}`;
           }
 
           // Fallback: tag + nth-of-type
           if (!cssSelector) {
-            cssSelector = el.tagName.toLowerCase();
+            cssSelector = element.tagName.toLowerCase();
           }
 
-          const text = (el.innerText || el.textContent || "").trim().slice(0, 80);
-          const tag = el.tagName.toLowerCase();
+          const text = (element.innerText || element.textContent || "").trim().slice(0, 80);
+          const tag = element.tagName.toLowerCase();
           const entry: Record<string, any> = { tag, selector: cssSelector };
 
           if (text) entry.text = text;
-          if (el.getAttribute("type")) entry.type = el.getAttribute("type");
-          if (el.getAttribute("placeholder")) entry.placeholder = el.getAttribute("placeholder");
-          if (el.getAttribute("href")) entry.href = el.getAttribute("href").slice(0, 120);
-          if (el.getAttribute("value")) entry.value = el.getAttribute("value").slice(0, 60);
-          if (el.getAttribute("role")) entry.role = el.getAttribute("role");
-          if (el.disabled) entry.disabled = true;
-          if (el.getAttribute("aria-label")) entry.ariaLabel = el.getAttribute("aria-label");
+          if (element.getAttribute("type")) entry.type = element.getAttribute("type");
+          if (element.getAttribute("placeholder")) entry.placeholder = element.getAttribute("placeholder");
+          if (element.getAttribute("href")) entry.href = element.getAttribute("href").slice(0, 120);
+          if (element.getAttribute("value")) entry.value = element.getAttribute("value").slice(0, 60);
+          if (element.getAttribute("role")) entry.role = element.getAttribute("role");
+          if (element.disabled) entry.disabled = true;
+          if (element.getAttribute("aria-label")) entry.ariaLabel = element.getAttribute("aria-label");
 
           results.push(entry);
         }

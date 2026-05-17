@@ -10,12 +10,12 @@ let heroCacheTime = 0;
 const HERO_CACHE_TTL = MS_PER_DAY;
 
 async function fetchJson(path: string): Promise<any> {
-  const res = await fetch(`${BASE_URL}${path}`);
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`OpenDota API error ${res.status}: ${text.slice(0, 200)}`);
+  const response = await fetch(`${BASE_URL}${path}`);
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`OpenDota API error ${response.status}: ${text.slice(0, 200)}`);
   }
-  return res.json();
+  return response.json();
 }
 
 // ── Hero Data ──────────────────────────────────────────────────

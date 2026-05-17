@@ -32,7 +32,7 @@ async function authenticate() {
   const baseUrl = getBaseUrl();
   if (!baseUrl) throw new Error("QBITTORRENT_URL not configured");
 
-  const res = await fetch(`${baseUrl}/api/v2/auth/login`, {
+  const response = await fetch(`${baseUrl}/api/v2/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -41,17 +41,17 @@ async function authenticate() {
     }),
   });
 
-  if (!res.ok) {
-    throw new Error(`qBittorrent auth failed: ${res.status} ${res.statusText}`);
+  if (!response.ok) {
+    throw new Error(`qBittorrent auth failed: ${response.status} ${response.statusText}`);
   }
 
-  const text = await res.text();
+  const text = await response.text();
   if (text.trim() !== "Ok.") {
     throw new Error(`qBittorrent auth rejected: ${text}`);
   }
 
   // Extract SID from Set-Cookie header
-  const setCookie = res.headers.get("set-cookie") || "";
+  const setCookie = response.headers.get("set-cookie") || "";
   const sidMatch = setCookie.match(/SID=([^;]+)/);
   if (!sidMatch) {
     throw new Error("qBittorrent did not return SID cookie");
@@ -91,10 +91,10 @@ async function qbtFetch(path, { method = "GET", body, params }: Record<string, a
     }
   }
 
-  const res = await fetch(url, opts);
+  const response = await fetch(url, opts);
 
   // Session expired — re-auth once
-  if (res.status === 403) {
+  if (response.status === 403) {
     sessionCookie = null;
     sessionExpiry = 0;
     const newSid = await authenticate();
@@ -107,12 +107,12 @@ async function qbtFetch(path, { method = "GET", body, params }: Record<string, a
     return ct.includes("json") ? retry.json() : retry.text();
   }
 
-  if (!res.ok) {
-    throw new Error(`qBittorrent API error: ${res.status} ${res.statusText}`);
+  if (!response.ok) {
+    throw new Error(`qBittorrent API error: ${response.status} ${response.statusText}`);
   }
 
-  const ct = res.headers.get("content-type") || "";
-  return ct.includes("json") ? res.json() : res.text();
+  const ct = response.headers.get("content-type") || "";
+  return ct.includes("json") ? response.json() : response.text();
 }
 
 // ─── Search API ─────────────────────────────────────────────

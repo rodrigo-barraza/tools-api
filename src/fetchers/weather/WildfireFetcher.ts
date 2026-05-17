@@ -6,9 +6,9 @@ const EONET_URL =
  * Free API, no key required.
  */
 export async function fetchWildfires() {
-  const res = await fetch(EONET_URL);
-  if (!res.ok) throw new Error(`EONET ${res.status}: ${res.statusText}`);
-  const json = await res.json();
+  const response = await fetch(EONET_URL);
+  if (!response.ok) throw new Error(`EONET ${response.status}: ${response.statusText}`);
+  const json = await response.json();
 
   return (json.events || []).map((event) => {
     const geo = event.geometry?.[0] || {};

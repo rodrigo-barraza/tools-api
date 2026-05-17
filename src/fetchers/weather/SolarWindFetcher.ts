@@ -14,22 +14,22 @@ function parseRows(rows, fields) {
     .map((row) => {
       const time = new Date(row[0] + "Z").getTime();
       if (isNaN(time) || time < cutoff) return null;
-      const obj = { time: row[0] };
+      const object = { time: row[0] };
       fields.forEach((f, i) => {
-        const val = parseFloat(row[i + 1]);
-        obj[f] = isNaN(val) ? null : val;
+        const value = parseFloat(row[i + 1]);
+        object[f] = isNaN(value) ? null : value;
       });
-      return obj;
+      return object;
     })
     .filter(Boolean);
 }
 
-function downsample(arr, intervalMinutes) {
-  if (arr.length === 0) return arr;
+function downsample(array, intervalMinutes) {
+  if (array.length === 0) return array;
   const result = [];
   let lastBucket = null;
 
-  for (const point of arr) {
+  for (const point of array) {
     const t = new Date(point.time + "Z").getTime();
     const bucket = Math.floor(t / (intervalMinutes * 60_000));
     if (bucket !== lastBucket) {

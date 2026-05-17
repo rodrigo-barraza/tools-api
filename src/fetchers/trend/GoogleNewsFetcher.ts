@@ -65,19 +65,19 @@ export async function fetchGoogleNews() {
 
   for (const { url, section } of sections) {
     try {
-      const res = await fetch(url, {
+      const response = await fetch(url, {
         headers: {
           "User-Agent": USER_AGENT,
           Accept: "application/rss+xml, application/xml, text/xml",
         },
       });
 
-      if (!res.ok) {
-        logger.warn(`[Google News] ⚠️ ${section} returned ${res.status}`);
+      if (!response.ok) {
+        logger.warn(`[Google News] ⚠️ ${section} returned ${response.status}`);
         continue;
       }
 
-      const xml = await res.text();
+      const xml = await response.text();
       const items = extractXmlItems(xml, "item");
 
       for (const item of items) {

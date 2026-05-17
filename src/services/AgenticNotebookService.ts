@@ -205,7 +205,7 @@ async function replaceCell(filePath, notebook, { cellIndex, content, cellType })
   // Update the cell in place
   if (content != null) {
     existingCell.source = content.split("\n").map(
-      (line, i, arr) => (i < arr.length - 1 ? line + "\n" : line),
+      (line, i, array) => (i < array.length - 1 ? line + "\n" : line),
     );
   }
   if (cellType) {
@@ -260,7 +260,7 @@ async function deleteCell(filePath, notebook, cellIndex) {
 
 function createCell(type, content) {
   const source = content.split("\n").map(
-    (line, i, arr) => (i < arr.length - 1 ? line + "\n" : line),
+    (line, i, array) => (i < array.length - 1 ? line + "\n" : line),
   );
 
   if (type === "code") {

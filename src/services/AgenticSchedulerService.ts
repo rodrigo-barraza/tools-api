@@ -143,7 +143,7 @@ export async function agenticScheduleCreate(data) {
     nextRunAt = new Date(now.getTime() + delayMs);
   }
 
-  const doc = {
+  const document = {
     project,
     scheduleId,
     name,
@@ -160,10 +160,10 @@ export async function agenticScheduleCreate(data) {
     updatedAt: now,
   };
 
-  await col.insertOne(doc);
+  await col.insertOne(document);
 
   return {
-    schedule: sanitize(doc),
+    schedule: sanitize(document),
     message: type === "trigger"
       ? `Trigger '${name}' created (fire with remote_trigger)`
       : `Schedule #${scheduleId} '${name}' created — next run at ${nextRunAt.toISOString()}`,
@@ -364,19 +364,19 @@ async function firePrismAgent(schedule, payload: Record<string, any> = {}) {
       autoApprove: true, // Scheduled tasks run unattended
     };
 
-    const res = await fetch(`${prismUrl}/agent`, {
+    const response = await fetch(`${prismUrl}/agent`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
 
-    if (!res.ok) {
-      const errBody = await res.json().catch(() => ({}));
-      logger.error(`[Scheduler] Prism returned ${res.status}: ${errBody.error || res.statusText}`);
-      return { error: errBody.error || `Prism returned ${res.status}` };
+    if (!response.ok) {
+      const errBody = await response.json().catch(() => ({}));
+      logger.error(`[Scheduler] Prism returned ${response.status}: ${errBody.error || response.statusText}`);
+      return { error: errBody.error || `Prism returned ${response.status}` };
     }
 
-    return await res.json().catch(() => ({ acknowledged: true }));
+    return await response.json().catch(() => ({ acknowledged: true }));
   } catch (error) {
     logger.error(`[Scheduler] Failed to reach Prism: ${error.message}`);
     return { error: error.message };
@@ -387,8 +387,8 @@ async function firePrismAgent(schedule, payload: Record<string, any> = {}) {
 // Helpers
 // ────────────────────────────────────────────────────────────
 
-function sanitize(doc) {
-  if (!doc) return null;
-  const { _id, ...rest } = doc;
+function sanitize(document) {
+  if (!document) return null;
+  const { _id, ...rest } = document;
   return rest;
 }

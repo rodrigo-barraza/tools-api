@@ -92,12 +92,12 @@ function connect(options: Record<string, any> = {}) {
 
   socket.onmessage = (event) => {
     try {
-      const msg = JSON.parse(event.data);
+      const message = JSON.parse(event.data);
 
       // Check for error messages
-      if (msg.error) {
-        stats.lastError = msg.error;
-        logger.error(`[AisStream] ❌ Error: ${msg.error}`);
+      if (message.error) {
+        stats.lastError = message.error;
+        logger.error(`[AisStream] ❌ Error: ${message.error}`);
         return;
       }
 
@@ -105,7 +105,7 @@ function connect(options: Record<string, any> = {}) {
       stats.lastMessageAt = new Date().toISOString();
 
       // Process and buffer the message
-      const processed = processMessage(msg);
+      const processed = processMessage(message);
       if (processed) {
         // Add to ring buffer
         vesselBuffer.push(processed);
@@ -125,8 +125,8 @@ function connect(options: Record<string, any> = {}) {
     }
   };
 
-  socket.onerror = (err) => {
-    stats.lastError = err.message || "WebSocket error";
+  socket.onerror = (error) => {
+    stats.lastError = error.message || "WebSocket error";
     logger.error(`[AisStream] ❌ WebSocket error: ${stats.lastError}`);
   };
 

@@ -50,14 +50,14 @@ async function eiaFetch(route, params: Record<string, any> = {}) {
   await rateLimiter.wait("EIA");
 
   const url = buildUrl(route, params);
-  const res = await fetch(url);
+  const response = await fetch(url);
 
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`EIA API → ${res.status} ${res.statusText}: ${body}`);
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`EIA API → ${response.status} ${response.statusText}: ${body}`);
   }
 
-  const json = await res.json();
+  const json = await response.json();
 
   // EIA returns errors inside the response body
   if (json.error) {
@@ -216,13 +216,13 @@ export async function getData(route, options: Record<string, any> = {}) {
 
   // Direct fetch since we've manually built the URL
   await rateLimiter.wait("EIA");
-  const res = await fetch(url);
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`EIA API → ${res.status} ${res.statusText}: ${body}`);
+  const response = await fetch(url);
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`EIA API → ${response.status} ${response.statusText}: ${body}`);
   }
 
-  const json = await res.json();
+  const json = await response.json();
   if (json.error) throw new Error(`EIA API error: ${json.error}`);
 
   const resp = json.response || json;

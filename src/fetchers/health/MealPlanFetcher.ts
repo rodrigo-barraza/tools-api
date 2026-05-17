@@ -61,14 +61,14 @@ function ensureFoodCache() {
       if (values.length < 40) continue;
 
       const row: Record<string, any> = {};
-      headers.forEach((h, idx) => {
-        row[h] = values[idx] || "";
+      headers.forEach((h, index) => {
+        row[h] = values[index] || "";
       });
 
       const numericStart = 35;
       for (let n = numericStart; n < headers.length; n++) {
-        const val = parseFloat(row[headers[n]]);
-        row[headers[n]] = isNaN(val) ? null : val;
+        const value = parseFloat(row[headers[n]]);
+        row[headers[n]] = isNaN(value) ? null : value;
       }
       foods.push(row);
     }
@@ -199,8 +199,8 @@ export function buildMealPlan({
   };
 
   // Merge macro targets
-  for (const [key, val] of Object.entries(macroTargets)) {
-    targets[key] = val;
+  for (const [key, value] of Object.entries(macroTargets)) {
+    targets[key] = value;
   }
 
   // ── Apply filters ────────────────────────────────────────────
@@ -270,8 +270,8 @@ export function buildMealPlan({
         // Bonus for emphasized nutrients
         if (emphasis) {
           for (const nutrient of emphasis) {
-            const val = (food[nutrient] || 0) * portionScale;
-            if (val > 0) score += val * 2;
+            const value = (food[nutrient] || 0) * portionScale;
+            if (value > 0) score += value * 2;
           }
         }
 

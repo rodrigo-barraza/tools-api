@@ -106,20 +106,20 @@ async function executeTool(toolName: string, endpoint: Record<string, any>, args
       if (context.agent && !bodyArgs.agent) bodyArgs.agent = context.agent;
       if (context.username && !bodyArgs.username) bodyArgs.username = context.username;
 
-      const res = await fetch(url, {
+      const response = await fetch(url, {
         method: "POST",
         headers,
         body: JSON.stringify(bodyArgs),
       });
-      if (!res.ok) {
-        return { error: `API returned ${res.status}: ${res.statusText}` };
+      if (!response.ok) {
+        return { error: `API returned ${response.status}: ${response.statusText}` };
       }
       // Check content type — some POST endpoints return binary
-      const ct = res.headers.get("content-type") || "";
+      const ct = response.headers.get("content-type") || "";
       if (ct.includes("application/json")) {
-        return await res.json();
+        return await response.json();
       }
-      return { result: await res.text() };
+      return { result: await response.text() };
     }
 
     const url = buildUrl(endpoint, resolvedArgs);
@@ -128,11 +128,11 @@ async function executeTool(toolName: string, endpoint: Record<string, any>, args
     if (context.agent) headers["X-Agent"] = context.agent;
     if (context.username) headers["X-Username"] = context.username;
 
-    const res = await fetch(url, { headers });
-    if (!res.ok) {
-      return { error: `API returned ${res.status}: ${res.statusText}` };
+    const response = await fetch(url, { headers });
+    if (!response.ok) {
+      return { error: `API returned ${response.status}: ${response.statusText}` };
     }
-    return await res.json();
+    return await response.json();
   } catch (error) {
     return { error: `Tool execution failed: ${error.message}` };
   }

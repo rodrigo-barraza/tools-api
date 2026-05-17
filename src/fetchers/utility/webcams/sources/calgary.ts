@@ -22,13 +22,13 @@ export async function refreshCalgaryWebcams() {
       break;
     }
 
-    const parsedWebcams = data.map((cam, idx) => {
+    const parsedWebcams = data.map((cam, index) => {
       const lat = cam.point?.coordinates ? cam.point.coordinates[1] : null;
       const lon = cam.point?.coordinates ? cam.point.coordinates[0] : null;
       
       return {
-        id: `CGY-${offset + idx}`, // Reliable unique fallback since camera_url might change
-        name: cam.camera_location || cam.camera_url?.description || `Calgary Camera ${offset + idx}`,
+        id: `CGY-${offset + index}`, // Reliable unique fallback since camera_url might change
+        name: cam.camera_location || cam.camera_url?.description || `Calgary Camera ${offset + index}`,
         url: cam.camera_url?.url || "",
         area: cam.quadrant || "Calgary",
         latitude: lat,

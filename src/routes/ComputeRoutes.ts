@@ -370,16 +370,16 @@ router.post("/json/transform", asyncHandler(async (req, res) => {
             if (Array.isArray(result) && op.key && op.value !== undefined) {
               const opType = op.operator || "eq";
               result = result.filter((item) => {
-                const val = item?.[op.key];
+                const value = item?.[op.key];
                 switch (opType) {
-                  case "eq": return val === op.value;
-                  case "neq": return val !== op.value;
-                  case "gt": return val > op.value;
-                  case "gte": return val >= op.value;
-                  case "lt": return val < op.value;
-                  case "lte": return val <= op.value;
-                  case "contains": return String(val).includes(String(op.value));
-                  case "startsWith": return String(val).startsWith(String(op.value));
+                  case "eq": return value === op.value;
+                  case "neq": return value !== op.value;
+                  case "gt": return value > op.value;
+                  case "gte": return value >= op.value;
+                  case "lt": return value < op.value;
+                  case "lte": return value <= op.value;
+                  case "contains": return String(value).includes(String(op.value));
+                  case "startsWith": return String(value).startsWith(String(op.value));
                   default: return true;
                 }
               });
@@ -431,8 +431,8 @@ router.post("/json/transform", asyncHandler(async (req, res) => {
           case "sum":
             if (Array.isArray(result)) {
               result = result.reduce((acc, item) => {
-                const val = op.key ? item?.[op.key] : item;
-                return acc + (typeof val === "number" ? val : 0);
+                const value = op.key ? item?.[op.key] : item;
+                return acc + (typeof value === "number" ? value : 0);
               }, 0);
             }
             break;
@@ -470,9 +470,9 @@ router.post("/csv", (req, res) => {
     // Determine columns from explicit list or first object keys
     const cols = columns || Object.keys(data[0]);
     // Escape CSV values
-    const escape = (val) => {
-      if (val === null || val === undefined) return "";
-      const str = String(val);
+    const escape = (value) => {
+      if (value === null || value === undefined) return "";
+      const str = String(value);
       if (str.includes(delim) || str.includes('"') || str.includes("\n")) {
         return `"${str.replace(/"/g, '""')}"`;
       }
@@ -1554,11 +1554,11 @@ function parseCronField(field: any, { min, max }: any) {
       }
       for (let i = start; i <= end; i += step) values.add(i);
     } else {
-      const val = parseInt(rangePart);
-      if (isNaN(val) || val < min || val > max) {
+      const value = parseInt(rangePart);
+      if (isNaN(value) || value < min || value > max) {
         throw new Error(`Invalid value: ${part} (valid: ${min}-${max})`);
       }
-      values.add(val);
+      values.add(value);
     }
   }
   return [...values].sort((a, b) => a - b);

@@ -75,13 +75,13 @@ export async function fetchGoogleAirQuality() {
     usEpaColor: usAqi?.color ?? null,
 
     // All AQI indexes
-    indexes: indexes.map((idx) => ({
-      code: idx.code,
-      displayName: idx.displayName,
-      aqi: idx.aqi,
-      category: idx.category,
-      dominantPollutant: idx.dominantPollutant,
-      color: idx.color,
+    indexes: indexes.map((index) => ({
+      code: index.code,
+      displayName: index.displayName,
+      aqi: index.aqi,
+      category: index.category,
+      dominantPollutant: index.dominantPollutant,
+      color: index.color,
     })),
 
     // Pollutant details

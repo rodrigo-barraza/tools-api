@@ -14,12 +14,12 @@ export async function fetchTVMazeTrends() {
   for (const country of countries) {
     try {
       const url = `${TVMAZE_SCHEDULE_URL}?country=${country}&date=${today}`;
-      const res = await fetch(url);
-      if (!res.ok) {
-        logger.error(`[TVMaze] ❌ ${country}: ${res.status}`);
+      const response = await fetch(url);
+      if (!response.ok) {
+        logger.error(`[TVMaze] ❌ ${country}: ${response.status}`);
         continue;
       }
-      const episodes = await res.json();
+      const episodes = await response.json();
       allShows.push(...episodes.map((ep) => ({ ...ep, country })));
     } catch (error) {
       logger.error(`[TVMaze] ❌ ${country}: ${error.message}`);

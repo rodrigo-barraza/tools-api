@@ -13,7 +13,7 @@ const redditTokenManager = new TokenManager(async () => {
   const credentials = Buffer.from(
     `${CONFIG.REDDIT_CLIENT_ID}:${CONFIG.REDDIT_CLIENT_SECRET}`,
   ).toString("base64");
-  const res = await fetch("https://www.reddit.com/api/v1/access_token", {
+  const response = await fetch("https://www.reddit.com/api/v1/access_token", {
     method: "POST",
     headers: {
       Authorization: `Basic ${credentials}`,
@@ -22,10 +22,10 @@ const redditTokenManager = new TokenManager(async () => {
     },
     body: "grant_type=client_credentials",
   });
-  if (!res.ok) {
-    throw new Error(`Reddit auth failed: ${res.status} ${res.statusText}`);
+  if (!response.ok) {
+    throw new Error(`Reddit auth failed: ${response.status} ${response.statusText}`);
   }
-  const data = await res.json();
+  const data = await response.json();
   return {
     token: data.access_token,
     expiresInMs: (data.expires_in - 60) * 1000,
@@ -40,16 +40,16 @@ const redditTokenManager = new TokenManager(async () => {
  */
 async function fetchSubreddit(subreddit, token, limit) {
   const url = `https://oauth.reddit.com/r/${subreddit}/hot.json?limit=${limit}&raw_json=1`;
-  const res = await fetch(url, {
+  const response = await fetch(url, {
     headers: {
       Authorization: `Bearer ${token}`,
       "User-Agent": CONFIG.REDDIT_USER_AGENT,
     },
   });
-  if (!res.ok) {
-    throw new Error(`Reddit /r/${subreddit}: ${res.status} ${res.statusText}`);
+  if (!response.ok) {
+    throw new Error(`Reddit /r/${subreddit}: ${response.status} ${response.statusText}`);
   }
-  const data = await res.json();
+  const data = await response.json();
   return data?.data?.children || [];
 }
 /**

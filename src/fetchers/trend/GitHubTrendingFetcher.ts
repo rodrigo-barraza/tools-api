@@ -8,18 +8,18 @@ const GITHUB_TRENDING_URL = "https://github.com/trending";
  * @returns {Promise<Array>} Normalized trend objects
  */
 export async function fetchGitHubTrending() {
-  const res = await fetch(`${GITHUB_TRENDING_URL}?since=daily`, {
+  const response = await fetch(`${GITHUB_TRENDING_URL}?since=daily`, {
     headers: {
       "User-Agent": randomUserAgent(),
       Accept: "text/html",
     },
   });
-  if (!res.ok) {
+  if (!response.ok) {
     throw new Error(
-      `GitHub Trending returned ${res.status}: ${res.statusText}`,
+      `GitHub Trending returned ${response.status}: ${response.statusText}`,
     );
   }
-  const html = await res.text();
+  const html = await response.text();
   return parseGitHubTrending(html);
 }
 /**

@@ -42,10 +42,10 @@ const OEMBED_URL = "https://www.youtube.com/oembed";
  */
 async function fetchOembedMetadata(videoId) {
   const url = `${OEMBED_URL}?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
-  const res = await fetch(url);
-  if (!res.ok) return null;
+  const response = await fetch(url);
+  if (!response.ok) return null;
 
-  const data = await res.json();
+  const data = await response.json();
   return {
     title: data.title || null,
     author: data.author_name || null,
@@ -68,15 +68,15 @@ async function fetchOembedMetadata(videoId) {
 async function fetchPageMetadata(videoId) {
   const url = `https://www.youtube.com/watch?v=${videoId}`;
   try {
-    const res = await fetch(url, {
+    const response = await fetch(url, {
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
         "Accept-Language": "en-US,en;q=0.9",
       },
     });
-    if (!res.ok) return {};
-    const html = await res.text();
+    if (!response.ok) return {};
+    const html = await response.text();
 
     const extract = (pattern) => {
       const match = html.match(pattern);

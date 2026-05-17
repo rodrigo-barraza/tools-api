@@ -62,7 +62,7 @@ export async function agenticFetchUrl(url, { selector }: Record<string, any> = {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
-    const res = await fetch(url, {
+    const response = await fetch(url, {
       signal: controller.signal,
       headers: {
         "User-Agent": USER_AGENT,
@@ -73,19 +73,19 @@ export async function agenticFetchUrl(url, { selector }: Record<string, any> = {
     });
     clearTimeout(timeout);
 
-    if (!res.ok) {
+    if (!response.ok) {
       return {
-        error: `HTTP ${res.status}: ${res.statusText}`,
+        error: `HTTP ${response.status}: ${response.statusText}`,
         url,
-        status: res.status,
+        status: response.status,
       };
     }
 
-    const contentType = res.headers.get("content-type") || "";
+    const contentType = response.headers.get("content-type") || "";
 
     // JSON — return directly
     if (contentType.includes("application/json")) {
-      const json = await res.json();
+      const json = await response.json();
       const text = JSON.stringify(json, null, 2);
       return {
         url,
@@ -100,7 +100,7 @@ export async function agenticFetchUrl(url, { selector }: Record<string, any> = {
 
     // Plain text
     if (contentType.includes("text/plain")) {
-      const text = await res.text();
+      const text = await response.text();
       return {
         url,
         contentType: "text/plain",
@@ -113,7 +113,7 @@ export async function agenticFetchUrl(url, { selector }: Record<string, any> = {
     }
 
     // HTML — convert to markdown
-    const html = await res.text();
+    const html = await response.text();
     const markdown = htmlToMarkdown(html, { selector });
 
     return {
@@ -201,7 +201,7 @@ async function _searchBrave(query, { limit, dateRestrict }) {
     params.set("freshness", freshness);
   }
 
-  const res = await fetch(`${BRAVE_SEARCH_BASE}?${params}`, {
+  const response = await fetch(`${BRAVE_SEARCH_BASE}?${params}`, {
     headers: {
       "Accept": "application/json",
       "Accept-Encoding": "gzip",
@@ -209,15 +209,15 @@ async function _searchBrave(query, { limit, dateRestrict }) {
     },
   });
 
-  if (!res.ok) {
-    const body = await res.text();
-    if (res.status === 429) {
+  if (!response.ok) {
+    const body = await response.text();
+    if (response.status === 429) {
       return { error: "Brave Search rate limit exceeded. Falling back to Google CSE.", query, provider: "brave" };
     }
-    return { error: `Brave Search API error: HTTP ${res.status} — ${body.slice(0, 500)}`, query, provider: "brave" };
+    return { error: `Brave Search API error: HTTP ${response.status} — ${body.slice(0, 500)}`, query, provider: "brave" };
   }
 
-  const data = await res.json();
+  const data = await response.json();
   const webResults = data.web?.results || [];
 
   const results = webResults.slice(0, limit).map((item) => ({
@@ -250,13 +250,13 @@ async function _searchGoogleCSE(query, { limit, dateRestrict, siteSearch }) {
   if (dateRestrict) params.set("dateRestrict", dateRestrict);
   if (siteSearch) params.set("siteSearch", siteSearch);
 
-  const res = await fetch(`${GOOGLE_CSE_BASE}?${params}`, {
+  const response = await fetch(`${GOOGLE_CSE_BASE}?${params}`, {
     headers: { "Accept": "application/json" },
   });
 
-  if (!res.ok) {
-    const body = await res.text();
-    if (res.status === 429) {
+  if (!response.ok) {
+    const body = await response.text();
+    if (response.status === 429) {
       return {
         error: "Google Custom Search daily quota exhausted (100/day free).",
         query,
@@ -264,13 +264,13 @@ async function _searchGoogleCSE(query, { limit, dateRestrict, siteSearch }) {
       };
     }
     return {
-      error: `Google CSE API error: HTTP ${res.status} — ${body.slice(0, 500)}`,
+      error: `Google CSE API error: HTTP ${response.status} — ${body.slice(0, 500)}`,
       query,
       provider: "google_cse",
     };
   }
 
-  const data = await res.json();
+  const data = await response.json();
 
   const results = (data.items || []).map((item) => ({
     title: item.title || "",
@@ -327,10 +327,10 @@ function htmlToMarkdown(html, { selector }: Record<string, any> = {}) {
 
   const lines = [];
 
-  function processNode(el) {
-    if (!el || !el.length) return;
+  function processNode(element) {
+    if (!element || !element.length) return;
 
-    el.contents().each((_, node) => {
+    element.contents().each((_, node) => {
       if (node.type === "text") {
         const text = $(node).text().trim();
         if (text) {

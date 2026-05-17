@@ -62,8 +62,8 @@ function ensureLoaded() {
     if (values.length < 3) continue;
 
     const row: Record<string, any> = {};
-    headers.forEach((h, idx) => {
-      row[h] = values[idx] || null;
+    headers.forEach((h, index) => {
+      row[h] = values[index] || null;
     });
 
     DRUG_DB.push(row);

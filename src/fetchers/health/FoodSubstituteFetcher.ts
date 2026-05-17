@@ -69,14 +69,14 @@ function ensureFoodCache() {
       if (values.length < 40) continue;
 
       const row: Record<string, any> = {};
-      headers.forEach((h, idx) => {
-        row[h] = values[idx] || "";
+      headers.forEach((h, index) => {
+        row[h] = values[index] || "";
       });
 
       const numericStart = 35;
       for (let n = numericStart; n < headers.length; n++) {
-        const val = parseFloat(row[headers[n]]);
-        row[headers[n]] = isNaN(val) ? null : val;
+        const value = parseFloat(row[headers[n]]);
+        row[headers[n]] = isNaN(value) ? null : value;
       }
       foods.push(row);
     }
@@ -102,8 +102,8 @@ const ALL_NUTRIENT_COLUMNS = [
 
 function extractVector(food, columns) {
   return columns.map((col) => {
-    const val = food[col];
-    return val !== null && val !== undefined && !isNaN(val) ? val : 0;
+    const value = food[col];
+    return value !== null && value !== undefined && !isNaN(value) ? value : 0;
   });
 }
 

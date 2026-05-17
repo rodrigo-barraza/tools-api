@@ -7,19 +7,19 @@ const AVCAN_PRODUCTS_URL = "https://api.avalanche.ca/forecasts/en/products";
  * and filters for the Sea-to-Sky / South Coast regions.
  */
 export async function fetchAvalancheForecast() {
-  const res = await fetch(AVCAN_PRODUCTS_URL, {
+  const response = await fetch(AVCAN_PRODUCTS_URL, {
     headers: {
       Accept: "application/json",
       "User-Agent":
         "Mozilla/5.0 (compatible; Sun/Nimbus; github.com/rodrigo-barraza)",
     },
   });
-  if (!res.ok) {
+  if (!response.ok) {
     throw new Error(
-      `Avalanche Canada API returned ${res.status}: ${res.statusText}`,
+      `Avalanche Canada API returned ${response.status}: ${response.statusText}`,
     );
   }
-  const products = await res.json();
+  const products = await response.json();
   if (!Array.isArray(products)) {
     throw new Error("Avalanche Canada returned unexpected data format");
   }

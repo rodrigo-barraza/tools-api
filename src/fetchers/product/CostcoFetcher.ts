@@ -100,10 +100,10 @@ async function scrapeCategory(
   const products = [];
 
   // ── Strategy 1: MUI-based product tiles (data-testid) ─────────
-  $('[data-testid^="ProductTile_"]').each((_i, el) => {
+  $('[data-testid^="ProductTile_"]').each((_i, element) => {
     if (products.length >= COSTCO_MAX_PRODUCTS_PER_CATEGORY) return false;
 
-    const $el = $(el);
+    const $el = $(element);
     const tileText = $el.text();
 
     // Title & URL — find the main product link
@@ -156,10 +156,10 @@ async function scrapeCategory(
 
   // ── Strategy 2: Legacy Costco layout (fallback) ───────────────
   if (products.length === 0) {
-    $(".product-tile, .product, .col-xs-6.col-lg-4.col-xl-3").each((_i, el) => {
+    $(".product-tile, .product, .col-xs-6.col-lg-4.col-xl-3").each((_i, element) => {
       if (products.length >= COSTCO_MAX_PRODUCTS_PER_CATEGORY) return false;
 
-      const $el = $(el);
+      const $el = $(element);
 
       // Title & URL
       const $link = $el

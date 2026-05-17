@@ -39,10 +39,10 @@ async function scrapeCategory(slug, categoryName, unifiedCategory) {
   const products = [];
 
   // Amazon Best Sellers grid items
-  $("[data-asin]").each((_i, el) => {
+  $("[data-asin]").each((_i, element) => {
     if (products.length >= AMAZON_MAX_PRODUCTS_PER_CATEGORY) return false;
 
-    const $el = $(el);
+    const $el = $(element);
     const asin = $el.attr("data-asin");
     if (!asin) return;
 

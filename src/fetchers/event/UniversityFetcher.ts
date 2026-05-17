@@ -27,8 +27,8 @@ async function fetchUbcEvents() {
   const events = [];
 
   $("article, .event-card, .views-row, [class*='event'], .card").each(
-    (_i, el) => {
-      const $el = $(el);
+    (_i, element) => {
+      const $el = $(element);
       const $link = $el.find("a").first();
       const title =
         $el.find("h2, h3, .event-title, .card-title").first().text().trim() ||
@@ -105,8 +105,8 @@ async function fetchSfuEvents() {
   const events = [];
 
   $("article, .event-card, .views-row, [class*='event'], .card, li").each(
-    (_i, el) => {
-      const $el = $(el);
+    (_i, element) => {
+      const $el = $(element);
       const $link = $el.find("a").first();
       const title =
         $el.find("h2, h3, h4, .event-title").first().text().trim() ||

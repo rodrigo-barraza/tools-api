@@ -94,12 +94,12 @@ export async function getHackerNewsThread(input, options: Record<string, any> = 
   const { commentLimit = MAX_COMMENTS } = options;
 
   try {
-    const res = await fetch(`${HN_API}/item/${itemId}.json`);
-    if (!res.ok) {
-      return { error: `HN API error: ${res.status}` };
+    const response = await fetch(`${HN_API}/item/${itemId}.json`);
+    if (!response.ok) {
+      return { error: `HN API error: ${response.status}` };
     }
 
-    const item = await res.json();
+    const item = await response.json();
     if (!item) {
       return { error: `Item not found: ${itemId}` };
     }

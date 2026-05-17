@@ -6,19 +6,19 @@ const LL2_URL =
  * Free API, no key required. 15 req/hr limit on free tier.
  */
 export async function fetchUpcomingLaunches() {
-  const res = await fetch(LL2_URL, {
+  const response = await fetch(LL2_URL, {
     headers: {
       "User-Agent": "Sun/Nimbus (github.com/rodrigo-barraza)",
     },
   });
 
-  if (!res.ok) {
+  if (!response.ok) {
     throw new Error(
-      `Launch Library 2 returned ${res.status}: ${res.statusText}`,
+      `Launch Library 2 returned ${response.status}: ${response.statusText}`,
     );
   }
 
-  const data = await res.json();
+  const data = await response.json();
 
   return (data.results || []).map((launch) => ({
     id: launch.id,

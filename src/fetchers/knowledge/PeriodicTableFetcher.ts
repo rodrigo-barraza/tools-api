@@ -76,13 +76,13 @@ function ensureLoaded() {
     if (values.length < 5) continue;
 
     const row: Record<string, any> = {};
-    headers.forEach((h, idx) => {
-      const val = values[idx] || "";
+    headers.forEach((h, index) => {
+      const value = values[index] || "";
       if (NUMERIC_FIELDS.has(h)) {
-        const num = parseFloat(val);
+        const num = parseFloat(value);
         row[h] = isNaN(num) ? null : num;
       } else {
-        row[h] = val || null;
+        row[h] = value || null;
       }
     });
 
@@ -98,29 +98,29 @@ function normalizeSearch(str) {
   return str.toLowerCase().replace(/[^a-z0-9\s]/g, "");
 }
 
-function formatElement(el) {
+function formatElement(element) {
   return {
-    atomicNumber: el.atomic_number,
-    symbol: el.symbol,
-    name: el.name,
-    atomicMass: el.atomic_mass,
-    category: el.category,
-    groupNumber: el.group_number,
-    period: el.period,
-    block: el.block,
-    electronConfiguration: el.electron_configuration,
-    electronegativity: el.electronegativity,
-    density: el.density_g_cm3,
-    molarHeat: el.molar_heat_j_mol_k,
-    electronAffinity: el.electron_affinity_kj_mol,
-    firstIonizationEnergy: el.first_ionization_energy_kj_mol,
-    phaseAtSTP: el.phase_at_stp,
-    meltingPoint: el.melting_point_k,
-    boilingPoint: el.boiling_point_k,
-    appearance: el.appearance,
-    discoveredBy: el.discovered_by,
-    cpkHexColor: el.cpk_hex_color,
-    summary: el.summary,
+    atomicNumber: element.atomic_number,
+    symbol: element.symbol,
+    name: element.name,
+    atomicMass: element.atomic_mass,
+    category: element.category,
+    groupNumber: element.group_number,
+    period: element.period,
+    block: element.block,
+    electronConfiguration: element.electron_configuration,
+    electronegativity: element.electronegativity,
+    density: element.density_g_cm3,
+    molarHeat: element.molar_heat_j_mol_k,
+    electronAffinity: element.electron_affinity_kj_mol,
+    firstIonizationEnergy: element.first_ionization_energy_kj_mol,
+    phaseAtSTP: element.phase_at_stp,
+    meltingPoint: element.melting_point_k,
+    boilingPoint: element.boiling_point_k,
+    appearance: element.appearance,
+    discoveredBy: element.discovered_by,
+    cpkHexColor: element.cpk_hex_color,
+    summary: element.summary,
   };
 }
 
@@ -162,13 +162,13 @@ export function searchElements(query, opts: Record<string, any> = {}) {
   if (category) {
     const c = category.toLowerCase();
     candidates = candidates.filter(
-      (el) => el.category && el.category.toLowerCase().includes(c),
+      (element) => element.category && element.category.toLowerCase().includes(c),
     );
   }
   if (block) {
     const b = block.toLowerCase();
     candidates = candidates.filter(
-      (el) => el.block && el.block.toLowerCase() === b,
+      (element) => element.block && element.block.toLowerCase() === b,
     );
   }
 
@@ -176,18 +176,18 @@ export function searchElements(query, opts: Record<string, any> = {}) {
   const numQuery = parseInt(q, 10);
 
   const scored = candidates
-    .map((el) => {
+    .map((element) => {
       let score = 0;
-      const name = normalizeSearch(el.name || "");
-      const symbol = (el.symbol || "").toLowerCase();
-      const cat = normalizeSearch(el.category || "");
+      const name = normalizeSearch(element.name || "");
+      const symbol = (element.symbol || "").toLowerCase();
+      const cat = normalizeSearch(element.category || "");
 
       // Exact symbol match
       if (symbol === q) score += 100;
       // Exact name match
       else if (name === q) score += 90;
       // Atomic number match
-      else if (!isNaN(numQuery) && el.atomic_number === numQuery) score += 95;
+      else if (!isNaN(numQuery) && element.atomic_number === numQuery) score += 95;
       // Name starts with query
       else if (name.startsWith(q)) score += 60;
       // Symbol starts with query
@@ -198,12 +198,12 @@ export function searchElements(query, opts: Record<string, any> = {}) {
       else if (cat.includes(q)) score += 15;
       // Summary contains query
       else if (
-        el.summary &&
-        normalizeSearch(el.summary).includes(q)
+        element.summary &&
+        normalizeSearch(element.summary).includes(q)
       )
         score += 5;
 
-      return { el, score };
+      return { element, score };
     })
     .filter((s) => s.score > 0)
     .sort((a, b) => b.score - a.score)
@@ -226,12 +226,12 @@ export function getElementBySymbol(symbol) {
   ensureLoaded();
 
   const s = symbol.trim();
-  const el = ELEMENT_DB.find(
+  const element = ELEMENT_DB.find(
     (e) => e.symbol && e.symbol.toLowerCase() === s.toLowerCase(),
   );
 
-  if (!el) return null;
-  return formatElement(el);
+  if (!element) return null;
+  return formatElement(element);
 }
 
 /**
@@ -263,18 +263,18 @@ export function rankElementsByProperty(property, opts: Record<string, any> = {})
   if (category) {
     const c = category.toLowerCase();
     candidates = candidates.filter(
-      (el) => el.category && el.category.toLowerCase().includes(c),
+      (element) => element.category && element.category.toLowerCase().includes(c),
     );
   }
   if (block) {
     const b = block.toLowerCase();
     candidates = candidates.filter(
-      (el) => el.block && el.block.toLowerCase() === b,
+      (element) => element.block && element.block.toLowerCase() === b,
     );
   }
 
   const ranked = candidates
-    .filter((el) => el[property] !== null)
+    .filter((element) => element[property] !== null)
     .sort((a, b) =>
       order === "asc" ? a[property] - b[property] : b[property] - a[property],
     )
@@ -286,12 +286,12 @@ export function rankElementsByProperty(property, opts: Record<string, any> = {})
     order,
     count: ranked.length,
     note: "Data from Bowserinator Periodic Table JSON (CC BY-SA 3.0).",
-    elements: ranked.map((el) => ({
-      atomicNumber: el.atomic_number,
-      symbol: el.symbol,
-      name: el.name,
-      value: el[property],
-      category: el.category,
+    elements: ranked.map((element) => ({
+      atomicNumber: element.atomic_number,
+      symbol: element.symbol,
+      name: element.name,
+      value: element[property],
+      category: element.category,
     })),
   };
 }

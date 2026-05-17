@@ -21,29 +21,29 @@ export async function searchBooks(query, limit = 10) {
       "key,title,author_name,first_publish_year,cover_i,subject,language,edition_count,ratings_average,ratings_count,isbn",
   });
   const url = `${OPEN_LIBRARY_BASE_URL}/search.json?${params}`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Open Library search → ${res.status} ${res.statusText}`);
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Open Library search → ${response.status} ${response.statusText}`);
   }
-  const data = await res.json();
+  const data = await response.json();
   return {
     totalResults: data.numFound || 0,
-    books: (data.docs || []).slice(0, limit).map((doc) => ({
-      key: doc.key,
-      title: doc.title,
-      authors: doc.author_name || [],
-      firstPublishYear: doc.first_publish_year || null,
-      coverUrl: doc.cover_i
-        ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`
+    books: (data.docs || []).slice(0, limit).map((document) => ({
+      key: document.key,
+      title: document.title,
+      authors: document.author_name || [],
+      firstPublishYear: document.first_publish_year || null,
+      coverUrl: document.cover_i
+        ? `https://covers.openlibrary.org/b/id/${document.cover_i}-M.jpg`
         : null,
-      subjects: (doc.subject || []).slice(0, 5),
-      languages: (doc.language || []).slice(0, 5),
-      editionCount: doc.edition_count || 0,
-      rating: doc.ratings_average
-        ? Math.round(doc.ratings_average * 10) / 10
+      subjects: (document.subject || []).slice(0, 5),
+      languages: (document.language || []).slice(0, 5),
+      editionCount: document.edition_count || 0,
+      rating: document.ratings_average
+        ? Math.round(document.ratings_average * 10) / 10
         : null,
-      ratingCount: doc.ratings_count || 0,
-      isbn: doc.isbn?.[0] || null,
+      ratingCount: document.ratings_count || 0,
+      isbn: document.isbn?.[0] || null,
     })),
   };
 }
@@ -56,13 +56,13 @@ export async function searchBooks(query, limit = 10) {
 export async function getBookDetails(workKey) {
   const key = workKey.startsWith("/works/") ? workKey : `/works/${workKey}`;
   const url = `${OPEN_LIBRARY_BASE_URL}${key}.json`;
-  const res = await fetch(url);
-  if (!res.ok) {
+  const response = await fetch(url);
+  if (!response.ok) {
     throw new Error(
-      `Open Library work detail → ${res.status} ${res.statusText}`,
+      `Open Library work detail → ${response.status} ${response.statusText}`,
     );
   }
-  const data = await res.json();
+  const data = await response.json();
   const description =
     typeof data.description === "string"
       ? data.description
@@ -93,13 +93,13 @@ export async function getAuthorInfo(authorKey) {
     ? authorKey
     : `/authors/${authorKey}`;
   const url = `${OPEN_LIBRARY_BASE_URL}${key}.json`;
-  const res = await fetch(url);
-  if (!res.ok) {
+  const response = await fetch(url);
+  if (!response.ok) {
     throw new Error(
-      `Open Library author detail → ${res.status} ${res.statusText}`,
+      `Open Library author detail → ${response.status} ${response.statusText}`,
     );
   }
-  const data = await res.json();
+  const data = await response.json();
   const bio = typeof data.bio === "string" ? data.bio : data.bio?.value || null;
   return {
     key: data.key,

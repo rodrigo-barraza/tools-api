@@ -36,13 +36,13 @@ function haversineDistanceKm(lat1, lon1, lat2, lon2) {
 
 async function findNearestTideStation(latitude, longitude) {
   try {
-    const res = await fetch(NOAA_STATIONS_URL);
-    if (!res.ok) {
-      logger.warn(`[Location] ⚠️ NOAA stations API → ${res.status}`);
+    const response = await fetch(NOAA_STATIONS_URL);
+    if (!response.ok) {
+      logger.warn(`[Location] ⚠️ NOAA stations API → ${response.status}`);
       return null;
     }
 
-    const json = await res.json();
+    const json = await response.json();
     const stations = json.stations || [];
     if (!stations.length) return null;
 
@@ -135,14 +135,14 @@ async function loadCachedLocation() {
 async function saveCachedLocation(location) {
   try {
     const db = getDB();
-    const doc = {
+    const document = {
       _id: "current",
       ...location,
       updatedAt: new Date(),
     };
     await db
       .collection(COLLECTION)
-      .replaceOne({ _id: "current" }, doc, { upsert: true });
+      .replaceOne({ _id: "current" }, document, { upsert: true });
   } catch (error) {
     logger.error(`[Location] ⚠️ Failed to persist: ${error.message}`);
   }

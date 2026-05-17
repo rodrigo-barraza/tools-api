@@ -9,15 +9,15 @@ const SUNRISE_SUNSET_URL = "https://api.sunrise-sunset.org/json";
  */
 export async function fetchTwilight() {
   const url = `${SUNRISE_SUNSET_URL}?lat=${CONFIG.LATITUDE}&lng=${CONFIG.LONGITUDE}&formatted=0&tzid=${CONFIG.TIMEZONE}`;
-  const res = await fetch(url);
+  const response = await fetch(url);
 
-  if (!res.ok) {
+  if (!response.ok) {
     throw new Error(
-      `Sunrise-Sunset API returned ${res.status}: ${res.statusText}`,
+      `Sunrise-Sunset API returned ${response.status}: ${response.statusText}`,
     );
   }
 
-  const data = await res.json();
+  const data = await response.json();
 
   if (data.status !== "OK") {
     throw new Error(`Sunrise-Sunset API returned status: ${data.status}`);

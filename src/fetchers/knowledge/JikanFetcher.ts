@@ -45,16 +45,16 @@ function normalizeAnime(anime) {
  */
 async function fetchJikan(endpoint) {
   const url = `${JIKAN_BASE_URL}${endpoint}`;
-  const res = await fetch(url);
+  const response = await fetch(url);
 
-  if (res.status === 404) {
+  if (response.status === 404) {
     return null;
   }
-  if (!res.ok) {
-    throw new Error(`Jikan API → ${res.status} ${res.statusText}`);
+  if (!response.ok) {
+    throw new Error(`Jikan API → ${response.status} ${response.statusText}`);
   }
 
-  const data = await res.json();
+  const data = await response.json();
   return data;
 }
 

@@ -10,11 +10,11 @@ import {
  * @returns {Promise<Array>} Trending tag objects
  */
 async function fetchTrendingTags(instance) {
-  const res = await fetch(`${instance}/api/v1/trends/tags?limit=20`, {
+  const response = await fetch(`${instance}/api/v1/trends/tags?limit=20`, {
     headers: { Accept: "application/json" },
   });
-  if (!res.ok) return [];
-  return res.json();
+  if (!response.ok) return [];
+  return response.json();
 }
 /**
  * Fetches trending statuses (posts) from a single Mastodon instance.
@@ -22,11 +22,11 @@ async function fetchTrendingTags(instance) {
  * @returns {Promise<Array>} Trending status objects
  */
 async function fetchTrendingStatuses(instance) {
-  const res = await fetch(`${instance}/api/v1/trends/statuses?limit=20`, {
+  const response = await fetch(`${instance}/api/v1/trends/statuses?limit=20`, {
     headers: { Accept: "application/json" },
   });
-  if (!res.ok) return [];
-  return res.json();
+  if (!response.ok) return [];
+  return response.json();
 }
 /**
  * Fetches trending content from Mastodon instances.

@@ -16,15 +16,15 @@ async function get(path) {
 
   const separator = path.includes("?") ? "&" : "?";
   const url = `${TRANSLINK_BASE_URL}${path}${separator}apikey=${CONFIG.TRANSLINK_API_KEY}`;
-  const res = await fetch(url, {
+  const response = await fetch(url, {
     headers: { Accept: "application/json" },
   });
 
-  if (!res.ok) {
-    throw new Error(`TransLink API ${path} → ${res.status} ${res.statusText}`);
+  if (!response.ok) {
+    throw new Error(`TransLink API ${path} → ${response.status} ${response.statusText}`);
   }
 
-  return res.json();
+  return response.json();
 }
 
 // ─── Get Next Bus at Stop ──────────────────────────────────────────

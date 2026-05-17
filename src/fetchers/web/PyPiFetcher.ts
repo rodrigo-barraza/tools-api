@@ -15,18 +15,18 @@ export async function getPyPiPackage(packageName) {
   }
 
   const encoded = encodeURIComponent(packageName);
-  const res = await fetch(`${PYPI_API}/${encoded}/json`, {
+  const response = await fetch(`${PYPI_API}/${encoded}/json`, {
     headers: { Accept: "application/json" },
   });
 
-  if (!res.ok) {
-    if (res.status === 404) {
+  if (!response.ok) {
+    if (response.status === 404) {
       return { error: `PyPI package not found: "${packageName}"` };
     }
-    return { error: `PyPI API error: ${res.status}` };
+    return { error: `PyPI API error: ${response.status}` };
   }
 
-  const data = await res.json();
+  const data = await response.json();
   const info = data.info || {};
 
   // Extract classifier categories

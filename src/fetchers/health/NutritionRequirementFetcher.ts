@@ -58,8 +58,8 @@ function ensureLoaded() {
       if (values.length < headers.length) continue;
 
       const row: Record<string, any> = {};
-      headers.forEach((h, idx) => {
-        row[h] = values[idx] || "";
+      headers.forEach((h, index) => {
+        row[h] = values[index] || "";
       });
       
       row.value_numeric = parseFloat(row.value_numeric);

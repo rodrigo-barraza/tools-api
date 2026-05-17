@@ -28,13 +28,13 @@ async function fetchRates(base = "USD") {
   }
 
   const url = `${EXCHANGE_RATE_BASE_URL}/${upperBase}`;
-  const res = await fetch(url);
+  const response = await fetch(url);
 
-  if (!res.ok) {
-    throw new Error(`Exchange Rate API → ${res.status} ${res.statusText}`);
+  if (!response.ok) {
+    throw new Error(`Exchange Rate API → ${response.status} ${response.statusText}`);
   }
 
-  const data = await res.json();
+  const data = await response.json();
 
   if (data.result !== "success") {
     throw new Error(

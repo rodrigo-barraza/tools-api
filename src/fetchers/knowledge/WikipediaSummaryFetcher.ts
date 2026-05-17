@@ -18,18 +18,18 @@ import { WIKIPEDIA_SUMMARY_BASE_URL } from "../../constants.ts";
 export async function getArticleSummary(title) {
   const encoded = encodeURIComponent(title.replace(/\s+/g, "_"));
   const url = `${WIKIPEDIA_SUMMARY_BASE_URL}/page/summary/${encoded}`;
-  const res = await fetch(url, {
+  const response = await fetch(url, {
     headers: { Accept: "application/json" },
   });
 
-  if (res.status === 404) {
+  if (response.status === 404) {
     return { found: false, title, message: "Article not found" };
   }
-  if (!res.ok) {
-    throw new Error(`Wikipedia REST API → ${res.status} ${res.statusText}`);
+  if (!response.ok) {
+    throw new Error(`Wikipedia REST API → ${response.status} ${response.statusText}`);
   }
 
-  const data = await res.json();
+  const data = await response.json();
 
   return {
     found: true,
@@ -63,15 +63,15 @@ export async function getOnThisDay(type = "selected", month, day) {
   const padD = String(d).padStart(2, "0");
 
   const url = `${WIKIPEDIA_SUMMARY_BASE_URL}/feed/onthisday/${type}/${padM}/${padD}`;
-  const res = await fetch(url, {
+  const response = await fetch(url, {
     headers: { Accept: "application/json" },
   });
 
-  if (!res.ok) {
-    throw new Error(`Wikipedia On This Day → ${res.status} ${res.statusText}`);
+  if (!response.ok) {
+    throw new Error(`Wikipedia On This Day → ${response.status} ${response.statusText}`);
   }
 
-  const data = await res.json();
+  const data = await response.json();
   const key = Object.keys(data)[0]; // "selected", "births", etc.
   const entries = data[key] || [];
 

@@ -41,16 +41,16 @@ export async function searchDrugLabels(query, limit = 5) {
     `openfda.brand_name:"${query}"+openfda.generic_name:"${query}"`,
   );
   const url = `${OPEN_FDA_BASE_URL}/drug/label.json?search=${searchTerm}&limit=${Math.min(limit, 20)}`;
-  const res = await fetch(url);
+  const response = await fetch(url);
 
-  if (res.status === 404) {
+  if (response.status === 404) {
     return { found: false, query, drugs: [] };
   }
-  if (!res.ok) {
-    throw new Error(`openFDA drug labels → ${res.status} ${res.statusText}`);
+  if (!response.ok) {
+    throw new Error(`openFDA drug labels → ${response.status} ${response.statusText}`);
   }
 
-  const data = await res.json();
+  const data = await response.json();
 
   return {
     found: true,
@@ -72,16 +72,16 @@ export async function getDrugAdverseEvents(drugName, limit = 10) {
     `patient.drug.openfda.brand_name:"${drugName}"+patient.drug.openfda.generic_name:"${drugName}"`,
   );
   const url = `${OPEN_FDA_BASE_URL}/drug/event.json?search=${searchTerm}&limit=${Math.min(limit, 25)}`;
-  const res = await fetch(url);
+  const response = await fetch(url);
 
-  if (res.status === 404) {
+  if (response.status === 404) {
     return { found: false, drugName, events: [] };
   }
-  if (!res.ok) {
-    throw new Error(`openFDA adverse events → ${res.status} ${res.statusText}`);
+  if (!response.ok) {
+    throw new Error(`openFDA adverse events → ${response.status} ${response.statusText}`);
   }
 
-  const data = await res.json();
+  const data = await response.json();
 
   return {
     found: true,
@@ -127,16 +127,16 @@ export async function getDrugRecalls(query, limit = 10) {
   }
   url += `limit=${Math.min(limit, 25)}&sort=report_date:desc`;
 
-  const res = await fetch(url);
+  const response = await fetch(url);
 
-  if (res.status === 404) {
+  if (response.status === 404) {
     return { found: false, recalls: [] };
   }
-  if (!res.ok) {
-    throw new Error(`openFDA recalls → ${res.status} ${res.statusText}`);
+  if (!response.ok) {
+    throw new Error(`openFDA recalls → ${response.status} ${response.statusText}`);
   }
 
-  const data = await res.json();
+  const data = await response.json();
 
   return {
     found: true,

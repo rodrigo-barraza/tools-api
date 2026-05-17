@@ -8,13 +8,13 @@ const APOD_URL = "https://api.nasa.gov/planetary/apod";
  */
 export async function fetchApod() {
   const url = `${APOD_URL}?api_key=${CONFIG.NASA_API_KEY}`;
-  const res = await fetch(url);
+  const response = await fetch(url);
 
-  if (!res.ok) {
-    throw new Error(`NASA APOD API returned ${res.status}: ${res.statusText}`);
+  if (!response.ok) {
+    throw new Error(`NASA APOD API returned ${response.status}: ${response.statusText}`);
   }
 
-  const data = await res.json();
+  const data = await response.json();
 
   return {
     title: data.title,

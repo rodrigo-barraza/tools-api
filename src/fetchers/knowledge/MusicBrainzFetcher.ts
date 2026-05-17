@@ -11,19 +11,19 @@ const COVER_ART_BASE = "https://coverartarchive.org";
 async function fetchMB(path, params: Record<string, any> = {}) {
   const url = new URL(`${BASE_URL}${path}`);
   url.searchParams.set("fmt", "json");
-  for (const [key, val] of Object.entries(params)) {
-    if (val !== undefined && val !== null) url.searchParams.set(key, val);
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null) url.searchParams.set(key, value);
   }
 
-  const res = await fetch(url.toString(), {
+  const response = await fetch(url.toString(), {
     headers: { "User-Agent": USER_AGENT },
   });
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`MusicBrainz API error ${res.status}: ${text.slice(0, 200)}`);
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`MusicBrainz API error ${response.status}: ${text.slice(0, 200)}`);
   }
-  return res.json();
+  return response.json();
 }
 
 // ── Artist Search ──────────────────────────────────────────────

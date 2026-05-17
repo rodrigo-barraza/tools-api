@@ -36,8 +36,8 @@ export async function fetchCraigslistEvents() {
   const $ = cheerio.load(html);
   const events = [];
 
-  $(".cl-static-search-result").each((_i, el) => {
-    const $el = $(el);
+  $(".cl-static-search-result").each((_i, element) => {
+    const $el = $(element);
     const title = $el.find(".title").text().trim();
     const link = $el.attr("href");
     const dateStr = $el.find(".date").text().trim();
@@ -84,8 +84,8 @@ export async function fetchCraigslistEvents() {
 
   // Fallback: try the gallery/list results format
   if (events.length === 0) {
-    $("li.cl-search-result, .result-row").each((_i, el) => {
-      const $el = $(el);
+    $("li.cl-search-result, .result-row").each((_i, element) => {
+      const $el = $(element);
       const $link = $el.find("a.posting-title, a.result-title, a");
       const title = $link.text().trim();
       const href = $link.attr("href");

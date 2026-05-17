@@ -63,14 +63,14 @@ function ensureLoaded() {
       const isWger = file.includes("wger");
       row._source = isWger ? "Wger" : "Free Exercise DB";
 
-      headers.forEach((h, idx) => {
-        const val = values[idx] || "";
+      headers.forEach((h, index) => {
+        const value = values[index] || "";
         if (h === "category" || h === "equipment") {
-          row[h] = val.toLowerCase();
+          row[h] = value.toLowerCase();
         } else if (h === "primary_muscles" || h === "secondary_muscles") {
-          row[h] = val ? val.split("|").map(m => m.toLowerCase()) : [];
+          row[h] = value ? value.split("|").map(m => m.toLowerCase()) : [];
         } else {
-          row[h] = val;
+          row[h] = value;
         }
       });
 

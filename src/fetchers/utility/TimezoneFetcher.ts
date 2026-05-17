@@ -15,16 +15,16 @@ import { TIMEZONE_BASE_URL } from "../../constants.ts";
  */
 export async function getTimeInTimezone(timezone) {
   const url = `${TIMEZONE_BASE_URL}/timezone/${encodeURIComponent(timezone)}`;
-  const res = await fetch(url);
+  const response = await fetch(url);
 
-  if (res.status === 404) {
+  if (response.status === 404) {
     return { found: false, timezone, message: "Timezone not found" };
   }
-  if (!res.ok) {
-    throw new Error(`World Time API → ${res.status} ${res.statusText}`);
+  if (!response.ok) {
+    throw new Error(`World Time API → ${response.status} ${response.statusText}`);
   }
 
-  const data = await res.json();
+  const data = await response.json();
 
   return {
     found: true,
@@ -53,12 +53,12 @@ export async function getTimeInTimezone(timezone) {
 export async function listTimezones(area) {
   const path = area ? `/timezone/${encodeURIComponent(area)}` : "/timezone";
   const url = `${TIMEZONE_BASE_URL}${path}`;
-  const res = await fetch(url);
+  const response = await fetch(url);
 
-  if (!res.ok) {
-    throw new Error(`World Time API → ${res.status} ${res.statusText}`);
+  if (!response.ok) {
+    throw new Error(`World Time API → ${response.status} ${response.statusText}`);
   }
 
-  return res.json();
+  return response.json();
 }
 

@@ -94,12 +94,12 @@ function ensureLoaded() {
     if (values.length < 3) continue;
 
     const row: Record<string, any> = {};
-    headers.forEach((h, idx) => {
-      const val = values[idx] || "";
+    headers.forEach((h, index) => {
+      const value = values[index] || "";
       if (SKIP_NUMERIC.has(h)) {
-        row[h] = val;
+        row[h] = value;
       } else {
-        const num = parseFloat(val);
+        const num = parseFloat(value);
         row[h] = isNaN(num) ? null : num;
       }
     });

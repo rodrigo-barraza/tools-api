@@ -15,18 +15,18 @@ const TRENDS_RSS_URL = "https://trends.google.com/trending/rss";
  */
 export async function fetchGoogleDailyTrends(geo = "US") {
   const url = `${TRENDS_RSS_URL}?geo=${geo}`;
-  const res = await fetch(url, {
+  const response = await fetch(url, {
     headers: {
       "User-Agent": randomUserAgent(),
       Accept: "application/rss+xml, application/xml, text/xml",
     },
   });
 
-  if (!res.ok) {
-    throw new Error(`Google Trends RSS returned ${res.status}`);
+  if (!response.ok) {
+    throw new Error(`Google Trends RSS returned ${response.status}`);
   }
 
-  const xml = await res.text();
+  const xml = await response.text();
   return parseRssTrends(xml, geo);
 }
 

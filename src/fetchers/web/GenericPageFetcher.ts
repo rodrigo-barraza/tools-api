@@ -52,19 +52,19 @@ const NOISE_SELECTORS = [
  * Score a container element for "article-ness" based on text density.
  * Higher score = more likely to be the main content.
  */
-function scoreElement($, el) {
-  const text = $(el).text().trim();
+function scoreElement($, element) {
+  const text = $(element).text().trim();
   const wordCount = text.split(/\s+/).length;
-  const linkDensity = ($(el).find("a").text().length || 0) / (text.length || 1);
+  const linkDensity = ($(element).find("a").text().length || 0) / (text.length || 1);
 
   let score = wordCount;
 
   // Bonus for article-like tags and classes
-  const tagName = (el.tagName || el.name || "").toLowerCase();
+  const tagName = (element.tagName || element.name || "").toLowerCase();
   if (tagName === "article") score *= 2;
   if (tagName === "main") score *= 1.8;
 
-  const classId = `${$(el).attr("class") || ""} ${$(el).attr("id") || ""}`.toLowerCase();
+  const classId = `${$(element).attr("class") || ""} ${$(element).attr("id") || ""}`.toLowerCase();
   if (/article|post|content|entry|story|body/i.test(classId)) score *= 1.5;
   if (/sidebar|nav|menu|footer|header|comment/i.test(classId)) score *= 0.1;
 
@@ -92,10 +92,10 @@ function extractMainContent($) {
 
   // Score all block-level containers
   const candidates = [];
-  $("div, section, article, main").each((_, el) => {
-    const score = scoreElement($, el);
+  $("div, section, article, main").each((_, element) => {
+    const score = scoreElement($, element);
     if (score > 25) {
-      candidates.push({ el, score });
+      candidates.push({ element, score });
     }
   });
 
@@ -116,10 +116,10 @@ function extractMainContent($) {
 function extractText($, container) {
   const paragraphs = [];
 
-  container.find("p, h1, h2, h3, h4, h5, h6, li, blockquote, pre, td, th").each((_, el) => {
-    const text = $(el).text().trim();
+  container.find("p, h1, h2, h3, h4, h5, h6, li, blockquote, pre, td, th").each((_, element) => {
+    const text = $(element).text().trim();
     if (text.length > 10) {
-      const tagName = (el.tagName || el.name || "").toLowerCase();
+      const tagName = (element.tagName || element.name || "").toLowerCase();
       if (tagName.startsWith("h")) {
         paragraphs.push(`## ${text}`);
       } else if (tagName === "blockquote") {

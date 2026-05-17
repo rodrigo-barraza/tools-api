@@ -18,18 +18,18 @@ export async function fetchXTrends(woeid = X_WOEIDS.WORLDWIDE) {
 
   const url = `https://api.x.com/1.1/trends/place.json?id=${woeid}`;
 
-  const res = await fetch(url, {
+  const response = await fetch(url, {
     headers: {
       Authorization: `Bearer ${CONFIG.X_BEARER_TOKEN}`,
     },
   });
 
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`X API returned ${res.status}: ${body}`);
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`X API returned ${response.status}: ${body}`);
   }
 
-  const data = await res.json();
+  const data = await response.json();
   const trendData = data?.[0];
   if (!trendData) {
     throw new Error("X API returned empty response");
