@@ -44,19 +44,21 @@ ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium
 
 WORKDIR /app
 
+# Non-root user — created before COPY so --chown can reference it.
+# This avoids a slow `chown -R /app` over tens of thousands of files
+# (node_modules + static datasets) that was timing out the build.
+RUN groupadd --system --gid 1001 toolsapi && \
+    useradd --system --uid 1001 --gid toolsapi toolsapi
+
 # Copy pre-built node_modules from deps stage
-COPY --from=deps /app/node_modules ./node_modules
+COPY --chown=toolsapi:toolsapi --from=deps /app/node_modules ./node_modules
 
 # Copy application source
-COPY . .
+COPY --chown=toolsapi:toolsapi . .
 
-# Build TypeScript
-RUN npm run build
+# Build TypeScript (still as root so npm scripts work; output owned via COPY)
+RUN npm run build && chown -R toolsapi:toolsapi dist
 
-# Non-root user for security
-RUN groupadd --system --gid 1001 toolsapi && \
-    useradd --system --uid 1001 --gid toolsapi toolsapi && \
-    chown -R toolsapi:toolsapi /app
 USER toolsapi
 
 EXPOSE 5590
