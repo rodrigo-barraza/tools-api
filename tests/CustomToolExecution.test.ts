@@ -11,7 +11,7 @@
 //   6. Route-level integration (POST /agentic/custom-tool/execute)
 // ────────────────────────────────────────────────────────────
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll } from "vitest";
 import { executeJavaScript } from "../src/services/JavaScriptInterpreterService.js";
 import { createTestApp } from "./testApp.js";
 import request from "supertest";
@@ -203,8 +203,11 @@ describe("POST /agentic/custom-tool/execute — route integration", () => {
     app = createTestApp("/agentic", router);
   };
 
-  it("executes return-based code and returns result", async () => {
+  beforeAll(async () => {
     await setup();
+  }, 15000);
+
+  it("executes return-based code and returns result", async () => {
     const res = await request(app)
       .post("/agentic/custom-tool/execute")
       .send({ code: "return 2 + 2;", args: {} });
@@ -215,7 +218,6 @@ describe("POST /agentic/custom-tool/execute — route integration", () => {
   });
 
   it("executes return-based code with object result (IIFE-wrapped by route)", async () => {
-    await setup();
     const code = `
       return { greeting: "hello", count: 42 };
     `;
@@ -229,7 +231,6 @@ describe("POST /agentic/custom-tool/execute — route integration", () => {
   });
 
   it("injects args into the sandbox", async () => {
-    await setup();
     const res = await request(app)
       .post("/agentic/custom-tool/execute")
       .send({ code: "return args.x * 2;", args: { x: 21 } });
@@ -240,7 +241,6 @@ describe("POST /agentic/custom-tool/execute — route integration", () => {
   });
 
   it("returns 400 when code is missing", async () => {
-    await setup();
     const res = await request(app)
       .post("/agentic/custom-tool/execute")
       .send({ args: {} });
@@ -250,7 +250,6 @@ describe("POST /agentic/custom-tool/execute — route integration", () => {
   });
 
   it("returns success=false for runtime errors", async () => {
-    await setup();
     const res = await request(app)
       .post("/agentic/custom-tool/execute")
       .send({ code: "undefinedVar.foo", args: {} });
@@ -261,7 +260,6 @@ describe("POST /agentic/custom-tool/execute — route integration", () => {
   });
 
   it("defaults to sandboxed execution tier", async () => {
-    await setup();
     const res = await request(app)
       .post("/agentic/custom-tool/execute")
       .send({ code: "return 1;", args: {} });
@@ -271,7 +269,6 @@ describe("POST /agentic/custom-tool/execute — route integration", () => {
   });
 
   it("accepts privileged execution tier", async () => {
-    await setup();
     const res = await request(app)
       .post("/agentic/custom-tool/execute")
       .send({ code: "return 1;", args: {}, execution: "privileged" });
@@ -282,7 +279,6 @@ describe("POST /agentic/custom-tool/execute — route integration", () => {
   });
 
   it("executes require() in privileged mode", async () => {
-    await setup();
     const res = await request(app)
       .post("/agentic/custom-tool/execute")
       .send({
@@ -297,7 +293,6 @@ describe("POST /agentic/custom-tool/execute — route integration", () => {
   });
 
   it("blocks require() in sandboxed mode (explicit)", async () => {
-    await setup();
     const res = await request(app)
       .post("/agentic/custom-tool/execute")
       .send({
