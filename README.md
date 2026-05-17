@@ -2,12 +2,12 @@
 
 Consolidated data aggregation and agentic tool execution hub. Continuously collects data from 70+ external sources across 11 domains — events, finance, market, products, trends, weather, knowledge, health, transit, and utility. Also serves as the tool execution backend for the Prism agentic loop (file ops, git, browser, shell, code interpreters, web search).
 
-**Port:** `5590` · **Runtime:** Node.js (ES Modules) · **Framework:** Express 5 · **DB:** MongoDB
+**Port:** `5590` · **Runtime:** Node.js (TypeScript) · **Framework:** Express 5 · **DB:** MongoDB
 
 ## Quick Start
 
 ```bash
-cp secrets.example.js secrets.js   # API keys
+cp secrets.example.ts secrets.ts   # API keys
 npm install
 npm run dev
 ```
