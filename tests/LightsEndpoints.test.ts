@@ -1,7 +1,7 @@
 // @ts-nocheck
 import request from "supertest";
 import { createTestApp } from "./testApp.js";
-import lightsRoutes from "../routes/LightsRoutes.js";
+import lightsRoutes from "../src/routes/LightsRoutes.js";
 
 // ─── Unit Tests for Lights Domain Endpoints ────────────────────
 

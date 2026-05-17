@@ -1,7 +1,7 @@
 // @ts-nocheck
 import request from "supertest";
 import { createTestApp } from "./testApp.js";
-import discordRoutes from "../routes/DiscordRoutes.js";
+import discordRoutes from "../src/routes/DiscordRoutes.js";
 
 // ─── Unit Tests for Discord Domain Endpoints ────────────────────
 

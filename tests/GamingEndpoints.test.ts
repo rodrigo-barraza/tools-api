@@ -1,7 +1,7 @@
 // @ts-nocheck
 import request from "supertest";
 import { createTestApp } from "./testApp.js";
-import gamingRoutes from "../routes/GamingRoutes.js";
+import gamingRoutes from "../src/routes/GamingRoutes.js";
 
 // ─── Unit Tests for Gaming Domain Endpoints ────────────────────
 

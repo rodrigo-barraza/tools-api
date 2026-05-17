@@ -1,7 +1,7 @@
 // @ts-nocheck
 import request from "supertest";
 import { createTestApp } from "./testApp.js";
-import productRoutes from "../routes/ProductRoutes.js";
+import productRoutes from "../src/routes/ProductRoutes.js";
 
 // ─── Unit Tests for Product Domain Endpoints ────────────────────
 

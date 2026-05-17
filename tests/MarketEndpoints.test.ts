@@ -1,7 +1,7 @@
 // @ts-nocheck
 import request from "supertest";
 import { createTestApp } from "./testApp.js";
-import marketRoutes from "../routes/MarketRoutes.js";
+import marketRoutes from "../src/routes/MarketRoutes.js";
 
 // ─── Unit Tests for Market Domain Endpoints ─────────────────────
 

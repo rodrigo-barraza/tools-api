@@ -1,7 +1,7 @@
 // @ts-nocheck
 import request from "supertest";
 import { createTestApp } from "./testApp.js";
-import adminRoutes from "../routes/AdminRoutes.js";
+import adminRoutes from "../src/routes/AdminRoutes.js";
 
 // ─── Unit Tests for Admin Endpoints ────────────────────
 

@@ -1,7 +1,7 @@
 // @ts-nocheck
 import request from "supertest";
 import { createTestApp } from "./testApp.js";
-import transitRoutes from "../routes/TransitRoutes.js";
+import transitRoutes from "../src/routes/TransitRoutes.js";
 
 // ─── Unit Tests for Transit Domain Endpoints ────────────────────
 

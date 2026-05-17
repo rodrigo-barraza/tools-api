@@ -13,8 +13,8 @@ import {
   TOOL_DEFINITIONS,
   TOOL_DOMAINS,
   TOOL_LABELS,
-} from "../services/ToolSchemaService.js";
-import { LABELS, DOMAINS } from "../services/ToolTaxonomyConstants.js";
+} from "../src/services/ToolSchemaService.js";
+import { LABELS, DOMAINS } from "../src/services/ToolTaxonomyConstants.js";
 
 // ── Helpers ──────────────────────────────────────────────────
 

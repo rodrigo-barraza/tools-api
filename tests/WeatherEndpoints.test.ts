@@ -1,7 +1,7 @@
 // @ts-nocheck
 import request from "supertest";
 import { createTestApp } from "./testApp.js";
-import weatherRoutes from "../routes/WeatherRoutes.js";
+import weatherRoutes from "../src/routes/WeatherRoutes.js";
 
 // ─── Unit Tests for Weather Domain Endpoints ────────────────────
 

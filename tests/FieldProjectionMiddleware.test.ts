@@ -1,6 +1,6 @@
 // @ts-nocheck
 import express from "express";
-import { fieldProjectionMiddleware } from "../middleware/FieldProjectionMiddleware.js";
+import { fieldProjectionMiddleware } from "../src/middleware/FieldProjectionMiddleware.js";
 
 // ─── Test Fixtures ─────────────────────────────────────────────
 

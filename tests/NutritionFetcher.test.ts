@@ -8,7 +8,7 @@ import {
   getFoodCategories,
   getTopFoodsByCategory,
   listCategoryNutrients,
-} from "../fetchers/health/NutritionFetcher.js";
+} from "../src/fetchers/health/NutritionFetcher.js";
 
 // ─── searchFoods ───────────────────────────────────────────────────
 

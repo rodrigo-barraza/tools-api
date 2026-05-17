@@ -12,7 +12,7 @@
 // ────────────────────────────────────────────────────────────
 
 import { describe, it, expect } from "vitest";
-import { executeJavaScript } from "../services/JavaScriptInterpreterService.js";
+import { executeJavaScript } from "../src/services/JavaScriptInterpreterService.js";
 import { createTestApp } from "./testApp.js";
 import request from "supertest";
 
@@ -199,7 +199,7 @@ describe("POST /agentic/custom-tool/execute — route integration", () => {
   // Dynamically import the router (it has many deps, only mount what we need)
   // We use a minimal approach: import the execute handler logic via the route
   const setup = async () => {
-    const { default: router } = await import("../routes/AgenticRoutes.js");
+    const { default: router } = await import("../src/routes/AgenticRoutes.js");
     app = createTestApp("/agentic", router);
   };
 

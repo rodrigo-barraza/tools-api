@@ -1,7 +1,7 @@
 // @ts-nocheck
 import request from "supertest";
 import { createTestApp } from "./testApp.js";
-import trendRoutes from "../routes/TrendRoutes.js";
+import trendRoutes from "../src/routes/TrendRoutes.js";
 
 // ─── Unit Tests for Trend Domain Endpoints ──────────────────────
 

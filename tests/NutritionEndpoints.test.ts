@@ -1,7 +1,7 @@
 // @ts-nocheck
 import request from "supertest";
 import { createTestApp } from "./testApp.js";
-import healthRoutes from "../routes/HealthRoutes.js";
+import healthRoutes from "../src/routes/HealthRoutes.js";
 
 // ─── Unit Tests for Nutrition HTTP Endpoints ────────────────────
 

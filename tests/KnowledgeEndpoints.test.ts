@@ -1,7 +1,7 @@
 // @ts-nocheck
 import request from "supertest";
 import { createTestApp } from "./testApp.js";
-import knowledgeRoutes from "../routes/KnowledgeRoutes.js";
+import knowledgeRoutes from "../src/routes/KnowledgeRoutes.js";
 
 // ─── Unit Tests for Knowledge Domain Endpoints ──────────────────
 

@@ -1,7 +1,7 @@
 // @ts-nocheck
 import request from "supertest";
 import { createTestApp } from "./testApp.js";
-import eventRoutes from "../routes/EventRoutes.js";
+import eventRoutes from "../src/routes/EventRoutes.js";
 
 // ─── Unit Tests for Event Domain Endpoints ──────────────────────
 

@@ -1,7 +1,7 @@
 // @ts-nocheck
 import request from "supertest";
 import { createTestApp } from "./testApp.js";
-import energyRoutes from "../routes/EnergyRoutes.js";
+import energyRoutes from "../src/routes/EnergyRoutes.js";
 
 // ─── Unit Tests for Energy Domain Endpoints ────────────────────
 

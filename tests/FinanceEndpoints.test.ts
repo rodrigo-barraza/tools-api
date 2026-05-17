@@ -1,7 +1,7 @@
 // @ts-nocheck
 import request from "supertest";
 import { createTestApp } from "./testApp.js";
-import financeRoutes from "../routes/FinanceRoutes.js";
+import financeRoutes from "../src/routes/FinanceRoutes.js";
 
 // ─── Unit Tests for Finance Domain Endpoints ────────────────────
 
