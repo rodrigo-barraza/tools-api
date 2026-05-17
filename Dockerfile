@@ -20,8 +20,7 @@ COPY package.json package-lock.json ./
 
 # Skip Playwright's bundled browser download — we install system Chromium
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-RUN mkdir -p -m 0700 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
-RUN --mount=type=ssh npm ci --omit=dev
+RUN npm ci --omit=dev
 
 # ── Stage 2: Runtime ──────────────────────────────────────────
 FROM node:22-slim
