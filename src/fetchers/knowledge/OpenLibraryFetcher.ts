@@ -12,7 +12,7 @@ import { OPEN_LIBRARY_BASE_URL } from "../../constants.ts";
 
 
  */
-export async function searchBooks(query, limit = 10) {
+export async function searchBooks(query: any, limit: any = 10) {
   const params = new URLSearchParams({
     q: query,
     limit: String(limit),
@@ -27,7 +27,7 @@ export async function searchBooks(query, limit = 10) {
   const data = await response.json();
   return {
     totalResults: data.numFound || 0,
-    books: (data.docs || []).slice(0, limit).map((document) => ({
+    books: (data.docs || []).slice(0, limit).map((document: any) => ({
       key: document.key,
       title: document.title,
       authors: document.author_name || [],
@@ -52,7 +52,7 @@ export async function searchBooks(query, limit = 10) {
 
 
  */
-export async function getBookDetails(workKey) {
+export async function getBookDetails(workKey: any) {
   const key = workKey.startsWith("/works/") ? workKey : `/works/${workKey}`;
   const url = `${OPEN_LIBRARY_BASE_URL}${key}.json`;
   const response = await fetch(url);
@@ -75,7 +75,7 @@ export async function getBookDetails(workKey) {
       ? `https://covers.openlibrary.org/b/id/${data.covers[0]}-L.jpg`
       : null,
     firstPublishDate: data.first_publish_date || null,
-    links: (data.links || []).map((l) => ({
+    links: (data.links || []).map((l: any) => ({
       title: l.title,
       url: l.url,
     })),
@@ -87,7 +87,7 @@ export async function getBookDetails(workKey) {
 
 
  */
-export async function getAuthorInfo(authorKey) {
+export async function getAuthorInfo(authorKey: any) {
   const key = authorKey.startsWith("/authors/")
     ? authorKey
     : `/authors/${authorKey}`;

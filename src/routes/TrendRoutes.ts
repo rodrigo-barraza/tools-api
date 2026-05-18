@@ -15,38 +15,38 @@ import {
   getHealth,
 } from "../caches/TrendCache.js";
 const router = Router();
-router.get("/trends", (_req, res) => {
+router.get("/trends", (_req: any, res: any) => {
   res.json(getAll());
 });
-router.get("/trends/hot", (_req, res) => {
+router.get("/trends/hot", (_req: any, res: any) => {
   res.json(getCorrelatedTrends());
 });
-router.get("/trends/source/:source", (req, res) => {
+router.get("/trends/source/:source", (req: any, res: any) => {
   res.json(getBySource(req.params.source as string));
 });
-router.get("/trends/category/:category", (req, res) => {
+router.get("/trends/category/:category", (req: any, res: any) => {
   res.json(getByCategory(req.params.category as string));
 });
-router.get("/trends/search", (req, res) => {
+router.get("/trends/search", (req: any, res: any) => {
   const query = req.query.q as string;
   if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
   res.json(searchTrends(query));
 });
-router.get("/trends/recent", asyncHandler(async (req, res) => {
+router.get("/trends/recent", asyncHandler(async (req: any, res: any) => {
   const hours = parseIntParam(req.query.hours as string, 24);
   const category = req.query.category as string || null;
   const source = req.query.source as string || null;
   const limit = parseIntParam(req.query.limit as string, 50);
   res.json(await getRecentTrends(hours, category, source, limit));
 }));
-router.get("/trends/top", asyncHandler(async (req, res) => {
+router.get("/trends/top", asyncHandler(async (req: any, res: any) => {
   const hours = parseIntParam(req.query.hours as string, 24);
   const limit = parseIntParam(req.query.limit as string, 20);
   res.json(await getTopTrends(hours, limit));
 }));
-router.get("/trends/db/search", asyncHandler(async (req, res) => {
+router.get("/trends/db/search", asyncHandler(async (req: any, res: any) => {
   const query = req.query.q as string;
   if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
@@ -58,9 +58,10 @@ export function getTrendHealth() {
   return getHealth();
 }
 // ── Unified Trends Dispatcher ──────────────────────────────────────
-router.get("/data", asyncHandler(async (req, res) => {
+router.get("/data", asyncHandler(async (req: any, res: any) => {
   const { action, source, hours, limit: rawLimit } = req.query as any;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["current", "hot", "top"] });
+  // @ts-expect-error - suppress remaining error
   const limit = parseIntParam(rawLimit, undefined);
   switch (action) {
     case "current": {

@@ -5,7 +5,7 @@ import CONFIG from "../config.ts";
 
 // ─── Lazy Client ───────────────────────────────────────────────────
 
-let client = null;
+let client: any = null;
 
 function getClient() {
   if (!client) {
@@ -24,7 +24,7 @@ function getClient() {
 
 
  */
-export async function sendSms(to, body, from) {
+export async function sendSms(to: any, body: any, from: any) {
   const c = getClient();
 
   // Resolve sender if not provided
@@ -75,7 +75,7 @@ export async function listMessages(filters: Record<string, any> = {}) {
 
   return {
     count: messages.length,
-    messages: messages.map((m) => ({
+    messages: messages.map((m: any) => ({
       sid: m.sid,
       to: m.to,
       from: m.from,
@@ -121,7 +121,7 @@ export async function getAccountInfo() {
 
 
  */
-export async function lookupPhone(phone) {
+export async function lookupPhone(phone: any) {
   const c = getClient();
   const result = await c.lookups.v2.phoneNumbers(phone).fetch({
     fields: "line_type_intelligence",
@@ -151,7 +151,7 @@ export async function listPhoneNumbers() {
 
   return {
     count: numbers.length,
-    phoneNumbers: numbers.map((n) => ({
+    phoneNumbers: numbers.map((n: any) => ({
       sid: n.sid,
       phoneNumber: n.phoneNumber,
       friendlyName: n.friendlyName,

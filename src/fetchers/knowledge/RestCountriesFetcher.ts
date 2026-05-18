@@ -40,7 +40,7 @@ function normalizeCountry(c: any) {
     coatOfArms: c.coatOfArms?.png || null,
     googleMaps: c.maps?.googleMaps || null,
     callingCodes: c.idd?.root
-      ? (c.idd.suffixes || [""]).map((s) => `${c.idd.root}${s}`).slice(0, 3)
+      ? (c.idd.suffixes || [""]).map((s: any) => `${c.idd.root}${s}`).slice(0, 3)
       : [],
     continent: c.continents?.[0] || null,
     independent: c.independent ?? null,
@@ -58,7 +58,7 @@ function normalizeCountry(c: any) {
 
 
  */
-export async function searchCountries(name) {
+export async function searchCountries(name: any) {
   const url = `${REST_COUNTRIES_BASE_URL}/name/${encodeURIComponent(name)}`;
   const response = await fetch(url);
 
@@ -84,7 +84,7 @@ export async function searchCountries(name) {
 
 
  */
-export async function getCountryByCode(code) {
+export async function getCountryByCode(code: any) {
   const url = `${REST_COUNTRIES_BASE_URL}/alpha/${encodeURIComponent(code.toUpperCase())}`;
   const response = await fetch(url);
 

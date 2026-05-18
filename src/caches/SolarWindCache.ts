@@ -7,7 +7,7 @@ cache.update({ plasma: [], magnetic: [], latest: {}, counts: {} });
 // Reset lastFetch since this was just initialization, not a real fetch
 const initialState = { update: cache.update, setError: cache.setError };
 
-export function updateSolarWind(data) {
+export function updateSolarWind(data: any) {
   initialState.update(data);
 }
 

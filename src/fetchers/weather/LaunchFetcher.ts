@@ -20,7 +20,7 @@ export async function fetchUpcomingLaunches() {
 
   const data = await response.json();
 
-  return (data.results || []).map((launch) => ({
+  return (data.results || []).map((launch: any) => ({
     id: launch.id,
     name: launch.name,
     slug: launch.slug,

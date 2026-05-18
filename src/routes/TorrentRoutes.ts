@@ -12,7 +12,7 @@ const router = Router();
 
 // ─── 1. Search — Full lifecycle (start → poll → results) ───
 
-router.get("/search", asyncHandler(async (req, res) => {
+router.get("/search", asyncHandler(async (req: any, res: any) => {
   const { q, query, category, plugins, limit, timeout } = req.query as any;
   const searchQuery = q || query;
   if (!searchQuery) {
@@ -30,14 +30,14 @@ router.get("/search", asyncHandler(async (req, res) => {
       timeoutMs: Math.min(parseInt(timeout) || TORRENT_SEARCH_TIMEOUT_MS, TORRENT_MAX_TIMEOUT_MS),
     });
     res.json(results);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: `Search failed: ${error.message}` });
   }
 }));
 
 // ─── 2. Download — Add torrent by magnet/URL ────────────────
 
-router.post("/download", asyncHandler(async (req, res) => {
+router.post("/download", asyncHandler(async (req: any, res: any) => {
   const { url, magnetUrl, magnet, savePath, category, tags, paused } = req.body;
   const torrentUrl = url || magnetUrl || magnet;
   if (!torrentUrl) {
@@ -54,14 +54,14 @@ router.post("/download", asyncHandler(async (req, res) => {
       paused,
     });
     res.json({ ...result, url: torrentUrl });
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: `Download failed: ${error.message}` });
   }
 }));
 
 // ─── 3. Status — List active torrents ───────────────────────
 
-router.get("/status", asyncHandler(async (req, res) => {
+router.get("/status", asyncHandler(async (req: any, res: any) => {
   const { filter, category, tag, sort, limit, offset } = req.query as any;
 
   try {
@@ -74,34 +74,34 @@ router.get("/status", asyncHandler(async (req, res) => {
       offset: parseInt(offset) || 0,
     });
     res.json({ count: torrents.length, torrents });
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: `Status check failed: ${error.message}` });
   }
 }));
 
 // ─── 4. Pause/Resume/Delete ─────────────────────────────────
 
-router.post("/pause", asyncHandler(async (req, res) => {
+router.post("/pause", asyncHandler(async (req: any, res: any) => {
   const { hashes } = req.body;
   try {
     const result = await qbt.pauseTorrents(hashes || "all");
     res.json(result);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: `Pause failed: ${error.message}` });
   }
 }));
 
-router.post("/resume", asyncHandler(async (req, res) => {
+router.post("/resume", asyncHandler(async (req: any, res: any) => {
   const { hashes } = req.body;
   try {
     const result = await qbt.resumeTorrents(hashes || "all");
     res.json(result);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: `Resume failed: ${error.message}` });
   }
 }));
 
-router.post("/delete", asyncHandler(async (req, res) => {
+router.post("/delete", asyncHandler(async (req: any, res: any) => {
   const { hashes, deleteFiles } = req.body;
   if (!hashes) {
     return res.status(400).json({ error: "'hashes' is required (pipe-separated hash list)" });
@@ -109,23 +109,23 @@ router.post("/delete", asyncHandler(async (req, res) => {
   try {
     const result = await qbt.deleteTorrents(hashes, deleteFiles === true);
     res.json(result);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: `Delete failed: ${error.message}` });
   }
 }));
 
 // ─── 5. Plugins — List/Install/Enable ───────────────────────
 
-router.get("/plugins", asyncHandler(async (req, res) => {
+router.get("/plugins", asyncHandler(async (req: any, res: any) => {
   try {
     const plugins = await qbt.getPlugins();
     res.json({ count: plugins.length, plugins });
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: `Plugin list failed: ${error.message}` });
   }
 }));
 
-router.post("/plugins/install", asyncHandler(async (req, res) => {
+router.post("/plugins/install", asyncHandler(async (req: any, res: any) => {
   const { url, urls } = req.body;
   const sources = url || urls;
   if (!sources) {
@@ -134,12 +134,12 @@ router.post("/plugins/install", asyncHandler(async (req, res) => {
   try {
     const result = await qbt.installPlugin(sources);
     res.json(result);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: `Plugin install failed: ${error.message}` });
   }
 }));
 
-router.post("/plugins/enable", asyncHandler(async (req, res) => {
+router.post("/plugins/enable", asyncHandler(async (req: any, res: any) => {
   const { names, enable } = req.body;
   if (!names) {
     return res.status(400).json({ error: "'names' is required (pipe-separated plugin names)" });
@@ -147,34 +147,34 @@ router.post("/plugins/enable", asyncHandler(async (req, res) => {
   try {
     const result = await qbt.enablePlugin(names, enable !== false);
     res.json(result);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: `Plugin enable failed: ${error.message}` });
   }
 }));
 
-router.post("/plugins/update", asyncHandler(async (_req, res) => {
+router.post("/plugins/update", asyncHandler(async (_req: any, res: any) => {
   try {
     const result = await qbt.updatePlugins();
     res.json(result);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: `Plugin update failed: ${error.message}` });
   }
 }));
 
 // ─── 6. Transfer Info ───────────────────────────────────────
 
-router.get("/transfer", asyncHandler(async (_req, res) => {
+router.get("/transfer", asyncHandler(async (_req: any, res: any) => {
   try {
     const info = await qbt.getTransferInfo();
     res.json(info);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: `Transfer info failed: ${error.message}` });
   }
 }));
 
 // ─── Unified Dispatcher (for AI tool schema) ────────────────
 
-router.get("/", asyncHandler(async (req, res) => {
+router.get("/", asyncHandler(async (req: any, res: any) => {
   const { action, q, query, category, plugins, limit, filter, sort, timeout, hashes } = req.query as any;
   if (!action) {
     return res.status(400).json({

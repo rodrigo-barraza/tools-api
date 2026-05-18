@@ -14,35 +14,35 @@ import { fetchGenericPage } from "./GenericPageFetcher.ts";
 const PLATFORM_PATTERNS = [
   {
     platform: "youtube",
-    test: (url) =>
+    test: (url: any) =>
       /(?:youtube\.com|youtu\.be|youtube-nocookie\.com)/i.test(url),
   },
   {
     platform: "reddit",
-    test: (url) =>
+    test: (url: any) =>
       /(?:reddit\.com|redd\.it)/i.test(url) ||
       /^r\/\w+\/comments\//i.test(url),
   },
   {
     platform: "twitter",
-    test: (url) =>
+    test: (url: any) =>
       /(?:twitter\.com|x\.com|fixupx\.com|fxtwitter\.com|vxtwitter\.com|nitter\.\w+)/i.test(url) ||
       (/\/status\/\d+/i.test(url) && !/reddit|github|stackoverflow/i.test(url)),
   },
   {
     platform: "hackernews",
-    test: (url) =>
+    test: (url: any) =>
       /(?:news\.ycombinator\.com)/i.test(url),
   },
   {
     platform: "stackoverflow",
-    test: (url) =>
+    test: (url: any) =>
       /(?:stackoverflow\.com|stackexchange\.com)/i.test(url) ||
       /^(?:stackoverflow|so):\d+$/i.test(url),
   },
   {
     platform: "github",
-    test: (url) =>
+    test: (url: any) =>
       /(?:github\.com)/i.test(url) ||
       // owner/repo shorthand: must have exactly one slash, no dots in TLD pattern
       /^[a-zA-Z][a-zA-Z0-9_.-]*\/[a-zA-Z0-9_.-]+$/.test(url),
@@ -54,7 +54,7 @@ const PLATFORM_PATTERNS = [
 
  * @returns {string|null} Platform name, or null for generic pages
  */
-function detectPlatform(url) {
+function detectPlatform(url: any) {
   if (!url || typeof url !== "string") return null;
   const trimmed = url.trim();
   for (const { platform, test } of PLATFORM_PATTERNS) {
@@ -74,10 +74,10 @@ function detectPlatform(url) {
 
  * @returns {Promise<object>} Platform-specific result with "platform" field
  */
-export async function getWebContent(url, options: Record<string, any> = {}) {
+export async function getWebContent(url: any, options: Record<string, any> = {}) {
   const platform = detectPlatform(url);
 
-  let result;
+  let result: any;
 
   switch (platform) {
     case "youtube":

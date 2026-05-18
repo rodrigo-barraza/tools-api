@@ -2,14 +2,14 @@ import { upsertNeos } from "../models/Neo.ts";
 
 const cache = {
   neos: [],
-  lastFetch: null,
-  error: null,
+  lastFetch: null as any,
+  error: null as any,
 };
 
 /**
  * Update the cache with freshly fetched NEO data and persist to DB.
  */
-export async function updateNeos(neos) {
+export async function updateNeos(neos: any) {
   cache.neos = neos;
   cache.lastFetch = new Date();
   cache.error = null;
@@ -20,13 +20,13 @@ export async function updateNeos(neos) {
  * Restore NEOs from a DB snapshot into the in-memory cache.
  * Memory-only — no MongoDB upsert.
  */
-export function restoreNeos(neos) {
+export function restoreNeos(neos: any) {
   cache.neos = neos;
   cache.lastFetch = new Date();
   cache.error = null;
 }
 
-export function setNeoError(error) {
+export function setNeoError(error: any) {
   cache.error = { message: error.message, time: new Date().toISOString() };
 }
 
@@ -41,10 +41,10 @@ export function getLatestNeos() {
  * Summary: total count, hazardous count, closest approach, largest object.
  */
 export function getNeoSummary() {
-  const hazardous = cache.neos.filter((n) => n.isPotentiallyHazardous);
+  const hazardous = cache.neos.filter((n: any) => n.isPotentiallyHazardous);
   const closest = cache.neos[0] || null; // already sorted by miss distance
   const largest = cache.neos.reduce(
-    (max, n) =>
+    (max: any, n: any) =>
       (n.estimatedDiameterMaxKm ?? 0) > (max?.estimatedDiameterMaxKm ?? 0)
         ? n
         : max,

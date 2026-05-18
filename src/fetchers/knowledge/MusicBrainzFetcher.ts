@@ -8,7 +8,7 @@ const USER_AGENT = "SunToolsService/1.0 (rodrigo@rod.dev)";
 // Cover art from Cover Art Archive (free, no auth)
 const COVER_ART_BASE = "https://coverartarchive.org";
 
-async function fetchMB(path, params: Record<string, any> = {}) {
+async function fetchMB(path: any, params: Record<string, any> = {}) {
   const url = new URL(`${BASE_URL}${path}`);
   url.searchParams.set("fmt", "json");
   for (const [key, value] of Object.entries(params)) {
@@ -33,11 +33,11 @@ async function fetchMB(path, params: Record<string, any> = {}) {
  * @param {string} query Artist name
  * @param {number} limit Max results (default: 10)
  */
-export async function searchArtists(query, limit = 10) {
+export async function searchArtists(query: any, limit: any = 10) {
   const data = await fetchMB("/artist", { query, limit });
   return {
     count: data.count,
-    artists: (data.artists || []).map((a) => ({
+    artists: (data.artists || []).map((a: any) => ({
       id: a.id,
       name: a.name,
       sortName: a["sort-name"],
@@ -48,9 +48,9 @@ export async function searchArtists(query, limit = 10) {
       endDate: a["life-span"]?.end || null,
       ended: a["life-span"]?.ended || false,
       tags: (a.tags || [])
-        .sort((x, y) => (y.count || 0) - (x.count || 0))
+        .sort((x: any, y: any) => (y.count || 0) - (x.count || 0))
         .slice(0, 10)
-        .map((t) => t.name),
+        .map((t: any) => t.name),
       score: a.score,
     })),
   };
@@ -62,7 +62,7 @@ export async function searchArtists(query, limit = 10) {
  * Get detailed artist info by MusicBrainz ID (MBID).
  * @param {string} mbid MusicBrainz Artist ID
  */
-export async function getArtist(mbid) {
+export async function getArtist(mbid: any) {
   const a = await fetchMB(`/artist/${mbid}`, {
     inc: "url-rels+release-groups+tags",
   });
@@ -88,7 +88,7 @@ export async function getArtist(mbid) {
   }
 
   // Group release groups by type
-  const releaseGroups = (a["release-groups"] || []).map((rg) => ({
+  const releaseGroups = (a["release-groups"] || []).map((rg: any) => ({
     id: rg.id,
     title: rg.title,
     type: rg["primary-type"] || "Other",
@@ -103,7 +103,7 @@ export async function getArtist(mbid) {
   }
   // Sort each type by date
   for (const type of Object.keys(byType)) {
-    byType[type].sort((a, b) => (a.firstReleaseDate || "").localeCompare(b.firstReleaseDate || ""));
+    byType[type].sort((a: any, b: any) => (a.firstReleaseDate || "").localeCompare(b.firstReleaseDate || ""));
   }
 
   return {
@@ -118,9 +118,9 @@ export async function getArtist(mbid) {
     ended: a["life-span"]?.ended || false,
     gender: a.gender || null,
     tags: (a.tags || [])
-      .sort((x, y) => (y.count || 0) - (x.count || 0))
+      .sort((x: any, y: any) => (y.count || 0) - (x.count || 0))
       .slice(0, 15)
-      .map((t) => t.name),
+      .map((t: any) => t.name),
     urls,
     discography: byType,
     totalReleaseGroups: releaseGroups.length,
@@ -135,17 +135,17 @@ export async function getArtist(mbid) {
  * @param {string} artist Optional artist name to narrow results
  * @param {number} limit Max results (default: 10)
  */
-export async function searchAlbums(query, artist, limit = 10) {
+export async function searchAlbums(query: any, artist: any, limit: any = 10) {
   const searchQuery = artist ? `${query} AND artist:${artist}` : query;
   const data = await fetchMB("/release-group", { query: searchQuery, limit });
   return {
     count: data.count,
-    albums: (data["release-groups"] || []).map((rg) => ({
+    albums: (data["release-groups"] || []).map((rg: any) => ({
       id: rg.id,
       title: rg.title,
       type: rg["primary-type"] || "Other",
       firstReleaseDate: rg["first-release-date"] || null,
-      artists: (rg["artist-credit"] || []).map((ac) => ({
+      artists: (rg["artist-credit"] || []).map((ac: any) => ({
         id: ac.artist?.id,
         name: ac.artist?.name,
       })),
@@ -159,20 +159,20 @@ export async function searchAlbums(query, artist, limit = 10) {
  * Get album details by release-group MBID.
  * @param {string} mbid MusicBrainz Release Group ID
  */
-export async function getAlbum(mbid) {
+export async function getAlbum(mbid: any) {
   const rg = await fetchMB(`/release-group/${mbid}`, {
     inc: "releases+artist-credits+tags",
   });
 
   // Get the first release's tracklist
-  let tracks = [];
+  let tracks: any[] = [];
   if (rg.releases?.[0]) {
     try {
       const release = await fetchMB(`/release/${rg.releases[0].id}`, {
         inc: "recordings",
       });
-      tracks = (release.media || []).flatMap((m) =>
-        (m.tracks || []).map((t) => ({
+      tracks = (release.media || []).flatMap((m: any) =>
+        (m.tracks || []).map((t: any) => ({
           position: t.position,
           title: t.title,
           durationMs: t.length || null,
@@ -190,14 +190,14 @@ export async function getAlbum(mbid) {
     type: rg["primary-type"] || "Other",
     secondaryTypes: rg["secondary-types"] || [],
     firstReleaseDate: rg["first-release-date"] || null,
-    artists: (rg["artist-credit"] || []).map((ac) => ({
+    artists: (rg["artist-credit"] || []).map((ac: any) => ({
       id: ac.artist?.id,
       name: ac.artist?.name,
     })),
     tags: (rg.tags || [])
-      .sort((x, y) => (y.count || 0) - (x.count || 0))
+      .sort((x: any, y: any) => (y.count || 0) - (x.count || 0))
       .slice(0, 10)
-      .map((t) => t.name),
+      .map((t: any) => t.name),
     coverArtUrl: `${COVER_ART_BASE}/release-group/${rg.id}/front-500`,
     releaseCount: rg.releases?.length || 0,
     tracks,
@@ -213,21 +213,21 @@ export async function getAlbum(mbid) {
  * @param {string} artist Optional artist name
  * @param {number} limit Max results (default: 10)
  */
-export async function searchTracks(query, artist, limit = 10) {
+export async function searchTracks(query: any, artist: any, limit: any = 10) {
   const searchQuery = artist ? `${query} AND artist:${artist}` : query;
   const data = await fetchMB("/recording", { query: searchQuery, limit });
   return {
     count: data.count,
-    tracks: (data.recordings || []).map((r) => ({
+    tracks: (data.recordings || []).map((r: any) => ({
       id: r.id,
       title: r.title,
       durationMs: r.length || null,
       duration: r.length ? formatMediaTimestamp(Math.round(r.length / 1000)) : null,
-      artists: (r["artist-credit"] || []).map((ac) => ({
+      artists: (r["artist-credit"] || []).map((ac: any) => ({
         id: ac.artist?.id,
         name: ac.artist?.name,
       })),
-      releases: (r.releases || []).slice(0, 3).map((rel) => ({
+      releases: (r.releases || []).slice(0, 3).map((rel: any) => ({
         id: rel.id,
         title: rel.title,
         date: rel.date || null,

@@ -15,7 +15,7 @@ const HEADERS = {
  * Parse a Craigslist date string into a Date object.
  * Craigslist uses formats like "Mar 20" or "2026-03-20 10:00"
  */
-function parseDate(dateStr) {
+function parseDate(dateStr: any) {
   if (!dateStr) return null;
   const d = new Date(dateStr);
   return isNaN(d.getTime()) ? null : d;
@@ -34,9 +34,9 @@ export async function fetchCraigslistEvents() {
 
   const html = await response.text();
   const $ = cheerio.load(html);
-  const events = [];
+  const events: any[] = [];
 
-  $(".cl-static-search-result").each((_i, element) => {
+  $(".cl-static-search-result").each((_i: any, element: any) => {
     const $el = $(element);
     const title = $el.find(".title").text().trim();
     const link = $el.attr("href");
@@ -84,7 +84,7 @@ export async function fetchCraigslistEvents() {
 
   // Fallback: try the gallery/list results format
   if (events.length === 0) {
-    $("li.cl-search-result, .result-row").each((_i, element) => {
+    $("li.cl-search-result, .result-row").each((_i: any, element: any) => {
       const $el = $(element);
       const $link = $el.find("a.posting-title, a.result-title, a");
       const title = $link.text().trim();

@@ -91,7 +91,7 @@ const BLOCKED_PATTERNS = [
 
  * @returns {{ valid: boolean, error?: string }}
  */
-function validateCommand(command) {
+function validateCommand(command: any) {
   // Check for blocked patterns
   for (const pattern of BLOCKED_PATTERNS) {
     if (pattern.test(command)) {
@@ -103,7 +103,7 @@ function validateCommand(command) {
   }
 
   // Split on pipes and validate each segment
-  const segments = command.split("|").map((s) => s.trim());
+  const segments = command.split("|").map((s: any) => s.trim());
   for (const segment of segments) {
     if (!segment) {
       return { valid: false, error: "Empty pipe segment" };
@@ -141,7 +141,7 @@ function validateCommand(command) {
  *   error?: string
  * }>}
  */
-export async function executeShell(command, { stdin = "", timeout = DEFAULT_TIMEOUT_MS }: Record<string, any> = {}) {
+export async function executeShell(command: any, { stdin = "", timeout = DEFAULT_TIMEOUT_MS }: Record<string, any> = {}) {
   const clampedTimeout = Math.min(Math.max(timeout, 500), MAX_TIMEOUT_MS);
 
   // Validate command
@@ -173,9 +173,9 @@ export async function executeShell(command, { stdin = "", timeout = DEFAULT_TIME
 
   const startTime = performance.now();
 
-  return new Promise<any>((resolve) => {
-    const stdoutChunks = [];
-    const stderrChunks = [];
+  return new Promise<any>((resolve: any) => {
+    const stdoutChunks: any[] = [];
+    const stderrChunks: any[] = [];
     let stdoutLen = 0;
     let stderrLen = 0;
     let timedOut = false;
@@ -201,14 +201,14 @@ export async function executeShell(command, { stdin = "", timeout = DEFAULT_TIME
     }
     child.stdin.end();
 
-    child.stdout.on("data", (chunk) => {
+    child.stdout.on("data", (chunk: any) => {
       if (stdoutLen < MAX_OUTPUT_BYTES) {
         stdoutChunks.push(chunk);
         stdoutLen += chunk.length;
       }
     });
 
-    child.stderr.on("data", (chunk) => {
+    child.stderr.on("data", (chunk: any) => {
       if (stderrLen < MAX_OUTPUT_BYTES) {
         stderrChunks.push(chunk);
         stderrLen += chunk.length;
@@ -220,7 +220,7 @@ export async function executeShell(command, { stdin = "", timeout = DEFAULT_TIME
       child.kill("SIGKILL");
     }, clampedTimeout);
 
-    function finish(exitCode) {
+    function finish(exitCode: any) {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
@@ -248,8 +248,8 @@ export async function executeShell(command, { stdin = "", timeout = DEFAULT_TIME
       });
     }
 
-    child.on("close", (code) => finish(code));
-    child.on("error", (error) => {
+    child.on("close", (code: any) => finish(code));
+    child.on("error", (error: any) => {
       if (!settled) {
         settled = true;
         clearTimeout(timer);
@@ -276,7 +276,7 @@ export async function executeShell(command, { stdin = "", timeout = DEFAULT_TIME
 
  * @returns {Promise<{ success, stdout, stderr, exitCode, executionTimeMs, timedOut, error? }>}
  */
-export async function executeShellStreaming(command, { stdin = "", timeout = DEFAULT_TIMEOUT_MS, onChunk }: Record<string, any> = {}) {
+export async function executeShellStreaming(command: any, { stdin = "", timeout = DEFAULT_TIMEOUT_MS, onChunk }: Record<string, any> = {}) {
   const clampedTimeout = Math.min(Math.max(timeout, 500), MAX_TIMEOUT_MS);
 
   const validation = validateCommand(command);
@@ -297,9 +297,9 @@ export async function executeShellStreaming(command, { stdin = "", timeout = DEF
 
   const startTime = performance.now();
 
-  return new Promise<any>((resolve) => {
-    const stdoutChunks = [];
-    const stderrChunks = [];
+  return new Promise<any>((resolve: any) => {
+    const stdoutChunks: any[] = [];
+    const stderrChunks: any[] = [];
     let stdoutLen = 0;
     let stderrLen = 0;
     let timedOut = false;
@@ -315,7 +315,7 @@ export async function executeShellStreaming(command, { stdin = "", timeout = DEF
     if (stdin) child.stdin.write(stdin);
     child.stdin.end();
 
-    child.stdout.on("data", (chunk) => {
+    child.stdout.on("data", (chunk: any) => {
       if (stdoutLen < MAX_OUTPUT_BYTES) {
         stdoutChunks.push(chunk);
         stdoutLen += chunk.length;
@@ -323,7 +323,7 @@ export async function executeShellStreaming(command, { stdin = "", timeout = DEF
       }
     });
 
-    child.stderr.on("data", (chunk) => {
+    child.stderr.on("data", (chunk: any) => {
       if (stderrLen < MAX_OUTPUT_BYTES) {
         stderrChunks.push(chunk);
         stderrLen += chunk.length;
@@ -333,7 +333,7 @@ export async function executeShellStreaming(command, { stdin = "", timeout = DEF
 
     const timer = setTimeout(() => { timedOut = true; child.kill("SIGKILL"); }, clampedTimeout);
 
-    function finish(exitCode) {
+    function finish(exitCode: any) {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
@@ -350,8 +350,8 @@ export async function executeShellStreaming(command, { stdin = "", timeout = DEF
       });
     }
 
-    child.on("close", (code) => finish(code));
-    child.on("error", (error) => {
+    child.on("close", (code: any) => finish(code));
+    child.on("error", (error: any) => {
       if (!settled) {
         settled = true;
         clearTimeout(timer);

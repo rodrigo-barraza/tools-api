@@ -42,7 +42,7 @@ export async function fetchAstronauts() {
 
   return {
     total: data.number,
-    people: data.people.map((p) => ({
+    people: data.people.map((p: any) => ({
       name: p.name,
       craft: p.craft,
     })),

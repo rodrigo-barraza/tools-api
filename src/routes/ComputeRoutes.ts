@@ -25,14 +25,14 @@ import { processImage } from "../services/ImageService.js";
 // ─── Lazy-loaded dependencies ──────────────────────────────────────
 // These are loaded on first use to avoid blocking startup.
 const getConvertUnits = lazyImport<any>("convert-units");
-const getDateFns = lazyImport<any>("date-fns", (m) => m);
-const getDateFnsTz = lazyImport<any>("date-fns-tz", (m) => m);
-const getJSONPath = lazyImport<any>("jsonpath-plus", (m) => m.JSONPath);
+const getDateFns = lazyImport<any>("date-fns", (m: any) => m);
+const getDateFnsTz = lazyImport<any>("date-fns-tz", (m: any) => m);
+const getJSONPath = lazyImport<any>("jsonpath-plus", (m: any) => m.JSONPath);
 const getQRCode = lazyImport<any>("qrcode");
-const getDiff = lazyImport<any>("diff", (m) => m);
+const getDiff = lazyImport<any>("diff", (m: any) => m);
 const router = Router();
 // ─── 1. JavaScript Interpreter (vm sandbox) ─────────────────
-router.post("/js/execute", (req, res) => {
+router.post("/js/execute", (req: any, res: any) => {
   const { code, timeout } = req.body;
   if (!code || typeof code !== "string") {
     return res
@@ -48,11 +48,11 @@ router.post("/js/execute", (req, res) => {
   });
   res.json(result);
 });
-router.get("/js/info", (_req, res) => {
+router.get("/js/info", (_req: any, res: any) => {
   res.json(getJsInterpreterInfo());
 });
 // ── JS Streaming (SSE) — synchronous vm, but follows the same SSE pattern ──
-router.post("/js/stream", (req, res) => {
+router.post("/js/stream", (req: any, res: any) => {
   const { code, timeout } = req.body;
   if (!code || typeof code !== "string") {
     return res.status(400).json({ error: "Request body must include 'code' (string)" });
@@ -75,7 +75,7 @@ router.post("/js/stream", (req, res) => {
   res.end();
 });
 // ─── 2. Shell Executor (allowlisted commands) ───────────────
-router.post("/shell/execute", asyncHandler(async (req, res) => {
+router.post("/shell/execute", asyncHandler(async (req: any, res: any) => {
   const { command, stdin, timeout } = req.body;
   if (!command || typeof command !== "string") {
     return res
@@ -92,12 +92,12 @@ router.post("/shell/execute", asyncHandler(async (req, res) => {
   });
   res.json(result);
 }));
-router.get("/shell/binaries", (_req, res) => {
+router.get("/shell/binaries", (_req: any, res: any) => {
   const binaries = getAllowedBinaries();
   res.json({ count: binaries.length, binaries });
 });
 // ── Shell Streaming (SSE) ─────────────────────────────────────
-router.post("/shell/stream", asyncHandler(async (req, res) => {
+router.post("/shell/stream", asyncHandler(async (req: any, res: any) => {
   const { command, stdin, timeout } = req.body;
   if (!command || typeof command !== "string") {
     return res.status(400).json({ error: "Request body must include 'command' (string)" });
@@ -109,13 +109,13 @@ router.post("/shell/stream", asyncHandler(async (req, res) => {
   const result = await executeShellStreaming(command, {
     stdin: stdin || "",
     timeout: timeout ? Math.min(Math.max(parseInt(timeout), 500), 30_000) : undefined,
-    onChunk: (event, data) => send({ event, data }),
+    onChunk: (event: any, data: any) => send({ event, data }),
   });
   send({ event: "exit", exitCode: result.exitCode, executionTimeMs: result.executionTimeMs, success: result.success, timedOut: result.timedOut, error: result.error || undefined });
   res.end();
 }));
 // ─── 3. Unit Conversion ─────────────────────────────────────
-router.get("/units/convert", asyncHandler(async (req, res) => {
+router.get("/units/convert", asyncHandler(async (req: any, res: any) => {
   const { value, from, to } = req.query as any;
   if (!value || !from || !to) {
     return res
@@ -137,17 +137,17 @@ router.get("/units/convert", asyncHandler(async (req, res) => {
       to: { abbr: to, singular: toUnit.singular, plural: toUnit.plural },
       result,
     });
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ error: `Conversion failed: ${error.message}` });
   }
 }));
-router.get("/units/list", asyncHandler(async (req, res) => {
+router.get("/units/list", asyncHandler(async (req: any, res: any) => {
   const { measure } = req.query as any;
   try {
     const convert = await getConvertUnits();
     if (measure) {
       const units = convert().possibilities(measure);
-      const described = units.map((u) => {
+      const described = units.map((u: any) => {
         const desc = convert().describe(u);
         return { abbr: u, singular: desc.singular, plural: desc.plural, measure: desc.measure };
       });
@@ -157,18 +157,18 @@ router.get("/units/list", asyncHandler(async (req, res) => {
     const all: Record<string, any> = {};
     for (const m of measures) {
       const units = convert().possibilities(m);
-      all[m] = units.map((u) => {
+      all[m] = units.map((u: any) => {
         const desc = convert().describe(u);
         return { abbr: u, singular: desc.singular };
       });
     }
     res.json({ measureCount: measures.length, measures: all });
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ error: `Unit listing failed: ${error.message}` });
   }
 }));
 // ─── 4. DateTime Parsing & Arithmetic ───────────────────────
-router.post("/datetime/parse", asyncHandler(async (req, res) => {
+router.post("/datetime/parse", asyncHandler(async (req: any, res: any) => {
   const { operation, date, date2, amount, unit, format, timezone } = req.body;
   if (!operation) {
     return res.status(400).json({
@@ -178,20 +178,20 @@ router.post("/datetime/parse", asyncHandler(async (req, res) => {
   try {
     const fns = await getDateFns();
     const tz = await getDateFnsTz();
-    const parseDate = (d) => {
+    const parseDate = (d: any) => {
       if (!d) return new Date();
       if (d === "now") return new Date();
       const parsed = typeof d === "number" ? new Date(d) : fns.parseISO(d);
       if (isNaN(parsed.getTime())) throw new Error(`Invalid date: ${d}`);
       return parsed;
     };
-    const formatDate = (d) => {
+    const formatDate = (d: any) => {
       if (timezone) {
         return tz.formatInTimeZone(d, timezone, format || "yyyy-MM-dd'T'HH:mm:ssXXX");
       }
       return format ? fns.format(d, format) : d.toISOString();
     };
-    let result;
+    let result: any;
     switch (operation) {
       case "now": {
         const now = new Date();
@@ -253,6 +253,7 @@ router.post("/datetime/parse", asyncHandler(async (req, res) => {
           minutes: fns.addMinutes,
           seconds: fns.addSeconds,
         };
+        // @ts-expect-error - TS7053: implicit any index
         const adder = ADDERS[unit];
         if (!adder) throw new Error(`Invalid unit: ${unit}. Use: ${Object.keys(ADDERS).join(", ")}`);
         const added = adder(d, parseInt(amount));
@@ -271,6 +272,7 @@ router.post("/datetime/parse", asyncHandler(async (req, res) => {
           minutes: fns.subMinutes,
           seconds: fns.subSeconds,
         };
+        // @ts-expect-error - TS7053: implicit any index
         const subber = SUBBERS[unit];
         if (!subber) throw new Error(`Invalid unit: ${unit}. Use: ${Object.keys(SUBBERS).join(", ")}`);
         const subtracted = subber(d, parseInt(amount));
@@ -288,6 +290,7 @@ router.post("/datetime/parse", asyncHandler(async (req, res) => {
           hour: fns.startOfHour,
           minute: fns.startOfMinute,
         };
+        // @ts-expect-error - TS7053: implicit any index
         const fn = STARTERS[unit];
         if (!fn) throw new Error(`Invalid unit: ${unit}. Use: ${Object.keys(STARTERS).join(", ")}`);
         const started = fn(d);
@@ -305,6 +308,7 @@ router.post("/datetime/parse", asyncHandler(async (req, res) => {
           hour: fns.endOfHour,
           minute: fns.endOfMinute,
         };
+        // @ts-expect-error - TS7053: implicit any index
         const fn = ENDERS[unit];
         if (!fn) throw new Error(`Invalid unit: ${unit}. Use: ${Object.keys(ENDERS).join(", ")}`);
         const ended = fn(d);
@@ -326,12 +330,12 @@ router.post("/datetime/parse", asyncHandler(async (req, res) => {
         });
     }
     res.json({ operation, ...result });
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ error: `DateTime operation failed: ${error.message}` });
   }
 }));
 // ─── 5. JSON Transform (JSONPath) ───────────────────────────
-router.post("/json/transform", asyncHandler(async (req, res) => {
+router.post("/json/transform", asyncHandler(async (req: any, res: any) => {
   const { data, expression, operations } = req.body;
   if (!data) {
     return res.status(400).json({ error: "Request body must include 'data' (object or array)" });
@@ -351,13 +355,13 @@ router.post("/json/transform", asyncHandler(async (req, res) => {
             result = Array.isArray(result) ? result.flat(op.depth ?? Infinity) : result;
             break;
           case "unique":
-            result = Array.isArray(result) ? [...new Set(result.map((x) => (typeof x === "object" ? JSON.stringify(x) : x)))].map((x) => { try { return JSON.parse(x); } catch { return x; } }) : result;
+            result = Array.isArray(result) ? [...new Set(result.map((x: any) => (typeof x === "object" ? JSON.stringify(x) : x)))].map((x: any) => { try { return JSON.parse(x); } catch { return x; } }) : result;
             break;
           case "sort":
             if (Array.isArray(result)) {
               const key = op.key;
               const order = op.order === "desc" ? -1 : 1;
-              result = [...result].sort((a, b) => {
+              result = [...result].sort((a: any, b: any) => {
                 const va = key ? a?.[key] : a;
                 const vb = key ? b?.[key] : b;
                 if (typeof va === "number" && typeof vb === "number") return (va - vb) * order;
@@ -368,7 +372,7 @@ router.post("/json/transform", asyncHandler(async (req, res) => {
           case "filter":
             if (Array.isArray(result) && op.key && op.value !== undefined) {
               const opType = op.operator || "eq";
-              result = result.filter((item) => {
+              result = result.filter((item: any) => {
                 const value = item?.[op.key];
                 switch (opType) {
                   case "eq": return value === op.value;
@@ -386,7 +390,7 @@ router.post("/json/transform", asyncHandler(async (req, res) => {
             break;
           case "pick":
             if (Array.isArray(result) && Array.isArray(op.keys)) {
-              result = result.map((item) => {
+              result = result.map((item: any) => {
                 const picked: Record<string, any> = {};
                 for (const k of op.keys) {
                   if (k in item) picked[k] = item[k];
@@ -403,7 +407,7 @@ router.post("/json/transform", asyncHandler(async (req, res) => {
             break;
           case "omit":
             if (Array.isArray(result) && Array.isArray(op.keys)) {
-              result = result.map((item) => {
+              result = result.map((item: any) => {
                 const omitted = { ...item };
                 for (const k of op.keys) delete omitted[k];
                 return omitted;
@@ -429,7 +433,7 @@ router.post("/json/transform", asyncHandler(async (req, res) => {
             break;
           case "sum":
             if (Array.isArray(result)) {
-              result = result.reduce((acc, item) => {
+              result = result.reduce((acc: any, item: any) => {
                 const value = op.key ? item?.[op.key] : item;
                 return acc + (typeof value === "number" ? value : 0);
               }, 0);
@@ -453,13 +457,13 @@ router.post("/json/transform", asyncHandler(async (req, res) => {
     }
     const count = Array.isArray(result) ? result.length : typeof result === "object" ? Object.keys(result).length : 1;
     res.json({ count, result });
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ error: `JSON transform failed: ${error.message}` });
   }
 }));
 // ─── 6. CSV Generation ──────────────────────────────────────
 const csvStore = new EphemeralStore();
-router.post("/csv", (req, res) => {
+router.post("/csv", (req: any, res: any) => {
   const { data, columns, filename, delimiter } = req.body;
   if (!data || !Array.isArray(data) || data.length === 0) {
     return res.status(400).json({ error: "'data' must be a non-empty array of objects" });
@@ -469,7 +473,7 @@ router.post("/csv", (req, res) => {
     // Determine columns from explicit list or first object keys
     const cols = columns || Object.keys(data[0]);
     // Escape CSV values
-    const escape = (value) => {
+    const escape = (value: any) => {
       if (value === null || value === undefined) return "";
       const str = String(value);
       if (str.includes(delim) || str.includes('"') || str.includes("\n")) {
@@ -479,7 +483,7 @@ router.post("/csv", (req, res) => {
     };
     const lines = [cols.map(escape).join(delim)];
     for (const row of data) {
-      lines.push(cols.map((c) => escape(row[c])).join(delim));
+      lines.push(cols.map((c: any) => escape(row[c])).join(delim));
     }
     const csv = lines.join("\n");
     const id = csvStore.set({ csv, filename: filename || "export.csv" });
@@ -490,11 +494,11 @@ router.post("/csv", (req, res) => {
       rows: data.length,
       columns: cols.length,
     });
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ error: `CSV generation failed: ${error.message}` });
   }
 });
-router.get("/csv/download", (req, res) => {
+router.get("/csv/download", (req: any, res: any) => {
   const { id } = req.query as any;
   if (!id) return res.status(400).send("Missing 'id' parameter");
   const entry = csvStore.get(id);
@@ -507,7 +511,7 @@ router.get("/csv/download", (req, res) => {
 });
 // ─── 7. QR Code Generation ──────────────────────────────────
 const qrStore = new EphemeralStore();
-router.post("/qr", asyncHandler(async (req, res) => {
+router.post("/qr", asyncHandler(async (req: any, res: any) => {
   const { data, size, errorCorrection, darkColor, lightColor } = req.body;
   if (!data || typeof data !== "string") {
     return res.status(400).json({ error: "'data' (string) is required — URL, text, WiFi config, etc." });
@@ -529,11 +533,11 @@ router.post("/qr", asyncHandler(async (req, res) => {
     const id = qrStore.set({ buffer: pngBuffer });
     const qrImageUrl = buildLocalUrl("compute/qr/render", { id });
     res.json({ qrImageUrl, qrId: id, dataLength: data.length });
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ error: `QR code generation failed: ${error.message}` });
   }
 }));
-router.get("/qr/render", (req, res) => {
+router.get("/qr/render", (req: any, res: any) => {
   const { id } = req.query as any;
   if (!id) return res.status(400).send("Missing 'id' parameter");
   const entry = qrStore.get(id);
@@ -546,7 +550,7 @@ router.get("/qr/render", (req, res) => {
 });
 // ─── 8. LaTeX Rendering (KaTeX CDN embed) ───────────────────
 const latexStore = new EphemeralStore();
-function buildLatexEmbedHtml(latex, displayMode = true) {
+function buildLatexEmbedHtml(latex: any, displayMode: any = true) {
   return buildEmbedHtml({
     headExtra: `<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></${"script"}>
@@ -575,7 +579,7 @@ function buildLatexEmbedHtml(latex, displayMode = true) {
 </${"script"}>`,
   });
 }
-router.post("/latex", (req, res) => {
+router.post("/latex", (req: any, res: any) => {
   const { latex, displayMode } = req.body;
   if (!latex || typeof latex !== "string") {
     return res.status(400).json({ error: "'latex' (string) is required" });
@@ -590,7 +594,7 @@ router.post("/latex", (req, res) => {
   const latexEmbedUrl = buildLocalUrl("compute/latex/embed", { id });
   res.json({ latexEmbedUrl, latexId: id });
 });
-router.get("/latex/embed", (req, res) => {
+router.get("/latex/embed", (req: any, res: any) => {
   const { id } = req.query as any;
   if (!id) return res.status(400).send("Missing 'id' parameter");
   const entry = latexStore.get(id);
@@ -602,7 +606,7 @@ router.get("/latex/embed", (req, res) => {
 });
 // ─── 9. Mermaid Diagram Rendering (CDN embed) ───────────────
 const diagramStore = new EphemeralStore();
-function buildMermaidEmbedHtml(definition, theme = "dark") {
+function buildMermaidEmbedHtml(definition: any, theme: any = "dark") {
   return buildEmbedHtml({
     styles: `  #diagram{
     max-width:100%;
@@ -630,7 +634,7 @@ function buildMermaidEmbedHtml(definition, theme = "dark") {
 </${"script"}>`,
   });
 }
-router.post("/diagram", (req, res) => {
+router.post("/diagram", (req: any, res: any) => {
   const { definition, theme } = req.body;
   if (!definition || typeof definition !== "string") {
     return res.status(400).json({ error: "'definition' (Mermaid syntax string) is required" });
@@ -645,7 +649,7 @@ router.post("/diagram", (req, res) => {
   const diagramEmbedUrl = buildLocalUrl("compute/diagram/embed", { id });
   res.json({ diagramEmbedUrl, diagramId: id });
 });
-router.get("/diagram/embed", (req, res) => {
+router.get("/diagram/embed", (req: any, res: any) => {
   const { id } = req.query as any;
   if (!id) return res.status(400).send("Missing 'id' parameter");
   const entry = diagramStore.get(id);
@@ -656,7 +660,7 @@ router.get("/diagram/embed", (req, res) => {
   res.send(buildMermaidEmbedHtml(entry.definition, entry.theme));
 });
 // ─── 10. Text Diff ──────────────────────────────────────────
-router.post("/diff", asyncHandler(async (req, res) => {
+router.post("/diff", asyncHandler(async (req: any, res: any) => {
   const { textA, textB, mode } = req.body;
   if (textA === undefined || textB === undefined) {
     return res.status(400).json({ error: "'textA' and 'textB' are required" });
@@ -664,7 +668,7 @@ router.post("/diff", asyncHandler(async (req, res) => {
   try {
     const diff = await getDiff();
     const diffMode = mode || "lines";
-    let changes;
+    let changes: any;
     switch (diffMode) {
       case "chars":
         changes = diff.diffChars(textA, textB);
@@ -704,7 +708,7 @@ router.post("/diff", asyncHandler(async (req, res) => {
       mode: diffMode,
       identical: additions === 0 && deletions === 0,
       stats: { additions, deletions, unchanged },
-      changes: changes.map((c) => ({
+      changes: changes.map((c: any) => ({
         value: c.value,
         added: c.added || false,
         removed: c.removed || false,
@@ -712,12 +716,12 @@ router.post("/diff", asyncHandler(async (req, res) => {
       })),
       patch,
     });
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ error: `Diff failed: ${error.message}` });
   }
 }));
 // ─── 11. Cryptographic Hashing ──────────────────────────────
-router.get("/hash", (req, res) => {
+router.get("/hash", (req: any, res: any) => {
   const { data, algorithm, encoding, key } = req.query as any;
   if (!data) {
     return res.status(400).json({ error: "Query parameter 'data' is required" });
@@ -725,7 +729,7 @@ router.get("/hash", (req, res) => {
   const algo = (algorithm || "sha256").toLowerCase();
   const enc = encoding || "hex";
   try {
-    let hash;
+    let hash: any;
     if (key) {
       // HMAC
       hash = crypto
@@ -744,8 +748,8 @@ router.get("/hash", (req, res) => {
       hash,
       dataLength: data.length,
     });
-  } catch (error) {
-    const algos = crypto.getHashes().filter((h) => !h.includes("RSA"));
+  } catch (error: any) {
+    const algos = crypto.getHashes().filter((h: any) => !h.includes("RSA"));
     res.status(400).json({
       error: `Hashing failed: ${error.message}`,
       supportedAlgorithms: algos.slice(0, 20),
@@ -753,7 +757,7 @@ router.get("/hash", (req, res) => {
   }
 });
 // UUID generation
-router.get("/uuid", (_req, res) => {
+router.get("/uuid", (_req: any, res: any) => {
   res.json({
     uuid: crypto.randomUUID(),
     v4: crypto.randomUUID(),
@@ -762,15 +766,15 @@ router.get("/uuid", (_req, res) => {
   });
 });
 // ─── 12. Regex Tester ───────────────────────────────────────
-router.post("/regex", (req, res) => {
+router.post("/regex", (req: any, res: any) => {
   const { pattern, flags, text } = req.body;
   if (!pattern || text === undefined) {
     return res.status(400).json({ error: "'pattern' and 'text' are required" });
   }
   try {
     const regex = new RegExp(pattern, flags || "g");
-    const matches = [];
-    let match;
+    const matches: any[] = [];
+    let match: any;
     let iterations = 0;
     const MAX_MATCHES = 1000;
     if (regex.global || regex.sticky) {
@@ -803,7 +807,7 @@ router.post("/regex", (req, res) => {
       matches,
       valid: true,
     });
-  } catch (error) {
+  } catch (error: any) {
     res.json({
       pattern,
       flags: flags || "g",
@@ -815,14 +819,14 @@ router.post("/regex", (req, res) => {
   }
 });
 // ─── 13. Encode / Decode ────────────────────────────────────
-router.get("/encode", (req, res) => {
+router.get("/encode", (req: any, res: any) => {
   const { data, format, direction } = req.query as any;
   if (!data || !format) {
     return res.status(400).json({ error: "Query parameters 'data' and 'format' are required" });
   }
   const dir = direction || "encode";
   try {
-    let result;
+    let result: any;
     switch (format.toLowerCase()) {
       case "base64":
         result = dir === "decode"
@@ -852,8 +856,8 @@ router.get("/encode", (req, res) => {
             .replace(/&gt;/g, ">")
             .replace(/&quot;/g, '"')
             .replace(/&#39;/g, "'")
-            .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
-            .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(parseInt(dec)));
+            .replace(/&#x([0-9a-fA-F]+);/g, (_: any, hex: any) => String.fromCharCode(parseInt(hex, 16)))
+            .replace(/&#(\d+);/g, (_: any, dec: any) => String.fromCharCode(parseInt(dec)));
         } else {
           result = data
             .replace(/&/g, "&amp;")
@@ -864,7 +868,7 @@ router.get("/encode", (req, res) => {
         }
         break;
       case "rot13":
-        result = data.replace(/[a-zA-Z]/g, (c) => {
+        result = data.replace(/[a-zA-Z]/g, (c: any) => {
           const base = c <= "Z" ? 65 : 97;
           return String.fromCharCode(((c.charCodeAt(0) - base + 13) % 26) + base);
         });
@@ -873,11 +877,11 @@ router.get("/encode", (req, res) => {
         if (dir === "decode") {
           result = data
             .split(" ")
-            .map((b) => String.fromCharCode(parseInt(b, 2)))
+            .map((b: any) => String.fromCharCode(parseInt(b, 2)))
             .join("");
         } else {
           result = [...data]
-            .map((c) => c.charCodeAt(0).toString(2).padStart(8, "0"))
+            .map((c: any) => c.charCodeAt(0).toString(2).padStart(8, "0"))
             .join(" ");
         }
         break;
@@ -907,13 +911,13 @@ router.get("/encode", (req, res) => {
       inputLength: data.length,
       outputLength: typeof result === "string" ? result.length : undefined,
     });
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ error: `Encoding failed: ${error.message}` });
   }
 });
 // ─── 14. Color Converter ────────────────────────────────────
 // ─── Color Math (service-specific — not in shared library) ──
-function rgbToHsv({ r, g, b }) {
+function rgbToHsv({ r, g, b }: any) {
   const rn = r / 255;
   const gn = g / 255;
   const bn = b / 255;
@@ -936,7 +940,7 @@ function rgbToHsv({ r, g, b }) {
     v: Math.round(v * 100),
   };
 }
-function rgbToCmyk({ r, g, b }) {
+function rgbToCmyk({ r, g, b }: any) {
   const rn = r / 255;
   const gn = g / 255;
   const bn = b / 255;
@@ -952,7 +956,7 @@ function rgbToCmyk({ r, g, b }) {
 /**
  * Parse any common color format into RGB.
  */
-function parseColorToRgb(color) {
+function parseColorToRgb(color: any) {
   const trimmedColor = color.trim();
   // HEX
   if (/^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(trimmedColor)) {
@@ -983,6 +987,7 @@ function parseColorToRgb(color) {
     coral: "#ff7f50", salmon: "#fa8072", khaki: "#f0e68c", tomato: "#ff6347",
     turquoise: "#40e0d0", plum: "#dda0dd",
   };
+  // @ts-expect-error - TS7053: implicit any index
   const named = NAMED[trimmedColor.toLowerCase()];
   if (named) return hexToRgb(named);
   throw new Error(`Cannot parse color: ${color}. Use HEX (#ff0000), rgb(255,0,0), hsl(0,100%,50%), or CSS named colors.`);
@@ -990,7 +995,7 @@ function parseColorToRgb(color) {
 /**
  * Generate color harmonies from a base hue.
  */
-function generatePalette(hsl, type) {
+function generatePalette(hsl: any, type: any) {
   const palettes = {
     complementary: [{ ...hsl }, { ...hsl, h: (hsl.h + 180) % 360 }],
     analogous: [
@@ -1022,9 +1027,10 @@ function generatePalette(hsl, type) {
       { ...hsl, l: Math.min(hsl.l + 30, 90) },
     ],
   };
+  // @ts-expect-error - TS7053: implicit any index
   const colors = palettes[type];
   if (!colors) throw new Error(`Unknown palette type: ${type}. Use: ${Object.keys(palettes).join(", ")}`);
-  return colors.map((h) => {
+  return colors.map((h: any) => {
     const rgb = hslToRgb(h);
     return {
       hex: rgbToHex(rgb),
@@ -1033,7 +1039,7 @@ function generatePalette(hsl, type) {
     };
   });
 }
-router.get("/color/convert", (req, res) => {
+router.get("/color/convert", (req: any, res: any) => {
   const { color, palette } = req.query as any;
   if (!color) {
     return res.status(400).json({ error: "Query parameter 'color' is required" });
@@ -1064,7 +1070,7 @@ router.get("/color/convert", (req, res) => {
       };
     }
     res.json(result);
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ error: error.message });
   }
 });
@@ -1417,7 +1423,7 @@ function cleanupTurtleSessions() {
     if (now - session.updatedAt > TURTLE_SESSION_TTL_MS) turtleSessions.delete(id);
   }
 }
-router.post("/turtle", (req, res) => {
+router.post("/turtle", (req: any, res: any) => {
   const { commands, options, sessionId } = req.body;
   if (!commands || !Array.isArray(commands) || commands.length === 0) {
     return res.status(400).json({
@@ -1504,7 +1510,7 @@ router.post("/turtle", (req, res) => {
     canvasSize: `${opts.canvasWidth}x${opts.canvasHeight}`,
   });
 });
-router.get("/turtle/embed", (req, res) => {
+router.get("/turtle/embed", (req: any, res: any) => {
   const { id } = req.query as any;
   if (!id) return res.status(400).send("Missing 'id' parameter");
   const entry = turtleStore.get(id);
@@ -1518,7 +1524,7 @@ router.get("/turtle/embed", (req, res) => {
 // No-op tool — the LLM uses this to write private reasoning.
 // We simply acknowledge receipt; the thought is already captured
 // in the tool_result appended to the conversation context.
-router.post("/think", (req, res) => {
+router.post("/think", (req: any, res: any) => {
   res.json({ acknowledged: true });
 });
 // ─── Cron Expression Parser ─────────────────────────────────
@@ -1560,9 +1566,9 @@ function parseCronField(field: any, { min, max }: any) {
       values.add(value);
     }
   }
-  return [...values].sort((a, b) => a - b);
+  return [...values].sort((a: any, b: any) => a - b);
 }
-function explainCronField(values, fieldIdx) {
+function explainCronField(values: any, fieldIdx: any) {
   const { min, max } = CRON_FIELD_RANGES[fieldIdx];
   const name = CRON_FIELD_NAMES[fieldIdx];
   // Wildcard — all values
@@ -1579,18 +1585,18 @@ function explainCronField(values, fieldIdx) {
   }
   // Step pattern detection
   if (values.length > 2) {
-    const diffs = values.slice(1).map((v, i) => v - values[i]);
-    if (diffs.every((d) => d === diffs[0])) {
+    const diffs = values.slice(1).map((v: any, i: any) => v - values[i]);
+    if (diffs.every((d: any) => d === diffs[0])) {
       return `every ${diffs[0]} ${name}s${values[0] !== min ? ` from ${values[0]}` : ""}`;
     }
   }
   // List
-  if (fieldIdx === 3) return `in ${values.map((v) => MONTH_NAMES[v]).join(", ")}`;
-  if (fieldIdx === 4) return `on ${values.map((v) => DAY_NAMES[v]).join(", ")}`;
+  if (fieldIdx === 3) return `in ${values.map((v: any) => MONTH_NAMES[v]).join(", ")}`;
+  if (fieldIdx === 4) return `on ${values.map((v: any) => DAY_NAMES[v]).join(", ")}`;
   return `${name} ${values.join(", ")}`;
 }
-function getNextCronExecutions(parsed, count, fromDate) {
-  const results = [];
+function getNextCronExecutions(parsed: any, count: any, fromDate: any) {
+  const results: any[] = [];
   const dt = new Date(fromDate);
   dt.setSeconds(0, 0);
   dt.setMinutes(dt.getMinutes() + 1); // Start from next minute
@@ -1616,7 +1622,7 @@ function getNextCronExecutions(parsed, count, fromDate) {
   }
   return results;
 }
-router.get("/cron/parse", (req, res) => {
+router.get("/cron/parse", (req: any, res: any) => {
   const { expression, count, from } = req.query as any;
   if (!expression) {
     return res.status(400).json({ error: "Query parameter 'expression' is required (e.g. '*/5 * * * *')" });
@@ -1629,33 +1635,33 @@ router.get("/cron/parse", (req, res) => {
         hint: "Standard cron: minute(0-59) hour(0-23) day(1-31) month(1-12) weekday(0-6, 0=Sun)",
       });
     }
-    const parsed = fields.map((f, i) => parseCronField(f, CRON_FIELD_RANGES[i]));
-    const explanations = parsed.map((vals, i) => explainCronField(vals, i));
-    const humanReadable = explanations.filter((e) => !e.startsWith("every ") || e !== `every ${CRON_FIELD_NAMES[explanations.indexOf(e)]}`).join(", ");
+    const parsed = fields.map((f: any, i: any) => parseCronField(f, CRON_FIELD_RANGES[i]));
+    const explanations = parsed.map((vals: any, i: any) => explainCronField(vals, i));
+    const humanReadable = explanations.filter((e: any) => !e.startsWith("every ") || e !== `every ${CRON_FIELD_NAMES[explanations.indexOf(e)]}`).join(", ");
     const nextCount = Math.min(Math.max(parseInt(count) || 5, 1), 25);
     const fromDate = from ? new Date(from) : new Date();
     const nextExecutions = getNextCronExecutions(parsed, nextCount, fromDate);
     res.json({
       expression,
-      fields: Object.fromEntries(CRON_FIELD_NAMES.map((name, i) => [name, { raw: fields[i], values: parsed[i] }])),
+      fields: Object.fromEntries(CRON_FIELD_NAMES.map((name: any, i: any) => [name, { raw: fields[i], values: parsed[i] }])),
       explanation: humanReadable,
-      descriptions: Object.fromEntries(CRON_FIELD_NAMES.map((name, i) => [name, explanations[i]])),
-      nextExecutions: nextExecutions.map((d) => d.toISOString()),
+      descriptions: Object.fromEntries(CRON_FIELD_NAMES.map((name: any, i: any) => [name, explanations[i]])),
+      nextExecutions: nextExecutions.map((d: any) => d.toISOString()),
       nextExecutionCount: nextExecutions.length,
       fromDate: fromDate.toISOString(),
     });
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ error: `Cron parse failed: ${error.message}` });
   }
 });
 // ─── Agentic: Sleep (Timed Pause) ───────────────────────────
 // Blocks for `duration_seconds` before responding.
 // Max 120s. AbortSignal from upstream will short-circuit.
-router.post("/sleep", asyncHandler(async (req, res) => {
+router.post("/sleep", asyncHandler(async (req: any, res: any) => {
   const { duration_seconds, reason } = req.body;
   const duration = Math.max(1, Math.min(120, duration_seconds || 5));
   const durationMs = duration * 1000;
-  await new Promise<void>((resolve) => {
+  await new Promise<void>((resolve: any) => {
     const timer = setTimeout(resolve, durationMs);
     // If the request is aborted (client disconnect), resolve immediately
     req.on("close", () => {
@@ -1672,7 +1678,7 @@ router.post("/sleep", asyncHandler(async (req, res) => {
 // ─── Agentic: Synthetic Output (Structured JSON Response) ───
 // Validates `data` against an optional JSON Schema and returns it.
 // Lightweight validator — handles type, required, enum, nested objects/arrays.
-function validateJsonSchema(data, schema, path = "", errors = []) {
+function validateJsonSchema(data: any, schema: any, path: any = "", errors: any = []) {
   if (!schema || typeof schema !== "object") return;
   const at = path || "root";
   if (schema.type) {
@@ -1716,16 +1722,16 @@ function validateJsonSchema(data, schema, path = "", errors = []) {
     }
   }
 }
-router.post("/synthetic-output", (req, res) => {
+router.post("/synthetic-output", (req: any, res: any) => {
   const { schema, data, label } = req.body;
   if (!data || typeof data !== "object") {
     return res.status(400).json({ error: "'data' is required and must be an object" });
   }
-  const validationErrors = [];
+  const validationErrors: any[] = [];
   if (schema && typeof schema === "object") {
     try {
       validateJsonSchema(data, schema, "", validationErrors);
-    } catch (error) {
+    } catch (error: any) {
       validationErrors.push(`Validation error: ${error.message}`);
     }
   }
@@ -1742,7 +1748,7 @@ router.post("/synthetic-output", (req, res) => {
 });
 // ─── Image Processing (Sharp + ImageMagick) ─────────────────
 const imageStore = new EphemeralStore();
-router.post("/image/process", asyncHandler(async (req, res) => {
+router.post("/image/process", asyncHandler(async (req: any, res: any) => {
   const { input, operations, outputFormat, outputQuality } = req.body;
   if (!input) {
     return res.status(400).json({ error: "'input' is required (URL, base64 data URI, or previous imageId)" });
@@ -1775,11 +1781,11 @@ router.post("/image/process", asyncHandler(async (req, res) => {
     };
     if (result.metadata) response.metadata = result.metadata;
     res.json(response);
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ error: `Image processing failed: ${error.message}` });
   }
 }));
-router.get("/image/render", (req, res) => {
+router.get("/image/render", (req: any, res: any) => {
   const { id } = req.query as any;
   if (!id) return res.status(400).send("Missing 'id' parameter");
   const entry = imageStore.get(id);

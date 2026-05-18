@@ -21,10 +21,10 @@ const __dirname = dirname(__filename);
 
 // ─── Load Food DB (same as FoodSubstituteFetcher) ──────────────
 
-let FOOD_CACHE = null;
+let FOOD_CACHE: any = null;
 
-function parseCSVLine(line) {
-  const fields = [];
+function parseCSVLine(line: any) {
+  const fields: any[] = [];
   let current = "";
   let inQuotes = false;
   for (let i = 0; i < line.length; i++) {
@@ -47,13 +47,13 @@ function ensureFoodCache() {
 
   const dataDir = join(__dirname, "data");
   const files = readdirSync(dataDir).filter(
-    (f) => f.startsWith("digest_food") && f.endsWith(".csv"),
+    (f: any) => f.startsWith("digest_food") && f.endsWith(".csv"),
   );
 
-  const foods = [];
+  const foods: any[] = [];
   for (const file of files) {
     const raw = readFileSync(join(dataDir, file), "utf-8");
-    const lines = raw.split("\n").filter((l) => l.trim());
+    const lines = raw.split("\n").filter((l: any) => l.trim());
     const headers = parseCSVLine(lines[0]);
 
     for (let i = 1; i < lines.length; i++) {
@@ -61,7 +61,7 @@ function ensureFoodCache() {
       if (values.length < 40) continue;
 
       const row: Record<string, any> = {};
-      headers.forEach((h, index) => {
+      headers.forEach((h: any, index: any) => {
         row[h] = values[index] || "";
       });
 
@@ -82,18 +82,18 @@ function ensureFoodCache() {
 
 const DIET_FILTERS = {
   omnivore: () => true,
-  vegetarian: (f) => {
+  vegetarian: (f: any) => {
     const k = (f.kingdom || "").toLowerCase();
     const t = (f.food_type || "").toLowerCase();
     return k !== "animalia" || t === "dairy" || t === "egg";
   },
-  vegan: (f) => (f.kingdom || "").toLowerCase() !== "animalia",
-  pescatarian: (f) => {
+  vegan: (f: any) => (f.kingdom || "").toLowerCase() !== "animalia",
+  pescatarian: (f: any) => {
     const k = (f.kingdom || "").toLowerCase();
     const t = (f.food_type || "").toLowerCase();
     return k !== "animalia" || ["fish", "seafood", "dairy", "egg"].includes(t);
   },
-  keto: (f) => {
+  keto: (f: any) => {
     // Low carb: prefer foods with <10g carbs per 100g
     const carbs = f.carbohydrate || 0;
     return carbs < 10;
@@ -112,7 +112,7 @@ const SCORING_NUTRIENTS = [
 
 // ─── Scoring Functions ─────────────────────────────────────────
 
-function computeGapScore(remainingGaps, food, portionScale) {
+function computeGapScore(remainingGaps: any, food: any, portionScale: any) {
   let score = 0;
   for (const nutrient of SCORING_NUTRIENTS) {
     const remaining = remainingGaps[nutrient] || 0;
@@ -125,7 +125,7 @@ function computeGapScore(remainingGaps, food, portionScale) {
   return score;
 }
 
-function normalizeSearch(str) {
+function normalizeSearch(str: any) {
   return str.toLowerCase().replace(/[^a-z0-9\s]/g, "");
 }
 
@@ -150,7 +150,7 @@ export function buildMealPlan({
   lifeStage = "adult_male",
   weightKg,
   itemsPerMeal = 4,
-}) {
+}: any) {
   // ── Validate ─────────────────────────────────────────────────
   if (!caloricTarget || caloricTarget <= 0) {
     return { error: "'caloricTarget' is required (e.g. 2000 for 2000 kcal/day)" };
@@ -199,6 +199,7 @@ export function buildMealPlan({
 
   // ── Apply filters ────────────────────────────────────────────
   const dietKey = (dietaryPreference || "omnivore").toLowerCase().replace(/[\s-]+/g, "_");
+  // @ts-expect-error - TS7053: implicit any index
   const dietFilter = DIET_FILTERS[dietKey] || DIET_FILTERS.omnivore;
 
   let candidates = allFoods.filter(dietFilter);
@@ -207,43 +208,43 @@ export function buildMealPlan({
   if (excludeFoods) {
     const excluded = excludeFoods
       .split(",")
-      .map((e) => normalizeSearch(e.trim()))
+      .map((e: any) => normalizeSearch(e.trim()))
       .filter(Boolean);
     candidates = candidates.filter(
-      (f) => !excluded.some((e) => normalizeSearch(f.food_name || "").includes(e)),
+      (f: any) => !excluded.some((e: any) => normalizeSearch(f.food_name || "").includes(e)),
     );
   }
 
   // Filter out zero-calorie foods
   candidates = candidates.filter(
-    (f) => f.kilocalories && f.kilocalories > 10,
+    (f: any) => f.kilocalories && f.kilocalories > 10,
   );
 
   // ── Emphasized nutrients priority ────────────────────────────
-  let emphasis = null;
+  let emphasis: any = null;
   if (emphasizeNutrients) {
     emphasis = emphasizeNutrients
       .split(",")
-      .map((n) => n.trim().toLowerCase().replace(/[\s-]+/g, "_"))
+      .map((n: any) => n.trim().toLowerCase().replace(/[\s-]+/g, "_"))
       .filter(Boolean);
   }
 
   // ── Greedy meal planning ─────────────────────────────────────
-  const meals = [];
+  const meals: any[] = [];
   const remainingGaps = { ...targets };
   const usedFoodNames = new Set();
 
   for (let m = 0; m < mealsPerDay; m++) {
     const mealCalBudget = caloriesPerMeal;
     let mealCalUsed = 0;
-    const mealItems = [];
+    const mealItems: any[] = [];
 
     for (let item = 0; item < itemsPerMeal; item++) {
       const remainingCal = mealCalBudget - mealCalUsed;
       if (remainingCal < 20) break;
 
       // Score each candidate
-      let bestFood = null;
+      let bestFood: any = null;
       let bestScore = -1;
       let bestPortion = 0;
 
@@ -336,7 +337,7 @@ export function buildMealPlan({
     };
   }
 
-  const totalCal = meals.reduce((sum, m) => sum + m.totalCalories, 0);
+  const totalCal = meals.reduce((sum: any, m: any) => sum + m.totalCalories, 0);
 
   return {
     plan: {
@@ -354,7 +355,7 @@ export function buildMealPlan({
 
 // ─── Meal Label Helper ─────────────────────────────────────────
 
-function getMealLabel(index, total) {
+function getMealLabel(index: any, total: any) {
   if (total <= 3) {
     return ["Breakfast", "Lunch", "Dinner"][index] || `Meal ${index + 1}`;
   }

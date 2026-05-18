@@ -11,7 +11,7 @@ export const getLaunchHealth = cache.getHealth;
 export function getNextLaunch() {
   const launches = cache.getData();
   const now = new Date();
-  const next = launches.find((l) => new Date(l.net) > now) || launches[0];
+  const next = launches.find((l: any) => new Date(l.net) > now) || launches[0];
   return {
     next: next || null,
     lastFetch: cache.getLastFetch(),
@@ -22,9 +22,9 @@ export function getNextLaunch() {
 export function getLaunchSummary() {
   const launches = cache.getData();
   const now = new Date();
-  const upcoming = launches.filter((l) => new Date(l.net) > now);
+  const upcoming = launches.filter((l: any) => new Date(l.net) > now);
   const providers = [
-    ...new Set(launches.map((l) => l.provider).filter(Boolean)),
+    ...new Set(launches.map((l: any) => l.provider).filter(Boolean)),
   ];
 
   return {

@@ -22,7 +22,7 @@ import {
 // ────────────────────────────────────────────────────────────
 
 
-let browser = null;
+let browser: any = null;
 
 /** @type {Map<string, { page: import('playwright').Page, lastUsed: number }>} */
 const sessions = new Map();
@@ -30,7 +30,7 @@ const sessions = new Map();
 const MAX_SESSIONS = 3;
 const VIEWPORT = { width: 1280, height: 720 };
 
-let cleanupInterval = null;
+let cleanupInterval: any = null;
 
 /**
  * Get or launch the singleton browser instance.
@@ -71,7 +71,7 @@ async function getBrowser() {
 /**
  * Get or create a session page.
  */
-async function getSession(sessionId) {
+async function getSession(sessionId: any) {
   if (sessions.has(sessionId)) {
     const session = sessions.get(sessionId);
 
@@ -93,7 +93,7 @@ async function getSession(sessionId) {
 
   if (sessions.size >= MAX_SESSIONS) {
     // Evict oldest session
-    let oldestId = null;
+    let oldestId: any = null;
     let oldestTime = Infinity;
     for (const [id, s] of sessions) {
       if (s.lastUsed < oldestTime) {
@@ -122,7 +122,7 @@ async function getSession(sessionId) {
 /**
  * Close and clean up a session.
  */
-async function closeSession(sessionId) {
+async function closeSession(sessionId: any) {
   const session = sessions.get(sessionId);
   if (!session) return false;
 
@@ -156,7 +156,7 @@ function cleanupIdleSessions() {
 // Action Handlers
 // ────────────────────────────────────────────────────────────
 
-async function actionNavigate(page, { url }) {
+async function actionNavigate(page: any, { url }: any) {
   if (!url) return { error: "Missing required parameter: url" };
 
   try {
@@ -174,14 +174,14 @@ async function actionNavigate(page, { url }) {
       title: await page.title(),
       status: response?.status() || null,
     };
-  } catch (error) {
+  } catch (error: any) {
     return { error: `Navigation failed: ${error.message}` };
   }
 }
 
-async function actionScreenshot(page, { fullPage, selector }) {
+async function actionScreenshot(page: any, { fullPage, selector }: any) {
   try {
-    let screenshotBuffer;
+    let screenshotBuffer: any;
     if (selector) {
       const element = await page.$(selector);
       if (!element) return { error: `Element not found: ${selector}` };
@@ -200,12 +200,12 @@ async function actionScreenshot(page, { fullPage, selector }) {
       screenshot: screenshotBuffer.toString("base64"),
       mimeType: "image/png",
     };
-  } catch (error) {
+  } catch (error: any) {
     return { error: `Screenshot failed: ${error.message}` };
   }
 }
 
-async function actionClick(page, { selector }) {
+async function actionClick(page: any, { selector }: any) {
   if (!selector) return { error: "Missing required parameter: selector" };
 
   try {
@@ -220,12 +220,12 @@ async function actionClick(page, { selector }) {
       url: page.url(),
       title: await page.title(),
     };
-  } catch (error) {
+  } catch (error: any) {
     return { error: `Click failed on "${selector}": ${error.message}` };
   }
 }
 
-async function actionType(page, { selector, text, pressEnter }) {
+async function actionType(page: any, { selector, text, pressEnter }: any) {
   if (!selector) return { error: "Missing required parameter: selector" };
   if (text === undefined || text === null) return { error: "Missing required parameter: text" };
 
@@ -247,16 +247,16 @@ async function actionType(page, { selector, text, pressEnter }) {
       url: page.url(),
       title: await page.title(),
     };
-  } catch (error) {
+  } catch (error: any) {
     return { error: `Type failed on "${selector}": ${error.message}` };
   }
 }
 
-async function actionScroll(page, { direction, selector, amount }) {
+async function actionScroll(page: any, { direction, selector, amount }: any) {
   try {
     if (selector) {
       await page.evaluate(
-        ({ sel }) => {
+        ({ sel }: any) => {
            
           const element = document.querySelector(sel);
           if (element) element.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -267,7 +267,7 @@ async function actionScroll(page, { direction, selector, amount }) {
       const pixels = amount || 500;
       const delta = direction === "up" ? -pixels : pixels;
        
-      await page.evaluate((d) => window.scrollBy(0, d), delta);
+      await page.evaluate((d: any) => window.scrollBy(0, d), delta);
     }
 
     // Small delay for scroll animation
@@ -278,12 +278,12 @@ async function actionScroll(page, { direction, selector, amount }) {
       direction: selector ? "to element" : (direction || "down"),
       url: page.url(),
     };
-  } catch (error) {
+  } catch (error: any) {
     return { error: `Scroll failed: ${error.message}` };
   }
 }
 
-async function actionEvaluate(page, { expression }) {
+async function actionEvaluate(page: any, { expression }: any) {
   if (!expression) return { error: "Missing required parameter: expression" };
 
   try {
@@ -294,23 +294,23 @@ async function actionEvaluate(page, { expression }) {
       result: typeof result === "object" ? JSON.stringify(result, null, 2) : String(result),
       url: page.url(),
     };
-  } catch (error) {
+  } catch (error: any) {
     return { error: `Evaluate failed: ${error.message}` };
   }
 }
 
-async function actionGetContent(page, { selector, format }) {
+async function actionGetContent(page: any, { selector, format }: any) {
   try {
-    let content;
+    let content: any;
 
     if (format === "html") {
       content = selector
-        ? await page.$eval(selector, (element) => element.innerHTML).catch(() => null)
+        ? await page.$eval(selector, (element: any) => element.innerHTML).catch(() => null)
         : await page.content();
     } else {
       // Default: extract text content
       content = selector
-        ? await page.$eval(selector, (element) => element.innerText).catch(() => null)
+        ? await page.$eval(selector, (element: any) => element.innerText).catch(() => null)
          
         : await page.evaluate(() => document.body.innerText);
     }
@@ -333,12 +333,12 @@ async function actionGetContent(page, { selector, format }) {
       length: content.length,
       truncated,
     };
-  } catch (error) {
+  } catch (error: any) {
     return { error: `Content extraction failed: ${error.message}` };
   }
 }
 
-async function actionWait(page, { selector, timeout, state }) {
+async function actionWait(page: any, { selector, timeout, state }: any) {
   try {
     if (selector) {
       await page.waitForSelector(selector, {
@@ -360,18 +360,18 @@ async function actionWait(page, { selector, timeout, state }) {
       waited_for: `${waitMs}ms`,
       url: page.url(),
     };
-  } catch (error) {
+  } catch (error: any) {
     return { error: `Wait failed: ${error.message}` };
   }
 }
 
-async function actionGetElements(page, { selector, limit }) {
+async function actionGetElements(page: any, { selector, limit }: any) {
   try {
     const maxElements = Math.min(limit || 50, 100);
     const scope = selector || "body";
 
     const elements = await page.evaluate(
-      ({ scope, max }) => {
+      ({ scope, max }: any) => {
          
         const root = document.querySelector(scope) || document.body;
 
@@ -396,7 +396,7 @@ async function actionGetElements(page, { selector, limit }) {
         ];
 
         const allElements = root.querySelectorAll(interactiveSelectors.join(", "));
-        const results = [];
+        const results: any[] = [];
 
         for (const element of allElements) {
           if (results.length >= max) break;
@@ -460,7 +460,7 @@ async function actionGetElements(page, { selector, limit }) {
       count: elements.length,
       elements,
     };
-  } catch (error) {
+  } catch (error: any) {
     return { error: `Get elements failed: ${error.message}` };
   }
 }
@@ -478,7 +478,7 @@ async function actionGetElements(page, { selector, limit }) {
  *
  * Ref IDs (e.g. [ref=s1e5]) can be used with click_ref/type_ref actions.
  */
-async function actionSnapshot(page, { selector }) {
+async function actionSnapshot(page: any, { selector }: any) {
   try {
     const locator = selector ? page.locator(selector) : page.locator("body");
 
@@ -504,7 +504,7 @@ async function actionSnapshot(page, { selector }) {
       snapshot: formatted,
       format: "a11y-tree",
     };
-  } catch (error) {
+  } catch (error: any) {
     return { error: `Snapshot failed: ${error.message}` };
   }
 }
@@ -513,10 +513,10 @@ async function actionSnapshot(page, { selector }) {
  * Format an accessibility tree node into a readable indented text representation.
  * Fallback for when locator.ariaSnapshot() is unavailable.
  */
-function formatAccessibilityTree(node, depth) {
+function formatAccessibilityTree(node: any, depth: any) {
   if (!node) return "";
   const indent = "  ".repeat(depth);
-  const parts = [];
+  const parts: any[] = [];
 
   // Role
   let line = `${indent}- ${node.role}`;
@@ -525,7 +525,7 @@ function formatAccessibilityTree(node, depth) {
   if (node.name) line += ` "${node.name}"`;
 
   // Key attributes
-  const attrs = [];
+  const attrs: any[] = [];
   if (node.level != null) attrs.push(`level=${node.level}`);
   if (node.checked != null) attrs.push(`checked=${node.checked}`);
   if (node.disabled) attrs.push("disabled");
@@ -562,7 +562,7 @@ function formatAccessibilityTree(node, depth) {
  * 1. If ariaSnapshot gave us [ref=X] IDs (Playwright ≥1.49), use getByRole/getByLabel
  * 2. Direct role + name matching: "button:Submit", "link:Home", "textbox:Search"
  */
-function resolveRef(page, ref) {
+function resolveRef(page: any, ref: any) {
   // Format: "role:name" (e.g. "button:Submit", "link:Get started")
   const colonIdx = ref.indexOf(":");
   if (colonIdx > 0) {
@@ -575,7 +575,7 @@ function resolveRef(page, ref) {
   return page.getByLabel(ref, { exact: false });
 }
 
-async function actionClickRef(page, { ref }) {
+async function actionClickRef(page: any, { ref }: any) {
   if (!ref) return { error: "Missing required parameter: ref" };
 
   try {
@@ -589,12 +589,12 @@ async function actionClickRef(page, { ref }) {
       url: page.url(),
       title: await page.title(),
     };
-  } catch (error) {
+  } catch (error: any) {
     return { error: `click_ref failed for "${ref}": ${error.message}` };
   }
 }
 
-async function actionTypeRef(page, { ref, text, pressEnter }) {
+async function actionTypeRef(page: any, { ref, text, pressEnter }: any) {
   if (!ref) return { error: "Missing required parameter: ref" };
   if (text === undefined || text === null) return { error: "Missing required parameter: text" };
 
@@ -616,12 +616,12 @@ async function actionTypeRef(page, { ref, text, pressEnter }) {
       url: page.url(),
       title: await page.title(),
     };
-  } catch (error) {
+  } catch (error: any) {
     return { error: `type_ref failed for "${ref}": ${error.message}` };
   }
 }
 
-async function actionHoverRef(page, { ref }) {
+async function actionHoverRef(page: any, { ref }: any) {
   if (!ref) return { error: "Missing required parameter: ref" };
 
   try {
@@ -633,12 +633,12 @@ async function actionHoverRef(page, { ref }) {
       ref,
       url: page.url(),
     };
-  } catch (error) {
+  } catch (error: any) {
     return { error: `hover_ref failed for "${ref}": ${error.message}` };
   }
 }
 
-async function actionSelectRef(page, { ref, value }) {
+async function actionSelectRef(page: any, { ref, value }: any) {
   if (!ref) return { error: "Missing required parameter: ref" };
   if (!value) return { error: "Missing required parameter: value" };
 
@@ -653,7 +653,7 @@ async function actionSelectRef(page, { ref, value }) {
       url: page.url(),
       title: await page.title(),
     };
-  } catch (error) {
+  } catch (error: any) {
     return { error: `select_ref failed for "${ref}": ${error.message}` };
   }
 }
@@ -672,7 +672,7 @@ async function actionSelectRef(page, { ref, value }) {
  * Scripts should use `chromium.connectOverCDP(process.env.BROWSER_WS_ENDPOINT)`
  * to connect.
  */
-async function actionRunScript(_page, { script, timeout }) {
+async function actionRunScript(_page: any, { script, timeout }: any) {
   if (!script) return { error: "Missing required parameter: script" };
 
   // Ensure the browser is running and get its WebSocket endpoint
@@ -707,8 +707,8 @@ const { chromium } = require('playwright');
 })();
 `;
 
-  let tmpDir;
-  let scriptPath;
+  let tmpDir: any;
+  let scriptPath: any;
 
   try {
     // Write script to temp file
@@ -724,7 +724,7 @@ const { chromium } = require('playwright');
       action: "run_script",
       ...result,
     };
-  } catch (error) {
+  } catch (error: any) {
     return { error: `run_script failed: ${error.message}` };
   } finally {
     // Cleanup
@@ -732,7 +732,7 @@ const { chromium } = require('playwright');
       unlink(scriptPath).catch(() => {});
     }
     if (tmpDir) {
-      import("node:fs").then(fs => fs.rmSync(tmpDir, { recursive: true, force: true })).catch(() => {});
+      import("node:fs").then((fs: any) => fs.rmSync(tmpDir, { recursive: true, force: true })).catch(() => {});
     }
   }
 }
@@ -740,10 +740,10 @@ const { chromium } = require('playwright');
 /**
  * Execute a Playwright script file in a subprocess.
  */
-function executeScript(scriptPath, wsEndpoint, timeoutMs) {
-  return new Promise<any>((resolve) => {
-    const stdoutChunks = [];
-    const stderrChunks = [];
+function executeScript(scriptPath: any, wsEndpoint: any, timeoutMs: any) {
+  return new Promise<any>((resolve: any) => {
+    const stdoutChunks: any[] = [];
+    const stderrChunks: any[] = [];
     let stdoutLen = 0;
     let stderrLen = 0;
     let timedOut = false;
@@ -763,14 +763,14 @@ function executeScript(scriptPath, wsEndpoint, timeoutMs) {
 
     child.stdin.end();
 
-    child.stdout.on("data", (chunk) => {
+    child.stdout.on("data", (chunk: any) => {
       if (stdoutLen < BROWSER_MAX_SCRIPT_OUTPUT) {
         stdoutChunks.push(chunk);
         stdoutLen += chunk.length;
       }
     });
 
-    child.stderr.on("data", (chunk) => {
+    child.stderr.on("data", (chunk: any) => {
       if (stderrLen < BROWSER_MAX_SCRIPT_OUTPUT) {
         stderrChunks.push(chunk);
         stderrLen += chunk.length;
@@ -782,7 +782,7 @@ function executeScript(scriptPath, wsEndpoint, timeoutMs) {
       child.kill("SIGKILL");
     }, timeoutMs);
 
-    function finish(exitCode) {
+    function finish(exitCode: any) {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
@@ -800,8 +800,8 @@ function executeScript(scriptPath, wsEndpoint, timeoutMs) {
       });
     }
 
-    child.on("close", (code) => finish(code));
-    child.on("error", (error) => {
+    child.on("close", (code: any) => finish(code));
+    child.on("error", (error: any) => {
       if (!settled) {
         settled = true;
         clearTimeout(timer);
@@ -848,7 +848,7 @@ const ACTION_HANDLERS = {
 
  * @returns {Promise<object>} Result with action-specific fields + sessionId
  */
-export async function agenticBrowserAction(params) {
+export async function agenticBrowserAction(params: any) {
   const { action, sessionId: requestedSessionId, ...actionParams } = params;
 
   // Handle close without needing a session
@@ -862,7 +862,7 @@ export async function agenticBrowserAction(params) {
     };
   }
 
-  const handler = ACTION_HANDLERS[action];
+  const handler = ACTION_HANDLERS[action as keyof typeof ACTION_HANDLERS];
   if (!handler) {
     return {
       error: `Unknown action: "${action}". Valid actions: ${Object.keys(ACTION_HANDLERS).join(", ")}, close`,
@@ -879,7 +879,7 @@ export async function agenticBrowserAction(params) {
       ...result,
       sessionId,
     };
-  } catch (error) {
+  } catch (error: any) {
     return {
       error: `Browser action "${action}" failed: ${error.message}`,
       sessionId,

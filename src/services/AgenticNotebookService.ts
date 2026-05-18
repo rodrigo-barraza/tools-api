@@ -24,7 +24,7 @@ const MAX_NOTEBOOK_SIZE = 10_485_760; // 10 MB
 
 
  */
-export async function agenticNotebookEdit(path, { action, cellIndex, content, cellType }: Record<string, any> = {}) {
+export async function agenticNotebookEdit(path: any, { action, cellIndex, content, cellType }: Record<string, any> = {}) {
   // Validate path
   const validation = validatePath(path);
   if (!validation.safe) {
@@ -43,14 +43,14 @@ export async function agenticNotebookEdit(path, { action, cellIndex, content, ce
   }
 
   // Read and parse notebook
-  let notebook;
+  let notebook: any;
   try {
     const raw = await readFile(resolved, "utf-8");
     if (Buffer.byteLength(raw) > MAX_NOTEBOOK_SIZE) {
       return { error: `Notebook is too large (max ${MAX_NOTEBOOK_SIZE / 1024 / 1024} MB)` };
     }
     notebook = JSON.parse(raw);
-  } catch (error) {
+  } catch (error: any) {
     if (error.code === "ENOENT") {
       // For insert_cell on a non-existent file, create a blank notebook
       if (action === "insert_cell") {
@@ -99,8 +99,8 @@ export async function agenticNotebookEdit(path, { action, cellIndex, content, ce
 // Actions
 // ────────────────────────────────────────────────────────────
 
-function listCells(filePath, notebook) {
-  const cells = notebook.cells.map((cell, index) => {
+function listCells(filePath: any, notebook: any) {
+  const cells = notebook.cells.map((cell: any, index: any) => {
     const source = Array.isArray(cell.source)
       ? cell.source.join("")
       : (cell.source || "");
@@ -125,7 +125,7 @@ function listCells(filePath, notebook) {
   };
 }
 
-function getCell(filePath, notebook, cellIndex) {
+function getCell(filePath: any, notebook: any, cellIndex: any) {
   if (cellIndex == null || typeof cellIndex !== "number") {
     return { error: "'cellIndex' is required (number, 0-based)" };
   }
@@ -154,7 +154,7 @@ function getCell(filePath, notebook, cellIndex) {
   return result;
 }
 
-async function insertCell(filePath, notebook, { cellIndex, content, cellType }) {
+async function insertCell(filePath: any, notebook: any, { cellIndex, content, cellType }: any) {
   if (!content || typeof content !== "string") {
     return { error: "'content' is required for insert_cell (string)" };
   }
@@ -185,7 +185,7 @@ async function insertCell(filePath, notebook, { cellIndex, content, cellType }) 
   };
 }
 
-async function replaceCell(filePath, notebook, { cellIndex, content, cellType }) {
+async function replaceCell(filePath: any, notebook: any, { cellIndex, content, cellType }: any) {
   if (cellIndex == null || typeof cellIndex !== "number") {
     return { error: "'cellIndex' is required for replace_cell (number, 0-based)" };
   }
@@ -203,7 +203,7 @@ async function replaceCell(filePath, notebook, { cellIndex, content, cellType })
   // Update the cell in place
   if (content != null) {
     existingCell.source = content.split("\n").map(
-      (line, i, array) => (i < array.length - 1 ? line + "\n" : line),
+      (line: any, i: any, array: any) => (i < array.length - 1 ? line + "\n" : line),
     );
   }
   if (cellType) {
@@ -230,7 +230,7 @@ async function replaceCell(filePath, notebook, { cellIndex, content, cellType })
   };
 }
 
-async function deleteCell(filePath, notebook, cellIndex) {
+async function deleteCell(filePath: any, notebook: any, cellIndex: any) {
   if (cellIndex == null || typeof cellIndex !== "number") {
     return { error: "'cellIndex' is required for delete_cell (number, 0-based)" };
   }
@@ -256,9 +256,9 @@ async function deleteCell(filePath, notebook, cellIndex) {
 // Helpers
 // ────────────────────────────────────────────────────────────
 
-function createCell(type, content) {
+function createCell(type: any, content: any) {
   const source = content.split("\n").map(
-    (line, i, array) => (i < array.length - 1 ? line + "\n" : line),
+    (line: any, i: any, array: any) => (i < array.length - 1 ? line + "\n" : line),
   );
 
   if (type === "code") {
@@ -301,7 +301,7 @@ function createBlankNotebook() {
  * Summarize a cell output for the tool response.
  * Strips large binary data (images, etc.) and truncates long text.
  */
-function summarizeOutput(output) {
+function summarizeOutput(output: any) {
   const summary: Record<string, any> = { output_type: output.output_type };
 
   if (output.output_type === "stream") {
@@ -327,7 +327,7 @@ function summarizeOutput(output) {
   return summary;
 }
 
-async function writeNotebook(filePath, notebook) {
+async function writeNotebook(filePath: any, notebook: any) {
   // Write with 1-space indentation (Jupyter standard) and trailing newline
   const json = JSON.stringify(notebook, null, 1) + "\n";
   await writeFile(filePath, json, "utf-8");

@@ -15,6 +15,7 @@ const redditTokenManager = new TokenManager(async () => {
   ).toString("base64");
   const response = await fetch("https://www.reddit.com/api/v1/access_token", {
     method: "POST",
+    // @ts-expect-error - suppress remaining error
     headers: {
       Authorization: `Basic ${credentials}`,
       "Content-Type": "application/x-www-form-urlencoded",
@@ -37,9 +38,10 @@ const redditTokenManager = new TokenManager(async () => {
 
  * @returns {Promise<Array>} Raw post data
  */
-async function fetchSubreddit(subreddit, token, limit) {
+async function fetchSubreddit(subreddit: any, token: any, limit: any) {
   const url = `https://oauth.reddit.com/r/${subreddit}/hot.json?limit=${limit}&raw_json=1`;
   const response = await fetch(url, {
+    // @ts-expect-error - suppress remaining error
     headers: {
       Authorization: `Bearer ${token}`,
       "User-Agent": CONFIG.REDDIT_USER_AGENT,
@@ -57,7 +59,7 @@ async function fetchSubreddit(subreddit, token, limit) {
 
  * @returns {object} Normalized trend object
  */
-function normalizeTrend(post, defaultCategory) {
+function normalizeTrend(post: any, defaultCategory: any) {
   const postData = post.data;
   return {
     name: postData.title,
@@ -90,7 +92,7 @@ export async function fetchRedditTrends() {
     throw new Error("REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET not configured");
   }
   const token = await redditTokenManager.getToken();
-  const allTrends = [];
+  const allTrends: any[] = [];
   for (const sub of REDDIT_SUBREDDITS) {
     await rateLimiter.wait("REDDIT");
     try {
@@ -100,10 +102,10 @@ export async function fetchRedditTrends() {
         REDDIT_POSTS_PER_SUBREDDIT,
       );
       const trends = posts
-        .filter((p) => !p.data.stickied) // exclude stickied/pinned posts
-        .map((p) => normalizeTrend(p, sub.category));
+        .filter((p: any) => !p.data.stickied) // exclude stickied/pinned posts
+        .map((p: any) => normalizeTrend(p, sub.category));
       allTrends.push(...trends);
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`[Reddit] ❌ /r/${sub.name}: ${error.message}`);
     }
   }

@@ -67,7 +67,7 @@ const BLOCKED_PATTERNS = [
 // Validation
 // ────────────────────────────────────────────────────────────
 
-function validateCommand(command) {
+function validateCommand(command: any) {
   if (!command || typeof command !== "string") {
     return { valid: false, error: "Command is required (string)" };
   }
@@ -114,13 +114,13 @@ function validateCommand(command) {
 // ────────────────────────────────────────────────────────────
 
 // Agent routing helper
-async function tryAgentRouteCommand(method, params, cwd) {
+async function tryAgentRouteCommand(method: any, params: any, cwd: any) {
   if (!cwd) return null;
   const agent = routeForPath(cwd);
   if (!agent) return null;
   try {
     return await sendRpc(agent.id, method, params);
-  } catch (error) {
+  } catch (error: any) {
     return { success: false, stdout: "", stderr: "", exitCode: null, executionTimeMs: 0, error: `Agent RPC failed: ${error.message}` };
   }
 }
@@ -137,7 +137,7 @@ async function tryAgentRouteCommand(method, params, cwd) {
 
 
  */
-export async function executeCommand(command, { cwd, timeout = DEFAULT_TIMEOUT_MS, signal, runInBackground = false }: Record<string, any> = {}) {
+export async function executeCommand(command: any, { cwd, timeout = DEFAULT_TIMEOUT_MS, signal, runInBackground = false }: Record<string, any> = {}) {
   // Agent routing — if CWD is served by a remote agent, proxy the command
   const agentResult = await tryAgentRouteCommand("command.run", { command, cwd, timeout, runInBackground }, cwd);
   if (agentResult) return agentResult;
@@ -163,9 +163,9 @@ export async function executeCommand(command, { cwd, timeout = DEFAULT_TIMEOUT_M
 
   const startTime = performance.now();
 
-  return new Promise<any>((resolve) => {
-    const stdoutChunks = [];
-    const stderrChunks = [];
+  return new Promise<any>((resolve: any) => {
+    const stdoutChunks: any[] = [];
+    const stderrChunks: any[] = [];
     let stdoutLen = 0;
     let stderrLen = 0;
     const timedOut = false;
@@ -188,7 +188,7 @@ export async function executeCommand(command, { cwd, timeout = DEFAULT_TIMEOUT_M
     child.stdin.end();
 
     // ── Helper: background the process and resolve immediately ────
-    function backgroundAndResolve(reason) {
+    function backgroundAndResolve(reason: any) {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
@@ -214,14 +214,14 @@ export async function executeCommand(command, { cwd, timeout = DEFAULT_TIMEOUT_M
       });
     }
 
-    child.stdout.on("data", (chunk) => {
+    child.stdout.on("data", (chunk: any) => {
       if (stdoutLen < MAX_OUTPUT_BYTES) {
         stdoutChunks.push(chunk);
         stdoutLen += chunk.length;
       }
     });
 
-    child.stderr.on("data", (chunk) => {
+    child.stderr.on("data", (chunk: any) => {
       if (stderrLen < MAX_OUTPUT_BYTES) {
         stderrChunks.push(chunk);
         stderrLen += chunk.length;
@@ -257,7 +257,7 @@ export async function executeCommand(command, { cwd, timeout = DEFAULT_TIMEOUT_M
       }, BACKGROUND_WARMUP_MS);
     }
 
-    function finish(exitCode) {
+    function finish(exitCode: any) {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
@@ -279,8 +279,8 @@ export async function executeCommand(command, { cwd, timeout = DEFAULT_TIMEOUT_M
       });
     }
 
-    child.on("close", (code) => finish(code));
-    child.on("error", (error) => {
+    child.on("close", (code: any) => finish(code));
+    child.on("error", (error: any) => {
       if (!settled) {
         settled = true;
         clearTimeout(timer);
@@ -301,17 +301,17 @@ export async function executeCommand(command, { cwd, timeout = DEFAULT_TIMEOUT_M
 
 
  */
-export async function executeCommandStreaming(command, { cwd, timeout = DEFAULT_TIMEOUT_MS, onChunk, signal }: Record<string, any> = {}) {
+export async function executeCommandStreaming(command: any, { cwd, timeout = DEFAULT_TIMEOUT_MS, onChunk, signal }: Record<string, any> = {}) {
   // Agent routing for streaming commands
   if (cwd) {
     const agent = routeForPath(cwd);
     if (agent) {
       try {
-        return await sendRpcStreaming(agent.id, "command.stream", { command, cwd, timeout }, (method, params) => {
+        return await sendRpcStreaming(agent.id, "command.stream", { command, cwd, timeout }, (method: any, params: any) => {
           if (method === "command.stdout") onChunk?.("stdout", params.data);
           else if (method === "command.stderr") onChunk?.("stderr", params.data);
         });
-      } catch (error) {
+      } catch (error: any) {
         return { success: false, stdout: "", stderr: "", exitCode: null, executionTimeMs: 0, error: `Agent RPC failed: ${error.message}` };
       }
     }
@@ -336,9 +336,9 @@ export async function executeCommandStreaming(command, { cwd, timeout = DEFAULT_
 
   const startTime = performance.now();
 
-  return new Promise<any>((resolve) => {
-    const stdoutChunks = [];
-    const stderrChunks = [];
+  return new Promise<any>((resolve: any) => {
+    const stdoutChunks: any[] = [];
+    const stderrChunks: any[] = [];
     let stdoutLen = 0;
     let stderrLen = 0;
     let timedOut = false;
@@ -359,7 +359,7 @@ export async function executeCommandStreaming(command, { cwd, timeout = DEFAULT_
 
     child.stdin.end();
 
-    child.stdout.on("data", (chunk) => {
+    child.stdout.on("data", (chunk: any) => {
       if (stdoutLen < MAX_OUTPUT_BYTES) {
         stdoutChunks.push(chunk);
         stdoutLen += chunk.length;
@@ -367,7 +367,7 @@ export async function executeCommandStreaming(command, { cwd, timeout = DEFAULT_
       }
     });
 
-    child.stderr.on("data", (chunk) => {
+    child.stderr.on("data", (chunk: any) => {
       if (stderrLen < MAX_OUTPUT_BYTES) {
         stderrChunks.push(chunk);
         stderrLen += chunk.length;
@@ -388,7 +388,7 @@ export async function executeCommandStreaming(command, { cwd, timeout = DEFAULT_
       signal.addEventListener("abort", onAbort, { once: true });
     }
 
-    function finish(exitCode) {
+    function finish(exitCode: any) {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
@@ -407,8 +407,8 @@ export async function executeCommandStreaming(command, { cwd, timeout = DEFAULT_
       });
     }
 
-    child.on("close", (code) => finish(code));
-    child.on("error", (error) => {
+    child.on("close", (code: any) => finish(code));
+    child.on("error", (error: any) => {
       if (!settled) {
         settled = true;
         clearTimeout(timer);
@@ -443,7 +443,7 @@ export function listBackgroundProcesses() {
 
 
  */
-export function getBackgroundProcess(pid) {
+export function getBackgroundProcess(pid: any) {
   return BackgroundProcessRegistry.getProcess(pid);
 }
 
@@ -455,7 +455,7 @@ export function getBackgroundProcess(pid) {
 
  * @returns {Promise<object>} Result with killed status
  */
-export async function killProcessTree(pid, { gracePeriodMs = KILL_GRACE_PERIOD_MS }: Record<string, any> = {}) {
+export async function killProcessTree(pid: any, { gracePeriodMs = KILL_GRACE_PERIOD_MS }: Record<string, any> = {}) {
   if (!pid || typeof pid !== "number" || pid <= 0) {
     return { success: false, error: "Valid PID is required (positive integer)" };
   }
@@ -483,7 +483,7 @@ export async function killProcessTree(pid, { gracePeriodMs = KILL_GRACE_PERIOD_M
     }
 
     // Wait for grace period then check if still alive
-    await new Promise<any>((resolve) => setTimeout(resolve, gracePeriodMs));
+    await new Promise<any>((resolve: any) => setTimeout(resolve, gracePeriodMs));
 
     try {
       process.kill(pid, 0); // Still alive?
@@ -498,7 +498,7 @@ export async function killProcessTree(pid, { gracePeriodMs = KILL_GRACE_PERIOD_M
       // Process is gone — SIGTERM was sufficient
       return { success: true, pid, signal: "SIGTERM", escalated: false };
     }
-  } catch (error) {
+  } catch (error: any) {
     return { success: false, pid, error: `Failed to kill process: ${error.message}` };
   }
 }

@@ -29,10 +29,10 @@ import { dirname, join } from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-let FOOD_CACHE = null;
+let FOOD_CACHE: any = null;
 
-function parseCSVLine(line) {
-  const fields = [];
+function parseCSVLine(line: any) {
+  const fields: any[] = [];
   let current = "";
   let inQuotes = false;
   for (let i = 0; i < line.length; i++) {
@@ -55,13 +55,13 @@ function ensureFoodCache() {
 
   const dataDir = join(__dirname, "data");
   const files = readdirSync(dataDir).filter(
-    (f) => f.startsWith("digest_food") && f.endsWith(".csv"),
+    (f: any) => f.startsWith("digest_food") && f.endsWith(".csv"),
   );
 
-  const foods = [];
+  const foods: any[] = [];
   for (const file of files) {
     const raw = readFileSync(join(dataDir, file), "utf-8");
-    const lines = raw.split("\n").filter((l) => l.trim());
+    const lines = raw.split("\n").filter((l: any) => l.trim());
     const headers = parseCSVLine(lines[0]);
 
     for (let i = 1; i < lines.length; i++) {
@@ -69,7 +69,7 @@ function ensureFoodCache() {
       if (values.length < 40) continue;
 
       const row: Record<string, any> = {};
-      headers.forEach((h, index) => {
+      headers.forEach((h: any, index: any) => {
         row[h] = values[index] || "";
       });
 
@@ -90,7 +90,7 @@ function ensureFoodCache() {
 
 const ALL_NUTRIENT_COLUMNS = [
   ...Object.keys(NUTRITION_MACRO_FIELDS).filter(
-    (k) => !["kilocalories", "kilojoules", "water", "mineral", "ethanol"].includes(k),
+    (k: any) => !["kilocalories", "kilojoules", "water", "mineral", "ethanol"].includes(k),
   ),
   ...Object.keys(NUTRITION_MINERAL_FIELDS),
   ...Object.keys(NUTRITION_VITAMIN_FIELDS),
@@ -100,14 +100,14 @@ const ALL_NUTRIENT_COLUMNS = [
 
 // ─── Vector Helpers ────────────────────────────────────────────
 
-function extractVector(food, columns) {
-  return columns.map((col) => {
+function extractVector(food: any, columns: any) {
+  return columns.map((col: any) => {
     const value = food[col];
     return value !== null && value !== undefined && !isNaN(value) ? value : 0;
   });
 }
 
-function cosineSimilarity(a, b) {
+function cosineSimilarity(a: any, b: any) {
   let dot = 0;
   let magA = 0;
   let magB = 0;
@@ -120,29 +120,29 @@ function cosineSimilarity(a, b) {
   return dot / (Math.sqrt(magA) * Math.sqrt(magB));
 }
 
-function normalizeSearch(str) {
+function normalizeSearch(str: any) {
   return str.toLowerCase().replace(/[^a-z0-9\s]/g, "");
 }
 
 // ─── Kingdom/Type Filters ──────────────────────────────────────
 
 const DIETARY_FILTERS = {
-  vegetarian: (food) => {
+  vegetarian: (food: any) => {
     const type = (food.food_type || "").toLowerCase();
     const kingdom = (food.kingdom || "").toLowerCase();
     // Allow everything except meat/fish
     return kingdom !== "animalia" || type === "dairy" || type === "egg";
   },
-  vegan: (food) => {
+  vegan: (food: any) => {
     const kingdom = (food.kingdom || "").toLowerCase();
     return kingdom !== "animalia";
   },
-  pescatarian: (food) => {
+  pescatarian: (food: any) => {
     const type = (food.food_type || "").toLowerCase();
     const kingdom = (food.kingdom || "").toLowerCase();
     return kingdom !== "animalia" || type === "fish" || type === "seafood" || type === "dairy" || type === "egg";
   },
-  plant_only: (food) => {
+  plant_only: (food: any) => {
     const kingdom = (food.kingdom || "").toLowerCase();
     return kingdom === "plantae";
   },
@@ -166,7 +166,7 @@ export function findFoodSubstitutes({
   excludeKingdom,
   excludeFoods,
   limit = 10,
-}) {
+}: any) {
   if (!food) {
     return { error: "'food' parameter is required (e.g. 'salmon', 'beef', 'tofu')" };
   }
@@ -176,7 +176,7 @@ export function findFoodSubstitutes({
   // ── Find the source food ─────────────────────────────────────
   const normalized = normalizeSearch(food);
   let sourceFood = allFoods.find(
-    (f) => normalizeSearch(f.food_name || "") === normalized,
+    (f: any) => normalizeSearch(f.food_name || "") === normalized,
   );
 
   if (!sourceFood) {
@@ -187,7 +187,7 @@ export function findFoodSubstitutes({
     }
     const matchedName = normalizeSearch(searchResult.foods[0].name);
     sourceFood = allFoods.find(
-      (f) => normalizeSearch(f.food_name || "") === matchedName,
+      (f: any) => normalizeSearch(f.food_name || "") === matchedName,
     );
     if (!sourceFood) {
       return { error: `Food matched but not in vector DB: "${food}"` };
@@ -196,19 +196,19 @@ export function findFoodSubstitutes({
 
   // ── Determine comparison columns ──────────────────────────────
   const columns = ALL_NUTRIENT_COLUMNS;
-  let emphasizedColumns = null;
+  let emphasizedColumns: any = null;
 
   if (targetNutrients) {
     const targets = targetNutrients
       .split(",")
-      .map((t) => t.trim().toLowerCase().replace(/[\s-]+/g, "_"))
+      .map((t: any) => t.trim().toLowerCase().replace(/[\s-]+/g, "_"))
       .filter(Boolean);
 
     // Match target nutrient names to columns
-    const matched = [];
+    const matched: any[] = [];
     for (const target of targets) {
       const col = ALL_NUTRIENT_COLUMNS.find(
-        (c) => c === target || c.includes(target),
+        (c: any) => c === target || c.includes(target),
       );
       if (col) matched.push(col);
     }
@@ -223,11 +223,12 @@ export function findFoodSubstitutes({
 
   // ── Filter candidates ────────────────────────────────────────
   let candidates = allFoods.filter(
-    (f) => f !== sourceFood,
+    (f: any) => f !== sourceFood,
   );
 
   // Dietary preference filter
   if (dietaryPreference) {
+    // @ts-expect-error - TS7053: implicit any index
     const filterFn = DIETARY_FILTERS[dietaryPreference.toLowerCase().replace(/[\s-]+/g, "_")];
     if (filterFn) {
       candidates = candidates.filter(filterFn);
@@ -238,7 +239,7 @@ export function findFoodSubstitutes({
   if (excludeKingdom) {
     const exc = excludeKingdom.toLowerCase();
     candidates = candidates.filter(
-      (f) => (f.kingdom || "").toLowerCase() !== exc,
+      (f: any) => (f.kingdom || "").toLowerCase() !== exc,
     );
   }
 
@@ -246,15 +247,15 @@ export function findFoodSubstitutes({
   if (excludeFoods) {
     const excluded = excludeFoods
       .split(",")
-      .map((e) => normalizeSearch(e.trim()))
+      .map((e: any) => normalizeSearch(e.trim()))
       .filter(Boolean);
     candidates = candidates.filter(
-      (f) => !excluded.some((e) => normalizeSearch(f.food_name || "").includes(e)),
+      (f: any) => !excluded.some((e: any) => normalizeSearch(f.food_name || "").includes(e)),
     );
   }
 
   // ── Score all candidates ─────────────────────────────────────
-  const scored = candidates.map((candidate) => {
+  const scored = candidates.map((candidate: any) => {
     const candidateVector = extractVector(candidate, columns);
 
     // Full profile similarity
@@ -273,7 +274,7 @@ export function findFoodSubstitutes({
   });
 
   // ── Sort and slice ───────────────────────────────────────────
-  scored.sort((a, b) => b.similarity - a.similarity);
+  scored.sort((a: any, b: any) => b.similarity - a.similarity);
   const topResults = scored.slice(0, limit);
 
   // ── Format output ────────────────────────────────────────────
@@ -293,7 +294,7 @@ export function findFoodSubstitutes({
     },
     count: topResults.length,
     candidatesEvaluated: candidates.length,
-    substitutes: topResults.map((r) => ({
+    substitutes: topResults.map((r: any) => ({
       name: r.food.food_name,
       kingdom: r.food.kingdom,
       foodType: r.food.food_type,
@@ -307,7 +308,7 @@ export function findFoodSubstitutes({
 
 // ─── Key Nutrient Formatter ────────────────────────────────────
 
-function formatKeyNutrients(food) {
+function formatKeyNutrients(food: any) {
   return {
     calories: food.kilocalories,
     protein_g: food.protein,
@@ -328,7 +329,7 @@ function formatKeyNutrients(food) {
  */
 export function getDietaryPreferences() {
   return {
-    preferences: Object.keys(DIETARY_FILTERS).map((k) => ({
+    preferences: Object.keys(DIETARY_FILTERS).map((k: any) => ({
       key: k,
       description: `Filter for ${k.replace(/_/g, " ")} diet`,
     })),

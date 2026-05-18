@@ -32,8 +32,8 @@ const __dirname = dirname(__filename);
 
 // ─── CSV Parser (handles quoted fields with commas) ────────────
 
-function parseCSVLine(line) {
-  const fields = [];
+function parseCSVLine(line: any) {
+  const fields: any[] = [];
   let current = "";
   let inQuotes = false;
 
@@ -54,8 +54,8 @@ function parseCSVLine(line) {
 
 // ─── Load & Index ──────────────────────────────────────────────
 
-const FOOD_DB = [];
-const NUTRIENT_DB = [];
+const FOOD_DB: any[] = [];
+const NUTRIENT_DB: any[] = [];
 let loaded = false;
 
 const FOOD_DATA_FILES = [
@@ -68,12 +68,12 @@ const FOOD_DATA_FILES = [
   { file: "digest_food_japan.csv", source: "Japan MEXT" },
 ];
 
-const SOURCES_NOTE = `All nutrient values per 100g edible portion. Sources: ${FOOD_DATA_FILES.map((f) => f.source).join(", ")}.`;
+const SOURCES_NOTE = `All nutrient values per 100g edible portion. Sources: ${FOOD_DATA_FILES.map((f: any) => f.source).join(", ")}.`;
 
-function loadFoodCSV(filename, source) {
+function loadFoodCSV(filename: any, source: any) {
   const foodPath = join(__dirname, "data", filename);
   const foodRaw = readFileSync(foodPath, "utf-8");
-  const foodLines = foodRaw.split("\n").filter((l) => l.trim());
+  const foodLines = foodRaw.split("\n").filter((l: any) => l.trim());
   const foodHeaders = parseCSVLine(foodLines[0]);
   let count = 0;
 
@@ -82,7 +82,7 @@ function loadFoodCSV(filename, source) {
     if (values.length < 40) continue;
 
     const row: Record<string, any> = {};
-    foodHeaders.forEach((h, index) => {
+    foodHeaders.forEach((h: any, index: any) => {
       row[h] = values[index] || "";
     });
 
@@ -108,7 +108,7 @@ function ensureLoaded() {
   loaded = true;
 
   // Load all food data files
-  const counts = [];
+  const counts: any[] = [];
   for (const { file, source } of FOOD_DATA_FILES) {
     const count = loadFoodCSV(file, source);
     counts.push(`${count} ${source}`);
@@ -117,13 +117,13 @@ function ensureLoaded() {
   // Load nutrient metadata
   const nutrientPath = join(__dirname, "data", "digest_nutrient.csv");
   const nutrientRaw = readFileSync(nutrientPath, "utf-8");
-  const nutrientLines = nutrientRaw.split("\n").filter((l) => l.trim());
+  const nutrientLines = nutrientRaw.split("\n").filter((l: any) => l.trim());
   const nutrientHeaders = parseCSVLine(nutrientLines[0]);
 
   for (let i = 1; i < nutrientLines.length; i++) {
     const values = parseCSVLine(nutrientLines[i]);
     const row: Record<string, any> = {};
-    nutrientHeaders.forEach((h, index) => {
+    nutrientHeaders.forEach((h: any, index: any) => {
       row[h] = values[index] || "";
     });
     NUTRIENT_DB.push(row);
@@ -136,11 +136,11 @@ function ensureLoaded() {
 
 // ─── Search Helpers ────────────────────────────────────────────
 
-function normalizeSearch(str) {
+function normalizeSearch(str: any) {
   return str.toLowerCase().replace(/[^a-z0-9\s]/g, "");
 }
 
-function scoreMatch(food, terms) {
+function scoreMatch(food: any, terms: any) {
   const name = normalizeSearch(food.food_name || "");
   const desc = normalizeSearch(food.description_long || "");
   const keywords = normalizeSearch(food.food_keywords || "");
@@ -191,7 +191,7 @@ function scoreMatch(food, terms) {
 
 // ─── Nutrient Extraction ───────────────────────────────────────
 
-function extractMacros(food) {
+function extractMacros(food: any) {
   const result: Record<string, any> = {};
   for (const [key, label] of Object.entries(NUTRITION_MACRO_FIELDS)) {
     if (food[key] !== null && food[key] !== undefined) {
@@ -201,7 +201,7 @@ function extractMacros(food) {
   return result;
 }
 
-function extractMinerals(food) {
+function extractMinerals(food: any) {
   const result: Record<string, any> = {};
   for (const [key, label] of Object.entries(NUTRITION_MINERAL_FIELDS)) {
     if (food[key] !== null && food[key] !== undefined) {
@@ -211,7 +211,7 @@ function extractMinerals(food) {
   return result;
 }
 
-function extractVitamins(food) {
+function extractVitamins(food: any) {
   const result: Record<string, any> = {};
   for (const [key, label] of Object.entries(NUTRITION_VITAMIN_FIELDS)) {
     if (food[key] !== null && food[key] !== undefined) {
@@ -221,7 +221,7 @@ function extractVitamins(food) {
   return result;
 }
 
-function extractAminoAcids(food) {
+function extractAminoAcids(food: any) {
   const result: Record<string, any> = {};
   for (const [key, label] of Object.entries(NUTRITION_AMINO_ACID_FIELDS)) {
     if (food[key] !== null && food[key] !== undefined) {
@@ -231,7 +231,7 @@ function extractAminoAcids(food) {
   return result;
 }
 
-function extractLipidProfile(food) {
+function extractLipidProfile(food: any) {
   const result: Record<string, any> = {};
   for (const [key, label] of Object.entries(NUTRITION_LIPID_FIELDS)) {
     if (food[key] !== null && food[key] !== undefined) {
@@ -241,7 +241,7 @@ function extractLipidProfile(food) {
   return result;
 }
 
-function extractCarbDetails(food) {
+function extractCarbDetails(food: any) {
   const result: Record<string, any> = {};
   for (const [key, label] of Object.entries(NUTRITION_CARB_DETAIL_FIELDS)) {
     if (food[key] !== null && food[key] !== undefined) {
@@ -251,7 +251,7 @@ function extractCarbDetails(food) {
   return result;
 }
 
-function extractSterols(food) {
+function extractSterols(food: any) {
   const result: Record<string, any> = {};
   for (const [key, label] of Object.entries(NUTRITION_STEROL_FIELDS)) {
     if (food[key] !== null && food[key] !== undefined) {
@@ -261,9 +261,9 @@ function extractSterols(food) {
   return result;
 }
 
-function formatFood(food, nutrientTypes = null) {
+function formatFood(food: any, nutrientTypes: any = null) {
   const types = nutrientTypes
-    ? nutrientTypes.split(",").map((t) => t.trim().toLowerCase())
+    ? nutrientTypes.split(",").map((t: any) => t.trim().toLowerCase())
     : null;
 
   const base = {
@@ -304,7 +304,7 @@ function formatFood(food, nutrientTypes = null) {
 
   // Always include macros unless specific types are requested
   const includeAll = !types;
-  const include = (t) => includeAll || types.includes(t);
+  const include = (t: any) => includeAll || types.includes(t);
 
   if (include("macros") || include("macro")) {
     base.perHundredGrams.macros = extractMacros(food);
@@ -339,7 +339,7 @@ function formatFood(food, nutrientTypes = null) {
 
  * @returns {object} Search results
  */
-export function searchFoods(query, opts: Record<string, any> = {}) {
+export function searchFoods(query: any, opts: Record<string, any> = {}) {
   ensureLoaded();
 
   const { limit = 10, kingdom, foodType, nutrientTypes } = opts;
@@ -355,28 +355,28 @@ export function searchFoods(query, opts: Record<string, any> = {}) {
   if (kingdom) {
     const k = kingdom.toLowerCase();
     candidates = candidates.filter(
-      (f) => f.kingdom && f.kingdom.toLowerCase() === k,
+      (f: any) => f.kingdom && f.kingdom.toLowerCase() === k,
     );
   }
   if (foodType) {
     const ft = foodType.toLowerCase();
     candidates = candidates.filter(
-      (f) => f.food_type && f.food_type.toLowerCase() === ft,
+      (f: any) => f.food_type && f.food_type.toLowerCase() === ft,
     );
   }
 
   // Score and rank
   const scored = candidates
-    .map((food) => ({ food, score: scoreMatch(food, terms) }))
-    .filter((s) => s.score > 0)
-    .sort((a, b) => b.score - a.score)
+    .map((food: any) => ({ food, score: scoreMatch(food, terms) }))
+    .filter((s: any) => s.score > 0)
+    .sort((a: any, b: any) => b.score - a.score)
     .slice(0, limit);
 
   return {
     count: scored.length,
     query,
     note: SOURCES_NOTE,
-    foods: scored.map((s) => formatFood(s.food, nutrientTypes)),
+    foods: scored.map((s: any) => formatFood(s.food, nutrientTypes)),
   };
 }
 
@@ -386,11 +386,11 @@ export function searchFoods(query, opts: Record<string, any> = {}) {
 
  * @returns {object|null} Food nutrition data or null
  */
-export function getFoodByName(name, nutrientTypes = null) {
+export function getFoodByName(name: any, nutrientTypes: any = null) {
   ensureLoaded();
 
   const normalized = normalizeSearch(name);
-  const food = FOOD_DB.find((f) => normalizeSearch(f.food_name) === normalized);
+  const food = FOOD_DB.find((f: any) => normalizeSearch(f.food_name) === normalized);
 
   if (!food) return null;
   return formatFood(food, nutrientTypes);
@@ -402,7 +402,7 @@ export function getFoodByName(name, nutrientTypes = null) {
 
  * @returns {object} Ranked results
  */
-export function rankByNutrient(nutrient, opts: Record<string, any> = {}) {
+export function rankByNutrient(nutrient: any, opts: Record<string, any> = {}) {
   ensureLoaded();
 
   const { limit = 10, kingdom, foodType } = opts;
@@ -411,7 +411,7 @@ export function rankByNutrient(nutrient, opts: Record<string, any> = {}) {
   if (!FOOD_DB[0] || !(nutrient in FOOD_DB[0])) {
     // Try to find a close match
     const allKeys = Object.keys(FOOD_DB[0] || {}).filter(
-      (k) => typeof FOOD_DB[0][k] === "number" || FOOD_DB[0][k] === null,
+      (k: any) => typeof FOOD_DB[0][k] === "number" || FOOD_DB[0][k] === null,
     );
     return {
       error: `Unknown nutrient: "${nutrient}"`,
@@ -424,23 +424,23 @@ export function rankByNutrient(nutrient, opts: Record<string, any> = {}) {
   if (kingdom) {
     const k = kingdom.toLowerCase();
     candidates = candidates.filter(
-      (f) => f.kingdom && f.kingdom.toLowerCase() === k,
+      (f: any) => f.kingdom && f.kingdom.toLowerCase() === k,
     );
   }
   if (foodType) {
     const ft = foodType.toLowerCase();
     candidates = candidates.filter(
-      (f) => f.food_type && f.food_type.toLowerCase() === ft,
+      (f: any) => f.food_type && f.food_type.toLowerCase() === ft,
     );
   }
 
   const ranked = candidates
-    .filter((f) => f[nutrient] !== null && f[nutrient] > 0)
-    .sort((a, b) => b[nutrient] - a[nutrient])
+    .filter((f: any) => f[nutrient] !== null && f[nutrient] > 0)
+    .sort((a: any, b: any) => b[nutrient] - a[nutrient])
     .slice(0, limit);
 
   // Find unit from nutrient metadata
-  const nutrientMeta = NUTRIENT_DB.find((n) => n.nutrient_id === nutrient);
+  const nutrientMeta = NUTRIENT_DB.find((n: any) => n.nutrient_id === nutrient);
 
   return {
     nutrient,
@@ -448,7 +448,7 @@ export function rankByNutrient(nutrient, opts: Record<string, any> = {}) {
     type: nutrientMeta?.nutrient_type || "unknown",
     count: ranked.length,
     note: SOURCES_NOTE,
-    foods: ranked.map((f) => ({
+    foods: ranked.map((f: any) => ({
       name: f.food_name,
       description: f.description_long,
       source: f._source || "USDA",
@@ -467,14 +467,14 @@ export function getNutrientTypes() {
   ensureLoaded();
 
   const nutritionDatasets = DATASET_REGISTRY.filter(
-    (d) => d.domain === "nutrition" && d.foods,
+    (d: any) => d.domain === "nutrition" && d.foods,
   );
 
   return {
     types: NUTRITION_NUTRIENT_TYPES,
     totalFoods: FOOD_DB.length,
     totalNutrients: NUTRIENT_DB.length,
-    sources: nutritionDatasets.map((d) => ({
+    sources: nutritionDatasets.map((d: any) => ({
       id: d.id,
       name: d.name,
       region: d.region,
@@ -492,14 +492,14 @@ export function getNutrientTypes() {
 export function getFoodCategories() {
   ensureLoaded();
 
-  const kingdoms = [...new Set(FOOD_DB.map((f) => f.kingdom).filter(Boolean))];
+  const kingdoms = [...new Set(FOOD_DB.map((f: any) => f.kingdom).filter(Boolean))];
   const foodTypes = [
-    ...new Set(FOOD_DB.map((f) => f.food_type).filter(Boolean)),
+    ...new Set(FOOD_DB.map((f: any) => f.food_type).filter(Boolean)),
   ];
   const foodSubtypes = [
-    ...new Set(FOOD_DB.map((f) => f.food_subtype).filter(Boolean)),
+    ...new Set(FOOD_DB.map((f: any) => f.food_subtype).filter(Boolean)),
   ];
-  const parts = [...new Set(FOOD_DB.map((f) => f.food_part).filter(Boolean))];
+  const parts = [...new Set(FOOD_DB.map((f: any) => f.food_part).filter(Boolean))];
 
   return {
     totalFoods: FOOD_DB.length,
@@ -516,23 +516,23 @@ export function getFoodCategories() {
 
  * @returns {object} Comparison results
  */
-export function compareFoods(foodNames, nutrientTypes = null) {
+export function compareFoods(foodNames: any, nutrientTypes: any = null) {
   ensureLoaded();
 
-  const results = foodNames.map((name) => {
+  const results = foodNames.map((name: any) => {
     const normalized = normalizeSearch(name);
     const terms = normalized.split(/\s+/).filter(Boolean);
 
     // Try exact match first, then scored search
-    let food = FOOD_DB.find((f) => normalizeSearch(f.food_name) === normalized);
+    let food = FOOD_DB.find((f: any) => normalizeSearch(f.food_name) === normalized);
 
     if (!food) {
-      const scored = FOOD_DB.map((f) => ({
+      const scored = FOOD_DB.map((f: any) => ({
         food: f,
         score: scoreMatch(f, terms),
       }))
-        .filter((s) => s.score > 0)
-        .sort((a, b) => b.score - a.score);
+        .filter((s: any) => s.score > 0)
+        .sort((a: any, b: any) => b.score - a.score);
       food = scored[0]?.food || null;
     }
 
@@ -541,7 +541,7 @@ export function compareFoods(foodNames, nutrientTypes = null) {
   });
 
   return {
-    count: results.filter((r) => r.found).length,
+    count: results.filter((r: any) => r.found).length,
     note: SOURCES_NOTE,
     comparison: results,
   };
@@ -549,7 +549,7 @@ export function compareFoods(foodNames, nutrientTypes = null) {
 
 // ─── Category → Field Map Lookup ───────────────────────────────
 
-const CATEGORY_FIELD_MAP = {
+const CATEGORY_FIELD_MAP: Record<string, any> = {
   macros: NUTRITION_MACRO_FIELDS,
   minerals: NUTRITION_MINERAL_FIELDS,
   vitamins: NUTRITION_VITAMIN_FIELDS,
@@ -566,7 +566,7 @@ const CATEGORY_FIELD_MAP = {
 
  * @returns {{ column: string, label: string } | null}
  */
-function resolveNutrientColumn(category, nutrient) {
+function resolveNutrientColumn(category: any, nutrient: any) {
   const fields = CATEGORY_FIELD_MAP[category];
   if (!fields) return null;
 
@@ -603,7 +603,7 @@ function resolveNutrientColumn(category, nutrient) {
 
  * @returns {object} Ranked results
  */
-export function getTopFoodsByCategory(category, nutrient, opts: Record<string, any> = {}) {
+export function getTopFoodsByCategory(category: any, nutrient: any, opts: Record<string, any> = {}) {
   ensureLoaded();
 
   const fields = CATEGORY_FIELD_MAP[category];
@@ -618,7 +618,7 @@ export function getTopFoodsByCategory(category, nutrient, opts: Record<string, a
   if (!resolved) {
     return {
       error: `Unknown nutrient "${nutrient}" in category "${category}"`,
-      availableNutrients: Object.entries(fields).map(([col, label]) => ({
+      availableNutrients: Object.entries(fields).map(([col, label]: any) => ({
         column: col,
         label,
       })),
@@ -631,24 +631,24 @@ export function getTopFoodsByCategory(category, nutrient, opts: Record<string, a
   if (kingdom) {
     const k = kingdom.toLowerCase();
     candidates = candidates.filter(
-      (f) => f.kingdom && f.kingdom.toLowerCase() === k,
+      (f: any) => f.kingdom && f.kingdom.toLowerCase() === k,
     );
   }
   if (foodType) {
     const ft = foodType.toLowerCase();
     candidates = candidates.filter(
-      (f) => f.food_type && f.food_type.toLowerCase() === ft,
+      (f: any) => f.food_type && f.food_type.toLowerCase() === ft,
     );
   }
 
   const ranked = candidates
-    .filter((f) => f[resolved.column] !== null && f[resolved.column] > 0)
-    .sort((a, b) => b[resolved.column] - a[resolved.column])
+    .filter((f: any) => f[resolved.column] !== null && f[resolved.column] > 0)
+    .sort((a: any, b: any) => b[resolved.column] - a[resolved.column])
     .slice(0, limit);
 
   // Find unit from nutrient metadata
   const nutrientMeta = NUTRIENT_DB.find(
-    (n) => n.nutrient_id === resolved.column,
+    (n: any) => n.nutrient_id === resolved.column,
   );
 
   return {
@@ -659,7 +659,7 @@ export function getTopFoodsByCategory(category, nutrient, opts: Record<string, a
     unit: nutrientMeta?.unit || null,
     count: ranked.length,
     note: SOURCES_NOTE,
-    foods: ranked.map((f) => ({
+    foods: ranked.map((f: any) => ({
       name: f.food_name,
       description: f.description_long,
       source: f._source || "USDA",
@@ -675,7 +675,7 @@ export function getTopFoodsByCategory(category, nutrient, opts: Record<string, a
 
  * @returns {object} Available nutrients with column names and labels
  */
-export function listCategoryNutrients(category) {
+export function listCategoryNutrients(category: any) {
   ensureLoaded();
 
   const fields = CATEGORY_FIELD_MAP[category];
@@ -686,13 +686,13 @@ export function listCategoryNutrients(category) {
     };
   }
 
-  const typeMeta = NUTRITION_NUTRIENT_TYPES.find((t) => t.key === category);
+  const typeMeta = NUTRITION_NUTRIENT_TYPES.find((t: any) => t.key === category);
 
   return {
     category,
     label: typeMeta?.label || category,
     description: typeMeta?.description || null,
-    nutrients: Object.entries(fields).map(([column, label]) => ({
+    nutrients: Object.entries(fields).map(([column, label]: any) => ({
       column,
       label,
     })),
@@ -729,7 +729,7 @@ const TAXONOMY_RANKS = [
 
  * @returns {object} Matched foods
  */
-export function searchByTaxonomy(rank, value, opts: Record<string, any> = {}) {
+export function searchByTaxonomy(rank: any, value: any, opts: Record<string, any> = {}) {
   ensureLoaded();
 
   const normalizedRank = rank.toLowerCase().trim();
@@ -743,7 +743,7 @@ export function searchByTaxonomy(rank, value, opts: Record<string, any> = {}) {
   const { limit = 25, nutrientTypes } = opts;
   const normalizedValue = value.toLowerCase().trim();
 
-  const matched = FOOD_DB.filter((f) => {
+  const matched = FOOD_DB.filter((f: any) => {
     const fieldVal = (f[normalizedRank] || "").toLowerCase().trim();
     return fieldVal === normalizedValue || fieldVal.includes(normalizedValue);
   }).slice(0, limit);
@@ -753,7 +753,7 @@ export function searchByTaxonomy(rank, value, opts: Record<string, any> = {}) {
     value,
     count: matched.length,
     note: SOURCES_NOTE,
-    foods: matched.map((f) => formatFood(f, nutrientTypes)),
+    foods: matched.map((f: any) => formatFood(f, nutrientTypes)),
   };
 }
 
@@ -765,9 +765,9 @@ export function searchByTaxonomy(rank, value, opts: Record<string, any> = {}) {
  * @returns {object} Taxonomy tree or single-rank listing
  */
 export function getTaxonomyTree(
-  rank = null,
-  parentRank = null,
-  parentValue = null,
+  rank: any = null,
+  parentRank: any = null,
+  parentValue: any = null,
 ) {
   ensureLoaded();
 
@@ -794,14 +794,14 @@ export function getTaxonomyTree(
         };
       }
       candidates = candidates.filter(
-        (f) =>
+        (f: any) =>
           (f[normalizedParent] || "").toLowerCase().trim() ===
           normalizedParentVal,
       );
     }
 
     const values = [
-      ...new Set(candidates.map((f) => f[normalizedRank]).filter(Boolean)),
+      ...new Set(candidates.map((f: any) => f[normalizedRank]).filter(Boolean)),
     ].sort();
 
     return {
@@ -818,7 +818,7 @@ export function getTaxonomyTree(
   const tree: Record<string, any> = {};
   for (const r of TAXONOMY_RANKS) {
     const values = [
-      ...new Set(FOOD_DB.map((f) => f[r]).filter(Boolean)),
+      ...new Set(FOOD_DB.map((f: any) => f[r]).filter(Boolean)),
     ].sort();
     if (values.length > 0) {
       tree[r] = { count: values.length, values };

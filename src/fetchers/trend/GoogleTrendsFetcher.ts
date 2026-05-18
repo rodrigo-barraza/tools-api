@@ -13,7 +13,7 @@ const TRENDS_RSS_URL = "https://trends.google.com/trending/rss";
 
  * @returns {Promise<Array>} Normalized trend objects
  */
-export async function fetchGoogleDailyTrends(geo = "US") {
+export async function fetchGoogleDailyTrends(geo: any = "US") {
   const url = `${TRENDS_RSS_URL}?geo=${geo}`;
   const response = await fetch(url, {
     headers: {
@@ -37,10 +37,10 @@ export async function fetchGoogleDailyTrends(geo = "US") {
 
  * @returns {Array} Normalized trend objects
  */
-function parseRssTrends(xml, geo) {
-  const trends = [];
+function parseRssTrends(xml: any, geo: any) {
+  const trends: any[] = [];
   const itemRegex = /<item>([\s\S]*?)<\/item>/g;
-  let match;
+  let match: any;
 
   while ((match = itemRegex.exec(xml)) !== null) {
     const item = match[1];
@@ -82,13 +82,13 @@ function parseRssTrends(xml, geo) {
  * @returns {Promise<Array>} Combined normalized trend objects
  */
 export async function fetchGoogleTrends() {
-  const allTrends = [];
+  const allTrends: any[] = [];
 
   for (const geo of GOOGLE_TRENDS_GEOS) {
     try {
       const trends = await fetchGoogleDailyTrends(geo);
       allTrends.push(...trends);
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`[Google Trends] ❌ ${geo}: ${error.message}`);
     }
   }

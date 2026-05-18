@@ -28,7 +28,7 @@ function evictStaleEntries() {
   }
   if (placesCache.size > MAX_CACHE_SIZE) {
     const entries = [...placesCache.entries()].sort(
-      (a, b) => a[1].fetchedAt - b[1].fetchedAt,
+      (a: any, b: any) => a[1].fetchedAt - b[1].fetchedAt,
     );
     const toRemove = Math.floor(entries.length / 2);
     for (let i = 0; i < toRemove; i++) {
@@ -60,7 +60,7 @@ const FIELD_MASK = [
 
 // ─── Normalize Response ───────────────────────────────────────────
 
-function normalizePlace(place) {
+function normalizePlace(place: any) {
   return {
     id: place.id,
     name: place.displayName?.text || null,
@@ -94,7 +94,7 @@ const MARKER_COLORS = ["red", "blue", "green", "purple", "orange", "yellow"];
 
  * @returns {string|null} Static map URL or null if no places
  */
-export function buildStaticMapUrl(places, center, { size = "800x400", zoom, maptype = "roadmap" }: Record<string, any> = {}) {
+export function buildStaticMapUrl(places: any, center: any, { size = "800x400", zoom, maptype = "roadmap" }: Record<string, any> = {}) {
   if (!places.length || !CONFIG.GOOGLE_API_KEY) return null;
 
   const params = new URLSearchParams({
@@ -110,8 +110,8 @@ export function buildStaticMapUrl(places, center, { size = "800x400", zoom, mapt
 
   // Add numbered markers
   const markerParams = places
-    .filter((p) => p.latitude != null && p.longitude != null)
-    .map((p, i) => {
+    .filter((p: any) => p.latitude != null && p.longitude != null)
+    .map((p: any, i: any) => {
       const color = MARKER_COLORS[i % MARKER_COLORS.length];
       const label = String(i + 1);
       return `markers=color:${color}|label:${label}|${p.latitude},${p.longitude}`;

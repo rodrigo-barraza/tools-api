@@ -70,7 +70,7 @@ export async function setupEventCollection(): Promise<void> {
 export async function upsertEvents(events: EventDocument[]): Promise<{ upserted: number; modified: number }> {
   if (!collection || events.length === 0) return { upserted: 0, modified: 0 };
 
-  const operations = events.map((event) => ({
+  const operations = events.map((event: any) => ({
     updateOne: {
       filter: { sourceId: event.sourceId, source: event.source },
       update: {
@@ -87,7 +87,7 @@ export async function upsertEvents(events: EventDocument[]): Promise<{ upserted:
       upserted: result.upsertedCount,
       modified: result.modifiedCount,
     };
-  } catch (error) {
+  } catch (error: any) {
     logger.error("Failed to upsert events:", (error as Error).message);
     return { upserted: 0, modified: 0 };
   }
@@ -119,7 +119,7 @@ export async function getEventsToday(timezone: string): Promise<EventDocument[]>
 /**
  * Get upcoming events (next N days from now).
  */
-export async function getEventsUpcoming(days = 30, limit = 200): Promise<EventDocument[]> {
+export async function getEventsUpcoming(days: any = 30, limit: any = 200): Promise<EventDocument[]> {
   if (!collection) return [];
 
   const now = new Date();
@@ -135,7 +135,7 @@ export async function getEventsUpcoming(days = 30, limit = 200): Promise<EventDo
 /**
  * Get past events (last N days).
  */
-export async function getEventsPast(days = 30, limit = 200): Promise<EventDocument[]> {
+export async function getEventsPast(days: any = 30, limit: any = 200): Promise<EventDocument[]> {
   if (!collection) return [];
 
   const now = new Date();

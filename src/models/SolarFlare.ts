@@ -1,7 +1,7 @@
 import { getDB } from "../db.ts";
 import logger from "../logger.ts";
 
-let collection = null;
+let collection: any = null;
 
 export async function setupSolarFlareCollection() {
   const db = getDB();
@@ -16,10 +16,10 @@ export async function setupSolarFlareCollection() {
   logger.info("☀️  Solar flare collection indexes ready");
 }
 
-export async function upsertSolarFlares(flares) {
+export async function upsertSolarFlares(flares: any) {
   if (!collection || flares.length === 0) return { upserted: 0, modified: 0 };
 
-  const operations = flares.map((flr) => ({
+  const operations = flares.map((flr: any) => ({
     updateOne: {
       filter: { flrId: flr.flrId },
       update: {
@@ -33,13 +33,13 @@ export async function upsertSolarFlares(flares) {
   try {
     const result = await collection.bulkWrite(operations, { ordered: false });
     return { upserted: result.upsertedCount, modified: result.modifiedCount };
-  } catch (error) {
+  } catch (error: any) {
     logger.error("Failed to upsert solar flares:", error.message);
     return { upserted: 0, modified: 0 };
   }
 }
 
-export async function getRecentSolarFlares(days = 7, limit = 50) {
+export async function getRecentSolarFlares(days: any = 7, limit: any = 50) {
   if (!collection) return [];
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);

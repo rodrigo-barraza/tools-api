@@ -28,7 +28,7 @@ const MAGICK_OPERATIONS = new Set(["text", "distort", "border", "ico"]);
 
 
  */
-async function resolveInput(input, store) {
+async function resolveInput(input: any, store: any) {
   if (!input || typeof input !== "string") {
     throw new Error("'input' is required (URL, base64 data URI, or previous imageId)");
   }
@@ -77,9 +77,9 @@ async function resolveInput(input, store) {
 
  * @returns {Promise<{buffer: Buffer, metadata?: object, mimeType: string}>}
  */
-async function processWithSharp(inputBuffer, operations, outputFormat, outputQuality) {
+async function processWithSharp(inputBuffer: any, operations: any, outputFormat: any, outputQuality: any) {
   let pipeline = sharp(inputBuffer, { failOn: "none", limitInputPixels: MAX_DIMENSION * MAX_DIMENSION });
-  let metadataResult = null;
+  let metadataResult: any = null;
 
   for (const op of operations) {
     switch (op.type) {
@@ -232,6 +232,7 @@ async function processWithSharp(inputBuffer, operations, outputFormat, outputQua
 
   return {
     buffer,
+    // @ts-expect-error - TS7053: implicit any index
     mimeType: MIME_MAP[format] || "image/png",
     ...(metadataResult && { metadata: metadataResult }),
   };
@@ -247,7 +248,7 @@ async function processWithSharp(inputBuffer, operations, outputFormat, outputQua
 
  * @returns {Promise<{buffer: Buffer, mimeType: string}>}
  */
-async function processWithMagick(inputBuffer, operations, outputFormat, outputQuality) {
+async function processWithMagick(inputBuffer: any, operations: any, outputFormat: any, outputQuality: any) {
   const id = crypto.randomUUID().slice(0, 12);
   const inputPath = join(tmpdir(), `img-in-${id}`);
   const outputPath = join(tmpdir(), `img-out-${id}.${outputFormat || "png"}`);
@@ -261,7 +262,7 @@ async function processWithMagick(inputBuffer, operations, outputFormat, outputQu
       switch (op.type) {
         case "text": {
           if (!op.content) throw new Error("text requires 'content'");
-          const textArgs = [];
+          const textArgs: any[] = [];
           textArgs.push("-gravity", op.gravity || "south");
           textArgs.push("-font", op.font || "Liberation-Sans");
           textArgs.push("-pointsize", String(op.fontSize || 32));
@@ -340,6 +341,7 @@ async function processWithMagick(inputBuffer, operations, outputFormat, outputQu
 
     return {
       buffer,
+      // @ts-expect-error - TS7053: implicit any index
       mimeType: MIME_MAP[outputFormat] || "image/png",
     };
   } finally {
@@ -364,7 +366,7 @@ async function processWithMagick(inputBuffer, operations, outputFormat, outputQu
  * @param {import("../utilities.js").EphemeralStore} params.store - Ephemeral store for ID lookups
  * @returns {Promise<{buffer: Buffer|null, mimeType: string|null, metadata?: object}>}
  */
-export async function processImage({ input, operations, outputFormat = "png", outputQuality = 80, store }) {
+export async function processImage({ input, operations, outputFormat = "png", outputQuality = 80, store }: any) {
   if (!operations || !Array.isArray(operations) || operations.length === 0) {
     throw new Error("'operations' must be a non-empty array of operation objects");
   }
@@ -389,12 +391,12 @@ export async function processImage({ input, operations, outputFormat = "png", ou
   const inputBuffer = await resolveInput(input, store);
 
   // Determine which engine to use
-  const needsMagick = operations.some((op) => MAGICK_OPERATIONS.has(op.type));
+  const needsMagick = operations.some((op: any) => MAGICK_OPERATIONS.has(op.type));
 
   // If we have a mix of Sharp and Magick operations, run Sharp first then Magick
   if (needsMagick) {
-    const sharpOps = operations.filter((op) => !MAGICK_OPERATIONS.has(op.type));
-    const magickOps = operations.filter((op) => MAGICK_OPERATIONS.has(op.type));
+    const sharpOps = operations.filter((op: any) => !MAGICK_OPERATIONS.has(op.type));
+    const magickOps = operations.filter((op: any) => MAGICK_OPERATIONS.has(op.type));
 
     let buffer = inputBuffer;
 

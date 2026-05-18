@@ -4,11 +4,11 @@ import { BESTBUY_CA_DEFAULT_SKUS } from "../constants.ts";
 
 const store = {
   /** @type {Object<string, { name: string, brand: string, category: string }>} */
-  watchlist: { ...BESTBUY_CA_DEFAULT_SKUS },
+  watchlist: { ...BESTBUY_CA_DEFAULT_SKUS } as Record<string, any>,
 
   statuses: {} as Record<string, any>,
-  lastCheck: null,
-  error: null,
+  lastCheck: null as any,
+  error: null as any,
 };
 
 // ─── Update Methods ────────────────────────────────────────────────
@@ -16,7 +16,7 @@ const store = {
 /**
  * Update availability statuses from a fetcher result set.
  */
-export function updateStatuses(results) {
+export function updateStatuses(results: any) {
   for (const result of results) {
     store.statuses[result.sku] = result;
   }
@@ -27,7 +27,7 @@ export function updateStatuses(results) {
 /**
  * Record an error from the collector.
  */
-export function setAvailabilityError(error) {
+export function setAvailabilityError(error: any) {
   store.error = {
     message: error.message,
     timestamp: new Date(),
@@ -42,7 +42,7 @@ export function setAvailabilityError(error) {
 export function getWatchlist() {
   return {
     count: Object.keys(store.watchlist).length,
-    skus: Object.entries(store.watchlist).map(([sku, meta]) => ({
+    skus: Object.entries(store.watchlist).map(([sku, meta]: any) => ({
       sku,
       ...meta,
     })),
@@ -67,7 +67,7 @@ export function getWatchlistMetadata() {
  * Add SKUs to the watchlist.
  * @param {Array<{ sku: string, name?: string, brand?: string, category?: string }>} items
  */
-export function addToWatchlist(items) {
+export function addToWatchlist(items: any) {
   let added = 0;
   for (const item of items) {
     if (!item.sku) continue;
@@ -85,7 +85,7 @@ export function addToWatchlist(items) {
 /**
  * Remove a SKU from the watchlist and its cached status.
  */
-export function removeFromWatchlist(sku) {
+export function removeFromWatchlist(sku: any) {
   const existed = sku in store.watchlist;
   delete store.watchlist[sku];
   delete store.statuses[sku];
@@ -102,7 +102,7 @@ export function getAll() {
   return {
     count: results.length,
     lastCheck: store.lastCheck,
-    inStockCount: results.filter((r) => r.inStock).length,
+    inStockCount: results.filter((r: any) => r.inStock).length,
     results,
   };
 }
@@ -110,7 +110,7 @@ export function getAll() {
 /**
  * Get availability for a single SKU.
  */
-export function getBySku(sku) {
+export function getBySku(sku: any) {
   return store.statuses[sku] || null;
 }
 
@@ -118,7 +118,7 @@ export function getBySku(sku) {
  * Get only in-stock items.
  */
 export function getInStock() {
-  const results = Object.values(store.statuses).filter((r) => r.inStock);
+  const results = Object.values(store.statuses).filter((r: any) => r.inStock);
   return {
     count: results.length,
     lastCheck: store.lastCheck,
@@ -130,7 +130,7 @@ export function getInStock() {
  * Get only out-of-stock items.
  */
 export function getOutOfStock() {
-  const results = Object.values(store.statuses).filter((r) => !r.inStock);
+  const results = Object.values(store.statuses).filter((r: any) => !r.inStock);
   return {
     count: results.length,
     lastCheck: store.lastCheck,
@@ -142,7 +142,7 @@ export function getOutOfStock() {
 
 export function getAvailabilityHealth() {
   const statusCount = Object.keys(store.statuses).length;
-  const inStock = Object.values(store.statuses).filter((r) => r.inStock).length;
+  const inStock = Object.values(store.statuses).filter((r: any) => r.inStock).length;
 
   return {
     watchlistSize: Object.keys(store.watchlist).length,

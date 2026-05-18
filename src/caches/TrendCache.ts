@@ -8,8 +8,8 @@ const cache: Record<string, any> = {};
 for (const source of Object.values(TREND_SOURCES)) {
   cache[source] = {
     trends: [],
-    lastFetch: null,
-    error: null,
+    lastFetch: null as any,
+    error: null as any,
   };
 }
 
@@ -20,11 +20,11 @@ for (const source of Object.values(TREND_SOURCES)) {
 
 
  */
-export function updateTrends(source, trends) {
+export function updateTrends(source: any, trends: any) {
   cache[source] = {
     trends,
     lastFetch: new Date().toISOString(),
-    error: null,
+    error: null as any,
   };
 }
 
@@ -33,7 +33,7 @@ export function updateTrends(source, trends) {
 
 
  */
-export function setTrendError(source, error) {
+export function setTrendError(source: any, error: any) {
   if (cache[source]) {
     cache[source].error = {
       message: error.message,
@@ -49,7 +49,7 @@ export function setTrendError(source, error) {
  * @returns {object} { count, sources, trends }
  */
 export function getAll() {
-  const allTrends = [];
+  const allTrends: any[] = [];
   const sourceSummary: Record<string, any> = {};
 
   for (const [source, data] of Object.entries(cache)) {
@@ -63,7 +63,7 @@ export function getAll() {
   return {
     count: allTrends.length,
     sources: sourceSummary,
-    trends: allTrends.sort((a, b) => (b.volume || 0) - (a.volume || 0)),
+    trends: allTrends.sort((a: any, b: any) => (b.volume || 0) - (a.volume || 0)),
   };
 }
 
@@ -72,16 +72,16 @@ export function getAll() {
 
  * @returns {object} { count, source, lastFetch, trends }
  */
-export function getBySource(source) {
+export function getBySource(source: any) {
   const data = cache[source];
   if (!data) {
-    return { count: 0, source, lastFetch: null, trends: [] };
+    return { count: 0, source, lastFetch: null as any, trends: [] };
   }
   return {
     count: data.trends.length,
     source,
     lastFetch: data.lastFetch,
-    trends: data.trends.sort((a, b) => (b.volume || 0) - (a.volume || 0)),
+    trends: data.trends.sort((a: any, b: any) => (b.volume || 0) - (a.volume || 0)),
   };
 }
 
@@ -90,12 +90,12 @@ export function getBySource(source) {
 
  * @returns {object} { count, category, trends }
  */
-export function getByCategory(category) {
-  const allTrends = [];
+export function getByCategory(category: any) {
+  const allTrends: any[] = [];
   for (const data of Object.values(cache)) {
     allTrends.push(
       ...data.trends.filter(
-        (t) =>
+        (t: any) =>
           t.category && t.category.toLowerCase() === category.toLowerCase(),
       ),
     );
@@ -104,7 +104,7 @@ export function getByCategory(category) {
   return {
     count: allTrends.length,
     category,
-    trends: allTrends.sort((a, b) => (b.volume || 0) - (a.volume || 0)),
+    trends: allTrends.sort((a: any, b: any) => (b.volume || 0) - (a.volume || 0)),
   };
 }
 
@@ -138,8 +138,8 @@ export function getCorrelatedTrends() {
 
   // Filter to topics in 2+ sources
   const correlated = Array.from(topicMap.values())
-    .filter((t) => t.sources.size >= 2)
-    .map((t) => ({
+    .filter((t: any) => t.sources.size >= 2)
+    .map((t: any) => ({
       name: t.name,
       normalizedName: t.normalizedName,
       sourceCount: t.sources.size,
@@ -148,7 +148,7 @@ export function getCorrelatedTrends() {
       entries: t.entries,
     }))
     .sort(
-      (a, b) => b.sourceCount - a.sourceCount || b.totalVolume - a.totalVolume,
+      (a: any, b: any) => b.sourceCount - a.sourceCount || b.totalVolume - a.totalVolume,
     );
 
   return {
@@ -162,14 +162,14 @@ export function getCorrelatedTrends() {
 
  * @returns {object} { count, query, trends }
  */
-export function searchTrends(query) {
+export function searchTrends(query: any) {
   const normalizedQuery = query.toLowerCase();
-  const allTrends = [];
+  const allTrends: any[] = [];
 
   for (const data of Object.values(cache)) {
     allTrends.push(
       ...data.trends.filter(
-        (t) => t.name.toLowerCase().includes(normalizedQuery) || t.normalizedName.includes(normalizedQuery),
+        (t: any) => t.name.toLowerCase().includes(normalizedQuery) || t.normalizedName.includes(normalizedQuery),
       ),
     );
   }
@@ -177,7 +177,7 @@ export function searchTrends(query) {
   return {
     count: allTrends.length,
     query,
-    trends: allTrends.sort((a, b) => (b.volume || 0) - (a.volume || 0)),
+    trends: allTrends.sort((a: any, b: any) => (b.volume || 0) - (a.volume || 0)),
   };
 }
 

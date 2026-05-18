@@ -46,7 +46,7 @@ const MACRO_PRESETS = {
 
 // ─── Mifflin-St Jeor BMR ──────────────────────────────────────
 
-function calculateBMR(sex, weightKg, heightCm, ageYears) {
+function calculateBMR(sex: any, weightKg: any, heightCm: any, ageYears: any) {
   // Mifflin-St Jeor (1990):
   //   Male:   10 × weight(kg) + 6.25 × height(cm) - 5 × age(y) + 5
   //   Female: 10 × weight(kg) + 6.25 × height(cm) - 5 × age(y) - 161
@@ -77,9 +77,9 @@ export function calculateCaloricNeeds({
   goal = "maintain",
   macroSplit = "balanced",
   bodyFatPct,
-}) {
+}: any) {
   // ── Validate required inputs ─────────────────────────────────
-  const errors = [];
+  const errors: any[] = [];
   if (!sex || !["male", "female"].includes(sex.toLowerCase())) {
     errors.push("'sex' must be 'male' or 'female'");
   }
@@ -102,6 +102,7 @@ export function calculateCaloricNeeds({
   const normalizedSplit = (macroSplit || "balanced").toLowerCase().replace(/[\s-]+/g, "_");
 
   // ── Resolve activity multiplier ──────────────────────────────
+  // @ts-expect-error - TS7053: implicit any index
   const activity = ACTIVITY_MULTIPLIERS[normalizedActivity];
   if (!activity) {
     return {
@@ -111,6 +112,7 @@ export function calculateCaloricNeeds({
   }
 
   // ── Resolve goal adjustment ──────────────────────────────────
+  // @ts-expect-error - TS7053: implicit any index
   const goalAdj = GOAL_ADJUSTMENTS[normalizedGoal];
   if (!goalAdj) {
     return {
@@ -120,6 +122,7 @@ export function calculateCaloricNeeds({
   }
 
   // ── Resolve macro split ──────────────────────────────────────
+  // @ts-expect-error - TS7053: implicit any index
   const split = MACRO_PRESETS[normalizedSplit];
   if (!split) {
     return {
@@ -159,7 +162,7 @@ export function calculateCaloricNeeds({
   };
 
   // ── Optional body composition ────────────────────────────────
-  let bodyComposition = null;
+  let bodyComposition: any = null;
   if (bodyFatPct && bodyFatPct > 0 && bodyFatPct < 100) {
     const fatMass = weightKg * (bodyFatPct / 100);
     const leanMass = weightKg - fatMass;
@@ -174,7 +177,7 @@ export function calculateCaloricNeeds({
   // ── BMI (informational) ──────────────────────────────────────
   const heightM = heightCm / 100;
   const bmi = weightKg / (heightM * heightM);
-  let bmiCategory;
+  let bmiCategory: any;
   if (bmi < 18.5) bmiCategory = "Underweight";
   else if (bmi < 25) bmiCategory = "Normal weight";
   else if (bmi < 30) bmiCategory = "Overweight";
@@ -210,17 +213,17 @@ export function calculateCaloricNeeds({
  */
 export function getCaloricNeedsOptions() {
   return {
-    activityLevels: Object.entries(ACTIVITY_MULTIPLIERS).map(([k, v]) => ({
+    activityLevels: Object.entries(ACTIVITY_MULTIPLIERS).map(([k, v]: any) => ({
       key: k,
       label: v.label,
       factor: v.factor,
     })),
-    goals: Object.entries(GOAL_ADJUSTMENTS).map(([k, v]) => ({
+    goals: Object.entries(GOAL_ADJUSTMENTS).map(([k, v]: any) => ({
       key: k,
       label: v.label,
       dailyDelta: v.delta,
     })),
-    macroSplits: Object.entries(MACRO_PRESETS).map(([k, v]) => ({
+    macroSplits: Object.entries(MACRO_PRESETS).map(([k, v]: any) => ({
       key: k,
       label: v.label,
       protein: v.protein,

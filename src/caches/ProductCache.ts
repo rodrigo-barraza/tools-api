@@ -5,50 +5,50 @@ import { PRODUCT_SOURCES, PRODUCT_CATEGORIES } from "../constants.ts";
 const store = {
   [PRODUCT_SOURCES.BESTBUY]: {
     products: [],
-    lastFetch: null,
-    error: null,
+    lastFetch: null as any,
+    error: null as any,
   },
   [PRODUCT_SOURCES.AMAZON]: {
     products: [],
-    lastFetch: null,
-    error: null,
+    lastFetch: null as any,
+    error: null as any,
   },
   [PRODUCT_SOURCES.PRODUCTHUNT]: {
     products: [],
-    lastFetch: null,
-    error: null,
+    lastFetch: null as any,
+    error: null as any,
   },
   [PRODUCT_SOURCES.EBAY]: {
     products: [],
-    lastFetch: null,
-    error: null,
+    lastFetch: null as any,
+    error: null as any,
   },
   [PRODUCT_SOURCES.ETSY]: {
     products: [],
-    lastFetch: null,
-    error: null,
+    lastFetch: null as any,
+    error: null as any,
   },
   [PRODUCT_SOURCES.COSTCO_US]: {
     products: [],
-    lastFetch: null,
-    error: null,
+    lastFetch: null as any,
+    error: null as any,
   },
   [PRODUCT_SOURCES.COSTCO_CA]: {
     products: [],
-    lastFetch: null,
-    error: null,
+    lastFetch: null as any,
+    error: null as any,
   },
 };
 
 // ─── Update Methods ────────────────────────────────────────────────
 
-export function updateProducts(source, products) {
+export function updateProducts(source: any, products: any) {
   store[source].products = products;
   store[source].lastFetch = new Date();
   store[source].error = null;
 }
 
-export function setProductError(source, error) {
+export function setProductError(source: any, error: any) {
   store[source].error = {
     message: error.message,
     timestamp: new Date(),
@@ -61,35 +61,35 @@ export function setProductError(source, error) {
  * Get all products across all sources, sorted by trending score.
  */
 export function getAll() {
-  const allProducts = Object.values(store).flatMap((s) => s.products);
+  const allProducts = Object.values(store).flatMap((s: any) => s.products);
   return {
     count: allProducts.length,
-    products: allProducts.sort((a, b) => b.trendingScore - a.trendingScore),
+    products: allProducts.sort((a: any, b: any) => b.trendingScore - a.trendingScore),
   };
 }
 
 /**
  * Get products from a specific source.
  */
-export function getBySource(source) {
+export function getBySource(source: any) {
   const entry = store[source];
   if (!entry) return { count: 0, products: [], error: "Unknown source" };
   return {
     source,
     count: entry.products.length,
     lastFetch: entry.lastFetch,
-    products: entry.products.sort((a, b) => b.trendingScore - a.trendingScore),
+    products: entry.products.sort((a: any, b: any) => b.trendingScore - a.trendingScore),
   };
 }
 
 /**
  * Get products filtered by unified category.
  */
-export function getByCategory(category) {
+export function getByCategory(category: any) {
   const allProducts = Object.values(store)
-    .flatMap((s) => s.products)
-    .filter((p) => p.category === category)
-    .sort((a, b) => b.trendingScore - a.trendingScore);
+    .flatMap((s: any) => s.products)
+    .filter((p: any) => p.category === category)
+    .sort((a: any, b: any) => b.trendingScore - a.trendingScore);
 
   return {
     category,
@@ -101,10 +101,10 @@ export function getByCategory(category) {
 /**
  * Get top trending products (cross-source, ranked by composite score).
  */
-export function getTrending(limit = 50) {
+export function getTrending(limit: any = 50) {
   const allProducts = Object.values(store)
-    .flatMap((s) => s.products)
-    .sort((a, b) => b.trendingScore - a.trendingScore)
+    .flatMap((s: any) => s.products)
+    .sort((a: any, b: any) => b.trendingScore - a.trendingScore)
     .slice(0, limit);
 
   return {
@@ -117,7 +117,7 @@ export function getTrending(limit = 50) {
  * List all available categories with product counts.
  */
 export function getCategories() {
-  const allProducts = Object.values(store).flatMap((s) => s.products);
+  const allProducts = Object.values(store).flatMap((s: any) => s.products);
   const categoryMap: Record<string, any> = {};
 
   for (const product of allProducts) {
@@ -131,8 +131,8 @@ export function getCategories() {
 
   // Convert Sets to arrays and sort by count
   const categories = Object.values(categoryMap)
-    .map((c) => ({ ...c, sources: [...c.sources] }))
-    .sort((a, b) => b.count - a.count);
+    .map((c: any) => ({ ...c, sources: [...c.sources] }))
+    .sort((a: any, b: any) => b.count - a.count);
 
   // Also include any configured categories that have no products yet
   const allCategoryValues = Object.values(PRODUCT_CATEGORIES);
@@ -151,12 +151,12 @@ export function getCategories() {
 /**
  * Simple in-memory search by product name.
  */
-export function searchByName(query) {
+export function searchByName(query: any) {
   const lower = query.toLowerCase();
   const allProducts = Object.values(store)
-    .flatMap((s) => s.products)
-    .filter((p) => p.name.toLowerCase().includes(lower))
-    .sort((a, b) => b.trendingScore - a.trendingScore);
+    .flatMap((s: any) => s.products)
+    .filter((p: any) => p.name.toLowerCase().includes(lower))
+    .sort((a: any, b: any) => b.trendingScore - a.trendingScore);
 
   return {
     query,

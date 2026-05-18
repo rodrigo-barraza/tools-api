@@ -9,7 +9,7 @@ import { TRANSLINK_BASE_URL } from "../../constants.ts";
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
-async function get(path) {
+async function get(path: any) {
   if (!CONFIG.TRANSLINK_API_KEY) {
     throw new Error("TransLink API key not configured");
   }
@@ -34,7 +34,7 @@ async function get(path) {
 
 
  */
-export async function getNextBus(stopNo, routeNo) {
+export async function getNextBus(stopNo: any, routeNo: any) {
   let path = `/stops/${stopNo}/estimates`;
   if (routeNo) {
     path += `?routeNo=${encodeURIComponent(routeNo)}`;
@@ -46,11 +46,11 @@ export async function getNextBus(stopNo, routeNo) {
   return {
     stopNo,
     count: estimates.length,
-    routes: estimates.map((r) => ({
+    routes: estimates.map((r: any) => ({
       routeNo: r.RouteNo,
       routeName: r.RouteName,
       direction: r.Direction,
-      schedules: (r.Schedules || []).map((s) => ({
+      schedules: (r.Schedules || []).map((s: any) => ({
         expectedLeaveTime: s.ExpectedLeaveTime,
         expectedCountdown: s.ExpectedCountdown,
         scheduleStatus: s.ScheduleStatus, // "*" = on time, "-" = late, "+" = early
@@ -71,7 +71,7 @@ export async function getNextBus(stopNo, routeNo) {
 
 
  */
-export async function getStopInfo(stopNo) {
+export async function getStopInfo(stopNo: any) {
   const data = await get(`/stops/${stopNo}`);
 
   return {
@@ -88,7 +88,7 @@ export async function getStopInfo(stopNo) {
     routes: data.Routes
       ? String(data.Routes)
           .split(",")
-          .map((r) => r.trim())
+          .map((r: any) => r.trim())
       : [],
   };
 }
@@ -100,14 +100,14 @@ export async function getStopInfo(stopNo) {
 
 
  */
-export async function findStopsNearby(lat, lng, radius = 500) {
+export async function findStopsNearby(lat: any, lng: any, radius: any = 500) {
   const path = `/stops?lat=${lat}&long=${lng}&radius=${Math.min(radius, 2000)}`;
   const data = await get(path);
   const stops = Array.isArray(data) ? data : [];
 
   return {
     count: stops.length,
-    stops: stops.slice(0, 20).map((s) => ({
+    stops: stops.slice(0, 20).map((s: any) => ({
       stopNo: s.StopNo,
       name: s.Name,
       city: s.City,
@@ -119,7 +119,7 @@ export async function findStopsNearby(lat, lng, radius = 500) {
       routes: s.Routes
         ? String(s.Routes)
             .split(",")
-            .map((r) => r.trim())
+            .map((r: any) => r.trim())
         : [],
     })),
   };
@@ -132,14 +132,14 @@ export async function findStopsNearby(lat, lng, radius = 500) {
 
 
  */
-export async function getRouteInfo(routeNo) {
+export async function getRouteInfo(routeNo: any) {
   const data = await get(`/routes/${encodeURIComponent(routeNo)}`);
 
   return {
     routeNo: data.RouteNo,
     name: data.Name,
     operatingCompany: data.OperatingCompany,
-    patterns: (data.Patterns || []).map((p) => ({
+    patterns: (data.Patterns || []).map((p: any) => ({
       patternNo: p.PatternNo,
       destination: p.Destination,
       direction: p.Direction,

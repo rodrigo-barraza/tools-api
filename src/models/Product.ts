@@ -1,7 +1,7 @@
 import { getDB } from "../db.ts";
 import logger from "../logger.ts";
 
-let productCollection;
+let productCollection: any;
 
 /**
  * Set up the products collection with indexes.
@@ -28,10 +28,10 @@ export async function setupProductCollection() {
 /**
  * Bulk upsert products.
  */
-export async function upsertProducts(products) {
+export async function upsertProducts(products: any) {
   if (!products.length) return { upserted: 0, modified: 0 };
 
-  const ops = products.map((p) => ({
+  const ops = products.map((p: any) => ({
     updateOne: {
       filter: { sourceId: p.sourceId, source: p.source },
       update: {
@@ -68,10 +68,10 @@ export async function upsertProducts(products) {
  * Query recent products from the database.
  */
 export async function getRecentProducts(
-  hours = 24,
-  category = null,
-  source = null,
-  limit = 50,
+  hours: any = 24,
+  category: any = null,
+  source: any = null,
+  limit: any = 50,
 ) {
   const cutoff = new Date(Date.now() - hours * 3_600_000);
   const filter: Record<string, any> = { lastSeenAt: { $gte: cutoff } };
@@ -88,7 +88,7 @@ export async function getRecentProducts(
 /**
  * Full-text search products.
  */
-export async function searchProducts(query, limit = 50) {
+export async function searchProducts(query: any, limit: any = 50) {
   return productCollection
     .find({ $text: { $search: query } })
     .sort({ score: { $meta: "textScore" }, trendingScore: -1 })

@@ -15,7 +15,7 @@ import { WIKIPEDIA_SUMMARY_BASE_URL } from "../../constants.ts";
 
 
  */
-export async function getArticleSummary(title) {
+export async function getArticleSummary(title: any) {
   const encoded = encodeURIComponent(title.replace(/\s+/g, "_"));
   const url = `${WIKIPEDIA_SUMMARY_BASE_URL}/page/summary/${encoded}`;
   const response = await fetch(url, {
@@ -53,7 +53,7 @@ export async function getArticleSummary(title) {
 
 
  */
-export async function getOnThisDay(type = "selected", month, day) {
+export async function getOnThisDay(type: any = "selected", month: any, day: any) {
   const now = new Date();
   const m = month || now.getMonth() + 1;
   const d = day || now.getDate();
@@ -77,10 +77,10 @@ export async function getOnThisDay(type = "selected", month, day) {
     date: `${padM}-${padD}`,
     type,
     count: entries.length,
-    events: entries.slice(0, 20).map((e) => ({
+    events: entries.slice(0, 20).map((e: any) => ({
       year: e.year || null,
       text: e.text || null,
-      pages: (e.pages || []).slice(0, 3).map((p) => ({
+      pages: (e.pages || []).slice(0, 3).map((p: any) => ({
         title: p.title,
         description: p.description || null,
         extract: p.extract || null,

@@ -38,7 +38,7 @@ export async function fetchAirQuality() {
 
     // Hourly AQ forecast
     hourlyAirQuality: data.hourly
-      ? data.hourly.time.map((time, i) => ({
+      ? data.hourly.time.map((time: any, i: any) => ({
           time,
           usAqi: data.hourly.us_aqi[i],
           pm25: data.hourly.pm2_5[i],

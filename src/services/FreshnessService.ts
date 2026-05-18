@@ -18,11 +18,11 @@ import logger from "../logger.ts";
  * @returns {Promise<boolean>} Whether the collector ran (true = fetched, false = restored from DB)
  */
 export async function collectIfStale(
-  label,
-  collection,
-  ttlMs,
-  collectFn,
-  restoreFn,
+  label: any,
+  collection: any,
+  ttlMs: any,
+  collectFn: any,
+  restoreFn: any,
 ) {
   const state = await loadState(collection);
 
@@ -58,7 +58,7 @@ export async function collectIfStale(
  *
  * @param {Array<{ label: string, collection: string, ttl: number, collectFn: Function, restoreFn?: Function, delay?: number }>} tasks
  */
-export function startCollectorLoop(tasks) {
+export function startCollectorLoop(tasks: any) {
   for (const task of tasks) {
     setTimeout(
       () =>

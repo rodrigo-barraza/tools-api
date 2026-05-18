@@ -8,7 +8,7 @@ const CDX_URL = "https://web.archive.org/cdx/search/cdx";
  * @param {string} url URL to check
  * @param {string} timestamp Optional YYYYMMDD timestamp to find closest snapshot to
  */
-export async function getSnapshot(url, timestamp) {
+export async function getSnapshot(url: any, timestamp: any) {
   const params = new URLSearchParams({ url });
   if (timestamp) params.set("timestamp", timestamp);
 
@@ -46,7 +46,7 @@ export async function getSnapshot(url, timestamp) {
  * @param {string} from Start date (YYYYMMDD)
  * @param {string} to End date (YYYYMMDD)
  */
-export async function getSnapshotHistory(url, { limit = 20, from, to }: Record<string, any> = {}) {
+export async function getSnapshotHistory(url: any, { limit = 20, from, to }: Record<string, any> = {}) {
   const params = new URLSearchParams({
     url,
     output: "json",
@@ -69,9 +69,9 @@ export async function getSnapshotHistory(url, { limit = 20, from, to }: Record<s
   const headers = data[0];
   const rows = data.slice(1);
 
-  const snapshots = rows.map((row) => {
+  const snapshots = rows.map((row: any) => {
     const object: Record<string, any> = {};
-    headers.forEach((h, i) => { object[h] = row[i]; });
+    headers.forEach((h: any, i: any) => { object[h] = row[i]; });
     return {
       timestamp: object.timestamp,
       date: formatWaybackTimestamp(object.timestamp),
@@ -94,7 +94,7 @@ export async function getSnapshotHistory(url, { limit = 20, from, to }: Record<s
 
 // ── Helpers ─────────────────────────────────────────────────────
 
-function formatWaybackTimestamp(ts) {
+function formatWaybackTimestamp(ts: any) {
   if (!ts || ts.length < 8) return null;
   const y = ts.slice(0, 4);
   const m = ts.slice(4, 6);

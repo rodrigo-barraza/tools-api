@@ -11,16 +11,16 @@ import {
 } from "../caches/CommodityCache.js";
 import { ASSET_CATEGORIES } from "../constants.js";
 const router = Router();
-router.get("/commodities", (_req, res) => {
+router.get("/commodities", (_req: any, res: any) => {
   res.json(getAllCommodities());
 });
-router.get("/commodities/summary", (_req, res) => {
+router.get("/commodities/summary", (_req: any, res: any) => {
   res.json(getCommoditySummary());
 });
-router.get("/commodities/categories", (_req, res) => {
+router.get("/commodities/categories", (_req: any, res: any) => {
   res.json(Object.values(ASSET_CATEGORIES));
 });
-router.get("/commodities/category/:category", (req, res) => {
+router.get("/commodities/category/:category", (req: any, res: any) => {
   const category = (req.params.category as string).toLowerCase();
   const valid = Object.values(ASSET_CATEGORIES);
   if (!valid.includes(category)) {
@@ -30,7 +30,7 @@ router.get("/commodities/category/:category", (req, res) => {
   }
   res.json(getCommoditiesByCategory(category));
 });
-router.get("/commodities/ticker/:ticker", (req, res) => {
+router.get("/commodities/ticker/:ticker", (req: any, res: any) => {
   const ticker = (req.params.ticker as string).toUpperCase();
   const commodity = getCommodityByTicker(ticker);
   if (!commodity) {
@@ -38,7 +38,7 @@ router.get("/commodities/ticker/:ticker", (req, res) => {
   }
   res.json(commodity);
 });
-router.get("/commodities/history/:ticker", asyncHandler(async (req, res) => {
+router.get("/commodities/history/:ticker", asyncHandler(async (req: any, res: any) => {
   const ticker = (req.params.ticker as string).toUpperCase();
   const hours = parseIntParam(req.query.hours as string, 24);
   const history = await getHistory(ticker, hours);
@@ -48,7 +48,7 @@ export function getMarketHealth() {
   return { commodities: getCommodityHealth() };
 }
 // ── Unified Commodities Dispatcher ─────────────────────────────────
-router.get("/commodities/data", asyncHandler(async (req, res) => {
+router.get("/commodities/data", asyncHandler(async (req: any, res: any) => {
   const { action, category, ticker, hours: rawHours } = req.query as any;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["summary", "category", "ticker", "categories", "history"] });
   switch (action) {

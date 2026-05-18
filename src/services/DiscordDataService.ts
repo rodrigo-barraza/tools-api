@@ -44,7 +44,7 @@ const BADGE_FLAGS = [
 
  * @returns {Array<{id: string, label: string}>}
  */
-function extractBadges(flags) {
+function extractBadges(flags: any) {
   if (!flags) return [];
   // discord.js stores BitField as { bitfield: <number> }
   const bits = typeof flags === "object" && flags.bitfield != null
@@ -52,8 +52,8 @@ function extractBadges(flags) {
     : Number(flags);
   if (!bits || isNaN(bits)) return [];
   return BADGE_FLAGS
-    .filter((f) => (bits & f.bit) === f.bit)
-    .map((f) => ({ id: f.id, label: f.label }));
+    .filter((f: any) => (bits & f.bit) === f.bit)
+    .map((f: any) => ({ id: f.id, label: f.label }));
 }
 
 /**
@@ -66,13 +66,13 @@ function extractBadges(flags) {
 
  * @returns {Array<{name: string, color: string|null, iconUrl: string|null}>}
  */
-function extractRoleTags(roles, guildId) {
+function extractRoleTags(roles: any, guildId: any) {
   if (!Array.isArray(roles) || roles.length === 0) return [];
   return roles
-    .filter((r) => r.id !== guildId && r.name !== "@everyone")
-    .sort((a, b) => (b.position ?? 0) - (a.position ?? 0))
+    .filter((r: any) => r.id !== guildId && r.name !== "@everyone")
+    .sort((a: any, b: any) => (b.position ?? 0) - (a.position ?? 0))
     .slice(0, 3)
-    .map((r) => ({
+    .map((r: any) => ({
       name: r.name,
       color: r.hexColor && r.hexColor !== "#000000" ? r.hexColor : null,
       iconUrl: r.iconURL || null,
@@ -86,7 +86,7 @@ function extractRoleTags(roles, guildId) {
 
 
  */
-function buildAvatarUrl(author) {
+function buildAvatarUrl(author: any) {
   if (!author) return null;
   if (author.avatar && author.id) {
     const ext = author.avatar.startsWith("a_") ? "gif" : "png";
@@ -103,7 +103,7 @@ function buildAvatarUrl(author) {
 
 
  */
-function resolveArchivedUrl(url, archiveMap) {
+function resolveArchivedUrl(url: any, archiveMap: any) {
   if (!url || !archiveMap) return url;
   const ref = archiveMap[url];
   // If the entry was marked as expired during backfill, it has no publicUrl
@@ -223,7 +223,7 @@ const DiscordDataService = {
         })
         .toArray();
 
-      const formatted = messages.map((m) => ({
+      const formatted = messages.map((m: any) => ({
         id: m.id,
         // Truncate content to 120 chars to save tokens
         content: m.content?.length > 120
@@ -293,12 +293,12 @@ const DiscordDataService = {
       .toArray();
 
     // Format into a clean shape with human-readable names
-    const formatted = messages.map((m) => {
+    const formatted = messages.map((m: any) => {
       // Build attachment list with URLs for image rendering.
       // Prefer archived MinIO URLs over potentially-expired Discord CDN URLs.
       const archive = m.mediaArchive || null;
       const attachments = Array.isArray(m.attachments) && m.attachments.length > 0
-        ? m.attachments.map((a) => {
+        ? m.attachments.map((a: any) => {
           const resolvedUrl = resolveArchivedUrl(a.url, archive) || resolveArchivedUrl(a.proxyURL, archive) || null;
           const resolvedProxy = resolveArchivedUrl(a.proxyURL, archive) || null;
           return {
@@ -317,7 +317,7 @@ const DiscordDataService = {
       // Resolve archived URLs for embed media as well (belt-and-suspenders).
       const embeds = Array.isArray(m.embeds) && m.embeds.length > 0
         ? m.embeds
-          .map((e) => {
+          .map((e: any) => {
             // Skip empty embeds
             if (!e.title && !e.description && !e.url && !e.image && !e.thumbnail && !e.video) return null;
             return {
@@ -397,7 +397,7 @@ const DiscordDataService = {
         replyTo: m.reference?.messageId || null,
         // Emoji reactions (array of { emoji, count, me })
         ...(Array.isArray(m.reactions) && m.reactions.length > 0 && {
-          reactions: m.reactions.map((r) => ({
+          reactions: m.reactions.map((r: any) => ({
             emoji: {
               id: r.emoji?.id || null,
               name: r.emoji?.name || null,
@@ -460,7 +460,7 @@ const DiscordDataService = {
     const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
     // ── Build group expression based on groupBy dimension ──────
-    let groupId;
+    let groupId: any;
 
     switch (groupBy) {
       case "user":
@@ -537,7 +537,7 @@ const DiscordDataService = {
     ]);
 
     // ── Format results with human-readable labels ─────────────
-    const groups = results.map((r) => {
+    const groups = results.map((r: any) => {
       const base: Record<string, any> = { count: r.count };
 
       switch (groupBy) {
@@ -684,17 +684,17 @@ const DiscordDataService = {
       avgMessagesPerUser: uniqueUsers > 0
         ? Math.round(totalMessages / uniqueUsers * 10) / 10
         : 0,
-      topUsers: topUsers.map((u) => ({
+      topUsers: topUsers.map((u: any) => ({
         userId: u._id,
         username: u.username,
         messageCount: u.count,
         lastActive: new Date(u.lastActive).toISOString(),
       })),
-      channelBreakdown: channelBreakdown.map((c) => ({
+      channelBreakdown: channelBreakdown.map((c: any) => ({
         channelId: c._id,
         messageCount: c.count,
       })),
-      hourlyActivity: hourlyActivity.map((h) => ({
+      hourlyActivity: hourlyActivity.map((h: any) => ({
         hour: h._id,
         messageCount: h.count,
       })),

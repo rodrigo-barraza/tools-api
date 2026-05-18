@@ -23,7 +23,7 @@ import logger from "../logger.ts";
 
 // ─── Collector Factory ─────────────────────────────────────────────
 
-function createEventCollector(collection, source, fetchFn) {
+function createEventCollector(collection: any, source: any, fetchFn: any) {
   return async function () {
     try {
       const events = await fetchFn();
@@ -32,7 +32,7 @@ function createEventCollector(collection, source, fetchFn) {
       logger.info(
         `[${collection}] ✅ ${events.length} events | ${result?.upserted || 0} new, ${result?.modified || 0} updated`,
       );
-    } catch (error) {
+    } catch (error: any) {
       setError(source, error);
       logger.error(`[${collection}] ❌ ${error.message}`);
     }
@@ -77,8 +77,8 @@ const collectGooglePlaces = createEventCollector(
 async function collectUniversities() {
   try {
     const events = await fetchUniversityEvents();
-    const ubcEvents = events.filter((e) => e.source === EVENT_SOURCES.UBC);
-    const sfuEvents = events.filter((e) => e.source === EVENT_SOURCES.SFU);
+    const ubcEvents = events.filter((e: any) => e.source === EVENT_SOURCES.UBC);
+    const sfuEvents = events.filter((e: any) => e.source === EVENT_SOURCES.SFU);
 
     if (ubcEvents.length > 0) {
       const r = await updateEvents(EVENT_SOURCES.UBC, ubcEvents);
@@ -97,7 +97,7 @@ async function collectUniversities() {
     }
 
     await saveState("events_universities", { ubcEvents, sfuEvents });
-  } catch (error) {
+  } catch (error: any) {
     setError(EVENT_SOURCES.UBC, error);
     setError(EVENT_SOURCES.SFU, error);
     logger.error(`[events_universities] ❌ ${error.message}`);
@@ -107,9 +107,9 @@ async function collectUniversities() {
 async function collectSports() {
   try {
     const events = await fetchSportsEvents();
-    const nhl = events.filter((e) => e.source === EVENT_SOURCES.NHL);
-    const caps = events.filter((e) => e.source === EVENT_SOURCES.WHITECAPS);
-    const lions = events.filter((e) => e.source === EVENT_SOURCES.BC_LIONS);
+    const nhl = events.filter((e: any) => e.source === EVENT_SOURCES.NHL);
+    const caps = events.filter((e: any) => e.source === EVENT_SOURCES.WHITECAPS);
+    const lions = events.filter((e: any) => e.source === EVENT_SOURCES.BC_LIONS);
 
     if (nhl.length > 0) {
       const r = await updateEvents(EVENT_SOURCES.NHL, nhl);
@@ -134,7 +134,7 @@ async function collectSports() {
     }
 
     await saveState("events_sports", { nhl, caps, lions });
-  } catch (error) {
+  } catch (error: any) {
     setError(EVENT_SOURCES.NHL, error);
     setError(EVENT_SOURCES.WHITECAPS, error);
     setError(EVENT_SOURCES.BC_LIONS, error);
@@ -174,7 +174,7 @@ const STARTUP_TASKS = [
     collection: "events_universities",
     ttl: UNIVERSITY_INTERVAL_MS,
     collectFn: collectUniversities,
-    restoreFn: (data) => {
+    restoreFn: (data: any) => {
       if (data.ubcEvents?.length)
         restoreEvents(EVENT_SOURCES.UBC, data.ubcEvents);
       if (data.sfuEvents?.length)
@@ -195,7 +195,7 @@ const STARTUP_TASKS = [
     collection: "events_sports",
     ttl: SPORTS_INTERVAL_MS,
     collectFn: collectSports,
-    restoreFn: (data) => {
+    restoreFn: (data: any) => {
       if (data.nhl?.length) restoreEvents(EVENT_SOURCES.NHL, data.nhl);
       if (data.caps?.length) restoreEvents(EVENT_SOURCES.WHITECAPS, data.caps);
       if (data.lions?.length)
@@ -225,9 +225,9 @@ const STARTUP_TASKS = [
 
 export function startEventCollectors() {
   // Set default restoreFn for simple event tasks (those with a source key)
-  const tasks = STARTUP_TASKS.map((task) => ({
+  const tasks = STARTUP_TASKS.map((task: any) => ({
     ...task,
-    restoreFn: task.restoreFn || ((data) => restoreEvents(task.source, data)),
+    restoreFn: task.restoreFn || ((data: any) => restoreEvents(task.source, data)),
   }));
 
   startCollectorLoop(tasks);

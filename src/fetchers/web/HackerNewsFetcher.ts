@@ -13,7 +13,7 @@ const HN_URL_REGEX =
 
 
  */
-function parseHnInput(input) {
+function parseHnInput(input: any) {
   if (!input || typeof input !== "string") return null;
   const trimmed = input.trim();
 
@@ -33,16 +33,16 @@ function parseHnInput(input) {
 
 
  */
-async function fetchComments(ids, remaining, depth = 0) {
+async function fetchComments(ids: any, remaining: any, depth: any = 0) {
   if (!ids?.length || remaining <= 0 || depth > 3) return [];
 
   const batch = ids.slice(0, remaining);
-  const comments = [];
+  const comments: any[] = [];
 
   const items = await Promise.all(
-    batch.map((id) =>
+    batch.map((id: any) =>
       fetch(`${HN_API}/item/${id}.json`)
-        .then((r) => (r.ok ? r.json() : null))
+        .then((r: any) => (r.ok ? r.json() : null))
         .catch(() => null),
     ),
   );
@@ -81,7 +81,7 @@ async function fetchComments(ids, remaining, depth = 0) {
 
 
  */
-export async function getHackerNewsThread(input, options: Record<string, any> = {}) {
+export async function getHackerNewsThread(input: any, options: Record<string, any> = {}) {
   const itemId = parseHnInput(input);
   if (!itemId) {
     return { error: `Invalid Hacker News URL or ID: "${input}"` };
@@ -121,7 +121,7 @@ export async function getHackerNewsThread(input, options: Record<string, any> = 
     }
 
     return result;
-  } catch (error) {
+  } catch (error: any) {
     return { error: `HN fetch failed: ${error.message}` };
   }
 }

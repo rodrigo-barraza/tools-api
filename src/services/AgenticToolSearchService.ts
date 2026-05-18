@@ -9,7 +9,7 @@ import { getToolSchemas } from "./ToolSchemaService.ts";
 
  * @returns {{ matches: Array, total: number, query: string }}
  */
-export function agenticToolSearch(query, { domain, label, limit = 20 }: Record<string, any> = {}) {
+export function agenticToolSearch(query: any, { domain, label, limit = 20 }: Record<string, any> = {}) {
   const allSchemas = getToolSchemas();
 
   if (!allSchemas || allSchemas.length === 0) {
@@ -24,7 +24,7 @@ export function agenticToolSearch(query, { domain, label, limit = 20 }: Record<s
   if (domain) {
     const domainLower = domain.toLowerCase();
     filtered = filtered.filter(
-      (t) => t.domain && t.domain.toLowerCase() === domainLower,
+      (t: any) => t.domain && t.domain.toLowerCase() === domainLower,
     );
   }
 
@@ -32,18 +32,18 @@ export function agenticToolSearch(query, { domain, label, limit = 20 }: Record<s
   if (label) {
     const labelLower = label.toLowerCase();
     filtered = filtered.filter(
-      (t) =>
+      (t: any) =>
         t.labels &&
         Object.values(t.labels).some(
-          (v) => typeof v === "string" && v.toLowerCase() === labelLower,
+          (v: any) => typeof v === "string" && v.toLowerCase() === labelLower,
         ),
     );
   }
 
   // Keyword search on name + description
-  let scored;
+  let scored: any;
   if (queryLower) {
-    scored = filtered.map((t) => {
+    scored = filtered.map((t: any) => {
       const nameLower = (t.name || "").toLowerCase();
       const descLower = (t.description || "").toLowerCase();
 
@@ -64,17 +64,17 @@ export function agenticToolSearch(query, { domain, label, limit = 20 }: Record<s
       }
 
       return { schema: t, score };
-    }).filter((s) => s.score > 0);
+    }).filter((s: any) => s.score > 0);
   } else {
     // No keyword query — just domain/label filtering, return all matches
-    scored = filtered.map((t) => ({ schema: t, score: 1 }));
+    scored = filtered.map((t: any) => ({ schema: t, score: 1 }));
   }
 
   // Sort by score descending
-  scored.sort((a, b) => b.score - a.score);
+  scored.sort((a: any, b: any) => b.score - a.score);
 
   const capped = Math.min(Math.max(1, limit), 50);
-  const matches = scored.slice(0, capped).map(({ schema }) => ({
+  const matches = scored.slice(0, capped).map(({ schema }: any) => ({
     name: schema.name,
     description: schema.description,
     domain: schema.domain || null,

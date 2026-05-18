@@ -100,7 +100,7 @@ const INTERACTION_DB = [
 
 // ─── Search Helpers ────────────────────────────────────────────
 
-function normalizeSearch(str) {
+function normalizeSearch(str: any) {
   return str.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
 }
 
@@ -114,7 +114,7 @@ function normalizeSearch(str) {
 
  * @returns {object} Interaction report
  */
-export function checkDrugNutrientInteractions({ drug, nutrients }) {
+export function checkDrugNutrientInteractions({ drug, nutrients }: any) {
   if (!drug) {
     return { error: "'drug' parameter is required (e.g. 'metformin', 'lisinopril', 'omeprazole')" };
   }
@@ -123,18 +123,18 @@ export function checkDrugNutrientInteractions({ drug, nutrients }) {
 
   // Filter nutrients if specified
   const nutrientFilter = nutrients
-    ? nutrients.split(",").map((n) => normalizeSearch(n)).filter(Boolean)
+    ? nutrients.split(",").map((n: any) => normalizeSearch(n)).filter(Boolean)
     : null;
 
   // Find matching interactions
-  const matches = INTERACTION_DB.filter((entry) => {
+  const matches = INTERACTION_DB.filter((entry: any) => {
     if (!entry.drugPattern.test(drug) && !entry.drugPattern.test(normalizedDrug)) {
       return false;
     }
     if (nutrientFilter) {
       const entryNutrient = normalizeSearch(entry.nutrient);
       return nutrientFilter.some(
-        (n) => entryNutrient.includes(n) || n.includes(entryNutrient),
+        (n: any) => entryNutrient.includes(n) || n.includes(entryNutrient),
       );
     }
     return true;
@@ -143,7 +143,8 @@ export function checkDrugNutrientInteractions({ drug, nutrients }) {
   // Sort by severity
   const severityOrder = { major: 0, moderate: 1, minor: 2 };
   matches.sort(
-    (a, b) => (severityOrder[a.severity] ?? 99) - (severityOrder[b.severity] ?? 99),
+    // @ts-expect-error - TS7053: implicit any index
+    (a: any, b: any) => (severityOrder[a.severity] ?? 99) - (severityOrder[b.severity] ?? 99),
   );
 
   const severityIcon = { major: "🔴", moderate: "🟡", minor: "🟢" };
@@ -151,10 +152,11 @@ export function checkDrugNutrientInteractions({ drug, nutrients }) {
   return {
     drug,
     interactionCount: matches.length,
-    interactions: matches.map((m) => ({
+    interactions: matches.map((m: any) => ({
       nutrient: m.nutrient,
       effect: m.effect,
       severity: m.severity,
+      // @ts-expect-error - TS7053: implicit any index
       icon: severityIcon[m.severity] || "⚪",
       description: m.description,
       recommendation: m.recommendation,

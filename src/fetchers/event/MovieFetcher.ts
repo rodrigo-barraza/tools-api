@@ -35,7 +35,7 @@ export async function fetchMovieEvents() {
   // Also fetch upcoming movies
   const upcomingResponse = await fetch(`${BASE_URL}/movie/upcoming?${params}`);
 
-  let upcomingMovies = [];
+  let upcomingMovies: any[] = [];
   if (upcomingResponse.ok) {
     const upcomingData = await upcomingResponse.json();
     upcomingMovies = upcomingData.results || [];
@@ -45,13 +45,13 @@ export async function fetchMovieEvents() {
 
   // Deduplicate by ID
   const seen = new Set();
-  const uniqueMovies = allMovies.filter((movie) => {
+  const uniqueMovies = allMovies.filter((movie: any) => {
     if (seen.has(movie.id)) return false;
     seen.add(movie.id);
     return true;
   });
 
-  return uniqueMovies.map((movie) => ({
+  return uniqueMovies.map((movie: any) => ({
     sourceId: `tmdb-${movie.id}`,
     source: EVENT_SOURCES.TMDB,
     name: movie.title,

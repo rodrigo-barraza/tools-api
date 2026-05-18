@@ -29,7 +29,7 @@ function evictStaleEntries() {
   // If still over limit after TTL eviction, drop oldest half
   if (ipCache.size > MAX_CACHE_SIZE) {
     const entries = [...ipCache.entries()].sort(
-      (a, b) => a[1].fetchedAt - b[1].fetchedAt,
+      (a: any, b: any) => a[1].fetchedAt - b[1].fetchedAt,
     );
     const toRemove = Math.floor(entries.length / 2);
     for (let i = 0; i < toRemove; i++) {
@@ -45,7 +45,7 @@ function evictStaleEntries() {
 
 
  */
-export async function lookupIp(ip) {
+export async function lookupIp(ip: any) {
   const targetIp = ip && ip !== "self" ? ip : "";
 
   // Check cache
@@ -70,8 +70,8 @@ export async function lookupIp(ip) {
   const data = await response.json();
 
   // Parse lat/lng from "loc" field (format: "49.2827,-123.1207")
-  let latitude = null;
-  let longitude = null;
+  let latitude: any = null;
+  let longitude: any = null;
   if (data.loc) {
     const [lat, lng] = data.loc.split(",").map(Number);
     latitude = lat;
@@ -106,12 +106,12 @@ export async function lookupIp(ip) {
 
 
  */
-export async function batchLookupIps(ips) {
+export async function batchLookupIps(ips: any) {
   const results = await Promise.allSettled(
-    ips.slice(0, 20).map((ip) => lookupIp(ip)),
+    ips.slice(0, 20).map((ip: any) => lookupIp(ip)),
   );
 
-  return results.map((r, i) => ({
+  return results.map((r: any, i: any) => ({
     ip: ips[i],
     ...(r.status === "fulfilled" ? r.value : { error: r.reason.message }),
   }));

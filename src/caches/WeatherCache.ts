@@ -14,19 +14,19 @@ const cache = {
 
   // Last fetch timestamps per source
   lastFetch: {
-    openmeteo: null,
-    airquality: null,
-    tomorrowio: null,
-    tomorrowio_daily: null,
-  },
+    openmeteo: null as any,
+    airquality: null as any,
+    tomorrowio: null as any,
+    tomorrowio_daily: null as any,
+  } as Record<string, any>,
 
   // Error tracking
   errors: {
-    openmeteo: null,
-    airquality: null,
-    tomorrowio: null,
-    tomorrowio_daily: null,
-  },
+    openmeteo: null as any,
+    airquality: null as any,
+    tomorrowio: null as any,
+    tomorrowio_daily: null as any,
+  } as Record<string, any>,
 
   // Tracks which sources have reported since last persist
   pendingSources: new Set(),
@@ -39,12 +39,12 @@ const ALL_SOURCES = [
   "tomorrowio_daily",
 ];
 let allSourcesReady = false;
-let lastPersistedHash = null;
+let lastPersistedHash: any = null;
 
 /**
  * Hash the current snapshot for change detection.
  */
-function hashSnapshot(data) {
+function hashSnapshot(data: any) {
   return createHash("md5").update(JSON.stringify(data)).digest("hex");
 }
 
@@ -52,7 +52,7 @@ function hashSnapshot(data) {
  * Merge incoming data from a source into the cache.
  * Waits for all sources on first cycle, then persists on every change.
  */
-export function update(source, data) {
+export function update(source: any, data: any) {
   const { source: _src, ...fields } = data;
   Object.assign(cache.current, fields);
   cache.lastFetch[source] = new Date();
@@ -60,7 +60,7 @@ export function update(source, data) {
 
   if (!allSourcesReady) {
     cache.pendingSources.add(source);
-    if (ALL_SOURCES.every((s) => cache.pendingSources.has(s))) {
+    if (ALL_SOURCES.every((s: any) => cache.pendingSources.has(s))) {
       allSourcesReady = true;
       cache.pendingSources.clear();
       lastPersistedHash = hashSnapshot(cache.current);
@@ -81,7 +81,7 @@ export function update(source, data) {
  * Restore a source's data from a DB snapshot into the cache.
  * Memory-only — no change-detection or MongoDB persistence.
  */
-export function restore(source, data) {
+export function restore(source: any, data: any) {
   const { source: _src, ...fields } = data;
   Object.assign(cache.current, fields);
   cache.lastFetch[source] = new Date();
@@ -91,7 +91,7 @@ export function restore(source, data) {
 /**
  * Record a fetch error for a source.
  */
-export function setError(source, error) {
+export function setError(source: any, error: any) {
   cache.errors[source] = {
     message: error.message,
     time: new Date().toISOString(),

@@ -42,8 +42,8 @@ export async function fetchGoogleAirQuality() {
   const pollutants = data.pollutants || [];
 
   // Find the universal AQI (uaqi) and US AQI
-  const uaqi = indexes.find((i) => i.code === "uaqi");
-  const usAqi = indexes.find((i) => i.code === "usa_epa");
+  const uaqi = indexes.find((i: any) => i.code === "uaqi");
+  const usAqi = indexes.find((i: any) => i.code === "usa_epa");
 
   // Build pollutant map
   const pollutantMap: Record<string, any> = {};
@@ -75,7 +75,7 @@ export async function fetchGoogleAirQuality() {
     usEpaColor: usAqi?.color ?? null,
 
     // All AQI indexes
-    indexes: indexes.map((index) => ({
+    indexes: indexes.map((index: any) => ({
       code: index.code,
       displayName: index.displayName,
       aqi: index.aqi,

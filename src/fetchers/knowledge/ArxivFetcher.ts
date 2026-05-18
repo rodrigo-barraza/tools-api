@@ -8,7 +8,7 @@ import { extractXmlTag, extractXmlItems } from "../../utilities.ts";
  * Uses Atom XML responses — parsed with lightweight XML utilities.
  */
 // ─── Helpers ───────────────────────────────────────────────────────
-function parseEntry(entryXml) {
+function parseEntry(entryXml: any) {
   const id = extractXmlTag(entryXml, "id");
   const title = extractXmlTag(entryXml, "title")?.replace(/\s+/g, " ").trim();
   const summary = extractXmlTag(entryXml, "summary")
@@ -19,12 +19,12 @@ function parseEntry(entryXml) {
   // Extract authors
   const authorBlocks = extractXmlItems(entryXml, "author");
   const authors = authorBlocks
-    .map((a) => extractXmlTag(a, "name"))
+    .map((a: any) => extractXmlTag(a, "name"))
     .filter(Boolean)
     .slice(0, 10);
   // Extract categories from <category term="..." />
   const categoryMatches = [...entryXml.matchAll(/category\s+term="([^"]+)"/g)];
-  const categories = categoryMatches.map((m) => m[1]);
+  const categories = categoryMatches.map((m: any) => m[1]);
   const primaryCategory = categories[0] || null;
   // Extract PDF link
   const pdfMatch = entryXml.match(/link[^>]+title="pdf"[^>]+href="([^"]+)"/);
@@ -72,6 +72,7 @@ export async function searchPapers(
     search_query: searchQuery,
     start: "0",
     max_results: String(Math.min(limit, 30)),
+    // @ts-expect-error - TS7053: implicit any index
     sortBy: sortMap[sortBy] || "relevance",
     sortOrder: "descending",
   });

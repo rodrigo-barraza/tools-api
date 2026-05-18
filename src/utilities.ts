@@ -20,7 +20,7 @@ export function randomUserAgent() {
 
  * @returns {string|null} Tag content or null
  */
-export function extractXmlTag(xml, tag) {
+export function extractXmlTag(xml: any, tag: any) {
   const escapedTag = tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const regex = new RegExp(
     `<${escapedTag}><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${escapedTag}>|<${escapedTag}>([\\s\\S]*?)<\\/${escapedTag}>`,
@@ -36,8 +36,8 @@ export function extractXmlTag(xml, tag) {
 
  * @returns {string[]} Array of raw element blocks
  */
-export function extractXmlItems(xml, tag) {
-  const items = [];
+export function extractXmlItems(xml: any, tag: any) {
+  const items: any[] = [];
   const openTag = `<${tag}>`;
   const closeTag = `</${tag}>`;
   let cursor = 0;
@@ -87,14 +87,14 @@ export function buildScraperHeaders(referer?: string): Record<string, string> {
  * Build a Google Static Maps API URL for a given lat/lng.
  */
 export function buildStaticMapUrl(
-  latitude,
-  longitude,
+  latitude: any,
+  longitude: any,
   {
     zoom = 14,
     size = "400x300",
     maptype = "roadmap",
     markerColor = "red",
-  } = {},
+  }: any = {},
 ) {
   if (!CONFIG.GOOGLE_PLACES_API_KEY || !latitude || !longitude) return null;
 
@@ -113,7 +113,7 @@ export function buildStaticMapUrl(
 /**
  * Enrich an event with a static map URL if it has coordinates.
  */
-export function enrichEventWithMapUrl(event) {
+export function enrichEventWithMapUrl(event: any) {
   if (!event?.venue?.latitude || !event?.venue?.longitude) return event;
 
   event.mapImageUrl = buildStaticMapUrl(
@@ -129,11 +129,11 @@ export function enrichEventWithMapUrl(event) {
 /**
  * Map a source-specific category string to a unified category.
  */
-export function normalizeCategory(sourceCategory, categoryMappings) {
+export function normalizeCategory(sourceCategory: any, categoryMappings: any) {
   if (!sourceCategory) return "other";
   const lower = sourceCategory.toLowerCase();
   const match = categoryMappings.find(
-    (m) =>
+    (m: any) =>
       m.name.toLowerCase() === lower ||
       m.slug?.toLowerCase() === lower ||
       m.id?.toLowerCase() === lower,
@@ -144,7 +144,7 @@ export function normalizeCategory(sourceCategory, categoryMappings) {
 /**
  * Compute a composite trending score for cross-source ranking.
  */
-export function computeTrendingScore(product) {
+export function computeTrendingScore(product: any) {
   const rankScore = product.rank ? Math.max(0, 100 - product.rank) : 50;
   const ratingScore = (product.rating || 0) * 4;
   const reviewScore = product.reviewCount
@@ -171,8 +171,8 @@ export function computeTrendingScore(product) {
 
  * @returns {Function} Express middleware
  */
-export function agenticHandler(fn) {
-  return async (req, res) => {
+export function agenticHandler(fn: any) {
+  return async (req: any, res: any) => {
     try {
       const result = await fn(req);
       if (result.error) {
@@ -182,7 +182,7 @@ export function agenticHandler(fn) {
         return res.status(isForbidden ? 403 : 400).json(result);
       }
       res.json(result);
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`Agentic handler error: ${error.message}`);
       res.status(500).json({ error: "Internal agentic tool error" });
     }
@@ -202,7 +202,7 @@ export class EphemeralStore {
   #ttlMs;
   #maxSize;
 
-  constructor(ttlMs = EPHEMERAL_TTL_MS, maxSize = EPHEMERAL_MAX_SIZE) {
+  constructor(ttlMs: any = EPHEMERAL_TTL_MS, maxSize: any = EPHEMERAL_MAX_SIZE) {
     this.#ttlMs = ttlMs;
     this.#maxSize = maxSize;
   }
@@ -212,7 +212,7 @@ export class EphemeralStore {
 
    * @returns {string} A 12-character UUID prefix
    */
-  set(value) {
+  set(value: any) {
     const id = crypto.randomUUID().slice(0, 12);
     this.#map.set(id, { value, createdAt: Date.now() });
     this.#cleanup();
@@ -224,7 +224,7 @@ export class EphemeralStore {
 
 
    */
-  get(id) {
+  get(id: any) {
     const entry = this.#map.get(id);
     if (!entry) return null;
     if (Date.now() - entry.createdAt > this.#ttlMs) {
@@ -252,7 +252,7 @@ export class EphemeralStore {
 
 
  */
-export function buildLocalUrl(routePath, params) {
+export function buildLocalUrl(routePath: any, params: any) {
   const selfBaseUrl = CONFIG.TOOLS_SERVICE_URL;
   const base = `${selfBaseUrl}/${routePath}`;
   if (!params || Object.keys(params).length === 0) return base;
@@ -272,7 +272,7 @@ export function buildLocalUrl(routePath, params) {
  * @param {string} options.scripts - Script tags or inline scripts
  * @returns {string} Complete HTML document
  */
-export function buildEmbedHtml({ headExtra = "", styles, bodyContent, scripts }) {
+export function buildEmbedHtml({ headExtra = "", styles, bodyContent, scripts }: any) {
   return `<!DOCTYPE html>
 <html><head>
 <meta charset="utf-8">
@@ -318,7 +318,7 @@ ${scripts}
 
  * @returns {{ project: string, username: string, agent: string|null, traceId: string|null, agentSessionId: string|null }}
  */
-export function extractCallerContext(req) {
+export function extractCallerContext(req: any) {
   return {
     project: req.headers["x-project"] || "tools-api",
     username: req.headers["x-username"] || "system",

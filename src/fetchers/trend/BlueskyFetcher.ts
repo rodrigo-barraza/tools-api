@@ -11,7 +11,7 @@ const BLUESKY_API = "https://public.api.bsky.app/xrpc";
  */
 export async function fetchBlueskyTrends() {
   // Fetch trending topics via the public search endpoint
-  const trends = [];
+  const trends: any[] = [];
 
   try {
     // Use getSuggestions for popular feeds (public endpoint)
@@ -50,7 +50,7 @@ export async function fetchBlueskyTrends() {
         });
       }
     }
-  } catch (error) {
+  } catch (error: any) {
     logger.error(`[Bluesky] ❌ Feeds: ${error.message}`);
   }
 
@@ -90,7 +90,7 @@ export async function fetchBlueskyTrends() {
         });
       }
     }
-  } catch (error) {
+  } catch (error: any) {
     logger.error(`[Bluesky] ❌ Suggestions: ${error.message}`);
   }
 

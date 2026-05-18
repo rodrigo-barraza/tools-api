@@ -1,7 +1,7 @@
 import { getDB } from "../db.ts";
 import logger from "../logger.ts";
 
-let collection = null;
+let collection: any = null;
 
 export async function setupGeomagneticStormCollection() {
   const db = getDB();
@@ -15,10 +15,10 @@ export async function setupGeomagneticStormCollection() {
   logger.info("🧲 Geomagnetic storm collection indexes ready");
 }
 
-export async function upsertGeomagneticStorms(storms) {
+export async function upsertGeomagneticStorms(storms: any) {
   if (!collection || storms.length === 0) return { upserted: 0, modified: 0 };
 
-  const operations = storms.map((gst) => ({
+  const operations = storms.map((gst: any) => ({
     updateOne: {
       filter: { gstId: gst.gstId },
       update: {
@@ -32,13 +32,13 @@ export async function upsertGeomagneticStorms(storms) {
   try {
     const result = await collection.bulkWrite(operations, { ordered: false });
     return { upserted: result.upsertedCount, modified: result.modifiedCount };
-  } catch (error) {
+  } catch (error: any) {
     logger.error("Failed to upsert geomagnetic storms:", error.message);
     return { upserted: 0, modified: 0 };
   }
 }
 
-export async function getRecentStorms(days = 30, limit = 20) {
+export async function getRecentStorms(days: any = 30, limit: any = 20) {
   if (!collection) return [];
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);

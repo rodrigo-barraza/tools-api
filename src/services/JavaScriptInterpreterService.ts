@@ -26,13 +26,13 @@ const MAX_OUTPUT_BYTES = 512 * 1024; // 512 KB max stdout
 
  * @returns {object} Globals for vm.createContext
  */
-function buildGlobals(outputBuffer, execution = "sandboxed") {
+function buildGlobals(outputBuffer: any, execution: any = "sandboxed") {
   let outputLen = 0;
 
-  const safePrint = (...args) => {
+  const safePrint = (...args: any) => {
     if (outputLen >= MAX_OUTPUT_BYTES) return;
     const line = args
-      .map((a) =>
+      .map((a: any) =>
         typeof a === "string" ? a : JSON.stringify(a, null, 2) ?? String(a),
       )
       .join(" ");
@@ -47,11 +47,11 @@ function buildGlobals(outputBuffer, execution = "sandboxed") {
       warn: safePrint,
       error: safePrint,
       info: safePrint,
-      dir: (...args) =>
+      dir: (...args: any) =>
         safePrint(
-          ...args.map((a) => JSON.stringify(a, null, 2) ?? String(a)),
+          ...args.map((a: any) => JSON.stringify(a, null, 2) ?? String(a)),
         ),
-      table: (data) => safePrint(JSON.stringify(data, null, 2)),
+      table: (data: any) => safePrint(JSON.stringify(data, null, 2)),
     },
 
     // Safe built-ins
@@ -181,10 +181,10 @@ function buildGlobals(outputBuffer, execution = "sandboxed") {
  *   error?: string
  * }}
  */
-export function executeJavaScript(code, { timeout = DEFAULT_TIMEOUT_MS, execution = "sandboxed" }: Record<string, any> = {}) {
+export function executeJavaScript(code: any, { timeout = DEFAULT_TIMEOUT_MS, execution = "sandboxed" }: Record<string, any> = {}) {
   const clampedTimeout = Math.min(Math.max(timeout, 100), MAX_TIMEOUT_MS);
   const startTime = performance.now();
-  const outputBuffer = [];
+  const outputBuffer: any[] = [];
 
   try {
     const sandbox = buildGlobals(outputBuffer, execution);
@@ -200,7 +200,7 @@ export function executeJavaScript(code, { timeout = DEFAULT_TIMEOUT_MS, executio
     const output = outputBuffer.join("\n");
 
     // Serialize the result for JSON transport
-    let serializedResult;
+    let serializedResult: any;
     if (result === undefined) {
       serializedResult = undefined;
     } else if (typeof result === "bigint") {
@@ -225,7 +225,7 @@ export function executeJavaScript(code, { timeout = DEFAULT_TIMEOUT_MS, executio
       timedOut: false,
       execution,
     };
-  } catch (error) {
+  } catch (error: any) {
     const executionTimeMs = Math.round(performance.now() - startTime);
     const timedOut =
       error.code === "ERR_SCRIPT_EXECUTION_TIMEOUT" ||

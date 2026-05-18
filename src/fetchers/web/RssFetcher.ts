@@ -13,7 +13,7 @@ const MAX_ITEMS = 50;
 
 
  */
-export async function readRssFeed(url, options: Record<string, any> = {}) {
+export async function readRssFeed(url: any, options: Record<string, any> = {}) {
   if (!url || typeof url !== "string") {
     return { error: "Feed URL is required" };
   }
@@ -57,7 +57,7 @@ export async function readRssFeed(url, options: Record<string, any> = {}) {
     }
 
     return { error: "Unrecognized feed format (expected RSS 2.0 or Atom)", url };
-  } catch (error) {
+  } catch (error: any) {
     if (error.name === "AbortError") {
       return { error: `Feed fetch timed out after ${FETCH_TIMEOUT_MS / 1000}s`, url };
     }
@@ -67,7 +67,7 @@ export async function readRssFeed(url, options: Record<string, any> = {}) {
 
 // ─── RSS 2.0 Parser ──────────────────────────────────────────────
 
-function parseRss2(channel, feedUrl, limit) {
+function parseRss2(channel: any, feedUrl: any, limit: any) {
   const items = Array.isArray(channel.item)
     ? channel.item
     : channel.item
@@ -83,7 +83,7 @@ function parseRss2(channel, feedUrl, limit) {
     language: channel.language || null,
     lastBuildDate: channel.lastBuildDate || null,
     itemCount: items.length,
-    items: items.slice(0, limit).map((item) => ({
+    items: items.slice(0, limit).map((item: any) => ({
       title: item.title || null,
       link: item.link || item.guid?._ || item.guid || null,
       pubDate: item.pubDate || null,
@@ -98,7 +98,7 @@ function parseRss2(channel, feedUrl, limit) {
 
 // ─── Atom Parser ─────────────────────────────────────────────────
 
-function parseAtom(feed, feedUrl, limit) {
+function parseAtom(feed: any, feedUrl: any, limit: any) {
   const entries = Array.isArray(feed.entry)
     ? feed.entry
     : feed.entry
@@ -113,7 +113,7 @@ function parseAtom(feed, feedUrl, limit) {
     link: extractLink(feed.link) || null,
     updated: feed.updated || null,
     itemCount: entries.length,
-    items: entries.slice(0, limit).map((entry) => ({
+    items: entries.slice(0, limit).map((entry: any) => ({
       title: extractText(entry.title),
       link: extractLink(entry.link) || null,
       pubDate: entry.published || entry.updated || null,
@@ -121,7 +121,7 @@ function parseAtom(feed, feedUrl, limit) {
       description: extractText(entry.summary) || "",
       content: extractText(entry.content) || "",
       categories: normalizeArray(entry.category).map(
-        (c) => (typeof c === "object" ? c.term || c.label : c),
+        (c: any) => (typeof c === "object" ? c.term || c.label : c),
       ),
       id: entry.id || null,
     })),
@@ -130,30 +130,30 @@ function parseAtom(feed, feedUrl, limit) {
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
-function extractText(field) {
+function extractText(field: any) {
   if (!field) return null;
   if (typeof field === "string") return field;
   if (field._ !== undefined) return field._;
   return null;
 }
 
-function extractLink(link) {
+function extractLink(link: any) {
   if (!link) return null;
   if (typeof link === "string") return link;
   if (Array.isArray(link)) {
-    const alternate = link.find((l) => l.rel === "alternate") || link[0];
+    const alternate = link.find((l: any) => l.rel === "alternate") || link[0];
     return alternate?.href || null;
   }
   return link.href || null;
 }
 
-function normalizeArray(value) {
+function normalizeArray(value: any) {
   if (!value) return [];
   if (Array.isArray(value)) return value;
   return [value];
 }
 
-function stripCdata(str) {
+function stripCdata(str: any) {
   if (!str) return "";
   return str.replace(/<!\[CDATA\[|\]\]>/g, "").trim();
 }

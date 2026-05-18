@@ -15,7 +15,7 @@ const opts = { errorStatus: 500, health };
 // Query: ?guildId=...&channelId=...&userId=...&query=...&before=...&after=...&limit=50&mode=messages
 router.get(
   "/messages/search",
-  asyncHandler((req) => {
+  asyncHandler((req: any) => {
     return DiscordDataService.searchMessages({
       guildId: req.query.guildId as string,
       channelId: req.query.channelId as string,
@@ -38,7 +38,7 @@ router.get(
 //   `delete`    — IDs of messages removed since the last poll
 //   `heartbeat` — keep-alive ping every 15s
 // Query: ?guildId=...&channelId=...&limit=50
-router.get("/messages/stream", (req, res) => {
+router.get("/messages/stream", (req: any, res: any) => {
   const guildId = req.query.guildId as string;
   const channelId = req.query.channelId as string;
   const limit = parseIntParam(req.query.limit as string, 50, 500);
@@ -61,10 +61,10 @@ router.get("/messages/stream", (req, res) => {
    * Used to detect when someone adds/removes a reaction on Discord
    * without the message ID itself changing.
    */
-  function reactionHash(message) {
+  function reactionHash(message: any) {
     if (!message.reactions?.length) return "";
     return message.reactions
-      .map((r) => `${r.emoji?.id || r.emoji?.name}:${r.count}`)
+      .map((r: any) => `${r.emoji?.id || r.emoji?.name}:${r.count}`)
       .join(",");
   }
 
@@ -76,11 +76,11 @@ router.get("/messages/stream", (req, res) => {
       });
       if (closed) return;
       const messages = data.messages || [];
-      knownIds = new Set(messages.map((m) => m.id));
-      reactionFingerprints = new Map(messages.map((m) => [m.id, reactionHash(m)]));
+      knownIds = new Set(messages.map((m: any) => m.id));
+      reactionFingerprints = new Map(messages.map((m: any) => [m.id, reactionHash(m)]));
       res.write(`event: init\ndata: ${JSON.stringify({ messages })}\n\n`);
       health.markSuccess();
-    } catch (error) {
+    } catch (error: any) {
       logger.error("[discord/stream] Init error:", error.message);
       health.markError(error);
       if (!closed) {
@@ -96,16 +96,16 @@ router.get("/messages/stream", (req, res) => {
         guildId, channelId, limit, includeBots,
       });
       const messages = data.messages || [];
-      const currentIds = new Set(messages.map((m) => m.id));
+      const currentIds = new Set(messages.map((m: any) => m.id));
       // ── Detect new messages ─────────────────────────────────
-      const newMessages = messages.filter((m) => !knownIds.has(m.id));
+      const newMessages = messages.filter((m: any) => !knownIds.has(m.id));
       if (newMessages.length > 0) {
         // Send newest-first (same order as searchMessages returns)
         res.write(`event: new\ndata: ${JSON.stringify({ messages: newMessages })}\n\n`);
         health.markSuccess();
       }
       // ── Detect deleted messages ─────────────────────────────
-      const deletedIds = [];
+      const deletedIds: any[] = [];
       for (const id of knownIds) {
         if (!currentIds.has(id)) {
           deletedIds.push(id);
@@ -117,7 +117,7 @@ router.get("/messages/stream", (req, res) => {
       // ── Detect reaction changes on existing messages ─────────
       // Compare reaction fingerprints — if they differ, the message's
       // reactions were added/removed since the last poll.
-      const updatedMessages = messages.filter((m) => {
+      const updatedMessages = messages.filter((m: any) => {
         if (!knownIds.has(m.id)) return false; // new messages handled above
         const oldHash = reactionFingerprints.get(m.id);
         const newHash = reactionHash(m);
@@ -128,8 +128,8 @@ router.get("/messages/stream", (req, res) => {
       }
       // Update tracked sets
       knownIds = currentIds;
-      reactionFingerprints = new Map(messages.map((m) => [m.id, reactionHash(m)]));
-    } catch (error) {
+      reactionFingerprints = new Map(messages.map((m: any) => [m.id, reactionHash(m)]));
+    } catch (error: any) {
       logger.error("[discord/stream] Poll error:", error.message);
       health.markError(error);
     }
@@ -145,7 +145,7 @@ router.get("/messages/stream", (req, res) => {
       pollInterval = setInterval(poll, 1_000);
     }
   });
-  let pollInterval = null;
+  let pollInterval: any = null;
   // ── Cleanup on disconnect ─────────────────────────────────────
   req.on("close", () => {
     closed = true;
@@ -158,7 +158,7 @@ router.get("/messages/stream", (req, res) => {
 // Query: ?guildId=...&groupBy=user&query=...&before=...&after=...&topN=25
 router.get(
   "/messages/analytics",
-  asyncHandler((req) => {
+  asyncHandler((req: any) => {
     return DiscordDataService.analyzeMessages({
       guildId: req.query.guildId as string,
       channelId: req.query.channelId as string,
@@ -178,7 +178,7 @@ router.get(
 // Query: ?guildId=...&channelId=...&days=7&topN=15
 router.get(
   "/activity",
-  asyncHandler((req) => {
+  asyncHandler((req: any) => {
     return DiscordDataService.getServerActivity({
       guildId: req.query.guildId as string,
       channelId: req.query.channelId as string,

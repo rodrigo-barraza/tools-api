@@ -9,7 +9,7 @@ import { OPEN_FDA_BASE_URL } from "../../constants.ts";
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
-function normalizeDrugLabel(r) {
+function normalizeDrugLabel(r: any) {
   return {
     brandName: r.openfda?.brand_name?.[0] || null,
     genericName: r.openfda?.generic_name?.[0] || null,
@@ -35,7 +35,7 @@ function normalizeDrugLabel(r) {
 
 
  */
-export async function searchDrugLabels(query, limit = 5) {
+export async function searchDrugLabels(query: any, limit: any = 5) {
   const searchTerm = encodeURIComponent(
     `openfda.brand_name:"${query}"+openfda.generic_name:"${query}"`,
   );
@@ -65,7 +65,7 @@ export async function searchDrugLabels(query, limit = 5) {
 
 
  */
-export async function getDrugAdverseEvents(drugName, limit = 10) {
+export async function getDrugAdverseEvents(drugName: any, limit: any = 10) {
   const searchTerm = encodeURIComponent(
     `patient.drug.openfda.brand_name:"${drugName}"+patient.drug.openfda.generic_name:"${drugName}"`,
   );
@@ -84,7 +84,7 @@ export async function getDrugAdverseEvents(drugName, limit = 10) {
   return {
     found: true,
     totalResults: data.meta?.results?.total || 0,
-    events: (data.results || []).slice(0, limit).map((e) => ({
+    events: (data.results || []).slice(0, limit).map((e: any) => ({
       safetyReportId: e.safetyreportid || null,
       receiveDate: e.receivedate || null,
       serious: e.serious ? parseInt(e.serious, 10) === 1 : null,
@@ -95,7 +95,7 @@ export async function getDrugAdverseEvents(drugName, limit = 10) {
         disability: e.seriousnessdisabling === "1",
       },
       reactions: (e.patient?.reaction || [])
-        .map((r) => r.reactionmeddrapt)
+        .map((r: any) => r.reactionmeddrapt)
         .filter(Boolean)
         .slice(0, 10),
       patientAge: e.patient?.patientonsetage || null,
@@ -116,7 +116,7 @@ export async function getDrugAdverseEvents(drugName, limit = 10) {
 
 
  */
-export async function getDrugRecalls(query, limit = 10) {
+export async function getDrugRecalls(query: any, limit: any = 10) {
   let url = `${OPEN_FDA_BASE_URL}/drug/enforcement.json?`;
 
   if (query) {
@@ -138,7 +138,7 @@ export async function getDrugRecalls(query, limit = 10) {
   return {
     found: true,
     totalResults: data.meta?.results?.total || 0,
-    recalls: (data.results || []).slice(0, limit).map((r) => ({
+    recalls: (data.results || []).slice(0, limit).map((r: any) => ({
       recallNumber: r.recall_number || null,
       status: r.status || null,
       classification: r.classification || null,

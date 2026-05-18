@@ -17,7 +17,7 @@ const BASE_URL = "https://www.amazon.com/Best-Sellers/zgbs";
 /**
  * Scrape Amazon Best Sellers for a single category.
  */
-async function scrapeCategory(slug, categoryName, unifiedCategory) {
+async function scrapeCategory(slug: any, categoryName: any, unifiedCategory: any) {
   const url = `${BASE_URL}/${slug}`;
 
   const response = await fetch(url, {
@@ -36,10 +36,10 @@ async function scrapeCategory(slug, categoryName, unifiedCategory) {
 
   const html = await response.text();
   const $ = cheerio.load(html);
-  const products = [];
+  const products: any[] = [];
 
   // Amazon Best Sellers grid items
-  $("[data-asin]").each((_i, element) => {
+  $("[data-asin]").each((_i: any, element: any) => {
     if (products.length >= AMAZON_MAX_PRODUCTS_PER_CATEGORY) return false;
 
     const $el = $(element);
@@ -127,14 +127,14 @@ async function scrapeCategory(slug, categoryName, unifiedCategory) {
  * Rate-limited to respect Amazon's servers.
  */
 export async function fetchAllAmazonBestSellers() {
-  const allProducts = [];
+  const allProducts: any[] = [];
 
   for (const cat of AMAZON_CATEGORIES) {
     try {
       const products = await scrapeCategory(cat.slug, cat.name, cat.unified);
       allProducts.push(...products);
       logger.info(`[Amazon] ✅ ${cat.name}: ${products.length} products`);
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`[Amazon] ❌ ${cat.name}: ${error.message}`);
     }
 

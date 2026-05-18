@@ -6,7 +6,7 @@
  */
 function parseCommaSeparated(envKey: string): string[] {
   const raw = process.env[envKey];
-  return raw ? raw.split(",").map((s) => s.trim()).filter(Boolean) : [];
+  return raw ? raw.split(",").map((s: any) => s.trim()).filter(Boolean) : [];
 }
 
 // ── Workspace / Agentic ────────────────────────────────────────────

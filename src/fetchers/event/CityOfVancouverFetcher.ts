@@ -25,7 +25,7 @@ export async function fetchCityOfVancouverEvents() {
 
   const html = await response.text();
   const $ = cheerio.load(html);
-  const events = [];
+  const events: any[] = [];
 
   // Try multiple selectors — city websites change layouts
   const selectors = [
@@ -38,7 +38,7 @@ export async function fetchCityOfVancouverEvents() {
   for (const selector of selectors) {
     if (events.length > 0) break;
 
-    $(selector).each((_i, element) => {
+    $(selector).each((_i: any, element: any) => {
       const $el = $(element);
       const $link = $el.find("a").first();
       const title =

@@ -20,9 +20,9 @@ const NOAA_STATIONS_URL =
 
 // ─── Haversine Distance ────────────────────────────────────────
 
-function haversineDistanceKm(lat1, lon1, lat2, lon2) {
+function haversineDistanceKm(lat1: any, lon1: any, lat2: any, lon2: any) {
   const R = 6371; // Earth's radius in km
-  const toRad = (deg) => (deg * Math.PI) / 180;
+  const toRad = (deg: any) => (deg * Math.PI) / 180;
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
   const a =
@@ -33,7 +33,7 @@ function haversineDistanceKm(lat1, lon1, lat2, lon2) {
 
 // ─── NOAA: Find Nearest Tide Station ───────────────────────────
 
-async function findNearestTideStation(latitude, longitude) {
+async function findNearestTideStation(latitude: any, longitude: any) {
   try {
     const response = await fetch(NOAA_STATIONS_URL);
     if (!response.ok) {
@@ -45,7 +45,7 @@ async function findNearestTideStation(latitude, longitude) {
     const stations = json.stations || [];
     if (!stations.length) return null;
 
-    let closest = null;
+    let closest: any = null;
     let minDist = Infinity;
 
     for (const s of stations) {
@@ -65,7 +65,7 @@ async function findNearestTideStation(latitude, longitude) {
     }
 
     return closest;
-  } catch (error) {
+  } catch (error: any) {
     logger.warn(`[Location] ⚠️ NOAA station lookup failed: ${error.message}`);
     return null;
   }
@@ -131,7 +131,7 @@ async function loadCachedLocation() {
   }
 }
 
-async function saveCachedLocation(location) {
+async function saveCachedLocation(location: any) {
   try {
     const db = getDB();
     const document = {
@@ -142,7 +142,7 @@ async function saveCachedLocation(location) {
     await db
       .collection(COLLECTION)
       .replaceOne({ _id: "current" as any }, document, { upsert: true });
-  } catch (error) {
+  } catch (error: any) {
     logger.error(`[Location] ⚠️ Failed to persist: ${error.message}`);
   }
 }
@@ -150,7 +150,7 @@ async function saveCachedLocation(location) {
 // ─── Public: Initialise on Startup ─────────────────────────────
 
 /** @type {{ latitude: number, longitude: number, timezone: string, radiusMiles: number, tideStationId: string | null }} */
-let resolvedLocation = null;
+let resolvedLocation: any = null;
 
 /**
  * Initialise the location config.
@@ -185,7 +185,7 @@ export async function initLocation() {
     resolvedLocation = fresh;
     logger.info("[Location] ✅ Location resolved and persisted");
     return resolvedLocation;
-  } catch (error) {
+  } catch (error: any) {
     // Fall back to cached data even if expired (better than nothing)
     if (cached) {
       const { _id, updatedAt: _updatedAt, ...rest } = cached;

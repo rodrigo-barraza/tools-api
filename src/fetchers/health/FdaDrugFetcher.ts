@@ -18,8 +18,8 @@ const __dirname = dirname(__filename);
 
 // ─── CSV Parser ────────────────────────────────────────────────
 
-function parseCSVLine(line) {
-  const fields = [];
+function parseCSVLine(line: any) {
+  const fields: any[] = [];
   let current = "";
   let inQuotes = false;
 
@@ -45,7 +45,7 @@ function parseCSVLine(line) {
 
 // ─── Load & Index ──────────────────────────────────────────────
 
-const DRUG_DB = [];
+const DRUG_DB: any[] = [];
 let loaded = false;
 
 function ensureLoaded() {
@@ -54,7 +54,7 @@ function ensureLoaded() {
 
   const csvPath = join(__dirname, "data", "digest_fda_drugs.csv");
   const raw = readFileSync(csvPath, "utf-8");
-  const lines = raw.split("\n").filter((l) => l.trim());
+  const lines = raw.split("\n").filter((l: any) => l.trim());
   const headers = parseCSVLine(lines[0]);
 
   for (let i = 1; i < lines.length; i++) {
@@ -62,7 +62,7 @@ function ensureLoaded() {
     if (values.length < 3) continue;
 
     const row: Record<string, any> = {};
-    headers.forEach((h, index) => {
+    headers.forEach((h: any, index: any) => {
       row[h] = values[index] || null;
     });
 
@@ -74,11 +74,11 @@ function ensureLoaded() {
 
 // ─── Helpers ───────────────────────────────────────────────────
 
-function normalizeSearch(str) {
+function normalizeSearch(str: any) {
   return str.toLowerCase().replace(/[^a-z0-9\s]/g, "");
 }
 
-function formatDrug(d) {
+function formatDrug(d: any) {
   return {
     productNdc: d.product_ndc,
     genericName: d.generic_name,
@@ -98,7 +98,7 @@ function formatDrug(d) {
 /**
  * Search drugs by name, ingredient, or manufacturer.
  */
-export function searchDrugs(query, opts: Record<string, any> = {}) {
+export function searchDrugs(query: any, opts: Record<string, any> = {}) {
   ensureLoaded();
 
   const { limit = 10, dosageForm, productType } = opts;
@@ -110,18 +110,18 @@ export function searchDrugs(query, opts: Record<string, any> = {}) {
   if (dosageForm) {
     const df = dosageForm.toUpperCase();
     candidates = candidates.filter(
-      (d) => d.dosage_form && d.dosage_form.toUpperCase().includes(df),
+      (d: any) => d.dosage_form && d.dosage_form.toUpperCase().includes(df),
     );
   }
   if (productType) {
     const pt = productType.toUpperCase();
     candidates = candidates.filter(
-      (d) => d.product_type && d.product_type.toUpperCase().includes(pt),
+      (d: any) => d.product_type && d.product_type.toUpperCase().includes(pt),
     );
   }
 
   const scored = candidates
-    .map((d) => {
+    .map((d: any) => {
       let score = 0;
       const generic = normalizeSearch(d.generic_name || "");
       const brand = normalizeSearch(d.brand_name || "");
@@ -139,27 +139,27 @@ export function searchDrugs(query, opts: Record<string, any> = {}) {
 
       return { d, score };
     })
-    .filter((s) => s.score > 0)
-    .sort((a, b) => b.score - a.score)
+    .filter((s: any) => s.score > 0)
+    .sort((a: any, b: any) => b.score - a.score)
     .slice(0, limit);
 
   return {
     count: scored.length,
     query,
     note: "Data from FDA openFDA NDC API (Public Domain). For informational use only — not medical advice.",
-    drugs: scored.map((s) => formatDrug(s.d)),
+    drugs: scored.map((s: any) => formatDrug(s.d)),
   };
 }
 
 /**
  * Get drug by exact NDC code.
  */
-export function getDrugByNdc(ndc) {
+export function getDrugByNdc(ndc: any) {
   ensureLoaded();
 
   const n = ndc.trim();
   const d = DRUG_DB.find(
-    (d) => d.product_ndc && d.product_ndc === n,
+    (d: any) => d.product_ndc && d.product_ndc === n,
   );
 
   if (!d) return null;
@@ -181,8 +181,8 @@ export function getDosageForms() {
   return {
     totalProducts: DRUG_DB.length,
     dosageForms: Object.entries(forms)
-      .sort((a, b) => b[1] - a[1])
-      .map(([form, count]) => ({ form, count })),
+      .sort((a: any, b: any) => b[1] - a[1])
+      .map(([form, count]: any) => ({ form, count })),
     note: "Data from FDA openFDA NDC API (Public Domain).",
   };
 }
@@ -190,13 +190,13 @@ export function getDosageForms() {
 /**
  * Search drugs by active ingredient.
  */
-export function searchByIngredient(ingredient, opts: Record<string, any> = {}) {
+export function searchByIngredient(ingredient: any, opts: Record<string, any> = {}) {
   ensureLoaded();
 
   const { limit = 20 } = opts;
   const q = normalizeSearch(ingredient);
 
-  const matches = DRUG_DB.filter((d) => {
+  const matches = DRUG_DB.filter((d: any) => {
     const ingredients = normalizeSearch(d.active_ingredients || "");
     return ingredients.includes(q);
   }).slice(0, limit);
@@ -212,13 +212,13 @@ export function searchByIngredient(ingredient, opts: Record<string, any> = {}) {
 /**
  * Search drugs by pharmacological class.
  */
-export function searchByPharmClass(pharmClass, opts: Record<string, any> = {}) {
+export function searchByPharmClass(pharmClass: any, opts: Record<string, any> = {}) {
   ensureLoaded();
 
   const { limit = 20 } = opts;
   const q = normalizeSearch(pharmClass);
 
-  const matches = DRUG_DB.filter((d) => {
+  const matches = DRUG_DB.filter((d: any) => {
     const pc = normalizeSearch(d.pharm_class || "");
     return pc.includes(q);
   }).slice(0, limit);

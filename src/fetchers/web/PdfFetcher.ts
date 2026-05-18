@@ -13,12 +13,12 @@ const FETCH_TIMEOUT_MS = 30_000;
 
 
  */
-export async function readPdfUrl(url, options: Record<string, any> = {}) {
+export async function readPdfUrl(url: any, options: Record<string, any> = {}) {
   if (!url || typeof url !== "string") {
     return { error: "URL is required" };
   }
 
-  let parser;
+  let parser: any;
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -92,7 +92,7 @@ export async function readPdfUrl(url, options: Record<string, any> = {}) {
       charCount,
       truncated,
     };
-  } catch (error) {
+  } catch (error: any) {
     if (error.name === "AbortError") {
       return { error: `PDF download timed out after ${FETCH_TIMEOUT_MS / 1000}s`, url };
     }

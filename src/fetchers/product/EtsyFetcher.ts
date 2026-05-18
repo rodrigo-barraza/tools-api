@@ -9,7 +9,7 @@ const BASE_URL = "https://openapi.etsy.com/v3/application";
 /**
  * Map an Etsy taxonomy tag to a unified category.
  */
-function mapEtsyCategory(tags) {
+function mapEtsyCategory(tags: any) {
   if (!tags || !tags.length) return "other";
   for (const tag of tags) {
     const lower = tag.toLowerCase().replace(/\s+/g, "_");
@@ -43,7 +43,7 @@ export async function fetchEtsyTrending() {
     "most popular",
   ];
 
-  const allProducts = [];
+  const allProducts: any[] = [];
 
   for (const keyword of trendingKeywords) {
     await rateLimiter.wait("ETSY");
@@ -68,7 +68,7 @@ export async function fetchEtsyTrending() {
       const data = await response.json();
       const listings = data.results || [];
 
-      const products = listings.map((item, index) => {
+      const products = listings.map((item: any, index: any) => {
         const product = {
           sourceId: String(item.listing_id),
           source: PRODUCT_SOURCES.ETSY,
@@ -95,14 +95,14 @@ export async function fetchEtsyTrending() {
       });
 
       allProducts.push(...products);
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`[Etsy] ❌ "${keyword}": ${error.message}`);
     }
   }
 
   // Deduplicate by listing ID
   const seen = new Set();
-  const unique = allProducts.filter((p) => {
+  const unique = allProducts.filter((p: any) => {
     if (seen.has(p.sourceId)) return false;
     seen.add(p.sourceId);
     return true;

@@ -263,12 +263,13 @@ const NAME_PATTERNS = [
 
 // ─── MET Resolution ───────────────────────────────────────────
 
-function resolveMET(exerciseName, category, intensity) {
+function resolveMET(exerciseName: any, category: any, intensity: any) {
   const intensityKey = (intensity || "moderate").toLowerCase();
 
   // Try name pattern matching first (most specific)
   for (const { pattern, key } of NAME_PATTERNS) {
     if (pattern.test(exerciseName)) {
+      // @ts-expect-error - TS7053: implicit any index
       const met = MET_TABLE[key];
       return {
         value: met[intensityKey] || met.default,
@@ -280,8 +281,11 @@ function resolveMET(exerciseName, category, intensity) {
 
   // Try category mapping
   if (category) {
+    // @ts-expect-error - TS7053: implicit any index
     const catKey = CATEGORY_TO_MET[category.toLowerCase()];
+    // @ts-expect-error - TS7053: implicit any index
     if (catKey && MET_TABLE[catKey]) {
+      // @ts-expect-error - TS7053: implicit any index
       const met = MET_TABLE[catKey];
       return {
         value: met[intensityKey] || met.default,
@@ -294,6 +298,7 @@ function resolveMET(exerciseName, category, intensity) {
   // Fallback to general
   const general = MET_TABLE.general;
   return {
+    // @ts-expect-error - TS7053: implicit any index
     value: general[intensityKey] || general.default,
     source: "general",
     label: general.label,
@@ -319,9 +324,9 @@ export function estimateExerciseCalories({
   weightKg,
   intensity = "moderate",
   category,
-}) {
+}: any) {
   // ── Validate ─────────────────────────────────────────────────
-  const errors = [];
+  const errors: any[] = [];
   if (!exercise) errors.push("'exercise' is required");
   if (!durationMinutes || durationMinutes <= 0) errors.push("'durationMinutes' must be positive");
   if (!weightKg || weightKg <= 0) errors.push("'weightKg' must be positive");
@@ -388,7 +393,7 @@ export function estimateExerciseCalories({
  */
 export function getMetCategories() {
   return {
-    categories: Object.entries(MET_TABLE).map(([key, data]) => ({
+    categories: Object.entries(MET_TABLE).map(([key, data]: any) => ({
       key,
       label: data.label,
       metLow: data.low,

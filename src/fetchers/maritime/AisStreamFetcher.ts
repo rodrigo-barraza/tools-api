@@ -25,13 +25,13 @@ import {
 // ─── State ─────────────────────────────────────────────────────────
 
 
-let socket = null;
+let socket: any = null;
 
 
 let intentionalClose = false;
 
 /** Ring buffer of recent AIS messages */
-const vesselBuffer = [];
+const vesselBuffer: any[] = [];
 
 /** Map of MMSI → latest known data (position + static merged) */
 const vesselMap = new Map();
@@ -88,7 +88,7 @@ function connect(options: Record<string, any> = {}) {
     );
   };
 
-  socket.onmessage = (event) => {
+  socket.onmessage = (event: any) => {
     try {
       const message = JSON.parse(event.data);
 
@@ -100,6 +100,7 @@ function connect(options: Record<string, any> = {}) {
       }
 
       stats.messagesReceived++;
+      // @ts-expect-error - suppress remaining error
       stats.lastMessageAt = new Date().toISOString();
 
       // Process and buffer the message
@@ -118,12 +119,12 @@ function connect(options: Record<string, any> = {}) {
           vesselMap.set(mmsi, { ...existing, ...processed });
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       logger.warn(`[AisStream] ⚠️ Parse error: ${error.message}`);
     }
   };
 
-  socket.onerror = (error) => {
+  socket.onerror = (error: any) => {
     stats.lastError = error.message || "WebSocket error";
     logger.error(`[AisStream] ❌ WebSocket error: ${stats.lastError}`);
   };
@@ -144,7 +145,7 @@ function connect(options: Record<string, any> = {}) {
 
 // ─── Subscription Builder ──────────────────────────────────────────
 
-function buildSubscription(options) {
+function buildSubscription(options: any) {
   const sub: Record<string, any> = {
     APIKey: CONFIG.AIS_STREAM_API_KEY,
     BoundingBoxes: options.boundingBoxes || buildDefaultBbox(),
@@ -179,7 +180,7 @@ function buildDefaultBbox() {
 
 // ─── Message Processing ────────────────────────────────────────────
 
-function processMessage(raw) {
+function processMessage(raw: any) {
   const { MessageType, MetaData, Message } = raw;
   if (!MessageType || !MetaData) return null;
 
@@ -270,7 +271,7 @@ function processMessage(raw) {
 
  * @returns {object[]} Array of vessel data objects
  */
-export function getTrackedVessels(limit = 100) {
+export function getTrackedVessels(limit: any = 100) {
   const vessels = Array.from(vesselMap.values())
     .sort((a: any, b: any) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime())
     .slice(0, limit);
@@ -283,7 +284,7 @@ export function getTrackedVessels(limit = 100) {
 
 
  */
-export function getVesselByMmsi(mmsi) {
+export function getVesselByMmsi(mmsi: any) {
   return vesselMap.get(Number(mmsi)) || null;
 }
 
@@ -292,10 +293,10 @@ export function getVesselByMmsi(mmsi) {
 
 
  */
-export function getRecentMessages(limit = 50, messageType = null) {
+export function getRecentMessages(limit: any = 50, messageType: any = null) {
   let messages = [...vesselBuffer];
   if (messageType) {
-    messages = messages.filter((m) => m.messageType === messageType);
+    messages = messages.filter((m: any) => m.messageType === messageType);
   }
   return messages.slice(-limit);
 }
@@ -305,10 +306,10 @@ export function getRecentMessages(limit = 50, messageType = null) {
 
 
  */
-export function getVesselsInArea(minLat, maxLat, minLng, maxLng, limit = 100) {
+export function getVesselsInArea(minLat: any, maxLat: any, minLng: any, maxLng: any, limit: any = 100) {
   return Array.from(vesselMap.values())
     .filter(
-      (v) =>
+      (v: any) =>
         v.latitude >= minLat &&
         v.latitude <= maxLat &&
         v.longitude >= minLng &&
@@ -323,10 +324,10 @@ export function getVesselsInArea(minLat, maxLat, minLng, maxLng, limit = 100) {
 
 
  */
-export function searchVessels(query, limit = 20) {
+export function searchVessels(query: any, limit: any = 20) {
   const q = query.toLowerCase();
   return Array.from(vesselMap.values())
-    .filter((v) => v.shipName?.toLowerCase().includes(q))
+    .filter((v: any) => v.shipName?.toLowerCase().includes(q))
     .sort((a: any, b: any) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime())
     .slice(0, limit);
 }

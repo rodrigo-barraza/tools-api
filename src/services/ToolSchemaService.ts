@@ -30,7 +30,7 @@ import {
 //                  from the same constant the collector uses.
 // ────────────────────────────────────────────────────────────
 
-function cached(provider, intervalMs) {
+function cached(provider: any, intervalMs: any) {
   return {
     type: "cached",
     provider,
@@ -38,15 +38,15 @@ function cached(provider, intervalMs) {
   };
 }
 
-function onDemand(provider) {
+function onDemand(provider: any) {
   return { type: "onDemand", provider };
 }
 
-function staticDataset(name) {
+function staticDataset(name: any) {
   return { type: "static", provider: "internal", dataset: name };
 }
 
-function compute(name) {
+function compute(name: any) {
   return { type: "compute", provider: "internal", runtime: name };
 }
 
@@ -1415,7 +1415,7 @@ const FIELDS = {
 // Helper — builds field description for tool parameters
 // ────────────────────────────────────────────────────────────
 
-function fieldsParam(fieldEnum) {
+function fieldsParam(fieldEnum: any) {
   return {
     fields: {
       type: "string",
@@ -8274,10 +8274,12 @@ const TOOL_REQUIRED_KEYS = {
  * Check if a tool is available based on its required API keys.
  * Returns true if the tool has no required keys or all keys are configured.
  */
-function isToolAvailable(toolName) {
+function isToolAvailable(toolName: any) {
+  // @ts-expect-error - TS7053: implicit any index
   const keys = TOOL_REQUIRED_KEYS[toolName];
   if (!keys) return true;
-  return keys.every((key) => Boolean(CONFIG[key]));
+  // @ts-expect-error - TS7053: implicit any index
+  return keys.every((key: any) => Boolean(CONFIG[key]));
 }
 
 // ────────────────────────────────────────────────────────────
@@ -8587,10 +8589,12 @@ export { TOOL_DOMAINS, TOOL_LABELS, TOOL_DEFINITIONS };
  */
 export function getToolSchemas() {
   return TOOL_DEFINITIONS
-    .filter((t) => isToolAvailable(t.name))
-    .map((t) => ({
+    .filter((t: any) => isToolAvailable(t.name))
+    .map((t: any) => ({
       ...t,
+      // @ts-expect-error - TS7053: implicit any index
       domain: TOOL_DOMAINS[t.name] || "Other",
+      // @ts-expect-error - TS7053: implicit any index
       labels: TOOL_LABELS[t.name] || [],
     }));
 }
@@ -8603,9 +8607,9 @@ export function getToolSchemas() {
  */
 export function getToolSchemasForAI() {
   return TOOL_DEFINITIONS
-    .filter((t) => isToolAvailable(t.name))
+    .filter((t: any) => isToolAvailable(t.name))
     .map(
-      ({ endpoint: _endpoint, dataSource: _dataSource, ...rest }) => rest,
+      ({ endpoint: _endpoint, dataSource: _dataSource, ...rest }: any) => rest,
     );
 }
 
@@ -8616,13 +8620,16 @@ export function getToolSchemasForAI() {
  */
 export function getDisabledTools() {
   return TOOL_DEFINITIONS
-    .filter((t) => !isToolAvailable(t.name))
-    .map((t) => {
+    .filter((t: any) => !isToolAvailable(t.name))
+    .map((t: any) => {
+      // @ts-expect-error - TS7053: implicit any index
       const requiredKeys = TOOL_REQUIRED_KEYS[t.name] || [];
       return {
         name: t.name,
+        // @ts-expect-error - TS7053: implicit any index
         domain: TOOL_DOMAINS[t.name] || "Other",
-        missingKeys: requiredKeys.filter((key) => !CONFIG[key]),
+        // @ts-expect-error - TS7053: implicit any index
+        missingKeys: requiredKeys.filter((key: any) => !CONFIG[key]),
       };
     });
 }

@@ -22,40 +22,40 @@ const cache = {
 
   // ── Polled general data ──
   marketNews: [],
-  newsLastFetch: null,
-  newsError: null,
+  newsLastFetch: null as any,
+  newsError: null as any,
 
   earnings: [],
-  earningsLastFetch: null,
-  earningsError: null,
+  earningsLastFetch: null as any,
+  earningsError: null as any,
 };
 
 // ─── TTL Helper ────────────────────────────────────────────────────
 
-function getCached(map, key, ttl) {
+function getCached(map: any, key: any, ttl: any) {
   const entry = map.get(key);
   if (!entry) return null;
   if (Date.now() - entry.fetchedAt > ttl) return null;
   return entry.data;
 }
 
-function setCache(map, key, data) {
+function setCache(map: any, key: any, data: any) {
   map.set(key, { data, fetchedAt: Date.now() });
 }
 
 // ─── Quote (on-demand) ─────────────────────────────────────────────
 
-export function getCachedQuote(symbol) {
+export function getCachedQuote(symbol: any) {
   return getCached(cache.quotes, symbol.toUpperCase(), FINNHUB_QUOTE_TTL_MS);
 }
 
-export function cacheQuote(symbol, data) {
+export function cacheQuote(symbol: any, data: any) {
   setCache(cache.quotes, symbol.toUpperCase(), data);
 }
 
 // ─── Profile (on-demand) ───────────────────────────────────────────
 
-export function getCachedProfile(symbol) {
+export function getCachedProfile(symbol: any) {
   return getCached(
     cache.profiles,
     symbol.toUpperCase(),
@@ -63,13 +63,13 @@ export function getCachedProfile(symbol) {
   );
 }
 
-export function cacheProfile(symbol, data) {
+export function cacheProfile(symbol: any, data: any) {
   setCache(cache.profiles, symbol.toUpperCase(), data);
 }
 
 // ─── Recommendation (on-demand) ────────────────────────────────────
 
-export function getCachedRecommendation(symbol) {
+export function getCachedRecommendation(symbol: any) {
   return getCached(
     cache.recommendations,
     symbol.toUpperCase(),
@@ -77,13 +77,13 @@ export function getCachedRecommendation(symbol) {
   );
 }
 
-export function cacheRecommendation(symbol, data) {
+export function cacheRecommendation(symbol: any, data: any) {
   setCache(cache.recommendations, symbol.toUpperCase(), data);
 }
 
 // ─── Financials (on-demand) ────────────────────────────────────────
 
-export function getCachedFinancials(symbol) {
+export function getCachedFinancials(symbol: any) {
   return getCached(
     cache.financials,
     symbol.toUpperCase(),
@@ -91,7 +91,7 @@ export function getCachedFinancials(symbol) {
   );
 }
 
-export function cacheFinancials(symbol, data) {
+export function cacheFinancials(symbol: any, data: any) {
   setCache(cache.financials, symbol.toUpperCase(), data);
 }
 
@@ -101,13 +101,13 @@ export function getMarketNews() {
   return cache.marketNews;
 }
 
-export function updateMarketNews(articles) {
+export function updateMarketNews(articles: any) {
   cache.marketNews = articles;
   cache.newsLastFetch = new Date();
   cache.newsError = null;
 }
 
-export function setNewsError(error) {
+export function setNewsError(error: any) {
   cache.newsError = { message: error.message, time: new Date().toISOString() };
 }
 
@@ -117,13 +117,13 @@ export function getEarnings() {
   return cache.earnings;
 }
 
-export function updateEarnings(earningsData) {
+export function updateEarnings(earningsData: any) {
   cache.earnings = earningsData;
   cache.earningsLastFetch = new Date();
   cache.earningsError = null;
 }
 
-export function setEarningsError(error) {
+export function setEarningsError(error: any) {
   cache.earningsError = { message: error.message, time: new Date().toISOString() };
 }
 

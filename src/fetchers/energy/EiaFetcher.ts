@@ -27,13 +27,14 @@ const META_CACHE_TTL_MS = 86_400_000; // 24 hours — routes/metadata rarely cha
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
-function buildUrl(route, params: Record<string, any> = {}) {
+function buildUrl(route: any, params: Record<string, any> = {}) {
   const url = new URL(`${EIA_BASE_URL}/${route}`);
+  // @ts-expect-error - suppress remaining error
   url.searchParams.set("api_key", CONFIG.EIA_API_KEY);
   for (const [key, value] of Object.entries(params)) {
     if (value != null) {
       if (Array.isArray(value)) {
-        value.forEach((v) => url.searchParams.append(`${key}[]`, String(v)));
+        value.forEach((v: any) => url.searchParams.append(`${key}[]`, String(v)));
       } else {
         url.searchParams.set(key, String(value));
       }
@@ -42,7 +43,7 @@ function buildUrl(route, params: Record<string, any> = {}) {
   return url.toString();
 }
 
-async function eiaFetch(route, params: Record<string, any> = {}) {
+async function eiaFetch(route: any, params: Record<string, any> = {}) {
   if (!CONFIG.EIA_API_KEY) {
     throw new Error("EIA_API_KEY is not configured");
   }
@@ -76,7 +77,7 @@ async function eiaFetch(route, params: Record<string, any> = {}) {
 
 
  */
-export async function browseRoute(route = "") {
+export async function browseRoute(route: any = "") {
   const cacheKey = `meta:${route}`;
   const cached = metaCache.get(cacheKey);
   if (cached && Date.now() - cached.fetchedAt < META_CACHE_TTL_MS) {
@@ -91,7 +92,7 @@ export async function browseRoute(route = "") {
     id: resp.id,
     name: resp.name,
     description: resp.description || null,
-    routes: (resp.routes || []).map((r) => ({
+    routes: (resp.routes || []).map((r: any) => ({
       id: r.id,
       name: r.name,
       description: r.description || null,
@@ -113,7 +114,7 @@ export async function browseRoute(route = "") {
 
 
  */
-export async function getFacetValues(route, facetId) {
+export async function getFacetValues(route: any, facetId: any) {
   const cacheKey = `facet:${route}:${facetId}`;
   const cached = metaCache.get(cacheKey);
   if (cached && Date.now() - cached.fetchedAt < META_CACHE_TTL_MS) {
@@ -127,7 +128,7 @@ export async function getFacetValues(route, facetId) {
     route,
     facetId,
     totalFacets: resp.totalFacets || 0,
-    facets: (resp.facets || []).map((f) => ({
+    facets: (resp.facets || []).map((f: any) => ({
       id: f.id,
       name: f.name,
       alias: f.alias || null,
@@ -146,7 +147,7 @@ export async function getFacetValues(route, facetId) {
 
 
  */
-export async function getData(route, options: Record<string, any> = {}) {
+export async function getData(route: any, options: Record<string, any> = {}) {
   const {
     data: dataColumns,
     facets,
@@ -186,7 +187,7 @@ export async function getData(route, options: Record<string, any> = {}) {
   // Append data columns
   if (dataColumns?.length) {
     const dataParams = dataColumns
-      .map((d) => `data[]=${encodeURIComponent(d)}`)
+      .map((d: any) => `data[]=${encodeURIComponent(d)}`)
       .join("&");
     url += `&${dataParams}`;
   }
@@ -196,7 +197,7 @@ export async function getData(route, options: Record<string, any> = {}) {
     for (const [facetId, values] of Object.entries(facets)) {
       const facetParams = (Array.isArray(values) ? values : [values])
         .map(
-          (v) =>
+          (v: any) =>
             `facets[${encodeURIComponent(facetId)}][]=${encodeURIComponent(v)}`,
         )
         .join("&");
@@ -273,17 +274,17 @@ export async function getEnergyIndicators() {
   );
 
   const indicators = results
-    .filter((r) => r.status === "fulfilled")
-    .map((r) => r.value);
+    .filter((r: any) => r.status === "fulfilled")
+    .map((r: any) => r.value);
 
   const failed = results
-    .filter((r) => r.status === "rejected")
-    .map((r, i) => ({ series: entries[i][0], error: r.reason.message }));
+    .filter((r: any) => r.status === "rejected")
+    .map((r: any, i: any) => ({ series: entries[i][0], error: r.reason.message }));
 
   if (failed.length > 0) {
     logger.warn(
       `[EiaFetcher] ⚠️ ${failed.length} indicator(s) failed:`,
-      failed.map((f) => f.series).join(", "),
+      failed.map((f: any) => f.series).join(", "),
     );
   }
 

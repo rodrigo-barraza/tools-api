@@ -7,14 +7,14 @@ const cache = {
   flares: [],
   cmes: [],
   storms: [],
-  lastFetch: null,
-  error: null,
+  lastFetch: null as any,
+  error: null as any,
 };
 
 /**
  * Update all space weather caches and persist to DB.
  */
-export async function updateSpaceWeather({ flares, cmes, storms }) {
+export async function updateSpaceWeather({ flares, cmes, storms }: any) {
   cache.flares = flares;
   cache.cmes = cmes;
   cache.storms = storms;
@@ -30,7 +30,7 @@ export async function updateSpaceWeather({ flares, cmes, storms }) {
   return { flares: flrResult, cmes: cmeResult, storms: gstResult };
 }
 
-export function setSpaceWeatherError(error) {
+export function setSpaceWeatherError(error: any) {
   cache.error = { message: error.message, time: new Date().toISOString() };
 }
 
@@ -38,7 +38,7 @@ export function setSpaceWeatherError(error) {
  * Restore space weather data from a DB snapshot.
  * Memory-only — no MongoDB upserts.
  */
-export function restoreSpaceWeather({ flares, cmes, storms }) {
+export function restoreSpaceWeather({ flares, cmes, storms }: any) {
   cache.flares = flares || [];
   cache.cmes = cmes || [];
   cache.storms = storms || [];
@@ -75,7 +75,7 @@ export function getLatestSpaceWeather() {
  */
 export function getSpaceWeatherSummary() {
   // Find strongest flare by class
-  const strongestFlare = cache.flares.reduce((strongest, flr) => {
+  const strongestFlare = cache.flares.reduce((strongest: any, flr: any) => {
     if (!strongest) return flr;
     const currentClass = flr.classType?.[0] || "";
     const bestClass = strongest.classType?.[0] || "";
@@ -91,12 +91,12 @@ export function getSpaceWeatherSummary() {
   }, null);
 
   const fastestCme = cache.cmes.reduce(
-    (fastest, cme) =>
+    (fastest: any, cme: any) =>
       (cme.speed ?? 0) > (fastest?.speed ?? 0) ? cme : fastest,
     null,
   );
 
-  const earthDirectedCmes = cache.cmes.filter((c) => c.isEarthDirected);
+  const earthDirectedCmes = cache.cmes.filter((c: any) => c.isEarthDirected);
 
   return {
     flareCount: cache.flares.length,

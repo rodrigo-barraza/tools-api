@@ -11,11 +11,11 @@ import { TMDB_BASE_URL, TMDB_IMAGE_BASE_URL } from "../../constants.ts";
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
-function img(path, size = "w500") {
+function img(path: any, size: any = "w500") {
   return path ? `${TMDB_IMAGE_BASE_URL}/${size}${path}` : null;
 }
 
-async function fetchTMDb(endpoint) {
+async function fetchTMDb(endpoint: any) {
   if (!CONFIG.TMDB_API_KEY) {
     throw new Error("TMDB_API_KEY is not configured");
   }
@@ -34,7 +34,7 @@ async function fetchTMDb(endpoint) {
 
 // ─── Normalizers ───────────────────────────────────────────────────
 
-function normalizeMovie(m) {
+function normalizeMovie(m: any) {
   if (!m) return null;
   return {
     tmdbId: m.id,
@@ -52,16 +52,16 @@ function normalizeMovie(m) {
     popularity: m.popularity || null,
     posterUrl: img(m.poster_path),
     backdropUrl: img(m.backdrop_path, "w1280"),
-    genres: (m.genres || m.genre_ids || []).map((g) =>
+    genres: (m.genres || m.genre_ids || []).map((g: any) =>
       typeof g === "object" ? g.name : g,
     ),
     originalLanguage: m.original_language || null,
     spokenLanguages: (m.spoken_languages || []).map(
-      (l) => l.english_name || l.name,
+      (l: any) => l.english_name || l.name,
     ),
-    productionCompanies: (m.production_companies || []).map((c) => c.name),
+    productionCompanies: (m.production_companies || []).map((c: any) => c.name),
     productionCountries: (m.production_countries || []).map(
-      (c) => c.name || c.iso_3166_1,
+      (c: any) => c.name || c.iso_3166_1,
     ),
     homepage: m.homepage || null,
     imdbId: m.imdb_id || null,
@@ -69,7 +69,7 @@ function normalizeMovie(m) {
   };
 }
 
-function normalizeTvShow(tv) {
+function normalizeTvShow(tv: any) {
   if (!tv) return null;
   return {
     tmdbId: tv.id,
@@ -89,12 +89,12 @@ function normalizeTvShow(tv) {
     popularity: tv.popularity || null,
     posterUrl: img(tv.poster_path),
     backdropUrl: img(tv.backdrop_path, "w1280"),
-    genres: (tv.genres || tv.genre_ids || []).map((g) =>
+    genres: (tv.genres || tv.genre_ids || []).map((g: any) =>
       typeof g === "object" ? g.name : g,
     ),
-    networks: (tv.networks || []).map((n) => n.name),
-    productionCompanies: (tv.production_companies || []).map((c) => c.name),
-    createdBy: (tv.created_by || []).map((c) => c.name),
+    networks: (tv.networks || []).map((n: any) => n.name),
+    productionCompanies: (tv.production_companies || []).map((c: any) => c.name),
+    createdBy: (tv.created_by || []).map((c: any) => c.name),
     originCountry: tv.origin_country || [],
     originalLanguage: tv.original_language || null,
     homepage: tv.homepage || null,
@@ -103,7 +103,7 @@ function normalizeTvShow(tv) {
   };
 }
 
-function normalizeCast(person) {
+function normalizeCast(person: any) {
   return {
     tmdbId: person.id,
     name: person.name,
@@ -114,7 +114,7 @@ function normalizeCast(person) {
   };
 }
 
-function normalizeCrew(person) {
+function normalizeCrew(person: any) {
   return {
     tmdbId: person.id,
     name: person.name,
@@ -129,7 +129,7 @@ function normalizeCrew(person) {
 /**
  * Search movies by title
  */
-export async function searchMovies(query, { page = 1, year }: Record<string, any> = {}) {
+export async function searchMovies(query: any, { page = 1, year }: Record<string, any> = {}) {
   let endpoint = `/search/movie?query=${encodeURIComponent(query)}&page=${page}&language=en-US`;
   if (year) endpoint += `&year=${year}`;
 
@@ -157,7 +157,7 @@ export async function searchMovies(query, { page = 1, year }: Record<string, any
 /**
  * Get full movie details by TMDb ID
  */
-export async function getMovieDetails(id) {
+export async function getMovieDetails(id: any) {
   const data = await fetchTMDb(`/movie/${id}?language=en-US`);
   if (!data) return { found: false, movie: null };
 
@@ -167,7 +167,7 @@ export async function getMovieDetails(id) {
 /**
  * Get movie credits (cast + crew)
  */
-export async function getMovieCredits(id) {
+export async function getMovieCredits(id: any) {
   const data = await fetchTMDb(`/movie/${id}/credits?language=en-US`);
   if (!data) return { found: false, cast: [], crew: [] };
 
@@ -175,7 +175,7 @@ export async function getMovieCredits(id) {
     found: true,
     cast: (data.cast || []).slice(0, 20).map(normalizeCast),
     crew: (data.crew || [])
-      .filter((c) =>
+      .filter((c: any) =>
         [
           "Director",
           "Writer",
@@ -192,7 +192,7 @@ export async function getMovieCredits(id) {
 /**
  * Get trending movies (day or week)
  */
-export async function getTrendingMovies(timeWindow = "day", limit = 10) {
+export async function getTrendingMovies(timeWindow: any = "day", limit: any = 10) {
   const data = await fetchTMDb(`/trending/movie/${timeWindow}?language=en-US`);
   if (!data || !data.results) return { found: false, results: [] };
 
@@ -278,7 +278,7 @@ export async function searchTvShows(
 /**
  * Get full TV series details by TMDb ID
  */
-export async function getTvShowDetails(id) {
+export async function getTvShowDetails(id: any) {
   const data = await fetchTMDb(`/tv/${id}?language=en-US`);
   if (!data) return { found: false, tvShow: null };
 
@@ -288,7 +288,7 @@ export async function getTvShowDetails(id) {
 /**
  * Get TV series aggregate credits (cast + crew across all seasons)
  */
-export async function getTvShowCredits(id) {
+export async function getTvShowCredits(id: any) {
   const data = await fetchTMDb(`/tv/${id}/aggregate_credits?language=en-US`);
   if (!data) return { found: false, cast: [], crew: [] };
 
@@ -296,7 +296,7 @@ export async function getTvShowCredits(id) {
     found: true,
     cast: (data.cast || []).slice(0, 20).map(normalizeCast),
     crew: (data.crew || [])
-      .filter((c) => {
+      .filter((c: any) => {
         const job = c.jobs?.[0]?.job || c.job || "";
         return [
           "Creator",
@@ -313,7 +313,7 @@ export async function getTvShowCredits(id) {
 /**
  * Get TV season details
  */
-export async function getTvSeasonDetails(tvId, seasonNumber) {
+export async function getTvSeasonDetails(tvId: any, seasonNumber: any) {
   const data = await fetchTMDb(
     `/tv/${tvId}/season/${seasonNumber}?language=en-US`,
   );
@@ -328,7 +328,7 @@ export async function getTvSeasonDetails(tvId, seasonNumber) {
       airDate: data.air_date || null,
       posterUrl: img(data.poster_path),
       episodeCount: (data.episodes || []).length,
-      episodes: (data.episodes || []).map((ep) => ({
+      episodes: (data.episodes || []).map((ep: any) => ({
         episodeNumber: ep.episode_number,
         name: ep.name,
         overview: ep.overview ? ep.overview.substring(0, 500) : null,
@@ -344,7 +344,7 @@ export async function getTvSeasonDetails(tvId, seasonNumber) {
 /**
  * Get trending TV shows (day or week)
  */
-export async function getTrendingTvShows(timeWindow = "day", limit = 10) {
+export async function getTrendingTvShows(timeWindow: any = "day", limit: any = 10) {
   const data = await fetchTMDb(`/trending/tv/${timeWindow}?language=en-US`);
   if (!data || !data.results) return { found: false, results: [] };
 

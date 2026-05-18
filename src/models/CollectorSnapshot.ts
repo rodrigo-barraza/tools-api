@@ -17,7 +17,7 @@ import logger from "../logger.ts";
 
 
  */
-export async function saveState(collectionName, data) {
+export async function saveState(collectionName: any, data: any) {
   try {
     const db = getDB();
     const document = Array.isArray(data)
@@ -27,7 +27,7 @@ export async function saveState(collectionName, data) {
     await db
       .collection(collectionName)
       .replaceOne({ _id: "current" as any }, document, { upsert: true });
-  } catch (error) {
+  } catch (error: any) {
     logger.error(
       `[State] ⚠️ Failed to save "${collectionName}": ${error.message}`,
     );
@@ -41,7 +41,7 @@ export async function saveState(collectionName, data) {
 
  * @returns {Promise<{ data: *, updatedAt: Date } | null>}
  */
-export async function loadState(collectionName) {
+export async function loadState(collectionName: any) {
   try {
     const db = getDB();
     const document = await db
@@ -58,7 +58,7 @@ export async function loadState(collectionName) {
 
     // Object data spread at top level
     return { data: rest, updatedAt };
-  } catch (error) {
+  } catch (error: any) {
     logger.error(
       `[State] ⚠️ Failed to load "${collectionName}": ${error.message}`,
     );

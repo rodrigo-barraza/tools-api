@@ -101,7 +101,7 @@ export const LSP_SERVER_CONFIGS = {
  * @param {string} [workspaceFolder] — project root path (injected into each config)
 
  */
-export function getLspServerConfigs(workspaceFolder) {
+export function getLspServerConfigs(workspaceFolder: any) {
   const configs: Record<string, any> = {};
 
   for (const [name, config] of Object.entries(LSP_SERVER_CONFIGS)) {

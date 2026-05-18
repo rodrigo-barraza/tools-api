@@ -8,8 +8,8 @@ const __dirname = dirname(__filename);
 
 // ─── CSV Parser ────────────────────────────────────────────────
 
-function parseCSVLine(line) {
-  const fields = [];
+function parseCSVLine(line: any) {
+  const fields: any[] = [];
   let current = "";
   let inQuotes = false;
 
@@ -30,7 +30,7 @@ function parseCSVLine(line) {
 
 // ─── Load & Index ──────────────────────────────────────────────
 
-const REQUIREMENTS_DB = [];
+const REQUIREMENTS_DB: any[] = [];
 let loaded = false;
 
 function ensureLoaded() {
@@ -50,7 +50,7 @@ function ensureLoaded() {
   
   try {
     const raw = readFileSync(datasetPath, "utf-8");
-    const lines = raw.split("\n").filter((l) => l.trim());
+    const lines = raw.split("\n").filter((l: any) => l.trim());
     const headers = parseCSVLine(lines[0]);
 
     for (let i = 1; i < lines.length; i++) {
@@ -58,7 +58,7 @@ function ensureLoaded() {
       if (values.length < headers.length) continue;
 
       const row: Record<string, any> = {};
-      headers.forEach((h, index) => {
+      headers.forEach((h: any, index: any) => {
         row[h] = values[index] || "";
       });
       
@@ -66,7 +66,7 @@ function ensureLoaded() {
       REQUIREMENTS_DB.push(row);
     }
     logger.info(`📊 Nutrition Requirement DB loaded: ${REQUIREMENTS_DB.length} rules.`);
-  } catch (error) {
+  } catch (error: any) {
     logger.error("Failed to load digest_nutrient_requirement.csv", error);
   }
 }
@@ -92,7 +92,7 @@ export function calculateTargetProfile({
   weightKg,
   caloricIntake,
   includeCompositional = false,
-}) {
+}: any) {
   ensureLoaded();
 
   const speciesLower = (species || "human").toLowerCase();
@@ -100,14 +100,14 @@ export function calculateTargetProfile({
   const targetAuth = (authority || (speciesLower === "human" ? "US_DRI" : "AAFCO")).toUpperCase();
 
   const baseRules = REQUIREMENTS_DB.filter(
-    (r) =>
+    (r: any) =>
       r.species.toLowerCase() === speciesLower &&
       r.demographic_life_stage.toLowerCase() === lifeStageLower &&
       r.authority.toUpperCase() === targetAuth,
   );
 
   const requirements: Record<string, any> = {};
-  const compositional = [];
+  const compositional: any[] = [];
   const kcalMult = caloricIntake ? caloricIntake / 1000.0 : 1;
 
   for (const rule of baseRules) {

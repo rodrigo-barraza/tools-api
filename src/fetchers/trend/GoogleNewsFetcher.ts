@@ -17,7 +17,7 @@ const GOOGLE_NEWS_RSS_URL = "https://news.google.com/rss";
 
  * @returns {string} Category string
  */
-function categorizeArticle(section) {
+function categorizeArticle(section: any) {
   if (!section) return "general";
 
   const lower = section.toLowerCase();
@@ -60,7 +60,7 @@ export async function fetchGoogleNews() {
     },
   ];
 
-  const allArticles = [];
+  const allArticles: any[] = [];
   const seen = new Set();
 
   for (const { url, section } of sections) {
@@ -97,7 +97,7 @@ export async function fetchGoogleNews() {
           section,
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       logger.warn(
         `[Google News] ⚠️ ${section} fetch failed: ${error.message}`,
       );
@@ -106,7 +106,7 @@ export async function fetchGoogleNews() {
 
   return allArticles
     .slice(0, GOOGLE_NEWS_ARTICLE_LIMIT)
-    .map((article, index) => ({
+    .map((article: any, index: any) => ({
       name: article.title,
       normalizedName: normalizeName(article.title),
       source: SOURCES.GOOGLE_NEWS,

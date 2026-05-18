@@ -41,7 +41,7 @@ const DAILY_VARIABLES = [
 
  * @returns {Promise<{ name: string, country: string, countryCode: string, latitude: number, longitude: number, timezone: string, population: number|null } | null>}
  */
-async function geocodeLocation(location) {
+async function geocodeLocation(location: any) {
   await rateLimiter.wait("OPEN_METEO");
 
   const url = `${GEOCODING_URL}?name=${encodeURIComponent(location)}&count=1&language=en&format=json`;
@@ -80,8 +80,8 @@ async function geocodeLocation(location) {
  * @param {{ location?: string, latitude?: number, longitude?: number, units?: string }} params
 
  */
-export async function fetchLiveWeather({ location, latitude, longitude, units = "metric" }) {
-  let geo = null;
+export async function fetchLiveWeather({ location, latitude, longitude, units = "metric" }: any) {
+  let geo: any = null;
 
   // Resolve coordinates
   if (location) {
@@ -171,7 +171,7 @@ export async function fetchLiveWeather({ location, latitude, longitude, units = 
 
     // 3-day forecast
     forecast: daily.time
-      ? daily.time.map((time, i) => ({
+      ? daily.time.map((time: any, i: any) => ({
           date: time,
           weatherCode: daily.weather_code[i],
           weatherDescription: WMO_WEATHER_CODES[daily.weather_code[i]] || "Unknown",

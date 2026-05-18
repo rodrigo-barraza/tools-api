@@ -25,7 +25,7 @@ const CHART_TTL_MS = MS_PER_HOUR;
 
  * @returns {string} Short UUID key
  */
-export function storeChart(chartConfig) {
+export function storeChart(chartConfig: any) {
   const id = crypto.randomUUID().slice(0, 12);
   CHART_STORE.set(id, { config: chartConfig, createdAt: Date.now() });
 
@@ -44,7 +44,7 @@ export function storeChart(chartConfig) {
 
 
  */
-export function getStoredChart(id) {
+export function getStoredChart(id: any) {
   const entry = CHART_STORE.get(id);
   if (!entry) return null;
   if (Date.now() - entry.createdAt > CHART_TTL_MS) {
@@ -71,22 +71,22 @@ const PALETTE = [
   "rgba(6, 182, 212, 0.85)",    // cyan
 ];
 
-const PALETTE_BORDER = PALETTE.map((c) => c.replace("0.85", "1"));
+const PALETTE_BORDER = PALETTE.map((c: any) => c.replace("0.85", "1"));
 
 /**
  * Assign colors to datasets that don't have explicit colors.
  */
-function assignColors(datasets, chartType) {
-  return datasets.map((ds, i) => {
+function assignColors(datasets: any, chartType: any) {
+  return datasets.map((ds: any, i: any) => {
     if (chartType === "pie") {
       // Pie charts need per-slice colors on the single dataset
       const count = ds.data?.length || 0;
       return {
         ...ds,
         backgroundColor:
-          ds.backgroundColor || Array.from({ length: count }, (_, j) => PALETTE[j % PALETTE.length]),
+          ds.backgroundColor || Array.from({ length: count }, (_: any, j: any) => PALETTE[j % PALETTE.length]),
         borderColor:
-          ds.borderColor || Array.from({ length: count }, (_, j) => PALETTE_BORDER[j % PALETTE_BORDER.length]),
+          ds.borderColor || Array.from({ length: count }, (_: any, j: any) => PALETTE_BORDER[j % PALETTE_BORDER.length]),
         borderWidth: ds.borderWidth ?? 2,
       };
     }
@@ -121,7 +121,7 @@ function assignColors(datasets, chartType) {
 
  * @returns {Promise<Buffer>} PNG buffer
  */
-export async function renderChartPng(chartConfig) {
+export async function renderChartPng(chartConfig: any) {
   const { type, title, labels, datasets, options = {} } = chartConfig;
 
   const coloredDatasets = assignColors(datasets, type);

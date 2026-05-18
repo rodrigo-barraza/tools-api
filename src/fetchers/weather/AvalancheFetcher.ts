@@ -32,7 +32,7 @@ export async function fetchAvalancheForecast() {
     "squamish",
     "howe sound",
   ];
-  const forecasts = [];
+  const forecasts: any[] = [];
   for (const product of products) {
     const title = (
       product.report?.title ||
@@ -42,7 +42,7 @@ export async function fetchAvalancheForecast() {
     ).toLowerCase();
     const areaId = (product.area?.id || product.id || "").toLowerCase();
     const isRelevant = bcKeywords.some(
-      (kw) => title.includes(kw) || areaId.includes(kw),
+      (kw: any) => title.includes(kw) || areaId.includes(kw),
     );
     if (isRelevant) {
       const report = product.report || {};
@@ -53,13 +53,13 @@ export async function fetchAvalancheForecast() {
         validUntil: report.validUntil || null,
         highlights: report.highlights ? stripHtml(report.highlights) : null,
         confidence: report.confidence?.rating?.display || null,
-        dangerRatings: (report.dangerRatings || []).map((dr) => ({
+        dangerRatings: (report.dangerRatings || []).map((dr: any) => ({
           date: dr.date?.display || null,
           alpine: dr.ratings?.alp?.rating?.display || null,
           treeline: dr.ratings?.tln?.rating?.display || null,
           belowTreeline: dr.ratings?.btl?.rating?.display || null,
         })),
-        problems: (report.problems || []).map((p) => ({
+        problems: (report.problems || []).map((p: any) => ({
           type: p.type?.display || null,
           comment: p.comment ? stripHtml(p.comment) : null,
         })),
@@ -80,13 +80,13 @@ export async function fetchAvalancheForecast() {
         validUntil: report.validUntil || null,
         highlights: report.highlights ? stripHtml(report.highlights) : null,
         confidence: report.confidence?.rating?.display || null,
-        dangerRatings: (report.dangerRatings || []).map((dr) => ({
+        dangerRatings: (report.dangerRatings || []).map((dr: any) => ({
           date: dr.date?.display || null,
           alpine: dr.ratings?.alp?.rating?.display || null,
           treeline: dr.ratings?.tln?.rating?.display || null,
           belowTreeline: dr.ratings?.btl?.rating?.display || null,
         })),
-        problems: (report.problems || []).map((p) => ({
+        problems: (report.problems || []).map((p: any) => ({
           type: p.type?.display || null,
           comment: p.comment ? stripHtml(p.comment) : null,
         })),

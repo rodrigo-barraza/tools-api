@@ -38,18 +38,18 @@ import { EphemeralStore, buildLocalUrl } from "../utilities.js";
 import { crawlSingleStatic } from "../services/CrawlerService.js";
 const router = Router();
 // ─── Calculator (BigNumber) ────────────────────────────────────────
-router.get("/calculate", (req, res) => {
+router.get("/calculate", (req: any, res: any) => {
   const { operation, a, b } = req.query as any;
   if (!operation || !a) {
     return res.status(400).json({ error: "Query parameters 'operation' and 'a' are required" });
   }
   try {
     const numA = new BigNumber(a);
-    let numB;
+    let numB: any;
     if (b !== undefined && b !== "") {
       numB = new BigNumber(b);
     }
-    let result;
+    let result: any;
     switch (operation) {
       case "add":
         if (numB === undefined) throw new Error("'b' is required for add");
@@ -90,12 +90,12 @@ router.get("/calculate", (req, res) => {
       b: b || null,
       result: result.toFixed(),
     });
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ error: `Calculation failed: ${error.message}` });
   }
 });
 // ─── Currency Conversion ───────────────────────────────────────────
-router.get("/currency/convert", asyncHandler(async (req, res) => {
+router.get("/currency/convert", asyncHandler(async (req: any, res: any) => {
   const { amount, from, to } = req.query as any;
   if (!from || !to) {
     return res
@@ -113,11 +113,11 @@ router.get("/currency/list", asyncHandler(
 ));
 // ─── Timezone ──────────────────────────────────────────────────────
 router.get("/timezone/:area/:location", asyncHandler(
-  (req) => getTimeInTimezone(`${req.params.area as string}/${req.params.location as string}`),
+  (req: any) => getTimeInTimezone(`${req.params.area as string}/${req.params.location as string}`),
   "Timezone lookup",
 ));
 router.get("/timezone/list", asyncHandler(
-  async (req) => {
+  async (req: any) => {
     const timezones = await listTimezones(req.query.area as string);
     return {
       count: Array.isArray(timezones) ? timezones.length : 0,
@@ -127,7 +127,7 @@ router.get("/timezone/list", asyncHandler(
   "Timezone list",
 ));
 // ─── IP Geolocation (IPinfo) ───────────────────────────────────────
-router.get("/ip/batch", asyncHandler(async (req, res) => {
+router.get("/ip/batch", asyncHandler(async (req: any, res: any) => {
   const ips = req.query.ips as string;
   if (!ips) {
     return res
@@ -136,7 +136,7 @@ router.get("/ip/batch", asyncHandler(async (req, res) => {
   }
   const ipArray = ips
     .split(",")
-    .map((ip) => ip.trim())
+    .map((ip: any) => ip.trim())
     .filter(Boolean);
   const result = await batchLookupIps(ipArray);
   res.json({ count: result.length, results: result });
@@ -146,7 +146,7 @@ router.get("/ip", asyncHandler(
   "IP lookup",
 ));
 router.get("/ip/:ip", asyncHandler(
-  (req) => {
+  (req: any) => {
     const raw = req.params.ip as string;
     const ip = raw === "self" || raw === ":ip" ? "" : raw;
     return lookupIp(ip);
@@ -154,7 +154,7 @@ router.get("/ip/:ip", asyncHandler(
   "IP lookup",
 ));
 // ─── Places — Nearby Search (Google Places API New) ────────────────
-router.get("/places/nearby", asyncHandler(async (req, res) => {
+router.get("/places/nearby", asyncHandler(async (req: any, res: any) => {
   const { type, latitude, longitude, radius, limit } = req.query as any;
   if (!type) {
     return res
@@ -170,7 +170,7 @@ router.get("/places/nearby", asyncHandler(async (req, res) => {
   }));
 }));
 // ─── Places — Text Search (Google Places API New) ──────────────────
-router.get("/places/search", asyncHandler(async (req, res) => {
+router.get("/places/search", asyncHandler(async (req: any, res: any) => {
   const { q, latitude, longitude, radius, limit } = req.query as any;
   if (!q) {
     return res
@@ -191,16 +191,16 @@ router.get("/places/search", asyncHandler(async (req, res) => {
  * Maps are keyed by short UUID, expire after 1h.
  */
 const mapStore = new EphemeralStore();
-function storeMarkers(markerList) {
+function storeMarkers(markerList: any) {
   return mapStore.set({ markers: markerList });
 }
 /**
  * Build the interactive embed HTML for Google Maps JS API.
  * Renders numbered markers with info windows showing name + address.
  */
-function buildMapEmbedHtml(markerList, apiKey, { zoom, maptype = "roadmap" }: Record<string, any> = {}) {
+function buildMapEmbedHtml(markerList: any, apiKey: any, { zoom, maptype = "roadmap" }: Record<string, any> = {}) {
   const markersJson = JSON.stringify(
-    markerList.map((m, i) => ({
+    markerList.map((m: any, i: any) => ({
       lat: m.latitude,
       lng: m.longitude,
       label: String(i + 1),
@@ -276,12 +276,12 @@ function initMap(){
 <script src="https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap" async defer></script>
 </body></html>`;
 }
-router.get("/map/embed", (req, res) => {
+router.get("/map/embed", (req: any, res: any) => {
   const { id, markers, zoom, maptype } = req.query as any;
   if (!CONFIG.GOOGLE_API_KEY) {
     return res.status(400).send("Missing API key");
   }
-  let markerList;
+  let markerList: any;
   // Resolve by stored ID (short URL) or inline JSON (backward compat)
   if (id) {
     const entry = mapStore.get(id);
@@ -306,7 +306,7 @@ router.get("/map/embed", (req, res) => {
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(html);
 });
-router.get("/map", asyncHandler(async (req, res) => {
+router.get("/map", asyncHandler(async (req: any, res: any) => {
   const { markers, zoom, maptype } = req.query as any;
   if (!markers) {
     return res
@@ -314,7 +314,7 @@ router.get("/map", asyncHandler(async (req, res) => {
       .json({ error: "Query parameter 'markers' is required (JSON array of {latitude, longitude, label?})" });
   }
   try {
-    let markerList;
+    let markerList: any;
     try {
       markerList = JSON.parse(markers);
     } catch {
@@ -337,13 +337,13 @@ router.get("/map", asyncHandler(async (req, res) => {
       mapEmbedUrl,
       markerCount: markerList.length,
     });
-  } catch (error) {
+  } catch (error: any) {
     res.status(502).json({ error: `Map generation failed: ${error.message}` });
   }
 }));
 // ─── Webcams ───────────────────────────────────────────────────────
 router.get("/webcams", asyncHandler(
-  async (req) => {
+  async (req: any) => {
     const { city, limit } = req.query as any;
     const webcams = await getPublicWebcams({ 
       city: city || "vancouver", 
@@ -354,7 +354,7 @@ router.get("/webcams", asyncHandler(
   "Webcams fetch"
 ));
 // ─── Airports ──────────────────────────────────────────────────────
-router.get("/airports/search", (req, res) => {
+router.get("/airports/search", (req: any, res: any) => {
   const { q, limit, country } = req.query as any;
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
@@ -364,7 +364,7 @@ router.get("/airports/search", (req, res) => {
     country,
   }));
 });
-router.get("/airports/code/:code", (req, res) => {
+router.get("/airports/code/:code", (req: any, res: any) => {
   const result = getAirportByCode(req.params.code as string);
   if (!result) {
     return res.status(404).json({ error: `Airport not found: ${req.params.code as string}` });
@@ -372,13 +372,13 @@ router.get("/airports/code/:code", (req, res) => {
   res.json(result);
 });
 router.get("/airports/country/:code", asyncHandler(
-  async (req) => getAirportsByCountry(req.params.code as string, {
+  async (req: any) => getAirportsByCountry(req.params.code as string, {
     limit: parseInt(req.query.limit as string) || 50,
   }),
   "Country airports lookup",
   500,
 ));
-router.get("/airports/nearest", (req, res) => {
+router.get("/airports/nearest", (req: any, res: any) => {
   const { lat, lng, limit } = req.query as any;
   if (!lat || !lng) {
     return res.status(400).json({ error: "Query parameters 'lat' and 'lng' are required" });
@@ -390,7 +390,7 @@ router.get("/airports/nearest", (req, res) => {
   ));
 });
 // ─── Python Code Interpreter ───────────────────────────────────────
-router.post("/python/execute", asyncHandler(async (req, res) => {
+router.post("/python/execute", asyncHandler(async (req: any, res: any) => {
   const { code, timeout } = req.body;
   if (!code || typeof code !== "string") {
     return res
@@ -411,7 +411,7 @@ router.get("/python/info", asyncHandler(
   "Python interpreter info",
 ));
 // ── Python Streaming (SSE) ────────────────────────────────────
-router.post("/python/stream", asyncHandler(async (req, res) => {
+router.post("/python/stream", asyncHandler(async (req: any, res: any) => {
   const { code, timeout } = req.body;
   if (!code || typeof code !== "string") {
     return res.status(400).json({ error: "Request body must include 'code' (string)" });
@@ -422,14 +422,14 @@ router.post("/python/stream", asyncHandler(async (req, res) => {
   send({ event: "start", language: "python" });
   const result = await executePythonStreaming(code, {
     timeout: timeout ? Math.min(Math.max(parseInt(timeout), 1000), 60_000) : undefined,
-    onChunk: (event, data) => send({ event, data }),
+    onChunk: (event: any, data: any) => send({ event, data }),
   });
   send({ event: "exit", exitCode: result.exitCode, executionTimeMs: result.executionTimeMs, success: result.success, timedOut: result.timedOut, error: result.error || undefined });
   res.end();
 }));
 // ─── Chart Generation ──────────────────────────────────────────────
 const VALID_CHART_TYPES = ["bar", "line", "pie"];
-router.post("/chart", (req, res) => {
+router.post("/chart", (req: any, res: any) => {
   const { type, title, labels, datasets } = req.body;
   if (!type || !VALID_CHART_TYPES.includes(type)) {
     return res.status(400).json({
@@ -471,7 +471,7 @@ router.post("/chart", (req, res) => {
     datasetCount: datasets.length,
   });
 });
-router.get("/chart/render", asyncHandler(async (req, res) => {
+router.get("/chart/render", asyncHandler(async (req: any, res: any) => {
   const { id } = req.query as any;
   if (!id) {
     return res.status(400).send("Missing 'id' parameter");
@@ -485,19 +485,19 @@ router.get("/chart/render", asyncHandler(async (req, res) => {
     res.setHeader("Content-Type", "image/png");
     res.setHeader("Cache-Control", "public, max-age=3600");
     res.send(pngBuffer);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: `Chart render failed: ${error.message}` });
   }
 }));
 // ─── Page Metadata Scraper (Crawlee) ───────────────────────────────
 router.get("/scrape/metadata", asyncHandler(
-  async (req) => {
+  async (req: any) => {
     const { url } = req.query as any;
     if (!url) {
       throw Object.assign(new Error("Query parameter 'url' is required"), { status: 400 });
     }
     const result = await crawlSingleStatic(url, {
-      extractFn: ($) => {
+      extractFn: ($: any) => {
         const meta: Record<string, any> = {};
         // Title
         meta.title =
@@ -528,7 +528,7 @@ router.get("/scrape/metadata", asyncHandler(
           $('meta[itemprop="keywords"]').attr("content") ||
           null;
         meta.keywords = keywords
-          ? keywords.split(",").map((k) => k.trim()).filter(Boolean)
+          ? keywords.split(",").map((k: any) => k.trim()).filter(Boolean)
           : null;
         // Site name
         meta.siteName =
@@ -568,7 +568,7 @@ export function getUtilityHealth() {
   };
 }
 // ── Unified Airport Lookup Dispatcher ──────────────────────────────
-router.get("/airports/lookup", asyncHandler(async (req, res) => {
+router.get("/airports/lookup", asyncHandler(async (req: any, res: any) => {
   const { action, q, code, country, lat, lng, limit } = req.query as any;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["search", "code", "country", "nearest"] });
   switch (action) {

@@ -5,18 +5,19 @@ const MAG_URL =
 
 import { MS_PER_DAY } from "@rodrigo-barraza/utilities-library";
 
-function parseRows(rows, fields) {
+function parseRows(rows: any, fields: any) {
   // First row is header, skip it
   const data = rows.slice(1);
   const cutoff = Date.now() - MS_PER_DAY;
 
   return data
-    .map((row) => {
+    .map((row: any) => {
       const time = new Date(row[0] + "Z").getTime();
       if (isNaN(time) || time < cutoff) return null;
       const object = { time: row[0] };
-      fields.forEach((f, i) => {
+      fields.forEach((f: any, i: any) => {
         const value = parseFloat(row[i + 1]);
+        // @ts-expect-error - TS7053: implicit any index
         object[f] = isNaN(value) ? null : value;
       });
       return object;
@@ -24,10 +25,10 @@ function parseRows(rows, fields) {
     .filter(Boolean);
 }
 
-function downsample(array, intervalMinutes) {
+function downsample(array: any, intervalMinutes: any) {
   if (array.length === 0) return array;
-  const result = [];
-  let lastBucket = null;
+  const result: any[] = [];
+  let lastBucket: any = null;
 
   for (const point of array) {
     const t = new Date(point.time + "Z").getTime();

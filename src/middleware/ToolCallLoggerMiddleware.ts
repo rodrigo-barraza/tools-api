@@ -24,7 +24,7 @@ const MAP_REBUILD_INTERVAL_MS = 60_000; // Rebuild every 60s
  * e.g. "/weather/live" stays "/weather/live"
  *      "/finance/stock/:symbol/quote" becomes "/finance/stock/STAR/quote"
  */
-function normalizePathTemplate(pathTemplate) {
+function normalizePathTemplate(pathTemplate: any) {
   return pathTemplate.replace(/:[^/]+/g, "*");
 }
 
@@ -32,7 +32,7 @@ function normalizePathTemplate(pathTemplate) {
  * Normalize an actual request path to match against templates.
  * Replaces path segments that look like dynamic values.
  */
-function normalizeRequestPath(actualPath) {
+function normalizeRequestPath(actualPath: any) {
   // Strip query string
   const clean = actualPath.split("?")[0];
   return clean;
@@ -65,7 +65,7 @@ function rebuildPathMap() {
 
  * @returns {{ toolName: string, domain: string } | null}
  */
-function resolveToolFromRequest(method, path) {
+function resolveToolFromRequest(method: any, path: any) {
   // Rebuild map periodically
   if (Date.now() - lastMapBuild > MAP_REBUILD_INTERVAL_MS) {
     rebuildPathMap();
@@ -111,14 +111,14 @@ function resolveToolFromRequest(method, path) {
  * Intercepts responses, identifies which tool was called,
  * and persists structured telemetry to MongoDB.
  */
-export function toolCallLoggerMiddleware(req, res, next) {
+export function toolCallLoggerMiddleware(req: any, res: any, next: any) {
   const start = performance.now();
 
   // Capture the response body by monkey-patching res.json
   const originalJson = res.json.bind(res);
-  let responseBody = null;
+  let responseBody: any = null;
 
-  res.json = (data) => {
+  res.json = (data: any) => {
     responseBody = data;
     return originalJson(data);
   };
@@ -212,7 +212,7 @@ const MAX_RESULT_ITEMS = 3;
  * Sanitize tool arguments for storage. Caps long strings,
  * strips base64 data, keeps structure readable.
  */
-function sanitizeArgs(args) {
+function sanitizeArgs(args: any) {
   if (!args || typeof args !== "object") return args;
 
   const sanitized: Record<string, any> = {};
@@ -232,7 +232,7 @@ function sanitizeArgs(args) {
  * Sanitize the response body for storage. Keeps metadata
  * (count, total, etc.) but truncates large arrays/objects.
  */
-function sanitizeResult(body) {
+function sanitizeResult(body: any) {
   if (!body || typeof body !== "object") return body;
 
   const result: Record<string, any> = {};
@@ -272,7 +272,7 @@ function sanitizeResult(body) {
 /**
  * Persist a tool-call log entry to MongoDB.
  */
-export async function persistToolCall(entry) {
+export async function persistToolCall(entry: any) {
   try {
     const db = getDB();
     await db.collection(COLLECTION).insertOne(entry);
@@ -335,7 +335,7 @@ export async function queryToolCallLogs(filters: Record<string, any> = {}) {
 
 
  */
-export async function getToolCallStats(since) {
+export async function getToolCallStats(since: any) {
   const db = getDB();
   const match = since ? { timestamp: { $gte: new Date(since) } } : {};
 
@@ -436,7 +436,7 @@ export async function getToolCallStats(since) {
   ]);
 
   const successMap = Object.fromEntries(
-    bySuccess.map((s) => [s._id ? "success" : "failure", s.count]),
+    bySuccess.map((s: any) => [s._id ? "success" : "failure", s.count]),
   );
 
   return {
@@ -444,7 +444,7 @@ export async function getToolCallStats(since) {
     successRate: totalCalls > 0
       ? Math.round(((successMap.success || 0) / totalCalls) * 10000) / 100
       : 0,
-    byTool: byTool.map((t) => ({
+    byTool: byTool.map((t: any) => ({
       toolName: t._id,
       count: t.count,
       avgMs: Math.round(t.avgMs * 100) / 100,
@@ -456,7 +456,7 @@ export async function getToolCallStats(since) {
         : 0,
       totalTransferBytes: t.totalBytes,
     })),
-    byDomain: byDomain.map((d) => ({
+    byDomain: byDomain.map((d: any) => ({
       domain: d._id,
       count: d.count,
       avgMs: Math.round(d.avgMs * 100) / 100,
@@ -491,7 +491,7 @@ export async function setupToolCallsCollection() {
     ]);
 
     logger.info(`📊 tool_calls collection indexes ensured`);
-  } catch (error) {
+  } catch (error: any) {
     logger.error(`Failed to setup tool_calls indexes: ${error.message}`);
   }
 }

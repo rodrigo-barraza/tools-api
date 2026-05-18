@@ -24,10 +24,10 @@ async function fetchUbcEvents() {
 
   const html = await response.text();
   const $ = cheerio.load(html);
-  const events = [];
+  const events: any[] = [];
 
   $("article, .event-card, .views-row, [class*='event'], .card").each(
-    (_i, element) => {
+    (_i: any, element: any) => {
       const $el = $(element);
       const $link = $el.find("a").first();
       const title =
@@ -102,10 +102,10 @@ async function fetchSfuEvents() {
 
   const html = await response.text();
   const $ = cheerio.load(html);
-  const events = [];
+  const events: any[] = [];
 
   $("article, .event-card, .views-row, [class*='event'], .card, li").each(
-    (_i, element) => {
+    (_i: any, element: any) => {
       const $el = $(element);
       const $link = $el.find("a").first();
       const title =
@@ -172,7 +172,7 @@ export async function fetchUniversityEvents() {
     fetchSfuEvents(),
   ]);
 
-  const events = [];
+  const events: any[] = [];
   for (const result of results) {
     if (result.status === "fulfilled") {
       events.push(...result.value);

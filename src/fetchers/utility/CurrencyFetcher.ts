@@ -18,7 +18,7 @@ const RATE_CACHE_TTL_MS = 3_600_000; // 1 hour — rates update daily on free ti
 
 
  */
-async function fetchRates(base = "USD") {
+async function fetchRates(base: any = "USD") {
   const upperBase = base.toUpperCase();
 
   // Check cache
@@ -60,7 +60,7 @@ async function fetchRates(base = "USD") {
 
 
  */
-export async function convertCurrency(amount, from, to) {
+export async function convertCurrency(amount: any, from: any, to: any) {
   const upperFrom = from.toUpperCase();
   const upperTo = to.toUpperCase();
 

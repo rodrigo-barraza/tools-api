@@ -23,7 +23,7 @@ class RateLimiterService {
 
 
    */
-  async wait(provider) {
+  async wait(provider: any) {
     const limits = API_RATE_LIMITS[provider];
     if (!limits) {
       logger.warn(`[RateLimiter] ⚠️ Unknown provider: ${provider}`);
@@ -46,13 +46,13 @@ class RateLimiterService {
 
 
    */
-  async #enforce(provider, delayMs) {
+  async #enforce(provider: any, delayMs: any) {
     const last = this.#lastRequestAt.get(provider) || 0;
     const elapsed = Date.now() - last;
     const remaining = delayMs - elapsed;
 
     if (remaining > 0) {
-      await new Promise<any>((resolve) => setTimeout(resolve, remaining));
+      await new Promise<any>((resolve: any) => setTimeout(resolve, remaining));
     }
 
     this.#lastRequestAt.set(provider, Date.now());
@@ -63,7 +63,7 @@ class RateLimiterService {
 
    * @returns {number|null} requestDelayMs or null if unknown
    */
-  getDelay(provider) {
+  getDelay(provider: any) {
     return API_RATE_LIMITS[provider]?.requestDelayMs ?? null;
   }
 
@@ -72,7 +72,7 @@ class RateLimiterService {
 
    * @returns {{ lastRequestAt: number|null, delayMs: number|null }}
    */
-  getStats(provider) {
+  getStats(provider: any) {
     return {
       lastRequestAt: this.#lastRequestAt.get(provider) ?? null,
       delayMs: this.getDelay(provider),

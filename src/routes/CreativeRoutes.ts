@@ -106,7 +106,7 @@ const SAFETY_SOFTENING_TIERS = [
 
  * @returns {string} Softened prompt
  */
-function softenPrompt(prompt, tier) {
+function softenPrompt(prompt: any, tier: any) {
   let softened = prompt;
   for (let t = 0; t <= tier && t < SAFETY_SOFTENING_TIERS.length; t++) {
     for (const [pattern, replacement] of SAFETY_SOFTENING_TIERS[t]) {
@@ -128,7 +128,7 @@ const VISION_CACHE_TTL_MS = 5 * 60 * 1000;
 // POST /creative/generate-image
 // ────────────────────────────────────────────────────────────
 
-router.post("/generate-image", asyncHandler(async (req, res) => {
+router.post("/generate-image", asyncHandler(async (req: any, res: any) => {
   const { prompt, referenceImages } = req.body;
 
   if (!prompt) {
@@ -140,7 +140,7 @@ router.post("/generate-image", asyncHandler(async (req, res) => {
 
   try {
     let currentPrompt = prompt;
-    let result = null;
+    let result: any = null;
     let safetyRetries = 0;
 
     for (let attempt = 0; attempt <= MAX_SAFETY_RETRIES; attempt++) {
@@ -175,7 +175,7 @@ router.post("/generate-image", asyncHandler(async (req, res) => {
           skipConversation: true,
           ...(systemPrompt && { systemPrompt }),
         });
-      } catch (error) {
+      } catch (error: any) {
         logger.error(`[CreativeRoutes] Prism chat failed: ${error.message}`);
         return res.status(502).json({
           error: `Image generation failed: ${error.message}`,
@@ -252,7 +252,7 @@ router.post("/generate-image", asyncHandler(async (req, res) => {
         softenedPrompt: currentPrompt.slice(0, 200),
       }),
     });
-  } catch (error) {
+  } catch (error: any) {
     logger.error(`[CreativeRoutes] generate-image failed: ${error.message}`);
     res.status(500).json({ error: `Image generation failed: ${error.message}` });
   }
@@ -262,7 +262,7 @@ router.post("/generate-image", asyncHandler(async (req, res) => {
 // POST /creative/describe-image
 // ────────────────────────────────────────────────────────────
 
-router.post("/describe-image", asyncHandler(async (req, res) => {
+router.post("/describe-image", asyncHandler(async (req: any, res: any) => {
   const { imageUrls, context = "general" } = req.body;
 
   if (!imageUrls || !Array.isArray(imageUrls) || imageUrls.length === 0) {
@@ -285,10 +285,11 @@ router.post("/describe-image", asyncHandler(async (req, res) => {
     photo: "Describe this image. Make no mention about the quality, resolution, or pixelation.",
     general: "Describe this image. Make no mention about the quality, resolution, or pixelation.",
   };
+  // @ts-expect-error - TS7053: implicit any index
   const visionPrompt = prompts[context] || prompts.general;
 
   try {
-    const descriptions = [];
+    const descriptions: any[] = [];
 
     // Per-request dedup cache keyed by X-Request-Id header
     const requestId = req.headers["x-request-id"] || "default";
@@ -327,7 +328,7 @@ router.post("/describe-image", asyncHandler(async (req, res) => {
           });
 
           return result.text || "Unable to describe this image.";
-        } catch (error) {
+        } catch (error: any) {
           logger.error(`[CreativeRoutes] describe-image vision call failed: ${error.message}`);
           return `Failed to describe image: ${error.message}`;
         }
@@ -347,7 +348,7 @@ router.post("/describe-image", asyncHandler(async (req, res) => {
       success: true,
       descriptions,
     });
-  } catch (error) {
+  } catch (error: any) {
     logger.error(`[CreativeRoutes] describe-image failed: ${error.message}`);
     res.status(500).json({ error: `Image description failed: ${error.message}` });
   }
@@ -357,7 +358,7 @@ router.post("/describe-image", asyncHandler(async (req, res) => {
 // POST /creative/text-to-speech
 // ────────────────────────────────────────────────────────────
 
-router.post("/text-to-speech", asyncHandler(async (req, res) => {
+router.post("/text-to-speech", asyncHandler(async (req: any, res: any) => {
   const { text, voice, provider, model } = req.body;
 
   if (!text) {
@@ -385,7 +386,7 @@ router.post("/text-to-speech", asyncHandler(async (req, res) => {
       },
       textLength: text.length,
     });
-  } catch (error) {
+  } catch (error: any) {
     logger.error(`[CreativeRoutes] text-to-speech failed: ${error.message}`);
     res.status(500).json({ error: `Text-to-speech failed: ${error.message}` });
   }
@@ -395,7 +396,7 @@ router.post("/text-to-speech", asyncHandler(async (req, res) => {
 // POST /creative/speech-to-text
 // ────────────────────────────────────────────────────────────
 
-router.post("/speech-to-text", asyncHandler(async (req, res) => {
+router.post("/speech-to-text", asyncHandler(async (req: any, res: any) => {
   const { audioUrl, audio, provider, model, language } = req.body;
 
   // Accept either a URL (we fetch it) or raw base64 audio
@@ -409,7 +410,7 @@ router.post("/speech-to-text", asyncHandler(async (req, res) => {
       const buffer = await response.arrayBuffer();
       const mimeType = response.headers.get("content-type") || "audio/mpeg";
       audioData = `data:${mimeType};base64,${Buffer.from(buffer).toString("base64")}`;
-    } catch (error) {
+    } catch (error: any) {
       return res.status(400).json({ error: `Failed to fetch audio URL: ${error.message}` });
     }
   }
@@ -437,7 +438,7 @@ router.post("/speech-to-text", asyncHandler(async (req, res) => {
       text: result.text,
       usage: result.usage || {},
     });
-  } catch (error) {
+  } catch (error: any) {
     logger.error(`[CreativeRoutes] speech-to-text failed: ${error.message}`);
     res.status(500).json({ error: `Speech-to-text failed: ${error.message}` });
   }

@@ -3,7 +3,7 @@ import { upsertWebcams } from "../../../../models/Webcam.ts";
 
 export async function refreshVancouverWebcams() {
   // Vancouver opendata caps at 100 per request. Paginate until we get all.
-  let allParsedWebcams = [];
+  let allParsedWebcams: any[] = [];
   let offset = 0;
   const limitPerPage = 100;
   let totalCount = 1;
@@ -19,7 +19,7 @@ export async function refreshVancouverWebcams() {
     const data = await response.json();
     totalCount = data.total_count;
 
-    const parsedWebcams = data.results.map((cam) => ({
+    const parsedWebcams = data.results.map((cam: any) => ({
       id: cam.mapid,
       name: cam.name,
       url: cam.url, // HTML page containing the camera image

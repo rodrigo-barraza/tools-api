@@ -7,7 +7,7 @@ import { JIKAN_BASE_URL } from "../../constants.ts";
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
-function normalizeAnime(anime) {
+function normalizeAnime(anime: any) {
   if (!anime) return null;
   return {
     malId: anime.mal_id || null,
@@ -34,16 +34,16 @@ function normalizeAnime(anime) {
     popularity: anime.popularity || null,
     season: anime.season || null,
     year: anime.year || null,
-    studios: (anime.studios || []).map((s) => s.name),
-    genres: (anime.genres || []).map((g) => g.name),
-    themes: (anime.themes || []).map((t) => t.name),
+    studios: (anime.studios || []).map((s: any) => s.name),
+    genres: (anime.genres || []).map((g: any) => g.name),
+    themes: (anime.themes || []).map((t: any) => t.name),
   };
 }
 
 /**
  * Handle Jikan API rate limiting via delays and standard fetch wrapper.
  */
-async function fetchJikan(endpoint) {
+async function fetchJikan(endpoint: any) {
   const url = `${JIKAN_BASE_URL}${endpoint}`;
   const response = await fetch(url);
 
@@ -65,7 +65,7 @@ async function fetchJikan(endpoint) {
 
 
  */
-export async function searchAnime(q, limit = 10) {
+export async function searchAnime(q: any, limit: any = 10) {
   const endpoint = `/anime?q=${encodeURIComponent(q)}&limit=${limit}`;
   const response = await fetchJikan(endpoint);
 
@@ -85,7 +85,7 @@ export async function searchAnime(q, limit = 10) {
 
 
  */
-export async function getTopAnime(limit = 10) {
+export async function getTopAnime(limit: any = 10) {
   const endpoint = `/top/anime?limit=${limit}`;
   const response = await fetchJikan(endpoint);
 
@@ -105,7 +105,7 @@ export async function getTopAnime(limit = 10) {
 
 
  */
-export async function getCurrentSeasonAnime(limit = 10) {
+export async function getCurrentSeasonAnime(limit: any = 10) {
   const endpoint = `/seasons/now?limit=${limit}`;
   const response = await fetchJikan(endpoint);
 
@@ -125,7 +125,7 @@ export async function getCurrentSeasonAnime(limit = 10) {
 
 
  */
-export async function getAnimeDetails(id) {
+export async function getAnimeDetails(id: any) {
   const endpoint = `/anime/${encodeURIComponent(id)}/full`;
   const response = await fetchJikan(endpoint);
 

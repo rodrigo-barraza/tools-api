@@ -15,8 +15,8 @@ const cache: Record<string, any> = {};
 for (const source of Object.values(EVENT_SOURCES)) {
   cache[source] = {
     events: [],
-    lastFetch: null,
-    error: null,
+    lastFetch: null as any,
+    error: null as any,
   };
 }
 
@@ -33,9 +33,9 @@ const GEOCODE_SOURCES = new Set([
  * Enriches scraped events with geocoding and static map URLs.
  * Persists to MongoDB via upsert (deduplication by sourceId + source).
  */
-export async function updateEvents(source, events) {
+export async function updateEvents(source: any, events: any) {
   if (!cache[source]) {
-    cache[source] = { events: [], lastFetch: null, error: null };
+    cache[source] = { events: [], lastFetch: null as any, error: null };
   }
 
   // Geocode scraped sources that lack coordinates
@@ -61,9 +61,9 @@ export async function updateEvents(source, events) {
  * Restore events from a DB snapshot into the in-memory cache.
  * Memory-only — skips geocoding and DB upserts.
  */
-export function restoreEvents(source, events) {
+export function restoreEvents(source: any, events: any) {
   if (!cache[source]) {
-    cache[source] = { events: [], lastFetch: null, error: null };
+    cache[source] = { events: [], lastFetch: null as any, error: null };
   }
   cache[source].events = events;
   cache[source].lastFetch = new Date();
@@ -73,9 +73,9 @@ export function restoreEvents(source, events) {
 /**
  * Record a fetch error for a source.
  */
-export function setError(source, error) {
+export function setError(source: any, error: any) {
   if (!cache[source]) {
-    cache[source] = { events: [], lastFetch: null, error: null };
+    cache[source] = { events: [], lastFetch: null as any, error: null };
   }
   cache[source].error = {
     message: error.message,
@@ -87,14 +87,14 @@ export function setError(source, error) {
  * Get all cached events merged from all sources, sorted by date.
  */
 export function getLatestEvents() {
-  const all = [];
+  const all: any[] = [];
   for (const source of Object.values(EVENT_SOURCES)) {
     if (cache[source]) {
       all.push(...cache[source].events);
     }
   }
   return all.sort(
-    (a, b) => (a.startDate?.getTime() ?? 0) - (b.startDate?.getTime() ?? 0),
+    (a: any, b: any) => (a.startDate?.getTime() ?? 0) - (b.startDate?.getTime() ?? 0),
   );
 }
 

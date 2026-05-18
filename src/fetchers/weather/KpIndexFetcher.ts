@@ -17,7 +17,7 @@ export async function fetchKpIndex() {
   // First row is headers: ["time_tag", "Kp", "a_running", "station_count"]
   const [, ...rows] = data;
 
-  return rows.map((row) => ({
+  return rows.map((row: any) => ({
     time: new Date(row[0]),
     kp: parseFloat(row[1]),
     aRunning: parseInt(row[2], 10),

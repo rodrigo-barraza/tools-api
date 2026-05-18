@@ -23,7 +23,7 @@ export async function fetchTides() {
     );
   }
 
-  return (json.predictions || []).map((p) => ({
+  return (json.predictions || []).map((p: any) => ({
     time: p.t,
     height: parseFloat(p.v),
     type: p.type === "H" ? "high" : "low",

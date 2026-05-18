@@ -24,7 +24,7 @@ const COSTCO_CA_BASE = "https://www.costco.ca";
  * Extract the Costco product ID from a URL or href.
  * Costco URLs follow: .../product.{ID}.html
  */
-function extractProductId(href) {
+function extractProductId(href: any) {
   if (!href) return null;
   const match = href.match(/product\.(\d+)\.html/);
   return match ? match[1] : null;
@@ -34,7 +34,7 @@ function extractProductId(href) {
  * Extract rating value from Costco review stars markup.
  * Looks for patterns like "4.5 out of 5 stars" or aria-label text.
  */
-function extractRating(text) {
+function extractRating(text: any) {
   if (!text) return null;
   const match = text.match(/([\d.]+)\s*(?:out of|\/)\s*5/i);
   return match ? parseFloat(match[1]) : null;
@@ -43,7 +43,7 @@ function extractRating(text) {
 /**
  * Extract review count from text like "(40)" or "40 reviews".
  */
-function extractReviewCount(text) {
+function extractReviewCount(text: any) {
   if (!text) return null;
   const match = text.match(/\((\d+)\)/);
   if (match) return parseInt(match[1], 10);
@@ -61,12 +61,12 @@ function extractReviewCount(text) {
 
  */
 async function scrapeCategory(
-  baseUrl,
-  slug,
-  categoryName,
-  unifiedCategory,
-  source,
-  currency,
+  baseUrl: any,
+  slug: any,
+  categoryName: any,
+  unifiedCategory: any,
+  source: any,
+  currency: any,
 ) {
   const url = `${baseUrl}/${slug}`;
 
@@ -93,10 +93,10 @@ async function scrapeCategory(
   }
 
   const $ = cheerio.load(html);
-  const products = [];
+  const products: any[] = [];
 
   // ── Strategy 1: MUI-based product tiles (data-testid) ─────────
-  $('[data-testid^="ProductTile_"]').each((_i, element) => {
+  $('[data-testid^="ProductTile_"]').each((_i: any, element: any) => {
     if (products.length >= COSTCO_MAX_PRODUCTS_PER_CATEGORY) return false;
 
     const $el = $(element);
@@ -152,7 +152,7 @@ async function scrapeCategory(
 
   // ── Strategy 2: Legacy Costco layout (fallback) ───────────────
   if (products.length === 0) {
-    $(".product-tile, .product, .col-xs-6.col-lg-4.col-xl-3").each((_i, element) => {
+    $(".product-tile, .product, .col-xs-6.col-lg-4.col-xl-3").each((_i: any, element: any) => {
       if (products.length >= COSTCO_MAX_PRODUCTS_PER_CATEGORY) return false;
 
       const $el = $(element);
@@ -218,7 +218,7 @@ async function scrapeCategory(
  * Fetch products from Costco US across all configured categories.
  */
 export async function fetchAllCostcoUS() {
-  const allProducts = [];
+  const allProducts: any[] = [];
 
   for (const cat of COSTCO_US_CATEGORIES) {
     try {
@@ -232,7 +232,7 @@ export async function fetchAllCostcoUS() {
       );
       allProducts.push(...products);
       logger.info(`[Costco US] ✅ ${cat.name}: ${products.length} products`);
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`[Costco US] ❌ ${cat.name}: ${error.message}`);
     }
 
@@ -246,7 +246,7 @@ export async function fetchAllCostcoUS() {
  * Fetch products from Costco Canada across all configured categories.
  */
 export async function fetchAllCostcoCA() {
-  const allProducts = [];
+  const allProducts: any[] = [];
 
   for (const cat of COSTCO_CA_CATEGORIES) {
     try {
@@ -260,7 +260,7 @@ export async function fetchAllCostcoCA() {
       );
       allProducts.push(...products);
       logger.info(`[Costco CA] ✅ ${cat.name}: ${products.length} products`);
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`[Costco CA] ❌ ${cat.name}: ${error.message}`);
     }
 

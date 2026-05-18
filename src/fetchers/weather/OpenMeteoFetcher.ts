@@ -131,7 +131,7 @@ export async function fetchOpenMeteoWeather() {
 
     // Hourly forecast (all variables)
     hourlyForecast: hourly
-      ? hourly.time.map((time, i) => ({
+      ? hourly.time.map((time: any, i: any) => ({
           time,
 
           // Temperature & humidity
@@ -203,7 +203,7 @@ export async function fetchOpenMeteoWeather() {
 
     // Daily forecast
     dailyForecast: daily.time
-      ? daily.time.map((time, i) => ({
+      ? daily.time.map((time: any, i: any) => ({
           time,
           weatherCode: daily.weather_code[i],
           temperatureMax: daily.temperature_2m_max[i],

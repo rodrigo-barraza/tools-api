@@ -9,7 +9,7 @@ import {
 } from "../services/TwilioService.js";
 const router = Router();
 // ─── Send SMS ──────────────────────────────────────────────────────
-router.post("/sms/send", asyncHandler(async (req, res) => {
+router.post("/sms/send", asyncHandler(async (req: any, res: any) => {
   const { to, body, from } = req.body;
   if (!to || !body) {
     return res
@@ -24,13 +24,13 @@ router.post("/sms/send", asyncHandler(async (req, res) => {
   try {
     const result = await sendSms(to, body, from);
     res.json(result);
-  } catch (error) {
+  } catch (error: any) {
     res.status(502).json({ error: `SMS send failed: ${error.message}` });
   }
 }));
 // ─── List Messages ─────────────────────────────────────────────────
 router.get("/sms/messages", asyncHandler(
-  async (req) => {
+  async (req: any) => {
     const { to, from, limit, dateSent } = req.query as any;
     return listMessages({ to, from, limit, dateSent });
   },
@@ -43,7 +43,7 @@ router.get("/account", asyncHandler(
 ));
 // ─── Phone Lookup ──────────────────────────────────────────────────
 router.get("/lookup/:phone", asyncHandler(
-  (req) => lookupPhone(req.params.phone as string),
+  (req: any) => lookupPhone(req.params.phone as string),
   "Phone lookup",
 ));
 // ─── List Numbers ──────────────────────────────────────────────────

@@ -19,7 +19,7 @@ export async function fetchNeos() {
   }
 
   const data = await response.json();
-  const neos = [];
+  const neos: any[] = [];
 
   for (const [date, objects] of Object.entries(data.near_earth_objects)) {
     for (const neo of (objects as any)) {
@@ -59,7 +59,7 @@ export async function fetchNeos() {
 
   // Sort by miss distance (closest first)
   neos.sort(
-    (a, b) => (a.missDistanceKm ?? Infinity) - (b.missDistanceKm ?? Infinity),
+    (a: any, b: any) => (a.missDistanceKm ?? Infinity) - (b.missDistanceKm ?? Infinity),
   );
 
   return neos;

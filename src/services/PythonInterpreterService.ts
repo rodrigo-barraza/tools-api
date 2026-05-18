@@ -69,18 +69,18 @@ del _BLOCKED, _orig_import, _safe_import, builtins
  *   error?: string
  * }>}
  */
-export async function executePython(code, { timeout = DEFAULT_TIMEOUT_MS }: Record<string, any> = {}) {
+export async function executePython(code: any, { timeout = DEFAULT_TIMEOUT_MS }: Record<string, any> = {}) {
   const clampedTimeout = Math.min(Math.max(timeout, 1000), MAX_TIMEOUT_MS);
   const startTime = performance.now();
 
   // Write code to a temp file (avoids shell injection via -c)
-  let tmpDir;
-  let scriptPath;
+  let tmpDir: any;
+  let scriptPath: any;
   try {
     tmpDir = await mkdtemp(join(tmpdir(), "pyexec-"));
     scriptPath = join(tmpDir, "script.py");
     await writeFile(scriptPath, PREAMBLE + "\n" + code, "utf-8");
-  } catch (error) {
+  } catch (error: any) {
     return {
       success: false,
       stdout: "",
@@ -92,9 +92,9 @@ export async function executePython(code, { timeout = DEFAULT_TIMEOUT_MS }: Reco
     };
   }
 
-  return new Promise<any>((resolve) => {
-    const stdoutChunks = [];
-    const stderrChunks = [];
+  return new Promise<any>((resolve: any) => {
+    const stdoutChunks: any[] = [];
+    const stderrChunks: any[] = [];
     let stdoutLen = 0;
     let stderrLen = 0;
     let timedOut = false;
@@ -114,14 +114,14 @@ export async function executePython(code, { timeout = DEFAULT_TIMEOUT_MS }: Reco
     // Close stdin immediately — no interactive input
     child.stdin.end();
 
-    child.stdout.on("data", (chunk) => {
+    child.stdout.on("data", (chunk: any) => {
       if (stdoutLen < MAX_OUTPUT_BYTES) {
         stdoutChunks.push(chunk);
         stdoutLen += chunk.length;
       }
     });
 
-    child.stderr.on("data", (chunk) => {
+    child.stderr.on("data", (chunk: any) => {
       if (stderrLen < MAX_OUTPUT_BYTES) {
         stderrChunks.push(chunk);
         stderrLen += chunk.length;
@@ -133,7 +133,7 @@ export async function executePython(code, { timeout = DEFAULT_TIMEOUT_MS }: Reco
       child.kill("SIGKILL");
     }, clampedTimeout);
 
-    function finish(exitCode) {
+    function finish(exitCode: any) {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
@@ -167,8 +167,8 @@ export async function executePython(code, { timeout = DEFAULT_TIMEOUT_MS }: Reco
       });
     }
 
-    child.on("close", (code) => finish(code));
-    child.on("error", (error) => {
+    child.on("close", (code: any) => finish(code));
+    child.on("error", (error: any) => {
       if (!settled) {
         settled = true;
         clearTimeout(timer);
@@ -199,17 +199,17 @@ export async function executePython(code, { timeout = DEFAULT_TIMEOUT_MS }: Reco
 
  * @returns {Promise<{ success, stdout, stderr, exitCode, executionTimeMs, timedOut, error? }>}
  */
-export async function executePythonStreaming(code, { timeout = DEFAULT_TIMEOUT_MS, onChunk }: Record<string, any> = {}) {
+export async function executePythonStreaming(code: any, { timeout = DEFAULT_TIMEOUT_MS, onChunk }: Record<string, any> = {}) {
   const clampedTimeout = Math.min(Math.max(timeout, 1000), MAX_TIMEOUT_MS);
   const startTime = performance.now();
 
-  let tmpDir;
-  let scriptPath;
+  let tmpDir: any;
+  let scriptPath: any;
   try {
     tmpDir = await mkdtemp(join(tmpdir(), "pyexec-"));
     scriptPath = join(tmpDir, "script.py");
     await writeFile(scriptPath, PREAMBLE + "\n" + code, "utf-8");
-  } catch (error) {
+  } catch (error: any) {
     return {
       success: false, stdout: "", stderr: "", exitCode: null,
       executionTimeMs: Math.round(performance.now() - startTime),
@@ -217,9 +217,9 @@ export async function executePythonStreaming(code, { timeout = DEFAULT_TIMEOUT_M
     };
   }
 
-  return new Promise<any>((resolve) => {
-    const stdoutChunks = [];
-    const stderrChunks = [];
+  return new Promise<any>((resolve: any) => {
+    const stdoutChunks: any[] = [];
+    const stderrChunks: any[] = [];
     let stdoutLen = 0;
     let stderrLen = 0;
     let timedOut = false;
@@ -233,7 +233,7 @@ export async function executePythonStreaming(code, { timeout = DEFAULT_TIMEOUT_M
 
     child.stdin.end();
 
-    child.stdout.on("data", (chunk) => {
+    child.stdout.on("data", (chunk: any) => {
       if (stdoutLen < MAX_OUTPUT_BYTES) {
         stdoutChunks.push(chunk);
         stdoutLen += chunk.length;
@@ -241,7 +241,7 @@ export async function executePythonStreaming(code, { timeout = DEFAULT_TIMEOUT_M
       }
     });
 
-    child.stderr.on("data", (chunk) => {
+    child.stderr.on("data", (chunk: any) => {
       if (stderrLen < MAX_OUTPUT_BYTES) {
         stderrChunks.push(chunk);
         stderrLen += chunk.length;
@@ -251,7 +251,7 @@ export async function executePythonStreaming(code, { timeout = DEFAULT_TIMEOUT_M
 
     const timer = setTimeout(() => { timedOut = true; child.kill("SIGKILL"); }, clampedTimeout);
 
-    function finish(exitCode) {
+    function finish(exitCode: any) {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
@@ -272,8 +272,8 @@ export async function executePythonStreaming(code, { timeout = DEFAULT_TIMEOUT_M
       });
     }
 
-    child.on("close", (code) => finish(code));
-    child.on("error", (error) => {
+    child.on("close", (code: any) => finish(code));
+    child.on("error", (error: any) => {
       if (!settled) {
         settled = true;
         clearTimeout(timer);

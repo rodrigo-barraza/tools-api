@@ -1,7 +1,7 @@
 import { getDB } from "../db.ts";
 import logger from "../logger.ts";
 
-let collection = null;
+let collection: any = null;
 
 /**
  * Initialize the neos collection with required indexes.
@@ -22,10 +22,10 @@ export async function setupNeoCollection() {
 /**
  * Bulk upsert NEOs by NASA reference ID.
  */
-export async function upsertNeos(neos) {
+export async function upsertNeos(neos: any) {
   if (!collection || neos.length === 0) return { upserted: 0, modified: 0 };
 
-  const operations = neos.map((neo) => ({
+  const operations = neos.map((neo: any) => ({
     updateOne: {
       filter: { neoId: neo.neoId },
       update: {
@@ -39,7 +39,7 @@ export async function upsertNeos(neos) {
   try {
     const result = await collection.bulkWrite(operations, { ordered: false });
     return { upserted: result.upsertedCount, modified: result.modifiedCount };
-  } catch (error) {
+  } catch (error: any) {
     logger.error("Failed to upsert NEOs:", error.message);
     return { upserted: 0, modified: 0 };
   }
@@ -49,9 +49,9 @@ export async function upsertNeos(neos) {
  * Query recent NEOs from the database.
  */
 export async function getRecentNeos(
-  days = 7,
-  hazardousOnly = false,
-  limit = 100,
+  days: any = 7,
+  hazardousOnly: any = false,
+  limit: any = 100,
 ) {
   if (!collection) return [];
 

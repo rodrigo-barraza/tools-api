@@ -15,15 +15,15 @@ async function collectCommodities() {
     await saveState("commodities", quotes);
 
     const topMover = [...quotes]
-      .filter((q) => q.changePercent != null)
-      .sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent))[0];
+      .filter((q: any) => q.changePercent != null)
+      .sort((a: any, b: any) => Math.abs(b.changePercent) - Math.abs(a.changePercent))[0];
 
     logger.info(
       `[Commodities] ✅ ${quotes.length} tickers | ` +
         `${result?.inserted || 0} snapshots saved | ` +
         `Top mover: ${topMover?.name ?? "?"} (${topMover?.changePercent >= 0 ? "+" : ""}${topMover?.changePercent ?? "?"}%)`,
     );
-  } catch (error) {
+  } catch (error: any) {
     setCommodityError(error);
     logger.error(`[Commodities] ❌ ${error.message}`);
   }

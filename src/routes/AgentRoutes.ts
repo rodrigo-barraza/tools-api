@@ -8,7 +8,7 @@ const router = Router();
 /**
  * GET /agents — List all connected workspace agents.
  */
-router.get("/", (_req, res) => {
+router.get("/", (_req: any, res: any) => {
   const agents = getConnectedAgents();
   res.json({
     count: agents.length,
@@ -19,9 +19,9 @@ router.get("/", (_req, res) => {
 /**
  * GET /agents/:id — Get a specific agent's details.
  */
-router.get("/:id", (req, res) => {
+router.get("/:id", (req: any, res: any) => {
   const agents = getConnectedAgents();
-  const agent = agents.find((a) => a.id === req.params.id as string);
+  const agent = agents.find((a: any) => a.id === req.params.id as string);
   if (!agent) {
     return res.status(404).json({ error: "Agent not found" });
   }

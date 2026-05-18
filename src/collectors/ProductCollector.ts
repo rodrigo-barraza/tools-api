@@ -31,7 +31,7 @@ import logger from "../logger.ts";
 
 // ─── Collector Factory ─────────────────────────────────────────────
 
-function createProductCollector(collection, source, fetchFn) {
+function createProductCollector(collection: any, source: any, fetchFn: any) {
   return async function () {
     try {
       const products = await fetchFn();
@@ -41,7 +41,7 @@ function createProductCollector(collection, source, fetchFn) {
       logger.info(
         `[${collection}] ✅ ${products.length} products | ${result.upserted} new, ${result.modified} updated`,
       );
-    } catch (error) {
+    } catch (error: any) {
       setProductError(source, error);
       logger.error(`[${collection}] ❌ ${error.message}`);
     }
@@ -70,7 +70,7 @@ async function collectBestBuyCAAvailability() {
     );
     updateStatuses(results);
     await saveState("bestbuy_ca_availability", results);
-    const inStock = results.filter((r) => r.inStock).length;
+    const inStock = results.filter((r: any) => r.inStock).length;
     logger.info(
       `[bestbuy_ca_availability] ✅ ${results.length} SKUs checked | ${inStock} in stock`,
     );
@@ -79,7 +79,7 @@ async function collectBestBuyCAAvailability() {
         `[bestbuy_ca_availability] ⚠️ ${errors.length} batch error(s): ${errors[0]}`,
       );
     }
-  } catch (error) {
+  } catch (error: any) {
     setAvailabilityError(error);
     logger.error(`[bestbuy_ca_availability] ❌ ${error.message}`);
   }
@@ -100,11 +100,11 @@ const STARTUP_TASKS = [
 
 export function startProductCollectors() {
   // Set default restoreFn for standard product tasks
-  const tasks = STARTUP_TASKS.map((task) => ({
+  const tasks = STARTUP_TASKS.map((task: any) => ({
     ...task,
     restoreFn:
       task.restoreFn ||
-      ((data) => updateProducts(data.source, data.products)),
+      ((data: any) => updateProducts(data.source, data.products)),
   }));
 
   startCollectorLoop(tasks);

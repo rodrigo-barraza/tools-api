@@ -12,7 +12,7 @@ const API_URL = "https://511ny.org/api/getcameras?key=public&format=json";
  * @param {string} options.idPrefix
  * @param {Object} options.bounds - { minLat, maxLat, minLon, maxLon }
  */
-export async function fetchNY511Cameras({ city, idPrefix, bounds }) {
+export async function fetchNY511Cameras({ city, idPrefix, bounds }: any) {
   const response = await fetch(API_URL, {
     headers: buildScraperHeaders(),
     signal: AbortSignal.timeout(30000),
@@ -25,7 +25,7 @@ export async function fetchNY511Cameras({ city, idPrefix, bounds }) {
   const data = await response.json();
   if (!Array.isArray(data) || data.length === 0) return;
 
-  const parsedWebcams = [];
+  const parsedWebcams: any[] = [];
 
   for (const cam of data) {
     if (cam.Disabled || cam.Blocked) continue;

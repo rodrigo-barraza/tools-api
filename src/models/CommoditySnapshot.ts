@@ -18,12 +18,12 @@ export async function setupCommodityCollection() {
 /**
  * Insert a batch of commodity snapshots.
  */
-export async function insertSnapshots(quotes) {
+export async function insertSnapshots(quotes: any) {
   if (!quotes.length) return;
 
   const db = getDB();
   const collection = db.collection("commodity_snapshots");
-  const docs = quotes.map((q) => ({
+  const docs = quotes.map((q: any) => ({
     ...q,
     fetchedAt: new Date(q.fetchedAt),
   }));
@@ -35,7 +35,7 @@ export async function insertSnapshots(quotes) {
 /**
  * Get historical price data for a specific ticker.
  */
-export async function getHistory(ticker, hours = 24) {
+export async function getHistory(ticker: any, hours: any = 24) {
   const db = getDB();
   const collection = db.collection("commodity_snapshots");
   const since = new Date(Date.now() - hoursToMs(hours));

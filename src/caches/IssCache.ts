@@ -1,19 +1,19 @@
 const TRAJECTORY_BUFFER_SIZE = 100;
 
 const cache = {
-  position: null,
-  astronauts: null,
-  trajectory: [],
-  lastPositionFetch: null,
-  lastAstrosFetch: null,
-  positionError: null,
-  astrosError: null,
+  position: null as any,
+  astronauts: null as any,
+  trajectory: [] as any[],
+  lastPositionFetch: null as any,
+  lastAstrosFetch: null as any,
+  positionError: null as any,
+  astrosError: null as any,
 };
 
 /**
  * Update ISS position and append to trajectory ring buffer.
  */
-export function updateIssPosition(position) {
+export function updateIssPosition(position: any) {
   cache.position = position;
   cache.lastPositionFetch = new Date();
   cache.positionError = null;
@@ -28,20 +28,20 @@ export function updateIssPosition(position) {
   }
 }
 
-export function setIssPositionError(error) {
+export function setIssPositionError(error: any) {
   cache.positionError = { message: error.message, time: new Date().toISOString() };
 }
 
 /**
  * Update astronaut roster.
  */
-export function updateAstronauts(data) {
+export function updateAstronauts(data: any) {
   cache.astronauts = data;
   cache.lastAstrosFetch = new Date();
   cache.astrosError = null;
 }
 
-export function setAstronautsError(error) {
+export function setAstronautsError(error: any) {
   cache.astrosError = { message: error.message, time: new Date().toISOString() };
 }
 

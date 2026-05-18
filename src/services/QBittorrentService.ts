@@ -9,7 +9,7 @@ import logger from "../logger.ts";
 const LOG_PREFIX = "🧲 QBittorrent";
 
 /** Session cookie (SID) cached across requests */
-let sessionCookie = null;
+let sessionCookie: any = null;
 let sessionExpiry = 0;
 
 /** Session TTL — re-authenticate after 50 minutes (qBT default session is 60m) */
@@ -66,7 +66,7 @@ async function authenticate() {
 /**
  * Make an authenticated request to the qBittorrent API.
  */
-async function qbtFetch(path, { method = "GET", body, params }: Record<string, any> = {}) {
+async function qbtFetch(path: any, { method = "GET", body, params }: Record<string, any> = {}) {
   const sid = await authenticate();
   const baseUrl = getBaseUrl();
 
@@ -95,7 +95,7 @@ async function qbtFetch(path, { method = "GET", body, params }: Record<string, a
 
   // Session expired — re-auth once
   if (response.status === 403) {
-    sessionCookie = null;
+  sessionCookie = null;
     sessionExpiry = 0;
     const newSid = await authenticate();
     opts.headers.Cookie = `SID=${newSid}`;
@@ -123,7 +123,7 @@ async function qbtFetch(path, { method = "GET", body, params }: Record<string, a
 
  * @returns {{ id: number }} Search job ID
  */
-export async function startSearch(pattern, plugins = "enabled", category = "all") {
+export async function startSearch(pattern: any, plugins: any = "enabled", category: any = "all") {
   const result = await qbtFetch("/api/v2/search/start", {
     method: "POST",
     body: { pattern, plugins, category },
@@ -136,7 +136,7 @@ export async function startSearch(pattern, plugins = "enabled", category = "all"
  * Get the status of a search job.
 
  */
-export async function getSearchStatus(id) {
+export async function getSearchStatus(id: any) {
   return qbtFetch("/api/v2/search/status", {
     method: "POST",
     body: { id: String(id) },
@@ -148,7 +148,7 @@ export async function getSearchStatus(id) {
 
 
  */
-export async function getSearchResults(id, limit = 50, offset = 0) {
+export async function getSearchResults(id: any, limit: any = 50, offset: any = 0) {
   return qbtFetch("/api/v2/search/results", {
     method: "POST",
     body: { id: String(id), limit: String(limit), offset: String(offset) },
@@ -158,7 +158,7 @@ export async function getSearchResults(id, limit = 50, offset = 0) {
 /**
  * Stop a running search.
  */
-export async function stopSearch(id) {
+export async function stopSearch(id: any) {
   return qbtFetch("/api/v2/search/stop", {
     method: "POST",
     body: { id: String(id) },
@@ -168,7 +168,7 @@ export async function stopSearch(id) {
 /**
  * Delete a search job and free resources.
  */
-export async function deleteSearch(id) {
+export async function deleteSearch(id: any) {
   return qbtFetch("/api/v2/search/delete", {
     method: "POST",
     body: { id: String(id) },
@@ -179,17 +179,17 @@ export async function deleteSearch(id) {
  * Run a complete search lifecycle: start → poll → get results → cleanup.
  * This is the primary method used by the route handler.
  */
-export async function search(pattern, { plugins = "enabled", category = "all", limit = 50, timeoutMs = 30000 }: Record<string, any> = {}) {
+export async function search(pattern: any, { plugins = "enabled", category = "all", limit = 50, timeoutMs = 30000 }: Record<string, any> = {}) {
   const { id } = await startSearch(pattern, plugins, category);
   const deadline = Date.now() + timeoutMs;
 
   // Poll until complete or timeout
   let status = "Running";
   while (status === "Running" && Date.now() < deadline) {
-    await new Promise((r) => setTimeout(r, 1000));
+    await new Promise((r: any) => setTimeout(r, 1000));
     const statusRes = await getSearchStatus(id);
     // statusRes is an array of search statuses
-    const job = Array.isArray(statusRes) ? statusRes.find((s) => s.id === id) : statusRes;
+    const job = Array.isArray(statusRes) ? statusRes.find((s: any) => s.id === id) : statusRes;
     status = job?.status || "Stopped";
   }
 
@@ -208,7 +208,7 @@ export async function search(pattern, { plugins = "enabled", category = "all", l
     category,
     plugins,
     totalResults: results?.total || 0,
-    results: (results?.results || []).map((r) => ({
+    results: (results?.results || []).map((r: any) => ({
       name: r.fileName,
       size: r.fileSize,
       seeds: r.nbSeeders,
@@ -228,13 +228,13 @@ export async function search(pattern, { plugins = "enabled", category = "all", l
  */
 export async function getPlugins() {
   const plugins = await qbtFetch("/api/v2/search/plugins");
-  return (Array.isArray(plugins) ? plugins : []).map((p) => ({
+  return (Array.isArray(plugins) ? plugins : []).map((p: any) => ({
     name: p.name,
     fullName: p.fullName,
     url: p.url,
     enabled: p.enabled,
     version: p.version,
-    supportedCategories: p.supportedCategories?.map((c) => c.name) || [],
+    supportedCategories: p.supportedCategories?.map((c: any) => c.name) || [],
   }));
 }
 
@@ -242,7 +242,7 @@ export async function getPlugins() {
  * Install search plugins from URLs.
 
  */
-export async function installPlugin(sources) {
+export async function installPlugin(sources: any) {
   await qbtFetch("/api/v2/search/installPlugin", {
     method: "POST",
     body: { sources },
@@ -254,7 +254,7 @@ export async function installPlugin(sources) {
 /**
  * Enable or disable a search plugin.
  */
-export async function enablePlugin(names, enable = true) {
+export async function enablePlugin(names: any, enable: any = true) {
   await qbtFetch("/api/v2/search/enablePlugin", {
     method: "POST",
     body: { names, enable: String(enable) },
@@ -277,7 +277,7 @@ export async function updatePlugins() {
 
 
  */
-export async function addTorrent(urls, opts: Record<string, any> = {}) {
+export async function addTorrent(urls: any, opts: Record<string, any> = {}) {
   const body: Record<string, any> = { urls: urls.replace(/\|/g, "\n") };
   if (opts.savePath) body.savepath = opts.savePath;
   if (opts.category) body.category = opts.category;
@@ -308,7 +308,7 @@ export async function listTorrents(opts: Record<string, any> = {}) {
   if (opts.offset) params.offset = String(opts.offset);
 
   const torrents = await qbtFetch("/api/v2/torrents/info", { params });
-  return (Array.isArray(torrents) ? torrents : []).map((t) => ({
+  return (Array.isArray(torrents) ? torrents : []).map((t: any) => ({
     hash: t.hash,
     name: t.name,
     size: t.size,
@@ -334,7 +334,7 @@ export async function listTorrents(opts: Record<string, any> = {}) {
  * Pause one or more torrents.
 
  */
-export async function pauseTorrents(hashes = "all") {
+export async function pauseTorrents(hashes: any = "all") {
   await qbtFetch("/api/v2/torrents/pause", {
     method: "POST",
     body: { hashes },
@@ -345,7 +345,7 @@ export async function pauseTorrents(hashes = "all") {
 /**
  * Resume one or more torrents.
  */
-export async function resumeTorrents(hashes = "all") {
+export async function resumeTorrents(hashes: any = "all") {
   await qbtFetch("/api/v2/torrents/resume", {
     method: "POST",
     body: { hashes },
@@ -358,7 +358,7 @@ export async function resumeTorrents(hashes = "all") {
 
 
  */
-export async function deleteTorrents(hashes, deleteFiles = false) {
+export async function deleteTorrents(hashes: any, deleteFiles: any = false) {
   await qbtFetch("/api/v2/torrents/delete", {
     method: "POST",
     body: { hashes, deleteFiles: String(deleteFiles) },

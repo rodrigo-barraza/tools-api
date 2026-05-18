@@ -16,7 +16,7 @@ const router = Router();
 
 // ─── 1. Dota 2 — Hero Data ──────────────────────────────────
 
-router.get("/dota/heroes", asyncHandler(async (req, res) => {
+router.get("/dota/heroes", asyncHandler(async (req: any, res: any) => {
   try {
     const heroes = await getHeroes();
     const { role, attr, q } = req.query as any;
@@ -25,41 +25,42 @@ router.get("/dota/heroes", asyncHandler(async (req, res) => {
 
     if (q) {
       const query = q.toLowerCase();
-      filtered = filtered.filter((h) => h.name.toLowerCase().includes(query));
+      filtered = filtered.filter((h: any) => h.name.toLowerCase().includes(query));
     }
 
     if (role) {
       const roleLower = role.toLowerCase();
-      filtered = filtered.filter((h) =>
-        h.roles.some((r) => r.toLowerCase() === roleLower),
+      filtered = filtered.filter((h: any) =>
+        h.roles.some((r: any) => r.toLowerCase() === roleLower),
       );
     }
 
     if (attr) {
       const attrMap = { str: "str", agi: "agi", int: "int", all: "all", universal: "all" };
+      // @ts-expect-error - TS7053: implicit any index
       const attrKey = attrMap[attr.toLowerCase()] || attr.toLowerCase();
-      filtered = filtered.filter((h) => h.primaryAttr === attrKey);
+      filtered = filtered.filter((h: any) => h.primaryAttr === attrKey);
     }
 
     res.json({ count: filtered.length, heroes: filtered });
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: `Failed to fetch heroes: ${error.message}` });
   }
 }));
 
-router.get("/dota/heroes/:query", asyncHandler(async (req, res) => {
+router.get("/dota/heroes/:query", asyncHandler(async (req: any, res: any) => {
   try {
     const result = await getHero(req.params.query as string);
     if (!result) {
       return res.status(404).json({ error: `Hero not found: ${req.params.query as string}` });
     }
     res.json(result);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: `Failed to fetch hero: ${error.message}` });
   }
 }));
 
-router.get("/dota/heroes/:heroId/matchups", asyncHandler(async (req, res) => {
+router.get("/dota/heroes/:heroId/matchups", asyncHandler(async (req: any, res: any) => {
   try {
     const heroId = parseInt(req.params.heroId as string);
     if (isNaN(heroId)) {
@@ -72,22 +73,22 @@ router.get("/dota/heroes/:heroId/matchups", asyncHandler(async (req, res) => {
       getHeroes(),
     ]);
 
-    const heroMap = new Map(heroes.map((h) => [h.id, h.name]));
-    const enrichMatchup = (m) => ({ ...m, heroName: heroMap.get(m.heroId) || "Unknown" });
+    const heroMap = new Map(heroes.map((h: any) => [h.id, h.name]));
+    const enrichMatchup = (m: any) => ({ ...m, heroName: heroMap.get(m.heroId) || "Unknown" });
 
     res.json({
       ...matchups,
       bestAgainst: matchups.bestAgainst.map(enrichMatchup),
       worstAgainst: matchups.worstAgainst.map(enrichMatchup),
     });
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: `Failed to fetch matchups: ${error.message}` });
   }
 }));
 
 // ─── 2. Dota 2 — Player Data ────────────────────────────────
 
-router.get("/dota/players/:accountId", asyncHandler(async (req, res) => {
+router.get("/dota/players/:accountId", asyncHandler(async (req: any, res: any) => {
   try {
     const accountId = parseInt(req.params.accountId as string);
     if (isNaN(accountId)) {
@@ -95,12 +96,12 @@ router.get("/dota/players/:accountId", asyncHandler(async (req, res) => {
     }
     const player = await getPlayer(accountId);
     res.json(player);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: `Failed to fetch player: ${error.message}` });
   }
 }));
 
-router.get("/dota/players/:accountId/matches", asyncHandler(async (req, res) => {
+router.get("/dota/players/:accountId/matches", asyncHandler(async (req: any, res: any) => {
   try {
     const accountId = parseInt(req.params.accountId as string);
     const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
@@ -113,21 +114,21 @@ router.get("/dota/players/:accountId/matches", asyncHandler(async (req, res) => 
       getHeroes(),
     ]);
 
-    const heroMap = new Map(heroes.map((h) => [h.id, h.name]));
-    const enriched = matches.map((m) => ({
+    const heroMap = new Map(heroes.map((h: any) => [h.id, h.name]));
+    const enriched = matches.map((m: any) => ({
       ...m,
       heroName: heroMap.get(m.heroId) || "Unknown",
     }));
 
     res.json({ count: enriched.length, matches: enriched });
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: `Failed to fetch matches: ${error.message}` });
   }
 }));
 
 // ─── 3. Dota 2 — Match Data ─────────────────────────────────
 
-router.get("/dota/matches/:matchId", asyncHandler(async (req, res) => {
+router.get("/dota/matches/:matchId", asyncHandler(async (req: any, res: any) => {
   try {
     const matchId = parseInt(req.params.matchId as string);
     if (isNaN(matchId)) {
@@ -139,33 +140,33 @@ router.get("/dota/matches/:matchId", asyncHandler(async (req, res) => {
       getHeroes(),
     ]);
 
-    const heroMap = new Map(heroes.map((h) => [h.id, h.name]));
-    match.players = match.players.map((p) => ({
+    const heroMap = new Map(heroes.map((h: any) => [h.id, h.name]));
+    match.players = match.players.map((p: any) => ({
       ...p,
       heroName: heroMap.get(p.heroId) || "Unknown",
     }));
 
     res.json(match);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: `Failed to fetch match: ${error.message}` });
   }
 }));
 
 // ─── 4. Dota 2 — Pro Scene ──────────────────────────────────
 
-router.get("/dota/pro-matches", asyncHandler(async (req, res) => {
+router.get("/dota/pro-matches", asyncHandler(async (req: any, res: any) => {
   try {
     const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
     const matches = await getProMatches(limit);
     res.json({ count: matches.length, matches });
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: `Failed to fetch pro matches: ${error.message}` });
   }
 }));
 
 // ─── Unified Dota Dispatcher (for AI tool schema) ───────────
 
-router.get("/dota", asyncHandler(async (req, res) => {
+router.get("/dota", asyncHandler(async (req: any, res: any) => {
   const { action, query, heroId, accountId, matchId, limit, role, attr } = req.query as any;
   if (!action) {
     return res.status(400).json({
@@ -175,7 +176,7 @@ router.get("/dota", asyncHandler(async (req, res) => {
   }
 
   // Build query string for sub-routes
-  const qs = (params) => {
+  const qs = (params: any) => {
     const searchParams = new URLSearchParams();
     for (const [k, v] of Object.entries(params)) {
       if (v !== undefined && v !== null) searchParams.set(k, String(v));

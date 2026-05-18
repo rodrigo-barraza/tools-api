@@ -23,13 +23,13 @@ const MAX_SCAN_ENTRIES = 200;
 
 
  */
-export async function agenticProjectSummary(projectPath) {
+export async function agenticProjectSummary(projectPath: any) {
   // Agent routing
   const agent = routeForPath(projectPath);
   if (agent) {
     try {
       return await sendRpc(agent.id, "project.summary", { path: projectPath });
-    } catch (error) {
+    } catch (error: any) {
       return { error: `Agent RPC failed: ${error.message}` };
     }
   }
@@ -69,7 +69,7 @@ export async function agenticProjectSummary(projectPath) {
 
     // Detect framework from dependencies
     const allDeps = { ...pkg.dependencies, ...pkg.devDependencies };
-    const frameworks = [];
+    const frameworks: any[] = [];
     if (allDeps["next"]) frameworks.push("next.js");
     if (allDeps["react"]) frameworks.push("react");
     if (allDeps["vue"]) frameworks.push("vue");
@@ -114,7 +114,7 @@ export async function agenticProjectSummary(projectPath) {
   let totalFiles = 0;
   let totalDirs = 0;
 
-  async function scanDir(dir, depth) {
+  async function scanDir(dir: any, depth: any) {
     if (depth > MAX_SCAN_DEPTH || totalFiles + totalDirs > MAX_SCAN_ENTRIES) return;
 
     try {
@@ -158,7 +158,7 @@ export async function agenticProjectSummary(projectPath) {
   result.totalDirectories = totalDirs;
 
   // ── Entry Points ─────────────────────────────────────────
-  const entryPoints = [];
+  const entryPoints: any[] = [];
   const candidates = [
     "src/app/layout.js", "src/app/layout.tsx", "src/app/page.js", "src/app/page.tsx",
     "src/index.js", "src/index.ts", "src/index.tsx",
@@ -178,7 +178,7 @@ export async function agenticProjectSummary(projectPath) {
   result.entryPoints = entryPoints;
 
   // ── Config Files ─────────────────────────────────────────
-  const configFiles = [];
+  const configFiles: any[] = [];
   const configCandidates = [
     "tsconfig.json", "jsconfig.json", ".eslintrc.js", "eslint.config.js",
     ".prettierrc", ".prettierrc.js", "prettier.config.js",

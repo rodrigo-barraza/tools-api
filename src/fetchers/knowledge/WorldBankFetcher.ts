@@ -18,8 +18,8 @@ const __dirname = dirname(__filename);
 
 // ─── CSV Parser ────────────────────────────────────────────────
 
-function parseCSVLine(line) {
-  const fields = [];
+function parseCSVLine(line: any) {
+  const fields: any[] = [];
   let current = "";
   let inQuotes = false;
 
@@ -45,11 +45,11 @@ function parseCSVLine(line) {
 
 // ─── Load & Index ──────────────────────────────────────────────
 
-const COUNTRY_DB = [];
+const COUNTRY_DB: any[] = [];
 let loaded = false;
 
 // Indicator metadata for human-readable output
-const INDICATOR_META = {
+const INDICATOR_META: Record<string, any> = {
   gdp_usd: { label: "GDP (current US$)", unit: "USD" },
   gdp_per_capita_usd: { label: "GDP per capita", unit: "USD" },
   population: { label: "Population", unit: "people" },
@@ -84,7 +84,7 @@ function ensureLoaded() {
 
   const csvPath = join(__dirname, "data", "digest_world_indicators.csv");
   const raw = readFileSync(csvPath, "utf-8");
-  const lines = raw.split("\n").filter((l) => l.trim());
+  const lines = raw.split("\n").filter((l: any) => l.trim());
   const headers = parseCSVLine(lines[0]);
 
   const SKIP_NUMERIC = new Set(["country_code", "country_name"]);
@@ -94,7 +94,7 @@ function ensureLoaded() {
     if (values.length < 3) continue;
 
     const row: Record<string, any> = {};
-    headers.forEach((h, index) => {
+    headers.forEach((h: any, index: any) => {
       const value = values[index] || "";
       if (SKIP_NUMERIC.has(h)) {
         row[h] = value;
@@ -114,16 +114,16 @@ function ensureLoaded() {
 
 // ─── Helpers ───────────────────────────────────────────────────
 
-function normalizeSearch(str) {
+function normalizeSearch(str: any) {
   return str.toLowerCase().replace(/[^a-z0-9\s]/g, "");
 }
 
-function formatCountry(country) {
+function formatCountry(country: any) {
   const result = {
     countryCode: country.country_code,
     countryName: country.country_name,
     dataYear: country.data_year,
-    indicators: {},
+    indicators: {} as Record<string, any>,
   };
 
   for (const key of INDICATOR_KEYS) {
@@ -147,14 +147,14 @@ function formatCountry(country) {
 
  * @returns {object|null} Country indicators or null
  */
-export function getCountryIndicators(code) {
+export function getCountryIndicators(code: any) {
   ensureLoaded();
 
   const c = code.toUpperCase().trim();
   const country =
-    COUNTRY_DB.find((r) => r.country_code === c) ||
+    COUNTRY_DB.find((r: any) => r.country_code === c) ||
     COUNTRY_DB.find(
-      (r) =>
+      (r: any) =>
         r.country_name && normalizeSearch(r.country_name).includes(normalizeSearch(code)),
     );
 
@@ -168,7 +168,7 @@ export function getCountryIndicators(code) {
 
  * @returns {object} Ranked results
  */
-export function rankCountriesByIndicator(indicator, opts: Record<string, any> = {}) {
+export function rankCountriesByIndicator(indicator: any, opts: Record<string, any> = {}) {
   ensureLoaded();
 
   const { limit = 10, order = "desc" } = opts;
@@ -177,7 +177,7 @@ export function rankCountriesByIndicator(indicator, opts: Record<string, any> = 
     return {
       error: `Unknown indicator: "${indicator}"`,
       availableIndicators: Object.entries(INDICATOR_META).map(
-        ([key, meta]) => ({
+        ([key, meta]: any) => ({
           key,
           label: meta.label,
           unit: meta.unit,
@@ -188,8 +188,8 @@ export function rankCountriesByIndicator(indicator, opts: Record<string, any> = 
 
   const meta = INDICATOR_META[indicator];
 
-  const ranked = COUNTRY_DB.filter((c) => c[indicator] !== null)
-    .sort((a, b) =>
+  const ranked = COUNTRY_DB.filter((c: any) => c[indicator] !== null)
+    .sort((a: any, b: any) =>
       order === "asc"
         ? a[indicator] - b[indicator]
         : b[indicator] - a[indicator],
@@ -203,7 +203,7 @@ export function rankCountriesByIndicator(indicator, opts: Record<string, any> = 
     order,
     count: ranked.length,
     note: "Data from World Bank Open Data (CC BY 4.0). Values are most recent available year (2018-2024).",
-    countries: ranked.map((c) => ({
+    countries: ranked.map((c: any) => ({
       countryCode: c.country_code,
       countryName: c.country_name,
       value: c[indicator],
@@ -218,14 +218,14 @@ export function rankCountriesByIndicator(indicator, opts: Record<string, any> = 
 
  * @returns {object} Comparison results
  */
-export function compareCountries(countryCodes, indicator = null) {
+export function compareCountries(countryCodes: any, indicator: any = null) {
   ensureLoaded();
 
   if (indicator && !INDICATOR_META[indicator]) {
     return {
       error: `Unknown indicator: "${indicator}"`,
       availableIndicators: Object.entries(INDICATOR_META).map(
-        ([key, meta]) => ({
+        ([key, meta]: any) => ({
           key,
           label: meta.label,
           unit: meta.unit,
@@ -234,12 +234,12 @@ export function compareCountries(countryCodes, indicator = null) {
     };
   }
 
-  const results = countryCodes.map((code) => {
+  const results = countryCodes.map((code: any) => {
     const c = code.toUpperCase().trim();
     const country =
-      COUNTRY_DB.find((r) => r.country_code === c) ||
+      COUNTRY_DB.find((r: any) => r.country_code === c) ||
       COUNTRY_DB.find(
-        (r) =>
+        (r: any) =>
           r.country_name &&
           normalizeSearch(r.country_name).includes(normalizeSearch(code)),
       );
@@ -265,7 +265,7 @@ export function compareCountries(countryCodes, indicator = null) {
   });
 
   return {
-    count: results.filter((r) => r.found).length,
+    count: results.filter((r: any) => r.found).length,
     note: "Data from World Bank Open Data (CC BY 4.0).",
     comparison: results,
   };
@@ -280,8 +280,8 @@ export function getAvailableIndicators() {
 
   return {
     totalCountries: COUNTRY_DB.length,
-    indicators: Object.entries(INDICATOR_META).map(([key, meta]) => {
-      const nonNull = COUNTRY_DB.filter((c) => c[key] !== null).length;
+    indicators: Object.entries(INDICATOR_META).map(([key, meta]: any) => {
+      const nonNull = COUNTRY_DB.filter((c: any) => c[key] !== null).length;
       return {
         key,
         label: meta.label,

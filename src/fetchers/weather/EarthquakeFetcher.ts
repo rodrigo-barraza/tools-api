@@ -6,10 +6,10 @@ const EARTHQUAKE_FEED_URL =
 /**
  * Classify magnitude into a human-readable scale label.
  */
-function classifyMagnitude(mag) {
+function classifyMagnitude(mag: any) {
   if (mag === null || mag === undefined) return "Unknown";
   const entry = EARTHQUAKE_MAGNITUDE_SCALE.find(
-    (s) => mag >= s.min && mag < s.max,
+    (s: any) => mag >= s.min && mag < s.max,
   );
   return entry?.label || "Unknown";
 }
@@ -27,7 +27,7 @@ export async function fetchEarthquakes() {
 
   const data = await response.json();
 
-  return data.features.map((feature) => {
+  return data.features.map((feature: any) => {
     const { properties: p, geometry: g, id } = feature;
 
     return {

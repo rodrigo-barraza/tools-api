@@ -9,7 +9,7 @@ const PYPI_API = "https://pypi.org/pypi";
 
 
  */
-export async function getPyPiPackage(packageName) {
+export async function getPyPiPackage(packageName: any) {
   if (!packageName || typeof packageName !== "string") {
     return { error: "Package name is required" };
   }
@@ -30,7 +30,7 @@ export async function getPyPiPackage(packageName) {
   const info = data.info || {};
 
   // Extract classifier categories
-  const classifiers = (info.classifiers || []).reduce((acc, c) => {
+  const classifiers = (info.classifiers || []).reduce((acc: any, c: any) => {
     const parts = c.split(" :: ");
     const category = parts[0];
     if (!acc[category]) acc[category] = [];
@@ -51,7 +51,7 @@ export async function getPyPiPackage(packageName) {
     license: info.license || null,
     homepage: info.home_page || info.project_url || null,
     projectUrls: info.project_urls || {},
-    keywords: info.keywords ? info.keywords.split(",").map((k) => k.trim()).filter(Boolean) : [],
+    keywords: info.keywords ? info.keywords.split(",").map((k: any) => k.trim()).filter(Boolean) : [],
     requiresPython: info.requires_python || null,
     requiresDist: info.requires_dist || [],
     packageUrl: info.package_url || null,

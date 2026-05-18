@@ -10,10 +10,10 @@ const BASE_URL = "https://api.bestbuy.com/beta/products";
  * Normalize a Best Buy product into the unified schema.
  */
 function normalizeBestBuyProduct(
-  item,
-  rank,
-  unifiedCategory,
-  sourceCategoryName,
+  item: any,
+  rank: any,
+  unifiedCategory: any,
+  sourceCategoryName: any,
 ) {
   return {
     sourceId: String(item.sku),
@@ -40,7 +40,7 @@ function normalizeBestBuyProduct(
  * Fetch trending products from Best Buy (top 10 by customer views, rolling 3h window).
  * Optionally filter by category.
  */
-export async function fetchBestBuyTrending(categoryId = null) {
+export async function fetchBestBuyTrending(categoryId: any = null) {
   if (!CONFIG.BESTBUY_API_KEY) {
     throw new Error("BESTBUY_API_KEY not configured");
   }
@@ -63,10 +63,10 @@ export async function fetchBestBuyTrending(categoryId = null) {
 
   // Find the matching category mapping
   const catMapping = categoryId
-    ? BESTBUY_CATEGORIES.find((c) => c.id === categoryId)
+    ? BESTBUY_CATEGORIES.find((c: any) => c.id === categoryId)
     : null;
 
-  const products = items.map((item, index) => {
+  const products = items.map((item: any, index: any) => {
     const product = normalizeBestBuyProduct(
       item,
       index + 1,
@@ -90,13 +90,13 @@ export async function fetchBestBuyTrending(categoryId = null) {
  * Rate-limited to 1 req/sec to respect Best Buy's per-second limit.
  */
 export async function fetchAllBestBuyTrending() {
-  const allProducts = [];
+  const allProducts: any[] = [];
 
   // Fetch general trending first
   try {
     const general = await fetchBestBuyTrending();
     allProducts.push(...general.products);
-  } catch (error) {
+  } catch (error: any) {
     logger.error(`[BestBuy] ❌ General trending: ${error.message}`);
   }
 
@@ -106,7 +106,7 @@ export async function fetchAllBestBuyTrending() {
     try {
       const result = await fetchBestBuyTrending(cat.id);
       allProducts.push(...result.products);
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`[BestBuy] ❌ ${cat.name}: ${error.message}`);
     }
   }

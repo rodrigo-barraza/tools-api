@@ -12,7 +12,7 @@ const BASE_URL = "https://app.ticketmaster.com/discovery/v2/events.json";
 /**
  * Map Ticketmaster segment name to our normalized category.
  */
-function normalizeCategory(segment) {
+function normalizeCategory(segment: any) {
   if (!segment) return EVENT_CATEGORIES.OTHER;
   return TICKETMASTER_CATEGORY_MAP[segment] || EVENT_CATEGORIES.OTHER;
 }
@@ -20,7 +20,7 @@ function normalizeCategory(segment) {
 /**
  * Map Ticketmaster event status to our normalized status.
  */
-function normalizeStatus(statusCode) {
+function normalizeStatus(statusCode: any) {
   const map = {
     onsale: "onsale",
     offsale: "offsale",
@@ -29,13 +29,14 @@ function normalizeStatus(statusCode) {
     postponed: "postponed",
     rescheduled: "rescheduled",
   };
+  // @ts-expect-error - TS7053: implicit any index
   return map[statusCode?.toLowerCase()] || "onsale";
 }
 
 /**
  * Extract price range from Ticketmaster event.
  */
-function extractPriceRange(event) {
+function extractPriceRange(event: any) {
   const prices = event.priceRanges;
   if (!prices || prices.length === 0) return null;
   const first = prices[0];
@@ -49,7 +50,7 @@ function extractPriceRange(event) {
 /**
  * Extract venue info from Ticketmaster event.
  */
-function extractVenue(event) {
+function extractVenue(event: any) {
   const venues = event._embedded?.venues;
   if (!venues || venues.length === 0) {
     return {
@@ -78,7 +79,7 @@ function extractVenue(event) {
 /**
  * Extract genre strings from Ticketmaster classifications.
  */
-function extractGenres(event) {
+function extractGenres(event: any) {
   const classifications = event.classifications;
   if (!classifications) return [];
 
@@ -97,11 +98,11 @@ function extractGenres(event) {
 /**
  * Normalize a single Ticketmaster event to our unified schema.
  */
-function normalizeEvent(event) {
+function normalizeEvent(event: any) {
   const segment = event.classifications?.[0]?.segment?.name || null;
   const images = event.images || [];
   const bestImage =
-    images.find((i) => i.ratio === "16_9" && i.width >= 640) ||
+    images.find((i: any) => i.ratio === "16_9" && i.width >= 640) ||
     images[0] ||
     null;
 
@@ -153,7 +154,7 @@ export async function fetchTicketmasterEvents() {
     endDateTime: endDate.toISOString().replace(/\.\d{3}Z$/, "Z"),
   });
 
-  const allEvents = [];
+  const allEvents: any[] = [];
   let page = 0;
   let totalPages = 1;
 

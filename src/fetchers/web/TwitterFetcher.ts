@@ -15,7 +15,7 @@ const TWITTER_URL_REGEX =
 
  * @returns {{ username: string, tweetId: string } | null}
  */
-function parseTwitterUrl(input) {
+function parseTwitterUrl(input: any) {
   if (!input || typeof input !== "string") return null;
   const match = input.trim().match(TWITTER_URL_REGEX);
   if (match) return { username: match[1], tweetId: match[2] };
@@ -35,7 +35,7 @@ function parseTwitterUrl(input) {
 
 
  */
-export async function getTwitterPost(input) {
+export async function getTwitterPost(input: any) {
   const parsed = parseTwitterUrl(input);
   if (!parsed) {
     return { error: `Invalid Twitter/X URL: "${input}"` };
@@ -56,7 +56,7 @@ export async function getTwitterPost(input) {
 
 // ─── fxtwitter Provider ──────────────────────────────────────────
 
-async function fetchFxTwitter(username, tweetId) {
+async function fetchFxTwitter(username: any, tweetId: any) {
   try {
     const response = await fetch(`${FXTWITTER_API}/${username}/status/${tweetId}`, {
       headers: { "User-Agent": USER_AGENT },
@@ -91,7 +91,7 @@ async function fetchFxTwitter(username, tweetId) {
 
     // Media
     if (tweet.media?.all?.length) {
-      result.media = tweet.media.all.map((m) => ({
+      result.media = tweet.media.all.map((m: any) => ({
         type: m.type || "photo",
         url: m.url || null,
         thumbnailUrl: m.thumbnail_url || null,
@@ -114,14 +114,14 @@ async function fetchFxTwitter(username, tweetId) {
     }
 
     return result;
-  } catch (error) {
+  } catch (error: any) {
     return { error: `fxtwitter fetch failed: ${error.message}` };
   }
 }
 
 // ─── Oembed Fallback ─────────────────────────────────────────────
 
-async function fetchOembed(tweetId) {
+async function fetchOembed(tweetId: any) {
   try {
     const tweetUrl = `https://twitter.com/i/status/${tweetId}`;
     const response = await fetch(
@@ -156,7 +156,7 @@ async function fetchOembed(tweetId) {
       text,
       source: "oembed (limited data)",
     };
-  } catch (error) {
+  } catch (error: any) {
     return { error: `oembed fetch failed: ${error.message}` };
   }
 }

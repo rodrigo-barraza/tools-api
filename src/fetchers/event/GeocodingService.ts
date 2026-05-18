@@ -12,7 +12,7 @@ const geocodeCache = new Map();
 
  * @returns {{ latitude: number, longitude: number, formattedAddress: string } | null}
  */
-export async function geocodeAddress(address) {
+export async function geocodeAddress(address: any) {
   if (!address || !CONFIG.GOOGLE_PLACES_API_KEY) return null;
 
   // Normalize cache key
@@ -53,7 +53,7 @@ export async function geocodeAddress(address) {
 
     geocodeCache.set(cacheKey, geocoded);
     return geocoded;
-  } catch (error) {
+  } catch (error: any) {
     logger.warn(`[Geocoding] ⚠️ ${error.message}`);
     return null;
   }
@@ -63,7 +63,7 @@ export async function geocodeAddress(address) {
  * Enrich an event with geocoded coordinates if missing.
  * Only geocodes if the event has a venue name/city but no lat/lng.
  */
-export async function enrichEventWithGeocode(event) {
+export async function enrichEventWithGeocode(event: any) {
   if (!event?.venue) return event;
 
   // Skip if already geocoded
@@ -99,9 +99,9 @@ export async function enrichEventWithGeocode(event) {
 
 
  */
-export async function batchGeocodeEvents(events, maxPerBatch = 5) {
+export async function batchGeocodeEvents(events: any, maxPerBatch: any = 5) {
   const needsGeocode = events.filter(
-    (e) => e.venue && !e.venue.latitude && !e.venue.longitude,
+    (e: any) => e.venue && !e.venue.latitude && !e.venue.longitude,
   );
 
   let geocoded = 0;

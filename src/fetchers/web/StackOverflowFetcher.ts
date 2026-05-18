@@ -13,7 +13,7 @@ const SO_URL_REGEX =
 
  * @returns {{ questionId: string, site: string } | null}
  */
-function parseStackOverflowInput(input) {
+function parseStackOverflowInput(input: any) {
   if (!input || typeof input !== "string") return null;
   const trimmed = input.trim();
 
@@ -38,13 +38,13 @@ function parseStackOverflowInput(input) {
 
 // ─── HTML → Text ─────────────────────────────────────────────────
 
-function htmlToText(html) {
+function htmlToText(html: any) {
   if (!html) return "";
   return html
-    .replace(/<pre[^>]*><code[^>]*>([\s\S]*?)<\/code><\/pre>/gi, (_, code) => {
+    .replace(/<pre[^>]*><code[^>]*>([\s\S]*?)<\/code><\/pre>/gi, (_: any, code: any) => {
       return "\n```\n" + decodeHtmlEntities(code) + "\n```\n";
     })
-    .replace(/<code[^>]*>([\s\S]*?)<\/code>/gi, (_, code) => {
+    .replace(/<code[^>]*>([\s\S]*?)<\/code>/gi, (_: any, code: any) => {
       return "`" + decodeHtmlEntities(code) + "`";
     })
     .replace(/<br\s*\/?>/gi, "\n")
@@ -61,7 +61,7 @@ function htmlToText(html) {
     .trim();
 }
 
-function decodeHtmlEntities(str) {
+function decodeHtmlEntities(str: any) {
   return str
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
@@ -77,7 +77,7 @@ function decodeHtmlEntities(str) {
 
 
  */
-export async function getStackOverflowQuestion(input, options: Record<string, any> = {}) {
+export async function getStackOverflowQuestion(input: any, options: Record<string, any> = {}) {
   const parsed = parseStackOverflowInput(input);
   if (!parsed) {
     return { error: `Invalid Stack Overflow URL or question ID: "${input}"` };
@@ -138,7 +138,7 @@ export async function getStackOverflowQuestion(input, options: Record<string, an
     };
 
     // Process answers
-    result.answers = (aData.items || []).map((a) => ({
+    result.answers = (aData.items || []).map((a: any) => ({
       answerId: a.answer_id,
       author: a.owner?.display_name || null,
       authorReputation: a.owner?.reputation || null,
@@ -151,7 +151,7 @@ export async function getStackOverflowQuestion(input, options: Record<string, an
     }));
 
     // Sort: accepted answer first, then by score
-    result.answers.sort((a, b) => {
+    result.answers.sort((a: any, b: any) => {
       if (a.isAccepted !== b.isAccepted) return a.isAccepted ? -1 : 1;
       return b.score - a.score;
     });
@@ -162,7 +162,7 @@ export async function getStackOverflowQuestion(input, options: Record<string, an
     }
 
     return result;
-  } catch (error) {
+  } catch (error: any) {
     return { error: `Stack Overflow fetch failed: ${error.message}` };
   }
 }

@@ -19,14 +19,14 @@ export async function setupTrendCollection() {
 /**
  * Upserts an array of trend objects into the database.
  */
-export async function upsertTrends(trends) {
+export async function upsertTrends(trends: any) {
   if (!trends.length) return { upserted: 0, modified: 0 };
 
   const db = getDB();
   const collection = db.collection("trends");
   const now = new Date();
 
-  const bulkOps = trends.map((trend) => ({
+  const bulkOps = trends.map((trend: any) => ({
     updateOne: {
       filter: {
         normalizedName: trend.normalizedName,
@@ -66,10 +66,10 @@ export async function upsertTrends(trends) {
  * Gets recent trends from the database.
  */
 export async function getRecentTrends(
-  hours = 24,
-  category = null,
-  source = null,
-  limit = 50,
+  hours: any = 24,
+  category: any = null,
+  source: any = null,
+  limit: any = 50,
 ) {
   const db = getDB();
   const collection = db.collection("trends");
@@ -85,7 +85,7 @@ export async function getRecentTrends(
 /**
  * Searches trends in the database by keyword.
  */
-export async function searchTrendsDB(query, limit = 50) {
+export async function searchTrendsDB(query: any, limit: any = 50) {
   const db = getDB();
   const collection = db.collection("trends");
   return collection
@@ -98,7 +98,7 @@ export async function searchTrendsDB(query, limit = 50) {
 /**
  * Gets top trends aggregated across all sources.
  */
-export async function getTopTrends(hours = 24, limit = 20) {
+export async function getTopTrends(hours: any = 24, limit: any = 20) {
   const db = getDB();
   const collection = db.collection("trends");
   const since = new Date(Date.now() - hoursToMs(hours));

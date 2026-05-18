@@ -8,16 +8,16 @@ import { EARTHQUAKE_MAGNITUDE_SCALE } from "../constants.ts";
  */
 
 const cache = {
-  events: [],
-  lastFetch: null,
-  error: null,
+  events: [] as any[],
+  lastFetch: null as any,
+  error: null as any,
 };
 
 /**
  * Update the cache with freshly fetched earthquake events.
  * Persists to MongoDB via upsert (deduplication by USGS ID).
  */
-export async function updateEarthquakes(events) {
+export async function updateEarthquakes(events: any) {
   cache.events = events;
   cache.lastFetch = new Date();
   cache.error = null;
@@ -30,7 +30,7 @@ export async function updateEarthquakes(events) {
  * Restore earthquakes from a DB snapshot into the in-memory cache.
  * Memory-only — no MongoDB upsert.
  */
-export function restoreEarthquakes(events) {
+export function restoreEarthquakes(events: any) {
   cache.events = events;
   cache.lastFetch = new Date();
   cache.error = null;
@@ -39,7 +39,7 @@ export function restoreEarthquakes(events) {
 /**
  * Record a fetch error.
  */
-export function setEarthquakeError(error) {
+export function setEarthquakeError(error: any) {
   cache.error = {
     message: error.message,
     time: new Date().toISOString(),
@@ -62,12 +62,12 @@ export function getEarthquakeSummary() {
     counts[scale.label] = 0;
   }
 
-  let strongest = null;
+  let strongest: any = null;
 
   for (const event of cache.events) {
     // Classify into magnitude bracket
     const scale = EARTHQUAKE_MAGNITUDE_SCALE.find(
-      (s) => event.magnitude >= s.min && event.magnitude < s.max,
+      (s: any) => event.magnitude >= s.min && event.magnitude < s.max,
     );
     if (scale) {
       counts[scale.label]++;

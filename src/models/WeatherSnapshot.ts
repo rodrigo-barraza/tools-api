@@ -4,7 +4,7 @@ import logger from "../logger.ts";
 /**
  * Insert a weather snapshot document.
  */
-export async function insertSnapshot(data) {
+export async function insertSnapshot(data: any) {
   try {
     const db = getDB();
     const collection = db.collection("snapshots");
@@ -12,7 +12,7 @@ export async function insertSnapshot(data) {
       ...data,
       createdAt: new Date(),
     });
-  } catch (error) {
+  } catch (error: any) {
     logger.error("Failed to persist weather snapshot:", error.message);
   }
 }

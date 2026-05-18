@@ -80,6 +80,7 @@ const ARG_REMAPS = {
 
 // ── Execute tool via internal HTTP ──────────────────────────
 async function executeTool(toolName: string, endpoint: Record<string, any>, args: Record<string, any> = {}, context: Record<string, any> = {}) {
+  // @ts-expect-error - TS7053: implicit any index
   const remaps = ARG_REMAPS[toolName];
   let resolvedArgs = args;
   if (remaps) {
@@ -96,8 +97,11 @@ async function executeTool(toolName: string, endpoint: Record<string, any>, args
     if (endpoint.method === "POST") {
       const url = `${SELF_BASE_URL}${endpoint.path}`;
       const headers = { "Content-Type": "application/json" };
+      // @ts-expect-error - TS7053: implicit any index
       if (context.project) headers["X-Project"] = context.project;
+      // @ts-expect-error - TS7053: implicit any index
       if (context.agent) headers["X-Agent"] = context.agent;
+      // @ts-expect-error - TS7053: implicit any index
       if (context.username) headers["X-Username"] = context.username;
 
       // Also inject into body for endpoints that might read from body
@@ -133,7 +137,7 @@ async function executeTool(toolName: string, endpoint: Record<string, any>, args
       return { error: `API returned ${response.status}: ${response.statusText}` };
     }
     return await response.json();
-  } catch (error) {
+  } catch (error: any) {
     return { error: `Tool execution failed: ${error.message}` };
   }
 }
@@ -158,7 +162,7 @@ function createMcpServer(context: Record<string, any> = {}) {
     async () => {
       const aiSchemas = getToolSchemasForAI();
       return {
-        tools: aiSchemas.map((t) => ({
+        tools: aiSchemas.map((t: any) => ({
           name: t.name,
           description: t.description || "",
           inputSchema: t.parameters || { type: "object", properties: {} },
@@ -170,7 +174,7 @@ function createMcpServer(context: Record<string, any> = {}) {
   // Register tools/call handler
   server.setRequestHandler(
     CallToolRequestSchema,
-    async (request) => {
+    async (request: any) => {
       const { name, arguments: args = {} } = request.params;
       const schema = toolMap.get(name);
 
@@ -188,7 +192,7 @@ function createMcpServer(context: Record<string, any> = {}) {
           content: [{ type: "text", text }],
           isError: !!result?.error,
         };
-      } catch (error) {
+      } catch (error: any) {
         return {
           content: [{ type: "text", text: JSON.stringify({ error: error.message }) }],
           isError: true,
@@ -203,10 +207,10 @@ function createMcpServer(context: Record<string, any> = {}) {
 // ── Mount MCP routes on Express app ─────────────────────────
 // LM Studio connects to the SSE endpoint for MCP communication.
 // Sessions are tracked per-connection to support multiple clients.
-export function mountMcpRoutes(app) {
+export function mountMcpRoutes(app: any) {
   const sessions = new Map();
 
-  app.get("/mcp/sse", async (req, res) => {
+  app.get("/mcp/sse", async (req: any, res: any) => {
     const transport = new SSEServerTransport("/mcp/messages", res);
     const context = {
       project: req.query.project,
@@ -225,7 +229,7 @@ export function mountMcpRoutes(app) {
     await server.connect(transport);
   });
 
-  app.post("/mcp/messages", async (req, res) => {
+  app.post("/mcp/messages", async (req: any, res: any) => {
     const sessionId = req.query.sessionId;
     const session = sessions.get(sessionId);
 

@@ -79,7 +79,7 @@ export async function fetchTomorrowIODailyForecast() {
     moonset: today.moonsetTime || null,
 
     // Daily forecast array
-    dailyForecast: days.map((day) => ({
+    dailyForecast: days.map((day: any) => ({
       time: day.time,
       temperatureMax: day.values.temperatureMax,
       temperatureMin: day.values.temperatureMin,

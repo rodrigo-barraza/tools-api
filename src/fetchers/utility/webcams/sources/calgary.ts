@@ -3,7 +3,7 @@ import { upsertWebcams } from "../../../../models/Webcam.ts";
 
 export async function refreshCalgaryWebcams() {
   // Open Calgary SODA API (Socrata)
-  let allParsedWebcams = [];
+  let allParsedWebcams: any[] = [];
   let offset = 0;
   const limitPerPage = 1000;
   let hasMore = true;
@@ -22,7 +22,7 @@ export async function refreshCalgaryWebcams() {
       break;
     }
 
-    const parsedWebcams = data.map((cam, index) => {
+    const parsedWebcams = data.map((cam: any, index: any) => {
       const lat = cam.point?.coordinates ? cam.point.coordinates[1] : null;
       const lon = cam.point?.coordinates ? cam.point.coordinates[0] : null;
       
@@ -37,7 +37,7 @@ export async function refreshCalgaryWebcams() {
         country: "CA",
         source: "data.calgary.ca"
       };
-    }).filter(c => c.url);
+    }).filter((c: any) => c.url);
 
     allParsedWebcams = allParsedWebcams.concat(parsedWebcams);
     

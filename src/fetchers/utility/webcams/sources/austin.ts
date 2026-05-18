@@ -16,7 +16,7 @@ export async function refreshAustinWebcams() {
     return;
   }
 
-  const parsedWebcams = data.map((cam) => {
+  const parsedWebcams = data.map((cam: any) => {
     const lat = cam.location?.coordinates ? cam.location.coordinates[1] : null;
     const lon = cam.location?.coordinates ? cam.location.coordinates[0] : null;
 
@@ -36,7 +36,7 @@ export async function refreshAustinWebcams() {
       country: "US",
       source: "data.austintexas.gov"
     };
-  }).filter(c => c && c.url);
+  }).filter((c: any) => c && c.url);
 
   await upsertWebcams(parsedWebcams);
 }

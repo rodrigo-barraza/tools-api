@@ -11,7 +11,7 @@ const MAX_README_CHARS = 15_000;
 
 
  */
-export async function getNpmPackage(packageName, options: Record<string, any> = {}) {
+export async function getNpmPackage(packageName: any, options: Record<string, any> = {}) {
   if (!packageName || typeof packageName !== "string") {
     return { error: "Package name is required" };
   }
@@ -51,7 +51,7 @@ export async function getNpmPackage(packageName, options: Record<string, any> = 
     author: typeof version.author === "string"
       ? version.author
       : version.author?.name || null,
-    maintainers: (data.maintainers || []).map((m) => m.name || m).slice(0, 10),
+    maintainers: (data.maintainers || []).map((m: any) => m.name || m).slice(0, 10),
     dependencies: version.dependencies || {},
     devDependencies: version.devDependencies || {},
     peerDependencies: version.peerDependencies || {},

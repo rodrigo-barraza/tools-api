@@ -36,7 +36,7 @@ export async function fetchPollen() {
     regionCode: data.regionCode || null,
 
     // Daily forecasts
-    daily: dailyInfo.map((day) => {
+    daily: dailyInfo.map((day: any) => {
       const pollenTypes = day.pollenTypeInfo || [];
       const plantInfo = day.plantInfo || [];
 
@@ -59,7 +59,7 @@ export async function fetchPollen() {
       }
 
       // Extract individual plant contributions
-      const plants = plantInfo.map((p) => ({
+      const plants = plantInfo.map((p: any) => ({
         code: p.code,
         displayName: p.displayName,
         inSeason: p.inSeason ?? false,

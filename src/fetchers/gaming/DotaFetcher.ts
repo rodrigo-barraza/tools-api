@@ -5,7 +5,7 @@ import { MS_PER_DAY } from "@rodrigo-barraza/utilities-library";
 const BASE_URL = "https://api.opendota.com/api";
 
 // Cache hero list in memory (static data, changes only on patches)
-let heroCache = null;
+let heroCache: any = null;
 let heroCacheTime = 0;
 const HERO_CACHE_TTL = MS_PER_DAY;
 
@@ -34,8 +34,8 @@ export async function getHeroes() {
   ]);
 
   // Merge stats into hero objects
-  const statsMap = new Map(stats.map((s) => [s.id, s]));
-  heroCache = heroes.map((h) => {
+  const statsMap = new Map(stats.map((s: any) => [s.id, s]));
+  heroCache = heroes.map((h: any) => {
     const s: any = statsMap.get(h.id) || {};
     return {
       id: h.id,
@@ -68,25 +68,25 @@ export async function getHeroes() {
  * Get a single hero by name or ID.
  * @param {string|number} query Hero name (partial match) or hero ID
  */
-export async function getHero(query) {
+export async function getHero(query: any) {
   const heroes = await getHeroes();
   const q = String(query).toLowerCase();
 
   // Try ID match first
-  const byId = heroes.find((h) => h.id === parseInt(query));
+  const byId = heroes.find((h: any) => h.id === parseInt(query));
   if (byId) return byId;
 
   // Exact name match
-  const exact = heroes.find((h) => h.name.toLowerCase() === q);
+  const exact = heroes.find((h: any) => h.name.toLowerCase() === q);
   if (exact) return exact;
 
   // Partial name match
-  const partial = heroes.filter((h) => h.name.toLowerCase().includes(q));
+  const partial = heroes.filter((h: any) => h.name.toLowerCase().includes(q));
   if (partial.length === 1) return partial[0];
   if (partial.length > 1) {
     return {
       ambiguous: true,
-      matches: partial.map((h) => ({ id: h.id, name: h.name })),
+      matches: partial.map((h: any) => ({ id: h.id, name: h.name })),
       hint: "Multiple heroes matched. Use the exact name or hero ID.",
     };
   }
@@ -100,13 +100,13 @@ export async function getHero(query) {
  * Get hero matchup data (best/worst opponents).
  * @param {number} heroId Hero ID
  */
-export async function getHeroMatchups(heroId) {
+export async function getHeroMatchups(heroId: any) {
   const matchups = await fetchJson(`/heroes/${heroId}/matchups`);
 
   // Sort by win rate to find best/worst
   const withRates = matchups
-    .filter((m) => m.games_played >= 50)
-    .map((m) => ({
+    .filter((m: any) => m.games_played >= 50)
+    .map((m: any) => ({
       heroId: m.hero_id,
       gamesPlayed: m.games_played,
       wins: m.wins,
@@ -114,7 +114,7 @@ export async function getHeroMatchups(heroId) {
     }));
 
   const sorted = [...withRates].sort(
-    (a, b) => parseFloat(b.winRate) - parseFloat(a.winRate),
+    (a: any, b: any) => parseFloat(b.winRate) - parseFloat(a.winRate),
   );
 
   return {
@@ -131,7 +131,7 @@ export async function getHeroMatchups(heroId) {
  * Get player profile by Steam account ID.
  * @param {number} accountId Steam32 account ID
  */
-export async function getPlayer(accountId) {
+export async function getPlayer(accountId: any) {
   const [profile, wl] = await Promise.all([
     fetchJson(`/players/${accountId}`),
     fetchJson(`/players/${accountId}/wl`),
@@ -161,9 +161,9 @@ export async function getPlayer(accountId) {
  * @param {number} accountId Steam32 account ID
  * @param {number} limit Number of matches (default: 10)
  */
-export async function getPlayerRecentMatches(accountId, limit = 10) {
+export async function getPlayerRecentMatches(accountId: any, limit: any = 10) {
   const matches = await fetchJson(`/players/${accountId}/recentMatches`);
-  return matches.slice(0, limit).map((m) => ({
+  return matches.slice(0, limit).map((m: any) => ({
     matchId: m.match_id,
     heroId: m.hero_id,
     duration: m.duration,
@@ -191,7 +191,7 @@ export async function getPlayerRecentMatches(accountId, limit = 10) {
  * Get match details by match ID.
  * @param {number} matchId Match ID
  */
-export async function getMatch(matchId) {
+export async function getMatch(matchId: any) {
   const m = await fetchJson(`/matches/${matchId}`);
 
   return {
@@ -205,7 +205,7 @@ export async function getMatch(matchId) {
     gameMode: m.game_mode,
     lobbyType: m.lobby_type,
     region: m.region,
-    players: (m.players || []).map((p) => ({
+    players: (m.players || []).map((p: any) => ({
       accountId: p.account_id,
       personaName: p.personaname,
       heroId: p.hero_id,
@@ -232,9 +232,9 @@ export async function getMatch(matchId) {
  * Get recent professional matches.
  * @param {number} limit Number of matches (default: 10)
  */
-export async function getProMatches(limit = 10) {
+export async function getProMatches(limit: any = 10) {
   const matches = await fetchJson("/proMatches");
-  return matches.slice(0, limit).map((m) => ({
+  return matches.slice(0, limit).map((m: any) => ({
     matchId: m.match_id,
     duration: m.duration,
     durationMinutes: Math.round(m.duration / 60),

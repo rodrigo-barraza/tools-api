@@ -6,12 +6,12 @@ import { WORKTREE_DIR } from "../config.ts";
 import { routeForPath, sendRpc } from "./AgentConnectionManager.ts";
 
 // Agent routing helper
-async function tryAgentRoute(method, params, targetPath) {
+async function tryAgentRoute(method: any, params: any, targetPath: any) {
   const agent = routeForPath(targetPath);
   if (!agent) return null;
   try {
     return await sendRpc(agent.id, method, params);
-  } catch (error) {
+  } catch (error: any) {
     return { error: `Agent RPC failed: ${error.message}` };
   }
 }
@@ -26,9 +26,9 @@ import {
 // ────────────────────────────────────────────────────────────
 
 async function runGit(args: string[], cwd: string): Promise<any> {
-  return new Promise<any>((resolve) => {
-    const stdoutChunks = [];
-    const stderrChunks = [];
+  return new Promise<any>((resolve: any) => {
+    const stdoutChunks: any[] = [];
+    const stderrChunks: any[] = [];
     let stdoutLen = 0;
     let stderrLen = 0;
     let settled = false;
@@ -47,14 +47,14 @@ async function runGit(args: string[], cwd: string): Promise<any> {
 
     child.stdin.end();
 
-    child.stdout.on("data", (chunk) => {
+    child.stdout.on("data", (chunk: any) => {
       if (stdoutLen < MAX_OUTPUT_BYTES) {
         stdoutChunks.push(chunk);
         stdoutLen += chunk.length;
       }
     });
 
-    child.stderr.on("data", (chunk) => {
+    child.stderr.on("data", (chunk: any) => {
       if (stderrLen < MAX_OUTPUT_BYTES) {
         stderrChunks.push(chunk);
         stderrLen += chunk.length;
@@ -69,7 +69,7 @@ async function runGit(args: string[], cwd: string): Promise<any> {
       }
     }, GIT_TIMEOUT_MS);
 
-    child.on("close", (code) => {
+    child.on("close", (code: any) => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
@@ -85,7 +85,7 @@ async function runGit(args: string[], cwd: string): Promise<any> {
       resolve({ stdout, stderr: stderr.trim() });
     });
 
-    child.on("error", (error) => {
+    child.on("error", (error: any) => {
       if (!settled) {
         settled = true;
         clearTimeout(timer);
@@ -105,7 +105,7 @@ async function runGit(args: string[], cwd: string): Promise<any> {
 
 
  */
-export async function agenticGitStatus(repoPath) {
+export async function agenticGitStatus(repoPath: any) {
   // Agent routing
   const agentResult = await tryAgentRoute("git.status", { path: repoPath }, repoPath);
   if (agentResult) return agentResult;
@@ -146,9 +146,9 @@ export async function agenticGitStatus(repoPath) {
   const behindMatch = branchLine.match(/behind (\d+)/);
 
   // Parse file changes
-  const staged = [];
-  const unstaged = [];
-  const untracked = [];
+  const staged: any[] = [];
+  const unstaged: any[] = [];
+  const untracked: any[] = [];
 
   for (const line of fileLines) {
     const x = line[0]; // staging area
@@ -190,7 +190,7 @@ export async function agenticGitStatus(repoPath) {
 
 
  */
-export async function agenticGitDiff(repoPath, { staged = false, path: filePath, ref }: Record<string, any> = {}) {
+export async function agenticGitDiff(repoPath: any, { staged = false, path: filePath, ref }: Record<string, any> = {}) {
   // Agent routing
   const agentResult = await tryAgentRoute("git.diff", { path: repoPath, staged, filePath, ref }, repoPath);
   if (agentResult) return agentResult;
@@ -249,7 +249,7 @@ export async function agenticGitDiff(repoPath, { staged = false, path: filePath,
 
 
  */
-export async function agenticGitLog(repoPath, { limit = 20, author, since, path: filePath }: Record<string, any> = {}) {
+export async function agenticGitLog(repoPath: any, { limit = 20, author, since, path: filePath }: Record<string, any> = {}) {
   // Agent routing
   const agentResult = await tryAgentRoute("git.log", { path: repoPath, limit, author, since, filePath }, repoPath);
   if (agentResult) return agentResult;
@@ -289,8 +289,8 @@ export async function agenticGitLog(repoPath, { limit = 20, author, since, path:
 
   const commits = result.stdout
     .split(separator)
-    .filter((s) => s.trim())
-    .map((entry) => {
+    .filter((s: any) => s.trim())
+    .map((entry: any) => {
       const parts = entry.trim().split("|");
       return {
         hash: parts[0] || "",
@@ -324,7 +324,7 @@ const WORKTREE_BASE = WORKTREE_DIR?.trim() || "/tmp/prism-worktrees";
 
  * @returns {Promise<object>} { worktreePath, branch }
  */
-export async function agenticGitWorktreeCreate(repoPath, branchName) {
+export async function agenticGitWorktreeCreate(repoPath: any, branchName: any) {
   const validation = validatePath(repoPath);
   if (!validation.safe) {
     return { error: validation.error };
@@ -364,7 +364,7 @@ export async function agenticGitWorktreeCreate(repoPath, branchName) {
 
 
  */
-export async function agenticGitWorktreeRemove(repoPath, worktreePath, { deleteBranch = true }: Record<string, any> = {}) {
+export async function agenticGitWorktreeRemove(repoPath: any, worktreePath: any, { deleteBranch = true }: Record<string, any> = {}) {
   const validation = validatePath(repoPath);
   if (!validation.safe) {
     return { error: validation.error };
@@ -373,7 +373,7 @@ export async function agenticGitWorktreeRemove(repoPath, worktreePath, { deleteB
   const cwd = validation.resolved;
 
   // Get branch name from worktree before removing
-  let branchName = null;
+  let branchName: any = null;
   if (deleteBranch) {
     const branchResult = await runGit(["branch", "--show-current"], worktreePath);
     if (!branchResult.error) {
@@ -409,7 +409,7 @@ export async function agenticGitWorktreeRemove(repoPath, worktreePath, { deleteB
 
 
  */
-export async function agenticGitWorktreeMerge(repoPath, branch, { message }: Record<string, any> = {}) {
+export async function agenticGitWorktreeMerge(repoPath: any, branch: any, { message }: Record<string, any> = {}) {
   const validation = validatePath(repoPath);
   if (!validation.safe) {
     return { error: validation.error };
@@ -439,7 +439,7 @@ export async function agenticGitWorktreeMerge(repoPath, branch, { message }: Rec
 
 
  */
-export async function agenticGitWorktreeDiff(repoPath, branch) {
+export async function agenticGitWorktreeDiff(repoPath: any, branch: any) {
   const validation = validatePath(repoPath);
   if (!validation.safe) {
     return { error: validation.error };
@@ -482,7 +482,7 @@ export async function agenticGitWorktreeDiff(repoPath, branch) {
 
 
  */
-export async function agenticGitWorktreeCleanup(repoPath) {
+export async function agenticGitWorktreeCleanup(repoPath: any) {
   const validation = validatePath(repoPath);
   if (!validation.safe) {
     return { error: validation.error };

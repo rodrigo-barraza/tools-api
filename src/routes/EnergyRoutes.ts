@@ -13,12 +13,12 @@ router.get(
   asyncHandler(() => getEnergyIndicators(), "Energy indicators fetch"),
 );
 // ─── Browse Data Tree ──────────────────────────────────────────────
-router.get("/browse", asyncHandler((req) => {
+router.get("/browse", asyncHandler((req: any) => {
   const route = req.query.route as string || "";
   return browseRoute(route);
 }, "EIA browse"));
 // ─── Facet Values ──────────────────────────────────────────────────
-router.get("/facets", asyncHandler(async (req, res) => {
+router.get("/facets", asyncHandler(async (req: any, res: any) => {
   const { route, facetId } = req.query as any;
   if (!route || !facetId) {
     return res
@@ -27,14 +27,14 @@ router.get("/facets", asyncHandler(async (req, res) => {
   }
   try {
     res.json(await getFacetValues(route, facetId));
-  } catch (error) {
+  } catch (error: any) {
     res
       .status(502)
       .json({ error: `Facet fetch failed: ${error.message}` });
   }
 }));
 // ─── Data Query ────────────────────────────────────────────────────
-router.get("/data", asyncHandler(async (req) => {
+router.get("/data", asyncHandler(async (req: any) => {
   const { route, frequency, start, end, sort, length, offset, ...rest } =
     req.query as any;
   if (!route) {
@@ -73,7 +73,7 @@ router.get("/data", asyncHandler(async (req) => {
 // ─── Convenience: Electricity ──────────────────────────────────────
 router.get(
   "/electricity/retail-sales",
-  asyncHandler((req) => {
+  asyncHandler((req: any) => {
     const { state, sector, frequency, start, end, length } = req.query as any;
     const facets: Record<string, any> = {};
     if (state) facets.stateid = Array.isArray(state) ? state : [state];
@@ -92,7 +92,7 @@ router.get(
 // ─── Convenience: Petroleum Prices ─────────────────────────────────
 router.get(
   "/petroleum/prices",
-  asyncHandler((req) => {
+  asyncHandler((req: any) => {
     const { product, area, frequency, start, end, length } = req.query as any;
     const facets: Record<string, any> = {};
     if (product) facets.product = Array.isArray(product) ? product : [product];
@@ -111,7 +111,7 @@ router.get(
 // ─── Convenience: Natural Gas Prices ───────────────────────────────
 router.get(
   "/natural-gas/prices",
-  asyncHandler((req) => {
+  asyncHandler((req: any) => {
     const { process: process_, area, frequency, start, end, length } = req.query as any;
     const facets: Record<string, any> = {};
     if (process_) facets.process = Array.isArray(process_) ? process_ : [process_];

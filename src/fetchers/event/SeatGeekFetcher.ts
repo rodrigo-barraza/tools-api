@@ -11,7 +11,7 @@ const BASE_URL = "https://api.seatgeek.com/2/events";
 /**
  * Map SeatGeek taxonomy name to our normalized category.
  */
-function normalizeCategory(taxonomies) {
+function normalizeCategory(taxonomies: any) {
   if (!taxonomies || taxonomies.length === 0) {
     return EVENT_CATEGORIES.OTHER;
   }
@@ -38,7 +38,7 @@ function normalizeCategory(taxonomies) {
 /**
  * Extract genre strings from SeatGeek taxonomies and performers.
  */
-function extractGenres(event) {
+function extractGenres(event: any) {
   const genres = new Set();
 
   if (event.taxonomies) {
@@ -63,7 +63,7 @@ function extractGenres(event) {
 /**
  * Extract venue info from SeatGeek event.
  */
-function extractVenue(venue) {
+function extractVenue(venue: any) {
   if (!venue) {
     return {
       name: null,
@@ -90,7 +90,7 @@ function extractVenue(venue) {
 /**
  * Extract price range from SeatGeek event stats.
  */
-function extractPriceRange(event) {
+function extractPriceRange(event: any) {
   const stats = event.stats;
   if (!stats) return null;
 
@@ -109,7 +109,7 @@ function extractPriceRange(event) {
 /**
  * Normalize a single SeatGeek event to our unified schema.
  */
-function normalizeEvent(event) {
+function normalizeEvent(event: any) {
   const performers = event.performers || [];
   const bestImage = performers[0]?.image || performers[0]?.images?.huge || null;
 
@@ -157,7 +157,7 @@ export async function fetchSeatGeekEvents() {
     "datetime_utc.lte": endDate.toISOString(),
   });
 
-  const allEvents = [];
+  const allEvents: any[] = [];
   let page = 1;
   let hasMore = true;
 
@@ -181,7 +181,7 @@ export async function fetchSeatGeekEvents() {
 
     // Small delay between pages
     if (hasMore) {
-      await new Promise((r) => setTimeout(r, 200));
+      await new Promise((r: any) => setTimeout(r, 200));
     }
   }
 

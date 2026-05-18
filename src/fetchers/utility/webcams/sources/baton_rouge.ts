@@ -17,8 +17,8 @@ export async function refreshBatonRougeWebcams() {
   if (!Array.isArray(data) || data.length === 0) return;
 
   const parsedWebcams = data
-    .filter((cam) => cam.image_view)
-    .map((cam) => ({
+    .filter((cam: any) => cam.image_view)
+    .map((cam: any) => ({
       id: `BTR-${cam.device_id || cam._id}`,
       name: cam.device_name || cam.location || `Camera ${cam.device_id}`,
       url: cam.image_view,

@@ -12,7 +12,7 @@ import logger from "../../logger.ts";
  * @param {string} [workspaceFolder] — root workspace path (defaults to cwd)
  * @returns {object} LSP server manager interface
  */
-export function createLspServerManager(workspaceFolder) {
+export function createLspServerManager(workspaceFolder: any) {
   // ── Private state ──────────────────────────────────────────
   /** @type {Map<string, object>} name → LspServerInstance */
   const servers = new Map();
@@ -61,12 +61,12 @@ export function createLspServerManager(workspaceFolder) {
 
         // Handle workspace/configuration requests from servers that send them
         // even when we say we don't support it (TypeScript does this)
-        instance.onRequest("workspace/configuration", (params) => {
+        instance.onRequest("workspace/configuration", (params: any) => {
           return (params?.items || []).map(() => null);
         });
 
         servers.set(serverName, instance);
-      } catch (error) {
+      } catch (error: any) {
         logger.error(`[LSP Manager] Failed to create server '${serverName}': ${error.message}`);
       }
     }
@@ -83,7 +83,7 @@ export function createLspServerManager(workspaceFolder) {
    * @param {string} filePath — absolute file path
    * @returns {object|undefined} LspServerInstance or undefined
    */
-  function getServerForFile(filePath) {
+  function getServerForFile(filePath: any) {
     const ext = extname(filePath).toLowerCase();
     const serverNames = extensionMap.get(ext);
     if (!serverNames || serverNames.length === 0) return undefined;
@@ -97,14 +97,14 @@ export function createLspServerManager(workspaceFolder) {
 
    * @returns {Promise<object|undefined>} LspServerInstance or undefined
    */
-  async function ensureServerStarted(filePath) {
+  async function ensureServerStarted(filePath: any) {
     const server = getServerForFile(filePath);
     if (!server) return undefined;
 
     if (server.state === "stopped" || server.state === "error") {
       try {
         await server.start();
-      } catch (error) {
+      } catch (error: any) {
         logger.error(`[LSP Manager] Failed to start server for ${basename(filePath)}: ${error.message}`);
         throw error;
       }
@@ -123,13 +123,13 @@ export function createLspServerManager(workspaceFolder) {
    * @param {unknown} params — method params
    * @returns {Promise<unknown|undefined>} Result or undefined if no server
    */
-  async function sendRequest(filePath, method, params) {
+  async function sendRequest(filePath: any, method: any, params: any) {
     const server = await ensureServerStarted(filePath);
     if (!server) return undefined;
 
     try {
       return await server.sendRequest(method, params);
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`[LSP Manager] Request '${method}' failed for ${basename(filePath)}: ${error.message}`);
       throw error;
     }
@@ -144,7 +144,7 @@ export function createLspServerManager(workspaceFolder) {
    * @param {string} filePath — absolute file path
    * @param {string} content — file content
    */
-  async function openFile(filePath, content) {
+  async function openFile(filePath: any, content: any) {
     const server = await ensureServerStarted(filePath);
     if (!server) return;
 
@@ -166,7 +166,7 @@ export function createLspServerManager(workspaceFolder) {
         },
       });
       openedFiles.set(fileUri, server.name);
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`[LSP Manager] didOpen failed for ${basename(filePath)}: ${error.message}`);
       throw error;
     }
@@ -178,7 +178,7 @@ export function createLspServerManager(workspaceFolder) {
 
    * @param {string} content — new full content
    */
-  async function changeFile(filePath, content) {
+  async function changeFile(filePath: any, content: any) {
     const server = getServerForFile(filePath);
     if (!server || server.state !== "running") {
       return openFile(filePath, content);
@@ -196,7 +196,7 @@ export function createLspServerManager(workspaceFolder) {
         textDocument: { uri: fileUri, version: 1 },
         contentChanges: [{ text: content }],
       });
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`[LSP Manager] didChange failed for ${basename(filePath)}: ${error.message}`);
       throw error;
     }
@@ -207,7 +207,7 @@ export function createLspServerManager(workspaceFolder) {
    *
 
    */
-  async function closeFile(filePath) {
+  async function closeFile(filePath: any) {
     const server = getServerForFile(filePath);
     if (!server || server.state !== "running") return;
 
@@ -218,7 +218,7 @@ export function createLspServerManager(workspaceFolder) {
         textDocument: { uri: fileUri },
       });
       openedFiles.delete(fileUri);
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`[LSP Manager] didClose failed for ${basename(filePath)}: ${error.message}`);
     }
   }
@@ -229,7 +229,7 @@ export function createLspServerManager(workspaceFolder) {
 
 
    */
-  function isFileOpen(filePath) {
+  function isFileOpen(filePath: any) {
     const fileUri = pathToFileURL(resolve(filePath)).href;
     return openedFiles.has(fileUri);
   }
@@ -263,15 +263,15 @@ export function createLspServerManager(workspaceFolder) {
    */
   async function shutdown() {
     const toStop = [...servers.entries()].filter(
-      ([, s]) => s.state === "running" || s.state === "error",
+      ([, s]: any) => s.state === "running" || s.state === "error",
     );
 
     const results = await Promise.allSettled(
-      toStop.map(([, server]) => server.stop()),
+      toStop.map(([, server]: any) => server.stop()),
     );
 
     const errors = results
-      .map((r, i) => r.status === "rejected" ? `${toStop[i][0]}: ${r.reason?.message}` : null)
+      .map((r: any, i: any) => r.status === "rejected" ? `${toStop[i][0]}: ${r.reason?.message}` : null)
       .filter(Boolean);
 
     servers.clear();
@@ -315,7 +315,7 @@ const managers = new Map();
 
  * @returns {object} LspServerManager
  */
-export function getLspManager(workspaceFolder) {
+export function getLspManager(workspaceFolder: any) {
   const key = workspaceFolder || "__default__";
 
   if (!managers.has(key)) {
@@ -333,7 +333,7 @@ export function getLspManager(workspaceFolder) {
 export async function shutdownAllLspManagers() {
   const all = [...managers.values()];
   managers.clear();
-  await Promise.allSettled(all.map((m) => m.shutdown()));
+  await Promise.allSettled(all.map((m: any) => m.shutdown()));
   logger.info("[LSP Manager] All managers shut down");
 }
 

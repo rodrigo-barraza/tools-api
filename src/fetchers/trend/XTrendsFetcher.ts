@@ -11,7 +11,7 @@ import logger from "../../logger.ts";
 
  * @returns {Promise<Array>} Normalized trend objects
  */
-export async function fetchXTrends(woeid = X_WOEIDS.WORLDWIDE) {
+export async function fetchXTrends(woeid: any = X_WOEIDS.WORLDWIDE) {
   if (!CONFIG.X_BEARER_TOKEN) {
     throw new Error("X_BEARER_TOKEN not configured");
   }
@@ -38,7 +38,7 @@ export async function fetchXTrends(woeid = X_WOEIDS.WORLDWIDE) {
   const location = trendData.locations?.[0]?.name || "Unknown";
   const asOf = trendData.as_of || new Date().toISOString();
 
-  return (trendData.trends || []).map((trend) => ({
+  return (trendData.trends || []).map((trend: any) => ({
     name: trend.name,
     normalizedName: normalizeName(trend.name.replace(/^#/, "")),
     source: SOURCES.X,
@@ -66,12 +66,12 @@ export async function fetchAllXTrends() {
   }
 
   // On free tier (100/month), just fetch worldwide to conserve reads
-  const allTrends = [];
+  const allTrends: any[] = [];
 
   try {
     const trends = await fetchXTrends(X_WOEIDS.WORLDWIDE);
     allTrends.push(...trends);
-  } catch (error) {
+  } catch (error: any) {
     logger.error(`[X] ❌ Worldwide: ${error.message}`);
   }
 

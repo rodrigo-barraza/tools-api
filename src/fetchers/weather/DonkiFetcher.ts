@@ -6,7 +6,7 @@ const DONKI_BASE = "https://api.nasa.gov/DONKI";
 /**
  * Get a date string N days ago in YYYY-MM-DD format.
  */
-function daysAgo(n) {
+function daysAgo(n: any) {
   const d = new Date();
   d.setDate(d.getDate() - n);
   return d.toISOString().split("T")[0];
@@ -27,7 +27,7 @@ export async function fetchSolarFlares() {
 
   const data = await response.json();
 
-  return data.map((flr) => ({
+  return data.map((flr: any) => ({
     flrId: flr.flrID,
     beginTime: flr.beginTime ? new Date(flr.beginTime) : null,
     peakTime: flr.peakTime ? new Date(flr.peakTime) : null,
@@ -35,8 +35,8 @@ export async function fetchSolarFlares() {
     classType: flr.classType,
     sourceLocation: flr.sourceLocation,
     activeRegionNum: flr.activeRegionNum,
-    instruments: flr.instruments?.map((i) => i.displayName) || [],
-    linkedEvents: flr.linkedEvents?.map((e) => e.activityID) || [],
+    instruments: flr.instruments?.map((i: any) => i.displayName) || [],
+    linkedEvents: flr.linkedEvents?.map((e: any) => e.activityID) || [],
     note: flr.note || null,
     link: flr.link,
   }));
@@ -57,9 +57,9 @@ export async function fetchCmes() {
 
   const data = await response.json();
 
-  return data.map((cme) => {
+  return data.map((cme: any) => {
     const analysis =
-      cme.cmeAnalyses?.find((a) => a.isMostAccurate) ||
+      cme.cmeAnalyses?.find((a: any) => a.isMostAccurate) ||
       cme.cmeAnalyses?.[0] ||
       {};
     const enlil = analysis.enlilList?.[0] || {};
@@ -69,7 +69,7 @@ export async function fetchCmes() {
       startTime: cme.startTime ? new Date(cme.startTime) : null,
       sourceLocation: cme.sourceLocation || null,
       activeRegionNum: cme.activeRegionNum,
-      instruments: cme.instruments?.map((i) => i.displayName) || [],
+      instruments: cme.instruments?.map((i: any) => i.displayName) || [],
       note: cme.note || null,
       link: cme.link,
       // Analysis data
@@ -88,7 +88,7 @@ export async function fetchCmes() {
       kp90: enlil.kp_90 ?? null,
       kp135: enlil.kp_135 ?? null,
       kp180: enlil.kp_180 ?? null,
-      linkedEvents: cme.linkedEvents?.map((e) => e.activityID) || [],
+      linkedEvents: cme.linkedEvents?.map((e: any) => e.activityID) || [],
     };
   });
 }
@@ -108,16 +108,16 @@ export async function fetchGeomagneticStorms() {
 
   const data = await response.json();
 
-  return data.map((gst) => ({
+  return data.map((gst: any) => ({
     gstId: gst.gstID,
     startTime: gst.startTime ? new Date(gst.startTime) : null,
     kpIndices:
-      gst.allKpIndex?.map((kp) => ({
+      gst.allKpIndex?.map((kp: any) => ({
         observedTime: new Date(kp.observedTime),
         kpIndex: kp.kpIndex,
         source: kp.source,
       })) || [],
-    linkedEvents: gst.linkedEvents?.map((e) => e.activityID) || [],
+    linkedEvents: gst.linkedEvents?.map((e: any) => e.activityID) || [],
     link: gst.link,
   }));
 }

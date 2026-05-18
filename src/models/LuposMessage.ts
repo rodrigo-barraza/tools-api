@@ -9,9 +9,9 @@ import logger from "../logger.ts";
 //    Messages — One doc per Discord message (scraped from servers)
 // ═══════════════════════════════════════════════════════════════
 
-let client = null;
-let luposDb = null;
-let messagesCol = null;
+let client: any = null;
+let luposDb: any = null;
+let messagesCol: any = null;
 
 /**
  * Connect to the Lupos database.
@@ -19,7 +19,7 @@ let messagesCol = null;
  *
 
  */
-export async function connectLuposDB(baseUri) {
+export async function connectLuposDB(baseUri: any) {
   if (luposDb) return luposDb;
 
   // Replace the database name in the URI
@@ -60,7 +60,7 @@ export async function setupLuposCollections() {
       await messagesCol.createIndex({ "author.id": 1, createdTimestamp: -1 }, { background: true });
       await messagesCol.createIndex({ guildId: 1, channelId: 1, createdTimestamp: -1 }, { background: true });
       await messagesCol.createIndex({ guildId: 1, createdTimestamp: -1 }, { background: true });
-    } catch (error) {
+    } catch (error: any) {
       logger.warn(`🐺 Lupos index creation warning: ${error.message}`);
     }
 
@@ -69,7 +69,7 @@ export async function setupLuposCollections() {
         { content: "text" },
         { name: "lupos_message_text_search", background: true },
       );
-    } catch (error) {
+    } catch (error: any) {
       // Text index may already exist with different fields — non-fatal
       logger.warn(`🐺 Lupos text index skipped: ${error.message}`);
     }

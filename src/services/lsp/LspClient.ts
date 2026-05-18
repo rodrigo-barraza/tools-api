@@ -16,19 +16,19 @@ import {
  * @param {(error: Error) => void} [onCrash] — called on unexpected exit (non-zero, not during stop)
  * @returns {object} LSP client interface
  */
-export function createLspClient(serverName, onCrash) {
+export function createLspClient(serverName: any, onCrash: any) {
   // ── Closure state ──────────────────────────────────────────
-  let proc = null;
-  let connection = null;
-  let capabilities = null;
+  let proc: any = null;
+  let connection: any = null;
+  let capabilities: any = null;
   let isInitialized = false;
   let startFailed = false;
-  let startError = null;
+  let startError: any = null;
   let isStopping = false;
 
   // Queues for handlers registered before connection is ready
-  const pendingNotificationHandlers = [];
-  const pendingRequestHandlers = [];
+  const pendingNotificationHandlers: any[] = [];
+  const pendingRequestHandlers: any[] = [];
 
   function checkStartFailed() {
     if (startFailed) {
@@ -53,7 +53,7 @@ export function createLspClient(serverName, onCrash) {
      * @param {string[]} args — arguments (e.g. ['typescript-language-server', '--stdio'])
      * @param {{ env?: Record<string,string>, cwd?: string }} [options]
      */
-    async start(command, args, options: Record<string, any> = {}) {
+    async start(command: any, args: any, options: Record<string, any> = {}) {
       try {
         // 1. Spawn process
         proc = spawn(command, args, {
@@ -69,9 +69,9 @@ export function createLspClient(serverName, onCrash) {
 
         // 2. Wait for successful spawn (catch ENOENT for missing binaries)
         const spawnedProc = proc;
-        await new Promise<void>((resolve, reject) => {
+        await new Promise<void>((resolve: any, reject: any) => {
           const onSpawn = () => { cleanup(); resolve(); };
-          const onError = (error) => { cleanup(); reject(error); };
+          const onError = (error: any) => { cleanup(); reject(error); };
           const cleanup = () => {
             spawnedProc.removeListener("spawn", onSpawn);
             spawnedProc.removeListener("error", onError);
@@ -82,7 +82,7 @@ export function createLspClient(serverName, onCrash) {
 
         // 3. Capture stderr for diagnostics
         if (proc.stderr) {
-          proc.stderr.on("data", (data) => {
+          proc.stderr.on("data", (data: any) => {
             const output = data.toString().trim();
             if (output) {
               logger.info(`[LSP:${serverName}:stderr] ${output}`);
@@ -91,7 +91,7 @@ export function createLspClient(serverName, onCrash) {
         }
 
         // 4. Handle process errors after spawn
-        proc.on("error", (error) => {
+        proc.on("error", (error: any) => {
           if (!isStopping) {
             startFailed = true;
             startError = error;
@@ -99,7 +99,7 @@ export function createLspClient(serverName, onCrash) {
           }
         });
 
-        proc.on("exit", (code, _signal) => {
+        proc.on("exit", (code: any, _signal: any) => {
           if (code !== 0 && code !== null && !isStopping) {
             isInitialized = false;
             startFailed = false;
@@ -111,7 +111,7 @@ export function createLspClient(serverName, onCrash) {
         });
 
         // Handle stdin errors (process exits before we finish writing)
-        proc.stdin.on("error", (error) => {
+        proc.stdin.on("error", (error: any) => {
           if (!isStopping) {
             logger.warn(`[LSP:${serverName}] stdin error: ${error.message}`);
           }
@@ -123,7 +123,7 @@ export function createLspClient(serverName, onCrash) {
         connection = createMessageConnection(reader, writer);
 
         // 6. Register error/close handlers BEFORE listen()
-        connection.onError(([error]) => {
+        connection.onError(([error]: any) => {
           if (!isStopping) {
             startFailed = true;
             startError = error;
@@ -153,7 +153,7 @@ export function createLspClient(serverName, onCrash) {
         pendingRequestHandlers.length = 0;
 
         logger.info(`[LSP:${serverName}] Client started`);
-      } catch (error) {
+      } catch (error: any) {
         logger.error(`[LSP:${serverName}] Failed to start: ${error.message}`);
         throw error;
       }
@@ -165,7 +165,7 @@ export function createLspClient(serverName, onCrash) {
      * @param {object} params — InitializeParams
      * @returns {Promise<object>} InitializeResult
      */
-    async initialize(params) {
+    async initialize(params: any) {
       if (!connection) throw new Error("LSP client not started");
       checkStartFailed();
 
@@ -179,7 +179,7 @@ export function createLspClient(serverName, onCrash) {
         isInitialized = true;
         logger.info(`[LSP:${serverName}] Initialized`);
         return result;
-      } catch (error) {
+      } catch (error: any) {
         logger.error(`[LSP:${serverName}] Initialize failed: ${error.message}`);
         throw error;
       }
@@ -192,14 +192,14 @@ export function createLspClient(serverName, onCrash) {
 
 
      */
-    async sendRequest(method, params) {
+    async sendRequest(method: any, params: any) {
       if (!connection) throw new Error("LSP client not started");
       checkStartFailed();
       if (!isInitialized) throw new Error("LSP server not initialized");
 
       try {
         return await connection.sendRequest(method, params);
-      } catch (error) {
+      } catch (error: any) {
         logger.error(`[LSP:${serverName}] Request ${method} failed: ${error.message}`);
         throw error;
       }
@@ -211,13 +211,13 @@ export function createLspClient(serverName, onCrash) {
      * @param {string} method — e.g. 'textDocument/didOpen'
 
      */
-    async sendNotification(method, params) {
+    async sendNotification(method: any, params: any) {
       if (!connection) throw new Error("LSP client not started");
       checkStartFailed();
 
       try {
         await connection.sendNotification(method, params);
-      } catch (error) {
+      } catch (error: any) {
         logger.warn(`[LSP:${serverName}] Notification ${method} failed: ${error.message}`);
         // Don't re-throw — notifications are fire-and-forget
       }
@@ -229,7 +229,7 @@ export function createLspClient(serverName, onCrash) {
 
 
      */
-    onNotification(method, handler) {
+    onNotification(method: any, handler: any) {
       if (!connection) {
         pendingNotificationHandlers.push({ method, handler });
         return;
@@ -244,7 +244,7 @@ export function createLspClient(serverName, onCrash) {
 
 
      */
-    onRequest(method, handler) {
+    onRequest(method: any, handler: any) {
       if (!connection) {
         pendingRequestHandlers.push({ method, handler });
         return;
@@ -257,7 +257,7 @@ export function createLspClient(serverName, onCrash) {
      * Gracefully stop the LSP server and clean up.
      */
     async stop() {
-      let shutdownError = null;
+      let shutdownError: any = null;
       isStopping = true;
 
       try {
@@ -265,7 +265,7 @@ export function createLspClient(serverName, onCrash) {
           await connection.sendRequest("shutdown", {});
           await connection.sendNotification("exit", {});
         }
-      } catch (error) {
+      } catch (error: any) {
         logger.warn(`[LSP:${serverName}] Shutdown error: ${error.message}`);
         shutdownError = error;
       } finally {

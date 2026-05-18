@@ -18,8 +18,8 @@ const __dirname = dirname(__filename);
 
 // ─── CSV Parser ────────────────────────────────────────────────
 
-function parseCSVLine(line) {
-  const fields = [];
+function parseCSVLine(line: any) {
+  const fields: any[] = [];
   let current = "";
   let inQuotes = false;
 
@@ -45,7 +45,7 @@ function parseCSVLine(line) {
 
 // ─── Load & Index ──────────────────────────────────────────────
 
-const PLANET_DB = [];
+const PLANET_DB: any[] = [];
 let loaded = false;
 
 const FIELD_META = {
@@ -85,7 +85,7 @@ function ensureLoaded() {
 
   const csvPath = join(__dirname, "data", "digest_exoplanets.csv");
   const raw = readFileSync(csvPath, "utf-8");
-  const lines = raw.split("\n").filter((l) => l.trim());
+  const lines = raw.split("\n").filter((l: any) => l.trim());
   const headers = parseCSVLine(lines[0]);
 
   for (let i = 1; i < lines.length; i++) {
@@ -93,7 +93,7 @@ function ensureLoaded() {
     if (values.length < 5) continue;
 
     const row: Record<string, any> = {};
-    headers.forEach((h, index) => {
+    headers.forEach((h: any, index: any) => {
       const value = values[index] || "";
       if (NUMERIC_FIELDS.has(h)) {
         const num = parseFloat(value);
@@ -111,11 +111,11 @@ function ensureLoaded() {
 
 // ─── Helpers ───────────────────────────────────────────────────
 
-function normalizeSearch(str) {
+function normalizeSearch(str: any) {
   return str.toLowerCase().replace(/[^a-z0-9\s-]/g, "");
 }
 
-function formatPlanet(p) {
+function formatPlanet(p: any) {
   return {
     name: p.pl_name,
     hostStar: p.hostname,
@@ -140,7 +140,7 @@ function formatPlanet(p) {
 /**
  * Search exoplanets by name or host star.
  */
-export function searchExoplanets(query, opts: Record<string, any> = {}) {
+export function searchExoplanets(query: any, opts: Record<string, any> = {}) {
   ensureLoaded();
 
   const { limit = 10, method } = opts;
@@ -152,13 +152,13 @@ export function searchExoplanets(query, opts: Record<string, any> = {}) {
   if (method) {
     const normalizedMethod = method.toLowerCase();
     candidates = candidates.filter(
-      (p) =>
+      (p: any) =>
         p.discoverymethod && p.discoverymethod.toLowerCase().includes(normalizedMethod),
     );
   }
 
   const scored = candidates
-    .map((p) => {
+    .map((p: any) => {
       let score = 0;
       const name = normalizeSearch(p.pl_name || "");
       const host = normalizeSearch(p.hostname || "");
@@ -172,26 +172,26 @@ export function searchExoplanets(query, opts: Record<string, any> = {}) {
 
       return { p, score };
     })
-    .filter((s) => s.score > 0)
-    .sort((a, b) => b.score - a.score)
+    .filter((s: any) => s.score > 0)
+    .sort((a: any, b: any) => b.score - a.score)
     .slice(0, limit);
 
   return {
     count: scored.length,
     query,
     note: "Data from NASA Exoplanet Archive (Public Domain).",
-    planets: scored.map((s) => formatPlanet(s.p)),
+    planets: scored.map((s: any) => formatPlanet(s.p)),
   };
 }
 
 /**
  * Get exoplanet by exact name.
  */
-export function getExoplanetByName(name) {
+export function getExoplanetByName(name: any) {
   ensureLoaded();
 
   const normalizedQuery = normalizeSearch(name);
-  const planet = PLANET_DB.find((p) => normalizeSearch(p.pl_name || "") === normalizedQuery);
+  const planet = PLANET_DB.find((p: any) => normalizeSearch(p.pl_name || "") === normalizedQuery);
 
   if (!planet) return null;
   return formatPlanet(planet);
@@ -200,15 +200,16 @@ export function getExoplanetByName(name) {
 /**
  * Rank exoplanets by a specific field.
  */
-export function rankExoplanets(field, opts: Record<string, any> = {}) {
+export function rankExoplanets(field: any, opts: Record<string, any> = {}) {
   ensureLoaded();
 
   const { limit = 10, order = "desc" } = opts;
 
+  // @ts-expect-error - TS7053: implicit any index
   if (!FIELD_META[field]) {
     return {
       error: `Unknown field: "${field}"`,
-      availableFields: Object.entries(FIELD_META).map(([key, meta]) => ({
+      availableFields: Object.entries(FIELD_META).map(([key, meta]: any) => ({
         key,
         label: meta.label,
         unit: meta.unit,
@@ -216,10 +217,11 @@ export function rankExoplanets(field, opts: Record<string, any> = {}) {
     };
   }
 
+  // @ts-expect-error - TS7053: implicit any index
   const meta = FIELD_META[field];
 
-  const ranked = PLANET_DB.filter((p) => p[field] !== null)
-    .sort((a, b) =>
+  const ranked = PLANET_DB.filter((p: any) => p[field] !== null)
+    .sort((a: any, b: any) =>
       order === "asc" ? a[field] - b[field] : b[field] - a[field],
     )
     .slice(0, limit);
@@ -231,7 +233,7 @@ export function rankExoplanets(field, opts: Record<string, any> = {}) {
     order,
     count: ranked.length,
     note: "Data from NASA Exoplanet Archive (Public Domain).",
-    planets: ranked.map((p) => ({
+    planets: ranked.map((p: any) => ({
       name: p.pl_name,
       hostStar: p.hostname,
       value: p[field],
@@ -265,13 +267,13 @@ export function getDiscoveryStats() {
   }
 
   const sortedMethods = Object.entries(methods)
-    .sort((a, b) => b[1] - a[1])
-    .map(([method, count]) => ({ method, count }));
+    .sort((a: any, b: any) => b[1] - a[1])
+    .map(([method, count]: any) => ({ method, count }));
 
   const topFacilities = Object.entries(facilities)
-    .sort((a, b) => b[1] - a[1])
+    .sort((a: any, b: any) => b[1] - a[1])
     .slice(0, 15)
-    .map(([facility, count]) => ({ facility, count }));
+    .map(([facility, count]: any) => ({ facility, count }));
 
   return {
     totalPlanets: PLANET_DB.length,
@@ -295,7 +297,7 @@ export function getHabitableZonePlanets(opts: Record<string, any> = {}) {
 
   // Conservative habitable zone: equilibrium temp roughly 200-320K
   // OR semi-major axis in ~0.8-1.5 AU for sun-like stars
-  const habitable = PLANET_DB.filter((p) => {
+  const habitable = PLANET_DB.filter((p: any) => {
     if (p.pl_eqt !== null && p.pl_eqt >= 200 && p.pl_eqt <= 320) return true;
     if (
       p.pl_orbsmax !== null &&
@@ -308,7 +310,7 @@ export function getHabitableZonePlanets(opts: Record<string, any> = {}) {
       return true;
     return false;
   })
-    .sort((a, b) => {
+    .sort((a: any, b: any) => {
       // Prefer planets with measured radii close to Earth
       const aR = a.pl_rade !== null ? Math.abs(a.pl_rade - 1) : 100;
       const bR = b.pl_rade !== null ? Math.abs(b.pl_rade - 1) : 100;

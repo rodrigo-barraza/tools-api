@@ -22,7 +22,7 @@ const BASE_MULTIPLIERS = {
 
 // ─── Climate Temperature Adjustments ───────────────────────────
 
-function climateAdjustment(tempCelsius) {
+function climateAdjustment(tempCelsius: any) {
   if (tempCelsius === null || tempCelsius === undefined) return 0;
   if (tempCelsius <= 10) return -200;   // Cold — less sweat loss
   if (tempCelsius <= 20) return 0;      // Temperate — baseline
@@ -34,7 +34,7 @@ function climateAdjustment(tempCelsius) {
 // ─── Altitude Adjustment ───────────────────────────────────────
 // Above 2500m, increased respiratory water loss + diuresis
 
-function altitudeAdjustment(altitudeM) {
+function altitudeAdjustment(altitudeM: any) {
   if (!altitudeM || altitudeM < 2500) return 0;
   if (altitudeM < 3500) return 500;
   return 1000;
@@ -43,7 +43,7 @@ function altitudeAdjustment(altitudeM) {
 // ─── Exercise Fluid Replacement ────────────────────────────────
 // ACSM: 400-800 mL/hour of exercise depending on intensity and sweat rate
 
-function exerciseFluid(durationMinutes, intensity) {
+function exerciseFluid(durationMinutes: any, intensity: any) {
   if (!durationMinutes || durationMinutes <= 0) return 0;
 
   const rates = {
@@ -52,6 +52,7 @@ function exerciseFluid(durationMinutes, intensity) {
     high: 800,
   };
 
+  // @ts-expect-error - TS7053: implicit any index
   const rate = rates[intensity || "moderate"] || 600;
   return (durationMinutes / 60) * rate;
 }
@@ -77,7 +78,7 @@ export function calculateHydrationNeeds({
   pregnant = false,
   breastfeeding = false,
   caffeineIntakeMg,
-}) {
+}: any) {
   // ── Validate ─────────────────────────────────────────────────
   if (!weightKg || weightKg <= 0) {
     return { error: "'weightKg' must be a positive number" };
@@ -87,6 +88,7 @@ export function calculateHydrationNeeds({
     .toLowerCase()
     .replace(/[\s-]+/g, "_");
 
+  // @ts-expect-error - TS7053: implicit any index
   const multiplier = BASE_MULTIPLIERS[normalizedActivity];
   if (!multiplier) {
     return {

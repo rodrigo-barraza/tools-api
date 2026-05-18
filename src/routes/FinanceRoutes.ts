@@ -29,7 +29,7 @@ import {
 } from "../fetchers/finance/FredFetcher.js";
 const router = Router();
 // ─── Stock Quote (on-demand with 1-min TTL cache) ──────────────────
-router.get("/quote/:symbol", asyncHandler(async (req, res) => {
+router.get("/quote/:symbol", asyncHandler(async (req: any, res: any) => {
   const symbol = (req.params.symbol as string).toUpperCase();
   const cached = getCachedQuote(symbol);
   if (cached) {
@@ -41,7 +41,7 @@ router.get("/quote/:symbol", asyncHandler(async (req, res) => {
   return { symbol, ...quote, cached: false };
 }, "Stock quote"));
 // ─── Company Profile (on-demand with 24h TTL cache) ────────────────
-router.get("/profile/:symbol", asyncHandler(async (req, res) => {
+router.get("/profile/:symbol", asyncHandler(async (req: any, res: any) => {
   const symbol = (req.params.symbol as string).toUpperCase();
   const cached = getCachedProfile(symbol);
   if (cached) {
@@ -53,7 +53,7 @@ router.get("/profile/:symbol", asyncHandler(async (req, res) => {
   return profile;
 }, "Company profile"));
 // ─── News (general = cached poll, company-specific = on-demand) ────
-router.get("/news", asyncHandler(async (req, res) => {
+router.get("/news", asyncHandler(async (req: any, res: any) => {
   const symbol = req.query.symbol as string;
   if (symbol) {
     try {
@@ -66,7 +66,7 @@ router.get("/news", asyncHandler(async (req, res) => {
         count: news.length,
         articles: news.slice(0, 50),
       });
-    } catch (error) {
+    } catch (error: any) {
       return res
         .status(502)
         .json({ error: `Failed to fetch company news: ${error.message}` });
@@ -76,12 +76,12 @@ router.get("/news", asyncHandler(async (req, res) => {
   res.json({ count: articles.length, articles });
 }));
 // ─── Earnings Calendar (cached poll) ───────────────────────────────
-router.get("/earnings", (_req, res) => {
+router.get("/earnings", (_req: any, res: any) => {
   const earnings = getEarnings();
   res.json({ count: earnings.length, earnings });
 });
 // ─── Analyst Recommendations (on-demand with 1h TTL cache) ─────────
-router.get("/recommendation/:symbol", asyncHandler(async (req, res) => {
+router.get("/recommendation/:symbol", asyncHandler(async (req: any, res: any) => {
   const symbol = (req.params.symbol as string).toUpperCase();
   const cached = getCachedRecommendation(symbol);
   if (cached) {
@@ -93,7 +93,7 @@ router.get("/recommendation/:symbol", asyncHandler(async (req, res) => {
   return data;
 }, "Analyst recommendations"));
 // ─── Basic Financials (on-demand with 1h TTL cache) ────────────────
-router.get("/financials/:symbol", asyncHandler(async (req, res) => {
+router.get("/financials/:symbol", asyncHandler(async (req: any, res: any) => {
   const symbol = (req.params.symbol as string).toUpperCase();
   const cached = getCachedFinancials(symbol);
   if (cached) {
@@ -109,7 +109,7 @@ router.get("/macro/indicators", asyncHandler(
   () => getKeyIndicators(),
   "Key indicators fetch",
 ));
-router.get("/macro/search", asyncHandler(async (req, res) => {
+router.get("/macro/search", asyncHandler(async (req: any, res: any) => {
   const { q, limit, orderBy } = req.query as any;
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
@@ -120,7 +120,7 @@ router.get("/macro/search", asyncHandler(async (req, res) => {
   }));
 }));
 router.get("/macro/series/:seriesId/observations", asyncHandler(
-  (req) => {
+  (req: any) => {
     const { limit, sortOrder, observationStart, observationEnd } = req.query as any;
     return getSeriesObservations(req.params.seriesId as string, {
       limit: parseInt(limit, 10) || 50,
@@ -132,7 +132,7 @@ router.get("/macro/series/:seriesId/observations", asyncHandler(
   "Series observations fetch",
 ));
 router.get("/macro/series/:seriesId", asyncHandler(
-  (req) => getSeriesInfo(req.params.seriesId as string),
+  (req: any) => getSeriesInfo(req.params.seriesId as string),
   "Series info fetch",
 ));
 // ─── Health ────────────────────────────────────────────────────────
@@ -142,7 +142,7 @@ export function getFinanceHealth() {
   return health;
 }
 // ── Unified Stock Data Dispatcher ──────────────────────────────────
-router.get("/stock/data", asyncHandler(async (req, res) => {
+router.get("/stock/data", asyncHandler(async (req: any, res: any) => {
   const { action, symbol } = req.query as any;
   if (!action || !symbol) return res.status(400).json({ error: "'action' and 'symbol' are required", actions: ["quote", "profile", "recommendation", "financials"] });
   const pathMap = {
@@ -151,14 +151,16 @@ router.get("/stock/data", asyncHandler(async (req, res) => {
     recommendation: `/recommendation/${symbol}`,
     financials: `/financials/${symbol}`,
   };
+  // @ts-expect-error - TS7053: implicit any index
   if (!pathMap[action]) return res.status(400).json({ error: `Unknown action: ${action}`, actions: Object.keys(pathMap) });
   // Internal redirect: re-use existing routes by forwarding the request
+  // @ts-expect-error - TS7053: implicit any index
   req.url = pathMap[action];
   req.params.symbol = symbol;
   return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
 }));
 // ── Unified Macro Data Dispatcher ──────────────────────────────────
-router.get("/macro/data", asyncHandler(async (req, res) => {
+router.get("/macro/data", asyncHandler(async (req: any, res: any) => {
   const { action, q, seriesId, limit, orderBy, sortOrder, observationStart, observationEnd } = req.query as any;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["indicators", "search", "series", "observations"] });
   const pathMap = {
@@ -167,7 +169,9 @@ router.get("/macro/data", asyncHandler(async (req, res) => {
     series: `/macro/series/${seriesId || "GDP"}`,
     observations: `/macro/series/${seriesId || "GDP"}/observations?limit=${limit || 10}&sortOrder=${sortOrder || "desc"}&observationStart=${observationStart || ""}&observationEnd=${observationEnd || ""}`,
   };
+  // @ts-expect-error - TS7053: implicit any index
   if (!pathMap[action]) return res.status(400).json({ error: `Unknown action: ${action}`, actions: Object.keys(pathMap) });
+  // @ts-expect-error - TS7053: implicit any index
   req.url = pathMap[action];
   if (seriesId) req.params.seriesId = seriesId;
   return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));

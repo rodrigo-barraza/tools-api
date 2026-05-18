@@ -12,7 +12,7 @@ import { DICTIONARY_BASE_URL } from "../../constants.ts";
 
  * @returns {Promise<object>} Normalized definition result
  */
-export async function fetchDefinition(word) {
+export async function fetchDefinition(word: any) {
   const url = `${DICTIONARY_BASE_URL}/${encodeURIComponent(word.toLowerCase().trim())}`;
   const response = await fetch(url);
   if (response.status === 404) {
@@ -25,15 +25,15 @@ export async function fetchDefinition(word) {
   const entry = data[0];
   // Extract phonetics with audio
   const phonetics = (entry.phonetics || [])
-    .filter((p) => p.text || p.audio)
-    .map((p) => ({
+    .filter((p: any) => p.text || p.audio)
+    .map((p: any) => ({
       text: p.text || null,
       audio: p.audio || null,
     }));
   // Extract meanings grouped by part of speech
-  const meanings = (entry.meanings || []).map((m) => ({
+  const meanings = (entry.meanings || []).map((m: any) => ({
     partOfSpeech: m.partOfSpeech,
-    definitions: (m.definitions || []).slice(0, 5).map((d) => ({
+    definitions: (m.definitions || []).slice(0, 5).map((d: any) => ({
       definition: stripHtml(d.definition),
       example: d.example ? stripHtml(d.example) : null,
       synonyms: (d.synonyms || []).slice(0, 5),

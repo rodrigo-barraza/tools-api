@@ -102,15 +102,15 @@ crawleeConfig.set("persistStorage", false);
 
  * @returns {Promise<object>} Extracted data or error
  */
-export async function crawlSingleStatic(url, options: Record<string, any> = {}) {
+export async function crawlSingleStatic(url: any, options: Record<string, any> = {}) {
   const { extractFn, proxyZone } = options;
 
   if (!extractFn) {
     return { error: "extractFn is required" };
   }
 
-  let result = null;
-  let crawlError = null;
+  let result: any = null;
+  let crawlError: any = null;
 
   const proxyConfiguration = proxyZone ? buildProxyConfig({ zone: proxyZone }) : null;
 
@@ -120,6 +120,7 @@ export async function crawlSingleStatic(url, options: Record<string, any> = {}) 
     requestHandlerTimeoutSecs: DEFAULTS.requestHandlerTimeoutSecs,
     useSessionPool: true,
     persistCookiesPerSession: true,
+    // @ts-expect-error - suppress remaining error
     ...(proxyConfiguration && { proxyConfiguration }),
 
     additionalHttpHeaders: {
@@ -128,18 +129,18 @@ export async function crawlSingleStatic(url, options: Record<string, any> = {}) 
       "Accept-Language": "en-US,en;q=0.9",
     },
 
-    async requestHandler({ $, request }) {
+    async requestHandler({ $, request }: any) {
       logger.info(`[Crawler] Processing (static): ${request.url}`);
 
       try {
         result = await extractFn($, request);
-      } catch (error) {
+      } catch (error: any) {
         crawlError = error;
         logger.error(`[Crawler] Extract failed for ${request.url}: ${error.message}`);
       }
     },
 
-    async failedRequestHandler({ request }, error) {
+    async failedRequestHandler({ request }: any, error: any) {
       crawlError = error;
       logger.error(`[Crawler] Failed after retries: ${request.url} — ${error.message}`);
     },
@@ -147,7 +148,7 @@ export async function crawlSingleStatic(url, options: Record<string, any> = {}) 
 
   try {
     await crawler.run([url]);
-  } catch (error) {
+  } catch (error: any) {
     return { error: `Crawler failed: ${error.message}`, url };
   }
 

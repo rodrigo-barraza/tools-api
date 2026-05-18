@@ -118,7 +118,7 @@ for (const [col] of Object.entries(NUTRITION_STEROL_FIELDS)) {
 
 // ─── Unit Conversion Helpers ───────────────────────────────────
 
-function convertToTarget(value, fromUnit, toUnit) {
+function convertToTarget(value: any, fromUnit: any, toUnit: any) {
   if (fromUnit === toUnit) return value;
 
   const normalized = `${fromUnit}→${toUnit}`;
@@ -135,7 +135,7 @@ function convertToTarget(value, fromUnit, toUnit) {
 
 // ─── Status Classification ─────────────────────────────────────
 
-function classifyStatus(pctDRI, hasUL, pctUL) {
+function classifyStatus(pctDRI: any, hasUL: any, pctUL: any) {
   if (pctDRI === null) return "no_data";
   if (hasUL && pctUL > 100) return "over_UL";
   if (pctDRI >= 90 && pctDRI <= 110) return "adequate";
@@ -144,7 +144,7 @@ function classifyStatus(pctDRI, hasUL, pctUL) {
   return "deficient";
 }
 
-function statusEmoji(status) {
+function statusEmoji(status: any) {
   switch (status) {
     case "deficient": return "🔴";
     case "low": return "🟡";
@@ -174,7 +174,7 @@ export function analyzeNutrientGaps({
   authority,
   weightKg,
   caloricIntake,
-}) {
+}: any) {
   // ── Validate ─────────────────────────────────────────────────
   if (!foods || !Array.isArray(foods) || foods.length === 0) {
     return {
@@ -191,8 +191,8 @@ export function analyzeNutrientGaps({
   }
 
   // ── Resolve foods from the database ──────────────────────────
-  const resolvedFoods = [];
-  const unresolvedFoods = [];
+  const resolvedFoods: any[] = [];
+  const unresolvedFoods: any[] = [];
 
   for (const { name, grams } of foods) {
     const result = searchFoods(name, { limit: 1 });
@@ -267,11 +267,12 @@ export function analyzeNutrientGaps({
   }
 
   // ── Gap analysis per nutrient ────────────────────────────────
-  const gaps = [];
+  const gaps: any[] = [];
   const { requirements: reqMap } = requirements;
 
   for (const [nutrientId, metrics] of Object.entries(reqMap)) {
     // Find the food column for this requirement nutrient
+    // @ts-expect-error - TS7053: implicit any index
     const foodColumn = REQUIREMENT_TO_FOOD_COLUMN[nutrientId];
     if (!foodColumn) continue;
 
@@ -283,10 +284,10 @@ export function analyzeNutrientGaps({
     const foodUnit = FOOD_COLUMN_UNITS[foodColumn] || "unknown";
 
     // Find target value (use RDA > AI > MIN > RDA_multiplier_per_kg)
-    let targetValue = null;
-    let targetMetric = null;
-    let targetUnit = null;
-    let ulValue = null;
+    let targetValue: any = null;
+    let targetMetric: any = null;
+    let targetUnit: any = null;
+    let ulValue: any = null;
 
     for (const [metric, data] of Object.entries(metrics)) {
       if (metric === "NO_DRI") continue;
@@ -344,18 +345,19 @@ export function analyzeNutrientGaps({
 
   // ── Sort: deficiencies first, then low, adequate, surplus, over_UL ──
   const statusOrder = { deficient: 0, low: 1, over_UL: 2, surplus: 3, adequate: 4, no_data: 5 };
-  gaps.sort((a, b) => {
+  gaps.sort((a: any, b: any) => {
+    // @ts-expect-error - TS7053: implicit any index
     const orderDiff = (statusOrder[a.status] ?? 99) - (statusOrder[b.status] ?? 99);
     if (orderDiff !== 0) return orderDiff;
     return (a.pctDRI || 0) - (b.pctDRI || 0);
   });
 
   // ── Summary ──────────────────────────────────────────────────
-  const deficient = gaps.filter((g) => g.status === "deficient");
-  const low = gaps.filter((g) => g.status === "low");
-  const adequate = gaps.filter((g) => g.status === "adequate");
-  const surplus = gaps.filter((g) => g.status === "surplus");
-  const overUL = gaps.filter((g) => g.status === "over_UL");
+  const deficient = gaps.filter((g: any) => g.status === "deficient");
+  const low = gaps.filter((g: any) => g.status === "low");
+  const adequate = gaps.filter((g: any) => g.status === "adequate");
+  const surplus = gaps.filter((g: any) => g.status === "surplus");
+  const overUL = gaps.filter((g: any) => g.status === "over_UL");
 
   const totalCalories = consumed["calories_kcal"] || 0;
 
@@ -374,14 +376,14 @@ export function analyzeNutrientGaps({
       overallScore: gaps.length > 0
         ? Number(
           (
-            (gaps.filter((g) => g.status === "adequate" || g.status === "surplus").length /
+            (gaps.filter((g: any) => g.status === "adequate" || g.status === "surplus").length /
               gaps.length) *
             100
           ).toFixed(1),
         )
         : 0,
     },
-    foodLog: resolvedFoods.map((f) => ({
+    foodLog: resolvedFoods.map((f: any) => ({
       query: f.query,
       matched: f.matched,
       grams: f.grams,
@@ -393,7 +395,7 @@ export function analyzeNutrientGaps({
 
 // ─── Metric Priority Helper ───────────────────────────────────
 
-function priorityOf(metric) {
+function priorityOf(metric: any) {
   if (!metric) return -1;
   const m = metric.toLowerCase();
   if (m === "rda") return 10;

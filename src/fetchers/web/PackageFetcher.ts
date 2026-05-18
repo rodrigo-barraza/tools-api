@@ -12,14 +12,14 @@ import { getPyPiPackage } from "./PyPiFetcher.ts";
 
  * @returns {Promise<object>} Package metadata with "registry" field
  */
-export async function getPackageInfo(name, registry, options: Record<string, any> = {}) {
+export async function getPackageInfo(name: any, registry: any, options: Record<string, any> = {}) {
   if (!name || typeof name !== "string") {
     return { error: "Package name is required" };
   }
 
   const reg = (registry || "npm").toLowerCase().trim();
 
-  let result;
+  let result: any;
 
   switch (reg) {
     case "npm":

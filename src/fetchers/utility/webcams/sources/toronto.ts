@@ -3,7 +3,7 @@ import { upsertWebcams } from "../../../../models/Webcam.ts";
 
 export async function refreshTorontoWebcams() {
   // Toronto Open Data CKAN API
-  let allParsedWebcams = [];
+  let allParsedWebcams: any[] = [];
   let offset = 0;
   const limitPerPage = 100;
   let totalCount = 1;
@@ -23,7 +23,7 @@ export async function refreshTorontoWebcams() {
 
     totalCount = data.result.total;
 
-    const parsedWebcams = data.result.records.map((cam) => {
+    const parsedWebcams = data.result.records.map((cam: any) => {
       let lat = null, lon = null;
       if (cam.geometry) {
         try {

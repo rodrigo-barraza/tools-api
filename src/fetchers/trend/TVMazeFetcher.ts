@@ -10,7 +10,7 @@ const TVMAZE_SCHEDULE_URL = "https://api.tvmaze.com/schedule";
 export async function fetchTVMazeTrends() {
   const today = new Date().toISOString().split("T")[0];
   const countries = ["US", "CA"];
-  const allShows = [];
+  const allShows: any[] = [];
   for (const country of countries) {
     try {
       const url = `${TVMAZE_SCHEDULE_URL}?country=${country}&date=${today}`;
@@ -20,8 +20,8 @@ export async function fetchTVMazeTrends() {
         continue;
       }
       const episodes = await response.json();
-      allShows.push(...episodes.map((ep) => ({ ...ep, country })));
-    } catch (error) {
+      allShows.push(...episodes.map((ep: any) => ({ ...ep, country })));
+    } catch (error: any) {
       logger.error(`[TVMaze] ❌ ${country}: ${error.message}`);
     }
   }
@@ -43,9 +43,9 @@ export async function fetchTVMazeTrends() {
   }
   // Sort by weight (TVMaze's popularity metric), take top 30
   const topShows = Array.from(showMap.values())
-    .sort((a, b) => b.weight - a.weight || b.rating - a.rating)
+    .sort((a: any, b: any) => b.weight - a.weight || b.rating - a.rating)
     .slice(0, 30);
-  return topShows.map((entry) => {
+  return topShows.map((entry: any) => {
     const show = entry.show;
     const ep = entry.episodes[0];
     return {

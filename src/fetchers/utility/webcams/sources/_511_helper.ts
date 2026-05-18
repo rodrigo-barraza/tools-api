@@ -14,7 +14,7 @@ import { upsertWebcams } from "../../../../models/Webcam.ts";
  * @param {string} options.idPrefix     - ID prefix for uniqueness (e.g. "ON")
  * @param {Object} options.bounds       - Geographic bounding box { minLat, maxLat, minLon, maxLon }
  */
-export async function fetch511Cameras({ apiUrl, city, country, source, idPrefix, bounds }) {
+export async function fetch511Cameras({ apiUrl, city, country, source, idPrefix, bounds }: any) {
   const url = `${apiUrl}?format=json`;
   const response = await fetch(url, {
     headers: buildScraperHeaders(),
@@ -30,7 +30,7 @@ export async function fetch511Cameras({ apiUrl, city, country, source, idPrefix,
     return;
   }
 
-  const parsedWebcams = [];
+  const parsedWebcams: any[] = [];
 
   for (const cam of data) {
     const lat = cam.Latitude;

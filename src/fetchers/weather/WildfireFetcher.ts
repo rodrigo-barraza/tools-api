@@ -10,7 +10,7 @@ export async function fetchWildfires() {
   if (!response.ok) throw new Error(`EONET ${response.status}: ${response.statusText}`);
   const json = await response.json();
 
-  return (json.events || []).map((event) => {
+  return (json.events || []).map((event: any) => {
     const geo = event.geometry?.[0] || {};
     const source = event.sources?.[0] || {};
 

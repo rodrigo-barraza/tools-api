@@ -33,7 +33,7 @@ const ebayTokenManager = new TokenManager(async () => {
 /**
  * Search eBay for popular items in a category, sorted by most watched.
  */
-async function fetchEbayCategoryTrending(token, category) {
+async function fetchEbayCategoryTrending(token: any, category: any) {
   const params = new URLSearchParams({
     category_ids: category.id,
     sort: "-price",
@@ -54,7 +54,7 @@ async function fetchEbayCategoryTrending(token, category) {
   }
   const data = await response.json();
   const items = data.itemSummaries || [];
-  return items.slice(0, 15).map((item, index) => {
+  return items.slice(0, 15).map((item: any, index: any) => {
     const product = {
       sourceId: item.itemId,
       source: PRODUCT_SOURCES.EBAY,
@@ -85,14 +85,14 @@ export async function fetchAllEbayTrending() {
     throw new Error("EBAY_CLIENT_ID and EBAY_CLIENT_SECRET not configured");
   }
   const token = await ebayTokenManager.getToken();
-  const allProducts = [];
+  const allProducts: any[] = [];
   for (const cat of EBAY_CATEGORIES) {
     await rateLimiter.wait("EBAY");
     try {
       const products = await fetchEbayCategoryTrending(token, cat);
       allProducts.push(...products);
       logger.info(`[eBay] ✅ ${cat.name}: ${products.length} products`);
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`[eBay] ❌ ${cat.name}: ${error.message}`);
     }
   }

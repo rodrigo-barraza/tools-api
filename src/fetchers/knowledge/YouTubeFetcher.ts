@@ -22,7 +22,7 @@ const YOUTUBE_ID_REGEX =
 
  * @returns {string|null} 11-character video ID or null
  */
-export function extractVideoId(input) {
+export function extractVideoId(input: any) {
   if (!input || typeof input !== "string") return null;
   const trimmed = input.trim();
   const match = trimmed.match(YOUTUBE_ID_REGEX);
@@ -40,7 +40,7 @@ const OEMBED_URL = "https://www.youtube.com/oembed";
 
 
  */
-async function fetchOembedMetadata(videoId) {
+async function fetchOembedMetadata(videoId: any) {
   const url = `${OEMBED_URL}?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
   const response = await fetch(url);
   if (!response.ok) return null;
@@ -65,7 +65,7 @@ async function fetchOembedMetadata(videoId) {
 
 
  */
-async function fetchPageMetadata(videoId) {
+async function fetchPageMetadata(videoId: any) {
   const url = `https://www.youtube.com/watch?v=${videoId}`;
   try {
     const response = await fetch(url, {
@@ -78,7 +78,7 @@ async function fetchPageMetadata(videoId) {
     if (!response.ok) return {};
     const html = await response.text();
 
-    const extract = (pattern) => {
+    const extract = (pattern: any) => {
       const match = html.match(pattern);
       return match ? match[1]?.replace(/\\u0026/g, "&")?.replace(/\\"/g, '"') : null;
     };
@@ -124,7 +124,7 @@ async function fetchPageMetadata(videoId) {
       duration,
       isFamilyFriendly: isFamilyFriendly === "true" ? true : isFamilyFriendly === "false" ? false : null,
       viewCount: viewCount ? parseInt(viewCount, 10) || null : null,
-      keywords: keywords ? keywords.split(",").map((k) => k.trim()).filter(Boolean) : null,
+      keywords: keywords ? keywords.split(",").map((k: any) => k.trim()).filter(Boolean) : null,
       channelId,
     };
   } catch {
@@ -139,7 +139,7 @@ async function fetchPageMetadata(videoId) {
 
 
  */
-async function fetchTranscript(videoId, lang) {
+async function fetchTranscript(videoId: any, lang: any) {
   try {
     const config = { lang: lang || "en" };
     const entries = await YoutubeTranscript.fetchTranscript(videoId, config);
@@ -148,7 +148,7 @@ async function fetchTranscript(videoId, lang) {
       return { available: false, segments: [], text: "" };
     }
 
-    const segments = entries.map((entry) => {
+    const segments = entries.map((entry: any) => {
       const offsetMs = entry.offset || 0;
       const minutes = Math.floor(offsetMs / 60000);
       const seconds = Math.floor((offsetMs % 60000) / 1000);
@@ -162,9 +162,9 @@ async function fetchTranscript(videoId, lang) {
       };
     });
 
-    const fullText = segments.map((s) => s.text).join(" ");
+    const fullText = segments.map((s: any) => s.text).join(" ");
     const timestampedText = segments
-      .map((s) => `[${s.timestamp}] ${s.text}`)
+      .map((s: any) => `[${s.timestamp}] ${s.text}`)
       .join("\n");
 
     return {
@@ -174,7 +174,7 @@ async function fetchTranscript(videoId, lang) {
       text: fullText,
       timestampedText,
     };
-  } catch (error) {
+  } catch (error: any) {
     return {
       available: false,
       segments: [],
@@ -192,7 +192,7 @@ async function fetchTranscript(videoId, lang) {
 
 
  */
-export async function getYouTubeVideoInfo(input, options: Record<string, any> = {}) {
+export async function getYouTubeVideoInfo(input: any, options: Record<string, any> = {}) {
   const videoId = extractVideoId(input);
   if (!videoId) {
     return { error: `Invalid YouTube URL or video ID: "${input}"` };

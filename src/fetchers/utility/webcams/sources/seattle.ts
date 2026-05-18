@@ -11,7 +11,7 @@ export async function refreshSeattleWebcams() {
   }
   
   const data = await response.json();
-  const parsedWebcams = [];
+  const parsedWebcams: any[] = [];
 
   for (const feature of data.Features) {
     const lat = feature.PointCoordinate[0];

@@ -2,7 +2,7 @@ import { hours as hoursToMs } from "@rodrigo-barraza/utilities-library";
 import { getDB } from "../db.ts";
 import logger from "../logger.ts";
 
-let collection = null;
+let collection: any = null;
 
 /**
  * Initialize the earthquakes collection with required indexes.
@@ -25,10 +25,10 @@ export async function setupEarthquakeCollection() {
  * Bulk upsert earthquake events by USGS ID.
  * Updates existing events (e.g. revised magnitude) and inserts new ones.
  */
-export async function upsertEarthquakes(events) {
+export async function upsertEarthquakes(events: any) {
   if (!collection || events.length === 0) return;
 
-  const operations = events.map((event) => ({
+  const operations = events.map((event: any) => ({
     updateOne: {
       filter: { usgsId: event.usgsId },
       update: {
@@ -45,7 +45,7 @@ export async function upsertEarthquakes(events) {
       upserted: result.upsertedCount,
       modified: result.modifiedCount,
     };
-  } catch (error) {
+  } catch (error: any) {
     logger.error("Failed to upsert earthquakes:", error.message);
     return { upserted: 0, modified: 0 };
   }
@@ -57,9 +57,9 @@ export async function upsertEarthquakes(events) {
 
  */
 export async function getRecentEarthquakes(
-  hours = 24,
-  minMagnitude = null,
-  limit = 100,
+  hours: any = 24,
+  minMagnitude: any = null,
+  limit: any = 100,
 ) {
   if (!collection) return [];
 
@@ -76,7 +76,7 @@ export async function getRecentEarthquakes(
 /**
  * Get a single earthquake event by its USGS ID.
  */
-export async function getEarthquakeById(usgsId) {
+export async function getEarthquakeById(usgsId: any) {
   if (!collection) return null;
   return collection.findOne({ usgsId });
 }

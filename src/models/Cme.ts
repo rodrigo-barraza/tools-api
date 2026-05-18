@@ -1,7 +1,7 @@
 import { getDB } from "../db.ts";
 import logger from "../logger.ts";
 
-let collection = null;
+let collection: any = null;
 
 export async function setupCmeCollection() {
   const db = getDB();
@@ -16,10 +16,10 @@ export async function setupCmeCollection() {
   logger.info("💥 CME collection indexes ready");
 }
 
-export async function upsertCmes(cmes) {
+export async function upsertCmes(cmes: any) {
   if (!collection || cmes.length === 0) return { upserted: 0, modified: 0 };
 
-  const operations = cmes.map((cme) => ({
+  const operations = cmes.map((cme: any) => ({
     updateOne: {
       filter: { activityId: cme.activityId },
       update: {
@@ -33,16 +33,16 @@ export async function upsertCmes(cmes) {
   try {
     const result = await collection.bulkWrite(operations, { ordered: false });
     return { upserted: result.upsertedCount, modified: result.modifiedCount };
-  } catch (error) {
+  } catch (error: any) {
     logger.error("Failed to upsert CMEs:", error.message);
     return { upserted: 0, modified: 0 };
   }
 }
 
 export async function getRecentCmes(
-  days = 7,
-  earthDirectedOnly = false,
-  limit = 50,
+  days: any = 7,
+  earthDirectedOnly: any = false,
+  limit: any = 50,
 ) {
   if (!collection) return [];
   const cutoff = new Date();

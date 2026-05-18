@@ -63,7 +63,7 @@ const agents = new Map();
 /** @type {Map<string, string>} rootPath → agentId (for fast routing) */
 const rootToAgent = new Map();
 
-let healthCheckTimer = null;
+let healthCheckTimer: any = null;
 
 // ────────────────────────────────────────────────────────────
 // WebSocket Server Setup
@@ -75,11 +75,11 @@ let healthCheckTimer = null;
  *
 
  */
-export function initAgentWebSocket(httpServer) {
+export function initAgentWebSocket(httpServer: any) {
   const wss = new WebSocketServer({ noServer: true });
   const clientWss = new WebSocketServer({ noServer: true });
 
-  httpServer.on("upgrade", (req, socket, head) => {
+  httpServer.on("upgrade", (req: any, socket: any, head: any) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
 
     // Auth check (shared across both endpoints)
@@ -95,7 +95,7 @@ export function initAgentWebSocket(httpServer) {
 
     // Agent connections (workspace-service sidecar → tools-service)
     if (url.pathname === "/ws/agent") {
-      wss.handleUpgrade(req, socket, head, (ws) => {
+      wss.handleUpgrade(req, socket, head, (ws: any) => {
         wss.emit("connection", ws, req);
       });
       return;
@@ -103,7 +103,7 @@ export function initAgentWebSocket(httpServer) {
 
     // Client connections (VS Code extension → tools-service → agent)
     if (url.pathname === "/ws/workspace") {
-      clientWss.handleUpgrade(req, socket, head, (ws) => {
+      clientWss.handleUpgrade(req, socket, head, (ws: any) => {
         clientWss.emit("connection", ws, req);
       });
       return;
@@ -112,7 +112,7 @@ export function initAgentWebSocket(httpServer) {
 
   // ── Agent WebSocket (workspace-service sidecar) ──────────
 
-  wss.on("connection", (ws, req) => {
+  wss.on("connection", (ws: any, req: any) => {
     const clientIp = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
       req.socket.remoteAddress?.replace(/^::ffff:/, "");
 
@@ -121,11 +121,11 @@ export function initAgentWebSocket(httpServer) {
     (ws as any).isAlive = true;
     ws.on("pong", () => { (ws as any).isAlive = true; });
 
-    ws.on("message", (raw) => {
+    ws.on("message", (raw: any) => {
       try {
         const message = JSON.parse(raw.toString());
         handleAgentMessage(ws, message, clientIp);
-      } catch (error) {
+      } catch (error: any) {
         logger.error(`[AgentWS] Invalid message: ${error.message}`);
       }
     });
@@ -139,14 +139,14 @@ export function initAgentWebSocket(httpServer) {
       }
     });
 
-    ws.on("error", (error) => {
+    ws.on("error", (error: any) => {
       logger.error(`[AgentWS] Connection error: ${error.message}`);
     });
   });
 
   // ── Client WebSocket (VS Code extension proxy) ──────────
 
-  clientWss.on("connection", (ws, req) => {
+  clientWss.on("connection", (ws: any, req: any) => {
     const clientIp = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
       req.socket.remoteAddress?.replace(/^::ffff:/, "");
 
@@ -155,7 +155,7 @@ export function initAgentWebSocket(httpServer) {
     (ws as any).isAlive = true;
     ws.on("pong", () => { (ws as any).isAlive = true; });
 
-    ws.on("message", async (raw) => {
+    ws.on("message", async (raw: any) => {
       try {
         const message = JSON.parse(raw.toString());
 
@@ -195,10 +195,10 @@ export function initAgentWebSocket(httpServer) {
         try {
           const result = await sendRpc(route.id, message.method, message.params);
           sendJson(ws, { jsonrpc: "2.0", id: message.id, result });
-        } catch (error) {
+        } catch (error: any) {
           sendJson(ws, { jsonrpc: "2.0", id: message.id, error: { code: -32000, message: error.message } });
         }
-      } catch (error) {
+      } catch (error: any) {
         logger.error(`[ClientWS] Invalid message: ${error.message}`);
       }
     });
@@ -207,7 +207,7 @@ export function initAgentWebSocket(httpServer) {
       logger.info(`[ClientWS] Client disconnected (${clientIp})`);
     });
 
-    ws.on("error", (error) => {
+    ws.on("error", (error: any) => {
       logger.error(`[ClientWS] Connection error: ${error.message}`);
     });
   });
@@ -223,7 +223,7 @@ export function initAgentWebSocket(httpServer) {
 // Message Handling
 // ────────────────────────────────────────────────────────────
 
-function handleAgentMessage(ws, message, clientIp) {
+function handleAgentMessage(ws: any, message: any, clientIp: any) {
   // Registration
   if (message.method === "agent.register") {
     const { agentId, name, roots, capabilities, version } = message.params || {};
@@ -326,7 +326,7 @@ function handleAgentMessage(ws, message, clientIp) {
 // Agent Lifecycle
 // ────────────────────────────────────────────────────────────
 
-function deregisterAgent(agentId, reason) {
+function deregisterAgent(agentId: any, reason: any) {
   const agent = agents.get(agentId);
   if (!agent) return;
 
@@ -363,7 +363,7 @@ function deregisterAgent(agentId, reason) {
  * @returns {Promise<object>} Result from the agent
  */
 export function sendRpc(agentId: string, method: string, params: Record<string, any> = {}): Promise<any> {
-  return new Promise<any>((resolve, reject) => {
+  return new Promise<any>((resolve: any, reject: any) => {
     const agent = agents.get(agentId);
     if (!agent) {
       reject(new Error("Agent not found"));
@@ -376,6 +376,7 @@ export function sendRpc(agentId: string, method: string, params: Record<string, 
     }
 
     const id = crypto.randomUUID();
+    // @ts-expect-error - TS7053: implicit any index
     const timeout = TIMEOUT_MAP[method] || RPC_TIMEOUT_DEFAULT_MS;
 
     const timer = setTimeout(() => {
@@ -401,7 +402,7 @@ export function sendRpc(agentId: string, method: string, params: Record<string, 
 
 
  */
-export function sendRpcStreaming(agentId, method, params: Record<string, any> = {}, onNotification) {
+export function sendRpcStreaming(agentId: any, method: any, params: Record<string, any> = {}, onNotification: any) {
   const agent = agents.get(agentId);
   if (!agent) return Promise.reject(new Error("Agent not found"));
 
@@ -424,7 +425,7 @@ export function sendRpcStreaming(agentId, method, params: Record<string, any> = 
 
  * @returns {{ id: string, name: string, roots: string[] } | null}
  */
-export function routeForPath(absolutePath) {
+export function routeForPath(absolutePath: any) {
   if (!absolutePath) return null;
 
   // Check each registered root
@@ -449,7 +450,7 @@ export function routeForPath(absolutePath) {
 
  */
 export function getConnectedAgents() {
-  return [...agents.values()].map((a) => ({
+  return [...agents.values()].map((a: any) => ({
     id: a.id,
     name: a.name,
     roots: a.roots,
@@ -467,7 +468,7 @@ export function getConnectedAgents() {
 
 
  */
-export function isAgentPath(path) {
+export function isAgentPath(path: any) {
   return routeForPath(path) !== null;
 }
 
@@ -476,7 +477,7 @@ export function isAgentPath(path) {
 
  * @returns {{ agentName: string, agentId: string } | null}
  */
-export function getAgentInfoForRoot(rootPath) {
+export function getAgentInfoForRoot(rootPath: any) {
   const agentId = rootToAgent.get(rootPath);
   if (!agentId) return null;
 
@@ -490,7 +491,7 @@ export function getAgentInfoForRoot(rootPath) {
 // Health Check
 // ────────────────────────────────────────────────────────────
 
-function startHealthCheck(wss) {
+function startHealthCheck(wss: any) {
   if (healthCheckTimer) clearInterval(healthCheckTimer);
 
   healthCheckTimer = setInterval(() => {
@@ -511,7 +512,7 @@ function startHealthCheck(wss) {
     }
 
     // WebSocket-level ping for all connections
-    wss.clients.forEach((ws) => {
+    wss.clients.forEach((ws: any) => {
       if (!(ws as any).isAlive) {
         ws.terminate();
         return;
@@ -526,7 +527,7 @@ function startHealthCheck(wss) {
 // Helpers
 // ────────────────────────────────────────────────────────────
 
-function sendJson(ws, object) {
+function sendJson(ws: any, object: any) {
   if (ws.readyState === 1) {
     ws.send(JSON.stringify(object));
   }
@@ -545,7 +546,7 @@ async function rebuildAllowedRootsFromAgents() {
     const { ALLOWED_ROOTS, refreshAllowedRoots, getStaticRoots } = await import("./AgenticFileService.ts");
 
     // Collect all agent roots
-    const agentRoots = [];
+    const agentRoots: any[] = [];
     for (const [, agent] of agents) {
       for (const root of agent.roots) {
         if (!agentRoots.includes(root)) {
@@ -561,10 +562,10 @@ async function rebuildAllowedRootsFromAgents() {
     const staticRoots = getStaticRoots();
     const staticSet = new Set(staticRoots);
     const agentSet = new Set(agentRoots);
-    const userRoots = ALLOWED_ROOTS.filter((r) => !staticSet.has(r) && !agentSet.has(r));
+    const userRoots = ALLOWED_ROOTS.filter((r: any) => !staticSet.has(r) && !agentSet.has(r));
 
     refreshAllowedRoots([...userRoots, ...agentRoots]);
-  } catch (error) {
+  } catch (error: any) {
     logger.warn(`[AgentWS] Failed to rebuild allowed roots: ${error.message}`);
   }
 }

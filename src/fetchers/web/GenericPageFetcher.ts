@@ -52,7 +52,7 @@ const NOISE_SELECTORS = [
  * Score a container element for "article-ness" based on text density.
  * Higher score = more likely to be the main content.
  */
-function scoreElement($, element) {
+function scoreElement($: any, element: any) {
   const text = $(element).text().trim();
   const wordCount = text.split(/\s+/).length;
   const linkDensity = ($(element).find("a").text().length || 0) / (text.length || 1);
@@ -80,7 +80,7 @@ function scoreElement($, element) {
 /**
  * Extract the main readable text from HTML.
  */
-function extractMainContent($) {
+function extractMainContent($: any) {
   // Remove noise elements first
   $(NOISE_SELECTORS.join(", ")).remove();
 
@@ -91,8 +91,8 @@ function extractMainContent($) {
   }
 
   // Score all block-level containers
-  const candidates = [];
-  $("div, section, article, main").each((_, element) => {
+  const candidates: any[] = [];
+  $("div, section, article, main").each((_: any, element: any) => {
     const score = scoreElement($, element);
     if (score > 25) {
       candidates.push({ element, score });
@@ -100,7 +100,7 @@ function extractMainContent($) {
   });
 
   // Sort by score descending
-  candidates.sort((a, b) => b.score - a.score);
+  candidates.sort((a: any, b: any) => b.score - a.score);
 
   if (candidates.length > 0) {
     return extractText($, $(candidates[0].el));
@@ -113,10 +113,10 @@ function extractMainContent($) {
 /**
  * Extract clean text from a Cheerio element, preserving paragraph breaks.
  */
-function extractText($, container) {
-  const paragraphs = [];
+function extractText($: any, container: any) {
+  const paragraphs: any[] = [];
 
-  container.find("p, h1, h2, h3, h4, h5, h6, li, blockquote, pre, td, th").each((_, element) => {
+  container.find("p, h1, h2, h3, h4, h5, h6, li, blockquote, pre, td, th").each((_: any, element: any) => {
     const text = $(element).text().trim();
     if (text.length > 10) {
       const tagName = (element.tagName || element.name || "").toLowerCase();
@@ -143,7 +143,7 @@ function extractText($, container) {
 
 // ─── Metadata Extraction ────────────────────────────────────────────
 
-function extractMetadata($, url) {
+function extractMetadata($: any, url: any) {
   const meta: Record<string, any> = {};
 
   // Title: og:title > twitter:title > <title>
@@ -187,7 +187,7 @@ function extractMetadata($, url) {
 
   // Keywords
   const keywords = $('meta[name="keywords"]').attr("content");
-  meta.keywords = keywords ? keywords.split(",").map((k) => k.trim()).filter(Boolean) : null;
+  meta.keywords = keywords ? keywords.split(",").map((k: any) => k.trim()).filter(Boolean) : null;
 
   // Canonical URL
   meta.canonicalUrl =
@@ -216,10 +216,10 @@ function extractMetadata($, url) {
 
 
  */
-export async function fetchGenericPage(url, options: Record<string, any> = {}) {
+export async function fetchGenericPage(url: any, options: Record<string, any> = {}) {
   const maxChars = options.maxChars ? parseInt(options.maxChars, 10) : MAX_BODY_CHARS;
 
-  let response;
+  let response: any;
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -235,7 +235,7 @@ export async function fetchGenericPage(url, options: Record<string, any> = {}) {
     });
 
     clearTimeout(timeout);
-  } catch (error) {
+  } catch (error: any) {
     if (error.name === "AbortError") {
       return { error: `Request timed out after ${FETCH_TIMEOUT_MS / 1000}s: ${url}` };
     }

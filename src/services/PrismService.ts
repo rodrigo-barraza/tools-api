@@ -21,7 +21,7 @@ const PRISM_SERVICE_URL = CONFIG.PRISM_SERVICE_URL;
 
  * @returns {Promise<object>} Parsed JSON response from Prism
  */
-export async function chat(params) {
+export async function chat(params: any) {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), PRISM_CHAT_TIMEOUT_MS);
@@ -45,7 +45,7 @@ export async function chat(params) {
     }
 
     return await response.json();
-  } catch (error) {
+  } catch (error: any) {
     logger.error(`[PrismService] chat failed: ${error.message}`);
     throw error;
   }
@@ -79,7 +79,7 @@ export async function health() {
 
  * @returns {Promise<{ audioBase64: string, contentType: string }>}
  */
-export async function textToSpeech(params) {
+export async function textToSpeech(params: any) {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), PRISM_TTS_TIMEOUT_MS);
@@ -110,7 +110,7 @@ export async function textToSpeech(params) {
     const audioBase64 = Buffer.from(arrayBuffer).toString("base64");
 
     return { audioBase64, contentType };
-  } catch (error) {
+  } catch (error: any) {
     logger.error(`[PrismService] textToSpeech failed: ${error.message}`);
     throw error;
   }
@@ -125,7 +125,7 @@ export async function textToSpeech(params) {
 
  * @returns {Promise<{ text: string, usage?: object }>}
  */
-export async function speechToText(params) {
+export async function speechToText(params: any) {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), PRISM_STT_TIMEOUT_MS);
@@ -152,7 +152,7 @@ export async function speechToText(params) {
     }
 
     return await response.json();
-  } catch (error) {
+  } catch (error: any) {
     logger.error(`[PrismService] speechToText failed: ${error.message}`);
     throw error;
   }

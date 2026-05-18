@@ -13,7 +13,7 @@ const COLLECTION = "requests";
  * Modeled after Prism's RequestLoggerMiddleware, without
  * token/cost tracking (not applicable for a data API).
  */
-export function requestLoggerMiddleware(req, res, next) {
+export function requestLoggerMiddleware(req: any, res: any, next: any) {
   const start = performance.now();
 
   res.on("finish", () => {
@@ -58,7 +58,7 @@ export function requestLoggerMiddleware(req, res, next) {
  * Persist a request log entry to MongoDB.
 
  */
-async function persistRequest(entry) {
+async function persistRequest(entry: any) {
   try {
     const db = getDB();
     await db.collection(COLLECTION).insertOne({
@@ -116,7 +116,7 @@ export async function queryRequestLogs(filters: Record<string, any> = {}) {
 
 
  */
-export async function getRequestStats(since) {
+export async function getRequestStats(since: any) {
   const db = getDB();
   const match = since ? { timestamp: { $gte: new Date(since) } } : {};
 
@@ -166,9 +166,9 @@ export async function getRequestStats(since) {
 
   return {
     totalRequests,
-    byStatus: Object.fromEntries(byStatus.map((s) => [s._id, s.count])),
-    byMethod: Object.fromEntries(byMethod.map((m) => [m._id, m.count])),
-    byDomain: byDomain.map((d) => ({
+    byStatus: Object.fromEntries(byStatus.map((s: any) => [s._id, s.count])),
+    byMethod: Object.fromEntries(byMethod.map((m: any) => [m._id, m.count])),
+    byDomain: byDomain.map((d: any) => ({
       domain: d._id,
       count: d.count,
       avgMs: Math.round(d.avgMs * 100) / 100,
@@ -197,7 +197,7 @@ export async function setupRequestsCollection() {
     ]);
 
     logger.info(`📊 requests collection indexes ensured`);
-  } catch (error) {
+  } catch (error: any) {
     logger.error(`Failed to setup requests indexes: ${error.message}`);
   }
 }

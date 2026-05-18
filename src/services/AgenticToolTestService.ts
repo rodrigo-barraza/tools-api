@@ -26,8 +26,8 @@ import { WORKSPACE_ROOTS } from "../config.ts";
 // Lazily resolved — WORKSPACE_ROOTS may be empty at import time
 // (e.g. when users configure workspaces via the Settings UI).
 
-let _fixtureDir;
-let _fixtureFile;
+let _fixtureDir: any;
+let _fixtureFile: any;
 
 function getFixtureDir() {
   if (!_fixtureDir) {
@@ -85,7 +85,7 @@ async function cleanupFixture() {
 
 // ── Test Runner ──────────────────────────────────────────────
 
-async function runTest(name, fn) {
+async function runTest(name: any, fn: any) {
   const start = performance.now();
   try {
     const result = await fn();
@@ -109,7 +109,7 @@ async function runTest(name, fn) {
       message: "OK",
       details: result,
     };
-  } catch (error) {
+  } catch (error: any) {
     const duration = Math.round(performance.now() - start);
     return {
       tool: name,
@@ -270,7 +270,8 @@ const TESTS = {
 
  * @returns {Promise<object>} { tool, success, duration, message, details? }
  */
-export async function testTool(toolName) {
+export async function testTool(toolName: any) {
+  // @ts-expect-error - TS7053: implicit any index
   const testFn = TESTS[toolName];
   if (!testFn) {
     return {
@@ -296,13 +297,14 @@ export async function testTool(toolName) {
  * @param {string[]} [toolNames] — if omitted, runs all
  * @returns {Promise<object[]>} array of test results
  */
-export async function testAllTools(toolNames) {
+export async function testAllTools(toolNames: any) {
   const names = toolNames || Object.keys(TESTS);
   try {
     await ensureFixture();
 
-    const results = [];
+    const results: any[] = [];
     for (const name of names) {
+      // @ts-expect-error - TS7053: implicit any index
       const testFn = TESTS[name];
       if (!testFn) {
         results.push({

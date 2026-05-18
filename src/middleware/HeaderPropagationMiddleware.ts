@@ -7,7 +7,7 @@
  *
  * Mirrors Prism's AuthMiddleware pattern.
  */
-export function headerPropagationMiddleware(req, res, next) {
+export function headerPropagationMiddleware(req: any, res: any, next: any) {
   // Project: from query param, body, or x-project header
   req.project = req.query?.project || req.body?.project || req.headers["x-project"] || "default";
 

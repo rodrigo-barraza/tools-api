@@ -18,8 +18,8 @@ const __dirname = dirname(__filename);
 
 // ─── CSV Parser ────────────────────────────────────────────────
 
-function parseCSVLine(line) {
-  const fields = [];
+function parseCSVLine(line: any) {
+  const fields: any[] = [];
   let current = "";
   let inQuotes = false;
 
@@ -45,9 +45,9 @@ function parseCSVLine(line) {
 
 // ─── Haversine ─────────────────────────────────────────────────
 
-function haversineKm(lat1, lon1, lat2, lon2) {
+function haversineKm(lat1: any, lon1: any, lat2: any, lon2: any) {
   const R = 6371;
-  const toRad = (d) => (d * Math.PI) / 180;
+  const toRad = (d: any) => (d * Math.PI) / 180;
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
   const a =
@@ -58,7 +58,7 @@ function haversineKm(lat1, lon1, lat2, lon2) {
 
 // ─── Load & Index ──────────────────────────────────────────────
 
-const AIRPORT_DB = [];
+const AIRPORT_DB: any[] = [];
 let loaded = false;
 
 function ensureLoaded() {
@@ -67,7 +67,7 @@ function ensureLoaded() {
 
   const csvPath = join(__dirname, "data", "digest_airports.csv");
   const raw = readFileSync(csvPath, "utf-8");
-  const lines = raw.split("\n").filter((l) => l.trim());
+  const lines = raw.split("\n").filter((l: any) => l.trim());
   const headers = parseCSVLine(lines[0]);
 
   const NUMERIC_FIELDS = new Set([
@@ -81,7 +81,7 @@ function ensureLoaded() {
     if (values.length < 5) continue;
 
     const row: Record<string, any> = {};
-    headers.forEach((h, index) => {
+    headers.forEach((h: any, index: any) => {
       const value = values[index] || "";
       if (NUMERIC_FIELDS.has(h)) {
         const num = parseFloat(value);
@@ -99,11 +99,11 @@ function ensureLoaded() {
 
 // ─── Helpers ───────────────────────────────────────────────────
 
-function normalizeSearch(str) {
+function normalizeSearch(str: any) {
   return str.toLowerCase().replace(/[^a-z0-9\s]/g, "");
 }
 
-function formatAirport(ap) {
+function formatAirport(ap: any) {
   return {
     iataCode: ap.iata_code,
     icaoCode: ap.icao_code,
@@ -124,7 +124,7 @@ function formatAirport(ap) {
 /**
  * Search airports by name, IATA code, city, or country.
  */
-export function searchAirports(query, opts: Record<string, any> = {}) {
+export function searchAirports(query: any, opts: Record<string, any> = {}) {
   ensureLoaded();
 
   const { limit = 10, country } = opts;
@@ -136,12 +136,12 @@ export function searchAirports(query, opts: Record<string, any> = {}) {
   if (country) {
     const c = country.toUpperCase();
     candidates = candidates.filter(
-      (a) => a.country_code && a.country_code.toUpperCase() === c,
+      (a: any) => a.country_code && a.country_code.toUpperCase() === c,
     );
   }
 
   const scored = candidates
-    .map((ap) => {
+    .map((ap: any) => {
       let score = 0;
       const iata = (ap.iata_code || "").toLowerCase();
       const icao = (ap.icao_code || "").toLowerCase();
@@ -162,31 +162,31 @@ export function searchAirports(query, opts: Record<string, any> = {}) {
 
       return { ap, score };
     })
-    .filter((s) => s.score > 0)
-    .sort((a, b) => b.score - a.score)
+    .filter((s: any) => s.score > 0)
+    .sort((a: any, b: any) => b.score - a.score)
     .slice(0, limit);
 
   return {
     count: scored.length,
     query,
     note: "Data from OurAirports (Public Domain). Medium and large airports with IATA codes.",
-    airports: scored.map((s) => formatAirport(s.ap)),
+    airports: scored.map((s: any) => formatAirport(s.ap)),
   };
 }
 
 /**
  * Get airport by exact IATA code.
  */
-export function getAirportByCode(code) {
+export function getAirportByCode(code: any) {
   ensureLoaded();
 
   const c = code.toUpperCase().trim();
   const ap =
     AIRPORT_DB.find(
-      (a) => a.iata_code && a.iata_code.toUpperCase() === c,
+      (a: any) => a.iata_code && a.iata_code.toUpperCase() === c,
     ) ||
     AIRPORT_DB.find(
-      (a) => a.icao_code && a.icao_code.toUpperCase() === c,
+      (a: any) => a.icao_code && a.icao_code.toUpperCase() === c,
     );
 
   if (!ap) return null;
@@ -196,16 +196,16 @@ export function getAirportByCode(code) {
 /**
  * Get all airports in a country.
  */
-export function getAirportsByCountry(countryCode, opts: Record<string, any> = {}) {
+export function getAirportsByCountry(countryCode: any, opts: Record<string, any> = {}) {
   ensureLoaded();
 
   const { limit = 50 } = opts;
   const c = countryCode.toUpperCase().trim();
 
   const airports = AIRPORT_DB.filter(
-    (a) => a.country_code && a.country_code.toUpperCase() === c,
+    (a: any) => a.country_code && a.country_code.toUpperCase() === c,
   )
-    .sort((a, b) => {
+    .sort((a: any, b: any) => {
       // Large airports first
       if (a.type === "large_airport" && b.type !== "large_airport") return -1;
       if (b.type === "large_airport" && a.type !== "large_airport") return 1;
@@ -224,19 +224,19 @@ export function getAirportsByCountry(countryCode, opts: Record<string, any> = {}
 /**
  * Find nearest airports to a coordinate.
  */
-export function getNearestAirports(lat, lng, opts: Record<string, any> = {}) {
+export function getNearestAirports(lat: any, lng: any, opts: Record<string, any> = {}) {
   ensureLoaded();
 
   const { limit = 5 } = opts;
 
   const withDist = AIRPORT_DB.filter(
-    (a) => a.latitude !== null && a.longitude !== null,
-  ).map((a) => ({
+    (a: any) => a.latitude !== null && a.longitude !== null,
+  ).map((a: any) => ({
     airport: a,
     distanceKm: haversineKm(lat, lng, a.latitude, a.longitude),
   }));
 
-  withDist.sort((a, b) => a.distanceKm - b.distanceKm);
+  withDist.sort((a: any, b: any) => a.distanceKm - b.distanceKm);
   const nearest = withDist.slice(0, limit);
 
   return {
@@ -244,7 +244,7 @@ export function getNearestAirports(lat, lng, opts: Record<string, any> = {}) {
     longitude: lng,
     count: nearest.length,
     note: "Distance calculated via Haversine formula. Data from OurAirports.",
-    airports: nearest.map((n) => ({
+    airports: nearest.map((n: any) => ({
       ...formatAirport(n.airport),
       distanceKm: Math.round(n.distanceKm * 10) / 10,
     })),

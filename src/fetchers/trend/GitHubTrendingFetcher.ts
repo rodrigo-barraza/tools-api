@@ -26,17 +26,17 @@ export async function fetchGitHubTrending() {
  * Parses GitHub Trending HTML into normalized trend objects.
  * Extracts repo name, description, language, stars, forks.
  */
-function parseGitHubTrending(html) {
-  const trends = [];
+function parseGitHubTrending(html: any) {
+  const trends: any[] = [];
   const articleRegex = /<article class="Box-row">([\s\S]*?)<\/article>/g;
-  let match;
+  let match: any;
   while ((match = articleRegex.exec(html)) !== null) {
     const article = match[1];
     // Extract repo full name (owner/repo)
     const repoMatch = article.match(
       /href="\/([^"]+)"[^>]*class="[^"]*Link[^"]*"/,
     );
-    let fullName;
+    let fullName: any;
     if (!repoMatch) {
       // Fallback: try another pattern
       const altMatch = article.match(/href="\/([\w-]+\/[\w.-]+)"/);

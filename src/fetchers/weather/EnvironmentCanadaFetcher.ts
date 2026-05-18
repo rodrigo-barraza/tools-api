@@ -55,12 +55,12 @@ async function tryCityPage() {
 /**
  * Parse warnings from the EC warnings report page.
  */
-function parseWarningsHtml(html) {
-  const warnings = [];
+function parseWarningsHtml(html: any) {
+  const warnings: any[] = [];
   // Look for warning/watch/statement sections
   const sectionRegex =
     /<h2[^>]*class="[^"]*"[^>]*>([\s\S]*?)<\/h2>[\s\S]*?<p[^>]*>([\s\S]*?)<\/p>/gi;
-  let match;
+  let match: any;
   while ((match = sectionRegex.exec(html)) !== null) {
     const title = stripHtml(match[1]);
     const content = stripHtml(match[2]);
@@ -80,7 +80,7 @@ function parseWarningsHtml(html) {
   while ((match = alertRegex.exec(html)) !== null) {
     const content = stripHtml(match[1]);
     if (content.length > 10 && isWarningContent(content)) {
-      const existing = warnings.find((w) => content.includes(w.title));
+      const existing = warnings.find((w: any) => content.includes(w.title));
       if (!existing) {
         warnings.push({
           title: content.substring(0, 100),
@@ -97,11 +97,11 @@ function parseWarningsHtml(html) {
 /**
  * Parse warning banners from the EC city forecast page.
  */
-function parseCityWarnings(html) {
-  const warnings = [];
+function parseCityWarnings(html: any) {
+  const warnings: any[] = [];
   const warningRegex =
     /class="[^"]*(?:warning|alert|watch|advisory)[^"]*"[^>]*>([\s\S]*?)<\/(?:div|section|a)>/gi;
-  let match;
+  let match: any;
   while ((match = warningRegex.exec(html)) !== null) {
     const content = stripHtml(match[1]);
     if (content.length > 5 && isWarningContent(content)) {
@@ -116,7 +116,7 @@ function parseCityWarnings(html) {
   }
   return warnings;
 }
-function classifyWarning(text) {
+function classifyWarning(text: any) {
   const lower = text.toLowerCase();
   if (lower.includes("warning")) return "warning";
   if (lower.includes("watch")) return "watch";
@@ -125,7 +125,7 @@ function classifyWarning(text) {
   if (lower.includes("ended")) return "ended";
   return "info";
 }
-function isWarningTitle(text) {
+function isWarningTitle(text: any) {
   const lower = text.toLowerCase();
   return (
     lower.includes("warning") ||
@@ -136,7 +136,7 @@ function isWarningTitle(text) {
     lower.includes("special weather")
   );
 }
-function isWarningContent(text) {
+function isWarningContent(text: any) {
   const lower = text.toLowerCase();
   return (
     lower.includes("warning") ||

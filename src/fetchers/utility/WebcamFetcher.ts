@@ -19,11 +19,12 @@ export async function getPublicWebcams({ city = "vancouver", limit = 100 }: Reco
   if (isStale) {
     logger.info(`📷 Refreshing webcam data for ${capitalizedCity}`);
     try {
+      // @ts-expect-error - TS7053: implicit any index
       const refreshFunction = WEBCAM_REGISTRY[normalizedCity];
       if (refreshFunction) {
         await refreshFunction();
       }
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`Failed to refresh webcams for ${capitalizedCity}:`, error.message);
       // If we never had them, we can't fallback to DB, so we throw
       if (!lastUpdated) throw error;

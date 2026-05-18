@@ -6,24 +6,24 @@
 // Domain-specific getters can use getData() for custom logic.
 // ═══════════════════════════════════════════════════════════════
 
-interface CacheError {
+export interface CacheError {
   message: string;
   time: string;
 }
 
-interface CacheHealth {
+export interface CacheHealth {
   lastFetch: string | null;
   error: CacheError | null;
   count?: number;
   hasData?: boolean;
 }
 
-interface SimpleCacheOptions {
+export interface SimpleCacheOptions {
   type?: "object" | "array";
   itemsKey?: string;
 }
 
-interface SimpleCache<T> {
+export interface SimpleCache<T> {
   update: (data: T) => void;
   setError: (error: Error) => void;
   get: () => Record<string, unknown>;
@@ -41,8 +41,8 @@ export function createSimpleCache<T = unknown>({
 }: SimpleCacheOptions = {}): SimpleCache<T> {
   const cache: { data: T; lastFetch: string | null; error: CacheError | null } = {
     data: (type === "array" ? [] : null) as T,
-    lastFetch: null,
-    error: null,
+    lastFetch: null as any,
+    error: null as any,
   };
 
   /** Replace cached data and reset error state. */

@@ -22,8 +22,8 @@ const BATCH_SIZE = 40;
  */
 export async function fetchCommodities() {
   const tickers = Object.keys(COMMODITY_TICKERS);
-  const results = [];
-  const errors = [];
+  const results: any[] = [];
+  const errors: any[] = [];
 
   // Process in batches
   for (let i = 0; i < tickers.length; i += BATCH_SIZE) {
@@ -71,7 +71,7 @@ export async function fetchCommodities() {
           fetchedAt: new Date().toISOString(),
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       errors.push({
         batch: batch.slice(0, 3).join(", ") + "…",
         error: error.message,
@@ -94,6 +94,6 @@ export async function fetchCommodities() {
 /**
  * Round a number to a given decimal precision.
  */
-function round(value, decimals) {
+function round(value: any, decimals: any) {
   return Math.round(value * 10 ** decimals) / 10 ** decimals;
 }

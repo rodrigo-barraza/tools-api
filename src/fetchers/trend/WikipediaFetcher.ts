@@ -11,7 +11,7 @@ import {
 
  * @returns {Promise<Array>} Normalized trend objects
  */
-export async function fetchWikipediaTrends(date = null) {
+export async function fetchWikipediaTrends(date: any = null) {
   // Use yesterday's date since today's data isn't available until after midnight UTC
   const targetDate = date || new Date(Date.now() - 86_400_000);
   const year = targetDate.getUTCFullYear();
@@ -35,9 +35,9 @@ export async function fetchWikipediaTrends(date = null) {
   const articles = data?.items?.[0]?.articles || [];
 
   return articles
-    .filter((a) => !WIKIPEDIA_EXCLUDED_PAGES.includes(a.article))
+    .filter((a: any) => !WIKIPEDIA_EXCLUDED_PAGES.includes(a.article))
     .slice(0, WIKIPEDIA_TOP_ARTICLES_LIMIT)
-    .map((article) => {
+    .map((article: any) => {
       const name = article.article.replace(/_/g, " ");
       return {
         name,
