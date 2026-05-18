@@ -1,6 +1,6 @@
 import request from "supertest";
-import { createTestApp } from "./testApp.js";
-import transitRoutes from "../src/routes/TransitRoutes.js";
+import { createTestApp } from "./testApp.ts";
+import transitRoutes from "../src/routes/TransitRoutes.ts";
 
 // ─── Unit Tests for Transit Domain Endpoints ────────────────────
 

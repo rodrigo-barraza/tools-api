@@ -2,9 +2,9 @@ import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { parseIntParam } from "@rodrigo-barraza/utilities-library";
 // ─── File System & Web Interaction Endpoints ────────────────
 import { Router } from "express";
-import CONFIG from "../config.js";
-import logger from "../logger.js";
-import { agenticHandler } from "../utilities.js";
+import CONFIG from "../config.ts";
+import logger from "../logger.ts";
+import { agenticHandler } from "../utilities.ts";
 import { createReadStream } from "node:fs";
 import { stat as fsStat } from "node:fs/promises";
 import { extname } from "node:path";
@@ -22,11 +22,11 @@ import {
   agenticMoveFile,
   agenticDeleteFile,
   validatePath,
-} from "../services/AgenticFileService.js";
+} from "../services/AgenticFileService.ts";
 import {
   agenticFetchUrl,
   agenticWebSearch,
-} from "../services/AgenticWebService.js";
+} from "../services/AgenticWebService.ts";
 import {
   executeCommand,
   executeCommandStreaming,
@@ -34,7 +34,7 @@ import {
   listBackgroundProcesses,
   getBackgroundProcess,
   killProcessTree,
-} from "../services/AgenticCommandService.js";
+} from "../services/AgenticCommandService.ts";
 import {
   agenticGitStatus,
   agenticGitDiff,
@@ -44,39 +44,39 @@ import {
   agenticGitWorktreeMerge,
   agenticGitWorktreeDiff,
   agenticGitWorktreeCleanup,
-} from "../services/AgenticGitService.js";
-import { agenticProjectSummary } from "../services/AgenticProjectService.js";
+} from "../services/AgenticGitService.ts";
+import { agenticProjectSummary } from "../services/AgenticProjectService.ts";
 import {
   agenticBrowserAction,
   getBrowserHealth,
-} from "../services/AgenticBrowserService.js";
+} from "../services/AgenticBrowserService.ts";
 import {
   agenticLspAction,
   agenticLspShutdown,
   agenticLspHealth,
-} from "../services/AgenticLspService.js";
+} from "../services/AgenticLspService.ts";
 import {
   testTool,
   testAllTools,
   getTestableTools,
-} from "../services/AgenticToolTestService.js";
+} from "../services/AgenticToolTestService.ts";
 import {
   agenticTaskCreate,
   agenticTaskList,
   agenticTaskGet,
   agenticTaskUpdate,
   agenticTaskDelete,
-} from "../services/AgenticTaskService.js";
-import { agenticToolSearch } from "../services/AgenticToolSearchService.js";
-import * as BackgroundProcessRegistry from "../services/BackgroundProcessRegistry.js";
+} from "../services/AgenticTaskService.ts";
+import { agenticToolSearch } from "../services/AgenticToolSearchService.ts";
+import * as BackgroundProcessRegistry from "../services/BackgroundProcessRegistry.ts";
 import {
   agenticScheduleCreate,
   agenticScheduleList,
   agenticScheduleDelete,
   agenticTriggerFire,
-} from "../services/AgenticSchedulerService.js";
-import { agenticNotebookEdit } from "../services/AgenticNotebookService.js";
-import { TOOL_DEFINITIONS } from "../services/ToolSchemaService.js";
+} from "../services/AgenticSchedulerService.ts";
+import { agenticNotebookEdit } from "../services/AgenticNotebookService.ts";
+import { TOOL_DEFINITIONS } from "../services/ToolSchemaService.ts";
 const router = Router();
 // ─── 1. File Operations ─────────────────────────────────────
 // ── Read File ─────────────────────────────────────────────────
@@ -982,7 +982,7 @@ router.post("/notebook/edit", agenticHandler(async (req: any) => {
   });
 }));
 // ─── 19. Custom Tool Management (Tool Factory) ──────────────
-import { executeJavaScript } from "../services/JavaScriptInterpreterService.js";
+import { executeJavaScript } from "../services/JavaScriptInterpreterService.ts";
 /**
  * POST /agentic/custom-tool/create
  *

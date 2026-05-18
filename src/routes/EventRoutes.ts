@@ -1,19 +1,19 @@
 import { parseIntParam } from "@rodrigo-barraza/utilities-library";
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { Router } from "express";
-import CONFIG from "../config.js";
+import CONFIG from "../config.ts";
 import {
   getEventsToday,
   getEventsUpcoming,
   getEventsPast,
   searchEvents,
   getEventBySourceId,
-} from "../models/Event.js";
+} from "../models/Event.ts";
 import {
   getLatestEvents,
   getEventSummary,
   getHealth,
-} from "../caches/EventCache.js";
+} from "../caches/EventCache.ts";
 const router = Router();
 // ─── Event Endpoints ───────────────────────────────────────────────
 router.get("/today", asyncHandler(async (_req: any, res: any) => {

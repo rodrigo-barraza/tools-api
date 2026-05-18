@@ -1,6 +1,6 @@
 import request from "supertest";
-import { createTestApp } from "./testApp.js";
-import lightsRoutes from "../src/routes/LightsRoutes.js";
+import { createTestApp } from "./testApp.ts";
+import lightsRoutes from "../src/routes/LightsRoutes.ts";
 
 // ─── Unit Tests for Lights Domain Endpoints ────────────────────
 

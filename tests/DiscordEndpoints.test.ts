@@ -1,6 +1,6 @@
 import request from "supertest";
-import { createTestApp } from "./testApp.js";
-import discordRoutes from "../src/routes/DiscordRoutes.js";
+import { createTestApp } from "./testApp.ts";
+import discordRoutes from "../src/routes/DiscordRoutes.ts";
 
 // ─── Unit Tests for Discord Domain Endpoints ────────────────────
 

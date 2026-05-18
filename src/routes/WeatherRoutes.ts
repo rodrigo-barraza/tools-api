@@ -1,15 +1,15 @@
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { parseIntParam } from "@rodrigo-barraza/utilities-library";
 import { Router } from "express";
-import { fetchLiveWeather } from "../fetchers/weather/LiveWeatherFetcher.js";
+import { fetchLiveWeather } from "../fetchers/weather/LiveWeatherFetcher.ts";
 import {
   getRecentEarthquakes,
   getEarthquakeById,
-} from "../models/Earthquake.js";
-import { getRecentNeos } from "../models/Neo.js";
-import { getRecentSolarFlares } from "../models/SolarFlare.js";
-import { getRecentCmes } from "../models/Cme.js";
-import { getRecentStorms } from "../models/GeomagneticStorm.js";
+} from "../models/Earthquake.ts";
+import { getRecentNeos } from "../models/Neo.ts";
+import { getRecentSolarFlares } from "../models/SolarFlare.ts";
+import { getRecentCmes } from "../models/Cme.ts";
+import { getRecentStorms } from "../models/GeomagneticStorm.ts";
 import {
   getLatest,
   getCurrent,
@@ -17,17 +17,17 @@ import {
   getAirQuality,
   getDaylight,
   getHealth as getWeatherCacheHealth,
-} from "../caches/WeatherCache.js";
+} from "../caches/WeatherCache.ts";
 import {
   getLatestEarthquakes,
   getEarthquakeSummary,
   getEarthquakeHealth,
-} from "../caches/EarthquakeCache.js";
+} from "../caches/EarthquakeCache.ts";
 import {
   getLatestNeos,
   getNeoSummary,
   getNeoHealth,
-} from "../caches/NeoCache.js";
+} from "../caches/NeoCache.ts";
 import {
   getLatestSpaceWeather,
   getLatestFlares,
@@ -35,51 +35,51 @@ import {
   getLatestStorms,
   getSpaceWeatherSummary,
   getSpaceWeatherHealth,
-} from "../caches/SpaceWeatherCache.js";
+} from "../caches/SpaceWeatherCache.ts";
 import {
   getIssData,
   getIssTrajectory,
   getIssHealth,
-} from "../caches/IssCache.js";
+} from "../caches/IssCache.ts";
 import {
   getKpHistory,
   getCurrentKp,
   getKpHealth,
-} from "../caches/KpIndexCache.js";
+} from "../caches/KpIndexCache.ts";
 import {
   getWildfires,
   getWildfireSummary,
   getWildfireHealth,
-} from "../caches/WildfireCache.js";
-import { getTides, getNextTide, getTideHealth } from "../caches/TideCache.js";
+} from "../caches/WildfireCache.ts";
+import { getTides, getNextTide, getTideHealth } from "../caches/TideCache.ts";
 import {
   getSolarWind,
   getSolarWindLatest,
   getSolarWindHealth,
-} from "../caches/SolarWindCache.js";
+} from "../caches/SolarWindCache.ts";
 import {
   getGoogleAirQuality,
   getGoogleAirQualityHealth,
-} from "../caches/GoogleAirQualityCache.js";
+} from "../caches/GoogleAirQualityCache.ts";
 import {
   getPollen,
   getPollenToday,
   getPollenHealth,
-} from "../caches/PollenCache.js";
-import { getApod, getApodHealth } from "../caches/ApodCache.js";
+} from "../caches/PollenCache.ts";
+import { getApod, getApodHealth } from "../caches/ApodCache.ts";
 import {
   getLaunches,
   getNextLaunch,
   getLaunchSummary,
   getLaunchHealth,
-} from "../caches/LaunchCache.js";
-import { getTwilight, getTwilightHealth } from "../caches/TwilightCache.js";
+} from "../caches/LaunchCache.ts";
+import { getTwilight, getTwilightHealth } from "../caches/TwilightCache.ts";
 import {
   getWarnings,
   getWarningCount,
   getWarningHealth,
-} from "../caches/EnvironmentCanadaCache.js";
-import { getAvalanche, getAvalancheHealth } from "../caches/AvalancheCache.js";
+} from "../caches/EnvironmentCanadaCache.ts";
+import { getAvalanche, getAvalancheHealth } from "../caches/AvalancheCache.ts";
 const router = Router();
 // ─── Weather ───────────────────────────────────────────────────────
 router.get("/weather", (_req: any, res: any) => res.json(getLatest()));

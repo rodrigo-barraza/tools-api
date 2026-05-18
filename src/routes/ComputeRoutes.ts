@@ -12,16 +12,16 @@ import { Router } from "express";
 import {
   executeJavaScript,
   getJsInterpreterInfo,
-} from "../services/JavaScriptInterpreterService.js";
+} from "../services/JavaScriptInterpreterService.ts";
 import {
   executeShell,
   executeShellStreaming,
   getAllowedBinaries,
-} from "../services/ShellExecutorService.js";
-import { MAX_CODE_LENGTH, MAX_COMMAND_LENGTH } from "../constants.js";
+} from "../services/ShellExecutorService.ts";
+import { MAX_CODE_LENGTH, MAX_COMMAND_LENGTH } from "../constants.ts";
 import crypto from "node:crypto";
-import { EphemeralStore, buildLocalUrl, buildEmbedHtml } from "../utilities.js";
-import { processImage } from "../services/ImageService.js";
+import { EphemeralStore, buildLocalUrl, buildEmbedHtml } from "../utilities.ts";
+import { processImage } from "../services/ImageService.ts";
 // ─── Lazy-loaded dependencies ──────────────────────────────────────
 // These are loaded on first use to avoid blocking startup.
 const getConvertUnits = lazyImport<any>("convert-units");

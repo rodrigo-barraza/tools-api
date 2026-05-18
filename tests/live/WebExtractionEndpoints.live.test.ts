@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { BASE_URL } from "./helpers.js";
+import { BASE_URL } from "./helpers.ts";
 
 // ─── Integration Tests for Web Extraction Endpoints ─────────────
 

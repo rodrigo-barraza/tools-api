@@ -1,15 +1,15 @@
 import { parseIntParam } from "@rodrigo-barraza/utilities-library";
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { Router } from "express";
-import { getHistory } from "../models/CommoditySnapshot.js";
+import { getHistory } from "../models/CommoditySnapshot.ts";
 import {
   getAllCommodities,
   getCommoditiesByCategory,
   getCommodityByTicker,
   getCommoditySummary,
   getCommodityHealth,
-} from "../caches/CommodityCache.js";
-import { ASSET_CATEGORIES } from "../constants.js";
+} from "../caches/CommodityCache.ts";
+import { ASSET_CATEGORIES } from "../constants.ts";
 const router = Router();
 router.get("/commodities", (_req: any, res: any) => {
   res.json(getAllCommodities());

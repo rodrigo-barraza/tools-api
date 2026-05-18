@@ -1,6 +1,6 @@
 import request from "supertest";
-import { createTestApp } from "./testApp.js";
-import productRoutes from "../src/routes/ProductRoutes.js";
+import { createTestApp } from "./testApp.ts";
+import productRoutes from "../src/routes/ProductRoutes.ts";
 
 // ─── Unit Tests for Product Domain Endpoints ────────────────────
 

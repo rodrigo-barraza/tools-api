@@ -2,10 +2,10 @@ import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 // ─── Image Generation & Vision ──────────────────────────────
 
 import { Router } from "express";
-import PrismService from "../services/PrismService.js";
-import logger from "../logger.js";
-import { extractCallerContext } from "../utilities.js";
-import CONFIG from "../config.js";
+import PrismService from "../services/PrismService.ts";
+import logger from "../logger.ts";
+import { extractCallerContext } from "../utilities.ts";
+import CONFIG from "../config.ts";
 
 const router = Router();
 

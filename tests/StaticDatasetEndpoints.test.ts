@@ -1,9 +1,9 @@
 import request from "supertest";
 import express from "express";
-import { fieldProjectionMiddleware } from "../src/middleware/FieldProjectionMiddleware.js";
-import knowledgeRoutes from "../src/routes/KnowledgeRoutes.js";
-import healthRoutes from "../src/routes/HealthRoutes.js";
-import utilityRoutes from "../src/routes/UtilityRoutes.js";
+import { fieldProjectionMiddleware } from "../src/middleware/FieldProjectionMiddleware.ts";
+import knowledgeRoutes from "../src/routes/KnowledgeRoutes.ts";
+import healthRoutes from "../src/routes/HealthRoutes.ts";
+import utilityRoutes from "../src/routes/UtilityRoutes.ts";
 
 // ─── Schema Regression Tests for Static In-Memory Datasets ──────
 

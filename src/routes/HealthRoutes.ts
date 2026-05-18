@@ -5,7 +5,7 @@ import {
   searchDrugLabels,
   getDrugAdverseEvents,
   getDrugRecalls,
-} from "../fetchers/health/OpenFdaFetcher.js";
+} from "../fetchers/health/OpenFdaFetcher.ts";
 import {
   searchFoods,
   rankByNutrient,
@@ -16,39 +16,39 @@ import {
   listCategoryNutrients,
   searchByTaxonomy,
   getTaxonomyTree,
-} from "../fetchers/health/NutritionFetcher.js";
-import { calculateTargetProfile } from "../fetchers/health/NutritionRequirementFetcher.js";
+} from "../fetchers/health/NutritionFetcher.ts";
+import { calculateTargetProfile } from "../fetchers/health/NutritionRequirementFetcher.ts";
 import {
   searchDrugs,
   getDrugByNdc,
   getDosageForms,
   searchByIngredient,
   searchByPharmClass,
-} from "../fetchers/health/FdaDrugFetcher.js";
+} from "../fetchers/health/FdaDrugFetcher.ts";
 import {
   searchExercises,
   getExerciseById,
   getExerciseCategories,
-} from "../fetchers/health/ExercisesFetcher.js";
+} from "../fetchers/health/ExercisesFetcher.ts";
 import {
   calculateCaloricNeeds,
   getCaloricNeedsOptions,
-} from "../fetchers/health/CalorieCalculatorFetcher.js";
-import { analyzeNutrientGaps } from "../fetchers/health/NutrientGapFetcher.js";
+} from "../fetchers/health/CalorieCalculatorFetcher.ts";
+import { analyzeNutrientGaps } from "../fetchers/health/NutrientGapFetcher.ts";
 import {
   findFoodSubstitutes,
   getDietaryPreferences,
-} from "../fetchers/health/FoodSubstituteFetcher.js";
+} from "../fetchers/health/FoodSubstituteFetcher.ts";
 import {
   estimateExerciseCalories,
   getMetCategories,
-} from "../fetchers/health/ExerciseCalorieFetcher.js";
-import { calculateHydrationNeeds } from "../fetchers/health/HydrationFetcher.js";
-import { buildMealPlan } from "../fetchers/health/MealPlanFetcher.js";
+} from "../fetchers/health/ExerciseCalorieFetcher.ts";
+import { calculateHydrationNeeds } from "../fetchers/health/HydrationFetcher.ts";
+import { buildMealPlan } from "../fetchers/health/MealPlanFetcher.ts";
 import {
   checkDrugNutrientInteractions,
   getDrugInteractionCategories,
-} from "../fetchers/health/DrugNutrientFetcher.js";
+} from "../fetchers/health/DrugNutrientFetcher.ts";
 const router = Router();
 // ─── USDA Nutrition (raw whole foods — in-memory database) ────
 router.get("/nutrition/search", (req: any, res: any) => {

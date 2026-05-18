@@ -1,6 +1,6 @@
 import request from "supertest";
-import { createTestApp } from "./testApp.js";
-import utilityRoutes from "../src/routes/UtilityRoutes.js";
+import { createTestApp } from "./testApp.ts";
+import utilityRoutes from "../src/routes/UtilityRoutes.ts";
 
 // ─── Unit Tests for Utility Domain Endpoints ────────────────────
 

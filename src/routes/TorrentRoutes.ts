@@ -5,8 +5,8 @@ import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 // ─────────────────────────────────────────────────────────────
 
 import { Router } from "express";
-import * as qbt from "../services/QBittorrentService.js";
-import { TORRENT_SEARCH_TIMEOUT_MS, TORRENT_MAX_TIMEOUT_MS } from "../constants.js";
+import * as qbt from "../services/QBittorrentService.ts";
+import { TORRENT_SEARCH_TIMEOUT_MS, TORRENT_MAX_TIMEOUT_MS } from "../constants.ts";
 
 const router = Router();
 

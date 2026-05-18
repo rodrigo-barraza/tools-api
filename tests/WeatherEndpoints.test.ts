@@ -1,6 +1,6 @@
 import request from "supertest";
-import { createTestApp } from "./testApp.js";
-import weatherRoutes from "../src/routes/WeatherRoutes.js";
+import { createTestApp } from "./testApp.ts";
+import weatherRoutes from "../src/routes/WeatherRoutes.ts";
 
 // ─── Unit Tests for Weather Domain Endpoints ────────────────────
 

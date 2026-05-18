@@ -1,5 +1,5 @@
 import express from "express";
-import { fieldProjectionMiddleware } from "../src/middleware/FieldProjectionMiddleware.js";
+import { fieldProjectionMiddleware } from "../src/middleware/FieldProjectionMiddleware.ts";
 
 /**
  * Creates a minimal Express app for in-process testing (supertest).

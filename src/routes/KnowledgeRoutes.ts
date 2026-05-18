@@ -1,27 +1,27 @@
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { parseIntParam } from "@rodrigo-barraza/utilities-library";
 import { Router } from "express";
-import { fetchDefinition } from "../fetchers/knowledge/DictionaryFetcher.js";
+import { fetchDefinition } from "../fetchers/knowledge/DictionaryFetcher.ts";
 import {
   searchBooks,
   getBookDetails,
   getAuthorInfo,
-} from "../fetchers/knowledge/OpenLibraryFetcher.js";
+} from "../fetchers/knowledge/OpenLibraryFetcher.ts";
 import {
   searchCountries,
   getCountryByCode,
-} from "../fetchers/knowledge/RestCountriesFetcher.js";
-import { searchPapers } from "../fetchers/knowledge/ArxivFetcher.js";
+} from "../fetchers/knowledge/RestCountriesFetcher.ts";
+import { searchPapers } from "../fetchers/knowledge/ArxivFetcher.ts";
 import {
   getArticleSummary,
   getOnThisDay,
-} from "../fetchers/knowledge/WikipediaSummaryFetcher.js";
+} from "../fetchers/knowledge/WikipediaSummaryFetcher.ts";
 import {
   searchAnime,
   getTopAnime,
   getCurrentSeasonAnime,
   getAnimeDetails,
-} from "../fetchers/knowledge/JikanFetcher.js";
+} from "../fetchers/knowledge/JikanFetcher.ts";
 import {
   searchMovies,
   getMovieDetails,
@@ -36,49 +36,49 @@ import {
   getTrendingTvShows,
   discoverTvShows,
   getTvGenres,
-} from "../fetchers/knowledge/TMDbFetcher.js";
+} from "../fetchers/knowledge/TMDbFetcher.ts";
 import {
   searchElements,
   getElementBySymbol,
   rankElementsByProperty,
   getElementCategories,
-} from "../fetchers/knowledge/PeriodicTableFetcher.js";
+} from "../fetchers/knowledge/PeriodicTableFetcher.ts";
 import {
   getCountryIndicators,
   rankCountriesByIndicator,
   compareCountries,
   getAvailableIndicators,
-} from "../fetchers/knowledge/WorldBankFetcher.js";
+} from "../fetchers/knowledge/WorldBankFetcher.ts";
 import {
   searchExoplanets,
   getExoplanetByName,
   rankExoplanets,
   getDiscoveryStats,
   getHabitableZonePlanets,
-} from "../fetchers/knowledge/ExoplanetFetcher.js";
-import { getYouTubeVideoInfo } from "../fetchers/knowledge/YouTubeFetcher.js";
-import { getGitHubRepo } from "../fetchers/web/GitHubFetcher.js";
-import { getRedditThread } from "../fetchers/web/RedditFetcher.js";
-import { getNpmPackage } from "../fetchers/web/NpmFetcher.js";
-import { getPyPiPackage } from "../fetchers/web/PyPiFetcher.js";
-import { readPdfUrl } from "../fetchers/web/PdfFetcher.js";
-import { readRssFeed } from "../fetchers/web/RssFetcher.js";
-import { getTwitterPost } from "../fetchers/web/TwitterFetcher.js";
-import { getHackerNewsThread } from "../fetchers/web/HackerNewsFetcher.js";
-import { getStackOverflowQuestion } from "../fetchers/web/StackOverflowFetcher.js";
-import { getWebContent } from "../fetchers/web/WebContentFetcher.js";
-import { getPackageInfo } from "../fetchers/web/PackageFetcher.js";
+} from "../fetchers/knowledge/ExoplanetFetcher.ts";
+import { getYouTubeVideoInfo } from "../fetchers/knowledge/YouTubeFetcher.ts";
+import { getGitHubRepo } from "../fetchers/web/GitHubFetcher.ts";
+import { getRedditThread } from "../fetchers/web/RedditFetcher.ts";
+import { getNpmPackage } from "../fetchers/web/NpmFetcher.ts";
+import { getPyPiPackage } from "../fetchers/web/PyPiFetcher.ts";
+import { readPdfUrl } from "../fetchers/web/PdfFetcher.ts";
+import { readRssFeed } from "../fetchers/web/RssFetcher.ts";
+import { getTwitterPost } from "../fetchers/web/TwitterFetcher.ts";
+import { getHackerNewsThread } from "../fetchers/web/HackerNewsFetcher.ts";
+import { getStackOverflowQuestion } from "../fetchers/web/StackOverflowFetcher.ts";
+import { getWebContent } from "../fetchers/web/WebContentFetcher.ts";
+import { getPackageInfo } from "../fetchers/web/PackageFetcher.ts";
 import {
   searchArtists,
   getArtist,
   searchAlbums,
   getAlbum,
   searchTracks,
-} from "../fetchers/knowledge/MusicBrainzFetcher.js";
+} from "../fetchers/knowledge/MusicBrainzFetcher.ts";
 import {
   getSnapshot as getWaybackSnapshot,
   getSnapshotHistory,
-} from "../fetchers/web/WaybackFetcher.js";
+} from "../fetchers/web/WaybackFetcher.ts";
 const router = Router();
 // ─── Dictionary ────────────────────────────────────────────────────
 router.get("/dictionary/:word", asyncHandler(

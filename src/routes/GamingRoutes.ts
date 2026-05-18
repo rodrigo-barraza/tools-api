@@ -10,7 +10,7 @@ import {
   getPlayerRecentMatches,
   getMatch,
   getProMatches,
-} from "../fetchers/gaming/DotaFetcher.js";
+} from "../fetchers/gaming/DotaFetcher.ts";
 
 const router = Router();
 

@@ -1,6 +1,6 @@
 import request from "supertest";
-import { createTestApp } from "./testApp.js";
-import eventRoutes from "../src/routes/EventRoutes.js";
+import { createTestApp } from "./testApp.ts";
+import eventRoutes from "../src/routes/EventRoutes.ts";
 
 // ─── Unit Tests for Event Domain Endpoints ──────────────────────
 

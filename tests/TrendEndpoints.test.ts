@@ -1,6 +1,6 @@
 import request from "supertest";
-import { createTestApp } from "./testApp.js";
-import trendRoutes from "../src/routes/TrendRoutes.js";
+import { createTestApp } from "./testApp.ts";
+import trendRoutes from "../src/routes/TrendRoutes.ts";
 
 // ─── Unit Tests for Trend Domain Endpoints ──────────────────────
 

@@ -1,6 +1,6 @@
 import request from "supertest";
-import { createTestApp } from "./testApp.js";
-import gamingRoutes from "../src/routes/GamingRoutes.js";
+import { createTestApp } from "./testApp.ts";
+import gamingRoutes from "../src/routes/GamingRoutes.ts";
 
 // ─── Unit Tests for Gaming Domain Endpoints ────────────────────
 

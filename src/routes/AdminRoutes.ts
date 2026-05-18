@@ -5,24 +5,24 @@ import { stat } from "node:fs/promises";
 import {
   queryRequestLogs,
   getRequestStats,
-} from "../middleware/RequestLoggerMiddleware.js";
+} from "../middleware/RequestLoggerMiddleware.ts";
 import {
   queryToolCallLogs,
   getToolCallStats,
-} from "../middleware/ToolCallLoggerMiddleware.js";
+} from "../middleware/ToolCallLoggerMiddleware.ts";
 import {
   getToolSchemas,
   getToolSchemasForAI,
   getDisabledTools,
-} from "../services/ToolSchemaService.js";
+} from "../services/ToolSchemaService.ts";
 import {
   ALLOWED_ROOTS,
   getStaticRoots,
   refreshAllowedRoots,
-} from "../services/AgenticFileService.js";
-import { getConnectedAgents } from "../services/AgentConnectionManager.js";
-import { getDB } from "../db.js";
-import logger from "../logger.js";
+} from "../services/AgenticFileService.ts";
+import { getConnectedAgents } from "../services/AgentConnectionManager.ts";
+import { getDB } from "../db.ts";
+import logger from "../logger.ts";
 const router = Router();
 // ─── Path Translation ─────────────────────────────────────────────
 const WORKSPACE_COLLECTION = "workspace_config";

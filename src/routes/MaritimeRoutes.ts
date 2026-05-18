@@ -6,7 +6,7 @@ import {
   getVesselsInArea,
   searchVessels,
   getAisStreamHealth,
-} from "../fetchers/maritime/AisStreamFetcher.js";
+} from "../fetchers/maritime/AisStreamFetcher.ts";
 
 const router = Router();
 

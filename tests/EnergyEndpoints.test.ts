@@ -1,6 +1,6 @@
 import request from "supertest";
-import { createTestApp } from "./testApp.js";
-import energyRoutes from "../src/routes/EnergyRoutes.js";
+import { createTestApp } from "./testApp.ts";
+import energyRoutes from "../src/routes/EnergyRoutes.ts";
 
 // ─── Unit Tests for Energy Domain Endpoints ────────────────────
 

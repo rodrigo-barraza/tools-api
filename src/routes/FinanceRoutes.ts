@@ -13,20 +13,20 @@ import {
   getCachedFinancials,
   cacheFinancials,
   getFinanceHealth as getHealth,
-} from "../caches/FinnhubCache.js";
+} from "../caches/FinnhubCache.ts";
 import {
   fetchStockQuote,
   fetchCompanyProfile,
   fetchCompanyNews,
   fetchRecommendationTrends,
   fetchBasicFinancials,
-} from "../fetchers/finance/FinnhubFetcher.js";
+} from "../fetchers/finance/FinnhubFetcher.ts";
 import {
   getSeriesInfo,
   getSeriesObservations,
   searchSeries,
   getKeyIndicators,
-} from "../fetchers/finance/FredFetcher.js";
+} from "../fetchers/finance/FredFetcher.ts";
 const router = Router();
 // ─── Stock Quote (on-demand with 1-min TTL cache) ──────────────────
 router.get("/quote/:symbol", asyncHandler(async (req: any, res: any) => {

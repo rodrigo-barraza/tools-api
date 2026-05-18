@@ -1,8 +1,8 @@
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { parseIntParam } from "@rodrigo-barraza/utilities-library";
 import { Router } from "express";
-import logger from "../logger.js";
-import { getRecentProducts, searchProducts } from "../models/Product.js";
+import logger from "../logger.ts";
+import { getRecentProducts, searchProducts } from "../models/Product.ts";
 import {
   getAll,
   getBySource,
@@ -11,7 +11,7 @@ import {
   getCategories,
   searchByName,
   getHealth,
-} from "../caches/ProductCache.js";
+} from "../caches/ProductCache.ts";
 import {
   getAll as getAvailabilityAll,
   getBySku,
@@ -21,8 +21,8 @@ import {
   addToWatchlist,
   removeFromWatchlist,
   getAvailabilityHealth,
-} from "../caches/BestBuyCAAvailabilityCache.js";
-import { fetchBestBuyCAAvailability } from "../fetchers/product/BestBuyCAAvailabilityFetcher.js";
+} from "../caches/BestBuyCAAvailabilityCache.ts";
+import { fetchBestBuyCAAvailability } from "../fetchers/product/BestBuyCAAvailabilityFetcher.ts";
 const router = Router();
 // ─── Existing Product Routes ───────────────────────────────────────
 router.get("/products", (_req: any, res: any) => {

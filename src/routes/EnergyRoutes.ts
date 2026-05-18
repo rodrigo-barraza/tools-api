@@ -5,7 +5,7 @@ import {
   getFacetValues,
   getData,
   getEnergyIndicators,
-} from "../fetchers/energy/EiaFetcher.js";
+} from "../fetchers/energy/EiaFetcher.ts";
 const router = Router();
 // ─── Key Energy Indicators (curated snapshot) ──────────────────────
 router.get(

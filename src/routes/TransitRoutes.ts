@@ -1,13 +1,13 @@
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { parseIntParam } from "@rodrigo-barraza/utilities-library";
 import { Router } from "express";
-import CONFIG from "../config.js";
+import CONFIG from "../config.ts";
 import {
   getNextBus,
   getStopInfo,
   findStopsNearby,
   getRouteInfo,
-} from "../fetchers/transit/TransLinkFetcher.js";
+} from "../fetchers/transit/TransLinkFetcher.ts";
 const router = Router();
 // ─── Next Bus ──────────────────────────────────────────────────────
 router.get("/nextbus/:stopNo", asyncHandler(async (req: any, res: any) => {

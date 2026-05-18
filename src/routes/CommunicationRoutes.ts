@@ -6,7 +6,7 @@ import {
   getAccountInfo,
   lookupPhone,
   listPhoneNumbers,
-} from "../services/TwilioService.js";
+} from "../services/TwilioService.ts";
 const router = Router();
 // ─── Send SMS ──────────────────────────────────────────────────────
 router.post("/sms/send", asyncHandler(async (req: any, res: any) => {

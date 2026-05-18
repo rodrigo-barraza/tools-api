@@ -1,6 +1,6 @@
 import request from "supertest";
-import { createTestApp } from "./testApp.js";
-import healthRoutes from "../src/routes/HealthRoutes.js";
+import { createTestApp } from "./testApp.ts";
+import healthRoutes from "../src/routes/HealthRoutes.ts";
 
 // ─── Unit Tests for Health/Drug Endpoints ───────────────────────
 

@@ -1,5 +1,5 @@
 import express from "express";
-import { fieldProjectionMiddleware } from "../src/middleware/FieldProjectionMiddleware.js";
+import { fieldProjectionMiddleware } from "../src/middleware/FieldProjectionMiddleware.ts";
 
 // ─── Test Fixtures ─────────────────────────────────────────────
 

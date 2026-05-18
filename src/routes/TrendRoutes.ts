@@ -5,7 +5,7 @@ import {
   getRecentTrends,
   searchTrendsDB,
   getTopTrends,
-} from "../models/Trend.js";
+} from "../models/Trend.ts";
 import {
   getAll,
   getBySource,
@@ -13,7 +13,7 @@ import {
   getCorrelatedTrends,
   searchTrends,
   getHealth,
-} from "../caches/TrendCache.js";
+} from "../caches/TrendCache.ts";
 const router = Router();
 router.get("/trends", (_req: any, res: any) => {
   res.json(getAll());

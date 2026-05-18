@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { asyncHandler, HealthTracker } from "@rodrigo-barraza/utilities-library/express";
-import LightsDataService from "../services/LightsDataService.js";
+import LightsDataService from "../services/LightsDataService.ts";
 
 const router = Router();
 

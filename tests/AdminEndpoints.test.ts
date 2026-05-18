@@ -1,6 +1,6 @@
 import request from "supertest";
-import { createTestApp } from "./testApp.js";
-import adminRoutes from "../src/routes/AdminRoutes.js";
+import { createTestApp } from "./testApp.ts";
+import adminRoutes from "../src/routes/AdminRoutes.ts";
 
 // ─── Unit Tests for Admin Endpoints ────────────────────
 

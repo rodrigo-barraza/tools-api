@@ -1,6 +1,6 @@
 import request from "supertest";
-import { createTestApp } from "./testApp.js";
-import financeRoutes from "../src/routes/FinanceRoutes.js";
+import { createTestApp } from "./testApp.ts";
+import financeRoutes from "../src/routes/FinanceRoutes.ts";
 
 // ─── Unit Tests for Finance Domain Endpoints ────────────────────
 

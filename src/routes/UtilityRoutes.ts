@@ -2,40 +2,40 @@ import { asyncHandler, setupStreamingSSE } from "@rodrigo-barraza/utilities-libr
 import { validateMaxLength } from "@rodrigo-barraza/utilities-library";
 import { Router } from "express";
 import BigNumber from "bignumber.js";
-import CONFIG from "../config.js";
+import CONFIG from "../config.ts";
 import {
   convertCurrency,
   listCurrencies,
-} from "../fetchers/utility/CurrencyFetcher.js";
+} from "../fetchers/utility/CurrencyFetcher.ts";
 import {
   getTimeInTimezone,
   listTimezones,
-} from "../fetchers/utility/TimezoneFetcher.js";
-import { lookupIp, batchLookupIps } from "../fetchers/utility/IpInfoFetcher.js";
+} from "../fetchers/utility/TimezoneFetcher.ts";
+import { lookupIp, batchLookupIps } from "../fetchers/utility/IpInfoFetcher.ts";
 import {
   searchNearbyPlaces,
   searchPlacesByText,
-} from "../fetchers/utility/PlacesFetcher.js";
+} from "../fetchers/utility/PlacesFetcher.ts";
 import {
   searchAirports,
   getAirportByCode,
   getAirportsByCountry,
   getNearestAirports,
-} from "../fetchers/utility/AirportFetcher.js";
-import { getPublicWebcams } from "../fetchers/utility/WebcamFetcher.js";
+} from "../fetchers/utility/AirportFetcher.ts";
+import { getPublicWebcams } from "../fetchers/utility/WebcamFetcher.ts";
 import {
   executePython,
   executePythonStreaming,
   getInterpreterInfo,
-} from "../services/PythonInterpreterService.js";
+} from "../services/PythonInterpreterService.ts";
 import {
   storeChart,
   getStoredChart,
   renderChartPng,
-} from "../services/ChartService.js";
-import { MAX_CODE_LENGTH } from "../constants.js";
-import { EphemeralStore, buildLocalUrl } from "../utilities.js";
-import { crawlSingleStatic } from "../services/CrawlerService.js";
+} from "../services/ChartService.ts";
+import { MAX_CODE_LENGTH } from "../constants.ts";
+import { EphemeralStore, buildLocalUrl } from "../utilities.ts";
+import { crawlSingleStatic } from "../services/CrawlerService.ts";
 const router = Router();
 // ─── Calculator (BigNumber) ────────────────────────────────────────
 router.get("/calculate", (req: any, res: any) => {

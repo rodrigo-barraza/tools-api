@@ -1,6 +1,6 @@
 import request from "supertest";
-import { createTestApp } from "./testApp.js";
-import knowledgeRoutes from "../src/routes/KnowledgeRoutes.js";
+import { createTestApp } from "./testApp.ts";
+import knowledgeRoutes from "../src/routes/KnowledgeRoutes.ts";
 
 // ─── Unit Tests for Knowledge Domain Endpoints ──────────────────
 

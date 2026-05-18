@@ -1,6 +1,6 @@
 import request from "supertest";
-import { createTestApp } from "./testApp.js";
-import maritimeRoutes from "../src/routes/MaritimeRoutes.js";
+import { createTestApp } from "./testApp.ts";
+import maritimeRoutes from "../src/routes/MaritimeRoutes.ts";
 
 // ─── Unit Tests for Maritime Domain Endpoints ────────────────────
 

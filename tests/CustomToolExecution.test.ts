@@ -11,8 +11,8 @@
 // ────────────────────────────────────────────────────────────
 
 import { describe, it, expect, beforeAll } from "vitest";
-import { executeJavaScript } from "../src/services/JavaScriptInterpreterService.js";
-import { createTestApp } from "./testApp.js";
+import { executeJavaScript } from "../src/services/JavaScriptInterpreterService.ts";
+import { createTestApp } from "./testApp.ts";
 import request from "supertest";
 
 // ── Unit: JavaScriptInterpreterService ──────────────────────
