@@ -8,7 +8,7 @@
 # ============================================================
 
 # ── Stage 1: Build ─────────────────────────────
-FROM node:22-slim AS build
+FROM node:26-slim AS build
 
 # Native module build tools (chart.js canvas, etc.)
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -33,7 +33,7 @@ RUN npm run build
 RUN npm prune --omit=dev
 
 # ── Stage 2: Runtime ──────────────────────────────────────────
-FROM node:22-slim
+FROM node:26-slim
 
 # Chromium (Playwright), Python 3 (interpreter), FFmpeg (media),
 # wget (healthcheck), git (agentic git tools)
