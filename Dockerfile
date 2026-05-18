@@ -7,8 +7,8 @@
 # at startup.
 # ============================================================
 
-# ── Stage 1: Install dependencies ─────────────────────────────
-FROM node:22-slim AS deps
+# ── Stage 1: Build ─────────────────────────────
+FROM node:22-slim AS build
 
 # Native module build tools (chart.js canvas, etc.)
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -20,7 +20,17 @@ COPY package.json package-lock.json ./
 
 # Skip Playwright's bundled browser download — we install system Chromium
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-RUN npm ci --omit=dev
+# Install ALL dependencies (including dev) so tsc can build
+RUN npm ci
+
+# Copy application source
+COPY . .
+
+# Build TypeScript
+RUN npm run build
+
+# Prune devDependencies to save space in the final image
+RUN npm prune --omit=dev
 
 # ── Stage 2: Runtime ──────────────────────────────────────────
 FROM node:22-slim
@@ -50,14 +60,10 @@ WORKDIR /app
 RUN groupadd --system --gid 1001 toolsapi && \
     useradd --system --uid 1001 --gid toolsapi toolsapi
 
-# Copy pre-built node_modules from deps stage
-COPY --chown=toolsapi:toolsapi --from=deps /app/node_modules ./node_modules
-
-# Copy application source
-COPY --chown=toolsapi:toolsapi . .
-
-# Build TypeScript (still as root so npm scripts work; output owned via COPY)
-RUN npm run build && chown -R toolsapi:toolsapi dist
+# Copy pre-built node_modules and dist from build stage
+COPY --chown=toolsapi:toolsapi --from=build /app/node_modules ./node_modules
+COPY --chown=toolsapi:toolsapi --from=build /app/dist ./dist
+COPY --chown=toolsapi:toolsapi package.json ./package.json
 
 USER toolsapi
 
