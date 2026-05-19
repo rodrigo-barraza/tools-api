@@ -232,13 +232,25 @@ router.get("/", asyncHandler(async (req: Request, res: Response) => {
   }
 }));
 
+// ─── Admin ──────────────────────────────────────────────────
+
+router.post("/reset-auth", asyncHandler(async (_req: Request, res: Response) => {
+  qbt.clearAuthState();
+  res.json({ success: true, message: "Auth state and cooldown cleared" });
+}));
+
 // ─── Health ─────────────────────────────────────────────────
 
+interface QbtHealthResult {
+  healthy: boolean;
+  version?: string;
+}
+
 export async function getTorrentHealth() {
-  const health = await qbt.isHealthy();
+  const health = await qbt.isHealthy() as QbtHealthResult;
   return {
-    qbittorrent: (health as any).healthy
-      ? `connected (v${(health as any).version})`
+    qbittorrent: health.healthy
+      ? `connected (v${health.version})`
       : "unavailable — QBITTORRENT_URL not configured or unreachable",
   };
 }
