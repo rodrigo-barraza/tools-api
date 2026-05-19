@@ -8165,6 +8165,290 @@ const TOOL_DOMAINS = {
 };
 
 // ────────────────────────────────────────────────────────────
+// Tool Emojis — per-tool emoji displayed in the client UI
+// ────────────────────────────────────────────────────────────
+
+const TOOL_EMOJIS = {
+  // Weather & Environment
+  get_weather: "🌤️",
+  get_local_environment: "🌍",
+  get_weather_forecast: "📅",
+  get_avalanche_forecast: "🏔️",
+  get_earthquakes: "🌋",
+  get_solar_activity: "☀️",
+  get_aurora_forecast: "🌌",
+  get_solar_wind: "💨",
+  get_twilight: "🌅",
+  get_tides: "🌊",
+  get_wildfires: "🔥",
+  get_iss_location: "🛸",
+  get_near_earth_objects: "☄️",
+  get_space_launches: "🚀",
+  get_nasa_apod: "🔭",
+  get_weather_warnings: "⚠️",
+  get_detailed_air_quality: "🫁",
+  get_pollen_forecast: "🌸",
+  get_weather_history: "📊",
+  get_weather_marine: "⚓",
+  get_weather_astronomy: "🌙",
+  get_weather_alerts: "🚨",
+
+  // Events
+  get_events: "🎟️",
+
+  // Sports
+  get_live_scores: "⚽",
+  get_upcoming_matches: "📅",
+  get_recent_results: "🏆",
+  get_league_standings: "📋",
+  get_match_details: "📺",
+  get_head_to_head: "⚔️",
+  search_teams: "🏟️",
+  search_players: "🧑‍🤝‍🧑",
+  get_team_squad: "👥",
+  get_league_top_scorers: "⭐",
+
+  // Markets & Commodities
+  get_commodities: "📦",
+
+  // Trends
+  get_trends: "📈",
+
+  // Products
+  search_products: "🛒",
+  get_trending_products: "🔥",
+  get_product_availability: "📋",
+  check_product_availability: "✅",
+  get_costco_us_products: "🏪",
+  get_costco_ca_products: "🏪",
+
+  // Finance
+  get_stock_data: "💹",
+  get_macro_data: "🏛️",
+  get_market_news: "📰",
+  get_earnings_calendar: "💰",
+
+  // Knowledge
+  lookup_book: "📚",
+  get_country_data: "🗺️",
+  get_element_data: "⚛️",
+  get_exoplanet_data: "🪐",
+  get_anime: "🎌",
+  define_word: "📖",
+  search_papers: "🎓",
+  get_wikipedia_summary: "📘",
+  get_on_this_day: "📜",
+  list_development_indicators: "📊",
+  get_youtube_video: "▶️",
+  get_web_content: "🌐",
+  get_package_info: "📦",
+  read_pdf_url: "📄",
+  read_rss_feed: "📡",
+  get_pypi_package: "🐍",
+  get_music_data: "🎵",
+  get_wayback_snapshot: "🕰️",
+
+  // Movies & TV
+  search_media: "🎬",
+  get_media_details: "🎥",
+  get_media_credits: "🌟",
+  get_trending_media: "🔥",
+  discover_media: "🍿",
+  get_media_genres: "🎭",
+
+  // Health
+  rank_foods: "🥗",
+  search_drugs: "💊",
+  get_drug_adverse_events: "⚕️",
+  get_drug_recalls: "🚫",
+  search_usda_nutrition: "🍎",
+  rank_foods_by_nutrient: "📊",
+  compare_food_nutrition: "⚖️",
+  get_food_categories: "🗂️",
+  get_nutrient_types: "🧬",
+  list_category_nutrients: "📋",
+  search_foods_by_taxonomy: "🔍",
+  browse_food_taxonomy: "🌿",
+  get_nutritional_requirements: "📏",
+  list_drug_dosage_forms: "💉",
+  search_gym_exercises: "🏋️",
+  get_gym_exercise_categories: "🗂️",
+  get_gym_exercise_by_id: "🎯",
+  calculate_caloric_needs: "🔢",
+  analyze_nutrient_gaps: "📉",
+  find_food_substitutes: "🔄",
+  estimate_exercise_calories: "🏃",
+  calculate_hydration_needs: "💧",
+  build_meal_plan: "🍽️",
+  check_drug_nutrient_interactions: "⚠️",
+
+  // Transit
+  get_next_bus: "🚌",
+  get_transit_stop_info: "🚏",
+  find_transit_stops_nearby: "📍",
+  get_transit_route_info: "🗺️",
+
+  // Utilities
+  lookup_airport: "✈️",
+  precise_calculator: "🧮",
+  convert_currency: "💱",
+  get_time_in_timezone: "🕐",
+  lookup_ip: "🔎",
+  search_nearby_places: "📍",
+  search_places: "🗺️",
+  generate_map: "🗺️",
+  generate_chart: "📊",
+  get_public_webcams: "📷",
+  execute_python: "🐍",
+
+  // Compute
+  execute_javascript: "⚡",
+  execute_shell: "🖥️",
+  convert_units: "📐",
+  parse_datetime: "📅",
+  transform_json: "🔧",
+  generate_csv: "📋",
+  generate_qr_code: "📱",
+  render_latex: "📐",
+  generate_diagram: "📊",
+  diff_text: "🔀",
+  generate_hash: "🔐",
+  regex_tester: "🔣",
+  encode_decode: "🔁",
+  convert_color: "🎨",
+  manipulate_image: "🖼️",
+  parse_cron_expression: "⏰",
+  turtle_draw: "🐢",
+
+  // Reasoning & Control Flow
+  think: "🧠",
+  sleep: "💤",
+  synthetic_output: "📝",
+
+  // Gaming
+  get_dota_data: "🎮",
+
+  // Torrent
+  torrent_search: "🔍",
+  torrent_download: "⬇️",
+  torrent_status: "📊",
+
+  // Maritime
+  get_tracked_vessels: "🚢",
+  get_vessel_by_mmsi: "🚢",
+  search_vessels: "⛵",
+  get_vessels_in_area: "🗺️",
+  get_ais_messages: "📡",
+
+  // Energy
+  get_energy_indicators: "⚡",
+  browse_energy_data: "📊",
+  get_energy_facets: "🔋",
+  query_energy_data: "📈",
+  get_electricity_retail_sales: "🔌",
+  get_petroleum_prices: "🛢️",
+  get_natural_gas_prices: "🔥",
+
+  // Agentic — File Operations
+  read_file: "📄",
+  write_file: "✏️",
+  str_replace_file: "🔧",
+  patch_file: "🩹",
+  multi_file_read: "📑",
+  file_info: "ℹ️",
+  file_diff: "🔀",
+  move_file: "📂",
+  delete_file: "🗑️",
+  notebook_edit: "📓",
+
+  // Agentic — Search & Discovery
+  list_directory: "📁",
+  grep_search: "🔍",
+  glob_files: "🔎",
+  project_summary: "📋",
+
+  // Agentic — Web
+  fetch_url: "🌐",
+  web_search: "🔍",
+
+  // Agentic — Command Execution
+  run_command: "▶️",
+
+  // Agentic — Git
+  git: "📦",
+
+  // Agentic — Browser
+  browser_action: "🌐",
+  browser_script: "📜",
+
+  // Agentic — Code Intelligence
+  lsp_action: "🧩",
+
+  // Agentic — Task Management
+  task_create: "➕",
+  task_get: "📋",
+  task_list: "📝",
+  task_update: "✏️",
+
+  // Agentic — Memory
+  upsert_memory: "🧠",
+
+  // Agentic — Agent Management
+  create_custom_agent: "🤖",
+  list_custom_agents: "📋",
+  update_custom_agent: "✏️",
+
+  // Agentic — Tool Management
+  create_custom_tool: "🔧",
+  create_privileged_tool: "🔐",
+  list_custom_tools: "📋",
+  update_custom_tool: "✏️",
+  delete_custom_tool: "🗑️",
+
+  // Agentic — Meta
+  tool_search: "🔍",
+
+  // Agentic — Scheduling
+  cron_create: "⏰",
+  remote_trigger: "📡",
+
+  // Communication (Twilio)
+  send_sms: "💬",
+  list_sms_messages: "📨",
+  get_twilio_account: "📱",
+  lookup_phone_number: "📞",
+  list_twilio_numbers: "📲",
+
+  // Creative
+  generate_image: "🖼️",
+  describe_image: "👁️",
+  text_to_speech: "🔊",
+  speech_to_text: "🎤",
+
+  // Discord
+  discord_message_search: "🔍",
+  discord_message_analytics: "📊",
+  discord_server_activity: "📈",
+
+  // Smart Home (LIFX)
+  lifx_list_lights: "💡",
+  lifx_set_state: "🎚️",
+  lifx_toggle_power: "🔌",
+  lifx_breathe_effect: "🌬️",
+  lifx_pulse_effect: "💥",
+  lifx_move_effect: "🔄",
+  lifx_flame_effect: "🔥",
+  lifx_morph_effect: "🌈",
+  lifx_set_states: "💡",
+  lifx_set_state_delta: "📊",
+  lifx_effects_off: "⏹️",
+  lifx_list_scenes: "🎬",
+  lifx_activate_scene: "▶️",
+  lifx_night_lock: "🌙",
+  lifx_health: "❤️",
+};
+
+// ────────────────────────────────────────────────────────────
 // API Key Gating — maps tools to required CONFIG keys
 // ────────────────────────────────────────────────────────────
 // Tools listed here will be excluded from schema responses
@@ -8579,7 +8863,7 @@ const TOOL_LABELS = {
 // ────────────────────────────────────────────────────────────
 
 // Re-export taxonomy registries for testing and downstream consumers
-export { TOOL_DOMAINS, TOOL_LABELS, TOOL_DEFINITIONS };
+export { TOOL_DOMAINS, TOOL_LABELS, TOOL_EMOJIS, TOOL_DEFINITIONS };
 
 /**
  * Get all tool schemas with endpoint metadata.
@@ -8596,6 +8880,8 @@ export function getToolSchemas() {
       domain: TOOL_DOMAINS[t.name] || "Other",
       // @ts-expect-error - TS7053: implicit any index
       labels: TOOL_LABELS[t.name] || [],
+      // @ts-expect-error - TS7053: implicit any index
+      emoji: TOOL_EMOJIS[t.name] || null,
     }));
 }
 
