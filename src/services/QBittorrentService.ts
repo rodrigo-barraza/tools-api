@@ -86,18 +86,21 @@ async function authenticate(): Promise<string> {
     );
   }
 
-  if (text.trim() !== "Ok.") {
+  // 200 "Ok." (legacy) or 204 (v5+) = success. Anything else = rejected.
+  if (text.trim() !== "" && text.trim() !== "Ok.") {
     authFailedUntil = now + AUTH_COOLDOWN_MS;
     throw new Error(`qBittorrent auth rejected: ${text}`);
   }
 
   // Extract SID from Set-Cookie header
+  // Legacy: SID=xxx — v5+: QBT_SID_<port>=xxx
   const setCookie = response.headers.get("set-cookie") || "";
-  const sidMatch = setCookie.match(/SID=([^;]+)/);
+  const sidMatch = setCookie.match(/((?:QBT_)?SID(?:_\d+)?=[^;]+)/);
   if (!sidMatch) {
     throw new Error("qBittorrent did not return SID cookie");
   }
 
+  // Store the full cookie pair (e.g. "QBT_SID_8080=xxx" or "SID=xxx")
   sessionCookie = sidMatch[1];
   sessionExpiry = now + SESSION_TTL_MS;
   authFailedUntil = 0; // Clear cooldown on success
@@ -126,7 +129,7 @@ async function qbtFetch(path: string, { method = "GET", body, params }: QbtFetch
     if (qs) url += `?${qs}`;
   }
 
-  const headers: Record<string, string> = { Cookie: `SID=${sid}` };
+  const headers: Record<string, string> = { Cookie: sid };
 
   const opts: RequestInit = { method, headers };
 
@@ -157,7 +160,7 @@ async function qbtFetch(path: string, { method = "GET", body, params }: QbtFetch
     sessionCookie = null;
     sessionExpiry = 0;
     const newSid = await authenticate();
-    headers.Cookie = `SID=${newSid}`;
+    headers.Cookie = newSid;
     const retry = await fetch(url, { ...opts, headers });
     if (!retry.ok) {
       throw new Error(`qBittorrent API error: ${retry.status} ${retry.statusText}`);
