@@ -1,6 +1,6 @@
 import { asyncHandler, setupStreamingSSE } from "@rodrigo-barraza/utilities-library/express";
 import { validateMaxLength } from "@rodrigo-barraza/utilities-library";
-import { Router } from "express";
+import { Request, Response, Router } from "express";
 import BigNumber from "bignumber.js";
 import CONFIG from "../config.ts";
 import {
@@ -38,7 +38,7 @@ import { EphemeralStore, buildLocalUrl } from "../utilities.ts";
 import { crawlSingleStatic } from "../services/CrawlerService.ts";
 const router = Router();
 // ─── Calculator (BigNumber) ────────────────────────────────────────
-router.get("/calculate", (req: any, res: any) => {
+router.get("/calculate", (req: Request, res: Response) => {
   const { operation, a, b } = req.query as any;
   if (!operation || !a) {
     return res.status(400).json({ error: "Query parameters 'operation' and 'a' are required" });
@@ -90,12 +90,12 @@ router.get("/calculate", (req: any, res: any) => {
       b: b || null,
       result: result.toFixed(),
     });
-  } catch (error: any) {
-    res.status(400).json({ error: `Calculation failed: ${error.message}` });
+  } catch (error: unknown) {
+    res.status(400).json({ error: `Calculation failed: ${(error as Error).message}` });
   }
 });
 // ─── Currency Conversion ───────────────────────────────────────────
-router.get("/currency/convert", asyncHandler(async (req: any, res: any) => {
+router.get("/currency/convert", asyncHandler(async (req: Request, res: Response) => {
   const { amount, from, to } = req.query as any;
   if (!from || !to) {
     return res
@@ -113,11 +113,11 @@ router.get("/currency/list", asyncHandler(
 ));
 // ─── Timezone ──────────────────────────────────────────────────────
 router.get("/timezone/:area/:location", asyncHandler(
-  (req: any) => getTimeInTimezone(`${req.params.area as string}/${req.params.location as string}`),
+  (req: Request) => getTimeInTimezone(`${req.params.area as string}/${req.params.location as string}`),
   "Timezone lookup",
 ));
 router.get("/timezone/list", asyncHandler(
-  async (req: any) => {
+  async (req: Request) => {
     const timezones = await listTimezones(req.query.area as string);
     return {
       count: Array.isArray(timezones) ? timezones.length : 0,
@@ -127,7 +127,7 @@ router.get("/timezone/list", asyncHandler(
   "Timezone list",
 ));
 // ─── IP Geolocation (IPinfo) ───────────────────────────────────────
-router.get("/ip/batch", asyncHandler(async (req: any, res: any) => {
+router.get("/ip/batch", asyncHandler(async (req: Request, res: Response) => {
   const ips = req.query.ips as string;
   if (!ips) {
     return res
@@ -146,7 +146,7 @@ router.get("/ip", asyncHandler(
   "IP lookup",
 ));
 router.get("/ip/:ip", asyncHandler(
-  (req: any) => {
+  (req: Request) => {
     const raw = req.params.ip as string;
     const ip = raw === "self" || raw === ":ip" ? "" : raw;
     return lookupIp(ip);
@@ -154,7 +154,7 @@ router.get("/ip/:ip", asyncHandler(
   "IP lookup",
 ));
 // ─── Places — Nearby Search (Google Places API New) ────────────────
-router.get("/places/nearby", asyncHandler(async (req: any, res: any) => {
+router.get("/places/nearby", asyncHandler(async (req: Request, res: Response) => {
   const { type, latitude, longitude, radius, limit } = req.query as any;
   if (!type) {
     return res
@@ -170,7 +170,7 @@ router.get("/places/nearby", asyncHandler(async (req: any, res: any) => {
   }));
 }));
 // ─── Places — Text Search (Google Places API New) ──────────────────
-router.get("/places/search", asyncHandler(async (req: any, res: any) => {
+router.get("/places/search", asyncHandler(async (req: Request, res: Response) => {
   const { q, latitude, longitude, radius, limit } = req.query as any;
   if (!q) {
     return res
@@ -190,7 +190,7 @@ router.get("/places/search", asyncHandler(async (req: any, res: any) => {
  * In-memory map marker store — avoids multi-kb query-param URLs.
  * Maps are keyed by short UUID, expire after 1h.
  */
-const mapStore = new EphemeralStore();
+const mapStore = new EphemeralStore<{ markers: unknown[] }>();
 function storeMarkers(markerList: any) {
   return mapStore.set({ markers: markerList });
 }
@@ -276,7 +276,7 @@ function initMap(){
 <script src="https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap" async defer></script>
 </body></html>`;
 }
-router.get("/map/embed", (req: any, res: any) => {
+router.get("/map/embed", (req: Request, res: Response) => {
   const { id, markers, zoom, maptype } = req.query as any;
   if (!CONFIG.GOOGLE_API_KEY) {
     return res.status(400).send("Missing API key");
@@ -306,7 +306,7 @@ router.get("/map/embed", (req: any, res: any) => {
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(html);
 });
-router.get("/map", asyncHandler(async (req: any, res: any) => {
+router.get("/map", asyncHandler(async (req: Request, res: Response) => {
   const { markers, zoom, maptype } = req.query as any;
   if (!markers) {
     return res
@@ -337,13 +337,13 @@ router.get("/map", asyncHandler(async (req: any, res: any) => {
       mapEmbedUrl,
       markerCount: markerList.length,
     });
-  } catch (error: any) {
-    res.status(502).json({ error: `Map generation failed: ${error.message}` });
+  } catch (error: unknown) {
+    res.status(502).json({ error: `Map generation failed: ${(error as Error).message}` });
   }
 }));
 // ─── Webcams ───────────────────────────────────────────────────────
 router.get("/webcams", asyncHandler(
-  async (req: any) => {
+  async (req: Request) => {
     const { city, limit } = req.query as any;
     const webcams = await getPublicWebcams({ 
       city: city || "vancouver", 
@@ -354,7 +354,7 @@ router.get("/webcams", asyncHandler(
   "Webcams fetch"
 ));
 // ─── Airports ──────────────────────────────────────────────────────
-router.get("/airports/search", (req: any, res: any) => {
+router.get("/airports/search", (req: Request, res: Response) => {
   const { q, limit, country } = req.query as any;
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
@@ -364,7 +364,7 @@ router.get("/airports/search", (req: any, res: any) => {
     country,
   }));
 });
-router.get("/airports/code/:code", (req: any, res: any) => {
+router.get("/airports/code/:code", (req: Request, res: Response) => {
   const result = getAirportByCode(req.params.code as string);
   if (!result) {
     return res.status(404).json({ error: `Airport not found: ${req.params.code as string}` });
@@ -372,13 +372,13 @@ router.get("/airports/code/:code", (req: any, res: any) => {
   res.json(result);
 });
 router.get("/airports/country/:code", asyncHandler(
-  async (req: any) => getAirportsByCountry(req.params.code as string, {
+  async (req: Request) => getAirportsByCountry(req.params.code as string, {
     limit: parseInt(req.query.limit as string) || 50,
   }),
   "Country airports lookup",
   500,
 ));
-router.get("/airports/nearest", (req: any, res: any) => {
+router.get("/airports/nearest", (req: Request, res: Response) => {
   const { lat, lng, limit } = req.query as any;
   if (!lat || !lng) {
     return res.status(400).json({ error: "Query parameters 'lat' and 'lng' are required" });
@@ -390,7 +390,7 @@ router.get("/airports/nearest", (req: any, res: any) => {
   ));
 });
 // ─── Python Code Interpreter ───────────────────────────────────────
-router.post("/python/execute", asyncHandler(async (req: any, res: any) => {
+router.post("/python/execute", asyncHandler(async (req: Request, res: Response) => {
   const { code, timeout } = req.body;
   if (!code || typeof code !== "string") {
     return res
@@ -411,7 +411,7 @@ router.get("/python/info", asyncHandler(
   "Python interpreter info",
 ));
 // ── Python Streaming (SSE) ────────────────────────────────────
-router.post("/python/stream", asyncHandler(async (req: any, res: any) => {
+router.post("/python/stream", asyncHandler(async (req: Request, res: Response) => {
   const { code, timeout } = req.body;
   if (!code || typeof code !== "string") {
     return res.status(400).json({ error: "Request body must include 'code' (string)" });
@@ -429,7 +429,7 @@ router.post("/python/stream", asyncHandler(async (req: any, res: any) => {
 }));
 // ─── Chart Generation ──────────────────────────────────────────────
 const VALID_CHART_TYPES = ["bar", "line", "pie"];
-router.post("/chart", (req: any, res: any) => {
+router.post("/chart", (req: Request, res: Response) => {
   const { type, title, labels, datasets } = req.body;
   if (!type || !VALID_CHART_TYPES.includes(type)) {
     return res.status(400).json({
@@ -471,7 +471,7 @@ router.post("/chart", (req: any, res: any) => {
     datasetCount: datasets.length,
   });
 });
-router.get("/chart/render", asyncHandler(async (req: any, res: any) => {
+router.get("/chart/render", asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.query as any;
   if (!id) {
     return res.status(400).send("Missing 'id' parameter");
@@ -485,13 +485,13 @@ router.get("/chart/render", asyncHandler(async (req: any, res: any) => {
     res.setHeader("Content-Type", "image/png");
     res.setHeader("Cache-Control", "public, max-age=3600");
     res.send(pngBuffer);
-  } catch (error: any) {
-    res.status(500).json({ error: `Chart render failed: ${error.message}` });
+  } catch (error: unknown) {
+    res.status(500).json({ error: `Chart render failed: ${(error as Error).message}` });
   }
 }));
 // ─── Page Metadata Scraper (Crawlee) ───────────────────────────────
 router.get("/scrape/metadata", asyncHandler(
-  async (req: any) => {
+  async (req: Request) => {
     const { url } = req.query as any;
     if (!url) {
       throw Object.assign(new Error("Query parameter 'url' is required"), { status: 400 });
@@ -568,7 +568,7 @@ export function getUtilityHealth() {
   };
 }
 // ── Unified Airport Lookup Dispatcher ──────────────────────────────
-router.get("/airports/lookup", asyncHandler(async (req: any, res: any) => {
+router.get("/airports/lookup", asyncHandler(async (req: Request, res: Response) => {
   const { action, q, code, country, lat, lng, limit } = req.query as any;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["search", "code", "country", "nearest"] });
   switch (action) {

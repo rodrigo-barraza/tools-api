@@ -1,7 +1,7 @@
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { parseIntParam } from "@rodrigo-barraza/utilities-library";
 // ─── File System & Web Interaction Endpoints ────────────────
-import { Router } from "express";
+import { Request, Response, Router } from "express";
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
 import { agenticHandler } from "../utilities.ts";
@@ -80,7 +80,7 @@ import { TOOL_DEFINITIONS } from "../services/ToolSchemaService.ts";
 const router = Router();
 // ─── 1. File Operations ─────────────────────────────────────
 // ── Read File ─────────────────────────────────────────────────
-router.post("/file/read", agenticHandler(async (req: any) => {
+router.post("/file/read", agenticHandler(async (req: Request) => {
   const { path, startLine, endLine } = req.body;
   if (!path || typeof path !== "string") {
     return { error: "Request body must include 'path' (string)" };
@@ -112,7 +112,7 @@ const EXT_TO_MIME = {
   ".pdf": "application/pdf",
 };
 
-router.get("/file/raw", asyncHandler(async (req: any, res: any) => {
+router.get("/file/raw", asyncHandler(async (req: Request, res: Response) => {
   const filePath = req.query.path as string;
   if (!filePath || typeof filePath !== "string") {
     return res.status(400).json({ error: "Query param 'path' is required" });
@@ -159,17 +159,17 @@ router.get("/file/raw", asyncHandler(async (req: any, res: any) => {
     } else {
       createReadStream(resolved).pipe(res);
     }
-  } catch (error: any) {
-    if (error.code === "ENOENT") {
+  } catch (error: unknown) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       return res.status(404).json({ error: `File not found: ${resolved}` });
     }
-    logger.error(`[file/raw] Stream failed: ${error.message}`);
-    res.status(500).json({ error: `Failed to stream file: ${error.message}` });
+    logger.error(`[file/raw] Stream failed: ${(error as Error).message}`);
+    res.status(500).json({ error: `Failed to stream file: ${(error as Error).message}` });
   }
 }));
 
 // ── Write File ────────────────────────────────────────────────
-router.post("/file/write", agenticHandler(async (req: any) => {
+router.post("/file/write", agenticHandler(async (req: Request) => {
   const { path, content, createDirs } = req.body;
   if (!path || typeof path !== "string") {
     return { error: "Request body must include 'path' (string)" };
@@ -182,7 +182,7 @@ router.post("/file/write", agenticHandler(async (req: any) => {
   });
 }));
 // ── String Replace ────────────────────────────────────────────
-router.post("/file/str-replace", agenticHandler(async (req: any) => {
+router.post("/file/str-replace", agenticHandler(async (req: Request) => {
   const { path, oldStr, newStr, allowMultiple } = req.body;
   if (!path || typeof path !== "string") {
     return { error: "Request body must include 'path' (string)" };
@@ -198,7 +198,7 @@ router.post("/file/str-replace", agenticHandler(async (req: any) => {
   });
 }));
 // ── Patch File (unified diff) ─────────────────────────────────
-router.post("/file/patch", agenticHandler(async (req: any) => {
+router.post("/file/patch", agenticHandler(async (req: Request) => {
   const { path, patch } = req.body;
   if (!path || typeof path !== "string") {
     return { error: "Request body must include 'path' (string)" };
@@ -209,7 +209,7 @@ router.post("/file/patch", agenticHandler(async (req: any) => {
   return agenticPatchFile(path, patch);
 }));
 // ─── 2. Directory Operations ────────────────────────────────
-router.post("/directory/list", agenticHandler(async (req: any) => {
+router.post("/directory/list", agenticHandler(async (req: Request) => {
   const { path, recursive, maxDepth } = req.body;
   if (!path || typeof path !== "string") {
     return { error: "Request body must include 'path' (string)" };
@@ -221,7 +221,7 @@ router.post("/directory/list", agenticHandler(async (req: any) => {
 }));
 // ─── 3. Search Operations ───────────────────────────────────
 // ── Grep Search ───────────────────────────────────────────────
-router.post("/search/grep", agenticHandler(async (req: any) => {
+router.post("/search/grep", agenticHandler(async (req: Request) => {
   const { pattern, searchPath, isRegex, includes, caseInsensitive, matchPerLine } = req.body;
   if (!pattern || typeof pattern !== "string") {
     return { error: "Request body must include 'pattern' (string)" };
@@ -237,7 +237,7 @@ router.post("/search/grep", agenticHandler(async (req: any) => {
   });
 }));
 // ── Glob Files ────────────────────────────────────────────────
-router.post("/search/glob", agenticHandler(async (req: any) => {
+router.post("/search/glob", agenticHandler(async (req: Request) => {
   const { pattern, searchPath } = req.body;
   if (!pattern || typeof pattern !== "string") {
     return { error: "Request body must include 'pattern' (string)" };
@@ -249,7 +249,7 @@ router.post("/search/glob", agenticHandler(async (req: any) => {
 }));
 // ─── 4. Web Operations ──────────────────────────────────────
 // ── Fetch URL ─────────────────────────────────────────────────
-router.post("/web/fetch", agenticHandler(async (req: any) => {
+router.post("/web/fetch", agenticHandler(async (req: Request) => {
   const { url, selector } = req.body;
   if (!url || typeof url !== "string") {
     return { error: "Request body must include 'url' (string)" };
@@ -257,7 +257,7 @@ router.post("/web/fetch", agenticHandler(async (req: any) => {
   return agenticFetchUrl(url, { selector });
 }));
 // ── Web Search ────────────────────────────────────────────────
-router.post("/web/search", agenticHandler(async (req: any) => {
+router.post("/web/search", agenticHandler(async (req: Request) => {
   const { query, limit, dateRestrict, siteSearch } = req.body;
   if (!query || typeof query !== "string") {
     return { error: "Request body must include 'query' (string)" };
@@ -270,7 +270,7 @@ router.post("/web/search", agenticHandler(async (req: any) => {
 }));
 // ─── 5. Extended File Operations ────────────────────────────
 // ── Multi-File Read ───────────────────────────────────────────
-router.post("/file/read-multi", agenticHandler(async (req: any) => {
+router.post("/file/read-multi", agenticHandler(async (req: Request) => {
   const { files } = req.body;
   if (!Array.isArray(files) || files.length === 0) {
     return { error: "Request body must include 'files' (array of { path, startLine?, endLine? })" };
@@ -278,7 +278,7 @@ router.post("/file/read-multi", agenticHandler(async (req: any) => {
   return agenticMultiFileRead(files);
 }));
 // ── File Info ─────────────────────────────────────────────────
-router.post("/file/info", agenticHandler(async (req: any) => {
+router.post("/file/info", agenticHandler(async (req: Request) => {
   const { paths, path } = req.body;
   const targetPaths = paths || (path ? [path] : null);
   if (!targetPaths) {
@@ -287,7 +287,7 @@ router.post("/file/info", agenticHandler(async (req: any) => {
   return agenticFileInfo(targetPaths.length === 1 ? targetPaths[0] : targetPaths);
 }));
 // ── File Diff ─────────────────────────────────────────────────
-router.post("/file/diff", agenticHandler(async (req: any) => {
+router.post("/file/diff", agenticHandler(async (req: Request) => {
   const { pathA, pathB, content, contextLines } = req.body;
   if (!pathA || typeof pathA !== "string") {
     return { error: "Request body must include 'pathA' (string)" };
@@ -298,7 +298,7 @@ router.post("/file/diff", agenticHandler(async (req: any) => {
   return agenticFileDiff(pathA, { pathB, content, contextLines });
 }));
 // ── Move File ─────────────────────────────────────────────────
-router.post("/file/move", agenticHandler(async (req: any) => {
+router.post("/file/move", agenticHandler(async (req: Request) => {
   const { source, destination, createDirs } = req.body;
   if (!source || typeof source !== "string") {
     return { error: "Request body must include 'source' (string)" };
@@ -309,7 +309,7 @@ router.post("/file/move", agenticHandler(async (req: any) => {
   return agenticMoveFile(source, destination, { createDirs: createDirs !== false });
 }));
 // ── Delete File ───────────────────────────────────────────────
-router.post("/file/delete", agenticHandler(async (req: any) => {
+router.post("/file/delete", agenticHandler(async (req: Request) => {
   const { path } = req.body;
   if (!path || typeof path !== "string") {
     return { error: "Request body must include 'path' (string)" };
@@ -317,7 +317,7 @@ router.post("/file/delete", agenticHandler(async (req: any) => {
   return agenticDeleteFile(path);
 }));
 // ─── 6. Command Execution ───────────────────────────────────
-router.post("/command/run", asyncHandler(async (req: any, res: any) => {
+router.post("/command/run", asyncHandler(async (req: Request, res: Response) => {
   const { command, cwd, timeout, run_in_background } = req.body;
   if (!command || typeof command !== "string") {
     return res.status(400).json({ error: "Request body must include 'command' (string)" });
@@ -339,7 +339,7 @@ router.post("/command/run", asyncHandler(async (req: any, res: any) => {
   }
   res.json(result);
 }));
-router.post("/command/stream", asyncHandler(async (req: any, res: any) => {
+router.post("/command/stream", asyncHandler(async (req: Request, res: Response) => {
   const { command, cwd, timeout } = req.body;
   if (!command || typeof command !== "string") {
     return res.status(400).json({ error: "Request body must include 'command' (string)" });
@@ -363,11 +363,11 @@ router.post("/command/stream", asyncHandler(async (req: any, res: any) => {
     res.end();
   }
 }));
-router.get("/command/allowed", (_req: any, res: any) => {
+router.get("/command/allowed", (_req: Request, res: Response) => {
   res.json({ commands: getAllowedCommands() });
 });
 // ── Kill Process ───────────────────────────────────────────
-router.post("/command/kill", asyncHandler(async (req: any, res: any) => {
+router.post("/command/kill", asyncHandler(async (req: Request, res: Response) => {
   const { pid } = req.body;
   if (!pid || typeof pid !== "number") {
     return res.status(400).json({ error: "Request body must include 'pid' (positive integer)" });
@@ -379,10 +379,10 @@ router.post("/command/kill", asyncHandler(async (req: any, res: any) => {
   res.json(result);
 }));
 // ── Background Process Management ─────────────────────────
-router.get("/command/background/list", (_req: any, res: any) => {
+router.get("/command/background/list", (_req: Request, res: Response) => {
   res.json({ processes: listBackgroundProcesses() });
 });
-router.get("/command/background/:pid", (req: any, res: any) => {
+router.get("/command/background/:pid", (req: Request, res: Response) => {
   const pid = parseInt(req.params.pid as string, 10);
   if (isNaN(pid)) return res.status(400).json({ error: "Invalid PID" });
   const proc = getBackgroundProcess(pid);
@@ -390,21 +390,21 @@ router.get("/command/background/:pid", (req: any, res: any) => {
   res.json(proc);
 });
 // ─── 7. Git Operations ──────────────────────────────────────
-router.post("/git/status", agenticHandler(async (req: any) => {
+router.post("/git/status", agenticHandler(async (req: Request) => {
   const { path } = req.body;
   if (!path || typeof path !== "string") {
     return { error: "Request body must include 'path' (string) — path to a directory inside a git repo" };
   }
   return agenticGitStatus(path);
 }));
-router.post("/git/diff", agenticHandler(async (req: any) => {
+router.post("/git/diff", agenticHandler(async (req: Request) => {
   const { path, staged, file, ref } = req.body;
   if (!path || typeof path !== "string") {
     return { error: "Request body must include 'path' (string)" };
   }
   return agenticGitDiff(path, { staged, path: file, ref });
 }));
-router.post("/git/log", agenticHandler(async (req: any) => {
+router.post("/git/log", agenticHandler(async (req: Request) => {
   const { path, limit, author, since, file } = req.body;
   if (!path || typeof path !== "string") {
     return { error: "Request body must include 'path' (string)" };
@@ -412,7 +412,7 @@ router.post("/git/log", agenticHandler(async (req: any) => {
   return agenticGitLog(path, { limit, author, since, path: file });
 }));
 // ── Git Worktree (Coordinator Mode) ───────────────────────────
-router.post("/git/worktree/create", agenticHandler(async (req: any) => {
+router.post("/git/worktree/create", agenticHandler(async (req: Request) => {
   const { path, branch } = req.body;
   if (!path || typeof path !== "string") {
     return { error: "Request body must include 'path' (string) — path to the main git repo" };
@@ -422,7 +422,7 @@ router.post("/git/worktree/create", agenticHandler(async (req: any) => {
   }
   return agenticGitWorktreeCreate(path, branch);
 }));
-router.post("/git/worktree/remove", agenticHandler(async (req: any) => {
+router.post("/git/worktree/remove", agenticHandler(async (req: Request) => {
   const { path, worktreePath, deleteBranch } = req.body;
   if (!path || typeof path !== "string") {
     return { error: "Request body must include 'path' (string) — path to the main git repo" };
@@ -432,7 +432,7 @@ router.post("/git/worktree/remove", agenticHandler(async (req: any) => {
   }
   return agenticGitWorktreeRemove(path, worktreePath, { deleteBranch: deleteBranch !== false });
 }));
-router.post("/git/worktree/merge", agenticHandler(async (req: any) => {
+router.post("/git/worktree/merge", agenticHandler(async (req: Request) => {
   const { path, branch, message } = req.body;
   if (!path || typeof path !== "string") {
     return { error: "Request body must include 'path' (string) — path to the main git repo" };
@@ -442,7 +442,7 @@ router.post("/git/worktree/merge", agenticHandler(async (req: any) => {
   }
   return agenticGitWorktreeMerge(path, branch, { message });
 }));
-router.post("/git/worktree/diff", agenticHandler(async (req: any) => {
+router.post("/git/worktree/diff", agenticHandler(async (req: Request) => {
   const { path, branch } = req.body;
   if (!path || typeof path !== "string") {
     return { error: "Request body must include 'path' (string) — path to the main git repo" };
@@ -452,7 +452,7 @@ router.post("/git/worktree/diff", agenticHandler(async (req: any) => {
   }
   return agenticGitWorktreeDiff(path, branch);
 }));
-router.post("/git/worktree/cleanup", agenticHandler(async (req: any) => {
+router.post("/git/worktree/cleanup", agenticHandler(async (req: Request) => {
   const { path } = req.body;
   if (!path || typeof path !== "string") {
     return { error: "Request body must include 'path' (string) — path to the main git repo" };
@@ -460,7 +460,7 @@ router.post("/git/worktree/cleanup", agenticHandler(async (req: any) => {
   return agenticGitWorktreeCleanup(path);
 }));
 // ─── 8. Project Intelligence ────────────────────────────────
-router.post("/project/summary", agenticHandler(async (req: any) => {
+router.post("/project/summary", agenticHandler(async (req: Request) => {
   const { path } = req.body;
   if (!path || typeof path !== "string") {
     return { error: "Request body must include 'path' (string) — the project root directory" };
@@ -468,7 +468,7 @@ router.post("/project/summary", agenticHandler(async (req: any) => {
   return agenticProjectSummary(path);
 }));
 // ─── 9. Browser Automation ──────────────────────────────────
-router.post("/browser/action", agenticHandler(async (req: any) => {
+router.post("/browser/action", agenticHandler(async (req: Request) => {
   const { action } = req.body;
   if (!action || typeof action !== "string") {
     return { error: "Request body must include 'action' (string)" };
@@ -476,7 +476,7 @@ router.post("/browser/action", agenticHandler(async (req: any) => {
   return agenticBrowserAction(req.body);
 }));
 // ── Browser Script Execution ──────────────────────────────────
-router.post("/browser/script", agenticHandler(async (req: any) => {
+router.post("/browser/script", agenticHandler(async (req: Request) => {
   const { script, sessionId, timeout } = req.body;
   if (!script || typeof script !== "string") {
     return { error: "Request body must include 'script' (string)" };
@@ -490,7 +490,7 @@ router.post("/browser/script", agenticHandler(async (req: any) => {
 }));
 // ─── 10. LSP Code Intelligence ──────────────────────────────
 // ── LSP Action ────────────────────────────────────────────────
-router.post("/lsp/action", agenticHandler(async (req: any) => {
+router.post("/lsp/action", agenticHandler(async (req: Request) => {
   const { operation, filePath, line, character, workspacePath } = req.body;
   if (!operation || typeof operation !== "string") {
     return { error: "Request body must include 'operation' (string)" };
@@ -507,16 +507,16 @@ router.post("/lsp/action", agenticHandler(async (req: any) => {
   });
 }));
 // ── LSP Health ────────────────────────────────────────────────
-router.get("/lsp/health", (_req: any, res: any) => {
+router.get("/lsp/health", (_req: Request, res: Response) => {
   res.json(agenticLspHealth());
 });
 // ── LSP Shutdown ──────────────────────────────────────────────
-router.post("/lsp/shutdown", asyncHandler(async (_req: any, res: any) => {
+router.post("/lsp/shutdown", asyncHandler(async (_req: Request, res: Response) => {
   try {
     await agenticLspShutdown();
     res.json({ success: true, message: "All LSP servers shut down" });
-  } catch (error: any) {
-    logger.error(`LSP shutdown failed: ${error.message}`);
+  } catch (error: unknown) {
+    logger.error(`LSP shutdown failed: ${(error as Error).message}`);
     res.status(500).json({ error: "LSP shutdown failed" });
   }
 }));
@@ -566,7 +566,7 @@ export function getAgenticHealth() {
   };
 }
 // ── Unified Git Dispatcher ─────────────────────────────────────────
-router.post("/git", asyncHandler(async (req: any, res: any) => {
+router.post("/git", asyncHandler(async (req: Request, res: Response) => {
   const { action, ...params } = req.body;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["status", "diff", "log"] });
   const pathMap = { status: "/git/status", diff: "/git/diff", log: "/git/log" };
@@ -579,7 +579,7 @@ router.post("/git", asyncHandler(async (req: any, res: any) => {
 }));
 // ─── 12. Task Management ────────────────────────────────────
 // ── Create Task ───────────────────────────────────────────────
-router.post("/task/create", asyncHandler(async (req: any, res: any) => {
+router.post("/task/create", asyncHandler(async (req: Request, res: Response) => {
   const { project, subject, description, status, activeForm, metadata } = req.body;
   if (!project || typeof project !== "string") {
     return res.status(400).json({ error: "Request body must include 'project' (string)" });
@@ -597,7 +597,7 @@ router.post("/task/create", asyncHandler(async (req: any, res: any) => {
   res.json(result);
 }));
 // ── List Tasks ────────────────────────────────────────────────
-router.post("/task/list", agenticHandler(async (req: any) => {
+router.post("/task/list", agenticHandler(async (req: Request) => {
   const { project, status, limit } = req.body;
   if (!project || typeof project !== "string") {
     return { error: "Request body must include 'project' (string)" };
@@ -607,7 +607,7 @@ router.post("/task/list", agenticHandler(async (req: any) => {
     limit: limit ? parseInt(limit, 10) : undefined,
   });
 }));
-router.get("/task/list-all", asyncHandler(async (req: any) => {
+router.get("/task/list-all", asyncHandler(async (req: Request) => {
   const { status, limit, agentSessionId } = req.query as any;
   const db = (await import("../db.js")).getDB();
   const col = db.collection("agent_tasks");
@@ -633,7 +633,7 @@ router.get("/task/list-all", asyncHandler(async (req: any) => {
   return { tasks: sanitized, summary };
 }, "Task list-all", 500));
 // ── Get Task ──────────────────────────────────────────────────
-router.post("/task/get", agenticHandler(async (req: any) => {
+router.post("/task/get", agenticHandler(async (req: Request) => {
   const { project, taskId } = req.body;
   if (!project || typeof project !== "string") {
     return { error: "Request body must include 'project' (string)" };
@@ -644,7 +644,7 @@ router.post("/task/get", agenticHandler(async (req: any) => {
   return agenticTaskGet(project, taskId);
 }));
 // ── Update Task ───────────────────────────────────────────────
-router.post("/task/update", agenticHandler(async (req: any) => {
+router.post("/task/update", agenticHandler(async (req: Request) => {
   const { project, taskId, status, subject, description, activeForm, metadata } = req.body;
   if (!project || typeof project !== "string") {
     return { error: "Request body must include 'project' (string)" };
@@ -664,7 +664,7 @@ router.post("/task/update", agenticHandler(async (req: any) => {
   return agenticTaskUpdate(project, taskId, updates);
 }));
 // ── Delete Task ───────────────────────────────────────────────
-router.post("/task/delete", agenticHandler(async (req: any) => {
+router.post("/task/delete", agenticHandler(async (req: Request) => {
   const { project, taskId } = req.body;
   if (!project || typeof project !== "string") {
     return { error: "Request body must include 'project' (string)" };
@@ -676,7 +676,7 @@ router.post("/task/delete", agenticHandler(async (req: any) => {
 }));
 // ─── 13. Tool Smoke Tests ───────────────────────────────────
 // ── Single tool test ──────────────────────────────────────────
-router.post("/test-tool", asyncHandler(async (req: any, res: any) => {
+router.post("/test-tool", asyncHandler(async (req: Request, res: Response) => {
   const { toolName } = req.body;
   if (!toolName || typeof toolName !== "string") {
     return res.status(400).json({
@@ -688,7 +688,7 @@ router.post("/test-tool", asyncHandler(async (req: any, res: any) => {
   res.json(result);
 }));
 // ── Test all tools ────────────────────────────────────────────
-router.post("/test-all-tools", asyncHandler(async (req: any, res: any) => {
+router.post("/test-all-tools", asyncHandler(async (req: Request, res: Response) => {
   const { toolNames } = req.body;
   const results = await testAllTools(toolNames || undefined);
   const passed = results.filter((r: any) => r.success).length;
@@ -700,7 +700,7 @@ router.post("/test-all-tools", asyncHandler(async (req: any, res: any) => {
   });
 }));
 // ── List testable tools ───────────────────────────────────────
-router.get("/testable-tools", (_req: any, res: any) => {
+router.get("/testable-tools", (_req: Request, res: Response) => {
   res.json(getTestableTools());
 });
 // ─── 14. Memory Persistence ─────────────────────────────────
@@ -712,7 +712,7 @@ router.get("/testable-tools", (_req: any, res: any) => {
  * cosine-similarity deduplication, and MongoDB persistence.
  * Same cross-service pattern as generate_image → Prism.
  */
-router.post("/memory/upsert", asyncHandler(async (req: any, res: any) => {
+router.post("/memory/upsert", asyncHandler(async (req: Request, res: Response) => {
   const { content, type, title } = req.body;
   if (!content || typeof content !== "string") {
     return res.status(400).json({ error: "Request body must include 'content' (string)" });
@@ -744,8 +744,8 @@ router.post("/memory/upsert", asyncHandler(async (req: any, res: any) => {
     }
     const result = await prismRes.json();
     res.json(result);
-  } catch (error: any) {
-    res.status(500).json({ error: `Memory storage failed: ${error.message}` });
+  } catch (error: unknown) {
+    res.status(500).json({ error: `Memory storage failed: ${(error as Error).message}` });
   }
 }));
 // ─── 15. Custom Agent Creation ──────────────────────────────
@@ -758,7 +758,7 @@ router.post("/memory/upsert", asyncHandler(async (req: any, res: any) => {
  *
  * Same cross-service pattern as memory/upsert → Prism.
  */
-router.post("/custom-agent/create", asyncHandler(async (req: any, res: any) => {
+router.post("/custom-agent/create", asyncHandler(async (req: Request, res: Response) => {
   const {
     name,
     description,
@@ -813,8 +813,8 @@ router.post("/custom-agent/create", asyncHandler(async (req: any, res: any) => {
     }
     const created = await prismRes.json();
     res.status(201).json(created);
-  } catch (error: any) {
-    res.status(500).json({ error: `Custom agent creation failed: ${error.message}` });
+  } catch (error: unknown) {
+    res.status(500).json({ error: `Custom agent creation failed: ${(error as Error).message}` });
   }
 }));
 // ── List Custom Agents ────────────────────────────────────────
@@ -824,7 +824,7 @@ router.post("/custom-agent/create", asyncHandler(async (req: any, res: any) => {
  * Returns all custom agent personas by proxying to Prism's
  * GET /custom-agents. Read-only discovery for the agentic loop.
  */
-router.get("/custom-agent/list", asyncHandler(async (_req: any, res: any) => {
+router.get("/custom-agent/list", asyncHandler(async (_req: Request, res: Response) => {
   try {
     const prismRes = await fetch(`${CONFIG.PRISM_SERVICE_URL}/custom-agents`);
     if (!prismRes.ok) {
@@ -833,8 +833,8 @@ router.get("/custom-agent/list", asyncHandler(async (_req: any, res: any) => {
     }
     const agents = await prismRes.json();
     res.json({ agents, count: agents.length });
-  } catch (error: any) {
-    res.status(500).json({ error: `Custom agent list failed: ${error.message}` });
+  } catch (error: unknown) {
+    res.status(500).json({ error: `Custom agent list failed: ${(error as Error).message}` });
   }
 }));
 // ── Update Custom Agent ───────────────────────────────────────
@@ -845,7 +845,7 @@ router.get("/custom-agent/list", asyncHandler(async (_req: any, res: any) => {
  * PUT /custom-agents/:id. Accepts partial updates — only
  * the fields you provide will be changed.
  */
-router.post("/custom-agent/update", asyncHandler(async (req: any, res: any) => {
+router.post("/custom-agent/update", asyncHandler(async (req: Request, res: Response) => {
   const {
     id,
     name,
@@ -901,12 +901,12 @@ router.post("/custom-agent/update", asyncHandler(async (req: any, res: any) => {
     }
     const updated = await prismRes.json();
     res.json(updated);
-  } catch (error: any) {
-    res.status(500).json({ error: `Custom agent update failed: ${error.message}` });
+  } catch (error: unknown) {
+    res.status(500).json({ error: `Custom agent update failed: ${(error as Error).message}` });
   }
 }));
 // ─── 16. Tool Search (Meta-Tool) ────────────────────────────
-router.post("/tool/search", agenticHandler(async (req: any) => {
+router.post("/tool/search", agenticHandler(async (req: Request) => {
   const { query, domain, label, limit } = req.body;
   if (!query && !domain && !label) {
     return { error: "At least one of 'query', 'domain', or 'label' is required" };
@@ -919,7 +919,7 @@ router.post("/tool/search", agenticHandler(async (req: any) => {
 }));
 // ─── 17. Scheduling (Cron + Remote Trigger) ─────────────────
 // ── Create Schedule ───────────────────────────────────────────
-router.post("/schedule/create", agenticHandler(async (req: any) => {
+router.post("/schedule/create", agenticHandler(async (req: Request) => {
   const { project, name, schedule, prompt, type, agent, model } = req.body;
   if (!project || typeof project !== "string") {
     return { error: "Request body must include 'project' (string)" };
@@ -933,7 +933,7 @@ router.post("/schedule/create", agenticHandler(async (req: any) => {
   return agenticScheduleCreate({ project, name, schedule, prompt, type, agent, model });
 }));
 // ── List Schedules ────────────────────────────────────────────
-router.post("/schedule/list", agenticHandler(async (req: any) => {
+router.post("/schedule/list", agenticHandler(async (req: Request) => {
   const { project, type, limit } = req.body;
   if (!project || typeof project !== "string") {
     return { error: "Request body must include 'project' (string)" };
@@ -944,7 +944,7 @@ router.post("/schedule/list", agenticHandler(async (req: any) => {
   });
 }));
 // ── Delete Schedule ───────────────────────────────────────────
-router.post("/schedule/delete", agenticHandler(async (req: any) => {
+router.post("/schedule/delete", agenticHandler(async (req: Request) => {
   const { project, scheduleId } = req.body;
   if (!project || typeof project !== "string") {
     return { error: "Request body must include 'project' (string)" };
@@ -955,7 +955,7 @@ router.post("/schedule/delete", agenticHandler(async (req: any) => {
   return agenticScheduleDelete(project, scheduleId);
 }));
 // ── Fire Remote Trigger ───────────────────────────────────────
-router.post("/trigger/fire", agenticHandler(async (req: any) => {
+router.post("/trigger/fire", agenticHandler(async (req: Request) => {
   const { project, triggerName, payload } = req.body;
   if (!project || typeof project !== "string") {
     return { error: "Request body must include 'project' (string)" };
@@ -966,7 +966,7 @@ router.post("/trigger/fire", agenticHandler(async (req: any) => {
   return agenticTriggerFire(project, triggerName, payload || {});
 }));
 // ─── 18. Notebook Editing ───────────────────────────────────
-router.post("/notebook/edit", agenticHandler(async (req: any) => {
+router.post("/notebook/edit", agenticHandler(async (req: Request) => {
   const { path, action, cellIndex, content, cellType } = req.body;
   if (!path || typeof path !== "string") {
     return { error: "Request body must include 'path' (string) — path to .ipynb file" };
@@ -992,7 +992,7 @@ import { executeJavaScript } from "../services/JavaScriptInterpreterService.ts";
  *
  * Persisted to Prism's custom_tools MongoDB collection via cross-service proxy.
  */
-router.post("/custom-tool/create", asyncHandler(async (req: any, res: any) => {
+router.post("/custom-tool/create", asyncHandler(async (req: Request, res: Response) => {
   const {
     name,
     description,
@@ -1031,8 +1031,8 @@ router.post("/custom-tool/create", asyncHandler(async (req: any, res: any) => {
     }
     const created = await prismRes.json();
     res.status(201).json(created);
-  } catch (error: any) {
-    res.status(500).json({ error: `Custom tool creation failed: ${error.message}` });
+  } catch (error: unknown) {
+    res.status(500).json({ error: `Custom tool creation failed: ${(error as Error).message}` });
   }
 }));
 // ── List Custom Tools ─────────────────────────────────────────
@@ -1042,7 +1042,7 @@ router.post("/custom-tool/create", asyncHandler(async (req: any, res: any) => {
  * Returns all custom tools for the current project + username
  * by proxying to Prism's GET /custom-tools.
  */
-router.get("/custom-tool/list", asyncHandler(async (req: any, res: any) => {
+router.get("/custom-tool/list", asyncHandler(async (req: Request, res: Response) => {
   const project = (req.headers["x-project"] || req.query.project || "default") as string;
   const username = (req.headers["x-username"] || req.query.username || null) as string;
   try {
@@ -1058,8 +1058,8 @@ router.get("/custom-tool/list", asyncHandler(async (req: any, res: any) => {
     }
     const tools = await prismRes.json();
     res.json({ tools, count: tools.length });
-  } catch (error: any) {
-    res.status(500).json({ error: `Custom tool list failed: ${error.message}` });
+  } catch (error: unknown) {
+    res.status(500).json({ error: `Custom tool list failed: ${(error as Error).message}` });
   }
 }));
 // ── Update Custom Tool ────────────────────────────────────────
@@ -1069,7 +1069,7 @@ router.get("/custom-tool/list", asyncHandler(async (req: any, res: any) => {
  * Updates an existing custom tool by proxying to Prism's
  * PUT /custom-tools/:id. Accepts partial updates.
  */
-router.post("/custom-tool/update", asyncHandler(async (req: any, res: any) => {
+router.post("/custom-tool/update", asyncHandler(async (req: Request, res: Response) => {
   const { id, name, description, code, parameters, enabled } = req.body;
   if (!id || typeof id !== "string") {
     return res.status(400).json({ error: "Request body must include 'id' (string — the tool's MongoDB ObjectId)" });
@@ -1092,8 +1092,8 @@ router.post("/custom-tool/update", asyncHandler(async (req: any, res: any) => {
     }
     const updated = await prismRes.json();
     res.json(updated);
-  } catch (error: any) {
-    res.status(500).json({ error: `Custom tool update failed: ${error.message}` });
+  } catch (error: unknown) {
+    res.status(500).json({ error: `Custom tool update failed: ${(error as Error).message}` });
   }
 }));
 // ── Delete Custom Tool ────────────────────────────────────────
@@ -1103,7 +1103,7 @@ router.post("/custom-tool/update", asyncHandler(async (req: any, res: any) => {
  * Deletes a custom tool by proxying to Prism's
  * DELETE /custom-tools/:id.
  */
-router.post("/custom-tool/delete", asyncHandler(async (req: any, res: any) => {
+router.post("/custom-tool/delete", asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.body;
   if (!id || typeof id !== "string") {
     return res.status(400).json({ error: "Request body must include 'id' (string — the tool's MongoDB ObjectId)" });
@@ -1118,8 +1118,8 @@ router.post("/custom-tool/delete", asyncHandler(async (req: any, res: any) => {
     }
     const result = await prismRes.json();
     res.json(result);
-  } catch (error: any) {
-    res.status(500).json({ error: `Custom tool deletion failed: ${error.message}` });
+  } catch (error: unknown) {
+    res.status(500).json({ error: `Custom tool deletion failed: ${(error as Error).message}` });
   }
 }));
 // ── Execute Custom Tool Code ──────────────────────────────────
@@ -1133,7 +1133,7 @@ router.post("/custom-tool/delete", asyncHandler(async (req: any, res: any) => {
  * a code-based custom tool is invoked during an agentic loop.
  * It is NOT a tool schema — it's an internal execution endpoint.
  */
-router.post("/custom-tool/execute", asyncHandler(async (req: any, res: any) => {
+router.post("/custom-tool/execute", asyncHandler(async (req: Request, res: Response) => {
   const { code, args, execution } = req.body;
   if (!code || typeof code !== "string") {
     return res.status(400).json({ error: "Request body must include 'code' (string)" });

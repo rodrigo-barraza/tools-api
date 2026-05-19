@@ -84,7 +84,7 @@ export async function searchPapers(
   const xml = await response.text();
   // Parse total results from feed
   const totalResults =
-    parseInt(extractXmlTag(xml, "opensearch:totalResults"), 10) || 0;
+    parseInt(extractXmlTag(xml, "opensearch:totalResults") ?? "0", 10) || 0;
   // Parse entries
   const entries = extractXmlItems(xml, "entry");
   const papers = entries.map(parseEntry);

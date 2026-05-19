@@ -1,5 +1,5 @@
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
-import { Router } from "express";
+import { Request, Response, Router } from "express";
 import {
   browseRoute,
   getFacetValues,
@@ -13,12 +13,12 @@ router.get(
   asyncHandler(() => getEnergyIndicators(), "Energy indicators fetch"),
 );
 // ─── Browse Data Tree ──────────────────────────────────────────────
-router.get("/browse", asyncHandler((req: any) => {
+router.get("/browse", asyncHandler((req: Request) => {
   const route = req.query.route as string || "";
   return browseRoute(route);
 }, "EIA browse"));
 // ─── Facet Values ──────────────────────────────────────────────────
-router.get("/facets", asyncHandler(async (req: any, res: any) => {
+router.get("/facets", asyncHandler(async (req: Request, res: Response) => {
   const { route, facetId } = req.query as any;
   if (!route || !facetId) {
     return res
@@ -27,14 +27,14 @@ router.get("/facets", asyncHandler(async (req: any, res: any) => {
   }
   try {
     res.json(await getFacetValues(route, facetId));
-  } catch (error: any) {
+  } catch (error: unknown) {
     res
       .status(502)
-      .json({ error: `Facet fetch failed: ${error.message}` });
+      .json({ error: `Facet fetch failed: ${(error as Error).message}` });
   }
 }));
 // ─── Data Query ────────────────────────────────────────────────────
-router.get("/data", asyncHandler(async (req: any) => {
+router.get("/data", asyncHandler(async (req: Request) => {
   const { route, frequency, start, end, sort, length, offset, ...rest } =
     req.query as any;
   if (!route) {
@@ -73,7 +73,7 @@ router.get("/data", asyncHandler(async (req: any) => {
 // ─── Convenience: Electricity ──────────────────────────────────────
 router.get(
   "/electricity/retail-sales",
-  asyncHandler((req: any) => {
+  asyncHandler((req: Request) => {
     const { state, sector, frequency, start, end, length } = req.query as any;
     const facets: Record<string, any> = {};
     if (state) facets.stateid = Array.isArray(state) ? state : [state];
@@ -92,7 +92,7 @@ router.get(
 // ─── Convenience: Petroleum Prices ─────────────────────────────────
 router.get(
   "/petroleum/prices",
-  asyncHandler((req: any) => {
+  asyncHandler((req: Request) => {
     const { product, area, frequency, start, end, length } = req.query as any;
     const facets: Record<string, any> = {};
     if (product) facets.product = Array.isArray(product) ? product : [product];
@@ -111,7 +111,7 @@ router.get(
 // ─── Convenience: Natural Gas Prices ───────────────────────────────
 router.get(
   "/natural-gas/prices",
-  asyncHandler((req: any) => {
+  asyncHandler((req: Request) => {
     const { process: process_, area, frequency, start, end, length } = req.query as any;
     const facets: Record<string, any> = {};
     if (process_) facets.process = Array.isArray(process_) ? process_ : [process_];

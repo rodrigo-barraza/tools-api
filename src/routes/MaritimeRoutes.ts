@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Request, Response, Router } from "express";
 import {
   getTrackedVessels,
   getVesselByMmsi,
@@ -12,7 +12,7 @@ const router = Router();
 
 // ─── Tracked Vessels (latest known state per MMSI) ─────────────────
 
-router.get("/vessels", (_req: any, res: any) => {
+router.get("/vessels", (_req: Request, res: Response) => {
   const limit = parseInt(_req.query.limit as string, 10) || 100;
   const vessels = getTrackedVessels(limit);
   res.json({ count: vessels.length, vessels });
@@ -20,7 +20,7 @@ router.get("/vessels", (_req: any, res: any) => {
 
 // ─── Vessel by MMSI ────────────────────────────────────────────────
 
-router.get("/vessels/:mmsi", (req: any, res: any) => {
+router.get("/vessels/:mmsi", (req: Request, res: Response) => {
   const vessel = getVesselByMmsi(req.params.mmsi as string);
   if (!vessel) {
     return res
@@ -32,7 +32,7 @@ router.get("/vessels/:mmsi", (req: any, res: any) => {
 
 // ─── Vessel Search ─────────────────────────────────────────────────
 
-router.get("/search", (req: any, res: any) => {
+router.get("/search", (req: Request, res: Response) => {
   const { q, limit } = req.query as any;
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
@@ -43,7 +43,7 @@ router.get("/search", (req: any, res: any) => {
 
 // ─── Vessels in Area ───────────────────────────────────────────────
 
-router.get("/area", (req: any, res: any) => {
+router.get("/area", (req: Request, res: Response) => {
   const { minLat, maxLat, minLng, maxLng, limit } = req.query as any;
   if (!minLat || !maxLat || !minLng || !maxLng) {
     return res
@@ -62,7 +62,7 @@ router.get("/area", (req: any, res: any) => {
 
 // ─── Recent Messages (raw stream buffer) ───────────────────────────
 
-router.get("/messages", (req: any, res: any) => {
+router.get("/messages", (req: Request, res: Response) => {
   const { limit, type } = req.query as any;
   const messages = getRecentMessages(parseInt(limit, 10) || 50, type || null);
   res.json({ count: messages.length, messages });

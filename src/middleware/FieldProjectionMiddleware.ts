@@ -1,5 +1,7 @@
 // ─── Field Projection Middleware (Sparse Fieldsets) ─────────
 
+import type { Request, Response, NextFunction } from "express";
+
 /**
  * Known wrapper keys that contain arrays of domain objects.
  * When projecting, these arrays' items get projected individually,
@@ -35,19 +37,18 @@ const INTERNAL_FIELDS = new Set(["_id", "__v", "firstSeen", "lastSeen"]);
  * Pick only the specified field paths from an object.
  * Supports dot-notation paths (e.g. "venue.name").
  *
-
-
+ *
  * @returns {object} New object with only the requested fields
  */
-function pickFields(object: any, fieldPaths: any) {
+function pickFields(object: Record<string, unknown>, fieldPaths: string[]): Record<string, unknown> {
   if (!object || typeof object !== "object" || Array.isArray(object)) return object;
 
-  const result: Record<string, any> = {};
+  const result: Record<string, unknown> = {};
 
   for (const path of fieldPaths) {
     const parts = path.split(".");
-    let source = object;
-    let target = result;
+    let source: Record<string, unknown> = object;
+    let target: Record<string, unknown> = result;
 
     for (let i = 0; i < parts.length; i++) {
       const key = parts[i];
@@ -63,8 +64,8 @@ function pickFields(object: any, fieldPaths: any) {
         if (!(key in target)) {
           target[key] = {};
         }
-        target = target[key];
-        source = source[key];
+        target = target[key] as Record<string, unknown>;
+        source = source[key] as Record<string, unknown>;
       }
     }
   }
@@ -75,13 +76,12 @@ function pickFields(object: any, fieldPaths: any) {
 /**
  * Strip internal/MongoDB fields from an object (shallow).
  *
-
  * @returns {object} Cleaned object
  */
-function stripInternal(object: any) {
+function stripInternal(object: Record<string, unknown>): Record<string, unknown> {
   if (!object || typeof object !== "object" || Array.isArray(object)) return object;
 
-  const result: Record<string, any> = {};
+  const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(object)) {
     if (!INTERNAL_FIELDS.has(key)) {
       result[key] = value;
@@ -93,43 +93,42 @@ function stripInternal(object: any) {
 /**
  * Apply field projection and internal-field stripping to a response body.
  *
-
-
+ *
  * @returns {*} Projected response
  */
-function projectResponse(data: any, fields: any) {
+function projectResponse(data: unknown, fields: string[] | null): unknown {
   if (data == null || typeof data !== "object") return data;
 
   // Single array response (rare — e.g. /commodities/categories)
   if (Array.isArray(data)) {
-    if (!fields) return data.map(stripInternal);
-    return data.map((item: any) =>
+    if (!fields) return data.map((item) => stripInternal(item as Record<string, unknown>));
+    return data.map((item) =>
       typeof item === "object" && item !== null
-        ? pickFields(stripInternal(item), fields)
+        ? pickFields(stripInternal(item as Record<string, unknown>), fields)
         : item,
     );
   }
 
   // Object response — check for wrapper arrays
-  const cleaned = stripInternal(data);
+  const cleaned = stripInternal(data as Record<string, unknown>) as Record<string, unknown>;
 
   // Find wrapper array keys present in this response
   const wrapperKey = Object.keys(cleaned).find(
-    (key: any) => ARRAY_WRAPPER_KEYS.has(key) && Array.isArray(cleaned[key]),
+    (key) => ARRAY_WRAPPER_KEYS.has(key) && Array.isArray(cleaned[key]),
   );
 
   if (wrapperKey) {
     // Strip internal fields from array items
-    cleaned[wrapperKey] = cleaned[wrapperKey].map(stripInternal);
+    cleaned[wrapperKey] = (cleaned[wrapperKey] as Record<string, unknown>[]).map(stripInternal);
 
     // Apply field projection to array items if requested
     if (fields) {
       const prefix = wrapperKey + ".";
-      const hasWrapperPrefix = fields.some((f: any) => f.startsWith(prefix));
+      const hasWrapperPrefix = fields.some((f) => f.startsWith(prefix));
 
       // Separate fields targeting wrapper items vs top-level metadata
-      const itemFields: any[] = [];
-      const topFields: any[] = [];
+      const itemFields: string[] = [];
+      const topFields: string[] = [];
 
       for (const f of fields) {
         if (f.startsWith(prefix)) {
@@ -150,7 +149,7 @@ function projectResponse(data: any, fields: any) {
 
       // Project items only if there are item-level fields
       if (itemFields.length > 0) {
-        cleaned[wrapperKey] = cleaned[wrapperKey].map((item: any) =>
+        cleaned[wrapperKey] = (cleaned[wrapperKey] as Record<string, unknown>[]).map((item) =>
           typeof item === "object" && item !== null
             ? pickFields(item, itemFields)
             : item,
@@ -159,7 +158,7 @@ function projectResponse(data: any, fields: any) {
 
       // If top-level metadata fields were specified, project those too
       if (topFields.length > 0) {
-        const projected = pickFields(cleaned, topFields);
+        const projected = pickFields(cleaned, topFields) as Record<string, unknown>;
         projected[wrapperKey] = cleaned[wrapperKey];
         return projected;
       }
@@ -180,19 +179,19 @@ function projectResponse(data: any, fields: any) {
  * Express middleware that enables sparse fieldsets via ?fields=a,b,c.d.
  * Also strips internal MongoDB fields (_id, __v, etc.) from all responses.
  */
-export function fieldProjectionMiddleware(req: any, res: any, next: any) {
-  const fieldsParam = req.query.fields;
+export function fieldProjectionMiddleware(req: Request, res: Response, next: NextFunction) {
+  const fieldsParam = req.query.fields as string | undefined;
   const fields = fieldsParam
     ? fieldsParam
         .split(",")
-        .map((f: any) => f.trim())
+        .map((f) => f.trim())
         .filter(Boolean)
     : null;
 
   // Override res.json to intercept the response
   const originalJson = res.json.bind(res);
 
-  res.json = (data: any) => {
+  res.json = (data: unknown) => {
     return originalJson(projectResponse(data, fields));
   };
 

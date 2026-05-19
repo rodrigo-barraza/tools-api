@@ -1,6 +1,6 @@
 // ─── Workspace Agent Status Endpoints ───────────────────────
 
-import { Router } from "express";
+import { Request, Response, Router } from "express";
 import { getConnectedAgents } from "../services/AgentConnectionManager.ts";
 
 const router = Router();
@@ -8,7 +8,7 @@ const router = Router();
 /**
  * GET /agents — List all connected workspace agents.
  */
-router.get("/", (_req: any, res: any) => {
+router.get("/", (_req: Request, res: Response) => {
   const agents = getConnectedAgents();
   res.json({
     count: agents.length,
@@ -19,7 +19,7 @@ router.get("/", (_req: any, res: any) => {
 /**
  * GET /agents/:id — Get a specific agent's details.
  */
-router.get("/:id", (req: any, res: any) => {
+router.get("/:id", (req: Request, res: Response) => {
   const agents = getConnectedAgents();
   const agent = agents.find((a: any) => a.id === req.params.id as string);
   if (!agent) {

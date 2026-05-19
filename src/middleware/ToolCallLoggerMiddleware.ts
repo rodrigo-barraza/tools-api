@@ -1,11 +1,69 @@
 // ─── Tool Call Logger Middleware ────────────────────────────
 
 import { performance } from "node:perf_hooks";
+import type { Request, Response, NextFunction } from "express";
 import logger from "../logger.ts";
 import { getDB } from "../db.ts";
 import { getToolSchemas } from "../services/ToolSchemaService.ts";
 
 const COLLECTION = "tool_calls";
+
+// ────────────────────────────────────────────────────────────
+// Interfaces
+// ────────────────────────────────────────────────────────────
+
+interface ToolEntry {
+  toolName: string;
+  domain: string;
+  method?: string;
+}
+
+interface ToolCallLogEntry {
+  toolName: string;
+  domain: string;
+  method: string;
+  path: string;
+  status: number;
+  success: boolean;
+  errorMessage: string | null;
+  elapsedMs: number;
+  inBytes: number;
+  outBytes: number;
+  args: Record<string, unknown> | null;
+  result: Record<string, unknown> | null;
+  callerProject: string | null;
+  callerUsername: string | null;
+  callerAgent: string | null;
+  callerRequestId: string | null;
+  callerConversationId: string | null;
+  callerIteration: number | null;
+  clientIp: string;
+  timestamp: Date;
+}
+
+interface ToolCallFilters {
+  toolName?: string;
+  domain?: string;
+  success?: string | boolean;
+  callerAgent?: string;
+  callerProject?: string;
+  minMs?: string;
+  maxMs?: string;
+  since?: string;
+  until?: string;
+  limit?: string;
+  skip?: string;
+}
+
+interface AggregateDoc {
+  _id: string | boolean;
+  count: number;
+  avgMs?: number;
+  maxMs?: number;
+  minMs?: number;
+  errors?: number;
+  totalBytes?: number;
+}
 
 // ────────────────────────────────────────────────────────────
 // Reverse Map: HTTP path -> { toolName, domain }
@@ -14,7 +72,7 @@ const COLLECTION = "tool_calls";
 // in case tool definitions change at runtime.
 
 // Map: path -> { toolName, domain, method }
-let pathToToolMap = new Map();
+let pathToToolMap = new Map<string, ToolEntry>();
 let lastMapBuild = 0;
 const MAP_REBUILD_INTERVAL_MS = 60_000; // Rebuild every 60s
 
@@ -24,7 +82,7 @@ const MAP_REBUILD_INTERVAL_MS = 60_000; // Rebuild every 60s
  * e.g. "/weather/live" stays "/weather/live"
  *      "/finance/stock/:symbol/quote" becomes "/finance/stock/STAR/quote"
  */
-function normalizePathTemplate(pathTemplate: any) {
+function normalizePathTemplate(pathTemplate: string): string {
   return pathTemplate.replace(/:[^/]+/g, "*");
 }
 
@@ -32,7 +90,7 @@ function normalizePathTemplate(pathTemplate: any) {
  * Normalize an actual request path to match against templates.
  * Replaces path segments that look like dynamic values.
  */
-function normalizeRequestPath(actualPath: any) {
+function normalizeRequestPath(actualPath: string): string {
   // Strip query string
   const clean = actualPath.split("?")[0];
   return clean;
@@ -43,7 +101,7 @@ function normalizeRequestPath(actualPath: any) {
  */
 function rebuildPathMap() {
   const schemas = getToolSchemas();
-  const newMap = new Map();
+  const newMap = new Map<string, ToolEntry>();
 
   for (const schema of schemas) {
     if (!schema.endpoint?.path) continue;
@@ -61,11 +119,11 @@ function rebuildPathMap() {
 
 /**
  * Resolve a request to its tool metadata.
-
-
+ *
+ *
  * @returns {{ toolName: string, domain: string } | null}
  */
-function resolveToolFromRequest(method: any, path: any) {
+function resolveToolFromRequest(method: string, path: string): ToolEntry | null {
   // Rebuild map periodically
   if (Date.now() - lastMapBuild > MAP_REBUILD_INTERVAL_MS) {
     rebuildPathMap();
@@ -75,7 +133,7 @@ function resolveToolFromRequest(method: any, path: any) {
 
   // Direct match first (most common — non-parameterized routes)
   if (pathToToolMap.has(cleanPath)) {
-    const entry = pathToToolMap.get(cleanPath);
+    const entry = pathToToolMap.get(cleanPath)!;
     if (!entry.method || entry.method === method) {
       return entry;
     }
@@ -111,15 +169,15 @@ function resolveToolFromRequest(method: any, path: any) {
  * Intercepts responses, identifies which tool was called,
  * and persists structured telemetry to MongoDB.
  */
-export function toolCallLoggerMiddleware(req: any, res: any, next: any) {
+export function toolCallLoggerMiddleware(req: Request, res: Response, next: NextFunction) {
   const start = performance.now();
 
   // Capture the response body by monkey-patching res.json
   const originalJson = res.json.bind(res);
-  let responseBody: any = null;
+  let responseBody: Record<string, unknown> | null = null;
 
-  res.json = (data: any) => {
-    responseBody = data;
+  res.json = (data: unknown) => {
+    responseBody = data as Record<string, unknown>;
     return originalJson(data);
   };
 
@@ -141,24 +199,24 @@ export function toolCallLoggerMiddleware(req: any, res: any, next: any) {
     if (!tool) return;
 
     // Extract caller context from headers (sent by Prism/Prism Client)
-    const callerProject = req.headers["x-project"] || null;
-    const callerUsername = req.headers["x-username"] || null;
-    const callerAgent = req.headers["x-agent"] || null;
-    const callerRequestId = req.headers["x-request-id"] || null;
-    const callerConversationId = req.headers["x-conversation-id"] || null;
+    const callerProject = (req.headers["x-project"] as string) || null;
+    const callerUsername = (req.headers["x-username"] as string) || null;
+    const callerAgent = (req.headers["x-agent"] as string) || null;
+    const callerRequestId = (req.headers["x-request-id"] as string) || null;
+    const callerConversationId = (req.headers["x-conversation-id"] as string) || null;
     const callerIteration = req.headers["x-iteration"]
-      ? parseInt(req.headers["x-iteration"], 10)
+      ? parseInt(req.headers["x-iteration"] as string, 10)
       : null;
     const clientIp =
-      req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.ip;
+      (req.headers["x-forwarded-for"] as string | undefined)?.split(",")[0]?.trim() || req.ip || "unknown";
 
     // Request / response sizes
     const inBytes = parseInt(req.headers["content-length"] || "0", 10);
-    const outBytes = parseInt(res.getHeader("content-length") || "0", 10);
+    const outBytes = parseInt(String(res.getHeader("content-length") || "0"), 10);
 
     // Determine success from status code AND response body
     const success = status >= 200 && status < 400 && !responseBody?.error;
-    const errorMessage = responseBody?.error || null;
+    const errorMessage = (responseBody?.error as string) || null;
 
     // Sanitize args — strip large payloads to keep docs lean
     const args = sanitizeArgs(method === "POST" ? req.body : req.query);
@@ -212,10 +270,10 @@ const MAX_RESULT_ITEMS = 3;
  * Sanitize tool arguments for storage. Caps long strings,
  * strips base64 data, keeps structure readable.
  */
-function sanitizeArgs(args: any) {
+function sanitizeArgs(args: Record<string, unknown> | null): Record<string, unknown> | null {
   if (!args || typeof args !== "object") return args;
 
-  const sanitized: Record<string, any> = {};
+  const sanitized: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(args)) {
     if (typeof value === "string" && value.length > MAX_ARG_LENGTH) {
       sanitized[key] = value.slice(0, MAX_ARG_LENGTH) + `… [${value.length} chars]`;
@@ -232,10 +290,10 @@ function sanitizeArgs(args: any) {
  * Sanitize the response body for storage. Keeps metadata
  * (count, total, etc.) but truncates large arrays/objects.
  */
-function sanitizeResult(body: any) {
+function sanitizeResult(body: Record<string, unknown> | null): Record<string, unknown> | null {
   if (!body || typeof body !== "object") return body;
 
-  const result: Record<string, any> = {};
+  const result: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(body)) {
     if (Array.isArray(value)) {
@@ -248,8 +306,8 @@ function sanitizeResult(body: any) {
       result[key] = value;
     } else if (typeof value === "object" && value !== null) {
       // Keep shallow objects, but cap nested arrays
-      const nested: Record<string, any> = {};
-      for (const [nk, nv] of Object.entries(value)) {
+      const nested: Record<string, unknown> = {};
+      for (const [nk, nv] of Object.entries(value as Record<string, unknown>)) {
         if (Array.isArray(nv)) {
           nested[nk] = { _type: "array", _count: nv.length };
         } else {
@@ -272,7 +330,7 @@ function sanitizeResult(body: any) {
 /**
  * Persist a tool-call log entry to MongoDB.
  */
-export async function persistToolCall(entry: any) {
+export async function persistToolCall(entry: ToolCallLogEntry) {
   try {
     const db = getDB();
     await db.collection(COLLECTION).insertOne(entry);
@@ -287,13 +345,13 @@ export async function persistToolCall(entry: any) {
 
 /**
  * Query tool-call logs with optional filters.
-
-
+ *
+ *
  * @returns {Promise<{ total: number, count: number, toolCalls: object[] }>}
  */
-export async function queryToolCallLogs(filters: Record<string, any> = {}) {
+export async function queryToolCallLogs(filters: ToolCallFilters = {}) {
   const db = getDB();
-  const query: Record<string, any> = {};
+  const query: Record<string, unknown> = {};
 
   if (filters.toolName) query.toolName = filters.toolName;
   if (filters.domain) query.domain = filters.domain;
@@ -303,14 +361,14 @@ export async function queryToolCallLogs(filters: Record<string, any> = {}) {
 
   if (filters.minMs || filters.maxMs) {
     query.elapsedMs = {};
-    if (filters.minMs) query.elapsedMs.$gte = parseFloat(filters.minMs);
-    if (filters.maxMs) query.elapsedMs.$lte = parseFloat(filters.maxMs);
+    if (filters.minMs) (query.elapsedMs as Record<string, number>).$gte = parseFloat(filters.minMs);
+    if (filters.maxMs) (query.elapsedMs as Record<string, number>).$lte = parseFloat(filters.maxMs);
   }
 
   if (filters.since || filters.until) {
     query.timestamp = {};
-    if (filters.since) query.timestamp.$gte = new Date(filters.since);
-    if (filters.until) query.timestamp.$lte = new Date(filters.until);
+    if (filters.since) (query.timestamp as Record<string, Date>).$gte = new Date(filters.since);
+    if (filters.until) (query.timestamp as Record<string, Date>).$lte = new Date(filters.until);
   }
 
   const limit = parseInt(filters.limit || "100", 10);
@@ -332,10 +390,8 @@ export async function queryToolCallLogs(filters: Record<string, any> = {}) {
 
 /**
  * Get aggregated tool-call statistics.
-
-
  */
-export async function getToolCallStats(since: any) {
+export async function getToolCallStats(since?: string) {
   const db = getDB();
   const match = since ? { timestamp: { $gte: new Date(since) } } : {};
 
@@ -436,7 +492,7 @@ export async function getToolCallStats(since: any) {
   ]);
 
   const successMap = Object.fromEntries(
-    bySuccess.map((s: any) => [s._id ? "success" : "failure", s.count]),
+    bySuccess.map((s) => [(s as AggregateDoc)._id ? "success" : "failure", (s as AggregateDoc).count]),
   );
 
   return {
@@ -444,23 +500,23 @@ export async function getToolCallStats(since: any) {
     successRate: totalCalls > 0
       ? Math.round(((successMap.success || 0) / totalCalls) * 10000) / 100
       : 0,
-    byTool: byTool.map((t: any) => ({
-      toolName: t._id,
-      count: t.count,
-      avgMs: Math.round(t.avgMs * 100) / 100,
-      maxMs: Math.round(t.maxMs * 100) / 100,
-      minMs: Math.round(t.minMs * 100) / 100,
-      errors: t.errors,
-      errorRate: t.count > 0
-        ? Math.round((t.errors / t.count) * 10000) / 100
+    byTool: byTool.map((t) => ({
+      toolName: (t as AggregateDoc)._id,
+      count: (t as AggregateDoc).count,
+      avgMs: Math.round(((t as AggregateDoc).avgMs || 0) * 100) / 100,
+      maxMs: Math.round(((t as AggregateDoc).maxMs || 0) * 100) / 100,
+      minMs: Math.round(((t as AggregateDoc).minMs || 0) * 100) / 100,
+      errors: (t as AggregateDoc).errors || 0,
+      errorRate: (t as AggregateDoc).count > 0
+        ? Math.round((((t as AggregateDoc).errors || 0) / (t as AggregateDoc).count) * 10000) / 100
         : 0,
-      totalTransferBytes: t.totalBytes,
+      totalTransferBytes: (t as AggregateDoc).totalBytes || 0,
     })),
-    byDomain: byDomain.map((d: any) => ({
-      domain: d._id,
-      count: d.count,
-      avgMs: Math.round(d.avgMs * 100) / 100,
-      errors: d.errors,
+    byDomain: byDomain.map((d) => ({
+      domain: (d as AggregateDoc)._id,
+      count: (d as AggregateDoc).count,
+      avgMs: Math.round(((d as AggregateDoc).avgMs || 0) * 100) / 100,
+      errors: (d as AggregateDoc).errors || 0,
     })),
     breakdown: successMap,
     slowest,
@@ -491,7 +547,7 @@ export async function setupToolCallsCollection() {
     ]);
 
     logger.info(`📊 tool_calls collection indexes ensured`);
-  } catch (error: any) {
-    logger.error(`Failed to setup tool_calls indexes: ${error.message}`);
+  } catch (error: unknown) {
+    logger.error(`Failed to setup tool_calls indexes: ${(error as Error).message}`);
   }
 }

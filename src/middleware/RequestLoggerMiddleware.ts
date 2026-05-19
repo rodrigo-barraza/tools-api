@@ -1,9 +1,40 @@
 import { performance } from "node:perf_hooks";
+import type { Request, Response, NextFunction } from "express";
 import { formatBytes } from "@rodrigo-barraza/utilities-library";
 import logger from "../logger.ts";
 import { getDB } from "../db.ts";
 
 const COLLECTION = "requests";
+
+// ─── Interfaces ──────────────────────────────────────────────
+
+interface RequestLogEntry {
+  method: string;
+  path: string;
+  status: number;
+  clientIp: string;
+  elapsedMs: number;
+  inBytes: number;
+  outBytes: number;
+}
+
+interface RequestLogFilters {
+  method?: string;
+  path?: string;
+  status?: string;
+  minStatus?: string;
+  maxStatus?: string;
+  since?: string;
+  until?: string;
+  limit?: string;
+  skip?: string;
+}
+
+interface AggregateDoc {
+  _id: string | number | boolean;
+  count: number;
+  avgMs?: number;
+}
 
 /**
  * Express middleware that logs every completed request to:
@@ -13,7 +44,7 @@ const COLLECTION = "requests";
  * Modeled after Prism's RequestLoggerMiddleware, without
  * token/cost tracking (not applicable for a data API).
  */
-export function requestLoggerMiddleware(req: any, res: any, next: any) {
+export function requestLoggerMiddleware(req: Request, res: Response, next: NextFunction) {
   const start = performance.now();
 
   res.on("finish", () => {
@@ -22,7 +53,7 @@ export function requestLoggerMiddleware(req: any, res: any, next: any) {
     const path = req.originalUrl;
     const status = res.statusCode;
     const clientIp =
-      req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.ip;
+      (req.headers["x-forwarded-for"] as string | undefined)?.split(",")[0]?.trim() || req.ip;
 
     // Format timing
     const time =
@@ -32,7 +63,7 @@ export function requestLoggerMiddleware(req: any, res: any, next: any) {
 
     // Request / response sizes (from headers — zero-cost)
     const inBytes = parseInt(req.headers["content-length"] || "0", 10);
-    const outBytes = parseInt(res.getHeader("content-length") || "0", 10);
+    const outBytes = parseInt(String(res.getHeader("content-length") || "0"), 10);
     const totalBytes = inBytes + outBytes;
     const sizeTag = `(in: ${formatBytes(inBytes)}, out: ${formatBytes(outBytes)}, total: ${formatBytes(totalBytes)})`;
 
@@ -44,7 +75,7 @@ export function requestLoggerMiddleware(req: any, res: any, next: any) {
       method,
       path,
       status,
-      clientIp,
+      clientIp: clientIp || "unknown",
       elapsedMs: Math.round(elapsed * 100) / 100,
       inBytes,
       outBytes,
@@ -56,9 +87,8 @@ export function requestLoggerMiddleware(req: any, res: any, next: any) {
 
 /**
  * Persist a request log entry to MongoDB.
-
  */
-async function persistRequest(entry: any) {
+async function persistRequest(entry: RequestLogEntry) {
   try {
     const db = getDB();
     await db.collection(COLLECTION).insertOne({
@@ -72,26 +102,26 @@ async function persistRequest(entry: any) {
 
 /**
  * Query persisted request logs with optional filters.
-
-
+ *
+ *
  * @returns {Promise<{ count: number, requests: object[] }>}
  */
-export async function queryRequestLogs(filters: Record<string, any> = {}) {
+export async function queryRequestLogs(filters: RequestLogFilters = {}) {
   const db = getDB();
-  const query: Record<string, any> = {};
+  const query: Record<string, unknown> = {};
 
   if (filters.method) query.method = filters.method.toUpperCase();
   if (filters.path) query.path = { $regex: `^${filters.path}` };
   if (filters.status) query.status = parseInt(filters.status, 10);
   if (filters.minStatus || filters.maxStatus) {
     query.status = query.status || {};
-    if (filters.minStatus) query.status.$gte = parseInt(filters.minStatus, 10);
-    if (filters.maxStatus) query.status.$lte = parseInt(filters.maxStatus, 10);
+    if (filters.minStatus) (query.status as Record<string, number>).$gte = parseInt(filters.minStatus, 10);
+    if (filters.maxStatus) (query.status as Record<string, number>).$lte = parseInt(filters.maxStatus, 10);
   }
   if (filters.since || filters.until) {
     query.timestamp = {};
-    if (filters.since) query.timestamp.$gte = new Date(filters.since);
-    if (filters.until) query.timestamp.$lte = new Date(filters.until);
+    if (filters.since) (query.timestamp as Record<string, Date>).$gte = new Date(filters.since);
+    if (filters.until) (query.timestamp as Record<string, Date>).$lte = new Date(filters.until);
   }
 
   const limit = parseInt(filters.limit || "100", 10);
@@ -113,10 +143,8 @@ export async function queryRequestLogs(filters: Record<string, any> = {}) {
 
 /**
  * Get aggregated request stats.
-
-
  */
-export async function getRequestStats(since: any) {
+export async function getRequestStats(since?: string) {
   const db = getDB();
   const match = since ? { timestamp: { $gte: new Date(since) } } : {};
 
@@ -166,12 +194,12 @@ export async function getRequestStats(since: any) {
 
   return {
     totalRequests,
-    byStatus: Object.fromEntries(byStatus.map((s: any) => [s._id, s.count])),
-    byMethod: Object.fromEntries(byMethod.map((m: any) => [m._id, m.count])),
-    byDomain: byDomain.map((d: any) => ({
-      domain: d._id,
-      count: d.count,
-      avgMs: Math.round(d.avgMs * 100) / 100,
+    byStatus: Object.fromEntries(byStatus.map((s) => [(s as AggregateDoc)._id, (s as AggregateDoc).count])),
+    byMethod: Object.fromEntries(byMethod.map((m) => [(m as AggregateDoc)._id, (m as AggregateDoc).count])),
+    byDomain: byDomain.map((d) => ({
+      domain: (d as AggregateDoc)._id,
+      count: (d as AggregateDoc).count,
+      avgMs: Math.round(((d as AggregateDoc).avgMs || 0) * 100) / 100,
     })),
   };
 }
@@ -197,7 +225,7 @@ export async function setupRequestsCollection() {
     ]);
 
     logger.info(`📊 requests collection indexes ensured`);
-  } catch (error: any) {
-    logger.error(`Failed to setup requests indexes: ${error.message}`);
+  } catch (error: unknown) {
+    logger.error(`Failed to setup requests indexes: ${(error as Error).message}`);
   }
 }

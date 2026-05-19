@@ -26,6 +26,7 @@ import {
 } from "./ToolSchemaService.ts";
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
+import type { Request, Response, Application } from "express";
 
 // ── Self base URL (vault-resolved, localhost fallback) ───────
 const SELF_BASE_URL = CONFIG.TOOLS_SERVICE_URL;
@@ -127,7 +128,7 @@ async function executeTool(toolName: string, endpoint: Record<string, any>, args
     }
 
     const url = buildUrl(endpoint, resolvedArgs);
-    const headers: Record<string, any> = {};
+    const headers: Record<string, string> = {};
     if (context.project) headers["X-Project"] = context.project;
     if (context.agent) headers["X-Agent"] = context.agent;
     if (context.username) headers["X-Username"] = context.username;
@@ -137,13 +138,13 @@ async function executeTool(toolName: string, endpoint: Record<string, any>, args
       return { error: `API returned ${response.status}: ${response.statusText}` };
     }
     return await response.json();
-  } catch (error: any) {
-    return { error: `Tool execution failed: ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `Tool execution failed: ${(error as Error).message}` };
   }
 }
 
 // ── Create the MCP Server ───────────────────────────────────
-function createMcpServer(context: Record<string, any> = {}) {
+function createMcpServer(context: Record<string, string> = {}) {
   const server = new Server(
     { name: "sun-tools", version: "1.0.0" },
     { capabilities: { tools: {} } },
@@ -162,7 +163,7 @@ function createMcpServer(context: Record<string, any> = {}) {
     async () => {
       const aiSchemas = getToolSchemasForAI();
       return {
-        tools: aiSchemas.map((t: any) => ({
+        tools: aiSchemas.map((t: Record<string, unknown>) => ({
           name: t.name,
           description: t.description || "",
           inputSchema: t.parameters || { type: "object", properties: {} },
@@ -174,7 +175,7 @@ function createMcpServer(context: Record<string, any> = {}) {
   // Register tools/call handler
   server.setRequestHandler(
     CallToolRequestSchema,
-    async (request: any) => {
+    async (request: { params: { name: string; arguments?: Record<string, unknown> } }) => {
       const { name, arguments: args = {} } = request.params;
       const schema = toolMap.get(name);
 
@@ -192,9 +193,9 @@ function createMcpServer(context: Record<string, any> = {}) {
           content: [{ type: "text", text }],
           isError: !!result?.error,
         };
-      } catch (error: any) {
+      } catch (error: unknown) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: error.message }) }],
+          content: [{ type: "text", text: JSON.stringify({ error: (error as Error).message }) }],
           isError: true,
         };
       }
@@ -207,15 +208,15 @@ function createMcpServer(context: Record<string, any> = {}) {
 // ── Mount MCP routes on Express app ─────────────────────────
 // LM Studio connects to the SSE endpoint for MCP communication.
 // Sessions are tracked per-connection to support multiple clients.
-export function mountMcpRoutes(app: any) {
-  const sessions = new Map();
+export function mountMcpRoutes(app: Application) {
+  const sessions = new Map<string, { server: Server; transport: SSEServerTransport }>();
 
-  app.get("/mcp/sse", async (req: any, res: any) => {
+  app.get("/mcp/sse", async (req: Request, res: Response) => {
     const transport = new SSEServerTransport("/mcp/messages", res);
     const context = {
-      project: req.query.project,
-      agent: req.query.agent,
-      username: req.query.username,
+      project: req.query.project as string || "",
+      agent: req.query.agent as string || "",
+      username: req.query.username as string || "",
     };
     const server = createMcpServer(context);
 
@@ -229,8 +230,8 @@ export function mountMcpRoutes(app: any) {
     await server.connect(transport);
   });
 
-  app.post("/mcp/messages", async (req: any, res: any) => {
-    const sessionId = req.query.sessionId;
+  app.post("/mcp/messages", async (req: Request, res: Response) => {
+    const sessionId = req.query.sessionId as string;
     const session = sessions.get(sessionId);
 
     if (!session) {

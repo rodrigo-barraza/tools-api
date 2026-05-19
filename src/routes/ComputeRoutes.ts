@@ -8,7 +8,7 @@ import {
   hslToRgb,
 } from "@rodrigo-barraza/utilities-library/color";
 // ─── Process-Based Tool Endpoints ───────────────────────────
-import { Router } from "express";
+import { Request, Response, Router } from "express";
 import {
   executeJavaScript,
   getJsInterpreterInfo,
@@ -32,7 +32,7 @@ const getQRCode = lazyImport<any>("qrcode");
 const getDiff = lazyImport<any>("diff", (m: any) => m);
 const router = Router();
 // ─── 1. JavaScript Interpreter (vm sandbox) ─────────────────
-router.post("/js/execute", (req: any, res: any) => {
+router.post("/js/execute", (req: Request, res: Response) => {
   const { code, timeout } = req.body;
   if (!code || typeof code !== "string") {
     return res
@@ -48,11 +48,11 @@ router.post("/js/execute", (req: any, res: any) => {
   });
   res.json(result);
 });
-router.get("/js/info", (_req: any, res: any) => {
+router.get("/js/info", (_req: Request, res: Response) => {
   res.json(getJsInterpreterInfo());
 });
 // ── JS Streaming (SSE) — synchronous vm, but follows the same SSE pattern ──
-router.post("/js/stream", (req: any, res: any) => {
+router.post("/js/stream", (req: Request, res: Response) => {
   const { code, timeout } = req.body;
   if (!code || typeof code !== "string") {
     return res.status(400).json({ error: "Request body must include 'code' (string)" });
@@ -75,7 +75,7 @@ router.post("/js/stream", (req: any, res: any) => {
   res.end();
 });
 // ─── 2. Shell Executor (allowlisted commands) ───────────────
-router.post("/shell/execute", asyncHandler(async (req: any, res: any) => {
+router.post("/shell/execute", asyncHandler(async (req: Request, res: Response) => {
   const { command, stdin, timeout } = req.body;
   if (!command || typeof command !== "string") {
     return res
@@ -92,12 +92,12 @@ router.post("/shell/execute", asyncHandler(async (req: any, res: any) => {
   });
   res.json(result);
 }));
-router.get("/shell/binaries", (_req: any, res: any) => {
+router.get("/shell/binaries", (_req: Request, res: Response) => {
   const binaries = getAllowedBinaries();
   res.json({ count: binaries.length, binaries });
 });
 // ── Shell Streaming (SSE) ─────────────────────────────────────
-router.post("/shell/stream", asyncHandler(async (req: any, res: any) => {
+router.post("/shell/stream", asyncHandler(async (req: Request, res: Response) => {
   const { command, stdin, timeout } = req.body;
   if (!command || typeof command !== "string") {
     return res.status(400).json({ error: "Request body must include 'command' (string)" });
@@ -115,7 +115,7 @@ router.post("/shell/stream", asyncHandler(async (req: any, res: any) => {
   res.end();
 }));
 // ─── 3. Unit Conversion ─────────────────────────────────────
-router.get("/units/convert", asyncHandler(async (req: any, res: any) => {
+router.get("/units/convert", asyncHandler(async (req: Request, res: Response) => {
   const { value, from, to } = req.query as any;
   if (!value || !from || !to) {
     return res
@@ -137,11 +137,11 @@ router.get("/units/convert", asyncHandler(async (req: any, res: any) => {
       to: { abbr: to, singular: toUnit.singular, plural: toUnit.plural },
       result,
     });
-  } catch (error: any) {
-    res.status(400).json({ error: `Conversion failed: ${error.message}` });
+  } catch (error: unknown) {
+    res.status(400).json({ error: `Conversion failed: ${(error as Error).message}` });
   }
 }));
-router.get("/units/list", asyncHandler(async (req: any, res: any) => {
+router.get("/units/list", asyncHandler(async (req: Request, res: Response) => {
   const { measure } = req.query as any;
   try {
     const convert = await getConvertUnits();
@@ -163,12 +163,12 @@ router.get("/units/list", asyncHandler(async (req: any, res: any) => {
       });
     }
     res.json({ measureCount: measures.length, measures: all });
-  } catch (error: any) {
-    res.status(400).json({ error: `Unit listing failed: ${error.message}` });
+  } catch (error: unknown) {
+    res.status(400).json({ error: `Unit listing failed: ${(error as Error).message}` });
   }
 }));
 // ─── 4. DateTime Parsing & Arithmetic ───────────────────────
-router.post("/datetime/parse", asyncHandler(async (req: any, res: any) => {
+router.post("/datetime/parse", asyncHandler(async (req: Request, res: Response) => {
   const { operation, date, date2, amount, unit, format, timezone } = req.body;
   if (!operation) {
     return res.status(400).json({
@@ -330,12 +330,12 @@ router.post("/datetime/parse", asyncHandler(async (req: any, res: any) => {
         });
     }
     res.json({ operation, ...result });
-  } catch (error: any) {
-    res.status(400).json({ error: `DateTime operation failed: ${error.message}` });
+  } catch (error: unknown) {
+    res.status(400).json({ error: `DateTime operation failed: ${(error as Error).message}` });
   }
 }));
 // ─── 5. JSON Transform (JSONPath) ───────────────────────────
-router.post("/json/transform", asyncHandler(async (req: any, res: any) => {
+router.post("/json/transform", asyncHandler(async (req: Request, res: Response) => {
   const { data, expression, operations } = req.body;
   if (!data) {
     return res.status(400).json({ error: "Request body must include 'data' (object or array)" });
@@ -457,13 +457,13 @@ router.post("/json/transform", asyncHandler(async (req: any, res: any) => {
     }
     const count = Array.isArray(result) ? result.length : typeof result === "object" ? Object.keys(result).length : 1;
     res.json({ count, result });
-  } catch (error: any) {
-    res.status(400).json({ error: `JSON transform failed: ${error.message}` });
+  } catch (error: unknown) {
+    res.status(400).json({ error: `JSON transform failed: ${(error as Error).message}` });
   }
 }));
 // ─── 6. CSV Generation ──────────────────────────────────────
-const csvStore = new EphemeralStore();
-router.post("/csv", (req: any, res: any) => {
+const csvStore = new EphemeralStore<{ csv: string; filename: string }>();
+router.post("/csv", (req: Request, res: Response) => {
   const { data, columns, filename, delimiter } = req.body;
   if (!data || !Array.isArray(data) || data.length === 0) {
     return res.status(400).json({ error: "'data' must be a non-empty array of objects" });
@@ -494,11 +494,11 @@ router.post("/csv", (req: any, res: any) => {
       rows: data.length,
       columns: cols.length,
     });
-  } catch (error: any) {
-    res.status(400).json({ error: `CSV generation failed: ${error.message}` });
+  } catch (error: unknown) {
+    res.status(400).json({ error: `CSV generation failed: ${(error as Error).message}` });
   }
 });
-router.get("/csv/download", (req: any, res: any) => {
+router.get("/csv/download", (req: Request, res: Response) => {
   const { id } = req.query as any;
   if (!id) return res.status(400).send("Missing 'id' parameter");
   const entry = csvStore.get(id);
@@ -510,8 +510,8 @@ router.get("/csv/download", (req: any, res: any) => {
   res.send(entry.csv);
 });
 // ─── 7. QR Code Generation ──────────────────────────────────
-const qrStore = new EphemeralStore();
-router.post("/qr", asyncHandler(async (req: any, res: any) => {
+const qrStore = new EphemeralStore<{ buffer: Buffer }>();
+router.post("/qr", asyncHandler(async (req: Request, res: Response) => {
   const { data, size, errorCorrection, darkColor, lightColor } = req.body;
   if (!data || typeof data !== "string") {
     return res.status(400).json({ error: "'data' (string) is required — URL, text, WiFi config, etc." });
@@ -533,11 +533,11 @@ router.post("/qr", asyncHandler(async (req: any, res: any) => {
     const id = qrStore.set({ buffer: pngBuffer });
     const qrImageUrl = buildLocalUrl("compute/qr/render", { id });
     res.json({ qrImageUrl, qrId: id, dataLength: data.length });
-  } catch (error: any) {
-    res.status(400).json({ error: `QR code generation failed: ${error.message}` });
+  } catch (error: unknown) {
+    res.status(400).json({ error: `QR code generation failed: ${(error as Error).message}` });
   }
 }));
-router.get("/qr/render", (req: any, res: any) => {
+router.get("/qr/render", (req: Request, res: Response) => {
   const { id } = req.query as any;
   if (!id) return res.status(400).send("Missing 'id' parameter");
   const entry = qrStore.get(id);
@@ -549,7 +549,7 @@ router.get("/qr/render", (req: any, res: any) => {
   res.send(entry.buffer);
 });
 // ─── 8. LaTeX Rendering (KaTeX CDN embed) ───────────────────
-const latexStore = new EphemeralStore();
+const latexStore = new EphemeralStore<{ latex: string; displayMode: boolean }>();
 function buildLatexEmbedHtml(latex: any, displayMode: any = true) {
   return buildEmbedHtml({
     headExtra: `<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
@@ -579,7 +579,7 @@ function buildLatexEmbedHtml(latex: any, displayMode: any = true) {
 </${"script"}>`,
   });
 }
-router.post("/latex", (req: any, res: any) => {
+router.post("/latex", (req: Request, res: Response) => {
   const { latex, displayMode } = req.body;
   if (!latex || typeof latex !== "string") {
     return res.status(400).json({ error: "'latex' (string) is required" });
@@ -594,7 +594,7 @@ router.post("/latex", (req: any, res: any) => {
   const latexEmbedUrl = buildLocalUrl("compute/latex/embed", { id });
   res.json({ latexEmbedUrl, latexId: id });
 });
-router.get("/latex/embed", (req: any, res: any) => {
+router.get("/latex/embed", (req: Request, res: Response) => {
   const { id } = req.query as any;
   if (!id) return res.status(400).send("Missing 'id' parameter");
   const entry = latexStore.get(id);
@@ -605,7 +605,7 @@ router.get("/latex/embed", (req: any, res: any) => {
   res.send(buildLatexEmbedHtml(entry.latex, entry.displayMode));
 });
 // ─── 9. Mermaid Diagram Rendering (CDN embed) ───────────────
-const diagramStore = new EphemeralStore();
+const diagramStore = new EphemeralStore<{ definition: string; theme: string }>();
 function buildMermaidEmbedHtml(definition: any, theme: any = "dark") {
   return buildEmbedHtml({
     styles: `  #diagram{
@@ -634,7 +634,7 @@ function buildMermaidEmbedHtml(definition: any, theme: any = "dark") {
 </${"script"}>`,
   });
 }
-router.post("/diagram", (req: any, res: any) => {
+router.post("/diagram", (req: Request, res: Response) => {
   const { definition, theme } = req.body;
   if (!definition || typeof definition !== "string") {
     return res.status(400).json({ error: "'definition' (Mermaid syntax string) is required" });
@@ -649,7 +649,7 @@ router.post("/diagram", (req: any, res: any) => {
   const diagramEmbedUrl = buildLocalUrl("compute/diagram/embed", { id });
   res.json({ diagramEmbedUrl, diagramId: id });
 });
-router.get("/diagram/embed", (req: any, res: any) => {
+router.get("/diagram/embed", (req: Request, res: Response) => {
   const { id } = req.query as any;
   if (!id) return res.status(400).send("Missing 'id' parameter");
   const entry = diagramStore.get(id);
@@ -660,7 +660,7 @@ router.get("/diagram/embed", (req: any, res: any) => {
   res.send(buildMermaidEmbedHtml(entry.definition, entry.theme));
 });
 // ─── 10. Text Diff ──────────────────────────────────────────
-router.post("/diff", asyncHandler(async (req: any, res: any) => {
+router.post("/diff", asyncHandler(async (req: Request, res: Response) => {
   const { textA, textB, mode } = req.body;
   if (textA === undefined || textB === undefined) {
     return res.status(400).json({ error: "'textA' and 'textB' are required" });
@@ -716,12 +716,12 @@ router.post("/diff", asyncHandler(async (req: any, res: any) => {
       })),
       patch,
     });
-  } catch (error: any) {
-    res.status(400).json({ error: `Diff failed: ${error.message}` });
+  } catch (error: unknown) {
+    res.status(400).json({ error: `Diff failed: ${(error as Error).message}` });
   }
 }));
 // ─── 11. Cryptographic Hashing ──────────────────────────────
-router.get("/hash", (req: any, res: any) => {
+router.get("/hash", (req: Request, res: Response) => {
   const { data, algorithm, encoding, key } = req.query as any;
   if (!data) {
     return res.status(400).json({ error: "Query parameter 'data' is required" });
@@ -748,16 +748,16 @@ router.get("/hash", (req: any, res: any) => {
       hash,
       dataLength: data.length,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const algos = crypto.getHashes().filter((h: any) => !h.includes("RSA"));
     res.status(400).json({
-      error: `Hashing failed: ${error.message}`,
+      error: `Hashing failed: ${(error as Error).message}`,
       supportedAlgorithms: algos.slice(0, 20),
     });
   }
 });
 // UUID generation
-router.get("/uuid", (_req: any, res: any) => {
+router.get("/uuid", (_req: Request, res: Response) => {
   res.json({
     uuid: crypto.randomUUID(),
     v4: crypto.randomUUID(),
@@ -766,7 +766,7 @@ router.get("/uuid", (_req: any, res: any) => {
   });
 });
 // ─── 12. Regex Tester ───────────────────────────────────────
-router.post("/regex", (req: any, res: any) => {
+router.post("/regex", (req: Request, res: Response) => {
   const { pattern, flags, text } = req.body;
   if (!pattern || text === undefined) {
     return res.status(400).json({ error: "'pattern' and 'text' are required" });
@@ -807,19 +807,19 @@ router.post("/regex", (req: any, res: any) => {
       matches,
       valid: true,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     res.json({
       pattern,
       flags: flags || "g",
       matchCount: 0,
       matches: [],
       valid: false,
-      error: error.message,
+      error: (error as Error).message,
     });
   }
 });
 // ─── 13. Encode / Decode ────────────────────────────────────
-router.get("/encode", (req: any, res: any) => {
+router.get("/encode", (req: Request, res: Response) => {
   const { data, format, direction } = req.query as any;
   if (!data || !format) {
     return res.status(400).json({ error: "Query parameters 'data' and 'format' are required" });
@@ -911,8 +911,8 @@ router.get("/encode", (req: any, res: any) => {
       inputLength: data.length,
       outputLength: typeof result === "string" ? result.length : undefined,
     });
-  } catch (error: any) {
-    res.status(400).json({ error: `Encoding failed: ${error.message}` });
+  } catch (error: unknown) {
+    res.status(400).json({ error: `Encoding failed: ${(error as Error).message}` });
   }
 });
 // ─── 14. Color Converter ────────────────────────────────────
@@ -1039,7 +1039,7 @@ function generatePalette(hsl: any, type: any) {
     };
   });
 }
-router.get("/color/convert", (req: any, res: any) => {
+router.get("/color/convert", (req: Request, res: Response) => {
   const { color, palette } = req.query as any;
   if (!color) {
     return res.status(400).json({ error: "Query parameter 'color' is required" });
@@ -1070,12 +1070,12 @@ router.get("/color/convert", (req: any, res: any) => {
       };
     }
     res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
+  } catch (error: unknown) {
+    res.status(400).json({ error: (error as Error).message });
   }
 });
 // ─── 15. LOGO Turtle Graphics ───────────────────────────────
-const turtleStore = new EphemeralStore();
+const turtleStore = new EphemeralStore<{ commands: unknown[]; options: Record<string, unknown> }>();
 const VALID_TURTLE_COMMANDS = new Set([
   "forward", "fd", "backward", "bk", "back",
   "right", "rt", "left", "lt",
@@ -1423,7 +1423,7 @@ function cleanupTurtleSessions() {
     if (now - session.updatedAt > TURTLE_SESSION_TTL_MS) turtleSessions.delete(id);
   }
 }
-router.post("/turtle", (req: any, res: any) => {
+router.post("/turtle", (req: Request, res: Response) => {
   const { commands, options, sessionId } = req.body;
   if (!commands || !Array.isArray(commands) || commands.length === 0) {
     return res.status(400).json({
@@ -1510,7 +1510,7 @@ router.post("/turtle", (req: any, res: any) => {
     canvasSize: `${opts.canvasWidth}x${opts.canvasHeight}`,
   });
 });
-router.get("/turtle/embed", (req: any, res: any) => {
+router.get("/turtle/embed", (req: Request, res: Response) => {
   const { id } = req.query as any;
   if (!id) return res.status(400).send("Missing 'id' parameter");
   const entry = turtleStore.get(id);
@@ -1524,7 +1524,7 @@ router.get("/turtle/embed", (req: any, res: any) => {
 // No-op tool — the LLM uses this to write private reasoning.
 // We simply acknowledge receipt; the thought is already captured
 // in the tool_result appended to the conversation context.
-router.post("/think", (req: any, res: any) => {
+router.post("/think", (req: Request, res: Response) => {
   res.json({ acknowledged: true });
 });
 // ─── Cron Expression Parser ─────────────────────────────────
@@ -1622,7 +1622,7 @@ function getNextCronExecutions(parsed: any, count: any, fromDate: any) {
   }
   return results;
 }
-router.get("/cron/parse", (req: any, res: any) => {
+router.get("/cron/parse", (req: Request, res: Response) => {
   const { expression, count, from } = req.query as any;
   if (!expression) {
     return res.status(400).json({ error: "Query parameter 'expression' is required (e.g. '*/5 * * * *')" });
@@ -1650,14 +1650,14 @@ router.get("/cron/parse", (req: any, res: any) => {
       nextExecutionCount: nextExecutions.length,
       fromDate: fromDate.toISOString(),
     });
-  } catch (error: any) {
-    res.status(400).json({ error: `Cron parse failed: ${error.message}` });
+  } catch (error: unknown) {
+    res.status(400).json({ error: `Cron parse failed: ${(error as Error).message}` });
   }
 });
 // ─── Agentic: Sleep (Timed Pause) ───────────────────────────
 // Blocks for `duration_seconds` before responding.
 // Max 120s. AbortSignal from upstream will short-circuit.
-router.post("/sleep", asyncHandler(async (req: any, res: any) => {
+router.post("/sleep", asyncHandler(async (req: Request, res: Response) => {
   const { duration_seconds, reason } = req.body;
   const duration = Math.max(1, Math.min(120, duration_seconds || 5));
   const durationMs = duration * 1000;
@@ -1722,7 +1722,7 @@ function validateJsonSchema(data: any, schema: any, path: any = "", errors: any 
     }
   }
 }
-router.post("/synthetic-output", (req: any, res: any) => {
+router.post("/synthetic-output", (req: Request, res: Response) => {
   const { schema, data, label } = req.body;
   if (!data || typeof data !== "object") {
     return res.status(400).json({ error: "'data' is required and must be an object" });
@@ -1731,8 +1731,8 @@ router.post("/synthetic-output", (req: any, res: any) => {
   if (schema && typeof schema === "object") {
     try {
       validateJsonSchema(data, schema, "", validationErrors);
-    } catch (error: any) {
-      validationErrors.push(`Validation error: ${error.message}`);
+    } catch (error: unknown) {
+      validationErrors.push(`Validation error: ${(error as Error).message}`);
     }
   }
   const result: Record<string, any> = {
@@ -1747,8 +1747,8 @@ router.post("/synthetic-output", (req: any, res: any) => {
   res.json(result);
 });
 // ─── Image Processing (Sharp + ImageMagick) ─────────────────
-const imageStore = new EphemeralStore();
-router.post("/image/process", asyncHandler(async (req: any, res: any) => {
+const imageStore = new EphemeralStore<{ buffer: Buffer; mimeType: string }>();
+router.post("/image/process", asyncHandler(async (req: Request, res: Response) => {
   const { input, operations, outputFormat, outputQuality } = req.body;
   if (!input) {
     return res.status(400).json({ error: "'input' is required (URL, base64 data URI, or previous imageId)" });
@@ -1781,11 +1781,11 @@ router.post("/image/process", asyncHandler(async (req: any, res: any) => {
     };
     if (result.metadata) response.metadata = result.metadata;
     res.json(response);
-  } catch (error: any) {
-    res.status(400).json({ error: `Image processing failed: ${error.message}` });
+  } catch (error: unknown) {
+    res.status(400).json({ error: `Image processing failed: ${(error as Error).message}` });
   }
 }));
-router.get("/image/render", (req: any, res: any) => {
+router.get("/image/render", (req: Request, res: Response) => {
   const { id } = req.query as any;
   if (!id) return res.status(400).send("Missing 'id' parameter");
   const entry = imageStore.get(id);

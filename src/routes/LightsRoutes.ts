@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Request, Response, Router } from "express";
 import { asyncHandler, HealthTracker } from "@rodrigo-barraza/utilities-library/express";
 import LightsDataService from "../services/LightsDataService.ts";
 
@@ -16,7 +16,7 @@ export function getLightsHealth() {
 // List lights and their current state.
 // Query: ?selector=all (default: all)
 
-router.get("/list", asyncHandler(async (req: any) => {
+router.get("/list", asyncHandler(async (req: Request) => {
   const selector = req.query.selector as string || "all";
   return await LightsDataService.listLights(selector);
 }, "List lights", { errorStatus: 502, health }));
@@ -24,7 +24,7 @@ router.get("/list", asyncHandler(async (req: any) => {
 // ─── POST /state ────────────────────────────────────────────────
 // Set the state of lights (power, color, brightness, duration, kelvin).
 
-router.post("/state", asyncHandler(async (req: any) => {
+router.post("/state", asyncHandler(async (req: Request) => {
   const { selector, power, color, brightness, duration, kelvin } = req.body;
   return await LightsDataService.setState({
     selector,
@@ -39,7 +39,7 @@ router.post("/state", asyncHandler(async (req: any) => {
 // ─── POST /state/delta ──────────────────────────────────────────
 // Set light state delta — relative adjustments to current values.
 
-router.post("/state/delta", asyncHandler(async (req: any) => {
+router.post("/state/delta", asyncHandler(async (req: Request) => {
   const { selector, hue, saturation, brightness, kelvin, duration } = req.body;
   return await LightsDataService.setStateDelta({
     selector,
@@ -54,7 +54,7 @@ router.post("/state/delta", asyncHandler(async (req: any) => {
 // ─── PUT /states ────────────────────────────────────────────────
 // Set different states on multiple selectors in a single request.
 
-router.put("/states", asyncHandler(async (req: any, res: any) => {
+router.put("/states", asyncHandler(async (req: Request, res: Response) => {
   const { states, defaults } = req.body;
   if (!Array.isArray(states) || states.length === 0) {
     return res.status(400).json({ error: "states must be a non-empty array" });
@@ -65,7 +65,7 @@ router.put("/states", asyncHandler(async (req: any, res: any) => {
 // ─── POST /toggle ───────────────────────────────────────────────
 // Toggle power on/off.
 
-router.post("/toggle", asyncHandler(async (req: any) => {
+router.post("/toggle", asyncHandler(async (req: Request) => {
   const { selector, duration } = req.body;
   return await LightsDataService.togglePower(selector, duration);
 }, "Toggle lights", { errorStatus: 502, health }));
@@ -73,7 +73,7 @@ router.post("/toggle", asyncHandler(async (req: any) => {
 // ─── POST /effects/breathe ──────────────────────────────────────
 // Breathe effect — slowly fades between two colors.
 
-router.post("/effects/breathe", asyncHandler(async (req: any) => {
+router.post("/effects/breathe", asyncHandler(async (req: Request) => {
   const { selector, color, fromColor, period, cycles, persist, powerOn, peak } = req.body;
   return await LightsDataService.breatheEffect({
     selector,
@@ -90,7 +90,7 @@ router.post("/effects/breathe", asyncHandler(async (req: any) => {
 // ─── POST /effects/pulse ────────────────────────────────────────
 // Pulse effect — quickly flashes between two colors.
 
-router.post("/effects/pulse", asyncHandler(async (req: any) => {
+router.post("/effects/pulse", asyncHandler(async (req: Request) => {
   const { selector, color, fromColor, period, cycles, persist, powerOn } = req.body;
   return await LightsDataService.pulseEffect({
     selector,
@@ -106,7 +106,7 @@ router.post("/effects/pulse", asyncHandler(async (req: any) => {
 // ─── POST /effects/move ─────────────────────────────────────────
 // Move effect — flowing color animation for strip products.
 
-router.post("/effects/move", asyncHandler(async (req: any) => {
+router.post("/effects/move", asyncHandler(async (req: Request) => {
   const { selector, direction, period, cycles, powerOn } = req.body;
   return await LightsDataService.moveEffect({
     selector,
@@ -120,7 +120,7 @@ router.post("/effects/move", asyncHandler(async (req: any) => {
 // ─── POST /effects/flame ────────────────────────────────────────
 // Flame effect — flickering fire animation for matrix devices.
 
-router.post("/effects/flame", asyncHandler(async (req: any) => {
+router.post("/effects/flame", asyncHandler(async (req: Request) => {
   const { selector, period, duration, powerOn } = req.body;
   return await LightsDataService.flameEffect({
     selector,
@@ -133,7 +133,7 @@ router.post("/effects/flame", asyncHandler(async (req: any) => {
 // ─── POST /effects/morph ────────────────────────────────────────
 // Morph effect — continuous color-blending for matrix devices.
 
-router.post("/effects/morph", asyncHandler(async (req: any) => {
+router.post("/effects/morph", asyncHandler(async (req: Request) => {
   const { selector, palette, period, duration, powerOn } = req.body;
   return await LightsDataService.morphEffect({
     selector,
@@ -147,7 +147,7 @@ router.post("/effects/morph", asyncHandler(async (req: any) => {
 // ─── POST /effects/off ──────────────────────────────────────────
 // Stop all running effects.
 
-router.post("/effects/off", asyncHandler(async (req: any) => {
+router.post("/effects/off", asyncHandler(async (req: Request) => {
   const { selector, powerOff } = req.body;
   return await LightsDataService.effectsOff(selector, powerOff);
 }, "Effects off", { errorStatus: 502, health }));
@@ -162,7 +162,7 @@ router.get("/scenes", asyncHandler(async () => {
 // ─── POST /scenes/activate ──────────────────────────────────────
 // Activate a saved scene.
 
-router.post("/scenes/activate", asyncHandler(async (req: any, res: any) => {
+router.post("/scenes/activate", asyncHandler(async (req: Request, res: Response) => {
   const { sceneId, duration, ignore } = req.body;
   if (!sceneId) {
     return res.status(400).json({ error: "sceneId is required" });
@@ -173,7 +173,7 @@ router.post("/scenes/activate", asyncHandler(async (req: any, res: any) => {
 // ─── POST /nightlock ────────────────────────────────────────────
 // Unified nightlock dispatcher — handles action param from tool schema.
 
-router.post("/nightlock", asyncHandler(async (req: any, res: any) => {
+router.post("/nightlock", asyncHandler(async (req: Request, res: Response) => {
   const { action, locked } = req.body;
 
   switch (action) {
@@ -207,7 +207,7 @@ router.post("/nightlock/toggle", asyncHandler(async () => {
 // ─── POST /nightlock/set ────────────────────────────────────────
 // Explicitly lock or unlock.
 
-router.post("/nightlock/set", asyncHandler(async (req: any, res: any) => {
+router.post("/nightlock/set", asyncHandler(async (req: Request, res: Response) => {
   const { locked } = req.body;
   if (locked === undefined) {
     return res.status(400).json({ error: "locked (boolean) is required" });

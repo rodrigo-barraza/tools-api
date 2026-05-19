@@ -1,5 +1,5 @@
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
-import { Router } from "express";
+import { Request, Response, Router } from "express";
 import {
   sendSms,
   listMessages,
@@ -9,7 +9,7 @@ import {
 } from "../services/TwilioService.ts";
 const router = Router();
 // ─── Send SMS ──────────────────────────────────────────────────────
-router.post("/sms/send", asyncHandler(async (req: any, res: any) => {
+router.post("/sms/send", asyncHandler(async (req: Request, res: Response) => {
   const { to, body, from } = req.body;
   if (!to || !body) {
     return res
@@ -24,13 +24,13 @@ router.post("/sms/send", asyncHandler(async (req: any, res: any) => {
   try {
     const result = await sendSms(to, body, from);
     res.json(result);
-  } catch (error: any) {
-    res.status(502).json({ error: `SMS send failed: ${error.message}` });
+  } catch (error: unknown) {
+    res.status(502).json({ error: `SMS send failed: ${(error as Error).message}` });
   }
 }));
 // ─── List Messages ─────────────────────────────────────────────────
 router.get("/sms/messages", asyncHandler(
-  async (req: any) => {
+  async (req: Request) => {
     const { to, from, limit, dateSent } = req.query as any;
     return listMessages({ to, from, limit, dateSent });
   },
@@ -43,7 +43,7 @@ router.get("/account", asyncHandler(
 ));
 // ─── Phone Lookup ──────────────────────────────────────────────────
 router.get("/lookup/:phone", asyncHandler(
-  (req: any) => lookupPhone(req.params.phone as string),
+  (req: Request) => lookupPhone(req.params.phone as string),
   "Phone lookup",
 ));
 // ─── List Numbers ──────────────────────────────────────────────────

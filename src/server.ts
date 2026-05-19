@@ -1,5 +1,5 @@
 import http from "node:http";
-import express from "express";
+import express, { type Request, type Response, type NextFunction } from "express";
 import logger from "./logger.ts";
 import CONFIG, { applyLocation } from "./config.ts";
 import { connectDB } from "./db.ts";
@@ -71,7 +71,7 @@ import { startAisStream } from "./fetchers/maritime/AisStreamFetcher.ts";
 
 const app = express();
 
-app.use((req: any, res: any, next: any) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   const origin = req.headers.origin;
   res.header("Access-Control-Allow-Origin", origin || "*");
   res.header("Access-Control-Allow-Credentials", "true");
@@ -115,7 +115,7 @@ mountMcpRoutes(app);
 
 // ─── Unified Health ────────────────────────────────────────────────
 
-app.get("/health", async (_req: any, res: any) => {
+app.get("/health", async (_req: Request, res: Response) => {
   res.json({
     status: "ok",
     uptime: process.uptime(),
@@ -185,8 +185,8 @@ async function start() {
 
     // Load user-configured workspace roots from MongoDB
     await loadUserWorkspaceRoots();
-  } catch (error: any) {
-    logger.error(`Failed to connect to MongoDB: ${error.message}`);
+  } catch (error: unknown) {
+    logger.error(`Failed to connect to MongoDB: ${(error as Error).message}`);
     process.exit(1);
   }
 

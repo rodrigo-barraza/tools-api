@@ -1,6 +1,6 @@
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { parseIntParam } from "@rodrigo-barraza/utilities-library";
-import { Router } from "express";
+import { Request, Response, Router } from "express";
 import { fetchDefinition } from "../fetchers/knowledge/DictionaryFetcher.ts";
 import {
   searchBooks,
@@ -82,11 +82,11 @@ import {
 const router = Router();
 // ─── Dictionary ────────────────────────────────────────────────────
 router.get("/dictionary/:word", asyncHandler(
-  (req: any) => fetchDefinition(req.params.word as string),
+  (req: Request) => fetchDefinition(req.params.word as string),
   "Dictionary lookup",
 ));
 // ─── Books ─────────────────────────────────────────────────────────
-router.get("/books/search", asyncHandler(async (req: any, res: any) => {
+router.get("/books/search", asyncHandler(async (req: Request, res: Response) => {
   const { q, limit } = req.query as any;
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
@@ -94,24 +94,24 @@ router.get("/books/search", asyncHandler(async (req: any, res: any) => {
   res.json(await searchBooks(q, parseIntParam(limit, 10)));
 }));
 router.get("/books/work/:workKey", asyncHandler(
-  (req: any) => getBookDetails(req.params.workKey as string),
+  (req: Request) => getBookDetails(req.params.workKey as string),
   "Book details",
 ));
 router.get("/books/author/:authorKey", asyncHandler(
-  (req: any) => getAuthorInfo(req.params.authorKey as string),
+  (req: Request) => getAuthorInfo(req.params.authorKey as string),
   "Author info",
 ));
 // ─── Countries ─────────────────────────────────────────────────────
 router.get("/countries/search/:name", asyncHandler(
-  (req: any) => searchCountries(req.params.name as string),
+  (req: Request) => searchCountries(req.params.name as string),
   "Country search",
 ));
 router.get("/countries/code/:code", asyncHandler(
-  (req: any) => getCountryByCode(req.params.code as string),
+  (req: Request) => getCountryByCode(req.params.code as string),
   "Country lookup",
 ));
 // ─── Papers (arXiv) ────────────────────────────────────────────────
-router.get("/papers/search", asyncHandler(async (req: any, res: any) => {
+router.get("/papers/search", asyncHandler(async (req: Request, res: Response) => {
   const { q, category, limit, sortBy } = req.query as any;
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
@@ -124,11 +124,11 @@ router.get("/papers/search", asyncHandler(async (req: any, res: any) => {
 }));
 // ─── Wikipedia Summaries ───────────────────────────────────────────
 router.get("/wikipedia/summary/:title", asyncHandler(
-  (req: any) => getArticleSummary(req.params.title as string),
+  (req: Request) => getArticleSummary(req.params.title as string),
   "Wikipedia summary",
 ));
 router.get("/wikipedia/onthisday", asyncHandler(
-  (req: any) => getOnThisDay(
+  (req: Request) => getOnThisDay(
     req.query.type as string || "selected",
     req.query.month as string ? parseInt(req.query.month as string, 10) : undefined,
     req.query.day as string ? parseInt(req.query.day as string, 10) : undefined,
@@ -136,7 +136,7 @@ router.get("/wikipedia/onthisday", asyncHandler(
   "On This Day",
 ));
 // ─── Anime (Jikan / MyAnimeList) ───────────────────────────────────
-router.get("/anime/search", asyncHandler(async (req: any, res: any) => {
+router.get("/anime/search", asyncHandler(async (req: Request, res: Response) => {
   const { q, limit } = req.query as any;
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
@@ -144,19 +144,19 @@ router.get("/anime/search", asyncHandler(async (req: any, res: any) => {
   res.json(await searchAnime(q, parseIntParam(limit, 10)));
 }));
 router.get("/anime/top", asyncHandler(
-  (req: any) => getTopAnime(parseIntParam(req.query.limit as string, 10)),
+  (req: Request) => getTopAnime(parseIntParam(req.query.limit as string, 10)),
   "Top anime fetch",
 ));
 router.get("/anime/season/now", asyncHandler(
-  (req: any) => getCurrentSeasonAnime(parseIntParam(req.query.limit as string, 10)),
+  (req: Request) => getCurrentSeasonAnime(parseIntParam(req.query.limit as string, 10)),
   "Seasonal anime fetch",
 ));
 router.get("/anime/:id", asyncHandler(
-  (req: any) => getAnimeDetails(req.params.id as string),
+  (req: Request) => getAnimeDetails(req.params.id as string),
   "Anime details",
 ));
 // ─── Movies (TMDb) ─────────────────────────────────────────────────
-router.get("/movies/search", asyncHandler(async (req: any, res: any) => {
+router.get("/movies/search", asyncHandler(async (req: Request, res: Response) => {
   const { q, page, year } = req.query as any;
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
@@ -167,14 +167,14 @@ router.get("/movies/search", asyncHandler(async (req: any, res: any) => {
   }));
 }));
 router.get("/movies/trending", asyncHandler(
-  (req: any) => getTrendingMovies(
+  (req: Request) => getTrendingMovies(
     req.query.timeWindow as string || "day",
     parseIntParam(req.query.limit as string, 10),
   ),
   "Trending movies",
 ));
 router.get("/movies/discover", asyncHandler(
-  (req: any) => {
+  (req: Request) => {
     const { genreId, year, sortBy, page, minVoteAverage, minVoteCount } = req.query as any;
     return discoverMovies({
       genreId: genreId ? parseInt(genreId, 10) : undefined,
@@ -192,15 +192,15 @@ router.get("/movies/genres", asyncHandler(
   "Movie genres",
 ));
 router.get("/movies/:id/credits", asyncHandler(
-  (req: any) => getMovieCredits(req.params.id as string),
+  (req: Request) => getMovieCredits(req.params.id as string),
   "Movie credits",
 ));
 router.get("/movies/:id", asyncHandler(
-  (req: any) => getMovieDetails(req.params.id as string),
+  (req: Request) => getMovieDetails(req.params.id as string),
   "Movie details",
 ));
 // ─── TV Series (TMDb) ──────────────────────────────────────────────
-router.get("/tv/search", asyncHandler(async (req: any, res: any) => {
+router.get("/tv/search", asyncHandler(async (req: Request, res: Response) => {
   const { q, page, firstAirDateYear } = req.query as any;
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
@@ -213,14 +213,14 @@ router.get("/tv/search", asyncHandler(async (req: any, res: any) => {
   }));
 }));
 router.get("/tv/trending", asyncHandler(
-  (req: any) => getTrendingTvShows(
+  (req: Request) => getTrendingTvShows(
     req.query.timeWindow as string || "day",
     parseIntParam(req.query.limit as string, 10),
   ),
   "Trending TV shows",
 ));
 router.get("/tv/discover", asyncHandler(
-  (req: any) => {
+  (req: Request) => {
     const { genreId, firstAirDateYear, sortBy, page, minVoteAverage, minVoteCount } = req.query as any;
     return discoverTvShows({
       genreId: genreId ? parseInt(genreId, 10) : undefined,
@@ -240,22 +240,22 @@ router.get("/tv/genres", asyncHandler(
   "TV genres",
 ));
 router.get("/tv/:id/credits", asyncHandler(
-  (req: any) => getTvShowCredits(req.params.id as string),
+  (req: Request) => getTvShowCredits(req.params.id as string),
   "TV credits",
 ));
 router.get("/tv/:id/season/:seasonNumber", asyncHandler(
-  (req: any) => getTvSeasonDetails(
+  (req: Request) => getTvSeasonDetails(
     req.params.id as string,
     parseInt(req.params.seasonNumber as string, 10),
   ),
   "TV season details",
 ));
 router.get("/tv/:id", asyncHandler(
-  (req: any) => getTvShowDetails(req.params.id as string),
+  (req: Request) => getTvShowDetails(req.params.id as string),
   "TV show details",
 ));
 // ─── Periodic Table (in-memory) ────────────────────────────────────
-router.get("/elements/search", (req: any, res: any) => {
+router.get("/elements/search", (req: Request, res: Response) => {
   const { q, limit, category, block } = req.query as any;
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
@@ -266,7 +266,7 @@ router.get("/elements/search", (req: any, res: any) => {
     block,
   }));
 });
-router.get("/elements/rank", (req: any, res: any) => {
+router.get("/elements/rank", (req: Request, res: Response) => {
   const { property, limit, order, category, block } = req.query as any;
   if (!property) {
     return res
@@ -289,7 +289,7 @@ router.get("/elements/categories", asyncHandler(
   "Element categories",
   500,
 ));
-router.get("/elements/:symbol", (req: any, res: any) => {
+router.get("/elements/:symbol", (req: Request, res: Response) => {
   const result = getElementBySymbol(req.params.symbol as string);
   if (!result) {
     return res
@@ -299,7 +299,7 @@ router.get("/elements/:symbol", (req: any, res: any) => {
   res.json(result);
 });
 // ─── World Bank Indicators (in-memory) ─────────────────────────────
-router.get("/indicators/country/:code", (req: any, res: any) => {
+router.get("/indicators/country/:code", (req: Request, res: Response) => {
   const result = getCountryIndicators(req.params.code as string);
   if (!result) {
     return res
@@ -308,7 +308,7 @@ router.get("/indicators/country/:code", (req: any, res: any) => {
   }
   res.json(result);
 });
-router.get("/indicators/rank", (req: any, res: any) => {
+router.get("/indicators/rank", (req: Request, res: Response) => {
   const { indicator, limit, order } = req.query as any;
   if (!indicator) {
     return res
@@ -324,7 +324,7 @@ router.get("/indicators/rank", (req: any, res: any) => {
   }
   res.json(result);
 });
-router.get("/indicators/compare", (req: any, res: any) => {
+router.get("/indicators/compare", (req: Request, res: Response) => {
   const { countries, indicator } = req.query as any;
   if (!countries) {
     return res.status(400).json({
@@ -353,7 +353,7 @@ router.get("/indicators/list", asyncHandler(
   500,
 ));
 // ─── Exoplanets ────────────────────────────────────────────────────
-router.get("/exoplanets/search", (req: any, res: any) => {
+router.get("/exoplanets/search", (req: Request, res: Response) => {
   const { q, limit, method } = req.query as any;
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
@@ -363,14 +363,14 @@ router.get("/exoplanets/search", (req: any, res: any) => {
     method,
   }));
 });
-router.get("/exoplanets/lookup/:name", (req: any, res: any) => {
+router.get("/exoplanets/lookup/:name", (req: Request, res: Response) => {
   const result = getExoplanetByName(req.params.name as string);
   if (!result) {
     return res.status(404).json({ error: `Exoplanet not found: ${req.params.name as string}` });
   }
   res.json(result);
 });
-router.get("/exoplanets/rank", (req: any, res: any) => {
+router.get("/exoplanets/rank", (req: Request, res: Response) => {
   const { field, limit, order } = req.query as any;
   if (!field) {
     return res.status(400).json({ error: "Query parameter 'field' is required" });
@@ -386,14 +386,14 @@ router.get("/exoplanets/stats", asyncHandler(
   500,
 ));
 router.get("/exoplanets/habitable", asyncHandler(
-  async (req: any) => getHabitableZonePlanets({
+  async (req: Request) => getHabitableZonePlanets({
     limit: parseIntParam(req.query.limit as string, 20),
   }),
   "Habitable zone query",
   500,
 ));
 // ─── YouTube ───────────────────────────────────────────────────────
-router.get("/youtube/video", asyncHandler(async (req: any, res: any) => {
+router.get("/youtube/video", asyncHandler(async (req: Request, res: Response) => {
   const { url, lang, transcript, timestamps } = req.query as any;
   if (!url) {
     return res.status(400).json({ error: "Query parameter 'url' is required (YouTube URL or video ID)" });
@@ -409,7 +409,7 @@ router.get("/youtube/video", asyncHandler(async (req: any, res: any) => {
   res.json(result);
 }));
 // ─── GitHub ────────────────────────────────────────────────────────
-router.get("/github/repo", asyncHandler(async (req: any, res: any) => {
+router.get("/github/repo", asyncHandler(async (req: Request, res: Response) => {
   const { url, readme, languages } = req.query as any;
   if (!url) {
     return res.status(400).json({ error: "Query parameter 'url' is required (GitHub URL or owner/repo)" });
@@ -424,7 +424,7 @@ router.get("/github/repo", asyncHandler(async (req: any, res: any) => {
   res.json(result);
 }));
 // ─── Reddit ────────────────────────────────────────────────────────
-router.get("/reddit/thread", asyncHandler(async (req: any, res: any) => {
+router.get("/reddit/thread", asyncHandler(async (req: Request, res: Response) => {
   const { url, commentLimit } = req.query as any;
   if (!url) {
     return res.status(400).json({ error: "Query parameter 'url' is required (Reddit URL)" });
@@ -438,7 +438,7 @@ router.get("/reddit/thread", asyncHandler(async (req: any, res: any) => {
   res.json(result);
 }));
 // ─── NPM ───────────────────────────────────────────────────────────
-router.get("/npm/package", asyncHandler(async (req: any, res: any) => {
+router.get("/npm/package", asyncHandler(async (req: Request, res: Response) => {
   const { name, readme } = req.query as any;
   if (!name) {
     return res.status(400).json({ error: "Query parameter 'name' is required (NPM package name)" });
@@ -453,11 +453,11 @@ router.get("/npm/package", asyncHandler(async (req: any, res: any) => {
 }));
 // ─── PyPI ──────────────────────────────────────────────────────────
 router.get("/pypi/package", asyncHandler(
-  (req: any) => getPyPiPackage(req.query.name as string),
+  (req: Request) => getPyPiPackage(req.query.name as string),
   "PyPI lookup",
 ));
 // ─── PDF ───────────────────────────────────────────────────────────
-router.get("/pdf/read", asyncHandler(async (req: any, res: any) => {
+router.get("/pdf/read", asyncHandler(async (req: Request, res: Response) => {
   const { url, maxPages } = req.query as any;
   if (!url) {
     return res.status(400).json({ error: "Query parameter 'url' is required (URL to a PDF file)" });
@@ -469,7 +469,7 @@ router.get("/pdf/read", asyncHandler(async (req: any, res: any) => {
   res.json(result);
 }));
 // ─── RSS ───────────────────────────────────────────────────────────
-router.get("/rss/feed", asyncHandler(async (req: any, res: any) => {
+router.get("/rss/feed", asyncHandler(async (req: Request, res: Response) => {
   const { url, limit } = req.query as any;
   if (!url) {
     return res.status(400).json({ error: "Query parameter 'url' is required (RSS/Atom feed URL)" });
@@ -483,7 +483,7 @@ router.get("/rss/feed", asyncHandler(async (req: any, res: any) => {
   res.json(result);
 }));
 // ─── Twitter/X ─────────────────────────────────────────────────────
-router.get("/twitter/post", asyncHandler(async (req: any, res: any) => {
+router.get("/twitter/post", asyncHandler(async (req: Request, res: Response) => {
   const { url } = req.query as any;
   if (!url) {
     return res.status(400).json({ error: "Query parameter 'url' is required (Twitter/X URL or tweet ID)" });
@@ -495,7 +495,7 @@ router.get("/twitter/post", asyncHandler(async (req: any, res: any) => {
   res.json(result);
 }));
 // ─── Hacker News ───────────────────────────────────────────────────
-router.get("/hackernews/thread", asyncHandler(async (req: any, res: any) => {
+router.get("/hackernews/thread", asyncHandler(async (req: Request, res: Response) => {
   const { url, commentLimit } = req.query as any;
   if (!url) {
     return res.status(400).json({ error: "Query parameter 'url' is required (HN URL or item ID)" });
@@ -509,7 +509,7 @@ router.get("/hackernews/thread", asyncHandler(async (req: any, res: any) => {
   res.json(result);
 }));
 // ─── Stack Overflow ────────────────────────────────────────────────
-router.get("/stackoverflow/question", asyncHandler(async (req: any, res: any) => {
+router.get("/stackoverflow/question", asyncHandler(async (req: Request, res: Response) => {
   const { url, answerLimit } = req.query as any;
   if (!url) {
     return res.status(400).json({ error: "Query parameter 'url' is required (Stack Overflow URL or question ID)" });
@@ -523,7 +523,7 @@ router.get("/stackoverflow/question", asyncHandler(async (req: any, res: any) =>
   res.json(result);
 }));
 // ─── Unified: Web Content (YouTube/Reddit/Twitter/HN/SO/GitHub) ───
-router.get("/web/content", asyncHandler(async (req: any, res: any) => {
+router.get("/web/content", asyncHandler(async (req: Request, res: Response) => {
   const { url, commentLimit, answerLimit, transcript, lang, readme, languages, maxChars } = req.query as any;
   if (!url) {
     return res.status(400).json({ error: "Query parameter 'url' is required" });
@@ -537,7 +537,7 @@ router.get("/web/content", asyncHandler(async (req: any, res: any) => {
   res.json(result);
 }));
 // ─── Unified: Package Info (NPM/PyPI) ─────────────────────────────
-router.get("/package/info", asyncHandler(async (req: any, res: any) => {
+router.get("/package/info", asyncHandler(async (req: Request, res: Response) => {
   const { name, registry, readme } = req.query as any;
   if (!name) {
     return res.status(400).json({ error: "Query parameter 'name' is required" });
@@ -552,40 +552,40 @@ router.get("/package/info", asyncHandler(async (req: any, res: any) => {
   res.json(result);
 }));
 // ─── Music (MusicBrainz) ───────────────────────────────────────────
-router.get("/music/artists/search", asyncHandler(async (req: any, res: any) => {
+router.get("/music/artists/search", asyncHandler(async (req: Request, res: Response) => {
   const { q, limit } = req.query as any;
   if (!q) return res.status(400).json({ error: "Query parameter 'q' is required" });
   res.json(await searchArtists(q, parseIntParam(limit, 10)));
 }));
 router.get("/music/artists/:mbid", asyncHandler(
-  (req: any) => getArtist(req.params.mbid as string),
+  (req: Request) => getArtist(req.params.mbid as string),
   "Artist details",
 ));
-router.get("/music/albums/search", asyncHandler(async (req: any, res: any) => {
+router.get("/music/albums/search", asyncHandler(async (req: Request, res: Response) => {
   const { q, artist, limit } = req.query as any;
   if (!q) return res.status(400).json({ error: "Query parameter 'q' is required" });
   res.json(await searchAlbums(q, artist, parseIntParam(limit, 10)));
 }));
 router.get("/music/albums/:mbid", asyncHandler(
-  (req: any) => getAlbum(req.params.mbid as string),
+  (req: Request) => getAlbum(req.params.mbid as string),
   "Album details",
 ));
-router.get("/music/tracks/search", asyncHandler(async (req: any, res: any) => {
+router.get("/music/tracks/search", asyncHandler(async (req: Request, res: Response) => {
   const { q, artist, limit } = req.query as any;
   if (!q) return res.status(400).json({ error: "Query parameter 'q' is required" });
   res.json(await searchTracks(q, artist, parseIntParam(limit, 10)));
 }));
 // ─── Wayback Machine ───────────────────────────────────────────────
-router.get("/wayback/snapshot", asyncHandler(async (req: any, res: any) => {
+router.get("/wayback/snapshot", asyncHandler(async (req: Request, res: Response) => {
   const { url, timestamp } = req.query as any;
   if (!url) return res.status(400).json({ error: "Query parameter 'url' is required" });
   try {
     res.json(await getWaybackSnapshot(url, timestamp));
-  } catch (error: any) {
-    res.status(500).json({ error: `Wayback lookup failed: ${error.message}` });
+  } catch (error: unknown) {
+    res.status(500).json({ error: `Wayback lookup failed: ${(error as Error).message}` });
   }
 }));
-router.get("/wayback/history", asyncHandler(async (req: any, res: any) => {
+router.get("/wayback/history", asyncHandler(async (req: Request, res: Response) => {
   const { url, limit, from, to } = req.query as any;
   if (!url) return res.status(400).json({ error: "Query parameter 'url' is required" });
   try {
@@ -594,8 +594,8 @@ router.get("/wayback/history", asyncHandler(async (req: any, res: any) => {
       from,
       to,
     }));
-  } catch (error: any) {
-    res.status(500).json({ error: `Wayback history failed: ${error.message}` });
+  } catch (error: unknown) {
+    res.status(500).json({ error: `Wayback history failed: ${(error as Error).message}` });
   }
 }));
 // ─── Health ────────────────────────────────────────────────────────
@@ -632,7 +632,7 @@ export function getKnowledgeHealth() {
 // UNIFIED DISPATCHERS
 // ═══════════════════════════════════════════════════════════════════
 // ── Unified Book Lookup ────────────────────────────────────────────
-router.get("/books/lookup", asyncHandler(async (req: any, res: any) => {
+router.get("/books/lookup", asyncHandler(async (req: Request, res: Response) => {
   const { action, q, workKey, authorKey, limit } = req.query as any;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["search", "work", "author"] });
   switch (action) {
@@ -652,7 +652,7 @@ router.get("/books/lookup", asyncHandler(async (req: any, res: any) => {
   }
 }));
 // ── Unified Country Data ───────────────────────────────────────────
-router.get("/countries/data", asyncHandler(async (req: any, res: any) => {
+router.get("/countries/data", asyncHandler(async (req: Request, res: Response) => {
   const { action, name, code, indicator, countries, limit, order } = req.query as any;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["info", "code", "indicators", "rank", "compare"] });
   switch (action) {
@@ -679,7 +679,7 @@ router.get("/countries/data", asyncHandler(async (req: any, res: any) => {
   }
 }));
 // ── Unified Element Data ───────────────────────────────────────────
-router.get("/elements/data", asyncHandler(async (req: any, res: any) => {
+router.get("/elements/data", asyncHandler(async (req: Request, res: Response) => {
   const { action, q, symbol, property, limit, order, category, block } = req.query as any;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["search", "lookup", "rank", "categories"] });
   switch (action) {
@@ -701,7 +701,7 @@ router.get("/elements/data", asyncHandler(async (req: any, res: any) => {
   }
 }));
 // ── Unified Exoplanet Data ─────────────────────────────────────────
-router.get("/exoplanets/data", asyncHandler(async (req: any, res: any) => {
+router.get("/exoplanets/data", asyncHandler(async (req: Request, res: Response) => {
   const { action, q, name, field, limit, order, method } = req.query as any;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["search", "lookup", "rank", "stats", "habitable"] });
   switch (action) {
@@ -725,7 +725,7 @@ router.get("/exoplanets/data", asyncHandler(async (req: any, res: any) => {
   }
 }));
 // ── Unified Anime Data ─────────────────────────────────────────────
-router.get("/anime/data", asyncHandler(async (req: any, res: any) => {
+router.get("/anime/data", asyncHandler(async (req: Request, res: Response) => {
   const { action, q, id, limit } = req.query as any;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["search", "top", "season", "details"] });
   switch (action) {
@@ -747,45 +747,45 @@ router.get("/anime/data", asyncHandler(async (req: any, res: any) => {
   }
 }));
 // ── Unified Media (Movies & TV) ────────────────────────────────────
-router.get("/media/search", asyncHandler(async (req: any, res: any) => {
+router.get("/media/search", asyncHandler(async (req: Request, res: Response) => {
   const { type, q, year, page } = req.query as any;
   if (!type || !q) return res.status(400).json({ error: "'type' and 'q' are required" });
   req.url = `/${type === "tv" ? "tv" : "movies"}/search?q=${q}&year=${year || ""}&page=${page || 1}${type === "tv" ? "&firstAirDateYear=" + (year || "") : ""}`;
   return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
 }));
-router.get("/media/trending", asyncHandler(async (req: any, res: any) => {
+router.get("/media/trending", asyncHandler(async (req: Request, res: Response) => {
   const { type, timeWindow, limit } = req.query as any;
   if (!type) return res.status(400).json({ error: "'type' is required" });
   req.url = `/${type === "tv" ? "tv" : "movies"}/trending?timeWindow=${timeWindow || "week"}&limit=${limit || 10}`;
   return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
 }));
-router.get("/media/discover", asyncHandler(async (req: any, res: any) => {
+router.get("/media/discover", asyncHandler(async (req: Request, res: Response) => {
   const { type, genreId, year, sortBy, page, minVoteAverage, minVoteCount } = req.query as any;
   if (!type) return res.status(400).json({ error: "'type' is required" });
   const yearParam = type === "tv" ? `firstAirDateYear=${year || ""}` : `year=${year || ""}`;
   req.url = `/${type === "tv" ? "tv" : "movies"}/discover?${yearParam}&genreId=${genreId || ""}&sortBy=${sortBy || ""}&page=${page || 1}&minVoteAverage=${minVoteAverage || ""}&minVoteCount=${minVoteCount || ""}`;
   return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
 }));
-router.get("/media/genres", asyncHandler(async (req: any, res: any) => {
+router.get("/media/genres", asyncHandler(async (req: Request, res: Response) => {
   const { type } = req.query as any;
   if (!type) return res.status(400).json({ error: "'type' is required" });
   req.url = `/${type === "tv" ? "tv" : "movies"}/genres`;
   return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
 }));
-router.get("/media/:id/credits", asyncHandler(async (req: any, res: any) => {
+router.get("/media/:id/credits", asyncHandler(async (req: Request, res: Response) => {
   const { type } = req.query as any;
   if (!type) return res.status(400).json({ error: "'type' is required" });
   req.url = `/${type === "tv" ? "tv" : "movies"}/${req.params.id as string}/credits`;
   return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
 }));
-router.get("/media/:id", asyncHandler(async (req: any, res: any) => {
+router.get("/media/:id", asyncHandler(async (req: Request, res: Response) => {
   const { type } = req.query as any;
   if (!type) return res.status(400).json({ error: "'type' is required" });
   req.url = `/${type === "tv" ? "tv" : "movies"}/${req.params.id as string}`;
   return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
 }));
 // ── Unified Music Data ─────────────────────────────────────────────
-router.get("/music", asyncHandler(async (req: any, res: any) => {
+router.get("/music", asyncHandler(async (req: Request, res: Response) => {
   const { action, q, mbid, artist, limit } = req.query as any;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["search_artists", "artist", "search_albums", "album", "search_tracks"] });
   switch (action) {
@@ -816,7 +816,7 @@ router.get("/music", asyncHandler(async (req: any, res: any) => {
   }
 }));
 // ── Unified Wayback Machine ────────────────────────────────────────
-router.get("/wayback", asyncHandler(async (req: any, res: any) => {
+router.get("/wayback", asyncHandler(async (req: Request, res: Response) => {
   const { action, url, timestamp, limit, from, to } = req.query as any;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["snapshot", "history"] });
   if (!url) return res.status(400).json({ error: "'url' is required" });

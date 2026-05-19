@@ -1,3 +1,4 @@
+import type { Request, Response } from "express";
 import CONFIG from "./config.ts";
 import crypto from "node:crypto";
 import logger from "./logger.ts";
@@ -16,11 +17,11 @@ export function randomUserAgent() {
 
 /**
  * Extract the text content of an XML tag (supports CDATA, namespaced tags).
-
-
+ *
+ *
  * @returns {string|null} Tag content or null
  */
-export function extractXmlTag(xml: any, tag: any) {
+export function extractXmlTag(xml: string, tag: string): string | null {
   const escapedTag = tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const regex = new RegExp(
     `<${escapedTag}><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${escapedTag}>|<${escapedTag}>([\\s\\S]*?)<\\/${escapedTag}>`,
@@ -32,12 +33,12 @@ export function extractXmlTag(xml: any, tag: any) {
 
 /**
  * Extract all occurrences of an XML element from a string.
-
-
+ *
+ *
  * @returns {string[]} Array of raw element blocks
  */
-export function extractXmlItems(xml: any, tag: any) {
-  const items: any[] = [];
+export function extractXmlItems(xml: string, tag: string): string[] {
+  const items: string[] = [];
   const openTag = `<${tag}>`;
   const closeTag = `</${tag}>`;
   let cursor = 0;
@@ -58,8 +59,8 @@ export function extractXmlItems(xml: any, tag: any) {
 
 /**
  * Build browser-like headers for web scraping requests.
-
-
+ *
+ *
  */
 export function buildScraperHeaders(referer?: string): Record<string, string> {
   const headers: Record<string, string> = {
@@ -83,19 +84,32 @@ export function buildScraperHeaders(referer?: string): Record<string, string> {
 
 // ─── Event Utilities ───────────────────────────────────────────────
 
+interface StaticMapOptions {
+  zoom?: number;
+  size?: string;
+  maptype?: string;
+  markerColor?: string;
+}
+
+interface EventWithVenue {
+  venue?: { latitude?: number; longitude?: number };
+  mapImageUrl?: string | null;
+  [key: string]: unknown;
+}
+
 /**
  * Build a Google Static Maps API URL for a given lat/lng.
  */
 export function buildStaticMapUrl(
-  latitude: any,
-  longitude: any,
+  latitude: number,
+  longitude: number,
   {
     zoom = 14,
     size = "400x300",
     maptype = "roadmap",
     markerColor = "red",
-  }: any = {},
-) {
+  }: StaticMapOptions = {},
+): string | null {
   if (!CONFIG.GOOGLE_PLACES_API_KEY || !latitude || !longitude) return null;
 
   const params = new URLSearchParams({
@@ -113,7 +127,7 @@ export function buildStaticMapUrl(
 /**
  * Enrich an event with a static map URL if it has coordinates.
  */
-export function enrichEventWithMapUrl(event: any) {
+export function enrichEventWithMapUrl(event: EventWithVenue): EventWithVenue {
   if (!event?.venue?.latitude || !event?.venue?.longitude) return event;
 
   event.mapImageUrl = buildStaticMapUrl(
@@ -126,14 +140,28 @@ export function enrichEventWithMapUrl(event: any) {
 
 // ─── Product Utilities ─────────────────────────────────────────────
 
+interface CategoryMapping {
+  name: string;
+  slug?: string;
+  id?: string;
+  unified?: string;
+}
+
+interface ProductForScoring {
+  rank?: number | null;
+  rating?: number | null;
+  reviewCount?: number | null;
+  fetchedAt?: string | Date | null;
+}
+
 /**
  * Map a source-specific category string to a unified category.
  */
-export function normalizeCategory(sourceCategory: any, categoryMappings: any) {
+export function normalizeCategory(sourceCategory: string | undefined, categoryMappings: CategoryMapping[]): string {
   if (!sourceCategory) return "other";
   const lower = sourceCategory.toLowerCase();
   const match = categoryMappings.find(
-    (m: any) =>
+    (m) =>
       m.name.toLowerCase() === lower ||
       m.slug?.toLowerCase() === lower ||
       m.id?.toLowerCase() === lower,
@@ -144,7 +172,7 @@ export function normalizeCategory(sourceCategory: any, categoryMappings: any) {
 /**
  * Compute a composite trending score for cross-source ranking.
  */
-export function computeTrendingScore(product: any) {
+export function computeTrendingScore(product: ProductForScoring): number {
   const rankScore = product.rank ? Math.max(0, 100 - product.rank) : 50;
   const ratingScore = (product.rating || 0) * 4;
   const reviewScore = product.reviewCount
@@ -168,11 +196,11 @@ export function computeTrendingScore(product: any) {
  * maps "outside allowed"/"blocked" errors to 403, other errors to 400,
  * and sends the result as JSON on success.
  *
-
+ *
  * @returns {Function} Express middleware
  */
-export function agenticHandler(fn: any) {
-  return async (req: any, res: any) => {
+export function agenticHandler(fn: (req: Request) => Promise<{ error?: string; [key: string]: unknown }>) {
+  return async (req: Request, res: Response) => {
     try {
       const result = await fn(req);
       if (result.error) {
@@ -182,8 +210,8 @@ export function agenticHandler(fn: any) {
         return res.status(isForbidden ? 403 : 400).json(result);
       }
       res.json(result);
-    } catch (error: any) {
-      logger.error(`Agentic handler error: ${error.message}`);
+    } catch (error: unknown) {
+      logger.error(`Agentic handler error: ${(error as Error).message}`);
       res.status(500).json({ error: "Internal agentic tool error" });
     }
   };
@@ -191,28 +219,33 @@ export function agenticHandler(fn: any) {
 
 // ─── Ephemeral Store ──────────────────────────────────────────
 
+interface EphemeralEntry<T> {
+  value: T;
+  createdAt: number;
+}
+
 /**
  * Generic in-memory ephemeral store backed by a Map with automatic
  * TTL expiry and lazy cleanup. Replaces the duplicated
  * Map + TTL + cleanup pattern used across CSV, QR, LaTeX, Diagram,
  * Map, and Chart stores.
  */
-export class EphemeralStore {
-  #map = new Map();
-  #ttlMs;
-  #maxSize;
+export class EphemeralStore<T = unknown> {
+  #map = new Map<string, EphemeralEntry<T>>();
+  #ttlMs: number;
+  #maxSize: number;
 
-  constructor(ttlMs: any = EPHEMERAL_TTL_MS, maxSize: any = EPHEMERAL_MAX_SIZE) {
+  constructor(ttlMs: number = EPHEMERAL_TTL_MS, maxSize: number = EPHEMERAL_MAX_SIZE) {
     this.#ttlMs = ttlMs;
     this.#maxSize = maxSize;
   }
 
   /**
    * Store a value and return its generated ID.
-
+   *
    * @returns {string} A 12-character UUID prefix
    */
-  set(value: any) {
+  set(value: T): string {
     const id = crypto.randomUUID().slice(0, 12);
     this.#map.set(id, { value, createdAt: Date.now() });
     this.#cleanup();
@@ -221,10 +254,8 @@ export class EphemeralStore {
 
   /**
    * Retrieve a stored value by ID. Returns null if expired or not found.
-
-
    */
-  get(id: any) {
+  get(id: string): T | null {
     const entry = this.#map.get(id);
     if (!entry) return null;
     if (Date.now() - entry.createdAt > this.#ttlMs) {
@@ -249,10 +280,8 @@ export class EphemeralStore {
 /**
  * Build a full local URL for this server (embed/download endpoints).
  * Uses TOOLS_SERVICE_URL from vault when available, falling back to localhost.
-
-
  */
-export function buildLocalUrl(routePath: any, params: any) {
+export function buildLocalUrl(routePath: string, params?: Record<string, string>): string {
   const selfBaseUrl = CONFIG.TOOLS_SERVICE_URL;
   const base = `${selfBaseUrl}/${routePath}`;
   if (!params || Object.keys(params).length === 0) return base;
@@ -262,17 +291,24 @@ export function buildLocalUrl(routePath: any, params: any) {
 
 // ─── HTML Embed Shell ─────────────────────────────────────────
 
+interface EmbedHtmlOptions {
+  headExtra?: string;
+  styles: string;
+  bodyContent: string;
+  scripts: string;
+}
+
 /**
  * Build a standard HTML embed page shell. Used by LaTeX, Mermaid,
  * and future embed renderers to avoid duplicating the HTML boilerplate.
-
-
+ *
+ *
  * @param {string} options.styles - CSS to inject into a <style> block
  * @param {string} options.bodyContent - Inner HTML for <body>
  * @param {string} options.scripts - Script tags or inline scripts
  * @returns {string} Complete HTML document
  */
-export function buildEmbedHtml({ headExtra = "", styles, bodyContent, scripts }: any) {
+export function buildEmbedHtml({ headExtra = "", styles, bodyContent, scripts }: EmbedHtmlOptions): string {
   return `<!DOCTYPE html>
 <html><head>
 <meta charset="utf-8">
@@ -311,19 +347,27 @@ ${scripts}
 
 // ─── Caller Context Extraction ────────────────────────────────
 
+interface CallerContext {
+  project: string;
+  username: string;
+  agent: string | null;
+  traceId: string | null;
+  agentSessionId: string | null;
+}
+
 /**
  * Extract caller identity context from request headers.
  * Replaces the duplicated 5-line header extraction block in
  * CreativeRoutes (4 occurrences) and AgenticRoutes.
-
+ *
  * @returns {{ project: string, username: string, agent: string|null, traceId: string|null, agentSessionId: string|null }}
  */
-export function extractCallerContext(req: any) {
+export function extractCallerContext(req: Request): CallerContext {
   return {
-    project: req.headers["x-project"] || "tools-api",
-    username: req.headers["x-username"] || "system",
-    agent: req.headers["x-agent"] || null,
-    traceId: req.headers["x-trace-id"] || null,
-    agentSessionId: req.headers["x-agent-session-id"] || null,
+    project: (req.headers["x-project"] as string) || "tools-api",
+    username: (req.headers["x-username"] as string) || "system",
+    agent: (req.headers["x-agent"] as string) || null,
+    traceId: (req.headers["x-trace-id"] as string) || null,
+    agentSessionId: (req.headers["x-agent-session-id"] as string) || null,
   };
 }

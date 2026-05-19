@@ -1,6 +1,6 @@
 import { asyncHandler, HealthTracker, setupStreamingSSE } from "@rodrigo-barraza/utilities-library/express";
 import { parseIntParam } from "@rodrigo-barraza/utilities-library";
-import { Router } from "express";
+import { Request, Response, Router } from "express";
 import DiscordDataService from "../services/DiscordDataService.ts";
 import logger from "../logger.ts";
 const router = Router();
@@ -15,7 +15,7 @@ const opts = { errorStatus: 500, health };
 // Query: ?guildId=...&channelId=...&userId=...&query=...&before=...&after=...&limit=50&mode=messages
 router.get(
   "/messages/search",
-  asyncHandler((req: any) => {
+  asyncHandler((req: Request) => {
     return DiscordDataService.searchMessages({
       guildId: req.query.guildId as string,
       channelId: req.query.channelId as string,
@@ -38,7 +38,7 @@ router.get(
 //   `delete`    — IDs of messages removed since the last poll
 //   `heartbeat` — keep-alive ping every 15s
 // Query: ?guildId=...&channelId=...&limit=50
-router.get("/messages/stream", (req: any, res: any) => {
+router.get("/messages/stream", (req: Request, res: Response) => {
   const guildId = req.query.guildId as string;
   const channelId = req.query.channelId as string;
   const limit = parseIntParam(req.query.limit as string, 50, 500);
@@ -80,11 +80,11 @@ router.get("/messages/stream", (req: any, res: any) => {
       reactionFingerprints = new Map(messages.map((m: any) => [m.id, reactionHash(m)]));
       res.write(`event: init\ndata: ${JSON.stringify({ messages })}\n\n`);
       health.markSuccess();
-    } catch (error: any) {
-      logger.error("[discord/stream] Init error:", error.message);
+    } catch (error: unknown) {
+      logger.error("[discord/stream] Init error:", (error as Error).message);
       health.markError(error);
       if (!closed) {
-        res.write(`event: error\ndata: ${JSON.stringify({ error: error.message })}\n\n`);
+        res.write(`event: error\ndata: ${JSON.stringify({ error: (error as Error).message })}\n\n`);
       }
     }
   }
@@ -129,8 +129,8 @@ router.get("/messages/stream", (req: any, res: any) => {
       // Update tracked sets
       knownIds = currentIds;
       reactionFingerprints = new Map(messages.map((m: any) => [m.id, reactionHash(m)]));
-    } catch (error: any) {
-      logger.error("[discord/stream] Poll error:", error.message);
+    } catch (error: unknown) {
+      logger.error("[discord/stream] Poll error:", (error as Error).message);
       health.markError(error);
     }
   }
@@ -158,7 +158,7 @@ router.get("/messages/stream", (req: any, res: any) => {
 // Query: ?guildId=...&groupBy=user&query=...&before=...&after=...&topN=25
 router.get(
   "/messages/analytics",
-  asyncHandler((req: any) => {
+  asyncHandler((req: Request) => {
     return DiscordDataService.analyzeMessages({
       guildId: req.query.guildId as string,
       channelId: req.query.channelId as string,
@@ -178,7 +178,7 @@ router.get(
 // Query: ?guildId=...&channelId=...&days=7&topN=15
 router.get(
   "/activity",
-  asyncHandler((req: any) => {
+  asyncHandler((req: Request) => {
     return DiscordDataService.getServerActivity({
       guildId: req.query.guildId as string,
       channelId: req.query.channelId as string,

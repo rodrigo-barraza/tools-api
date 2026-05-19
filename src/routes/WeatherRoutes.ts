@@ -1,6 +1,6 @@
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { parseIntParam } from "@rodrigo-barraza/utilities-library";
-import { Router } from "express";
+import { Request, Response, Router } from "express";
 import { fetchLiveWeather } from "../fetchers/weather/LiveWeatherFetcher.ts";
 import {
   getRecentEarthquakes,
@@ -82,96 +82,96 @@ import {
 import { getAvalanche, getAvalancheHealth } from "../caches/AvalancheCache.ts";
 const router = Router();
 // ─── Weather ───────────────────────────────────────────────────────
-router.get("/weather", (_req: any, res: any) => res.json(getLatest()));
-router.get("/weather/current", (_req: any, res: any) => res.json(getCurrent()));
-router.get("/weather/forecast", (_req: any, res: any) => res.json(getForecasts()));
-router.get("/weather/air", (_req: any, res: any) => res.json(getAirQuality()));
-router.get("/weather/daylight", (_req: any, res: any) => res.json(getDaylight()));
+router.get("/weather", (_req: Request, res: Response) => res.json(getLatest()));
+router.get("/weather/current", (_req: Request, res: Response) => res.json(getCurrent()));
+router.get("/weather/forecast", (_req: Request, res: Response) => res.json(getForecasts()));
+router.get("/weather/air", (_req: Request, res: Response) => res.json(getAirQuality()));
+router.get("/weather/daylight", (_req: Request, res: Response) => res.json(getDaylight()));
 // ─── Earthquakes ───────────────────────────────────────────────────
-router.get("/earthquakes", (_req: any, res: any) => res.json(getLatestEarthquakes()));
-router.get("/earthquakes/summary", (_req: any, res: any) =>
+router.get("/earthquakes", (_req: Request, res: Response) => res.json(getLatestEarthquakes()));
+router.get("/earthquakes/summary", (_req: Request, res: Response) =>
   res.json(getEarthquakeSummary()),
 );
-router.get("/earthquakes/recent", asyncHandler(async (req: any, res: any) => {
+router.get("/earthquakes/recent", asyncHandler(async (req: Request, res: Response) => {
   const hours = parseIntParam(req.query.hours as string, 24);
   const minMag = req.query.minMag as string ? parseFloat(req.query.minMag as string) : null;
   const limit = parseIntParam(req.query.limit as string, 100);
   res.json(await getRecentEarthquakes(hours, minMag, limit));
 }));
-router.get("/earthquakes/:id", asyncHandler(async (req: any, res: any) => {
+router.get("/earthquakes/:id", asyncHandler(async (req: Request, res: Response) => {
   const event = await getEarthquakeById(req.params.id as string);
   if (!event) return res.status(404).json({ error: "Earthquake not found" });
   res.json(event);
 }));
 // ─── NEO ───────────────────────────────────────────────────────────
-router.get("/neo", (_req: any, res: any) => res.json(getLatestNeos()));
-router.get("/neo/summary", (_req: any, res: any) => res.json(getNeoSummary()));
-router.get("/neo/recent", asyncHandler(async (req: any, res: any) => {
+router.get("/neo", (_req: Request, res: Response) => res.json(getLatestNeos()));
+router.get("/neo/summary", (_req: Request, res: Response) => res.json(getNeoSummary()));
+router.get("/neo/recent", asyncHandler(async (req: Request, res: Response) => {
   const days = parseIntParam(req.query.days as string, 7);
   const hazardousOnly = req.query.hazardousOnly as string === "true";
   const limit = parseIntParam(req.query.limit as string, 100);
   res.json(await getRecentNeos(days, hazardousOnly, limit));
 }));
 // ─── Space Weather ─────────────────────────────────────────────────
-router.get("/space-weather", (_req: any, res: any) => res.json(getLatestSpaceWeather()));
-router.get("/space-weather/flares", (_req: any, res: any) => res.json(getLatestFlares()));
-router.get("/space-weather/flares/recent", asyncHandler(async (req: any, res: any) => {
+router.get("/space-weather", (_req: Request, res: Response) => res.json(getLatestSpaceWeather()));
+router.get("/space-weather/flares", (_req: Request, res: Response) => res.json(getLatestFlares()));
+router.get("/space-weather/flares/recent", asyncHandler(async (req: Request, res: Response) => {
   const days = parseIntParam(req.query.days as string, 7);
   const limit = parseIntParam(req.query.limit as string, 50);
   res.json(await getRecentSolarFlares(days, limit));
 }));
-router.get("/space-weather/cmes", (_req: any, res: any) => res.json(getLatestCmes()));
-router.get("/space-weather/cmes/recent", asyncHandler(async (req: any, res: any) => {
+router.get("/space-weather/cmes", (_req: Request, res: Response) => res.json(getLatestCmes()));
+router.get("/space-weather/cmes/recent", asyncHandler(async (req: Request, res: Response) => {
   const days = parseIntParam(req.query.days as string, 7);
   const earthDirectedOnly = req.query.earthDirected as string === "true";
   const limit = parseIntParam(req.query.limit as string, 50);
   res.json(await getRecentCmes(days, earthDirectedOnly, limit));
 }));
-router.get("/space-weather/storms", (_req: any, res: any) => res.json(getLatestStorms()));
-router.get("/space-weather/storms/recent", asyncHandler(async (req: any, res: any) => {
+router.get("/space-weather/storms", (_req: Request, res: Response) => res.json(getLatestStorms()));
+router.get("/space-weather/storms/recent", asyncHandler(async (req: Request, res: Response) => {
   const days = parseIntParam(req.query.days as string, 30);
   const limit = parseIntParam(req.query.limit as string, 20);
   res.json(await getRecentStorms(days, limit));
 }));
-router.get("/space-weather/summary", (_req: any, res: any) =>
+router.get("/space-weather/summary", (_req: Request, res: Response) =>
   res.json(getSpaceWeatherSummary()),
 );
 // ─── ISS ───────────────────────────────────────────────────────────
-router.get("/iss", (_req: any, res: any) => res.json(getIssData()));
-router.get("/iss/trajectory", (_req: any, res: any) => res.json(getIssTrajectory()));
+router.get("/iss", (_req: Request, res: Response) => res.json(getIssData()));
+router.get("/iss/trajectory", (_req: Request, res: Response) => res.json(getIssTrajectory()));
 // ─── Kp Index ──────────────────────────────────────────────────────
-router.get("/kp", (_req: any, res: any) => res.json(getKpHistory()));
-router.get("/kp/current", (_req: any, res: any) => res.json(getCurrentKp()));
+router.get("/kp", (_req: Request, res: Response) => res.json(getKpHistory()));
+router.get("/kp/current", (_req: Request, res: Response) => res.json(getCurrentKp()));
 // ─── Wildfires ─────────────────────────────────────────────────────
-router.get("/wildfires", (_req: any, res: any) => res.json(getWildfires()));
-router.get("/wildfires/summary", (_req: any, res: any) => res.json(getWildfireSummary()));
+router.get("/wildfires", (_req: Request, res: Response) => res.json(getWildfires()));
+router.get("/wildfires/summary", (_req: Request, res: Response) => res.json(getWildfireSummary()));
 // ─── Tides ─────────────────────────────────────────────────────────
-router.get("/tides", (_req: any, res: any) => res.json(getTides()));
-router.get("/tides/next", (_req: any, res: any) => res.json(getNextTide()));
+router.get("/tides", (_req: Request, res: Response) => res.json(getTides()));
+router.get("/tides/next", (_req: Request, res: Response) => res.json(getNextTide()));
 // ─── Solar Wind ────────────────────────────────────────────────────
-router.get("/solar-wind", (_req: any, res: any) => res.json(getSolarWind()));
-router.get("/solar-wind/latest", (_req: any, res: any) => res.json(getSolarWindLatest()));
+router.get("/solar-wind", (_req: Request, res: Response) => res.json(getSolarWind()));
+router.get("/solar-wind/latest", (_req: Request, res: Response) => res.json(getSolarWindLatest()));
 // ─── Air Quality & Pollen ──────────────────────────────────────────
-router.get("/airquality/google", (_req: any, res: any) =>
+router.get("/airquality/google", (_req: Request, res: Response) =>
   res.json(getGoogleAirQuality()),
 );
-router.get("/pollen", (_req: any, res: any) => res.json(getPollen()));
-router.get("/pollen/today", (_req: any, res: any) => res.json(getPollenToday()));
+router.get("/pollen", (_req: Request, res: Response) => res.json(getPollen()));
+router.get("/pollen/today", (_req: Request, res: Response) => res.json(getPollenToday()));
 // ─── APOD ──────────────────────────────────────────────────────────
-router.get("/apod", (_req: any, res: any) => res.json(getApod()));
+router.get("/apod", (_req: Request, res: Response) => res.json(getApod()));
 // ─── Launches ──────────────────────────────────────────────────────
-router.get("/launches", (_req: any, res: any) => res.json(getLaunches()));
-router.get("/launches/next", (_req: any, res: any) => res.json(getNextLaunch()));
-router.get("/launches/summary", (_req: any, res: any) => res.json(getLaunchSummary()));
+router.get("/launches", (_req: Request, res: Response) => res.json(getLaunches()));
+router.get("/launches/next", (_req: Request, res: Response) => res.json(getNextLaunch()));
+router.get("/launches/summary", (_req: Request, res: Response) => res.json(getLaunchSummary()));
 // ─── Twilight ──────────────────────────────────────────────────────
-router.get("/twilight", (_req: any, res: any) => res.json(getTwilight()));
+router.get("/twilight", (_req: Request, res: Response) => res.json(getTwilight()));
 // ─── Environment Canada ────────────────────────────────────────────
-router.get("/warnings", (_req: any, res: any) => res.json(getWarnings()));
-router.get("/warnings/count", (_req: any, res: any) => res.json(getWarningCount()));
+router.get("/warnings", (_req: Request, res: Response) => res.json(getWarnings()));
+router.get("/warnings/count", (_req: Request, res: Response) => res.json(getWarningCount()));
 // ─── Avalanche ─────────────────────────────────────────────────────
-router.get("/avalanche", (_req: any, res: any) => res.json(getAvalanche()));
+router.get("/avalanche", (_req: Request, res: Response) => res.json(getAvalanche()));
 // ── Live Weather (on-demand, any location) ────────────────────────
-router.get("/live", asyncHandler(async (req: any, res: any) => {
+router.get("/live", asyncHandler(async (req: Request, res: Response) => {
   const { location, latitude, longitude, units } = req.query as any;
   if (!location && (latitude == null || longitude == null)) {
     return res.status(400).json({
@@ -195,8 +195,8 @@ router.get("/live", asyncHandler(async (req: any, res: any) => {
       return res.status(404).json(result);
     }
     res.json(result);
-  } catch (error: any) {
-    res.status(500).json({ error: `Weather fetch failed: ${error.message}` });
+  } catch (error: unknown) {
+    res.status(500).json({ error: `Weather fetch failed: ${(error as Error).message}` });
   }
 }));
 // ── Unified Environment Dispatcher ─────────────────────────────────
@@ -218,7 +218,7 @@ const SOURCE_MAP = {
   warnings: () => getWarnings(),
   air_quality_google: () => getGoogleAirQuality(),
 };
-router.get("/environment", (req: any, res: any) => {
+router.get("/environment", (req: Request, res: Response) => {
   const { source } = req.query as any;
   if (!source) {
     return res.status(400).json({
