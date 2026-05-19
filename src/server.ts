@@ -113,6 +113,17 @@ app.use("/admin", adminRoutes);
 app.use("/agents", agentStatusRoutes);
 mountMcpRoutes(app);
 
+// ─── Global Error Handler ──────────────────────────────────────────
+// Defense-in-depth — catches any unhandled route errors and returns
+// a structured JSON response instead of Express's default HTML page.
+
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  logger.error(`[GlobalErrorHandler] ${err.message}`);
+  if (!res.headersSent) {
+    res.status(500).json({ error: err.message || "Internal server error" });
+  }
+});
+
 // ─── Unified Health ────────────────────────────────────────────────
 
 app.get("/health", async (_req: Request, res: Response) => {

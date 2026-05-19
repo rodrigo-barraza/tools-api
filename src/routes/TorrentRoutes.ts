@@ -183,48 +183,52 @@ router.get("/", asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
-  switch (action) {
-    case "search": {
-      const searchQuery = q || query;
-      if (!searchQuery) return res.status(400).json({ error: "'q' is required for action=search" });
-      const results = await qbt.search(searchQuery, {
-        category: category || "all",
-        plugins: plugins || "enabled",
-        limit: Math.min(parseInt(limit) || 50, 100),
-        timeoutMs: Math.min(parseInt(timeout) || TORRENT_SEARCH_TIMEOUT_MS, TORRENT_MAX_TIMEOUT_MS),
-      });
-      return res.json(results);
+  try {
+    switch (action) {
+      case "search": {
+        const searchQuery = q || query;
+        if (!searchQuery) return res.status(400).json({ error: "'q' is required for action=search" });
+        const results = await qbt.search(searchQuery, {
+          category: category || "all",
+          plugins: plugins || "enabled",
+          limit: Math.min(parseInt(limit) || 50, 100),
+          timeoutMs: Math.min(parseInt(timeout) || TORRENT_SEARCH_TIMEOUT_MS, TORRENT_MAX_TIMEOUT_MS),
+        });
+        return res.json(results);
+      }
+      case "status": {
+        const torrents = await qbt.listTorrents({
+          filter: filter || "all",
+          category,
+          sort: sort || "added_on",
+          limit: Math.min(parseInt(limit) || 50, 200),
+        });
+        return res.json({ count: torrents.length, torrents });
+      }
+      case "plugins": {
+        const pluginList = await qbt.getPlugins();
+        return res.json({ count: pluginList.length, plugins: pluginList });
+      }
+      case "transfer": {
+        const info = await qbt.getTransferInfo();
+        return res.json(info);
+      }
+      case "pause": {
+        const result = await qbt.pauseTorrents(hashes || "all");
+        return res.json(result);
+      }
+      case "resume": {
+        const resumeResult = await qbt.resumeTorrents(hashes || "all");
+        return res.json(resumeResult);
+      }
+      default:
+        return res.status(400).json({
+          error: `Unknown action: ${action}`,
+          actions: ["search", "status", "plugins", "transfer", "pause", "resume"],
+        });
     }
-    case "status": {
-      const torrents = await qbt.listTorrents({
-        filter: filter || "all",
-        category,
-        sort: sort || "added_on",
-        limit: Math.min(parseInt(limit) || 50, 200),
-      });
-      return res.json({ count: torrents.length, torrents });
-    }
-    case "plugins": {
-      const pluginList = await qbt.getPlugins();
-      return res.json({ count: pluginList.length, plugins: pluginList });
-    }
-    case "transfer": {
-      const info = await qbt.getTransferInfo();
-      return res.json(info);
-    }
-    case "pause": {
-      const result = await qbt.pauseTorrents(hashes || "all");
-      return res.json(result);
-    }
-    case "resume": {
-      const resumeResult = await qbt.resumeTorrents(hashes || "all");
-      return res.json(resumeResult);
-    }
-    default:
-      return res.status(400).json({
-        error: `Unknown action: ${action}`,
-        actions: ["search", "status", "plugins", "transfer", "pause", "resume"],
-      });
+  } catch (error: unknown) {
+    res.status(500).json({ error: `${action} failed: ${(error as Error).message}` });
   }
 }));
 

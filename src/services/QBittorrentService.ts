@@ -32,14 +32,19 @@ async function authenticate() {
   const baseUrl = getBaseUrl();
   if (!baseUrl) throw new Error("QBITTORRENT_URL not configured");
 
-  const response = await fetch(`${baseUrl}/api/v2/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      username: CONFIG.QBITTORRENT_USERNAME || "admin",
-      password: CONFIG.QBITTORRENT_PASSWORD || "",
-    }),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl}/api/v2/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        username: CONFIG.QBITTORRENT_USERNAME || "admin",
+        password: CONFIG.QBITTORRENT_PASSWORD || "",
+      }),
+    });
+  } catch (error: unknown) {
+    throw new Error(`qBittorrent unreachable at ${baseUrl}: ${(error as Error).message}`);
+  }
 
   if (!response.ok) {
     throw new Error(`qBittorrent auth failed: ${response.status} ${response.statusText}`);
@@ -91,11 +96,16 @@ async function qbtFetch(path: any, { method = "GET", body, params }: Record<stri
     }
   }
 
-  const response = await fetch(url, opts);
+  let response: Response;
+  try {
+    response = await fetch(url, opts);
+  } catch (error: unknown) {
+    throw new Error(`qBittorrent unreachable at ${baseUrl}: ${(error as Error).message}`);
+  }
 
   // Session expired — re-auth once
   if (response.status === 403) {
-  sessionCookie = null;
+    sessionCookie = null;
     sessionExpiry = 0;
     const newSid = await authenticate();
     opts.headers.Cookie = `SID=${newSid}`;
