@@ -24,8 +24,8 @@ export async function getPublicWebcams({ city = "vancouver", limit = 100 }: Reco
       if (refreshFunction) {
         await refreshFunction();
       }
-    } catch (error: any) {
-      logger.error(`Failed to refresh webcams for ${capitalizedCity}:`, error.message);
+    } catch (error: unknown) {
+      logger.error(`Failed to refresh webcams for ${capitalizedCity}:`, (error as Error).message);
       // If we never had them, we can't fallback to DB, so we throw
       if (!lastUpdated) throw error;
     }

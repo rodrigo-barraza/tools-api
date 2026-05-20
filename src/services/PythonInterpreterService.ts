@@ -72,7 +72,7 @@ export async function executePython(code: any, { timeout = DEFAULT_TIMEOUT_MS }:
     tmpDir = await mkdtemp(join(tmpdir(), "pyexec-"));
     scriptPath = join(tmpDir, "script.py");
     await writeFile(scriptPath, PREAMBLE + "\n" + code, "utf-8");
-  } catch (error: any) {
+  } catch (error: unknown) {
     return {
       success: false,
       stdout: "",
@@ -80,7 +80,7 @@ export async function executePython(code: any, { timeout = DEFAULT_TIMEOUT_MS }:
       exitCode: null,
       executionTimeMs: Math.round(performance.now() - startTime),
       timedOut: false,
-      error: `Failed to stage script: ${error.message}`,
+      error: `Failed to stage script: ${(error as Error).message}`,
     };
   }
 
@@ -197,11 +197,11 @@ export async function executePythonStreaming(code: any, { timeout = DEFAULT_TIME
     tmpDir = await mkdtemp(join(tmpdir(), "pyexec-"));
     scriptPath = join(tmpDir, "script.py");
     await writeFile(scriptPath, PREAMBLE + "\n" + code, "utf-8");
-  } catch (error: any) {
+  } catch (error: unknown) {
     return {
       success: false, stdout: "", stderr: "", exitCode: null,
       executionTimeMs: Math.round(performance.now() - startTime),
-      timedOut: false, error: `Failed to stage script: ${error.message}`,
+      timedOut: false, error: `Failed to stage script: ${(error as Error).message}`,
     };
   }
 

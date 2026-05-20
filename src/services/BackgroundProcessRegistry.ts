@@ -156,8 +156,8 @@ export function kill(pid: any, signal: any = "SIGTERM") {
     }
     registry.delete(pid);
     return { success: true, pid, signal, message: `Sent ${signal} to PID ${pid}` };
-  } catch (error: any) {
-    return { success: false, pid, error: `Failed to kill: ${error.message}` };
+  } catch (error: unknown) {
+    return { success: false, pid, error: `Failed to kill: ${(error as Error).message}` };
   }
 }
 

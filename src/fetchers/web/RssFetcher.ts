@@ -57,11 +57,11 @@ export async function readRssFeed(url: any, options: Record<string, any> = {}) {
     }
 
     return { error: "Unrecognized feed format (expected RSS 2.0 or Atom)", url };
-  } catch (error: any) {
-    if (error.name === "AbortError") {
+  } catch (error: unknown) {
+    if ((error as any).name === "AbortError") {
       return { error: `Feed fetch timed out after ${FETCH_TIMEOUT_MS / 1000}s`, url };
     }
-    return { error: `Feed parsing failed: ${error.message}`, url };
+    return { error: `Feed parsing failed: ${(error as Error).message}`, url };
   }
 }
 

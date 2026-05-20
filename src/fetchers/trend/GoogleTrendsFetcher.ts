@@ -85,8 +85,8 @@ export async function fetchGoogleTrends() {
     try {
       const trends = await fetchGoogleDailyTrends(geo);
       allTrends.push(...trends);
-    } catch (error: any) {
-      logger.error(`[Google Trends] ❌ ${geo}: ${error.message}`);
+    } catch (error: unknown) {
+      logger.error(`[Google Trends] ❌ ${geo}: ${(error as Error).message}`);
     }
   }
 

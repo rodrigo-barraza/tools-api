@@ -69,13 +69,13 @@ export async function fetchCommodities() {
           fetchedAt: new Date().toISOString(),
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       errors.push({
         batch: batch.slice(0, 3).join(", ") + "…",
-        error: error.message,
+        error: (error as Error).message,
       });
       logger.warn(
-        `[CommodityFetcher] ⚠️ Batch ${i / BATCH_SIZE + 1} failed: ${error.message}`,
+        `[CommodityFetcher] ⚠️ Batch ${i / BATCH_SIZE + 1} failed: ${(error as Error).message}`,
       );
     }
   }

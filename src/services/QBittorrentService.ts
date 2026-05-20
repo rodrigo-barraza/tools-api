@@ -423,7 +423,7 @@ export async function updatePlugins() {
 /**
  * Add a torrent via magnet link or URL.
  */
-export async function addTorrent(urls: string, opts: AddTorrentOptions = {}) {
+export async function addTorrent(urls: string, options: AddTorrentOptions = {}) {
   const body: Record<string, string> = { urls: urls.replace(/\|/g, "\n") };
   if (options.savePath) body.savepath = options.savePath;
   if (options.category) body.category = options.category;
@@ -443,7 +443,7 @@ export async function addTorrent(urls: string, opts: AddTorrentOptions = {}) {
 /**
  * List torrents with optional filter.
  */
-export async function listTorrents(opts: ListTorrentsOptions = {}) {
+export async function listTorrents(options: ListTorrentsOptions = {}) {
   const params: Record<string, string> = {};
   if (options.filter) params.filter = options.filter; // all|downloading|seeding|completed|paused|active|inactive|resumed|stalled|errored
   if (options.category) params.category = options.category;

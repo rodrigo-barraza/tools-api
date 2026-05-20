@@ -232,11 +232,11 @@ export async function fetchGenericPage(url: any, options: Record<string, any> = 
     });
 
     clearTimeout(timeout);
-  } catch (error: any) {
-    if (error.name === "AbortError") {
+  } catch (error: unknown) {
+    if ((error as any).name === "AbortError") {
       return { error: `Request timed out after ${FETCH_TIMEOUT_MS / 1000}s: ${url}` };
     }
-    return { error: `Fetch failed: ${error.message}` };
+    return { error: `Fetch failed: ${(error as Error).message}` };
   }
 
   if (!response.ok) {

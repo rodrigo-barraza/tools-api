@@ -95,9 +95,9 @@ export async function fetchGoogleNews() {
           section,
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.warn(
-        `[Google News] ⚠️ ${section} fetch failed: ${error.message}`,
+        `[Google News] ⚠️ ${section} fetch failed: ${(error as Error).message}`,
       );
     }
   }

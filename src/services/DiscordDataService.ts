@@ -98,7 +98,7 @@ function resolveArchivedUrl(url: any, archiveMap: any) {
   if (!url || !archiveMap) return url;
   const archiveReference = archiveMap[url];
   // If the entry was marked as expired during backfill, it has no publicUrl
-  if (ref?.publicUrl) return archiveReference.publicUrl;
+  if (archiveReference?.publicUrl) return archiveReference.publicUrl;
   return url;
 }
 

@@ -136,11 +136,11 @@ export async function agenticLspAction({ operation, filePath, line, character, w
     }
     // @ts-expect-error - suppress remaining error
     fileContent = await readFile(resolvedPath, "utf-8");
-  } catch (error: any) {
-    if (error.code === "ENOENT") {
+  } catch (error: unknown) {
+    if ((error as any).code === "ENOENT") {
       return { error: `File not found: ${resolvedPath}` };
     }
-    return { error: `Cannot read file: ${error.message}` };
+    return { error: `Cannot read file: ${(error as Error).message}` };
   }
 
   // ── 5. Determine workspace root ────────────────────────────
@@ -151,9 +151,9 @@ export async function agenticLspAction({ operation, filePath, line, character, w
   try {
     manager = getLspManager(wsRoot);
     await manager.openFile(resolvedPath, fileContent);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return {
-      error: `LSP server failed to start for '${fileExtension}' files: ${error.message}`,
+      error: `LSP server failed to start for '${fileExtension}' files: ${(error as Error).message}`,
       hint: "The language server may not be installed. Check that npx can find the server binary.",
     };
   }
@@ -188,15 +188,15 @@ export async function agenticLspAction({ operation, filePath, line, character, w
   let result: any;
   try {
     result = await manager.sendRequest(resolvedPath, opDef.method, lspParams);
-  } catch (error: any) {
-    return { error: `LSP request '${opDef.method}' failed: ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `LSP request '${opDef.method}' failed: ${(error as Error).message}` };
   }
 
   // ── 9. Format & return ─────────────────────────────────────
   try {
     return formatResult(operation, result, resolvedPath, wsRoot);
-  } catch (error: any) {
-    return { error: `Failed to format result: ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `Failed to format result: ${(error as Error).message}` };
   }
 }
 

@@ -65,8 +65,8 @@ async function findNearestTideStation(latitude: any, longitude: any) {
     }
 
     return closest;
-  } catch (error: any) {
-    logger.warn(`[Location] ⚠️ NOAA station lookup failed: ${error.message}`);
+  } catch (error: unknown) {
+    logger.warn(`[Location] ⚠️ NOAA station lookup failed: ${(error as Error).message}`);
     return null;
   }
 }
@@ -142,8 +142,8 @@ async function saveCachedLocation(location: any) {
     await db
       .collection(COLLECTION)
       .replaceOne({ _id: "current" as any }, document, { upsert: true });
-  } catch (error: any) {
-    logger.error(`[Location] ⚠️ Failed to persist: ${error.message}`);
+  } catch (error: unknown) {
+    logger.error(`[Location] ⚠️ Failed to persist: ${(error as Error).message}`);
   }
 }
 
@@ -184,17 +184,17 @@ export async function initLocation() {
     resolvedLocation = fresh;
     logger.info("[Location] ✅ Location resolved and persisted");
     return resolvedLocation;
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Fall back to cached data even if expired (better than nothing)
     if (cached) {
       const { _id, updatedAt: _updatedAt, ...rest } = cached;
       resolvedLocation = rest;
       logger.warn(
-        `[Location] ⚠️ Refresh failed (${error.message}), using stale cache`,
+        `[Location] ⚠️ Refresh failed (${(error as Error).message}), using stale cache`,
       );
       return resolvedLocation;
     }
-    throw new Error(`Location resolution failed: ${error.message}`);
+    throw new Error(`Location resolution failed: ${(error as Error).message}`);
   }
 }
 

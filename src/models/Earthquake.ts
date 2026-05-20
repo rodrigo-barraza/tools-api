@@ -45,8 +45,8 @@ export async function upsertEarthquakes(events: any) {
       upserted: result.upsertedCount,
       modified: result.modifiedCount,
     };
-  } catch (error: any) {
-    logger.error("Failed to upsert earthquakes:", error.message);
+  } catch (error: unknown) {
+    logger.error("Failed to upsert earthquakes:", (error as Error).message);
     return { upserted: 0, modified: 0 };
   }
 }

@@ -67,8 +67,8 @@ export async function fetchAllXTrends() {
   try {
     const trends = await fetchXTrends(X_WOEIDS.WORLDWIDE);
     allTrends.push(...trends);
-  } catch (error: any) {
-    logger.error(`[X] ❌ Worldwide: ${error.message}`);
+  } catch (error: unknown) {
+    logger.error(`[X] ❌ Worldwide: ${(error as Error).message}`);
   }
 
   return allTrends;

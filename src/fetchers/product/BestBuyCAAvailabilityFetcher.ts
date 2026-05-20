@@ -82,8 +82,8 @@ export async function fetchBestBuyCAAvailability(skus: any, skuMetadata: Record<
       for (const avail of availabilities) {
         allResults.push(normalizeAvailability(avail, skuMetadata[avail.sku]));
       }
-    } catch (error: any) {
-      errors.push(`Batch ${i + 1}/${batches.length}: ${error.message}`);
+    } catch (error: unknown) {
+      errors.push(`Batch ${i + 1}/${batches.length}: ${(error as Error).message}`);
     }
   }
   return { results: allResults, errors };

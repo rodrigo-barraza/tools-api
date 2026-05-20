@@ -34,8 +34,8 @@ export async function upsertWebcams(webcams: any) {
   try {
     const result = await collection.bulkWrite(operations, { ordered: false });
     return result;
-  } catch (error: any) {
-    logger.error("Failed to upsert webcams:", error.message);
+  } catch (error: unknown) {
+    logger.error("Failed to upsert webcams:", (error as Error).message);
     return null;
   }
 }

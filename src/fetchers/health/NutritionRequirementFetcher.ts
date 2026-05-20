@@ -66,7 +66,7 @@ function ensureLoaded() {
       REQUIREMENTS_DB.push(row);
     }
     logger.info(`📊 Nutrition Requirement DB loaded: ${REQUIREMENTS_DB.length} rules.`);
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error("Failed to load digest_nutrient_requirement.csv", error);
   }
 }

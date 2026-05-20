@@ -134,8 +134,8 @@ export async function fetchAllAmazonBestSellers() {
       const products = await scrapeCategory(cat.slug, cat.name, cat.unified);
       allProducts.push(...products);
       logger.info(`[Amazon] ✅ ${cat.name}: ${products.length} products`);
-    } catch (error: any) {
-      logger.error(`[Amazon] ❌ ${cat.name}: ${error.message}`);
+    } catch (error: unknown) {
+      logger.error(`[Amazon] ❌ ${cat.name}: ${(error as Error).message}`);
     }
 
     // Rate limit between category requests

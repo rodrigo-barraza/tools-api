@@ -121,13 +121,13 @@ export function createLspServerInstance(name: any, config: any) {
       startTime = new Date();
       crashRecoveryCount = 0;
       logger.info(`[LSP:${name}] Server running`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Clean up on failure
       client.stop().catch(() => {});
       initPromise?.catch(() => {});
       state = "error";
       lastError = error;
-      logger.error(`[LSP:${name}] Start failed: ${error.message}`);
+      logger.error(`[LSP:${name}] Start failed: ${(error as Error).message}`);
       throw error;
     }
   }
@@ -138,18 +138,18 @@ export function createLspServerInstance(name: any, config: any) {
       await client.stop();
       state = "stopped";
       logger.info(`[LSP:${name}] Server stopped`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       state = "error";
       lastError = error;
-      logger.error(`[LSP:${name}] Stop failed: ${error.message}`);
+      logger.error(`[LSP:${name}] Stop failed: ${(error as Error).message}`);
       throw error;
     }
   }
   async function restart() {
     try {
       await stop();
-    } catch (error: any) {
-      logger.error(`[LSP:${name}] Stop during restart failed: ${error.message}`);
+    } catch (error: unknown) {
+      logger.error(`[LSP:${name}] Stop during restart failed: ${(error as Error).message}`);
       throw error;
     }
     restartCount++;
@@ -159,8 +159,8 @@ export function createLspServerInstance(name: any, config: any) {
     }
     try {
       await start();
-    } catch (error: any) {
-      logger.error(`[LSP:${name}] Start during restart failed (attempt ${restartCount}/${maxRestarts}): ${error.message}`);
+    } catch (error: unknown) {
+      logger.error(`[LSP:${name}] Start during restart failed (attempt ${restartCount}/${maxRestarts}): ${(error as Error).message}`);
       throw error;
     }
   }
@@ -181,9 +181,9 @@ export function createLspServerInstance(name: any, config: any) {
     for (let attempt = 0; attempt <= MAX_RETRIES_FOR_TRANSIENT; attempt++) {
       try {
         return await client.sendRequest(method, params);
-      } catch (error: any) {
+      } catch (error: unknown) {
         lastAttemptError = error;
-        const errorCode = error?.code;
+        const errorCode = (error as any)?.code;
         const isTransient = typeof errorCode === "number" && errorCode === LSP_ERROR_CONTENT_MODIFIED;
         if (isTransient && attempt < MAX_RETRIES_FOR_TRANSIENT) {
           const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt);

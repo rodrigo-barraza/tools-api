@@ -49,8 +49,8 @@ export async function fetchBlueskyTrends() {
         });
       }
     }
-  } catch (error: any) {
-    logger.error(`[Bluesky] ❌ Feeds: ${error.message}`);
+  } catch (error: unknown) {
+    logger.error(`[Bluesky] ❌ Feeds: ${(error as Error).message}`);
   }
 
   // Also try to get trending search terms
@@ -89,8 +89,8 @@ export async function fetchBlueskyTrends() {
         });
       }
     }
-  } catch (error: any) {
-    logger.error(`[Bluesky] ❌ Suggestions: ${error.message}`);
+  } catch (error: unknown) {
+    logger.error(`[Bluesky] ❌ Suggestions: ${(error as Error).message}`);
   }
 
   return trends;

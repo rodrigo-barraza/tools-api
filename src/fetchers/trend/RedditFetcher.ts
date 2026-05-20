@@ -102,8 +102,8 @@ export async function fetchRedditTrends() {
         .filter((p: any) => !p.data.stickied) // exclude stickied/pinned posts
         .map((p: any) => normalizeTrend(p, sub.category));
       allTrends.push(...trends);
-    } catch (error: any) {
-      logger.error(`[Reddit] ❌ /r/${sub.name}: ${error.message}`);
+    } catch (error: unknown) {
+      logger.error(`[Reddit] ❌ /r/${sub.name}: ${(error as Error).message}`);
     }
   }
   return allTrends;

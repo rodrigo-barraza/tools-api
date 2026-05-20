@@ -32,9 +32,9 @@ function createEventCollector(collection: any, source: any, fetchFn: any) {
       logger.info(
         `[${collection}] ✅ ${events.length} events | ${result?.upserted || 0} new, ${result?.modified || 0} updated`,
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       setError(source, error);
-      logger.error(`[${collection}] ❌ ${error.message}`);
+      logger.error(`[${collection}] ❌ ${(error as Error).message}`);
     }
   };
 }
@@ -97,10 +97,10 @@ async function collectUniversities() {
     }
 
     await saveState("events_universities", { ubcEvents, sfuEvents });
-  } catch (error: any) {
+  } catch (error: unknown) {
     setError(EVENT_SOURCES.UBC, error);
     setError(EVENT_SOURCES.SFU, error);
-    logger.error(`[events_universities] ❌ ${error.message}`);
+    logger.error(`[events_universities] ❌ ${(error as Error).message}`);
   }
 }
 
@@ -134,11 +134,11 @@ async function collectSports() {
     }
 
     await saveState("events_sports", { nhl, caps, lions });
-  } catch (error: any) {
+  } catch (error: unknown) {
     setError(EVENT_SOURCES.NHL, error);
     setError(EVENT_SOURCES.WHITECAPS, error);
     setError(EVENT_SOURCES.BC_LIONS, error);
-    logger.error(`[events_sports] ❌ ${error.message}`);
+    logger.error(`[events_sports] ❌ ${(error as Error).message}`);
   }
 }
 

@@ -92,8 +92,8 @@ export async function fetchAllEbayTrending() {
       const products = await fetchEbayCategoryTrending(token, cat);
       allProducts.push(...products);
       logger.info(`[eBay] ✅ ${cat.name}: ${products.length} products`);
-    } catch (error: any) {
-      logger.error(`[eBay] ❌ ${cat.name}: ${error.message}`);
+    } catch (error: unknown) {
+      logger.error(`[eBay] ❌ ${cat.name}: ${(error as Error).message}`);
     }
   }
   return allProducts;

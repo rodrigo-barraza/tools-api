@@ -161,7 +161,7 @@ export async function getStackOverflowQuestion(input: any, options: Record<strin
     }
 
     return result;
-  } catch (error: any) {
-    return { error: `Stack Overflow fetch failed: ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `Stack Overflow fetch failed: ${(error as Error).message}` };
   }
 }

@@ -11,8 +11,8 @@ async function tryAgentRoute(method: any, params: any, targetPath: any) {
   if (!agent) return null;
   try {
     return await sendRpc(agent.id, method, params);
-  } catch (error: any) {
-    return { error: `Agent RPC failed: ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `Agent RPC failed: ${(error as Error).message}` };
   }
 }
 

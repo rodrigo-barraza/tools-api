@@ -740,8 +740,8 @@ const { chromium } = require('playwright');
       action: "run_script",
       ...result,
     };
-  } catch (error: any) {
-    return { error: `run_script failed: ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `run_script failed: ${(error as Error).message}` };
   } finally {
     // Cleanup
     if (scriptPath) {
@@ -889,9 +889,9 @@ export async function agenticBrowserAction(params: any) {
       ...result,
       sessionId,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return {
-      error: `Browser action "${action}" failed: ${error.message}`,
+      error: `Browser action "${action}" failed: ${(error as Error).message}`,
       sessionId,
     };
   }

@@ -113,8 +113,8 @@ async function fetchFxTwitter(username: any, tweetId: any) {
     }
 
     return result;
-  } catch (error: any) {
-    return { error: `fxtwitter fetch failed: ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `fxtwitter fetch failed: ${(error as Error).message}` };
   }
 }
 
@@ -155,7 +155,7 @@ async function fetchOembed(tweetId: any) {
       text,
       source: "oembed (limited data)",
     };
-  } catch (error: any) {
-    return { error: `oembed fetch failed: ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `oembed fetch failed: ${(error as Error).message}` };
   }
 }

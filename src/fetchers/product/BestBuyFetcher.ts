@@ -96,8 +96,8 @@ export async function fetchAllBestBuyTrending() {
   try {
     const general = await fetchBestBuyTrending();
     allProducts.push(...general.products);
-  } catch (error: any) {
-    logger.error(`[BestBuy] ❌ General trending: ${error.message}`);
+  } catch (error: unknown) {
+    logger.error(`[BestBuy] ❌ General trending: ${(error as Error).message}`);
   }
 
   // Fetch per-category trending with rate limiting
@@ -106,8 +106,8 @@ export async function fetchAllBestBuyTrending() {
     try {
       const result = await fetchBestBuyTrending(cat.id);
       allProducts.push(...result.products);
-    } catch (error: any) {
-      logger.error(`[BestBuy] ❌ ${cat.name}: ${error.message}`);
+    } catch (error: unknown) {
+      logger.error(`[BestBuy] ❌ ${cat.name}: ${(error as Error).message}`);
     }
   }
 

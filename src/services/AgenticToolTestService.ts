@@ -109,13 +109,13 @@ async function runTest(name: any, fn: any) {
       message: "OK",
       details: result,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     const duration = Math.round(performance.now() - start);
     return {
       tool: name,
       success: false,
       duration,
-      message: error.message || String(error),
+      message: (error as Error).message || String(error),
     };
   }
 }

@@ -12,7 +12,7 @@ export async function insertSnapshot(data: any) {
       ...data,
       createdAt: new Date(),
     });
-  } catch (error: any) {
-    logger.error("Failed to persist weather snapshot:", error.message);
+  } catch (error: unknown) {
+    logger.error("Failed to persist weather snapshot:", (error as Error).message);
   }
 }

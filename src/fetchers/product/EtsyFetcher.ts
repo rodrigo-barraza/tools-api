@@ -95,8 +95,8 @@ export async function fetchEtsyTrending() {
       });
 
       allProducts.push(...products);
-    } catch (error: any) {
-      logger.error(`[Etsy] ❌ "${keyword}": ${error.message}`);
+    } catch (error: unknown) {
+      logger.error(`[Etsy] ❌ "${keyword}": ${(error as Error).message}`);
     }
   }
 

@@ -120,11 +120,11 @@ export async function agenticFetchUrl(url: any, { selector }: Record<string, any
       charCount: markdown.length,
       truncated: markdown.length > MAX_OUTPUT_CHARS,
     };
-  } catch (error: any) {
-    if (error.name === "AbortError") {
+  } catch (error: unknown) {
+    if ((error as any).name === "AbortError") {
       return { error: `Request timed out after ${FETCH_TIMEOUT_MS}ms`, url };
     }
-    return { error: `Fetch failed: ${error.message}`, url };
+    return { error: `Fetch failed: ${(error as Error).message}`, url };
   }
 }
 
@@ -155,8 +155,8 @@ export async function agenticWebSearch(query: any, { limit = 5, dateRestrict, si
       if (!result.error) return result;
       // If Brave fails, fall through to Google CSE
       logger.warn(`[AgenticWebService] Brave Search failed, trying Google CSE: ${result.error}`);
-    } catch (error: any) {
-      logger.warn(`[AgenticWebService] Brave Search exception: ${error.message}`);
+    } catch (error: unknown) {
+      logger.warn(`[AgenticWebService] Brave Search exception: ${(error as Error).message}`);
     }
   }
 
@@ -368,9 +368,9 @@ function htmlToMarkdown(html: any, { selector }: Record<string, any> = {}) {
         }
         case "img": {
           const alt = $node.attr("alt") || "";
-          const sourceAttribute = $node.attr("sourceAttribute") || "";
+          const sourceAttribute = $node.attr("src") || "";
           if (sourceAttribute) {
-            lines.push(`![${alt}](${src})`);
+            lines.push(`![${alt}](${sourceAttribute})`);
           }
           break;
         }

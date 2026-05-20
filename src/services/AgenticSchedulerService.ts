@@ -313,12 +313,12 @@ export function startSchedulePoller() {
             { _id: schedule._id },
             { $set: updates, $inc: { runCount: 1 } },
           );
-        } catch (error: any) {
-          logger.error(`[Scheduler] Failed to fire schedule #${schedule.scheduleId}: ${error.message}`);
+        } catch (error: unknown) {
+          logger.error(`[Scheduler] Failed to fire schedule #${schedule.scheduleId}: ${(error as Error).message}`);
         }
       }
-    } catch (error: any) {
-      logger.error(`[Scheduler] Poller error: ${error.message}`);
+    } catch (error: unknown) {
+      logger.error(`[Scheduler] Poller error: ${(error as Error).message}`);
     }
   }, POLLER_INTERVAL_MS);
 
@@ -366,9 +366,9 @@ async function firePrismAgent(schedule: any, payload: Record<string, any> = {}) 
     }
 
     return await response.json().catch(() => ({ acknowledged: true }));
-  } catch (error: any) {
-    logger.error(`[Scheduler] Failed to reach Prism: ${error.message}`);
-    return { error: error.message };
+  } catch (error: unknown) {
+    logger.error(`[Scheduler] Failed to reach Prism: ${(error as Error).message}`);
+    return { error: (error as Error).message };
   }
 }
 

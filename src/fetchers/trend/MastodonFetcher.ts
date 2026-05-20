@@ -67,9 +67,9 @@ export async function fetchMastodonTrends() {
           timestamp: new Date().toISOString(),
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.warn(
-        `[Mastodon] ⚠️ Tags from ${instance} failed: ${error.message}`,
+        `[Mastodon] ⚠️ Tags from ${instance} failed: ${(error as Error).message}`,
       );
     }
     // ── Trending Statuses ──
@@ -105,9 +105,9 @@ export async function fetchMastodonTrends() {
           timestamp: new Date().toISOString(),
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.warn(
-        `[Mastodon] ⚠️ Statuses from ${instance} failed: ${error.message}`,
+        `[Mastodon] ⚠️ Statuses from ${instance} failed: ${(error as Error).message}`,
       );
     }
   }

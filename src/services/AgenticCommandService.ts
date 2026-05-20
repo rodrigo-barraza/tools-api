@@ -120,8 +120,8 @@ async function tryAgentRouteCommand(method: any, params: any, cwd: any) {
   if (!agent) return null;
   try {
     return await sendRpc(agent.id, method, params);
-  } catch (error: any) {
-    return { success: false, stdout: "", stderr: "", exitCode: null, executionTimeMs: 0, error: `Agent RPC failed: ${error.message}` };
+  } catch (error: unknown) {
+    return { success: false, stdout: "", stderr: "", exitCode: null, executionTimeMs: 0, error: `Agent RPC failed: ${(error as Error).message}` };
   }
 }
 
@@ -305,8 +305,8 @@ export async function executeCommandStreaming(command: any, { cwd, timeout = DEF
           if (method === "command.stdout") onChunk?.("stdout", params.data);
           else if (method === "command.stderr") onChunk?.("stderr", params.data);
         });
-      } catch (error: any) {
-        return { success: false, stdout: "", stderr: "", exitCode: null, executionTimeMs: 0, error: `Agent RPC failed: ${error.message}` };
+      } catch (error: unknown) {
+        return { success: false, stdout: "", stderr: "", exitCode: null, executionTimeMs: 0, error: `Agent RPC failed: ${(error as Error).message}` };
       }
     }
   }
@@ -488,7 +488,7 @@ export async function killProcessTree(pid: any, { gracePeriodMs = KILL_GRACE_PER
       // Process is gone — SIGTERM was sufficient
       return { success: true, pid, signal: "SIGTERM", escalated: false };
     }
-  } catch (error: any) {
-    return { success: false, pid, error: `Failed to kill process: ${error.message}` };
+  } catch (error: unknown) {
+    return { success: false, pid, error: `Failed to kill process: ${(error as Error).message}` };
   }
 }

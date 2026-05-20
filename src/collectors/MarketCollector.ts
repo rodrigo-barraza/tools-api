@@ -23,9 +23,9 @@ async function collectCommodities() {
         `${result?.inserted || 0} snapshots saved | ` +
         `Top mover: ${topMover?.name ?? "?"} (${topMover?.changePercent >= 0 ? "+" : ""}${topMover?.changePercent ?? "?"}%)`,
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     setCommodityError(error);
-    logger.error(`[Commodities] ❌ ${error.message}`);
+    logger.error(`[Commodities] ❌ ${(error as Error).message}`);
   }
 }
 

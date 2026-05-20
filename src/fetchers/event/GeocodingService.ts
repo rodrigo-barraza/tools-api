@@ -52,8 +52,8 @@ export async function geocodeAddress(address: any) {
 
     geocodeCache.set(cacheKey, geocoded);
     return geocoded;
-  } catch (error: any) {
-    logger.warn(`[Geocoding] ⚠️ ${error.message}`);
+  } catch (error: unknown) {
+    logger.warn(`[Geocoding] ⚠️ ${(error as Error).message}`);
     return null;
   }
 }

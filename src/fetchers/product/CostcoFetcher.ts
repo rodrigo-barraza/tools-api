@@ -229,8 +229,8 @@ export async function fetchAllCostcoUS() {
       );
       allProducts.push(...products);
       logger.info(`[Costco US] ✅ ${cat.name}: ${products.length} products`);
-    } catch (error: any) {
-      logger.error(`[Costco US] ❌ ${cat.name}: ${error.message}`);
+    } catch (error: unknown) {
+      logger.error(`[Costco US] ❌ ${cat.name}: ${(error as Error).message}`);
     }
 
     await rateLimiter.wait("COSTCO");
@@ -257,8 +257,8 @@ export async function fetchAllCostcoCA() {
       );
       allProducts.push(...products);
       logger.info(`[Costco CA] ✅ ${cat.name}: ${products.length} products`);
-    } catch (error: any) {
-      logger.error(`[Costco CA] ❌ ${cat.name}: ${error.message}`);
+    } catch (error: unknown) {
+      logger.error(`[Costco CA] ❌ ${cat.name}: ${(error as Error).message}`);
     }
 
     await rateLimiter.wait("COSTCO");

@@ -92,11 +92,11 @@ export async function readPdfUrl(url: any, options: Record<string, any> = {}) {
       charCount,
       truncated,
     };
-  } catch (error: any) {
-    if (error.name === "AbortError") {
+  } catch (error: unknown) {
+    if ((error as any).name === "AbortError") {
       return { error: `PDF download timed out after ${FETCH_TIMEOUT_MS / 1000}s`, url };
     }
-    return { error: `PDF extraction failed: ${error.message}`, url };
+    return { error: `PDF extraction failed: ${(error as Error).message}`, url };
   } finally {
     if (parser) {
       await parser.destroy().catch(() => {});

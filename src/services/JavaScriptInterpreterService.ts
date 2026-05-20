@@ -213,11 +213,11 @@ export function executeJavaScript(code: any, { timeout = DEFAULT_TIMEOUT_MS, exe
       timedOut: false,
       execution,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     const executionTimeMs = Math.round(performance.now() - startTime);
     const timedOut =
-      error.code === "ERR_SCRIPT_EXECUTION_TIMEOUT" ||
-      error.message?.includes("Script execution timed out");
+      (error as any).code === "ERR_SCRIPT_EXECUTION_TIMEOUT" ||
+      (error as Error).message?.includes("Script execution timed out");
 
     return {
       success: false,
@@ -227,7 +227,7 @@ export function executeJavaScript(code: any, { timeout = DEFAULT_TIMEOUT_MS, exe
       timedOut,
       error: timedOut
         ? `Execution timed out after ${clampedTimeout}ms`
-        : `${error.constructor.name}: ${error.message}`,
+        : `${(error as any).constructor.name}: ${(error as Error).message}`,
     };
   }
 }

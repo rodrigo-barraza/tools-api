@@ -121,7 +121,7 @@ export async function getHackerNewsThread(input: any, options: Record<string, an
     }
 
     return result;
-  } catch (error: any) {
-    return { error: `HN fetch failed: ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `HN fetch failed: ${(error as Error).message}` };
   }
 }

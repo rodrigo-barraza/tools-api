@@ -32,8 +32,8 @@ export async function upsertGeomagneticStorms(storms: any) {
   try {
     const result = await collection.bulkWrite(operations, { ordered: false });
     return { upserted: result.upsertedCount, modified: result.modifiedCount };
-  } catch (error: any) {
-    logger.error("Failed to upsert geomagnetic storms:", error.message);
+  } catch (error: unknown) {
+    logger.error("Failed to upsert geomagnetic storms:", (error as Error).message);
     return { upserted: 0, modified: 0 };
   }
 }

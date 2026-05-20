@@ -24,9 +24,9 @@ export async function saveState(collectionName: any, data: any) {
     await db
       .collection(collectionName)
       .replaceOne({ _id: "current" as any }, document, { upsert: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error(
-      `[State] ⚠️ Failed to save "${collectionName}": ${error.message}`,
+      `[State] ⚠️ Failed to save "${collectionName}": ${(error as Error).message}`,
     );
   }
 }
@@ -52,9 +52,9 @@ export async function loadState(collectionName: any) {
 
     // Object data spread at top level
     return { data: rest, updatedAt };
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error(
-      `[State] ⚠️ Failed to load "${collectionName}": ${error.message}`,
+      `[State] ⚠️ Failed to load "${collectionName}": ${(error as Error).message}`,
     );
     return null;
   }

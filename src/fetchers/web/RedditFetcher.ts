@@ -135,7 +135,7 @@ export async function getRedditThread(input: any, options: Record<string, any> =
       domain: post.domain || null,
       comments,
     };
-  } catch (error: any) {
-    return { error: `Reddit fetch failed: ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `Reddit fetch failed: ${(error as Error).message}` };
   }
 }

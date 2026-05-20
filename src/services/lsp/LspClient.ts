@@ -145,8 +145,8 @@ export function createLspClient(serverName: any, onCrash: any) {
         pendingRequestHandlers.length = 0;
 
         logger.info(`[LSP:${serverName}] Client started`);
-      } catch (error: any) {
-        logger.error(`[LSP:${serverName}] Failed to start: ${error.message}`);
+      } catch (error: unknown) {
+        logger.error(`[LSP:${serverName}] Failed to start: ${(error as Error).message}`);
         throw error;
       }
     },
@@ -168,8 +168,8 @@ export function createLspClient(serverName: any, onCrash: any) {
         isInitialized = true;
         logger.info(`[LSP:${serverName}] Initialized`);
         return result;
-      } catch (error: any) {
-        logger.error(`[LSP:${serverName}] Initialize failed: ${error.message}`);
+      } catch (error: unknown) {
+        logger.error(`[LSP:${serverName}] Initialize failed: ${(error as Error).message}`);
         throw error;
       }
     },
@@ -184,8 +184,8 @@ export function createLspClient(serverName: any, onCrash: any) {
 
       try {
         return await connection.sendRequest(method, params);
-      } catch (error: any) {
-        logger.error(`[LSP:${serverName}] Request ${method} failed: ${error.message}`);
+      } catch (error: unknown) {
+        logger.error(`[LSP:${serverName}] Request ${method} failed: ${(error as Error).message}`);
         throw error;
       }
     },
@@ -199,8 +199,8 @@ export function createLspClient(serverName: any, onCrash: any) {
 
       try {
         await connection.sendNotification(method, params);
-      } catch (error: any) {
-        logger.warn(`[LSP:${serverName}] Notification ${method} failed: ${error.message}`);
+      } catch (error: unknown) {
+        logger.warn(`[LSP:${serverName}] Notification ${method} failed: ${(error as Error).message}`);
         // Don't re-throw — notifications are fire-and-forget
       }
     },
@@ -241,8 +241,8 @@ export function createLspClient(serverName: any, onCrash: any) {
           await connection.sendRequest("shutdown", {});
           await connection.sendNotification("exit", {});
         }
-      } catch (error: any) {
-        logger.warn(`[LSP:${serverName}] Shutdown error: ${error.message}`);
+      } catch (error: unknown) {
+        logger.warn(`[LSP:${serverName}] Shutdown error: ${(error as Error).message}`);
         shutdownError = error;
       } finally {
         // Always cleanup regardless of shutdown success

@@ -173,12 +173,12 @@ async function fetchTranscript(videoId: any, lang: any) {
       text: fullText,
       timestampedText,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return {
       available: false,
       segments: [],
       text: "",
-      error: error.message || "Transcript unavailable",
+      error: (error as Error).message || "Transcript unavailable",
     };
   }
 }

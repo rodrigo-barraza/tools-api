@@ -40,9 +40,9 @@ function createTrendCollector(collection: any, source: any, fetchFn: any, noun: 
       logger.info(
         `[${collection}] ✅ ${trends.length} ${noun} | ${result.upserted} new, ${result.modified} updated`,
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       setTrendError(source, error);
-      logger.error(`[${collection}] ❌ ${error.message}`);
+      logger.error(`[${collection}] ❌ ${(error as Error).message}`);
     }
   };
 }

@@ -63,8 +63,8 @@ export function createLspServerManager(workspaceFolder: any) {
         });
 
         servers.set(serverName, instance);
-      } catch (error: any) {
-        logger.error(`[LSP Manager] Failed to create server '${serverName}': ${error.message}`);
+      } catch (error: unknown) {
+        logger.error(`[LSP Manager] Failed to create server '${serverName}': ${(error as Error).message}`);
       }
     }
 
@@ -95,8 +95,8 @@ export function createLspServerManager(workspaceFolder: any) {
     if (server.state === "stopped" || server.state === "error") {
       try {
         await server.start();
-      } catch (error: any) {
-        logger.error(`[LSP Manager] Failed to start server for ${basename(filePath)}: ${error.message}`);
+      } catch (error: unknown) {
+        logger.error(`[LSP Manager] Failed to start server for ${basename(filePath)}: ${(error as Error).message}`);
         throw error;
       }
     }
@@ -115,8 +115,8 @@ export function createLspServerManager(workspaceFolder: any) {
 
     try {
       return await server.sendRequest(method, params);
-    } catch (error: any) {
-      logger.error(`[LSP Manager] Request '${method}' failed for ${basename(filePath)}: ${error.message}`);
+    } catch (error: unknown) {
+      logger.error(`[LSP Manager] Request '${method}' failed for ${basename(filePath)}: ${(error as Error).message}`);
       throw error;
     }
   }
@@ -149,8 +149,8 @@ export function createLspServerManager(workspaceFolder: any) {
         },
       });
       openedFiles.set(fileUri, server.name);
-    } catch (error: any) {
-      logger.error(`[LSP Manager] didOpen failed for ${basename(filePath)}: ${error.message}`);
+    } catch (error: unknown) {
+      logger.error(`[LSP Manager] didOpen failed for ${basename(filePath)}: ${(error as Error).message}`);
       throw error;
     }
   }
@@ -176,8 +176,8 @@ export function createLspServerManager(workspaceFolder: any) {
         textDocument: { uri: fileUri, version: 1 },
         contentChanges: [{ text: content }],
       });
-    } catch (error: any) {
-      logger.error(`[LSP Manager] didChange failed for ${basename(filePath)}: ${error.message}`);
+    } catch (error: unknown) {
+      logger.error(`[LSP Manager] didChange failed for ${basename(filePath)}: ${(error as Error).message}`);
       throw error;
     }
   }
@@ -196,8 +196,8 @@ export function createLspServerManager(workspaceFolder: any) {
         textDocument: { uri: fileUri },
       });
       openedFiles.delete(fileUri);
-    } catch (error: any) {
-      logger.error(`[LSP Manager] didClose failed for ${basename(filePath)}: ${error.message}`);
+    } catch (error: unknown) {
+      logger.error(`[LSP Manager] didClose failed for ${basename(filePath)}: ${(error as Error).message}`);
     }
   }
 

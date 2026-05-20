@@ -87,7 +87,7 @@ export async function upsertEvents(events: EventDocument[]): Promise<{ upserted:
       upserted: result.upsertedCount,
       modified: result.modifiedCount,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error("Failed to upsert events:", (error as Error).message);
     return { upserted: 0, modified: 0 };
   }

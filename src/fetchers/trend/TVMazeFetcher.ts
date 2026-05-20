@@ -20,8 +20,8 @@ export async function fetchTVMazeTrends() {
       }
       const episodes = await response.json();
       allShows.push(...episodes.map((ep: any) => ({ ...ep, country })));
-    } catch (error: any) {
-      logger.error(`[TVMaze] ❌ ${country}: ${error.message}`);
+    } catch (error: unknown) {
+      logger.error(`[TVMaze] ❌ ${country}: ${(error as Error).message}`);
     }
   }
   // Deduplicate shows by show ID (same show airs in both countries)

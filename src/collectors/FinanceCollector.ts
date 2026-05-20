@@ -23,9 +23,9 @@ async function collectMarketNews() {
     updateMarketNews(sliced);
     await saveState("market_news", sliced);
     logger.info(`[Finnhub/News] ✅ ${sliced.length} articles`);
-  } catch (error: any) {
+  } catch (error: unknown) {
     setNewsError(error);
-    logger.error(`[Finnhub/News] ❌ ${error.message}`);
+    logger.error(`[Finnhub/News] ❌ ${(error as Error).message}`);
   }
 }
 // ─── Earnings Calendar Collector ───────────────────────────────────
@@ -41,9 +41,9 @@ async function collectEarnings() {
     logger.info(
       `[Finnhub/Earnings] ✅ ${earnings.length} upcoming (${from} → ${to})`,
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     setEarningsError(error);
-    logger.error(`[Finnhub/Earnings] ❌ ${error.message}`);
+    logger.error(`[Finnhub/Earnings] ❌ ${(error as Error).message}`);
   }
 }
 // ─── Startup Definitions ──────────────────────────────────────────

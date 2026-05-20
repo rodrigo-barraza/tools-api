@@ -101,9 +101,9 @@ function makeCollector({ label, collection, fetchFn, updateFn, setErrorFn, logFn
       } else {
         logger.info(`[${label}] ✅ Collected`);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       setErrorFn(error);
-      logger.error(`[${label}] ❌ ${error.message}`);
+      logger.error(`[${label}] ❌ ${(error as Error).message}`);
     }
   };
 }
@@ -274,9 +274,9 @@ async function collectEarthquakes() {
         `${result?.upserted || 0} new, ${result?.modified || 0} updated | ` +
         `Strongest: M${strongest?.magnitude ?? "?"} ${strongest?.place ?? ""}`,
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     setEarthquakeError(error);
-    logger.error(`[Earthquake] ❌ ${error.message}`);
+    logger.error(`[Earthquake] ❌ ${(error as Error).message}`);
   }
 }
 
@@ -291,9 +291,9 @@ async function collectNeos() {
         `${result?.upserted || 0} new | ` +
         `Closest: ${closest?.name ?? "?"} at ${Math.round(closest?.missDistanceKm ?? 0)} km`,
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     setNeoError(error);
-    logger.error(`[NEO] ❌ ${error.message}`);
+    logger.error(`[NEO] ❌ ${(error as Error).message}`);
   }
 }
 
@@ -307,9 +307,9 @@ async function collectDonki() {
         `${data.cmes.length} CMEs (${result.cmes.upserted} new) | ` +
         `${data.storms.length} storms (${result.storms.upserted} new)`,
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     setSpaceWeatherError(error);
-    logger.error(`[DONKI] ❌ ${error.message}`);
+    logger.error(`[DONKI] ❌ ${(error as Error).message}`);
   }
 }
 

@@ -116,8 +116,8 @@ function connect(options: Record<string, any> = {}) {
           vesselMap.set(mmsi, { ...existing, ...processed });
         }
       }
-    } catch (error: any) {
-      logger.warn(`[AisStream] ⚠️ Parse error: ${error.message}`);
+    } catch (error: unknown) {
+      logger.warn(`[AisStream] ⚠️ Parse error: ${(error as Error).message}`);
     }
   };
 
