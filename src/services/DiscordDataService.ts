@@ -86,8 +86,12 @@ function extractRoleTags(roles: any, guildId: any) {
 
 
  */
-function buildAvatarUrl(author: any) {
+function buildAvatarUrl(author: any, member?: any, guildId?: any) {
   if (!author) return null;
+  if (member?.avatar && author.id && guildId) {
+    const ext = member.avatar.startsWith("a_") ? "gif" : "png";
+    return `https://cdn.discordapp.com/guilds/${guildId}/users/${author.id}/avatars/${member.avatar}.${ext}?size=128`;
+  }
   if (author.avatar && author.id) {
     const ext = author.avatar.startsWith("a_") ? "gif" : "png";
     return `https://cdn.discordapp.com/avatars/${author.id}/${author.avatar}.${ext}?size=128`;
@@ -217,6 +221,8 @@ const DiscordDataService = {
           "author.avatar": 1,
           "author.defaultAvatarURL": 1,
           "member.displayName": 1,
+          "member.avatar": 1,
+          guildId: 1,
           channelId: 1,
           "channel.name": 1,
           createdTimestamp: 1,
@@ -230,7 +236,7 @@ const DiscordDataService = {
           ? m.content.slice(0, 120) + "…"
           : m.content,
         author: m.member?.displayName || m.author?.globalName || m.author?.username,
-        avatarUrl: buildAvatarUrl(m.author),
+        avatarUrl: buildAvatarUrl(m.author, m.member, m.guildId),
         channel: m.channel?.name || null,
         date: m.createdTimestamp
           ? new Date(m.createdTimestamp).toISOString().slice(0, 16)
@@ -258,6 +264,7 @@ const DiscordDataService = {
         "author.defaultAvatarURL": 1,
         "member.displayName": 1,
         "member.displayHexColor": 1,
+        "member.avatar": 1,
         // Enhanced Role Styles (gradient/holographic)
         "member.roleColors": 1,
         channelId: 1,
@@ -309,6 +316,8 @@ const DiscordDataService = {
             proxyURL: resolvedProxy,
             width: a.width || null,
             height: a.height || null,
+            duration: a.duration ?? null,
+            waveform: a.waveform ?? null,
           };
         })
         : undefined;
@@ -366,7 +375,7 @@ const DiscordDataService = {
           id: m.author?.id,
           username: m.author?.username,
           displayName: m.member?.displayName || m.author?.globalName || m.author?.username,
-          avatarUrl: buildAvatarUrl(m.author),
+          avatarUrl: buildAvatarUrl(m.author, m.member, m.guildId),
           isBot: m.author?.bot === true,
           roleColor,
           // Enhanced Role Styles — gradient (secondary) / holographic (tertiary)
