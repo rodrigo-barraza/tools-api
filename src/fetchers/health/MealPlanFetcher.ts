@@ -28,14 +28,14 @@ function parseCSVLine(line: any) {
   let current = "";
   let inQuotes = false;
   for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') {
+    const character = line[i];
+    if (character === '"') {
       inQuotes = !inQuotes;
-    } else if (ch === "," && !inQuotes) {
+    } else if (character === "," && !inQuotes) {
       fields.push(current.trim());
       current = "";
     } else {
-      current += ch;
+      current += character;
     }
   }
   fields.push(current.trim());

@@ -36,14 +36,14 @@ function parseCSVLine(line: any) {
   let current = "";
   let inQuotes = false;
   for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') {
+    const character = line[i];
+    if (character === '"') {
       inQuotes = !inQuotes;
-    } else if (ch === "," && !inQuotes) {
+    } else if (character === "," && !inQuotes) {
       fields.push(current.trim());
       current = "";
     } else {
-      current += ch;
+      current += character;
     }
   }
   fields.push(current.trim());
@@ -101,8 +101,8 @@ const ALL_NUTRIENT_COLUMNS = [
 // ─── Vector Helpers ────────────────────────────────────────────
 
 function extractVector(food: any, columns: any) {
-  return columns.map((col: any) => {
-    const value = food[col];
+  return columns.map((column: any) => {
+    const value = food[column];
     return value !== null && value !== undefined && !isNaN(value) ? value : 0;
   });
 }
@@ -204,7 +204,7 @@ export function findFoodSubstitutes({
       const collection = ALL_NUTRIENT_COLUMNS.find(
         (c: any) => c === target || c.includes(target),
       );
-      if (col) matched.push(col);
+      if (collection) matched.push(collection);
     }
 
     if (matched.length > 0) {

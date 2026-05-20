@@ -24,19 +24,19 @@ function parseCSVLine(line: any) {
   let inQuotes = false;
 
   for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') {
+    const character = line[i];
+    if (character === '"') {
       if (inQuotes && line[i + 1] === '"') {
         current += '"';
         i++;
       } else {
         inQuotes = !inQuotes;
       }
-    } else if (ch === "," && !inQuotes) {
+    } else if (character === "," && !inQuotes) {
       fields.push(current.trim());
       current = "";
     } else {
-      current += ch;
+      current += character;
     }
   }
   fields.push(current.trim());

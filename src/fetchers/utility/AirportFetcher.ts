@@ -36,7 +36,7 @@ function parseCSVLine(line: any) {
       fields.push(current.trim());
       current = "";
     } else {
-      current += ch;
+      current += character;
     }
   }
   fields.push(current.trim());
@@ -85,7 +85,7 @@ function ensureLoaded() {
       const value = values[index] || "";
       if (NUMERIC_FIELDS.has(h)) {
         const parsedNumber = parseFloat(value);
-        row[h] = isNaN(parsedNumber) ? null : num;
+        row[h] = isNaN(parsedNumber) ? null : parsedNumber;
       } else {
         row[h] = value || null;
       }
