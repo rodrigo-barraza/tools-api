@@ -21,7 +21,7 @@ COPY package.json package-lock.json ./
 # Skip Playwright's bundled browser download — we install system Chromium
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 # Install ALL dependencies (including dev) so tsc can build
-RUN npm ci
+RUN --mount=type=ssh npm ci
 
 # Copy application source
 COPY . .
