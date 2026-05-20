@@ -1,6 +1,6 @@
 // ─── Headless Playwright Automation ─────────────────────────
 
-import { chromium } from "playwright";
+import { chromium, Browser, BrowserContext, Page } from "playwright";
 import { writeFile, unlink, mkdtemp } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -21,16 +21,19 @@ import {
 // Session Management
 // ────────────────────────────────────────────────────────────
 
+interface BrowserSession {
+  page: Page;
+  context: BrowserContext;
+  lastUsed: number;
+}
 
-let browser: any = null;
-
-/** @type {Map<string, { page: import('playwright').Page, lastUsed: number }>} */
-const sessions = new Map();
+let browser: Browser | null = null;
+const sessions = new Map<string, BrowserSession>();
 
 const MAX_SESSIONS = 3;
 const VIEWPORT = { width: 1280, height: 720 };
 
-let cleanupInterval: any = null;
+let cleanupInterval: NodeJS.Timeout | null = null;
 
 /**
  * Get or launch the singleton browser instance.
@@ -71,29 +74,28 @@ async function getBrowser() {
 /**
  * Get or create a session page.
  */
-async function getSession(sessionId: any) {
-  if (sessions.has(sessionId)) {
-    const session = sessions.get(sessionId);
-
+async function getSession(sessionId: string): Promise<BrowserSession> {
+  const existingSession = sessions.get(sessionId);
+  if (existingSession) {
     // Validate the cached session is still alive — the page or browser context
     // may have been closed externally (manual window close, browser crash, etc.)
-    const pageAlive = session.page && !session.page.isClosed();
+    const pageAlive = existingSession.page && !existingSession.page.isClosed();
     const browserAlive = browser && browser.isConnected();
 
     if (pageAlive && browserAlive) {
-      session.lastUsed = Date.now();
-      return session;
+      existingSession.lastUsed = Date.now();
+      return existingSession;
     }
 
     // Stale session — evict silently and fall through to create a new one
     logger.warn(`[AgenticBrowser] Session "${sessionId}" stale (page=${pageAlive}, browser=${browserAlive}), recreating`);
-    try { await session.context.close(); } catch { /* already dead */ }
+    try { await existingSession.context.close(); } catch { /* already dead */ }
     sessions.delete(sessionId);
   }
 
   if (sessions.size >= MAX_SESSIONS) {
     // Evict oldest session
-    let oldestId: any = null;
+    let oldestId: string | null = null;
     let oldestTime = Infinity;
     for (const [id, s] of sessions) {
       if (s.lastUsed < oldestTime) {
@@ -122,7 +124,7 @@ async function getSession(sessionId: any) {
 /**
  * Close and clean up a session.
  */
-async function closeSession(sessionId: any) {
+async function closeSession(sessionId: string): Promise<boolean> {
   const session = sessions.get(sessionId);
   if (!session) return false;
 
@@ -156,7 +158,7 @@ function cleanupIdleSessions() {
 // Action Handlers
 // ────────────────────────────────────────────────────────────
 
-async function actionNavigate(page: any, { url }: any) {
+async function actionNavigate(page: Page, { url }: { url?: string }) {
   if (!url) return { error: "Missing required parameter: url" };
 
   try {
@@ -174,14 +176,14 @@ async function actionNavigate(page: any, { url }: any) {
       title: await page.title(),
       status: response?.status() || null,
     };
-  } catch (error: any) {
-    return { error: `Navigation failed: ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `Navigation failed: ${(error as Error).message}` };
   }
 }
 
-async function actionScreenshot(page: any, { fullPage, selector }: any) {
+async function actionScreenshot(page: Page, { fullPage, selector }: { fullPage?: boolean; selector?: string }) {
   try {
-    let screenshotBuffer: any;
+    let screenshotBuffer: Buffer;
     if (selector) {
       const element = await page.$(selector);
       if (!element) return { error: `Element not found: ${selector}` };
@@ -200,12 +202,12 @@ async function actionScreenshot(page: any, { fullPage, selector }: any) {
       screenshot: screenshotBuffer.toString("base64"),
       mimeType: "image/png",
     };
-  } catch (error: any) {
-    return { error: `Screenshot failed: ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `Screenshot failed: ${(error as Error).message}` };
   }
 }
 
-async function actionClick(page: any, { selector }: any) {
+async function actionClick(page: Page, { selector }: { selector?: string }) {
   if (!selector) return { error: "Missing required parameter: selector" };
 
   try {
@@ -220,12 +222,12 @@ async function actionClick(page: any, { selector }: any) {
       url: page.url(),
       title: await page.title(),
     };
-  } catch (error: any) {
-    return { error: `Click failed on "${selector}": ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `Click failed on "${selector}": ${(error as Error).message}` };
   }
 }
 
-async function actionType(page: any, { selector, text, pressEnter }: any) {
+async function actionType(page: Page, { selector, text, pressEnter }: { selector?: string; text?: string; pressEnter?: boolean }) {
   if (!selector) return { error: "Missing required parameter: selector" };
   if (text === undefined || text === null) return { error: "Missing required parameter: text" };
 
@@ -247,17 +249,16 @@ async function actionType(page: any, { selector, text, pressEnter }: any) {
       url: page.url(),
       title: await page.title(),
     };
-  } catch (error: any) {
-    return { error: `Type failed on "${selector}": ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `Type failed on "${selector}": ${(error as Error).message}` };
   }
 }
 
-async function actionScroll(page: any, { direction, selector, amount }: any) {
+async function actionScroll(page: Page, { direction, selector, amount }: { direction?: string; selector?: string; amount?: number }) {
   try {
     if (selector) {
       await page.evaluate(
-        ({ sel }: any) => {
-           
+        ({ sel }: { sel: string }) => {
           const element = document.querySelector(sel);
           if (element) element.scrollIntoView({ behavior: "smooth", block: "center" });
         },
@@ -267,7 +268,7 @@ async function actionScroll(page: any, { direction, selector, amount }: any) {
       const pixels = amount || 500;
       const delta = direction === "up" ? -pixels : pixels;
        
-      await page.evaluate((d: any) => window.scrollBy(0, d), delta);
+      await page.evaluate((d: number) => window.scrollBy(0, d), delta);
     }
 
     // Small delay for scroll animation
@@ -278,12 +279,12 @@ async function actionScroll(page: any, { direction, selector, amount }: any) {
       direction: selector ? "to element" : (direction || "down"),
       url: page.url(),
     };
-  } catch (error: any) {
-    return { error: `Scroll failed: ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `Scroll failed: ${(error as Error).message}` };
   }
 }
 
-async function actionEvaluate(page: any, { expression }: any) {
+async function actionEvaluate(page: Page, { expression }: { expression?: string }) {
   if (!expression) return { error: "Missing required parameter: expression" };
 
   try {
@@ -294,23 +295,23 @@ async function actionEvaluate(page: any, { expression }: any) {
       result: typeof result === "object" ? JSON.stringify(result, null, 2) : String(result),
       url: page.url(),
     };
-  } catch (error: any) {
-    return { error: `Evaluate failed: ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `Evaluate failed: ${(error as Error).message}` };
   }
 }
 
-async function actionGetContent(page: any, { selector, format }: any) {
+async function actionGetContent(page: Page, { selector, format }: { selector?: string; format?: string }) {
   try {
-    let content: any;
+    let content: string | null;
 
     if (format === "html") {
       content = selector
-        ? await page.$eval(selector, (element: any) => element.innerHTML).catch(() => null)
+        ? await page.$eval(selector, (element: HTMLElement) => element.innerHTML).catch(() => null)
         : await page.content();
     } else {
       // Default: extract text content
       content = selector
-        ? await page.$eval(selector, (element: any) => element.innerText).catch(() => null)
+        ? await page.$eval(selector, (element: HTMLElement) => element.innerText).catch(() => null)
          
         : await page.evaluate(() => document.body.innerText);
     }
@@ -333,12 +334,12 @@ async function actionGetContent(page: any, { selector, format }: any) {
       length: content.length,
       truncated,
     };
-  } catch (error: any) {
-    return { error: `Content extraction failed: ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `Content extraction failed: ${(error as Error).message}` };
   }
 }
 
-async function actionWait(page: any, { selector, timeout, state }: any) {
+async function actionWait(page: Page, { selector, timeout, state }: { selector?: string; timeout?: number; state?: "attached" | "detached" | "visible" | "hidden" }) {
   try {
     if (selector) {
       await page.waitForSelector(selector, {
@@ -360,18 +361,18 @@ async function actionWait(page: any, { selector, timeout, state }: any) {
       waited_for: `${waitMs}ms`,
       url: page.url(),
     };
-  } catch (error: any) {
-    return { error: `Wait failed: ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `Wait failed: ${(error as Error).message}` };
   }
 }
 
-async function actionGetElements(page: any, { selector, limit }: any) {
+async function actionGetElements(page: Page, { selector, limit }: { selector?: string; limit?: number }) {
   try {
     const maxElements = Math.min(limit || 50, 100);
     const scope = selector || "body";
 
     const elements = await page.evaluate(
-      ({ scope, max }: any) => {
+      ({ scope, max }: { scope: string; max: number }) => {
          
         const root = document.querySelector(scope) || document.body;
 
@@ -396,7 +397,7 @@ async function actionGetElements(page: any, { selector, limit }: any) {
         ];
 
         const allElements = root.querySelectorAll(interactiveSelectors.join(", "));
-        const results: any[] = [];
+        const results: Record<string, any>[] = [];
 
         for (const element of allElements) {
           if (results.length >= max) break;
@@ -432,17 +433,17 @@ async function actionGetElements(page: any, { selector, limit }: any) {
             cssSelector = element.tagName.toLowerCase();
           }
 
-          const text = (element.innerText || element.textContent || "").trim().slice(0, 80);
+          const text = (element.textContent || "").trim().slice(0, 80);
           const tag = element.tagName.toLowerCase();
           const entry: Record<string, any> = { tag, selector: cssSelector };
 
           if (text) entry.text = text;
           if (element.getAttribute("type")) entry.type = element.getAttribute("type");
           if (element.getAttribute("placeholder")) entry.placeholder = element.getAttribute("placeholder");
-          if (element.getAttribute("href")) entry.href = element.getAttribute("href").slice(0, 120);
-          if (element.getAttribute("value")) entry.value = element.getAttribute("value").slice(0, 60);
+          if (element.getAttribute("href")) entry.href = element.getAttribute("href")?.slice(0, 120);
+          if (element.getAttribute("value")) entry.value = element.getAttribute("value")?.slice(0, 60);
           if (element.getAttribute("role")) entry.role = element.getAttribute("role");
-          if (element.disabled) entry.disabled = true;
+          if ((element as HTMLInputElement).disabled) entry.disabled = true;
           if (element.getAttribute("aria-label")) entry.ariaLabel = element.getAttribute("aria-label");
 
           results.push(entry);
@@ -460,8 +461,8 @@ async function actionGetElements(page: any, { selector, limit }: any) {
       count: elements.length,
       elements,
     };
-  } catch (error: any) {
-    return { error: `Get elements failed: ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `Get elements failed: ${(error as Error).message}` };
   }
 }
 
@@ -478,13 +479,13 @@ async function actionGetElements(page: any, { selector, limit }: any) {
  *
  * Ref IDs (e.g. [ref=s1e5]) can be used with click_ref/type_ref actions.
  */
-async function actionSnapshot(page: any, { selector }: any) {
+async function actionSnapshot(page: Page, { selector }: { selector?: string }) {
   try {
     const locator = selector ? page.locator(selector) : page.locator("body");
 
     // Playwright ≥1.49 supports locator.ariaSnapshot()
-    if (typeof locator.ariaSnapshot === "function") {
-      const snapshot = await locator.ariaSnapshot();
+    if (typeof (locator as any).ariaSnapshot === "function") {
+      const snapshot = await (locator as any).ariaSnapshot();
       return {
         action: "snapshot",
         url: page.url(),
@@ -495,7 +496,7 @@ async function actionSnapshot(page: any, { selector }: any) {
     }
 
     // Fallback: use page.accessibility.snapshot() + format ourselves
-    const tree = await page.accessibility.snapshot({ interestingOnly: true });
+    const tree = await (page as any).accessibility.snapshot({ interestingOnly: true });
     const formatted = formatAccessibilityTree(tree, 0);
     return {
       action: "snapshot",
@@ -504,19 +505,34 @@ async function actionSnapshot(page: any, { selector }: any) {
       snapshot: formatted,
       format: "a11y-tree",
     };
-  } catch (error: any) {
-    return { error: `Snapshot failed: ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `Snapshot failed: ${(error as Error).message}` };
   }
+}
+
+interface AccessibilityNode {
+  role: string;
+  name?: string;
+  level?: number;
+  checked?: boolean | "mixed";
+  disabled?: boolean;
+  expanded?: boolean;
+  pressed?: boolean | "mixed";
+  selected?: boolean;
+  required?: boolean;
+  valuetext?: string;
+  value?: string | number;
+  children?: AccessibilityNode[];
 }
 
 /**
  * Format an accessibility tree node into a readable indented text representation.
  * Fallback for when locator.ariaSnapshot() is unavailable.
  */
-function formatAccessibilityTree(node: any, depth: any) {
+function formatAccessibilityTree(node: AccessibilityNode | null, depth: number): string {
   if (!node) return "";
   const indent = "  ".repeat(depth);
-  const parts: any[] = [];
+  const parts: string[] = [];
 
   // Role
   let line = `${indent}- ${node.role}`;
@@ -525,7 +541,7 @@ function formatAccessibilityTree(node: any, depth: any) {
   if (node.name) line += ` "${node.name}"`;
 
   // Key attributes
-  const attrs: any[] = [];
+  const attrs: string[] = [];
   if (node.level != null) attrs.push(`level=${node.level}`);
   if (node.checked != null) attrs.push(`checked=${node.checked}`);
   if (node.disabled) attrs.push("disabled");
@@ -562,20 +578,20 @@ function formatAccessibilityTree(node: any, depth: any) {
  * 1. If ariaSnapshot gave us [ref=X] IDs (Playwright ≥1.49), use getByRole/getByLabel
  * 2. Direct role + name matching: "button:Submit", "link:Home", "textbox:Search"
  */
-function resolveRef(page: any, ref: any) {
+function resolveRef(page: Page, ref: string) {
   // Format: "role:name" (e.g. "button:Submit", "link:Get started")
   const colonIdx = ref.indexOf(":");
   if (colonIdx > 0) {
     const role = ref.slice(0, colonIdx).trim();
     const name = ref.slice(colonIdx + 1).trim();
-    return page.getByRole(role, { name, exact: false });
+    return page.getByRole(role as any, { name, exact: false });
   }
 
   // Fallback: try as aria-label
   return page.getByLabel(ref, { exact: false });
 }
 
-async function actionClickRef(page: any, { ref }: any) {
+async function actionClickRef(page: Page, { ref }: { ref?: string }) {
   if (!ref) return { error: "Missing required parameter: ref" };
 
   try {
@@ -589,12 +605,12 @@ async function actionClickRef(page: any, { ref }: any) {
       url: page.url(),
       title: await page.title(),
     };
-  } catch (error: any) {
-    return { error: `click_ref failed for "${ref}": ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `click_ref failed for "${ref}": ${(error as Error).message}` };
   }
 }
 
-async function actionTypeRef(page: any, { ref, text, pressEnter }: any) {
+async function actionTypeRef(page: Page, { ref, text, pressEnter }: { ref?: string; text?: string; pressEnter?: boolean }) {
   if (!ref) return { error: "Missing required parameter: ref" };
   if (text === undefined || text === null) return { error: "Missing required parameter: text" };
 
@@ -616,12 +632,12 @@ async function actionTypeRef(page: any, { ref, text, pressEnter }: any) {
       url: page.url(),
       title: await page.title(),
     };
-  } catch (error: any) {
-    return { error: `type_ref failed for "${ref}": ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `type_ref failed for "${ref}": ${(error as Error).message}` };
   }
 }
 
-async function actionHoverRef(page: any, { ref }: any) {
+async function actionHoverRef(page: Page, { ref }: { ref?: string }) {
   if (!ref) return { error: "Missing required parameter: ref" };
 
   try {
@@ -633,12 +649,12 @@ async function actionHoverRef(page: any, { ref }: any) {
       ref,
       url: page.url(),
     };
-  } catch (error: any) {
-    return { error: `hover_ref failed for "${ref}": ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `hover_ref failed for "${ref}": ${(error as Error).message}` };
   }
 }
 
-async function actionSelectRef(page: any, { ref, value }: any) {
+async function actionSelectRef(page: Page, { ref, value }: { ref?: string; value?: string }) {
   if (!ref) return { error: "Missing required parameter: ref" };
   if (!value) return { error: "Missing required parameter: value" };
 
@@ -653,8 +669,8 @@ async function actionSelectRef(page: any, { ref, value }: any) {
       url: page.url(),
       title: await page.title(),
     };
-  } catch (error: any) {
-    return { error: `select_ref failed for "${ref}": ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `select_ref failed for "${ref}": ${(error as Error).message}` };
   }
 }
 
@@ -672,12 +688,12 @@ async function actionSelectRef(page: any, { ref, value }: any) {
  * Scripts should use `chromium.connectOverCDP(process.env.BROWSER_WS_ENDPOINT)`
  * to connect.
  */
-async function actionRunScript(_page: any, { script, timeout }: any) {
+async function actionRunScript(_page: Page, { script, timeout }: { script?: string; timeout?: number }) {
   if (!script) return { error: "Missing required parameter: script" };
 
   // Ensure the browser is running and get its WebSocket endpoint
   const b = await getBrowser();
-  const wsEndpoint = b.wsEndpoint?.() || null;
+  const wsEndpoint = (b as any).wsEndpoint?.() || null;
 
   // Wrap the user script with boilerplate for connecting to our browser
   const wrappedScript = `

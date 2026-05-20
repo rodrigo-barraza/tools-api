@@ -17,13 +17,14 @@ import logger from "../logger.ts";
  * If so, sends an RPC request and returns the result.
  * Returns null if the path should be handled locally.
  */
-async function tryAgentRoute(method: any, params: any, targetPath: any) {
+async function tryAgentRoute(method: string, params: Record<string, unknown>, targetPath: string): Promise<unknown> {
   const agent = routeForPath(targetPath);
   if (!agent) return null;
   try {
     return await sendRpc(agent.id, method, params);
-  } catch (error: any) {
-    return { error: `Agent RPC failed: ${error.message}` };
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    return { error: `Agent RPC failed: ${msg}` };
   }
 }
 
@@ -43,7 +44,7 @@ if (!Array.isArray(WORKSPACE_ROOTS_RAW) || WORKSPACE_ROOTS_RAW.length === 0) {
 const STATIC_ROOTS = Object.freeze(
   (Array.isArray(WORKSPACE_ROOTS_RAW) ? WORKSPACE_ROOTS_RAW : [])
     .filter(Boolean)
-    .map((r: any) => resolve(r.trim()))
+    .map((r: string) => resolve(r.trim()))
 );
 
 // Dynamic roots — mutable array that includes static + user-configured roots.
@@ -97,7 +98,7 @@ const PREVIEW_IMAGE_EXTENSIONS = new Set([
  * Validate and resolve a path against the sandbox.
 
  */
-function validatePath(inputPath: any) {
+function validatePath(inputPath: string | unknown) {
   if (!inputPath || typeof inputPath !== "string") {
     return { safe: false, resolved: "", error: "Path is required (string)" };
   }
@@ -111,7 +112,7 @@ function validatePath(inputPath: any) {
     : resolve(inputPath);
 
   // Check against allowed roots
-  const inAllowedRoot = ALLOWED_ROOTS.some((root: any) =>
+  const inAllowedRoot = ALLOWED_ROOTS.some((root: string) =>
     resolved.startsWith(root + "/") || resolved === root,
   );
 
@@ -144,7 +145,10 @@ function validatePath(inputPath: any) {
 /**
  * Read file contents with optional line range.
  */
-export async function agenticReadFile(filePath: any, { startLine, endLine }: Record<string, any> = {}) {
+export async function agenticReadFile(
+  filePath: string,
+  { startLine, endLine }: { startLine?: number; endLine?: number } = {},
+) {
   // Agent routing — proxy to remote agent if path is served by one
   const agentResult = await tryAgentRoute("file.read", { path: filePath, startLine, endLine }, filePath);
   if (agentResult) return agentResult;
@@ -170,7 +174,7 @@ export async function agenticReadFile(filePath: any, { startLine, endLine }: Rec
     // Binary detection
     const ext = extname(resolved).toLowerCase();
     if (BINARY_EXTENSIONS.has(ext)) {
-      const result: Record<string, any> = {
+      const result: Record<string, unknown> = {
         filePath: resolved,
         isBinary: true,
         extension: ext,
@@ -203,7 +207,7 @@ export async function agenticReadFile(filePath: any, { startLine, endLine }: Rec
 
     const selectedLines = allLines.slice(start - 1, end);
     const numberedContent = selectedLines
-      .map((line: any, i: any) => `${start + i}: ${line}`)
+      .map((line: string, i: number) => `${start + i}: ${line}`)
       .join("\n");
 
     return {
@@ -216,18 +220,23 @@ export async function agenticReadFile(filePath: any, { startLine, endLine }: Rec
       truncated: end < totalLines,
       content: numberedContent,
     };
-  } catch (error: any) {
-    if (error.code === "ENOENT") {
+  } catch (error: unknown) {
+    const err = error as Record<string, unknown>;
+    if (err.code === "ENOENT") {
       return { error: `File not found: ${resolved}` };
     }
-    return { error: `Read failed: ${error.message}` };
+    return { error: `Read failed: ${err.message || String(error)}` };
   }
 }
 
 /**
  * Write (create or overwrite) a file.
  */
-export async function agenticWriteFile(filePath: any, content: any, { createDirs = true }: Record<string, any> = {}) {
+export async function agenticWriteFile(
+  filePath: string,
+  content: string,
+  { createDirs = true }: { createDirs?: boolean } = {},
+) {
   // Agent routing
   const agentResult = await tryAgentRoute("file.write", { path: filePath, content, createDirs }, filePath);
   if (agentResult) return agentResult;
@@ -268,8 +277,9 @@ export async function agenticWriteFile(filePath: any, content: any, { createDirs
       bytesWritten: bytes,
       linesWritten: lines,
     };
-  } catch (error: any) {
-    return { error: `Write failed: ${error.message}` };
+  } catch (error: unknown) {
+    const err = error as Error;
+    return { error: `Write failed: ${err.message || String(error)}` };
   }
 }
 
@@ -277,7 +287,12 @@ export async function agenticWriteFile(filePath: any, content: any, { createDirs
  * Perform a targeted string replacement in a file.
  * The `oldStr` must match exactly (including whitespace).
  */
-export async function agenticStrReplace(filePath: any, oldStr: any, newStr: any, { allowMultiple = false }: Record<string, any> = {}) {
+export async function agenticStrReplace(
+  filePath: string,
+  oldStr: string,
+  newStr: string,
+  { allowMultiple = false }: { allowMultiple?: boolean } = {},
+) {
   // Agent routing
   const agentResult = await tryAgentRoute("file.strReplace", { path: filePath, oldStr, newStr, allowMultiple }, filePath);
   if (agentResult) return agentResult;
@@ -323,7 +338,7 @@ export async function agenticStrReplace(filePath: any, oldStr: any, newStr: any,
     }
 
     // Perform replacement
-    let updated: any;
+    let updated: string;
     if (allowMultiple) {
       updated = content.split(oldStr).join(newStr);
     } else {
@@ -344,18 +359,19 @@ export async function agenticStrReplace(filePath: any, oldStr: any, newStr: any,
       newLines,
       lineDelta: newLines - oldLines,
     };
-  } catch (error: any) {
-    if (error.code === "ENOENT") {
+  } catch (error: unknown) {
+    const err = error as Record<string, unknown>;
+    if (err.code === "ENOENT") {
       return { error: `File not found: ${resolved}` };
     }
-    return { error: `str_replace failed: ${error.message}` };
+    return { error: `str_replace failed: ${err.message || String(error)}` };
   }
 }
 
 /**
  * Apply a unified diff patch to a file.
  */
-export async function agenticPatchFile(filePath: any, patch: any) {
+export async function agenticPatchFile(filePath: string, patch: string) {
   // Agent routing
   const agentResult = await tryAgentRoute("file.patch", { path: filePath, patch }, filePath);
   if (agentResult) return agentResult;
@@ -395,18 +411,29 @@ export async function agenticPatchFile(filePath: any, patch: any) {
       newLines,
       lineDelta: newLines - oldLines,
     };
-  } catch (error: any) {
-    if (error.code === "ENOENT") {
+  } catch (error: unknown) {
+    const err = error as Record<string, unknown>;
+    if (err.code === "ENOENT") {
       return { error: `File not found: ${resolved}` };
     }
-    return { error: `patch_file failed: ${error.message}` };
+    return { error: `patch_file failed: ${err.message || String(error)}` };
   }
 }
 
 /**
  * List directory contents with metadata.
  */
-export async function agenticListDirectory(dirPath: any, { recursive = false, maxDepth = 3 }: Record<string, any> = {}) {
+export interface DirectoryEntry {
+  name: string;
+  path: string;
+  isDir: boolean;
+  sizeBytes?: number;
+}
+
+export async function agenticListDirectory(
+  dirPath: string,
+  { recursive = false, maxDepth = 3 }: { recursive?: boolean; maxDepth?: number } = {},
+) {
   // Agent routing
   const agentResult = await tryAgentRoute("directory.list", { path: dirPath, recursive, maxDepth }, dirPath);
   if (agentResult) return agentResult;
@@ -424,9 +451,9 @@ export async function agenticListDirectory(dirPath: any, { recursive = false, ma
       return { error: `'${resolved}' is a file, not a directory. Use read_file instead.` };
     }
 
-    const entries: any[] = [];
+    const entries: DirectoryEntry[] = [];
 
-    async function walk(dir: any, depth: any) {
+    async function walk(dir: string, depth: number) {
       if (entries.length >= MAX_DIR_ENTRIES) return;
       if (depth > maxDepth) return;
 
@@ -479,23 +506,39 @@ export async function agenticListDirectory(dirPath: any, { recursive = false, ma
       truncated: entries.length >= MAX_DIR_ENTRIES,
       entries,
     };
-  } catch (error: any) {
-    if (error.code === "ENOENT") {
+  } catch (error: unknown) {
+    const err = error as Record<string, unknown>;
+    if (err.code === "ENOENT") {
       return { error: `Directory not found: ${resolved}` };
     }
-    return { error: `list_directory failed: ${error.message}` };
+    return { error: `list_directory failed: ${err.message || String(error)}` };
   }
 }
 
 /**
  * Search for pattern matches within files (ripgrep-style).
  */
-export async function agenticGrepSearch(pattern: any, searchPath: any, {
-  isRegex = false,
-  includes = [],
-  caseInsensitive = false,
-  matchPerLine = true,
-}: Record<string, any> = {}) {
+export interface GrepResult {
+  file: string;
+  line: number;
+  content: string;
+}
+
+export async function agenticGrepSearch(
+  pattern: string,
+  searchPath: string,
+  {
+    isRegex = false,
+    includes = [],
+    caseInsensitive = false,
+    matchPerLine = true,
+  }: {
+    isRegex?: boolean;
+    includes?: string[];
+    caseInsensitive?: boolean;
+    matchPerLine?: boolean;
+  } = {},
+) {
   // Agent routing
   const agentResult = await tryAgentRoute("search.grep", { pattern, searchPath, isRegex, includes, caseInsensitive, matchPerLine }, searchPath);
   if (agentResult) return agentResult;
@@ -512,19 +555,20 @@ export async function agenticGrepSearch(pattern: any, searchPath: any, {
   const resolved = validation.resolved;
 
   try {
-    let regex: any;
+    let regex: RegExp;
     try {
       regex = isRegex
         ? new RegExp(pattern, caseInsensitive ? "gi" : "g")
         : new RegExp(escapeRegex(pattern), caseInsensitive ? "gi" : "g");
-    } catch (error: any) {
-      return { error: `Invalid regex pattern: ${error.message}` };
+    } catch (error: unknown) {
+      const err = error as Error;
+      return { error: `Invalid regex pattern: ${err.message || String(error)}` };
     }
 
-    const results: any[] = [];
-    const fileMatches = new Set();
+    const results: GrepResult[] = [];
+    const fileMatches = new Set<string>();
 
-    async function searchFile(filePath: any) {
+    async function searchFile(filePath: string) {
       if (results.length >= MAX_GREP_RESULTS) return;
 
       const ext = extname(filePath).toLowerCase();
@@ -561,7 +605,7 @@ export async function agenticGrepSearch(pattern: any, searchPath: any, {
       }
     }
 
-    async function walkDir(dir: any) {
+    async function walkDir(dir: string) {
       if (results.length >= MAX_GREP_RESULTS) return;
 
       try {
@@ -580,7 +624,7 @@ export async function agenticGrepSearch(pattern: any, searchPath: any, {
             // Apply include filters
             if (includes.length > 0) {
               const name = entry.name;
-              const matched = includes.some((glob: any) => {
+              const matched = includes.some((glob: string) => {
                 if (glob.startsWith("*.")) {
                   return name.endsWith(glob.slice(1));
                 }
@@ -620,15 +664,23 @@ export async function agenticGrepSearch(pattern: any, searchPath: any, {
       truncated: results.length >= MAX_GREP_RESULTS,
       results,
     };
-  } catch (error: any) {
-    return { error: `grep_search failed: ${error.message}` };
+  } catch (error: unknown) {
+    const err = error as Error;
+    return { error: `grep_search failed: ${err.message || String(error)}` };
   }
 }
 
 /**
  * Find files by glob pattern.
  */
-export async function agenticGlobFiles(pattern: any, searchPath: any) {
+export interface GlobMatch {
+  path: string;
+  relativePath: string;
+  name: string;
+  sizeBytes?: number;
+}
+
+export async function agenticGlobFiles(pattern: string, searchPath: string) {
   // Agent routing
   const agentResult = await tryAgentRoute("search.glob", { pattern, searchPath }, searchPath);
   if (agentResult) return agentResult;
@@ -643,12 +695,12 @@ export async function agenticGlobFiles(pattern: any, searchPath: any) {
   }
 
   const resolved = validation.resolved;
-  const matches: any[] = [];
+  const matches: GlobMatch[] = [];
 
   // Convert simple glob to regex
   const globRegex = globToRegex(pattern);
 
-  async function walk(dir: any) {
+  async function walk(dir: string) {
     if (matches.length >= MAX_GLOB_RESULTS) return;
 
     try {
@@ -701,8 +753,9 @@ export async function agenticGlobFiles(pattern: any, searchPath: any) {
       truncated: matches.length >= MAX_GLOB_RESULTS,
       matches,
     };
-  } catch (error: any) {
-    return { error: `glob_files failed: ${error.message}` };
+  } catch (error: unknown) {
+    const err = error as Error;
+    return { error: `glob_files failed: ${err.message || String(error)}` };
   }
 }
 
@@ -713,7 +766,13 @@ export async function agenticGlobFiles(pattern: any, searchPath: any) {
 /**
  * Read multiple files in a single call.
  */
-export async function agenticMultiFileRead(files: any) {
+export interface MultiFileReadItem {
+  path: string;
+  startLine?: number;
+  endLine?: number;
+}
+
+export async function agenticMultiFileRead(files: MultiFileReadItem[]) {
   if (!Array.isArray(files) || files.length === 0) {
     return { error: "'files' must be a non-empty array of { path, startLine?, endLine? }" };
   }
@@ -722,7 +781,7 @@ export async function agenticMultiFileRead(files: any) {
   }
 
   const results = await Promise.all(
-    files.map(async (f: any) => {
+    files.map(async (f: MultiFileReadItem) => {
       const result = await agenticReadFile(f.path, {
         startLine: f.startLine,
         endLine: f.endLine,
@@ -731,8 +790,8 @@ export async function agenticMultiFileRead(files: any) {
     }),
   );
 
-  const succeeded = results.filter((r: any) => !r.error).length;
-  const failed = results.filter((r: any) => r.error).length;
+  const succeeded = results.filter((r: Record<string, unknown> & { error?: string }) => !r.error).length;
+  const failed = results.filter((r: Record<string, unknown> & { error?: string }) => r.error).length;
 
   return {
     totalRequested: files.length,
@@ -749,8 +808,21 @@ export async function agenticMultiFileRead(files: any) {
 /**
  * Get metadata for one or more files without reading content.
  */
-export async function agenticFileInfo(paths: any) {
-  const pathList = Array.isArray(paths) ? paths : [paths];
+export interface FileInfoResult {
+  path: string;
+  exists: boolean;
+  isFile?: boolean;
+  isDirectory?: boolean;
+  sizeBytes?: number;
+  lastModified?: string;
+  extension?: string | null;
+  isBinary?: boolean;
+  lines?: number;
+  error?: string;
+}
+
+export async function agenticFileInfo(paths: string | string[]) {
+  const pathList: string[] = Array.isArray(paths) ? paths : [paths];
   // Agent routing — if first path is agent-served, proxy the entire batch
   if (pathList.length > 0) {
     const agentResult = await tryAgentRoute("file.info", { paths: pathList }, pathList[0]);
@@ -765,7 +837,7 @@ export async function agenticFileInfo(paths: any) {
   }
 
   const results = await Promise.all(
-    pathList.map(async (p: any) => {
+    pathList.map(async (p: string) => {
       const validation = validatePath(p);
       if (!validation.safe) {
         return { path: p, exists: false, error: validation.error };
@@ -775,7 +847,7 @@ export async function agenticFileInfo(paths: any) {
       try {
         const stats = await stat(resolved);
         const ext = extname(resolved).toLowerCase();
-        const info: Record<string, any> = {
+        const info: FileInfoResult = {
           path: resolved,
           exists: true,
           isFile: stats.isFile(),
@@ -797,11 +869,12 @@ export async function agenticFileInfo(paths: any) {
         }
 
         return info;
-      } catch (error: any) {
-        if (error.code === "ENOENT") {
+      } catch (error: unknown) {
+        const err = error as Record<string, unknown>;
+        if (err.code === "ENOENT") {
           return { path: resolved, exists: false };
         }
-        return { path: resolved, exists: false, error: error.message };
+        return { path: resolved, exists: false, error: err.message || String(error) };
       }
     }),
   );
@@ -823,7 +896,10 @@ export async function agenticFileInfo(paths: any) {
 /**
  * Generate a unified diff between two files or between a file and provided content.
  */
-export async function agenticFileDiff(pathA: any, { pathB, content, contextLines = 3 }: Record<string, any> = {}) {
+export async function agenticFileDiff(
+  pathA: string,
+  { pathB, content, contextLines = 3 }: { pathB?: string; content?: string; contextLines?: number } = {},
+) {
   // Agent routing
   const agentResult = await tryAgentRoute("file.diff", { pathA, pathB, content, contextLines }, pathA);
   if (agentResult) return agentResult;
@@ -842,8 +918,8 @@ export async function agenticFileDiff(pathA: any, { pathB, content, contextLines
 
   try {
     const contentA = await readFile(validA.resolved, "utf-8");
-    let contentB: any;
-    let labelB: any;
+    let contentB = "";
+    let labelB = "";
 
     if (pathB) {
       const validB = validatePath(pathB);
@@ -853,7 +929,7 @@ export async function agenticFileDiff(pathA: any, { pathB, content, contextLines
       contentB = await readFile(validB.resolved, "utf-8");
       labelB = validB.resolved;
     } else {
-      contentB = content;
+      contentB = content || "";
       labelB = "(provided content)";
     }
 
@@ -866,7 +942,7 @@ export async function agenticFileDiff(pathA: any, { pathB, content, contextLines
       "",
       "",
       { context: Math.min(contextLines, 10) },
-    );
+    ) as string;
 
     const hasChanges = diff.includes("@@");
     const additions = (diff.match(/^\+[^+]/gm) || []).length;
@@ -880,11 +956,12 @@ export async function agenticFileDiff(pathA: any, { pathB, content, contextLines
       deletions,
       diff: hasChanges ? diff : "(files are identical)",
     };
-  } catch (error: any) {
-    if (error.code === "ENOENT") {
-      return { error: `File not found: ${(error as any).path || pathA}` };
+  } catch (error: unknown) {
+    const err = error as Record<string, unknown>;
+    if (err.code === "ENOENT") {
+      return { error: `File not found: ${String(err.path || pathA)}` };
     }
-    return { error: `file_diff failed: ${error.message}` };
+    return { error: `file_diff failed: ${err.message || String(error)}` };
   }
 }
 
@@ -895,7 +972,11 @@ export async function agenticFileDiff(pathA: any, { pathB, content, contextLines
 /**
  * Move or rename a file within allowed roots.
  */
-export async function agenticMoveFile(source: any, destination: any, { createDirs = true }: Record<string, any> = {}) {
+export async function agenticMoveFile(
+  source: string,
+  destination: string,
+  { createDirs = true }: { createDirs?: boolean } = {},
+) {
   // Agent routing
   const agentResult = await tryAgentRoute("file.move", { source, destination, createDirs }, source);
   if (agentResult) return agentResult;
@@ -928,8 +1009,9 @@ export async function agenticMoveFile(source: any, destination: any, { createDir
       destination: validDst.resolved,
       success: true,
     };
-  } catch (error: any) {
-    return { error: `move_file failed: ${error.message}` };
+  } catch (error: unknown) {
+    const err = error as Error;
+    return { error: `move_file failed: ${err.message || String(error)}` };
   }
 }
 
@@ -940,7 +1022,7 @@ export async function agenticMoveFile(source: any, destination: any, { createDir
 /**
  * Delete a file within allowed roots.
  */
-export async function agenticDeleteFile(filePath: any) {
+export async function agenticDeleteFile(filePath: string) {
   // Agent routing
   const agentResult = await tryAgentRoute("file.delete", { path: filePath }, filePath);
   if (agentResult) return agentResult;
@@ -964,11 +1046,12 @@ export async function agenticDeleteFile(filePath: any) {
       deleted: true,
       sizeBytes,
     };
-  } catch (error: any) {
-    if (error.code === "ENOENT") {
+  } catch (error: unknown) {
+    const err = error as Record<string, unknown>;
+    if (err.code === "ENOENT") {
       return { error: `File not found: ${validation.resolved}` };
     }
-    return { error: `delete_file failed: ${error.message}` };
+    return { error: `delete_file failed: ${err.message || String(error)}` };
   }
 }
 
@@ -978,7 +1061,7 @@ export async function agenticDeleteFile(filePath: any) {
 
 // escapeRegex — imported from @rodrigo-barraza/utilities-library
 
-function globToRegex(glob: any) {
+function globToRegex(glob: string) {
   // Convert glob pattern to regex
   // Supports: * (any except /), ** (any including /), ? (single char)
   const regex = glob
@@ -1008,10 +1091,10 @@ export function getStaticRoots() {
  * Mutates the array in-place so all importers see the update.
 
  */
-export function refreshAllowedRoots(extraRoots: any = []) {
+export function refreshAllowedRoots(extraRoots: string[] = []) {
   const resolved = extraRoots
-    .filter((r: any) => r && typeof r === "string")
-    .map((r: any) => resolve(r.trim()));
+    .filter((r: string) => r && typeof r === "string")
+    .map((r: string) => resolve(r.trim()));
 
   const merged = [...STATIC_ROOTS];
   for (const root of resolved) {

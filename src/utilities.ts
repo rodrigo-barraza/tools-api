@@ -188,7 +188,7 @@ export function computeTrendingScore(product: ProductForScoring): number {
  * maps "outside allowed"/"blocked" errors to 403, other errors to 400,
  * and sends the result as JSON on success.
  */
-export function agenticHandler(fn: (req: Request) => Promise<{ error?: string; [key: string]: unknown }>) {
+export function agenticHandler(fn: (req: Request) => Promise<{ error?: string; [key: string]: any }>) {
   return async (req: Request, res: Response) => {
     try {
       const result = await fn(req);

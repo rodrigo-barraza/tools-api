@@ -1,11 +1,11 @@
 // ─── Remote Workspace Agent Registry ────────────────────────
 
-import { WebSocketServer } from "ws";
+import { WebSocketServer, WebSocket } from "ws";
 import crypto from "node:crypto";
 import logger from "../logger.ts";
-// NOTE: AgenticFileService imports from this module → circular dependency.
-// We use dynamic import() in rebuildAllowedRootsFromAgents() to break the cycle.
 import CONFIG from "../config.ts";
+import { Server, IncomingMessage } from "node:http";
+import { Duplex } from "node:stream";
 import {
   AGENT_RPC_TIMEOUT_FILE_MS as RPC_TIMEOUT_FILE_MS,
   AGENT_RPC_TIMEOUT_GIT_MS as RPC_TIMEOUT_GIT_MS,
@@ -44,25 +44,56 @@ const TIMEOUT_MAP = {
 // Agent Registry
 // ────────────────────────────────────────────────────────────
 
-/**
- * @property {string} id
- * @property {string} name
- * @property {string[]} roots
- * @property {string[]} capabilities
- * @property {string} version
- * @property {WebSocket} ws
- * @property {Date} connectedAt
- * @property {Date} lastPong
- * @property {Map<string, { resolve, reject, timer }>} pendingRpc
- */
+interface PendingRpc {
+  resolve: (value: any) => void;
+  reject: (reason: Error) => void;
+  timer: NodeJS.Timeout;
+}
 
+interface AgentRegistryEntry {
+  id: string;
+  name: string;
+  roots: string[];
+  capabilities: string[];
+  version: string;
+  ws: WebSocket & { isAlive?: boolean };
+  clientIp?: string;
+  connectedAt: Date;
+  lastPong: Date;
+  pendingRpc: Map<string, PendingRpc>;
+  _streamCallback?: ((method: string, params: Record<string, any>) => void) | null;
+}
 
-const agents = new Map();
+interface AgentRpcMessage {
+  id?: string;
+  method?: string;
+  params?: {
+    agentId?: string;
+    name?: string;
+    roots?: string[];
+    capabilities?: string[];
+    version?: string;
+    path?: string;
+    paths?: string[];
+    searchPath?: string;
+    source?: string;
+    pathA?: string;
+    cwd?: string;
+    [key: string]: any;
+  };
+  result?: any;
+  error?: {
+    code?: number;
+    message?: string;
+  };
+}
 
-/** @type {Map<string, string>} rootPath → agentId (for fast routing) */
-const rootToAgent = new Map();
+const agents = new Map<string, AgentRegistryEntry>();
 
-let healthCheckTimer: any = null;
+/** rootPath → agentId (for fast routing) */
+const rootToAgent = new Map<string, string>();
+
+let healthCheckTimer: NodeJS.Timeout | null = null;
 
 // ────────────────────────────────────────────────────────────
 // WebSocket Server Setup
@@ -72,12 +103,12 @@ let healthCheckTimer: any = null;
  * Initialize the agent WebSocket server on an existing HTTP server.
  * Handles upgrade requests on /ws/agent path.
  */
-export function initAgentWebSocket(httpServer: any) {
+export function initAgentWebSocket(httpServer: Server) {
   const wss = new WebSocketServer({ noServer: true });
   const clientWss = new WebSocketServer({ noServer: true });
 
-  httpServer.on("upgrade", (req: any, socket: any, head: any) => {
-    const url = new URL(req.url, `http://${req.headers.host}`);
+  httpServer.on("upgrade", (req: IncomingMessage, socket: Duplex, head: Buffer) => {
+    const url = new URL(req.url || "", `http://${req.headers.host || "localhost"}`);
 
     // Auth check (shared across both endpoints)
     const secret = req.headers["x-api-secret"];
@@ -92,7 +123,7 @@ export function initAgentWebSocket(httpServer: any) {
 
     // Agent connections (workspace-service sidecar → tools-service)
     if (url.pathname === "/ws/agent") {
-      wss.handleUpgrade(req, socket, head, (ws: any) => {
+      wss.handleUpgrade(req, socket, head, (ws) => {
         wss.emit("connection", ws, req);
       });
       return;
@@ -100,7 +131,7 @@ export function initAgentWebSocket(httpServer: any) {
 
     // Client connections (VS Code extension → tools-service → agent)
     if (url.pathname === "/ws/workspace") {
-      clientWss.handleUpgrade(req, socket, head, (ws: any) => {
+      clientWss.handleUpgrade(req, socket, head, (ws) => {
         clientWss.emit("connection", ws, req);
       });
       return;
@@ -109,21 +140,23 @@ export function initAgentWebSocket(httpServer: any) {
 
   // ── Agent WebSocket (workspace-service sidecar) ──────────
 
-  wss.on("connection", (ws: any, req: any) => {
+  wss.on("connection", (ws: WebSocket & { isAlive?: boolean }, req: IncomingMessage) => {
     const clientIp = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
       req.socket.remoteAddress?.replace(/^::ffff:/, "");
 
     logger.info(`[AgentWS] New connection from ${clientIp}`);
 
-    (ws as any).isAlive = true;
-    ws.on("pong", () => { (ws as any).isAlive = true; });
+    ws.isAlive = true;
+    ws.on("pong", () => { ws.isAlive = true; });
 
-    ws.on("message", (raw: any) => {
+    ws.on("message", (raw: unknown) => {
       try {
-        const message = JSON.parse(raw.toString());
+        const data = raw as Buffer | ArrayBuffer | Buffer[];
+        const message = JSON.parse(data.toString()) as AgentRpcMessage;
         handleAgentMessage(ws, message, clientIp);
-      } catch (error: any) {
-        logger.error(`[AgentWS] Invalid message: ${error.message}`);
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        logger.error(`[AgentWS] Invalid message: ${msg}`);
       }
     });
 
@@ -136,25 +169,26 @@ export function initAgentWebSocket(httpServer: any) {
       }
     });
 
-    ws.on("error", (error: any) => {
+    ws.on("error", (error: Error) => {
       logger.error(`[AgentWS] Connection error: ${error.message}`);
     });
   });
 
   // ── Client WebSocket (VS Code extension proxy) ──────────
 
-  clientWss.on("connection", (ws: any, req: any) => {
+  clientWss.on("connection", (ws: WebSocket & { isAlive?: boolean }, req: IncomingMessage) => {
     const clientIp = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
       req.socket.remoteAddress?.replace(/^::ffff:/, "");
 
     logger.info(`[ClientWS] New client connection from ${clientIp}`);
 
-    (ws as any).isAlive = true;
-    ws.on("pong", () => { (ws as any).isAlive = true; });
+    ws.isAlive = true;
+    ws.on("pong", () => { ws.isAlive = true; });
 
-    ws.on("message", async (raw: any) => {
+    ws.on("message", async (raw: unknown) => {
       try {
-        const message = JSON.parse(raw.toString());
+        const data = raw as Buffer | ArrayBuffer | Buffer[];
+        const message = JSON.parse(data.toString()) as AgentRpcMessage;
 
         // Only handle RPC requests (has id + method)
         if (!message.id || !message.method) return;
@@ -192,11 +226,13 @@ export function initAgentWebSocket(httpServer: any) {
         try {
           const result = await sendRpc(route.id, message.method, message.params);
           sendJson(ws, { jsonrpc: "2.0", id: message.id, result });
-        } catch (error: any) {
-          sendJson(ws, { jsonrpc: "2.0", id: message.id, error: { code: -32000, message: error.message } });
+        } catch (error: unknown) {
+          const msg = error instanceof Error ? error.message : String(error);
+          sendJson(ws, { jsonrpc: "2.0", id: message.id, error: { code: -32000, message: msg } });
         }
-      } catch (error: any) {
-        logger.error(`[ClientWS] Invalid message: ${error.message}`);
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        logger.error(`[ClientWS] Invalid message: ${msg}`);
       }
     });
 
@@ -204,7 +240,7 @@ export function initAgentWebSocket(httpServer: any) {
       logger.info(`[ClientWS] Client disconnected (${clientIp})`);
     });
 
-    ws.on("error", (error: any) => {
+    ws.on("error", (error: Error) => {
       logger.error(`[ClientWS] Connection error: ${error.message}`);
     });
   });
@@ -220,7 +256,7 @@ export function initAgentWebSocket(httpServer: any) {
 // Message Handling
 // ────────────────────────────────────────────────────────────
 
-function handleAgentMessage(ws: any, message: any, clientIp: any) {
+function handleAgentMessage(ws: WebSocket & { isAlive?: boolean }, message: AgentRpcMessage, clientIp?: string) {
   // Registration
   if (message.method === "agent.register") {
     const { agentId, name, roots, capabilities, version } = message.params || {};
@@ -239,7 +275,7 @@ function handleAgentMessage(ws: any, message: any, clientIp: any) {
     }
 
     // Register
-    const entry = {
+    const entry: AgentRegistryEntry = {
       id: agentId,
       name: name || `agent-${agentId.slice(0, 8)}`,
       roots: [...roots],
@@ -282,7 +318,10 @@ function handleAgentMessage(ws: any, message: any, clientIp: any) {
   if (message.method === "agent.pong") {
     const { agentId } = message.params || {};
     if (agentId && agents.has(agentId)) {
-      agents.get(agentId).lastPong = new Date();
+      const agent = agents.get(agentId);
+      if (agent) {
+        agent.lastPong = new Date();
+      }
     }
     return;
   }
@@ -292,13 +331,15 @@ function handleAgentMessage(ws: any, message: any, clientIp: any) {
     for (const [, agent] of agents) {
       if (agent.ws === ws && agent.pendingRpc.has(message.id)) {
         const pending = agent.pendingRpc.get(message.id);
-        agent.pendingRpc.delete(message.id);
-        clearTimeout(pending.timer);
+        if (pending) {
+          agent.pendingRpc.delete(message.id);
+          clearTimeout(pending.timer);
 
-        if (message.error) {
-          pending.reject(new Error(message.error.message || "RPC error"));
-        } else {
-          pending.resolve(message.result);
+          if (message.error) {
+            pending.reject(new Error(message.error.message || "RPC error"));
+          } else {
+            pending.resolve(message.result);
+          }
         }
         return;
       }
@@ -312,7 +353,7 @@ function handleAgentMessage(ws: any, message: any, clientIp: any) {
     // by the caller who set up the streaming RPC
     for (const [, agent] of agents) {
       if (agent.ws === ws && agent._streamCallback) {
-        agent._streamCallback(message.method, message.params);
+        agent._streamCallback(message.method, message.params || {});
       }
     }
     return;
@@ -323,7 +364,7 @@ function handleAgentMessage(ws: any, message: any, clientIp: any) {
 // Agent Lifecycle
 // ────────────────────────────────────────────────────────────
 
-function deregisterAgent(agentId: any, reason: any) {
+function deregisterAgent(agentId: string, reason: string) {
   const agent = agents.get(agentId);
   if (!agent) return;
 
@@ -356,7 +397,7 @@ function deregisterAgent(agentId: any, reason: any) {
  * Send an RPC request to an agent and wait for the response.
  */
 export function sendRpc(agentId: string, method: string, params: Record<string, any> = {}): Promise<any> {
-  return new Promise<any>((resolve: any, reject: any) => {
+  return new Promise<any>((resolve, reject) => {
     const agent = agents.get(agentId);
     if (!agent) {
       reject(new Error("Agent not found"));
@@ -369,8 +410,7 @@ export function sendRpc(agentId: string, method: string, params: Record<string, 
     }
 
     const id = crypto.randomUUID();
-    // @ts-expect-error - TS7053: implicit any index
-    const timeout = TIMEOUT_MAP[method] || RPC_TIMEOUT_DEFAULT_MS;
+    const timeout = (TIMEOUT_MAP as Record<string, number>)[method] || RPC_TIMEOUT_DEFAULT_MS;
 
     const timer = setTimeout(() => {
       agent.pendingRpc.delete(id);
@@ -392,7 +432,12 @@ export function sendRpc(agentId: string, method: string, params: Record<string, 
  * Send an RPC request to an agent with a streaming callback for notifications.
  * Used for command.stream where stdout/stderr arrive as notifications.
  */
-export function sendRpcStreaming(agentId: any, method: any, params: Record<string, any> = {}, onNotification: any) {
+export function sendRpcStreaming(
+  agentId: string,
+  method: string,
+  params: Record<string, any> = {},
+  onNotification: (method: string, params: Record<string, any>) => void,
+): Promise<any> {
   const agent = agents.get(agentId);
   if (!agent) return Promise.reject(new Error("Agent not found"));
 
@@ -412,7 +457,7 @@ export function sendRpcStreaming(agentId: any, method: any, params: Record<strin
  * Find the agent that serves a given file system path.
  * Returns null if the path should be handled locally.
  */
-export function routeForPath(absolutePath: any) {
+export function routeForPath(absolutePath: string | undefined | null) {
   if (!absolutePath) return null;
 
   // Check each registered root
@@ -434,10 +479,9 @@ export function routeForPath(absolutePath: any) {
 
 /**
  * Get the list of connected agents with metadata.
-
  */
 export function getConnectedAgents() {
-  return [...agents.values()].map((a: any) => ({
+  return [...agents.values()].map((a) => ({
     id: a.id,
     name: a.name,
     roots: a.roots,
@@ -452,18 +496,15 @@ export function getConnectedAgents() {
 
 /**
  * Check if a specific path is served by a connected agent.
-
-
  */
-export function isAgentPath(path: any) {
+export function isAgentPath(path: string | undefined | null): boolean {
   return routeForPath(path) !== null;
 }
 
 /**
  * Get agent info for a root path (for workspace metadata).
-
  */
-export function getAgentInfoForRoot(rootPath: any) {
+export function getAgentInfoForRoot(rootPath: string) {
   const agentId = rootToAgent.get(rootPath);
   if (!agentId) return null;
 
@@ -477,7 +518,7 @@ export function getAgentInfoForRoot(rootPath: any) {
 // Health Check
 // ────────────────────────────────────────────────────────────
 
-function startHealthCheck(wss: any) {
+function startHealthCheck(wss: WebSocketServer) {
   if (healthCheckTimer) clearInterval(healthCheckTimer);
 
   healthCheckTimer = setInterval(() => {
@@ -498,13 +539,14 @@ function startHealthCheck(wss: any) {
     }
 
     // WebSocket-level ping for all connections
-    wss.clients.forEach((ws: any) => {
-      if (!(ws as any).isAlive) {
-        ws.terminate();
+    wss.clients.forEach((ws) => {
+      const clientWs = ws as WebSocket & { isAlive?: boolean };
+      if (!clientWs.isAlive) {
+        clientWs.terminate();
         return;
       }
-      (ws as any).isAlive = false;
-      ws.ping();
+      clientWs.isAlive = false;
+      clientWs.ping();
     });
   }, HEALTH_CHECK_INTERVAL_MS);
 }
@@ -513,7 +555,7 @@ function startHealthCheck(wss: any) {
 // Helpers
 // ────────────────────────────────────────────────────────────
 
-function sendJson(ws: any, object: any) {
+function sendJson(ws: WebSocket, object: Record<string, any>) {
   if (ws.readyState === 1) {
     ws.send(JSON.stringify(object));
   }
@@ -532,7 +574,7 @@ async function rebuildAllowedRootsFromAgents() {
     const { ALLOWED_ROOTS, refreshAllowedRoots, getStaticRoots } = await import("./AgenticFileService.ts");
 
     // Collect all agent roots
-    const agentRoots: any[] = [];
+    const agentRoots: string[] = [];
     for (const [, agent] of agents) {
       for (const root of agent.roots) {
         if (!agentRoots.includes(root)) {
@@ -548,11 +590,12 @@ async function rebuildAllowedRootsFromAgents() {
     const staticRoots = getStaticRoots();
     const staticSet = new Set(staticRoots);
     const agentSet = new Set(agentRoots);
-    const userRoots = ALLOWED_ROOTS.filter((r: any) => !staticSet.has(r) && !agentSet.has(r));
+    const userRoots = ALLOWED_ROOTS.filter((r) => !staticSet.has(r) && !agentSet.has(r));
 
     refreshAllowedRoots([...userRoots, ...agentRoots]);
-  } catch (error: any) {
-    logger.warn(`[AgentWS] Failed to rebuild allowed roots: ${error.message}`);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    logger.warn(`[AgentWS] Failed to rebuild allowed roots: ${msg}`);
   }
 }
 

@@ -24,12 +24,25 @@ import { EphemeralStore, buildLocalUrl, buildEmbedHtml } from "../utilities.ts";
 import { processImage } from "../services/ImageService.ts";
 // ─── Lazy-loaded dependencies ──────────────────────────────────────
 // These are loaded on first use to avoid blocking startup.
-const getConvertUnits = lazyImport<any>("convert-units");
-const getDateFns = lazyImport<any>("date-fns", (m: any) => m);
-const getDateFnsTz = lazyImport<any>("date-fns-tz", (m: any) => m);
-const getJSONPath = lazyImport<any>("jsonpath-plus", (m: any) => m.JSONPath);
-const getQRCode = lazyImport<any>("qrcode");
-const getDiff = lazyImport<any>("diff", (m: any) => m);
+interface ConvertUnitsInstance {
+  (value: number): {
+    from: (unit: string) => {
+      to: (unit: string) => number;
+    };
+  };
+  (): {
+    describe: (unit: string) => { singular: string; plural: string; measure: string };
+    possibilities: (measure?: string) => string[];
+    measures: () => string[];
+  };
+}
+
+const getConvertUnits = lazyImport<ConvertUnitsInstance>("convert-units");
+const getDateFns = lazyImport<typeof import("date-fns")>("date-fns", (m: any) => m as typeof import("date-fns"));
+const getDateFnsTz = lazyImport<typeof import("date-fns-tz")>("date-fns-tz", (m: any) => m as typeof import("date-fns-tz"));
+const getJSONPath = lazyImport<typeof import("jsonpath-plus").JSONPath>("jsonpath-plus", (m: any) => m.JSONPath as typeof import("jsonpath-plus").JSONPath);
+const getQRCode = lazyImport<typeof import("qrcode")>("qrcode");
+const getDiff = lazyImport<typeof import("diff")>("diff", (m: any) => m as typeof import("diff"));
 const router = Router();
 // ─── 1. JavaScript Interpreter (vm sandbox) ─────────────────
 router.post("/js/execute", (req: Request, res: Response) => {
@@ -109,14 +122,14 @@ router.post("/shell/stream", asyncHandler(async (req: Request, res: Response) =>
   const result = await executeShellStreaming(command, {
     stdin: stdin || "",
     timeout: timeout ? Math.min(Math.max(parseInt(timeout), 500), 30_000) : undefined,
-    onChunk: (event: any, data: any) => send({ event, data }),
+    onChunk: (event: string, data: string) => send({ event, data }),
   });
   send({ event: "exit", exitCode: result.exitCode, executionTimeMs: result.executionTimeMs, success: result.success, timedOut: result.timedOut, error: result.error || undefined });
   res.end();
 }));
 // ─── 3. Unit Conversion ─────────────────────────────────────
 router.get("/units/convert", asyncHandler(async (req: Request, res: Response) => {
-  const { value, from, to } = req.query as any;
+  const { value, from, to } = req.query as Record<string, string>;
   if (!value || !from || !to) {
     return res
       .status(400)
@@ -142,12 +155,12 @@ router.get("/units/convert", asyncHandler(async (req: Request, res: Response) =>
   }
 }));
 router.get("/units/list", asyncHandler(async (req: Request, res: Response) => {
-  const { measure } = req.query as any;
+  const { measure } = req.query as Record<string, string>;
   try {
     const convert = await getConvertUnits();
     if (measure) {
       const units = convert().possibilities(measure);
-      const described = units.map((u: any) => {
+      const described = units.map((u: string) => {
         const desc = convert().describe(u);
         return { abbr: u, singular: desc.singular, plural: desc.plural, measure: desc.measure };
       });
@@ -157,7 +170,7 @@ router.get("/units/list", asyncHandler(async (req: Request, res: Response) => {
     const all: Record<string, any> = {};
     for (const m of measures) {
       const units = convert().possibilities(m);
-      all[m] = units.map((u: any) => {
+      all[m] = units.map((u: string) => {
         const desc = convert().describe(u);
         return { abbr: u, singular: desc.singular };
       });
@@ -178,14 +191,14 @@ router.post("/datetime/parse", asyncHandler(async (req: Request, res: Response) 
   try {
     const fns = await getDateFns();
     const tz = await getDateFnsTz();
-    const parseDate = (d: any) => {
+    const parseDate = (d: unknown) => {
       if (!d) return new Date();
       if (d === "now") return new Date();
-      const parsed = typeof d === "number" ? new Date(d) : fns.parseISO(d);
+      const parsed = typeof d === "number" ? new Date(d) : fns.parseISO(d as string);
       if (isNaN(parsed.getTime())) throw new Error(`Invalid date: ${d}`);
       return parsed;
     };
-    const formatDate = (d: any) => {
+    const formatDate = (d: Date) => {
       if (timezone) {
         return tz.formatInTimeZone(d, timezone, format || "yyyy-MM-dd'T'HH:mm:ssXXX");
       }
@@ -244,7 +257,7 @@ router.post("/datetime/parse", asyncHandler(async (req: Request, res: Response) 
       case "add": {
         const d = parseDate(date);
         if (!amount || !unit) throw new Error("'amount' and 'unit' are required for add");
-        const ADDERS = {
+        const ADDERS: Record<string, (date: Date, amount: number) => Date> = {
           years: fns.addYears,
           months: fns.addMonths,
           weeks: fns.addWeeks,
@@ -253,7 +266,6 @@ router.post("/datetime/parse", asyncHandler(async (req: Request, res: Response) 
           minutes: fns.addMinutes,
           seconds: fns.addSeconds,
         };
-        // @ts-expect-error - TS7053: implicit any index
         const adder = ADDERS[unit];
         if (!adder) throw new Error(`Invalid unit: ${unit}. Use: ${Object.keys(ADDERS).join(", ")}`);
         const added = adder(d, parseInt(amount));
@@ -263,7 +275,7 @@ router.post("/datetime/parse", asyncHandler(async (req: Request, res: Response) 
       case "subtract": {
         const d = parseDate(date);
         if (!amount || !unit) throw new Error("'amount' and 'unit' are required for subtract");
-        const SUBBERS = {
+        const SUBBERS: Record<string, (date: Date, amount: number) => Date> = {
           years: fns.subYears,
           months: fns.subMonths,
           weeks: fns.subWeeks,
@@ -272,7 +284,6 @@ router.post("/datetime/parse", asyncHandler(async (req: Request, res: Response) 
           minutes: fns.subMinutes,
           seconds: fns.subSeconds,
         };
-        // @ts-expect-error - TS7053: implicit any index
         const subber = SUBBERS[unit];
         if (!subber) throw new Error(`Invalid unit: ${unit}. Use: ${Object.keys(SUBBERS).join(", ")}`);
         const subtracted = subber(d, parseInt(amount));
@@ -282,7 +293,7 @@ router.post("/datetime/parse", asyncHandler(async (req: Request, res: Response) 
       case "startOf": {
         const d = parseDate(date);
         if (!unit) throw new Error("'unit' is required for startOf");
-        const STARTERS = {
+        const STARTERS: Record<string, (date: Date) => Date> = {
           year: fns.startOfYear,
           month: fns.startOfMonth,
           week: fns.startOfWeek,
@@ -290,7 +301,6 @@ router.post("/datetime/parse", asyncHandler(async (req: Request, res: Response) 
           hour: fns.startOfHour,
           minute: fns.startOfMinute,
         };
-        // @ts-expect-error - TS7053: implicit any index
         const fn = STARTERS[unit];
         if (!fn) throw new Error(`Invalid unit: ${unit}. Use: ${Object.keys(STARTERS).join(", ")}`);
         const started = fn(d);
@@ -300,7 +310,7 @@ router.post("/datetime/parse", asyncHandler(async (req: Request, res: Response) 
       case "endOf": {
         const d = parseDate(date);
         if (!unit) throw new Error("'unit' is required for endOf");
-        const ENDERS = {
+        const ENDERS: Record<string, (date: Date) => Date> = {
           year: fns.endOfYear,
           month: fns.endOfMonth,
           week: fns.endOfWeek,
@@ -308,7 +318,6 @@ router.post("/datetime/parse", asyncHandler(async (req: Request, res: Response) 
           hour: fns.endOfHour,
           minute: fns.endOfMinute,
         };
-        // @ts-expect-error - TS7053: implicit any index
         const fn = ENDERS[unit];
         if (!fn) throw new Error(`Invalid unit: ${unit}. Use: ${Object.keys(ENDERS).join(", ")}`);
         const ended = fn(d);
@@ -473,7 +482,7 @@ router.post("/csv", (req: Request, res: Response) => {
     // Determine columns from explicit list or first object keys
     const cols = columns || Object.keys(data[0]);
     // Escape CSV values
-    const escape = (value: any) => {
+    const escape = (value: unknown) => {
       if (value === null || value === undefined) return "";
       const str = String(value);
       if (str.includes(delim) || str.includes('"') || str.includes("\n")) {
@@ -483,7 +492,7 @@ router.post("/csv", (req: Request, res: Response) => {
     };
     const lines = [cols.map(escape).join(delim)];
     for (const row of data) {
-      lines.push(cols.map((c: any) => escape(row[c])).join(delim));
+      lines.push(cols.map((c: string) => escape((row as Record<string, any>)[c])).join(delim));
     }
     const csv = lines.join("\n");
     const id = csvStore.set({ csv, filename: filename || "export.csv" });
@@ -499,7 +508,7 @@ router.post("/csv", (req: Request, res: Response) => {
   }
 });
 router.get("/csv/download", (req: Request, res: Response) => {
-  const { id } = req.query as any;
+  const { id } = req.query as Record<string, string>;
   if (!id) return res.status(400).send("Missing 'id' parameter");
   const entry = csvStore.get(id);
   if (!entry) {
@@ -538,7 +547,7 @@ router.post("/qr", asyncHandler(async (req: Request, res: Response) => {
   }
 }));
 router.get("/qr/render", (req: Request, res: Response) => {
-  const { id } = req.query as any;
+  const { id } = req.query as Record<string, string>;
   if (!id) return res.status(400).send("Missing 'id' parameter");
   const entry = qrStore.get(id);
   if (!entry) {
@@ -550,7 +559,7 @@ router.get("/qr/render", (req: Request, res: Response) => {
 });
 // ─── 8. LaTeX Rendering (KaTeX CDN embed) ───────────────────
 const latexStore = new EphemeralStore<{ latex: string; displayMode: boolean }>();
-function buildLatexEmbedHtml(latex: any, displayMode: any = true) {
+function buildLatexEmbedHtml(latex: string, displayMode: boolean = true) {
   return buildEmbedHtml({
     headExtra: `<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></${"script"}>
@@ -595,7 +604,7 @@ router.post("/latex", (req: Request, res: Response) => {
   res.json({ latexEmbedUrl, latexId: id });
 });
 router.get("/latex/embed", (req: Request, res: Response) => {
-  const { id } = req.query as any;
+  const { id } = req.query as Record<string, string>;
   if (!id) return res.status(400).send("Missing 'id' parameter");
   const entry = latexStore.get(id);
   if (!entry) {
@@ -606,7 +615,7 @@ router.get("/latex/embed", (req: Request, res: Response) => {
 });
 // ─── 9. Mermaid Diagram Rendering (CDN embed) ───────────────
 const diagramStore = new EphemeralStore<{ definition: string; theme: string }>();
-function buildMermaidEmbedHtml(definition: any, theme: any = "dark") {
+function buildMermaidEmbedHtml(definition: string, theme: string = "dark") {
   return buildEmbedHtml({
     styles: `  #diagram{
     max-width:100%;
@@ -650,7 +659,7 @@ router.post("/diagram", (req: Request, res: Response) => {
   res.json({ diagramEmbedUrl, diagramId: id });
 });
 router.get("/diagram/embed", (req: Request, res: Response) => {
-  const { id } = req.query as any;
+  const { id } = req.query as Record<string, string>;
   if (!id) return res.status(400).send("Missing 'id' parameter");
   const entry = diagramStore.get(id);
   if (!entry) {
@@ -668,7 +677,7 @@ router.post("/diff", asyncHandler(async (req: Request, res: Response) => {
   try {
     const diff = await getDiff();
     const diffMode = mode || "lines";
-    let changes: any;
+    let changes: import("diff").Change[] = [];
     switch (diffMode) {
       case "chars":
         changes = diff.diffChars(textA, textB);
@@ -708,7 +717,7 @@ router.post("/diff", asyncHandler(async (req: Request, res: Response) => {
       mode: diffMode,
       identical: additions === 0 && deletions === 0,
       stats: { additions, deletions, unchanged },
-      changes: changes.map((c: any) => ({
+      changes: changes.map((c: import("diff").Change) => ({
         value: c.value,
         added: c.added || false,
         removed: c.removed || false,
@@ -722,12 +731,12 @@ router.post("/diff", asyncHandler(async (req: Request, res: Response) => {
 }));
 // ─── 11. Cryptographic Hashing ──────────────────────────────
 router.get("/hash", (req: Request, res: Response) => {
-  const { data, algorithm, encoding, key } = req.query as any;
+  const { data, algorithm, encoding, key } = req.query as Record<string, string>;
   if (!data) {
     return res.status(400).json({ error: "Query parameter 'data' is required" });
   }
   const algo = (algorithm || "sha256").toLowerCase();
-  const enc = encoding || "hex";
+  const enc = (encoding || "hex") as crypto.BinaryToTextEncoding;
   try {
     let hash: any;
     if (key) {
@@ -820,7 +829,7 @@ router.post("/regex", (req: Request, res: Response) => {
 });
 // ─── 13. Encode / Decode ────────────────────────────────────
 router.get("/encode", (req: Request, res: Response) => {
-  const { data, format, direction } = req.query as any;
+  const { data, format, direction } = req.query as Record<string, string>;
   if (!data || !format) {
     return res.status(400).json({ error: "Query parameters 'data' and 'format' are required" });
   }
@@ -916,8 +925,14 @@ router.get("/encode", (req: Request, res: Response) => {
   }
 });
 // ─── 14. Color Converter ────────────────────────────────────
+interface HslColor {
+  h: number;
+  s: number;
+  l: number;
+}
+
 // ─── Color Math (service-specific — not in shared library) ──
-function rgbToHsv({ r, g, b }: any) {
+function rgbToHsv({ r, g, b }: { r: number; g: number; b: number }) {
   const rn = r / 255;
   const gn = g / 255;
   const bn = b / 255;
@@ -940,7 +955,7 @@ function rgbToHsv({ r, g, b }: any) {
     v: Math.round(v * 100),
   };
 }
-function rgbToCmyk({ r, g, b }: any) {
+function rgbToCmyk({ r, g, b }: { r: number; g: number; b: number }) {
   const rn = r / 255;
   const gn = g / 255;
   const bn = b / 255;
@@ -956,7 +971,7 @@ function rgbToCmyk({ r, g, b }: any) {
 /**
  * Parse any common color format into RGB.
  */
-function parseColorToRgb(color: any) {
+function parseColorToRgb(color: string) {
   const trimmedColor = color.trim();
   // HEX
   if (/^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(trimmedColor)) {
@@ -977,7 +992,7 @@ function parseColorToRgb(color: any) {
     });
   }
   // CSS named colors (top 30)
-  const NAMED = {
+  const NAMED: Record<string, string> = {
     black: "#000000", white: "#ffffff", red: "#ff0000", green: "#008000",
     blue: "#0000ff", yellow: "#ffff00", cyan: "#00ffff", magenta: "#ff00ff",
     orange: "#ffa500", purple: "#800080", pink: "#ffc0cb", brown: "#a52a2a",
@@ -987,15 +1002,14 @@ function parseColorToRgb(color: any) {
     coral: "#ff7f50", salmon: "#fa8072", khaki: "#f0e68c", tomato: "#ff6347",
     turquoise: "#40e0d0", plum: "#dda0dd",
   };
-  // @ts-expect-error - TS7053: implicit any index
-  const named = NAMED[trimmedColor.toLowerCase()];
+  const named = NAMED[trimmedColor.toLowerCase() as keyof typeof NAMED];
   if (named) return hexToRgb(named);
   throw new Error(`Cannot parse color: ${color}. Use HEX (#ff0000), rgb(255,0,0), hsl(0,100%,50%), or CSS named colors.`);
 }
 /**
  * Generate color harmonies from a base hue.
  */
-function generatePalette(hsl: any, type: any) {
+function generatePalette(hsl: HslColor, type: string) {
   const palettes = {
     complementary: [{ ...hsl }, { ...hsl, h: (hsl.h + 180) % 360 }],
     analogous: [
@@ -1027,10 +1041,9 @@ function generatePalette(hsl: any, type: any) {
       { ...hsl, l: Math.min(hsl.l + 30, 90) },
     ],
   };
-  // @ts-expect-error - TS7053: implicit any index
-  const colors = palettes[type];
+  const colors = palettes[type as keyof typeof palettes];
   if (!colors) throw new Error(`Unknown palette type: ${type}. Use: ${Object.keys(palettes).join(", ")}`);
-  return colors.map((h: any) => {
+  return colors.map((h: HslColor) => {
     const rgb = hslToRgb(h);
     return {
       hex: rgbToHex(rgb),
@@ -1040,7 +1053,7 @@ function generatePalette(hsl: any, type: any) {
   });
 }
 router.get("/color/convert", (req: Request, res: Response) => {
-  const { color, palette } = req.query as any;
+  const { color, palette } = req.query as Record<string, string>;
   if (!color) {
     return res.status(400).json({ error: "Query parameter 'color' is required" });
   }
@@ -1511,7 +1524,7 @@ router.post("/turtle", (req: Request, res: Response) => {
   });
 });
 router.get("/turtle/embed", (req: Request, res: Response) => {
-  const { id } = req.query as any;
+  const { id } = req.query as Record<string, string>;
   if (!id) return res.status(400).send("Missing 'id' parameter");
   const entry = turtleStore.get(id);
   if (!entry) {
@@ -1623,7 +1636,7 @@ function getNextCronExecutions(parsed: any, count: any, fromDate: any) {
   return results;
 }
 router.get("/cron/parse", (req: Request, res: Response) => {
-  const { expression, count, from } = req.query as any;
+  const { expression, count, from } = req.query as Record<string, string>;
   if (!expression) {
     return res.status(400).json({ error: "Query parameter 'expression' is required (e.g. '*/5 * * * *')" });
   }
@@ -1786,7 +1799,7 @@ router.post("/image/process", asyncHandler(async (req: Request, res: Response) =
   }
 }));
 router.get("/image/render", (req: Request, res: Response) => {
-  const { id } = req.query as any;
+  const { id } = req.query as Record<string, string>;
   if (!id) return res.status(400).send("Missing 'id' parameter");
   const entry = imageStore.get(id);
   if (!entry) {
