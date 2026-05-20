@@ -9,7 +9,6 @@ import {
  * Fetches the most-viewed Wikipedia articles for a given date.
  * Uses the Wikimedia REST API (completely free, no auth required).
 
- * @returns {Promise<Array>} Normalized trend objects
  */
 export async function fetchWikipediaTrends(date: any = null) {
   // Use yesterday's date since today's data isn't available until after midnight UTC

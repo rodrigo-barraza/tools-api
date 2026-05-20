@@ -274,8 +274,6 @@ interface SearchOptions {
 
 /**
  * Start a torrent search across installed plugins.
- *
- * @returns Search job with ID
  */
 export async function startSearch(pattern: string, plugins = "enabled", category = "all"): Promise<QbtSearchStartResult> {
   const result = await qbtFetch("/api/v2/search/start", {

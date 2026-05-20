@@ -30,8 +30,6 @@ async function fetchMB(path: any, params: Record<string, any> = {}) {
 
 /**
  * Search for artists by name.
- * @param {string} query Artist name
- * @param {number} limit Max results (default: 10)
  */
 export async function searchArtists(query: any, limit: any = 10) {
   const data = await fetchMB("/artist", { query, limit });
@@ -60,7 +58,6 @@ export async function searchArtists(query: any, limit: any = 10) {
 
 /**
  * Get detailed artist info by MusicBrainz ID (MBID).
- * @param {string} mbid MusicBrainz Artist ID
  */
 export async function getArtist(mbid: any) {
   const a = await fetchMB(`/artist/${mbid}`, {
@@ -131,9 +128,6 @@ export async function getArtist(mbid: any) {
 
 /**
  * Search for albums/releases by title.
- * @param {string} query Album title
- * @param {string} artist Optional artist name to narrow results
- * @param {number} limit Max results (default: 10)
  */
 export async function searchAlbums(query: any, artist: any, limit: any = 10) {
   const searchQuery = artist ? `${query} AND artist:${artist}` : query;
@@ -157,7 +151,6 @@ export async function searchAlbums(query: any, artist: any, limit: any = 10) {
 
 /**
  * Get album details by release-group MBID.
- * @param {string} mbid MusicBrainz Release Group ID
  */
 export async function getAlbum(mbid: any) {
   const rg = await fetchMB(`/release-group/${mbid}`, {
@@ -209,9 +202,6 @@ export async function getAlbum(mbid: any) {
 
 /**
  * Search for tracks/recordings by title.
- * @param {string} query Track title
- * @param {string} artist Optional artist name
- * @param {number} limit Max results (default: 10)
  */
 export async function searchTracks(query: any, artist: any, limit: any = 10) {
   const searchQuery = artist ? `${query} AND artist:${artist}` : query;

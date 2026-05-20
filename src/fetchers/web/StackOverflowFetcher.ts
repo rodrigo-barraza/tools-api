@@ -11,7 +11,6 @@ const SO_URL_REGEX =
 /**
  * Extract question ID and site from a Stack Overflow URL or raw ID.
 
- * @returns {{ questionId: string, site: string } | null}
  */
 function parseStackOverflowInput(input: any) {
   if (!input || typeof input !== "string") return null;

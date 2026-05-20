@@ -16,8 +16,6 @@ let messagesCol: any = null;
 /**
  * Connect to the Lupos database.
  * Uses the same MongoDB host but targets the `lupos` database.
- *
-
  */
 export async function connectLuposDB(baseUri: any) {
   if (luposDb) return luposDb;

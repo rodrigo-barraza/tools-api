@@ -36,9 +36,6 @@ const INTERNAL_FIELDS = new Set(["_id", "__v", "firstSeen", "lastSeen"]);
 /**
  * Pick only the specified field paths from an object.
  * Supports dot-notation paths (e.g. "venue.name").
- *
- *
- * @returns {object} New object with only the requested fields
  */
 function pickFields(object: Record<string, unknown>, fieldPaths: string[]): Record<string, unknown> {
   if (!object || typeof object !== "object" || Array.isArray(object)) return object;
@@ -75,8 +72,6 @@ function pickFields(object: Record<string, unknown>, fieldPaths: string[]): Reco
 
 /**
  * Strip internal/MongoDB fields from an object (shallow).
- *
- * @returns {object} Cleaned object
  */
 function stripInternal(object: Record<string, unknown>): Record<string, unknown> {
   if (!object || typeof object !== "object" || Array.isArray(object)) return object;
@@ -92,9 +87,6 @@ function stripInternal(object: Record<string, unknown>): Record<string, unknown>
 
 /**
  * Apply field projection and internal-field stripping to a response body.
- *
- *
- * @returns {*} Projected response
  */
 function projectResponse(data: unknown, fields: string[] | null): unknown {
   if (data == null || typeof data !== "object") return data;

@@ -20,7 +20,6 @@ import {
 const registry = new Map();
 
 /**
- * @typedef {object} BackgroundProcess
  * @property {import("child_process").ChildProcess} child
  * @property {string} command
  * @property {string} cwd
@@ -42,10 +41,6 @@ const registry = new Map();
 /**
  * Register a child process in the background registry.
  * Attaches output listeners and tracks the process lifecycle.
- *
-
- * @param {{ command: string, cwd: string }} meta
- * @returns {{ pid: number }}
  */
 export function register(child: any, meta: any) {
   const pid = child.pid;
@@ -114,9 +109,6 @@ export function register(child: any, meta: any) {
 /**
  * Get the current state of a background process.
  * Updates lastReadAt to extend the TTL.
- *
-
-
  */
 export function getProcess(pid: any) {
   const entry = registry.get(pid);
@@ -140,10 +132,6 @@ export function getProcess(pid: any) {
 
 /**
  * Kill a background process and remove it from the registry.
- *
-
-
- * @returns {{ success: boolean, pid: number, message?: string, error?: string }}
  */
 export function kill(pid: any, signal: any = "SIGTERM") {
   const entry = registry.get(pid);
@@ -175,8 +163,6 @@ export function kill(pid: any, signal: any = "SIGTERM") {
 
 /**
  * List all tracked background processes.
- *
-
  */
 export function list() {
   const result: any[] = [];
@@ -204,10 +190,6 @@ export function killAll() {
   }
   logger.info(`[BackgroundProcessRegistry] Killed all ${registry.size} background processes`);
 }
-
-/**
- * @returns {number} Count of active (non-exited) processes
- */
 export function activeCount() {
   let count = 0;
   for (const entry of registry.values()) {

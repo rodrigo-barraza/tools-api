@@ -13,9 +13,6 @@ import logger from "../logger.ts";
 /**
  * Save the latest collector state to a dedicated collection.
  * Objects are spread at the top level. Arrays are stored under `items`.
- *
-
-
  */
 export async function saveState(collectionName: any, data: any) {
   try {
@@ -37,9 +34,6 @@ export async function saveState(collectionName: any, data: any) {
 /**
  * Load the latest state from a dedicated collection.
  * Reconstructs the original payload shape (object or array).
- *
-
- * @returns {Promise<{ data: *, updatedAt: Date } | null>}
  */
 export async function loadState(collectionName: any) {
   try {

@@ -5,8 +5,6 @@ const CDX_URL = "https://web.archive.org/cdx/search/cdx";
 
 /**
  * Check if a URL has been archived and get the closest snapshot.
- * @param {string} url URL to check
- * @param {string} timestamp Optional YYYYMMDD timestamp to find closest snapshot to
  */
 export async function getSnapshot(url: any, timestamp: any) {
   const params = new URLSearchParams({ url });
@@ -41,10 +39,6 @@ export async function getSnapshot(url: any, timestamp: any) {
 
 /**
  * Get snapshot history for a URL — list of archived captures.
- * @param {string} url URL to look up
- * @param {number} limit Max snapshots to return (default: 20)
- * @param {string} from Start date (YYYYMMDD)
- * @param {string} to End date (YYYYMMDD)
  */
 export async function getSnapshotHistory(url: any, { limit = 20, from, to }: Record<string, any> = {}) {
   const params = new URLSearchParams({

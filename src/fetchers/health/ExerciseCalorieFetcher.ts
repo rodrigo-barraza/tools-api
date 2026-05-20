@@ -309,14 +309,6 @@ function resolveMET(exerciseName: any, category: any, intensity: any) {
 
 /**
  * Estimate calories burned during an exercise session.
- *
-
- * @param {string} params.exercise - Exercise name or ID
- * @param {number} params.durationMinutes - Duration in minutes
- * @param {number} params.weightKg - Body weight in kg
-
-
- * @returns {object} Caloric expenditure estimate
  */
 export function estimateExerciseCalories({
   exercise,

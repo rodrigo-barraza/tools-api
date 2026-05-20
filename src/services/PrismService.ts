@@ -13,13 +13,6 @@ const PRISM_SERVICE_URL = CONFIG.PRISM_SERVICE_URL;
 
 /**
  * Call Prism's /chat endpoint for text/image generation.
- *
-
- * @param {string} params.provider - Provider name (e.g. "google", "openai")
- * @param {string} params.model - Model name
- * @param {Array}  params.messages - Messages array
-
- * @returns {Promise<object>} Parsed JSON response from Prism
  */
 export async function chat(params: any) {
   try {
@@ -53,7 +46,6 @@ export async function chat(params: any) {
 
 /**
  * Check Prism health/connectivity.
- * @returns {Promise<boolean>} true if Prism is reachable
  */
 export async function health() {
   try {
@@ -72,12 +64,6 @@ export async function health() {
 /**
  * Call Prism's /text-to-audio endpoint to generate speech.
  * Collects the streamed binary response into a base64-encoded buffer.
- *
-
- * @param {string} params.text - Text to synthesize
-
-
- * @returns {Promise<{ audioBase64: string, contentType: string }>}
  */
 export async function textToSpeech(params: any) {
   try {
@@ -118,12 +104,6 @@ export async function textToSpeech(params: any) {
 
 /**
  * Call Prism's /audio-to-text endpoint to transcribe audio.
- *
-
- * @param {string} params.audio - Base64-encoded audio or data URL
-
-
- * @returns {Promise<{ text: string, usage?: object }>}
  */
 export async function speechToText(params: any) {
   try {

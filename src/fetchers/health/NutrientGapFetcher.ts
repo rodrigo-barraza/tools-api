@@ -160,12 +160,6 @@ function statusEmoji(status: any) {
 
 /**
  * Analyze nutrient gaps between consumed foods and requirements.
- *
-
- * @param {Array<{name: string, grams: number}>} params.foods - Foods consumed with amounts
-
-
- * @returns {object} Gap analysis with per-nutrient status
  */
 export function analyzeNutrientGaps({
   foods,

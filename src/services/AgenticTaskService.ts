@@ -50,14 +50,6 @@ async function nextTaskId(project: any) {
 
 /**
  * Create a new task.
- *
-
-
- * @param {string} data.subject - Brief title
- * @param {string} data.description - What needs to be done
-
-
- * @returns {Promise<object>} Created task document
  */
 export async function agenticTaskCreate(project: any, data: any) {
   if (!project || typeof project !== "string") {
@@ -116,9 +108,6 @@ export async function agenticTaskCreate(project: any, data: any) {
 
 /**
  * List tasks for a project, optionally filtered by status.
- *
-
-
  */
 export async function agenticTaskList(project: any, { status, limit = 50 }: Record<string, any> = {}) {
   if (!project || typeof project !== "string") {
@@ -159,9 +148,6 @@ export async function agenticTaskList(project: any, { status, limit = 50 }: Reco
 
 /**
  * Get a single task by ID.
- *
-
-
  */
 export async function agenticTaskGet(project: any, taskId: any) {
   if (!project || typeof project !== "string") {
@@ -185,9 +171,6 @@ export async function agenticTaskGet(project: any, taskId: any) {
 
 /**
  * Update a task's status, description, or metadata.
- *
-
-
  */
 export async function agenticTaskUpdate(project: any, taskId: any, updates: any) {
   if (!project || typeof project !== "string") {
@@ -255,9 +238,6 @@ export async function agenticTaskUpdate(project: any, taskId: any, updates: any)
 
 /**
  * Delete a task.
- *
-
-
  */
 export async function agenticTaskDelete(project: any, taskId: any) {
   if (!project || typeof project !== "string") {

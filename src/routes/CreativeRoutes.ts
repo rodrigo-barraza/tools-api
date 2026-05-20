@@ -104,7 +104,6 @@ const SAFETY_SOFTENING_TIERS = [
  * Apply cumulative softening tiers to a prompt string.
 
 
- * @returns {string} Softened prompt
  */
 function softenPrompt(prompt: any, tier: any) {
   let softened = prompt;

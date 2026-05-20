@@ -60,9 +60,6 @@ async function nextScheduleId(project: any) {
  * Supports: "5m", "30m", "1h", "2h", "24h", "1d", "7d"
  * Also supports full cron expressions (basic 5-field) — but for
  * v1 we use delay-based scheduling with repeat support.
- *
-
- * @returns {number|null} Delay in milliseconds, or null if invalid
  */
 function parseDelay(schedule: any) {
   if (!schedule || typeof schedule !== "string") return null;
@@ -84,14 +81,6 @@ function parseDelay(schedule: any) {
 
 /**
  * Create a new schedule.
- *
-
- * @param {string} data.project - Project scope
- * @param {string} data.name - Human-readable schedule name
- * @param {string} data.schedule - Delay expression (e.g. "30m", "2h")
- * @param {string} data.prompt - The prompt to send to Prism when fired
-
-
  */
 export async function agenticScheduleCreate(data: any) {
   const {

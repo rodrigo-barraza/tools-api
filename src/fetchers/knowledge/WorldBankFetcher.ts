@@ -145,7 +145,6 @@ function formatCountry(country: any) {
 /**
  * Get all indicators for a specific country.
 
- * @returns {object|null} Country indicators or null
  */
 export function getCountryIndicators(code: any) {
   ensureLoaded();
@@ -166,7 +165,6 @@ export function getCountryIndicators(code: any) {
  * Rank countries by a specific indicator (highest first by default).
 
 
- * @returns {object} Ranked results
  */
 export function rankCountriesByIndicator(indicator: any, opts: Record<string, any> = {}) {
   ensureLoaded();
@@ -216,7 +214,6 @@ export function rankCountriesByIndicator(indicator: any, opts: Record<string, an
  * Compare indicators between multiple countries.
 
 
- * @returns {object} Comparison results
  */
 export function compareCountries(countryCodes: any, indicator: any = null) {
   ensureLoaded();
@@ -273,7 +270,6 @@ export function compareCountries(countryCodes: any, indicator: any = null) {
 
 /**
  * List all available indicators with metadata.
- * @returns {object} Available indicators
  */
 export function getAvailableIndicators() {
   ensureLoaded();

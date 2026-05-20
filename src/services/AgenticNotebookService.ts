@@ -17,12 +17,6 @@ const MAX_NOTEBOOK_SIZE = 10_485_760; // 10 MB
 
 /**
  * Edit a Jupyter notebook file.
- *
-
-
- * @param {string} options.action - One of VALID_ACTIONS
-
-
  */
 export async function agenticNotebookEdit(path: any, { action, cellIndex, content, cellType }: Record<string, any> = {}) {
   // Validate path

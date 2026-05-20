@@ -52,7 +52,6 @@ const PLATFORM_PATTERNS = [
 /**
  * Detect which platform a URL belongs to.
 
- * @returns {string|null} Platform name, or null for generic pages
  */
 function detectPlatform(url: any) {
   if (!url || typeof url !== "string") return null;
@@ -69,10 +68,6 @@ function detectPlatform(url: any) {
  * Extract structured content from any URL.
  * Auto-detects GitHub, Reddit, Twitter/X, Hacker News, Stack Overflow,
  * or YouTube. Falls back to generic HTML extraction for unknown sites.
- *
-
-
- * @returns {Promise<object>} Platform-specific result with "platform" field
  */
 export async function getWebContent(url: any, options: Record<string, any> = {}) {
   const platform = detectPlatform(url);

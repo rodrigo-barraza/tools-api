@@ -73,9 +73,6 @@ async function eiaFetch(route: any, params: Record<string, any> = {}) {
 /**
  * Browse the EIA data tree at a given route path.
  * Returns child routes, available facets, frequencies, and data columns.
- *
-
-
  */
 export async function browseRoute(route: any = "") {
   const cacheKey = `meta:${route}`;
@@ -110,9 +107,6 @@ export async function browseRoute(route: any = "") {
 
 /**
  * Get available facet values for a route + facet.
- *
-
-
  */
 export async function getFacetValues(route: any, facetId: any) {
   const cacheKey = `facet:${route}:${facetId}`;
@@ -143,9 +137,6 @@ export async function getFacetValues(route: any, facetId: any) {
 
 /**
  * Fetch data from the EIA API for a given route.
- *
-
-
  */
 export async function getData(route: any, options: Record<string, any> = {}) {
   const {
@@ -238,8 +229,6 @@ export async function getData(route: any, options: Record<string, any> = {}) {
 /**
  * Get the latest values for a curated set of key energy indicators.
  * Fetches the most recent data point for each series in EIA_DEFAULT_SERIES.
- *
-
  */
 export async function getEnergyIndicators() {
   const cacheKey = "energy-indicators";

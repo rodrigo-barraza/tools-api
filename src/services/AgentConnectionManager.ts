@@ -45,7 +45,6 @@ const TIMEOUT_MAP = {
 // ────────────────────────────────────────────────────────────
 
 /**
- * @typedef {object} AgentEntry
  * @property {string} id
  * @property {string} name
  * @property {string[]} roots
@@ -72,8 +71,6 @@ let healthCheckTimer: any = null;
 /**
  * Initialize the agent WebSocket server on an existing HTTP server.
  * Handles upgrade requests on /ws/agent path.
- *
-
  */
 export function initAgentWebSocket(httpServer: any) {
   const wss = new WebSocketServer({ noServer: true });
@@ -357,10 +354,6 @@ function deregisterAgent(agentId: any, reason: any) {
 
 /**
  * Send an RPC request to an agent and wait for the response.
- *
-
-
- * @returns {Promise<object>} Result from the agent
  */
 export function sendRpc(agentId: string, method: string, params: Record<string, any> = {}): Promise<any> {
   return new Promise<any>((resolve: any, reject: any) => {
@@ -398,9 +391,6 @@ export function sendRpc(agentId: string, method: string, params: Record<string, 
 /**
  * Send an RPC request to an agent with a streaming callback for notifications.
  * Used for command.stream where stdout/stderr arrive as notifications.
- *
-
-
  */
 export function sendRpcStreaming(agentId: any, method: any, params: Record<string, any> = {}, onNotification: any) {
   const agent = agents.get(agentId);
@@ -421,9 +411,6 @@ export function sendRpcStreaming(agentId: any, method: any, params: Record<strin
 /**
  * Find the agent that serves a given file system path.
  * Returns null if the path should be handled locally.
- *
-
- * @returns {{ id: string, name: string, roots: string[] } | null}
  */
 export function routeForPath(absolutePath: any) {
   if (!absolutePath) return null;
@@ -475,7 +462,6 @@ export function isAgentPath(path: any) {
 /**
  * Get agent info for a root path (for workspace metadata).
 
- * @returns {{ agentName: string, agentId: string } | null}
  */
 export function getAgentInfoForRoot(rootPath: any) {
   const agentId = rootToAgent.get(rootPath);

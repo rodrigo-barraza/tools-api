@@ -59,14 +59,6 @@ del _BLOCKED, _orig_import, _safe_import, builtins
  *
 
 
- * @returns {Promise<{
- *   success: boolean,
- *   stdout: string,
- *   stderr: string,
- *   exitCode: number|null,
- *   executionTimeMs: number,
- *   timedOut: boolean,
- *   error?: string
  * }>}
  */
 export async function executePython(code: any, { timeout = DEFAULT_TIMEOUT_MS }: Record<string, any> = {}) {
@@ -194,10 +186,6 @@ export async function executePython(code: any, { timeout = DEFAULT_TIMEOUT_MS }:
  * Execute Python code with real-time output streaming.
  * Same sandbox as executePython, but invokes `onChunk` for each
  * stdout/stderr data event as it arrives.
- *
-
-
- * @returns {Promise<{ success, stdout, stderr, exitCode, executionTimeMs, timedOut, error? }>}
  */
 export async function executePythonStreaming(code: any, { timeout = DEFAULT_TIMEOUT_MS, onChunk }: Record<string, any> = {}) {
   const clampedTimeout = Math.min(Math.max(timeout, 1000), MAX_TIMEOUT_MS);

@@ -1,7 +1,6 @@
 // ─── Language Server Registry ───────────────────────────────
 
 /**
- * @typedef {object} LspServerConfig
  * @property {string} command — binary to run
  * @property {string[]} args — arguments to pass
  * @property {Record<string,string>} extensionToLanguage — file ext → LSP languageId
@@ -97,9 +96,6 @@ export const LSP_SERVER_CONFIGS = {
 
 /**
  * Get all configured LSP servers, optionally scoped to a workspace folder.
- *
- * @param {string} [workspaceFolder] — project root path (injected into each config)
-
  */
 export function getLspServerConfigs(workspaceFolder: any) {
   const configs: Record<string, any> = {};

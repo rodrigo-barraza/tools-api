@@ -11,7 +11,6 @@ const TRENDS_RSS_URL = "https://trends.google.com/trending/rss";
  * Fetches daily trending searches from Google Trends via RSS feed.
  * More stable than the unofficial npm package — RSS feeds rarely get blocked.
 
- * @returns {Promise<Array>} Normalized trend objects
  */
 export async function fetchGoogleDailyTrends(geo: any = "US") {
   const url = `${TRENDS_RSS_URL}?geo=${geo}`;
@@ -35,7 +34,6 @@ export async function fetchGoogleDailyTrends(geo: any = "US") {
  * Uses regex-based parsing to avoid needing an XML library.
 
 
- * @returns {Array} Normalized trend objects
  */
 function parseRssTrends(xml: any, geo: any) {
   const trends: any[] = [];
@@ -79,7 +77,6 @@ function parseRssTrends(xml: any, geo: any) {
 
 /**
  * Fetches daily trends from multiple geos and deduplicates.
- * @returns {Promise<Array>} Combined normalized trend objects
  */
 export async function fetchGoogleTrends() {
   const allTrends: any[] = [];

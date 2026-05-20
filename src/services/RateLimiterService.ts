@@ -19,9 +19,6 @@ class RateLimiterService {
    * Enforces the requestDelayMs from API_RATE_LIMITS.
    * Multiple concurrent callers for the same provider are serialized
    * via a promise chain to prevent thundering herd.
-   *
-
-
    */
   async wait(provider: any) {
     const limits = API_RATE_LIMITS[provider];
@@ -61,7 +58,6 @@ class RateLimiterService {
   /**
    * Get the configured delay for a provider (useful for logging/diagnostics).
 
-   * @returns {number|null} requestDelayMs or null if unknown
    */
   getDelay(provider: any) {
     return API_RATE_LIMITS[provider]?.requestDelayMs ?? null;
@@ -70,7 +66,6 @@ class RateLimiterService {
   /**
    * Get current usage stats for a provider.
 
-   * @returns {{ lastRequestAt: number|null, delayMs: number|null }}
    */
   getStats(provider: any) {
     return {

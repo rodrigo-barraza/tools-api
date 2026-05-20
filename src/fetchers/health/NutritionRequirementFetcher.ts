@@ -75,15 +75,6 @@ function ensureLoaded() {
 
 /**
  * Dynamically compile the nutritional requirement checklist for an agent context.
- *
-
- * @param {string} params.species - enum: human, canine, feline
- * @param {string} params.lifeStage - enum: adult_male, adult_female, adult_maintenance, puppy
- * @param {string} params.authority - enum: US_DRI, AAFCO, EFSA, NRC
- * @param {number} params.weightKg - User/Pet body weight in kg (critical for amino acid scales)
-
-
- * @returns {object} Compiled requirements map
  */
 export function calculateTargetProfile({
   species,

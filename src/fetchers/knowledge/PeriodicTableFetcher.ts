@@ -144,7 +144,6 @@ const RANKABLE_PROPERTIES = {
  * Search elements by name, symbol, or atomic number.
 
 
- * @returns {object} Search results
  */
 export function searchElements(query: any, opts: Record<string, any> = {}) {
   ensureLoaded();
@@ -235,7 +234,6 @@ export function getElementBySymbol(symbol: any) {
  * Rank elements by a numeric property (highest first by default).
 
 
- * @returns {object} Ranked results
  */
 export function rankElementsByProperty(property: any, opts: Record<string, any> = {}) {
   ensureLoaded();
@@ -293,7 +291,6 @@ export function rankElementsByProperty(property: any, opts: Record<string, any> 
 
 /**
  * Get all unique element categories, blocks, and phases.
- * @returns {object} Available taxonomy filters
  */
 export function getElementCategories() {
   ensureLoaded();

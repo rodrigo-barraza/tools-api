@@ -24,9 +24,6 @@ const MAGICK_OPERATIONS = new Set(["text", "distort", "border", "ico"]);
 /**
  * Resolve an input source to a Sharp-compatible buffer.
  * Supports: URL, base64 data URI, or EphemeralStore ID.
- *
-
-
  */
 async function resolveInput(input: any, store: any) {
   if (!input || typeof input !== "string") {
@@ -75,7 +72,6 @@ async function resolveInput(input: any, store: any) {
  * Apply a pipeline of Sharp-based operations to an image buffer.
 
 
- * @returns {Promise<{buffer: Buffer, metadata?: object, mimeType: string}>}
  */
 async function processWithSharp(inputBuffer: any, operations: any, outputFormat: any, outputQuality: any) {
   let pipeline = sharp(inputBuffer, { failOn: "none", limitInputPixels: MAX_DIMENSION * MAX_DIMENSION });
@@ -243,10 +239,6 @@ async function processWithSharp(inputBuffer: any, operations: any, outputFormat:
 /**
  * Apply ImageMagick-based operations via the `convert` CLI.
  * Used for operations Sharp can't handle natively.
- *
-
-
- * @returns {Promise<{buffer: Buffer, mimeType: string}>}
  */
 async function processWithMagick(inputBuffer: any, operations: any, outputFormat: any, outputQuality: any) {
   const id = crypto.randomUUID().slice(0, 12);
@@ -357,14 +349,6 @@ async function processWithMagick(inputBuffer: any, operations: any, outputFormat
  * Process an image through a pipeline of operations.
  * Automatically routes to Sharp or ImageMagick based on the
  * operation types requested.
- *
-
- * @param {string} params.input - URL, base64 data URI, or ephemeral store ID
- * @param {Array<object>} params.operations - Array of operations to apply
-
-
- * @param {import("../utilities.js").EphemeralStore} params.store - Ephemeral store for ID lookups
- * @returns {Promise<{buffer: Buffer|null, mimeType: string|null, metadata?: object}>}
  */
 export async function processImage({ input, operations, outputFormat = "png", outputQuality = 80, store }: any) {
   if (!operations || !Array.isArray(operations) || operations.length === 0) {
@@ -417,7 +401,6 @@ export async function processImage({ input, operations, outputFormat = "png", ou
 
 /**
  * Check if ImageMagick is available on the system.
- * @returns {Promise<{available: boolean, version?: string}>}
  */
 export async function checkMagickAvailability() {
   try {

@@ -841,12 +841,6 @@ const ACTION_HANDLERS = {
 
 /**
  * Execute a browser action.
- *
-
- * @param {string} params.action - Action name
-
-
- * @returns {Promise<object>} Result with action-specific fields + sessionId
  */
 export async function agenticBrowserAction(params: any) {
   const { action, sessionId: requestedSessionId, ...actionParams } = params;

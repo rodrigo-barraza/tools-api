@@ -65,7 +65,6 @@ export function getWatchlistMetadata() {
 
 /**
  * Add SKUs to the watchlist.
- * @param {Array<{ sku: string, name?: string, brand?: string, category?: string }>} items
  */
 export function addToWatchlist(items: any) {
   let added = 0;

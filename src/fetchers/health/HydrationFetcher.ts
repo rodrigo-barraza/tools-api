@@ -61,12 +61,6 @@ function exerciseFluid(durationMinutes: any, intensity: any) {
 
 /**
  * Calculate daily water intake recommendation.
- *
-
- * @param {number} params.weightKg - Body weight in kilograms
-
-
- * @returns {object} Detailed hydration recommendation
  */
 export function calculateHydrationNeeds({
   weightKg,

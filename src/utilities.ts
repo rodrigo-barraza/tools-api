@@ -17,9 +17,6 @@ export function randomUserAgent() {
 
 /**
  * Extract the text content of an XML tag (supports CDATA, namespaced tags).
- *
- *
- * @returns {string|null} Tag content or null
  */
 export function extractXmlTag(xml: string, tag: string): string | null {
   const escapedTag = tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -33,9 +30,6 @@ export function extractXmlTag(xml: string, tag: string): string | null {
 
 /**
  * Extract all occurrences of an XML element from a string.
- *
- *
- * @returns {string[]} Array of raw element blocks
  */
 export function extractXmlItems(xml: string, tag: string): string[] {
   const items: string[] = [];
@@ -59,8 +53,6 @@ export function extractXmlItems(xml: string, tag: string): string[] {
 
 /**
  * Build browser-like headers for web scraping requests.
- *
- *
  */
 export function buildScraperHeaders(referer?: string): Record<string, string> {
   const headers: Record<string, string> = {
@@ -195,9 +187,6 @@ export function computeTrendingScore(product: ProductForScoring): number {
  * Agentic services return `{ error }` objects (not throw). This wrapper
  * maps "outside allowed"/"blocked" errors to 403, other errors to 400,
  * and sends the result as JSON on success.
- *
- *
- * @returns {Function} Express middleware
  */
 export function agenticHandler(fn: (req: Request) => Promise<{ error?: string; [key: string]: unknown }>) {
   return async (req: Request, res: Response) => {
@@ -242,8 +231,6 @@ export class EphemeralStore<T = unknown> {
 
   /**
    * Store a value and return its generated ID.
-   *
-   * @returns {string} A 12-character UUID prefix
    */
   set(value: T): string {
     const id = crypto.randomUUID().slice(0, 12);
@@ -301,12 +288,6 @@ interface EmbedHtmlOptions {
 /**
  * Build a standard HTML embed page shell. Used by LaTeX, Mermaid,
  * and future embed renderers to avoid duplicating the HTML boilerplate.
- *
- *
- * @param {string} options.styles - CSS to inject into a <style> block
- * @param {string} options.bodyContent - Inner HTML for <body>
- * @param {string} options.scripts - Script tags or inline scripts
- * @returns {string} Complete HTML document
  */
 export function buildEmbedHtml({ headExtra = "", styles, bodyContent, scripts }: EmbedHtmlOptions): string {
   return `<!DOCTYPE html>
@@ -359,8 +340,6 @@ interface CallerContext {
  * Extract caller identity context from request headers.
  * Replaces the duplicated 5-line header extraction block in
  * CreativeRoutes (4 occurrences) and AgenticRoutes.
- *
- * @returns {{ project: string, username: string, agent: string|null, traceId: string|null, agentSessionId: string|null }}
  */
 export function extractCallerContext(req: Request): CallerContext {
   return {

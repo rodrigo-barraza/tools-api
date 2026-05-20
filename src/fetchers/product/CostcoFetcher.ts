@@ -56,9 +56,6 @@ function extractReviewCount(text: any) {
 /**
  * Scrape a single Costco category page.
  * Uses multiple selector strategies to handle Costco's MUI-based layout.
- *
-
-
  */
 async function scrapeCategory(
   baseUrl: any,

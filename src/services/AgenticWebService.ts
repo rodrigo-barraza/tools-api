@@ -31,9 +31,6 @@ const GOOGLE_CSE_BASE = "https://www.googleapis.com/customsearch/v1";
 
 /**
  * Fetch a URL and convert its HTML content to clean markdown.
- *
-
-
  */
 export async function agenticFetchUrl(url: any, { selector }: Record<string, any> = {}) {
   if (!url || typeof url !== "string") {
@@ -141,9 +138,6 @@ const BRAVE_SEARCH_BASE = "https://api.search.brave.com/res/v1/web/search";
  * Search the web. Provider priority:
  *   1. Brave Search API (whole-web, 2000 queries/month free)
  *   2. Google Custom Search (site-restricted, 100 queries/day free)
- *
-
-
  */
 export async function agenticWebSearch(query: any, { limit = 5, dateRestrict, siteSearch }: Record<string, any> = {}) {
   if (!query || typeof query !== "string") {
@@ -293,10 +287,6 @@ async function _searchGoogleCSE(query: any, { limit, dateRestrict, siteSearch }:
 /**
  * Convert HTML to clean markdown using cheerio.
  * Strips scripts, styles, nav, and other non-content elements.
- *
-
-
- * @returns {string} Clean markdown
  */
 function htmlToMarkdown(html: any, { selector }: Record<string, any> = {}) {
   const $ = cheerio.load(html);

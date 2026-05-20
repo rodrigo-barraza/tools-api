@@ -119,9 +119,6 @@ function rebuildPathMap() {
 
 /**
  * Resolve a request to its tool metadata.
- *
- *
- * @returns {{ toolName: string, domain: string } | null}
  */
 function resolveToolFromRequest(method: string, path: string): ToolEntry | null {
   // Rebuild map periodically
@@ -345,9 +342,6 @@ export async function persistToolCall(entry: ToolCallLogEntry) {
 
 /**
  * Query tool-call logs with optional filters.
- *
- *
- * @returns {Promise<{ total: number, count: number, toolCalls: object[] }>}
  */
 export async function queryToolCallLogs(filters: ToolCallFilters = {}) {
   const db = getDB();

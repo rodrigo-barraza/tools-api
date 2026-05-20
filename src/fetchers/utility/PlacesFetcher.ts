@@ -89,10 +89,6 @@ const MARKER_COLORS = ["red", "blue", "green", "purple", "orange", "yellow"];
 /**
  * Build a Google Maps Static API URL with labeled markers for each place.
  * https://developers.google.com/maps/documentation/maps-static/start
- *
-
-
- * @returns {string|null} Static map URL or null if no places
  */
 export function buildStaticMapUrl(places: any, center: any, { size = "800x400", zoom, maptype = "roadmap" }: Record<string, any> = {}) {
   if (!places.length || !CONFIG.GOOGLE_API_KEY) return null;
@@ -125,8 +121,6 @@ export function buildStaticMapUrl(places: any, center: any, { size = "800x400", 
 
 /**
  * Search for nearby places by type.
-
- * @param {string}   opts.type     - Google Places type (e.g. "restaurant", "cafe", "gas_station")
 
 
  */
@@ -205,8 +199,6 @@ export async function searchNearbyPlaces({
 
 /**
  * Search for places using a natural language text query.
-
- * @param {string}   opts.query      - Text query (e.g. "best sushi in Vancouver")
 
 
  */

@@ -53,7 +53,6 @@ function normalizeAvailability(availability: any, metadata: any = null) {
  * Automatically batches to stay within URL / request limits.
 
 
- * @returns {{ results: object[], errors: string[] }}
  */
 export async function fetchBestBuyCAAvailability(skus: any, skuMetadata: Record<string, any> = {}) {
   if (!skus.length) return { results: [], errors: [] };

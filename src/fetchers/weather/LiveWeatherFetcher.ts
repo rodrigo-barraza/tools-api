@@ -39,7 +39,6 @@ const DAILY_VARIABLES = [
 /**
  * Geocode a location string to lat/lon using Open-Meteo's free geocoding API.
 
- * @returns {Promise<{ name: string, country: string, countryCode: string, latitude: number, longitude: number, timezone: string, population: number|null } | null>}
  */
 async function geocodeLocation(location: any) {
   await rateLimiter.wait("OPEN_METEO");
@@ -76,9 +75,6 @@ async function geocodeLocation(location: any) {
  * Accepts either:
  *   - A location string (geocoded via Open-Meteo)
  *   - Direct latitude/longitude coordinates
- *
- * @param {{ location?: string, latitude?: number, longitude?: number, units?: string }} params
-
  */
 export async function fetchLiveWeather({ location, latitude, longitude, units = "metric" }: any) {
   let geo: any = null;

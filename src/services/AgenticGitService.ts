@@ -101,9 +101,6 @@ async function runGit(args: string[], cwd: string): Promise<any> {
 
 /**
  * Get git status for a repository.
- *
-
-
  */
 export async function agenticGitStatus(repoPath: any) {
   // Agent routing
@@ -186,9 +183,6 @@ export async function agenticGitStatus(repoPath: any) {
 
 /**
  * Get git diff output.
- *
-
-
  */
 export async function agenticGitDiff(repoPath: any, { staged = false, path: filePath, ref }: Record<string, any> = {}) {
   // Agent routing
@@ -245,9 +239,6 @@ export async function agenticGitDiff(repoPath: any, { staged = false, path: file
 
 /**
  * Get git log.
- *
-
-
  */
 export async function agenticGitLog(repoPath: any, { limit = 20, author, since, path: filePath }: Record<string, any> = {}) {
   // Agent routing
@@ -319,10 +310,6 @@ const WORKTREE_BASE = WORKTREE_DIR?.trim() || "/tmp/prism-worktrees";
 
 /**
  * Create a git worktree with its own branch.
- *
-
-
- * @returns {Promise<object>} { worktreePath, branch }
  */
 export async function agenticGitWorktreeCreate(repoPath: any, branchName: any) {
   const validation = validatePath(repoPath);
@@ -360,9 +347,6 @@ export async function agenticGitWorktreeCreate(repoPath: any, branchName: any) {
 
 /**
  * Remove a git worktree and optionally delete the branch.
- *
-
-
  */
 export async function agenticGitWorktreeRemove(repoPath: any, worktreePath: any, { deleteBranch = true }: Record<string, any> = {}) {
   const validation = validatePath(repoPath);
@@ -405,9 +389,6 @@ export async function agenticGitWorktreeRemove(repoPath: any, worktreePath: any,
 
 /**
  * Merge a worktree branch back into the current branch.
- *
-
-
  */
 export async function agenticGitWorktreeMerge(repoPath: any, branch: any, { message }: Record<string, any> = {}) {
   const validation = validatePath(repoPath);
@@ -435,9 +416,6 @@ export async function agenticGitWorktreeMerge(repoPath: any, branch: any, { mess
 
 /**
  * Get the diff between a worktree branch and the main branch.
- *
-
-
  */
 export async function agenticGitWorktreeDiff(repoPath: any, branch: any) {
   const validation = validatePath(repoPath);
@@ -478,9 +456,6 @@ export async function agenticGitWorktreeDiff(repoPath: any, branch: any) {
 /**
  * Clean up any orphaned worktrees from previous runs.
  * Should be called on server startup.
- *
-
-
  */
 export async function agenticGitWorktreeCleanup(repoPath: any) {
   const validation = validatePath(repoPath);

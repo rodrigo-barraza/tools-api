@@ -7,10 +7,6 @@ import { getPyPiPackage } from "./PyPiFetcher.ts";
 
 /**
  * Look up a package on NPM or PyPI.
- *
-
-
- * @returns {Promise<object>} Package metadata with "registry" field
  */
 export async function getPackageInfo(name: any, registry: any, options: Record<string, any> = {}) {
   if (!name || typeof name !== "string") {

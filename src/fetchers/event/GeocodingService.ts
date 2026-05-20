@@ -10,7 +10,6 @@ const geocodeCache = new Map();
  * Geocode an address string into lat/lng coordinates.
  * Results are cached in-memory to reduce API calls.
 
- * @returns {{ latitude: number, longitude: number, formattedAddress: string } | null}
  */
 export async function geocodeAddress(address: any) {
   if (!address || !CONFIG.GOOGLE_PLACES_API_KEY) return null;

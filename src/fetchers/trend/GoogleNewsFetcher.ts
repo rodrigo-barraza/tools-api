@@ -15,7 +15,6 @@ const GOOGLE_NEWS_RSS_URL = "https://news.google.com/rss";
 /**
  * Categorize a Google News article based on its source tag or section.
 
- * @returns {string} Category string
  */
 function categorizeArticle(section: any) {
   if (!section) return "general";
@@ -37,7 +36,6 @@ function categorizeArticle(section: any) {
  * No API key required — returns up to ~100 headlines.
  * Feed sections: top headlines, world, nation, business, technology,
  * entertainment, sports, science, health.
- * @returns {Promise<Array>} Normalized trend objects
  */
 export async function fetchGoogleNews() {
   const sections = [

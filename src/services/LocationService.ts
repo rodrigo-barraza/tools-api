@@ -158,7 +158,6 @@ let resolvedLocation: any = null;
  * - Otherwise, resolve from IP + NOAA and persist.
  *
  * Must be called after connectDB() and before the server starts listening.
- * @returns {Promise<object>} The resolved location data.
  */
 export async function initLocation() {
   const cached = await loadCachedLocation();

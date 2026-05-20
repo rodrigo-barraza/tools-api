@@ -16,9 +16,6 @@ import logger from "../logger.ts";
  * Check if a path should be routed to a remote workspace agent.
  * If so, sends an RPC request and returns the result.
  * Returns null if the path should be handled locally.
- *
-
-
  */
 async function tryAgentRoute(method: any, params: any, targetPath: any) {
   const agent = routeForPath(targetPath);
@@ -99,7 +96,6 @@ const PREVIEW_IMAGE_EXTENSIONS = new Set([
 /**
  * Validate and resolve a path against the sandbox.
 
- * @returns {{ safe: boolean, resolved: string, error?: string }}
  */
 function validatePath(inputPath: any) {
   if (!inputPath || typeof inputPath !== "string") {
@@ -147,9 +143,6 @@ function validatePath(inputPath: any) {
 
 /**
  * Read file contents with optional line range.
- *
-
-
  */
 export async function agenticReadFile(filePath: any, { startLine, endLine }: Record<string, any> = {}) {
   // Agent routing — proxy to remote agent if path is served by one
@@ -233,9 +226,6 @@ export async function agenticReadFile(filePath: any, { startLine, endLine }: Rec
 
 /**
  * Write (create or overwrite) a file.
- *
-
-
  */
 export async function agenticWriteFile(filePath: any, content: any, { createDirs = true }: Record<string, any> = {}) {
   // Agent routing
@@ -286,9 +276,6 @@ export async function agenticWriteFile(filePath: any, content: any, { createDirs
 /**
  * Perform a targeted string replacement in a file.
  * The `oldStr` must match exactly (including whitespace).
- *
-
-
  */
 export async function agenticStrReplace(filePath: any, oldStr: any, newStr: any, { allowMultiple = false }: Record<string, any> = {}) {
   // Agent routing
@@ -367,9 +354,6 @@ export async function agenticStrReplace(filePath: any, oldStr: any, newStr: any,
 
 /**
  * Apply a unified diff patch to a file.
- *
-
-
  */
 export async function agenticPatchFile(filePath: any, patch: any) {
   // Agent routing
@@ -421,9 +405,6 @@ export async function agenticPatchFile(filePath: any, patch: any) {
 
 /**
  * List directory contents with metadata.
- *
-
-
  */
 export async function agenticListDirectory(dirPath: any, { recursive = false, maxDepth = 3 }: Record<string, any> = {}) {
   // Agent routing
@@ -508,9 +489,6 @@ export async function agenticListDirectory(dirPath: any, { recursive = false, ma
 
 /**
  * Search for pattern matches within files (ripgrep-style).
- *
-
-
  */
 export async function agenticGrepSearch(pattern: any, searchPath: any, {
   isRegex = false,
@@ -649,9 +627,6 @@ export async function agenticGrepSearch(pattern: any, searchPath: any, {
 
 /**
  * Find files by glob pattern.
- *
-
-
  */
 export async function agenticGlobFiles(pattern: any, searchPath: any) {
   // Agent routing
@@ -737,9 +712,6 @@ export async function agenticGlobFiles(pattern: any, searchPath: any) {
 
 /**
  * Read multiple files in a single call.
- *
- * @param {Array<{ path: string, startLine?: number, endLine?: number }>} files
-
  */
 export async function agenticMultiFileRead(files: any) {
   if (!Array.isArray(files) || files.length === 0) {
@@ -776,9 +748,6 @@ export async function agenticMultiFileRead(files: any) {
 
 /**
  * Get metadata for one or more files without reading content.
- *
-
-
  */
 export async function agenticFileInfo(paths: any) {
   const pathList = Array.isArray(paths) ? paths : [paths];
@@ -853,9 +822,6 @@ export async function agenticFileInfo(paths: any) {
 
 /**
  * Generate a unified diff between two files or between a file and provided content.
- *
-
-
  */
 export async function agenticFileDiff(pathA: any, { pathB, content, contextLines = 3 }: Record<string, any> = {}) {
   // Agent routing
@@ -928,9 +894,6 @@ export async function agenticFileDiff(pathA: any, { pathB, content, contextLines
 
 /**
  * Move or rename a file within allowed roots.
- *
-
-
  */
 export async function agenticMoveFile(source: any, destination: any, { createDirs = true }: Record<string, any> = {}) {
   // Agent routing
@@ -976,9 +939,6 @@ export async function agenticMoveFile(source: any, destination: any, { createDir
 
 /**
  * Delete a file within allowed roots.
- *
-
-
  */
 export async function agenticDeleteFile(filePath: any) {
   // Agent routing

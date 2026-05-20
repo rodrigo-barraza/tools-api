@@ -11,10 +11,6 @@ import {
 /**
  * Create an LSP client wrapper using vscode-jsonrpc.
  * Manages communication with an LSP server process via stdio.
- *
- * @param {string} serverName — human-readable name for logging
- * @param {(error: Error) => void} [onCrash] — called on unexpected exit (non-zero, not during stop)
- * @returns {object} LSP client interface
  */
 export function createLspClient(serverName: any, onCrash: any) {
   // ── Closure state ──────────────────────────────────────────
@@ -48,10 +44,6 @@ export function createLspClient(serverName: any, onCrash: any) {
 
     /**
      * Spawn the LSP server process and establish JSON-RPC connection.
-     *
-     * @param {string} command — binary to run (e.g. 'npx')
-     * @param {string[]} args — arguments (e.g. ['typescript-language-server', '--stdio'])
-     * @param {{ env?: Record<string,string>, cwd?: string }} [options]
      */
     async start(command: any, args: any, options: Record<string, any> = {}) {
       try {
@@ -161,9 +153,6 @@ export function createLspClient(serverName: any, onCrash: any) {
 
     /**
      * Send the LSP `initialize` request and `initialized` notification.
-     *
-     * @param {object} params — InitializeParams
-     * @returns {Promise<object>} InitializeResult
      */
     async initialize(params: any) {
       if (!connection) throw new Error("LSP client not started");
@@ -187,10 +176,6 @@ export function createLspClient(serverName: any, onCrash: any) {
 
     /**
      * Send an LSP request and return the result.
-     *
-     * @param {string} method — e.g. 'textDocument/definition'
-
-
      */
     async sendRequest(method: any, params: any) {
       if (!connection) throw new Error("LSP client not started");
@@ -207,9 +192,6 @@ export function createLspClient(serverName: any, onCrash: any) {
 
     /**
      * Send an LSP notification (fire-and-forget).
-     *
-     * @param {string} method — e.g. 'textDocument/didOpen'
-
      */
     async sendNotification(method: any, params: any) {
       if (!connection) throw new Error("LSP client not started");
@@ -225,9 +207,6 @@ export function createLspClient(serverName: any, onCrash: any) {
 
     /**
      * Register a handler for notifications FROM the server.
-     *
-
-
      */
     onNotification(method: any, handler: any) {
       if (!connection) {
@@ -240,9 +219,6 @@ export function createLspClient(serverName: any, onCrash: any) {
 
     /**
      * Register a handler for requests FROM the server (reverse direction).
-     *
-
-
      */
     onRequest(method: any, handler: any) {
       if (!connection) {

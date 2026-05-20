@@ -7,9 +7,6 @@ import logger from "../../logger.ts";
  * Fetches trending topics from X (Twitter) for a given WOEID.
  * Uses X API v1.1 trends/place endpoint (available on free tier, 100 reads/month).
  * Called once per day to stay within free tier limits.
- *
-
- * @returns {Promise<Array>} Normalized trend objects
  */
 export async function fetchXTrends(woeid: any = X_WOEIDS.WORLDWIDE) {
   if (!CONFIG.X_BEARER_TOKEN) {
@@ -58,7 +55,6 @@ export async function fetchXTrends(woeid: any = X_WOEIDS.WORLDWIDE) {
 /**
  * Fetches trends from multiple locations and deduplicates.
  * Uses 1 API call per location — keep locations minimal on free tier.
- * @returns {Promise<Array>} Combined normalized trend objects
  */
 export async function fetchAllXTrends() {
   if (!CONFIG.X_BEARER_TOKEN) {

@@ -8,9 +8,6 @@ import logger from "../../logger.ts";
 
 /**
  * Creates an LSP server manager instance.
- *
- * @param {string} [workspaceFolder] — root workspace path (defaults to cwd)
- * @returns {object} LSP server manager interface
  */
 export function createLspServerManager(workspaceFolder: any) {
   // ── Private state ──────────────────────────────────────────
@@ -79,9 +76,6 @@ export function createLspServerManager(workspaceFolder: any) {
 
   /**
    * Get the server instance for a given file path based on extension.
-   *
-   * @param {string} filePath — absolute file path
-   * @returns {object|undefined} LspServerInstance or undefined
    */
   function getServerForFile(filePath: any) {
     const ext = extname(filePath).toLowerCase();
@@ -93,9 +87,6 @@ export function createLspServerManager(workspaceFolder: any) {
   /**
    * Ensure the appropriate server is started for a file.
    * Lazy-starts the server on first request for that language.
-   *
-
-   * @returns {Promise<object|undefined>} LspServerInstance or undefined
    */
   async function ensureServerStarted(filePath: any) {
     const server = getServerForFile(filePath);
@@ -117,11 +108,6 @@ export function createLspServerManager(workspaceFolder: any) {
 
   /**
    * Send an LSP request to the appropriate server for the given file.
-   *
-   * @param {string} filePath — absolute file path
-   * @param {string} method — LSP method (e.g. 'textDocument/definition')
-   * @param {unknown} params — method params
-   * @returns {Promise<unknown|undefined>} Result or undefined if no server
    */
   async function sendRequest(filePath: any, method: any, params: any) {
     const server = await ensureServerStarted(filePath);
@@ -140,9 +126,6 @@ export function createLspServerManager(workspaceFolder: any) {
   /**
    * Open a file in the appropriate LSP server (sends didOpen).
    * Skips if already open on the same server.
-   *
-   * @param {string} filePath — absolute file path
-   * @param {string} content — file content
    */
   async function openFile(filePath: any, content: any) {
     const server = await ensureServerStarted(filePath);
@@ -174,9 +157,6 @@ export function createLspServerManager(workspaceFolder: any) {
 
   /**
    * Notify the server of file content changes.
-   *
-
-   * @param {string} content — new full content
    */
   async function changeFile(filePath: any, content: any) {
     const server = getServerForFile(filePath);
@@ -204,8 +184,6 @@ export function createLspServerManager(workspaceFolder: any) {
 
   /**
    * Close a file in the LSP server (sends didClose).
-   *
-
    */
   async function closeFile(filePath: any) {
     const server = getServerForFile(filePath);
@@ -225,9 +203,6 @@ export function createLspServerManager(workspaceFolder: any) {
 
   /**
    * Check if a file is currently open on a compatible server.
-   *
-
-
    */
   function isFileOpen(filePath: any) {
     const fileUri = pathToFileURL(resolve(filePath)).href;
@@ -238,8 +213,6 @@ export function createLspServerManager(workspaceFolder: any) {
 
   /**
    * Get health status of all configured servers.
-   *
-   * @returns {Record<string, string>} name → state
    */
   function getHealth() {
     const health: Record<string, any> = {};
@@ -251,8 +224,6 @@ export function createLspServerManager(workspaceFolder: any) {
 
   /**
    * Get all server instances.
-   *
-
    */
   function getAllServers() {
     return servers;
@@ -311,9 +282,6 @@ const managers = new Map();
 
 /**
  * Get or create the LSP server manager for a workspace.
- *
-
- * @returns {object} LspServerManager
  */
 export function getLspManager(workspaceFolder: any) {
   const key = workspaceFolder || "__default__";
@@ -339,8 +307,6 @@ export async function shutdownAllLspManagers() {
 
 /**
  * Get health of all managers.
- *
-
  */
 export function getAllLspHealth() {
   const health: Record<string, any> = {};

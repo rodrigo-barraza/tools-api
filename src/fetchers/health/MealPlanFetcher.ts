@@ -133,12 +133,6 @@ function normalizeSearch(str: any) {
 
 /**
  * Generate a meal plan that covers nutritional targets.
- *
-
- * @param {number} params.caloricTarget - Daily caloric target
-
-
- * @returns {object} Meal plan with coverage analysis
  */
 export function buildMealPlan({
   caloricTarget,

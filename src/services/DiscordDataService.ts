@@ -40,9 +40,6 @@ const BADGE_FLAGS = [
  * Extract badge identifiers from a UserFlags bitfield.
  * The bitfield can be a number, a string-encoded number, or a
  * discord.js BitField object with a `.bitfield` property.
- *
-
- * @returns {Array<{id: string, label: string}>}
  */
 function extractBadges(flags: any) {
   if (!flags) return [];
@@ -61,10 +58,6 @@ function extractBadges(flags: any) {
  * Returns the top non-@everyone roles (sorted by position desc),
  * limited to the top 3 for UI space — matching Discord's inline
  * role badge behavior.
- *
-
-
- * @returns {Array<{name: string, color: string|null, iconUrl: string|null}>}
  */
 function extractRoleTags(roles: any, guildId: any) {
   if (!Array.isArray(roles) || roles.length === 0) return [];
@@ -82,9 +75,6 @@ function extractRoleTags(roles: any, guildId: any) {
 /**
  * Build a Discord CDN avatar URL from raw author data stored in MongoDB.
  * Falls back to the default avatar URL (e.g. blue/green Wumpus silhouette).
- *
-
-
  */
 function buildAvatarUrl(author: any, member?: any, guildId?: any) {
   if (!author) return null;
@@ -103,9 +93,6 @@ function buildAvatarUrl(author: any, member?: any, guildId?: any) {
  * Resolve a media URL using the mediaArchive map.
  * Prefers the permanent MinIO URL when the original URL was archived.
  * Falls back to the original URL otherwise.
- *
-
-
  */
 function resolveArchivedUrl(url: any, archiveMap: any) {
   if (!url || !archiveMap) return url;
@@ -117,9 +104,6 @@ function resolveArchivedUrl(url: any, archiveMap: any) {
 
 /**
  * Build the common MongoDB filter used by search and analytics.
- *
-
- * @returns {object} MongoDB filter document
  */
 function buildBaseFilter({
   guildId,
@@ -175,13 +159,10 @@ const DiscordDataService = {
    * Search Discord messages with flexible filters.
    *
 
-   * @param {string} opts.guildId    - Filter by guild (required)
-
 
    *   "messages" — full message objects (default)
    *   "count"    — only the matching count, zero message bodies
    *   "compact"  — minimal per-message data (author, timestamp, truncated content)
-   * @returns {Promise<{ count: number, messages?: object[] }>}
    */
   async searchMessages({
     guildId,
@@ -437,8 +418,6 @@ const DiscordDataService = {
    * filters as searchMessages.
    *
 
-   * @param {string} opts.guildId     - Guild to analyze (required)
-
 
    *   "user"    — group by author
    *   "channel" — group by channel
@@ -597,11 +576,6 @@ const DiscordDataService = {
 
   /**
    * Get server activity stats for a guild.
-   *
-
-   * @param {string} opts.guildId      - Guild to analyze (required)
-
-
    */
   async getServerActivity({
     guildId,

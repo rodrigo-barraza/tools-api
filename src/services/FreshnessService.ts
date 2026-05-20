@@ -12,10 +12,6 @@ import logger from "../logger.ts";
 /**
  * Conditionally execute a collector function only if the data is stale.
  * If data is fresh, restores the in-memory cache from the DB.
- *
-
-
- * @returns {Promise<boolean>} Whether the collector ran (true = fetched, false = restored from DB)
  */
 export async function collectIfStale(
   label: any,
@@ -55,8 +51,6 @@ export async function collectIfStale(
  * Start a set of collectors from a declarative task array.
  * Handles initial stale check with staggered delays, then sets up intervals.
  * Eliminates the need to manually write setInterval lines per collector.
- *
- * @param {Array<{ label: string, collection: string, ttl: number, collectFn: Function, restoreFn?: Function, delay?: number }>} tasks
  */
 export function startCollectorLoop(tasks: any) {
   for (const task of tasks) {

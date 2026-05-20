@@ -36,7 +36,6 @@ const redditTokenManager = new TokenManager(async () => {
  * Fetches hot posts from a given subreddit.
 
 
- * @returns {Promise<Array>} Raw post data
  */
 async function fetchSubreddit(subreddit: any, token: any, limit: any) {
   const url = `https://oauth.reddit.com/r/${subreddit}/hot.json?limit=${limit}&raw_json=1`;
@@ -57,7 +56,6 @@ async function fetchSubreddit(subreddit: any, token: any, limit: any) {
  * Normalizes a Reddit post into a trend object.
 
 
- * @returns {object} Normalized trend object
  */
 function normalizeTrend(post: any, defaultCategory: any) {
   const postData = post.data;
@@ -85,7 +83,6 @@ function normalizeTrend(post: any, defaultCategory: any) {
 /**
  * Fetches trending posts from all configured subreddits.
  * Requires REDDIT_CLIENT_ID + REDDIT_CLIENT_SECRET to be configured.
- * @returns {Promise<Array>} Normalized trend objects
  */
 export async function fetchRedditTrends() {
   if (!CONFIG.REDDIT_CLIENT_ID || !CONFIG.REDDIT_CLIENT_SECRET) {

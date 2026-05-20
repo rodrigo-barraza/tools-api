@@ -5,7 +5,6 @@ const GITHUB_TRENDING_URL = "https://github.com/trending";
 /**
  * Scrapes GitHub's trending page for today's top repositories.
  * No API key required — HTML scraping.
- * @returns {Promise<Array>} Normalized trend objects
  */
 export async function fetchGitHubTrending() {
   const response = await fetch(`${GITHUB_TRENDING_URL}?since=daily`, {

@@ -337,7 +337,6 @@ function formatFood(food: any, nutrientTypes: any = null) {
  * Search for foods by name/keyword.
 
 
- * @returns {object} Search results
  */
 export function searchFoods(query: any, opts: Record<string, any> = {}) {
   ensureLoaded();
@@ -384,7 +383,6 @@ export function searchFoods(query: any, opts: Record<string, any> = {}) {
  * Get detailed nutrition for a specific food by exact name.
 
 
- * @returns {object|null} Food nutrition data or null
  */
 export function getFoodByName(name: any, nutrientTypes: any = null) {
   ensureLoaded();
@@ -400,7 +398,6 @@ export function getFoodByName(name: any, nutrientTypes: any = null) {
  * Get all foods ranked by a specific nutrient (highest first).
 
 
- * @returns {object} Ranked results
  */
 export function rankByNutrient(nutrient: any, opts: Record<string, any> = {}) {
   ensureLoaded();
@@ -461,7 +458,6 @@ export function rankByNutrient(nutrient: any, opts: Record<string, any> = {}) {
 
 /**
  * List available nutrient types for filtering.
- * @returns {object} Available nutrient categories and fields
  */
 export function getNutrientTypes() {
   ensureLoaded();
@@ -487,7 +483,6 @@ export function getNutrientTypes() {
 
 /**
  * List all unique food categories / kingdoms / types.
- * @returns {object} Available taxonomy filters
  */
 export function getFoodCategories() {
   ensureLoaded();
@@ -514,7 +509,6 @@ export function getFoodCategories() {
  * Compare nutrition between two or more foods.
 
 
- * @returns {object} Comparison results
  */
 export function compareFoods(foodNames: any, nutrientTypes: any = null) {
   ensureLoaded();
@@ -564,7 +558,6 @@ const CATEGORY_FIELD_MAP: Record<string, any> = {
  * Accepts: CSV column name, human label, or partial match.
 
 
- * @returns {{ column: string, label: string } | null}
  */
 function resolveNutrientColumn(category: any, nutrient: any) {
   const fields = CATEGORY_FIELD_MAP[category];
@@ -601,7 +594,6 @@ function resolveNutrientColumn(category: any, nutrient: any) {
  * Accepts human-friendly nutrient names (e.g. "calcium", "omega3", "vitamin C").
 
 
- * @returns {object} Ranked results
  */
 export function getTopFoodsByCategory(category: any, nutrient: any, opts: Record<string, any> = {}) {
   ensureLoaded();
@@ -673,7 +665,6 @@ export function getTopFoodsByCategory(category: any, nutrient: any, opts: Record
 /**
  * List available nutrients within a specific category.
 
- * @returns {object} Available nutrients with column names and labels
  */
 export function listCategoryNutrients(category: any) {
   ensureLoaded();
@@ -727,7 +718,6 @@ const TAXONOMY_RANKS = [
  * Example: rank="family", value="Rosaceae" → all rose-family foods.
 
 
- * @returns {object} Matched foods
  */
 export function searchByTaxonomy(rank: any, value: any, opts: Record<string, any> = {}) {
   ensureLoaded();
@@ -762,7 +752,6 @@ export function searchByTaxonomy(rank: any, value: any, opts: Record<string, any
  * Useful for discovery: "what families exist?", "what genera are in Rosaceae?"
 
 
- * @returns {object} Taxonomy tree or single-rank listing
  */
 export function getTaxonomyTree(
   rank: any = null,

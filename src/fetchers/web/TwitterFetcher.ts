@@ -13,7 +13,6 @@ const TWITTER_URL_REGEX =
 /**
  * Extract username and tweet ID from a Twitter/X URL.
 
- * @returns {{ username: string, tweetId: string } | null}
  */
 function parseTwitterUrl(input: any) {
   if (!input || typeof input !== "string") return null;

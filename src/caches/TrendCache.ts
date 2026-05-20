@@ -46,7 +46,6 @@ export function setTrendError(source: any, error: any) {
 
 /**
  * Returns all cached trends across all sources.
- * @returns {object} { count, sources, trends }
  */
 export function getAll() {
   const allTrends: any[] = [];
@@ -70,7 +69,6 @@ export function getAll() {
 /**
  * Returns cached trends from a specific source.
 
- * @returns {object} { count, source, lastFetch, trends }
  */
 export function getBySource(source: any) {
   const data = cache[source];
@@ -88,7 +86,6 @@ export function getBySource(source: any) {
 /**
  * Returns cached trends filtered by category.
 
- * @returns {object} { count, category, trends }
  */
 export function getByCategory(category: any) {
   const allTrends: any[] = [];
@@ -111,7 +108,6 @@ export function getByCategory(category: any) {
 /**
  * Finds cross-source correlated trends — topics appearing in 2+ sources.
  * Uses normalized name matching to find overlapping topics.
- * @returns {object} { count, trends }
  */
 export function getCorrelatedTrends() {
   // Build a map of normalizedName → { sources, totalVolume, entries }
@@ -160,7 +156,6 @@ export function getCorrelatedTrends() {
 /**
  * Searches cached trends by keyword (case-insensitive).
 
- * @returns {object} { count, query, trends }
  */
 export function searchTrends(query: any) {
   const normalizedQuery = query.toLowerCase();
@@ -183,7 +178,6 @@ export function searchTrends(query: any) {
 
 /**
  * Returns health status for all collectors.
- * @returns {object} Per-source health info
  */
 export function getHealth() {
   const health: Record<string, any> = {};

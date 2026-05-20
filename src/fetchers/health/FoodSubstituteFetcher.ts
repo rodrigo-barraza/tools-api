@@ -152,12 +152,6 @@ const DIETARY_FILTERS = {
 
 /**
  * Find nutritionally similar substitutes for a given food.
- *
-
- * @param {string} params.food - Source food name
-
-
- * @returns {object} Ranked substitutes with similarity scores
  */
 export function findFoodSubstitutes({
   food,

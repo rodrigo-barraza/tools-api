@@ -23,7 +23,6 @@ const CHART_TTL_MS = MS_PER_HOUR;
 /**
  * Store chart config and return a short ID.
 
- * @returns {string} Short UUID key
  */
 export function storeChart(chartConfig: any) {
   const id = crypto.randomUUID().slice(0, 12);
@@ -119,7 +118,6 @@ function assignColors(datasets: any, chartType: any) {
 /**
  * Render a chart config to a PNG buffer.
 
- * @returns {Promise<Buffer>} PNG buffer
  */
 export async function renderChartPng(chartConfig: any) {
   const { type, title, labels, datasets, options = {} } = chartConfig;

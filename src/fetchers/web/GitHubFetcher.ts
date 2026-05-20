@@ -18,7 +18,6 @@ const GITHUB_REPO_REGEX =
 /**
  * Parse a GitHub repo URL or "owner/repo" shorthand.
 
- * @returns {{ owner: string, repo: string } | null}
  */
 function parseGitHubInput(input: any) {
   if (!input || typeof input !== "string") return null;

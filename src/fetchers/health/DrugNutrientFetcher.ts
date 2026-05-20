@@ -108,11 +108,6 @@ function normalizeSearch(str: any) {
 
 /**
  * Check for drug-nutrient interactions.
- *
-
- * @param {string} params.drug - Drug name (brand or generic)
-
- * @returns {object} Interaction report
  */
 export function checkDrugNutrientInteractions({ drug, nutrients }: any) {
   if (!drug) {

@@ -7,7 +7,6 @@ import {
 /**
  * Fetches trending tags from a single Mastodon instance.
 
- * @returns {Promise<Array>} Trending tag objects
  */
 async function fetchTrendingTags(instance: any) {
   const response = await fetch(`${instance}/api/v1/trends/tags?limit=20`, {
@@ -19,7 +18,6 @@ async function fetchTrendingTags(instance: any) {
 /**
  * Fetches trending statuses (posts) from a single Mastodon instance.
 
- * @returns {Promise<Array>} Trending status objects
  */
 async function fetchTrendingStatuses(instance: any) {
   const response = await fetch(`${instance}/api/v1/trends/statuses?limit=20`, {
@@ -33,7 +31,6 @@ async function fetchTrendingStatuses(instance: any) {
  * Aggregates both trending hashtags and trending statuses from
  * multiple instances, deduplicates, and normalizes.
  * No API key required — all public endpoints.
- * @returns {Promise<Array>} Normalized trend objects
  */
 export async function fetchMastodonTrends() {
   const allTrends: any[] = [];

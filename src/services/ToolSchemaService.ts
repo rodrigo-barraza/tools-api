@@ -8869,7 +8869,6 @@ export { TOOL_DOMAINS, TOOL_LABELS, TOOL_EMOJIS, TOOL_DEFINITIONS };
  * Get all tool schemas with endpoint metadata.
  * Used by clients (like Prism Client) to build dynamic executors.
  * Filters out tools whose required API keys are not configured.
- * @returns {Array} Full tool definitions including endpoint info
  */
 export function getToolSchemas() {
   return TOOL_DEFINITIONS
@@ -8889,7 +8888,6 @@ export function getToolSchemas() {
  * Get tool schemas cleaned for LLM consumption.
  * Strips the `endpoint` property since the AI doesn't need routing info.
  * Filters out tools whose required API keys are not configured.
- * @returns {Array} Tool definitions without endpoint metadata
  */
 export function getToolSchemasForAI() {
   return TOOL_DEFINITIONS
@@ -8902,7 +8900,6 @@ export function getToolSchemasForAI() {
 /**
  * Get tools that are disabled due to missing API keys.
  * Useful for admin diagnostics and health checks.
- * @returns {Array<{ name: string, domain: string, missingKeys: string[] }>}
  */
 export function getDisabledTools() {
   return TOOL_DEFINITIONS
@@ -8922,7 +8919,6 @@ export function getDisabledTools() {
 
 /**
  * Get the available fields map.
- * @returns {object} FIELDS enum map
  */
 export function getFields() {
   return FIELDS;

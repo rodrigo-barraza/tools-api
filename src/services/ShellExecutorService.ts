@@ -89,7 +89,6 @@ const BLOCKED_PATTERNS = [
 /**
  * Validate that a command string only uses allowed binaries.
 
- * @returns {{ valid: boolean, error?: string }}
  */
 function validateCommand(command: any) {
   // Check for blocked patterns
@@ -131,14 +130,6 @@ function validateCommand(command: any) {
  *
 
 
- * @returns {Promise<{
- *   success: boolean,
- *   stdout: string,
- *   stderr: string,
- *   exitCode: number|null,
- *   executionTimeMs: number,
- *   timedOut: boolean,
- *   error?: string
  * }>}
  */
 export async function executeShell(command: any, { stdin = "", timeout = DEFAULT_TIMEOUT_MS }: Record<string, any> = {}) {
@@ -271,10 +262,6 @@ export async function executeShell(command: any, { stdin = "", timeout = DEFAULT
  * Execute an allowlisted shell command with real-time output streaming.
  * Same security model as executeShell, but invokes `onChunk` for each
  * stdout/stderr data event as it arrives.
- *
-
-
- * @returns {Promise<{ success, stdout, stderr, exitCode, executionTimeMs, timedOut, error? }>}
  */
 export async function executeShellStreaming(command: any, { stdin = "", timeout = DEFAULT_TIMEOUT_MS, onChunk }: Record<string, any> = {}) {
   const clampedTimeout = Math.min(Math.max(timeout, 500), MAX_TIMEOUT_MS);

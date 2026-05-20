@@ -6,11 +6,6 @@ const API_URL = "https://511ny.org/api/getcameras?key=public&format=json";
 /**
  * Shared fetcher for New York 511 cameras.
  * Filters by geographic bounding box and upserts results.
- *
-
- * @param {string} options.city
- * @param {string} options.idPrefix
- * @param {Object} options.bounds - { minLat, maxLat, minLon, maxLon }
  */
 export async function fetchNY511Cameras({ city, idPrefix, bounds }: any) {
   const response = await fetch(API_URL, {

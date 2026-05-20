@@ -10,7 +10,6 @@ const HN_API_BASE = "https://hacker-news.firebaseio.com/v0";
 /**
  * Fetches a single Hacker News item by ID.
 
- * @returns {Promise<object|null>} Item data or null
  */
 async function fetchItem(id: any) {
   const response = await fetch(`${HN_API_BASE}/item/${id}.json`);
@@ -21,7 +20,6 @@ async function fetchItem(id: any) {
 /**
  * Fetches the top stories from Hacker News.
  * Uses the Firebase-based HN API (completely free, no auth required).
- * @returns {Promise<Array>} Normalized trend objects
  */
 export async function fetchHackerNewsTrends() {
   const response = await fetch(`${HN_API_BASE}/topstories.json`);

@@ -133,9 +133,6 @@ async function tryAgentRouteCommand(method: any, params: any, cwd: any) {
  *      spawns, collects warmup output (~2.5s), then returns with a `pid`.
  *   2. **Auto-background on timeout** — instead of killing the process,
  *      it's promoted to the background registry and returns what we have.
- *
-
-
  */
 export async function executeCommand(command: any, { cwd, timeout = DEFAULT_TIMEOUT_MS, signal, runInBackground = false }: Record<string, any> = {}) {
   // Agent routing — if CWD is served by a remote agent, proxy the command
@@ -297,9 +294,6 @@ export async function executeCommand(command: any, { cwd, timeout = DEFAULT_TIME
 
 /**
  * Execute a command with SSE streaming output.
- *
-
-
  */
 export async function executeCommandStreaming(command: any, { cwd, timeout = DEFAULT_TIMEOUT_MS, onChunk, signal }: Record<string, any> = {}) {
   // Agent routing for streaming commands
@@ -450,10 +444,6 @@ export function getBackgroundProcess(pid: any) {
 /**
  * Kill a process tree by PID.
  * Attempts SIGTERM first, then SIGKILL after a grace period.
- *
-
-
- * @returns {Promise<object>} Result with killed status
  */
 export async function killProcessTree(pid: any, { gracePeriodMs = KILL_GRACE_PERIOD_MS }: Record<string, any> = {}) {
   if (!pid || typeof pid !== "number" || pid <= 0) {

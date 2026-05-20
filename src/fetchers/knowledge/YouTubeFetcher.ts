@@ -20,7 +20,6 @@ const YOUTUBE_ID_REGEX =
 /**
  * Extract a YouTube video ID from a URL or raw ID string.
 
- * @returns {string|null} 11-character video ID or null
  */
 export function extractVideoId(input: any) {
   if (!input || typeof input !== "string") return null;

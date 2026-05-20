@@ -7,7 +7,6 @@ const BLUESKY_API = "https://public.api.bsky.app/xrpc";
 /**
  * Fetches trending content from Bluesky's public API.
  * No authentication needed for public endpoints.
- * @returns {Promise<Array>} Normalized trend objects
  */
 export async function fetchBlueskyTrends() {
   // Fetch trending topics via the public search endpoint

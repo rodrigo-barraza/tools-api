@@ -5,14 +5,6 @@ import { upsertWebcams } from "../../../../models/Webcam.ts";
  * Shared fetcher for 511-style camera APIs (Ontario, Alberta, etc.).
  * These APIs return JSON arrays of camera objects with Views arrays
  * containing CCTV page URLs.
- *
-
- * @param {string} options.apiUrl       - Base API URL (e.g. https://511on.ca/api/v2/get/cameras)
- * @param {string} options.city         - City name for tagging (e.g. "Ottawa")
- * @param {string} options.country      - Country code (e.g. "CA")
- * @param {string} options.source       - Source identifier (e.g. "511on.ca")
- * @param {string} options.idPrefix     - ID prefix for uniqueness (e.g. "ON")
- * @param {Object} options.bounds       - Geographic bounding box { minLat, maxLat, minLon, maxLon }
  */
 export async function fetch511Cameras({ apiUrl, city, country, source, idPrefix, bounds }: any) {
   const url = `${apiUrl}?format=json`;

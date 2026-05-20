@@ -5,7 +5,6 @@ const TVMAZE_SCHEDULE_URL = "https://api.tvmaze.com/schedule";
 /**
  * Fetches today's TV schedule from TVMaze for US and CA.
  * Free API, no key required. Groups shows by popularity.
- * @returns {Promise<Array>} Normalized trend objects
  */
 export async function fetchTVMazeTrends() {
   const today = new Date().toISOString().split("T")[0];

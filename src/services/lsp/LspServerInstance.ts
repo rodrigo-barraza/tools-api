@@ -14,18 +14,6 @@ const MAX_RETRIES_FOR_TRANSIENT = 3;
 const RETRY_BASE_DELAY_MS = 500;
 /**
  * Creates and manages a single LSP server instance.
- *
- * @param {string} name — unique server identifier
- * @param {object} config — server config from lspConfig.js
- * @param {string} config.command — binary to run
- * @param {string[]} [config.args] — arguments
- * @param {Record<string,string>} [config.extensionToLanguage] — ext → languageId mapping
- * @param {string} [config.workspaceFolder] — workspace root
- * @param {number} [config.maxRestarts] — max restart attempts (default 3)
- * @param {number} [config.startupTimeout] — init timeout in ms
- * @param {Record<string,string>} [config.env] — extra env vars
- * @param {object} [config.initializationOptions] — server-specific init options
- * @returns {object} LSP server instance
  */
 export function createLspServerInstance(name: any, config: any) {
   // ── Private state ────────────────────────────────────────

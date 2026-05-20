@@ -10,7 +10,6 @@ import { DICTIONARY_BASE_URL } from "../../constants.ts";
 /**
  * Look up a word and return structured definition data.
 
- * @returns {Promise<object>} Normalized definition result
  */
 export async function fetchDefinition(word: any) {
   const url = `${DICTIONARY_BASE_URL}/${encodeURIComponent(word.toLowerCase().trim())}`;

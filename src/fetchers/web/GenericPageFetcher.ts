@@ -212,9 +212,6 @@ function extractMetadata($: any, url: any) {
 /**
  * Fetch and extract readable content from any URL.
  * No Puppeteer — uses fetch + Cheerio.
- *
-
-
  */
 export async function fetchGenericPage(url: any, options: Record<string, any> = {}) {
   const maxChars = options.maxChars ? parseInt(options.maxChars, 10) : MAX_BODY_CHARS;

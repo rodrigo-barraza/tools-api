@@ -4,10 +4,6 @@ import { getToolSchemas } from "./ToolSchemaService.ts";
 
 /**
  * Search all registered tool schemas by keyword, domain, or label.
- *
-
-
- * @returns {{ matches: Array, total: number, query: string }}
  */
 export function agenticToolSearch(query: any, { domain, label, limit = 20 }: Record<string, any> = {}) {
   const allSchemas = getToolSchemas();

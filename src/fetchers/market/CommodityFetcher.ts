@@ -17,8 +17,6 @@ const BATCH_SIZE = 40;
  *
  * Splits tickers into batches to stay comfortably within Yahoo Finance
  * limits and avoid request timeouts on large payloads.
- *
- * @returns {Promise<Array>} Array of normalized quote objects.
  */
 export async function fetchCommodities() {
   const tickers = Object.keys(COMMODITY_TICKERS);

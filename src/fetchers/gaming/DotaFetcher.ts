@@ -22,7 +22,6 @@ async function fetchJson(path: string): Promise<any> {
 
 /**
  * Get all heroes with stats.
- * @returns {Array} Hero list with localized names, roles, stats
  */
 export async function getHeroes() {
   const now = Date.now();
@@ -66,7 +65,6 @@ export async function getHeroes() {
 
 /**
  * Get a single hero by name or ID.
- * @param {string|number} query Hero name (partial match) or hero ID
  */
 export async function getHero(query: any) {
   const heroes = await getHeroes();
@@ -98,7 +96,6 @@ export async function getHero(query: any) {
 
 /**
  * Get hero matchup data (best/worst opponents).
- * @param {number} heroId Hero ID
  */
 export async function getHeroMatchups(heroId: any) {
   const matchups = await fetchJson(`/heroes/${heroId}/matchups`);
@@ -129,7 +126,6 @@ export async function getHeroMatchups(heroId: any) {
 
 /**
  * Get player profile by Steam account ID.
- * @param {number} accountId Steam32 account ID
  */
 export async function getPlayer(accountId: any) {
   const [profile, wl] = await Promise.all([
@@ -158,8 +154,6 @@ export async function getPlayer(accountId: any) {
 
 /**
  * Get player's recent matches.
- * @param {number} accountId Steam32 account ID
- * @param {number} limit Number of matches (default: 10)
  */
 export async function getPlayerRecentMatches(accountId: any, limit: any = 10) {
   const matches = await fetchJson(`/players/${accountId}/recentMatches`);
@@ -189,7 +183,6 @@ export async function getPlayerRecentMatches(accountId: any, limit: any = 10) {
 
 /**
  * Get match details by match ID.
- * @param {number} matchId Match ID
  */
 export async function getMatch(matchId: any) {
   const m = await fetchJson(`/matches/${matchId}`);
@@ -230,7 +223,6 @@ export async function getMatch(matchId: any) {
 
 /**
  * Get recent professional matches.
- * @param {number} limit Number of matches (default: 10)
  */
 export async function getProMatches(limit: any = 10) {
   const matches = await fetchJson("/proMatches");

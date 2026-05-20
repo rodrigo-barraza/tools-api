@@ -81,14 +81,6 @@ function validateLspPath(inputPath: any) {
 
 /**
  * Execute an LSP code intelligence operation.
- *
-
- * @param {string} params.operation — one of the OPERATIONS keys
- * @param {string} params.filePath — absolute path to the file
- * @param {number} [params.line] — 1-based line number
- * @param {number} [params.character] — 1-based character offset
- * @param {string} [params.workspacePath] — workspace root override
- * @returns {Promise<object>} formatted result
  */
 export async function agenticLspAction({ operation, filePath, line, character, workspacePath }: any) {
   // ── 1. Validate operation ──────────────────────────────────

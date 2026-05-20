@@ -43,7 +43,6 @@ const LightsDataService = {
   /**
    * List lights and their current state.
 
-   * @returns {Promise<Array>} Light objects with power, color, brightness, label, group, etc.
    */
   async listLights(selector: any = "all") {
     const data = await lightsApiFetch("GET", `/lights/${encodeURIComponent(selector)}`);
@@ -127,9 +126,6 @@ const LightsDataService = {
    * Breathe effect — slowly fades between two colors.
 
 
-   * @param {string} opts.color - Target color
-
-
    */
   async breatheEffect({ selector = "all", color, fromColor, period, cycles, persist, powerOn, peak }: any) {
     const body: Record<string, any> = {};
@@ -146,9 +142,6 @@ const LightsDataService = {
 
   /**
    * Pulse effect — quickly flashes between two colors.
-
-
-   * @param {string} opts.color - Target color
 
 
    */
@@ -222,7 +215,6 @@ const LightsDataService = {
 
   /**
    * List all saved LIFX scenes.
-   * @returns {Promise<Array>} Scene objects with uuid, name, and light states
    */
   async listScenes() {
     const data = await lightsApiFetch("GET", "/scenes");
@@ -253,7 +245,6 @@ const LightsDataService = {
 
   /**
    * Get night lock status.
-   * @returns {Promise<object>} { locked, lockedAt, unlockedAt, lockCount, unlockCount }
    */
   async getNightLockStatus() {
     return lightsApiFetch("GET", "/nightlock");
@@ -261,7 +252,6 @@ const LightsDataService = {
 
   /**
    * Toggle night lock on/off.
-   * @returns {Promise<object>} Updated night lock status
    */
   async toggleNightLock() {
     return lightsApiFetch("POST", "/nightlock/toggle");
@@ -279,7 +269,6 @@ const LightsDataService = {
 
   /**
    * Get service health and diagnostics.
-   * @returns {Promise<object>} Health data including uptime, automation phase, rate limits
    */
   async getHealth() {
     return lightsApiFetch("GET", "/health");

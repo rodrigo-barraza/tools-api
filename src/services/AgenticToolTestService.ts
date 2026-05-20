@@ -266,9 +266,6 @@ const TESTS = {
 
 /**
  * Run a smoke test for a single tool.
- *
-
- * @returns {Promise<object>} { tool, success, duration, message, details? }
  */
 export async function testTool(toolName: any) {
   // @ts-expect-error - TS7053: implicit any index
@@ -293,9 +290,6 @@ export async function testTool(toolName: any) {
 
 /**
  * Run smoke tests for all tools (or a subset).
- *
- * @param {string[]} [toolNames] — if omitted, runs all
- * @returns {Promise<object[]>} array of test results
  */
 export async function testAllTools(toolNames: any) {
   const names = toolNames || Object.keys(TESTS);
@@ -329,8 +323,6 @@ export async function testAllTools(toolNames: any) {
 
 /**
  * Get list of tools that have smoke tests.
- *
-
  */
 export function getTestableTools() {
   return Object.keys(TESTS);

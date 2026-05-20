@@ -7,7 +7,6 @@ const PRODUCT_HUNT_URL = "https://www.producthunt.com";
 /**
  * Scrapes Product Hunt's homepage for today's top products.
  * No API key required — HTML scraping.
- * @returns {Promise<Array>} Normalized trend objects
  */
 export async function fetchProductHuntTrends() {
   const response = await fetch(PRODUCT_HUNT_URL, {

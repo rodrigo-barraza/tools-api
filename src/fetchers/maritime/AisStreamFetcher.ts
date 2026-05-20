@@ -50,9 +50,6 @@ const stats = {
 /**
  * Start the AIS Stream WebSocket connection.
  * Automatically subscribes to a bounding box around the configured location.
- *
-
-
  */
 export function startAisStream(options: Record<string, any> = {}) {
   if (!CONFIG.AIS_STREAM_API_KEY) {
@@ -269,7 +266,6 @@ function processMessage(raw: any) {
 /**
  * Get the latest known positions for all tracked vessels.
 
- * @returns {object[]} Array of vessel data objects
  */
 export function getTrackedVessels(limit: any = 100) {
   const vessels = Array.from(vesselMap.values())
