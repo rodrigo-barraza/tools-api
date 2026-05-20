@@ -102,11 +102,11 @@ export async function agenticLspAction({ operation, filePath, line, character, w
 
   const resolvedPath = validation.resolved;
   // @ts-expect-error - suppress remaining error
-  const ext = extname(resolvedPath).toLowerCase();
+  const fileExtension = extname(resolvedPath).toLowerCase();
 
-  if (!SUPPORTED_EXTENSIONS.has(ext)) {
+  if (!SUPPORTED_EXTENSIONS.has(fileExtension)) {
     return {
-      error: `LSP does not support '${ext}' files. Supported: ${[...SUPPORTED_EXTENSIONS].join(", ")}`,
+      error: `LSP does not support '${fileExtension}' files. Supported: ${[...SUPPORTED_EXTENSIONS].join(", ")}`,
     };
   }
 
@@ -153,7 +153,7 @@ export async function agenticLspAction({ operation, filePath, line, character, w
     await manager.openFile(resolvedPath, fileContent);
   } catch (error: any) {
     return {
-      error: `LSP server failed to start for '${ext}' files: ${error.message}`,
+      error: `LSP server failed to start for '${fileExtension}' files: ${error.message}`,
       hint: "The language server may not be installed. Check that npx can find the server binary.",
     };
   }

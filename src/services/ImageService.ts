@@ -34,11 +34,11 @@ async function resolveInput(input: any, store: any) {
   if (input.startsWith("data:")) {
     const match = input.match(/^data:[^;]+;base64,(.+)$/s);
     if (!match) throw new Error("Invalid data URI format. Expected: data:<mime>;base64,<data>");
-    const buf = Buffer.from(match[1], "base64");
-    if (buf.length > MAX_INPUT_BYTES) {
+    const imageBuffer = Buffer.from(match[1], "base64");
+    if (imageBuffer.length > MAX_INPUT_BYTES) {
       throw new Error(`Input image exceeds ${MAX_INPUT_BYTES / 1024 / 1024} MB limit`);
     }
-    return buf;
+    return imageBuffer;
   }
 
   // ── URL ───────────────────────────────────────────────────
@@ -80,13 +80,13 @@ async function processWithSharp(inputBuffer: any, operations: any, outputFormat:
   for (const op of operations) {
     switch (op.type) {
       case "resize": {
-        const opts: Record<string, any> = {};
-        if (op.width) opts.width = Math.min(op.width, MAX_DIMENSION);
-        if (op.height) opts.height = Math.min(op.height, MAX_DIMENSION);
-        if (op.fit) opts.fit = op.fit;
-        if (op.background) opts.background = op.background;
-        if (op.withoutEnlargement !== undefined) opts.withoutEnlargement = op.withoutEnlargement;
-        pipeline = pipeline.resize(opts);
+        const options: Record<string, any> = {};
+        if (op.width) options.width = Math.min(op.width, MAX_DIMENSION);
+        if (op.height) options.height = Math.min(op.height, MAX_DIMENSION);
+        if (op.fit) options.fit = op.fit;
+        if (op.background) options.background = op.background;
+        if (op.withoutEnlargement !== undefined) options.withoutEnlargement = op.withoutEnlargement;
+        pipeline = pipeline.resize(options);
         break;
       }
 

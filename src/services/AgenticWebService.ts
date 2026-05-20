@@ -368,8 +368,8 @@ function htmlToMarkdown(html: any, { selector }: Record<string, any> = {}) {
         }
         case "img": {
           const alt = $node.attr("alt") || "";
-          const src = $node.attr("src") || "";
-          if (src) {
+          const sourceAttribute = $node.attr("sourceAttribute") || "";
+          if (sourceAttribute) {
             lines.push(`![${alt}](${src})`);
           }
           break;

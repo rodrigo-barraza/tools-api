@@ -131,18 +131,18 @@ async function qbtFetch(path: string, { method = "GET", body, params }: QbtFetch
 
   const headers: Record<string, string> = { Cookie: sid };
 
-  const opts: RequestInit = { method, headers };
+  const options: RequestInit = { method, headers };
 
   if (body && method !== "GET") {
     headers["Content-Type"] = "application/x-www-form-urlencoded";
-    opts.body = body instanceof URLSearchParams
+    options.body = body instanceof URLSearchParams
       ? body
       : new URLSearchParams(body);
   }
 
   let response: Response;
   try {
-    response = await fetch(url, opts);
+    response = await fetch(url, options);
   } catch (error: unknown) {
     throw new Error(`qBittorrent unreachable at ${baseUrl}: ${(error as Error).message}`);
   }
@@ -161,7 +161,7 @@ async function qbtFetch(path: string, { method = "GET", body, params }: QbtFetch
     sessionExpiry = 0;
     const newSid = await authenticate();
     headers.Cookie = newSid;
-    const retry = await fetch(url, { ...opts, headers });
+    const retry = await fetch(url, { ...options, headers });
     if (!retry.ok) {
       throw new Error(`qBittorrent API error: ${retry.status} ${retry.statusText}`);
     }
@@ -425,12 +425,12 @@ export async function updatePlugins() {
  */
 export async function addTorrent(urls: string, opts: AddTorrentOptions = {}) {
   const body: Record<string, string> = { urls: urls.replace(/\|/g, "\n") };
-  if (opts.savePath) body.savepath = opts.savePath;
-  if (opts.category) body.category = opts.category;
-  if (opts.tags) body.tags = opts.tags;
-  if (opts.paused !== undefined) body.paused = String(opts.paused);
-  if (opts.sequentialDownload) body.sequentialDownload = "true";
-  if (opts.firstLastPiece) body.firstLastPiecePrio = "true";
+  if (options.savePath) body.savepath = options.savePath;
+  if (options.category) body.category = options.category;
+  if (options.tags) body.tags = options.tags;
+  if (options.paused !== undefined) body.paused = String(options.paused);
+  if (options.sequentialDownload) body.sequentialDownload = "true";
+  if (options.firstLastPiece) body.firstLastPiecePrio = "true";
 
   await qbtFetch("/api/v2/torrents/add", {
     method: "POST",
@@ -445,12 +445,12 @@ export async function addTorrent(urls: string, opts: AddTorrentOptions = {}) {
  */
 export async function listTorrents(opts: ListTorrentsOptions = {}) {
   const params: Record<string, string> = {};
-  if (opts.filter) params.filter = opts.filter; // all|downloading|seeding|completed|paused|active|inactive|resumed|stalled|errored
-  if (opts.category) params.category = opts.category;
-  if (opts.tag) params.tag = opts.tag;
-  if (opts.sort) params.sort = opts.sort;
-  if (opts.limit) params.limit = String(opts.limit);
-  if (opts.offset) params.offset = String(opts.offset);
+  if (options.filter) params.filter = options.filter; // all|downloading|seeding|completed|paused|active|inactive|resumed|stalled|errored
+  if (options.category) params.category = options.category;
+  if (options.tag) params.tag = options.tag;
+  if (options.sort) params.sort = options.sort;
+  if (options.limit) params.limit = String(options.limit);
+  if (options.offset) params.offset = String(options.offset);
 
   const torrents = await qbtFetch("/api/v2/torrents/info", { params }) as QbtTorrentInfo[];
   return (Array.isArray(torrents) ? torrents : []).map((t) => ({

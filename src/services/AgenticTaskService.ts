@@ -20,11 +20,11 @@ const MAX_TASKS_PER_PROJECT = 200;
 
 export async function setupAgenticTaskCollection() {
   const db = getDB();
-  const col = db.collection(COLLECTION);
+  const collection = db.collection(COLLECTION);
 
-  await col.createIndex({ project: 1, taskId: 1 }, { unique: true });
-  await col.createIndex({ project: 1, status: 1 });
-  await col.createIndex({ project: 1, createdAt: -1 });
+  await collection.createIndex({ project: 1, taskId: 1 }, { unique: true });
+  await collection.createIndex({ project: 1, status: 1 });
+  await collection.createIndex({ project: 1, createdAt: -1 });
 
   logger.info(`   ✅ ${COLLECTION} indexes ensured`);
 }
@@ -68,10 +68,10 @@ export async function agenticTaskCreate(project: any, data: any) {
   }
 
   const db = getDB();
-  const col = db.collection(COLLECTION);
+  const collection = db.collection(COLLECTION);
 
   // Guard: cap tasks per project
-  const count = await col.countDocuments({ project });
+  const count = await collection.countDocuments({ project });
   if (count >= MAX_TASKS_PER_PROJECT) {
     return { error: `Task limit reached (${MAX_TASKS_PER_PROJECT}). Complete or delete existing tasks first.` };
   }
@@ -98,7 +98,7 @@ export async function agenticTaskCreate(project: any, data: any) {
     updatedAt: now,
   };
 
-  await col.insertOne(task);
+  await collection.insertOne(task);
 
   return {
     task: sanitize(task),
@@ -119,19 +119,19 @@ export async function agenticTaskList(project: any, { status, limit = 50 }: Reco
   }
 
   const db = getDB();
-  const col = db.collection(COLLECTION);
+  const collection = db.collection(COLLECTION);
 
   const filter: Record<string, any> = { project };
   if (status) filter.status = status;
 
-  const tasks = await col
+  const tasks = await collection
     .find(filter)
     .sort({ taskId: 1 })
     .limit(Math.min(limit, MAX_TASKS_PER_PROJECT))
     .toArray();
 
   // Summary counts
-  const allTasks = await col.find({ project }).toArray();
+  const allTasks = await collection.find({ project }).toArray();
   const summary = {
     total: allTasks.length,
     pending: allTasks.filter((t: any) => t.status === "pending").length,
@@ -191,16 +191,16 @@ export async function agenticTaskUpdate(project: any, taskId: any, updates: any)
   }
 
   const db = getDB();
-  const col = db.collection(COLLECTION);
+  const collection = db.collection(COLLECTION);
 
-  const existing = await col.findOne({ project, taskId: id });
+  const existing = await collection.findOne({ project, taskId: id });
   if (!existing) {
     return { error: `Task #${id} not found in project '${project}'` };
   }
 
   // Handle "deleted" as a special status — remove the task entirely
   if (updates.status === "deleted") {
-    await col.deleteOne({ project, taskId: id });
+    await collection.deleteOne({ project, taskId: id });
     return {
       task: sanitize(existing),
       message: `Task #${id} deleted`,
@@ -223,9 +223,9 @@ export async function agenticTaskUpdate(project: any, taskId: any, updates: any)
     }
   }
 
-  await col.updateOne({ project, taskId: id }, { $set });
+  await collection.updateOne({ project, taskId: id }, { $set });
 
-  const updated = await col.findOne({ project, taskId: id });
+  const updated = await collection.findOne({ project, taskId: id });
 
   return {
     task: sanitize(updated),
@@ -250,24 +250,24 @@ export async function agenticTaskDelete(project: any, taskId: any) {
   }
 
   const db = getDB();
-  const col = db.collection(COLLECTION);
+  const collection = db.collection(COLLECTION);
 
-  const existing = await col.findOne({ project, taskId: id });
+  const existing = await collection.findOne({ project, taskId: id });
   if (!existing) {
     return { error: `Task #${id} not found in project '${project}'` };
   }
 
   // Clean up references in other tasks
-  await col.updateMany(
+  await collection.updateMany(
     { project, blocks: id } as any,
     { $pull: { blocks: id } } as any,
   );
-  await col.updateMany(
+  await collection.updateMany(
     { project, blockedBy: id } as any,
     { $pull: { blockedBy: id } } as any,
   );
 
-  await col.deleteOne({ project, taskId: id });
+  await collection.deleteOne({ project, taskId: id });
 
   return {
     deleted: true,

@@ -1496,7 +1496,7 @@ router.post("/turtle", (req: Request, res: Response) => {
       error: "Maximum 5,000 commands per drawing",
     });
   }
-  const opts = {
+  const options = {
     canvasWidth: Math.min(options?.canvasWidth || 800, 1920),
     canvasHeight: Math.min(options?.canvasHeight || 600, 1080),
     background: options?.background || "#0f172a",
@@ -1508,11 +1508,11 @@ router.post("/turtle", (req: Request, res: Response) => {
   const newSessionId = sessionId || crypto.randomUUID().slice(0, 12);
   turtleSessions.set(newSessionId, {
     commands: [...commands],
-    options: { ...opts },
+    options: { ...options },
     updatedAt: Date.now(),
   });
   cleanupTurtleSessions();
-  const embedId = turtleStore.set({ commands, options: opts });
+  const embedId = turtleStore.set({ commands, options: options });
   const turtleEmbedUrl = buildLocalUrl("compute/turtle/embed", { id: embedId });
   res.json({
     turtleEmbedUrl,
@@ -1520,7 +1520,7 @@ router.post("/turtle", (req: Request, res: Response) => {
     turtleId: embedId,
     commandCount: commands.length,
     totalCommands: commands.length,
-    canvasSize: `${opts.canvasWidth}x${opts.canvasHeight}`,
+    canvasSize: `${options.canvasWidth}x${options.canvasHeight}`,
   });
 });
 router.get("/turtle/embed", (req: Request, res: Response) => {

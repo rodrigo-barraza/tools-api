@@ -23,8 +23,8 @@ async function tryAgentRoute(method: string, params: Record<string, unknown>, ta
   try {
     return await sendRpc(agent.id, method, params);
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
-    return { error: `Agent RPC failed: ${msg}` };
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { error: `Agent RPC failed: ${errorMessage}` };
   }
 }
 
@@ -172,21 +172,21 @@ export async function agenticReadFile(
     }
 
     // Binary detection
-    const ext = extname(resolved).toLowerCase();
-    if (BINARY_EXTENSIONS.has(ext)) {
+    const fileExtension = extname(resolved).toLowerCase();
+    if (BINARY_EXTENSIONS.has(fileExtension)) {
       const result: Record<string, unknown> = {
         filePath: resolved,
         isBinary: true,
-        extension: ext,
+        extension: fileExtension,
         sizeBytes: stats.size,
       };
 
       // Auto-include base64 for previewable image files under threshold
-      if (PREVIEW_IMAGE_EXTENSIONS.has(ext) && stats.size <= MAX_PREVIEW_BYTES) {
+      if (PREVIEW_IMAGE_EXTENSIONS.has(fileExtension) && stats.size <= MAX_PREVIEW_BYTES) {
         const buffer = await readFile(resolved);
         result.contentBase64 = buffer.toString("base64");
       } else {
-        result.message = `Binary file detected (${ext}). Content not returned.`;
+        result.message = `Binary file detected (${fileExtension}). Content not returned.`;
       }
 
       return result;
@@ -571,8 +571,8 @@ export async function agenticGrepSearch(
     async function searchFile(filePath: string) {
       if (results.length >= MAX_GREP_RESULTS) return;
 
-      const ext = extname(filePath).toLowerCase();
-      if (BINARY_EXTENSIONS.has(ext)) return;
+      const fileExtension = extname(filePath).toLowerCase();
+      if (BINARY_EXTENSIONS.has(fileExtension)) return;
 
       // Check blocked patterns
       const pathCheck = validatePath(filePath);
@@ -846,7 +846,7 @@ export async function agenticFileInfo(paths: string | string[]) {
       const resolved = validation.resolved;
       try {
         const stats = await stat(resolved);
-        const ext = extname(resolved).toLowerCase();
+        const fileExtension = extname(resolved).toLowerCase();
         const info: FileInfoResult = {
           path: resolved,
           exists: true,
@@ -854,12 +854,12 @@ export async function agenticFileInfo(paths: string | string[]) {
           isDirectory: stats.isDirectory(),
           sizeBytes: stats.size,
           lastModified: stats.mtime.toISOString(),
-          extension: ext || null,
-          isBinary: BINARY_EXTENSIONS.has(ext),
+          extension: fileExtension || null,
+          isBinary: BINARY_EXTENSIONS.has(fileExtension),
         };
 
         // Line count for text files
-        if (stats.isFile() && !BINARY_EXTENSIONS.has(ext) && stats.size <= MAX_READ_BYTES) {
+        if (stats.isFile() && !BINARY_EXTENSIONS.has(fileExtension) && stats.size <= MAX_READ_BYTES) {
           try {
             const content = await readFile(resolved, "utf-8");
             info.lines = content.split("\n").length;

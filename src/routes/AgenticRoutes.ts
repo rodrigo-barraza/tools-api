@@ -124,11 +124,11 @@ router.get("/file/raw", asyncHandler(async (req: Request, res: Response) => {
   }
 
   const resolved = validation.resolved;
-  const ext = extname(resolved).toLowerCase();
+  const fileExtension = extname(resolved).toLowerCase();
   // @ts-expect-error - TS7053: implicit any index
-  const mime = EXT_TO_MIME[ext];
+  const mime = EXT_TO_MIME[fileExtension];
   if (!mime) {
-    return res.status(415).json({ error: `Unsupported file type: ${ext}` });
+    return res.status(415).json({ error: `Unsupported file type: ${fileExtension}` });
   }
 
   try {
@@ -610,18 +610,18 @@ router.post("/task/list", agenticHandler(async (req: Request) => {
 router.get("/task/list-all", asyncHandler(async (req: Request) => {
   const { status, limit, agentSessionId } = req.query as any;
   const db = (await import("../db.js")).getDB();
-  const col = db.collection("agent_tasks");
+  const collection = db.collection("agent_tasks");
   const filter: Record<string, any> = {};
   if (status) filter.status = status;
   if (agentSessionId) filter.agentSessionId = agentSessionId;
-  const tasks = await col
+  const tasks = await collection
     .find(filter)
     .sort({ taskId: 1 })
     .limit(parseIntParam(limit, 100, 500))
     .toArray();
   // Summary counts (scoped to same filter base)
   const summaryFilter = agentSessionId ? { agentSessionId } : {};
-  const allTasks = await col.find(summaryFilter).toArray();
+  const allTasks = await collection.find(summaryFilter).toArray();
   const summary = {
     total: allTasks.length,
     pending: allTasks.filter((t: any) => t.status === "pending").length,

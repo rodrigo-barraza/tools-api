@@ -192,13 +192,13 @@ const TESTS = {
 
   move_file: () =>
     runTest("move_file", async () => {
-      const src = join(getFixtureDir(), "move_src.txt");
-      const dst = join(getFixtureDir(), "move_dst.txt");
-      await writeFile(src, "move test\n", "utf-8");
-      const result = await agenticMoveFile(src, dst);
+      const sourcePath = join(getFixtureDir(), "move_src.txt");
+      const destinationPath = join(getFixtureDir(), "move_dst.txt");
+      await writeFile(sourcePath, "move test\n", "utf-8");
+      const result = await agenticMoveFile(sourcePath, destinationPath);
       // Cleanup destination
-      try { await unlink(dst); } catch { /* ignore */ }
-      try { await unlink(src); } catch { /* ignore */ }
+      try { await unlink(destinationPath); } catch { /* ignore */ }
+      try { await unlink(sourcePath); } catch { /* ignore */ }
       return result;
     }),
 

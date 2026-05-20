@@ -9,7 +9,7 @@ const health = new HealthTracker();
 export function getDiscordHealth() {
   return health.getHealth();
 }
-const opts = { errorStatus: 500, health };
+const options = { errorStatus: 500, health };
 // ─── GET /messages/search ───────────────────────────────────────
 // Search Discord messages with flexible filters.
 // Query: ?guildId=...&channelId=...&userId=...&query=...&before=...&after=...&limit=50&mode=messages
@@ -28,7 +28,7 @@ router.get(
       mode: req.query.mode as string || "messages",
       includeBots: req.query.includeBots as string === "true",
     });
-  }, "Message search", opts),
+  }, "Message search", options),
 );
 // ─── GET /messages/stream ───────────────────────────────────────
 // SSE endpoint — streams Discord messages in real-time.
@@ -171,7 +171,7 @@ router.get(
       topN: parseIntParam(req.query.topN as string, 25),
       includeBots: req.query.includeBots as string === "true",
     });
-  }, "Message analytics", opts),
+  }, "Message analytics", options),
 );
 // ─── GET /activity ──────────────────────────────────────────────
 // Get server activity stats: top users, channel breakdown, hourly distribution.
@@ -185,6 +185,6 @@ router.get(
       days: parseIntParam(req.query.days as string, 7),
       topN: parseIntParam(req.query.topN as string, 15),
     });
-  }, "Server activity", opts),
+  }, "Server activity", options),
 );
 export default router;

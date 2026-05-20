@@ -201,7 +201,7 @@ export function findFoodSubstitutes({
     // Match target nutrient names to columns
     const matched: any[] = [];
     for (const target of targets) {
-      const col = ALL_NUTRIENT_COLUMNS.find(
+      const collection = ALL_NUTRIENT_COLUMNS.find(
         (c: any) => c === target || c.includes(target),
       );
       if (col) matched.push(col);

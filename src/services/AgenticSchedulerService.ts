@@ -26,12 +26,12 @@ let pollerInterval: any = null;
 
 export async function setupAgenticScheduleCollection() {
   const db = getDB();
-  const col = db.collection(COLLECTION);
+  const collection = db.collection(COLLECTION);
 
-  await col.createIndex({ project: 1, scheduleId: 1 }, { unique: true });
-  await col.createIndex({ project: 1, type: 1 });
-  await col.createIndex({ nextRunAt: 1 });
-  await col.createIndex({ type: 1, name: 1 });
+  await collection.createIndex({ project: 1, scheduleId: 1 }, { unique: true });
+  await collection.createIndex({ project: 1, type: 1 });
+  await collection.createIndex({ nextRunAt: 1 });
+  await collection.createIndex({ type: 1, name: 1 });
 
   logger.info(`   ✅ ${COLLECTION} indexes ensured`);
 }
@@ -113,10 +113,10 @@ export async function agenticScheduleCreate(data: any) {
   }
 
   const db = getDB();
-  const col = db.collection(COLLECTION);
+  const collection = db.collection(COLLECTION);
 
   // Guard: cap schedules per project
-  const count = await col.countDocuments({ project });
+  const count = await collection.countDocuments({ project });
   if (count >= MAX_SCHEDULES_PER_PROJECT) {
     return { error: `Schedule limit reached (${MAX_SCHEDULES_PER_PROJECT}). Delete existing schedules first.` };
   }
@@ -149,7 +149,7 @@ export async function agenticScheduleCreate(data: any) {
     updatedAt: now,
   };
 
-  await col.insertOne(document);
+  await collection.insertOne(document);
 
   return {
     schedule: sanitize(document),
@@ -168,12 +168,12 @@ export async function agenticScheduleList(project: any, { type, limit = 50 }: Re
   }
 
   const db = getDB();
-  const col = db.collection(COLLECTION);
+  const collection = db.collection(COLLECTION);
 
   const filter: Record<string, any> = { project };
   if (type) filter.type = type;
 
-  const schedules = await col
+  const schedules = await collection
     .find(filter)
     .sort({ scheduleId: 1 })
     .limit(Math.min(limit, MAX_SCHEDULES_PER_PROJECT))
@@ -200,14 +200,14 @@ export async function agenticScheduleDelete(project: any, scheduleId: any) {
   }
 
   const db = getDB();
-  const col = db.collection(COLLECTION);
+  const collection = db.collection(COLLECTION);
 
-  const existing = await col.findOne({ project, scheduleId: id });
+  const existing = await collection.findOne({ project, scheduleId: id });
   if (!existing) {
     return { error: `Schedule #${id} not found in project '${project}'` };
   }
 
-  await col.deleteOne({ project, scheduleId: id });
+  await collection.deleteOne({ project, scheduleId: id });
 
   return {
     deleted: true,
@@ -228,9 +228,9 @@ export async function agenticTriggerFire(project: any, triggerName: any, payload
   }
 
   const db = getDB();
-  const col = db.collection(COLLECTION);
+  const collection = db.collection(COLLECTION);
 
-  const trigger = await col.findOne({
+  const trigger = await collection.findOne({
     project,
     type: "trigger",
     name: triggerName,
@@ -245,7 +245,7 @@ export async function agenticTriggerFire(project: any, triggerName: any, payload
   const result = await firePrismAgent(trigger, payload);
 
   // Update run stats
-  await col.updateOne(
+  await collection.updateOne(
     { _id: trigger._id },
     {
       $set: { lastRunAt: new Date(), updatedAt: new Date() },
@@ -275,12 +275,12 @@ export function startSchedulePoller() {
   pollerInterval = setInterval(async () => {
     try {
       const db = getDB();
-      const col = db.collection(COLLECTION);
+      const collection = db.collection(COLLECTION);
 
       const now = new Date();
 
       // Find due schedules (time-based only, not triggers)
-      const dueSchedules = await col.find({
+      const dueSchedules = await collection.find({
         type: { $in: ["cron", "once"] },
         enabled: true,
         nextRunAt: { $lte: now },
@@ -309,7 +309,7 @@ export function startSchedulePoller() {
             if (!updates.nextRunAt) updates.enabled = false;
           }
 
-          await col.updateOne(
+          await collection.updateOne(
             { _id: schedule._id },
             { $set: updates, $inc: { runCount: 1 } },
           );

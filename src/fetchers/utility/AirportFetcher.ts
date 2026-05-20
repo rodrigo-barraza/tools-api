@@ -24,15 +24,15 @@ function parseCSVLine(line: any) {
   let inQuotes = false;
 
   for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') {
+    const character = line[i];
+    if (character === '"') {
       if (inQuotes && line[i + 1] === '"') {
         current += '"';
         i++;
       } else {
         inQuotes = !inQuotes;
       }
-    } else if (ch === "," && !inQuotes) {
+    } else if (character === "," && !inQuotes) {
       fields.push(current.trim());
       current = "";
     } else {
@@ -84,8 +84,8 @@ function ensureLoaded() {
     headers.forEach((h: any, index: any) => {
       const value = values[index] || "";
       if (NUMERIC_FIELDS.has(h)) {
-        const num = parseFloat(value);
-        row[h] = isNaN(num) ? null : num;
+        const parsedNumber = parseFloat(value);
+        row[h] = isNaN(parsedNumber) ? null : num;
       } else {
         row[h] = value || null;
       }

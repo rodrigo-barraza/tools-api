@@ -45,8 +45,8 @@ export function createLspServerManager(workspaceFolder: any) {
         }
 
         // Build extension → server mapping
-        for (const ext of Object.keys(config.extensionToLanguage)) {
-          const normalized = ext.toLowerCase();
+        for (const fileExtension of Object.keys(config.extensionToLanguage)) {
+          const normalized = fileExtension.toLowerCase();
           if (!extensionMap.has(normalized)) {
             extensionMap.set(normalized, []);
           }
@@ -78,8 +78,8 @@ export function createLspServerManager(workspaceFolder: any) {
    * Get the server instance for a given file path based on extension.
    */
   function getServerForFile(filePath: any) {
-    const ext = extname(filePath).toLowerCase();
-    const serverNames = extensionMap.get(ext);
+    const fileExtension = extname(filePath).toLowerCase();
+    const serverNames = extensionMap.get(fileExtension);
     if (!serverNames || serverNames.length === 0) return undefined;
     return servers.get(serverNames[0]);
   }
@@ -136,8 +136,8 @@ export function createLspServerManager(workspaceFolder: any) {
     // Skip if already open on this server
     if (openedFiles.get(fileUri) === server.name) return;
 
-    const ext = extname(filePath).toLowerCase();
-    const languageId = server.config.extensionToLanguage[ext] || "plaintext";
+    const fileExtension = extname(filePath).toLowerCase();
+    const languageId = server.config.extensionToLanguage[fileExtension] || "plaintext";
 
     try {
       await server.sendNotification("textDocument/didOpen", {

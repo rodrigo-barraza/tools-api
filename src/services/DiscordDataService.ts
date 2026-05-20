@@ -79,12 +79,12 @@ function extractRoleTags(roles: any, guildId: any) {
 function buildAvatarUrl(author: any, member?: any, guildId?: any) {
   if (!author) return null;
   if (member?.avatar && author.id && guildId) {
-    const ext = member.avatar.startsWith("a_") ? "gif" : "png";
-    return `https://cdn.discordapp.com/guilds/${guildId}/users/${author.id}/avatars/${member.avatar}.${ext}?size=128`;
+    const fileExtension = member.avatar.startsWith("a_") ? "gif" : "png";
+    return `https://cdn.discordapp.com/guilds/${guildId}/users/${author.id}/avatars/${member.avatar}.${fileExtension}?size=128`;
   }
   if (author.avatar && author.id) {
-    const ext = author.avatar.startsWith("a_") ? "gif" : "png";
-    return `https://cdn.discordapp.com/avatars/${author.id}/${author.avatar}.${ext}?size=128`;
+    const fileExtension = author.avatar.startsWith("a_") ? "gif" : "png";
+    return `https://cdn.discordapp.com/avatars/${author.id}/${author.avatar}.${fileExtension}?size=128`;
   }
   return author.defaultAvatarURL || null;
 }
@@ -96,9 +96,9 @@ function buildAvatarUrl(author: any, member?: any, guildId?: any) {
  */
 function resolveArchivedUrl(url: any, archiveMap: any) {
   if (!url || !archiveMap) return url;
-  const ref = archiveMap[url];
+  const archiveReference = archiveMap[url];
   // If the entry was marked as expired during backfill, it has no publicUrl
-  if (ref?.publicUrl) return ref.publicUrl;
+  if (ref?.publicUrl) return archiveReference.publicUrl;
   return url;
 }
 
@@ -176,19 +176,19 @@ const DiscordDataService = {
     mode = "messages",
     includeBots = false,
   }: Record<string, any> = {}) {
-    const col = getMessagesCollection();
+    const collection = getMessagesCollection();
     const filter = buildBaseFilter({ guildId, channelId, userId, username, query, before, after, includeBots });
     const cappedLimit = Math.min(limit, 500);
 
     // ── Count mode — return only the total, zero payloads ──────
     if (mode === "count") {
-      const total = await col.countDocuments(filter);
+      const total = await collection.countDocuments(filter);
       return { count: total };
     }
 
     // ── Compact mode — minimal per-message data ───────────────
     if (mode === "compact") {
-      const messages = await col
+      const messages = await collection
         .find(filter)
         .sort({ createdTimestamp: -1 })
         .limit(cappedLimit)
@@ -228,7 +228,7 @@ const DiscordDataService = {
     }
 
     // ── Messages mode — full message objects (default) ─────────
-    const messages = await col
+    const messages = await collection
       .find(filter)
       .sort({ createdTimestamp: -1 })
       .limit(cappedLimit)
@@ -440,7 +440,7 @@ const DiscordDataService = {
     topN = 25,
     includeBots = false,
   }: Record<string, any> = {}) {
-    const col = getMessagesCollection();
+    const collection = getMessagesCollection();
     const filter = buildBaseFilter({ guildId, channelId, userId, username, query, before, after, includeBots });
     const cappedTopN = Math.min(topN, 100);
 
@@ -520,8 +520,8 @@ const DiscordDataService = {
     ];
 
     const [results, totalCount] = await Promise.all([
-      col.aggregate(pipeline).toArray(),
-      col.countDocuments(filter),
+      collection.aggregate(pipeline).toArray(),
+      collection.countDocuments(filter),
     ]);
 
     // ── Format results with human-readable labels ─────────────
@@ -583,7 +583,7 @@ const DiscordDataService = {
     days = 7,
     topN = 15,
   }: Record<string, any> = {}) {
-    const col = getMessagesCollection();
+    const collection = getMessagesCollection();
     const cappedDays = Math.min(days, 365);
     const sinceTimestamp = Date.now() - daysToMs(cappedDays);
 
@@ -605,10 +605,10 @@ const DiscordDataService = {
       hourlyActivity,
     ] = await Promise.all([
       // Total message count
-      col.countDocuments(match),
+      collection.countDocuments(match),
 
       // Top users by message count
-      col.aggregate([
+      collection.aggregate([
         { $match: match },
         {
           $group: {
@@ -623,7 +623,7 @@ const DiscordDataService = {
       ]).toArray(),
 
       // Channel breakdown (top 10)
-      col.aggregate([
+      collection.aggregate([
         { $match: { ...match, channelId: channelId ? channelId : { $exists: true } } },
         {
           $group: {
@@ -636,7 +636,7 @@ const DiscordDataService = {
       ]).toArray(),
 
       // Hourly activity distribution
-      col.aggregate([
+      collection.aggregate([
         { $match: match },
         {
           $group: {
@@ -649,7 +649,7 @@ const DiscordDataService = {
     ]);
 
     // Unique users count
-    const uniqueUsersResult = await col.aggregate([
+    const uniqueUsersResult = await collection.aggregate([
       { $match: match },
       { $group: { _id: "$author.id" } },
       { $count: "total" },

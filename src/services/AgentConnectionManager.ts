@@ -155,8 +155,8 @@ export function initAgentWebSocket(httpServer: Server) {
         const message = JSON.parse(data.toString()) as AgentRpcMessage;
         handleAgentMessage(ws, message, clientIp);
       } catch (error: unknown) {
-        const msg = error instanceof Error ? error.message : String(error);
-        logger.error(`[AgentWS] Invalid message: ${msg}`);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logger.error(`[AgentWS] Invalid message: ${errorMessage}`);
       }
     });
 
@@ -227,12 +227,12 @@ export function initAgentWebSocket(httpServer: Server) {
           const result = await sendRpc(route.id, message.method, message.params);
           sendJson(ws, { jsonrpc: "2.0", id: message.id, result });
         } catch (error: unknown) {
-          const msg = error instanceof Error ? error.message : String(error);
-          sendJson(ws, { jsonrpc: "2.0", id: message.id, error: { code: -32000, message: msg } });
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          sendJson(ws, { jsonrpc: "2.0", id: message.id, error: { code: -32000, message: errorMessage } });
         }
       } catch (error: unknown) {
-        const msg = error instanceof Error ? error.message : String(error);
-        logger.error(`[ClientWS] Invalid message: ${msg}`);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logger.error(`[ClientWS] Invalid message: ${errorMessage}`);
       }
     });
 
@@ -594,8 +594,8 @@ async function rebuildAllowedRootsFromAgents() {
 
     refreshAllowedRoots([...userRoots, ...agentRoots]);
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
-    logger.warn(`[AgentWS] Failed to rebuild allowed roots: ${msg}`);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.warn(`[AgentWS] Failed to rebuild allowed roots: ${errorMessage}`);
   }
 }
 

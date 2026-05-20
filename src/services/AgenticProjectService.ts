@@ -55,17 +55,17 @@ export async function agenticProjectSummary(projectPath: any) {
   // ── Package.json Analysis ────────────────────────────────
   try {
     const pkgRaw = await readFile(join(root, "package.json"), "utf-8");
-    const pkg = JSON.parse(pkgRaw);
+    const packageJson = JSON.parse(pkgRaw);
 
     result.packageManager = "npm";
-    result.version = pkg.version || null;
-    result.description = pkg.description || null;
-    result.scripts = pkg.scripts || {};
-    result.dependencies = Object.keys(pkg.dependencies || {});
-    result.devDependencies = Object.keys(pkg.devDependencies || {});
+    result.version = packageJson.version || null;
+    result.description = packageJson.description || null;
+    result.scripts = packageJson.scripts || {};
+    result.dependencies = Object.keys(packageJson.dependencies || {});
+    result.devDependencies = Object.keys(packageJson.devDependencies || {});
 
     // Detect framework from dependencies
-    const allDeps = { ...pkg.dependencies, ...pkg.devDependencies };
+    const allDeps = { ...packageJson.dependencies, ...packageJson.devDependencies };
     const frameworks: any[] = [];
     if (allDeps["next"]) frameworks.push("next.js");
     if (allDeps["react"]) frameworks.push("react");
@@ -77,7 +77,7 @@ export async function agenticProjectSummary(projectPath: any) {
     if (allDeps["@angular/core"]) frameworks.push("angular");
 
     result.frameworks = frameworks;
-    result.type = pkg.type || "commonjs";
+    result.type = packageJson.type || "commonjs";
   } catch {
     // Not a Node.js project — check for Python
     try {

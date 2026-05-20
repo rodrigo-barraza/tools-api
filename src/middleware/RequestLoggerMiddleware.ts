@@ -212,13 +212,13 @@ export async function getRequestStats(since?: string) {
 export async function setupRequestsCollection() {
   try {
     const db = getDB();
-    const col = db.collection(COLLECTION);
+    const collection = db.collection(COLLECTION);
 
     await Promise.all([
-      col.createIndex({ timestamp: -1 }),
-      col.createIndex({ method: 1, timestamp: -1 }),
-      col.createIndex({ status: 1, timestamp: -1 }),
-      col.createIndex({ path: 1, timestamp: -1 }),
+      collection.createIndex({ timestamp: -1 }),
+      collection.createIndex({ method: 1, timestamp: -1 }),
+      collection.createIndex({ status: 1, timestamp: -1 }),
+      collection.createIndex({ path: 1, timestamp: -1 }),
     ]);
 
     logger.info(`📊 requests collection indexes ensured`);

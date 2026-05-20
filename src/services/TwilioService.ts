@@ -64,14 +64,14 @@ export async function sendSms(to: any, body: any, from: any) {
 export async function listMessages(filters: Record<string, any> = {}) {
   const c = getClient();
 
-  const opts: Record<string, any> = {
+  const options: Record<string, any> = {
     limit: Math.min(parseInt(filters.limit) || 20, 100),
   };
-  if (filters.to) opts.to = filters.to;
-  if (filters.from) opts.from = filters.from;
-  if (filters.dateSent) opts.dateSent = new Date(filters.dateSent);
+  if (filters.to) options.to = filters.to;
+  if (filters.from) options.from = filters.from;
+  if (filters.dateSent) options.dateSent = new Date(filters.dateSent);
 
-  const messages = await c.messages.list(opts);
+  const messages = await c.messages.list(options);
 
   return {
     count: messages.length,

@@ -529,15 +529,15 @@ export async function getToolCallStats(since?: string) {
 export async function setupToolCallsCollection() {
   try {
     const db = getDB();
-    const col = db.collection(COLLECTION);
+    const collection = db.collection(COLLECTION);
 
     await Promise.all([
-      col.createIndex({ timestamp: -1 }),
-      col.createIndex({ toolName: 1, timestamp: -1 }),
-      col.createIndex({ domain: 1, timestamp: -1 }),
-      col.createIndex({ success: 1, timestamp: -1 }),
-      col.createIndex({ callerAgent: 1, timestamp: -1 }),
-      col.createIndex({ elapsedMs: -1 }),
+      collection.createIndex({ timestamp: -1 }),
+      collection.createIndex({ toolName: 1, timestamp: -1 }),
+      collection.createIndex({ domain: 1, timestamp: -1 }),
+      collection.createIndex({ success: 1, timestamp: -1 }),
+      collection.createIndex({ callerAgent: 1, timestamp: -1 }),
+      collection.createIndex({ elapsedMs: -1 }),
     ]);
 
     logger.info(`📊 tool_calls collection indexes ensured`);
