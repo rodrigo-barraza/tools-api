@@ -1,3 +1,4 @@
+import type { Document } from "mongodb";
 import { getDB } from "../db.ts";
 import logger from "../logger.ts";
 
@@ -10,20 +11,27 @@ import logger from "../logger.ts";
 //   Arrays:  { _id: "current", items: [...], updatedAt }
 // ═══════════════════════════════════════════════════════════════
 
+interface StateDocument extends Document {
+  _id: string;
+  updatedAt: Date;
+  items?: unknown[];
+  [key: string]: unknown;
+}
+
 /**
  * Save the latest collector state to a dedicated collection.
  * Objects are spread at the top level. Arrays are stored under `items`.
  */
-export async function saveState(collectionName: any, data: any) {
+export async function saveState(collectionName: string, data: unknown[] | Record<string, unknown>) {
   try {
     const db = getDB();
-    const document = Array.isArray(data)
+    const document: StateDocument = Array.isArray(data)
       ? { _id: "current", items: data, updatedAt: new Date() }
       : { _id: "current", ...data, updatedAt: new Date() };
 
     await db
-      .collection(collectionName)
-      .replaceOne({ _id: "current" as any }, document, { upsert: true });
+      .collection<StateDocument>(collectionName)
+      .replaceOne({ _id: "current" }, document, { upsert: true });
   } catch (error: unknown) {
     logger.error(
       `[State] ⚠️ Failed to save "${collectionName}": ${(error as Error).message}`,
@@ -35,12 +43,12 @@ export async function saveState(collectionName: any, data: any) {
  * Load the latest state from a dedicated collection.
  * Reconstructs the original payload shape (object or array).
  */
-export async function loadState(collectionName: any) {
+export async function loadState(collectionName: string) {
   try {
     const db = getDB();
     const document = await db
-      .collection(collectionName)
-      .findOne({ _id: "current" as any });
+      .collection<StateDocument>(collectionName)
+      .findOne({ _id: "current" });
     if (!document) return null;
 
     const { _id, updatedAt, items, ...rest } = document;

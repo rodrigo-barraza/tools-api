@@ -2,6 +2,13 @@ import { hours as hoursToMs } from "@rodrigo-barraza/utilities-library";
 import { getDB } from "../db.ts";
 import logger from "../logger.ts";
 
+// ─── Types ──────────────────────────────────────────────────────
+export interface CommodityQuoteInput {
+  ticker: string;
+  fetchedAt: string | Date;
+  [key: string]: unknown;
+}
+
 /**
  * Set up the commodity_snapshots collection with a TTL index.
  */
@@ -18,12 +25,12 @@ export async function setupCommodityCollection() {
 /**
  * Insert a batch of commodity snapshots.
  */
-export async function insertSnapshots(quotes: any) {
+export async function insertSnapshots(quotes: CommodityQuoteInput[]) {
   if (!quotes.length) return;
 
   const db = getDB();
   const collection = db.collection("commodity_snapshots");
-  const docs = quotes.map((q: any) => ({
+  const docs = quotes.map((q: CommodityQuoteInput) => ({
     ...q,
     fetchedAt: new Date(q.fetchedAt),
   }));
@@ -35,7 +42,7 @@ export async function insertSnapshots(quotes: any) {
 /**
  * Get historical price data for a specific ticker.
  */
-export async function getHistory(ticker: any, hours: any = 24) {
+export async function getHistory(ticker: string, hours: number = 24) {
   const db = getDB();
   const collection = db.collection("commodity_snapshots");
   const since = new Date(Date.now() - hoursToMs(hours));

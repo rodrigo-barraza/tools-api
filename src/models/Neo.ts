@@ -1,7 +1,19 @@
+import type { Collection } from "mongodb";
 import { getDB } from "../db.ts";
 import logger from "../logger.ts";
 
-let collection: any = null;
+// ─── Types ──────────────────────────────────────────────────────
+export interface NeoDocument {
+  neoId: string;
+  closeApproachDate?: Date;
+  isPotentiallyHazardous?: boolean;
+  missDistanceKm?: number;
+  lastSeen?: Date;
+  firstSeen?: Date;
+  [key: string]: unknown;
+}
+
+let collection: Collection<NeoDocument> | null = null;
 
 /**
  * Initialize the neos collection with required indexes.
@@ -10,7 +22,7 @@ export async function setupNeoCollection() {
   const db = getDB();
   if (!db) throw new Error("Database not connected");
 
-  collection = db.collection("neos");
+  collection = db.collection<NeoDocument>("neos");
 
   await collection.createIndex({ neoId: 1 }, { unique: true });
   await collection.createIndex({ closeApproachDate: -1 });
@@ -22,10 +34,10 @@ export async function setupNeoCollection() {
 /**
  * Bulk upsert NEOs by NASA reference ID.
  */
-export async function upsertNeos(neos: any) {
+export async function upsertNeos(neos: NeoDocument[]) {
   if (!collection || neos.length === 0) return { upserted: 0, modified: 0 };
 
-  const operations = neos.map((neo: any) => ({
+  const operations = neos.map((neo: NeoDocument) => ({
     updateOne: {
       filter: { neoId: neo.neoId },
       update: {
@@ -49,16 +61,16 @@ export async function upsertNeos(neos: any) {
  * Query recent NEOs from the database.
  */
 export async function getRecentNeos(
-  days: any = 7,
-  hazardousOnly: any = false,
-  limit: any = 100,
+  days: number = 7,
+  hazardousOnly: boolean = false,
+  limit: number = 100,
 ) {
   if (!collection) return [];
 
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
 
-  const query: Record<string, any> = { lastSeen: { $gte: cutoff } };
+  const query: Record<string, unknown> = { lastSeen: { $gte: cutoff } };
   if (hazardousOnly) query.isPotentiallyHazardous = true;
 
   return collection

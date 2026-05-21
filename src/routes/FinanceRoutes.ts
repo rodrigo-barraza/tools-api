@@ -110,7 +110,7 @@ router.get("/macro/indicators", asyncHandler(
   "Key indicators fetch",
 ));
 router.get("/macro/search", asyncHandler(async (req: Request, res: Response) => {
-  const { q, limit, orderBy } = req.query as any;
+  const { q, limit, orderBy } = req.query as Record<string, string | undefined>;
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
@@ -121,7 +121,7 @@ router.get("/macro/search", asyncHandler(async (req: Request, res: Response) => 
 }));
 router.get("/macro/series/:seriesId/observations", asyncHandler(
   (req: Request) => {
-    const { limit, sortOrder, observationStart, observationEnd } = req.query as any;
+    const { limit, sortOrder, observationStart, observationEnd } = req.query as Record<string, string | undefined>;
     return getSeriesObservations(req.params.seriesId as string, {
       limit: parseInt(limit, 10) || 50,
       sortOrder,
@@ -138,40 +138,35 @@ router.get("/macro/series/:seriesId", asyncHandler(
 // ─── Health ────────────────────────────────────────────────────────
 export function getFinanceHealth() {
   const health = getHealth();
-  (health as any).fred = "on-demand";
-  return health;
+  return { ...health, fred: "on-demand" };
 }
 // ── Unified Stock Data Dispatcher ──────────────────────────────────
 router.get("/stock/data", asyncHandler(async (req: Request, res: Response) => {
-  const { action, symbol } = req.query as any;
+  const { action, symbol } = req.query as Record<string, string | undefined>;
   if (!action || !symbol) return res.status(400).json({ error: "'action' and 'symbol' are required", actions: ["quote", "profile", "recommendation", "financials"] });
-  const pathMap = {
+  const pathMap: Record<string, string> = {
     quote: `/quote/${symbol}`,
     profile: `/profile/${symbol}`,
     recommendation: `/recommendation/${symbol}`,
     financials: `/financials/${symbol}`,
   };
-  // @ts-expect-error - TS7053: implicit any index
-  if (!pathMap[action]) return res.status(400).json({ error: `Unknown action: ${action}`, actions: Object.keys(pathMap) });
+  if (!action || !pathMap[action]) return res.status(400).json({ error: `Unknown action: ${action}`, actions: Object.keys(pathMap) });
   // Internal redirect: re-use existing routes by forwarding the request
-  // @ts-expect-error - TS7053: implicit any index
   req.url = pathMap[action];
   req.params.symbol = symbol;
   return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
 }));
 // ── Unified Macro Data Dispatcher ──────────────────────────────────
 router.get("/macro/data", asyncHandler(async (req: Request, res: Response) => {
-  const { action, q, seriesId, limit, orderBy, sortOrder, observationStart, observationEnd } = req.query as any;
+  const { action, q, seriesId, limit, orderBy, sortOrder, observationStart, observationEnd } = req.query as Record<string, string | undefined>;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["indicators", "search", "series", "observations"] });
-  const pathMap = {
+  const pathMap: Record<string, string> = {
     indicators: "/macro/indicators",
     search: `/macro/search?q=${q || ""}&limit=${limit || 10}&orderBy=${orderBy || ""}`,
     series: `/macro/series/${seriesId || "GDP"}`,
     observations: `/macro/series/${seriesId || "GDP"}/observations?limit=${limit || 10}&sortOrder=${sortOrder || "desc"}&observationStart=${observationStart || ""}&observationEnd=${observationEnd || ""}`,
   };
-  // @ts-expect-error - TS7053: implicit any index
-  if (!pathMap[action]) return res.status(400).json({ error: `Unknown action: ${action}`, actions: Object.keys(pathMap) });
-  // @ts-expect-error - TS7053: implicit any index
+  if (!action || !pathMap[action]) return res.status(400).json({ error: `Unknown action: ${action}`, actions: Object.keys(pathMap) });
   req.url = pathMap[action];
   if (seriesId) req.params.seriesId = seriesId;
   return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));

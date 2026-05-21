@@ -274,7 +274,7 @@ router.post("/describe-image", asyncHandler(async (req: Request, res: Response) 
   const { project: callerProject, username: callerUsername, agent: callerAgent, traceId: callerTraceId, agentSessionId: callerAgentSessionId } = extractCallerContext(req);
 
   // Tailor the prompt based on image context
-  const prompts = {
+  const prompts: Record<string, string> = {
     avatar:
       "Describe this profile picture/avatar. Focus on the person's appearance, " +
       "style, notable features, and any artistic elements. Make no mention about quality or resolution.",
@@ -284,7 +284,6 @@ router.post("/describe-image", asyncHandler(async (req: Request, res: Response) 
     photo: "Describe this image. Make no mention about the quality, resolution, or pixelation.",
     general: "Describe this image. Make no mention about the quality, resolution, or pixelation.",
   };
-  // @ts-expect-error - TS7053: implicit any index
   const visionPrompt = prompts[context] || prompts.general;
 
   try {

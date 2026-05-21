@@ -7,17 +7,31 @@ import { EARTHQUAKE_MAGNITUDE_SCALE } from "../constants.ts";
  * not a single rolling snapshot.
  */
 
-const cache = {
-  events: [] as any[],
-  lastFetch: null as any,
-  error: null as any,
+interface EarthquakeEvent {
+  magnitude: number;
+  [key: string]: unknown;
+}
+
+interface CacheError {
+  message: string;
+  time: string;
+}
+
+const cache: {
+  events: EarthquakeEvent[];
+  lastFetch: Date | null;
+  error: CacheError | null;
+} = {
+  events: [],
+  lastFetch: null,
+  error: null,
 };
 
 /**
  * Update the cache with freshly fetched earthquake events.
  * Persists to MongoDB via upsert (deduplication by USGS ID).
  */
-export async function updateEarthquakes(events: any) {
+export async function updateEarthquakes(events: EarthquakeEvent[]) {
   cache.events = events;
   cache.lastFetch = new Date();
   cache.error = null;
@@ -30,7 +44,7 @@ export async function updateEarthquakes(events: any) {
  * Restore earthquakes from a DB snapshot into the in-memory cache.
  * Memory-only — no MongoDB upsert.
  */
-export function restoreEarthquakes(events: any) {
+export function restoreEarthquakes(events: EarthquakeEvent[]) {
   cache.events = events;
   cache.lastFetch = new Date();
   cache.error = null;
@@ -39,7 +53,7 @@ export function restoreEarthquakes(events: any) {
 /**
  * Record a fetch error.
  */
-export function setEarthquakeError(error: any) {
+export function setEarthquakeError(error: { message: string }) {
   cache.error = {
     message: error.message,
     time: new Date().toISOString(),
@@ -57,17 +71,17 @@ export function getLatestEarthquakes() {
  * Get a summary of the latest feed — counts by magnitude bracket + strongest event.
  */
 export function getEarthquakeSummary() {
-  const counts: Record<string, any> = {};
+  const counts: Record<string, number> = {};
   for (const scale of EARTHQUAKE_MAGNITUDE_SCALE) {
     counts[scale.label] = 0;
   }
 
-  let strongest: any = null;
+  let strongest: EarthquakeEvent | null = null;
 
   for (const event of cache.events) {
     // Classify into magnitude bracket
     const scale = EARTHQUAKE_MAGNITUDE_SCALE.find(
-      (s: any) => event.magnitude >= s.min && event.magnitude < s.max,
+      (s) => event.magnitude >= s.min && event.magnitude < s.max,
     );
     if (scale) {
       counts[scale.label]++;

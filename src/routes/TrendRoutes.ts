@@ -59,10 +59,9 @@ export function getTrendHealth() {
 }
 // ── Unified Trends Dispatcher ──────────────────────────────────────
 router.get("/data", asyncHandler(async (req: Request, res: Response) => {
-  const { action, source, hours, limit: rawLimit } = req.query as any;
+  const { action, source, hours, limit: rawLimit } = req.query as Record<string, string | undefined>;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["current", "hot", "top"] });
-  // @ts-expect-error - suppress remaining error
-  const limit = parseIntParam(rawLimit, undefined);
+  const limit = rawLimit ? parseIntParam(rawLimit, 20) : undefined;
   switch (action) {
     case "current": {
       const trends = source ? getBySource(source) : getAll();

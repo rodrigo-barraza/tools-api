@@ -19,7 +19,7 @@ const GITHUB_REPO_REGEX =
  * Parse a GitHub repo URL or "owner/repo" shorthand.
 
  */
-function parseGitHubInput(input: any) {
+function parseGitHubInput(input: string) {
   if (!input || typeof input !== "string") return null;
   const trimmed = input.trim().replace(/\.git$/, "").replace(/\/$/, "");
 
@@ -42,7 +42,7 @@ function parseGitHubInput(input: any) {
 
 
  */
-export async function getGitHubRepo(input: any, options: Record<string, any> = {}) {
+export async function getGitHubRepo(input: string, options: Record<string, unknown> = {}) {
   const parsed = parseGitHubInput(input);
   if (!parsed) {
     return { error: `Invalid GitHub URL or owner/repo: "${input}"` };
@@ -52,35 +52,21 @@ export async function getGitHubRepo(input: any, options: Record<string, any> = {
   const { includeReadme = true, includeLanguages = true } = options;
 
   // Fetch repo metadata + optional README + languages concurrently
-  const tasks = [
-    fetch(`${GITHUB_API}/repos/${owner}/${repo}`, { headers: GITHUB_HEADERS }),
-  ];
+  const repoPromise = fetch(`${GITHUB_API}/repos/${owner}/${repo}`, { headers: GITHUB_HEADERS });
 
-  if (includeReadme) {
-    tasks.push(
-      // @ts-expect-error - suppress remaining error
-      fetch(`${GITHUB_API}/repos/${owner}/${repo}/readme`, {
+  const readmePromise = includeReadme
+    ? fetch(`${GITHUB_API}/repos/${owner}/${repo}/readme`, {
         headers: { ...GITHUB_HEADERS, Accept: "application/vnd.github.v3.raw" },
-      }).catch(() => null),
-    );
-  } else {
-    // @ts-expect-error - suppress remaining error
-    tasks.push(null);
-  }
+      }).catch(() => null)
+    : Promise.resolve(null);
 
-  if (includeLanguages) {
-    tasks.push(
-      // @ts-expect-error - suppress remaining error
-      fetch(`${GITHUB_API}/repos/${owner}/${repo}/languages`, {
+  const langsPromise = includeLanguages
+    ? fetch(`${GITHUB_API}/repos/${owner}/${repo}/languages`, {
         headers: GITHUB_HEADERS,
-      }).catch(() => null),
-    );
-  } else {
-    // @ts-expect-error - suppress remaining error
-    tasks.push(null);
-  }
+      }).catch(() => null)
+    : Promise.resolve(null);
 
-  const [repoRes, readmeRes, langsRes] = await Promise.all(tasks);
+  const [repoRes, readmeRes, langsRes] = await Promise.all([repoPromise, readmePromise, langsPromise]);
 
   if (!repoRes.ok) {
     if (repoRes.status === 404) {
@@ -94,7 +80,7 @@ export async function getGitHubRepo(input: any, options: Record<string, any> = {
 
   const data = await repoRes.json();
 
-  const result: Record<string, any> = {
+  const result: Record<string, unknown> = {
     fullName: data.full_name,
     description: data.description,
     url: data.html_url,

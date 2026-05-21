@@ -3,18 +3,50 @@ import { upsertCmes } from "../models/Cme.ts";
 import { upsertGeomagneticStorms } from "../models/GeomagneticStorm.ts";
 import { SOLAR_FLARE_CLASSES } from "../constants.ts";
 
-const cache = {
+interface SolarFlare {
+  classType?: string;
+  [key: string]: unknown;
+}
+
+interface Cme {
+  speed?: number;
+  isEarthDirected?: boolean;
+  [key: string]: unknown;
+}
+
+interface GeomagneticStorm {
+  [key: string]: unknown;
+}
+
+interface CacheError {
+  message: string;
+  time: string;
+}
+
+interface SpaceWeatherData {
+  flares: SolarFlare[];
+  cmes: Cme[];
+  storms: GeomagneticStorm[];
+}
+
+const cache: {
+  flares: SolarFlare[];
+  cmes: Cme[];
+  storms: GeomagneticStorm[];
+  lastFetch: Date | null;
+  error: CacheError | null;
+} = {
   flares: [],
   cmes: [],
   storms: [],
-  lastFetch: null as any,
-  error: null as any,
+  lastFetch: null,
+  error: null,
 };
 
 /**
  * Update all space weather caches and persist to DB.
  */
-export async function updateSpaceWeather({ flares, cmes, storms }: any) {
+export async function updateSpaceWeather({ flares, cmes, storms }: SpaceWeatherData) {
   cache.flares = flares;
   cache.cmes = cmes;
   cache.storms = storms;
@@ -30,7 +62,7 @@ export async function updateSpaceWeather({ flares, cmes, storms }: any) {
   return { flares: flrResult, cmes: cmeResult, storms: gstResult };
 }
 
-export function setSpaceWeatherError(error: any) {
+export function setSpaceWeatherError(error: { message: string }) {
   cache.error = { message: error.message, time: new Date().toISOString() };
 }
 
@@ -38,7 +70,7 @@ export function setSpaceWeatherError(error: any) {
  * Restore space weather data from a DB snapshot.
  * Memory-only — no MongoDB upserts.
  */
-export function restoreSpaceWeather({ flares, cmes, storms }: any) {
+export function restoreSpaceWeather({ flares, cmes, storms }: Partial<SpaceWeatherData>) {
   cache.flares = flares || [];
   cache.cmes = cmes || [];
   cache.storms = storms || [];
@@ -75,7 +107,7 @@ export function getLatestSpaceWeather() {
  */
 export function getSpaceWeatherSummary() {
   // Find strongest flare by class
-  const strongestFlare = cache.flares.reduce((strongest: any, flr: any) => {
+  const strongestFlare = cache.flares.reduce((strongest: SolarFlare | null, flr: SolarFlare) => {
     if (!strongest) return flr;
     const currentClass = flr.classType?.[0] || "";
     const bestClass = strongest.classType?.[0] || "";
@@ -91,12 +123,12 @@ export function getSpaceWeatherSummary() {
   }, null);
 
   const fastestCme = cache.cmes.reduce(
-    (fastest: any, cme: any) =>
+    (fastest: Cme | null, cme: Cme) =>
       (cme.speed ?? 0) > (fastest?.speed ?? 0) ? cme : fastest,
     null,
   );
 
-  const earthDirectedCmes = cache.cmes.filter((c: any) => c.isEarthDirected);
+  const earthDirectedCmes = cache.cmes.filter((c: Cme) => c.isEarthDirected);
 
   return {
     flareCount: cache.flares.length,

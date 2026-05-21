@@ -52,7 +52,7 @@ import {
 const router = Router();
 // ─── USDA Nutrition (raw whole foods — in-memory database) ────
 router.get("/nutrition/search", (req: Request, res: Response) => {
-  const { q, limit, kingdom, foodType, nutrientTypes } = req.query as any;
+  const { q, limit, kingdom, foodType, nutrientTypes } = req.query as Record<string, string | undefined>;
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
@@ -64,7 +64,7 @@ router.get("/nutrition/search", (req: Request, res: Response) => {
   }));
 });
 router.get("/nutrition/rank", (req: Request, res: Response) => {
-  const { nutrient, limit, kingdom, foodType } = req.query as any;
+  const { nutrient, limit, kingdom, foodType } = req.query as Record<string, string | undefined>;
   if (!nutrient) {
     return res
       .status(400)
@@ -81,7 +81,7 @@ router.get("/nutrition/rank", (req: Request, res: Response) => {
   res.json(result);
 });
 router.get("/nutrition/compare", (req: Request, res: Response) => {
-  const { foods, nutrientTypes } = req.query as any;
+  const { foods, nutrientTypes } = req.query as Record<string, string | undefined>;
   if (!foods) {
     return res
       .status(400)
@@ -92,7 +92,7 @@ router.get("/nutrition/compare", (req: Request, res: Response) => {
   }
   const foodList = foods
     .split(",")
-    .map((f: any) => f.trim())
+    .map((f: string) => f.trim())
     .filter(Boolean);
   if (foodList.length < 2) {
     return res
@@ -112,7 +112,7 @@ router.get("/nutrition/nutrient-types", asyncHandler(
   500,
 ));
 router.get("/nutrition/top", (req: Request, res: Response) => {
-  const { category, nutrient, limit, kingdom, foodType } = req.query as any;
+  const { category, nutrient, limit, kingdom, foodType } = req.query as Record<string, string | undefined>;
   if (!category || !nutrient) {
     return res.status(400).json({
       error:
@@ -137,7 +137,7 @@ router.get("/nutrition/nutrients/:category", (req: Request, res: Response) => {
   res.json(result);
 });
 router.get("/nutrition/taxonomy/search", (req: Request, res: Response) => {
-  const { rank, value, limit, nutrientTypes } = req.query as any;
+  const { rank, value, limit, nutrientTypes } = req.query as Record<string, string | undefined>;
   if (!rank || !value) {
     return res.status(400).json({
       error:
@@ -154,7 +154,7 @@ router.get("/nutrition/taxonomy/search", (req: Request, res: Response) => {
   res.json(result);
 });
 router.get("/nutrition/taxonomy/tree", (req: Request, res: Response) => {
-  const { rank, parentRank, parentValue } = req.query as any;
+  const { rank, parentRank, parentValue } = req.query as Record<string, string | undefined>;
   const result = getTaxonomyTree(rank || null, parentRank || null, parentValue || null);
   if (result.error) {
     return res.status(400).json(result);
@@ -162,7 +162,7 @@ router.get("/nutrition/taxonomy/tree", (req: Request, res: Response) => {
   res.json(result);
 });
 router.get("/nutrition/requirements", (req: Request, res: Response) => {
-  const { species, lifeStage, authority, weightKg, caloricIntake, includeCompositional } = req.query as any;
+  const { species, lifeStage, authority, weightKg, caloricIntake, includeCompositional } = req.query as Record<string, string | undefined>;
   const result = calculateTargetProfile({
     species,
     lifeStage,
@@ -175,14 +175,14 @@ router.get("/nutrition/requirements", (req: Request, res: Response) => {
 });
 // ─── Drug Info (openFDA) ───────────────────────────────────────────
 router.get("/drugs/search", asyncHandler(async (req: Request, res: Response) => {
-  const { q, limit } = req.query as any;
+  const { q, limit } = req.query as Record<string, string | undefined>;
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
   res.json(await searchDrugLabels(q, parseIntParam(limit, 5)));
 }));
 router.get("/drugs/adverse-events", asyncHandler(async (req: Request, res: Response) => {
-  const { drug, limit } = req.query as any;
+  const { drug, limit } = req.query as Record<string, string | undefined>;
   if (!drug) {
     return res
       .status(400)
@@ -196,7 +196,7 @@ router.get("/drugs/recalls", asyncHandler(
 ));
 // ─── FDA Drug NDC Database (In-Memory) ──────────────────────────────
 router.get("/drugs/ndc/search", (req: Request, res: Response) => {
-  const { q, limit, dosageForm, productType } = req.query as any;
+  const { q, limit, dosageForm, productType } = req.query as Record<string, string | undefined>;
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
@@ -219,7 +219,7 @@ router.get("/drugs/ndc/dosage-forms", asyncHandler(
   500,
 ));
 router.get("/drugs/ndc/ingredient", (req: Request, res: Response) => {
-  const { q, limit } = req.query as any;
+  const { q, limit } = req.query as Record<string, string | undefined>;
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
@@ -228,7 +228,7 @@ router.get("/drugs/ndc/ingredient", (req: Request, res: Response) => {
   }));
 });
 router.get("/drugs/ndc/pharm-class", (req: Request, res: Response) => {
-  const { q, limit } = req.query as any;
+  const { q, limit } = req.query as Record<string, string | undefined>;
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
@@ -238,7 +238,7 @@ router.get("/drugs/ndc/pharm-class", (req: Request, res: Response) => {
 });
 // ─── Gym Exercises (Free Exercise DB) ──────────────────────────────
 router.get("/exercises/search", (req: Request, res: Response) => {
-  const { q, limit, category, equipment, force, level, mechanic, muscle } = req.query as any;
+  const { q, limit, category, equipment, force, level, mechanic, muscle } = req.query as Record<string, string | undefined>;
   res.json(searchExercises(q, {
     limit: parseIntParam(limit, 10),
     category,
@@ -263,7 +263,7 @@ router.get("/exercises/:id", (req: Request, res: Response) => {
 });
 // ─── Calorie Calculator (BMR/TDEE) ─────────────────────────────────
 router.get("/calories/calculate", (req: Request, res: Response) => {
-  const { sex, weightKg, heightCm, ageYears, activityLevel, goal, macroSplit, bodyFatPct } = req.query as any;
+  const { sex, weightKg, heightCm, ageYears, activityLevel, goal, macroSplit, bodyFatPct } = req.query as Record<string, string | undefined>;
   if (!sex || !weightKg || !heightCm || !ageYears) {
     return res.status(400).json({
       error: "Required parameters: sex, weightKg, heightCm, ageYears",
@@ -303,7 +303,7 @@ router.post("/nutrition/gap-analysis", (req: Request, res: Response) => {
 });
 // GET variant for agent tool-call compatibility
 router.get("/nutrition/gap-analysis", (req: Request, res: Response) => {
-  const { foods, species, lifeStage, authority, weightKg, caloricIntake } = req.query as any;
+  const { foods, species, lifeStage, authority, weightKg, caloricIntake } = req.query as Record<string, string | undefined>;
   if (!foods) {
     return res.status(400).json({
       error: "'foods' is required — JSON array of {name, grams} objects. Example: [{\"name\":\"chicken\",\"grams\":200}]",
@@ -328,7 +328,7 @@ router.get("/nutrition/gap-analysis", (req: Request, res: Response) => {
 });
 // ─── Food Substitutes ──────────────────────────────────────────────
 router.get("/nutrition/substitutes", (req: Request, res: Response) => {
-  const { food, targetNutrients, dietaryPreference, excludeKingdom, excludeFoods, limit } = req.query as any;
+  const { food, targetNutrients, dietaryPreference, excludeKingdom, excludeFoods, limit } = req.query as Record<string, string | undefined>;
   if (!food) {
     return res.status(400).json({ error: "'food' parameter is required" });
   }
@@ -350,7 +350,7 @@ router.get("/nutrition/substitutes/preferences", asyncHandler(
 ));
 // ─── Exercise Calorie Estimation ───────────────────────────────────
 router.get("/exercises/calories", (req: Request, res: Response) => {
-  const { exercise, durationMinutes, weightKg, intensity, category } = req.query as any;
+  const { exercise, durationMinutes, weightKg, intensity, category } = req.query as Record<string, string | undefined>;
   if (!exercise || !durationMinutes || !weightKg) {
     return res.status(400).json({
       error: "Required parameters: exercise, durationMinutes, weightKg",
@@ -376,7 +376,7 @@ router.get("/hydration/calculate", (req: Request, res: Response) => {
   const {
     weightKg, activityLevel, climateTemp, exerciseMinutes,
     exerciseIntensity, altitudeM, pregnant, breastfeeding, caffeineIntakeMg,
-  } = req.query as any;
+  } = req.query as Record<string, string | undefined>;
   if (!weightKg) {
     return res.status(400).json({ error: "'weightKg' is required" });
   }
@@ -399,7 +399,7 @@ router.get("/nutrition/meal-plan", (req: Request, res: Response) => {
   const {
     caloricTarget, mealsPerDay, dietaryPreference, excludeFoods,
     emphasizeNutrients, species, lifeStage, weightKg, itemsPerMeal,
-  } = req.query as any;
+  } = req.query as Record<string, string | undefined>;
   if (!caloricTarget) {
     return res.status(400).json({ error: "'caloricTarget' is required (e.g. 2000)" });
   }
@@ -419,7 +419,7 @@ router.get("/nutrition/meal-plan", (req: Request, res: Response) => {
 });
 // ─── Drug-Nutrient Interactions ────────────────────────────────────
 router.get("/drugs/nutrient-interactions", (req: Request, res: Response) => {
-  const { drug, nutrients } = req.query as any;
+  const { drug, nutrients } = req.query as Record<string, string | undefined>;
   if (!drug) {
     return res.status(400).json({ error: "'drug' parameter is required" });
   }
@@ -448,7 +448,7 @@ export function getHealthDomainHealth() {
 }
 // ── Unified Drug Search Dispatcher ─────────────────────────────────
 router.get("/drugs/unified", asyncHandler(async (req: Request, res: Response) => {
-  const { q, searchBy, limit, dosageForm, productType } = req.query as any;
+  const { q, searchBy, limit, dosageForm, productType } = req.query as Record<string, string | undefined>;
   if (!q) return res.status(400).json({ error: "'q' is required" });
   const mode = searchBy || "name";
   switch (mode) {

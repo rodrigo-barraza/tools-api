@@ -41,8 +41,8 @@ export function createSimpleCache<T = unknown>({
 }: SimpleCacheOptions = {}): SimpleCache<T> {
   const cache: { data: T; lastFetch: string | null; error: CacheError | null } = {
     data: (type === "array" ? [] : null) as T,
-    lastFetch: null as any,
-    error: null as any,
+    lastFetch: null,
+    error: null,
   };
 
   /** Replace cached data and reset error state. */

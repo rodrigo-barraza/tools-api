@@ -1,8 +1,19 @@
+import type { Collection } from "mongodb";
 import { hours as hoursToMs } from "@rodrigo-barraza/utilities-library";
 import { getDB } from "../db.ts";
 import logger from "../logger.ts";
 
-let collection: any = null;
+// ─── Types ──────────────────────────────────────────────────────
+export interface EarthquakeDocument {
+  usgsId: string;
+  time?: Date;
+  magnitude?: number;
+  lastSeen?: Date;
+  firstSeen?: Date;
+  [key: string]: unknown;
+}
+
+let collection: Collection<EarthquakeDocument> | null = null;
 
 /**
  * Initialize the earthquakes collection with required indexes.
@@ -12,7 +23,7 @@ export async function setupEarthquakeCollection() {
   const db = getDB();
   if (!db) throw new Error("Database not connected");
 
-  collection = db.collection("earthquakes");
+  collection = db.collection<EarthquakeDocument>("earthquakes");
 
   await collection.createIndex({ usgsId: 1 }, { unique: true });
   await collection.createIndex({ time: -1 });
@@ -25,10 +36,10 @@ export async function setupEarthquakeCollection() {
  * Bulk upsert earthquake events by USGS ID.
  * Updates existing events (e.g. revised magnitude) and inserts new ones.
  */
-export async function upsertEarthquakes(events: any) {
+export async function upsertEarthquakes(events: EarthquakeDocument[]) {
   if (!collection || events.length === 0) return;
 
-  const operations = events.map((event: any) => ({
+  const operations = events.map((event: EarthquakeDocument) => ({
     updateOne: {
       filter: { usgsId: event.usgsId },
       update: {
@@ -57,14 +68,14 @@ export async function upsertEarthquakes(events: any) {
 
  */
 export async function getRecentEarthquakes(
-  hours: any = 24,
-  minMagnitude: any = null,
-  limit: any = 100,
+  hours: number = 24,
+  minMagnitude: number | null = null,
+  limit: number = 100,
 ) {
   if (!collection) return [];
 
   const cutoff = new Date(Date.now() - hoursToMs(hours));
-  const query: Record<string, any> = { time: { $gte: cutoff } };
+  const query: Record<string, unknown> = { time: { $gte: cutoff } };
 
   if (minMagnitude !== null) {
     query.magnitude = { $gte: minMagnitude };
@@ -76,7 +87,7 @@ export async function getRecentEarthquakes(
 /**
  * Get a single earthquake event by its USGS ID.
  */
-export async function getEarthquakeById(usgsId: any) {
+export async function getEarthquakeById(usgsId: string) {
   if (!collection) return null;
   return collection.findOne({ usgsId });
 }

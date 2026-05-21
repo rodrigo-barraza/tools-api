@@ -1,14 +1,54 @@
+import type { Collection } from "mongodb";
 import { getDB } from "../db.ts";
 import logger from "../logger.ts";
 
-let productCollection: any;
+// ─── Types ──────────────────────────────────────────────────────
+export interface ProductDocument {
+  sourceId: string;
+  source: string;
+  name: string;
+  category?: string;
+  sourceCategory?: string;
+  rank?: number;
+  price?: number;
+  currency?: string;
+  rating?: number;
+  reviewCount?: number;
+  imageUrl?: string;
+  productUrl?: string;
+  description?: string;
+  trendingScore?: number;
+  lastSeenAt?: Date;
+  firstSeenAt?: Date;
+  fetchedAt?: Date;
+}
+
+export interface ProductInput {
+  sourceId: string;
+  source: string;
+  name: string;
+  category?: string;
+  sourceCategory?: string;
+  rank?: number;
+  price?: number;
+  currency?: string;
+  rating?: number;
+  reviewCount?: number;
+  imageUrl?: string;
+  productUrl?: string;
+  description?: string;
+  trendingScore?: number;
+  fetchedAt?: Date;
+}
+
+let productCollection: Collection<ProductDocument> | null = null;
 
 /**
  * Set up the products collection with indexes.
  */
 export async function setupProductCollection() {
   const db = getDB();
-  productCollection = db.collection("products");
+  productCollection = db.collection<ProductDocument>("products");
 
   await productCollection.createIndex(
     { sourceId: 1, source: 1 },
@@ -28,10 +68,10 @@ export async function setupProductCollection() {
 /**
  * Bulk upsert products.
  */
-export async function upsertProducts(products: any) {
-  if (!products.length) return { upserted: 0, modified: 0 };
+export async function upsertProducts(products: ProductInput[]) {
+  if (!productCollection || !products.length) return { upserted: 0, modified: 0 };
 
-  const ops = products.map((p: any) => ({
+  const ops = products.map((p: ProductInput) => ({
     updateOne: {
       filter: { sourceId: p.sourceId, source: p.source },
       update: {
@@ -68,13 +108,15 @@ export async function upsertProducts(products: any) {
  * Query recent products from the database.
  */
 export async function getRecentProducts(
-  hours: any = 24,
-  category: any = null,
-  source: any = null,
-  limit: any = 50,
+  hours: number = 24,
+  category: string | null = null,
+  source: string | null = null,
+  limit: number = 50,
 ) {
+  if (!productCollection) return [];
+
   const cutoff = new Date(Date.now() - hours * 3_600_000);
-  const filter: Record<string, any> = { lastSeenAt: { $gte: cutoff } };
+  const filter: Record<string, unknown> = { lastSeenAt: { $gte: cutoff } };
   if (category) filter.category = category;
   if (source) filter.source = source;
 
@@ -88,7 +130,9 @@ export async function getRecentProducts(
 /**
  * Full-text search products.
  */
-export async function searchProducts(query: any, limit: any = 50) {
+export async function searchProducts(query: string, limit: number = 50) {
+  if (!productCollection) return [];
+
   return productCollection
     .find({ $text: { $search: query } })
     .sort({ score: { $meta: "textScore" }, trendingScore: -1 })

@@ -39,7 +39,7 @@ import { crawlSingleStatic } from "../services/CrawlerService.ts";
 const router = Router();
 // ─── Calculator (BigNumber) ────────────────────────────────────────
 router.get("/calculate", (req: Request, res: Response) => {
-  const { operation, a, b } = req.query as any;
+  const { operation, a, b } = req.query as Record<string, string | undefined>;
   if (!operation || !a) {
     return res.status(400).json({ error: "Query parameters 'operation' and 'a' are required" });
   }
@@ -96,7 +96,7 @@ router.get("/calculate", (req: Request, res: Response) => {
 });
 // ─── Currency Conversion ───────────────────────────────────────────
 router.get("/currency/convert", asyncHandler(async (req: Request, res: Response) => {
-  const { amount, from, to } = req.query as any;
+  const { amount, from, to } = req.query as Record<string, string | undefined>;
   if (!from || !to) {
     return res
       .status(400)
@@ -136,7 +136,7 @@ router.get("/ip/batch", asyncHandler(async (req: Request, res: Response) => {
   }
   const ipArray = ips
     .split(",")
-    .map((ip: any) => ip.trim())
+    .map((ip: string) => ip.trim())
     .filter(Boolean);
   const result = await batchLookupIps(ipArray);
   res.json({ count: result.length, results: result });
@@ -155,7 +155,7 @@ router.get("/ip/:ip", asyncHandler(
 ));
 // ─── Places — Nearby Search (Google Places API New) ────────────────
 router.get("/places/nearby", asyncHandler(async (req: Request, res: Response) => {
-  const { type, latitude, longitude, radius, limit } = req.query as any;
+  const { type, latitude, longitude, radius, limit } = req.query as Record<string, string | undefined>;
   if (!type) {
     return res
       .status(400)
@@ -171,7 +171,7 @@ router.get("/places/nearby", asyncHandler(async (req: Request, res: Response) =>
 }));
 // ─── Places — Text Search (Google Places API New) ──────────────────
 router.get("/places/search", asyncHandler(async (req: Request, res: Response) => {
-  const { q, latitude, longitude, radius, limit } = req.query as any;
+  const { q, latitude, longitude, radius, limit } = req.query as Record<string, string | undefined>;
   if (!q) {
     return res
       .status(400)
@@ -277,7 +277,7 @@ function initMap(){
 </body></html>`;
 }
 router.get("/map/embed", (req: Request, res: Response) => {
-  const { id, markers, zoom, maptype } = req.query as any;
+  const { id, markers, zoom, maptype } = req.query as Record<string, string | undefined>;
   if (!CONFIG.GOOGLE_API_KEY) {
     return res.status(400).send("Missing API key");
   }
@@ -307,7 +307,7 @@ router.get("/map/embed", (req: Request, res: Response) => {
   res.send(html);
 });
 router.get("/map", asyncHandler(async (req: Request, res: Response) => {
-  const { markers, zoom, maptype } = req.query as any;
+  const { markers, zoom, maptype } = req.query as Record<string, string | undefined>;
   if (!markers) {
     return res
       .status(400)
@@ -344,7 +344,7 @@ router.get("/map", asyncHandler(async (req: Request, res: Response) => {
 // ─── Webcams ───────────────────────────────────────────────────────
 router.get("/webcams", asyncHandler(
   async (req: Request) => {
-    const { city, limit } = req.query as any;
+    const { city, limit } = req.query as Record<string, string | undefined>;
     const webcams = await getPublicWebcams({ 
       city: city || "vancouver", 
       limit: parseInt(limit, 10) || 100 
@@ -355,7 +355,7 @@ router.get("/webcams", asyncHandler(
 ));
 // ─── Airports ──────────────────────────────────────────────────────
 router.get("/airports/search", (req: Request, res: Response) => {
-  const { q, limit, country } = req.query as any;
+  const { q, limit, country } = req.query as Record<string, string | undefined>;
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
@@ -379,7 +379,7 @@ router.get("/airports/country/:code", asyncHandler(
   500,
 ));
 router.get("/airports/nearest", (req: Request, res: Response) => {
-  const { lat, lng, limit } = req.query as any;
+  const { lat, lng, limit } = req.query as Record<string, string | undefined>;
   if (!lat || !lng) {
     return res.status(400).json({ error: "Query parameters 'lat' and 'lng' are required" });
   }
@@ -472,7 +472,7 @@ router.post("/chart", (req: Request, res: Response) => {
   });
 });
 router.get("/chart/render", asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.query as any;
+  const { id } = req.query as Record<string, string | undefined>;
   if (!id) {
     return res.status(400).send("Missing 'id' parameter");
   }
@@ -492,7 +492,7 @@ router.get("/chart/render", asyncHandler(async (req: Request, res: Response) => 
 // ─── Page Metadata Scraper (Crawlee) ───────────────────────────────
 router.get("/scrape/metadata", asyncHandler(
   async (req: Request) => {
-    const { url } = req.query as any;
+    const { url } = req.query as Record<string, string | undefined>;
     if (!url) {
       throw Object.assign(new Error("Query parameter 'url' is required"), { status: 400 });
     }
@@ -528,7 +528,7 @@ router.get("/scrape/metadata", asyncHandler(
           $('meta[itemprop="keywords"]').attr("content") ||
           null;
         meta.keywords = keywords
-          ? keywords.split(",").map((k: any) => k.trim()).filter(Boolean)
+          ? keywords.split(",").map((k: string) => k.trim()).filter(Boolean)
           : null;
         // Site name
         meta.siteName =
@@ -569,7 +569,7 @@ export function getUtilityHealth() {
 }
 // ── Unified Airport Lookup Dispatcher ──────────────────────────────
 router.get("/airports/lookup", asyncHandler(async (req: Request, res: Response) => {
-  const { action, q, code, country, lat, lng, limit } = req.query as any;
+  const { action, q, code, country, lat, lng, limit } = req.query as Record<string, string | undefined>;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["search", "code", "country", "nearest"] });
   switch (action) {
     case "search":

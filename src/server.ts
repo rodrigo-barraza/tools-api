@@ -160,8 +160,7 @@ app.get("/health", async (_req: Request, res: Response) => {
 
 async function start() {
   try {
-    // @ts-expect-error - suppress remaining error
-    await connectDB(CONFIG.MONGODB_URI);
+    await connectDB(CONFIG.MONGODB_URI!);
 
     // Resolve location from IP geolocation + NOAA (cached in DB, 24h TTL)
     const location = await initLocation();

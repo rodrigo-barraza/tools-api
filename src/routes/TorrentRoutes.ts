@@ -13,7 +13,7 @@ const router = Router();
 // ─── 1. Search — Full lifecycle (start → poll → results) ───
 
 router.get("/search", asyncHandler(async (req: Request, res: Response) => {
-  const { q, query, category, plugins, limit, timeout } = req.query as any;
+  const { q, query, category, plugins, limit, timeout } = req.query as Record<string, string | undefined>;
   const searchQuery = q || query;
   if (!searchQuery) {
     return res.status(400).json({
@@ -62,7 +62,7 @@ router.post("/download", asyncHandler(async (req: Request, res: Response) => {
 // ─── 3. Status — List active torrents ───────────────────────
 
 router.get("/status", asyncHandler(async (req: Request, res: Response) => {
-  const { filter, category, tag, sort, limit, offset } = req.query as any;
+  const { filter, category, tag, sort, limit, offset } = req.query as Record<string, string | undefined>;
 
   try {
     const torrents = await qbt.listTorrents({
@@ -175,7 +175,7 @@ router.get("/transfer", asyncHandler(async (_req: Request, res: Response) => {
 // ─── Unified Dispatcher (for AI tool schema) ────────────────
 
 router.get("/", asyncHandler(async (req: Request, res: Response) => {
-  const { action, q, query, category, plugins, limit, filter, sort, timeout, hashes } = req.query as any;
+  const { action, q, query, category, plugins, limit, filter, sort, timeout, hashes } = req.query as Record<string, string | undefined>;
   if (!action) {
     return res.status(400).json({
       error: "'action' is required",

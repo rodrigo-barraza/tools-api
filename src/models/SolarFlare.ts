@@ -1,13 +1,24 @@
+import type { Collection } from "mongodb";
 import { getDB } from "../db.ts";
 import logger from "../logger.ts";
 
-let collection: any = null;
+// ─── Types ──────────────────────────────────────────────────────
+export interface SolarFlareDocument {
+  flrId: string;
+  peakTime?: Date;
+  classType?: string;
+  lastSeen?: Date;
+  firstSeen?: Date;
+  [key: string]: unknown;
+}
+
+let collection: Collection<SolarFlareDocument> | null = null;
 
 export async function setupSolarFlareCollection() {
   const db = getDB();
   if (!db) throw new Error("Database not connected");
 
-  collection = db.collection("solar_flares");
+  collection = db.collection<SolarFlareDocument>("solar_flares");
 
   await collection.createIndex({ flrId: 1 }, { unique: true });
   await collection.createIndex({ peakTime: -1 });
@@ -16,10 +27,10 @@ export async function setupSolarFlareCollection() {
   logger.info("☀️  Solar flare collection indexes ready");
 }
 
-export async function upsertSolarFlares(flares: any) {
+export async function upsertSolarFlares(flares: SolarFlareDocument[]) {
   if (!collection || flares.length === 0) return { upserted: 0, modified: 0 };
 
-  const operations = flares.map((flr: any) => ({
+  const operations = flares.map((flr: SolarFlareDocument) => ({
     updateOne: {
       filter: { flrId: flr.flrId },
       update: {
@@ -39,7 +50,7 @@ export async function upsertSolarFlares(flares: any) {
   }
 }
 
-export async function getRecentSolarFlares(days: any = 7, limit: any = 50) {
+export async function getRecentSolarFlares(days: number = 7, limit: number = 50) {
   if (!collection) return [];
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);

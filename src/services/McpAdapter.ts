@@ -32,7 +32,7 @@ import type { Request, Response, Application } from "express";
 const SELF_BASE_URL = CONFIG.TOOLS_SERVICE_URL;
 
 // ── Build tool executor URL from endpoint metadata ──────────
-function buildUrl(endpoint: Record<string, any>, args: Record<string, any> = {}) {
+function buildUrl(endpoint: Record<string, unknown>, args: Record<string, unknown> = {}) {
   let path = endpoint.path;
 
   // Handle conditional paths
@@ -45,7 +45,7 @@ function buildUrl(endpoint: Record<string, any>, args: Record<string, any> = {})
 
   // Replace path params
   const pathParams = new Set<string>(endpoint.pathParams || []);
-  for (const param of pathParams as any) {
+  for (const param of pathParams) {
     if (args[param] !== undefined && args[param] !== null) {
       path = path.replace(`:${param}`, encodeURIComponent(String(args[param])));
     }
@@ -74,14 +74,13 @@ function buildUrl(endpoint: Record<string, any>, args: Record<string, any> = {})
 }
 
 // ── Arg remaps (same as Prism's ToolOrchestratorService) ────
-const ARG_REMAPS = {
+const ARG_REMAPS: Record<string, Record<string, string>> = {
   search_events: { query: "q" },
   search_products: { query: "q" },
 };
 
 // ── Execute tool via internal HTTP ──────────────────────────
-async function executeTool(toolName: string, endpoint: Record<string, any>, args: Record<string, any> = {}, context: Record<string, any> = {}) {
-  // @ts-expect-error - TS7053: implicit any index
+async function executeTool(toolName: string, endpoint: Record<string, unknown>, args: Record<string, unknown> = {}, context: Record<string, string> = {}) {
   const remaps = ARG_REMAPS[toolName];
   let resolvedArgs = args;
   if (remaps) {
@@ -97,12 +96,9 @@ async function executeTool(toolName: string, endpoint: Record<string, any>, args
   try {
     if (endpoint.method === "POST") {
       const url = `${SELF_BASE_URL}${endpoint.path}`;
-      const headers = { "Content-Type": "application/json" };
-      // @ts-expect-error - TS7053: implicit any index
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (context.project) headers["X-Project"] = context.project;
-      // @ts-expect-error - TS7053: implicit any index
       if (context.agent) headers["X-Agent"] = context.agent;
-      // @ts-expect-error - TS7053: implicit any index
       if (context.username) headers["X-Username"] = context.username;
 
       // Also inject into body for endpoints that might read from body

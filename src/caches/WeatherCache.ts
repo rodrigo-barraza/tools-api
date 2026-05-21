@@ -8,43 +8,45 @@ import logger from "../logger.ts";
  * over MongoDB queries for API consumers.
  */
 
+type WeatherSource = "openmeteo" | "airquality" | "tomorrowio" | "tomorrowio_daily";
+
 const cache = {
   // Merged current snapshot
-  current: {} as Record<string, any>,
+  current: {} as Record<string, unknown>,
 
   // Last fetch timestamps per source
   lastFetch: {
-    openmeteo: null as any,
-    airquality: null as any,
-    tomorrowio: null as any,
-    tomorrowio_daily: null as any,
-  } as Record<string, any>,
+    openmeteo: null,
+    airquality: null,
+    tomorrowio: null,
+    tomorrowio_daily: null,
+  } as Record<WeatherSource, Date | null>,
 
   // Error tracking
   errors: {
-    openmeteo: null as any,
-    airquality: null as any,
-    tomorrowio: null as any,
-    tomorrowio_daily: null as any,
-  } as Record<string, any>,
+    openmeteo: null,
+    airquality: null,
+    tomorrowio: null,
+    tomorrowio_daily: null,
+  } as Record<WeatherSource, { message: string; time: string } | null>,
 
   // Tracks which sources have reported since last persist
-  pendingSources: new Set(),
+  pendingSources: new Set<string>(),
 };
 
-const ALL_SOURCES = [
+const ALL_SOURCES: WeatherSource[] = [
   "openmeteo",
   "airquality",
   "tomorrowio",
   "tomorrowio_daily",
 ];
 let allSourcesReady = false;
-let lastPersistedHash: any = null;
+let lastPersistedHash: string | null = null;
 
 /**
  * Hash the current snapshot for change detection.
  */
-function hashSnapshot(data: any) {
+function hashSnapshot(data: Record<string, unknown>) {
   return createHash("md5").update(JSON.stringify(data)).digest("hex");
 }
 
@@ -52,7 +54,7 @@ function hashSnapshot(data: any) {
  * Merge incoming data from a source into the cache.
  * Waits for all sources on first cycle, then persists on every change.
  */
-export function update(source: any, data: any) {
+export function update(source: WeatherSource, data: Record<string, unknown>) {
   const { source: _src, ...fields } = data;
   Object.assign(cache.current, fields);
   cache.lastFetch[source] = new Date();
@@ -60,7 +62,7 @@ export function update(source: any, data: any) {
 
   if (!allSourcesReady) {
     cache.pendingSources.add(source);
-    if (ALL_SOURCES.every((s: any) => cache.pendingSources.has(s))) {
+    if (ALL_SOURCES.every((s) => cache.pendingSources.has(s))) {
       allSourcesReady = true;
       cache.pendingSources.clear();
       lastPersistedHash = hashSnapshot(cache.current);
@@ -81,7 +83,7 @@ export function update(source: any, data: any) {
  * Restore a source's data from a DB snapshot into the cache.
  * Memory-only — no change-detection or MongoDB persistence.
  */
-export function restore(source: any, data: any) {
+export function restore(source: WeatherSource, data: Record<string, unknown>) {
   const { source: _src, ...fields } = data;
   Object.assign(cache.current, fields);
   cache.lastFetch[source] = new Date();
@@ -91,7 +93,7 @@ export function restore(source: any, data: any) {
 /**
  * Record a fetch error for a source.
  */
-export function setError(source: any, error: any) {
+export function setError(source: WeatherSource, error: { message: string }) {
   cache.errors[source] = {
     message: error.message,
     time: new Date().toISOString(),

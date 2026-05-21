@@ -19,7 +19,7 @@ router.get("/browse", asyncHandler((req: Request) => {
 }, "EIA browse"));
 // ─── Facet Values ──────────────────────────────────────────────────
 router.get("/facets", asyncHandler(async (req: Request, res: Response) => {
-  const { route, facetId } = req.query as any;
+  const { route, facetId } = req.query as Record<string, string | undefined>;
   if (!route || !facetId) {
     return res
       .status(400)
@@ -36,7 +36,7 @@ router.get("/facets", asyncHandler(async (req: Request, res: Response) => {
 // ─── Data Query ────────────────────────────────────────────────────
 router.get("/data", asyncHandler(async (req: Request) => {
   const { route, frequency, start, end, sort, length, offset, ...rest } =
-    req.query as any;
+    req.query as Record<string, string | undefined>;
   if (!route) {
     return { error: "Parameter 'route' is required" };
   }
@@ -74,7 +74,7 @@ router.get("/data", asyncHandler(async (req: Request) => {
 router.get(
   "/electricity/retail-sales",
   asyncHandler((req: Request) => {
-    const { state, sector, frequency, start, end, length } = req.query as any;
+    const { state, sector, frequency, start, end, length } = req.query as Record<string, string | undefined>;
     const facets: Record<string, any> = {};
     if (state) facets.stateid = Array.isArray(state) ? state : [state];
     if (sector) facets.sectorid = Array.isArray(sector) ? sector : [sector];
@@ -93,7 +93,7 @@ router.get(
 router.get(
   "/petroleum/prices",
   asyncHandler((req: Request) => {
-    const { product, area, frequency, start, end, length } = req.query as any;
+    const { product, area, frequency, start, end, length } = req.query as Record<string, string | undefined>;
     const facets: Record<string, any> = {};
     if (product) facets.product = Array.isArray(product) ? product : [product];
     if (area) facets.duoarea = Array.isArray(area) ? area : [area];
@@ -112,7 +112,7 @@ router.get(
 router.get(
   "/natural-gas/prices",
   asyncHandler((req: Request) => {
-    const { process: process_, area, frequency, start, end, length } = req.query as any;
+    const { process: process_, area, frequency, start, end, length } = req.query as Record<string, string | undefined>;
     const facets: Record<string, any> = {};
     if (process_) facets.process = Array.isArray(process_) ? process_ : [process_];
     if (area) facets.duoarea = Array.isArray(area) ? area : [area];

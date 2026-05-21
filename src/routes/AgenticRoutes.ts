@@ -94,7 +94,7 @@ router.post("/file/read", agenticHandler(async (req: Request) => {
 // ── Raw File Stream (binary files: images, audio, video) ──────
 // Serves file content directly with correct Content-Type.
 // Used by the FileViewerPanelComponent for media preview.
-const EXT_TO_MIME = {
+const EXT_TO_MIME: Record<string, string> = {
   // Images
   ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
   ".gif": "image/gif", ".webp": "image/webp", ".bmp": "image/bmp",
@@ -125,7 +125,6 @@ router.get("/file/raw", asyncHandler(async (req: Request, res: Response) => {
 
   const resolved = validation.resolved;
   const fileExtension = extname(resolved).toLowerCase();
-  // @ts-expect-error - TS7053: implicit any index
   const mime = EXT_TO_MIME[fileExtension];
   if (!mime) {
     return res.status(415).json({ error: `Unsupported file type: ${fileExtension}` });
@@ -569,10 +568,8 @@ export function getAgenticHealth() {
 router.post("/git", asyncHandler(async (req: Request, res: Response) => {
   const { action, ...params } = req.body;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["status", "diff", "log"] });
-  const pathMap = { status: "/git/status", diff: "/git/diff", log: "/git/log" };
-  // @ts-expect-error - TS7053: implicit any index
+  const pathMap: Record<string, string> = { status: "/git/status", diff: "/git/diff", log: "/git/log" };
   if (!pathMap[action]) return res.status(400).json({ error: `Unknown action: ${action}`, actions: Object.keys(pathMap) });
-  // @ts-expect-error - TS7053: implicit any index
   req.url = pathMap[action];
   req.body = params;
   return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
@@ -608,7 +605,7 @@ router.post("/task/list", agenticHandler(async (req: Request) => {
   });
 }));
 router.get("/task/list-all", asyncHandler(async (req: Request) => {
-  const { status, limit, agentSessionId } = req.query as any;
+  const { status, limit, agentSessionId } = req.query as Record<string, string | undefined>;
   const db = (await import("../db.js")).getDB();
   const collection = db.collection("agent_tasks");
   const filter: Record<string, any> = {};

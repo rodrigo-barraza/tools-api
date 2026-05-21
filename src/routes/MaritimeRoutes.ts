@@ -33,7 +33,7 @@ router.get("/vessels/:mmsi", (req: Request, res: Response) => {
 // ─── Vessel Search ─────────────────────────────────────────────────
 
 router.get("/search", (req: Request, res: Response) => {
-  const { q, limit } = req.query as any;
+  const { q, limit } = req.query as Record<string, string | undefined>;
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
@@ -44,7 +44,7 @@ router.get("/search", (req: Request, res: Response) => {
 // ─── Vessels in Area ───────────────────────────────────────────────
 
 router.get("/area", (req: Request, res: Response) => {
-  const { minLat, maxLat, minLng, maxLng, limit } = req.query as any;
+  const { minLat, maxLat, minLng, maxLng, limit } = req.query as Record<string, string | undefined>;
   if (!minLat || !maxLat || !minLng || !maxLng) {
     return res
       .status(400)
@@ -63,7 +63,7 @@ router.get("/area", (req: Request, res: Response) => {
 // ─── Recent Messages (raw stream buffer) ───────────────────────────
 
 router.get("/messages", (req: Request, res: Response) => {
-  const { limit, type } = req.query as any;
+  const { limit, type } = req.query as Record<string, string | undefined>;
   const messages = getRecentMessages(parseInt(limit, 10) || 50, type || null);
   res.json({ count: messages.length, messages });
 });

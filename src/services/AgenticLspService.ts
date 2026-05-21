@@ -7,6 +7,52 @@ import { getLspManager, shutdownAllLspManagers, getAllLspHealth } from "./lsp/Ls
 import { ALLOWED_ROOTS } from "./AgenticFileService.ts";
 
 // ────────────────────────────────────────────────────────────
+// Types
+// ────────────────────────────────────────────────────────────
+
+interface LspOperation {
+  method: string;
+  needsPosition: boolean;
+  description: string;
+}
+
+interface LspRange {
+  start: { line: number; character: number };
+  end: { line: number; character: number };
+}
+
+interface LspLocation {
+  uri?: string;
+  targetUri?: string;
+  range?: LspRange;
+  targetRange?: LspRange;
+  targetSelectionRange?: LspRange;
+}
+
+interface LspHoverResult {
+  contents: string | { kind?: string; value?: string; language?: string } | Array<string | { value?: string; language?: string }>;
+}
+
+interface LspSymbol {
+  name: string;
+  kind: number;
+  detail?: string;
+  containerName?: string;
+  location?: { range?: LspRange };
+  selectionRange?: LspRange;
+  range?: LspRange;
+  children?: LspSymbol[];
+}
+
+interface LspActionParams {
+  operation: string;
+  filePath: string;
+  line: number;
+  character: number;
+  workspacePath?: string;
+}
+
+// ────────────────────────────────────────────────────────────
 // Configuration
 // ────────────────────────────────────────────────────────────
 
@@ -26,7 +72,7 @@ const SUPPORTED_EXTENSIONS = new Set([
 
 // ── Supported operations ─────────────────────────────────────
 
-const OPERATIONS = {
+const OPERATIONS: Record<string, LspOperation> = {
   goToDefinition: {
     method: "textDocument/definition",
     needsPosition: true,
@@ -58,21 +104,21 @@ const OPERATIONS = {
 // Path Validation (lightweight — reuses logic from FileService)
 // ────────────────────────────────────────────────────────────
 
-function validateLspPath(inputPath: any) {
+function validateLspPath(inputPath: string | undefined) {
   if (!inputPath || typeof inputPath !== "string") {
-    return { safe: false, error: "'filePath' is required (string)" };
+    return { safe: false as const, error: "'filePath' is required (string)" };
   }
 
   const resolved = resolve(inputPath);
   const inAllowedRoot = ALLOWED_ROOTS.some(
-    (root: any) => resolved.startsWith(root + "/") || resolved === root,
+    (root: string) => resolved.startsWith(root + "/") || resolved === root,
   );
 
   if (!inAllowedRoot) {
-    return { safe: false, error: `Path '${resolved}' is outside allowed roots` };
+    return { safe: false as const, error: `Path '${resolved}' is outside allowed roots` };
   }
 
-  return { safe: true, resolved };
+  return { safe: true as const, resolved };
 }
 
 // ────────────────────────────────────────────────────────────
@@ -82,16 +128,14 @@ function validateLspPath(inputPath: any) {
 /**
  * Execute an LSP code intelligence operation.
  */
-export async function agenticLspAction({ operation, filePath, line, character, workspacePath }: any) {
+export async function agenticLspAction({ operation, filePath, line, character, workspacePath }: LspActionParams) {
   // ── 1. Validate operation ──────────────────────────────────
-  // @ts-expect-error - TS7053: implicit any index
   if (!operation || !OPERATIONS[operation]) {
     return {
       error: `Unknown operation '${operation}'. Supported: ${Object.keys(OPERATIONS).join(", ")}`,
     };
   }
 
-  // @ts-expect-error - TS7053: implicit any index
   const opDef = OPERATIONS[operation];
 
   // ── 2. Validate file path ─────────────────────────────────
@@ -101,7 +145,6 @@ export async function agenticLspAction({ operation, filePath, line, character, w
   }
 
   const resolvedPath = validation.resolved;
-  // @ts-expect-error - suppress remaining error
   const fileExtension = extname(resolvedPath).toLowerCase();
 
   if (!SUPPORTED_EXTENSIONS.has(fileExtension)) {
@@ -124,9 +167,8 @@ export async function agenticLspAction({ operation, filePath, line, character, w
   }
 
   // ── 4. Read file content ──────────────────────────────────
-  let fileContent: any;
+  let fileContent: string;
   try {
-    // @ts-expect-error - suppress remaining error
     const stats = await stat(resolvedPath);
     if (stats.isDirectory()) {
       return { error: `'${resolvedPath}' is a directory, not a file` };
@@ -134,10 +176,9 @@ export async function agenticLspAction({ operation, filePath, line, character, w
     if (stats.size > MAX_FILE_SIZE_FOR_OPEN) {
       return { error: `File is too large (${(stats.size / 1024).toFixed(0)} KB). Maximum: ${MAX_FILE_SIZE_FOR_OPEN / 1024} KB` };
     }
-    // @ts-expect-error - suppress remaining error
     fileContent = await readFile(resolvedPath, "utf-8");
   } catch (error: unknown) {
-    if ((error as any).code === "ENOENT") {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       return { error: `File not found: ${resolvedPath}` };
     }
     return { error: `Cannot read file: ${(error as Error).message}` };
@@ -147,7 +188,7 @@ export async function agenticLspAction({ operation, filePath, line, character, w
   const wsRoot = resolvedWorkspace(resolvedPath, workspacePath);
 
   // ── 6. Get manager & ensure file is open ───────────────────
-  let manager: any;
+  let manager: ReturnType<typeof getLspManager>;
   try {
     manager = getLspManager(wsRoot);
     await manager.openFile(resolvedPath, fileContent);
@@ -159,9 +200,8 @@ export async function agenticLspAction({ operation, filePath, line, character, w
   }
 
   // ── 7. Build LSP params ────────────────────────────────────
-  // @ts-expect-error - suppress remaining error
   const fileUri = pathToFileURL(resolvedPath).href;
-  let lspParams: any;
+  let lspParams: Record<string, unknown>;
 
   if (opDef.needsPosition) {
     // Convert 1-based (user) → 0-based (LSP)
@@ -185,7 +225,7 @@ export async function agenticLspAction({ operation, filePath, line, character, w
   }
 
   // ── 8. Send request ────────────────────────────────────────
-  let result: any;
+  let result: unknown;
   try {
     result = await manager.sendRequest(resolvedPath, opDef.method, lspParams);
   } catch (error: unknown) {
@@ -204,7 +244,7 @@ export async function agenticLspAction({ operation, filePath, line, character, w
 // Result Formatters
 // ────────────────────────────────────────────────────────────
 
-function formatResult(operation: any, result: any, filePath: any, wsRoot: any) {
+function formatResult(operation: string, result: unknown, filePath: string, wsRoot: string) {
   if (result === null || result === undefined) {
     return {
       operation,
@@ -217,19 +257,19 @@ function formatResult(operation: any, result: any, filePath: any, wsRoot: any) {
   switch (operation) {
     case "goToDefinition":
     case "goToImplementation":
-      return formatLocations(operation, result, filePath, wsRoot);
+      return formatLocations(operation, result as LspLocation | LspLocation[], filePath, wsRoot);
     case "findReferences":
-      return formatLocations(operation, result, filePath, wsRoot);
+      return formatLocations(operation, result as LspLocation | LspLocation[], filePath, wsRoot);
     case "hover":
-      return formatHover(result, filePath);
+      return formatHover(result as LspHoverResult, filePath);
     case "documentSymbol":
-      return formatSymbols(result, filePath, wsRoot);
+      return formatSymbols(result as LspSymbol[], filePath, wsRoot);
     default:
       return { operation, filePath, result };
   }
 }
 
-function formatLocations(operation: any, result: any, filePath: any, wsRoot: any) {
+function formatLocations(operation: string, result: LspLocation | LspLocation[], filePath: string, wsRoot: string) {
   // Normalize to array (some servers return single Location)
   const locations = Array.isArray(result) ? result : result ? [result] : [];
 
@@ -243,14 +283,14 @@ function formatLocations(operation: any, result: any, filePath: any, wsRoot: any
     };
   }
 
-  const formatted = locations.slice(0, MAX_LOCATIONS_RETURNED).map((loc: any) => {
+  const formatted = locations.slice(0, MAX_LOCATIONS_RETURNED).map((loc) => {
     // Handle both Location and LocationLink
     const uri = loc.targetUri || loc.uri;
     const range = loc.targetRange || loc.targetSelectionRange || loc.range;
 
     if (!uri || !range) return null;
 
-    let targetPath: any;
+    let targetPath: string;
     try {
       targetPath = fileURLToPath(uri);
     } catch {
@@ -279,7 +319,7 @@ function formatLocations(operation: any, result: any, filePath: any, wsRoot: any
   };
 }
 
-function formatHover(result: any, filePath: any) {
+function formatHover(result: LspHoverResult, filePath: string) {
   if (!result || !result.contents) {
     return {
       operation: "hover",
@@ -290,7 +330,7 @@ function formatHover(result: any, filePath: any) {
   }
 
   // MarkupContent
-  if (typeof result.contents === "object" && result.contents.kind) {
+  if (typeof result.contents === "object" && !Array.isArray(result.contents) && "kind" in result.contents && result.contents.kind) {
     return {
       operation: "hover",
       filePath,
@@ -311,7 +351,7 @@ function formatHover(result: any, filePath: any) {
 
   // MarkedString[] (deprecated, some servers still use it)
   if (Array.isArray(result.contents)) {
-    const parts = result.contents.map((c: any) => {
+    const parts = result.contents.map((c) => {
       if (typeof c === "string") return c;
       if (c.value) return `\`\`\`${c.language || ""}\n${c.value}\n\`\`\``;
       return "";
@@ -326,7 +366,7 @@ function formatHover(result: any, filePath: any) {
   }
 
   // Single MarkedString
-  if (result.contents.value) {
+  if (typeof result.contents === "object" && "value" in result.contents && result.contents.value) {
     return {
       operation: "hover",
       filePath,
@@ -343,7 +383,7 @@ function formatHover(result: any, filePath: any) {
   };
 }
 
-function formatSymbols(result: any, filePath: any, _wsRoot: any) {
+function formatSymbols(result: LspSymbol[], filePath: string, _wsRoot: string) {
   if (!result || !Array.isArray(result) || result.length === 0) {
     return {
       operation: "documentSymbol",
@@ -368,8 +408,8 @@ function formatSymbols(result: any, filePath: any, _wsRoot: any) {
 /**
  * Flatten hierarchical DocumentSymbol[] into a flat list with depth info.
  */
-function flattenSymbols(symbols: any, depth: any = 0) {
-  const result: any[] = [];
+function flattenSymbols(symbols: LspSymbol[], depth: number = 0) {
+  const result: Array<Record<string, unknown>> = [];
 
   for (const sym of symbols) {
     // SymbolInformation (flat — used by some servers)
@@ -408,7 +448,7 @@ function flattenSymbols(symbols: any, depth: any = 0) {
 // Helpers
 // ────────────────────────────────────────────────────────────
 
-const SYMBOL_KIND_MAP = {
+const SYMBOL_KIND_MAP: Record<number, string> = {
   1: "File", 2: "Module", 3: "Namespace", 4: "Package",
   5: "Class", 6: "Method", 7: "Property", 8: "Field",
   9: "Constructor", 10: "Enum", 11: "Interface", 12: "Function",
@@ -418,8 +458,7 @@ const SYMBOL_KIND_MAP = {
   25: "Operator", 26: "TypeParameter",
 };
 
-function symbolKindToString(kind: any) {
-  // @ts-expect-error - TS7053: implicit any index
+function symbolKindToString(kind: number) {
   return SYMBOL_KIND_MAP[kind] || `Unknown(${kind})`;
 }
 
@@ -427,7 +466,7 @@ function symbolKindToString(kind: any) {
  * Determine the workspace root for a file.
  * Tries: explicit override → ALLOWED_ROOTS match → dirname fallback.
  */
-function resolvedWorkspace(filePath: any, explicitWorkspace: any) {
+function resolvedWorkspace(filePath: string, explicitWorkspace: string | undefined) {
   if (explicitWorkspace) return resolve(explicitWorkspace);
 
   // Find the allowed root that contains this file
@@ -446,3 +485,4 @@ function resolvedWorkspace(filePath: any, explicitWorkspace: any) {
 
 export { shutdownAllLspManagers as agenticLspShutdown };
 export { getAllLspHealth as agenticLspHealth };
+

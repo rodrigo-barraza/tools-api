@@ -1,13 +1,23 @@
+import type { Collection } from "mongodb";
 import { getDB } from "../db.ts";
 import logger from "../logger.ts";
 
-let collection: any = null;
+// ─── Types ──────────────────────────────────────────────────────
+export interface GeomagneticStormDocument {
+  gstId: string;
+  startTime?: Date;
+  lastSeen?: Date;
+  firstSeen?: Date;
+  [key: string]: unknown;
+}
+
+let collection: Collection<GeomagneticStormDocument> | null = null;
 
 export async function setupGeomagneticStormCollection() {
   const db = getDB();
   if (!db) throw new Error("Database not connected");
 
-  collection = db.collection("geomagnetic_storms");
+  collection = db.collection<GeomagneticStormDocument>("geomagnetic_storms");
 
   await collection.createIndex({ gstId: 1 }, { unique: true });
   await collection.createIndex({ startTime: -1 });
@@ -15,10 +25,10 @@ export async function setupGeomagneticStormCollection() {
   logger.info("🧲 Geomagnetic storm collection indexes ready");
 }
 
-export async function upsertGeomagneticStorms(storms: any) {
+export async function upsertGeomagneticStorms(storms: GeomagneticStormDocument[]) {
   if (!collection || storms.length === 0) return { upserted: 0, modified: 0 };
 
-  const operations = storms.map((gst: any) => ({
+  const operations = storms.map((gst: GeomagneticStormDocument) => ({
     updateOne: {
       filter: { gstId: gst.gstId },
       update: {
@@ -38,7 +48,7 @@ export async function upsertGeomagneticStorms(storms: any) {
   }
 }
 
-export async function getRecentStorms(days: any = 30, limit: any = 20) {
+export async function getRecentStorms(days: number = 30, limit: number = 20) {
   if (!collection) return [];
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);

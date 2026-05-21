@@ -18,7 +18,7 @@ import {
 
 const VALID_TYPES = ["cron", "once", "trigger"];
 
-let pollerInterval: any = null;
+let pollerInterval: ReturnType<typeof setInterval> | null = null;
 
 // ────────────────────────────────────────────────────────────
 // Collection Setup
@@ -40,15 +40,14 @@ export async function setupAgenticScheduleCollection() {
 // Monotonic ID Generator
 // ────────────────────────────────────────────────────────────
 
-async function nextScheduleId(project: any) {
+async function nextScheduleId(project: string) {
   const db = getDB();
   const result = await db.collection(COUNTER_COLLECTION).findOneAndUpdate(
-    { _id: `schedule_${project}` as any },
-    { $inc: { seq: 1 } } as any,
+    { _id: `schedule_${project}` } as Record<string, unknown>,
+    { $inc: { seq: 1 } },
     { upsert: true, returnDocument: "after" },
   );
-  // @ts-expect-error - suppress remaining error
-  return result.seq;
+  return (result as Record<string, unknown>).seq;
 }
 
 // ────────────────────────────────────────────────────────────
@@ -61,7 +60,7 @@ async function nextScheduleId(project: any) {
  * Also supports full cron expressions (basic 5-field) — but for
  * v1 we use delay-based scheduling with repeat support.
  */
-function parseDelay(schedule: any) {
+function parseDelay(schedule: string | undefined): number | null {
   if (!schedule || typeof schedule !== "string") return null;
 
   const match = schedule.trim().match(/^(\d+)(s|m|h|d)$/i);
@@ -70,8 +69,7 @@ function parseDelay(schedule: any) {
   const value = parseInt(match[1], 10);
   const unit = match[2].toLowerCase();
 
-  const multipliers = { s: 1000, m: 60_000, h: 3_600_000, d: 86_400_000 };
-  // @ts-expect-error - TS7053: implicit any index
+  const multipliers: Record<string, number> = { s: 1000, m: 60_000, h: 3_600_000, d: 86_400_000 };
   return value * (multipliers[unit] || 0);
 }
 
@@ -82,7 +80,7 @@ function parseDelay(schedule: any) {
 /**
  * Create a new schedule.
  */
-export async function agenticScheduleCreate(data: any) {
+export async function agenticScheduleCreate(data: Record<string, unknown>) {
   const {
     project, name, schedule, prompt, type = "once",
     agent, model,
@@ -125,11 +123,10 @@ export async function agenticScheduleCreate(data: any) {
   const now = new Date();
 
   // Calculate nextRunAt for time-based schedules
-  let nextRunAt: any = null;
+  let nextRunAt: Date | null = null;
   if (type !== "trigger") {
-    const delayMs = parseDelay(schedule);
-    // @ts-expect-error - suppress remaining error
-    nextRunAt = new Date(now.getTime() + delayMs);
+    const delayMs = parseDelay(schedule as string);
+    nextRunAt = new Date(now.getTime() + delayMs!);
   }
 
   const document = {
@@ -162,7 +159,7 @@ export async function agenticScheduleCreate(data: any) {
 /**
  * List schedules for a project.
  */
-export async function agenticScheduleList(project: any, { type, limit = 50 }: Record<string, any> = {}) {
+export async function agenticScheduleList(project: string, { type, limit = 50 }: Record<string, unknown> = {}) {
   if (!project || typeof project !== "string") {
     return { error: "'project' is required (string)" };
   }
@@ -170,7 +167,7 @@ export async function agenticScheduleList(project: any, { type, limit = 50 }: Re
   const db = getDB();
   const collection = db.collection(COLLECTION);
 
-  const filter: Record<string, any> = { project };
+  const filter: Record<string, unknown> = { project };
   if (type) filter.type = type;
 
   const schedules = await collection
@@ -189,7 +186,7 @@ export async function agenticScheduleList(project: any, { type, limit = 50 }: Re
 /**
  * Delete a schedule.
  */
-export async function agenticScheduleDelete(project: any, scheduleId: any) {
+export async function agenticScheduleDelete(project: string, scheduleId: string | number) {
   if (!project || typeof project !== "string") {
     return { error: "'project' is required (string)" };
   }
@@ -219,7 +216,7 @@ export async function agenticScheduleDelete(project: any, scheduleId: any) {
 /**
  * Fire a named remote trigger.
  */
-export async function agenticTriggerFire(project: any, triggerName: any, payload: Record<string, any> = {}) {
+export async function agenticTriggerFire(project: string, triggerName: string, payload: Record<string, unknown> = {}) {
   if (!project || typeof project !== "string") {
     return { error: "'project' is required (string)" };
   }
@@ -293,7 +290,7 @@ export function startSchedulePoller() {
           await firePrismAgent(schedule);
 
           // Update run stats
-          const updates: Record<string, any> = {
+          const updates: Record<string, unknown> = {
             lastRunAt: now,
             updatedAt: now,
           };
@@ -329,7 +326,7 @@ export function startSchedulePoller() {
 // Fire a schedule/trigger via Prism's /agent endpoint
 // ────────────────────────────────────────────────────────────
 
-async function firePrismAgent(schedule: any, payload: Record<string, any> = {}) {
+async function firePrismAgent(schedule: Record<string, unknown>, payload: Record<string, unknown> = {}) {
   try {
     const prismUrl = CONFIG.PRISM_SERVICE_URL;
     if (!prismUrl) {
@@ -376,7 +373,7 @@ async function firePrismAgent(schedule: any, payload: Record<string, any> = {}) 
 // Helpers
 // ────────────────────────────────────────────────────────────
 
-function sanitize(document: any) {
+function sanitize(document: Record<string, unknown> | null) {
   if (!document) return null;
   const { _id, ...rest } = document;
   return rest;

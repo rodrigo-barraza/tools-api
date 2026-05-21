@@ -262,9 +262,7 @@ export async function loadUserWorkspaceRoots() {
     const collection = db.collection(WORKSPACE_COLLECTION);
     const document = await collection.findOne({ _key: "user_roots" });
     if (document?.roots?.length > 0) {
-      // @ts-expect-error - suppress remaining error
       refreshAllowedRoots(document.roots);
-      // @ts-expect-error - suppress remaining error
       logger.info(`   📂 User workspace roots: ${document.roots.join(", ")}`);
     }
   } catch (error: unknown) {

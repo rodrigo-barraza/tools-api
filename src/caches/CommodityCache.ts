@@ -5,10 +5,33 @@ import { insertSnapshots } from "../models/CommoditySnapshot.ts";
  * Follows the Nimbus cache pattern — update/get/health/error.
  */
 
+// ─── Types ─────────────────────────────────────────────────────────
+
+interface CommodityQuote {
+  ticker: string;
+  name: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  unit: string;
+  category: string;
+}
+
+interface CommoditySummaryEntry {
+  ticker: string;
+  name: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  unit: string;
+}
+
+// ─── Cache ─────────────────────────────────────────────────────────
+
 const cache = {
-  commodities: [] as any[],
-  lastFetch: null as any,
-  error: null as any,
+  commodities: [] as CommodityQuote[],
+  lastFetch: null as Date | null,
+  error: null as { message: string; time: string } | null,
 };
 
 // ─── Setters ───────────────────────────────────────────────────────
@@ -17,7 +40,7 @@ const cache = {
  * Update the cache with freshly fetched commodity quotes.
  * Persists to MongoDB as timestamped snapshots.
  */
-export async function updateCommodities(quotes: any) {
+export async function updateCommodities(quotes: CommodityQuote[]) {
   cache.commodities = quotes;
   cache.lastFetch = new Date();
   cache.error = null;
@@ -30,7 +53,7 @@ export async function updateCommodities(quotes: any) {
  * Restore commodities from a DB snapshot into the in-memory cache.
  * Memory-only — no MongoDB snapshot insertion.
  */
-export function restoreCommodities(quotes: any) {
+export function restoreCommodities(quotes: CommodityQuote[]) {
   cache.commodities = quotes;
   cache.lastFetch = new Date();
   cache.error = null;
@@ -39,7 +62,7 @@ export function restoreCommodities(quotes: any) {
 /**
  * Record a fetch error.
  */
-export function setCommodityError(error: any) {
+export function setCommodityError(error: { message: string }) {
   cache.error = {
     message: error.message,
     time: new Date().toISOString(),
@@ -58,16 +81,16 @@ export function getAllCommodities() {
 /**
  * Get commodities filtered by category.
  */
-export function getCommoditiesByCategory(category: any) {
-  return cache.commodities.filter((c: any) => c.category === category);
+export function getCommoditiesByCategory(category: string) {
+  return cache.commodities.filter((c) => c.category === category);
 }
 
 /**
  * Get a single commodity by ticker symbol.
  */
-export function getCommodityByTicker(ticker: any) {
+export function getCommodityByTicker(ticker: string) {
   return cache.commodities.find(
-    (c: any) => c.ticker.toUpperCase() === ticker.toUpperCase(),
+    (c) => c.ticker.toUpperCase() === ticker.toUpperCase(),
   );
 }
 
@@ -82,16 +105,16 @@ export function getCommoditySummary() {
   }
 
   // Sort by changePercent for gainers/losers
-  const withChange = commodities.filter((c: any) => c.changePercent != null);
+  const withChange = commodities.filter((c) => c.changePercent != null);
   const sorted = [...withChange].sort(
-    (a: any, b: any) => b.changePercent - a.changePercent,
+    (a, b) => b.changePercent - a.changePercent,
   );
 
   const gainers = sorted.slice(0, 5).map(summarize);
   const losers = sorted.slice(-5).reverse().map(summarize);
 
   // Group by category
-  const byCategory: Record<string, any> = {};
+  const byCategory: Record<string, CommoditySummaryEntry[]> = {};
   for (const c of commodities) {
     if (!byCategory[c.category]) {
       byCategory[c.category] = [];
@@ -121,7 +144,7 @@ export function getCommodityHealth() {
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
-function summarize(c: any) {
+function summarize(c: CommodityQuote): CommoditySummaryEntry {
   return {
     ticker: c.ticker,
     name: c.name,

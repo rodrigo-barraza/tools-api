@@ -19,7 +19,7 @@ const router = Router();
 router.get("/dota/heroes", asyncHandler(async (req: Request, res: Response) => {
   try {
     const heroes = await getHeroes();
-    const { role, attr, q } = req.query as any;
+    const { role, attr, q } = req.query as Record<string, string | undefined>;
 
     let filtered = heroes;
 
@@ -36,8 +36,7 @@ router.get("/dota/heroes", asyncHandler(async (req: Request, res: Response) => {
     }
 
     if (attr) {
-      const attrMap = { str: "str", agi: "agi", int: "int", all: "all", universal: "all" };
-      // @ts-expect-error - TS7053: implicit any index
+      const attrMap: Record<string, string> = { str: "str", agi: "agi", int: "int", all: "all", universal: "all" };
       const attrKey = attrMap[attr.toLowerCase()] || attr.toLowerCase();
       filtered = filtered.filter((h: any) => h.primaryAttr === attrKey);
     }
@@ -167,7 +166,7 @@ router.get("/dota/pro-matches", asyncHandler(async (req: Request, res: Response)
 // ─── Unified Dota Dispatcher (for AI tool schema) ───────────
 
 router.get("/dota", asyncHandler(async (req: Request, res: Response) => {
-  const { action, query, heroId, accountId, matchId, limit, role, attr } = req.query as any;
+  const { action, query, heroId, accountId, matchId, limit, role, attr } = req.query as Record<string, string | undefined>;
   if (!action) {
     return res.status(400).json({
       error: "'action' is required",

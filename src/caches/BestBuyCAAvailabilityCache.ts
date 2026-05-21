@@ -1,14 +1,33 @@
 import { BESTBUY_CA_DEFAULT_SKUS } from "../constants.ts";
 
+// ─── Interfaces ────────────────────────────────────────────────────
+
+interface SkuMetadata {
+  name: string | null;
+  brand: string | null;
+  category: string | null;
+}
+
+interface AvailabilityResult {
+  sku: string;
+  inStock: boolean;
+  [key: string]: unknown;
+}
+
+interface CacheError {
+  message: string;
+  timestamp: Date;
+}
+
 // ─── In-Memory Store ───────────────────────────────────────────────
 
 const store = {
   /** @type {Object<string, { name: string, brand: string, category: string }>} */
-  watchlist: { ...BESTBUY_CA_DEFAULT_SKUS } as Record<string, any>,
+  watchlist: { ...BESTBUY_CA_DEFAULT_SKUS } as Record<string, SkuMetadata>,
 
-  statuses: {} as Record<string, any>,
-  lastCheck: null as any,
-  error: null as any,
+  statuses: {} as Record<string, AvailabilityResult>,
+  lastCheck: null as Date | null,
+  error: null as CacheError | null,
 };
 
 // ─── Update Methods ────────────────────────────────────────────────
@@ -16,7 +35,7 @@ const store = {
 /**
  * Update availability statuses from a fetcher result set.
  */
-export function updateStatuses(results: any) {
+export function updateStatuses(results: AvailabilityResult[]) {
   for (const result of results) {
     store.statuses[result.sku] = result;
   }
@@ -27,7 +46,7 @@ export function updateStatuses(results: any) {
 /**
  * Record an error from the collector.
  */
-export function setAvailabilityError(error: any) {
+export function setAvailabilityError(error: { message: string }) {
   store.error = {
     message: error.message,
     timestamp: new Date(),
@@ -42,7 +61,7 @@ export function setAvailabilityError(error: any) {
 export function getWatchlist() {
   return {
     count: Object.keys(store.watchlist).length,
-    skus: Object.entries(store.watchlist).map(([sku, meta]: any) => ({
+    skus: Object.entries(store.watchlist).map(([sku, meta]: [string, SkuMetadata]) => ({
       sku,
       ...meta,
     })),
@@ -66,7 +85,7 @@ export function getWatchlistMetadata() {
 /**
  * Add SKUs to the watchlist.
  */
-export function addToWatchlist(items: any) {
+export function addToWatchlist(items: { sku?: string | number; name?: string; brand?: string; category?: string }[]) {
   let added = 0;
   for (const item of items) {
     if (!item.sku) continue;
@@ -84,7 +103,7 @@ export function addToWatchlist(items: any) {
 /**
  * Remove a SKU from the watchlist and its cached status.
  */
-export function removeFromWatchlist(sku: any) {
+export function removeFromWatchlist(sku: string) {
   const existed = sku in store.watchlist;
   delete store.watchlist[sku];
   delete store.statuses[sku];
@@ -101,7 +120,7 @@ export function getAll() {
   return {
     count: results.length,
     lastCheck: store.lastCheck,
-    inStockCount: results.filter((r: any) => r.inStock).length,
+    inStockCount: results.filter((r: AvailabilityResult) => r.inStock).length,
     results,
   };
 }
@@ -109,7 +128,7 @@ export function getAll() {
 /**
  * Get availability for a single SKU.
  */
-export function getBySku(sku: any) {
+export function getBySku(sku: string) {
   return store.statuses[sku] || null;
 }
 
@@ -117,7 +136,7 @@ export function getBySku(sku: any) {
  * Get only in-stock items.
  */
 export function getInStock() {
-  const results = Object.values(store.statuses).filter((r: any) => r.inStock);
+  const results = Object.values(store.statuses).filter((r: AvailabilityResult) => r.inStock);
   return {
     count: results.length,
     lastCheck: store.lastCheck,
@@ -129,7 +148,7 @@ export function getInStock() {
  * Get only out-of-stock items.
  */
 export function getOutOfStock() {
-  const results = Object.values(store.statuses).filter((r: any) => !r.inStock);
+  const results = Object.values(store.statuses).filter((r: AvailabilityResult) => !r.inStock);
   return {
     count: results.length,
     lastCheck: store.lastCheck,
@@ -141,7 +160,7 @@ export function getOutOfStock() {
 
 export function getAvailabilityHealth() {
   const statusCount = Object.keys(store.statuses).length;
-  const inStock = Object.values(store.statuses).filter((r: any) => r.inStock).length;
+  const inStock = Object.values(store.statuses).filter((r: AvailabilityResult) => r.inStock).length;
 
   return {
     watchlistSize: Object.keys(store.watchlist).length,

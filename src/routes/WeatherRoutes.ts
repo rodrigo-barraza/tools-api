@@ -172,7 +172,7 @@ router.get("/warnings/count", (_req: Request, res: Response) => res.json(getWarn
 router.get("/avalanche", (_req: Request, res: Response) => res.json(getAvalanche()));
 // ── Live Weather (on-demand, any location) ────────────────────────
 router.get("/live", asyncHandler(async (req: Request, res: Response) => {
-  const { location, latitude, longitude, units } = req.query as any;
+  const { location, latitude, longitude, units } = req.query as Record<string, string | undefined>;
   if (!location && (latitude == null || longitude == null)) {
     return res.status(400).json({
       error: "Query parameter 'location' (city name) or 'latitude' + 'longitude' are required",
@@ -191,7 +191,7 @@ router.get("/live", asyncHandler(async (req: Request, res: Response) => {
       longitude: longitude != null ? parseFloat(longitude) : undefined,
       units: units || "metric",
     });
-    if ((result as any).error) {
+    if (result && typeof result === "object" && "error" in result) {
       return res.status(404).json(result);
     }
     res.json(result);
@@ -200,7 +200,7 @@ router.get("/live", asyncHandler(async (req: Request, res: Response) => {
   }
 }));
 // ── Unified Environment Dispatcher ─────────────────────────────────
-const SOURCE_MAP = {
+const SOURCE_MAP: Record<string, () => unknown> = {
   current_weather: () => getCurrent(),
   air_quality: () => getAirQuality(),
   earthquakes: () => getLatestEarthquakes(),
@@ -219,15 +219,14 @@ const SOURCE_MAP = {
   air_quality_google: () => getGoogleAirQuality(),
 };
 router.get("/environment", (req: Request, res: Response) => {
-  const { source } = req.query as any;
+  const { source } = req.query as Record<string, string | undefined>;
   if (!source) {
     return res.status(400).json({
       error: "Query parameter 'source' is required",
       availableSources: Object.keys(SOURCE_MAP),
     });
   }
-  // @ts-expect-error - TS7053: implicit any index
-  const handler = SOURCE_MAP[source];
+  const handler = SOURCE_MAP[source as string];
   if (!handler) {
     return res.status(400).json({
       error: `Unknown source: ${source}`,

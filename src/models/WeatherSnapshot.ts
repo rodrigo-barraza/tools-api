@@ -4,7 +4,7 @@ import logger from "../logger.ts";
 /**
  * Insert a weather snapshot document.
  */
-export async function insertSnapshot(data: any) {
+export async function insertSnapshot(data: Record<string, unknown>) {
   try {
     const db = getDB();
     const collection = db.collection("snapshots");

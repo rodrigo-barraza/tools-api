@@ -1,4 +1,4 @@
-import { MongoClient } from "mongodb";
+import { MongoClient, type Db, type Collection, type Document } from "mongodb";
 import logger from "../logger.ts";
 
 // ═══════════════════════════════════════════════════════════════
@@ -9,15 +9,15 @@ import logger from "../logger.ts";
 //    Messages — One doc per Discord message (scraped from servers)
 // ═══════════════════════════════════════════════════════════════
 
-let client: any = null;
-let luposDb: any = null;
-let messagesCol: any = null;
+let client: MongoClient | null = null;
+let luposDb: Db | null = null;
+let messagesCol: Collection<Document> | null = null;
 
 /**
  * Connect to the Lupos database.
  * Uses the same MongoDB host but targets the `lupos` database.
  */
-export async function connectLuposDB(baseUri: any) {
+export async function connectLuposDB(baseUri: string) {
   if (luposDb) return luposDb;
 
   // Replace the database name in the URI
@@ -36,7 +36,7 @@ export async function connectLuposDB(baseUri: any) {
 /**
  * Get the Lupos database instance.
  */
-export function getLuposDB() {
+export function getLuposDB(): Db {
   if (!luposDb) throw new Error("Lupos DB not connected — call connectLuposDB() first");
   return luposDb;
 }
@@ -54,16 +54,16 @@ export async function setupLuposCollections() {
   // On 8M+ docs, new indexes may take several minutes to build in background.
   const ensureIndexes = async () => {
     try {
-      await messagesCol.createIndex({ id: 1 }, { unique: true, background: true });
-      await messagesCol.createIndex({ "author.id": 1, createdTimestamp: -1 }, { background: true });
-      await messagesCol.createIndex({ guildId: 1, channelId: 1, createdTimestamp: -1 }, { background: true });
-      await messagesCol.createIndex({ guildId: 1, createdTimestamp: -1 }, { background: true });
+      await messagesCol!.createIndex({ id: 1 }, { unique: true, background: true });
+      await messagesCol!.createIndex({ "author.id": 1, createdTimestamp: -1 }, { background: true });
+      await messagesCol!.createIndex({ guildId: 1, channelId: 1, createdTimestamp: -1 }, { background: true });
+      await messagesCol!.createIndex({ guildId: 1, createdTimestamp: -1 }, { background: true });
     } catch (error: unknown) {
       logger.warn(`🐺 Lupos index creation warning: ${(error as Error).message}`);
     }
 
     try {
-      await messagesCol.createIndex(
+      await messagesCol!.createIndex(
         { content: "text" },
         { name: "lupos_message_text_search", background: true },
       );
@@ -82,7 +82,7 @@ export async function setupLuposCollections() {
 /**
  * Get the Messages collection reference.
  */
-export function getMessagesCollection() {
+export function getMessagesCollection(): Collection<Document> {
   if (!messagesCol) {
     const db = getLuposDB();
     messagesCol = db.collection("Messages");

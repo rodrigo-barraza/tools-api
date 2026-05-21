@@ -3,6 +3,7 @@
 // (dev servers, watchers, etc.) so the agent can return
 // immediately while the process continues running.
 
+import type { ChildProcess } from "node:child_process";
 import logger from "../logger.ts";
 import {
   BACKGROUND_PROCESS_MAX_TTL_MS as MAX_TTL_MS,
@@ -13,26 +14,44 @@ import {
 } from "../constants.ts";
 
 // ────────────────────────────────────────────────────────────
+// Types
+// ────────────────────────────────────────────────────────────
+
+interface BackgroundProcessMeta {
+  command: string;
+  cwd: string;
+}
+
+interface BackgroundProcessEntry {
+  child: ChildProcess;
+  command: string;
+  cwd: string;
+  startedAt: number;
+  lastReadAt: number;
+  stdoutBuffer: string[];
+  stderrBuffer: string[];
+  stdoutBytes: number;
+  stderrBytes: number;
+  exited: boolean;
+  exitCode: number | null;
+  exitReason: string | null;
+}
+
+interface ProcessListEntry {
+  pid: number;
+  command: string;
+  cwd: string;
+  startedAt: number;
+  uptimeMs: number;
+  exited: boolean;
+  exitCode: number | null;
+}
+
+// ────────────────────────────────────────────────────────────
 // Registry Store
 // ────────────────────────────────────────────────────────────
 
-/** @type {Map<number, BackgroundProcess>} pid → process info */
-const registry = new Map();
-
-/**
- * @property {import("child_process").ChildProcess} child
- * @property {string} command
- * @property {string} cwd
- * @property {number} startedAt
- * @property {number} lastReadAt
- * @property {string[]} stdoutBuffer - Ring buffer of recent stdout lines
- * @property {string[]} stderrBuffer - Ring buffer of recent stderr lines
- * @property {number} stdoutBytes
- * @property {number} stderrBytes
- * @property {boolean} exited
- * @property {number|null} exitCode
- * @property {string|null} exitReason
- */
+const registry = new Map<number, BackgroundProcessEntry>();
 
 // ────────────────────────────────────────────────────────────
 // Public API
@@ -42,9 +61,9 @@ const registry = new Map();
  * Register a child process in the background registry.
  * Attaches output listeners and tracks the process lifecycle.
  */
-export function register(child: any, meta: any) {
-  const pid = child.pid;
-  const entry = {
+export function register(child: ChildProcess, meta: BackgroundProcessMeta) {
+  const pid = child.pid!;
+  const entry: BackgroundProcessEntry = {
     child,
     command: meta.command,
     cwd: meta.cwd,
@@ -60,42 +79,36 @@ export function register(child: any, meta: any) {
   };
 
   // Accumulate output into a bounded ring buffer
-  child.stdout?.on("data", (chunk: any) => {
+  child.stdout?.on("data", (chunk: Buffer) => {
     const text = chunk.toString("utf-8");
-    // @ts-expect-error - suppress remaining error
     entry.stdoutBuffer.push(text);
     entry.stdoutBytes += chunk.length;
     // Trim to keep buffer bounded
     while (entry.stdoutBytes > MAX_BUFFERED_BYTES && entry.stdoutBuffer.length > 1) {
-      const removed = entry.stdoutBuffer.shift();
-      // @ts-expect-error - suppress remaining error
+      const removed = entry.stdoutBuffer.shift()!;
       entry.stdoutBytes -= Buffer.byteLength(removed, "utf-8");
     }
   });
 
-  child.stderr?.on("data", (chunk: any) => {
+  child.stderr?.on("data", (chunk: Buffer) => {
     const text = chunk.toString("utf-8");
-    // @ts-expect-error - suppress remaining error
     entry.stderrBuffer.push(text);
     entry.stderrBytes += chunk.length;
     while (entry.stderrBytes > MAX_BUFFERED_BYTES && entry.stderrBuffer.length > 1) {
-      const removed = entry.stderrBuffer.shift();
-      // @ts-expect-error - suppress remaining error
+      const removed = entry.stderrBuffer.shift()!;
       entry.stderrBytes -= Buffer.byteLength(removed, "utf-8");
     }
   });
 
-  child.on("close", (code: any) => {
+  child.on("close", (code: number | null) => {
     entry.exited = true;
     entry.exitCode = code;
-    // @ts-expect-error - suppress remaining error
     entry.exitReason = "exited";
     logger.info(`[BackgroundProcessRegistry] PID ${pid} exited with code ${code} (${meta.command.slice(0, 60)})`);
   });
 
-  child.on("error", (error: any) => {
+  child.on("error", (error: Error) => {
     entry.exited = true;
-    // @ts-expect-error - suppress remaining error
     entry.exitReason = `error: ${error.message}`;
     logger.warn(`[BackgroundProcessRegistry] PID ${pid} error: ${error.message}`);
   });
@@ -110,7 +123,7 @@ export function register(child: any, meta: any) {
  * Get the current state of a background process.
  * Updates lastReadAt to extend the TTL.
  */
-export function getProcess(pid: any) {
+export function getProcess(pid: number) {
   const entry = registry.get(pid);
   if (!entry) return null;
 
@@ -133,7 +146,7 @@ export function getProcess(pid: any) {
 /**
  * Kill a background process and remove it from the registry.
  */
-export function kill(pid: any, signal: any = "SIGTERM") {
+export function kill(pid: number, signal: NodeJS.Signals = "SIGTERM") {
   const entry = registry.get(pid);
   if (!entry) {
     return { success: false, pid, error: `PID ${pid} not found in background registry` };
@@ -164,8 +177,8 @@ export function kill(pid: any, signal: any = "SIGTERM") {
 /**
  * List all tracked background processes.
  */
-export function list() {
-  const result: any[] = [];
+export function list(): ProcessListEntry[] {
+  const result: ProcessListEntry[] = [];
   for (const [pid, entry] of registry) {
     result.push({
       pid,

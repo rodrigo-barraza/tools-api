@@ -1,19 +1,46 @@
 const TRAJECTORY_BUFFER_SIZE = 100;
 
-const cache = {
-  position: null as any,
-  astronauts: null as any,
-  trajectory: [] as any[],
-  lastPositionFetch: null as any,
-  lastAstrosFetch: null as any,
-  positionError: null as any,
-  astrosError: null as any,
+interface IssPosition {
+  latitude: number;
+  longitude: number;
+  [key: string]: unknown;
+}
+
+interface TrajectoryPoint extends IssPosition {
+  recordedAt: Date;
+}
+
+interface AstronautData {
+  [key: string]: unknown;
+}
+
+interface CacheError {
+  message: string;
+  time: string;
+}
+
+const cache: {
+  position: IssPosition | null;
+  astronauts: AstronautData | null;
+  trajectory: TrajectoryPoint[];
+  lastPositionFetch: Date | null;
+  lastAstrosFetch: Date | null;
+  positionError: CacheError | null;
+  astrosError: CacheError | null;
+} = {
+  position: null,
+  astronauts: null,
+  trajectory: [],
+  lastPositionFetch: null,
+  lastAstrosFetch: null,
+  positionError: null,
+  astrosError: null,
 };
 
 /**
  * Update ISS position and append to trajectory ring buffer.
  */
-export function updateIssPosition(position: any) {
+export function updateIssPosition(position: IssPosition) {
   cache.position = position;
   cache.lastPositionFetch = new Date();
   cache.positionError = null;
@@ -28,20 +55,20 @@ export function updateIssPosition(position: any) {
   }
 }
 
-export function setIssPositionError(error: any) {
+export function setIssPositionError(error: { message: string }) {
   cache.positionError = { message: error.message, time: new Date().toISOString() };
 }
 
 /**
  * Update astronaut roster.
  */
-export function updateAstronauts(data: any) {
+export function updateAstronauts(data: AstronautData) {
   cache.astronauts = data;
   cache.lastAstrosFetch = new Date();
   cache.astrosError = null;
 }
 
-export function setAstronautsError(error: any) {
+export function setAstronautsError(error: { message: string }) {
   cache.astrosError = { message: error.message, time: new Date().toISOString() };
 }
 

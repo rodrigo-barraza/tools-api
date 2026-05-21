@@ -1,13 +1,23 @@
+import type { Collection } from "mongodb";
 import { getDB } from "../db.ts";
 import logger from "../logger.ts";
 
-let collection: any = null;
+// ─── Types ──────────────────────────────────────────────────────
+export interface WebcamDocument {
+  id: string;
+  city?: string;
+  lastUpdated?: Date;
+  firstSeen?: Date;
+  [key: string]: unknown;
+}
+
+let collection: Collection<WebcamDocument> | null = null;
 
 export async function setupWebcamCollection() {
   const db = getDB();
   if (!db) return;
   
-  collection = db.collection("webcams");
+  collection = db.collection<WebcamDocument>("webcams");
 
   await collection.createIndex({ id: 1 }, { unique: true });
   await collection.createIndex({ city: 1 });
@@ -16,11 +26,11 @@ export async function setupWebcamCollection() {
   logger.info("📷 Webcam collection indexes ready");
 }
 
-export async function upsertWebcams(webcams: any) {
+export async function upsertWebcams(webcams: WebcamDocument[]) {
   if (!collection || webcams.length === 0) return null;
 
   const now = new Date();
-  const operations = webcams.map((cam: any) => ({
+  const operations = webcams.map((cam: WebcamDocument) => ({
     updateOne: {
       filter: { id: cam.id },
       update: {
@@ -40,13 +50,13 @@ export async function upsertWebcams(webcams: any) {
   }
 }
 
-export async function getWebcamsByCity(city: any, limit: any = 100) {
+export async function getWebcamsByCity(city: string, limit: number = 100) {
   if (!collection) return [];
   // Exclude mongodb _id from results so it's clean
   return collection.find({ city }, { projection: { _id: 0, lastUpdated: 0, firstSeen: 0 } }).limit(limit).toArray();
 }
 
-export async function getWebcamsLastUpdated(city: any) {
+export async function getWebcamsLastUpdated(city: string) {
   if (!collection) return null;
   const latest = await collection.find({ city }).sort({ lastUpdated: -1 }).limit(1).toArray();
   return latest.length > 0 ? latest[0].lastUpdated : null;

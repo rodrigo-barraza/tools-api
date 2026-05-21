@@ -1,15 +1,41 @@
 import { TREND_SOURCES } from "../constants.ts";
 
+// ─── Types ─────────────────────────────────────────────────────────
+
+interface CachedTrend {
+  name: string;
+  normalizedName: string;
+  source: string;
+  category?: string;
+  volume?: number;
+  url?: string;
+  context?: Record<string, unknown>;
+}
+
+interface TrendSourceData {
+  trends: CachedTrend[];
+  lastFetch: string | null;
+  error: { message: string; time: string } | null;
+}
+
+interface CorrelatedTopic {
+  name: string;
+  normalizedName: string;
+  sources: Set<string>;
+  totalVolume: number;
+  entries: CachedTrend[];
+}
+
 // ─── In-Memory Cache ───────────────────────────────────────────────
 
-const cache: Record<string, any> = {};
+const cache: Record<string, TrendSourceData> = {};
 
 // Initialize cache slots for each source
 for (const source of Object.values(TREND_SOURCES)) {
   cache[source] = {
     trends: [],
-    lastFetch: null as any,
-    error: null as any,
+    lastFetch: null,
+    error: null,
   };
 }
 
@@ -20,11 +46,11 @@ for (const source of Object.values(TREND_SOURCES)) {
 
 
  */
-export function updateTrends(source: any, trends: any) {
+export function updateTrends(source: string, trends: CachedTrend[]) {
   cache[source] = {
     trends,
     lastFetch: new Date().toISOString(),
-    error: null as any,
+    error: null,
   };
 }
 
@@ -33,7 +59,7 @@ export function updateTrends(source: any, trends: any) {
 
 
  */
-export function setTrendError(source: any, error: any) {
+export function setTrendError(source: string, error: { message: string }) {
   if (cache[source]) {
     cache[source].error = {
       message: error.message,
@@ -48,8 +74,8 @@ export function setTrendError(source: any, error: any) {
  * Returns all cached trends across all sources.
  */
 export function getAll() {
-  const allTrends: any[] = [];
-  const sourceSummary: Record<string, any> = {};
+  const allTrends: CachedTrend[] = [];
+  const sourceSummary: Record<string, { count: number; lastFetch: string | null }> = {};
 
   for (const [source, data] of Object.entries(cache)) {
     allTrends.push(...data.trends);
@@ -62,7 +88,7 @@ export function getAll() {
   return {
     count: allTrends.length,
     sources: sourceSummary,
-    trends: allTrends.sort((a: any, b: any) => (b.volume || 0) - (a.volume || 0)),
+    trends: allTrends.sort((a, b) => (b.volume || 0) - (a.volume || 0)),
   };
 }
 
@@ -70,16 +96,16 @@ export function getAll() {
  * Returns cached trends from a specific source.
 
  */
-export function getBySource(source: any) {
+export function getBySource(source: string) {
   const data = cache[source];
   if (!data) {
-    return { count: 0, source, lastFetch: null as any, trends: [] };
+    return { count: 0, source, lastFetch: null, trends: [] as CachedTrend[] };
   }
   return {
     count: data.trends.length,
     source,
     lastFetch: data.lastFetch,
-    trends: data.trends.sort((a: any, b: any) => (b.volume || 0) - (a.volume || 0)),
+    trends: data.trends.sort((a, b) => (b.volume || 0) - (a.volume || 0)),
   };
 }
 
@@ -87,12 +113,12 @@ export function getBySource(source: any) {
  * Returns cached trends filtered by category.
 
  */
-export function getByCategory(category: any) {
-  const allTrends: any[] = [];
+export function getByCategory(category: string) {
+  const allTrends: CachedTrend[] = [];
   for (const data of Object.values(cache)) {
     allTrends.push(
       ...data.trends.filter(
-        (t: any) =>
+        (t) =>
           t.category && t.category.toLowerCase() === category.toLowerCase(),
       ),
     );
@@ -101,7 +127,7 @@ export function getByCategory(category: any) {
   return {
     count: allTrends.length,
     category,
-    trends: allTrends.sort((a: any, b: any) => (b.volume || 0) - (a.volume || 0)),
+    trends: allTrends.sort((a, b) => (b.volume || 0) - (a.volume || 0)),
   };
 }
 
@@ -111,7 +137,7 @@ export function getByCategory(category: any) {
  */
 export function getCorrelatedTrends() {
   // Build a map of normalizedName → { sources, totalVolume, entries }
-  const topicMap = new Map();
+  const topicMap = new Map<string, CorrelatedTopic>();
 
   for (const data of Object.values(cache)) {
     for (const trend of data.trends) {
@@ -125,7 +151,7 @@ export function getCorrelatedTrends() {
           entries: [],
         });
       }
-      const topic = topicMap.get(key);
+      const topic = topicMap.get(key)!;
       topic.sources.add(trend.source);
       topic.totalVolume += trend.volume || 0;
       topic.entries.push(trend);
@@ -134,8 +160,8 @@ export function getCorrelatedTrends() {
 
   // Filter to topics in 2+ sources
   const correlated = Array.from(topicMap.values())
-    .filter((t: any) => t.sources.size >= 2)
-    .map((t: any) => ({
+    .filter((t) => t.sources.size >= 2)
+    .map((t) => ({
       name: t.name,
       normalizedName: t.normalizedName,
       sourceCount: t.sources.size,
@@ -144,7 +170,7 @@ export function getCorrelatedTrends() {
       entries: t.entries,
     }))
     .sort(
-      (a: any, b: any) => b.sourceCount - a.sourceCount || b.totalVolume - a.totalVolume,
+      (a, b) => b.sourceCount - a.sourceCount || b.totalVolume - a.totalVolume,
     );
 
   return {
@@ -157,14 +183,14 @@ export function getCorrelatedTrends() {
  * Searches cached trends by keyword (case-insensitive).
 
  */
-export function searchTrends(query: any) {
+export function searchTrends(query: string) {
   const normalizedQuery = query.toLowerCase();
-  const allTrends: any[] = [];
+  const allTrends: CachedTrend[] = [];
 
   for (const data of Object.values(cache)) {
     allTrends.push(
       ...data.trends.filter(
-        (t: any) => t.name.toLowerCase().includes(normalizedQuery) || t.normalizedName.includes(normalizedQuery),
+        (t) => t.name.toLowerCase().includes(normalizedQuery) || t.normalizedName.includes(normalizedQuery),
       ),
     );
   }
@@ -172,7 +198,7 @@ export function searchTrends(query: any) {
   return {
     count: allTrends.length,
     query,
-    trends: allTrends.sort((a: any, b: any) => (b.volume || 0) - (a.volume || 0)),
+    trends: allTrends.sort((a, b) => (b.volume || 0) - (a.volume || 0)),
   };
 }
 
@@ -180,7 +206,7 @@ export function searchTrends(query: any) {
  * Returns health status for all collectors.
  */
 export function getHealth() {
-  const health: Record<string, any> = {};
+  const health: Record<string, { trendCount: number; lastFetch: string | null; error: TrendSourceData["error"] }> = {};
   for (const [source, data] of Object.entries(cache)) {
     health[source] = {
       trendCount: data.trends.length,

@@ -1,6 +1,18 @@
+import type { AnyBulkWriteOperation, Document } from "mongodb";
 import { hours as hoursToMs } from "@rodrigo-barraza/utilities-library";
 import { getDB } from "../db.ts";
 import logger from "../logger.ts";
+
+// ─── Types ──────────────────────────────────────────────────────
+export interface TrendInput {
+  name: string;
+  normalizedName: string;
+  source: string;
+  category?: string | null;
+  volume?: number;
+  url?: string | null;
+  context?: Record<string, unknown>;
+}
 
 /**
  * Sets up the trends collection with indexes.
@@ -19,14 +31,14 @@ export async function setupTrendCollection() {
 /**
  * Upserts an array of trend objects into the database.
  */
-export async function upsertTrends(trends: any) {
+export async function upsertTrends(trends: TrendInput[]) {
   if (!trends.length) return { upserted: 0, modified: 0 };
 
   const db = getDB();
   const collection = db.collection("trends");
   const now = new Date();
 
-  const bulkOps = trends.map((trend: any) => ({
+  const bulkOps = trends.map((trend: TrendInput) => ({
     updateOne: {
       filter: {
         normalizedName: trend.normalizedName,
@@ -55,7 +67,7 @@ export async function upsertTrends(trends: any) {
     },
   }));
 
-  const result = await collection.bulkWrite(bulkOps, { ordered: false });
+  const result = await collection.bulkWrite(bulkOps as unknown as AnyBulkWriteOperation<Document>[], { ordered: false });
   return {
     upserted: result.upsertedCount || 0,
     modified: result.modifiedCount || 0,
@@ -66,16 +78,16 @@ export async function upsertTrends(trends: any) {
  * Gets recent trends from the database.
  */
 export async function getRecentTrends(
-  hours: any = 24,
-  category: any = null,
-  source: any = null,
-  limit: any = 50,
+  hours: number = 24,
+  category: string | null = null,
+  source: string | null = null,
+  limit: number = 50,
 ) {
   const db = getDB();
   const collection = db.collection("trends");
   const since = new Date(Date.now() - hoursToMs(hours));
 
-  const filter: Record<string, any> = { lastSeen: { $gte: since } };
+  const filter: Record<string, unknown> = { lastSeen: { $gte: since } };
   if (category) filter.category = category;
   if (source) filter.source = source;
 
@@ -85,7 +97,7 @@ export async function getRecentTrends(
 /**
  * Searches trends in the database by keyword.
  */
-export async function searchTrendsDB(query: any, limit: any = 50) {
+export async function searchTrendsDB(query: string, limit: number = 50) {
   const db = getDB();
   const collection = db.collection("trends");
   return collection
@@ -98,7 +110,7 @@ export async function searchTrendsDB(query: any, limit: any = 50) {
 /**
  * Gets top trends aggregated across all sources.
  */
-export async function getTopTrends(hours: any = 24, limit: any = 20) {
+export async function getTopTrends(hours: number = 24, limit: number = 20) {
   const db = getDB();
   const collection = db.collection("trends");
   const since = new Date(Date.now() - hoursToMs(hours));

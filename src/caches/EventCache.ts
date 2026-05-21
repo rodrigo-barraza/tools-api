@@ -9,14 +9,39 @@ import logger from "../logger.ts";
  * Dynamically initializes entries for all EVENT_SOURCES.
  */
 
-const cache: Record<string, any> = {};
+interface CacheError {
+  message: string;
+  time: string;
+}
+
+interface CachedEvent {
+  source: string;
+  sourceId: string;
+  category?: string;
+  startDate?: Date;
+  [key: string]: unknown;
+}
+
+interface EventCacheEntry {
+  events: CachedEvent[];
+  lastFetch: Date | null;
+  error: CacheError | null;
+}
+
+interface EventHealthEntry {
+  lastFetch: Date | null;
+  error: CacheError | null;
+  eventCount: number;
+}
+
+const cache: Record<string, EventCacheEntry> = {};
 
 // Initialize cache for all sources
 for (const source of Object.values(EVENT_SOURCES)) {
   cache[source] = {
     events: [],
-    lastFetch: null as any,
-    error: null as any,
+    lastFetch: null,
+    error: null,
   };
 }
 
@@ -33,9 +58,9 @@ const GEOCODE_SOURCES = new Set([
  * Enriches scraped events with geocoding and static map URLs.
  * Persists to MongoDB via upsert (deduplication by sourceId + source).
  */
-export async function updateEvents(source: any, events: any) {
+export async function updateEvents(source: string, events: CachedEvent[]) {
   if (!cache[source]) {
-    cache[source] = { events: [], lastFetch: null as any, error: null };
+    cache[source] = { events: [], lastFetch: null, error: null };
   }
 
   // Geocode scraped sources that lack coordinates
@@ -61,9 +86,9 @@ export async function updateEvents(source: any, events: any) {
  * Restore events from a DB snapshot into the in-memory cache.
  * Memory-only — skips geocoding and DB upserts.
  */
-export function restoreEvents(source: any, events: any) {
+export function restoreEvents(source: string, events: CachedEvent[]) {
   if (!cache[source]) {
-    cache[source] = { events: [], lastFetch: null as any, error: null };
+    cache[source] = { events: [], lastFetch: null, error: null };
   }
   cache[source].events = events;
   cache[source].lastFetch = new Date();
@@ -73,9 +98,9 @@ export function restoreEvents(source: any, events: any) {
 /**
  * Record a fetch error for a source.
  */
-export function setError(source: any, error: any) {
+export function setError(source: string, error: { message: string }) {
   if (!cache[source]) {
-    cache[source] = { events: [], lastFetch: null as any, error: null };
+    cache[source] = { events: [], lastFetch: null, error: null };
   }
   cache[source].error = {
     message: error.message,
@@ -87,14 +112,14 @@ export function setError(source: any, error: any) {
  * Get all cached events merged from all sources, sorted by date.
  */
 export function getLatestEvents() {
-  const all: any[] = [];
+  const all: CachedEvent[] = [];
   for (const source of Object.values(EVENT_SOURCES)) {
     if (cache[source]) {
       all.push(...cache[source].events);
     }
   }
   return all.sort(
-    (a: any, b: any) => (a.startDate?.getTime() ?? 0) - (b.startDate?.getTime() ?? 0),
+    (a: CachedEvent, b: CachedEvent) => (a.startDate?.getTime() ?? 0) - (b.startDate?.getTime() ?? 0),
   );
 }
 
@@ -109,12 +134,12 @@ export function getEventSummary() {
   const todayEnd = new Date(now);
   todayEnd.setHours(23, 59, 59, 999);
 
-  const byCategoryCount: Record<string, any> = {};
+  const byCategoryCount: Record<string, number> = {};
   for (const cat of Object.values(EVENT_CATEGORIES)) {
     byCategoryCount[cat] = 0;
   }
 
-  const bySource: Record<string, any> = {};
+  const bySource: Record<string, number> = {};
   for (const source of Object.values(EVENT_SOURCES)) {
     bySource[source] = cache[source]?.events.length || 0;
   }
@@ -138,7 +163,7 @@ export function getEventSummary() {
     }
   }
 
-  const lastFetch: Record<string, any> = {};
+  const lastFetch: Record<string, Date | null> = {};
   for (const source of Object.values(EVENT_SOURCES)) {
     lastFetch[source] = cache[source]?.lastFetch || null;
   }
@@ -157,7 +182,7 @@ export function getEventSummary() {
  * Get health info for the /health endpoint.
  */
 export function getHealth() {
-  const health: Record<string, any> = {};
+  const health: Record<string, EventHealthEntry> = {};
   for (const source of Object.values(EVENT_SOURCES)) {
     health[source] = {
       lastFetch: cache[source]?.lastFetch || null,

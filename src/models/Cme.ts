@@ -1,13 +1,24 @@
+import type { Collection } from "mongodb";
 import { getDB } from "../db.ts";
 import logger from "../logger.ts";
 
-let collection: any = null;
+// ─── Types ──────────────────────────────────────────────────────
+export interface CmeDocument {
+  activityId: string;
+  startTime?: Date;
+  isEarthDirected?: boolean;
+  lastSeen?: Date;
+  firstSeen?: Date;
+  [key: string]: unknown;
+}
+
+let collection: Collection<CmeDocument> | null = null;
 
 export async function setupCmeCollection() {
   const db = getDB();
   if (!db) throw new Error("Database not connected");
 
-  collection = db.collection("cmes");
+  collection = db.collection<CmeDocument>("cmes");
 
   await collection.createIndex({ activityId: 1 }, { unique: true });
   await collection.createIndex({ startTime: -1 });
@@ -16,10 +27,10 @@ export async function setupCmeCollection() {
   logger.info("💥 CME collection indexes ready");
 }
 
-export async function upsertCmes(cmes: any) {
+export async function upsertCmes(cmes: CmeDocument[]) {
   if (!collection || cmes.length === 0) return { upserted: 0, modified: 0 };
 
-  const operations = cmes.map((cme: any) => ({
+  const operations = cmes.map((cme: CmeDocument) => ({
     updateOne: {
       filter: { activityId: cme.activityId },
       update: {
@@ -40,14 +51,14 @@ export async function upsertCmes(cmes: any) {
 }
 
 export async function getRecentCmes(
-  days: any = 7,
-  earthDirectedOnly: any = false,
-  limit: any = 50,
+  days: number = 7,
+  earthDirectedOnly: boolean = false,
+  limit: number = 50,
 ) {
   if (!collection) return [];
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
-  const query: Record<string, any> = { startTime: { $gte: cutoff } };
+  const query: Record<string, unknown> = { startTime: { $gte: cutoff } };
   if (earthDirectedOnly) query.isEarthDirected = true;
   return collection.find(query).sort({ startTime: -1 }).limit(limit).toArray();
 }
