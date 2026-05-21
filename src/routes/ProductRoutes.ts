@@ -137,7 +137,7 @@ router.delete("/products/availability/watchlist/:sku", (req: Request, res: Respo
   res.json({ ...result, watchlist: getWatchlist() });
 });
 // ─── Health ────────────────────────────────────────────────────────
-export function getProductHealth() {
+export function getProductHealth(): any {
   return {
     products: getHealth(),
     availability: getAvailabilityHealth(),

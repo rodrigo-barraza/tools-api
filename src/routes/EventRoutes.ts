@@ -80,7 +80,7 @@ router.get("/events", asyncHandler(async (req: Request, res: Response) => {
   }
 }));
 // ─── Domain Health ─────────────────────────────────────────────────
-export function getEventHealth() {
+export function getEventHealth(): any {
   return getHealth();
 }
 export default router;

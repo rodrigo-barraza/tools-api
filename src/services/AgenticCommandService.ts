@@ -428,7 +428,7 @@ export function getAllowedCommands() {
  * List all background processes.
 
  */
-export function listBackgroundProcesses() {
+export function listBackgroundProcesses(): any {
   return BackgroundProcessRegistry.list();
 }
 

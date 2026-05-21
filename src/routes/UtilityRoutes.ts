@@ -102,7 +102,7 @@ router.get("/currency/convert", asyncHandler(async (req: Request, res: Response)
       .status(400)
       .json({ error: "Query parameters 'from' and 'to' are required" });
   }
-  res.json(await convertCurrency(parseFloat(amount) || 1, from, to));
+  res.json(await convertCurrency(parseFloat(amount || "") || 1, from, to));
 }));
 router.get("/currency/list", asyncHandler(
   async () => {
@@ -347,7 +347,7 @@ router.get("/webcams", asyncHandler(
     const { city, limit } = req.query as Record<string, string | undefined>;
     const webcams = await getPublicWebcams({ 
       city: city || "vancouver", 
-      limit: parseInt(limit, 10) || 100 
+      limit: parseInt(limit || "", 10) || 100 
     });
     return { count: webcams.length, webcams };
   },
@@ -360,7 +360,7 @@ router.get("/airports/search", (req: Request, res: Response) => {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
   res.json(searchAirports(q, {
-    limit: parseInt(limit) || 10,
+    limit: parseInt(limit || "") || 10,
     country,
   }));
 });
@@ -386,7 +386,7 @@ router.get("/airports/nearest", (req: Request, res: Response) => {
   res.json(getNearestAirports(
     parseFloat(lat),
     parseFloat(lng),
-    { limit: parseInt(limit) || 5 },
+    { limit: parseInt(limit || "") || 5 },
   ));
 });
 // ─── Python Code Interpreter ───────────────────────────────────────

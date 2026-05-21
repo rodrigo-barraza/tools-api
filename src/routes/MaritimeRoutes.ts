@@ -37,7 +37,7 @@ router.get("/search", (req: Request, res: Response) => {
   if (!q) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  const results = searchVessels(q, parseInt(limit, 10) || 20);
+  const results = searchVessels(q, parseInt(limit || "", 10) || 20);
   res.json({ query: q, count: results.length, vessels: results });
 });
 
@@ -55,7 +55,7 @@ router.get("/area", (req: Request, res: Response) => {
     parseFloat(maxLat),
     parseFloat(minLng),
     parseFloat(maxLng),
-    parseInt(limit, 10) || 100,
+    parseInt(limit || "", 10) || 100,
   );
   res.json({ count: vessels.length, vessels });
 });
@@ -64,7 +64,7 @@ router.get("/area", (req: Request, res: Response) => {
 
 router.get("/messages", (req: Request, res: Response) => {
   const { limit, type } = req.query as Record<string, string | undefined>;
-  const messages = getRecentMessages(parseInt(limit, 10) || 50, type || null);
+  const messages = getRecentMessages(parseInt(limit || "", 10) || 50, type || null);
   res.json({ count: messages.length, messages });
 });
 

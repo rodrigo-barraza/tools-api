@@ -24,7 +24,7 @@ async function collectCommodities() {
         `Top mover: ${topMover?.name ?? "?"} (${topMover?.changePercent >= 0 ? "+" : ""}${topMover?.changePercent ?? "?"}%)`,
     );
   } catch (error: unknown) {
-    setCommodityError(error);
+    setCommodityError(error as any);
     logger.error(`[Commodities] ❌ ${(error as Error).message}`);
   }
 }

@@ -115,7 +115,7 @@ router.get("/macro/search", asyncHandler(async (req: Request, res: Response) => 
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
   res.json(await searchSeries(q, {
-    limit: parseInt(limit, 10) || 10,
+    limit: parseInt(limit || "", 10) || 10,
     orderBy,
   }));
 }));
@@ -123,7 +123,7 @@ router.get("/macro/series/:seriesId/observations", asyncHandler(
   (req: Request) => {
     const { limit, sortOrder, observationStart, observationEnd } = req.query as Record<string, string | undefined>;
     return getSeriesObservations(req.params.seriesId as string, {
-      limit: parseInt(limit, 10) || 50,
+      limit: parseInt(limit || "", 10) || 50,
       sortOrder,
       observationStart,
       observationEnd,

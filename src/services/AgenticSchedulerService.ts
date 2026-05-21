@@ -95,7 +95,7 @@ export async function agenticScheduleCreate(data: Record<string, unknown>) {
   if (!prompt || typeof prompt !== "string") {
     return { error: "'prompt' is required (string)" };
   }
-  if (!VALID_TYPES.includes(type)) {
+  if (!VALID_TYPES.includes(type as string)) {
     return { error: `Invalid type '${type}'. Must be one of: ${VALID_TYPES.join(", ")}` };
   }
 
@@ -152,7 +152,7 @@ export async function agenticScheduleCreate(data: Record<string, unknown>) {
     schedule: sanitize(document),
     message: type === "trigger"
       ? `Trigger '${name}' created (fire with remote_trigger)`
-      : `Schedule #${scheduleId} '${name}' created — next run at ${nextRunAt.toISOString()}`,
+      : `Schedule #${scheduleId} '${name}' created — next run at ${nextRunAt?.toISOString() || "never"}`,
   };
 }
 
@@ -170,10 +170,12 @@ export async function agenticScheduleList(project: string, { type, limit = 50 }:
   const filter: Record<string, unknown> = { project };
   if (type) filter.type = type;
 
+  const limitNum = typeof limit === "number" ? limit : parseInt(limit as string, 10) || 50;
+
   const schedules = await collection
     .find(filter)
     .sort({ scheduleId: 1 })
-    .limit(Math.min(limit, MAX_SCHEDULES_PER_PROJECT))
+    .limit(Math.min(limitNum, MAX_SCHEDULES_PER_PROJECT))
     .toArray();
 
   return {
@@ -191,7 +193,7 @@ export async function agenticScheduleDelete(project: string, scheduleId: string 
     return { error: "'project' is required (string)" };
   }
 
-  const id = parseInt(scheduleId, 10);
+  const id = typeof scheduleId === "number" ? scheduleId : parseInt(scheduleId || "", 10);
   if (isNaN(id)) {
     return { error: "'scheduleId' must be a number" };
   }

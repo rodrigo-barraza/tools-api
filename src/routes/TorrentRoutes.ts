@@ -26,8 +26,8 @@ router.get("/search", asyncHandler(async (req: Request, res: Response) => {
     const results = await qbt.search(searchQuery, {
       category: category || "all",
       plugins: plugins || "enabled",
-      limit: Math.min(parseInt(limit) || 50, 100),
-      timeoutMs: Math.min(parseInt(timeout) || TORRENT_SEARCH_TIMEOUT_MS, TORRENT_MAX_TIMEOUT_MS),
+      limit: Math.min(parseInt(limit || "") || 50, 100),
+      timeoutMs: Math.min(parseInt(timeout || "") || TORRENT_SEARCH_TIMEOUT_MS, TORRENT_MAX_TIMEOUT_MS),
     });
     res.json(results);
   } catch (error: unknown) {
@@ -70,8 +70,8 @@ router.get("/status", asyncHandler(async (req: Request, res: Response) => {
       category,
       tag,
       sort: sort || "added_on",
-      limit: Math.min(parseInt(limit) || 50, 200),
-      offset: parseInt(offset) || 0,
+      limit: Math.min(parseInt(limit || "") || 50, 200),
+      offset: parseInt(offset || "") || 0,
     });
     res.json({ count: torrents.length, torrents });
   } catch (error: unknown) {
@@ -191,8 +191,8 @@ router.get("/", asyncHandler(async (req: Request, res: Response) => {
         const results = await qbt.search(searchQuery, {
           category: category || "all",
           plugins: plugins || "enabled",
-          limit: Math.min(parseInt(limit) || 50, 100),
-          timeoutMs: Math.min(parseInt(timeout) || TORRENT_SEARCH_TIMEOUT_MS, TORRENT_MAX_TIMEOUT_MS),
+          limit: Math.min(parseInt(limit || "") || 50, 100),
+          timeoutMs: Math.min(parseInt(timeout || "") || TORRENT_SEARCH_TIMEOUT_MS, TORRENT_MAX_TIMEOUT_MS),
         });
         return res.json(results);
       }
@@ -201,7 +201,7 @@ router.get("/", asyncHandler(async (req: Request, res: Response) => {
           filter: filter || "all",
           category,
           sort: sort || "added_on",
-          limit: Math.min(parseInt(limit) || 50, 200),
+          limit: Math.min(parseInt(limit || "") || 50, 200),
         });
         return res.json({ count: torrents.length, torrents });
       }

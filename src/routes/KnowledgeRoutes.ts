@@ -641,11 +641,11 @@ router.get("/books/lookup", asyncHandler(async (req: Request, res: Response) => 
       return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
     case "work":
       req.url = `/books/work/${workKey || ""}`;
-      req.params.workKey = workKey;
+      req.params.workKey = workKey || "";
       return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
     case "author":
       req.url = `/books/author/${authorKey || ""}`;
-      req.params.authorKey = authorKey;
+      req.params.authorKey = authorKey || "";
       return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
     default:
       return res.status(400).json({ error: `Unknown action: ${action}`, actions: ["search", "work", "author"] });
@@ -658,15 +658,15 @@ router.get("/countries/data", asyncHandler(async (req: Request, res: Response) =
   switch (action) {
     case "info":
       req.url = `/countries/search/${encodeURIComponent(name || "")}`;
-      req.params.name = name;
+      req.params.name = name || "";
       return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
     case "code":
       req.url = `/countries/code/${code || ""}`;
-      req.params.code = code;
+      req.params.code = code || "";
       return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
     case "indicators":
       req.url = `/indicators/country/${code || ""}`;
-      req.params.code = code;
+      req.params.code = code || "";
       return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
     case "rank":
       req.url = `/indicators/rank?indicator=${indicator || ""}&limit=${limit || 10}&order=${order || "desc"}`;
@@ -688,7 +688,7 @@ router.get("/elements/data", asyncHandler(async (req: Request, res: Response) =>
       return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
     case "lookup":
       req.url = `/elements/${symbol || ""}`;
-      req.params.symbol = symbol;
+      req.params.symbol = symbol || "";
       return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
     case "rank":
       req.url = `/elements/rank?property=${property || ""}&limit=${limit || 10}&order=${order || "desc"}&category=${category || ""}&block=${block || ""}`;
@@ -740,7 +740,7 @@ router.get("/anime/data", asyncHandler(async (req: Request, res: Response) => {
       return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
     case "details":
       req.url = `/anime/${id || ""}`;
-      req.params.id = id;
+      req.params.id = id || "";
       return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
     default:
       return res.status(400).json({ error: `Unknown action: ${action}`, actions: ["search", "top", "season", "details"] });

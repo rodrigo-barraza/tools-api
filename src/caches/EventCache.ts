@@ -15,6 +15,7 @@ interface CacheError {
 }
 
 interface CachedEvent {
+  name: string;
   source: string;
   sourceId: string;
   category?: string;

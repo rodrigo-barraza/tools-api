@@ -66,8 +66,8 @@ router.get("/data", asyncHandler(async (req: Request) => {
     start,
     end,
     sort,
-    length: parseInt(length, 10) || 100,
-    offset: parseInt(offset, 10) || 0,
+    length: parseInt(length || "", 10) || 100,
+    offset: parseInt(offset || "", 10) || 0,
   });
 }, "EIA data"));
 // ─── Convenience: Electricity ──────────────────────────────────────
@@ -84,7 +84,7 @@ router.get(
       frequency: frequency || "monthly",
       start,
       end,
-      length: parseInt(length, 10) || 50,
+      length: parseInt(length || "", 10) || 50,
       sort: "period:desc",
     });
   }, "Electricity retail sales fetch"),
@@ -103,7 +103,7 @@ router.get(
       frequency: frequency || "weekly",
       start,
       end,
-      length: parseInt(length, 10) || 50,
+      length: parseInt(length || "", 10) || 50,
       sort: "period:desc",
     });
   }, "Petroleum prices fetch"),
@@ -122,7 +122,7 @@ router.get(
       frequency: frequency || "monthly",
       start,
       end,
-      length: parseInt(length, 10) || 50,
+      length: parseInt(length || "", 10) || 50,
       sort: "period:desc",
     });
   }, "Natural gas prices fetch"),

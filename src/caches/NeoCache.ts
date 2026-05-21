@@ -1,6 +1,7 @@
 import { upsertNeos } from "../models/Neo.ts";
 
 interface NearEarthObject {
+  neoId: string;
   isPotentiallyHazardous?: boolean;
   estimatedDiameterMaxKm?: number;
   [key: string]: unknown;

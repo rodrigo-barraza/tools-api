@@ -32,8 +32,8 @@ import type { Request, Response, Application } from "express";
 const SELF_BASE_URL = CONFIG.TOOLS_SERVICE_URL;
 
 // ── Build tool executor URL from endpoint metadata ──────────
-function buildUrl(endpoint: Record<string, unknown>, args: Record<string, unknown> = {}) {
-  let path = endpoint.path;
+function buildUrl(endpoint: any, args: any = {}) {
+  let path = endpoint.path as string;
 
   // Handle conditional paths
   if (endpoint.conditionalPath) {
@@ -53,11 +53,11 @@ function buildUrl(endpoint: Record<string, unknown>, args: Record<string, unknow
 
   // Build query string from remaining params
   const params = new URLSearchParams();
-  const queryParams = endpoint.queryParams || [];
+  const queryParams = (endpoint.queryParams as string[]) || [];
   for (const key of queryParams) {
     const value = args[key];
     if (value !== undefined && value !== null && value !== "") {
-      params.set(key, value);
+      params.set(key, String(value));
     }
   }
 
@@ -65,7 +65,7 @@ function buildUrl(endpoint: Record<string, unknown>, args: Record<string, unknow
   if (args.fields) {
     const fieldsStr = Array.isArray(args.fields)
       ? args.fields.join(",")
-      : args.fields;
+      : String(args.fields);
     params.set("fields", fieldsStr);
   }
 
@@ -80,7 +80,7 @@ const ARG_REMAPS: Record<string, Record<string, string>> = {
 };
 
 // ── Execute tool via internal HTTP ──────────────────────────
-async function executeTool(toolName: string, endpoint: Record<string, unknown>, args: Record<string, unknown> = {}, context: Record<string, string> = {}) {
+async function executeTool(toolName: string, endpoint: any, args: any = {}, context: Record<string, string> = {}) {
   const remaps = ARG_REMAPS[toolName];
   let resolvedArgs = args;
   if (remaps) {

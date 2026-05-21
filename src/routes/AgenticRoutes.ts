@@ -503,7 +503,7 @@ router.post("/lsp/action", agenticHandler(async (req: Request) => {
     line: line != null ? parseInt(line, 10) : undefined,
     character: character != null ? parseInt(character, 10) : undefined,
     workspacePath,
-  });
+  } as any);
 }));
 // ── LSP Health ────────────────────────────────────────────────
 router.get("/lsp/health", (_req: Request, res: Response) => {

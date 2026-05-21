@@ -24,7 +24,7 @@ async function collectMarketNews() {
     await saveState("market_news", sliced);
     logger.info(`[Finnhub/News] ✅ ${sliced.length} articles`);
   } catch (error: unknown) {
-    setNewsError(error);
+    setNewsError(error as any);
     logger.error(`[Finnhub/News] ❌ ${(error as Error).message}`);
   }
 }
@@ -42,7 +42,7 @@ async function collectEarnings() {
       `[Finnhub/Earnings] ✅ ${earnings.length} upcoming (${from} → ${to})`,
     );
   } catch (error: unknown) {
-    setEarningsError(error);
+    setEarningsError(error as any);
     logger.error(`[Finnhub/Earnings] ❌ ${(error as Error).message}`);
   }
 }

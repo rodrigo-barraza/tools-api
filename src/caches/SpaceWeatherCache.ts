@@ -4,17 +4,20 @@ import { upsertGeomagneticStorms } from "../models/GeomagneticStorm.ts";
 import { SOLAR_FLARE_CLASSES } from "../constants.ts";
 
 interface SolarFlare {
+  flrId: string;
   classType?: string;
   [key: string]: unknown;
 }
 
 interface Cme {
+  activityId: string;
   speed?: number;
   isEarthDirected?: boolean;
   [key: string]: unknown;
 }
 
 interface GeomagneticStorm {
+  gstId: string;
   [key: string]: unknown;
 }
 

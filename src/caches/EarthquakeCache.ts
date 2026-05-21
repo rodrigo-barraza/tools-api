@@ -8,6 +8,7 @@ import { EARTHQUAKE_MAGNITUDE_SCALE } from "../constants.ts";
  */
 
 interface EarthquakeEvent {
+  usgsId: string;
   magnitude: number;
   [key: string]: unknown;
 }

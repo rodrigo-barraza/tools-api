@@ -41,7 +41,7 @@ function createTrendCollector(collection: any, source: any, fetchFn: any, noun: 
         `[${collection}] ✅ ${trends.length} ${noun} | ${result.upserted} new, ${result.modified} updated`,
       );
     } catch (error: unknown) {
-      setTrendError(source, error);
+      setTrendError(source, error as any);
       logger.error(`[${collection}] ❌ ${(error as Error).message}`);
     }
   };

@@ -234,10 +234,10 @@ router.get("/environment", (req: Request, res: Response) => {
     });
   }
   const data = handler();
-  res.json({ source, ...data });
+  res.json({ source, ...(data as any) });
 });
 // ─── Domain Health ─────────────────────────────────────────────────
-export function getWeatherHealth() {
+export function getWeatherHealth(): any {
   return {
     weather: getWeatherCacheHealth(),
     earthquake: getEarthquakeHealth(),

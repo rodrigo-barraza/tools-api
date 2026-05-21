@@ -38,5 +38,5 @@ export async function refreshAustinWebcams() {
     };
   }).filter((c: any) => c && c.url);
 
-  await upsertWebcams(parsedWebcams);
+  await upsertWebcams(parsedWebcams as any);
 }

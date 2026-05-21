@@ -1,0 +1,29 @@
+ M src/caches/CommodityCache.ts
+ M src/caches/EarthquakeCache.ts
+ M src/caches/EventCache.ts
+ M src/caches/NeoCache.ts
+ M src/caches/SpaceWeatherCache.ts
+ M src/collectors/EventCollector.ts
+ M src/collectors/FinanceCollector.ts
+ M src/collectors/MarketCollector.ts
+ M src/collectors/TrendCollector.ts
+ M src/collectors/WeatherCollector.ts
+ M src/fetchers/utility/webcams/sources/austin.ts
+ M src/routes/AdminRoutes.ts
+ M src/routes/AgenticRoutes.ts
+ M src/routes/EnergyRoutes.ts
+ M src/routes/EventRoutes.ts
+ M src/routes/FinanceRoutes.ts
+ M src/routes/KnowledgeRoutes.ts
+ M src/routes/MaritimeRoutes.ts
+ M src/routes/ProductRoutes.ts
+ M src/routes/TorrentRoutes.ts
+ M src/routes/UtilityRoutes.ts
+ M src/routes/WeatherRoutes.ts
+ M src/server.ts
+ M src/services/AgenticCommandService.ts
+ M src/services/AgenticSchedulerService.ts
+ M src/services/McpAdapter.ts
+?? build_err.txt
+?? git_status.txt
+?? tsc_errors.txt

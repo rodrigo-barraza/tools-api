@@ -190,7 +190,7 @@ async function start() {
     ]);
 
     // Connect to separate Lupos database (Discord message archive)
-    await connectLuposDB(CONFIG.MONGODB_URI);
+    await connectLuposDB(CONFIG.MONGODB_URI!);
     await setupLuposCollections();
 
     // Load user-configured workspace roots from MongoDB

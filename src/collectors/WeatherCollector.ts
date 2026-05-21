@@ -275,7 +275,7 @@ async function collectEarthquakes() {
         `Strongest: M${strongest?.magnitude ?? "?"} ${strongest?.place ?? ""}`,
     );
   } catch (error: unknown) {
-    setEarthquakeError(error);
+    setEarthquakeError(error as any);
     logger.error(`[Earthquake] ❌ ${(error as Error).message}`);
   }
 }
@@ -292,7 +292,7 @@ async function collectNeos() {
         `Closest: ${closest?.name ?? "?"} at ${Math.round(closest?.missDistanceKm ?? 0)} km`,
     );
   } catch (error: unknown) {
-    setNeoError(error);
+    setNeoError(error as any);
     logger.error(`[NEO] ❌ ${(error as Error).message}`);
   }
 }
@@ -308,7 +308,7 @@ async function collectDonki() {
         `${data.storms.length} storms (${result.storms.upserted} new)`,
     );
   } catch (error: unknown) {
-    setSpaceWeatherError(error);
+    setSpaceWeatherError(error as any);
     logger.error(`[DONKI] ❌ ${(error as Error).message}`);
   }
 }

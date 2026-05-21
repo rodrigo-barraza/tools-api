@@ -261,7 +261,7 @@ export async function loadUserWorkspaceRoots() {
     const db = getDB();
     const collection = db.collection(WORKSPACE_COLLECTION);
     const document = await collection.findOne({ _key: "user_roots" });
-    if (document?.roots?.length > 0) {
+    if (document && Array.isArray(document.roots) && document.roots.length > 0) {
       refreshAllowedRoots(document.roots);
       logger.info(`   📂 User workspace roots: ${document.roots.join(", ")}`);
     }
