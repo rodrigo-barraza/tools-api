@@ -22,6 +22,8 @@ import {
   agenticMoveFile,
   agenticDeleteFile,
   validatePath,
+  agenticBlockReplace,
+  agenticMultiReplace,
 } from "../services/AgenticFileService.ts";
 import {
   agenticFetchUrl,
@@ -206,6 +208,37 @@ router.post("/file/patch", agenticHandler(async (req: Request) => {
     return { error: "Request body must include 'patch' (unified diff string)" };
   }
   return agenticPatchFile(path, patch);
+}));
+// ── Block Replace ─────────────────────────────────────────────
+router.post("/file/block-replace", agenticHandler(async (req: Request) => {
+  const { path, startLine, endLine, targetContent, replacementContent } = req.body;
+  if (!path || typeof path !== "string") {
+    return { error: "Request body must include 'path' (string)" };
+  }
+  if (typeof startLine !== "number") {
+    return { error: "Request body must include 'startLine' (number)" };
+  }
+  if (typeof endLine !== "number") {
+    return { error: "Request body must include 'endLine' (number)" };
+  }
+  if (typeof targetContent !== "string") {
+    return { error: "Request body must include 'targetContent' (string)" };
+  }
+  if (typeof replacementContent !== "string") {
+    return { error: "Request body must include 'replacementContent' (string)" };
+  }
+  return agenticBlockReplace(path, startLine, endLine, targetContent, replacementContent);
+}));
+// ── Multi Replace ─────────────────────────────────────────────
+router.post("/file/multi-replace", agenticHandler(async (req: Request) => {
+  const { path, chunks } = req.body;
+  if (!path || typeof path !== "string") {
+    return { error: "Request body must include 'path' (string)" };
+  }
+  if (!Array.isArray(chunks) || chunks.length === 0) {
+    return { error: "Request body must include 'chunks' (non-empty array of replacement chunks)" };
+  }
+  return agenticMultiReplace(path, chunks);
 }));
 // ─── 2. Directory Operations ────────────────────────────────
 router.post("/directory/list", agenticHandler(async (req: Request) => {
@@ -525,6 +558,8 @@ export function getAgenticHealth() {
     readFile: "on-demand (sandboxed fs)",
     writeFile: "on-demand (sandboxed fs)",
     strReplace: "on-demand (sandboxed fs)",
+    blockReplace: "on-demand (sandboxed fs)",
+    multiReplace: "on-demand (sandboxed fs)",
     patchFile: "on-demand (sandboxed fs + diff)",
     listDirectory: "on-demand (sandboxed fs)",
     grepSearch: "on-demand (sandboxed fs)",

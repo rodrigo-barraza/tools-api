@@ -1056,6 +1056,234 @@ export async function agenticDeleteFile(filePath: string) {
 }
 
 // ────────────────────────────────────────────────────────────
+// Surgical Block & Multi-Block Editing
+// ────────────────────────────────────────────────────────────
+
+/**
+ * Perform a targeted block replacement in a file bounded by startLine and endLine.
+ * Verifies that the targeted range contains the exact 'targetContent', then replaces it.
+ */
+export async function agenticBlockReplace(
+  filePath: string,
+  startLine: number,
+  endLine: number,
+  targetContent: string,
+  replacementContent: string,
+) {
+  // Agent routing
+  const agentResult = await tryAgentRoute(
+    "file.blockReplace",
+    { path: filePath, startLine, endLine, targetContent, replacementContent },
+    filePath,
+  );
+  if (agentResult) return agentResult;
+
+  const validation = validatePath(filePath);
+  if (!validation.safe) {
+    return { error: validation.error };
+  }
+
+  if (typeof startLine !== "number" || startLine <= 0) {
+    return { error: "'startLine' must be a positive integer" };
+  }
+  if (typeof endLine !== "number" || endLine < startLine) {
+    return { error: "'endLine' must be an integer greater than or equal to startLine" };
+  }
+  if (typeof targetContent !== "string") {
+    return { error: "'targetContent' must be a string" };
+  }
+  if (typeof replacementContent !== "string") {
+    return { error: "'replacementContent' must be a string" };
+  }
+
+  const resolved = validation.resolved;
+
+  try {
+    const raw = await readFile(resolved, "utf-8");
+    const lines = raw.split("\n");
+    const totalLines = lines.length;
+
+    if (startLine > totalLines || endLine > totalLines) {
+      return {
+        error: `Line range [${startLine}, ${endLine}] exceeds total file lines (${totalLines})`,
+        filePath: resolved,
+      };
+    }
+
+    // Extract the target segment to match against targetContent
+    const segment = lines.slice(startLine - 1, endLine).join("\n");
+
+    // Precise match (including whitespace)
+    if (segment !== targetContent) {
+      const numberedActual = lines
+        .slice(startLine - 1, endLine)
+        .map((l: string, i: number) => `${startLine + i}: ${l}`)
+        .join("\n");
+      return {
+        error: `Content in line range [${startLine}, ${endLine}] does not match targetContent.`,
+        filePath: resolved,
+        actualContentInRange: numberedActual,
+      };
+    }
+
+    // Replace the segment
+    const before = lines.slice(0, startLine - 1);
+    const after = lines.slice(endLine);
+    const newSegmentLines = replacementContent.split("\n");
+    const updatedContent = [...before, ...newSegmentLines, ...after].join("\n");
+
+    await writeFile(resolved, updatedContent, "utf-8");
+
+    const oldLinesCount = endLine - startLine + 1;
+    const newLinesCount = newSegmentLines.length;
+
+    return {
+      filePath: resolved,
+      success: true,
+      oldLines: oldLinesCount,
+      newLines: newLinesCount,
+      lineDelta: newLinesCount - oldLinesCount,
+    };
+  } catch (error: unknown) {
+    const err = error as Record<string, unknown>;
+    if (err.code === "ENOENT") {
+      return { error: `File not found: ${resolved}` };
+    }
+    return { error: `block_replace failed: ${err.message || String(error)}` };
+  }
+}
+
+export interface MultiReplaceChunk {
+  startLine: number;
+  endLine: number;
+  targetContent: string;
+  replacementContent: string;
+}
+
+/**
+ * Perform multiple non-contiguous block replacements in a single file atomically.
+ * Processed from bottom-to-top to ensure subsequent line index stability.
+ */
+export async function agenticMultiReplace(filePath: string, chunks: MultiReplaceChunk[]) {
+  // Agent routing
+  const agentResult = await tryAgentRoute("file.multiReplace", { path: filePath, chunks }, filePath);
+  if (agentResult) return agentResult;
+
+  const validation = validatePath(filePath);
+  if (!validation.safe) {
+    return { error: validation.error };
+  }
+
+  if (!Array.isArray(chunks) || chunks.length === 0) {
+    return { error: "'chunks' must be a non-empty array of replacement chunks" };
+  }
+  if (chunks.length > 30) {
+    return { error: `Maximum 30 chunks per batch. Received ${chunks.length}.` };
+  }
+
+  // Validate each chunk parameter type
+  for (let i = 0; i < chunks.length; i++) {
+    const c = chunks[i];
+    if (typeof c.startLine !== "number" || c.startLine <= 0) {
+      return { error: `Chunk ${i}: 'startLine' must be a positive integer` };
+    }
+    if (typeof c.endLine !== "number" || c.endLine < c.startLine) {
+      return { error: `Chunk ${i}: 'endLine' must be an integer greater than or equal to startLine` };
+    }
+    if (typeof c.targetContent !== "string") {
+      return { error: `Chunk ${i}: 'targetContent' must be a string` };
+    }
+    if (typeof c.replacementContent !== "string") {
+      return { error: `Chunk ${i}: 'replacementContent' must be a string` };
+    }
+  }
+
+  const resolved = validation.resolved;
+
+  try {
+    const raw = await readFile(resolved, "utf-8");
+    let lines = raw.split("\n");
+
+    // Check for overlap between chunks
+    const sortedAsc = [...chunks].sort((a, b) => a.startLine - b.startLine);
+    for (let i = 0; i < sortedAsc.length - 1; i++) {
+      if (sortedAsc[i].endLine >= sortedAsc[i + 1].startLine) {
+        return {
+          error: `Chunks overlap or touch: Chunk at [${sortedAsc[i].startLine}, ${sortedAsc[i].endLine}] overlaps/touches [${sortedAsc[i + 1].startLine}, ${sortedAsc[i + 1].endLine}]`,
+          filePath: resolved,
+        };
+      }
+    }
+
+    // Sort descending by startLine so we replace bottom-to-top without affecting subsequent indices
+    const sortedDesc = [...chunks].sort((a, b) => b.startLine - a.startLine);
+    const chunkResults = [];
+    let overallLineDelta = 0;
+
+    for (let idx = 0; idx < sortedDesc.length; idx++) {
+      const c = sortedDesc[idx];
+      const totalLines = lines.length;
+
+      if (c.startLine > totalLines || c.endLine > totalLines) {
+        return {
+          error: `Chunk range [${c.startLine}, ${c.endLine}] exceeds total file lines (${totalLines})`,
+          filePath: resolved,
+        };
+      }
+
+      const segment = lines.slice(c.startLine - 1, c.endLine).join("\n");
+      if (segment !== c.targetContent) {
+        const numberedActual = lines
+          .slice(c.startLine - 1, c.endLine)
+          .map((l: string, i: number) => `${c.startLine + i}: ${l}`)
+          .join("\n");
+        return {
+          error: `Chunk in range [${c.startLine}, ${c.endLine}] does not match targetContent.`,
+          filePath: resolved,
+          actualContentInRange: numberedActual,
+        };
+      }
+
+      // Perform replace
+      const before = lines.slice(0, c.startLine - 1);
+      const after = lines.slice(c.endLine);
+      const newSegmentLines = c.replacementContent.split("\n");
+      lines = [...before, ...newSegmentLines, ...after];
+
+      const oldLinesCount = c.endLine - c.startLine + 1;
+      const newLinesCount = newSegmentLines.length;
+      const delta = newLinesCount - oldLinesCount;
+      overallLineDelta += delta;
+
+      chunkResults.push({
+        startLine: c.startLine,
+        endLine: c.endLine,
+        oldLines: oldLinesCount,
+        newLines: newLinesCount,
+        lineDelta: delta,
+      });
+    }
+
+    // Write back updated content
+    await writeFile(resolved, lines.join("\n"), "utf-8");
+
+    return {
+      filePath: resolved,
+      success: true,
+      chunksProcessed: chunkResults.length,
+      overallLineDelta,
+      details: chunkResults.reverse(),
+    };
+  } catch (error: unknown) {
+    const err = error as Record<string, unknown>;
+    if (err.code === "ENOENT") {
+      return { error: `File not found: ${resolved}` };
+    }
+    return { error: `multi_replace failed: ${err.message || String(error)}` };
+  }
+}
+
+// ────────────────────────────────────────────────────────────
 // Helpers
 // ────────────────────────────────────────────────────────────
 

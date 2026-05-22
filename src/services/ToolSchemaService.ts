@@ -5113,6 +5113,114 @@ const TOOL_DEFINITIONS = [
     },
   },
   {
+    name: "block_replace_file",
+    dataSource: compute("sandboxed fs"),
+    description:
+      "Perform a highly precise, line-bounded block replacement in a file. It searches for 'targetContent' within the exact line range [startLine, endLine] (1-indexed, inclusive). The targetContent must match the file content in that range EXACTLY, including leading and trailing whitespace and line breaks. Returns an error if the content in that range doesn't match targetContent, and outputs a numbered line preview of the actual content inside the range to help you self-correct. This is the safest way to modify a contiguous block of text without affecting the rest of the file.",
+    endpoint: {
+      method: "POST",
+      path: "/agentic/file/block-replace",
+      bodyParams: [
+        "path",
+        "startLine",
+        "endLine",
+        "targetContent",
+        "replacementContent",
+      ],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        path: {
+          type: "string",
+          description: "Absolute path to the file to edit.",
+        },
+        startLine: {
+          type: "integer",
+          description:
+            "The 1-indexed starting line number of the block to edit.",
+        },
+        endLine: {
+          type: "integer",
+          description:
+            "The 1-indexed ending line number of the block to edit (inclusive).",
+        },
+        targetContent: {
+          type: "string",
+          description:
+            "The exact string to be replaced. Must match the file content within the startLine and endLine range exactly.",
+        },
+        replacementContent: {
+          type: "string",
+          description:
+            "The replacement content to insert in place of the targetContent.",
+        },
+      },
+      required: [
+        "path",
+        "startLine",
+        "endLine",
+        "targetContent",
+        "replacementContent",
+      ],
+    },
+  },
+  {
+    name: "multi_replace_file",
+    dataSource: compute("sandboxed fs"),
+    description:
+      "Perform multiple, non-contiguous block replacements in a single file atomically. The operations are processed from bottom-to-top to ensure that modifications do not shift the line numbers for subsequent chunks. Each chunk defines a range and targetContent, similar to block_replace_file. Use this tool ONLY when making multiple separate, non-adjacent modifications in a single file.",
+    endpoint: {
+      method: "POST",
+      path: "/agentic/file/multi-replace",
+      bodyParams: ["path", "chunks"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        path: {
+          type: "string",
+          description: "Absolute path to the file to edit.",
+        },
+        chunks: {
+          type: "array",
+          description: "An array of replacement chunks to apply.",
+          items: {
+            type: "object",
+            properties: {
+              startLine: {
+                type: "integer",
+                description:
+                  "The 1-indexed starting line number of this chunk.",
+              },
+              endLine: {
+                type: "integer",
+                description:
+                  "The 1-indexed ending line number of this chunk (inclusive).",
+              },
+              targetContent: {
+                type: "string",
+                description:
+                  "The exact string to find in this range. Must match the file content within the range exactly.",
+              },
+              replacementContent: {
+                type: "string",
+                description: "The replacement content for this chunk.",
+              },
+            },
+            required: [
+              "startLine",
+              "endLine",
+              "targetContent",
+              "replacementContent",
+            ],
+          },
+        },
+      },
+      required: ["path", "chunks"],
+    },
+  },
+  {
     name: "patch_file",
     dataSource: compute("sandboxed fs + diff"),
     description:
@@ -8067,6 +8175,8 @@ const TOOL_DOMAINS = {
   read_file: "Agentic: File Operations",
   write_file: "Agentic: File Operations",
   str_replace_file: "Agentic: File Operations",
+  block_replace_file: "Agentic: File Operations",
+  multi_replace_file: "Agentic: File Operations",
   patch_file: "Agentic: File Operations",
   multi_file_read: "Agentic: File Operations",
   file_info: "Agentic: File Operations",
@@ -8353,6 +8463,8 @@ const TOOL_EMOJIS = {
   read_file: "📄",
   write_file: "✏️",
   str_replace_file: "🔧",
+  block_replace_file: "🧱",
+  multi_replace_file: "🧱",
   patch_file: "🩹",
   multi_file_read: "📑",
   file_info: "ℹ️",
@@ -8760,6 +8872,8 @@ const TOOL_LABELS = {
   read_file: ["coding"],
   write_file: ["coding"],
   str_replace_file: ["coding"],
+  block_replace_file: ["coding"],
+  multi_replace_file: ["coding"],
   patch_file: ["coding"],
   multi_file_read: ["coding"],
   file_info: ["coding"],
