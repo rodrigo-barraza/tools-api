@@ -11,9 +11,18 @@
  *   - Natural Medicines Comprehensive Database
  */
 
+export interface DrugNutrientInteraction {
+  drugPattern: RegExp;
+  nutrient: string;
+  effect: "depletion" | "absorption_block" | "interaction" | "enhancement";
+  severity: "major" | "moderate" | "minor";
+  description: string;
+  recommendation: string;
+}
+
 // ─── Drug-Nutrient Interaction Database ────────────────────────
 
-const INTERACTION_DB = [
+const INTERACTION_DB: DrugNutrientInteraction[] = [
   // ── Statins ──────────────────────────────────────────────────
   { drugPattern: /statin|atorvastatin|simvastatin|rosuvastatin|lovastatin|pravastatin/i, nutrient: "coenzyme_q10", effect: "depletion", severity: "moderate", description: "Statins inhibit HMG-CoA reductase, which is also required for CoQ10 synthesis. May cause muscle pain/weakness.", recommendation: "Consider CoQ10 supplementation (100-200mg/day)" },
   { drugPattern: /statin|atorvastatin|simvastatin|rosuvastatin|lovastatin|pravastatin/i, nutrient: "vitamin_d", effect: "depletion", severity: "minor", description: "Some evidence statins may reduce vitamin D levels.", recommendation: "Monitor vitamin D levels; supplement if deficient" },
@@ -100,16 +109,30 @@ const INTERACTION_DB = [
 
 // ─── Search Helpers ────────────────────────────────────────────
 
-function normalizeSearch(str: any) {
+function normalizeSearch(str: string): string {
   return str.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
 }
 
 // ─── Public API ────────────────────────────────────────────────
 
+export interface CheckDrugNutrientInteractionsOptions {
+  drug: string;
+  nutrients?: string;
+}
+
+export interface DrugInteractionResult {
+  nutrient: string;
+  effect: string;
+  severity: "major" | "moderate" | "minor";
+  icon: string;
+  description: string;
+  recommendation: string;
+}
+
 /**
  * Check for drug-nutrient interactions.
  */
-export function checkDrugNutrientInteractions({ drug, nutrients }: any) {
+export function checkDrugNutrientInteractions({ drug, nutrients }: CheckDrugNutrientInteractionsOptions) {
   if (!drug) {
     return { error: "'drug' parameter is required (e.g. 'metformin', 'lisinopril', 'omeprazole')" };
   }
@@ -118,40 +141,38 @@ export function checkDrugNutrientInteractions({ drug, nutrients }: any) {
 
   // Filter nutrients if specified
   const nutrientFilter = nutrients
-    ? nutrients.split(",").map((n: any) => normalizeSearch(n)).filter(Boolean)
+    ? nutrients.split(",").map((n) => normalizeSearch(n)).filter(Boolean)
     : null;
 
   // Find matching interactions
-  const matches = INTERACTION_DB.filter((entry: any) => {
+  const matches = INTERACTION_DB.filter((entry: DrugNutrientInteraction) => {
     if (!entry.drugPattern.test(drug) && !entry.drugPattern.test(normalizedDrug)) {
       return false;
     }
     if (nutrientFilter) {
       const entryNutrient = normalizeSearch(entry.nutrient);
       return nutrientFilter.some(
-        (n: any) => entryNutrient.includes(n) || n.includes(entryNutrient),
+        (n) => entryNutrient.includes(n) || n.includes(entryNutrient),
       );
     }
     return true;
   });
 
   // Sort by severity
-  const severityOrder = { major: 0, moderate: 1, minor: 2 };
+  const severityOrder: Record<"major" | "moderate" | "minor", number> = { major: 0, moderate: 1, minor: 2 };
   matches.sort(
-    // @ts-expect-error - TS7053: implicit any index
-    (a: any, b: any) => (severityOrder[a.severity] ?? 99) - (severityOrder[b.severity] ?? 99),
+    (a, b) => (severityOrder[a.severity] ?? 99) - (severityOrder[b.severity] ?? 99),
   );
 
-  const severityIcon = { major: "🔴", moderate: "🟡", minor: "🟢" };
+  const severityIcon: Record<"major" | "moderate" | "minor", string> = { major: "🔴", moderate: "🟡", minor: "🟢" };
 
   return {
     drug,
     interactionCount: matches.length,
-    interactions: matches.map((m: any) => ({
+    interactions: matches.map((m): DrugInteractionResult => ({
       nutrient: m.nutrient,
       effect: m.effect,
       severity: m.severity,
-      // @ts-expect-error - TS7053: implicit any index
       icon: severityIcon[m.severity] || "⚪",
       description: m.description,
       recommendation: m.recommendation,
@@ -165,8 +186,8 @@ export function checkDrugNutrientInteractions({ drug, nutrients }: any) {
  * List all drug classes covered by the interaction database.
  */
 export function getDrugInteractionCategories() {
-  const drugClasses = new Set();
-  const nutrients = new Set();
+  const drugClasses = new Set<string>();
+  const nutrients = new Set<string>();
 
   for (const entry of INTERACTION_DB) {
     // Extract a readable drug class from the pattern

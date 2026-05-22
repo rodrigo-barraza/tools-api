@@ -5,9 +5,9 @@ import logger from "../logger.ts";
 // ─── Types ──────────────────────────────────────────────────────
 export interface NeoDocument {
   neoId: string;
-  closeApproachDate?: Date;
+  closeApproachDate?: string | Date;
   isPotentiallyHazardous?: boolean;
-  missDistanceKm?: number;
+  missDistanceKm?: number | null;
   lastSeen?: Date;
   firstSeen?: Date;
   [key: string]: unknown;

@@ -5,8 +5,96 @@ import { validatePath } from "./AgenticFileService.ts";
 import { WORKTREE_DIR } from "../config.ts";
 import { routeForPath, sendRpc } from "./AgentConnectionManager.ts";
 
+export interface GitFileStatus {
+  status: string;
+  file: string;
+}
+
+export interface GitStatusResult {
+  path: string;
+  branch: string;
+  ahead: number;
+  behind: number;
+  staged: GitFileStatus[];
+  unstaged: GitFileStatus[];
+  untracked: string[];
+  totalChanges: number;
+  clean: boolean;
+  error?: string;
+}
+
+export interface GitDiffResult {
+  path?: string;
+  staged?: boolean;
+  file?: string;
+  ref?: string;
+  hasChanges?: boolean;
+  additions?: number;
+  deletions?: number;
+  diff?: string;
+  error?: string;
+}
+
+export interface GitCommit {
+  hash: string;
+  shortHash: string;
+  author: string;
+  email: string;
+  date: string;
+  message: string;
+}
+
+export interface GitLogResult {
+  path?: string;
+  totalCommits?: number;
+  author?: string;
+  since?: string;
+  commits?: GitCommit[];
+  error?: string;
+}
+
+export interface GitWorktreeCreateResult {
+  worktreePath?: string;
+  branch?: string;
+  repoPath?: string;
+  error?: string;
+}
+
+export interface GitWorktreeRemoveResult {
+  removed?: string;
+  branch?: string | null;
+  branchDeleted?: boolean;
+  error?: string;
+}
+
+export interface GitWorktreeMergeResult {
+  merged?: string;
+  output?: string;
+  error?: string;
+}
+
+export interface GitWorktreeDiffResult {
+  branch?: string;
+  baseBranch?: string;
+  hasChanges?: boolean;
+  additions?: number;
+  deletions?: number;
+  diff?: string;
+  error?: string;
+}
+
+export interface GitWorktreeCleanupResult {
+  pruned?: boolean;
+  cleanedDirs?: number;
+  error?: string;
+}
+
 // Agent routing helper
-async function tryAgentRoute(method: any, params: any, targetPath: any) {
+async function tryAgentRoute(
+  method: string,
+  params: Record<string, unknown>,
+  targetPath: string,
+): Promise<any> {
   const agent = routeForPath(targetPath);
   if (!agent) return null;
   try {
@@ -21,14 +109,21 @@ import {
   AGENT_GIT_MAX_OUTPUT_BYTES as MAX_OUTPUT_BYTES,
 } from "../constants.ts";
 
+interface GitRunResult {
+  stdout: string;
+  stderr: string;
+  error?: string;
+  exitCode?: number | null;
+}
+
 // ────────────────────────────────────────────────────────────
 // Internal Git Runner
 // ────────────────────────────────────────────────────────────
 
-async function runGit(args: string[], cwd: string): Promise<any> {
-  return new Promise<any>((resolve: any) => {
-    const stdoutChunks: any[] = [];
-    const stderrChunks: any[] = [];
+async function runGit(args: string[], cwd: string): Promise<GitRunResult> {
+  return new Promise<GitRunResult>((resolve) => {
+    const stdoutChunks: Buffer[] = [];
+    const stderrChunks: Buffer[] = [];
     let stdoutLen = 0;
     let stderrLen = 0;
     let settled = false;
@@ -45,31 +140,37 @@ async function runGit(args: string[], cwd: string): Promise<any> {
       detached: false,
     });
 
-    child.stdin.end();
+    if (child.stdin) {
+      child.stdin.end();
+    }
 
-    child.stdout.on("data", (chunk: any) => {
-      if (stdoutLen < MAX_OUTPUT_BYTES) {
-        stdoutChunks.push(chunk);
-        stdoutLen += chunk.length;
-      }
-    });
+    if (child.stdout) {
+      child.stdout.on("data", (chunk: Buffer) => {
+        if (stdoutLen < MAX_OUTPUT_BYTES) {
+          stdoutChunks.push(chunk);
+          stdoutLen += chunk.length;
+        }
+      });
+    }
 
-    child.stderr.on("data", (chunk: any) => {
-      if (stderrLen < MAX_OUTPUT_BYTES) {
-        stderrChunks.push(chunk);
-        stderrLen += chunk.length;
-      }
-    });
+    if (child.stderr) {
+      child.stderr.on("data", (chunk: Buffer) => {
+        if (stderrLen < MAX_OUTPUT_BYTES) {
+          stderrChunks.push(chunk);
+          stderrLen += chunk.length;
+        }
+      });
+    }
 
     const timer = setTimeout(() => {
       child.kill("SIGKILL");
       if (!settled) {
         settled = true;
-        resolve({ error: `Git command timed out after ${GIT_TIMEOUT_MS}ms` });
+        resolve({ stdout: "", stderr: "", error: `Git command timed out after ${GIT_TIMEOUT_MS}ms` });
       }
     }, GIT_TIMEOUT_MS);
 
-    child.on("close", (code: any) => {
+    child.on("close", (code: number | null) => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
@@ -78,18 +179,18 @@ async function runGit(args: string[], cwd: string): Promise<any> {
       const stderr = Buffer.concat(stderrChunks).toString("utf-8");
 
       if (code !== 0) {
-        resolve({ error: stderr.trim() || `Git exited with code ${code}`, exitCode: code });
+        resolve({ stdout, stderr, error: stderr.trim() || `Git exited with code ${code}`, exitCode: code });
         return;
       }
 
       resolve({ stdout, stderr: stderr.trim() });
     });
 
-    child.on("error", (error: any) => {
+    child.on("error", (error: Error) => {
       if (!settled) {
         settled = true;
         clearTimeout(timer);
-        resolve({ error: `Git process error: ${error.message}` });
+        resolve({ stdout: "", stderr: "", error: `Git process error: ${error.message}` });
       }
     });
   });
@@ -102,14 +203,14 @@ async function runGit(args: string[], cwd: string): Promise<any> {
 /**
  * Get git status for a repository.
  */
-export async function agenticGitStatus(repoPath: any) {
+export async function agenticGitStatus(repoPath: string): Promise<GitStatusResult | { error: string; path?: string }> {
   // Agent routing
   const agentResult = await tryAgentRoute("git.status", { path: repoPath }, repoPath);
   if (agentResult) return agentResult;
 
   const validation = validatePath(repoPath);
   if (!validation.safe) {
-    return { error: validation.error };
+    return { error: validation.error || "Invalid path" };
   }
 
   const cwd = validation.resolved;
@@ -143,9 +244,9 @@ export async function agenticGitStatus(repoPath: any) {
   const behindMatch = branchLine.match(/behind (\d+)/);
 
   // Parse file changes
-  const staged: any[] = [];
-  const unstaged: any[] = [];
-  const untracked: any[] = [];
+  const staged: GitFileStatus[] = [];
+  const unstaged: GitFileStatus[] = [];
+  const untracked: string[] = [];
 
   for (const line of fileLines) {
     const x = line[0]; // staging area
@@ -181,10 +282,19 @@ export async function agenticGitStatus(repoPath: any) {
 // Git Diff
 // ────────────────────────────────────────────────────────────
 
+interface DiffOptions {
+  staged?: boolean;
+  path?: string;
+  ref?: string;
+}
+
 /**
  * Get git diff output.
  */
-export async function agenticGitDiff(repoPath: any, { staged = false, path: filePath, ref }: Record<string, any> = {}) {
+export async function agenticGitDiff(
+  repoPath: string,
+  { staged = false, path: filePath, ref }: DiffOptions = {},
+): Promise<GitDiffResult> {
   // Agent routing
   const agentResult = await tryAgentRoute("git.diff", { path: repoPath, staged, filePath, ref }, repoPath);
   if (agentResult) return agentResult;
@@ -237,10 +347,20 @@ export async function agenticGitDiff(repoPath: any, { staged = false, path: file
 // Git Log
 // ────────────────────────────────────────────────────────────
 
+interface LogOptions {
+  limit?: number;
+  author?: string;
+  since?: string;
+  path?: string;
+}
+
 /**
  * Get git log.
  */
-export async function agenticGitLog(repoPath: any, { limit = 20, author, since, path: filePath }: Record<string, any> = {}) {
+export async function agenticGitLog(
+  repoPath: string,
+  { limit = 20, author, since, path: filePath }: LogOptions = {},
+): Promise<GitLogResult> {
   // Agent routing
   const agentResult = await tryAgentRoute("git.log", { path: repoPath, limit, author, since, filePath }, repoPath);
   if (agentResult) return agentResult;
@@ -278,10 +398,10 @@ export async function agenticGitLog(repoPath: any, { limit = 20, author, since, 
     return { error: result.error, path: cwd };
   }
 
-  const commits = result.stdout
+  const commits: GitCommit[] = result.stdout
     .split(separator)
-    .filter((s: any) => s.trim())
-    .map((entry: any) => {
+    .filter((s: string) => s.trim())
+    .map((entry: string) => {
       const parts = entry.trim().split("|");
       return {
         hash: parts[0] || "",
@@ -311,7 +431,7 @@ const WORKTREE_BASE = WORKTREE_DIR?.trim() || "/tmp/prism-worktrees";
 /**
  * Create a git worktree with its own branch.
  */
-export async function agenticGitWorktreeCreate(repoPath: any, branchName: any) {
+export async function agenticGitWorktreeCreate(repoPath: string, branchName: string): Promise<GitWorktreeCreateResult> {
   const validation = validatePath(repoPath);
   if (!validation.safe) {
     return { error: validation.error };
@@ -335,7 +455,7 @@ export async function agenticGitWorktreeCreate(repoPath: any, branchName: any) {
   );
 
   if (result.error) {
-    return { error: result.error, path: cwd };
+    return { error: result.error, repoPath: cwd };
   }
 
   return {
@@ -345,10 +465,18 @@ export async function agenticGitWorktreeCreate(repoPath: any, branchName: any) {
   };
 }
 
+interface WorktreeRemoveOptions {
+  deleteBranch?: boolean;
+}
+
 /**
  * Remove a git worktree and optionally delete the branch.
  */
-export async function agenticGitWorktreeRemove(repoPath: any, worktreePath: any, { deleteBranch = true }: Record<string, any> = {}) {
+export async function agenticGitWorktreeRemove(
+  repoPath: string,
+  worktreePath: string,
+  { deleteBranch = true }: WorktreeRemoveOptions = {},
+): Promise<GitWorktreeRemoveResult> {
   const validation = validatePath(repoPath);
   if (!validation.safe) {
     return { error: validation.error };
@@ -357,7 +485,7 @@ export async function agenticGitWorktreeRemove(repoPath: any, worktreePath: any,
   const cwd = validation.resolved;
 
   // Get branch name from worktree before removing
-  let branchName: any = null;
+  let branchName: string | null = null;
   if (deleteBranch) {
     const branchResult = await runGit(["branch", "--show-current"], worktreePath);
     if (!branchResult.error) {
@@ -372,7 +500,7 @@ export async function agenticGitWorktreeRemove(repoPath: any, worktreePath: any,
   );
 
   if (result.error) {
-    return { error: result.error, path: cwd };
+    return { error: result.error };
   }
 
   // Delete the branch
@@ -387,10 +515,18 @@ export async function agenticGitWorktreeRemove(repoPath: any, worktreePath: any,
   };
 }
 
+interface WorktreeMergeOptions {
+  message?: string;
+}
+
 /**
  * Merge a worktree branch back into the current branch.
  */
-export async function agenticGitWorktreeMerge(repoPath: any, branch: any, { message }: Record<string, any> = {}) {
+export async function agenticGitWorktreeMerge(
+  repoPath: string,
+  branch: string,
+  { message }: WorktreeMergeOptions = {},
+): Promise<GitWorktreeMergeResult> {
   const validation = validatePath(repoPath);
   if (!validation.safe) {
     return { error: validation.error };
@@ -405,7 +541,7 @@ export async function agenticGitWorktreeMerge(repoPath: any, branch: any, { mess
 
   const result = await runGit(args, cwd);
   if (result.error) {
-    return { error: result.error, path: cwd };
+    return { error: result.error };
   }
 
   return {
@@ -417,7 +553,7 @@ export async function agenticGitWorktreeMerge(repoPath: any, branch: any, { mess
 /**
  * Get the diff between a worktree branch and the main branch.
  */
-export async function agenticGitWorktreeDiff(repoPath: any, branch: any) {
+export async function agenticGitWorktreeDiff(repoPath: string, branch: string): Promise<GitWorktreeDiffResult> {
   const validation = validatePath(repoPath);
   if (!validation.safe) {
     return { error: validation.error };
@@ -435,7 +571,7 @@ export async function agenticGitWorktreeDiff(repoPath: any, branch: any) {
   );
 
   if (result.error) {
-    return { error: result.error, path: cwd };
+    return { error: result.error };
   }
 
   const diff = result.stdout;
@@ -457,7 +593,7 @@ export async function agenticGitWorktreeDiff(repoPath: any, branch: any) {
  * Clean up any orphaned worktrees from previous runs.
  * Should be called on server startup.
  */
-export async function agenticGitWorktreeCleanup(repoPath: any) {
+export async function agenticGitWorktreeCleanup(repoPath: string): Promise<GitWorktreeCleanupResult> {
   const validation = validatePath(repoPath);
   if (!validation.safe) {
     return { error: validation.error };

@@ -275,7 +275,7 @@ router.get("/elements/rank", (req: Request, res: Response) => {
   }
   const result = rankElementsByProperty(property, {
     limit: parseIntParam(limit, 10),
-    order: order || "desc",
+    order: (order === "asc" || order === "desc") ? order : "desc",
     category,
     block,
   });
@@ -317,7 +317,7 @@ router.get("/indicators/rank", (req: Request, res: Response) => {
   }
   const result = rankCountriesByIndicator(indicator, {
     limit: parseIntParam(limit, 10),
-    order: order || "desc",
+    order: (order === "asc" || order === "desc") ? order : "desc",
   });
   if (result.error) {
     return res.status(400).json(result);
@@ -377,7 +377,7 @@ router.get("/exoplanets/rank", (req: Request, res: Response) => {
   }
   res.json(rankExoplanets(field, {
     limit: parseIntParam(limit, 10),
-    order: order || "desc",
+    order: (order === "asc" || order === "desc") ? order : "desc",
   }));
 });
 router.get("/exoplanets/stats", asyncHandler(

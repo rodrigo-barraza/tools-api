@@ -1,6 +1,8 @@
-import { readFileSync } from "fs";
+import { readFileSync, readdirSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
+import logger from "../../logger.ts";
+import { Exercise } from "../../types/health.ts";
 
 /**
  * Exercises Fetcher — Static In-Memory Database
@@ -11,8 +13,8 @@ import { dirname, join } from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-function parseCSVLine(line: any) {
-  const fields: any[] = [];
+function parseCSVLine(line: string): string[] {
+  const fields: string[] = [];
   let current = "";
   let inQuotes = false;
 
@@ -31,25 +33,28 @@ function parseCSVLine(line: any) {
   return fields;
 }
 
-const EXERCISE_DB: any[] = [];
+const EXERCISE_DB: Exercise[] = [];
 let loaded = false;
 
-import { readdirSync } from "fs";
-import logger from "../../logger.ts";
-
-function ensureLoaded() {
+function ensureLoaded(): void {
   if (loaded) return;
   loaded = true;
 
   const dataDir = join(__dirname, "data");
-  const files = readdirSync(dataDir).filter((f: any) => f.startsWith("digest_exercises") && f.endsWith(".csv"));
+  let files: string[] = [];
+  try {
+    files = readdirSync(dataDir).filter((f: string) => f.startsWith("digest_exercises") && f.endsWith(".csv"));
+  } catch (error) {
+    logger.error(`Error reading exercises directory: ${(error as Error).message}`);
+    return;
+  }
   
   let totalCount = 0;
 
   for (const file of files) {
     const dataPath = join(dataDir, file);
     const rawData = readFileSync(dataPath, "utf-8");
-    const lines = rawData.split("\n").filter((l: any) => l.trim());
+    const lines = rawData.split("\n").filter((l: string) => l.trim());
     
     if (lines.length === 0) continue;
     const headers = parseCSVLine(lines[0]);
@@ -58,17 +63,29 @@ function ensureLoaded() {
       const values = parseCSVLine(lines[i]);
       if (values.length < headers.length) continue;
 
-      const row: Record<string, any> = {};
       // Infer source from filename (e.g. digest_exercises.csv -> Free Exercise DB, digest_exercises_wger.csv -> WGER)
       const isWger = file.includes("wger");
-      row._source = isWger ? "Wger" : "Free Exercise DB";
+      const source = isWger ? "Wger" : "Free Exercise DB";
 
-      headers.forEach((h: any, index: any) => {
+      const row: Exercise = {
+        id: "",
+        name: "",
+        category: "",
+        equipment: "",
+        force: "",
+        level: "",
+        mechanic: "",
+        primary_muscles: [],
+        secondary_muscles: [],
+        _source: source
+      };
+
+      headers.forEach((h: string, index: number) => {
         const value = values[index] || "";
         if (h === "category" || h === "equipment") {
           row[h] = value.toLowerCase();
         } else if (h === "primary_muscles" || h === "secondary_muscles") {
-          row[h] = value ? value.split("|").map((m: any) => m.toLowerCase()) : [];
+          row[h] = value ? value.split("|").map((m: string) => m.toLowerCase()) : [];
         } else {
           row[h] = value;
         }
@@ -82,15 +99,32 @@ function ensureLoaded() {
   logger.info(`🏋️ Exercises DB loaded: ${totalCount} exercises from ${files.length} sources`);
 }
 
-function normalizeSearch(str: any) {
+function normalizeSearch(str: string): string {
   return str.toLowerCase().replace(/[^a-z0-9\s]/g, "");
 }
 
-function normalizeQuery(str: any) {
+function normalizeQuery(str: string | undefined | null): string {
   return str ? str.toLowerCase().trim() : "";
 }
 
-export function searchExercises(query: any, opts: Record<string, any> = {}) {
+export interface SearchExercisesOptions {
+  limit?: number;
+  category?: string;
+  equipment?: string;
+  force?: string;
+  level?: string;
+  mechanic?: string;
+  muscle?: string;
+}
+
+export interface SearchExercisesResult {
+  count: number;
+  returned: number;
+  query: string | null;
+  exercises: Exercise[];
+}
+
+export function searchExercises(query: string | null | undefined, opts: SearchExercisesOptions = {}): SearchExercisesResult {
   ensureLoaded();
 
   const {
@@ -107,40 +141,40 @@ export function searchExercises(query: any, opts: Record<string, any> = {}) {
 
   if (category) {
     const f = normalizeQuery(category);
-    candidates = candidates.filter((c: any) => normalizeQuery(c.category) === f);
+    candidates = candidates.filter((c: Exercise) => normalizeQuery(c.category) === f);
   }
   if (equipment) {
     const f = normalizeQuery(equipment);
-    candidates = candidates.filter((c: any) => normalizeQuery(c.equipment) === f);
+    candidates = candidates.filter((c: Exercise) => normalizeQuery(c.equipment) === f);
   }
   if (force) {
     const f = normalizeQuery(force);
-    candidates = candidates.filter((c: any) => normalizeQuery(c.force) === f);
+    candidates = candidates.filter((c: Exercise) => normalizeQuery(c.force) === f);
   }
   if (level) {
     const f = normalizeQuery(level);
-    candidates = candidates.filter((c: any) => normalizeQuery(c.level) === f);
+    candidates = candidates.filter((c: Exercise) => normalizeQuery(c.level) === f);
   }
   if (mechanic) {
     const f = normalizeQuery(mechanic);
-    candidates = candidates.filter((c: any) => normalizeQuery(c.mechanic) === f);
+    candidates = candidates.filter((c: Exercise) => normalizeQuery(c.mechanic) === f);
   }
   if (muscle) {
     const f = normalizeQuery(muscle);
     candidates = candidates.filter(
-      (c: any) =>
-        c.primary_muscles.some((m: any) => normalizeQuery(m) === f) ||
-        c.secondary_muscles.some((m: any) => normalizeQuery(m) === f)
+      (c: Exercise) =>
+        c.primary_muscles.some((m: string) => normalizeQuery(m) === f) ||
+        c.secondary_muscles.some((m: string) => normalizeQuery(m) === f)
     );
   }
 
   if (query) {
     const term = normalizeSearch(query);
-    candidates = candidates.filter((c: any) => {
+    candidates = candidates.filter((c: Exercise) => {
       const parts = term.split(/\s+/).filter(Boolean);
       const name = normalizeSearch(c.name);
       const id = normalizeSearch(c.id);
-      return parts.every((p: any) => name.includes(p) || id.includes(p));
+      return parts.every((p: string) => name.includes(p) || id.includes(p));
     });
   }
 
@@ -152,19 +186,26 @@ export function searchExercises(query: any, opts: Record<string, any> = {}) {
   };
 }
 
-export function getExerciseById(id: any) {
+export function getExerciseById(id: string): Exercise | null {
   ensureLoaded();
   const normalized = normalizeQuery(id);
-  const ex = EXERCISE_DB.find((c: any) => normalizeQuery(c.id) === normalized);
+  const ex = EXERCISE_DB.find((c: Exercise) => normalizeQuery(c.id) === normalized);
   return ex || null;
 }
 
-export function getExerciseCategories() {
+export interface ExerciseCategoriesResult {
+  totalExercises: number;
+  categories: string[];
+  equipment: string[];
+  muscles: string[];
+}
+
+export function getExerciseCategories(): ExerciseCategoriesResult {
   ensureLoaded();
-  const categories = [...new Set(EXERCISE_DB.map((e: any) => e.category).filter(Boolean))];
-  const equipment = [...new Set(EXERCISE_DB.map((e: any) => e.equipment).filter(Boolean))];
+  const categories = [...new Set(EXERCISE_DB.map((e: Exercise) => e.category).filter(Boolean))];
+  const equipment = [...new Set(EXERCISE_DB.map((e: Exercise) => e.equipment).filter(Boolean))];
   const muscles = [
-    ...new Set(EXERCISE_DB.flatMap((e: any) => [...e.primary_muscles, ...e.secondary_muscles]).filter(Boolean)),
+    ...new Set(EXERCISE_DB.flatMap((e: Exercise) => [...e.primary_muscles, ...e.secondary_muscles]).filter(Boolean)),
   ];
 
   return {
@@ -174,3 +215,4 @@ export function getExerciseCategories() {
     muscles: muscles.sort(),
   };
 }
+

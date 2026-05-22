@@ -2,11 +2,98 @@ import CONFIG from "../../config.ts";
 
 const API_URL = "https://pollen.googleapis.com/v1/forecast:lookup";
 
+export interface PollenIndexInfo {
+  value: number | null;
+  category: string | null;
+  indexDescription: string | null;
+  color: { red?: number; green?: number; blue?: number } | null;
+}
+
+export interface PollenTypeDetails {
+  displayName: string;
+  indexInfo: PollenIndexInfo | null;
+  inSeason: boolean;
+  healthRecommendations: string[];
+}
+
+export interface PlantContribution {
+  code: string;
+  displayName: string;
+  inSeason: boolean;
+  indexInfo: PollenIndexInfo | null;
+  description: string | null;
+  crossReaction: string | null;
+  season: string | null;
+}
+
+export interface PollenDailyForecast {
+  date: string | null;
+  grass: PollenTypeDetails | null;
+  tree: PollenTypeDetails | null;
+  weed: PollenTypeDetails | null;
+  plants: PlantContribution[];
+}
+
+export interface PollenResponse {
+  source: string;
+  timestamp: Date;
+  regionCode: string | null;
+  daily: PollenDailyForecast[];
+}
+
+interface RawGoogleColor {
+  red?: number;
+  green?: number;
+  blue?: number;
+}
+
+interface RawGooglePollenIndexInfo {
+  value?: number;
+  category?: string;
+  indexDescription?: string;
+  color?: RawGoogleColor;
+}
+
+interface RawGooglePollenTypeInfo {
+  code?: string;
+  displayName?: string;
+  indexInfo?: RawGooglePollenIndexInfo;
+  inSeason?: boolean;
+  healthRecommendations?: string[];
+}
+
+interface RawGooglePlantInfo {
+  code?: string;
+  displayName?: string;
+  inSeason?: boolean;
+  indexInfo?: RawGooglePollenIndexInfo;
+  plantDescription?: {
+    type?: string;
+    crossReaction?: string;
+    season?: string;
+  };
+}
+
+interface RawGoogleDailyInfo {
+  date?: {
+    year: number;
+    month: number;
+    day: number;
+  };
+  pollenTypeInfo?: RawGooglePollenTypeInfo[];
+  plantInfo?: RawGooglePlantInfo[];
+}
+
+interface RawGooglePollenResponse {
+  regionCode?: string;
+  dailyInfo?: RawGoogleDailyInfo[];
+}
+
 /**
  * Fetch pollen forecast from Google Pollen API.
  * Returns daily pollen indexes for grass, tree, and weed with plant breakdowns.
  */
-export async function fetchPollen() {
+export async function fetchPollen(): Promise<PollenResponse> {
   if (!CONFIG.GOOGLE_API_KEY) {
     throw new Error("GOOGLE_API_KEY is not configured");
   }
@@ -27,7 +114,7 @@ export async function fetchPollen() {
     throw new Error(`Google Pollen API returned ${response.status}: ${text}`);
   }
 
-  const data = await response.json();
+  const data = await response.json() as RawGooglePollenResponse;
   const dailyInfo = data.dailyInfo || [];
 
   return {
@@ -36,15 +123,17 @@ export async function fetchPollen() {
     regionCode: data.regionCode || null,
 
     // Daily forecasts
-    daily: dailyInfo.map((day: any) => {
+    daily: dailyInfo.map((day): PollenDailyForecast => {
       const pollenTypes = day.pollenTypeInfo || [];
       const plantInfo = day.plantInfo || [];
 
       // Extract index for each pollen type
-      const byType: Record<string, any> = {};
+      const byType: Record<string, PollenTypeDetails> = {};
       for (const pt of pollenTypes) {
-        byType[pt.code?.toLowerCase() || pt.displayName?.toLowerCase()] = {
-          displayName: pt.displayName,
+        const key = pt.code?.toLowerCase() || pt.displayName?.toLowerCase() || "";
+        if (!key) continue;
+        byType[key] = {
+          displayName: pt.displayName || "",
           indexInfo: pt.indexInfo
             ? {
                 value: pt.indexInfo.value ?? null,
@@ -59,9 +148,9 @@ export async function fetchPollen() {
       }
 
       // Extract individual plant contributions
-      const plants = plantInfo.map((p: any) => ({
-        code: p.code,
-        displayName: p.displayName,
+      const plants = plantInfo.map((p): PlantContribution => ({
+        code: p.code || "",
+        displayName: p.displayName || "",
         inSeason: p.inSeason ?? false,
         indexInfo: p.indexInfo
           ? {

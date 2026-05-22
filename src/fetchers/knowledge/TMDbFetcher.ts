@@ -1,5 +1,12 @@
 import CONFIG from "../../config.ts";
 import { TMDB_BASE_URL, TMDB_IMAGE_BASE_URL } from "../../constants.ts";
+import {
+  MovieResult,
+  TvShowResult,
+  CastMember,
+  CrewMember,
+  TvSeason,
+} from "../../types/knowledge.ts";
 
 /**
  * TMDb Fetcher — Movies & TV Series
@@ -9,13 +16,113 @@ import { TMDB_BASE_URL, TMDB_IMAGE_BASE_URL } from "../../constants.ts";
  * All endpoints are on-demand (no background polling).
  */
 
+// ─── Interfaces ───────────────────────────────────────────────────
+
+interface RawTmdbMovie {
+  id: number;
+  title?: string | null;
+  original_title?: string | null;
+  tagline?: string | null;
+  overview?: string | null;
+  release_date?: string | null;
+  status?: string | null;
+  runtime?: number | null;
+  budget?: number | null;
+  revenue?: number | null;
+  vote_average?: number | null;
+  vote_count?: number | null;
+  popularity?: number | null;
+  poster_path?: string | null;
+  backdrop_path?: string | null;
+  genres?: Array<{ id: number; name: string }>;
+  genre_ids?: number[];
+  original_language?: string | null;
+  spoken_languages?: Array<{ english_name?: string; name?: string }>;
+  production_companies?: Array<{ name: string }>;
+  production_countries?: Array<{ name?: string; iso_3166_1?: string }>;
+  homepage?: string | null;
+  imdb_id?: string | null;
+}
+
+interface RawTmdbTvShow {
+  id: number;
+  name?: string | null;
+  original_name?: string | null;
+  tagline?: string | null;
+  overview?: string | null;
+  first_air_date?: string | null;
+  last_air_date?: string | null;
+  status?: string | null;
+  type?: string | null;
+  number_of_seasons?: number | null;
+  number_of_episodes?: number | null;
+  episode_run_time?: number[] | null;
+  vote_average?: number | null;
+  vote_count?: number | null;
+  popularity?: number | null;
+  poster_path?: string | null;
+  backdrop_path?: string | null;
+  genres?: Array<{ id: number; name: string }>;
+  genre_ids?: number[];
+  networks?: Array<{ name: string }>;
+  production_companies?: Array<{ name: string }>;
+  created_by?: Array<{ name: string }>;
+  origin_country?: string[];
+  original_language?: string | null;
+  homepage?: string | null;
+  in_production?: boolean;
+}
+
+interface RawTmdbCast {
+  id: number;
+  name: string;
+  character?: string | null;
+  roles?: Array<{ character: string }>;
+  profile_path?: string | null;
+  order?: number | null;
+  known_for_department?: string | null;
+}
+
+interface RawTmdbCrew {
+  id: number;
+  name: string;
+  job?: string | null;
+  jobs?: Array<{ job: string }>;
+  department?: string | null;
+  profile_path?: string | null;
+}
+
+export interface TmdbGenre {
+  id: number;
+  name: string;
+}
+
+interface RawTmdbEpisode {
+  episode_number: number;
+  name: string;
+  overview?: string | null;
+  air_date?: string | null;
+  runtime?: number | null;
+  vote_average?: number | null;
+  still_path?: string | null;
+}
+
+interface RawTmdbSeason {
+  season_number: number;
+  name?: string | null;
+  overview?: string | null;
+  air_date?: string | null;
+  poster_path?: string | null;
+  episodes?: RawTmdbEpisode[];
+}
+
 // ─── Helpers ───────────────────────────────────────────────────────
 
-function img(path: any, size: any = "w500") {
+function img(path: string | null | undefined, size: string = "w500"): string | null {
   return path ? `${TMDB_IMAGE_BASE_URL}/${size}${path}` : null;
 }
 
-async function fetchTMDb(endpoint: any) {
+async function fetchTMDb<T>(endpoint: string): Promise<T | null> {
   if (!CONFIG.TMDB_API_KEY) {
     throw new Error("TMDB_API_KEY is not configured");
   }
@@ -29,12 +136,12 @@ async function fetchTMDb(endpoint: any) {
     throw new Error(`TMDb API → ${response.status} ${response.statusText}`);
   }
 
-  return response.json();
+  return response.json() as Promise<T>;
 }
 
 // ─── Normalizers ───────────────────────────────────────────────────
 
-function normalizeMovie(m: any) {
+function normalizeMovie(m: RawTmdbMovie | null | undefined): MovieResult | null {
   if (!m) return null;
   return {
     tmdbId: m.id,
@@ -52,24 +159,23 @@ function normalizeMovie(m: any) {
     popularity: m.popularity || null,
     posterUrl: img(m.poster_path),
     backdropUrl: img(m.backdrop_path, "w1280"),
-    genres: (m.genres || m.genre_ids || []).map((g: any) =>
-      typeof g === "object" ? g.name : g,
-    ),
+    genres: (m.genres || []).map((g) => g.name)
+      .concat((m.genre_ids || []).map((id) => String(id))),
     originalLanguage: m.original_language || null,
     spokenLanguages: (m.spoken_languages || []).map(
-      (l: any) => l.english_name || l.name,
-    ),
-    productionCompanies: (m.production_companies || []).map((c: any) => c.name),
+      (l) => l.english_name || l.name || "",
+    ).filter(Boolean),
+    productionCompanies: (m.production_companies || []).map((c) => c.name),
     productionCountries: (m.production_countries || []).map(
-      (c: any) => c.name || c.iso_3166_1,
-    ),
+      (c) => c.name || c.iso_3166_1 || "",
+    ).filter(Boolean),
     homepage: m.homepage || null,
     imdbId: m.imdb_id || null,
     url: `https://www.themoviedb.org/movie/${m.id}`,
   };
 }
 
-function normalizeTvShow(tv: any) {
+function normalizeTvShow(tv: RawTmdbTvShow | null | undefined): TvShowResult | null {
   if (!tv) return null;
   return {
     tmdbId: tv.id,
@@ -89,12 +195,11 @@ function normalizeTvShow(tv: any) {
     popularity: tv.popularity || null,
     posterUrl: img(tv.poster_path),
     backdropUrl: img(tv.backdrop_path, "w1280"),
-    genres: (tv.genres || tv.genre_ids || []).map((g: any) =>
-      typeof g === "object" ? g.name : g,
-    ),
-    networks: (tv.networks || []).map((n: any) => n.name),
-    productionCompanies: (tv.production_companies || []).map((c: any) => c.name),
-    createdBy: (tv.created_by || []).map((c: any) => c.name),
+    genres: (tv.genres || []).map((g) => g.name)
+      .concat((tv.genre_ids || []).map((id) => String(id))),
+    networks: (tv.networks || []).map((n) => n.name),
+    productionCompanies: (tv.production_companies || []).map((c) => c.name),
+    createdBy: (tv.created_by || []).map((c) => c.name),
     originCountry: tv.origin_country || [],
     originalLanguage: tv.original_language || null,
     homepage: tv.homepage || null,
@@ -103,7 +208,7 @@ function normalizeTvShow(tv: any) {
   };
 }
 
-function normalizeCast(person: any) {
+function normalizeCast(person: RawTmdbCast): CastMember {
   return {
     tmdbId: person.id,
     name: person.name,
@@ -114,7 +219,7 @@ function normalizeCast(person: any) {
   };
 }
 
-function normalizeCrew(person: any) {
+function normalizeCrew(person: RawTmdbCrew): CrewMember {
   return {
     tmdbId: person.id,
     name: person.name,
@@ -126,18 +231,29 @@ function normalizeCrew(person: any) {
 
 // ─── Movie Fetchers ────────────────────────────────────────────────
 
+export interface SearchMoviesOptions {
+  page?: number;
+  year?: number;
+}
+
 /**
  * Search movies by title
  */
-export async function searchMovies(query: any, { page = 1, year }: Record<string, any> = {}) {
+export async function searchMovies(query: string, { page = 1, year }: SearchMoviesOptions = {}) {
   let endpoint = `/search/movie?query=${encodeURIComponent(query)}&page=${page}&language=en-US`;
   if (year) endpoint += `&year=${year}`;
 
-  const data = await fetchTMDb(endpoint);
+  const data = await fetchTMDb<{
+    results?: RawTmdbMovie[];
+    total_results: number;
+    page: number;
+    total_pages: number;
+  }>(endpoint);
+
   if (!data || !data.results) {
     return {
       found: false,
-      results: [],
+      results: [] as MovieResult[],
       totalResults: 0,
       page: 1,
       totalPages: 0,
@@ -150,15 +266,15 @@ export async function searchMovies(query: any, { page = 1, year }: Record<string
     totalResults: data.total_results,
     page: data.page,
     totalPages: data.total_pages,
-    results: data.results.map(normalizeMovie),
+    results: data.results.map(normalizeMovie).filter(Boolean) as MovieResult[],
   };
 }
 
 /**
  * Get full movie details by TMDb ID
  */
-export async function getMovieDetails(id: any) {
-  const data = await fetchTMDb(`/movie/${id}?language=en-US`);
+export async function getMovieDetails(id: string | number) {
+  const data = await fetchTMDb<RawTmdbMovie>(`/movie/${id}?language=en-US`);
   if (!data) return { found: false, movie: null };
 
   return { found: true, movie: normalizeMovie(data) };
@@ -167,15 +283,19 @@ export async function getMovieDetails(id: any) {
 /**
  * Get movie credits (cast + crew)
  */
-export async function getMovieCredits(id: any) {
-  const data = await fetchTMDb(`/movie/${id}/credits?language=en-US`);
-  if (!data) return { found: false, cast: [], crew: [] };
+export async function getMovieCredits(id: string | number) {
+  const data = await fetchTMDb<{
+    cast?: RawTmdbCast[];
+    crew?: RawTmdbCrew[];
+  }>(`/movie/${id}/credits?language=en-US`);
+
+  if (!data) return { found: false, cast: [] as CastMember[], crew: [] as CrewMember[] };
 
   return {
     found: true,
     cast: (data.cast || []).slice(0, 20).map(normalizeCast),
     crew: (data.crew || [])
-      .filter((c: any) =>
+      .filter((c) =>
         [
           "Director",
           "Writer",
@@ -183,7 +303,7 @@ export async function getMovieCredits(id: any) {
           "Producer",
           "Director of Photography",
           "Original Music Composer",
-        ].includes(c.job),
+        ].includes(c.job || ""),
       )
       .map(normalizeCrew),
   };
@@ -192,16 +312,25 @@ export async function getMovieCredits(id: any) {
 /**
  * Get trending movies (day or week)
  */
-export async function getTrendingMovies(timeWindow: any = "day", limit: any = 10) {
-  const data = await fetchTMDb(`/trending/movie/${timeWindow}?language=en-US`);
-  if (!data || !data.results) return { found: false, results: [] };
+export async function getTrendingMovies(timeWindow: string = "day", limit: number = 10) {
+  const data = await fetchTMDb<{ results?: RawTmdbMovie[] }>(`/trending/movie/${timeWindow}?language=en-US`);
+  if (!data || !data.results) return { found: false, results: [] as MovieResult[] };
 
   return {
     found: true,
     timeWindow,
     count: Math.min(data.results.length, limit),
-    results: data.results.slice(0, limit).map(normalizeMovie),
+    results: data.results.slice(0, limit).map(normalizeMovie).filter(Boolean) as MovieResult[],
   };
+}
+
+export interface DiscoverMoviesOptions {
+  genreId?: number | string;
+  year?: number | string;
+  sortBy?: string;
+  page?: number;
+  minVoteAverage?: number | string;
+  minVoteCount?: number | string;
 }
 
 /**
@@ -214,18 +343,24 @@ export async function discoverMovies({
   page = 1,
   minVoteAverage,
   minVoteCount,
-}: Record<string, any> = {}) {
+}: DiscoverMoviesOptions = {}) {
   let endpoint = `/discover/movie?language=en-US&sort_by=${sortBy}&page=${page}`;
   if (genreId) endpoint += `&with_genres=${genreId}`;
   if (year) endpoint += `&primary_release_year=${year}`;
   if (minVoteAverage) endpoint += `&vote_average.gte=${minVoteAverage}`;
   if (minVoteCount) endpoint += `&vote_count.gte=${minVoteCount}`;
 
-  const data = await fetchTMDb(endpoint);
+  const data = await fetchTMDb<{
+    results?: RawTmdbMovie[];
+    total_results: number;
+    page: number;
+    total_pages: number;
+  }>(endpoint);
+
   if (!data || !data.results) {
     return {
       found: false,
-      results: [],
+      results: [] as MovieResult[],
       totalResults: 0,
       page: 1,
       totalPages: 0,
@@ -238,27 +373,38 @@ export async function discoverMovies({
     totalResults: data.total_results,
     page: data.page,
     totalPages: data.total_pages,
-    results: data.results.map(normalizeMovie),
+    results: data.results.map(normalizeMovie).filter(Boolean) as MovieResult[],
   };
 }
 
 // ─── TV Series Fetchers ────────────────────────────────────────────
 
+export interface SearchTvShowsOptions {
+  page?: number;
+  firstAirDateYear?: number | string;
+}
+
 /**
  * Search TV series by name
  */
 export async function searchTvShows(
-  query: any,
-  { page = 1, firstAirDateYear }: any = {},
+  query: string,
+  { page = 1, firstAirDateYear }: SearchTvShowsOptions = {},
 ) {
   let endpoint = `/search/tv?query=${encodeURIComponent(query)}&page=${page}&language=en-US`;
   if (firstAirDateYear) endpoint += `&first_air_date_year=${firstAirDateYear}`;
 
-  const data = await fetchTMDb(endpoint);
+  const data = await fetchTMDb<{
+    results?: RawTmdbTvShow[];
+    total_results: number;
+    page: number;
+    total_pages: number;
+  }>(endpoint);
+
   if (!data || !data.results) {
     return {
       found: false,
-      results: [],
+      results: [] as TvShowResult[],
       totalResults: 0,
       page: 1,
       totalPages: 0,
@@ -271,15 +417,15 @@ export async function searchTvShows(
     totalResults: data.total_results,
     page: data.page,
     totalPages: data.total_pages,
-    results: data.results.map(normalizeTvShow),
+    results: data.results.map(normalizeTvShow).filter(Boolean) as TvShowResult[],
   };
 }
 
 /**
  * Get full TV series details by TMDb ID
  */
-export async function getTvShowDetails(id: any) {
-  const data = await fetchTMDb(`/tv/${id}?language=en-US`);
+export async function getTvShowDetails(id: string | number) {
+  const data = await fetchTMDb<RawTmdbTvShow>(`/tv/${id}?language=en-US`);
   if (!data) return { found: false, tvShow: null };
 
   return { found: true, tvShow: normalizeTvShow(data) };
@@ -288,15 +434,19 @@ export async function getTvShowDetails(id: any) {
 /**
  * Get TV series aggregate credits (cast + crew across all seasons)
  */
-export async function getTvShowCredits(id: any) {
-  const data = await fetchTMDb(`/tv/${id}/aggregate_credits?language=en-US`);
-  if (!data) return { found: false, cast: [], crew: [] };
+export async function getTvShowCredits(id: string | number) {
+  const data = await fetchTMDb<{
+    cast?: RawTmdbCast[];
+    crew?: RawTmdbCrew[];
+  }>(`/tv/${id}/aggregate_credits?language=en-US`);
+
+  if (!data) return { found: false, cast: [] as CastMember[], crew: [] as CrewMember[] };
 
   return {
     found: true,
     cast: (data.cast || []).slice(0, 20).map(normalizeCast),
     crew: (data.crew || [])
-      .filter((c: any) => {
+      .filter((c) => {
         const job = c.jobs?.[0]?.job || c.job || "";
         return [
           "Creator",
@@ -313,8 +463,8 @@ export async function getTvShowCredits(id: any) {
 /**
  * Get TV season details
  */
-export async function getTvSeasonDetails(tvId: any, seasonNumber: any) {
-  const data = await fetchTMDb(
+export async function getTvSeasonDetails(tvId: string | number, seasonNumber: string | number) {
+  const data = await fetchTMDb<RawTmdbSeason>(
     `/tv/${tvId}/season/${seasonNumber}?language=en-US`,
   );
   if (!data) return { found: false, season: null };
@@ -328,7 +478,7 @@ export async function getTvSeasonDetails(tvId: any, seasonNumber: any) {
       airDate: data.air_date || null,
       posterUrl: img(data.poster_path),
       episodeCount: (data.episodes || []).length,
-      episodes: (data.episodes || []).map((ep: any) => ({
+      episodes: (data.episodes || []).map((ep) => ({
         episodeNumber: ep.episode_number,
         name: ep.name,
         overview: ep.overview ? ep.overview.substring(0, 500) : null,
@@ -337,23 +487,32 @@ export async function getTvSeasonDetails(tvId: any, seasonNumber: any) {
         voteAverage: ep.vote_average || null,
         stillUrl: img(ep.still_path),
       })),
-    },
+    } as TvSeason,
   };
 }
 
 /**
  * Get trending TV shows (day or week)
  */
-export async function getTrendingTvShows(timeWindow: any = "day", limit: any = 10) {
-  const data = await fetchTMDb(`/trending/tv/${timeWindow}?language=en-US`);
-  if (!data || !data.results) return { found: false, results: [] };
+export async function getTrendingTvShows(timeWindow: string = "day", limit: number = 10) {
+  const data = await fetchTMDb<{ results?: RawTmdbTvShow[] }>(`/trending/tv/${timeWindow}?language=en-US`);
+  if (!data || !data.results) return { found: false, results: [] as TvShowResult[] };
 
   return {
     found: true,
     timeWindow,
     count: Math.min(data.results.length, limit),
-    results: data.results.slice(0, limit).map(normalizeTvShow),
+    results: data.results.slice(0, limit).map(normalizeTvShow).filter(Boolean) as TvShowResult[],
   };
+}
+
+export interface DiscoverTvShowsOptions {
+  genreId?: number | string;
+  firstAirDateYear?: number | string;
+  sortBy?: string;
+  page?: number;
+  minVoteAverage?: number | string;
+  minVoteCount?: number | string;
 }
 
 /**
@@ -366,18 +525,24 @@ export async function discoverTvShows({
   page = 1,
   minVoteAverage,
   minVoteCount,
-}: Record<string, any> = {}) {
+}: DiscoverTvShowsOptions = {}) {
   let endpoint = `/discover/tv?language=en-US&sort_by=${sortBy}&page=${page}`;
   if (genreId) endpoint += `&with_genres=${genreId}`;
   if (firstAirDateYear) endpoint += `&first_air_date_year=${firstAirDateYear}`;
   if (minVoteAverage) endpoint += `&vote_average.gte=${minVoteAverage}`;
   if (minVoteCount) endpoint += `&vote_count.gte=${minVoteCount}`;
 
-  const data = await fetchTMDb(endpoint);
+  const data = await fetchTMDb<{
+    results?: RawTmdbTvShow[];
+    total_results: number;
+    page: number;
+    total_pages: number;
+  }>(endpoint);
+
   if (!data || !data.results) {
     return {
       found: false,
-      results: [],
+      results: [] as TvShowResult[],
       totalResults: 0,
       page: 1,
       totalPages: 0,
@@ -390,7 +555,7 @@ export async function discoverTvShows({
     totalResults: data.total_results,
     page: data.page,
     totalPages: data.total_pages,
-    results: data.results.map(normalizeTvShow),
+    results: data.results.map(normalizeTvShow).filter(Boolean) as TvShowResult[],
   };
 }
 
@@ -400,8 +565,8 @@ export async function discoverTvShows({
  * Get movie genre list (useful for discover filters)
  */
 export async function getMovieGenres() {
-  const data = await fetchTMDb("/genre/movie/list?language=en-US");
-  if (!data || !data.genres) return { found: false, genres: [] };
+  const data = await fetchTMDb<{ genres: TmdbGenre[] }>("/genre/movie/list?language=en-US");
+  if (!data || !data.genres) return { found: false, genres: [] as TmdbGenre[] };
   return { found: true, genres: data.genres };
 }
 
@@ -409,7 +574,7 @@ export async function getMovieGenres() {
  * Get TV genre list
  */
 export async function getTvGenres() {
-  const data = await fetchTMDb("/genre/tv/list?language=en-US");
-  if (!data || !data.genres) return { found: false, genres: [] };
+  const data = await fetchTMDb<{ genres: TmdbGenre[] }>("/genre/tv/list?language=en-US");
+  if (!data || !data.genres) return { found: false, genres: [] as TmdbGenre[] };
   return { found: true, genres: data.genres };
 }

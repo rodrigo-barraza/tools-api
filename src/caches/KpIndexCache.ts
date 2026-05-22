@@ -1,17 +1,30 @@
 import { createSimpleCache } from "./createSimpleCache.ts";
 import { MS_PER_DAY } from "@rodrigo-barraza/utilities-library";
 import { KP_STORM_SCALE } from "../constants.ts";
+import { KpReading } from "../types/weather.ts";
 
-const cache = createSimpleCache<any>({ type: "array", itemsKey: "readings" });
+const cache = createSimpleCache<KpReading[]>({ type: "array", itemsKey: "readings" });
 
 export const updateKpIndex = cache.update;
 export const setKpIndexError = cache.setError;
 
+interface KpStormScale {
+  level: string;
+  storm: string | null;
+  min: number;
+  max: number;
+}
+
+interface KpClassification {
+  level: string;
+  storm: string | null;
+}
+
 /**
  * Classify a Kp value into its storm scale level.
  */
-function classifyKp(kp: any) {
-  const entry = KP_STORM_SCALE.find((s: any) => kp >= s.min && kp < s.max);
+function classifyKp(kp: number): KpClassification {
+  const entry = (KP_STORM_SCALE as KpStormScale[]).find((s) => kp >= s.min && kp < s.max);
   return entry || { level: "Unknown", storm: null };
 }
 
@@ -30,8 +43,8 @@ export function getCurrentKp() {
   const latest = readings[readings.length - 1] || null;
   if (!latest) {
     return {
-      current: null as any,
-      classification: null as any,
+      current: null as KpReading | null,
+      classification: null as KpClassification | null,
       lastFetch: cache.getLastFetch(),
     };
   }
@@ -40,9 +53,9 @@ export function getCurrentKp() {
 
   // Find peak in last 24 hours
   const dayAgo = new Date(Date.now() - MS_PER_DAY);
-  const last24h = readings.filter((r: any) => r.time >= dayAgo);
-  const peak = last24h.reduce(
-    (max: any, r: any) => (r.kp > (max?.kp ?? -1) ? r : max),
+  const last24h = readings.filter((r) => new Date(r.time) >= dayAgo);
+  const peak = last24h.reduce<KpReading | null>(
+    (max, r) => (r.kp > (max?.kp ?? -1) ? r : max),
     null,
   );
 
@@ -50,7 +63,7 @@ export function getCurrentKp() {
     current: latest,
     classification,
     peak24h: peak,
-    peakClassification: peak ? classifyKp(peak.kp) : null as any,
+    peakClassification: peak ? classifyKp(peak.kp) : null,
     lastFetch: cache.getLastFetch(),
   };
 }

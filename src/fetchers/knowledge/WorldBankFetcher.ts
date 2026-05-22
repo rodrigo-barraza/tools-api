@@ -2,6 +2,7 @@ import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import logger from "../../logger.ts";
+import { WorldBankCountry, FormattedCountry } from "../../types/knowledge.ts";
 
 /**
  * World Bank Fetcher — Static In-Memory Country Indicators Database
@@ -18,8 +19,8 @@ const __dirname = dirname(__filename);
 
 // ─── CSV Parser ────────────────────────────────────────────────
 
-function parseCSVLine(line: any) {
-  const fields: any[] = [];
+function parseCSVLine(line: string): string[] {
+  const fields: string[] = [];
   let current = "";
   let inQuotes = false;
 
@@ -45,11 +46,16 @@ function parseCSVLine(line: any) {
 
 // ─── Load & Index ──────────────────────────────────────────────
 
-const COUNTRY_DB: any[] = [];
+const COUNTRY_DB: WorldBankCountry[] = [];
 let loaded = false;
 
+interface IndicatorMetadata {
+  label: string;
+  unit: string;
+}
+
 // Indicator metadata for human-readable output
-const INDICATOR_META: Record<string, any> = {
+const INDICATOR_META: Record<string, IndicatorMetadata> = {
   gdp_usd: { label: "GDP (current US$)", unit: "USD" },
   gdp_per_capita_usd: { label: "GDP per capita", unit: "USD" },
   population: { label: "Population", unit: "people" },
@@ -78,13 +84,13 @@ const INDICATOR_META: Record<string, any> = {
 
 const INDICATOR_KEYS = Object.keys(INDICATOR_META);
 
-function ensureLoaded() {
+function ensureLoaded(): void {
   if (loaded) return;
   loaded = true;
 
   const csvPath = join(__dirname, "data", "digest_world_indicators.csv");
   const raw = readFileSync(csvPath, "utf-8");
-  const lines = raw.split("\n").filter((l: any) => l.trim());
+  const lines = raw.split("\n").filter((l) => l.trim());
   const headers = parseCSVLine(lines[0]);
 
   const SKIP_NUMERIC = new Set(["country_code", "country_name"]);
@@ -93,8 +99,8 @@ function ensureLoaded() {
     const values = parseCSVLine(lines[i]);
     if (values.length < 3) continue;
 
-    const row: Record<string, any> = {};
-    headers.forEach((h: any, index: any) => {
+    const row = {} as WorldBankCountry;
+    headers.forEach((h, index) => {
       const value = values[index] || "";
       if (SKIP_NUMERIC.has(h)) {
         row[h] = value;
@@ -114,16 +120,16 @@ function ensureLoaded() {
 
 // ─── Helpers ───────────────────────────────────────────────────
 
-function normalizeSearch(str: any) {
+function normalizeSearch(str: string): string {
   return str.toLowerCase().replace(/[^a-z0-9\s]/g, "");
 }
 
-function formatCountry(country: any) {
-  const result = {
+function formatCountry(country: WorldBankCountry): FormattedCountry {
+  const result: FormattedCountry = {
     countryCode: country.country_code,
     countryName: country.country_name,
-    dataYear: country.data_year,
-    indicators: {} as Record<string, any>,
+    dataYear: Number(country.data_year),
+    indicators: {},
   };
 
   for (const key of INDICATOR_KEYS) {
@@ -131,7 +137,7 @@ function formatCountry(country: any) {
       const meta = INDICATOR_META[key];
       result.indicators[key] = {
         label: meta.label,
-        value: country[key],
+        value: Number(country[key]),
         unit: meta.unit,
       };
     }
@@ -144,29 +150,32 @@ function formatCountry(country: any) {
 
 /**
  * Get all indicators for a specific country.
-
  */
-export function getCountryIndicators(code: any) {
+export function getCountryIndicators(code: string): FormattedCountry | null {
   ensureLoaded();
 
   const c = code.toUpperCase().trim();
   const country =
-    COUNTRY_DB.find((r: any) => r.country_code === c) ||
+    COUNTRY_DB.find((r) => r.country_code === c) ||
     COUNTRY_DB.find(
-      (r: any) =>
-        r.country_name && normalizeSearch(r.country_name).includes(normalizeSearch(code)),
+      (r) =>
+        r.country_name &&
+        normalizeSearch(r.country_name).includes(normalizeSearch(code)),
     );
 
   if (!country) return null;
   return formatCountry(country);
 }
 
+export interface RankOptions {
+  limit?: number;
+  order?: "asc" | "desc";
+}
+
 /**
  * Rank countries by a specific indicator (highest first by default).
-
-
  */
-export function rankCountriesByIndicator(indicator: any, opts: Record<string, any> = {}) {
+export function rankCountriesByIndicator(indicator: string, opts: RankOptions = {}) {
   ensureLoaded();
 
   const { limit = 10, order = "desc" } = opts;
@@ -174,24 +183,22 @@ export function rankCountriesByIndicator(indicator: any, opts: Record<string, an
   if (!INDICATOR_META[indicator]) {
     return {
       error: `Unknown indicator: "${indicator}"`,
-      availableIndicators: Object.entries(INDICATOR_META).map(
-        ([key, meta]: any) => ({
-          key,
-          label: meta.label,
-          unit: meta.unit,
-        }),
-      ),
+      availableIndicators: Object.entries(INDICATOR_META).map(([key, meta]) => ({
+        key,
+        label: meta.label,
+        unit: meta.unit,
+      })),
     };
   }
 
   const meta = INDICATOR_META[indicator];
 
-  const ranked = COUNTRY_DB.filter((c: any) => c[indicator] !== null)
-    .sort((a: any, b: any) =>
-      order === "asc"
-        ? a[indicator] - b[indicator]
-        : b[indicator] - a[indicator],
-    )
+  const ranked = COUNTRY_DB.filter((c) => c[indicator] !== null)
+    .sort((a, b) => {
+      const valA = Number(a[indicator] || 0);
+      const valB = Number(b[indicator] || 0);
+      return order === "asc" ? valA - valB : valB - valA;
+    })
     .slice(0, limit);
 
   return {
@@ -201,7 +208,7 @@ export function rankCountriesByIndicator(indicator: any, opts: Record<string, an
     order,
     count: ranked.length,
     note: "Data from World Bank Open Data (CC BY 4.0). Values are most recent available year (2018-2024).",
-    countries: ranked.map((c: any) => ({
+    countries: ranked.map((c) => ({
       countryCode: c.country_code,
       countryName: c.country_name,
       value: c[indicator],
@@ -212,31 +219,27 @@ export function rankCountriesByIndicator(indicator: any, opts: Record<string, an
 
 /**
  * Compare indicators between multiple countries.
-
-
  */
-export function compareCountries(countryCodes: any, indicator: any = null) {
+export function compareCountries(countryCodes: string[], indicator: string | null = null) {
   ensureLoaded();
 
   if (indicator && !INDICATOR_META[indicator]) {
     return {
       error: `Unknown indicator: "${indicator}"`,
-      availableIndicators: Object.entries(INDICATOR_META).map(
-        ([key, meta]: any) => ({
-          key,
-          label: meta.label,
-          unit: meta.unit,
-        }),
-      ),
+      availableIndicators: Object.entries(INDICATOR_META).map(([key, meta]) => ({
+        key,
+        label: meta.label,
+        unit: meta.unit,
+      })),
     };
   }
 
-  const results = countryCodes.map((code: any) => {
+  const results = countryCodes.map((code) => {
     const c = code.toUpperCase().trim();
     const country =
-      COUNTRY_DB.find((r: any) => r.country_code === c) ||
+      COUNTRY_DB.find((r) => r.country_code === c) ||
       COUNTRY_DB.find(
-        (r: any) =>
+        (r) =>
           r.country_name &&
           normalizeSearch(r.country_name).includes(normalizeSearch(code)),
       );
@@ -262,7 +265,7 @@ export function compareCountries(countryCodes: any, indicator: any = null) {
   });
 
   return {
-    count: results.filter((r: any) => r.found).length,
+    count: results.filter((r) => r.found).length,
     note: "Data from World Bank Open Data (CC BY 4.0).",
     comparison: results,
   };
@@ -276,8 +279,8 @@ export function getAvailableIndicators() {
 
   return {
     totalCountries: COUNTRY_DB.length,
-    indicators: Object.entries(INDICATOR_META).map(([key, meta]: any) => {
-      const nonNull = COUNTRY_DB.filter((c: any) => c[key] !== null).length;
+    indicators: Object.entries(INDICATOR_META).map(([key, meta]) => {
+      const nonNull = COUNTRY_DB.filter((c) => c[key] !== null).length;
       return {
         key,
         label: meta.label,

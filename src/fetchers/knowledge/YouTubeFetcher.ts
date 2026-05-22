@@ -1,6 +1,13 @@
 // ─── Video Metadata + Transcript Extraction ─────────────────
 
 import { YoutubeTranscript } from "youtube-transcript";
+import {
+  YouTubeVideoInfo,
+  YouTubeOembed,
+  YouTubePageMetadata,
+  YouTubeTranscriptResult,
+  YouTubeTranscriptSegment,
+} from "../../types/knowledge.ts";
 
 // ─── URL Parsing ───────────────────────────────────────────────────
 
@@ -19,9 +26,8 @@ const YOUTUBE_ID_REGEX =
 
 /**
  * Extract a YouTube video ID from a URL or raw ID string.
-
  */
-export function extractVideoId(input: any) {
+export function extractVideoId(input: string | null | undefined): string | null {
   if (!input || typeof input !== "string") return null;
   const trimmed = input.trim();
   const match = trimmed.match(YOUTUBE_ID_REGEX);
@@ -33,18 +39,26 @@ export function extractVideoId(input: any) {
 
 const OEMBED_URL = "https://www.youtube.com/oembed";
 
+interface RawOembedResponse {
+  title?: string | null;
+  author_name?: string | null;
+  author_url?: string | null;
+  thumbnail_url?: string | null;
+  thumbnail_width?: number | null;
+  thumbnail_height?: number | null;
+  provider_name?: string | null;
+}
+
 /**
  * Fetch video metadata via YouTube's public oEmbed endpoint.
  * Returns title, author, thumbnail — no API key needed.
-
-
  */
-async function fetchOembedMetadata(videoId: any) {
+async function fetchOembedMetadata(videoId: string): Promise<YouTubeOembed | null> {
   const url = `${OEMBED_URL}?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
   const response = await fetch(url);
   if (!response.ok) return null;
 
-  const data = await response.json();
+  const data = (await response.json()) as RawOembedResponse;
   return {
     title: data.title || null,
     author: data.author_name || null,
@@ -61,10 +75,8 @@ async function fetchOembedMetadata(videoId: any) {
 /**
  * Scrape additional metadata from the YouTube video page HTML.
  * Gets description and other OG tags not available via oEmbed.
-
-
  */
-async function fetchPageMetadata(videoId: any) {
+async function fetchPageMetadata(videoId: string): Promise<YouTubePageMetadata> {
   const url = `https://www.youtube.com/watch?v=${videoId}`;
   try {
     const response = await fetch(url, {
@@ -74,10 +86,21 @@ async function fetchPageMetadata(videoId: any) {
         "Accept-Language": "en-US,en;q=0.9",
       },
     });
-    if (!response.ok) return {};
+    if (!response.ok) {
+      return {
+        description: null,
+        publishDate: null,
+        genre: null,
+        duration: null,
+        isFamilyFriendly: null,
+        viewCount: null,
+        keywords: null,
+        channelId: null,
+      };
+    }
     const html = await response.text();
 
-    const extract = (pattern: any) => {
+    const extract = (pattern: RegExp): string | null => {
       const match = html.match(pattern);
       return match ? match[1]?.replace(/\\u0026/g, "&")?.replace(/\\"/g, '"') : null;
     };
@@ -123,31 +146,47 @@ async function fetchPageMetadata(videoId: any) {
       duration,
       isFamilyFriendly: isFamilyFriendly === "true" ? true : isFamilyFriendly === "false" ? false : null,
       viewCount: viewCount ? parseInt(viewCount, 10) || null : null,
-      keywords: keywords ? keywords.split(",").map((k: any) => k.trim()).filter(Boolean) : null,
+      keywords: keywords ? keywords.split(",").map((k) => k.trim()).filter(Boolean) : null,
       channelId,
     };
   } catch {
-    return {};
+    return {
+      description: null,
+      publishDate: null,
+      genre: null,
+      duration: null,
+      isFamilyFriendly: null,
+      viewCount: null,
+      keywords: null,
+      channelId: null,
+    };
   }
 }
 
 // ─── Transcript Extraction ────────────────────────────────────────
 
+interface RawTranscriptEntry {
+  text: string;
+  duration: number;
+  offset: number;
+}
+
 /**
  * Fetch the transcript/captions for a YouTube video.
-
-
  */
-async function fetchTranscript(videoId: any, lang: any) {
+async function fetchTranscript(videoId: string, lang?: string): Promise<YouTubeTranscriptResult> {
   try {
     const config = { lang: lang || "en" };
-    const entries = await YoutubeTranscript.fetchTranscript(videoId, config);
+    const entries = (await YoutubeTranscript.fetchTranscript(
+      videoId,
+      config,
+    )) as unknown as RawTranscriptEntry[];
 
     if (!entries?.length) {
       return { available: false, segments: [], text: "" };
     }
 
-    const segments = entries.map((entry: any) => {
+    const segments = entries.map((entry): YouTubeTranscriptSegment => {
       const offsetMs = entry.offset || 0;
       const minutes = Math.floor(offsetMs / 60000);
       const seconds = Math.floor((offsetMs % 60000) / 1000);
@@ -161,9 +200,9 @@ async function fetchTranscript(videoId: any, lang: any) {
       };
     });
 
-    const fullText = segments.map((s: any) => s.text).join(" ");
+    const fullText = segments.map((s) => s.text).join(" ");
     const timestampedText = segments
-      .map((s: any) => `[${s.timestamp}] ${s.text}`)
+      .map((s) => `[${s.timestamp}] ${s.text}`)
       .join("\n");
 
     return {
@@ -185,39 +224,43 @@ async function fetchTranscript(videoId: any, lang: any) {
 
 // ─── Public API ───────────────────────────────────────────────────
 
+export interface YouTubeVideoInfoOptions {
+  lang?: string;
+  includeTranscript?: boolean;
+  includeTimestamps?: boolean;
+}
+
 /**
  * Full YouTube video info: metadata + transcript.
  * The primary endpoint for the agentic YouTube tool.
-
-
  */
-export async function getYouTubeVideoInfo(input: any, options: Record<string, any> = {}) {
+export async function getYouTubeVideoInfo(
+  input: string,
+  options: YouTubeVideoInfoOptions = {},
+): Promise<YouTubeVideoInfo | { error: string }> {
   const videoId = extractVideoId(input);
   if (!videoId) {
     return { error: `Invalid YouTube URL or video ID: "${input}"` };
   }
 
-  const {
-    lang,
-    includeTranscript = true,
-    includeTimestamps = true,
-  } = options;
+  const { lang, includeTranscript = true, includeTimestamps = true } = options;
 
   const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
   // Fetch metadata and transcript concurrently
-  const tasks: Promise<any>[] = [
-    fetchOembedMetadata(videoId),
-    fetchPageMetadata(videoId),
-  ];
+  const tasks: [
+    Promise<YouTubeOembed | null>,
+    Promise<YouTubePageMetadata>,
+    Promise<YouTubeTranscriptResult>?,
+  ] = [fetchOembedMetadata(videoId), fetchPageMetadata(videoId)];
 
   if (includeTranscript) {
     tasks.push(fetchTranscript(videoId, lang));
   }
 
-  const [oembed, page, transcript] = await Promise.all(tasks) as any[];
+  const [oembed, page, transcript] = await Promise.all(tasks);
 
-  const result: Record<string, any> = {
+  const result: YouTubeVideoInfo = {
     videoId,
     url: videoUrl,
     title: oembed?.title || null,

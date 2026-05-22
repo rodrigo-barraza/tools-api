@@ -2,6 +2,7 @@ import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import logger from "../../logger.ts";
+import { PeriodicElement, FormattedElement } from "../../types/knowledge.ts";
 
 /**
  * Periodic Table Fetcher — Static In-Memory Element Database
@@ -18,8 +19,8 @@ const __dirname = dirname(__filename);
 
 // ─── CSV Parser ────────────────────────────────────────────────
 
-function parseCSVLine(line: any) {
-  const fields: any[] = [];
+function parseCSVLine(line: string): string[] {
+  const fields: string[] = [];
   let current = "";
   let inQuotes = false;
 
@@ -45,7 +46,7 @@ function parseCSVLine(line: any) {
 
 // ─── Load & Index ──────────────────────────────────────────────
 
-const ELEMENT_DB: any[] = [];
+const ELEMENT_DB: PeriodicElement[] = [];
 let loaded = false;
 
 function ensureLoaded() {
@@ -54,7 +55,7 @@ function ensureLoaded() {
 
   const csvPath = join(__dirname, "data", "digest_elements.csv");
   const raw = readFileSync(csvPath, "utf-8");
-  const lines = raw.split("\n").filter((l: any) => l.trim());
+  const lines = raw.split("\n").filter((l: string) => l.trim());
   const headers = parseCSVLine(lines[0]);
 
   const NUMERIC_FIELDS = new Set([
@@ -75,8 +76,8 @@ function ensureLoaded() {
     const values = parseCSVLine(lines[i]);
     if (values.length < 5) continue;
 
-    const row: Record<string, any> = {};
-    headers.forEach((h: any, index: any) => {
+    const row: Record<string, string | number | null> = {};
+    headers.forEach((h: string, index: number) => {
       const value = values[index] || "";
       if (NUMERIC_FIELDS.has(h)) {
         const num = parseFloat(value);
@@ -86,7 +87,7 @@ function ensureLoaded() {
       }
     });
 
-    ELEMENT_DB.push(row);
+    ELEMENT_DB.push(row as unknown as PeriodicElement);
   }
 
   logger.info(`⚛️  Periodic Table loaded: ${ELEMENT_DB.length} elements`);
@@ -94,11 +95,11 @@ function ensureLoaded() {
 
 // ─── Helpers ───────────────────────────────────────────────────
 
-function normalizeSearch(str: any) {
+function normalizeSearch(str: string): string {
   return str.toLowerCase().replace(/[^a-z0-9\s]/g, "");
 }
 
-function formatElement(element: any) {
+function formatElement(element: PeriodicElement): FormattedElement {
   return {
     atomicNumber: element.atomic_number,
     symbol: element.symbol,
@@ -138,33 +139,39 @@ const RANKABLE_PROPERTIES = {
   atomic_number: "Atomic Number",
 };
 
+export type RankableProperty = keyof typeof RANKABLE_PROPERTIES;
+
 // ─── Public API ────────────────────────────────────────────────
+
+export interface SearchElementsOptions {
+  limit?: number;
+  category?: string;
+  block?: string;
+}
 
 /**
  * Search elements by name, symbol, or atomic number.
-
-
  */
-export function searchElements(query: any, opts: Record<string, any> = {}) {
+export function searchElements(query: string, opts: SearchElementsOptions = {}) {
   ensureLoaded();
 
   const { limit = 10, category, block } = opts;
   const q = normalizeSearch(query);
 
-  if (!q) return { count: 0, query, elements: [] };
+  if (!q) return { count: 0, query, elements: [] as FormattedElement[] };
 
   let candidates = ELEMENT_DB;
 
   if (category) {
     const c = category.toLowerCase();
     candidates = candidates.filter(
-      (element: any) => element.category && element.category.toLowerCase().includes(c),
+      (element: PeriodicElement) => element.category && element.category.toLowerCase().includes(c),
     );
   }
   if (block) {
     const b = block.toLowerCase();
     candidates = candidates.filter(
-      (element: any) => element.block && element.block.toLowerCase() === b,
+      (element: PeriodicElement) => element.block && element.block.toLowerCase() === b,
     );
   }
 
@@ -172,7 +179,7 @@ export function searchElements(query: any, opts: Record<string, any> = {}) {
   const numQuery = parseInt(q, 10);
 
   const scored = candidates
-    .map((element: any) => {
+    .map((element: PeriodicElement) => {
       let score = 0;
       const name = normalizeSearch(element.name || "");
       const symbol = (element.symbol || "").toLowerCase();
@@ -201,89 +208,97 @@ export function searchElements(query: any, opts: Record<string, any> = {}) {
 
       return { element, score };
     })
-    .filter((s: any) => s.score > 0)
-    .sort((a: any, b: any) => b.score - a.score)
+    .filter((s) => s.score > 0)
+    .sort((a, b) => b.score - a.score)
     .slice(0, limit);
 
   return {
     count: scored.length,
     query,
     note: "Data from Bowserinator Periodic Table JSON (CC BY-SA 3.0). Temperatures in Kelvin, densities in g/cm³.",
-    elements: scored.map((s: any) => formatElement(s.element)),
+    elements: scored.map((s) => formatElement(s.element)),
   };
 }
 
 /**
  * Get element by exact symbol.
-
-
  */
-export function getElementBySymbol(symbol: any) {
+export function getElementBySymbol(symbol: string) {
   ensureLoaded();
 
   const s = symbol.trim();
   const element = ELEMENT_DB.find(
-    (e: any) => e.symbol && e.symbol.toLowerCase() === s.toLowerCase(),
+    (e: PeriodicElement) => e.symbol && e.symbol.toLowerCase() === s.toLowerCase(),
   );
 
   if (!element) return null;
   return formatElement(element);
 }
 
+export interface RankElementsOptions {
+  limit?: number;
+  order?: "asc" | "desc";
+  category?: string;
+  block?: string;
+}
+
 /**
  * Rank elements by a numeric property (highest first by default).
-
-
  */
-export function rankElementsByProperty(property: any, opts: Record<string, any> = {}) {
+export function rankElementsByProperty(property: string, opts: RankElementsOptions = {}) {
   ensureLoaded();
 
   const { limit = 10, order = "desc", category, block } = opts;
 
-  // @ts-expect-error - TS7053: implicit any index
-  if (!RANKABLE_PROPERTIES[property]) {
+  if (!(property in RANKABLE_PROPERTIES)) {
     return {
       error: `Unknown property: "${property}"`,
       availableProperties: Object.entries(RANKABLE_PROPERTIES).map(
-        ([key, label]: any) => ({ key, label }),
+        ([key, label]) => ({ key, label }),
       ),
     };
   }
 
+  const propKey = property as RankableProperty;
   let candidates = ELEMENT_DB;
 
   if (category) {
     const c = category.toLowerCase();
     candidates = candidates.filter(
-      (element: any) => element.category && element.category.toLowerCase().includes(c),
+      (element: PeriodicElement) => element.category && element.category.toLowerCase().includes(c),
     );
   }
   if (block) {
     const b = block.toLowerCase();
     candidates = candidates.filter(
-      (element: any) => element.block && element.block.toLowerCase() === b,
+      (element: PeriodicElement) => element.block && element.block.toLowerCase() === b,
     );
   }
 
   const ranked = candidates
-    .filter((element: any) => element[property] !== null)
-    .sort((a: any, b: any) =>
-      order === "asc" ? a[property] - b[property] : b[property] - a[property],
-    )
+    .filter((element: PeriodicElement) => element[propKey] !== null)
+    .sort((a: PeriodicElement, b: PeriodicElement) => {
+      const valA = a[propKey];
+      const valB = b[propKey];
+      if (valA === null || valA === undefined || valB === null || valB === undefined) return 0;
+      if (typeof valA === "number" && typeof valB === "number") {
+        return order === "asc" ? valA - valB : valB - valA;
+      }
+      return 0;
+    })
     .slice(0, limit);
 
   return {
     property,
-    // @ts-expect-error - TS7053: implicit any index
-    propertyLabel: RANKABLE_PROPERTIES[property],
+    propertyLabel: RANKABLE_PROPERTIES[propKey],
     order,
     count: ranked.length,
     note: "Data from Bowserinator Periodic Table JSON (CC BY-SA 3.0).",
-    elements: ranked.map((element: any) => ({
+    elements: ranked.map((element: PeriodicElement) => ({
       atomicNumber: element.atomic_number,
       symbol: element.symbol,
       name: element.name,
-      value: element[property],
+      value: element[propKey],
       category: element.category,
     })),
   };
@@ -296,13 +311,13 @@ export function getElementCategories() {
   ensureLoaded();
 
   const categories = [
-    ...new Set(ELEMENT_DB.map((e: any) => e.category).filter(Boolean)),
+    ...new Set(ELEMENT_DB.map((e: PeriodicElement) => e.category).filter(Boolean)),
   ].sort();
   const blocks = [
-    ...new Set(ELEMENT_DB.map((e: any) => e.block).filter(Boolean)),
+    ...new Set(ELEMENT_DB.map((e: PeriodicElement) => e.block).filter(Boolean)),
   ].sort();
   const phases = [
-    ...new Set(ELEMENT_DB.map((e: any) => e.phase_at_stp).filter(Boolean)),
+    ...new Set(ELEMENT_DB.map((e: PeriodicElement) => e.phase_at_stp).filter(Boolean)),
   ].sort();
 
   return {
@@ -311,7 +326,7 @@ export function getElementCategories() {
     blocks,
     phases,
     rankableProperties: Object.entries(RANKABLE_PROPERTIES).map(
-      ([key, label]: any) => ({ key, label }),
+      ([key, label]) => ({ key, label }),
     ),
   };
 }

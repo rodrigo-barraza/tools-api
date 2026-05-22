@@ -1,5 +1,10 @@
 import CONFIG from "../../config.ts";
 import { WMO_WEATHER_CODES } from "../../constants.ts";
+import {
+  OpenMeteoResponse,
+  OpenMeteoHourlyForecast,
+  OpenMeteoDailyForecast,
+} from "../../types/weather.ts";
 
 const { LATITUDE, LONGITUDE, TIMEZONE } = CONFIG;
 
@@ -85,14 +90,94 @@ const FORECAST_URL =
   `&timezone=${TIMEZONE}` +
   `&forecast_days=2`;
 
-export async function fetchOpenMeteoWeather() {
+interface RawOpenMeteoResponse {
+  timezone: string;
+  current: {
+    time: string;
+    weather_code: number;
+    temperature_2m: number;
+    apparent_temperature: number;
+    relative_humidity_2m: number;
+    cloud_cover: number;
+    precipitation: number;
+    rain: number;
+    showers: number;
+    snowfall: number;
+    wind_speed_10m: number;
+    wind_direction_10m: number;
+    wind_gusts_10m: number;
+    surface_pressure: number;
+    is_day: number;
+    uv_index: number;
+  };
+  daily: {
+    time: string[];
+    weather_code: number[];
+    temperature_2m_max: number[];
+    temperature_2m_min: number[];
+    sunrise: string[];
+    sunset: string[];
+    daylight_duration: number[];
+    uv_index_max: number[];
+    precipitation_sum: number[];
+    wind_speed_10m_max: number[];
+  };
+  hourly?: {
+    time: string[];
+    temperature_2m: number[];
+    relative_humidity_2m: number[];
+    dewpoint_2m: number[];
+    apparent_temperature: number[];
+    precipitation_probability: number[];
+    precipitation: number[];
+    rain: number[];
+    showers: number[];
+    snowfall: number[];
+    snow_depth: number[];
+    weather_code: number[];
+    pressure_msl: number[];
+    surface_pressure: number[];
+    cloud_cover: number[];
+    cloud_cover_low: number[];
+    cloud_cover_mid: number[];
+    cloud_cover_high: number[];
+    visibility: number[];
+    evapotranspiration: number[];
+    et0_fao_evapotranspiration: number[];
+    vapour_pressure_deficit: number[];
+    wind_speed_10m: number[];
+    wind_speed_80m: number[];
+    wind_speed_120m: number[];
+    wind_speed_180m: number[];
+    wind_direction_10m: number[];
+    wind_direction_80m: number[];
+    wind_direction_120m: number[];
+    wind_direction_180m: number[];
+    wind_gusts_10m: number[];
+    temperature_80m: number[];
+    temperature_120m: number[];
+    temperature_180m: number[];
+    soil_temperature_0cm: number[];
+    soil_temperature_6cm: number[];
+    soil_temperature_18cm: number[];
+    soil_temperature_54cm: number[];
+    soil_moisture_0_to_1cm: number[];
+    soil_moisture_1_to_3cm: number[];
+    soil_moisture_3_to_9cm: number[];
+    soil_moisture_9_to_27cm: number[];
+    soil_moisture_27_to_81cm: number[];
+    uv_index: number[];
+  };
+}
+
+export async function fetchOpenMeteoWeather(): Promise<OpenMeteoResponse> {
   const response = await fetch(FORECAST_URL);
 
   if (!response.ok) {
     throw new Error(`Open-Meteo returned ${response.status}`);
   }
 
-  const data = await response.json();
+  const data = await response.json() as RawOpenMeteoResponse;
   const current = data.current;
   const daily = data.daily;
   const hourly = data.hourly;
@@ -100,7 +185,7 @@ export async function fetchOpenMeteoWeather() {
   // Find today's daily data
   const todayIndex = 0;
   const weatherDescription =
-    WMO_WEATHER_CODES[current.weather_code] || "Unknown";
+    WMO_WEATHER_CODES[current.weather_code as unknown as keyof typeof WMO_WEATHER_CODES] || "Unknown";
 
   return {
     source: "openmeteo",
@@ -131,7 +216,7 @@ export async function fetchOpenMeteoWeather() {
 
     // Hourly forecast (all variables)
     hourlyForecast: hourly
-      ? hourly.time.map((time: any, i: any) => ({
+      ? hourly.time.map((time, i): OpenMeteoHourlyForecast => ({
           time,
 
           // Temperature & humidity
@@ -203,7 +288,7 @@ export async function fetchOpenMeteoWeather() {
 
     // Daily forecast
     dailyForecast: daily.time
-      ? daily.time.map((time: any, i: any) => ({
+      ? daily.time.map((time, i): OpenMeteoDailyForecast => ({
           time,
           weatherCode: daily.weather_code[i],
           temperatureMax: daily.temperature_2m_max[i],

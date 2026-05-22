@@ -1,5 +1,15 @@
 import { stripHtml } from "@rodrigo-barraza/utilities-library";
 import { OPEN_LIBRARY_BASE_URL } from "../../constants.ts";
+import {
+  OpenLibraryAuthor,
+  OpenLibraryBookDetails,
+  OpenLibrarySearchResponse,
+  RawOpenLibraryAuthor,
+  RawOpenLibraryDoc,
+  RawOpenLibraryLink,
+  RawOpenLibrarySearchResponse,
+  RawOpenLibraryWork,
+} from "../../types/knowledge.ts";
 
 /**
  * Open Library API fetcher.
@@ -9,10 +19,8 @@ import { OPEN_LIBRARY_BASE_URL } from "../../constants.ts";
 // ─── Search Books ──────────────────────────────────────────────────
 /**
  * Search for books by title, author, or general query.
-
-
  */
-export async function searchBooks(query: any, limit: any = 10) {
+export async function searchBooks(query: string, limit = 10): Promise<OpenLibrarySearchResponse> {
   const params = new URLSearchParams({
     q: query,
     limit: String(limit),
@@ -24,10 +32,10 @@ export async function searchBooks(query: any, limit: any = 10) {
   if (!response.ok) {
     throw new Error(`Open Library search → ${response.status} ${response.statusText}`);
   }
-  const data = await response.json();
+  const data = (await response.json()) as RawOpenLibrarySearchResponse;
   return {
     totalResults: data.numFound || 0,
-    books: (data.docs || []).slice(0, limit).map((document: any) => ({
+    books: (data.docs || []).slice(0, limit).map((document: RawOpenLibraryDoc) => ({
       key: document.key,
       title: document.title,
       authors: document.author_name || [],
@@ -46,13 +54,12 @@ export async function searchBooks(query: any, limit: any = 10) {
     })),
   };
 }
+
 // ─── Get Book Details ──────────────────────────────────────────────
 /**
  * Get detailed book info by Open Library work key (e.g., "/works/OL45883W").
-
-
  */
-export async function getBookDetails(workKey: any) {
+export async function getBookDetails(workKey: string): Promise<OpenLibraryBookDetails> {
   const key = workKey.startsWith("/works/") ? workKey : `/works/${workKey}`;
   const url = `${OPEN_LIBRARY_BASE_URL}${key}.json`;
   const response = await fetch(url);
@@ -61,7 +68,7 @@ export async function getBookDetails(workKey: any) {
       `Open Library work detail → ${response.status} ${response.statusText}`,
     );
   }
-  const data = await response.json();
+  const data = (await response.json()) as RawOpenLibraryWork;
   const description =
     typeof data.description === "string"
       ? data.description
@@ -75,19 +82,18 @@ export async function getBookDetails(workKey: any) {
       ? `https://covers.openlibrary.org/b/id/${data.covers[0]}-L.jpg`
       : null,
     firstPublishDate: data.first_publish_date || null,
-    links: (data.links || []).map((l: any) => ({
+    links: (data.links || []).map((l: RawOpenLibraryLink) => ({
       title: l.title,
       url: l.url,
     })),
   };
 }
+
 // ─── Get Author Info ───────────────────────────────────────────────
 /**
  * Get author info by Open Library author key (e.g., "OL23919A").
-
-
  */
-export async function getAuthorInfo(authorKey: any) {
+export async function getAuthorInfo(authorKey: string): Promise<OpenLibraryAuthor> {
   const key = authorKey.startsWith("/authors/")
     ? authorKey
     : `/authors/${authorKey}`;
@@ -98,7 +104,7 @@ export async function getAuthorInfo(authorKey: any) {
       `Open Library author detail → ${response.status} ${response.statusText}`,
     );
   }
-  const data = await response.json();
+  const data = (await response.json()) as RawOpenLibraryAuthor;
   const bio = typeof data.bio === "string" ? data.bio : data.bio?.value || null;
   return {
     key: data.key,

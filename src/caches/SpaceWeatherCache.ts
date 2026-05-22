@@ -2,24 +2,7 @@ import { upsertSolarFlares } from "../models/SolarFlare.ts";
 import { upsertCmes } from "../models/Cme.ts";
 import { upsertGeomagneticStorms } from "../models/GeomagneticStorm.ts";
 import { SOLAR_FLARE_CLASSES } from "../constants.ts";
-
-interface SolarFlare {
-  flrId: string;
-  classType?: string;
-  [key: string]: unknown;
-}
-
-interface Cme {
-  activityId: string;
-  speed?: number;
-  isEarthDirected?: boolean;
-  [key: string]: unknown;
-}
-
-interface GeomagneticStorm {
-  gstId: string;
-  [key: string]: unknown;
-}
+import { SolarFlare, Cme, GeomagneticStorm } from "../fetchers/weather/DonkiFetcher.ts";
 
 interface CacheError {
   message: string;

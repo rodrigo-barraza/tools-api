@@ -1,4 +1,5 @@
 import { REST_COUNTRIES_BASE_URL } from "../../constants.ts";
+import { RawRestCountry, RestCountry } from "../../types/knowledge.ts";
 
 /**
  * Rest Countries API fetcher.
@@ -8,13 +9,14 @@ import { REST_COUNTRIES_BASE_URL } from "../../constants.ts";
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
-function normalizeCountry(c: any) {
+function normalizeCountry(c: RawRestCountry): RestCountry {
   return {
     name: c.name?.common || null,
     officialName: c.name?.official || null,
     nativeNames: c.name?.nativeName
       ? Object.values(c.name.nativeName)
-          .map((n: any) => n.common)
+          .map((n) => n.common || "")
+          .filter(Boolean)
           .slice(0, 3)
       : [],
     cca2: c.cca2 || null,
@@ -26,10 +28,10 @@ function normalizeCountry(c: any) {
     area: c.area || null,
     languages: c.languages ? Object.values(c.languages) : [],
     currencies: c.currencies
-      ? Object.entries(c.currencies).map(([code, info]: any) => ({
+      ? Object.entries(c.currencies).map(([code, info]) => ({
           code,
-          name: info.name,
-          symbol: info.symbol,
+          name: info.name || "",
+          symbol: info.symbol || undefined,
         }))
       : [],
     timezones: c.timezones || [],
@@ -40,7 +42,7 @@ function normalizeCountry(c: any) {
     coatOfArms: c.coatOfArms?.png || null,
     googleMaps: c.maps?.googleMaps || null,
     callingCodes: c.idd?.root
-      ? (c.idd.suffixes || [""]).map((s: any) => `${c.idd.root}${s}`).slice(0, 3)
+      ? (c.idd.suffixes || [""]).map((s) => `${c.idd!.root}${s}`).slice(0, 3)
       : [],
     continent: c.continents?.[0] || null,
     independent: c.independent ?? null,
@@ -55,21 +57,19 @@ function normalizeCountry(c: any) {
 
 /**
  * Search for a country by name (partial match).
-
-
  */
-export async function searchCountries(name: any) {
+export async function searchCountries(name: string) {
   const url = `${REST_COUNTRIES_BASE_URL}/name/${encodeURIComponent(name)}`;
   const response = await fetch(url);
 
   if (response.status === 404) {
-    return { found: false, countries: [] };
+    return { found: false, countries: [] as RestCountry[] };
   }
   if (!response.ok) {
     throw new Error(`Rest Countries API → ${response.status} ${response.statusText}`);
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as RawRestCountry[];
   return {
     found: true,
     count: data.length,
@@ -81,22 +81,19 @@ export async function searchCountries(name: any) {
 
 /**
  * Get a single country by ISO 3166-1 alpha-2 or alpha-3 code.
-
-
  */
-export async function getCountryByCode(code: any) {
+export async function getCountryByCode(code: string) {
   const url = `${REST_COUNTRIES_BASE_URL}/alpha/${encodeURIComponent(code.toUpperCase())}`;
   const response = await fetch(url);
 
   if (response.status === 404) {
-    return { found: false, code };
+    return { found: false, code, name: null, officialName: null, nativeNames: [] as string[], cca2: null, cca3: null, capital: [] as string[], region: null, subregion: null, population: 0, area: null, languages: [] as string[], currencies: [] as Array<{ code: string, name: string, symbol?: string }>, timezones: [] as string[], borders: [] as string[], flag: null, flagPng: null, flagSvg: null, coatOfArms: null, googleMaps: null, callingCodes: [] as string[], continent: null, independent: null, unMember: null, landlocked: null, carSide: null, startOfWeek: null };
   }
   if (!response.ok) {
     throw new Error(`Rest Countries API → ${response.status} ${response.statusText}`);
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as RawRestCountry | RawRestCountry[];
   const country = Array.isArray(data) ? data[0] : data;
   return { found: true, ...normalizeCountry(country) };
 }
-

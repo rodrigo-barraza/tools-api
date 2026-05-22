@@ -5,7 +5,7 @@ import logger from "../logger.ts";
 // ─── Types ──────────────────────────────────────────────────────
 export interface GeomagneticStormDocument {
   gstId: string;
-  startTime?: Date;
+  startTime?: Date | null;
   lastSeen?: Date;
   firstSeen?: Date;
   [key: string]: unknown;

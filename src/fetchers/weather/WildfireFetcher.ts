@@ -1,3 +1,5 @@
+import { RawWildfireEvent, WildfireEvent } from "../../types/weather.ts";
+
 const EONET_URL =
   "https://eonet.gsfc.nasa.gov/api/v3/events?category=wildfires&limit=25&days=7";
 
@@ -5,12 +7,12 @@ const EONET_URL =
  * Fetch active wildfire events from NASA EONET v3.
  * Free API, no key required.
  */
-export async function fetchWildfires() {
+export async function fetchWildfires(): Promise<WildfireEvent[]> {
   const response = await fetch(EONET_URL);
   if (!response.ok) throw new Error(`EONET ${response.status}: ${response.statusText}`);
-  const json = await response.json();
+  const json = (await response.json()) as { events?: RawWildfireEvent[] };
 
-  return (json.events || []).map((event: any) => {
+  return (json.events || []).map((event: RawWildfireEvent) => {
     const geo = event.geometry?.[0] || {};
     const source = event.sources?.[0] || {};
 
@@ -18,7 +20,7 @@ export async function fetchWildfires() {
       eonetId: event.id,
       title: event.title,
       description: event.description || null,
-      status: event.closed ? "closed" : "open",
+      status: event.closed ? ("closed" as const) : ("open" as const),
       coordinates: geo.coordinates
         ? { lng: geo.coordinates[0], lat: geo.coordinates[1] }
         : null,

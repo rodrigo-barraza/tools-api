@@ -8,8 +8,8 @@ const __dirname = dirname(__filename);
 
 // ─── CSV Parser ────────────────────────────────────────────────
 
-function parseCSVLine(line: any) {
-  const fields: any[] = [];
+function parseCSVLine(line: string): string[] {
+  const fields: string[] = [];
   let current = "";
   let inQuotes = false;
 
@@ -30,10 +30,21 @@ function parseCSVLine(line: any) {
 
 // ─── Load & Index ──────────────────────────────────────────────
 
-const REQUIREMENTS_DB: any[] = [];
+export interface RequirementRule {
+  species: string;
+  demographic_life_stage: string;
+  authority: string;
+  metric: string;
+  value_numeric: number;
+  unit: string;
+  nutrient_id: string;
+  [key: string]: string | number;
+}
+
+const REQUIREMENTS_DB: RequirementRule[] = [];
 let loaded = false;
 
-function ensureLoaded() {
+function ensureLoaded(): void {
   if (loaded) return;
   loaded = true;
 
@@ -50,19 +61,33 @@ function ensureLoaded() {
   
   try {
     const raw = readFileSync(datasetPath, "utf-8");
-    const lines = raw.split("\n").filter((l: any) => l.trim());
+    const lines = raw.split("\n").filter((l: string) => l.trim());
+    if (lines.length === 0) return;
     const headers = parseCSVLine(lines[0]);
 
     for (let i = 1; i < lines.length; i++) {
       const values = parseCSVLine(lines[i]);
       if (values.length < headers.length) continue;
 
-      const row: Record<string, any> = {};
-      headers.forEach((h: any, index: any) => {
-        row[h] = values[index] || "";
+      const row: RequirementRule = {
+        species: "",
+        demographic_life_stage: "",
+        authority: "",
+        metric: "",
+        value_numeric: 0,
+        unit: "",
+        nutrient_id: "",
+      };
+      
+      headers.forEach((h: string, index: number) => {
+        const val = values[index] || "";
+        if (h === "value_numeric") {
+          row.value_numeric = parseFloat(val) || 0;
+        } else {
+          row[h] = val;
+        }
       });
       
-      row.value_numeric = parseFloat(row.value_numeric);
       REQUIREMENTS_DB.push(row);
     }
     logger.info(`📊 Nutrition Requirement DB loaded: ${REQUIREMENTS_DB.length} rules.`);
@@ -72,6 +97,39 @@ function ensureLoaded() {
 }
 
 // ─── Target Profile Engine ─────────────────────────────────────
+
+export interface CalculateTargetProfileOptions {
+  species?: string;
+  lifeStage?: string;
+  authority?: string;
+  weightKg?: number;
+  caloricIntake?: number;
+  includeCompositional?: boolean;
+}
+
+export interface NutrientTargetMetricData {
+  value: number;
+  unit: string;
+}
+
+export type NutrientTargetMetrics = Record<string, NutrientTargetMetricData>;
+
+export interface TargetProfileResult {
+  _context: {
+    species: string;
+    lifeStage: string;
+    authority: string;
+    weightKg?: number;
+    caloricIntake?: number;
+  };
+  _summary: {
+    actionableNutrients: number;
+    compositionalNutrients: number;
+    totalRulesMatched: number;
+  };
+  requirements: Record<string, NutrientTargetMetrics>;
+  error?: string;
+}
 
 /**
  * Dynamically compile the nutritional requirement checklist for an agent context.
@@ -83,7 +141,7 @@ export function calculateTargetProfile({
   weightKg,
   caloricIntake,
   includeCompositional = false,
-}: any) {
+}: CalculateTargetProfileOptions = {}): TargetProfileResult | { error: string } {
   ensureLoaded();
 
   const speciesLower = (species || "human").toLowerCase();
@@ -91,14 +149,14 @@ export function calculateTargetProfile({
   const targetAuth = (authority || (speciesLower === "human" ? "US_DRI" : "AAFCO")).toUpperCase();
 
   const baseRules = REQUIREMENTS_DB.filter(
-    (r: any) =>
+    (r: RequirementRule) =>
       r.species.toLowerCase() === speciesLower &&
       r.demographic_life_stage.toLowerCase() === lifeStageLower &&
       r.authority.toUpperCase() === targetAuth,
   );
 
-  const requirements: Record<string, any> = {};
-  const compositional: any[] = [];
+  const requirements: Record<string, NutrientTargetMetrics> = {};
+  const compositional: string[] = [];
   const kcalMult = caloricIntake ? caloricIntake / 1000.0 : 1;
 
   for (const rule of baseRules) {
@@ -146,3 +204,4 @@ export function calculateTargetProfile({
     requirements,
   };
 }
+

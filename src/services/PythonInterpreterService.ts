@@ -19,8 +19,8 @@ const PYTHON_BIN = "python3";
 const PREAMBLE = `
 import resource, sys, os
 
-# ─── Memory limit (${MEMORY_LIMIT_MB} MB) ───
-_mb = ${MEMORY_LIMIT_MB} * 1024 * 1024
+# ─── Memory limit (\${MEMORY_LIMIT_MB} MB) ───
+_mb = \${MEMORY_LIMIT_MB} * 1024 * 1024
 try:
     resource.setrlimit(resource.RLIMIT_AS, (_mb, _mb))
 except (ValueError, resource.error):
@@ -54,20 +54,46 @@ del _BLOCKED, _orig_import, _safe_import, builtins
 // Execution Engine
 // ────────────────────────────────────────────────────────────
 
+export interface PythonExecutionOptions {
+  timeout?: number;
+}
+
+export interface PythonExecutionResult {
+  success: boolean;
+  stdout: string;
+  stderr: string;
+  exitCode: number | null;
+  executionTimeMs: number;
+  timedOut: boolean;
+  error?: string;
+}
+
+export interface PythonStreamingOptions {
+  timeout?: number;
+  onChunk?: (stream: "stdout" | "stderr", chunk: string) => void;
+}
+
+export interface InterpreterInfo {
+  available: boolean;
+  version: string | null;
+  maxTimeoutMs?: number;
+  maxOutputBytes?: number;
+  memoryLimitMb?: number;
+}
+
 /**
  * Execute Python code in a sandboxed subprocess.
- *
-
-
- * }>}
  */
-export async function executePython(code: any, { timeout = DEFAULT_TIMEOUT_MS }: Record<string, any> = {}) {
+export async function executePython(
+  code: string,
+  { timeout = DEFAULT_TIMEOUT_MS }: PythonExecutionOptions = {},
+): Promise<PythonExecutionResult> {
   const clampedTimeout = Math.min(Math.max(timeout, 1000), MAX_TIMEOUT_MS);
   const startTime = performance.now();
 
   // Write code to a temp file (avoids shell injection via -c)
-  let tmpDir: any;
-  let scriptPath: any;
+  let tmpDir = "";
+  let scriptPath = "";
   try {
     tmpDir = await mkdtemp(join(tmpdir(), "pyexec-"));
     scriptPath = join(tmpDir, "script.py");
@@ -84,9 +110,9 @@ export async function executePython(code: any, { timeout = DEFAULT_TIMEOUT_MS }:
     };
   }
 
-  return new Promise<any>((resolve: any) => {
-    const stdoutChunks: any[] = [];
-    const stderrChunks: any[] = [];
+  return new Promise<PythonExecutionResult>((resolve) => {
+    const stdoutChunks: Buffer[] = [];
+    const stderrChunks: Buffer[] = [];
     let stdoutLen = 0;
     let stderrLen = 0;
     let timedOut = false;
@@ -104,28 +130,34 @@ export async function executePython(code: any, { timeout = DEFAULT_TIMEOUT_MS }:
     });
 
     // Close stdin immediately — no interactive input
-    child.stdin.end();
+    if (child.stdin) {
+      child.stdin.end();
+    }
 
-    child.stdout.on("data", (chunk: any) => {
-      if (stdoutLen < MAX_OUTPUT_BYTES) {
-        stdoutChunks.push(chunk);
-        stdoutLen += chunk.length;
-      }
-    });
+    if (child.stdout) {
+      child.stdout.on("data", (chunk: Buffer) => {
+        if (stdoutLen < MAX_OUTPUT_BYTES) {
+          stdoutChunks.push(chunk);
+          stdoutLen += chunk.length;
+        }
+      });
+    }
 
-    child.stderr.on("data", (chunk: any) => {
-      if (stderrLen < MAX_OUTPUT_BYTES) {
-        stderrChunks.push(chunk);
-        stderrLen += chunk.length;
-      }
-    });
+    if (child.stderr) {
+      child.stderr.on("data", (chunk: Buffer) => {
+        if (stderrLen < MAX_OUTPUT_BYTES) {
+          stderrChunks.push(chunk);
+          stderrLen += chunk.length;
+        }
+      });
+    }
 
     const timer = setTimeout(() => {
       timedOut = true;
       child.kill("SIGKILL");
     }, clampedTimeout);
 
-    function finish(exitCode: any) {
+    function finish(exitCode: number | null) {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
@@ -135,7 +167,9 @@ export async function executePython(code: any, { timeout = DEFAULT_TIMEOUT_MS }:
       const executionTimeMs = Math.round(performance.now() - startTime);
 
       // Cleanup temp dir (includes the script file)
-      rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+      if (tmpDir) {
+        rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+      }
 
       const truncatedStdout =
         stdoutLen > MAX_OUTPUT_BYTES
@@ -159,14 +193,16 @@ export async function executePython(code: any, { timeout = DEFAULT_TIMEOUT_MS }:
       });
     }
 
-    child.on("close", (code: any) => finish(code));
-    child.on("error", (error: any) => {
+    child.on("close", (code: number | null) => finish(code));
+    child.on("error", (error: Error) => {
       if (!settled) {
         settled = true;
         clearTimeout(timer);
 
         // Cleanup
-        unlink(scriptPath).catch(() => {});
+        if (scriptPath) {
+          unlink(scriptPath).catch(() => {});
+        }
 
         resolve({
           success: false,
@@ -187,27 +223,34 @@ export async function executePython(code: any, { timeout = DEFAULT_TIMEOUT_MS }:
  * Same sandbox as executePython, but invokes `onChunk` for each
  * stdout/stderr data event as it arrives.
  */
-export async function executePythonStreaming(code: any, { timeout = DEFAULT_TIMEOUT_MS, onChunk }: Record<string, any> = {}) {
+export async function executePythonStreaming(
+  code: string,
+  { timeout = DEFAULT_TIMEOUT_MS, onChunk }: PythonStreamingOptions = {},
+): Promise<PythonExecutionResult> {
   const clampedTimeout = Math.min(Math.max(timeout, 1000), MAX_TIMEOUT_MS);
   const startTime = performance.now();
 
-  let tmpDir: any;
-  let scriptPath: any;
+  let tmpDir = "";
+  let scriptPath = "";
   try {
     tmpDir = await mkdtemp(join(tmpdir(), "pyexec-"));
     scriptPath = join(tmpDir, "script.py");
     await writeFile(scriptPath, PREAMBLE + "\n" + code, "utf-8");
   } catch (error: unknown) {
     return {
-      success: false, stdout: "", stderr: "", exitCode: null,
+      success: false,
+      stdout: "",
+      stderr: "",
+      exitCode: null,
       executionTimeMs: Math.round(performance.now() - startTime),
-      timedOut: false, error: `Failed to stage script: ${(error as Error).message}`,
+      timedOut: false,
+      error: `Failed to stage script: ${(error as Error).message}`,
     };
   }
 
-  return new Promise<any>((resolve: any) => {
-    const stdoutChunks: any[] = [];
-    const stderrChunks: any[] = [];
+  return new Promise<PythonExecutionResult>((resolve) => {
+    const stdoutChunks: Buffer[] = [];
+    const stderrChunks: Buffer[] = [];
     let stdoutLen = 0;
     let stderrLen = 0;
     let timedOut = false;
@@ -219,27 +262,36 @@ export async function executePythonStreaming(code: any, { timeout = DEFAULT_TIME
       detached: false,
     });
 
-    child.stdin.end();
+    if (child.stdin) {
+      child.stdin.end();
+    }
 
-    child.stdout.on("data", (chunk: any) => {
-      if (stdoutLen < MAX_OUTPUT_BYTES) {
-        stdoutChunks.push(chunk);
-        stdoutLen += chunk.length;
-        onChunk?.("stdout", chunk.toString("utf-8"));
-      }
-    });
+    if (child.stdout) {
+      child.stdout.on("data", (chunk: Buffer) => {
+        if (stdoutLen < MAX_OUTPUT_BYTES) {
+          stdoutChunks.push(chunk);
+          stdoutLen += chunk.length;
+          onChunk?.("stdout", chunk.toString("utf-8"));
+        }
+      });
+    }
 
-    child.stderr.on("data", (chunk: any) => {
-      if (stderrLen < MAX_OUTPUT_BYTES) {
-        stderrChunks.push(chunk);
-        stderrLen += chunk.length;
-        onChunk?.("stderr", chunk.toString("utf-8"));
-      }
-    });
+    if (child.stderr) {
+      child.stderr.on("data", (chunk: Buffer) => {
+        if (stderrLen < MAX_OUTPUT_BYTES) {
+          stderrChunks.push(chunk);
+          stderrLen += chunk.length;
+          onChunk?.("stderr", chunk.toString("utf-8"));
+        }
+      });
+    }
 
-    const timer = setTimeout(() => { timedOut = true; child.kill("SIGKILL"); }, clampedTimeout);
+    const timer = setTimeout(() => {
+      timedOut = true;
+      child.kill("SIGKILL");
+    }, clampedTimeout);
 
-    function finish(exitCode: any) {
+    function finish(exitCode: number | null) {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
@@ -247,7 +299,9 @@ export async function executePythonStreaming(code: any, { timeout = DEFAULT_TIME
       const stdout = Buffer.concat(stdoutChunks).toString("utf-8");
       const stderr = Buffer.concat(stderrChunks).toString("utf-8");
 
-      rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+      if (tmpDir) {
+        rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+      }
 
       resolve({
         success: exitCode === 0 && !timedOut,
@@ -260,16 +314,22 @@ export async function executePythonStreaming(code: any, { timeout = DEFAULT_TIME
       });
     }
 
-    child.on("close", (code: any) => finish(code));
-    child.on("error", (error: any) => {
+    child.on("close", (code: number | null) => finish(code));
+    child.on("error", (error: Error) => {
       if (!settled) {
         settled = true;
         clearTimeout(timer);
-        unlink(scriptPath).catch(() => {});
+        if (scriptPath) {
+          unlink(scriptPath).catch(() => {});
+        }
         resolve({
-          success: false, stdout: "", stderr: "", exitCode: null,
+          success: false,
+          stdout: "",
+          stderr: "",
+          exitCode: null,
           executionTimeMs: Math.round(performance.now() - startTime),
-          timedOut: false, error: `Process error: ${error.message}`,
+          timedOut: false,
+          error: `Process error: ${error.message}`,
         });
       }
     });
@@ -279,7 +339,7 @@ export async function executePythonStreaming(code: any, { timeout = DEFAULT_TIME
 /**
  * Get interpreter metadata for health checks.
  */
-export async function getInterpreterInfo() {
+export async function getInterpreterInfo(): Promise<InterpreterInfo> {
   try {
     const result = await executePython(
       "import sys; print(f'{sys.version}')",

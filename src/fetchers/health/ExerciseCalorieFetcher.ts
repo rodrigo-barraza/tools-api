@@ -11,9 +11,17 @@
  *   - ACSM Guidelines for Exercise Testing and Prescription (11th Ed.)
  */
 
+export interface MetEntry {
+  low: number;
+  moderate: number;
+  high: number;
+  default: number;
+  label: string;
+}
+
 // ─── MET Value Lookup Table ────────────────────────────────────
 
-const MET_TABLE = {
+const MET_TABLE: Record<string, MetEntry> = {
   // ── Strength Training ────────────────────────────────────────
   strength: {
     low: 3.5,
@@ -221,7 +229,7 @@ const MET_TABLE = {
 // ─── Exercise Category → MET Key Mapping ───────────────────────
 // Maps exercise DB categories to MET table keys
 
-const CATEGORY_TO_MET = {
+const CATEGORY_TO_MET: Record<string, string> = {
   strength: "strength",
   stretching: "stretching",
   plyometrics: "plyometrics",
@@ -234,7 +242,12 @@ const CATEGORY_TO_MET = {
 
 // ─── Exercise Name Pattern → MET Key ──────────────────────────
 
-const NAME_PATTERNS = [
+interface NamePatternEntry {
+  pattern: RegExp;
+  key: string;
+}
+
+const NAME_PATTERNS: NamePatternEntry[] = [
   { pattern: /squat|deadlift|bench\s*press|overhead\s*press/i, key: "strength" },
   { pattern: /curl|tricep|bicep|extension|fly|raise|row/i, key: "strength" },
   { pattern: /run|sprint|jog/i, key: "running" },
@@ -263,13 +276,12 @@ const NAME_PATTERNS = [
 
 // ─── MET Resolution ───────────────────────────────────────────
 
-function resolveMET(exerciseName: any, category: any, intensity: any) {
-  const intensityKey = (intensity || "moderate").toLowerCase();
+function resolveMET(exerciseName: string, category: string | undefined, intensity: string) {
+  const intensityKey = (intensity || "moderate").toLowerCase() as "low" | "moderate" | "high";
 
   // Try name pattern matching first (most specific)
   for (const { pattern, key } of NAME_PATTERNS) {
     if (pattern.test(exerciseName)) {
-      // @ts-expect-error - TS7053: implicit any index
       const met = MET_TABLE[key];
       return {
         value: met[intensityKey] || met.default,
@@ -281,11 +293,8 @@ function resolveMET(exerciseName: any, category: any, intensity: any) {
 
   // Try category mapping
   if (category) {
-    // @ts-expect-error - TS7053: implicit any index
     const catKey = CATEGORY_TO_MET[category.toLowerCase()];
-    // @ts-expect-error - TS7053: implicit any index
     if (catKey && MET_TABLE[catKey]) {
-      // @ts-expect-error - TS7053: implicit any index
       const met = MET_TABLE[catKey];
       return {
         value: met[intensityKey] || met.default,
@@ -298,7 +307,6 @@ function resolveMET(exerciseName: any, category: any, intensity: any) {
   // Fallback to general
   const general = MET_TABLE.general;
   return {
-    // @ts-expect-error - TS7053: implicit any index
     value: general[intensityKey] || general.default,
     source: "general",
     label: general.label,
@@ -306,6 +314,14 @@ function resolveMET(exerciseName: any, category: any, intensity: any) {
 }
 
 // ─── Public API ────────────────────────────────────────────────
+
+export interface EstimateExerciseCaloriesOptions {
+  exercise: string;
+  durationMinutes: number;
+  weightKg: number;
+  intensity?: string;
+  category?: string;
+}
 
 /**
  * Estimate calories burned during an exercise session.
@@ -316,9 +332,9 @@ export function estimateExerciseCalories({
   weightKg,
   intensity = "moderate",
   category,
-}: any) {
+}: EstimateExerciseCaloriesOptions) {
   // ── Validate ─────────────────────────────────────────────────
-  const errors: any[] = [];
+  const errors: string[] = [];
   if (!exercise) errors.push("'exercise' is required");
   if (!durationMinutes || durationMinutes <= 0) errors.push("'durationMinutes' must be positive");
   if (!weightKg || weightKg <= 0) errors.push("'weightKg' must be positive");
@@ -385,7 +401,7 @@ export function estimateExerciseCalories({
  */
 export function getMetCategories() {
   return {
-    categories: Object.entries(MET_TABLE).map(([key, data]: any) => ({
+    categories: Object.entries(MET_TABLE).map(([key, data]) => ({
       key,
       label: data.label,
       metLow: data.low,

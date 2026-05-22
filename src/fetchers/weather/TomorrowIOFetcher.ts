@@ -1,5 +1,10 @@
 import CONFIG from "../../config.ts";
 import { TOMORROWIO_WEATHER_CODES } from "../../constants.ts";
+import {
+  TomorrowIORealtimeResponse,
+  TomorrowIODailyForecastResponse,
+  TomorrowIODailyForecast,
+} from "../../types/weather.ts";
 
 const { LATITUDE, LONGITUDE, TOMORROWIO_API_KEY } = CONFIG;
 
@@ -14,17 +19,77 @@ const DAILY_FORECAST_URL =
   `&timesteps=1d` +
   `&apikey=${TOMORROWIO_API_KEY}`;
 
-export async function fetchTomorrowIORealtime() {
+interface RawTomorrowRealtimeData {
+  data: {
+    time: string;
+    values: {
+      weatherCode: number;
+      temperature: number;
+      temperatureApparent: number;
+      humidity: number;
+      cloudCover: number;
+      cloudBase: number | null;
+      cloudCeiling: number | null;
+      dewPoint: number;
+      precipitationProbability: number;
+      rainIntensity: number;
+      snowIntensity: number;
+      sleetIntensity: number;
+      freezingRainIntensity: number;
+      windSpeed: number;
+      windDirection: number;
+      windGust: number;
+      visibility: number;
+      uvIndex: number;
+      uvHealthConcern: number;
+      pressureSeaLevel: number;
+    };
+  };
+}
+
+interface RawTomorrowDailyForecastDay {
+  time: string;
+  values: {
+    temperatureMax: number;
+    temperatureMin: number;
+    temperatureAvg: number;
+    precipitationProbabilityAvg: number;
+    precipitationProbabilityMax: number;
+    rainAccumulationSum: number;
+    snowAccumulationSum: number;
+    windSpeedAvg: number;
+    windSpeedMax: number;
+    windGustMax: number;
+    visibilityAvg: number;
+    visibilityMin: number;
+    uvIndexMax: number;
+    cloudCoverAvg: number;
+    humidityAvg: number;
+    sunriseTime: string | null;
+    sunsetTime: string | null;
+    moonriseTime: string | null;
+    moonsetTime: string | null;
+    weatherCodeMax: number;
+  };
+}
+
+interface RawTomorrowDailyForecastResponse {
+  timelines?: {
+    daily?: RawTomorrowDailyForecastDay[];
+  };
+}
+
+export async function fetchTomorrowIORealtime(): Promise<TomorrowIORealtimeResponse> {
   const response = await fetch(REALTIME_URL);
 
   if (!response.ok) {
     throw new Error(`Tomorrow.io realtime returned ${response.status}`);
   }
 
-  const data = await response.json();
+  const data = await response.json() as RawTomorrowRealtimeData;
   const values = data.data.values;
   const weatherDescription =
-    TOMORROWIO_WEATHER_CODES[values.weatherCode] || "Unknown";
+    TOMORROWIO_WEATHER_CODES[values.weatherCode as unknown as keyof typeof TOMORROWIO_WEATHER_CODES] || "Unknown";
 
   return {
     source: "tomorrowio",
@@ -55,14 +120,14 @@ export async function fetchTomorrowIORealtime() {
   };
 }
 
-export async function fetchTomorrowIODailyForecast() {
+export async function fetchTomorrowIODailyForecast(): Promise<TomorrowIODailyForecastResponse> {
   const response = await fetch(DAILY_FORECAST_URL);
 
   if (!response.ok) {
     throw new Error(`Tomorrow.io daily forecast returned ${response.status}`);
   }
 
-  const data = await response.json();
+  const data = await response.json() as RawTomorrowDailyForecastResponse;
   const days = data.timelines?.daily || [];
 
   // Extract today's daylight data
@@ -79,7 +144,7 @@ export async function fetchTomorrowIODailyForecast() {
     moonset: today.moonsetTime || null,
 
     // Daily forecast array
-    dailyForecast: days.map((day: any) => ({
+    dailyForecast: days.map((day): TomorrowIODailyForecast => ({
       time: day.time,
       temperatureMax: day.values.temperatureMax,
       temperatureMin: day.values.temperatureMin,

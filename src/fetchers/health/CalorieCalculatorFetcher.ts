@@ -14,9 +14,30 @@
  *   - ISSN Position Stand on protein (Jäger et al. 2017)
  */
 
+export type ActivityLevelKey = "sedentary" | "light" | "moderate" | "active" | "very_active";
+export type GoalKey = "maintain" | "cut" | "aggressive_cut" | "lean_bulk" | "bulk";
+export type MacroSplitKey = "balanced" | "high_protein" | "keto" | "low_fat" | "zone";
+
+export interface ActivityMultiplier {
+  factor: number;
+  label: string;
+}
+
+export interface GoalAdjustment {
+  delta: number;
+  label: string;
+}
+
+export interface MacroPreset {
+  protein: number;
+  carbs: number;
+  fat: number;
+  label: string;
+}
+
 // ─── Activity Level PAL Multipliers ────────────────────────────
 
-const ACTIVITY_MULTIPLIERS = {
+const ACTIVITY_MULTIPLIERS: Record<ActivityLevelKey, ActivityMultiplier> = {
   sedentary: { factor: 1.2, label: "Sedentary (little or no exercise)" },
   light: { factor: 1.375, label: "Lightly active (1-3 days/week)" },
   moderate: { factor: 1.55, label: "Moderately active (3-5 days/week)" },
@@ -26,7 +47,7 @@ const ACTIVITY_MULTIPLIERS = {
 
 // ─── Goal Adjustments ──────────────────────────────────────────
 
-const GOAL_ADJUSTMENTS = {
+const GOAL_ADJUSTMENTS: Record<GoalKey, GoalAdjustment> = {
   maintain: { delta: 0, label: "Maintenance (isocaloric)" },
   cut: { delta: -500, label: "Fat loss (~0.45 kg/week deficit)" },
   aggressive_cut: { delta: -750, label: "Aggressive cut (~0.68 kg/week deficit)" },
@@ -36,7 +57,7 @@ const GOAL_ADJUSTMENTS = {
 
 // ─── Macro Split Presets (% of total calories) ─────────────────
 
-const MACRO_PRESETS = {
+const MACRO_PRESETS: Record<MacroSplitKey, MacroPreset> = {
   balanced: { protein: 0.30, carbs: 0.40, fat: 0.30, label: "Balanced (30/40/30)" },
   high_protein: { protein: 0.40, carbs: 0.30, fat: 0.30, label: "High Protein (40/30/30)" },
   keto: { protein: 0.25, carbs: 0.05, fat: 0.70, label: "Ketogenic (25/5/70)" },
@@ -46,7 +67,7 @@ const MACRO_PRESETS = {
 
 // ─── Mifflin-St Jeor BMR ──────────────────────────────────────
 
-function calculateBMR(sex: any, weightKg: any, heightCm: any, ageYears: any) {
+function calculateBMR(sex: string, weightKg: number, heightCm: number, ageYears: number): number {
   // Mifflin-St Jeor (1990):
   //   Male:   10 × weight(kg) + 6.25 × height(cm) - 5 × age(y) + 5
   //   Female: 10 × weight(kg) + 6.25 × height(cm) - 5 × age(y) - 161
@@ -55,6 +76,29 @@ function calculateBMR(sex: any, weightKg: any, heightCm: any, ageYears: any) {
 }
 
 // ─── Public API ────────────────────────────────────────────────
+
+export interface CalculateCaloricNeedsOptions {
+  sex: string;
+  weightKg: number;
+  heightCm: number;
+  ageYears: number;
+  activityLevel?: string;
+  goal?: string;
+  macroSplit?: string;
+  bodyFatPct?: number;
+}
+
+export interface BmiInfo {
+  value: number;
+  category: "Underweight" | "Normal weight" | "Overweight" | "Obese";
+}
+
+export interface BodyCompositionInfo {
+  bodyFatPct: number;
+  fatMassKg: number;
+  leanMassKg: number;
+  proteinPerKgLean: number;
+}
 
 /**
  * Calculate BMR, TDEE, and macronutrient targets.
@@ -68,9 +112,9 @@ export function calculateCaloricNeeds({
   goal = "maintain",
   macroSplit = "balanced",
   bodyFatPct,
-}: any) {
+}: CalculateCaloricNeedsOptions) {
   // ── Validate required inputs ─────────────────────────────────
-  const errors: any[] = [];
+  const errors: string[] = [];
   if (!sex || !["male", "female"].includes(sex.toLowerCase())) {
     errors.push("'sex' must be 'male' or 'female'");
   }
@@ -88,12 +132,11 @@ export function calculateCaloricNeeds({
   }
 
   const normalizedSex = sex.toLowerCase();
-  const normalizedActivity = (activityLevel || "moderate").toLowerCase().replace(/[\s-]+/g, "_");
-  const normalizedGoal = (goal || "maintain").toLowerCase().replace(/[\s-]+/g, "_");
-  const normalizedSplit = (macroSplit || "balanced").toLowerCase().replace(/[\s-]+/g, "_");
+  const normalizedActivity = (activityLevel || "moderate").toLowerCase().replace(/[\s-]+/g, "_") as ActivityLevelKey;
+  const normalizedGoal = (goal || "maintain").toLowerCase().replace(/[\s-]+/g, "_") as GoalKey;
+  const normalizedSplit = (macroSplit || "balanced").toLowerCase().replace(/[\s-]+/g, "_") as MacroSplitKey;
 
   // ── Resolve activity multiplier ──────────────────────────────
-  // @ts-expect-error - TS7053: implicit any index
   const activity = ACTIVITY_MULTIPLIERS[normalizedActivity];
   if (!activity) {
     return {
@@ -103,7 +146,6 @@ export function calculateCaloricNeeds({
   }
 
   // ── Resolve goal adjustment ──────────────────────────────────
-  // @ts-expect-error - TS7053: implicit any index
   const goalAdj = GOAL_ADJUSTMENTS[normalizedGoal];
   if (!goalAdj) {
     return {
@@ -113,7 +155,6 @@ export function calculateCaloricNeeds({
   }
 
   // ── Resolve macro split ──────────────────────────────────────
-  // @ts-expect-error - TS7053: implicit any index
   const split = MACRO_PRESETS[normalizedSplit];
   if (!split) {
     return {
@@ -153,7 +194,7 @@ export function calculateCaloricNeeds({
   };
 
   // ── Optional body composition ────────────────────────────────
-  let bodyComposition: any = null;
+  let bodyComposition: BodyCompositionInfo | null = null;
   if (bodyFatPct && bodyFatPct > 0 && bodyFatPct < 100) {
     const fatMass = weightKg * (bodyFatPct / 100);
     const leanMass = weightKg - fatMass;
@@ -168,7 +209,7 @@ export function calculateCaloricNeeds({
   // ── BMI (informational) ──────────────────────────────────────
   const heightM = heightCm / 100;
   const bmi = weightKg / (heightM * heightM);
-  let bmiCategory: any;
+  let bmiCategory: BmiInfo["category"];
   if (bmi < 18.5) bmiCategory = "Underweight";
   else if (bmi < 25) bmiCategory = "Normal weight";
   else if (bmi < 30) bmiCategory = "Overweight";
@@ -204,17 +245,17 @@ export function calculateCaloricNeeds({
  */
 export function getCaloricNeedsOptions() {
   return {
-    activityLevels: Object.entries(ACTIVITY_MULTIPLIERS).map(([k, v]: any) => ({
+    activityLevels: Object.entries(ACTIVITY_MULTIPLIERS).map(([k, v]) => ({
       key: k,
       label: v.label,
       factor: v.factor,
     })),
-    goals: Object.entries(GOAL_ADJUSTMENTS).map(([k, v]: any) => ({
+    goals: Object.entries(GOAL_ADJUSTMENTS).map(([k, v]) => ({
       key: k,
       label: v.label,
       dailyDelta: v.delta,
     })),
-    macroSplits: Object.entries(MACRO_PRESETS).map(([k, v]: any) => ({
+    macroSplits: Object.entries(MACRO_PRESETS).map(([k, v]) => ({
       key: k,
       label: v.label,
       protein: v.protein,

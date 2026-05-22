@@ -2,24 +2,32 @@
 
 import { extname, resolve, basename } from "node:path";
 import { pathToFileURL } from "node:url";
-import { createLspServerInstance } from "./LspServerInstance.ts";
+import { createLspServerInstance, LspServerInstance } from "./LspServerInstance.ts";
 import { getLspServerConfigs } from "./LspConfig.ts";
 import logger from "../../logger.ts";
+
+export interface LspServerManager {
+  initialize(): void;
+  getServerForFile(filePath: string): LspServerInstance | undefined;
+  ensureServerStarted(filePath: string): Promise<LspServerInstance | undefined>;
+  sendRequest(filePath: string, method: string, params: any): Promise<any>;
+  openFile(filePath: string, content: string): Promise<void>;
+  changeFile(filePath: string, content: string): Promise<void>;
+  closeFile(filePath: string): Promise<void>;
+  isFileOpen(filePath: string): boolean;
+  getHealth(): Record<string, string>;
+  getAllServers(): Map<string, LspServerInstance>;
+  shutdown(): Promise<void>;
+}
 
 /**
  * Creates an LSP server manager instance.
  */
-export function createLspServerManager(workspaceFolder: any) {
+export function createLspServerManager(workspaceFolder?: string): LspServerManager {
   // ── Private state ──────────────────────────────────────────
-  /** @type {Map<string, object>} name → LspServerInstance */
-  const servers = new Map();
-
-  /** @type {Map<string, string[]>} extension → server name[] */
-  const extensionMap = new Map();
-
-  /** @type {Map<string, string>} fileURI → server name (tracks open files) */
-  const openedFiles = new Map();
-
+  const servers = new Map<string, LspServerInstance>();
+  const extensionMap = new Map<string, string[]>();
+  const openedFiles = new Map<string, string>();
   let initialized = false;
 
   // ── Initialization ─────────────────────────────────────────
@@ -28,7 +36,7 @@ export function createLspServerManager(workspaceFolder: any) {
    * Load all configured LSP servers and build extension routing map.
    * Does NOT start any servers — they start lazily on first request.
    */
-  function initialize() {
+  function initialize(): void {
     if (initialized) return;
 
     const configs = getLspServerConfigs(workspaceFolder);
@@ -50,7 +58,7 @@ export function createLspServerManager(workspaceFolder: any) {
           if (!extensionMap.has(normalized)) {
             extensionMap.set(normalized, []);
           }
-          extensionMap.get(normalized).push(serverName);
+          extensionMap.get(normalized)!.push(serverName);
         }
 
         // Create instance (not started yet)
@@ -77,7 +85,7 @@ export function createLspServerManager(workspaceFolder: any) {
   /**
    * Get the server instance for a given file path based on extension.
    */
-  function getServerForFile(filePath: any) {
+  function getServerForFile(filePath: string): LspServerInstance | undefined {
     const fileExtension = extname(filePath).toLowerCase();
     const serverNames = extensionMap.get(fileExtension);
     if (!serverNames || serverNames.length === 0) return undefined;
@@ -88,7 +96,7 @@ export function createLspServerManager(workspaceFolder: any) {
    * Ensure the appropriate server is started for a file.
    * Lazy-starts the server on first request for that language.
    */
-  async function ensureServerStarted(filePath: any) {
+  async function ensureServerStarted(filePath: string): Promise<LspServerInstance | undefined> {
     const server = getServerForFile(filePath);
     if (!server) return undefined;
 
@@ -109,7 +117,7 @@ export function createLspServerManager(workspaceFolder: any) {
   /**
    * Send an LSP request to the appropriate server for the given file.
    */
-  async function sendRequest(filePath: any, method: any, params: any) {
+  async function sendRequest(filePath: string, method: string, params: any): Promise<any> {
     const server = await ensureServerStarted(filePath);
     if (!server) return undefined;
 
@@ -127,7 +135,7 @@ export function createLspServerManager(workspaceFolder: any) {
    * Open a file in the appropriate LSP server (sends didOpen).
    * Skips if already open on the same server.
    */
-  async function openFile(filePath: any, content: any) {
+  async function openFile(filePath: string, content: string): Promise<void> {
     const server = await ensureServerStarted(filePath);
     if (!server) return;
 
@@ -158,7 +166,7 @@ export function createLspServerManager(workspaceFolder: any) {
   /**
    * Notify the server of file content changes.
    */
-  async function changeFile(filePath: any, content: any) {
+  async function changeFile(filePath: string, content: string): Promise<void> {
     const server = getServerForFile(filePath);
     if (!server || server.state !== "running") {
       return openFile(filePath, content);
@@ -185,7 +193,7 @@ export function createLspServerManager(workspaceFolder: any) {
   /**
    * Close a file in the LSP server (sends didClose).
    */
-  async function closeFile(filePath: any) {
+  async function closeFile(filePath: string): Promise<void> {
     const server = getServerForFile(filePath);
     if (!server || server.state !== "running") return;
 
@@ -204,7 +212,7 @@ export function createLspServerManager(workspaceFolder: any) {
   /**
    * Check if a file is currently open on a compatible server.
    */
-  function isFileOpen(filePath: any) {
+  function isFileOpen(filePath: string): boolean {
     const fileUri = pathToFileURL(resolve(filePath)).href;
     return openedFiles.has(fileUri);
   }
@@ -214,8 +222,8 @@ export function createLspServerManager(workspaceFolder: any) {
   /**
    * Get health status of all configured servers.
    */
-  function getHealth() {
-    const health: Record<string, any> = {};
+  function getHealth(): Record<string, string> {
+    const health: Record<string, string> = {};
     for (const [name, server] of servers) {
       health[name] = server.state;
     }
@@ -225,24 +233,24 @@ export function createLspServerManager(workspaceFolder: any) {
   /**
    * Get all server instances.
    */
-  function getAllServers() {
+  function getAllServers(): Map<string, LspServerInstance> {
     return servers;
   }
 
   /**
    * Shutdown all running servers and clear state.
    */
-  async function shutdown() {
+  async function shutdown(): Promise<void> {
     const toStop = [...servers.entries()].filter(
-      ([, s]: any) => s.state === "running" || s.state === "error",
+      ([, s]) => s.state === "running" || s.state === "error",
     );
 
     const results = await Promise.allSettled(
-      toStop.map(([, server]: any) => server.stop()),
+      toStop.map(([, server]) => server.stop()),
     );
 
     const errors = results
-      .map((r: any, i: any) => r.status === "rejected" ? `${toStop[i][0]}: ${r.reason?.message}` : null)
+      .map((r, i) => r.status === "rejected" ? `${toStop[i][0]}: ${(r as PromiseRejectedResult).reason?.message}` : null)
       .filter(Boolean);
 
     servers.clear();
@@ -277,13 +285,12 @@ export function createLspServerManager(workspaceFolder: any) {
 // Lazily created on first use. The workspace folder can be
 // overridden per-request via AgenticLspService.
 
-/** @type {Map<string, object>} workspaceFolder → manager */
-const managers = new Map();
+const managers = new Map<string, LspServerManager>();
 
 /**
  * Get or create the LSP server manager for a workspace.
  */
-export function getLspManager(workspaceFolder: any) {
+export function getLspManager(workspaceFolder?: string): LspServerManager {
   const key = workspaceFolder || "__default__";
 
   if (!managers.has(key)) {
@@ -292,24 +299,24 @@ export function getLspManager(workspaceFolder: any) {
     managers.set(key, manager);
   }
 
-  return managers.get(key);
+  return managers.get(key)!;
 }
 
 /**
  * Shutdown all managers (for graceful process exit).
  */
-export async function shutdownAllLspManagers() {
+export async function shutdownAllLspManagers(): Promise<void> {
   const all = [...managers.values()];
   managers.clear();
-  await Promise.allSettled(all.map((m: any) => m.shutdown()));
+  await Promise.allSettled(all.map((m) => m.shutdown()));
   logger.info("[LSP Manager] All managers shut down");
 }
 
 /**
  * Get health of all managers.
  */
-export function getAllLspHealth() {
-  const health: Record<string, any> = {};
+export function getAllLspHealth(): Record<string, Record<string, string>> {
+  const health: Record<string, Record<string, string>> = {};
   for (const [key, manager] of managers) {
     health[key] = manager.getHealth();
   }

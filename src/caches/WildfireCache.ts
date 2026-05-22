@@ -1,6 +1,7 @@
 import { createSimpleCache } from "./createSimpleCache.ts";
+import { WildfireEvent } from "../types/weather.ts";
 
-const cache = createSimpleCache<any>({ type: "array", itemsKey: "events" });
+const cache = createSimpleCache<WildfireEvent[]>({ type: "array", itemsKey: "events" });
 
 export const updateWildfires = cache.update;
 export const setWildfireError = cache.setError;
@@ -11,13 +12,13 @@ export const getWildfireHealth = cache.getHealth;
 export function getWildfireSummary() {
   const wildfires = cache.getData();
   const sorted = [...wildfires]
-    .filter((w: any) => w.magnitudeValue != null)
-    .sort((a: any, b: any) => b.magnitudeValue - a.magnitudeValue);
+    .filter((w) => w.magnitudeValue != null)
+    .sort((a, b) => (b.magnitudeValue ?? 0) - (a.magnitudeValue ?? 0));
 
   return {
     count: wildfires.length,
     largest: sorted[0] || null,
-    openCount: wildfires.filter((w: any) => w.status === "open").length,
+    openCount: wildfires.filter((w) => w.status === "open").length,
     lastFetch: cache.getLastFetch(),
   };
 }

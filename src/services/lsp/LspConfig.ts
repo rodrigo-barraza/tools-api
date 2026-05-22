@@ -1,17 +1,17 @@
 // ─── Language Server Registry ───────────────────────────────
 
-/**
- * @property {string} command — binary to run
- * @property {string[]} args — arguments to pass
- * @property {Record<string,string>} extensionToLanguage — file ext → LSP languageId
- * @property {number} [maxRestarts] — max restart attempts before giving up (default: 3)
- * @property {number} [startupTimeout] — init timeout in ms
- * @property {Record<string,string>} [env] — extra environment variables
- * @property {object} [initializationOptions] — server-specific init options
- */
+export interface LspServerConfig {
+  command: string;
+  args: string[];
+  extensionToLanguage: Record<string, string>;
+  maxRestarts?: number;
+  startupTimeout?: number;
+  env?: Record<string, string>;
+  initializationOptions?: Record<string, any>;
+  workspaceFolder?: string;
+}
 
-
-export const LSP_SERVER_CONFIGS = {
+export const LSP_SERVER_CONFIGS: Record<string, LspServerConfig> = {
   // ── TypeScript / JavaScript ──────────────────────────────
   typescript: {
     command: "npx",
@@ -97,8 +97,8 @@ export const LSP_SERVER_CONFIGS = {
 /**
  * Get all configured LSP servers, optionally scoped to a workspace folder.
  */
-export function getLspServerConfigs(workspaceFolder: any) {
-  const configs: Record<string, any> = {};
+export function getLspServerConfigs(workspaceFolder?: string): Record<string, LspServerConfig> {
+  const configs: Record<string, LspServerConfig> = {};
 
   for (const [name, config] of Object.entries(LSP_SERVER_CONFIGS)) {
     configs[name] = {

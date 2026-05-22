@@ -7,7 +7,7 @@ import logger from "../logger.ts";
 export interface EarthquakeDocument {
   usgsId: string;
   time?: Date;
-  magnitude?: number;
+  magnitude?: number | null;
   lastSeen?: Date;
   firstSeen?: Date;
   [key: string]: unknown;

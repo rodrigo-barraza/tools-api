@@ -2,7 +2,8 @@ import { sleep } from "@rodrigo-barraza/utilities-library";
 // ─── Single Server Lifecycle Manager ────────────────────────
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { createLspClient } from "./LspClient.ts";
+import { createLspClient, LspClient } from "./LspClient.ts";
+import { LspServerConfig } from "./LspConfig.ts";
 import logger from "../../logger.ts";
 
 // ── Constants ────────────────────────────────────────────────
@@ -12,24 +13,45 @@ const LSP_ERROR_CONTENT_MODIFIED = -32801;
 const MAX_RETRIES_FOR_TRANSIENT = 3;
 /** Base delay in ms for exponential backoff (500, 1000, 2000) */
 const RETRY_BASE_DELAY_MS = 500;
+
+export interface LspServerInstance {
+  readonly name: string;
+  readonly config: LspServerConfig;
+  readonly state: string;
+  readonly startTime: Date | null;
+  readonly lastError: Error | null;
+  readonly restartCount: number;
+  start(): Promise<void>;
+  stop(): Promise<void>;
+  restart(): Promise<void>;
+  isHealthy(): boolean;
+  sendRequest(method: string, params: any): Promise<any>;
+  sendNotification(method: string, params: any): Promise<void>;
+  onNotification(method: string, handler: (...args: any[]) => void): void;
+  onRequest(method: string, handler: (...args: any[]) => any): void;
+}
+
 /**
  * Creates and manages a single LSP server instance.
  */
-export function createLspServerInstance(name: any, config: any) {
+export function createLspServerInstance(name: string, config: LspServerConfig): LspServerInstance {
   // ── Private state ────────────────────────────────────────
   let state = "stopped";
-  let startTime: any = null;
-  let lastError: any = null;
+  let startTime: Date | null = null;
+  let lastError: Error | null = null;
   let restartCount = 0;
   let crashRecoveryCount = 0;
-  const client = createLspClient(name, (error: any) => {
+
+  const client: LspClient = createLspClient(name, (error: Error) => {
     state = "error";
     lastError = error;
     crashRecoveryCount++;
   });
+
   // ── Lifecycle methods ────────────────────────────────────
-  async function start() {
+  async function start(): Promise<void> {
     if (state === "running" || state === "starting") return;
+
     // Guard: max crash recovery
     const maxRestarts = config.maxRestarts ?? 3;
     if (state === "error" && crashRecoveryCount > maxRestarts) {
@@ -37,14 +59,17 @@ export function createLspServerInstance(name: any, config: any) {
       lastError = error;
       throw error;
     }
-    let initPromise: any;
+
+    let initPromise: Promise<any> | undefined;
     try {
       state = "starting";
       logger.info(`[LSP:${name}] Starting server instance...`);
+
       await client.start(config.command, config.args || [], {
         env: config.env,
         cwd: config.workspaceFolder,
       });
+
       // Build initialization params
       const workspaceFolder = config.workspaceFolder || process.cwd();
       const workspaceUri = pathToFileURL(workspaceFolder).href;
@@ -107,7 +132,9 @@ export function createLspServerInstance(name: any, config: any) {
           },
         },
       };
+
       initPromise = client.initialize(initParams);
+
       if (config.startupTimeout) {
         await withTimeout(
           initPromise,
@@ -117,6 +144,7 @@ export function createLspServerInstance(name: any, config: any) {
       } else {
         await initPromise;
       }
+
       state = "running";
       startTime = new Date();
       crashRecoveryCount = 0;
@@ -124,14 +152,17 @@ export function createLspServerInstance(name: any, config: any) {
     } catch (error: unknown) {
       // Clean up on failure
       client.stop().catch(() => {});
-      initPromise?.catch(() => {});
+      if (initPromise) {
+        initPromise.catch(() => {});
+      }
       state = "error";
-      lastError = error;
+      lastError = error as Error;
       logger.error(`[LSP:${name}] Start failed: ${(error as Error).message}`);
       throw error;
     }
   }
-  async function stop() {
+
+  async function stop(): Promise<void> {
     if (state === "stopped" || state === "stopping") return;
     try {
       state = "stopping";
@@ -140,12 +171,13 @@ export function createLspServerInstance(name: any, config: any) {
       logger.info(`[LSP:${name}] Server stopped`);
     } catch (error: unknown) {
       state = "error";
-      lastError = error;
+      lastError = error as Error;
       logger.error(`[LSP:${name}] Stop failed: ${(error as Error).message}`);
       throw error;
     }
   }
-  async function restart() {
+
+  async function restart(): Promise<void> {
     try {
       await stop();
     } catch (error: unknown) {
@@ -164,13 +196,15 @@ export function createLspServerInstance(name: any, config: any) {
       throw error;
     }
   }
-  function isHealthy() {
+
+  function isHealthy(): boolean {
     return state === "running" && client.isInitialized;
   }
+
   /**
    * Send an LSP request with exponential backoff retry on transient errors.
    */
-  async function sendRequest(method: any, params: any) {
+  async function sendRequest(method: string, params: any): Promise<any> {
     if (!isHealthy()) {
       throw new Error(
         `Cannot send request to LSP server '${name}': server is ${state}` +
@@ -198,18 +232,22 @@ export function createLspServerInstance(name: any, config: any) {
       `LSP request '${method}' failed for server '${name}': ${lastAttemptError?.message ?? "unknown error"}`,
     );
   }
-  async function sendNotification(method: any, params: any) {
+
+  async function sendNotification(method: string, params: any): Promise<void> {
     if (!isHealthy()) {
       throw new Error(`Cannot send notification to LSP server '${name}': server is ${state}`);
     }
     await client.sendNotification(method, params);
   }
-  function onNotification(method: any, handler: any) {
+
+  function onNotification(method: string, handler: (...args: any[]) => void): void {
     client.onNotification(method, handler);
   }
-  function onRequest(method: any, handler: any) {
+
+  function onRequest(method: string, handler: (...args: any[]) => any): void {
     client.onRequest(method, handler);
   }
+
   // ── Public API ─────────────────────────────────────────────
   return {
     name,
@@ -228,10 +266,11 @@ export function createLspServerInstance(name: any, config: any) {
     onRequest,
   };
 }
+
 // ── Helpers ──────────────────────────────────────────────────
-function withTimeout(promise: any, ms: any, message: any) {
-  let timer: any;
-  const timeoutPromise = new Promise((_resolve: any, reject: any) => {
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  let timer: NodeJS.Timeout;
+  const timeoutPromise = new Promise<never>((_, reject) => {
     timer = setTimeout(() => reject(new Error(message)), ms);
   });
   return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timer));

@@ -25,14 +25,15 @@ import {
 import { readFileSync, readdirSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
+import { FoodItem } from "../../types/health.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-let FOOD_CACHE: any = null;
+let FOOD_CACHE: FoodItem[] | null = null;
 
-function parseCSVLine(line: any) {
-  const fields: any[] = [];
+function parseCSVLine(line: string): string[] {
+  const fields: string[] = [];
   let current = "";
   let inQuotes = false;
   for (let i = 0; i < line.length; i++) {
@@ -50,35 +51,36 @@ function parseCSVLine(line: any) {
   return fields;
 }
 
-function ensureFoodCache() {
+function ensureFoodCache(): FoodItem[] {
   if (FOOD_CACHE) return FOOD_CACHE;
 
   const dataDir = join(__dirname, "data");
   const files = readdirSync(dataDir).filter(
-    (f: any) => f.startsWith("digest_food") && f.endsWith(".csv"),
+    (f: string) => f.startsWith("digest_food") && f.endsWith(".csv"),
   );
 
-  const foods: any[] = [];
+  const foods: FoodItem[] = [];
   for (const file of files) {
     const raw = readFileSync(join(dataDir, file), "utf-8");
-    const lines = raw.split("\n").filter((l: any) => l.trim());
+    const lines = raw.split("\n").filter((l: string) => l.trim());
     const headers = parseCSVLine(lines[0]);
 
     for (let i = 1; i < lines.length; i++) {
       const values = parseCSVLine(lines[i]);
       if (values.length < 40) continue;
 
-      const row: Record<string, any> = {};
-      headers.forEach((h: any, index: any) => {
+      const row: Record<string, string | number | null> = {};
+      headers.forEach((h: string, index: number) => {
         row[h] = values[index] || "";
       });
 
       const numericStart = 35;
       for (let n = numericStart; n < headers.length; n++) {
-        const value = parseFloat(row[headers[n]]);
+        const rawVal = row[headers[n]];
+        const value = typeof rawVal === "string" ? parseFloat(rawVal) : NaN;
         row[headers[n]] = isNaN(value) ? null : value;
       }
-      foods.push(row);
+      foods.push(row as unknown as FoodItem);
     }
   }
 
@@ -90,7 +92,7 @@ function ensureFoodCache() {
 
 const ALL_NUTRIENT_COLUMNS = [
   ...Object.keys(NUTRITION_MACRO_FIELDS).filter(
-    (k: any) => !["kilocalories", "kilojoules", "water", "mineral", "ethanol"].includes(k),
+    (k: string) => !["kilocalories", "kilojoules", "water", "mineral", "ethanol"].includes(k),
   ),
   ...Object.keys(NUTRITION_MINERAL_FIELDS),
   ...Object.keys(NUTRITION_VITAMIN_FIELDS),
@@ -100,14 +102,14 @@ const ALL_NUTRIENT_COLUMNS = [
 
 // ─── Vector Helpers ────────────────────────────────────────────
 
-function extractVector(food: any, columns: any) {
-  return columns.map((column: any) => {
+function extractVector(food: FoodItem, columns: string[]): number[] {
+  return columns.map((column: string) => {
     const value = food[column];
-    return value !== null && value !== undefined && !isNaN(value) ? value : 0;
+    return value !== null && value !== undefined && typeof value === "number" && !isNaN(value) ? value : 0;
   });
 }
 
-function cosineSimilarity(a: any, b: any) {
+function cosineSimilarity(a: number[], b: number[]): number {
   let dot = 0;
   let magA = 0;
   let magB = 0;
@@ -120,33 +122,42 @@ function cosineSimilarity(a: any, b: any) {
   return dot / (Math.sqrt(magA) * Math.sqrt(magB));
 }
 
-function normalizeSearch(str: any) {
+function normalizeSearch(str: string): string {
   return str.toLowerCase().replace(/[^a-z0-9\s]/g, "");
 }
 
 // ─── Kingdom/Type Filters ──────────────────────────────────────
 
-const DIETARY_FILTERS = {
-  vegetarian: (food: any) => {
+const DIETARY_FILTERS: Record<string, (food: FoodItem) => boolean> = {
+  vegetarian: (food: FoodItem) => {
     const type = (food.food_type || "").toLowerCase();
     const kingdom = (food.kingdom || "").toLowerCase();
     // Allow everything except meat/fish
     return kingdom !== "animalia" || type === "dairy" || type === "egg";
   },
-  vegan: (food: any) => {
+  vegan: (food: FoodItem) => {
     const kingdom = (food.kingdom || "").toLowerCase();
     return kingdom !== "animalia";
   },
-  pescatarian: (food: any) => {
+  pescatarian: (food: FoodItem) => {
     const type = (food.food_type || "").toLowerCase();
     const kingdom = (food.kingdom || "").toLowerCase();
     return kingdom !== "animalia" || type === "fish" || type === "seafood" || type === "dairy" || type === "egg";
   },
-  plant_only: (food: any) => {
+  plant_only: (food: FoodItem) => {
     const kingdom = (food.kingdom || "").toLowerCase();
     return kingdom === "plantae";
   },
 };
+
+export interface FindSubstitutesOptions {
+  food: string;
+  targetNutrients?: string;
+  dietaryPreference?: string;
+  excludeKingdom?: string;
+  excludeFoods?: string;
+  limit?: number;
+}
 
 // ─── Public API ────────────────────────────────────────────────
 
@@ -160,7 +171,7 @@ export function findFoodSubstitutes({
   excludeKingdom,
   excludeFoods,
   limit = 10,
-}: any) {
+}: FindSubstitutesOptions) {
   if (!food) {
     return { error: "'food' parameter is required (e.g. 'salmon', 'beef', 'tofu')" };
   }
@@ -170,7 +181,7 @@ export function findFoodSubstitutes({
   // ── Find the source food ─────────────────────────────────────
   const normalized = normalizeSearch(food);
   let sourceFood = allFoods.find(
-    (f: any) => normalizeSearch(f.food_name || "") === normalized,
+    (f: FoodItem) => normalizeSearch(f.food_name || "") === normalized,
   );
 
   if (!sourceFood) {
@@ -181,7 +192,7 @@ export function findFoodSubstitutes({
     }
     const matchedName = normalizeSearch(searchResult.foods[0].name);
     sourceFood = allFoods.find(
-      (f: any) => normalizeSearch(f.food_name || "") === matchedName,
+      (f: FoodItem) => normalizeSearch(f.food_name || "") === matchedName,
     );
     if (!sourceFood) {
       return { error: `Food matched but not in vector DB: "${food}"` };
@@ -190,19 +201,19 @@ export function findFoodSubstitutes({
 
   // ── Determine comparison columns ──────────────────────────────
   const columns = ALL_NUTRIENT_COLUMNS;
-  let emphasizedColumns: any = null;
+  let emphasizedColumns: string[] | null = null;
 
   if (targetNutrients) {
     const targets = targetNutrients
       .split(",")
-      .map((t: any) => t.trim().toLowerCase().replace(/[\s-]+/g, "_"))
+      .map((t: string) => t.trim().toLowerCase().replace(/[\s-]+/g, "_"))
       .filter(Boolean);
 
     // Match target nutrient names to columns
-    const matched: any[] = [];
+    const matched: string[] = [];
     for (const target of targets) {
       const collection = ALL_NUTRIENT_COLUMNS.find(
-        (c: any) => c === target || c.includes(target),
+        (c: string) => c === target || c.includes(target),
       );
       if (collection) matched.push(collection);
     }
@@ -217,13 +228,13 @@ export function findFoodSubstitutes({
 
   // ── Filter candidates ────────────────────────────────────────
   let candidates = allFoods.filter(
-    (f: any) => f !== sourceFood,
+    (f: FoodItem) => f !== sourceFood,
   );
 
   // Dietary preference filter
   if (dietaryPreference) {
-    // @ts-expect-error - TS7053: implicit any index
-    const filterFn = DIETARY_FILTERS[dietaryPreference.toLowerCase().replace(/[\s-]+/g, "_")];
+    const key = dietaryPreference.toLowerCase().replace(/[\s-]+/g, "_");
+    const filterFn = DIETARY_FILTERS[key];
     if (filterFn) {
       candidates = candidates.filter(filterFn);
     }
@@ -233,7 +244,7 @@ export function findFoodSubstitutes({
   if (excludeKingdom) {
     const exc = excludeKingdom.toLowerCase();
     candidates = candidates.filter(
-      (f: any) => (f.kingdom || "").toLowerCase() !== exc,
+      (f: FoodItem) => (f.kingdom || "").toLowerCase() !== exc,
     );
   }
 
@@ -241,15 +252,15 @@ export function findFoodSubstitutes({
   if (excludeFoods) {
     const excluded = excludeFoods
       .split(",")
-      .map((e: any) => normalizeSearch(e.trim()))
+      .map((e: string) => normalizeSearch(e.trim()))
       .filter(Boolean);
     candidates = candidates.filter(
-      (f: any) => !excluded.some((e: any) => normalizeSearch(f.food_name || "").includes(e)),
+      (f: FoodItem) => !excluded.some((e: string) => normalizeSearch(f.food_name || "").includes(e)),
     );
   }
 
   // ── Score all candidates ─────────────────────────────────────
-  const scored = candidates.map((candidate: any) => {
+  const scored = candidates.map((candidate: FoodItem) => {
     const candidateVector = extractVector(candidate, columns);
 
     // Full profile similarity
@@ -257,7 +268,7 @@ export function findFoodSubstitutes({
 
     // If emphasized nutrients exist, compute a weighted bonus
     if (emphasizedColumns) {
-      const srcEmph = extractVector(sourceFood, emphasizedColumns);
+      const srcEmph = extractVector(sourceFood!, emphasizedColumns);
       const candEmph = extractVector(candidate, emphasizedColumns);
       const emphSimilarity = cosineSimilarity(srcEmph, candEmph);
       // 60% emphasis on targeted nutrients, 40% overall profile
@@ -268,7 +279,7 @@ export function findFoodSubstitutes({
   });
 
   // ── Sort and slice ───────────────────────────────────────────
-  scored.sort((a: any, b: any) => b.similarity - a.similarity);
+  scored.sort((a, b) => b.similarity - a.similarity);
   const topResults = scored.slice(0, limit);
 
   // ── Format output ────────────────────────────────────────────
@@ -288,7 +299,7 @@ export function findFoodSubstitutes({
     },
     count: topResults.length,
     candidatesEvaluated: candidates.length,
-    substitutes: topResults.map((r: any) => ({
+    substitutes: topResults.map((r) => ({
       name: r.food.food_name,
       kingdom: r.food.kingdom,
       foodType: r.food.food_type,
@@ -302,7 +313,7 @@ export function findFoodSubstitutes({
 
 // ─── Key Nutrient Formatter ────────────────────────────────────
 
-function formatKeyNutrients(food: any) {
+function formatKeyNutrients(food: FoodItem) {
   return {
     calories: food.kilocalories,
     protein_g: food.protein,
@@ -323,7 +334,7 @@ function formatKeyNutrients(food: any) {
  */
 export function getDietaryPreferences() {
   return {
-    preferences: Object.keys(DIETARY_FILTERS).map((k: any) => ({
+    preferences: Object.keys(DIETARY_FILTERS).map((k: string) => ({
       key: k,
       description: `Filter for ${k.replace(/_/g, " ")} diet`,
     })),

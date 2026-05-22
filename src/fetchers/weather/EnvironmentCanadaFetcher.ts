@@ -1,4 +1,5 @@
 import { stripHtml } from "@rodrigo-barraza/utilities-library";
+
 /**
  * Fetch weather warnings from Environment Canada for Metro Vancouver.
  * Scrapes the public warnings page since RSS/Atom feeds and GeoMet API
@@ -9,7 +10,18 @@ import { stripHtml } from "@rodrigo-barraza/utilities-library";
 const EC_WARNINGS_PAGE = "https://weather.gc.ca/warnings/report_e.html?bc74";
 // Backup: the city forecast page which includes warning banners
 const EC_CITY_PAGE = "https://weather.gc.ca/city/pages/bc-74_metric_e.html";
-export async function fetchEnvironmentCanadaWarnings() {
+
+export type WarningType = "warning" | "watch" | "advisory" | "statement" | "ended" | "info";
+
+export interface CanadaWarning {
+  title: string;
+  summary: string;
+  type: WarningType;
+  source: string;
+  url: string;
+}
+
+export async function fetchEnvironmentCanadaWarnings(): Promise<CanadaWarning[]> {
   // Try the main warnings page first
   let warnings = await tryWarningsPage();
   // Fallback to city page warning banners
@@ -18,7 +30,8 @@ export async function fetchEnvironmentCanadaWarnings() {
   }
   return warnings;
 }
-async function tryWarningsPage() {
+
+async function tryWarningsPage(): Promise<CanadaWarning[]> {
   try {
     const response = await fetch(EC_WARNINGS_PAGE, {
       headers: {
@@ -35,7 +48,8 @@ async function tryWarningsPage() {
     return [];
   }
 }
-async function tryCityPage() {
+
+async function tryCityPage(): Promise<CanadaWarning[]> {
   try {
     const response = await fetch(EC_CITY_PAGE, {
       headers: {
@@ -52,15 +66,16 @@ async function tryCityPage() {
     return [];
   }
 }
+
 /**
  * Parse warnings from the EC warnings report page.
  */
-function parseWarningsHtml(html: any) {
-  const warnings: any[] = [];
+function parseWarningsHtml(html: string): CanadaWarning[] {
+  const warnings: CanadaWarning[] = [];
   // Look for warning/watch/statement sections
   const sectionRegex =
     /<h2[^>]*class="[^"]*"[^>]*>([\s\S]*?)<\/h2>[\s\S]*?<p[^>]*>([\s\S]*?)<\/p>/gi;
-  let match: any;
+  let match: RegExpExecArray | null;
   while ((match = sectionRegex.exec(html)) !== null) {
     const title = stripHtml(match[1]);
     const content = stripHtml(match[2]);
@@ -80,7 +95,7 @@ function parseWarningsHtml(html: any) {
   while ((match = alertRegex.exec(html)) !== null) {
     const content = stripHtml(match[1]);
     if (content.length > 10 && isWarningContent(content)) {
-      const existing = warnings.find((w: any) => content.includes(w.title));
+      const existing = warnings.find((w) => content.includes(w.title));
       if (!existing) {
         warnings.push({
           title: content.substring(0, 100),
@@ -94,14 +109,15 @@ function parseWarningsHtml(html: any) {
   }
   return warnings;
 }
+
 /**
  * Parse warning banners from the EC city forecast page.
  */
-function parseCityWarnings(html: any) {
-  const warnings: any[] = [];
+function parseCityWarnings(html: string): CanadaWarning[] {
+  const warnings: CanadaWarning[] = [];
   const warningRegex =
     /class="[^"]*(?:warning|alert|watch|advisory)[^"]*"[^>]*>([\s\S]*?)<\/(?:div|section|a)>/gi;
-  let match: any;
+  let match: RegExpExecArray | null;
   while ((match = warningRegex.exec(html)) !== null) {
     const content = stripHtml(match[1]);
     if (content.length > 5 && isWarningContent(content)) {
@@ -116,7 +132,8 @@ function parseCityWarnings(html: any) {
   }
   return warnings;
 }
-function classifyWarning(text: any) {
+
+function classifyWarning(text: string): WarningType {
   const lower = text.toLowerCase();
   if (lower.includes("warning")) return "warning";
   if (lower.includes("watch")) return "watch";
@@ -125,7 +142,8 @@ function classifyWarning(text: any) {
   if (lower.includes("ended")) return "ended";
   return "info";
 }
-function isWarningTitle(text: any) {
+
+function isWarningTitle(text: string): boolean {
   const lower = text.toLowerCase();
   return (
     lower.includes("warning") ||
@@ -136,7 +154,8 @@ function isWarningTitle(text: any) {
     lower.includes("special weather")
   );
 }
-function isWarningContent(text: any) {
+
+function isWarningContent(text: string): boolean {
   const lower = text.toLowerCase();
   return (
     lower.includes("warning") ||

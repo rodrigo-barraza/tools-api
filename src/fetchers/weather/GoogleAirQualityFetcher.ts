@@ -1,4 +1,10 @@
 import CONFIG from "../../config.ts";
+import {
+  GoogleAirQuality,
+  GoogleAirQualityPollutant,
+  RawGoogleAirQualityResponse,
+  RawGoogleAqiIndex,
+} from "../../types/weather.ts";
 
 const API_URL = "https://airquality.googleapis.com/v1/currentConditions:lookup";
 
@@ -7,7 +13,7 @@ const API_URL = "https://airquality.googleapis.com/v1/currentConditions:lookup";
  * Returns AQI with health recommendations, dominant pollutant, and color codes.
  * Complements the existing Open-Meteo AQ data with richer insights.
  */
-export async function fetchGoogleAirQuality() {
+export async function fetchGoogleAirQuality(): Promise<GoogleAirQuality> {
   if (!CONFIG.GOOGLE_API_KEY) {
     throw new Error("GOOGLE_API_KEY is not configured");
   }
@@ -37,19 +43,19 @@ export async function fetchGoogleAirQuality() {
     );
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as RawGoogleAirQualityResponse;
   const indexes = data.indexes || [];
   const pollutants = data.pollutants || [];
 
   // Find the universal AQI (uaqi) and US AQI
-  const uaqi = indexes.find((i: any) => i.code === "uaqi");
-  const usAqi = indexes.find((i: any) => i.code === "usa_epa");
+  const uaqi = indexes.find((i) => i.code === "uaqi");
+  const usAqi = indexes.find((i) => i.code === "usa_epa");
 
   // Build pollutant map
-  const pollutantMap: Record<string, any> = {};
+  const pollutantMap: Record<string, GoogleAirQualityPollutant> = {};
   for (const p of pollutants) {
     pollutantMap[p.code] = {
-      displayName: p.displayName,
+      displayName: p.displayName ?? null,
       concentration: p.concentration?.value ?? null,
       unit: p.concentration?.units ?? null,
       sources: p.additionalInfo?.sources ?? null,
@@ -75,13 +81,13 @@ export async function fetchGoogleAirQuality() {
     usEpaColor: usAqi?.color ?? null,
 
     // All AQI indexes
-    indexes: indexes.map((index: any) => ({
-      code: index.code,
-      displayName: index.displayName,
-      aqi: index.aqi,
-      category: index.category,
-      dominantPollutant: index.dominantPollutant,
-      color: index.color,
+    indexes: indexes.map((index: RawGoogleAqiIndex) => ({
+      code: index.code || "",
+      displayName: index.displayName ?? null,
+      aqi: index.aqi ?? null,
+      category: index.category ?? null,
+      dominantPollutant: index.dominantPollutant ?? null,
+      color: index.color ?? null,
     })),
 
     // Pollutant details

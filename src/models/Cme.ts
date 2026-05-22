@@ -5,7 +5,7 @@ import logger from "../logger.ts";
 // ─── Types ──────────────────────────────────────────────────────
 export interface CmeDocument {
   activityId: string;
-  startTime?: Date;
+  startTime?: Date | null;
   isEarthDirected?: boolean;
   lastSeen?: Date;
   firstSeen?: Date;

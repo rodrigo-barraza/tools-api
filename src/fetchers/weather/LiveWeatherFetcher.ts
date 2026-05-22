@@ -36,11 +36,133 @@ const DAILY_VARIABLES = [
   "wind_speed_10m_max",
 ].join(",");
 
+export interface GeocodeResult {
+  name: string;
+  country: string;
+  countryCode: string;
+  admin1: string | null;
+  latitude: number;
+  longitude: number;
+  timezone: string;
+  elevation: number | null;
+  population: number | null;
+}
+
+export interface LiveWeatherOptions {
+  location?: string;
+  latitude?: number;
+  longitude?: number;
+  units?: "metric" | "imperial";
+}
+
+export interface LiveWeatherResult {
+  error?: string;
+  location?: {
+    name?: string;
+    admin1?: string | null;
+    country?: string;
+    countryCode?: string;
+    latitude: number;
+    longitude: number;
+    elevation?: number | null;
+    timezone: string;
+    population?: number | null;
+  };
+  units?: {
+    temperature: string;
+    wind: string;
+    precipitation: string;
+  };
+  current?: {
+    time: string;
+    weatherCode: number;
+    weatherDescription: string;
+    temperature: number;
+    apparentTemperature: number;
+    humidity: number;
+    cloudCover: number;
+    precipitation: number;
+    rain: number;
+    showers: number;
+    snowfall: number;
+    windSpeed: number;
+    windDirection: number;
+    windGust: number;
+    pressure: number;
+    isDay: boolean;
+    uvIndex: number;
+  };
+  forecast?: Array<{
+    date: string;
+    weatherCode: number;
+    weatherDescription: string;
+    temperatureMax: number;
+    temperatureMin: number;
+    sunrise: string;
+    sunset: string;
+    daylightDuration: number;
+    uvIndexMax: number;
+    precipitationSum: number;
+    precipitationProbabilityMax: number;
+    windSpeedMax: number;
+  }>;
+}
+
+interface RawGeocodeResult {
+  name: string;
+  country: string;
+  country_code: string;
+  admin1?: string;
+  latitude: number;
+  longitude: number;
+  timezone: string;
+  elevation?: number;
+  population?: number;
+}
+
+interface RawGeocodeResponse {
+  results?: RawGeocodeResult[];
+}
+
+interface RawForecastResponse {
+  timezone: string;
+  current: {
+    time: string;
+    weather_code: number;
+    temperature_2m: number;
+    apparent_temperature: number;
+    relative_humidity_2m: number;
+    cloud_cover: number;
+    precipitation: number;
+    rain: number;
+    showers: number;
+    snowfall: number;
+    wind_speed_10m: number;
+    wind_direction_10m: number;
+    wind_gusts_10m: number;
+    surface_pressure: number;
+    is_day: number;
+    uv_index: number;
+  };
+  daily: {
+    time: string[];
+    weather_code: number[];
+    temperature_2m_max: number[];
+    temperature_2m_min: number[];
+    sunrise: string[];
+    sunset: string[];
+    daylight_duration: number[];
+    uv_index_max: number[];
+    precipitation_sum: number[];
+    precipitation_probability_max: number[];
+    wind_speed_10m_max: number[];
+  };
+}
+
 /**
  * Geocode a location string to lat/lon using Open-Meteo's free geocoding API.
-
  */
-async function geocodeLocation(location: any) {
+async function geocodeLocation(location: string): Promise<GeocodeResult | null> {
   await rateLimiter.wait("OPEN_METEO");
 
   const url = `${GEOCODING_URL}?name=${encodeURIComponent(location)}&count=1&language=en&format=json`;
@@ -50,7 +172,7 @@ async function geocodeLocation(location: any) {
     throw new Error(`Geocoding API returned ${response.status}`);
   }
 
-  const data = await response.json();
+  const data = await response.json() as RawGeocodeResponse;
   if (!data.results || data.results.length === 0) {
     return null;
   }
@@ -76,8 +198,13 @@ async function geocodeLocation(location: any) {
  *   - A location string (geocoded via Open-Meteo)
  *   - Direct latitude/longitude coordinates
  */
-export async function fetchLiveWeather({ location, latitude, longitude, units = "metric" }: any) {
-  let geo: any = null;
+export async function fetchLiveWeather({
+  location,
+  latitude,
+  longitude,
+  units = "metric"
+}: LiveWeatherOptions): Promise<LiveWeatherResult> {
+  let geo: GeocodeResult | null = null;
 
   // Resolve coordinates
   if (location) {
@@ -114,12 +241,12 @@ export async function fetchLiveWeather({ location, latitude, longitude, units = 
     throw new Error(`Open-Meteo forecast API returned ${response.status}`);
   }
 
-  const data = await response.json();
+  const data = await response.json() as RawForecastResponse;
   const current = data.current;
   const daily = data.daily;
-  const weatherDescription = WMO_WEATHER_CODES[current.weather_code] || "Unknown";
+  const weatherDescription = WMO_WEATHER_CODES[current.weather_code as unknown as keyof typeof WMO_WEATHER_CODES] || "Unknown";
 
-  const result = {
+  const result: LiveWeatherResult = {
     // Location info
     location: geo
       ? {
@@ -167,10 +294,10 @@ export async function fetchLiveWeather({ location, latitude, longitude, units = 
 
     // 3-day forecast
     forecast: daily.time
-      ? daily.time.map((time: any, i: any) => ({
+      ? daily.time.map((time, i) => ({
           date: time,
           weatherCode: daily.weather_code[i],
-          weatherDescription: WMO_WEATHER_CODES[daily.weather_code[i]] || "Unknown",
+          weatherDescription: WMO_WEATHER_CODES[daily.weather_code[i] as unknown as keyof typeof WMO_WEATHER_CODES] || "Unknown",
           temperatureMax: daily.temperature_2m_max[i],
           temperatureMin: daily.temperature_2m_min[i],
           sunrise: daily.sunrise[i],

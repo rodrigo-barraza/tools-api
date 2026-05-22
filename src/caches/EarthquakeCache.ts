@@ -9,7 +9,7 @@ import { EARTHQUAKE_MAGNITUDE_SCALE } from "../constants.ts";
 
 interface EarthquakeEvent {
   usgsId: string;
-  magnitude: number;
+  magnitude: number | null;
   [key: string]: unknown;
 }
 
@@ -82,7 +82,7 @@ export function getEarthquakeSummary() {
   for (const event of cache.events) {
     // Classify into magnitude bracket
     const scale = EARTHQUAKE_MAGNITUDE_SCALE.find(
-      (s) => event.magnitude >= s.min && event.magnitude < s.max,
+      (s) => event.magnitude !== null && event.magnitude >= s.min && event.magnitude < s.max,
     );
     if (scale) {
       counts[scale.label]++;

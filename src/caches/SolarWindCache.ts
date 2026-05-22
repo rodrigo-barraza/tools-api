@@ -1,13 +1,29 @@
 import { createSimpleCache } from "./createSimpleCache.ts";
+import { SolarWindResponse } from "../types/weather.ts";
 
-const cache = createSimpleCache<any>();
+const cache = createSimpleCache<SolarWindResponse>();
 
 // Default data shape for solar wind
-cache.update({ plasma: [], magnetic: [], latest: {}, counts: {} });
+cache.update({
+  plasma: [],
+  magnetic: [],
+  latest: {
+    time: null,
+    speed: null,
+    density: null,
+    temperature: null,
+    bz: null,
+    bt: null,
+    bx: null,
+    by: null,
+  },
+  counts: { plasma: 0, magnetic: 0 },
+});
+
 // Reset lastFetch since this was just initialization, not a real fetch
 const initialState = { update: cache.update, setError: cache.setError };
 
-export function updateSolarWind(data: any) {
+export function updateSolarWind(data: SolarWindResponse) {
   initialState.update(data);
 }
 

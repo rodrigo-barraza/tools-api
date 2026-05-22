@@ -1,4 +1,5 @@
 import CONFIG from "../../config.ts";
+import { AirQuality } from "../../types/weather.ts";
 
 const { LATITUDE, LONGITUDE, TIMEZONE } = CONFIG;
 
@@ -11,7 +12,7 @@ const AIR_QUALITY_URL =
   `&timezone=${TIMEZONE}` +
   `&forecast_hours=24`;
 
-export async function fetchAirQuality() {
+export async function fetchAirQuality(): Promise<AirQuality> {
   const response = await fetch(AIR_QUALITY_URL);
 
   if (!response.ok) {
@@ -38,7 +39,7 @@ export async function fetchAirQuality() {
 
     // Hourly AQ forecast
     hourlyAirQuality: data.hourly
-      ? data.hourly.time.map((time: any, i: any) => ({
+      ? data.hourly.time.map((time: string, i: number) => ({
           time,
           usAqi: data.hourly.us_aqi[i],
           pm25: data.hourly.pm2_5[i],

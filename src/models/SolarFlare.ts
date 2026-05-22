@@ -5,7 +5,7 @@ import logger from "../logger.ts";
 // ─── Types ──────────────────────────────────────────────────────
 export interface SolarFlareDocument {
   flrId: string;
-  peakTime?: Date;
+  peakTime?: Date | null;
   classType?: string;
   lastSeen?: Date;
   firstSeen?: Date;

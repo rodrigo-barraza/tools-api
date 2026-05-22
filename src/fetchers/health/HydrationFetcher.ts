@@ -10,9 +10,12 @@
  *   - Sawka MN et al., Exercise and Fluid Replacement (2007)
  */
 
+export type HydrationActivityLevel = "sedentary" | "light" | "moderate" | "active" | "very_active";
+export type ExerciseIntensity = "low" | "moderate" | "high";
+
 // ─── Base Water Multipliers (mL per kg body weight) ────────────
 
-const BASE_MULTIPLIERS = {
+const BASE_MULTIPLIERS: Record<HydrationActivityLevel, number> = {
   sedentary: 30,   // ~30 mL/kg — WHO/EFSA baseline
   light: 33,       // light activity
   moderate: 35,    // moderate activity
@@ -22,7 +25,7 @@ const BASE_MULTIPLIERS = {
 
 // ─── Climate Temperature Adjustments ───────────────────────────
 
-function climateAdjustment(tempCelsius: any) {
+function climateAdjustment(tempCelsius: number | undefined): number {
   if (tempCelsius === null || tempCelsius === undefined) return 0;
   if (tempCelsius <= 10) return -200;   // Cold — less sweat loss
   if (tempCelsius <= 20) return 0;      // Temperate — baseline
@@ -34,7 +37,7 @@ function climateAdjustment(tempCelsius: any) {
 // ─── Altitude Adjustment ───────────────────────────────────────
 // Above 2500m, increased respiratory water loss + diuresis
 
-function altitudeAdjustment(altitudeM: any) {
+function altitudeAdjustment(altitudeM: number | undefined): number {
   if (!altitudeM || altitudeM < 2500) return 0;
   if (altitudeM < 3500) return 500;
   return 1000;
@@ -43,21 +46,33 @@ function altitudeAdjustment(altitudeM: any) {
 // ─── Exercise Fluid Replacement ────────────────────────────────
 // ACSM: 400-800 mL/hour of exercise depending on intensity and sweat rate
 
-function exerciseFluid(durationMinutes: any, intensity: any) {
+function exerciseFluid(durationMinutes: number | undefined, intensity: string | undefined): number {
   if (!durationMinutes || durationMinutes <= 0) return 0;
 
-  const rates = {
+  const rates: Record<ExerciseIntensity, number> = {
     low: 400,      // mL per hour
     moderate: 600,
     high: 800,
   };
 
-  // @ts-expect-error - TS7053: implicit any index
-  const rate = rates[intensity || "moderate"] || 600;
+  const normIntensity = (intensity || "moderate").toLowerCase() as ExerciseIntensity;
+  const rate = rates[normIntensity] || 600;
   return (durationMinutes / 60) * rate;
 }
 
 // ─── Public API ────────────────────────────────────────────────
+
+export interface CalculateHydrationNeedsOptions {
+  weightKg: number;
+  activityLevel?: string;
+  climateTemp?: number;
+  exerciseMinutes?: number;
+  exerciseIntensity?: string;
+  altitudeM?: number;
+  pregnant?: boolean;
+  breastfeeding?: boolean;
+  caffeineIntakeMg?: number;
+}
 
 /**
  * Calculate daily water intake recommendation.
@@ -72,7 +87,7 @@ export function calculateHydrationNeeds({
   pregnant = false,
   breastfeeding = false,
   caffeineIntakeMg,
-}: any) {
+}: CalculateHydrationNeedsOptions) {
   // ── Validate ─────────────────────────────────────────────────
   if (!weightKg || weightKg <= 0) {
     return { error: "'weightKg' must be a positive number" };
@@ -80,9 +95,8 @@ export function calculateHydrationNeeds({
 
   const normalizedActivity = (activityLevel || "moderate")
     .toLowerCase()
-    .replace(/[\s-]+/g, "_");
+    .replace(/[\s-]+/g, "_") as HydrationActivityLevel;
 
-  // @ts-expect-error - TS7053: implicit any index
   const multiplier = BASE_MULTIPLIERS[normalizedActivity];
   if (!multiplier) {
     return {
@@ -106,14 +120,14 @@ export function calculateHydrationNeeds({
 
   // ── Timing distribution ──────────────────────────────────────
   const waking = totalIntake - exerciseAdj;
-  const timing: Record<string, any> = {
+  const timing: Record<string, number> = {
     morning: Math.round(waking * 0.25),
     midday: Math.round(waking * 0.30),
     afternoon: Math.round(waking * 0.25),
     evening: Math.round(waking * 0.20),
   };
 
-  if (exerciseMinutes > 0) {
+  if (exerciseMinutes && exerciseMinutes > 0) {
     // ACSM: 500 mL 2h pre-exercise, rest during/after
     timing.preExercise = Math.min(500, Math.round(exerciseAdj * 0.3));
     timing.duringExercise = Math.round(exerciseAdj * 0.5);

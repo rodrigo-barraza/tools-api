@@ -1,6 +1,7 @@
 import { createSimpleCache } from "./createSimpleCache.ts";
+import { Launch } from "../types/weather.ts";
 
-const cache = createSimpleCache<any>({ type: "array", itemsKey: "launches" });
+const cache = createSimpleCache<Launch[]>({ type: "array", itemsKey: "launches" });
 
 export const updateLaunches = cache.update;
 export const setLaunchError = cache.setError;
@@ -11,7 +12,7 @@ export const getLaunchHealth = cache.getHealth;
 export function getNextLaunch() {
   const launches = cache.getData();
   const now = new Date();
-  const next = launches.find((l: any) => new Date(l.net) > now) || launches[0];
+  const next = launches.find((l) => new Date(l.net) > now) || launches[0];
   return {
     next: next || null,
     lastFetch: cache.getLastFetch(),
@@ -22,9 +23,9 @@ export function getNextLaunch() {
 export function getLaunchSummary() {
   const launches = cache.getData();
   const now = new Date();
-  const upcoming = launches.filter((l: any) => new Date(l.net) > now);
+  const upcoming = launches.filter((l) => new Date(l.net) > now);
   const providers = [
-    ...new Set(launches.map((l: any) => l.provider).filter(Boolean)),
+    ...new Set(launches.map((l) => l.provider).filter((p): p is string => p !== null)),
   ];
 
   return {

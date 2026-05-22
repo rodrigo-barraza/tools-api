@@ -1,11 +1,5 @@
 import { upsertNeos } from "../models/Neo.ts";
-
-interface NearEarthObject {
-  neoId: string;
-  isPotentiallyHazardous?: boolean;
-  estimatedDiameterMaxKm?: number;
-  [key: string]: unknown;
-}
+import { NearEarthObject } from "../fetchers/weather/NeoFetcher.ts";
 
 interface CacheError {
   message: string;

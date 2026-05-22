@@ -189,7 +189,7 @@ router.get("/live", asyncHandler(async (req: Request, res: Response) => {
       location,
       latitude: latitude != null ? parseFloat(latitude) : undefined,
       longitude: longitude != null ? parseFloat(longitude) : undefined,
-      units: units || "metric",
+      units: (units === "imperial" || units === "metric") ? units : undefined,
     });
     if (result && typeof result === "object" && "error" in result) {
       return res.status(404).json(result);

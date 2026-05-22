@@ -1,4 +1,5 @@
 import { JIKAN_BASE_URL } from "../../constants.ts";
+import { JikanAnime, RawJikanAnime } from "../../types/knowledge.ts";
 
 /**
  * Jikan API Fetcher (MyAnimeList unofficial API v4)
@@ -7,7 +8,7 @@ import { JIKAN_BASE_URL } from "../../constants.ts";
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
-function normalizeAnime(anime: any) {
+function normalizeAnime(anime: RawJikanAnime | null | undefined): JikanAnime | null {
   if (!anime) return null;
   return {
     malId: anime.mal_id || null,
@@ -34,16 +35,16 @@ function normalizeAnime(anime: any) {
     popularity: anime.popularity || null,
     season: anime.season || null,
     year: anime.year || null,
-    studios: (anime.studios || []).map((s: any) => s.name),
-    genres: (anime.genres || []).map((g: any) => g.name),
-    themes: (anime.themes || []).map((t: any) => t.name),
+    studios: (anime.studios || []).map((s) => s.name),
+    genres: (anime.genres || []).map((g) => g.name),
+    themes: (anime.themes || []).map((t) => t.name),
   };
 }
 
 /**
  * Handle Jikan API rate limiting via delays and standard fetch wrapper.
  */
-async function fetchJikan(endpoint: any) {
+async function fetchJikan<T>(endpoint: string): Promise<T | null> {
   const url = `${JIKAN_BASE_URL}${endpoint}`;
   const response = await fetch(url);
 
@@ -55,82 +56,74 @@ async function fetchJikan(endpoint: any) {
   }
 
   const data = await response.json();
-  return data;
+  return data as T;
 }
 
 // ─── Fetchers ──────────────────────────────────────────────────────
 
 /**
  * Search anime by title
-
-
  */
-export async function searchAnime(q: any, limit: any = 10) {
+export async function searchAnime(q: string, limit: number = 10) {
   const endpoint = `/anime?q=${encodeURIComponent(q)}&limit=${limit}`;
-  const response = await fetchJikan(endpoint);
+  const response = await fetchJikan<{ data?: RawJikanAnime[] }>(endpoint);
 
   if (!response || !response.data) {
-    return { found: false, results: [] };
+    return { found: false, results: [] as JikanAnime[] };
   }
 
   return {
     found: true,
     count: response.data.length,
-    results: response.data.map(normalizeAnime),
+    results: response.data.map(normalizeAnime).filter(Boolean) as JikanAnime[],
   };
 }
 
 /**
  * Get top ranking anime
-
-
  */
-export async function getTopAnime(limit: any = 10) {
+export async function getTopAnime(limit: number = 10) {
   const endpoint = `/top/anime?limit=${limit}`;
-  const response = await fetchJikan(endpoint);
+  const response = await fetchJikan<{ data?: RawJikanAnime[] }>(endpoint);
 
   if (!response || !response.data) {
-    return { found: false, results: [] };
+    return { found: false, results: [] as JikanAnime[] };
   }
 
   return {
     found: true,
     count: response.data.length,
-    results: response.data.map(normalizeAnime),
+    results: response.data.map(normalizeAnime).filter(Boolean) as JikanAnime[],
   };
 }
 
 /**
  * Get current season anime
-
-
  */
-export async function getCurrentSeasonAnime(limit: any = 10) {
+export async function getCurrentSeasonAnime(limit: number = 10) {
   const endpoint = `/seasons/now?limit=${limit}`;
-  const response = await fetchJikan(endpoint);
+  const response = await fetchJikan<{ data?: RawJikanAnime[] }>(endpoint);
 
   if (!response || !response.data) {
-    return { found: false, results: [] };
+    return { found: false, results: [] as JikanAnime[] };
   }
 
   return {
     found: true,
     count: response.data.length,
-    results: response.data.map(normalizeAnime),
+    results: response.data.map(normalizeAnime).filter(Boolean) as JikanAnime[],
   };
 }
 
 /**
  * Get specific anime details by ID
-
-
  */
-export async function getAnimeDetails(id: any) {
-  const endpoint = `/anime/${encodeURIComponent(id)}/full`;
-  const response = await fetchJikan(endpoint);
+export async function getAnimeDetails(id: string | number) {
+  const endpoint = `/anime/${encodeURIComponent(String(id))}/full`;
+  const response = await fetchJikan<{ data?: RawJikanAnime }>(endpoint);
 
   if (!response || !response.data) {
-    return { found: false, anime: null };
+    return { found: false, anime: null as JikanAnime | null };
   }
 
   return {

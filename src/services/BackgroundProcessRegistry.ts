@@ -17,12 +17,12 @@ import {
 // Types
 // ────────────────────────────────────────────────────────────
 
-interface BackgroundProcessMeta {
+export interface BackgroundProcessMeta {
   command: string;
   cwd: string;
 }
 
-interface BackgroundProcessEntry {
+export interface BackgroundProcessEntry {
   child: ChildProcess;
   command: string;
   cwd: string;
@@ -37,7 +37,7 @@ interface BackgroundProcessEntry {
   exitReason: string | null;
 }
 
-interface ProcessListEntry {
+export interface ProcessListEntry {
   pid: number;
   command: string;
   cwd: string;
