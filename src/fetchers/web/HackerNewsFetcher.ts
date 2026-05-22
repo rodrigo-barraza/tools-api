@@ -1,3 +1,5 @@
+import { errorMessage } from "../../utilities.ts";
+
 // ─── Post + Comment Thread ──────────────────────────────────
 
 const HN_API = "https://hacker-news.firebaseio.com/v0";
@@ -81,7 +83,7 @@ async function fetchComments(ids: any, remaining: any, depth: any = 0) {
 
 
  */
-export async function getHackerNewsThread(input: any, options: Record<string, any> = {}) {
+export async function getHackerNewsThread(input: any, options: Record<string, unknown> = {}) {
   const itemId = parseHnInput(input);
   if (!itemId) {
     return { error: `Invalid Hacker News URL or ID: "${input}"` };
@@ -100,7 +102,7 @@ export async function getHackerNewsThread(input: any, options: Record<string, an
       return { error: `Item not found: ${itemId}` };
     }
 
-    const result: Record<string, any> = {
+    const result: Record<string, unknown> = {
       id: item.id,
       type: item.type,
       title: item.title || null,
@@ -122,6 +124,6 @@ export async function getHackerNewsThread(input: any, options: Record<string, an
 
     return result;
   } catch (error: unknown) {
-    return { error: `HN fetch failed: ${(error as Error).message}` };
+    return { error: `HN fetch failed: ${errorMessage(error)}` };
   }
 }

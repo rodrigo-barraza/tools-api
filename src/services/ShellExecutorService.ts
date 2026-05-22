@@ -132,8 +132,8 @@ function validateCommand(command: any) {
 
  * }>}
  */
-export async function executeShell(command: any, { stdin = "", timeout = DEFAULT_TIMEOUT_MS }: Record<string, any> = {}) {
-  const clampedTimeout = Math.min(Math.max(timeout, 500), MAX_TIMEOUT_MS);
+export async function executeShell(command: any, { stdin = "", timeout = DEFAULT_TIMEOUT_MS }: Record<string, unknown> = {}) {
+  const clampedTimeout = Math.min(Math.max(Number(timeout), 500), MAX_TIMEOUT_MS);
 
   // Validate command
   const validation = validateCommand(command);
@@ -150,7 +150,7 @@ export async function executeShell(command: any, { stdin = "", timeout = DEFAULT
   }
 
   // Validate stdin size
-  if (stdin && Buffer.byteLength(stdin) > MAX_INPUT_BYTES) {
+  if (stdin && Buffer.byteLength(stdin as string) > MAX_INPUT_BYTES) {
     return {
       success: false,
       stdout: "",
@@ -263,8 +263,8 @@ export async function executeShell(command: any, { stdin = "", timeout = DEFAULT
  * Same security model as executeShell, but invokes `onChunk` for each
  * stdout/stderr data event as it arrives.
  */
-export async function executeShellStreaming(command: any, { stdin = "", timeout = DEFAULT_TIMEOUT_MS, onChunk }: Record<string, any> = {}) {
-  const clampedTimeout = Math.min(Math.max(timeout, 500), MAX_TIMEOUT_MS);
+export async function executeShellStreaming(command: any, { stdin = "", timeout = DEFAULT_TIMEOUT_MS, onChunk }: Record<string, unknown> = {}) {
+  const clampedTimeout = Math.min(Math.max(Number(timeout), 500), MAX_TIMEOUT_MS);
 
   const validation = validateCommand(command);
   if (!validation.valid) {
@@ -274,7 +274,7 @@ export async function executeShellStreaming(command: any, { stdin = "", timeout 
     };
   }
 
-  if (stdin && Buffer.byteLength(stdin) > MAX_INPUT_BYTES) {
+  if (stdin && Buffer.byteLength(stdin as string) > MAX_INPUT_BYTES) {
     return {
       success: false, stdout: "", stderr: "", exitCode: null,
       executionTimeMs: 0, timedOut: false,
@@ -306,7 +306,7 @@ export async function executeShellStreaming(command: any, { stdin = "", timeout 
       if (stdoutLen < MAX_OUTPUT_BYTES) {
         stdoutChunks.push(chunk);
         stdoutLen += chunk.length;
-        onChunk?.("stdout", chunk.toString("utf-8"));
+        (onChunk as Function)?.("stdout", chunk.toString("utf-8"));
       }
     });
 
@@ -314,7 +314,7 @@ export async function executeShellStreaming(command: any, { stdin = "", timeout 
       if (stderrLen < MAX_OUTPUT_BYTES) {
         stderrChunks.push(chunk);
         stderrLen += chunk.length;
-        onChunk?.("stderr", chunk.toString("utf-8"));
+        (onChunk as Function)?.("stderr", chunk.toString("utf-8"));
       }
     });
 

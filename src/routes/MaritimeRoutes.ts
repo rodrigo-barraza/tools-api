@@ -21,7 +21,8 @@ router.get("/vessels", (_req: Request, res: Response) => {
 // ─── Vessel by MMSI ────────────────────────────────────────────────
 
 router.get("/vessels/:mmsi", (req: Request, res: Response) => {
-  const vessel = getVesselByMmsi(req.params.mmsi as string);
+  const mmsi = parseInt(req.params.mmsi as string, 10);
+  const vessel = getVesselByMmsi(mmsi);
   if (!vessel) {
     return res
       .status(404)

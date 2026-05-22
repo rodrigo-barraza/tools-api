@@ -7,6 +7,7 @@ import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { Request, Response, Router } from "express";
 import * as qbt from "../services/QBittorrentService.ts";
 import { TORRENT_SEARCH_TIMEOUT_MS, TORRENT_MAX_TIMEOUT_MS } from "../constants.ts";
+import { errorMessage } from "../utilities.ts";
 
 const router = Router();
 
@@ -31,7 +32,7 @@ router.get("/search", asyncHandler(async (req: Request, res: Response) => {
     });
     res.json(results);
   } catch (error: unknown) {
-    res.status(500).json({ error: `Search failed: ${(error as Error).message}` });
+    res.status(500).json({ error: `Search failed: ${errorMessage(error)}` });
   }
 }));
 
@@ -55,7 +56,7 @@ router.post("/download", asyncHandler(async (req: Request, res: Response) => {
     });
     res.json({ ...result, url: torrentUrl });
   } catch (error: unknown) {
-    res.status(500).json({ error: `Download failed: ${(error as Error).message}` });
+    res.status(500).json({ error: `Download failed: ${errorMessage(error)}` });
   }
 }));
 
@@ -75,7 +76,7 @@ router.get("/status", asyncHandler(async (req: Request, res: Response) => {
     });
     res.json({ count: torrents.length, torrents });
   } catch (error: unknown) {
-    res.status(500).json({ error: `Status check failed: ${(error as Error).message}` });
+    res.status(500).json({ error: `Status check failed: ${errorMessage(error)}` });
   }
 }));
 
@@ -87,7 +88,7 @@ router.post("/pause", asyncHandler(async (req: Request, res: Response) => {
     const result = await qbt.pauseTorrents(hashes || "all");
     res.json(result);
   } catch (error: unknown) {
-    res.status(500).json({ error: `Pause failed: ${(error as Error).message}` });
+    res.status(500).json({ error: `Pause failed: ${errorMessage(error)}` });
   }
 }));
 
@@ -97,7 +98,7 @@ router.post("/resume", asyncHandler(async (req: Request, res: Response) => {
     const result = await qbt.resumeTorrents(hashes || "all");
     res.json(result);
   } catch (error: unknown) {
-    res.status(500).json({ error: `Resume failed: ${(error as Error).message}` });
+    res.status(500).json({ error: `Resume failed: ${errorMessage(error)}` });
   }
 }));
 
@@ -110,7 +111,7 @@ router.post("/delete", asyncHandler(async (req: Request, res: Response) => {
     const result = await qbt.deleteTorrents(hashes, deleteFiles === true);
     res.json(result);
   } catch (error: unknown) {
-    res.status(500).json({ error: `Delete failed: ${(error as Error).message}` });
+    res.status(500).json({ error: `Delete failed: ${errorMessage(error)}` });
   }
 }));
 
@@ -121,7 +122,7 @@ router.get("/plugins", asyncHandler(async (req: Request, res: Response) => {
     const plugins = await qbt.getPlugins();
     res.json({ count: plugins.length, plugins });
   } catch (error: unknown) {
-    res.status(500).json({ error: `Plugin list failed: ${(error as Error).message}` });
+    res.status(500).json({ error: `Plugin list failed: ${errorMessage(error)}` });
   }
 }));
 
@@ -135,7 +136,7 @@ router.post("/plugins/install", asyncHandler(async (req: Request, res: Response)
     const result = await qbt.installPlugin(sources);
     res.json(result);
   } catch (error: unknown) {
-    res.status(500).json({ error: `Plugin install failed: ${(error as Error).message}` });
+    res.status(500).json({ error: `Plugin install failed: ${errorMessage(error)}` });
   }
 }));
 
@@ -148,7 +149,7 @@ router.post("/plugins/enable", asyncHandler(async (req: Request, res: Response) 
     const result = await qbt.enablePlugin(names, enable !== false);
     res.json(result);
   } catch (error: unknown) {
-    res.status(500).json({ error: `Plugin enable failed: ${(error as Error).message}` });
+    res.status(500).json({ error: `Plugin enable failed: ${errorMessage(error)}` });
   }
 }));
 
@@ -157,7 +158,7 @@ router.post("/plugins/update", asyncHandler(async (_req: Request, res: Response)
     const result = await qbt.updatePlugins();
     res.json(result);
   } catch (error: unknown) {
-    res.status(500).json({ error: `Plugin update failed: ${(error as Error).message}` });
+    res.status(500).json({ error: `Plugin update failed: ${errorMessage(error)}` });
   }
 }));
 
@@ -168,7 +169,7 @@ router.get("/transfer", asyncHandler(async (_req: Request, res: Response) => {
     const info = await qbt.getTransferInfo();
     res.json(info);
   } catch (error: unknown) {
-    res.status(500).json({ error: `Transfer info failed: ${(error as Error).message}` });
+    res.status(500).json({ error: `Transfer info failed: ${errorMessage(error)}` });
   }
 }));
 
@@ -228,7 +229,7 @@ router.get("/", asyncHandler(async (req: Request, res: Response) => {
         });
     }
   } catch (error: unknown) {
-    res.status(500).json({ error: `${action} failed: ${(error as Error).message}` });
+    res.status(500).json({ error: `${action} failed: ${errorMessage(error)}` });
   }
 }));
 

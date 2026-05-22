@@ -40,8 +40,7 @@ async function nextTaskId(project: any) {
     { $inc: { seq: 1 } } as any,
     { upsert: true, returnDocument: "after" },
   );
-  // @ts-expect-error - suppress remaining error
-  return result.seq;
+    return (result as any)?.seq || (result as any)?.value?.seq;
 }
 
 // ────────────────────────────────────────────────────────────
@@ -109,25 +108,25 @@ export async function agenticTaskCreate(project: any, data: any) {
 /**
  * List tasks for a project, optionally filtered by status.
  */
-export async function agenticTaskList(project: any, { status, limit = 50 }: Record<string, any> = {}) {
+export async function agenticTaskList(project: any, { status, limit = 50 }: Record<string, unknown> = {}) {
   if (!project || typeof project !== "string") {
     return { error: "'project' is required (string)" };
   }
 
-  if (status && !VALID_STATUSES.includes(status)) {
-    return { error: `Invalid status filter '${status}'. Must be one of: ${VALID_STATUSES.join(", ")}` };
+  if (status && !VALID_STATUSES.includes(status as string)) {
+    return { error: `Invalid status filter '${status as string}'. Must be one of: ${VALID_STATUSES.join(", ")}` };
   }
 
   const db = getDB();
   const collection = db.collection(COLLECTION);
 
-  const filter: Record<string, any> = { project };
+  const filter: Record<string, unknown> = { project };
   if (status) filter.status = status;
 
   const tasks = await collection
     .find(filter)
     .sort({ taskId: 1 })
-    .limit(Math.min(limit, MAX_TASKS_PER_PROJECT))
+    .limit(Math.min(Number(limit), MAX_TASKS_PER_PROJECT))
     .toArray();
 
   // Summary counts
@@ -208,7 +207,7 @@ export async function agenticTaskUpdate(project: any, taskId: any, updates: any)
     };
   }
 
-  const $set: Record<string, any> = { updatedAt: new Date() };
+  const $set: Record<string, unknown> = { updatedAt: new Date() };
 
   if (updates.status) $set.status = updates.status;
   if (updates.subject) $set.subject = updates.subject;

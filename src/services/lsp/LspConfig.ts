@@ -7,7 +7,7 @@ export interface LspServerConfig {
   maxRestarts?: number;
   startupTimeout?: number;
   env?: Record<string, string>;
-  initializationOptions?: Record<string, any>;
+  initializationOptions?: Record<string, unknown>;
   workspaceFolder?: string;
 }
 

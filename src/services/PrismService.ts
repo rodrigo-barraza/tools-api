@@ -8,6 +8,7 @@ import {
   PRISM_TTS_TIMEOUT_MS,
   PRISM_STT_TIMEOUT_MS,
 } from "../constants.ts";
+import { errorMessage } from "../utilities.ts";
 
 const PRISM_SERVICE_URL = CONFIG.PRISM_SERVICE_URL;
 
@@ -39,7 +40,7 @@ export async function chat(params: any) {
 
     return await response.json();
   } catch (error: unknown) {
-    logger.error(`[PrismService] chat failed: ${(error as Error).message}`);
+    logger.error(`[PrismService] chat failed: ${errorMessage(error)}`);
     throw error;
   }
 }
@@ -97,7 +98,7 @@ export async function textToSpeech(params: any) {
 
     return { audioBase64, contentType };
   } catch (error: unknown) {
-    logger.error(`[PrismService] textToSpeech failed: ${(error as Error).message}`);
+    logger.error(`[PrismService] textToSpeech failed: ${errorMessage(error)}`);
     throw error;
   }
 }
@@ -133,7 +134,7 @@ export async function speechToText(params: any) {
 
     return await response.json();
   } catch (error: unknown) {
-    logger.error(`[PrismService] speechToText failed: ${(error as Error).message}`);
+    logger.error(`[PrismService] speechToText failed: ${errorMessage(error)}`);
     throw error;
   }
 }

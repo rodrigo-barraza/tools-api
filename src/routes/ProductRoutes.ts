@@ -23,6 +23,8 @@ import {
   getAvailabilityHealth,
 } from "../caches/BestBuyCAAvailabilityCache.ts";
 import { fetchBestBuyCAAvailability } from "../fetchers/product/BestBuyCAAvailabilityFetcher.ts";
+import { errorMessage } from "../utilities.ts";
+
 const router = Router();
 // ─── Existing Product Routes ───────────────────────────────────────
 router.get("/products", (_req: Request, res: Response) => {
@@ -109,7 +111,7 @@ router.get("/products/availability/check", asyncHandler(async (req: Request, res
       errors: errors.length ? errors : undefined,
     });
   } catch (error: unknown) {
-    logger.error(`Product availability check failed: ${(error as Error).message}`);
+    logger.error(`Product availability check failed: ${errorMessage(error)}`);
     res.status(502).json({ error: "Product search failed" });
   }
 }));

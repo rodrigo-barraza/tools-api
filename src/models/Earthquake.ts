@@ -2,6 +2,7 @@ import type { Collection } from "mongodb";
 import { hours as hoursToMs } from "@rodrigo-barraza/utilities-library";
 import { getDB } from "../db.ts";
 import logger from "../logger.ts";
+import { errorMessage } from "../utilities.ts";
 
 // ─── Types ──────────────────────────────────────────────────────
 export interface EarthquakeDocument {
@@ -57,7 +58,7 @@ export async function upsertEarthquakes(events: EarthquakeDocument[]) {
       modified: result.modifiedCount,
     };
   } catch (error: unknown) {
-    logger.error("Failed to upsert earthquakes:", (error as Error).message);
+    logger.error("Failed to upsert earthquakes:", errorMessage(error));
     return { upserted: 0, modified: 0 };
   }
 }

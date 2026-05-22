@@ -1,6 +1,7 @@
 // ─── Download and Extract Text from PDF URLs ────────────────
 
 import { PDFParse } from "pdf-parse";
+import { errorMessage } from "../../utilities.ts";
 
 const MAX_PDF_BYTES = 10_485_760; // 10 MB
 const MAX_TEXT_CHARS = 100_000;
@@ -8,12 +9,17 @@ const FETCH_TIMEOUT_MS = 30_000;
 
 // ─── Public API ───────────────────────────────────────────────────
 
+export interface PdfOptions {
+  maxPages?: number | string;
+  maxChars?: number | string;
+}
+
 /**
  * Download a PDF from a URL and extract its text content.
 
 
  */
-export async function readPdfUrl(url: any, options: Record<string, any> = {}) {
+export async function readPdfUrl(url: string, options: PdfOptions = {}) {
   if (!url || typeof url !== "string") {
     return { error: "URL is required" };
   }
@@ -63,18 +69,21 @@ export async function readPdfUrl(url: any, options: Record<string, any> = {}) {
     const info = await parser.getInfo();
 
     // Build text extraction params
-    const textParams: Record<string, any> = {};
+    const textParams: Record<string, unknown> = {};
     if (options.maxPages) {
-      textParams.last = parseInt(options.maxPages, 10);
+      textParams.last = parseInt(String(options.maxPages), 10);
     }
 
     const textResult = await parser.getText(textParams);
     let text = textResult.text || "";
     const pageCount = textResult.total || info.numPages || null;
     const charCount = text.length;
-    const truncated = charCount > MAX_TEXT_CHARS;
+
+    // Apply max characters limit if requested
+    const charsLimit = options.maxChars ? parseInt(String(options.maxChars), 10) : MAX_TEXT_CHARS;
+    const truncated = charCount > charsLimit;
     if (truncated) {
-      text = text.slice(0, MAX_TEXT_CHARS) + "\n\n... [truncated]";
+      text = text.slice(0, charsLimit) + "\n\n... [truncated]";
     }
 
     return {
@@ -96,7 +105,7 @@ export async function readPdfUrl(url: any, options: Record<string, any> = {}) {
     if ((error as any).name === "AbortError") {
       return { error: `PDF download timed out after ${FETCH_TIMEOUT_MS / 1000}s`, url };
     }
-    return { error: `PDF extraction failed: ${(error as Error).message}`, url };
+    return { error: `PDF extraction failed: ${errorMessage(error)}`, url };
   } finally {
     if (parser) {
       await parser.destroy().catch(() => {});

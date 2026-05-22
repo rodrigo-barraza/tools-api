@@ -7,8 +7,7 @@ import {
 import { parsePrice } from "@rodrigo-barraza/utilities-library";
 import {
   randomUserAgent,
-  computeTrendingScore,
-} from "../../utilities.ts";
+  computeTrendingScore, errorMessage } from "../../utilities.ts";
 import rateLimiter from "../../services/RateLimiterService.ts";
 import logger from "../../logger.ts";
 
@@ -135,7 +134,7 @@ export async function fetchAllAmazonBestSellers() {
       allProducts.push(...products);
       logger.info(`[Amazon] ✅ ${cat.name}: ${products.length} products`);
     } catch (error: unknown) {
-      logger.error(`[Amazon] ❌ ${cat.name}: ${(error as Error).message}`);
+      logger.error(`[Amazon] ❌ ${cat.name}: ${errorMessage(error)}`);
     }
 
     // Rate limit between category requests

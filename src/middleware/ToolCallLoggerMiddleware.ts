@@ -5,6 +5,7 @@ import type { Request, Response, NextFunction } from "express";
 import logger from "../logger.ts";
 import { getDB } from "../db.ts";
 import { getToolSchemas } from "../services/ToolSchemaService.ts";
+import { errorMessage } from "../utilities.ts";
 
 const COLLECTION = "tool_calls";
 
@@ -542,6 +543,6 @@ export async function setupToolCallsCollection() {
 
     logger.info(`📊 tool_calls collection indexes ensured`);
   } catch (error: unknown) {
-    logger.error(`Failed to setup tool_calls indexes: ${(error as Error).message}`);
+    logger.error(`Failed to setup tool_calls indexes: ${errorMessage(error)}`);
   }
 }

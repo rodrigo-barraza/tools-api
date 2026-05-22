@@ -79,6 +79,8 @@ import {
   getSnapshot as getWaybackSnapshot,
   getSnapshotHistory,
 } from "../fetchers/web/WaybackFetcher.ts";
+import { errorMessage } from "../utilities.ts";
+
 const router = Router();
 // ─── Dictionary ────────────────────────────────────────────────────
 router.get("/dictionary/:word", asyncHandler(
@@ -517,7 +519,7 @@ router.get("/stackoverflow/question", asyncHandler(async (req: Request, res: Res
   const result = await getStackOverflowQuestion(url, {
     answerLimit: answerLimit ? parseIntParam(answerLimit, 5) : undefined,
   });
-  if (result.error) {
+  if (result && typeof result === "object" && "error" in result) {
     return res.status(400).json(result);
   }
   res.json(result);
@@ -529,7 +531,7 @@ router.get("/web/content", asyncHandler(async (req: Request, res: Response) => {
     return res.status(400).json({ error: "Query parameter 'url' is required" });
   }
   const result = await getWebContent(url, {
-    commentLimit, answerLimit, transcript, lang, readme, languages, maxChars,
+    commentLimit, answerLimit, transcript, lang, readme, languages, maxChars: maxChars ? parseInt(maxChars, 10) : undefined,
   });
   if (result.error) {
     return res.status(400).json(result);
@@ -582,7 +584,7 @@ router.get("/wayback/snapshot", asyncHandler(async (req: Request, res: Response)
   try {
     res.json(await getWaybackSnapshot(url, timestamp));
   } catch (error: unknown) {
-    res.status(500).json({ error: `Wayback lookup failed: ${(error as Error).message}` });
+    res.status(500).json({ error: `Wayback lookup failed: ${errorMessage(error)}` });
   }
 }));
 router.get("/wayback/history", asyncHandler(async (req: Request, res: Response) => {
@@ -595,7 +597,7 @@ router.get("/wayback/history", asyncHandler(async (req: Request, res: Response) 
       to,
     }));
   } catch (error: unknown) {
-    res.status(500).json({ error: `Wayback history failed: ${(error as Error).message}` });
+    res.status(500).json({ error: `Wayback history failed: ${errorMessage(error)}` });
   }
 }));
 // ─── Health ────────────────────────────────────────────────────────

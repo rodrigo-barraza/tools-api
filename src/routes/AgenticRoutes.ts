@@ -4,7 +4,7 @@ import { parseIntParam } from "@rodrigo-barraza/utilities-library";
 import { Request, Response, Router } from "express";
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
-import { agenticHandler } from "../utilities.ts";
+import { agenticHandler, errorMessage } from "../utilities.ts";
 import { createReadStream } from "node:fs";
 import { stat as fsStat } from "node:fs/promises";
 import { extname } from "node:path";
@@ -164,8 +164,8 @@ router.get("/file/raw", asyncHandler(async (req: Request, res: Response) => {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       return res.status(404).json({ error: `File not found: ${resolved}` });
     }
-    logger.error(`[file/raw] Stream failed: ${(error as Error).message}`);
-    res.status(500).json({ error: `Failed to stream file: ${(error as Error).message}` });
+    logger.error(`[file/raw] Stream failed: ${errorMessage(error)}`);
+    res.status(500).json({ error: `Failed to stream file: ${errorMessage(error)}` });
   }
 }));
 
@@ -548,7 +548,7 @@ router.post("/lsp/shutdown", asyncHandler(async (_req: Request, res: Response) =
     await agenticLspShutdown();
     res.json({ success: true, message: "All LSP servers shut down" });
   } catch (error: unknown) {
-    logger.error(`LSP shutdown failed: ${(error as Error).message}`);
+    logger.error(`LSP shutdown failed: ${errorMessage(error)}`);
     res.status(500).json({ error: "LSP shutdown failed" });
   }
 }));
@@ -643,7 +643,7 @@ router.get("/task/list-all", asyncHandler(async (req: Request) => {
   const { status, limit, agentSessionId } = req.query as Record<string, string | undefined>;
   const db = (await import("../db.js")).getDB();
   const collection = db.collection("agent_tasks");
-  const filter: Record<string, any> = {};
+  const filter: Record<string, unknown> = {};
   if (status) filter.status = status;
   if (agentSessionId) filter.agentSessionId = agentSessionId;
   const tasks = await collection
@@ -684,7 +684,7 @@ router.post("/task/update", agenticHandler(async (req: Request) => {
   if (taskId == null) {
     return { error: "Request body must include 'taskId' (number)" };
   }
-  const updates: Record<string, any> = {};
+  const updates: Record<string, unknown> = {};
   if (status) updates.status = status;
   if (subject) updates.subject = subject;
   if (description) updates.description = description;
@@ -777,7 +777,7 @@ router.post("/memory/upsert", asyncHandler(async (req: Request, res: Response) =
     const result = await prismRes.json();
     res.json(result);
   } catch (error: unknown) {
-    res.status(500).json({ error: `Memory storage failed: ${(error as Error).message}` });
+    res.status(500).json({ error: `Memory storage failed: ${errorMessage(error)}` });
   }
 }));
 // ─── 15. Custom Agent Creation ──────────────────────────────
@@ -846,7 +846,7 @@ router.post("/custom-agent/create", asyncHandler(async (req: Request, res: Respo
     const created = await prismRes.json();
     res.status(201).json(created);
   } catch (error: unknown) {
-    res.status(500).json({ error: `Custom agent creation failed: ${(error as Error).message}` });
+    res.status(500).json({ error: `Custom agent creation failed: ${errorMessage(error)}` });
   }
 }));
 // ── List Custom Agents ────────────────────────────────────────
@@ -866,7 +866,7 @@ router.get("/custom-agent/list", asyncHandler(async (_req: Request, res: Respons
     const agents = await prismRes.json();
     res.json({ agents, count: agents.length });
   } catch (error: unknown) {
-    res.status(500).json({ error: `Custom agent list failed: ${(error as Error).message}` });
+    res.status(500).json({ error: `Custom agent list failed: ${errorMessage(error)}` });
   }
 }));
 // ── Update Custom Agent ───────────────────────────────────────
@@ -934,7 +934,7 @@ router.post("/custom-agent/update", asyncHandler(async (req: Request, res: Respo
     const updated = await prismRes.json();
     res.json(updated);
   } catch (error: unknown) {
-    res.status(500).json({ error: `Custom agent update failed: ${(error as Error).message}` });
+    res.status(500).json({ error: `Custom agent update failed: ${errorMessage(error)}` });
   }
 }));
 // ─── 16. Tool Search (Meta-Tool) ────────────────────────────
@@ -1064,7 +1064,7 @@ router.post("/custom-tool/create", asyncHandler(async (req: Request, res: Respon
     const created = await prismRes.json();
     res.status(201).json(created);
   } catch (error: unknown) {
-    res.status(500).json({ error: `Custom tool creation failed: ${(error as Error).message}` });
+    res.status(500).json({ error: `Custom tool creation failed: ${errorMessage(error)}` });
   }
 }));
 // ── List Custom Tools ─────────────────────────────────────────
@@ -1091,7 +1091,7 @@ router.get("/custom-tool/list", asyncHandler(async (req: Request, res: Response)
     const tools = await prismRes.json();
     res.json({ tools, count: tools.length });
   } catch (error: unknown) {
-    res.status(500).json({ error: `Custom tool list failed: ${(error as Error).message}` });
+    res.status(500).json({ error: `Custom tool list failed: ${errorMessage(error)}` });
   }
 }));
 // ── Update Custom Tool ────────────────────────────────────────
@@ -1125,7 +1125,7 @@ router.post("/custom-tool/update", asyncHandler(async (req: Request, res: Respon
     const updated = await prismRes.json();
     res.json(updated);
   } catch (error: unknown) {
-    res.status(500).json({ error: `Custom tool update failed: ${(error as Error).message}` });
+    res.status(500).json({ error: `Custom tool update failed: ${errorMessage(error)}` });
   }
 }));
 // ── Delete Custom Tool ────────────────────────────────────────
@@ -1151,7 +1151,7 @@ router.post("/custom-tool/delete", asyncHandler(async (req: Request, res: Respon
     const result = await prismRes.json();
     res.json(result);
   } catch (error: unknown) {
-    res.status(500).json({ error: `Custom tool deletion failed: ${(error as Error).message}` });
+    res.status(500).json({ error: `Custom tool deletion failed: ${errorMessage(error)}` });
   }
 }));
 // ── Execute Custom Tool Code ──────────────────────────────────

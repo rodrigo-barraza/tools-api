@@ -5,6 +5,7 @@ import { pathToFileURL } from "node:url";
 import { createLspClient, LspClient } from "./LspClient.ts";
 import { LspServerConfig } from "./LspConfig.ts";
 import logger from "../../logger.ts";
+import { errorMessage } from "../../utilities.ts";
 
 // ── Constants ────────────────────────────────────────────────
 /** LSP error code for "content modified" — transient, safe to retry */
@@ -157,7 +158,7 @@ export function createLspServerInstance(name: string, config: LspServerConfig): 
       }
       state = "error";
       lastError = error as Error;
-      logger.error(`[LSP:${name}] Start failed: ${(error as Error).message}`);
+      logger.error(`[LSP:${name}] Start failed: ${errorMessage(error)}`);
       throw error;
     }
   }
@@ -172,7 +173,7 @@ export function createLspServerInstance(name: string, config: LspServerConfig): 
     } catch (error: unknown) {
       state = "error";
       lastError = error as Error;
-      logger.error(`[LSP:${name}] Stop failed: ${(error as Error).message}`);
+      logger.error(`[LSP:${name}] Stop failed: ${errorMessage(error)}`);
       throw error;
     }
   }
@@ -181,7 +182,7 @@ export function createLspServerInstance(name: string, config: LspServerConfig): 
     try {
       await stop();
     } catch (error: unknown) {
-      logger.error(`[LSP:${name}] Stop during restart failed: ${(error as Error).message}`);
+      logger.error(`[LSP:${name}] Stop during restart failed: ${errorMessage(error)}`);
       throw error;
     }
     restartCount++;
@@ -192,7 +193,7 @@ export function createLspServerInstance(name: string, config: LspServerConfig): 
     try {
       await start();
     } catch (error: unknown) {
-      logger.error(`[LSP:${name}] Start during restart failed (attempt ${restartCount}/${maxRestarts}): ${(error as Error).message}`);
+      logger.error(`[LSP:${name}] Start during restart failed (attempt ${restartCount}/${maxRestarts}): ${errorMessage(error)}`);
       throw error;
     }
   }

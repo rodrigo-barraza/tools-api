@@ -20,7 +20,7 @@ import {
 } from "../services/ShellExecutorService.ts";
 import { MAX_CODE_LENGTH, MAX_COMMAND_LENGTH } from "../constants.ts";
 import crypto from "node:crypto";
-import { EphemeralStore, buildLocalUrl, buildEmbedHtml } from "../utilities.ts";
+import { EphemeralStore, buildLocalUrl, buildEmbedHtml, errorMessage } from "../utilities.ts";
 import { processImage } from "../services/ImageService.ts";
 // ─── Lazy-loaded dependencies ──────────────────────────────────────
 // These are loaded on first use to avoid blocking startup.
@@ -151,7 +151,7 @@ router.get("/units/convert", asyncHandler(async (req: Request, res: Response) =>
       result,
     });
   } catch (error: unknown) {
-    res.status(400).json({ error: `Conversion failed: ${(error as Error).message}` });
+    res.status(400).json({ error: `Conversion failed: ${errorMessage(error)}` });
   }
 }));
 router.get("/units/list", asyncHandler(async (req: Request, res: Response) => {
@@ -177,7 +177,7 @@ router.get("/units/list", asyncHandler(async (req: Request, res: Response) => {
     }
     res.json({ measureCount: measures.length, measures: all });
   } catch (error: unknown) {
-    res.status(400).json({ error: `Unit listing failed: ${(error as Error).message}` });
+    res.status(400).json({ error: `Unit listing failed: ${errorMessage(error)}` });
   }
 }));
 // ─── 4. DateTime Parsing & Arithmetic ───────────────────────
@@ -340,7 +340,7 @@ router.post("/datetime/parse", asyncHandler(async (req: Request, res: Response) 
     }
     res.json({ operation, ...(result as Record<string, unknown>) });
   } catch (error: unknown) {
-    res.status(400).json({ error: `DateTime operation failed: ${(error as Error).message}` });
+    res.status(400).json({ error: `DateTime operation failed: ${errorMessage(error)}` });
   }
 }));
 // ─── 5. JSON Transform (JSONPath) ───────────────────────────
@@ -467,7 +467,7 @@ router.post("/json/transform", asyncHandler(async (req: Request, res: Response) 
     const count = Array.isArray(result) ? result.length : typeof result === "object" ? Object.keys(result).length : 1;
     res.json({ count, result });
   } catch (error: unknown) {
-    res.status(400).json({ error: `JSON transform failed: ${(error as Error).message}` });
+    res.status(400).json({ error: `JSON transform failed: ${errorMessage(error)}` });
   }
 }));
 // ─── 6. CSV Generation ──────────────────────────────────────
@@ -504,7 +504,7 @@ router.post("/csv", (req: Request, res: Response) => {
       columns: cols.length,
     });
   } catch (error: unknown) {
-    res.status(400).json({ error: `CSV generation failed: ${(error as Error).message}` });
+    res.status(400).json({ error: `CSV generation failed: ${errorMessage(error)}` });
   }
 });
 router.get("/csv/download", (req: Request, res: Response) => {
@@ -543,7 +543,7 @@ router.post("/qr", asyncHandler(async (req: Request, res: Response) => {
     const qrImageUrl = buildLocalUrl("compute/qr/render", { id });
     res.json({ qrImageUrl, qrId: id, dataLength: data.length });
   } catch (error: unknown) {
-    res.status(400).json({ error: `QR code generation failed: ${(error as Error).message}` });
+    res.status(400).json({ error: `QR code generation failed: ${errorMessage(error)}` });
   }
 }));
 router.get("/qr/render", (req: Request, res: Response) => {
@@ -726,7 +726,7 @@ router.post("/diff", asyncHandler(async (req: Request, res: Response) => {
       patch,
     });
   } catch (error: unknown) {
-    res.status(400).json({ error: `Diff failed: ${(error as Error).message}` });
+    res.status(400).json({ error: `Diff failed: ${errorMessage(error)}` });
   }
 }));
 // ─── 11. Cryptographic Hashing ──────────────────────────────
@@ -760,7 +760,7 @@ router.get("/hash", (req: Request, res: Response) => {
   } catch (error: unknown) {
     const algos = crypto.getHashes().filter((h: string) => !h.includes("RSA"));
     res.status(400).json({
-      error: `Hashing failed: ${(error as Error).message}`,
+      error: `Hashing failed: ${errorMessage(error)}`,
       supportedAlgorithms: algos.slice(0, 20),
     });
   }
@@ -823,7 +823,7 @@ router.post("/regex", (req: Request, res: Response) => {
       matchCount: 0,
       matches: [],
       valid: false,
-      error: (error as Error).message,
+      error: errorMessage(error),
     });
   }
 });
@@ -921,7 +921,7 @@ router.get("/encode", (req: Request, res: Response) => {
       outputLength: typeof result === "string" ? result.length : undefined,
     });
   } catch (error: unknown) {
-    res.status(400).json({ error: `Encoding failed: ${(error as Error).message}` });
+    res.status(400).json({ error: `Encoding failed: ${errorMessage(error)}` });
   }
 });
 // ─── 14. Color Converter ────────────────────────────────────
@@ -1084,7 +1084,7 @@ router.get("/color/convert", (req: Request, res: Response) => {
     }
     res.json(result);
   } catch (error: unknown) {
-    res.status(400).json({ error: (error as Error).message });
+    res.status(400).json({ error: errorMessage(error) });
   }
 });
 // ─── 15. LOGO Turtle Graphics ───────────────────────────────
@@ -1664,7 +1664,7 @@ router.get("/cron/parse", (req: Request, res: Response) => {
       fromDate: fromDate.toISOString(),
     });
   } catch (error: unknown) {
-    res.status(400).json({ error: `Cron parse failed: ${(error as Error).message}` });
+    res.status(400).json({ error: `Cron parse failed: ${errorMessage(error)}` });
   }
 });
 // ─── Agentic: Sleep (Timed Pause) ───────────────────────────
@@ -1745,7 +1745,7 @@ router.post("/synthetic-output", (req: Request, res: Response) => {
     try {
       validateJsonSchema(data, schema, "", validationErrors);
     } catch (error: unknown) {
-      validationErrors.push(`Validation error: ${(error as Error).message}`);
+      validationErrors.push(`Validation error: ${errorMessage(error)}`);
     }
   }
   const result: Record<string, unknown> = {
@@ -1795,7 +1795,7 @@ router.post("/image/process", asyncHandler(async (req: Request, res: Response) =
     if (result.metadata) response.metadata = result.metadata;
     res.json(response);
   } catch (error: unknown) {
-    res.status(400).json({ error: `Image processing failed: ${(error as Error).message}` });
+    res.status(400).json({ error: `Image processing failed: ${errorMessage(error)}` });
   }
 }));
 router.get("/image/render", (req: Request, res: Response) => {

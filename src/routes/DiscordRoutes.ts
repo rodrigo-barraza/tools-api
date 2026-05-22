@@ -3,6 +3,8 @@ import { parseIntParam } from "@rodrigo-barraza/utilities-library";
 import { Request, Response, Router } from "express";
 import DiscordDataService from "../services/DiscordDataService.ts";
 import logger from "../logger.ts";
+import { errorMessage } from "../utilities.ts";
+
 const router = Router();
 // ─── Health ─────────────────────────────────────────────────────
 const health = new HealthTracker();
@@ -81,10 +83,10 @@ router.get("/messages/stream", (req: Request, res: Response) => {
       res.write(`event: init\ndata: ${JSON.stringify({ messages })}\n\n`);
       health.markSuccess();
     } catch (error: unknown) {
-      logger.error("[discord/stream] Init error:", (error as Error).message);
+      logger.error("[discord/stream] Init error:", errorMessage(error));
       health.markError(error);
       if (!closed) {
-        res.write(`event: error\ndata: ${JSON.stringify({ error: (error as Error).message })}\n\n`);
+        res.write(`event: error\ndata: ${JSON.stringify({ error: errorMessage(error) })}\n\n`);
       }
     }
   }
@@ -130,7 +132,7 @@ router.get("/messages/stream", (req: Request, res: Response) => {
       knownIds = currentIds;
       reactionFingerprints = new Map(messages.map((m: any) => [m.id, reactionHash(m)]));
     } catch (error: unknown) {
-      logger.error("[discord/stream] Poll error:", (error as Error).message);
+      logger.error("[discord/stream] Poll error:", errorMessage(error));
       health.markError(error);
     }
   }

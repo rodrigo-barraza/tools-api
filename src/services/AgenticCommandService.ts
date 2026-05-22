@@ -12,6 +12,7 @@ import {
   AGENTIC_COMMAND_BACKGROUND_WARMUP_MS as BACKGROUND_WARMUP_MS,
   AGENTIC_COMMAND_KILL_GRACE_PERIOD_MS as KILL_GRACE_PERIOD_MS,
 } from "../constants.ts";
+import { errorMessage } from "../utilities.ts";
 
 export interface CommandResult {
   success: boolean;
@@ -141,7 +142,7 @@ async function tryAgentRouteCommand(
       stderr: "",
       exitCode: null,
       executionTimeMs: 0,
-      error: `Agent RPC failed: ${(error as Error).message}`,
+      error: `Agent RPC failed: ${errorMessage(error)}`,
     };
   }
 }
@@ -381,9 +382,9 @@ export async function executeCommandStreaming(
           agent.id,
           "command.stream",
           { command, cwd, timeout },
-          (method: string, params: Record<string, any>) => {
-            if (method === "command.stdout") onChunk?.("stdout", params.data);
-            else if (method === "command.stderr") onChunk?.("stderr", params.data);
+          (method: string, params: Record<string, unknown>) => {
+            if (method === "command.stdout") onChunk?.("stdout", params.data as string);
+            else if (method === "command.stderr") onChunk?.("stderr", params.data as string);
           }
         )) as CommandResult;
       } catch (error: unknown) {
@@ -393,7 +394,7 @@ export async function executeCommandStreaming(
           stderr: "",
           exitCode: null,
           executionTimeMs: 0,
-          error: `Agent RPC failed: ${(error as Error).message}`,
+          error: `Agent RPC failed: ${errorMessage(error)}`,
         };
       }
     }
@@ -605,6 +606,6 @@ export async function killProcessTree(
       return { success: true, pid, signal: "SIGTERM", escalated: false };
     }
   } catch (error: unknown) {
-    return { success: false, pid, error: `Failed to kill process: ${(error as Error).message}` };
+    return { success: false, pid, error: `Failed to kill process: ${errorMessage(error)}` };
   }
 }

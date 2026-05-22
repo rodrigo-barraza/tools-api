@@ -11,6 +11,7 @@ import {
   PYTHON_MEMORY_LIMIT_MB as MEMORY_LIMIT_MB,
   PYTHON_HEALTH_CHECK_TIMEOUT_MS as HEALTH_CHECK_TIMEOUT_MS,
 } from "../constants.ts";
+import { errorMessage } from "../utilities.ts";
 
 const PYTHON_BIN = "python3";
 
@@ -106,7 +107,7 @@ export async function executePython(
       exitCode: null,
       executionTimeMs: Math.round(performance.now() - startTime),
       timedOut: false,
-      error: `Failed to stage script: ${(error as Error).message}`,
+      error: `Failed to stage script: ${errorMessage(error)}`,
     };
   }
 
@@ -244,7 +245,7 @@ export async function executePythonStreaming(
       exitCode: null,
       executionTimeMs: Math.round(performance.now() - startTime),
       timedOut: false,
-      error: `Failed to stage script: ${(error as Error).message}`,
+      error: `Failed to stage script: ${errorMessage(error)}`,
     };
   }
 

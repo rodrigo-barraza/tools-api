@@ -1,3 +1,5 @@
+import { errorMessage } from "../../utilities.ts";
+
 // ─── Question + Answers ─────────────────────────────────────
 
 const SE_API = "https://api.stackexchange.com/2.3";
@@ -71,19 +73,23 @@ function decodeHtmlEntities(str: any) {
 
 // ─── Public API ───────────────────────────────────────────────────
 
+export interface StackOverflowOptions {
+  answerLimit?: number;
+}
+
 /**
  * Fetch a Stack Overflow question with accepted and top answers.
 
 
  */
-export async function getStackOverflowQuestion(input: any, options: Record<string, any> = {}) {
+export async function getStackOverflowQuestion(input: string, options: StackOverflowOptions = {}) {
   const parsed = parseStackOverflowInput(input);
   if (!parsed) {
     return { error: `Invalid Stack Overflow URL or question ID: "${input}"` };
   }
 
   const { questionId, site } = parsed;
-  const { answerLimit = 5 } = options;
+  const answerLimit = options.answerLimit ?? 5;
   const clampedLimit = Math.min(answerLimit, MAX_ANSWERS);
 
   try {
@@ -115,7 +121,7 @@ export async function getStackOverflowQuestion(input: any, options: Record<strin
       return { error: `Question not found: ${questionId}` };
     }
 
-    const result: Record<string, any> = {
+    const result = {
       questionId: question.question_id,
       title: question.title || null,
       url: question.link || `https://stackoverflow.com/questions/${questionId}`,
@@ -134,6 +140,8 @@ export async function getStackOverflowQuestion(input: any, options: Record<strin
       lastActivityAt: question.last_activity_date
         ? new Date(question.last_activity_date * 1000).toISOString()
         : null,
+      answers: [] as any[],
+      quotaRemaining: qData.quota_remaining,
     };
 
     // Process answers
@@ -157,11 +165,11 @@ export async function getStackOverflowQuestion(input: any, options: Record<strin
 
     // API quota info
     if (qData.quota_remaining !== undefined) {
-      result.apiQuotaRemaining = qData.quota_remaining;
+      result.quotaRemaining = qData.quota_remaining;
     }
 
     return result;
   } catch (error: unknown) {
-    return { error: `Stack Overflow fetch failed: ${(error as Error).message}` };
+    return { error: `Stack Overflow fetch failed: ${errorMessage(error)}` };
   }
 }

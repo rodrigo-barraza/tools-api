@@ -100,7 +100,7 @@ async function tryAgentRoute(
   try {
     return await sendRpc(agent.id, method, params);
   } catch (error: unknown) {
-    return { error: `Agent RPC failed: ${(error as Error).message}` };
+    return { error: `Agent RPC failed: ${errorMessage(error)}` };
   }
 }
 
@@ -108,6 +108,7 @@ import {
   AGENT_GIT_TIMEOUT_MS as GIT_TIMEOUT_MS,
   AGENT_GIT_MAX_OUTPUT_BYTES as MAX_OUTPUT_BYTES,
 } from "../constants.ts";
+import { errorMessage } from "../utilities.ts";
 
 interface GitRunResult {
   stdout: string;

@@ -27,6 +27,8 @@ import {
   searchSeries,
   getKeyIndicators,
 } from "../fetchers/finance/FredFetcher.ts";
+import { errorMessage } from "../utilities.ts";
+
 const router = Router();
 // ─── Stock Quote (on-demand with 1-min TTL cache) ──────────────────
 router.get("/quote/:symbol", asyncHandler(async (req: Request, res: Response) => {
@@ -69,7 +71,7 @@ router.get("/news", asyncHandler(async (req: Request, res: Response) => {
     } catch (error: unknown) {
       return res
         .status(502)
-        .json({ error: `Failed to fetch company news: ${(error as Error).message}` });
+        .json({ error: `Failed to fetch company news: ${errorMessage(error)}` });
     }
   }
   const articles = getMarketNews();

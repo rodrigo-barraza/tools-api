@@ -2,18 +2,23 @@
 
 import xml2js from "xml2js";
 import { USER_AGENT } from "../../constants.ts";
+import { errorMessage } from "../../utilities.ts";
 
 const FETCH_TIMEOUT_MS = 15_000;
 const MAX_ITEMS = 50;
 
 // ─── Public API ───────────────────────────────────────────────────
 
+export interface RssOptions {
+  limit?: number;
+}
+
 /**
  * Fetch and parse an RSS or Atom feed.
-
-
+ *
+ *
  */
-export async function readRssFeed(url: any, options: Record<string, any> = {}) {
+export async function readRssFeed(url: string, options: RssOptions = {}) {
   if (!url || typeof url !== "string") {
     return { error: "Feed URL is required" };
   }
@@ -61,7 +66,7 @@ export async function readRssFeed(url: any, options: Record<string, any> = {}) {
     if ((error as any).name === "AbortError") {
       return { error: `Feed fetch timed out after ${FETCH_TIMEOUT_MS / 1000}s`, url };
     }
-    return { error: `Feed parsing failed: ${(error as Error).message}`, url };
+    return { error: `Feed parsing failed: ${errorMessage(error)}`, url };
   }
 }
 

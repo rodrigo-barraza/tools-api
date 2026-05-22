@@ -114,7 +114,7 @@ function buildBaseFilter({
   before,
   after,
   includeBots = false,
-}: Record<string, any> = {}) {
+}: Record<string, unknown> = {}) {
   const filter: Record<string, any> = {};
 
   if (guildId) filter.guildId = guildId;
@@ -140,11 +140,9 @@ function buildBaseFilter({
   filter["channel.parentId"] = { $nin: EXCLUDED_CATEGORY_IDS };
 
   // Time range
-  if (before || after) {
-    filter.createdTimestamp = {};
-    if (before) filter.createdTimestamp.$lte = new Date(before).getTime();
-    if (after) filter.createdTimestamp.$gte = new Date(after).getTime();
-  }
+  if (before || after) filter.createdTimestamp = {};
+  if (before) filter.createdTimestamp.$lte = new Date(before as string | number).getTime();
+  if (after) filter.createdTimestamp.$gte = new Date(after as string | number).getTime();
 
   // Text search — prefer $regex for reliability (text index may still be building)
   if (query) {
@@ -175,10 +173,10 @@ const DiscordDataService = {
     limit = 50,
     mode = "messages",
     includeBots = false,
-  }: Record<string, any> = {}) {
+  }: Record<string, unknown> = {}) {
     const collection = getMessagesCollection();
     const filter = buildBaseFilter({ guildId, channelId, userId, username, query, before, after, includeBots });
-    const cappedLimit = Math.min(limit, 500);
+    const cappedLimit = Math.min(Number(limit), 500);
 
     // ── Count mode — return only the total, zero payloads ──────
     if (mode === "count") {
@@ -439,10 +437,10 @@ const DiscordDataService = {
     groupBy = "user",
     topN = 25,
     includeBots = false,
-  }: Record<string, any> = {}) {
+  }: Record<string, unknown> = {}) {
     const collection = getMessagesCollection();
     const filter = buildBaseFilter({ guildId, channelId, userId, username, query, before, after, includeBots });
-    const cappedTopN = Math.min(topN, 100);
+    const cappedTopN = Math.min(Number(topN), 100);
 
     // Weekday labels for the weekday grouping
     const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -526,7 +524,7 @@ const DiscordDataService = {
 
     // ── Format results with human-readable labels ─────────────
     const groups = results.map((r: any) => {
-      const base: Record<string, any> = { count: r.count };
+      const base: Record<string, unknown> = { count: r.count };
 
       switch (groupBy) {
         case "user":
@@ -569,7 +567,7 @@ const DiscordDataService = {
       groupBy,
       totalMatchingMessages: totalCount,
       groupCount: groups.length,
-      ...(query && { query }),
+      ...(typeof query === "string" && query ? { query } : {}),
       groups,
     };
   },
@@ -582,12 +580,12 @@ const DiscordDataService = {
     channelId,
     days = 7,
     topN = 15,
-  }: Record<string, any> = {}) {
+  }: Record<string, unknown> = {}) {
     const collection = getMessagesCollection();
-    const cappedDays = Math.min(days, 365);
+    const cappedDays = Math.min(Number(days), 365);
     const sinceTimestamp = Date.now() - daysToMs(cappedDays);
 
-    const match: Record<string, any> = {
+    const match: Record<string, unknown> = {
       guildId,
       createdTimestamp: { $gte: sinceTimestamp },
       "author.bot": { $ne: true },
@@ -595,7 +593,7 @@ const DiscordDataService = {
     };
     if (channelId) match.channelId = channelId;
 
-    const cappedTopN = Math.min(topN, 50);
+    const cappedTopN = Math.min(Number(topN), 50);
 
     // Run all aggregations in parallel
     const [

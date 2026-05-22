@@ -3,6 +3,7 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import logger from "../../logger.ts";
 import { Exercise } from "../../types/health.ts";
+import { errorMessage } from "../../utilities.ts";
 
 /**
  * Exercises Fetcher — Static In-Memory Database
@@ -45,7 +46,7 @@ function ensureLoaded(): void {
   try {
     files = readdirSync(dataDir).filter((f: string) => f.startsWith("digest_exercises") && f.endsWith(".csv"));
   } catch (error) {
-    logger.error(`Error reading exercises directory: ${(error as Error).message}`);
+    logger.error(`Error reading exercises directory: ${errorMessage(error)}`);
     return;
   }
   

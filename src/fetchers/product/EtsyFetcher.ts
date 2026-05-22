@@ -1,6 +1,6 @@
 import CONFIG from "../../config.ts";
 import { PRODUCT_SOURCES, ETSY_CATEGORY_MAP } from "../../constants.ts";
-import { computeTrendingScore } from "../../utilities.ts";
+import { computeTrendingScore, errorMessage } from "../../utilities.ts";
 import rateLimiter from "../../services/RateLimiterService.ts";
 import logger from "../../logger.ts";
 
@@ -96,7 +96,7 @@ export async function fetchEtsyTrending() {
 
       allProducts.push(...products);
     } catch (error: unknown) {
-      logger.error(`[Etsy] ❌ "${keyword}": ${(error as Error).message}`);
+      logger.error(`[Etsy] ❌ "${keyword}": ${errorMessage(error)}`);
     }
   }
 

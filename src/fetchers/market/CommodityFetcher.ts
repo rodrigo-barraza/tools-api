@@ -1,6 +1,7 @@
 import YahooFinance from "yahoo-finance2";
 import { COMMODITY_TICKERS } from "../../constants.ts";
 import logger from "../../logger.ts";
+import { errorMessage } from "../../utilities.ts";
 
 const yahooFinance = new YahooFinance();
 
@@ -72,10 +73,10 @@ export async function fetchCommodities() {
     } catch (error: unknown) {
       errors.push({
         batch: batch.slice(0, 3).join(", ") + "…",
-        error: (error as Error).message,
+        error: errorMessage(error),
       });
       logger.warn(
-        `[CommodityFetcher] ⚠️ Batch ${i / BATCH_SIZE + 1} failed: ${(error as Error).message}`,
+        `[CommodityFetcher] ⚠️ Batch ${i / BATCH_SIZE + 1} failed: ${errorMessage(error)}`,
       );
     }
   }

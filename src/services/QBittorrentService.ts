@@ -5,6 +5,7 @@
 
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
+import { errorMessage } from "../utilities.ts";
 
 const LOG_PREFIX = "🧲 QBittorrent";
 
@@ -61,7 +62,7 @@ async function authenticate(): Promise<string> {
       }),
     });
   } catch (error: unknown) {
-    throw new Error(`qBittorrent unreachable at ${baseUrl}: ${(error as Error).message}`);
+    throw new Error(`qBittorrent unreachable at ${baseUrl}: ${errorMessage(error)}`);
   }
 
   // Read body for all paths — qBittorrent sends descriptive text on errors
@@ -144,7 +145,7 @@ async function qbtFetch(path: string, { method = "GET", body, params }: QbtFetch
   try {
     response = await fetch(url, options);
   } catch (error: unknown) {
-    throw new Error(`qBittorrent unreachable at ${baseUrl}: ${(error as Error).message}`);
+    throw new Error(`qBittorrent unreachable at ${baseUrl}: ${errorMessage(error)}`);
   }
 
   // Session expired — check for ban first, then re-auth once

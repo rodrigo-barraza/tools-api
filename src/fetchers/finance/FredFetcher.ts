@@ -22,10 +22,11 @@ const SEARCH_CACHE_TTL_MS = 1_800_000; // 30 minutes
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
-function buildUrl(endpoint: any, params: Record<string, any> = {}) {
+function buildUrl(endpoint: string, params: Record<string, unknown> = {}) {
   const url = new URL(`${FRED_BASE_URL}/${endpoint}`);
-  // @ts-expect-error - suppress remaining error
-  url.searchParams.set("api_key", CONFIG.FRED_API_KEY);
+  if (CONFIG.FRED_API_KEY) {
+    url.searchParams.set("api_key", CONFIG.FRED_API_KEY);
+  }
   url.searchParams.set("file_type", "json");
   for (const [key, value] of Object.entries(params)) {
     if (value != null) url.searchParams.set(key, String(value));
@@ -33,7 +34,7 @@ function buildUrl(endpoint: any, params: Record<string, any> = {}) {
   return url.toString();
 }
 
-async function fredFetch(endpoint: any, params: Record<string, any> = {}) {
+async function fredFetch(endpoint: string, params: Record<string, unknown> = {}) {
   if (!CONFIG.FRED_API_KEY) {
     throw new Error("FRED_API_KEY is not configured");
   }
@@ -56,7 +57,7 @@ async function fredFetch(endpoint: any, params: Record<string, any> = {}) {
 
 
  */
-export async function getSeriesInfo(seriesId: any) {
+export async function getSeriesInfo(seriesId: string) {
   const data = await fredFetch("series", { series_id: seriesId });
   const series = data.seriess?.[0];
   if (!series) throw new Error(`Series "${seriesId}" not found`);
@@ -76,12 +77,19 @@ export async function getSeriesInfo(seriesId: any) {
 
 // ─── Series Observations ───────────────────────────────────────────
 
+export interface FredObservationOptions {
+  limit?: number;
+  sortOrder?: string;
+  observationStart?: string;
+  observationEnd?: string;
+}
+
 /**
  * Get observations (data points) for a FRED series.
 
 
  */
-export async function getSeriesObservations(seriesId: any, options: Record<string, any> = {}) {
+export async function getSeriesObservations(seriesId: string, options: FredObservationOptions = {}) {
   const {
     limit = 50,
     sortOrder = "desc",
@@ -96,7 +104,7 @@ export async function getSeriesObservations(seriesId: any, options: Record<strin
     return cached.data;
   }
 
-  const params: Record<string, any> = {
+  const params: Record<string, unknown> = {
     series_id: seriesId,
     limit,
     sort_order: sortOrder,
@@ -129,12 +137,17 @@ export async function getSeriesObservations(seriesId: any, options: Record<strin
 
 // ─── Search Series ─────────────────────────────────────────────────
 
+export interface FredSearchOptions {
+  limit?: number;
+  orderBy?: string;
+}
+
 /**
  * Search for FRED series by keywords.
 
 
  */
-export async function searchSeries(query: any, options: Record<string, any> = {}) {
+export async function searchSeries(query: string, options: FredSearchOptions = {}) {
   const { limit = 10, orderBy = "search_rank" } = options;
 
   const cacheKey = `search:${query}:${limit}:${orderBy}`;

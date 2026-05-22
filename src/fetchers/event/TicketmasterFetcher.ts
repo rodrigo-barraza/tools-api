@@ -4,6 +4,7 @@ import {
   EVENT_SOURCES,
   TICKETMASTER_CATEGORY_MAP,
   EVENT_CATEGORIES,
+  EVENT_STATUSES,
 } from "../../constants.ts";
 import rateLimiter from "../../services/RateLimiterService.ts";
 
@@ -18,19 +19,19 @@ function normalizeCategory(segment: any) {
 }
 
 /**
- * Map Ticketmaster event status to our normalized status.
+ * Maps Ticketmaster event status codes to our internal normalized status.
  */
-function normalizeStatus(statusCode: any) {
-  const map = {
-    onsale: "onsale",
-    offsale: "offsale",
-    cancelled: "cancelled",
-    canceled: "cancelled",
-    postponed: "postponed",
-    rescheduled: "rescheduled",
+function mapTicketmasterStatus(statusCode: string | undefined): string {
+  const map: Record<string, string> = {
+    onsale: EVENT_STATUSES.ON_SALE,
+    offsale: EVENT_STATUSES.OFF_SALE,
+    cancelled: EVENT_STATUSES.CANCELLED,
+    canceled: EVENT_STATUSES.CANCELLED, // Ticketmaster sometimes uses US spelling
+    postponed: EVENT_STATUSES.POSTPONED,
+    rescheduled: EVENT_STATUSES.RESCHEDULED,
   };
-  // @ts-expect-error - TS7053: implicit any index
-  return map[statusCode?.toLowerCase()] || "onsale";
+  const code = statusCode?.toLowerCase();
+  return code && map[code] ? map[code] : EVENT_STATUSES.ON_SALE;
 }
 
 /**
@@ -125,7 +126,7 @@ function normalizeEvent(event: any) {
     category: normalizeCategory(segment),
     genres: extractGenres(event),
     priceRange: extractPriceRange(event),
-    status: normalizeStatus(event.dates?.status?.code),
+    status: mapTicketmasterStatus(event.dates?.status?.code),
     fetchedAt: new Date(),
   };
 }

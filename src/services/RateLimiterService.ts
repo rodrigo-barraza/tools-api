@@ -21,7 +21,7 @@ class RateLimiterService {
    * via a promise chain to prevent thundering herd.
    */
   async wait(provider: any) {
-    const limits = API_RATE_LIMITS[provider];
+    const limits = API_RATE_LIMITS[provider as keyof typeof API_RATE_LIMITS];
     if (!limits) {
       logger.warn(`[RateLimiter] ⚠️ Unknown provider: ${provider}`);
       return;
@@ -60,7 +60,7 @@ class RateLimiterService {
 
    */
   getDelay(provider: any) {
-    return API_RATE_LIMITS[provider]?.requestDelayMs ?? null;
+    return API_RATE_LIMITS[provider as keyof typeof API_RATE_LIMITS]?.requestDelayMs ?? null;
   }
 
   /**

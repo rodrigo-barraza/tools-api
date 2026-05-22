@@ -66,6 +66,7 @@ import { startProductCollectors } from "./collectors/ProductCollector.ts";
 import { startTrendCollectors } from "./collectors/TrendCollector.ts";
 import { startWeatherCollectors } from "./collectors/WeatherCollector.ts";
 import { startAisStream } from "./fetchers/maritime/AisStreamFetcher.ts";
+import { errorMessage } from "./utilities.ts";
 
 // ─── Express App ───────────────────────────────────────────────────
 
@@ -196,7 +197,7 @@ async function start() {
     // Load user-configured workspace roots from MongoDB
     await loadUserWorkspaceRoots();
   } catch (error: unknown) {
-    logger.error(`Failed to connect to MongoDB: ${(error as Error).message}`);
+    logger.error(`Failed to connect to MongoDB: ${errorMessage(error)}`);
     process.exit(1);
   }
 

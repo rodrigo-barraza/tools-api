@@ -4,6 +4,8 @@ import {
   TREND_SOURCES as SOURCES,
   MASTODON_INSTANCES,
 } from "../../constants.ts";
+import { errorMessage } from "../../utilities.ts";
+
 /**
  * Fetches trending tags from a single Mastodon instance.
 
@@ -69,7 +71,7 @@ export async function fetchMastodonTrends() {
       }
     } catch (error: unknown) {
       logger.warn(
-        `[Mastodon] ⚠️ Tags from ${instance} failed: ${(error as Error).message}`,
+        `[Mastodon] ⚠️ Tags from ${instance} failed: ${errorMessage(error)}`,
       );
     }
     // ── Trending Statuses ──
@@ -107,7 +109,7 @@ export async function fetchMastodonTrends() {
       }
     } catch (error: unknown) {
       logger.warn(
-        `[Mastodon] ⚠️ Statuses from ${instance} failed: ${(error as Error).message}`,
+        `[Mastodon] ⚠️ Statuses from ${instance} failed: ${errorMessage(error)}`,
       );
     }
   }

@@ -2,6 +2,7 @@
 
 import { readFile, writeFile } from "node:fs/promises";
 import { validatePath } from "./AgenticFileService.ts";
+import { errorMessage } from "../utilities.ts";
 
 // ────────────────────────────────────────────────────────────
 // Constants
@@ -18,7 +19,7 @@ const MAX_NOTEBOOK_SIZE = 10_485_760; // 10 MB
 /**
  * Edit a Jupyter notebook file.
  */
-export async function agenticNotebookEdit(path: any, { action, cellIndex, content, cellType }: Record<string, any> = {}) {
+export async function agenticNotebookEdit(path: any, { action, cellIndex, content, cellType }: Record<string, unknown> = {}) {
   // Validate path
   const validation = validatePath(path);
   if (!validation.safe) {
@@ -32,8 +33,8 @@ export async function agenticNotebookEdit(path: any, { action, cellIndex, conten
   }
 
   // Validate action
-  if (!action || !VALID_ACTIONS.includes(action)) {
-    return { error: `Invalid action '${action}'. Must be one of: ${VALID_ACTIONS.join(", ")}` };
+  if (!action || !VALID_ACTIONS.includes(action as string)) {
+    return { error: `Invalid action '${action as string}'. Must be one of: ${VALID_ACTIONS.join(", ")}` };
   }
 
   // Read and parse notebook
@@ -53,7 +54,7 @@ export async function agenticNotebookEdit(path: any, { action, cellIndex, conten
         return { error: `Notebook not found: ${resolved}` };
       }
     } else {
-      return { error: `Failed to parse notebook: ${(error as Error).message}` };
+      return { error: `Failed to parse notebook: ${errorMessage(error)}` };
     }
   }
 
@@ -132,7 +133,7 @@ function getCell(filePath: any, notebook: any, cellIndex: any) {
     ? cell.source.join("")
     : (cell.source || "");
 
-  const result: Record<string, any> = {
+  const result: Record<string, unknown> = {
     filePath,
     cellIndex,
     cellType: cell.cell_type,
@@ -296,7 +297,7 @@ function createBlankNotebook() {
  * Strips large binary data (images, etc.) and truncates long text.
  */
 function summarizeOutput(output: any) {
-  const summary: Record<string, any> = { output_type: output.output_type };
+  const summary: Record<string, unknown> = { output_type: output.output_type };
 
   if (output.output_type === "stream") {
     const text = Array.isArray(output.text) ? output.text.join("") : (output.text || "");

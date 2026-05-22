@@ -2,6 +2,7 @@ import { normalizeName } from "@rodrigo-barraza/utilities-library";
 import CONFIG from "../../config.ts";
 import { TREND_SOURCES as SOURCES, X_WOEIDS } from "../../constants.ts";
 import logger from "../../logger.ts";
+import { errorMessage } from "../../utilities.ts";
 
 /**
  * Fetches trending topics from X (Twitter) for a given WOEID.
@@ -68,7 +69,7 @@ export async function fetchAllXTrends() {
     const trends = await fetchXTrends(X_WOEIDS.WORLDWIDE);
     allTrends.push(...trends);
   } catch (error: unknown) {
-    logger.error(`[X] ❌ Worldwide: ${(error as Error).message}`);
+    logger.error(`[X] ❌ Worldwide: ${errorMessage(error)}`);
   }
 
   return allTrends;

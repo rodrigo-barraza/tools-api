@@ -1,6 +1,7 @@
 // ─── Thread Content + Top Comments ──────────────────────────
 
 import { USER_AGENT } from "../../constants.ts";
+import { errorMessage } from "../../utilities.ts";
 
 const MAX_COMMENTS = 20;
 const MAX_BODY_CHARS = 10_000;
@@ -81,7 +82,7 @@ function extractComments(children: any, limit: any) {
 
 
  */
-export async function getRedditThread(input: any, options: Record<string, any> = {}) {
+export async function getRedditThread(input: any, options: Record<string, unknown> = {}) {
   const jsonUrl = buildRedditJsonUrl(input);
   if (!jsonUrl) {
     return { error: `Invalid Reddit URL: "${input}"` };
@@ -136,6 +137,6 @@ export async function getRedditThread(input: any, options: Record<string, any> =
       comments,
     };
   } catch (error: unknown) {
-    return { error: `Reddit fetch failed: ${(error as Error).message}` };
+    return { error: `Reddit fetch failed: ${errorMessage(error)}` };
   }
 }

@@ -8,8 +8,7 @@ import {
 import { parsePrice } from "@rodrigo-barraza/utilities-library";
 import {
   computeTrendingScore,
-  buildScraperHeaders,
-} from "../../utilities.ts";
+  buildScraperHeaders, errorMessage } from "../../utilities.ts";
 import rateLimiter from "../../services/RateLimiterService.ts";
 import logger from "../../logger.ts";
 
@@ -230,7 +229,7 @@ export async function fetchAllCostcoUS() {
       allProducts.push(...products);
       logger.info(`[Costco US] ✅ ${cat.name}: ${products.length} products`);
     } catch (error: unknown) {
-      logger.error(`[Costco US] ❌ ${cat.name}: ${(error as Error).message}`);
+      logger.error(`[Costco US] ❌ ${cat.name}: ${errorMessage(error)}`);
     }
 
     await rateLimiter.wait("COSTCO");
@@ -258,7 +257,7 @@ export async function fetchAllCostcoCA() {
       allProducts.push(...products);
       logger.info(`[Costco CA] ✅ ${cat.name}: ${products.length} products`);
     } catch (error: unknown) {
-      logger.error(`[Costco CA] ❌ ${cat.name}: ${(error as Error).message}`);
+      logger.error(`[Costco CA] ❌ ${cat.name}: ${errorMessage(error)}`);
     }
 
     await rateLimiter.wait("COSTCO");

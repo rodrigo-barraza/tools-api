@@ -15,6 +15,8 @@ import {
 } from "../caches/FinnhubCache.ts";
 import { saveState, startCollectorLoop } from "../services/FreshnessService.ts";
 import logger from "../logger.ts";
+import { errorMessage } from "../utilities.ts";
+
 // ─── News Collector ────────────────────────────────────────────────
 async function collectMarketNews() {
   try {
@@ -25,7 +27,7 @@ async function collectMarketNews() {
     logger.info(`[Finnhub/News] ✅ ${sliced.length} articles`);
   } catch (error: unknown) {
     setNewsError(error as any);
-    logger.error(`[Finnhub/News] ❌ ${(error as Error).message}`);
+    logger.error(`[Finnhub/News] ❌ ${errorMessage(error)}`);
   }
 }
 // ─── Earnings Calendar Collector ───────────────────────────────────
@@ -43,7 +45,7 @@ async function collectEarnings() {
     );
   } catch (error: unknown) {
     setEarningsError(error as any);
-    logger.error(`[Finnhub/Earnings] ❌ ${(error as Error).message}`);
+    logger.error(`[Finnhub/Earnings] ❌ ${errorMessage(error)}`);
   }
 }
 // ─── Startup Definitions ──────────────────────────────────────────

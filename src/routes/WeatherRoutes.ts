@@ -80,6 +80,8 @@ import {
   getWarningHealth,
 } from "../caches/EnvironmentCanadaCache.ts";
 import { getAvalanche, getAvalancheHealth } from "../caches/AvalancheCache.ts";
+import { errorMessage } from "../utilities.ts";
+
 const router = Router();
 // ─── Weather ───────────────────────────────────────────────────────
 router.get("/weather", (_req: Request, res: Response) => res.json(getLatest()));
@@ -196,7 +198,7 @@ router.get("/live", asyncHandler(async (req: Request, res: Response) => {
     }
     res.json(result);
   } catch (error: unknown) {
-    res.status(500).json({ error: `Weather fetch failed: ${(error as Error).message}` });
+    res.status(500).json({ error: `Weather fetch failed: ${errorMessage(error)}` });
   }
 }));
 // ── Unified Environment Dispatcher ─────────────────────────────────

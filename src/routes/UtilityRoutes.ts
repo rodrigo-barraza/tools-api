@@ -34,7 +34,7 @@ import {
   renderChartPng,
 } from "../services/ChartService.ts";
 import { MAX_CODE_LENGTH } from "../constants.ts";
-import { EphemeralStore, buildLocalUrl } from "../utilities.ts";
+import { EphemeralStore, buildLocalUrl, errorMessage } from "../utilities.ts";
 import { crawlSingleStatic } from "../services/CrawlerService.ts";
 const router = Router();
 // ─── Calculator (BigNumber) ────────────────────────────────────────
@@ -91,7 +91,7 @@ router.get("/calculate", (req: Request, res: Response) => {
       result: result.toFixed(),
     });
   } catch (error: unknown) {
-    res.status(400).json({ error: `Calculation failed: ${(error as Error).message}` });
+    res.status(400).json({ error: `Calculation failed: ${errorMessage(error)}` });
   }
 });
 // ─── Currency Conversion ───────────────────────────────────────────
@@ -198,7 +198,7 @@ function storeMarkers(markerList: any) {
  * Build the interactive embed HTML for Google Maps JS API.
  * Renders numbered markers with info windows showing name + address.
  */
-function buildMapEmbedHtml(markerList: any, apiKey: any, { zoom, maptype = "roadmap" }: Record<string, any> = {}) {
+function buildMapEmbedHtml(markerList: any, apiKey: any, { zoom, maptype = "roadmap" }: Record<string, unknown> = {}) {
   const markersJson = JSON.stringify(
     markerList.map((m: any, i: any) => ({
       lat: m.latitude,
@@ -338,7 +338,7 @@ router.get("/map", asyncHandler(async (req: Request, res: Response) => {
       markerCount: markerList.length,
     });
   } catch (error: unknown) {
-    res.status(502).json({ error: `Map generation failed: ${(error as Error).message}` });
+    res.status(502).json({ error: `Map generation failed: ${errorMessage(error)}` });
   }
 }));
 // ─── Webcams ───────────────────────────────────────────────────────
@@ -486,7 +486,7 @@ router.get("/chart/render", asyncHandler(async (req: Request, res: Response) => 
     res.setHeader("Cache-Control", "public, max-age=3600");
     res.send(pngBuffer);
   } catch (error: unknown) {
-    res.status(500).json({ error: `Chart render failed: ${(error as Error).message}` });
+    res.status(500).json({ error: `Chart render failed: ${errorMessage(error)}` });
   }
 }));
 // ─── Page Metadata Scraper (Crawlee) ───────────────────────────────
@@ -498,7 +498,7 @@ router.get("/scrape/metadata", asyncHandler(
     }
     const result = await crawlSingleStatic(url, {
       extractFn: ($: any) => {
-        const meta: Record<string, any> = {};
+        const meta: Record<string, unknown> = {};
         // Title
         meta.title =
           $('meta[property="og:title"]').attr("content") ||

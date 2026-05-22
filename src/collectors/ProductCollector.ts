@@ -28,6 +28,7 @@ import {
 } from "../caches/BestBuyCAAvailabilityCache.ts";
 import { saveState, startCollectorLoop } from "../services/FreshnessService.ts";
 import logger from "../logger.ts";
+import { errorMessage } from "../utilities.ts";
 
 // ─── Collector Factory ─────────────────────────────────────────────
 
@@ -43,7 +44,7 @@ function createProductCollector(collection: any, source: any, fetchFn: any) {
       );
     } catch (error: unknown) {
       setProductError(source, error as Error);
-      logger.error(`[${collection}] ❌ ${(error as Error).message}`);
+      logger.error(`[${collection}] ❌ ${errorMessage(error)}`);
     }
   };
 }
@@ -81,7 +82,7 @@ async function collectBestBuyCAAvailability() {
     }
   } catch (error: unknown) {
     setAvailabilityError(error as Error);
-    logger.error(`[bestbuy_ca_availability] ❌ ${(error as Error).message}`);
+    logger.error(`[bestbuy_ca_availability] ❌ ${errorMessage(error)}`);
   }
 }
 

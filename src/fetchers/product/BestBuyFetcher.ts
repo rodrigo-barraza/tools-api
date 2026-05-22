@@ -1,6 +1,6 @@
 import CONFIG from "../../config.ts";
 import { BESTBUY_CATEGORIES, PRODUCT_SOURCES } from "../../constants.ts";
-import { computeTrendingScore } from "../../utilities.ts";
+import { computeTrendingScore, errorMessage } from "../../utilities.ts";
 import rateLimiter from "../../services/RateLimiterService.ts";
 import logger from "../../logger.ts";
 
@@ -97,7 +97,7 @@ export async function fetchAllBestBuyTrending() {
     const general = await fetchBestBuyTrending();
     allProducts.push(...general.products);
   } catch (error: unknown) {
-    logger.error(`[BestBuy] ❌ General trending: ${(error as Error).message}`);
+    logger.error(`[BestBuy] ❌ General trending: ${errorMessage(error)}`);
   }
 
   // Fetch per-category trending with rate limiting
@@ -107,7 +107,7 @@ export async function fetchAllBestBuyTrending() {
       const result = await fetchBestBuyTrending(cat.id);
       allProducts.push(...result.products);
     } catch (error: unknown) {
-      logger.error(`[BestBuy] ❌ ${cat.name}: ${(error as Error).message}`);
+      logger.error(`[BestBuy] ❌ ${cat.name}: ${errorMessage(error)}`);
     }
   }
 

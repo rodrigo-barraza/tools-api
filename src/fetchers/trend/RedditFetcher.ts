@@ -9,17 +9,18 @@ import {
 
 import rateLimiter from "../../services/RateLimiterService.ts";
 import logger from "../../logger.ts";
+import { errorMessage } from "../../utilities.ts";
+
 const redditTokenManager = new TokenManager(async () => {
   const credentials = Buffer.from(
     `${CONFIG.REDDIT_CLIENT_ID}:${CONFIG.REDDIT_CLIENT_SECRET}`,
   ).toString("base64");
   const response = await fetch("https://www.reddit.com/api/v1/access_token", {
     method: "POST",
-    // @ts-expect-error - suppress remaining error
     headers: {
       Authorization: `Basic ${credentials}`,
       "Content-Type": "application/x-www-form-urlencoded",
-      "User-Agent": CONFIG.REDDIT_USER_AGENT,
+      "User-Agent": CONFIG.REDDIT_USER_AGENT || "",
     },
     body: "grant_type=client_credentials",
   });
@@ -37,13 +38,12 @@ const redditTokenManager = new TokenManager(async () => {
 
 
  */
-async function fetchSubreddit(subreddit: any, token: any, limit: any) {
+async function fetchSubreddit(subreddit: string, token: string, limit: number) {
   const url = `https://oauth.reddit.com/r/${subreddit}/hot.json?limit=${limit}&raw_json=1`;
   const response = await fetch(url, {
-    // @ts-expect-error - suppress remaining error
     headers: {
       Authorization: `Bearer ${token}`,
-      "User-Agent": CONFIG.REDDIT_USER_AGENT,
+      "User-Agent": CONFIG.REDDIT_USER_AGENT || "",
     },
   });
   if (!response.ok) {
@@ -57,7 +57,7 @@ async function fetchSubreddit(subreddit: any, token: any, limit: any) {
 
 
  */
-function normalizeTrend(post: any, defaultCategory: any) {
+function normalizeTrend(post: Record<string, any>, defaultCategory: string | null) {
   const postData = post.data;
   return {
     name: postData.title,
@@ -103,7 +103,7 @@ export async function fetchRedditTrends() {
         .map((p: any) => normalizeTrend(p, sub.category));
       allTrends.push(...trends);
     } catch (error: unknown) {
-      logger.error(`[Reddit] ❌ /r/${sub.name}: ${(error as Error).message}`);
+      logger.error(`[Reddit] ❌ /r/${sub.name}: ${errorMessage(error)}`);
     }
   }
   return allTrends;

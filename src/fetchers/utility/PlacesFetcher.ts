@@ -86,11 +86,17 @@ function normalizePlace(place: any) {
 const STATIC_MAP_URL = "https://maps.googleapis.com/maps/api/staticmap";
 const MARKER_COLORS = ["red", "blue", "green", "purple", "orange", "yellow"];
 
+export interface PlacesStaticMapOptions {
+  size?: string;
+  zoom?: number;
+  maptype?: string;
+}
+
 /**
  * Build a Google Maps Static API URL with labeled markers for each place.
  * https://developers.google.com/maps/documentation/maps-static/start
  */
-export function buildStaticMapUrl(places: any, center: any, { size = "800x400", zoom, maptype = "roadmap" }: Record<string, any> = {}) {
+export function buildStaticMapUrl(places: any[], center: any, { size = "800x400", zoom, maptype = "roadmap" }: PlacesStaticMapOptions = {}) {
   if (!places.length || !CONFIG.GOOGLE_API_KEY) return null;
 
   const params = new URLSearchParams({
@@ -119,10 +125,18 @@ export function buildStaticMapUrl(places: any, center: any, { size = "800x400", 
 
 // ─── Nearby Search ────────────────────────────────────────────────
 
+export interface PlacesNearbyOptions {
+  type?: string;
+  latitude?: number;
+  longitude?: number;
+  radius?: number;
+  limit?: number;
+}
+
 /**
  * Search for nearby places by type.
-
-
+ *
+ *
  */
 export async function searchNearbyPlaces({
   type,
@@ -130,7 +144,7 @@ export async function searchNearbyPlaces({
   longitude,
   radius = 5000,
   limit = 20,
-}: Record<string, any> = {}) {
+}: PlacesNearbyOptions = {}) {
   if (!CONFIG.GOOGLE_PLACES_API_KEY) {
     throw new Error("GOOGLE_PLACES_API_KEY is not configured");
   }
@@ -140,8 +154,8 @@ export async function searchNearbyPlaces({
 
   const lat = latitude ?? CONFIG.LATITUDE;
   const lng = longitude ?? CONFIG.LONGITUDE;
-  const rad = Math.min(Math.max(radius, 100), 50000);
-  const max = Math.min(Math.max(limit, 1), 20);
+  const rad = Math.min(Math.max(radius ?? 5000, 100), 50000);
+  const max = Math.min(Math.max(limit ?? 20, 1), 20);
 
   // Cache check
   const cacheKey = `nearby:${type}:${lat}:${lng}:${rad}:${max}`;
@@ -197,10 +211,18 @@ export async function searchNearbyPlaces({
 
 // ─── Text Search ──────────────────────────────────────────────────
 
+export interface PlacesSearchOptions {
+  query?: string;
+  latitude?: number;
+  longitude?: number;
+  radius?: number;
+  limit?: number;
+}
+
 /**
  * Search for places using a natural language text query.
-
-
+ *
+ *
  */
 export async function searchPlacesByText({
   query,
@@ -208,7 +230,7 @@ export async function searchPlacesByText({
   longitude,
   radius = 10000,
   limit = 10,
-}: Record<string, any> = {}) {
+}: PlacesSearchOptions = {}) {
   if (!CONFIG.GOOGLE_PLACES_API_KEY) {
     throw new Error("GOOGLE_PLACES_API_KEY is not configured");
   }
@@ -218,11 +240,11 @@ export async function searchPlacesByText({
 
   const lat = latitude ?? CONFIG.LATITUDE;
   const lng = longitude ?? CONFIG.LONGITUDE;
-  const rad = Math.min(Math.max(radius, 100), 50000);
-  const max = Math.min(Math.max(limit, 1), 20);
+  const rad = Math.min(Math.max(radius ?? 10000, 100), 50000);
+  const max = Math.min(Math.max(limit ?? 10, 1), 20);
 
   // Cache check
-  const cacheKey = `text:${query.toLowerCase().trim()}:${lat}:${lng}:${rad}:${max}`;
+  const cacheKey = `text:${query?.toLowerCase().trim()}:${lat}:${lng}:${rad}:${max}`;
   const cached = placesCache.get(cacheKey);
   if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
     return cached.data;

@@ -8,7 +8,7 @@ import { getPyPiPackage } from "./PyPiFetcher.ts";
 /**
  * Look up a package on NPM or PyPI.
  */
-export async function getPackageInfo(name: any, registry: any, options: Record<string, any> = {}) {
+export async function getPackageInfo(name: any, registry: any, options: Record<string, unknown> = {}) {
   if (!name || typeof name !== "string") {
     return { error: "Package name is required" };
   }

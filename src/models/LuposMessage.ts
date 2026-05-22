@@ -1,5 +1,6 @@
 import { MongoClient, type Db, type Collection, type Document } from "mongodb";
 import logger from "../logger.ts";
+import { errorMessage } from "../utilities.ts";
 
 // ═══════════════════════════════════════════════════════════════
 //  Lupos Discord — MongoDB Connection (separate database)
@@ -59,7 +60,7 @@ export async function setupLuposCollections() {
       await messagesCol!.createIndex({ guildId: 1, channelId: 1, createdTimestamp: -1 }, { background: true });
       await messagesCol!.createIndex({ guildId: 1, createdTimestamp: -1 }, { background: true });
     } catch (error: unknown) {
-      logger.warn(`🐺 Lupos index creation warning: ${(error as Error).message}`);
+      logger.warn(`🐺 Lupos index creation warning: ${errorMessage(error)}`);
     }
 
     try {
@@ -69,7 +70,7 @@ export async function setupLuposCollections() {
       );
     } catch (error: unknown) {
       // Text index may already exist with different fields — non-fatal
-      logger.warn(`🐺 Lupos text index skipped: ${(error as Error).message}`);
+      logger.warn(`🐺 Lupos text index skipped: ${errorMessage(error)}`);
     }
   };
 

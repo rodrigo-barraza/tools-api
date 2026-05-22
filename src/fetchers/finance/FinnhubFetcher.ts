@@ -8,14 +8,13 @@ import { FINNHUB_BASE_URL } from "../../constants.ts";
  */
 
 const HEADERS = () => ({
-  "X-Finnhub-Token": CONFIG.FINNHUB_API_KEY,
+  "X-Finnhub-Token": CONFIG.FINNHUB_API_KEY || "",
 });
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
-async function get(path: any) {
+async function get(path: string) {
   const url = `${FINNHUB_BASE_URL}${path}`;
-  // @ts-expect-error - suppress remaining error
   const response = await fetch(url, { headers: HEADERS() });
   if (!response.ok) {
     throw new Error(`Finnhub ${path} → ${response.status} ${response.statusText}`);
@@ -39,7 +38,7 @@ async function get(path: any) {
  *   pc = previous close
  *   t  = timestamp
  */
-export async function fetchStockQuote(symbol: any) {
+export async function fetchStockQuote(symbol: string) {
   return get(`/quote?symbol=${encodeURIComponent(symbol)}`);
 }
 
@@ -48,7 +47,7 @@ export async function fetchStockQuote(symbol: any) {
 /**
  * Fetch company profile (name, logo, sector, market cap, etc.).
  */
-export async function fetchCompanyProfile(symbol: any) {
+export async function fetchCompanyProfile(symbol: string) {
   return get(`/stock/profile2?symbol=${encodeURIComponent(symbol)}`);
 }
 
@@ -58,7 +57,7 @@ export async function fetchCompanyProfile(symbol: any) {
  * Fetch general market news.
 
  */
-export async function fetchMarketNews(category: any = "general") {
+export async function fetchMarketNews(category: string = "general") {
   return get(`/news?category=${encodeURIComponent(category)}`);
 }
 
@@ -67,7 +66,7 @@ export async function fetchMarketNews(category: any = "general") {
 
 
  */
-export async function fetchCompanyNews(symbol: any, from: any, to: any) {
+export async function fetchCompanyNews(symbol: string, from: string, to: string) {
   return get(
     `/company-news?symbol=${encodeURIComponent(symbol)}&from=${from}&to=${to}`,
   );
@@ -80,7 +79,7 @@ export async function fetchCompanyNews(symbol: any, from: any, to: any) {
 
 
  */
-export async function fetchEarningsCalendar(from: any, to: any) {
+export async function fetchEarningsCalendar(from: string, to: string) {
   return get(`/calendar/earnings?from=${from}&to=${to}`);
 }
 
@@ -89,13 +88,13 @@ export async function fetchEarningsCalendar(from: any, to: any) {
 /**
  * Fetch analyst recommendation trends for a symbol.
  */
-export async function fetchRecommendationTrends(symbol: any) {
+export async function fetchRecommendationTrends(symbol: string) {
   return get(`/stock/recommendation?symbol=${encodeURIComponent(symbol)}`);
 }
 
 /**
  * Fetch basic financial metrics (PE, EPS, 52w high/low, beta, etc.).
  */
-export async function fetchBasicFinancials(symbol: any) {
+export async function fetchBasicFinancials(symbol: string) {
   return get(`/stock/metric?symbol=${encodeURIComponent(symbol)}&metric=all`);
 }

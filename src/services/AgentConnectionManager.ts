@@ -61,7 +61,7 @@ interface AgentRegistryEntry {
   connectedAt: Date;
   lastPong: Date;
   pendingRpc: Map<string, PendingRpc>;
-  _streamCallback?: ((method: string, params: Record<string, any>) => void) | null;
+  _streamCallback?: ((method: string, params: Record<string, unknown>) => void) | null;
 }
 
 interface AgentRpcMessage {
@@ -396,7 +396,7 @@ function deregisterAgent(agentId: string, reason: string) {
 /**
  * Send an RPC request to an agent and wait for the response.
  */
-export function sendRpc(agentId: string, method: string, params: Record<string, any> = {}): Promise<any> {
+export function sendRpc(agentId: string, method: string, params: Record<string, unknown> = {}): Promise<any> {
   return new Promise<any>((resolve, reject) => {
     const agent = agents.get(agentId);
     if (!agent) {
@@ -435,8 +435,8 @@ export function sendRpc(agentId: string, method: string, params: Record<string, 
 export function sendRpcStreaming(
   agentId: string,
   method: string,
-  params: Record<string, any> = {},
-  onNotification: (method: string, params: Record<string, any>) => void,
+  params: Record<string, unknown> = {},
+  onNotification: (method: string, params: Record<string, unknown>) => void,
 ): Promise<any> {
   const agent = agents.get(agentId);
   if (!agent) return Promise.reject(new Error("Agent not found"));
@@ -555,7 +555,7 @@ function startHealthCheck(wss: WebSocketServer) {
 // Helpers
 // ────────────────────────────────────────────────────────────
 
-function sendJson(ws: WebSocket, object: Record<string, any>) {
+function sendJson(ws: WebSocket, object: Record<string, unknown>) {
   if (ws.readyState === 1) {
     ws.send(JSON.stringify(object));
   }

@@ -1,6 +1,7 @@
 // ─── Lightweight Article Extraction ─────────────────────────
 
 import * as cheerio from "cheerio";
+import { errorMessage } from "../../utilities.ts";
 
 const MAX_BODY_CHARS = 15_000;
 const FETCH_TIMEOUT_MS = 10_000;
@@ -144,7 +145,7 @@ function extractText($: any, container: any) {
 // ─── Metadata Extraction ────────────────────────────────────────────
 
 function extractMetadata($: any, url: any) {
-  const meta: Record<string, any> = {};
+  const meta: Record<string, unknown> = {};
 
   // Title: og:title > twitter:title > <title>
   meta.title =
@@ -209,12 +210,16 @@ function extractMetadata($: any, url: any) {
 
 // ─── Public API ─────────────────────────────────────────────────────
 
+export interface GenericPageOptions {
+  maxChars?: number | string;
+}
+
 /**
- * Fetch and extract readable content from any URL.
+ * Fetch and extract text/metadata from a generic web page.
  * No Puppeteer — uses fetch + Cheerio.
  */
-export async function fetchGenericPage(url: any, options: Record<string, any> = {}) {
-  const maxChars = options.maxChars ? parseInt(options.maxChars, 10) : MAX_BODY_CHARS;
+export async function fetchGenericPage(url: string, options: GenericPageOptions = {}) {
+  const maxChars = options.maxChars ? parseInt(String(options.maxChars), 10) : MAX_BODY_CHARS;
 
   let response: any;
   try {
@@ -236,7 +241,7 @@ export async function fetchGenericPage(url: any, options: Record<string, any> = 
     if ((error as any).name === "AbortError") {
       return { error: `Request timed out after ${FETCH_TIMEOUT_MS / 1000}s: ${url}` };
     }
-    return { error: `Fetch failed: ${(error as Error).message}` };
+    return { error: `Fetch failed: ${errorMessage(error)}` };
   }
 
   if (!response.ok) {

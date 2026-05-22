@@ -87,6 +87,7 @@ import {
 } from "../caches/AvalancheCache.ts";
 import { saveState, startCollectorLoop } from "../services/FreshnessService.ts";
 import logger from "../logger.ts";
+import { errorMessage } from "../utilities.ts";
 
 // ─── Collector Factory ─────────────────────────────────────────────
 
@@ -103,7 +104,7 @@ function makeCollector({ label, collection, fetchFn, updateFn, setErrorFn, logFn
       }
     } catch (error: unknown) {
       setErrorFn(error);
-      logger.error(`[${label}] ❌ ${(error as Error).message}`);
+      logger.error(`[${label}] ❌ ${errorMessage(error)}`);
     }
   };
 }
@@ -276,7 +277,7 @@ async function collectEarthquakes() {
     );
   } catch (error: unknown) {
     setEarthquakeError(error as any);
-    logger.error(`[Earthquake] ❌ ${(error as Error).message}`);
+    logger.error(`[Earthquake] ❌ ${errorMessage(error)}`);
   }
 }
 
@@ -293,7 +294,7 @@ async function collectNeos() {
     );
   } catch (error: unknown) {
     setNeoError(error as any);
-    logger.error(`[NEO] ❌ ${(error as Error).message}`);
+    logger.error(`[NEO] ❌ ${errorMessage(error)}`);
   }
 }
 
@@ -309,7 +310,7 @@ async function collectDonki() {
     );
   } catch (error: unknown) {
     setSpaceWeatherError(error as any);
-    logger.error(`[DONKI] ❌ ${(error as Error).message}`);
+    logger.error(`[DONKI] ❌ ${errorMessage(error)}`);
   }
 }
 

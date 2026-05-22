@@ -4,7 +4,7 @@ import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { Request, Response, Router } from "express";
 import PrismService from "../services/PrismService.ts";
 import logger from "../logger.ts";
-import { extractCallerContext } from "../utilities.ts";
+import { extractCallerContext, errorMessage } from "../utilities.ts";
 import CONFIG from "../config.ts";
 
 const router = Router();
@@ -175,9 +175,9 @@ router.post("/generate-image", asyncHandler(async (req: Request, res: Response) 
           ...(systemPrompt && { systemPrompt }),
         });
       } catch (error: unknown) {
-        logger.error(`[CreativeRoutes] Prism chat failed: ${(error as Error).message}`);
+        logger.error(`[CreativeRoutes] Prism chat failed: ${errorMessage(error)}`);
         return res.status(502).json({
-          error: `Image generation failed: ${(error as Error).message}`,
+          error: `Image generation failed: ${errorMessage(error)}`,
         });
       }
 
@@ -252,8 +252,8 @@ router.post("/generate-image", asyncHandler(async (req: Request, res: Response) 
       }),
     });
   } catch (error: unknown) {
-    logger.error(`[CreativeRoutes] generate-image failed: ${(error as Error).message}`);
-    res.status(500).json({ error: `Image generation failed: ${(error as Error).message}` });
+    logger.error(`[CreativeRoutes] generate-image failed: ${errorMessage(error)}`);
+    res.status(500).json({ error: `Image generation failed: ${errorMessage(error)}` });
   }
 }));
 
@@ -327,8 +327,8 @@ router.post("/describe-image", asyncHandler(async (req: Request, res: Response) 
 
           return result.text || "Unable to describe this image.";
         } catch (error: unknown) {
-          logger.error(`[CreativeRoutes] describe-image vision call failed: ${(error as Error).message}`);
-          return `Failed to describe image: ${(error as Error).message}`;
+          logger.error(`[CreativeRoutes] describe-image vision call failed: ${errorMessage(error)}`);
+          return `Failed to describe image: ${errorMessage(error)}`;
         }
       })();
 
@@ -347,8 +347,8 @@ router.post("/describe-image", asyncHandler(async (req: Request, res: Response) 
       descriptions,
     });
   } catch (error: unknown) {
-    logger.error(`[CreativeRoutes] describe-image failed: ${(error as Error).message}`);
-    res.status(500).json({ error: `Image description failed: ${(error as Error).message}` });
+    logger.error(`[CreativeRoutes] describe-image failed: ${errorMessage(error)}`);
+    res.status(500).json({ error: `Image description failed: ${errorMessage(error)}` });
   }
 }));
 
@@ -385,8 +385,8 @@ router.post("/text-to-speech", asyncHandler(async (req: Request, res: Response) 
       textLength: text.length,
     });
   } catch (error: unknown) {
-    logger.error(`[CreativeRoutes] text-to-speech failed: ${(error as Error).message}`);
-    res.status(500).json({ error: `Text-to-speech failed: ${(error as Error).message}` });
+    logger.error(`[CreativeRoutes] text-to-speech failed: ${errorMessage(error)}`);
+    res.status(500).json({ error: `Text-to-speech failed: ${errorMessage(error)}` });
   }
 }));
 
@@ -409,7 +409,7 @@ router.post("/speech-to-text", asyncHandler(async (req: Request, res: Response) 
       const mimeType = response.headers.get("content-type") || "audio/mpeg";
       audioData = `data:${mimeType};base64,${Buffer.from(buffer).toString("base64")}`;
     } catch (error: unknown) {
-      return res.status(400).json({ error: `Failed to fetch audio URL: ${(error as Error).message}` });
+      return res.status(400).json({ error: `Failed to fetch audio URL: ${errorMessage(error)}` });
     }
   }
 
@@ -437,8 +437,8 @@ router.post("/speech-to-text", asyncHandler(async (req: Request, res: Response) 
       usage: result.usage || {},
     });
   } catch (error: unknown) {
-    logger.error(`[CreativeRoutes] speech-to-text failed: ${(error as Error).message}`);
-    res.status(500).json({ error: `Speech-to-text failed: ${(error as Error).message}` });
+    logger.error(`[CreativeRoutes] speech-to-text failed: ${errorMessage(error)}`);
+    res.status(500).json({ error: `Speech-to-text failed: ${errorMessage(error)}` });
   }
 }));
 

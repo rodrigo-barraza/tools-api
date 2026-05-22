@@ -8,12 +8,13 @@ import {
   StreamMessageWriter,
   MessageConnection,
 } from "vscode-jsonrpc/node.js";
+import { errorMessage } from "../../utilities.ts";
 
 export interface LspClient {
-  readonly capabilities: Record<string, any> | null;
+  readonly capabilities: Record<string, unknown> | null;
   readonly isInitialized: boolean;
   start(command: string, args: string[], options?: { env?: Record<string, string>; cwd?: string }): Promise<void>;
-  initialize(params: Record<string, any>): Promise<any>;
+  initialize(params: Record<string, unknown>): Promise<any>;
   sendRequest(method: string, params: any): Promise<any>;
   sendNotification(method: string, params: any): Promise<void>;
   onNotification(method: string, handler: (...args: any[]) => void): void;
@@ -42,7 +43,7 @@ export function createLspClient(
   // ── Closure state ──────────────────────────────────────────
   let proc: ChildProcess | null = null;
   let connection: MessageConnection | null = null;
-  let capabilities: Record<string, any> | null = null;
+  let capabilities: Record<string, unknown> | null = null;
   let isInitialized = false;
   let startFailed = false;
   let startError: Error | null = null;
@@ -60,7 +61,7 @@ export function createLspClient(
 
   // ── Public API ─────────────────────────────────────────────
   return {
-    get capabilities(): Record<string, any> | null {
+    get capabilities(): Record<string, unknown> | null {
       return capabilities;
     },
 
@@ -172,7 +173,7 @@ export function createLspClient(
 
         logger.info(`[LSP:${serverName}] Client started`);
       } catch (error: unknown) {
-        logger.error(`[LSP:${serverName}] Failed to start: ${(error as Error).message}`);
+        logger.error(`[LSP:${serverName}] Failed to start: ${errorMessage(error)}`);
         throw error;
       }
     },
@@ -180,7 +181,7 @@ export function createLspClient(
     /**
      * Send the LSP `initialize` request and `initialized` notification.
      */
-    async initialize(params: Record<string, any>): Promise<any> {
+    async initialize(params: Record<string, unknown>): Promise<any> {
       if (!connection) throw new Error("LSP client not started");
       checkStartFailed();
 
@@ -195,7 +196,7 @@ export function createLspClient(
         logger.info(`[LSP:${serverName}] Initialized`);
         return result;
       } catch (error: unknown) {
-        logger.error(`[LSP:${serverName}] Initialize failed: ${(error as Error).message}`);
+        logger.error(`[LSP:${serverName}] Initialize failed: ${errorMessage(error)}`);
         throw error;
       }
     },
@@ -211,7 +212,7 @@ export function createLspClient(
       try {
         return await connection.sendRequest(method, params);
       } catch (error: unknown) {
-        logger.error(`[LSP:${serverName}] Request ${method} failed: ${(error as Error).message}`);
+        logger.error(`[LSP:${serverName}] Request ${method} failed: ${errorMessage(error)}`);
         throw error;
       }
     },
@@ -226,7 +227,7 @@ export function createLspClient(
       try {
         await connection.sendNotification(method, params);
       } catch (error: unknown) {
-        logger.warn(`[LSP:${serverName}] Notification ${method} failed: ${(error as Error).message}`);
+        logger.warn(`[LSP:${serverName}] Notification ${method} failed: ${errorMessage(error)}`);
         // Don't re-throw — notifications are fire-and-forget
       }
     },
@@ -268,7 +269,7 @@ export function createLspClient(
           await connection.sendNotification("exit", {});
         }
       } catch (error: unknown) {
-        logger.warn(`[LSP:${serverName}] Shutdown error: ${(error as Error).message}`);
+        logger.warn(`[LSP:${serverName}] Shutdown error: ${errorMessage(error)}`);
         shutdownError = error as Error;
       } finally {
         // Always cleanup regardless of shutdown success

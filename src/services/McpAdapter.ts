@@ -27,6 +27,7 @@ import {
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
 import type { Request, Response, Application } from "express";
+import { errorMessage } from "../utilities.ts";
 
 // ── Self base URL (vault-resolved, localhost fallback) ───────
 const SELF_BASE_URL = CONFIG.TOOLS_SERVICE_URL;
@@ -135,7 +136,7 @@ async function executeTool(toolName: string, endpoint: any, args: any = {}, cont
     }
     return await response.json();
   } catch (error: unknown) {
-    return { error: `Tool execution failed: ${(error as Error).message}` };
+    return { error: `Tool execution failed: ${errorMessage(error)}` };
   }
 }
 
@@ -191,7 +192,7 @@ function createMcpServer(context: Record<string, string> = {}) {
         };
       } catch (error: unknown) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: (error as Error).message }) }],
+          content: [{ type: "text", text: JSON.stringify({ error: errorMessage(error) }) }],
           isError: true,
         };
       }

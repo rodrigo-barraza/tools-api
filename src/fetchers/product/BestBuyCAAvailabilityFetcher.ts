@@ -3,7 +3,7 @@ import {
   BESTBUY_CA_AVAILABILITY_BASE_URL,
   BESTBUY_CA_MAX_SKUS_PER_REQUEST,
 } from "../../constants.ts";
-import { randomUserAgent } from "../../utilities.ts";
+import { randomUserAgent, errorMessage } from "../../utilities.ts";
 import rateLimiter from "../../services/RateLimiterService.ts";
 /**
  * Build the Best Buy CA availability URL for a batch of SKUs.
@@ -54,7 +54,7 @@ function normalizeAvailability(availability: any, metadata: any = null) {
 
 
  */
-export async function fetchBestBuyCAAvailability(skus: any, skuMetadata: Record<string, any> = {}) {
+export async function fetchBestBuyCAAvailability(skus: any, skuMetadata: Record<string, unknown> = {}) {
   if (!skus.length) return { results: [], errors: [] };
   const batches = chunk(skus, BESTBUY_CA_MAX_SKUS_PER_REQUEST);
   const allResults: any[] = [];
@@ -83,7 +83,7 @@ export async function fetchBestBuyCAAvailability(skus: any, skuMetadata: Record<
         allResults.push(normalizeAvailability(avail, skuMetadata[avail.sku]));
       }
     } catch (error: unknown) {
-      errors.push(`Batch ${i + 1}/${batches.length}: ${(error as Error).message}`);
+      errors.push(`Batch ${i + 1}/${batches.length}: ${errorMessage(error)}`);
     }
   }
   return { results: allResults, errors };

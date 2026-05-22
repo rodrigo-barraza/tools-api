@@ -1,6 +1,7 @@
 // ─── Twitter/X Fetcher — Post Content Extraction ────────────
 
 import { USER_AGENT } from "../../constants.ts";
+import { errorMessage } from "../../utilities.ts";
 
 const FXTWITTER_API = "https://api.fxtwitter.com";
 const OEMBED_API = "https://publish.twitter.com/oembed";
@@ -69,7 +70,7 @@ async function fetchFxTwitter(username: any, tweetId: any) {
     const tweet = data.tweet;
     if (!tweet) return { error: "Tweet not found in response" };
 
-    const result: Record<string, any> = {
+    const result: Record<string, unknown> = {
       tweetId: tweet.id || tweetId,
       url: tweet.url || `https://x.com/${username}/status/${tweetId}`,
       author: tweet.author?.name || null,
@@ -114,7 +115,7 @@ async function fetchFxTwitter(username: any, tweetId: any) {
 
     return result;
   } catch (error: unknown) {
-    return { error: `fxtwitter fetch failed: ${(error as Error).message}` };
+    return { error: `fxtwitter fetch failed: ${errorMessage(error)}` };
   }
 }
 
@@ -156,6 +157,6 @@ async function fetchOembed(tweetId: any) {
       source: "oembed (limited data)",
     };
   } catch (error: unknown) {
-    return { error: `oembed fetch failed: ${(error as Error).message}` };
+    return { error: `oembed fetch failed: ${errorMessage(error)}` };
   }
 }

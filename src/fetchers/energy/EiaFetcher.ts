@@ -27,14 +27,15 @@ const META_CACHE_TTL_MS = 86_400_000; // 24 hours — routes/metadata rarely cha
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
-function buildUrl(route: any, params: Record<string, any> = {}) {
+function buildUrl(route: string, params: Record<string, unknown> = {}) {
   const url = new URL(`${EIA_BASE_URL}/${route}`);
-  // @ts-expect-error - suppress remaining error
-  url.searchParams.set("api_key", CONFIG.EIA_API_KEY);
+  if (CONFIG.EIA_API_KEY) {
+    url.searchParams.set("api_key", CONFIG.EIA_API_KEY);
+  }
   for (const [key, value] of Object.entries(params)) {
     if (value != null) {
       if (Array.isArray(value)) {
-        value.forEach((v: any) => url.searchParams.append(`${key}[]`, String(v)));
+        value.forEach((v: unknown) => url.searchParams.append(`${key}[]`, String(v)));
       } else {
         url.searchParams.set(key, String(value));
       }
@@ -43,7 +44,7 @@ function buildUrl(route: any, params: Record<string, any> = {}) {
   return url.toString();
 }
 
-async function eiaFetch(route: any, params: Record<string, any> = {}) {
+async function eiaFetch(route: string, params: Record<string, unknown> = {}) {
   if (!CONFIG.EIA_API_KEY) {
     throw new Error("EIA_API_KEY is not configured");
   }
@@ -74,7 +75,7 @@ async function eiaFetch(route: any, params: Record<string, any> = {}) {
  * Browse the EIA data tree at a given route path.
  * Returns child routes, available facets, frequencies, and data columns.
  */
-export async function browseRoute(route: any = "") {
+export async function browseRoute(route: string = "") {
   const cacheKey = `meta:${route}`;
   const cached = metaCache.get(cacheKey);
   if (cached && Date.now() - cached.fetchedAt < META_CACHE_TTL_MS) {
@@ -108,7 +109,7 @@ export async function browseRoute(route: any = "") {
 /**
  * Get available facet values for a route + facet.
  */
-export async function getFacetValues(route: any, facetId: any) {
+export async function getFacetValues(route: string, facetId: string) {
   const cacheKey = `facet:${route}:${facetId}`;
   const cached = metaCache.get(cacheKey);
   if (cached && Date.now() - cached.fetchedAt < META_CACHE_TTL_MS) {
@@ -135,10 +136,21 @@ export async function getFacetValues(route: any, facetId: any) {
 
 // ─── Data Retrieval ────────────────────────────────────────────────
 
+export interface EiaGetDataOptions {
+  data?: string[];
+  facets?: Record<string, string | string[]>;
+  frequency?: string;
+  start?: string;
+  end?: string;
+  sort?: string;
+  length?: number;
+  offset?: number;
+}
+
 /**
  * Fetch data from the EIA API for a given route.
  */
-export async function getData(route: any, options: Record<string, any> = {}) {
+export async function getData(route: string, options: EiaGetDataOptions = {}) {
   const {
     data: dataColumns,
     facets,
@@ -158,7 +170,7 @@ export async function getData(route: any, options: Record<string, any> = {}) {
   }
 
   // Build query params
-  const params: Record<string, any> = {
+  const params: Record<string, unknown> = {
     length: Math.min(length, 5000),
     offset,
   };
@@ -188,7 +200,7 @@ export async function getData(route: any, options: Record<string, any> = {}) {
     for (const [facetId, values] of Object.entries(facets)) {
       const facetParams = (Array.isArray(values) ? values : [values])
         .map(
-          (v: any) =>
+          (v: string) =>
             `facets[${encodeURIComponent(facetId)}][]=${encodeURIComponent(v)}`,
         )
         .join("&");

@@ -1,6 +1,7 @@
 import { getDB } from "../db.ts";
 import { lookupIp } from "../fetchers/utility/IpInfoFetcher.ts";
 import logger from "../logger.ts";
+import { errorMessage } from "../utilities.ts";
 
 // ═══════════════════════════════════════════════════════════════
 //  Location Service — Dynamic Geolocation Resolution
@@ -66,7 +67,7 @@ async function findNearestTideStation(latitude: any, longitude: any) {
 
     return closest;
   } catch (error: unknown) {
-    logger.warn(`[Location] ⚠️ NOAA station lookup failed: ${(error as Error).message}`);
+    logger.warn(`[Location] ⚠️ NOAA station lookup failed: ${errorMessage(error)}`);
     return null;
   }
 }
@@ -143,7 +144,7 @@ async function saveCachedLocation(location: any) {
       .collection(COLLECTION)
       .replaceOne({ _id: "current" as any }, document, { upsert: true });
   } catch (error: unknown) {
-    logger.error(`[Location] ⚠️ Failed to persist: ${(error as Error).message}`);
+    logger.error(`[Location] ⚠️ Failed to persist: ${errorMessage(error)}`);
   }
 }
 
@@ -190,11 +191,11 @@ export async function initLocation() {
       const { _id, updatedAt: _updatedAt, ...rest } = cached;
       resolvedLocation = rest;
       logger.warn(
-        `[Location] ⚠️ Refresh failed (${(error as Error).message}), using stale cache`,
+        `[Location] ⚠️ Refresh failed (${errorMessage(error)}), using stale cache`,
       );
       return resolvedLocation;
     }
-    throw new Error(`Location resolution failed: ${(error as Error).message}`);
+    throw new Error(`Location resolution failed: ${errorMessage(error)}`);
   }
 }
 

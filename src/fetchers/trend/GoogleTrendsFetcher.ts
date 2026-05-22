@@ -2,7 +2,7 @@ import {
   TREND_SOURCES as SOURCES,
   GOOGLE_TRENDS_GEOS,
 } from "../../constants.ts";
-import { extractXmlTag, randomUserAgent } from "../../utilities.ts";
+import { extractXmlTag, randomUserAgent, errorMessage } from "../../utilities.ts";
 import logger from "../../logger.ts";
 
 const TRENDS_RSS_URL = "https://trends.google.com/trending/rss";
@@ -86,7 +86,7 @@ export async function fetchGoogleTrends() {
       const trends = await fetchGoogleDailyTrends(geo);
       allTrends.push(...trends);
     } catch (error: unknown) {
-      logger.error(`[Google Trends] ❌ ${geo}: ${(error as Error).message}`);
+      logger.error(`[Google Trends] ❌ ${geo}: ${errorMessage(error)}`);
     }
   }
 

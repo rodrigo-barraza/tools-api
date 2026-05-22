@@ -12,6 +12,7 @@ import {
   BACKGROUND_PROCESS_EXIT_TTL_MS as EXIT_TTL_MS,
   BACKGROUND_PROCESS_FORCE_KILL_DELAY_MS as FORCE_KILL_DELAY_MS,
 } from "../constants.ts";
+import { errorMessage } from "../utilities.ts";
 
 // ────────────────────────────────────────────────────────────
 // Types
@@ -170,7 +171,7 @@ export function kill(pid: number, signal: NodeJS.Signals = "SIGTERM") {
     registry.delete(pid);
     return { success: true, pid, signal, message: `Sent ${signal} to PID ${pid}` };
   } catch (error: unknown) {
-    return { success: false, pid, error: `Failed to kill: ${(error as Error).message}` };
+    return { success: false, pid, error: `Failed to kill: ${errorMessage(error)}` };
   }
 }
 

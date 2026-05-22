@@ -1,6 +1,7 @@
 import type { Collection } from "mongodb";
 import { getDB } from "../db.ts";
 import logger from "../logger.ts";
+import { errorMessage } from "../utilities.ts";
 
 // ─── Types ──────────────────────────────────────────────────────
 export interface GeomagneticStormDocument {
@@ -43,7 +44,7 @@ export async function upsertGeomagneticStorms(storms: GeomagneticStormDocument[]
     const result = await collection.bulkWrite(operations, { ordered: false });
     return { upserted: result.upsertedCount, modified: result.modifiedCount };
   } catch (error: unknown) {
-    logger.error("Failed to upsert geomagnetic storms:", (error as Error).message);
+    logger.error("Failed to upsert geomagnetic storms:", errorMessage(error));
     return { upserted: 0, modified: 0 };
   }
 }

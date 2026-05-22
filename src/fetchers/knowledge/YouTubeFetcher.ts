@@ -8,6 +8,7 @@ import {
   YouTubeTranscriptResult,
   YouTubeTranscriptSegment,
 } from "../../types/knowledge.ts";
+import { errorMessage } from "../../utilities.ts";
 
 // ─── URL Parsing ───────────────────────────────────────────────────
 
@@ -217,7 +218,7 @@ async function fetchTranscript(videoId: string, lang?: string): Promise<YouTubeT
       available: false,
       segments: [],
       text: "",
-      error: (error as Error).message || "Transcript unavailable",
+      error: errorMessage(error) || "Transcript unavailable",
     };
   }
 }

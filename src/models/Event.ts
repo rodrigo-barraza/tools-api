@@ -2,6 +2,7 @@ import type { Collection, Db } from "mongodb";
 import { days as daysToMs } from "@rodrigo-barraza/utilities-library";
 import { getDB } from "../db.ts";
 import logger from "../logger.ts";
+import { errorMessage } from "../utilities.ts";
 
 // ─── Types ──────────────────────────────────────────────────────
 export interface EventVenue {
@@ -88,7 +89,7 @@ export async function upsertEvents(events: EventDocument[]): Promise<{ upserted:
       modified: result.modifiedCount,
     };
   } catch (error: unknown) {
-    logger.error("Failed to upsert events:", (error as Error).message);
+    logger.error("Failed to upsert events:", errorMessage(error));
     return { upserted: 0, modified: 0 };
   }
 }

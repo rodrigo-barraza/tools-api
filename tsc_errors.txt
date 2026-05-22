@@ -1,0 +1,135 @@
+src/fetchers/energy/EiaFetcher.ts(32,37): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/fetchers/energy/EiaFetcher.ts(161,22): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number'.
+src/fetchers/energy/EiaFetcher.ts(169,29): error TS2339: Property 'split' does not exist on type '{}'.
+src/fetchers/energy/EiaFetcher.ts(178,20): error TS2339: Property 'length' does not exist on type '{}'.
+src/fetchers/energy/EiaFetcher.ts(180,8): error TS2339: Property 'map' does not exist on type '{}'.
+src/fetchers/event/GooglePlacesFetcher.ts(115,12): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ event_venue: string; night_club: string; performing_arts_theater: string; movie_theater: string; stadium: string; amusement_park: string; art_gallery: string; museum: string; convention_center: string; }'.
+src/fetchers/event/TicketmasterFetcher.ts(32,12): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ onsale: string; offsale: string; cancelled: string; canceled: string; postponed: string; rescheduled: string; }'.
+src/fetchers/finance/FinnhubFetcher.ts(18,41): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(input: string | URL | Request, init?: RequestInit | undefined): Promise<Response>', gave the following error.
+    Type '{ "X-Finnhub-Token": string | undefined; }' is not assignable to type 'HeadersInit | undefined'.
+      Type '{ "X-Finnhub-Token": string | undefined; }' is not assignable to type 'Record<string, string>'.
+        Property '"X-Finnhub-Token"' is incompatible with index signature.
+          Type 'string | undefined' is not assignable to type 'string'.
+            Type 'undefined' is not assignable to type 'string'.
+  Overload 2 of 2, '(input: URL | RequestInfo, init?: RequestInit | undefined): Promise<Response>', gave the following error.
+    Type '{ "X-Finnhub-Token": string | undefined; }' is not assignable to type 'HeadersInit | undefined'.
+      Type '{ "X-Finnhub-Token": string | undefined; }' is not assignable to type 'Record<string, string>'.
+        Property '"X-Finnhub-Token"' is incompatible with index signature.
+          Type 'string | undefined' is not assignable to type 'string'.
+            Type 'undefined' is not assignable to type 'string'.
+src/fetchers/finance/FredFetcher.ts(27,37): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/fetchers/maritime/AisStreamFetcher.ts(85,39): error TS18046: 'subscription.BoundingBoxes' is of type 'unknown'.
+src/fetchers/maritime/AisStreamFetcher.ts(101,13): error TS2322: Type 'string' is not assignable to type 'null'.
+src/fetchers/trend/RedditFetcher.ts(20,9): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(input: string | URL | Request, init?: RequestInit | undefined): Promise<Response>', gave the following error.
+    Type '{ Authorization: string; "Content-Type": string; "User-Agent": string | undefined; }' is not assignable to type 'HeadersInit | undefined'.
+      Type '{ Authorization: string; "Content-Type": string; "User-Agent": string | undefined; }' is not assignable to type 'undefined'.
+  Overload 2 of 2, '(input: URL | RequestInfo, init?: RequestInit | undefined): Promise<Response>', gave the following error.
+    Type '{ Authorization: string; "Content-Type": string; "User-Agent": string | undefined; }' is not assignable to type 'HeadersInit | undefined'.
+      Type '{ Authorization: string; "Content-Type": string; "User-Agent": string | undefined; }' is not assignable to type 'undefined'.
+src/fetchers/trend/RedditFetcher.ts(44,9): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(input: string | URL | Request, init?: RequestInit | undefined): Promise<Response>', gave the following error.
+    Type '{ Authorization: string; "User-Agent": string | undefined; }' is not assignable to type 'HeadersInit | undefined'.
+      Type '{ Authorization: string; "User-Agent": string | undefined; }' is not assignable to type 'undefined'.
+  Overload 2 of 2, '(input: URL | RequestInfo, init?: RequestInit | undefined): Promise<Response>', gave the following error.
+    Type '{ Authorization: string; "User-Agent": string | undefined; }' is not assignable to type 'HeadersInit | undefined'.
+      Type '{ Authorization: string; "User-Agent": string | undefined; }' is not assignable to type 'undefined'.
+src/fetchers/utility/PlacesFetcher.ts(96,38): error TS2345: Argument of type '{ size: unknown; maptype: unknown; scale: string; key: string; }' is not assignable to parameter of type 'string | Record<string, string> | string[][] | URLSearchParams | undefined'.
+  Types of property 'size' are incompatible.
+    Type 'unknown' is not assignable to type 'string | number | undefined'.
+src/fetchers/utility/PlacesFetcher.ts(143,33): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number'.
+src/fetchers/utility/PlacesFetcher.ts(144,33): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number'.
+src/fetchers/utility/PlacesFetcher.ts(221,33): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number'.
+src/fetchers/utility/PlacesFetcher.ts(222,33): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number'.
+src/fetchers/utility/PlacesFetcher.ts(225,34): error TS2339: Property 'toLowerCase' does not exist on type '{}'.
+src/fetchers/utility/WebcamFetcher.ts(8,26): error TS18046: 'city' is of type 'unknown'.
+src/fetchers/utility/WebcamFetcher.ts(15,27): error TS18046: 'city' is of type 'unknown'.
+src/fetchers/utility/WebcamFetcher.ts(15,58): error TS18046: 'city' is of type 'unknown'.
+src/fetchers/utility/WebcamFetcher.ts(23,37): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ vancouver: () => Promise<void>; seattle: () => Promise<void>; toronto: () => Promise<void>; calgary: () => Promise<void>; austin: () => Promise<void>; ... 28 more ...; ithaca: () => Promise<...>; }'.
+src/fetchers/utility/WebcamFetcher.ts(35,44): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number | undefined'.
+src/fetchers/web/GenericPageFetcher.ts(218,48): error TS2345: Argument of type '{}' is not assignable to parameter of type 'string'.
+src/fetchers/web/PdfFetcher.ts(69,34): error TS2345: Argument of type '{}' is not assignable to parameter of type 'string'.
+src/fetchers/web/RssFetcher.ts(23,33): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number'.
+src/fetchers/web/StackOverflowFetcher.ts(89,33): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number'.
+src/fetchers/web/StackOverflowFetcher.ts(155,5): error TS18046: 'result.answers' is of type 'unknown'.
+src/fetchers/web/WaybackFetcher.ts(47,28): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number'.
+src/fetchers/web/WaybackFetcher.ts(51,32): error TS2345: Argument of type '{}' is not assignable to parameter of type 'string'.
+src/fetchers/web/WaybackFetcher.ts(52,28): error TS2345: Argument of type '{}' is not assignable to parameter of type 'string'.
+src/fetchers/web/WaybackFetcher.ts(73,28): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+src/fetchers/web/WaybackFetcher.ts(75,27): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+src/fetchers/web/WebContentFetcher.ts(80,9): error TS2322: Type 'unknown' is not assignable to type 'string | undefined'.
+src/fetchers/web/WebContentFetcher.ts(88,55): error TS2345: Argument of type '{}' is not assignable to parameter of type 'string'.
+src/fetchers/web/WebContentFetcher.ts(98,55): error TS2345: Argument of type '{}' is not assignable to parameter of type 'string'.
+src/fetchers/web/WebContentFetcher.ts(106,53): error TS2345: Argument of type '{}' is not assignable to parameter of type 'string'.
+src/services/AgenticCommandService.ts(386,66): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+src/services/AgenticCommandService.ts(387,71): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+src/services/AgenticNotebookService.ts(36,42): error TS2345: Argument of type '{}' is not assignable to parameter of type 'string'.
+src/services/AgenticTaskService.ts(43,12): error TS18047: 'result' is possibly 'null'.
+src/services/AgenticTaskService.ts(116,42): error TS2345: Argument of type '{}' is not assignable to parameter of type 'string'.
+src/services/AgenticTaskService.ts(129,21): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number'.
+src/services/AgenticToolSearchService.ts(21,32): error TS2339: Property 'toLowerCase' does not exist on type '{}'.
+src/services/AgenticToolSearchService.ts(29,30): error TS2339: Property 'toLowerCase' does not exist on type '{}'.
+src/services/AgenticToolSearchService.ts(72,39): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number'.
+src/services/AgenticToolTestService.ts(272,20): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ read_file: () => Promise<{ tool: any; success: boolean; duration: number; message: any; details: any; } | { tool: any; success: boolean; duration: number; message: string; details?: undefined; }>; ... 15 more ...; tool_search: () => Promise<...>; }'.
+src/services/AgenticToolTestService.ts(301,28): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ read_file: () => Promise<{ tool: any; success: boolean; duration: number; message: any; details: any; } | { tool: any; success: boolean; duration: number; message: string; details?: undefined; }>; ... 15 more ...; tool_search: () => Promise<...>; }'.
+src/services/AgenticWebService.ts(150,33): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number'.
+src/services/AgenticWebService.ts(189,27): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ d1: string; d7: string; w1: string; w2: string; m1: string; m3: string; y1: string; }'.
+src/services/AgenticWebService.ts(194,9): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(input: string | URL | Request, init?: RequestInit | undefined): Promise<Response>', gave the following error.
+    Type '{ Accept: string; "Accept-Encoding": string; "X-Subscription-Token": string | undefined; }' is not assignable to type 'HeadersInit | undefined'.
+      Type '{ Accept: string; "Accept-Encoding": string; "X-Subscription-Token": string | undefined; }' is not assignable to type 'undefined'.
+  Overload 2 of 2, '(input: URL | RequestInfo, init?: RequestInit | undefined): Promise<Response>', gave the following error.
+    Type '{ Accept: string; "Accept-Encoding": string; "X-Subscription-Token": string | undefined; }' is not assignable to type 'HeadersInit | undefined'.
+      Type '{ Accept: string; "Accept-Encoding": string; "X-Subscription-Token": string | undefined; }' is not assignable to type 'undefined'.
+src/services/AgenticWebService.ts(232,40): error TS2345: Argument of type '{ key: string | undefined; cx: string | undefined; q: any; num: string; }' is not assignable to parameter of type 'string | Record<string, string> | string[][] | URLSearchParams | undefined'.
+  Type '{ key: string | undefined; cx: string | undefined; q: any; num: string; }' is not assignable to type 'undefined'.
+src/services/AgenticWebService.ts(300,24): error TS2345: Argument of type '{}' is not assignable to parameter of type 'BasicAcceptedElems<AnyNode> | undefined'.
+src/services/AgenticWebService.ts(302,7): error TS2322: Type 'Cheerio<AnyNode>' is not assignable to type 'Cheerio<Element>'.
+  Type 'AnyNode' is not assignable to type 'Element'.
+    Type 'Document' is missing the following properties from type 'Element': name, attribs, tagName, attributes
+src/services/CrawlerService.ts(115,9): error TS2698: Spread types may only be created from object types.
+src/services/CrawlerService.ts(127,24): error TS2349: This expression is not callable.
+  Type '{}' has no call signatures.
+src/services/DiscordDataService.ts(145,17): error TS18046: 'filter.createdTimestamp' is of type 'unknown'.
+src/services/DiscordDataService.ts(145,57): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'string | number'.
+src/services/DiscordDataService.ts(146,16): error TS18046: 'filter.createdTimestamp' is of type 'unknown'.
+src/services/DiscordDataService.ts(146,56): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'string | number'.
+src/services/DiscordDataService.ts(181,34): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number'.
+src/services/DiscordDataService.ts(445,33): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number'.
+src/services/DiscordDataService.ts(572,7): error TS2698: Spread types may only be created from object types.
+src/services/DiscordDataService.ts(587,33): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number'.
+src/services/DiscordDataService.ts(598,33): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number'.
+src/services/ImageService.ts(231,19): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ jpeg: string; jpg: string; png: string; webp: string; avif: string; tiff: string; gif: string; }'.
+src/services/ImageService.ts(335,23): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ jpeg: string; jpg: string; png: string; webp: string; gif: string; ico: string; tiff: string; bmp: string; }'.
+src/services/JavaScriptInterpreterService.ts(174,44): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number'.
+src/services/RateLimiterService.ts(24,20): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ TICKETMASTER: { qps: number; qpm: null; qpd: number; requestDelayMs: number; }; SEATGEEK: { qps: null; qpm: null; qpd: number; requestDelayMs: number; }; TMDB: { qps: number; qpm: null; qpd: null; requestDelayMs: number; }; ... 42 more ...; EIA: { ...; }; }'.
+src/services/RateLimiterService.ts(63,12): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ TICKETMASTER: { qps: number; qpm: null; qpd: number; requestDelayMs: number; }; SEATGEEK: { qps: null; qpm: null; qpd: number; requestDelayMs: number; }; TMDB: { qps: number; qpm: null; qpd: null; requestDelayMs: number; }; ... 42 more ...; EIA: { ...; }; }'.
+src/services/ShellExecutorService.ts(136,44): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number'.
+src/services/ShellExecutorService.ts(153,34): error TS2345: Argument of type '{}' is not assignable to parameter of type 'string | ArrayBufferLike | ArrayBufferView<ArrayBufferLike>'.
+src/services/ShellExecutorService.ts(267,44): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number'.
+src/services/ShellExecutorService.ts(277,34): error TS2345: Argument of type '{}' is not assignable to parameter of type 'string | ArrayBufferLike | ArrayBufferView<ArrayBufferLike>'.
+src/services/ShellExecutorService.ts(309,9): error TS2349: This expression is not callable.
+  Type '{}' has no call signatures.
+src/services/ShellExecutorService.ts(317,9): error TS2349: This expression is not callable.
+  Type '{}' has no call signatures.
+src/services/ToolSchemaService.ts(8676,47): error TS2352: Conversion of type 'ToolsServiceConfig' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Index signature for type 'string' is missing in type 'ToolsServiceConfig'.
+src/services/ToolSchemaService.ts(9021,61): error TS2352: Conversion of type 'ToolsServiceConfig' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Index signature for type 'string' is missing in type 'ToolsServiceConfig'.
+src/services/TwilioService.ts(68,30): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+src/services/TwilioService.ts(72,53): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'string | number'.

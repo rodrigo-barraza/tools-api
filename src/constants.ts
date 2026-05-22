@@ -26,7 +26,7 @@ export const MOVIE_INTERVAL_MS = 14_400_000; // 4 hours
 export const GOOGLE_PLACES_INTERVAL_MS = 86_400_000; // 24 hours
 
 // Event sources
-export const EVENT_SOURCES = {
+export const EVENT_SOURCES: Record<string, string> = {
   TICKETMASTER: "ticketmaster",
   SEATGEEK: "seatgeek",
   CRAIGSLIST: "craigslist",
@@ -38,10 +38,10 @@ export const EVENT_SOURCES = {
   BC_LIONS: "bc_lions",
   TMDB: "tmdb",
   GOOGLE_PLACES: "google_places",
-} as Record<string, any>;
+};
 
 // Normalized event categories
-export const EVENT_CATEGORIES = {
+export const EVENT_CATEGORIES: Record<string, string> = {
   MUSIC: "music",
   SPORTS: "sports",
   ARTS: "arts",
@@ -51,20 +51,20 @@ export const EVENT_CATEGORIES = {
   FOOD: "food",
   TECH: "tech",
   OTHER: "other",
-} as Record<string, any>;
+};
 
 // Ticketmaster segment → normalized category mapping
-export const TICKETMASTER_CATEGORY_MAP = {
+export const TICKETMASTER_CATEGORY_MAP: Record<string, string> = {
   Music: EVENT_CATEGORIES.MUSIC,
   Sports: EVENT_CATEGORIES.SPORTS,
   "Arts & Theatre": EVENT_CATEGORIES.ARTS,
   Film: EVENT_CATEGORIES.FILM,
   Miscellaneous: EVENT_CATEGORIES.OTHER,
   Undefined: EVENT_CATEGORIES.OTHER,
-} as Record<string, any>;
+};
 
 // SeatGeek taxonomy → normalized category mapping
-export const SEATGEEK_CATEGORY_MAP = {
+export const SEATGEEK_CATEGORY_MAP: Record<string, string> = {
   concert: EVENT_CATEGORIES.MUSIC,
   sports: EVENT_CATEGORIES.SPORTS,
   theater: EVENT_CATEGORIES.ARTS,
@@ -75,20 +75,20 @@ export const SEATGEEK_CATEGORY_MAP = {
   dance_performance_tour: EVENT_CATEGORIES.ARTS,
   classical: EVENT_CATEGORIES.MUSIC,
   broadway_tickets_national: EVENT_CATEGORIES.ARTS,
-} as Record<string, any>;
+};
 
 // Event status values
-export const EVENT_STATUSES = {
+export const EVENT_STATUSES: Record<string, string> = {
   ON_SALE: "onsale",
   OFF_SALE: "offsale",
   CANCELLED: "cancelled",
   POSTPONED: "postponed",
   RESCHEDULED: "rescheduled",
-} as Record<string, any>;
+};
 
 // ─── MARKET DOMAIN ──────────────────────────────────────────
 
-export const ASSET_CATEGORIES = {
+export const ASSET_CATEGORIES: Record<string, string> = {
   ENERGY: "energy",
   PRECIOUS_METALS: "precious_metals",
   INDUSTRIAL_METALS: "industrial_metals",
@@ -102,9 +102,9 @@ export const ASSET_CATEGORIES = {
   FOREX: "forex",
   CRYPTO: "crypto",
   VOLATILITY: "volatility",
-} as Record<string, any>;
+};
 
-export const COMMODITY_TICKERS = {
+export const COMMODITY_TICKERS: Record<string, {name: string, category: string, unit: string}> = {
   // Energy
   "CL=F": {
     name: "Crude Oil WTI",
@@ -682,7 +682,7 @@ export const COMMODITY_TICKERS = {
     category: ASSET_CATEGORIES.VOLATILITY,
     unit: "index",
   },
-} as Record<string, any>;
+};
 
 export const COMMODITIES_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
 export const SNAPSHOT_TTL_SECONDS = 90 * 24 * 60 * 60; // 90 days
@@ -1090,9 +1090,9 @@ export const BESTBUY_CA_DEFAULT_SKUS = {
     brand: "Xbox",
     category: "gaming-accessory",
   },
-} as Record<string, any>;
+};
 
-export const PRODUCT_CATEGORIES = {
+export const PRODUCT_CATEGORIES: Record<string, string> = {
   ELECTRONICS: "electronics",
   COMPUTERS: "computers",
   PHONES: "phones",
@@ -1113,7 +1113,7 @@ export const PRODUCT_CATEGORIES = {
   SOFTWARE: "software",
   TECH: "tech",
   OTHER: "other",
-} as Record<string, any>;
+};
 
 export const BESTBUY_CATEGORIES = [
   {
@@ -1215,7 +1215,7 @@ export const AMAZON_CATEGORIES = [
   },
 ];
 
-export const PRODUCT_SOURCES = {
+export const PRODUCT_SOURCES: Record<string, string> = {
   BESTBUY: "bestbuy",
   AMAZON: "amazon",
   PRODUCTHUNT: "producthunt",
@@ -1223,7 +1223,7 @@ export const PRODUCT_SOURCES = {
   ETSY: "etsy",
   COSTCO_US: "costco_us",
   COSTCO_CA: "costco_ca",
-} as Record<string, any>;
+};
 
 // Costco — shared base categories (US and CA differ only in 2 slugs)
 const COSTCO_BASE_CATEGORIES = [
@@ -1404,7 +1404,7 @@ export const FRED_DEFAULT_SERIES = {
     category: "consumer",
     unit: "millions of dollars",
   },
-} as Record<string, any>;
+};
 
 // ─── TREND DOMAIN ───────────────────────────────────────────
 
@@ -1420,7 +1420,7 @@ export const BLUESKY_INTERVAL_MS = 600_000; // 10 minutes
 export const GITHUB_TRENDING_INTERVAL_MS = 1_800_000; // 30 minutes
 export const PRODUCTHUNT_TREND_INTERVAL_MS = 3_600_000; // 1 hour
 
-export const TREND_SOURCES = {
+export const TREND_SOURCES: Record<string, string> = {
   GOOGLE_TRENDS: "google-trends",
   REDDIT: "reddit",
   WIKIPEDIA: "wikipedia",
@@ -1432,9 +1432,9 @@ export const TREND_SOURCES = {
   BLUESKY: "bluesky",
   GITHUB: "github",
   PRODUCTHUNT: "producthunt",
-} as Record<string, any>;
+};
 
-export const TREND_CATEGORIES = {
+export const TREND_CATEGORIES: Record<string, string> = {
   TECHNOLOGY: "technology",
   ENTERTAINMENT: "entertainment",
   SPORTS: "sports",
@@ -1446,7 +1446,7 @@ export const TREND_CATEGORIES = {
   HEALTH: "health",
   WORLD: "world",
   OTHER: "other",
-} as Record<string, any>;
+};
 
 export const REDDIT_SUBREDDITS = [
   { name: "popular", category: null },
@@ -1465,7 +1465,7 @@ export const X_WOEIDS = {
   UNITED_STATES: 23424977,
   CANADA: 23424775,
   UNITED_KINGDOM: 23424975,
-} as Record<string, any>;
+};
 
 export const WIKIPEDIA_EXCLUDED_PAGES = [
   "Main_Page",
@@ -1526,7 +1526,7 @@ export const EARTHQUAKE_ALERT_LEVELS = {
   yellow: "Some casualties and damage",
   orange: "Significant casualties and damage",
   red: "Extensive casualties and damage",
-} as Record<string, any>;
+};
 
 export const EARTHQUAKE_MAGNITUDE_SCALE = [
   { min: 0, max: 2, label: "Micro" },
@@ -1567,7 +1567,7 @@ export const WMO_WEATHER_CODES = {
   95: "Thunderstorm: Slight or moderate",
   96: "Thunderstorm with slight hail",
   99: "Thunderstorm with heavy hail",
-} as Record<string, any>;
+};
 
 export const TOMORROWIO_WEATHER_CODES = {
   0: "Unknown",
@@ -1594,7 +1594,7 @@ export const TOMORROWIO_WEATHER_CODES = {
   7101: "Heavy Ice Pellets",
   7102: "Light Ice Pellets",
   8000: "Thunderstorm",
-} as Record<string, any>;
+};
 
 // ─── API RATE LIMITS ────────────────────────────────────────
 // Single source of truth for all external API rate limits.
@@ -1904,7 +1904,7 @@ export const API_RATE_LIMITS = {
     qpd: null, // undocumented; key auto-suspended if exceeded
     requestDelayMs: 500, // conservative pacing
   },
-} as Record<string, any>;
+};
 
 // ─── Category Mappings ──────────────────────────────────────
 
@@ -1942,7 +1942,7 @@ export const ETSY_CATEGORY_MAP = {
   accessories: "fashion",
   pet_supplies: "other",
   weddings: "other",
-} as Record<string, any>;
+};
 
 // ─── Geographic Regions ─────────────────────────────────────
 
@@ -2121,7 +2121,7 @@ export const EIA_DEFAULT_SERIES = {
     unit: "%",
     description: "Percentage of U.S. nuclear capacity currently offline",
   },
-} as Record<string, any>;
+};
 
 // ─── Static Data Manifests ──────────────────────────────────
 // Tracks provenance for all static datasets loaded into memory.
@@ -2423,7 +2423,7 @@ export const NUTRITION_MACRO_FIELDS = {
   water: "water_g",
   mineral: "ash_g",
   ethanol: "alcohol_g",
-} as Record<string, any>;
+};
 
 /** CSV column → human-readable label map for minerals (values in mg unless noted) */
 export const NUTRITION_MINERAL_FIELDS = {
@@ -2438,7 +2438,7 @@ export const NUTRITION_MINERAL_FIELDS = {
   manganese: "manganese_mg",
   selenium: "selenium_mcg",
   fluoride: "fluoride_mcg",
-} as Record<string, any>;
+};
 
 /** CSV column → human-readable label map for vitamins */
 export const NUTRITION_VITAMIN_FIELDS = {
@@ -2465,7 +2465,7 @@ export const NUTRITION_VITAMIN_FIELDS = {
   lycopene: "lycopene_mcg",
   lutein_and_zeaxanthin: "luteinZeaxanthin_mcg",
   beta_cryptoxanthin: "betaCryptoxanthin_mcg",
-} as Record<string, any>;
+};
 
 /** CSV column → human-readable label map for amino acids (values in g) */
 export const NUTRITION_AMINO_ACID_FIELDS = {
@@ -2488,7 +2488,7 @@ export const NUTRITION_AMINO_ACID_FIELDS = {
   proline: "proline_g",
   serine: "serine_g",
   hydroxyproline: "hydroxyproline_g",
-} as Record<string, any>;
+};
 
 /** CSV column → human-readable label map for lipid profile (values in g) */
 export const NUTRITION_LIPID_FIELDS = {
@@ -2503,7 +2503,7 @@ export const NUTRITION_LIPID_FIELDS = {
   c22_d5_n3: "omega3_DPA_g",
   c18_d2_n6_cis_cis: "omega6_linoleic_g",
   c20_d4_undifferentiated: "omega6_arachidonic_g",
-} as Record<string, any>;
+};
 
 /** CSV column → human-readable label map for carbohydrate details */
 export const NUTRITION_CARB_DETAIL_FIELDS = {
@@ -2516,7 +2516,7 @@ export const NUTRITION_CARB_DETAIL_FIELDS = {
   galactose: "galactose_g",
   fiber: "fiber_g",
   sugar: "totalSugar_g",
-} as Record<string, any>;
+};
 
 /** CSV column → human-readable label map for sterols (values in mg) */
 export const NUTRITION_STEROL_FIELDS = {
@@ -2525,7 +2525,7 @@ export const NUTRITION_STEROL_FIELDS = {
   stigmasterol: "stigmasterol_mg",
   campesterol: "campesterol_mg",
   beta_sitosterol: "betaSitosterol_mg",
-} as Record<string, any>;
+};
 
 // ─── SHARED COMPUTE / ROUTE CONSTANTS ───────────────────────
 

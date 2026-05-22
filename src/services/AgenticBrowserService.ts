@@ -16,6 +16,7 @@ import {
   BROWSER_MAX_SCRIPT_OUTPUT,
   BROWSER_MAX_CONTENT_LENGTH
 } from "../constants.ts";
+import { errorMessage } from "../utilities.ts";
 
 // ────────────────────────────────────────────────────────────
 // Session Management
@@ -177,7 +178,7 @@ async function actionNavigate(page: Page, { url }: { url?: string }) {
       status: response?.status() || null,
     };
   } catch (error: unknown) {
-    return { error: `Navigation failed: ${(error as Error).message}` };
+    return { error: `Navigation failed: ${errorMessage(error)}` };
   }
 }
 
@@ -203,7 +204,7 @@ async function actionScreenshot(page: Page, { fullPage, selector }: { fullPage?:
       mimeType: "image/png",
     };
   } catch (error: unknown) {
-    return { error: `Screenshot failed: ${(error as Error).message}` };
+    return { error: `Screenshot failed: ${errorMessage(error)}` };
   }
 }
 
@@ -223,7 +224,7 @@ async function actionClick(page: Page, { selector }: { selector?: string }) {
       title: await page.title(),
     };
   } catch (error: unknown) {
-    return { error: `Click failed on "${selector}": ${(error as Error).message}` };
+    return { error: `Click failed on "${selector}": ${errorMessage(error)}` };
   }
 }
 
@@ -250,7 +251,7 @@ async function actionType(page: Page, { selector, text, pressEnter }: { selector
       title: await page.title(),
     };
   } catch (error: unknown) {
-    return { error: `Type failed on "${selector}": ${(error as Error).message}` };
+    return { error: `Type failed on "${selector}": ${errorMessage(error)}` };
   }
 }
 
@@ -280,7 +281,7 @@ async function actionScroll(page: Page, { direction, selector, amount }: { direc
       url: page.url(),
     };
   } catch (error: unknown) {
-    return { error: `Scroll failed: ${(error as Error).message}` };
+    return { error: `Scroll failed: ${errorMessage(error)}` };
   }
 }
 
@@ -296,7 +297,7 @@ async function actionEvaluate(page: Page, { expression }: { expression?: string 
       url: page.url(),
     };
   } catch (error: unknown) {
-    return { error: `Evaluate failed: ${(error as Error).message}` };
+    return { error: `Evaluate failed: ${errorMessage(error)}` };
   }
 }
 
@@ -335,7 +336,7 @@ async function actionGetContent(page: Page, { selector, format }: { selector?: s
       truncated,
     };
   } catch (error: unknown) {
-    return { error: `Content extraction failed: ${(error as Error).message}` };
+    return { error: `Content extraction failed: ${errorMessage(error)}` };
   }
 }
 
@@ -362,7 +363,7 @@ async function actionWait(page: Page, { selector, timeout, state }: { selector?:
       url: page.url(),
     };
   } catch (error: unknown) {
-    return { error: `Wait failed: ${(error as Error).message}` };
+    return { error: `Wait failed: ${errorMessage(error)}` };
   }
 }
 
@@ -397,7 +398,7 @@ async function actionGetElements(page: Page, { selector, limit }: { selector?: s
         ];
 
         const allElements = root.querySelectorAll(interactiveSelectors.join(", "));
-        const results: Record<string, any>[] = [];
+        const results: Record<string, unknown>[] = [];
 
         for (const element of allElements) {
           if (results.length >= max) break;
@@ -435,7 +436,7 @@ async function actionGetElements(page: Page, { selector, limit }: { selector?: s
 
           const text = (element.textContent || "").trim().slice(0, 80);
           const tag = element.tagName.toLowerCase();
-          const entry: Record<string, any> = { tag, selector: cssSelector };
+          const entry: Record<string, unknown> = { tag, selector: cssSelector };
 
           if (text) entry.text = text;
           if (element.getAttribute("type")) entry.type = element.getAttribute("type");
@@ -462,7 +463,7 @@ async function actionGetElements(page: Page, { selector, limit }: { selector?: s
       elements,
     };
   } catch (error: unknown) {
-    return { error: `Get elements failed: ${(error as Error).message}` };
+    return { error: `Get elements failed: ${errorMessage(error)}` };
   }
 }
 
@@ -506,7 +507,7 @@ async function actionSnapshot(page: Page, { selector }: { selector?: string }) {
       format: "a11y-tree",
     };
   } catch (error: unknown) {
-    return { error: `Snapshot failed: ${(error as Error).message}` };
+    return { error: `Snapshot failed: ${errorMessage(error)}` };
   }
 }
 
@@ -606,7 +607,7 @@ async function actionClickRef(page: Page, { ref }: { ref?: string }) {
       title: await page.title(),
     };
   } catch (error: unknown) {
-    return { error: `click_ref failed for "${ref}": ${(error as Error).message}` };
+    return { error: `click_ref failed for "${ref}": ${errorMessage(error)}` };
   }
 }
 
@@ -633,7 +634,7 @@ async function actionTypeRef(page: Page, { ref, text, pressEnter }: { ref?: stri
       title: await page.title(),
     };
   } catch (error: unknown) {
-    return { error: `type_ref failed for "${ref}": ${(error as Error).message}` };
+    return { error: `type_ref failed for "${ref}": ${errorMessage(error)}` };
   }
 }
 
@@ -650,7 +651,7 @@ async function actionHoverRef(page: Page, { ref }: { ref?: string }) {
       url: page.url(),
     };
   } catch (error: unknown) {
-    return { error: `hover_ref failed for "${ref}": ${(error as Error).message}` };
+    return { error: `hover_ref failed for "${ref}": ${errorMessage(error)}` };
   }
 }
 
@@ -670,7 +671,7 @@ async function actionSelectRef(page: Page, { ref, value }: { ref?: string; value
       title: await page.title(),
     };
   } catch (error: unknown) {
-    return { error: `select_ref failed for "${ref}": ${(error as Error).message}` };
+    return { error: `select_ref failed for "${ref}": ${errorMessage(error)}` };
   }
 }
 
@@ -741,7 +742,7 @@ const { chromium } = require('playwright');
       ...result,
     };
   } catch (error: unknown) {
-    return { error: `run_script failed: ${(error as Error).message}` };
+    return { error: `run_script failed: ${errorMessage(error)}` };
   } finally {
     // Cleanup
     if (scriptPath) {
@@ -891,7 +892,7 @@ export async function agenticBrowserAction(params: any) {
     };
   } catch (error: unknown) {
     return {
-      error: `Browser action "${action}" failed: ${(error as Error).message}`,
+      error: `Browser action "${action}" failed: ${errorMessage(error)}`,
       sessionId,
     };
   }

@@ -5,7 +5,13 @@ import { getToolSchemas } from "./ToolSchemaService.ts";
 /**
  * Search all registered tool schemas by keyword, domain, or label.
  */
-export function agenticToolSearch(query: any, { domain, label, limit = 20 }: Record<string, any> = {}) {
+export interface AgenticToolSearchOptions {
+  domain?: string;
+  label?: string;
+  limit?: number;
+}
+
+export function agenticToolSearch(query: string, { domain, label, limit = 20 }: AgenticToolSearchOptions = {}) {
   const allSchemas = getToolSchemas();
 
   if (!allSchemas || allSchemas.length === 0) {

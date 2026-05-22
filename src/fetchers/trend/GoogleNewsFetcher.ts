@@ -7,8 +7,7 @@ import {
 import logger from "../../logger.ts";
 import {
   extractXmlTag,
-  extractXmlItems,
-} from "../../utilities.ts";
+  extractXmlItems, errorMessage } from "../../utilities.ts";
 
 const GOOGLE_NEWS_RSS_URL = "https://news.google.com/rss";
 
@@ -97,7 +96,7 @@ export async function fetchGoogleNews() {
       }
     } catch (error: unknown) {
       logger.warn(
-        `[Google News] ⚠️ ${section} fetch failed: ${(error as Error).message}`,
+        `[Google News] ⚠️ ${section} fetch failed: ${errorMessage(error)}`,
       );
     }
   }

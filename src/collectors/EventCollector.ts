@@ -20,6 +20,7 @@ import { fetchGooglePlacesEvents } from "../fetchers/event/GooglePlacesFetcher.t
 import { updateEvents, setError, restoreEvents } from "../caches/EventCache.ts";
 import { saveState, startCollectorLoop } from "../services/FreshnessService.ts";
 import logger from "../logger.ts";
+import { errorMessage } from "../utilities.ts";
 
 // ─── Collector Factory ─────────────────────────────────────────────
 
@@ -34,7 +35,7 @@ function createEventCollector(collection: any, source: any, fetchFn: any) {
       );
     } catch (error: unknown) {
       setError(source, error as any);
-      logger.error(`[${collection}] ❌ ${(error as Error).message}`);
+      logger.error(`[${collection}] ❌ ${errorMessage(error)}`);
     }
   };
 }
@@ -100,7 +101,7 @@ async function collectUniversities() {
   } catch (error: unknown) {
     setError(EVENT_SOURCES.UBC, error as any);
     setError(EVENT_SOURCES.SFU, error as any);
-    logger.error(`[events_universities] ❌ ${(error as Error).message}`);
+    logger.error(`[events_universities] ❌ ${errorMessage(error)}`);
   }
 }
 
@@ -138,7 +139,7 @@ async function collectSports() {
     setError(EVENT_SOURCES.NHL, error as any);
     setError(EVENT_SOURCES.WHITECAPS, error as any);
     setError(EVENT_SOURCES.BC_LIONS, error as any);
-    logger.error(`[events_sports] ❌ ${(error as Error).message}`);
+    logger.error(`[events_sports] ❌ ${errorMessage(error)}`);
   }
 }
 

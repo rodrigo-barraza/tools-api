@@ -3,6 +3,7 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import logger from "../../logger.ts";
 import { AirportInfo, FormattedAirport } from "../../types/utility.ts";
+import { errorMessage } from "../../utilities.ts";
 
 /**
  * Airport Fetcher — Static In-Memory Airport Database
@@ -110,7 +111,7 @@ function ensureLoaded(): void {
       AIRPORT_DB.push(row);
     }
   } catch (error) {
-    logger.error(`Failed to load airport database: ${(error as Error).message}`);
+    logger.error(`Failed to load airport database: ${errorMessage(error)}`);
   }
 
   logger.info(`✈️  Airport database loaded: ${AIRPORT_DB.length} airports`);

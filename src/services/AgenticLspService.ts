@@ -5,6 +5,7 @@ import { resolve, extname, relative, dirname } from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
 import { getLspManager, shutdownAllLspManagers, getAllLspHealth } from "./lsp/LspServerManager.ts";
 import { ALLOWED_ROOTS } from "./AgenticFileService.ts";
+import { errorMessage } from "../utilities.ts";
 
 // ────────────────────────────────────────────────────────────
 // Types
@@ -181,7 +182,7 @@ export async function agenticLspAction({ operation, filePath, line, character, w
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       return { error: `File not found: ${resolvedPath}` };
     }
-    return { error: `Cannot read file: ${(error as Error).message}` };
+    return { error: `Cannot read file: ${errorMessage(error)}` };
   }
 
   // ── 5. Determine workspace root ────────────────────────────
@@ -194,7 +195,7 @@ export async function agenticLspAction({ operation, filePath, line, character, w
     await manager.openFile(resolvedPath, fileContent);
   } catch (error: unknown) {
     return {
-      error: `LSP server failed to start for '${fileExtension}' files: ${(error as Error).message}`,
+      error: `LSP server failed to start for '${fileExtension}' files: ${errorMessage(error)}`,
       hint: "The language server may not be installed. Check that npx can find the server binary.",
     };
   }
@@ -229,14 +230,14 @@ export async function agenticLspAction({ operation, filePath, line, character, w
   try {
     result = await manager.sendRequest(resolvedPath, opDef.method, lspParams);
   } catch (error: unknown) {
-    return { error: `LSP request '${opDef.method}' failed: ${(error as Error).message}` };
+    return { error: `LSP request '${opDef.method}' failed: ${errorMessage(error)}` };
   }
 
   // ── 9. Format & return ─────────────────────────────────────
   try {
     return formatResult(operation, result, resolvedPath, wsRoot);
   } catch (error: unknown) {
-    return { error: `Failed to format result: ${(error as Error).message}` };
+    return { error: `Failed to format result: ${errorMessage(error)}` };
   }
 }
 

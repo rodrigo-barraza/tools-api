@@ -17,7 +17,7 @@ const TIMEOUT_MS = 10_000;
  */
 async function lightsApiFetch(method: any, path: any, body: any = null) {
   const url = `${CONFIG.LIGHTS_SERVICE_URL}${path}`;
-  const options: Record<string, any> = {
+  const options: Record<string, unknown> = {
     method,
     headers: { "Content-Type": "application/json" },
     signal: AbortSignal.timeout(TIMEOUT_MS),
@@ -76,7 +76,7 @@ const LightsDataService = {
 
    */
   async setState({ selector = "all", power, color, brightness, duration, kelvin }: any) {
-    const body: Record<string, any> = {};
+    const body: Record<string, unknown> = {};
     if (power !== undefined) body.power = power;
     if (color !== undefined) body.color = color;
     if (brightness !== undefined) body.brightness = brightness;
@@ -92,7 +92,7 @@ const LightsDataService = {
 
    */
   async setStateDelta({ selector = "all", hue, saturation, brightness, kelvin, duration }: any) {
-    const body: Record<string, any> = {};
+    const body: Record<string, unknown> = {};
     if (hue !== undefined) body.hue = hue;
     if (saturation !== undefined) body.saturation = saturation;
     if (brightness !== undefined) body.brightness = brightness;
@@ -108,7 +108,7 @@ const LightsDataService = {
 
    */
   async setStates(states: any, defaults: any = null) {
-    const body: Record<string, any> = { states };
+    const body: Record<string, unknown> = { states };
     if (defaults) body.defaults = defaults;
     return lightsApiFetch("PUT", "/lights/states", body);
   },
@@ -128,7 +128,7 @@ const LightsDataService = {
 
    */
   async breatheEffect({ selector = "all", color, fromColor, period, cycles, persist, powerOn, peak }: any) {
-    const body: Record<string, any> = {};
+    const body: Record<string, unknown> = {};
     if (color !== undefined) body.color = color;
     if (fromColor !== undefined) body.fromColor = fromColor;
     if (period !== undefined) body.period = period;
@@ -146,7 +146,7 @@ const LightsDataService = {
 
    */
   async pulseEffect({ selector = "all", color, fromColor, period, cycles, persist, powerOn }: any) {
-    const body: Record<string, any> = {};
+    const body: Record<string, unknown> = {};
     if (color !== undefined) body.color = color;
     if (fromColor !== undefined) body.fromColor = fromColor;
     if (period !== undefined) body.period = period;
@@ -163,7 +163,7 @@ const LightsDataService = {
 
    */
   async moveEffect({ selector = "all", direction, period, cycles, powerOn }: any) {
-    const body: Record<string, any> = {};
+    const body: Record<string, unknown> = {};
     if (direction !== undefined) body.direction = direction;
     if (period !== undefined) body.period = period;
     if (cycles !== undefined) body.cycles = cycles;
@@ -178,7 +178,7 @@ const LightsDataService = {
 
    */
   async flameEffect({ selector = "all", period, duration, powerOn }: any) {
-    const body: Record<string, any> = {};
+    const body: Record<string, unknown> = {};
     if (period !== undefined) body.period = period;
     if (duration !== undefined) body.duration = duration;
     if (powerOn !== undefined) body.powerOn = powerOn;
@@ -192,7 +192,7 @@ const LightsDataService = {
 
    */
   async morphEffect({ selector = "all", palette, period, duration, powerOn }: any) {
-    const body: Record<string, any> = {};
+    const body: Record<string, unknown> = {};
     if (palette !== undefined) body.palette = palette;
     if (period !== undefined) body.period = period;
     if (duration !== undefined) body.duration = duration;
@@ -207,7 +207,7 @@ const LightsDataService = {
 
    */
   async effectsOff(selector: any = "all", powerOff: any = false) {
-    const body: Record<string, any> = {};
+    const body: Record<string, unknown> = {};
     if (powerOff) body.powerOff = true;
 
     return lightsApiFetch("POST", `/lights/${encodeURIComponent(selector)}/effects/off`, body);
@@ -236,7 +236,7 @@ const LightsDataService = {
 
    */
   async activateScene(sceneId: any, duration: any = 1, ignore: any = null) {
-    const body: Record<string, any> = {};
+    const body: Record<string, unknown> = {};
     if (duration !== undefined) body.duration = duration;
     if (ignore) body.ignore = ignore;
 

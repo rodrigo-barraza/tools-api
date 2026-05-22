@@ -13,6 +13,12 @@ export function randomUserAgent() {
   return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
 }
 
+/**
+ * Extracts a safe error message string from an unknown error object.
+ */
+export const errorMessage = (err: unknown): string =>
+  err instanceof Error ? err.message : String(err);
+
 // ─── XML Utilities ─────────────────────────────────────────────────
 
 /**
@@ -200,7 +206,7 @@ export function agenticHandler(fn: (req: Request) => Promise<{ error?: string; [
       }
       res.json(result);
     } catch (error: unknown) {
-      logger.error(`Agentic handler error: ${(error as Error).message}`);
+      logger.error(`Agentic handler error: ${errorMessage(error)}`);
       res.status(500).json({ error: "Internal agentic tool error" });
     }
   };

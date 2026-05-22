@@ -1,5 +1,6 @@
 import CONFIG from "../../config.ts";
 import logger from "../../logger.ts";
+import { errorMessage } from "../../utilities.ts";
 
 const GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json";
 
@@ -53,7 +54,7 @@ export async function geocodeAddress(address: any) {
     geocodeCache.set(cacheKey, geocoded);
     return geocoded;
   } catch (error: unknown) {
-    logger.warn(`[Geocoding] ⚠️ ${(error as Error).message}`);
+    logger.warn(`[Geocoding] ⚠️ ${errorMessage(error)}`);
     return null;
   }
 }

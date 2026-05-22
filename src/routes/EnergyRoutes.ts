@@ -6,6 +6,8 @@ import {
   getData,
   getEnergyIndicators,
 } from "../fetchers/energy/EiaFetcher.ts";
+import { errorMessage } from "../utilities.ts";
+
 const router = Router();
 // ─── Key Energy Indicators (curated snapshot) ──────────────────────
 router.get(
@@ -30,7 +32,7 @@ router.get("/facets", asyncHandler(async (req: Request, res: Response) => {
   } catch (error: unknown) {
     res
       .status(502)
-      .json({ error: `Facet fetch failed: ${(error as Error).message}` });
+      .json({ error: `Facet fetch failed: ${errorMessage(error)}` });
   }
 }));
 // ─── Data Query ────────────────────────────────────────────────────
@@ -41,22 +43,22 @@ router.get("/data", asyncHandler(async (req: Request) => {
     return { error: "Parameter 'route' is required" };
   }
   // Parse data[] columns from query string
-  const dataColumns = req.query["data[]"]
+  const dataColumns = (req.query["data[]"]
     ? Array.isArray(req.query["data[]"])
       ? req.query["data[]"]
       : [req.query["data[]"]]
-    : req.query.data as string
-      ? Array.isArray(req.query.data as string)
-        ? req.query.data as string
-        : [req.query.data as string]
-      : undefined;
+    : req.query.data
+      ? Array.isArray(req.query.data)
+        ? req.query.data
+        : [req.query.data]
+      : undefined) as string[] | undefined;
   // Parse facets from query string — facets[stateid][]=CO format
-  const facets: Record<string, any> = {};
+  const facets: Record<string, string | string[]> = {};
   for (const key of Object.keys(rest)) {
     const match = key.match(/^facets\[(\w+)\]\[\]$/);
     if (match) {
       const facetId = match[1];
-      facets[facetId] = Array.isArray(rest[key]) ? rest[key] : [rest[key]];
+      facets[facetId] = Array.isArray(rest[key]) ? (rest[key] as string[]) : [rest[key] as string];
     }
   }
   return getData(route, {
@@ -75,7 +77,7 @@ router.get(
   "/electricity/retail-sales",
   asyncHandler((req: Request) => {
     const { state, sector, frequency, start, end, length } = req.query as Record<string, string | undefined>;
-    const facets: Record<string, any> = {};
+    const facets: Record<string, string | string[]> = {};
     if (state) facets.stateid = Array.isArray(state) ? state : [state];
     if (sector) facets.sectorid = Array.isArray(sector) ? sector : [sector];
     return getData("electricity/retail-sales", {
@@ -94,7 +96,7 @@ router.get(
   "/petroleum/prices",
   asyncHandler((req: Request) => {
     const { product, area, frequency, start, end, length } = req.query as Record<string, string | undefined>;
-    const facets: Record<string, any> = {};
+    const facets: Record<string, string | string[]> = {};
     if (product) facets.product = Array.isArray(product) ? product : [product];
     if (area) facets.duoarea = Array.isArray(area) ? area : [area];
     return getData("petroleum/pri/gnd", {
@@ -113,7 +115,7 @@ router.get(
   "/natural-gas/prices",
   asyncHandler((req: Request) => {
     const { process: process_, area, frequency, start, end, length } = req.query as Record<string, string | undefined>;
-    const facets: Record<string, any> = {};
+    const facets: Record<string, string | string[]> = {};
     if (process_) facets.process = Array.isArray(process_) ? process_ : [process_];
     if (area) facets.duoarea = Array.isArray(area) ? area : [area];
     return getData("natural-gas/pri/sum", {

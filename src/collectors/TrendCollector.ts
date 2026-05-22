@@ -27,6 +27,7 @@ import { fetchProductHuntTrends } from "../fetchers/trend/ProductHuntFetcher.ts"
 import { updateTrends, setTrendError } from "../caches/TrendCache.ts";
 import { saveState, startCollectorLoop } from "../services/FreshnessService.ts";
 import logger from "../logger.ts";
+import { errorMessage } from "../utilities.ts";
 
 // ─── Collector Factory ─────────────────────────────────────────────
 
@@ -42,7 +43,7 @@ function createTrendCollector(collection: any, source: any, fetchFn: any, noun: 
       );
     } catch (error: unknown) {
       setTrendError(source, error as any);
-      logger.error(`[${collection}] ❌ ${(error as Error).message}`);
+      logger.error(`[${collection}] ❌ ${errorMessage(error)}`);
     }
   };
 }

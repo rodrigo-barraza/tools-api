@@ -7,6 +7,7 @@ import {
 } from "../caches/CommodityCache.ts";
 import { saveState, startCollectorLoop } from "../services/FreshnessService.ts";
 import logger from "../logger.ts";
+import { errorMessage } from "../utilities.ts";
 
 async function collectCommodities() {
   try {
@@ -25,7 +26,7 @@ async function collectCommodities() {
     );
   } catch (error: unknown) {
     setCommodityError(error as any);
-    logger.error(`[Commodities] ❌ ${(error as Error).message}`);
+    logger.error(`[Commodities] ❌ ${errorMessage(error)}`);
   }
 }
 

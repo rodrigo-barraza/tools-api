@@ -3,6 +3,7 @@ import type { Request, Response, NextFunction } from "express";
 import { formatBytes } from "@rodrigo-barraza/utilities-library";
 import logger from "../logger.ts";
 import { getDB } from "../db.ts";
+import { errorMessage } from "../utilities.ts";
 
 const COLLECTION = "requests";
 
@@ -223,6 +224,6 @@ export async function setupRequestsCollection() {
 
     logger.info(`📊 requests collection indexes ensured`);
   } catch (error: unknown) {
-    logger.error(`Failed to setup requests indexes: ${(error as Error).message}`);
+    logger.error(`Failed to setup requests indexes: ${errorMessage(error)}`);
   }
 }

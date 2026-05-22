@@ -100,8 +100,8 @@ export async function fetchGooglePlacesEvents() {
 /**
  * Map a Google Places type to our normalized category.
  */
-function mapPlaceTypeToCategory(type: any) {
-  const map = {
+function mapPlaceTypeToCategory(type: string | undefined) {
+  const map: Record<string, string> = {
     event_venue: EVENT_CATEGORIES.OTHER,
     night_club: EVENT_CATEGORIES.MUSIC,
     performing_arts_theater: EVENT_CATEGORIES.ARTS,
@@ -112,6 +112,5 @@ function mapPlaceTypeToCategory(type: any) {
     museum: EVENT_CATEGORIES.ARTS,
     convention_center: EVENT_CATEGORIES.TECH,
   };
-  // @ts-expect-error - TS7053: implicit any index
-  return map[type] || EVENT_CATEGORIES.OTHER;
+  return type && map[type] ? map[type] : EVENT_CATEGORIES.OTHER;
 }

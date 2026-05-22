@@ -80,7 +80,7 @@ async function processWithSharp(inputBuffer: any, operations: any, outputFormat:
   for (const op of operations) {
     switch (op.type) {
       case "resize": {
-        const options: Record<string, any> = {};
+        const options: Record<string, unknown> = {};
         if (op.width) options.width = Math.min(op.width, MAX_DIMENSION);
         if (op.height) options.height = Math.min(op.height, MAX_DIMENSION);
         if (op.fit) options.fit = op.fit;
@@ -159,7 +159,7 @@ async function processWithSharp(inputBuffer: any, operations: any, outputFormat:
         break;
 
       case "extend": {
-        const ext: Record<string, any> = {
+        const ext: Record<string, unknown> = {
           top: op.top || 0,
           right: op.right || 0,
           bottom: op.bottom || 0,
@@ -173,7 +173,7 @@ async function processWithSharp(inputBuffer: any, operations: any, outputFormat:
       case "composite": {
         if (!op.overlayUrl) throw new Error("composite requires 'overlayUrl'");
         const overlayBuf = await resolveInput(op.overlayUrl, null);
-        const compositeOpts: Record<string, any> = { input: overlayBuf };
+        const compositeOpts: Record<string, unknown> = { input: overlayBuf };
         if (op.gravity) compositeOpts.gravity = op.gravity;
         if (op.blend) compositeOpts.blend = op.blend;
         if (op.left !== undefined && op.top !== undefined) {
@@ -208,7 +208,7 @@ async function processWithSharp(inputBuffer: any, operations: any, outputFormat:
 
   // Apply output format
   const format = outputFormat || "png";
-  const formatOpts: Record<string, any> = {};
+  const formatOpts: Record<string, unknown> = {};
   if (outputQuality && ["jpeg", "webp", "avif", "tiff"].includes(format)) {
     formatOpts.quality = Math.min(Math.max(outputQuality, 1), 100);
   }
@@ -228,8 +228,7 @@ async function processWithSharp(inputBuffer: any, operations: any, outputFormat:
 
   return {
     buffer,
-    // @ts-expect-error - TS7053: implicit any index
-    mimeType: MIME_MAP[format] || "image/png",
+        mimeType: MIME_MAP[format as keyof typeof MIME_MAP] || "image/png",
     ...(metadataResult && { metadata: metadataResult }),
   };
 }
@@ -333,8 +332,7 @@ async function processWithMagick(inputBuffer: any, operations: any, outputFormat
 
     return {
       buffer,
-      // @ts-expect-error - TS7053: implicit any index
-      mimeType: MIME_MAP[outputFormat] || "image/png",
+            mimeType: MIME_MAP[outputFormat as keyof typeof MIME_MAP] || "image/png",
     };
   } finally {
     // Clean up temp files

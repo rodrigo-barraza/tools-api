@@ -3,6 +3,7 @@
 import vm from "node:vm";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
+import { errorMessage } from "../utilities.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const nodeRequire = createRequire(__filename);
@@ -169,8 +170,8 @@ function buildGlobals(outputBuffer: any, execution: any = "sandboxed") {
 
  * }}
  */
-export function executeJavaScript(code: any, { timeout = DEFAULT_TIMEOUT_MS, execution = "sandboxed" }: Record<string, any> = {}) {
-  const clampedTimeout = Math.min(Math.max(timeout, 100), MAX_TIMEOUT_MS);
+export function executeJavaScript(code: any, { timeout = DEFAULT_TIMEOUT_MS, execution = "sandboxed" }: Record<string, unknown> = {}) {
+  const clampedTimeout = Math.min(Math.max(Number(timeout), 100), MAX_TIMEOUT_MS);
   const startTime = performance.now();
   const outputBuffer: any[] = [];
 
@@ -217,7 +218,7 @@ export function executeJavaScript(code: any, { timeout = DEFAULT_TIMEOUT_MS, exe
     const executionTimeMs = Math.round(performance.now() - startTime);
     const timedOut =
       (error as any).code === "ERR_SCRIPT_EXECUTION_TIMEOUT" ||
-      (error as Error).message?.includes("Script execution timed out");
+      errorMessage(error)?.includes("Script execution timed out");
 
     return {
       success: false,
@@ -227,7 +228,7 @@ export function executeJavaScript(code: any, { timeout = DEFAULT_TIMEOUT_MS, exe
       timedOut,
       error: timedOut
         ? `Execution timed out after ${clampedTimeout}ms`
-        : `${(error as any).constructor.name}: ${(error as Error).message}`,
+        : `${(error as any).constructor.name}: ${errorMessage(error)}`,
     };
   }
 }

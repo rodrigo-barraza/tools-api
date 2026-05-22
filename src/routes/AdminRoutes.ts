@@ -23,6 +23,8 @@ import {
 import { getConnectedAgents } from "../services/AgentConnectionManager.ts";
 import { getDB } from "../db.ts";
 import logger from "../logger.ts";
+import { errorMessage } from "../utilities.ts";
+
 const router = Router();
 // ─── Path Translation ─────────────────────────────────────────────
 const WORKSPACE_COLLECTION = "workspace_config";
@@ -266,7 +268,7 @@ export async function loadUserWorkspaceRoots() {
       logger.info(`   📂 User workspace roots: ${document.roots.join(", ")}`);
     }
   } catch (error: unknown) {
-    logger.warn(`   ⚠️  Could not load user workspace roots: ${(error as Error).message}`);
+    logger.warn(`   ⚠️  Could not load user workspace roots: ${errorMessage(error)}`);
   }
 }
 export default router;

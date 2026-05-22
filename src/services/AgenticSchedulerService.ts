@@ -15,6 +15,7 @@ import {
   SCHEDULER_MAX_PER_PROJECT as MAX_SCHEDULES_PER_PROJECT,
   SCHEDULER_POLLER_INTERVAL_MS as POLLER_INTERVAL_MS,
 } from "../constants.ts";
+import { errorMessage } from "../utilities.ts";
 
 const VALID_TYPES = ["cron", "once", "trigger"];
 
@@ -313,11 +314,11 @@ export function startSchedulePoller() {
             { $set: updates, $inc: { runCount: 1 } },
           );
         } catch (error: unknown) {
-          logger.error(`[Scheduler] Failed to fire schedule #${schedule.scheduleId}: ${(error as Error).message}`);
+          logger.error(`[Scheduler] Failed to fire schedule #${schedule.scheduleId}: ${errorMessage(error)}`);
         }
       }
     } catch (error: unknown) {
-      logger.error(`[Scheduler] Poller error: ${(error as Error).message}`);
+      logger.error(`[Scheduler] Poller error: ${errorMessage(error)}`);
     }
   }, POLLER_INTERVAL_MS);
 
@@ -366,8 +367,8 @@ async function firePrismAgent(schedule: Record<string, unknown>, payload: Record
 
     return await response.json().catch(() => ({ acknowledged: true }));
   } catch (error: unknown) {
-    logger.error(`[Scheduler] Failed to reach Prism: ${(error as Error).message}`);
-    return { error: (error as Error).message };
+    logger.error(`[Scheduler] Failed to reach Prism: ${errorMessage(error)}`);
+    return { error: errorMessage(error) };
   }
 }
 

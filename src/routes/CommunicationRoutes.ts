@@ -7,6 +7,8 @@ import {
   lookupPhone,
   listPhoneNumbers,
 } from "../services/TwilioService.ts";
+import { errorMessage } from "../utilities.ts";
+
 const router = Router();
 // ─── Send SMS ──────────────────────────────────────────────────────
 router.post("/sms/send", asyncHandler(async (req: Request, res: Response) => {
@@ -25,7 +27,7 @@ router.post("/sms/send", asyncHandler(async (req: Request, res: Response) => {
     const result = await sendSms(to, body, from);
     res.json(result);
   } catch (error: unknown) {
-    res.status(502).json({ error: `SMS send failed: ${(error as Error).message}` });
+    res.status(502).json({ error: `SMS send failed: ${errorMessage(error)}` });
   }
 }));
 // ─── List Messages ─────────────────────────────────────────────────

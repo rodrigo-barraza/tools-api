@@ -5,6 +5,7 @@ import {
   Configuration,
 } from "crawlee";
 import logger from "../logger.ts";
+import { errorMessage } from "../utilities.ts";
 
 // ────────────────────────────────────────────────────────────
 // Constants
@@ -35,7 +36,7 @@ const USER_AGENT =
  * Build a ProxyConfiguration for Bright Data.
  * Supports datacenter and residential zones.
  */
-function buildProxyConfig(_options: Record<string, any> = {}) {
+function buildProxyConfig(_options: Record<string, unknown> = {}) {
   // ──────────────────────────────────────────────────────────
   // BRIGHT DATA PROXY — UNCOMMENT WHEN READY
   // ──────────────────────────────────────────────────────────
@@ -93,7 +94,7 @@ crawleeConfig.set("persistStorage", false);
  * Crawl a single URL using Cheerio (static HTML parsing).
  * Best for: Static pages, forums, blogs — much faster than Playwright.
  */
-export async function crawlSingleStatic(url: any, options: Record<string, any> = {}) {
+export async function crawlSingleStatic(url: any, options: Record<string, unknown> = {}) {
   const { extractFn, proxyZone } = options;
 
   if (!extractFn) {
@@ -111,8 +112,7 @@ export async function crawlSingleStatic(url: any, options: Record<string, any> =
     requestHandlerTimeoutSecs: DEFAULTS.requestHandlerTimeoutSecs,
     useSessionPool: true,
     persistCookiesPerSession: true,
-    // @ts-expect-error - suppress remaining error
-    ...(proxyConfiguration && { proxyConfiguration }),
+        ...((proxyConfiguration ? { proxyConfiguration } : {}) as any),
 
     additionalHttpHeaders: {
       "User-Agent": USER_AGENT,
@@ -124,10 +124,10 @@ export async function crawlSingleStatic(url: any, options: Record<string, any> =
       logger.info(`[Crawler] Processing (static): ${request.url}`);
 
       try {
-        result = await extractFn($, request);
+        result = await (extractFn as Function)($, request);
       } catch (error: unknown) {
         crawlError = error;
-        logger.error(`[Crawler] Extract failed for ${request.url}: ${(error as Error).message}`);
+        logger.error(`[Crawler] Extract failed for ${request.url}: ${errorMessage(error)}`);
       }
     },
 
@@ -140,7 +140,7 @@ export async function crawlSingleStatic(url: any, options: Record<string, any> =
   try {
     await crawler.run([url]);
   } catch (error: unknown) {
-    return { error: `Crawler failed: ${(error as Error).message}`, url };
+    return { error: `Crawler failed: ${errorMessage(error)}`, url };
   }
 
   if (crawlError) {

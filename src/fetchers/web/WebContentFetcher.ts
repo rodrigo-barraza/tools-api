@@ -64,12 +64,23 @@ function detectPlatform(url: any) {
 
 // ─── Public API ───────────────────────────────────────────────────
 
+export interface WebContentOptions {
+  lang?: string;
+  transcript?: string;
+  commentLimit?: string;
+  maxChars?: number;
+  format?: string;
+  answerLimit?: string;
+  readme?: string;
+  languages?: string;
+}
+
 /**
  * Extract structured content from any URL.
  * Auto-detects GitHub, Reddit, Twitter/X, Hacker News, Stack Overflow,
  * or YouTube. Falls back to generic HTML extraction for unknown sites.
  */
-export async function getWebContent(url: any, options: Record<string, any> = {}) {
+export async function getWebContent(url: string, options: WebContentOptions = {}) {
   const platform = detectPlatform(url);
 
   let result: any;

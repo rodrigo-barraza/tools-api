@@ -1,6 +1,7 @@
 import type { Collection } from "mongodb";
 import { getDB } from "../db.ts";
 import logger from "../logger.ts";
+import { errorMessage } from "../utilities.ts";
 
 // ─── Types ──────────────────────────────────────────────────────
 export interface CmeDocument {
@@ -45,7 +46,7 @@ export async function upsertCmes(cmes: CmeDocument[]) {
     const result = await collection.bulkWrite(operations, { ordered: false });
     return { upserted: result.upsertedCount, modified: result.modifiedCount };
   } catch (error: unknown) {
-    logger.error("Failed to upsert CMEs:", (error as Error).message);
+    logger.error("Failed to upsert CMEs:", errorMessage(error));
     return { upserted: 0, modified: 0 };
   }
 }

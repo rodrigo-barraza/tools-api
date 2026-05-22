@@ -3,6 +3,7 @@
 import * as cheerio from "cheerio";
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
+import { errorMessage } from "../utilities.ts";
 
 // ────────────────────────────────────────────────────────────
 // Constants
@@ -32,7 +33,7 @@ const GOOGLE_CSE_BASE = "https://www.googleapis.com/customsearch/v1";
 /**
  * Fetch a URL and convert its HTML content to clean markdown.
  */
-export async function agenticFetchUrl(url: any, { selector }: Record<string, any> = {}) {
+export async function agenticFetchUrl(url: any, { selector }: Record<string, unknown> = {}) {
   if (!url || typeof url !== "string") {
     return { error: "'url' is required and must be a string" };
   }
@@ -124,7 +125,7 @@ export async function agenticFetchUrl(url: any, { selector }: Record<string, any
     if ((error as any).name === "AbortError") {
       return { error: `Request timed out after ${FETCH_TIMEOUT_MS}ms`, url };
     }
-    return { error: `Fetch failed: ${(error as Error).message}`, url };
+    return { error: `Fetch failed: ${errorMessage(error)}`, url };
   }
 }
 
@@ -139,14 +140,14 @@ const BRAVE_SEARCH_BASE = "https://api.search.brave.com/res/v1/web/search";
  *   1. Brave Search API (whole-web, 2000 queries/month free)
  *   2. Google Custom Search (site-restricted, 100 queries/day free)
  */
-export async function agenticWebSearch(query: any, { limit = 5, dateRestrict, siteSearch }: Record<string, any> = {}) {
+export async function agenticWebSearch(query: any, { limit = 5, dateRestrict, siteSearch }: Record<string, unknown> = {}) {
   if (!query || typeof query !== "string") {
     return { error: "'query' is required and must be a non-empty string" };
   }
 
   // If siteSearch is specified, prepend it to the query for Brave
   const effectiveQuery = siteSearch ? `site:${siteSearch} ${query}` : query;
-  const clampedLimit = Math.min(limit, 10);
+  const clampedLimit = Math.min(Number(limit), 10);
 
   // ── Provider 1: Brave Search ───────────────────────────────
   if (CONFIG.BRAVE_SEARCH_API_KEY) {
@@ -156,7 +157,7 @@ export async function agenticWebSearch(query: any, { limit = 5, dateRestrict, si
       // If Brave fails, fall through to Google CSE
       logger.warn(`[AgenticWebService] Brave Search failed, trying Google CSE: ${result.error}`);
     } catch (error: unknown) {
-      logger.warn(`[AgenticWebService] Brave Search exception: ${(error as Error).message}`);
+      logger.warn(`[AgenticWebService] Brave Search exception: ${errorMessage(error)}`);
     }
   }
 
@@ -185,18 +186,20 @@ async function _searchBrave(query: any, { limit, dateRestrict }: any) {
   // Brave freshness: "pd" (past day), "pw" (past week), "pm" (past month), "py" (past year)
   if (dateRestrict) {
     const freshnessMap = { d1: "pd", d7: "pw", w1: "pw", w2: "pw", m1: "pm", m3: "pm", y1: "py" };
-    // @ts-expect-error - TS7053: implicit any index
-    const freshness = freshnessMap[dateRestrict] || dateRestrict;
+        const freshness = freshnessMap[dateRestrict as keyof typeof freshnessMap] || dateRestrict;
     params.set("freshness", freshness);
   }
 
+  const headers: Record<string, string> = {
+    "Accept": "application/json",
+    "Accept-Encoding": "gzip",
+  };
+  if (CONFIG.BRAVE_SEARCH_API_KEY) {
+    headers["X-Subscription-Token"] = CONFIG.BRAVE_SEARCH_API_KEY;
+  }
+
   const response = await fetch(`${BRAVE_SEARCH_BASE}?${params}`, {
-    // @ts-expect-error - suppress remaining error
-    headers: {
-      "Accept": "application/json",
-      "Accept-Encoding": "gzip",
-      "X-Subscription-Token": CONFIG.BRAVE_SEARCH_API_KEY,
-    },
+        headers,
   });
 
   if (!response.ok) {
@@ -229,11 +232,10 @@ async function _searchBrave(query: any, { limit, dateRestrict }: any) {
 
 // ── Google CSE Implementation ────────────────────────────────
 
-async function _searchGoogleCSE(query: any, { limit, dateRestrict, siteSearch }: any) {
-  // @ts-expect-error - suppress remaining error
-  const params = new URLSearchParams({
-    key: CONFIG.GOOGLE_API_KEY,
-    cx: CONFIG.GOOGLE_CSE_CX,
+async function _searchGoogleCSE(query: string, { limit, dateRestrict, siteSearch }: any) {
+    const params = new URLSearchParams({
+    key: CONFIG.GOOGLE_API_KEY as string,
+    cx: CONFIG.GOOGLE_CSE_CX as string,
     q: query,
     num: String(limit),
   });
@@ -288,7 +290,7 @@ async function _searchGoogleCSE(query: any, { limit, dateRestrict, siteSearch }:
  * Convert HTML to clean markdown using cheerio.
  * Strips scripts, styles, nav, and other non-content elements.
  */
-function htmlToMarkdown(html: any, { selector }: Record<string, any> = {}) {
+function htmlToMarkdown(html: any, { selector }: Record<string, unknown> = {}) {
   const $ = cheerio.load(html);
 
   // Remove non-content elements
@@ -297,9 +299,9 @@ function htmlToMarkdown(html: any, { selector }: Record<string, any> = {}) {
   $(".cookie-banner, .popup, .modal, .overlay, .sidebar, .ad, .advertisement").remove();
 
   // If a CSS selector was provided, focus on that
-  let root = $("body");
+  let root: any = $("body");
   if (selector) {
-    const selected = $(selector);
+    const selected = $(selector as string);
     if (selected.length > 0) {
       root = selected;
     }

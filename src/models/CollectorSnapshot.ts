@@ -1,6 +1,7 @@
 import type { Document } from "mongodb";
 import { getDB } from "../db.ts";
 import logger from "../logger.ts";
+import { errorMessage } from "../utilities.ts";
 
 // ═══════════════════════════════════════════════════════════════
 //  Collector State — Per-Collection Persistence
@@ -34,7 +35,7 @@ export async function saveState(collectionName: string, data: unknown[] | Record
       .replaceOne({ _id: "current" }, document, { upsert: true });
   } catch (error: unknown) {
     logger.error(
-      `[State] ⚠️ Failed to save "${collectionName}": ${(error as Error).message}`,
+      `[State] ⚠️ Failed to save "${collectionName}": ${errorMessage(error)}`,
     );
   }
 }
@@ -62,7 +63,7 @@ export async function loadState(collectionName: string) {
     return { data: rest, updatedAt };
   } catch (error: unknown) {
     logger.error(
-      `[State] ⚠️ Failed to load "${collectionName}": ${(error as Error).message}`,
+      `[State] ⚠️ Failed to load "${collectionName}": ${errorMessage(error)}`,
     );
     return null;
   }

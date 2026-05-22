@@ -1,5 +1,6 @@
 import { getDB } from "../db.ts";
 import logger from "../logger.ts";
+import { errorMessage } from "../utilities.ts";
 
 /**
  * Insert a weather snapshot document.
@@ -13,6 +14,6 @@ export async function insertSnapshot(data: Record<string, unknown>) {
       createdAt: new Date(),
     });
   } catch (error: unknown) {
-    logger.error("Failed to persist weather snapshot:", (error as Error).message);
+    logger.error("Failed to persist weather snapshot:", errorMessage(error));
   }
 }

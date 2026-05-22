@@ -37,10 +37,16 @@ export async function getSnapshot(url: any, timestamp: any) {
   };
 }
 
+export interface WaybackOptions {
+  limit?: number;
+  from?: string;
+  to?: string;
+}
+
 /**
  * Get snapshot history for a URL — list of archived captures.
  */
-export async function getSnapshotHistory(url: any, { limit = 20, from, to }: Record<string, any> = {}) {
+export async function getSnapshotHistory(url: string, { limit = 20, from, to }: WaybackOptions = {}) {
   const params = new URLSearchParams({
     url,
     output: "json",
@@ -64,15 +70,15 @@ export async function getSnapshotHistory(url: any, { limit = 20, from, to }: Rec
   const rows = data.slice(1);
 
   const snapshots = rows.map((row: any) => {
-    const object: Record<string, any> = {};
+    const object: Record<string, unknown> = {};
     headers.forEach((h: any, i: any) => { object[h] = row[i]; });
     return {
       timestamp: object.timestamp,
       date: formatWaybackTimestamp(object.timestamp),
       archiveUrl: `https://web.archive.org/web/${object.timestamp}/${url}`,
-      statusCode: parseInt(object.statuscode) || null,
+      statusCode: parseInt(String(object.statuscode)) || null,
       mimeType: object.mimetype,
-      sizeBytes: parseInt(object.length) || null,
+      sizeBytes: parseInt(String(object.length)) || null,
     };
   });
 

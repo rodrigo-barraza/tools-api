@@ -21,6 +21,7 @@ import { executeCommand } from "./AgenticCommandService.ts";
 import { agenticProjectSummary } from "./AgenticProjectService.ts";
 import { agenticToolSearch } from "./AgenticToolSearchService.ts";
 import { WORKSPACE_ROOTS } from "../config.ts";
+import { errorMessage } from "../utilities.ts";
 
 // ── Test Fixture ─────────────────────────────────────────────
 // Lazily resolved — WORKSPACE_ROOTS may be empty at import time
@@ -115,7 +116,7 @@ async function runTest(name: any, fn: any) {
       tool: name,
       success: false,
       duration,
-      message: (error as Error).message || String(error),
+      message: errorMessage(error) || String(error),
     };
   }
 }
@@ -267,9 +268,8 @@ const TESTS = {
 /**
  * Run a smoke test for a single tool.
  */
-export async function testTool(toolName: any) {
-  // @ts-expect-error - TS7053: implicit any index
-  const testFn = TESTS[toolName];
+export async function testTool(toolName: string) {
+    const testFn = TESTS[toolName as keyof typeof TESTS];
   if (!testFn) {
     return {
       tool: toolName,
@@ -291,15 +291,14 @@ export async function testTool(toolName: any) {
 /**
  * Run smoke tests for all tools (or a subset).
  */
-export async function testAllTools(toolNames: any) {
+export async function testAllTools(toolNames?: string[]) {
   const names = toolNames || Object.keys(TESTS);
   try {
     await ensureFixture();
 
     const results: any[] = [];
     for (const name of names) {
-      // @ts-expect-error - TS7053: implicit any index
-      const testFn = TESTS[name];
+            const testFn = TESTS[name as keyof typeof TESTS];
       if (!testFn) {
         results.push({
           tool: name,

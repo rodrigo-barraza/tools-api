@@ -3,6 +3,7 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import logger from "../../logger.ts";
 import { DrugProduct, RawDrugRow } from "../../types/health.ts";
+import { errorMessage } from "../../utilities.ts";
 
 /**
  * FDA Drug Fetcher — Static In-Memory FDA NDC Drug Database
@@ -84,7 +85,7 @@ function ensureLoaded(): void {
       DRUG_DB.push(row);
     }
   } catch (error) {
-    logger.error(`Failed to load FDA drug database: ${(error as Error).message}`);
+    logger.error(`Failed to load FDA drug database: ${errorMessage(error)}`);
   }
 
   logger.info(`💊 FDA drug database loaded: ${DRUG_DB.length} products`);

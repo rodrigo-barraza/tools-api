@@ -1,7 +1,7 @@
 import { TokenManager } from "@rodrigo-barraza/utilities-library/node";
 import CONFIG from "../../config.ts";
 import { PRODUCT_SOURCES, EBAY_CATEGORIES } from "../../constants.ts";
-import { computeTrendingScore } from "../../utilities.ts";
+import { computeTrendingScore, errorMessage } from "../../utilities.ts";
 import rateLimiter from "../../services/RateLimiterService.ts";
 import logger from "../../logger.ts";
 const BASE_URL = "https://api.ebay.com/buy/browse/v1";
@@ -93,7 +93,7 @@ export async function fetchAllEbayTrending() {
       allProducts.push(...products);
       logger.info(`[eBay] ✅ ${cat.name}: ${products.length} products`);
     } catch (error: unknown) {
-      logger.error(`[eBay] ❌ ${cat.name}: ${(error as Error).message}`);
+      logger.error(`[eBay] ❌ ${cat.name}: ${errorMessage(error)}`);
     }
   }
   return allProducts;

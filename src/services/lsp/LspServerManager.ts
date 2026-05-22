@@ -5,6 +5,7 @@ import { pathToFileURL } from "node:url";
 import { createLspServerInstance, LspServerInstance } from "./LspServerInstance.ts";
 import { getLspServerConfigs } from "./LspConfig.ts";
 import logger from "../../logger.ts";
+import { errorMessage } from "../../utilities.ts";
 
 export interface LspServerManager {
   initialize(): void;
@@ -72,7 +73,7 @@ export function createLspServerManager(workspaceFolder?: string): LspServerManag
 
         servers.set(serverName, instance);
       } catch (error: unknown) {
-        logger.error(`[LSP Manager] Failed to create server '${serverName}': ${(error as Error).message}`);
+        logger.error(`[LSP Manager] Failed to create server '${serverName}': ${errorMessage(error)}`);
       }
     }
 
@@ -104,7 +105,7 @@ export function createLspServerManager(workspaceFolder?: string): LspServerManag
       try {
         await server.start();
       } catch (error: unknown) {
-        logger.error(`[LSP Manager] Failed to start server for ${basename(filePath)}: ${(error as Error).message}`);
+        logger.error(`[LSP Manager] Failed to start server for ${basename(filePath)}: ${errorMessage(error)}`);
         throw error;
       }
     }
@@ -124,7 +125,7 @@ export function createLspServerManager(workspaceFolder?: string): LspServerManag
     try {
       return await server.sendRequest(method, params);
     } catch (error: unknown) {
-      logger.error(`[LSP Manager] Request '${method}' failed for ${basename(filePath)}: ${(error as Error).message}`);
+      logger.error(`[LSP Manager] Request '${method}' failed for ${basename(filePath)}: ${errorMessage(error)}`);
       throw error;
     }
   }
@@ -158,7 +159,7 @@ export function createLspServerManager(workspaceFolder?: string): LspServerManag
       });
       openedFiles.set(fileUri, server.name);
     } catch (error: unknown) {
-      logger.error(`[LSP Manager] didOpen failed for ${basename(filePath)}: ${(error as Error).message}`);
+      logger.error(`[LSP Manager] didOpen failed for ${basename(filePath)}: ${errorMessage(error)}`);
       throw error;
     }
   }
@@ -185,7 +186,7 @@ export function createLspServerManager(workspaceFolder?: string): LspServerManag
         contentChanges: [{ text: content }],
       });
     } catch (error: unknown) {
-      logger.error(`[LSP Manager] didChange failed for ${basename(filePath)}: ${(error as Error).message}`);
+      logger.error(`[LSP Manager] didChange failed for ${basename(filePath)}: ${errorMessage(error)}`);
       throw error;
     }
   }
@@ -205,7 +206,7 @@ export function createLspServerManager(workspaceFolder?: string): LspServerManag
       });
       openedFiles.delete(fileUri);
     } catch (error: unknown) {
-      logger.error(`[LSP Manager] didClose failed for ${basename(filePath)}: ${(error as Error).message}`);
+      logger.error(`[LSP Manager] didClose failed for ${basename(filePath)}: ${errorMessage(error)}`);
     }
   }
 
