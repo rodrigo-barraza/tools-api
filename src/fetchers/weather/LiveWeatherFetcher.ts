@@ -244,7 +244,7 @@ export async function fetchLiveWeather({
   const data = await response.json() as RawForecastResponse;
   const current = data.current;
   const daily = data.daily;
-  const weatherDescription = WMO_WEATHER_CODES[current.weather_code as unknown as keyof typeof WMO_WEATHER_CODES] || "Unknown";
+  const weatherDescription = (WMO_WEATHER_CODES as Record<number, string>)[current.weather_code] || "Unknown";
 
   const result: LiveWeatherResult = {
     // Location info
@@ -297,7 +297,7 @@ export async function fetchLiveWeather({
       ? daily.time.map((time, i) => ({
           date: time,
           weatherCode: daily.weather_code[i],
-          weatherDescription: WMO_WEATHER_CODES[daily.weather_code[i] as unknown as keyof typeof WMO_WEATHER_CODES] || "Unknown",
+          weatherDescription: (WMO_WEATHER_CODES as Record<number, string>)[daily.weather_code[i]] || "Unknown",
           temperatureMax: daily.temperature_2m_max[i],
           temperatureMin: daily.temperature_2m_min[i],
           sunrise: daily.sunrise[i],

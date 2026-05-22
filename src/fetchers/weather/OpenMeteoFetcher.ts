@@ -185,7 +185,7 @@ export async function fetchOpenMeteoWeather(): Promise<OpenMeteoResponse> {
   // Find today's daily data
   const todayIndex = 0;
   const weatherDescription =
-    WMO_WEATHER_CODES[current.weather_code as unknown as keyof typeof WMO_WEATHER_CODES] || "Unknown";
+    (WMO_WEATHER_CODES as Record<number, string>)[current.weather_code] || "Unknown";
 
   return {
     source: "openmeteo",

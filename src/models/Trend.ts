@@ -38,7 +38,7 @@ export async function upsertTrends(trends: TrendInput[]) {
   const collection = db.collection("trends");
   const now = new Date();
 
-  const bulkOps = trends.map((trend: TrendInput) => ({
+  const bulkOps: any[] = trends.map((trend: TrendInput) => ({
     updateOne: {
       filter: {
         normalizedName: trend.normalizedName,
@@ -67,7 +67,7 @@ export async function upsertTrends(trends: TrendInput[]) {
     },
   }));
 
-  const result = await collection.bulkWrite(bulkOps as unknown as AnyBulkWriteOperation<Document>[], { ordered: false });
+  const result = await collection.bulkWrite(bulkOps, { ordered: false });
   return {
     upserted: result.upsertedCount || 0,
     modified: result.modifiedCount || 0,

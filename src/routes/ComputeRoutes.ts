@@ -38,11 +38,11 @@ interface ConvertUnitsInstance {
 }
 
 const getConvertUnits = lazyImport<ConvertUnitsInstance>("convert-units");
-const getDateFns = lazyImport<typeof import("date-fns")>("date-fns", (m: any) => m as typeof import("date-fns"));
-const getDateFnsTz = lazyImport<typeof import("date-fns-tz")>("date-fns-tz", (m: any) => m as typeof import("date-fns-tz"));
-const getJSONPath = lazyImport<typeof import("jsonpath-plus").JSONPath>("jsonpath-plus", (m: any) => m.JSONPath as typeof import("jsonpath-plus").JSONPath);
+const getDateFns = lazyImport<typeof import("date-fns")>("date-fns", (m: unknown) => m as typeof import("date-fns"));
+const getDateFnsTz = lazyImport<typeof import("date-fns-tz")>("date-fns-tz", (m: unknown) => m as typeof import("date-fns-tz"));
+const getJSONPath = lazyImport<typeof import("jsonpath-plus").JSONPath>("jsonpath-plus", (m: unknown) => (m as Record<string, unknown>).JSONPath as typeof import("jsonpath-plus").JSONPath);
 const getQRCode = lazyImport<typeof import("qrcode")>("qrcode");
-const getDiff = lazyImport<typeof import("diff")>("diff", (m: any) => m as typeof import("diff"));
+const getDiff = lazyImport<typeof import("diff")>("diff", (m: unknown) => m as typeof import("diff"));
 const router = Router();
 // ─── 1. JavaScript Interpreter (vm sandbox) ─────────────────
 router.post("/js/execute", (req: Request, res: Response) => {
@@ -167,7 +167,7 @@ router.get("/units/list", asyncHandler(async (req: Request, res: Response) => {
       return res.json({ measure, count: described.length, units: described });
     }
     const measures = convert().measures();
-    const all: Record<string, any> = {};
+    const all: Record<string, unknown> = {};
     for (const m of measures) {
       const units = convert().possibilities(m);
       all[m] = units.map((u: string) => {
@@ -204,7 +204,7 @@ router.post("/datetime/parse", asyncHandler(async (req: Request, res: Response) 
       }
       return format ? fns.format(d, format) : d.toISOString();
     };
-    let result: any;
+    let result: unknown;
     switch (operation) {
       case "now": {
         const now = new Date();
@@ -214,7 +214,7 @@ router.post("/datetime/parse", asyncHandler(async (req: Request, res: Response) 
           formatted: formatDate(now),
         };
         if (timezone) {
-          result.inTimezone = tz.formatInTimeZone(now, timezone, "yyyy-MM-dd HH:mm:ss zzz");
+          (result as Record<string, unknown>).inTimezone = tz.formatInTimeZone(now, timezone, "yyyy-MM-dd HH:mm:ss zzz");
         }
         break;
       }
@@ -338,7 +338,7 @@ router.post("/datetime/parse", asyncHandler(async (req: Request, res: Response) 
           error: `Unknown operation: ${operation}. Use: now, parse, format, diff, add, subtract, startOf, endOf, isValid`,
         });
     }
-    res.json({ operation, ...result });
+    res.json({ operation, ...(result as Record<string, unknown>) });
   } catch (error: unknown) {
     res.status(400).json({ error: `DateTime operation failed: ${(error as Error).message}` });
   }
@@ -364,15 +364,15 @@ router.post("/json/transform", asyncHandler(async (req: Request, res: Response) 
             result = Array.isArray(result) ? result.flat(op.depth ?? Infinity) : result;
             break;
           case "unique":
-            result = Array.isArray(result) ? [...new Set(result.map((x: any) => (typeof x === "object" ? JSON.stringify(x) : x)))].map((x: any) => { try { return JSON.parse(x); } catch { return x; } }) : result;
+            result = Array.isArray(result) ? [...new Set(result.map((x: unknown) => (typeof x === "object" ? JSON.stringify(x) : x)))].map((x: unknown) => { try { return JSON.parse(x as string); } catch { return x; } }) : result;
             break;
           case "sort":
             if (Array.isArray(result)) {
               const key = op.key;
               const order = op.order === "desc" ? -1 : 1;
-              result = [...result].sort((a: any, b: any) => {
-                const va = key ? a?.[key] : a;
-                const vb = key ? b?.[key] : b;
+              result = [...result].sort((a: Record<string, unknown> | number | string, b: Record<string, unknown> | number | string) => {
+                const va = key ? (a as Record<string, unknown>)?.[key] : a;
+                const vb = key ? (b as Record<string, unknown>)?.[key] : b;
                 if (typeof va === "number" && typeof vb === "number") return (va - vb) * order;
                 return String(va).localeCompare(String(vb)) * order;
               });
@@ -381,15 +381,15 @@ router.post("/json/transform", asyncHandler(async (req: Request, res: Response) 
           case "filter":
             if (Array.isArray(result) && op.key && op.value !== undefined) {
               const opType = op.operator || "eq";
-              result = result.filter((item: any) => {
+              result = result.filter((item: Record<string, unknown>) => {
                 const value = item?.[op.key];
                 switch (opType) {
                   case "eq": return value === op.value;
                   case "neq": return value !== op.value;
-                  case "gt": return value > op.value;
-                  case "gte": return value >= op.value;
-                  case "lt": return value < op.value;
-                  case "lte": return value <= op.value;
+                  case "gt": return (value as number) > (op.value as number);
+                  case "gte": return (value as number) >= (op.value as number);
+                  case "lt": return (value as number) < (op.value as number);
+                  case "lte": return (value as number) <= (op.value as number);
                   case "contains": return String(value).includes(String(op.value));
                   case "startsWith": return String(value).startsWith(String(op.value));
                   default: return true;
@@ -399,15 +399,15 @@ router.post("/json/transform", asyncHandler(async (req: Request, res: Response) 
             break;
           case "pick":
             if (Array.isArray(result) && Array.isArray(op.keys)) {
-              result = result.map((item: any) => {
-                const picked: Record<string, any> = {};
+              result = result.map((item: Record<string, unknown>) => {
+                const picked: Record<string, unknown> = {};
                 for (const k of op.keys) {
                   if (k in item) picked[k] = item[k];
                 }
                 return picked;
               });
             } else if (typeof result === "object" && Array.isArray(op.keys)) {
-              const picked: Record<string, any> = {};
+              const picked: Record<string, unknown> = {};
               for (const k of op.keys) {
                 if (k in result) picked[k] = result[k];
               }
@@ -416,7 +416,7 @@ router.post("/json/transform", asyncHandler(async (req: Request, res: Response) 
             break;
           case "omit":
             if (Array.isArray(result) && Array.isArray(op.keys)) {
-              result = result.map((item: any) => {
+              result = result.map((item: Record<string, unknown>) => {
                 const omitted = { ...item };
                 for (const k of op.keys) delete omitted[k];
                 return omitted;
@@ -428,11 +428,11 @@ router.post("/json/transform", asyncHandler(async (req: Request, res: Response) 
             break;
           case "groupBy":
             if (Array.isArray(result) && op.key) {
-              const groups: Record<string, any> = {};
+              const groups: Record<string, unknown> = {};
               for (const item of result) {
                 const k = String(item?.[op.key] ?? "undefined");
                 if (!groups[k]) groups[k] = [];
-                groups[k].push(item);
+                (groups[k] as unknown[]).push(item);
               }
               result = groups;
             }
@@ -442,7 +442,7 @@ router.post("/json/transform", asyncHandler(async (req: Request, res: Response) 
             break;
           case "sum":
             if (Array.isArray(result)) {
-              result = result.reduce((acc: any, item: any) => {
+              result = result.reduce((acc: number, item: Record<string, unknown>) => {
                 const value = op.key ? item?.[op.key] : item;
                 return acc + (typeof value === "number" ? value : 0);
               }, 0);
@@ -492,7 +492,7 @@ router.post("/csv", (req: Request, res: Response) => {
     };
     const lines = [cols.map(escape).join(delim)];
     for (const row of data) {
-      lines.push(cols.map((c: string) => escape((row as Record<string, any>)[c])).join(delim));
+      lines.push(cols.map((c: string) => escape((row as Record<string, unknown>)[c])).join(delim));
     }
     const csv = lines.join("\n");
     const id = csvStore.set({ csv, filename: filename || "export.csv" });
@@ -738,7 +738,7 @@ router.get("/hash", (req: Request, res: Response) => {
   const algo = (algorithm || "sha256").toLowerCase();
   const enc = (encoding || "hex") as crypto.BinaryToTextEncoding;
   try {
-    let hash: any;
+    let hash: string | Buffer;
     if (key) {
       // HMAC
       hash = crypto
@@ -758,7 +758,7 @@ router.get("/hash", (req: Request, res: Response) => {
       dataLength: data.length,
     });
   } catch (error: unknown) {
-    const algos = crypto.getHashes().filter((h: any) => !h.includes("RSA"));
+    const algos = crypto.getHashes().filter((h: string) => !h.includes("RSA"));
     res.status(400).json({
       error: `Hashing failed: ${(error as Error).message}`,
       supportedAlgorithms: algos.slice(0, 20),
@@ -782,8 +782,8 @@ router.post("/regex", (req: Request, res: Response) => {
   }
   try {
     const regex = new RegExp(pattern, flags || "g");
-    const matches: any[] = [];
-    let match: any;
+    const matches: Record<string, unknown>[] = [];
+    let match: RegExpExecArray | null;
     let iterations = 0;
     const MAX_MATCHES = 1000;
     if (regex.global || regex.sticky) {
@@ -835,7 +835,7 @@ router.get("/encode", (req: Request, res: Response) => {
   }
   const dir = direction || "encode";
   try {
-    let result: any;
+    let result: unknown;
     switch (format.toLowerCase()) {
       case "base64":
         result = dir === "decode"
@@ -865,8 +865,8 @@ router.get("/encode", (req: Request, res: Response) => {
             .replace(/&gt;/g, ">")
             .replace(/&quot;/g, '"')
             .replace(/&#39;/g, "'")
-            .replace(/&#x([0-9a-fA-F]+);/g, (_: any, hex: any) => String.fromCharCode(parseInt(hex, 16)))
-            .replace(/&#(\d+);/g, (_: any, dec: any) => String.fromCharCode(parseInt(dec)));
+            .replace(/&#x([0-9a-fA-F]+);/g, (_: string, hex: string) => String.fromCharCode(parseInt(hex, 16)))
+            .replace(/&#(\d+);/g, (_: string, dec: string) => String.fromCharCode(parseInt(dec)));
         } else {
           result = data
             .replace(/&/g, "&amp;")
@@ -877,7 +877,7 @@ router.get("/encode", (req: Request, res: Response) => {
         }
         break;
       case "rot13":
-        result = data.replace(/[a-zA-Z]/g, (c: any) => {
+        result = data.replace(/[a-zA-Z]/g, (c: string) => {
           const base = c <= "Z" ? 65 : 97;
           return String.fromCharCode(((c.charCodeAt(0) - base + 13) % 26) + base);
         });
@@ -886,11 +886,11 @@ router.get("/encode", (req: Request, res: Response) => {
         if (dir === "decode") {
           result = data
             .split(" ")
-            .map((b: any) => String.fromCharCode(parseInt(b, 2)))
+            .map((b: string) => String.fromCharCode(parseInt(b, 2)))
             .join("");
         } else {
           result = [...data]
-            .map((c: any) => c.charCodeAt(0).toString(2).padStart(8, "0"))
+            .map((c: string) => c.charCodeAt(0).toString(2).padStart(8, "0"))
             .join(" ");
         }
         break;
@@ -1063,7 +1063,7 @@ router.get("/color/convert", (req: Request, res: Response) => {
     const hsl = rgbToHsl(rgb);
     const hsv = rgbToHsv(rgb);
     const cmyk = rgbToCmyk(rgb);
-    const result: Record<string, any> = {
+    const result: Record<string, unknown> = {
       input: color,
       hex,
       rgb: `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`,
@@ -1106,7 +1106,7 @@ const VALID_TURTLE_COMMANDS = new Set([
   "hideturtle", "ht", "showturtle", "st",
   "home",
 ]);
-function buildTurtleEmbedHtml(commands: any, options: Record<string, any> = {}) {
+function buildTurtleEmbedHtml(commands: string[], options: Record<string, unknown> = {}) {
   const {
     canvasWidth = 800,
     canvasHeight = 600,
@@ -1531,7 +1531,7 @@ router.get("/turtle/embed", (req: Request, res: Response) => {
     return res.status(404).send("Turtle drawing not found or expired");
   }
   res.setHeader("Content-Type", "text/html; charset=utf-8");
-  res.send(buildTurtleEmbedHtml(entry.commands, entry.options));
+  res.send(buildTurtleEmbedHtml(entry.commands as string[], entry.options));
 });
 // ─── Agentic: Think (Echo Scratchpad) ───────────────────────
 // No-op tool — the LLM uses this to write private reasoning.
@@ -1554,7 +1554,7 @@ const CRON_FIELD_RANGES = [
 ];
 const MONTH_NAMES = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-function parseCronField(field: any, { min, max }: any) {
+function parseCronField(field: string, { min, max }: { min: number, max: number }) {
   const values = new Set<number>();
   for (const part of field.split(",")) {
     // Handle step syntax: */5, 1-10/2
@@ -1579,9 +1579,9 @@ function parseCronField(field: any, { min, max }: any) {
       values.add(value);
     }
   }
-  return [...values].sort((a: any, b: any) => a - b);
+  return [...values].sort((a: Record<string, unknown> | number | string, b: Record<string, unknown> | number | string) => (a as number) - (b as number));
 }
-function explainCronField(values: any, fieldIdx: any) {
+function explainCronField(values: number[], fieldIdx: number) {
   const { min, max } = CRON_FIELD_RANGES[fieldIdx];
   const name = CRON_FIELD_NAMES[fieldIdx];
   // Wildcard — all values
@@ -1598,18 +1598,18 @@ function explainCronField(values: any, fieldIdx: any) {
   }
   // Step pattern detection
   if (values.length > 2) {
-    const diffs = values.slice(1).map((v: any, i: any) => v - values[i]);
-    if (diffs.every((d: any) => d === diffs[0])) {
+    const diffs = values.slice(1).map((v: number, i: number) => v - values[i]);
+    if (diffs.every((d: number) => d === diffs[0])) {
       return `every ${diffs[0]} ${name}s${values[0] !== min ? ` from ${values[0]}` : ""}`;
     }
   }
   // List
-  if (fieldIdx === 3) return `in ${values.map((v: any) => MONTH_NAMES[v]).join(", ")}`;
-  if (fieldIdx === 4) return `on ${values.map((v: any) => DAY_NAMES[v]).join(", ")}`;
+  if (fieldIdx === 3) return `in ${values.map((v: number) => MONTH_NAMES[v]).join(", ")}`;
+  if (fieldIdx === 4) return `on ${values.map((v: number) => DAY_NAMES[v]).join(", ")}`;
   return `${name} ${values.join(", ")}`;
 }
-function getNextCronExecutions(parsed: any, count: any, fromDate: any) {
-  const results: any[] = [];
+function getNextCronExecutions(parsed: number[][], count: number, fromDate: Date) {
+  const results: Date[] = [];
   const dt = new Date(fromDate);
   dt.setSeconds(0, 0);
   dt.setMinutes(dt.getMinutes() + 1); // Start from next minute
@@ -1648,18 +1648,18 @@ router.get("/cron/parse", (req: Request, res: Response) => {
         hint: "Standard cron: minute(0-59) hour(0-23) day(1-31) month(1-12) weekday(0-6, 0=Sun)",
       });
     }
-    const parsed = fields.map((f: any, i: any) => parseCronField(f, CRON_FIELD_RANGES[i]));
-    const explanations = parsed.map((vals: any, i: any) => explainCronField(vals, i));
-    const humanReadable = explanations.filter((e: any) => !e.startsWith("every ") || e !== `every ${CRON_FIELD_NAMES[explanations.indexOf(e)]}`).join(", ");
+    const parsed = fields.map((f: string, i: number) => parseCronField(f, CRON_FIELD_RANGES[i]));
+    const explanations = parsed.map((vals: number[], i: number) => explainCronField(vals, i));
+    const humanReadable = explanations.filter((e: string) => !e.startsWith("every ") || e !== `every ${CRON_FIELD_NAMES[explanations.indexOf(e)]}`).join(", ");
     const nextCount = Math.min(Math.max(parseInt(count) || 5, 1), 25);
     const fromDate = from ? new Date(from) : new Date();
     const nextExecutions = getNextCronExecutions(parsed, nextCount, fromDate);
     res.json({
       expression,
-      fields: Object.fromEntries(CRON_FIELD_NAMES.map((name: any, i: any) => [name, { raw: fields[i], values: parsed[i] }])),
+      fields: Object.fromEntries(CRON_FIELD_NAMES.map((name: string, i: number) => [name, { raw: fields[i], values: parsed[i] }])),
       explanation: humanReadable,
-      descriptions: Object.fromEntries(CRON_FIELD_NAMES.map((name: any, i: any) => [name, explanations[i]])),
-      nextExecutions: nextExecutions.map((d: any) => d.toISOString()),
+      descriptions: Object.fromEntries(CRON_FIELD_NAMES.map((name: string, i: number) => [name, explanations[i]])),
+      nextExecutions: nextExecutions.map((d: Date) => d.toISOString()),
       nextExecutionCount: nextExecutions.length,
       fromDate: fromDate.toISOString(),
     });
@@ -1674,7 +1674,7 @@ router.post("/sleep", asyncHandler(async (req: Request, res: Response) => {
   const { duration_seconds, reason } = req.body;
   const duration = Math.max(1, Math.min(120, duration_seconds || 5));
   const durationMs = duration * 1000;
-  await new Promise<void>((resolve: any) => {
+  await new Promise<void>((resolve: () => void) => {
     const timer = setTimeout(resolve, durationMs);
     // If the request is aborted (client disconnect), resolve immediately
     req.on("close", () => {
@@ -1691,7 +1691,7 @@ router.post("/sleep", asyncHandler(async (req: Request, res: Response) => {
 // ─── Agentic: Synthetic Output (Structured JSON Response) ───
 // Validates `data` against an optional JSON Schema and returns it.
 // Lightweight validator — handles type, required, enum, nested objects/arrays.
-function validateJsonSchema(data: any, schema: any, path: any = "", errors: any = []) {
+function validateJsonSchema(data: unknown, schema: Record<string, unknown>, path: string = "", errors: string[] = []) {
   if (!schema || typeof schema !== "object") return;
   const at = path || "root";
   if (schema.type) {
@@ -1712,26 +1712,26 @@ function validateJsonSchema(data: any, schema: any, path: any = "", errors: any 
     errors.push(`${at}: value must be one of [${schema.enum.join(", ")}]`);
   }
   if (typeof data === "string") {
-    if (schema.minLength !== undefined && data.length < schema.minLength) errors.push(`${at}: string length ${data.length} < minLength ${schema.minLength}`);
-    if (schema.maxLength !== undefined && data.length > schema.maxLength) errors.push(`${at}: string length ${data.length} > maxLength ${schema.maxLength}`);
+    if (schema.minLength !== undefined && (data as string).length < (schema.minLength as number)) errors.push(`${at}: string length ${(data as string).length} < minLength ${schema.minLength}`);
+    if (schema.maxLength !== undefined && (data as string).length > (schema.maxLength as number)) errors.push(`${at}: string length ${(data as string).length} > maxLength ${schema.maxLength}`);
   }
   if (typeof data === "number") {
-    if (schema.minimum !== undefined && data < schema.minimum) errors.push(`${at}: ${data} < minimum ${schema.minimum}`);
-    if (schema.maximum !== undefined && data > schema.maximum) errors.push(`${at}: ${data} > maximum ${schema.maximum}`);
+    if (schema.minimum !== undefined && (data as number) < (schema.minimum as number)) errors.push(`${at}: ${data} < minimum ${schema.minimum}`);
+    if (schema.maximum !== undefined && (data as number) > (schema.maximum as number)) errors.push(`${at}: ${data} > maximum ${schema.maximum}`);
   }
   if (schema.required && Array.isArray(schema.required) && typeof data === "object" && data !== null) {
     for (const key of schema.required) {
-      if (data[key] === undefined) errors.push(`${at}: missing required field "${key}"`);
+      if ((data as Record<string, unknown>)[key] === undefined) errors.push(`${at}: missing required field "${key}"`);
     }
   }
   if (schema.properties && typeof data === "object" && data !== null && !Array.isArray(data)) {
     for (const [key, propSchema] of Object.entries(schema.properties)) {
-      if (data[key] !== undefined) validateJsonSchema(data[key], propSchema, `${path ? path + "." : ""}${key}`, errors);
+      if ((data as Record<string, unknown>)[key] !== undefined) validateJsonSchema((data as Record<string, unknown>)[key], propSchema, `${path ? path + "." : ""}${key}`, errors);
     }
   }
-  if (schema.items && Array.isArray(data)) {
+  if (schema.items as Record<string, unknown> && Array.isArray(data)) {
     for (let i = 0; i < data.length; i++) {
-      validateJsonSchema(data[i], schema.items, `${path}[${i}]`, errors);
+      validateJsonSchema((data as unknown[])[i], schema.items as Record<string, unknown>, `${path}[${i}]`, errors);
     }
   }
 }
@@ -1740,7 +1740,7 @@ router.post("/synthetic-output", (req: Request, res: Response) => {
   if (!data || typeof data !== "object") {
     return res.status(400).json({ error: "'data' is required and must be an object" });
   }
-  const validationErrors: any[] = [];
+  const validationErrors: string[] = [];
   if (schema && typeof schema === "object") {
     try {
       validateJsonSchema(data, schema, "", validationErrors);
@@ -1748,7 +1748,7 @@ router.post("/synthetic-output", (req: Request, res: Response) => {
       validationErrors.push(`Validation error: ${(error as Error).message}`);
     }
   }
-  const result: Record<string, any> = {
+  const result: Record<string, unknown> = {
     acknowledged: true,
     label: label || null,
     data,
@@ -1770,7 +1770,7 @@ router.post("/image/process", asyncHandler(async (req: Request, res: Response) =
     return res.status(400).json({ error: "'operations' must be a non-empty array of operation objects" });
   }
   try {
-    const result: any = await processImage({
+    const result = await processImage({
       input,
       operations,
       outputFormat: outputFormat || "png",
@@ -1786,7 +1786,7 @@ router.post("/image/process", asyncHandler(async (req: Request, res: Response) =
     }
     const id = imageStore.set({ buffer: result.buffer, mimeType: result.mimeType });
     const imageUrl = buildLocalUrl("compute/image/render", { id });
-    const response: Record<string, any> = {
+    const response: Record<string, unknown> = {
       success: true,
       imageUrl,
       imageId: id,

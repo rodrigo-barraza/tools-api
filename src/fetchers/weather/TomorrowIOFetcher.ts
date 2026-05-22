@@ -89,7 +89,7 @@ export async function fetchTomorrowIORealtime(): Promise<TomorrowIORealtimeRespo
   const data = await response.json() as RawTomorrowRealtimeData;
   const values = data.data.values;
   const weatherDescription =
-    TOMORROWIO_WEATHER_CODES[values.weatherCode as unknown as keyof typeof TOMORROWIO_WEATHER_CODES] || "Unknown";
+    (TOMORROWIO_WEATHER_CODES as Record<number, string>)[values.weatherCode] || "Unknown";
 
   return {
     source: "tomorrowio",

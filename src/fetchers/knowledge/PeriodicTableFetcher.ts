@@ -76,7 +76,7 @@ function ensureLoaded() {
     const values = parseCSVLine(lines[i]);
     if (values.length < 5) continue;
 
-    const row: Record<string, string | number | null> = {};
+    const row: any = {};
     headers.forEach((h: string, index: number) => {
       const value = values[index] || "";
       if (NUMERIC_FIELDS.has(h)) {
@@ -87,7 +87,7 @@ function ensureLoaded() {
       }
     });
 
-    ELEMENT_DB.push(row as unknown as PeriodicElement);
+    ELEMENT_DB.push(row);
   }
 
   logger.info(`⚛️  Periodic Table loaded: ${ELEMENT_DB.length} elements`);

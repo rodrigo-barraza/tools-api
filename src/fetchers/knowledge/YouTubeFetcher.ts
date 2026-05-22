@@ -180,7 +180,7 @@ async function fetchTranscript(videoId: string, lang?: string): Promise<YouTubeT
     const entries = (await YoutubeTranscript.fetchTranscript(
       videoId,
       config,
-    )) as unknown as RawTranscriptEntry[];
+    )) as any[];
 
     if (!entries?.length) {
       return { available: false, segments: [], text: "" };

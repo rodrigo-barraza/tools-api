@@ -69,7 +69,7 @@ function ensureFoodCache(): FoodItem[] {
       const values = parseCSVLine(lines[i]);
       if (values.length < 40) continue;
 
-      const row: Record<string, string | number | null> = {};
+      const row: any = {};
       headers.forEach((h: string, index: number) => {
         row[h] = values[index] || "";
       });
@@ -80,7 +80,7 @@ function ensureFoodCache(): FoodItem[] {
         const value = typeof rawVal === "string" ? parseFloat(rawVal) : NaN;
         row[headers[n]] = isNaN(value) ? null : value;
       }
-      foods.push(row as unknown as FoodItem);
+      foods.push(row);
     }
   }
 
