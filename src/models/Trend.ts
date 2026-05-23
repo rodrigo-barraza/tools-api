@@ -1,4 +1,4 @@
-import type { AnyBulkWriteOperation, Document } from "mongodb";
+import type { AnyBulkWriteOperation } from "mongodb";
 import { hours as hoursToMs } from "@rodrigo-barraza/utilities-library";
 import { getDB } from "../db.ts";
 import logger from "../logger.ts";
@@ -12,6 +12,19 @@ export interface TrendInput {
   volume?: number;
   url?: string | null;
   context?: Record<string, unknown>;
+}
+
+export interface TrendDoc {
+  name: string;
+  normalizedName: string;
+  source: string;
+  category: string | null;
+  volume: number;
+  url: string | null;
+  context: Record<string, unknown>;
+  lastSeen: Date;
+  firstSeen: Date;
+  appearances: { timestamp: Date; volume: number }[];
 }
 
 /**
@@ -35,10 +48,10 @@ export async function upsertTrends(trends: TrendInput[]) {
   if (!trends.length) return { upserted: 0, modified: 0 };
 
   const db = getDB();
-  const collection = db.collection("trends");
+  const collection = db.collection<TrendDoc>("trends");
   const now = new Date();
 
-  const bulkOps: any[] = trends.map((trend: TrendInput) => ({
+  const bulkOps: AnyBulkWriteOperation<TrendDoc>[] = trends.map((trend: TrendInput) => ({
     updateOne: {
       filter: {
         normalizedName: trend.normalizedName,

@@ -5,7 +5,7 @@ export interface Product {
   source: string;
   category: string;
   trendingScore: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface ProductCacheEntry {

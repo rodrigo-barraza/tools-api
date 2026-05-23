@@ -1,6 +1,12 @@
 import { createSimpleCache } from "./createSimpleCache.ts";
 
-const cache = createSimpleCache<any>({ type: "array", itemsKey: "predictions" });
+interface TidePrediction {
+  time: string;
+  height: number;
+  type: string;
+}
+
+const cache = createSimpleCache<TidePrediction[]>({ type: "array", itemsKey: "predictions" });
 
 export const updateTides = cache.update;
 export const setTideError = cache.setError;
@@ -11,7 +17,7 @@ export const getTideHealth = cache.getHealth;
 export function getNextTide() {
   const tides = cache.getData();
   const now = new Date();
-  const upcoming = tides.find((t: any) => new Date(t.time) > now);
+  const upcoming = tides.find((t) => new Date(t.time) > now);
   return {
     next: upcoming || null,
     lastFetch: cache.getLastFetch(),

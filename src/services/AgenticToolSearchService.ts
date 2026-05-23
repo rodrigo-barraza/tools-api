@@ -1,7 +1,7 @@
 // ─── Meta-Tool for Tool Discovery ───────────────────────────
 
 import { getToolSchemas } from "./ToolSchemaService.ts";
-import type { ToolSearchMatch } from "../types/tools.ts";
+import type { ToolSearchMatch, ToolParameters } from "../types/tools.ts";
 
 type InferredToolSchema = ReturnType<typeof getToolSchemas>[number];
 
@@ -84,12 +84,12 @@ export function agenticToolSearch(query: string, { domain, label, limit = 20 }: 
   scored.sort((a: ScoredMatch, b: ScoredMatch) => b.score - a.score);
 
   const capped = Math.min(Math.max(1, limit), 50);
-  const matches = scored.slice(0, capped).map(({ schema }: ScoredMatch) => ({
+  const matches: ToolSearchMatch[] = scored.slice(0, capped).map(({ schema }: ScoredMatch) => ({
     name: schema.name,
     description: schema.description,
     domain: schema.domain || null,
-    labels: schema.labels || null,
-    parameters: schema.parameters || null,
+    labels: schema.labels ? (schema.labels as string[]) : null,
+    parameters: schema.parameters ? (schema.parameters as unknown as ToolParameters) : null,
   }));
 
   return {

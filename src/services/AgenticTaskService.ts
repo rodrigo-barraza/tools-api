@@ -70,7 +70,7 @@ export async function agenticTaskCreate(project: string, data: AgenticTaskCreate
     return { error: "'description' is required (string)" };
   }
 
-  const status = data.status || "pending";
+  const status = (data.status as AgenticTask["status"]) || "pending";
   if (!VALID_STATUSES.includes(status)) {
     return { error: `Invalid status '${status}'. Must be one of: ${VALID_STATUSES.join(", ")}` };
   }
@@ -87,7 +87,7 @@ export async function agenticTaskCreate(project: string, data: AgenticTaskCreate
   const taskId = await nextTaskId(project);
   const now = new Date();
 
-  const task = {
+  const task: AgenticTask = {
     project,
     taskId,
     subject: data.subject,

@@ -1,10 +1,18 @@
 import { createSimpleCache } from "./createSimpleCache.ts";
 
-const { update, setError, get, getHealth } = createSimpleCache<any>();
+export interface ApodResponse {
+  title: string;
+  explanation: string;
+  date: string;
+  url: string;
+  hdUrl: string | null;
+  mediaType: string;
+  copyright: string | null;
+}
 
-export {
-  update as updateApod,
-  setError as setApodError,
-  get as getApod,
-  getHealth as getApodHealth,
-};
+const cache = createSimpleCache<ApodResponse>();
+
+export const updateApod = cache.update;
+export const setApodError = cache.setError;
+export const getApod = cache.get;
+export const getApodHealth = cache.getHealth;

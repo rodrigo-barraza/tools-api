@@ -1,6 +1,7 @@
 import { createSimpleCache } from "./createSimpleCache.ts";
+import { type PollenResponse } from "../fetchers/weather/GooglePollenFetcher.ts";
 
-const cache = createSimpleCache<any>();
+const cache = createSimpleCache<PollenResponse>();
 
 export const updatePollen = cache.update;
 export const setPollenError = cache.setError;
@@ -10,7 +11,7 @@ export const getPollenHealth = () => {
   return {
     lastFetch: cache.getLastFetch(),
     error: cache.getHealth().error,
-    hasForecast: data?.daily?.length > 0,
+    hasForecast: (data?.daily?.length ?? 0) > 0,
     forecastDays: data?.daily?.length || 0,
   };
 };

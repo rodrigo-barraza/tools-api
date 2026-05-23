@@ -60,7 +60,7 @@ export function createSimpleCache<T = unknown>({
   /** Get the cached data with metadata. */
   function get(): Record<string, unknown> {
     if (type === "array") {
-      const array = cache.data as any;
+      const array = cache.data as unknown[];
       return {
         count: array.length,
         [itemsKey]: cache.data,
@@ -74,7 +74,7 @@ export function createSimpleCache<T = unknown>({
   /** Get health/status info for admin endpoints. */
   function getHealth(): CacheHealth {
     if (type === "array") {
-      const array = cache.data as any;
+      const array = cache.data as unknown[];
       return {
         lastFetch: cache.lastFetch,
         error: cache.error,

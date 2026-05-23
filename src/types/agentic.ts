@@ -2,12 +2,12 @@
  * Agentic Subsystem TypeScript Definitions
  */
 
-import type { Document, WithId } from "mongodb";
+import type { Document, ObjectId } from "mongodb";
 
 // ─── Agent Task Document ────────────────────────────────────────
 
 export interface AgenticTask extends Document {
-  _id?: unknown;
+  _id?: ObjectId;
   project: string;
   taskId: number;
   subject: string;
