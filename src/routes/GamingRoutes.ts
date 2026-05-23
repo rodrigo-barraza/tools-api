@@ -2,6 +2,7 @@ import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 // ─── Video Game Data Endpoints ──────────────────────────────
 
 import { Request, Response, Router } from "express";
+import { createBonfire, bonfireStore } from "../services/BonfireService.ts";
 import {
   getHeroes,
   getHero,
@@ -225,11 +226,36 @@ router.get("/dota", asyncHandler(async (req: Request, res: Response) => {
   }
 }));
 
+// ─── 5. Bonfire — Fun campfire generator ───────────────────
+
+router.post("/bonfire", asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const result = createBonfire(req.body);
+    res.json(result);
+  } catch (error: unknown) {
+    res.status(400).json({ error: errorMessage(error) });
+  }
+}));
+
+router.get("/bonfire/embed", (req: Request, res: Response) => {
+  const { id } = req.query as Record<string, string | undefined>;
+  if (!id) {
+    return res.status(400).send("Missing 'id' parameter");
+  }
+  const bonfire = bonfireStore.get(id);
+  if (!bonfire) {
+    return res.status(404).send("Bonfire not found or expired");
+  }
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.send(bonfire.htmlEmbed);
+});
+
 // ─── Health ─────────────────────────────────────────────────
 
 export function getGamingHealth() {
   return {
     dota: "on-demand (OpenDota API)",
+    bonfire: "on-demand (Custom Bonfire Service)",
   };
 }
 

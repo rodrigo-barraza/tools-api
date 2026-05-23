@@ -7749,6 +7749,55 @@ const TOOL_DEFINITIONS = [
     },
   },
 
+  // ── Bonfire (Cozy Fire Pit) ───────────────────────────────────
+  {
+    name: "start_bonfire",
+    dataSource: compute("Bonfire Generator"),
+    description:
+      "Start a cozy, custom-designed visual bonfire. You can configure the wood type, wind breeze, flame intensity, custom color chemistry, toss custom items into the fire to incinerate them, or roast marshmallows! Returns a gorgeous colorful ANSI art display for the terminal and a responsive, GPU-accelerated animated HTML/CSS embed to show the user.",
+    endpoint: {
+      method: "POST",
+      path: "/gaming/bonfire",
+      bodyParams: ["woodType", "logsCount", "breezeSpeed", "fireColor", "intensity", "marshmallows", "itemToBurn"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        woodType: {
+          type: "string",
+          enum: ["oak", "pine", "birch", "driftwood", "magical"],
+          description: "The type of wood to burn (affects logs rendering, flame characteristics, and embers). Default: 'oak'.",
+        },
+        logsCount: {
+          type: "number",
+          description: "Number of logs stacked at the base of the fire (1 to 10). Default: 4.",
+        },
+        breezeSpeed: {
+          type: "number",
+          description: "Wind breeze speed in MPH (0 to 50). High breeze tilts the flames and blows sparks horizontally to the right. Default: 5.",
+        },
+        fireColor: {
+          type: "string",
+          enum: ["classic", "emerald", "sapphire", "amethyst", "ghostly"],
+          description: "The chemical color chemistry of the flame (classic orange-red, green emerald, blue sapphire, purple amethyst, cyan-white ghostly). Default: 'classic'.",
+        },
+        intensity: {
+          type: "string",
+          enum: ["ember", "spark", "cozy", "blazing", "inferno"],
+          description: "The fire's heat and size (ember, spark, cozy, blazing, or inferno). Default: 'cozy'.",
+        },
+        marshmallows: {
+          type: "number",
+          description: "Number of marshmallows to toast on sticks over the fire (0, 1, or 2). Default: 0.",
+        },
+        itemToBurn: {
+          type: "string",
+          description: "An optional custom item name to toss into the fire and incinerate (e.g. 'bugs', 'homework').",
+        },
+      },
+    },
+  },
+
   // ── Music (MusicBrainz) ────────────────────────────────────────
   {
     name: "get_music_data",
@@ -8143,6 +8192,7 @@ const TOOL_DOMAINS = {
 
   // Gaming
   get_dota_data: "Gaming",
+  start_bonfire: "Gaming",
 
   // Music
   get_music_data: "Knowledge",
@@ -8437,6 +8487,7 @@ const TOOL_EMOJIS = {
 
   // Gaming
   get_dota_data: "🎮",
+  start_bonfire: "🔥",
 
   // Torrent
   torrent_search: "🔍",
@@ -8840,6 +8891,7 @@ const TOOL_LABELS = {
 
   // ── Gaming ───────────────────────────────────────────────
   get_dota_data: ["reference", "media"],
+  start_bonfire: ["creative"],
 
   // ── Music ─────────────────────────────────────────────────
   get_music_data: ["reference", "media"],
