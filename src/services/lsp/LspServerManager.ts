@@ -3,15 +3,25 @@
 import { extname, resolve, basename } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createLspServerInstance, LspServerInstance } from "./LspServerInstance.ts";
+import { LspParams } from "./LspClient.ts";
 import { getLspServerConfigs } from "./LspConfig.ts";
 import logger from "../../logger.ts";
 import { errorMessage } from "../../utilities.ts";
+
+export interface LspConfigurationItem {
+  scopeUri?: string;
+  section?: string;
+}
+
+export interface LspConfigurationParams {
+  items: LspConfigurationItem[];
+}
 
 export interface LspServerManager {
   initialize(): void;
   getServerForFile(filePath: string): LspServerInstance | undefined;
   ensureServerStarted(filePath: string): Promise<LspServerInstance | undefined>;
-  sendRequest(filePath: string, method: string, params: any): Promise<unknown>;
+  sendRequest(filePath: string, method: string, params?: LspParams): Promise<unknown>;
   openFile(filePath: string, content: string): Promise<void>;
   changeFile(filePath: string, content: string): Promise<void>;
   closeFile(filePath: string): Promise<void>;
@@ -67,7 +77,7 @@ export function createLspServerManager(workspaceFolder?: string): LspServerManag
 
         // Handle workspace/configuration requests from servers that send them
         // even when we say we don't support it (TypeScript does this)
-        instance.onRequest("workspace/configuration", (params: any) => {
+        instance.onRequest<LspConfigurationParams, (null | undefined)[]>("workspace/configuration", (params) => {
           return (params?.items || []).map(() => null);
         });
 
@@ -118,7 +128,7 @@ export function createLspServerManager(workspaceFolder?: string): LspServerManag
   /**
    * Send an LSP request to the appropriate server for the given file.
    */
-  async function sendRequest(filePath: string, method: string, params: any): Promise<unknown> {
+  async function sendRequest(filePath: string, method: string, params?: LspParams): Promise<unknown> {
     const server = await ensureServerStarted(filePath);
     if (!server) return undefined;
 

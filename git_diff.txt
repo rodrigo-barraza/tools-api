@@ -1,347 +1,1588 @@
-diff --git a/src/fetchers/health/NutritionFetcher.ts b/src/fetchers/health/NutritionFetcher.ts
-index 70fda86..3b6618f 100644
---- a/src/fetchers/health/NutritionFetcher.ts
-+++ b/src/fetchers/health/NutritionFetcher.ts
-@@ -30,10 +30,52 @@ import {
- const __filename = fileURLToPath(import.meta.url);
- const __dirname = dirname(__filename);
+diff --git a/git_diff.txt b/git_diff.txt
+index 7c0864c..e69de29 100644
+--- a/git_diff.txt
++++ b/git_diff.txt
+@@ -1,347 +0,0 @@
+-diff --git a/src/fetchers/health/NutritionFetcher.ts b/src/fetchers/health/NutritionFetcher.ts
+-index 70fda86..3b6618f 100644
+---- a/src/fetchers/health/NutritionFetcher.ts
+-+++ b/src/fetchers/health/NutritionFetcher.ts
+-@@ -30,10 +30,52 @@ import {
+- const __filename = fileURLToPath(import.meta.url);
+- const __dirname = dirname(__filename);
+- 
+-+interface FoodRow {
+-+  food_name: string;
+-+  description_long: string;
+-+  food_keywords?: string;
+-+  food_type: string;
+-+  food_subtype?: string;
+-+  food_part?: string;
+-+  food_form?: string;
+-+  food_state?: string;
+-+  food_region?: string;
+-+  _source?: string;
+-+  kingdom?: string;
+-+  phylum?: string;
+-+  class?: string;
+-+  order?: string;
+-+  suborder?: string;
+-+  family?: string;
+-+  subfamily?: string;
+-+  tribe?: string;
+-+  genus?: string;
+-+  species?: string;
+-+  subspecies?: string;
+-+  variety?: string;
+-+  form?: string;
+-+  group?: string;
+-+  cultivar?: string;
+-+  phenotype?: string;
+-+  binomial?: string;
+-+  nomial?: string;
+-+  trinomial?: string;
+-+  taxon?: string;
+-+  [key: string]: string | number | null | undefined;
+-+}
+-+
+-+interface NutrientMetadata {
+-+  nutrient_id: string;
+-+  nutrient_name: string;
+-+  nutrient_type: string;
+-+  unit: string;
+-+  [key: string]: string | undefined;
+-+}
+-+
+- // ─── CSV Parser (handles quoted fields with commas) ────────────
+- 
+--function parseCSVLine(line: any) {
+--  const fields: any[] = [];
+-+function parseCSVLine(line: string): string[] {
+-+  const fields: string[] = [];
+-   let current = "";
+-   let inQuotes = false;
+- 
+-@@ -54,8 +96,8 @@ function parseCSVLine(line: any) {
+- 
+- // ─── Load & Index ──────────────────────────────────────────────
+- 
+--const FOOD_DB: any[] = [];
+--const NUTRIENT_DB: any[] = [];
+-+const FOOD_DB: FoodRow[] = [];
+-+const NUTRIENT_DB: NutrientMetadata[] = [];
+- let loaded = false;
+- 
+- const FOOD_DATA_FILES = [
+-@@ -68,12 +110,12 @@ const FOOD_DATA_FILES = [
+-   { file: "digest_food_japan.csv", source: "Japan MEXT" },
+- ];
+- 
+--const SOURCES_NOTE = `All nutrient values per 100g edible portion. Sources: ${FOOD_DATA_FILES.map((f: any) => f.source).join(", ")}.`;
+-+const SOURCES_NOTE = `All nutrient values per 100g edible portion. Sources: ${FOOD_DATA_FILES.map((f) => f.source).join(", ")}.`;
+- 
+--function loadFoodCSV(filename: any, source: any) {
+-+function loadFoodCSV(filename: string, source: string): number {
+-   const foodPath = join(__dirname, "data", filename);
+-   const foodRaw = readFileSync(foodPath, "utf-8");
+--  const foodLines = foodRaw.split("\n").filter((l: any) => l.trim());
+-+  const foodLines = foodRaw.split("\n").filter((l) => l.trim());
+-   const foodHeaders = parseCSVLine(foodLines[0]);
+-   let count = 0;
+- 
+-@@ -81,15 +123,19 @@ function loadFoodCSV(filename: any, source: any) {
+-     const values = parseCSVLine(foodLines[i]);
+-     if (values.length < 40) continue;
+- 
+--    const row: Record<string, any> = {};
+--    foodHeaders.forEach((h: any, index: any) => {
+-+    const row: FoodRow = {
+-+      food_name: "",
+-+      description_long: "",
+-+      food_type: "",
+-+    };
+-+    foodHeaders.forEach((h, index) => {
+-       row[h] = values[index] || "";
+-     });
+- 
+-     // Parse numeric nutrient fields (columns 36 onward are numeric)
+-     const numericStart = 35; // protein is index 35 (0-based)
+-     for (let n = numericStart; n < foodHeaders.length; n++) {
+--      const value = parseFloat(row[foodHeaders[n]]);
+-+      const value = parseFloat(row[foodHeaders[n]] as string);
+-       row[foodHeaders[n]] = isNaN(value) ? null : value;
+-     }
+- 
+-@@ -103,12 +149,12 @@ function loadFoodCSV(filename: any, source: any) {
+-   return count;
+- }
+- 
+--function ensureLoaded() {
+-+function ensureLoaded(): void {
+-   if (loaded) return;
+-   loaded = true;
+- 
+-   // Load all food data files
+--  const counts: any[] = [];
+-+  const counts: string[] = [];
+-   for (const { file, source } of FOOD_DATA_FILES) {
+-     const count = loadFoodCSV(file, source);
+-     counts.push(`${count} ${source}`);
+-@@ -117,13 +163,18 @@ function ensureLoaded() {
+-   // Load nutrient metadata
+-   const nutrientPath = join(__dirname, "data", "digest_nutrient.csv");
+-   const nutrientRaw = readFileSync(nutrientPath, "utf-8");
+--  const nutrientLines = nutrientRaw.split("\n").filter((l: any) => l.trim());
+-+  const nutrientLines = nutrientRaw.split("\n").filter((l) => l.trim());
+-   const nutrientHeaders = parseCSVLine(nutrientLines[0]);
+- 
+-   for (let i = 1; i < nutrientLines.length; i++) {
+-     const values = parseCSVLine(nutrientLines[i]);
+--    const row: Record<string, any> = {};
+--    nutrientHeaders.forEach((h: any, index: any) => {
+-+    const row: NutrientMetadata = {
+-+      nutrient_id: "",
+-+      nutrient_name: "",
+-+      nutrient_type: "",
+-+      unit: "",
+-+    };
+-+    nutrientHeaders.forEach((h, index) => {
+-       row[h] = values[index] || "";
+-     });
+-     NUTRIENT_DB.push(row);
+-@@ -134,13 +185,7 @@ function ensureLoaded() {
+-   );
+- }
+- 
+--// ─── Search Helpers ────────────────────────────────────────────
+--
+--function normalizeSearch(str: any) {
+--  return str.toLowerCase().replace(/[^a-z0-9\s]/g, "");
+--}
+--
+--function scoreMatch(food: any, terms: any) {
+-+// ─── Search Helpers ────�function scoreMatch(food: FoodRow, terms: string[]): number {
+-   const name = normalizeSearch(food.food_name || "");
+-   const desc = normalizeSearch(food.description_long || "");
+-   const keywords = normalizeSearch(food.food_keywords || "");
+-@@ -191,79 +236,86 @@ function scoreMatch(food: any, terms: any) {
+- 
+- // ─── Nutrient Extraction ───────────────────────────────────────
+- 
+--function extractMacros(food: any) {
+--  const result: Record<string, any> = {};
+-+function extractMacros(food: FoodRow): Record<string, number> {
+-+  const result: Record<string, number> = {};
+-   for (const [key, label] of Object.entries(NUTRITION_MACRO_FIELDS)) {
+--    if (food[key] !== null && food[key] !== undefined) {
+--      result[label] = food[key];
+-+    const val = food[key];
+-+    if (typeof val === "number") {
+-+      result[label] = val;
+-     }
+-   }
+-   return result;
+- }
+- 
+--function extractMinerals(food: any) {
+--  const result: Record<string, any> = {};
+-+function extractMinerals(food: FoodRow): Record<string, number> {
+-+  const result: Record<string, number> = {};
+-   for (const [key, label] of Object.entries(NUTRITION_MINERAL_FIELDS)) {
+--    if (food[key] !== null && food[key] !== undefined) {
+--      result[label] = food[key];
+-+    const val = food[key];
+-+    if (typeof val === "number") {
+-+      result[label] = val;
+-     }
+-   }
+-   return result;
+- }
+- 
+--function extractVitamins(food: any) {
+--  const result: Record<string, any> = {};
+-+function extractVitamins(food: FoodRow): Record<string, number> {
+-+  const result: Record<string, number> = {};
+-   for (const [key, label] of Object.entries(NUTRITION_VITAMIN_FIELDS)) {
+--    if (food[key] !== null && food[key] !== undefined) {
+--      result[label] = food[key];
+-+    const val = food[key];
+-+    if (typeof val === "number") {
+-+      result[label] = val;
+-     }
+-   }
+-   return result;
+- }
+- 
+--function extractAminoAcids(food: any) {
+--  const result: Record<string, any> = {};
+-+function extractAminoAcids(food: FoodRow): Record<string, number> {
+-+  const result: Record<string, number> = {};
+-   for (const [key, label] of Object.entries(NUTRITION_AMINO_ACID_FIELDS)) {
+--    if (food[key] !== null && food[key] !== undefined) {
+--      result[label] = food[key];
+-+    const val = food[key];
+-+    if (typeof val === "number") {
+-+      result[label] = val;
+-     }
+-   }
+-   return result;
+- }
+- 
+--function extractLipidProfile(food: any) {
+--  const result: Record<string, any> = {};
+-+function extractLipidProfile(food: FoodRow): Record<string, number> {
+-+  const result: Record<string, number> = {};
+-   for (const [key, label] of Object.entries(NUTRITION_LIPID_FIELDS)) {
+--    if (food[key] !== null && food[key] !== undefined) {
+--      result[label] = food[key];
+-+    const val = food[key];
+-+    if (typeof val === "number") {
+-+      result[label] = val;
+-     }
+-   }
+-   return result;
+- }
+- 
+--function extractCarbDetails(food: any) {
+--  const result: Record<string, any> = {};
+-+function extractCarbDetails(food: FoodRow): Record<string, number> {
+-+  const result: Record<string, number> = {};
+-   for (const [key, label] of Object.entries(NUTRITION_CARB_DETAIL_FIELDS)) {
+--    if (food[key] !== null && food[key] !== undefined) {
+--      result[label] = food[key];
+-+    const val = food[key];
+-+    if (typeof val === "number") {
+-+      result[label] = val;
+-     }
+-   }
+-   return result;
+- }
+- 
+--function extractSterols(food: any) {
+--  const result: Record<string, any> = {};
+-+function extractSterols(food: FoodRow): Record<string, number> {
+-+  const result: Record<string, number> = {};
+-   for (const [key, label] of Object.entries(NUTRITION_STEROL_FIELDS)) {
+--    if (food[key] !== null && food[key] !== undefined) {
+--      result[label] = food[key];
+-+    const val = food[key];
+-+    if (typeof val === "number") {
+-+      result[label] = val;
+-     }
+-   }
+-   return result;
+- }
+- 
+--function formatFood(food: any, nutrientTypes: any = null) {
+-+function formatFood(food: FoodRow, nutrientTypes: string | null = null) {
+-   const types = nutrientTypes
+--    ? nutrientTypes.split(",").map((t: any) => t.trim().toLowerCase())
+-+    ? nutrientTypes.split(",").map((t) => t.trim().toLowerCase())
+-     : null;
+- 
+-   const base = {
+-@@ -271,7 +323,7 @@ function formatFood(food: any, nutrientTypes: any = null) {
+-     description: food.description_long,
+-     source: food._source || "USDA",
+-     region: food.food_region || null,
+--    kingdom: food.kingdom,
+-+    kingdom: food.kingdom || null,
+-     foodType: food.food_type,
+-     foodSubtype: food.food_subtype || null,
+-     part: food.food_part || null,
+-@@ -299,12 +351,12 @@ function formatFood(food: any, nutrientTypes: any = null) {
+-       nomial: food.nomial || null,
+-       trinomial: food.trinomial || null,
+-     },
+--    perHundredGrams: {} as Record<string, any>,
+-+    perHundredGrams: {} as Record<string, Record<string, number>>,
+-   };
+- 
+-   // Always include macros unless specific types are requested
+-   const includeAll = !types;
+--  const include = (t: any) => includeAll || types.includes(t);
+-+  const include = (t: string) => includeAll || types.includes(t);
+- 
+-   if (include("macros") || include("macro")) {
+-     base.perHundredGrams.macros = extractMacros(food);
+-@@ -335,10 +387,8 @@ function formatFood(food: any, nutrientTypes: any = null) {
+- 
+- /**
+-  * Search for foods by name/keyword.
+--
+--
+-  */
+--export function searchFoods(query: any, opts: Record<string, any> = {}) {
+-+export function searchFoods(query: string, opts: { limit?: number; kingdom?: string; foodType?: string; nutrientTypes?: string | null } = {}) {
+-   ensureLoaded();
+- 
+-   const { limit = 10, kingdom, foodType, nutrientTypes } = opts;
+-@@ -354,13 +404,30 @@ export function searchFoods(query: any, opts: Record<string, any> = {}) {
+-   if (kingdom) {
+-     const k = kingdom.toLowerCase();
+-     candidates = candidates.filter(
+--      (f: any) => f.kingdom && f.kingdom.toLowerCase() === k,
+-+      (f) => f.kingdom && f.kingdom.toLowerCase() === k,
+-     );
+-   }
+-   if (foodType) {
+-     const ft = foodType.toLowerCase();
+-     candidates = candidates.filter(
+--      (f: any) => f.food_type && f.food_type.toLowerCase() === ft,
+-+      (f) => f.food_type && f.food_type.toLowerCase() === ft,
+-+    );
+-+  }
+-+
+-+  // Score and rank
+-+  const scored = candidates
+-+    .map((food) => ({ food, score: scoreMatch(food, terms) }))
+-+    .filter((s) => s.score > 0)
+-+    .sort((a, b) => b.score - a.score)
+-+    .slice(0, limit);
+-+
+-+  return {
+-+    count: scored.length,
+-+    query,
+-+    note: SOURCES_NOTE,
+-+    foods: scored.map((s) => formatFood(s.food, nutrientTypes)),
+-+  };
+-+}_type.toLowerCase() === ft,
+-     );
+-   }
+- 
+diff --git a/src/caches/IssCache.ts b/src/caches/IssCache.ts
+index 9b2515a..f9382f7 100644
+--- a/src/caches/IssCache.ts
++++ b/src/caches/IssCache.ts
+@@ -1,19 +1,11 @@
+-const TRAJECTORY_BUFFER_SIZE = 100;
++import { IssPosition, AstronautsResponse } from "../fetchers/weather/IssFetcher.ts";
  
-+interface FoodRow {
-+  food_name: string;
-+  description_long: string;
-+  food_keywords?: string;
-+  food_type: string;
-+  food_subtype?: string;
-+  food_part?: string;
-+  food_form?: string;
-+  food_state?: string;
-+  food_region?: string;
-+  _source?: string;
-+  kingdom?: string;
-+  phylum?: string;
-+  class?: string;
-+  order?: string;
-+  suborder?: string;
-+  family?: string;
-+  subfamily?: string;
-+  tribe?: string;
-+  genus?: string;
-+  species?: string;
-+  subspecies?: string;
-+  variety?: string;
-+  form?: string;
-+  group?: string;
-+  cultivar?: string;
-+  phenotype?: string;
-+  binomial?: string;
-+  nomial?: string;
-+  trinomial?: string;
-+  taxon?: string;
-+  [key: string]: string | number | null | undefined;
-+}
-+
-+interface NutrientMetadata {
-+  nutrient_id: string;
-+  nutrient_name: string;
-+  nutrient_type: string;
-+  unit: string;
-+  [key: string]: string | undefined;
-+}
-+
- // ─── CSV Parser (handles quoted fields with commas) ────────────
+-interface IssPosition {
+-  latitude: number;
+-  longitude: number;
+-  [key: string]: unknown;
+-}
++const TRAJECTORY_BUFFER_SIZE = 100;
  
--function parseCSVLine(line: any) {
--  const fields: any[] = [];
-+function parseCSVLine(line: string): string[] {
-+  const fields: string[] = [];
-   let current = "";
-   let inQuotes = false;
- 
-@@ -54,8 +96,8 @@ function parseCSVLine(line: any) {
- 
- // ─── Load & Index ──────────────────────────────────────────────
- 
--const FOOD_DB: any[] = [];
--const NUTRIENT_DB: any[] = [];
-+const FOOD_DB: FoodRow[] = [];
-+const NUTRIENT_DB: NutrientMetadata[] = [];
- let loaded = false;
- 
- const FOOD_DATA_FILES = [
-@@ -68,12 +110,12 @@ const FOOD_DATA_FILES = [
-   { file: "digest_food_japan.csv", source: "Japan MEXT" },
- ];
- 
--const SOURCES_NOTE = `All nutrient values per 100g edible portion. Sources: ${FOOD_DATA_FILES.map((f: any) => f.source).join(", ")}.`;
-+const SOURCES_NOTE = `All nutrient values per 100g edible portion. Sources: ${FOOD_DATA_FILES.map((f) => f.source).join(", ")}.`;
- 
--function loadFoodCSV(filename: any, source: any) {
-+function loadFoodCSV(filename: string, source: string): number {
-   const foodPath = join(__dirname, "data", filename);
-   const foodRaw = readFileSync(foodPath, "utf-8");
--  const foodLines = foodRaw.split("\n").filter((l: any) => l.trim());
-+  const foodLines = foodRaw.split("\n").filter((l) => l.trim());
-   const foodHeaders = parseCSVLine(foodLines[0]);
-   let count = 0;
- 
-@@ -81,15 +123,19 @@ function loadFoodCSV(filename: any, source: any) {
-     const values = parseCSVLine(foodLines[i]);
-     if (values.length < 40) continue;
- 
--    const row: Record<string, any> = {};
--    foodHeaders.forEach((h: any, index: any) => {
-+    const row: FoodRow = {
-+      food_name: "",
-+      description_long: "",
-+      food_type: "",
-+    };
-+    foodHeaders.forEach((h, index) => {
-       row[h] = values[index] || "";
-     });
- 
-     // Parse numeric nutrient fields (columns 36 onward are numeric)
-     const numericStart = 35; // protein is index 35 (0-based)
-     for (let n = numericStart; n < foodHeaders.length; n++) {
--      const value = parseFloat(row[foodHeaders[n]]);
-+      const value = parseFloat(row[foodHeaders[n]] as string);
-       row[foodHeaders[n]] = isNaN(value) ? null : value;
-     }
- 
-@@ -103,12 +149,12 @@ function loadFoodCSV(filename: any, source: any) {
-   return count;
+ interface TrajectoryPoint extends IssPosition {
+   recordedAt: Date;
  }
  
--function ensureLoaded() {
-+function ensureLoaded(): void {
-   if (loaded) return;
-   loaded = true;
- 
-   // Load all food data files
--  const counts: any[] = [];
-+  const counts: string[] = [];
-   for (const { file, source } of FOOD_DATA_FILES) {
-     const count = loadFoodCSV(file, source);
-     counts.push(`${count} ${source}`);
-@@ -117,13 +163,18 @@ function ensureLoaded() {
-   // Load nutrient metadata
-   const nutrientPath = join(__dirname, "data", "digest_nutrient.csv");
-   const nutrientRaw = readFileSync(nutrientPath, "utf-8");
--  const nutrientLines = nutrientRaw.split("\n").filter((l: any) => l.trim());
-+  const nutrientLines = nutrientRaw.split("\n").filter((l) => l.trim());
-   const nutrientHeaders = parseCSVLine(nutrientLines[0]);
- 
-   for (let i = 1; i < nutrientLines.length; i++) {
-     const values = parseCSVLine(nutrientLines[i]);
--    const row: Record<string, any> = {};
--    nutrientHeaders.forEach((h: any, index: any) => {
-+    const row: NutrientMetadata = {
-+      nutrient_id: "",
-+      nutrient_name: "",
-+      nutrient_type: "",
-+      unit: "",
-+    };
-+    nutrientHeaders.forEach((h, index) => {
-       row[h] = values[index] || "";
-     });
-     NUTRIENT_DB.push(row);
-@@ -134,13 +185,7 @@ function ensureLoaded() {
-   );
- }
- 
--// ─── Search Helpers ────────────────────────────────────────────
--
--function normalizeSearch(str: any) {
--  return str.toLowerCase().replace(/[^a-z0-9\s]/g, "");
+-interface AstronautData {
+-  [key: string]: unknown;
 -}
 -
--function scoreMatch(food: any, terms: any) {
-+// ─── Search Helpers ────�function scoreMatch(food: FoodRow, terms: string[]): number {
-   const name = normalizeSearch(food.food_name || "");
-   const desc = normalizeSearch(food.description_long || "");
-   const keywords = normalizeSearch(food.food_keywords || "");
-@@ -191,79 +236,86 @@ function scoreMatch(food: any, terms: any) {
+ interface CacheError {
+   message: string;
+   time: string;
+@@ -21,7 +13,7 @@ interface CacheError {
  
- // ─── Nutrient Extraction ───────────────────────────────────────
+ const cache: {
+   position: IssPosition | null;
+-  astronauts: AstronautData | null;
++  astronauts: AstronautsResponse | null;
+   trajectory: TrajectoryPoint[];
+   lastPositionFetch: Date | null;
+   lastAstrosFetch: Date | null;
+@@ -62,7 +54,7 @@ export function setIssPositionError(error: { message: string }) {
+ /**
+  * Update astronaut roster.
+  */
+-export function updateAstronauts(data: AstronautData) {
++export function updateAstronauts(data: AstronautsResponse) {
+   cache.astronauts = data;
+   cache.lastAstrosFetch = new Date();
+   cache.astrosError = null;
+diff --git a/src/collectors/EventCollector.ts b/src/collectors/EventCollector.ts
+index 66b6b45..85aada6 100644
+--- a/src/collectors/EventCollector.ts
++++ b/src/collectors/EventCollector.ts
+@@ -33,19 +33,18 @@ interface SourcedEvent {
  
--function extractMacros(food: any) {
--  const result: Record<string, any> = {};
-+function extractMacros(food: FoodRow): Record<string, number> {
-+  const result: Record<string, number> = {};
-   for (const [key, label] of Object.entries(NUTRITION_MACRO_FIELDS)) {
--    if (food[key] !== null && food[key] !== undefined) {
--      result[label] = food[key];
-+    const val = food[key];
-+    if (typeof val === "number") {
-+      result[label] = val;
+ // ─── Collector Factory ─────────────────────────────────────────────
+ 
+-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Fetcher return types are heterogeneous across sources; the EventCache normalizes them
+-function createEventCollector(collection: string, source: string, fetchFn: () => Promise<any[]>) {
++function createEventCollector<T>(collection: string, source: string, fetchFn: () => Promise<T[]>) {
+   return async function () {
+     try {
+       const events = await fetchFn();
+-      const result = await updateEvents(source, events);
++      const result = await updateEvents(source, events as unknown as CachedEventParam);
+       await saveState(collection, events);
+       logger.info(
+-        `[${collection}] ✅ ${events.length} events | ${result?.upserted || 0} new, ${result?.modified || 0} updated`,
++        `[${collection}]  ${events.length} events | ${result?.upserted || 0} new, ${result?.modified || 0} updated`,
+       );
+     } catch (error: unknown) {
+       setError(source, { message: errorMessage(error) });
+-      logger.error(`[${collection}] ❌ ${errorMessage(error)}`);
++      logger.error(`[${collection}]  ${errorMessage(error)}`);
      }
-   }
-   return result;
- }
- 
--function extractMinerals(food: any) {
--  const result: Record<string, any> = {};
-+function extractMinerals(food: FoodRow): Record<string, number> {
-+  const result: Record<string, number> = {};
-   for (const [key, label] of Object.entries(NUTRITION_MINERAL_FIELDS)) {
--    if (food[key] !== null && food[key] !== undefined) {
--      result[label] = food[key];
-+    const val = food[key];
-+    if (typeof val === "number") {
-+      result[label] = val;
-     }
-   }
-   return result;
- }
- 
--function extractVitamins(food: any) {
--  const result: Record<string, any> = {};
-+function extractVitamins(food: FoodRow): Record<string, number> {
-+  const result: Record<string, number> = {};
-   for (const [key, label] of Object.entries(NUTRITION_VITAMIN_FIELDS)) {
--    if (food[key] !== null && food[key] !== undefined) {
--      result[label] = food[key];
-+    const val = food[key];
-+    if (typeof val === "number") {
-+      result[label] = val;
-     }
-   }
-   return result;
- }
- 
--function extractAminoAcids(food: any) {
--  const result: Record<string, any> = {};
-+function extractAminoAcids(food: FoodRow): Record<string, number> {
-+  const result: Record<string, number> = {};
-   for (const [key, label] of Object.entries(NUTRITION_AMINO_ACID_FIELDS)) {
--    if (food[key] !== null && food[key] !== undefined) {
--      result[label] = food[key];
-+    const val = food[key];
-+    if (typeof val === "number") {
-+      result[label] = val;
-     }
-   }
-   return result;
- }
- 
--function extractLipidProfile(food: any) {
--  const result: Record<string, any> = {};
-+function extractLipidProfile(food: FoodRow): Record<string, number> {
-+  const result: Record<string, number> = {};
-   for (const [key, label] of Object.entries(NUTRITION_LIPID_FIELDS)) {
--    if (food[key] !== null && food[key] !== undefined) {
--      result[label] = food[key];
-+    const val = food[key];
-+    if (typeof val === "number") {
-+      result[label] = val;
-     }
-   }
-   return result;
- }
- 
--function extractCarbDetails(food: any) {
--  const result: Record<string, any> = {};
-+function extractCarbDetails(food: FoodRow): Record<string, number> {
-+  const result: Record<string, number> = {};
-   for (const [key, label] of Object.entries(NUTRITION_CARB_DETAIL_FIELDS)) {
--    if (food[key] !== null && food[key] !== undefined) {
--      result[label] = food[key];
-+    const val = food[key];
-+    if (typeof val === "number") {
-+      result[label] = val;
-     }
-   }
-   return result;
- }
- 
--function extractSterols(food: any) {
--  const result: Record<string, any> = {};
-+function extractSterols(food: FoodRow): Record<string, number> {
-+  const result: Record<string, number> = {};
-   for (const [key, label] of Object.entries(NUTRITION_STEROL_FIELDS)) {
--    if (food[key] !== null && food[key] !== undefined) {
--      result[label] = food[key];
-+    const val = food[key];
-+    if (typeof val === "number") {
-+      result[label] = val;
-     }
-   }
-   return result;
- }
- 
--function formatFood(food: any, nutrientTypes: any = null) {
-+function formatFood(food: FoodRow, nutrientTypes: string | null = null) {
-   const types = nutrientTypes
--    ? nutrientTypes.split(",").map((t: any) => t.trim().toLowerCase())
-+    ? nutrientTypes.split(",").map((t) => t.trim().toLowerCase())
-     : null;
- 
-   const base = {
-@@ -271,7 +323,7 @@ function formatFood(food: any, nutrientTypes: any = null) {
-     description: food.description_long,
-     source: food._source || "USDA",
-     region: food.food_region || null,
--    kingdom: food.kingdom,
-+    kingdom: food.kingdom || null,
-     foodType: food.food_type,
-     foodSubtype: food.food_subtype || null,
-     part: food.food_part || null,
-@@ -299,12 +351,12 @@ function formatFood(food: any, nutrientTypes: any = null) {
-       nomial: food.nomial || null,
-       trinomial: food.trinomial || null,
-     },
--    perHundredGrams: {} as Record<string, any>,
-+    perHundredGrams: {} as Record<string, Record<string, number>>,
    };
+ }
+@@ -155,17 +154,7 @@ async function collectSports() {
  
-   // Always include macros unless specific types are requested
-   const includeAll = !types;
--  const include = (t: any) => includeAll || types.includes(t);
-+  const include = (t: string) => includeAll || types.includes(t);
+ // ─── Startup Definitions ──────────────────────────────────────────
  
-   if (include("macros") || include("macro")) {
-     base.perHundredGrams.macros = extractMacros(food);
-@@ -335,10 +387,8 @@ function formatFood(food: any, nutrientTypes: any = null) {
+-interface CollectorTask {
+-  label: string;
+-  collection: string;
+-  source?: string;
+-  ttl: number;
+-  collectFn: () => Promise<void>;
+-  restoreFn?: (data: Record<string, unknown>) => void;
+-  delay: number;
+-}
+-
+-const STARTUP_TASKS: CollectorTask[] = [
++const STARTUP_TASKS = [
+   {
+     label: "Ticketmaster",
+     collection: "events_ticketmaster",
+diff --git a/src/collectors/ProductCollector.ts b/src/collectors/ProductCollector.ts
+index 1a52529..a9dfbab 100644
+--- a/src/collectors/ProductCollector.ts
++++ b/src/collectors/ProductCollector.ts
+@@ -19,7 +19,7 @@ import {
+   fetchAllCostcoUS,
+   fetchAllCostcoCA,
+ } from "../fetchers/product/CostcoFetcher.ts";
+-import { updateProducts, setProductError } from "../caches/ProductCache.ts";
++import { updateProducts, setProductError, type Product } from "../caches/ProductCache.ts";
+ import {
+   getWatchedSkus,
+   getWatchlistMetadata,
+@@ -31,14 +31,12 @@ import logger from "../logger.ts";
+ import { errorMessage } from "../utilities.ts";
+ 
+ // ─── Collector Factory ─────────────────────────────────────────────
+-
+-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Fetcher return types vary per source
+-function createProductCollector(collection: string, source: string, fetchFn: () => Promise<any[]>) {
++function createProductCollector<T>(collection: string, source: string, fetchFn: () => Promise<T[]>) {
+   return async function () {
+     try {
+       const products = await fetchFn();
+-      updateProducts(source, products);
+-      const result = await upsertProducts(products);
++      updateProducts(source, products as unknown as Product[]);
++      const result = await upsertProducts(products as unknown as Parameters<typeof upsertProducts>[0]);
+       await saveState(collection, { source, products });
+       logger.info(
+         `[${collection}] ✅ ${products.length} products | ${result.upserted} new, ${result.modified} updated`,
+diff --git a/src/collectors/TrendCollector.ts b/src/collectors/TrendCollector.ts
+index 3204a07..4e9c03f 100644
+--- a/src/collectors/TrendCollector.ts
++++ b/src/collectors/TrendCollector.ts
+@@ -30,14 +30,12 @@ import logger from "../logger.ts";
+ import { errorMessage } from "../utilities.ts";
+ 
+ // ─── Collector Factory ─────────────────────────────────────────────
+-
+-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- fetchFn returns diverse trend types per source
+-function createTrendCollector(collection: string, source: string, fetchFn: () => Promise<any[]>, noun: string = "trends") {
++function createTrendCollector<T>(collection: string, source: string, fetchFn: () => Promise<T[]>, noun: string = "trends") {
+   return async function () {
+     try {
+       const trends = await fetchFn();
+-      updateTrends(source, trends);
+-      const result = await upsertTrends(trends);
++      updateTrends(source, trends as unknown as CachedTrend[]);
++      const result = await upsertTrends(trends as unknown as Parameters<typeof upsertTrends>[0]);
+       await saveState(collection, { source, trends });
+       logger.info(
+         `[${collection}] ✅ ${trends.length} ${noun} | ${result.upserted} new, ${result.modified} updated`,
+@@ -48,7 +46,6 @@ function createTrendCollector(collection: string, source: string, fetchFn: () =>
+     }
+   };
+ }
+-
+ // ─── Collectors ────────────────────────────────────────────────────
+ 
+ const collectGoogleTrends = createTrendCollector("trends_google", TREND_SOURCES.GOOGLE_TRENDS, fetchGoogleTrends);
+diff --git a/src/collectors/WeatherCollector.ts b/src/collectors/WeatherCollector.ts
+index 4c19f77..49123a6 100644
+--- a/src/collectors/WeatherCollector.ts
++++ b/src/collectors/WeatherCollector.ts
+@@ -89,22 +89,21 @@ import { saveState, startCollectorLoop } from "../services/FreshnessService.ts";
+ import logger from "../logger.ts";
+ import { errorMessage } from "../utilities.ts";
+ 
+-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Polymorphic factory over 20+ fetcher/cache pairs with different signatures
+-interface CollectorConfig {
++interface CollectorConfig<T> {
+   label: string;
+   collection: string;
+-  fetchFn: () => Promise<any>;
+-  updateFn: (data: any) => void;
+-  setErrorFn: (error: any) => void;
+-  logFn?: (data: any) => string;
++  fetchFn: () => Promise<T>;
++  updateFn: (data: T) => void;
++  setErrorFn: (error: unknown) => void;
++  logFn?: (data: T) => string;
+ }
+ 
+-function makeCollector(config: CollectorConfig) {
++function makeCollector<T>(config: CollectorConfig<T>) {
+   return async () => {
+     try {
+       const data = await config.fetchFn();
+       config.updateFn(data);
+-      await saveState(config.collection, data);
++      await saveState(config.collection, data as unknown as Record<string, unknown> | unknown[]);
+       if (config.logFn) {
+         logger.info(`[${config.label}] ✅ ${config.logFn(data)}`);
+       } else {
+@@ -122,48 +121,48 @@ function makeCollector(config: CollectorConfig) {
+ const collectOpenMeteo = makeCollector({
+   label: "OpenMeteo", collection: "openmeteo",
+   fetchFn: fetchOpenMeteoWeather,
+-  updateFn: (d) => update("openmeteo", d),
+-  setErrorFn: (e) => setError("openmeteo", e),
++  updateFn: (d) => update("openmeteo", d as unknown as Record<string, unknown>),
++  setErrorFn: (e) => setError("openmeteo", e instanceof Error ? e : { message: errorMessage(e) }),
+   logFn: (d) => `${d.weatherDescription} | ${d.temperature}°C`,
+ });
+ 
+ const collectAirQuality = makeCollector({
+   label: "AirQuality", collection: "air_quality",
+   fetchFn: fetchAirQuality,
+-  updateFn: (d) => update("airquality", d),
+-  setErrorFn: (e) => setError("airquality", e),
++  updateFn: (d) => update("airquality", d as unknown as Record<string, unknown>),
++  setErrorFn: (e) => setError("airquality", e instanceof Error ? e : { message: errorMessage(e) }),
+   logFn: (d) => `US AQI: ${d.usAqi} | PM2.5: ${d.pm25}`,
+ });
+ 
+ const collectTomorrowIORealtime = makeCollector({
+   label: "Tomorrow.io", collection: "tomorrowio",
+   fetchFn: fetchTomorrowIORealtime,
+-  updateFn: (d) => update("tomorrowio", d),
+-  setErrorFn: (e) => setError("tomorrowio", e),
++  updateFn: (d) => update("tomorrowio", d as unknown as Record<string, unknown>),
++  setErrorFn: (e) => setError("tomorrowio", e instanceof Error ? e : { message: errorMessage(e) }),
+   logFn: (d) => `${d.weatherDescription} | Visibility: ${d.visibility}km | UV: ${d.uvIndex}`,
+ });
+ 
+ const collectTomorrowIODaily = makeCollector({
+   label: "Tomorrow.io Daily", collection: "tomorrowio_daily",
+   fetchFn: fetchTomorrowIODailyForecast,
+-  updateFn: (d) => update("tomorrowio_daily", d),
+-  setErrorFn: (e) => setError("tomorrowio_daily", e),
++  updateFn: (d) => update("tomorrowio_daily", d as unknown as Record<string, unknown>),
++  setErrorFn: (e) => setError("tomorrowio_daily", e instanceof Error ? e : { message: errorMessage(e) }),
+   logFn: (d) => `Moonrise: ${d.moonrise || "N/A"} | Moonset: ${d.moonset || "N/A"}`,
+ });
+ 
+ const collectIssPosition = makeCollector({
+   label: "ISS", collection: "iss_position",
+   fetchFn: fetchIssPosition,
+-  updateFn: updateIssPosition,
+-  setErrorFn: setIssPositionError,
++  updateFn: (d) => updateIssPosition(d as unknown as Parameters<typeof updateIssPosition>[0]),
++  setErrorFn: (e) => setIssPositionError(e instanceof Error ? e : { message: errorMessage(e) }),
+   logFn: (d) => `Lat: ${d.latitude.toFixed(2)}, Lng: ${d.longitude.toFixed(2)}`,
+ });
+ 
+ const collectAstronauts = makeCollector({
+   label: "Astronauts", collection: "astronauts",
+   fetchFn: fetchAstronauts,
+-  updateFn: updateAstronauts,
+-  setErrorFn: setAstronautsError,
++  updateFn: (d) => updateAstronauts(d as unknown as Parameters<typeof updateAstronauts>[0]),
++  setErrorFn: (e) => setAstronautsError(e instanceof Error ? e : { message: errorMessage(e) }),
+   logFn: (d) => `${d.total} people in space`,
+ });
+ 
+@@ -171,7 +170,7 @@ const collectKpIndex = makeCollector({
+   label: "Kp Index", collection: "kp_index",
+   fetchFn: fetchKpIndex,
+   updateFn: updateKpIndex,
+-  setErrorFn: setKpIndexError,
++  setErrorFn: (e) => setKpIndexError(e instanceof Error ? e : new Error(errorMessage(e))),
+   logFn: (d) => `${d.length} readings | Current Kp: ${d[d.length - 1]?.kp ?? "?"}`,
+ });
+ 
+@@ -179,12 +178,12 @@ const collectWildfires = makeCollector({
+   label: "Wildfire", collection: "wildfires",
+   fetchFn: fetchWildfires,
+   updateFn: updateWildfires,
+-  setErrorFn: setWildfireError,
++  setErrorFn: (e) => setWildfireError(e instanceof Error ? e : new Error(errorMessage(e))),
+   logFn: (d) => {
+-    const largest = d.filter((e: { magnitudeValue?: number }) => e.magnitudeValue != null)
+-      .sort((a: { magnitudeValue?: number }, b: { magnitudeValue?: number }) => (b.magnitudeValue ?? 0) - (a.magnitudeValue ?? 0))[0];
++    const largest = d.filter((e) => e.magnitudeValue != null)
++      .sort((a, b) => (b.magnitudeValue ?? 0) - (a.magnitudeValue ?? 0))[0];
+     return `${d.length} active fires` +
+-      (largest ? ` | Largest: ${(largest as Record<string, unknown>).title} (${largest.magnitudeValue} ${(largest as Record<string, unknown>).magnitudeUnit})` : "");
++      (largest ? ` | Largest: ${(largest as unknown as Record<string, unknown>).title} (${largest.magnitudeValue} ${(largest as unknown as Record<string, unknown>).magnitudeUnit})` : "");
+   },
+ });
+ 
+@@ -192,11 +191,11 @@ const collectTides = makeCollector({
+   label: "Tides", collection: "tide_predictions",
+   fetchFn: fetchTides,
+   updateFn: updateTides,
+-  setErrorFn: setTideError,
++  setErrorFn: (e) => setTideError(e instanceof Error ? e : new Error(errorMessage(e))),
+   logFn: (d) => {
+-    const next = d.find((t: { time: string }) => new Date(t.time) > new Date());
++    const next = d.find((t) => new Date(t.time) > new Date());
+     return `${d.length} predictions` +
+-      (next ? ` | Next: ${(next as Record<string, unknown>).type} at ${next.time} (${(next as Record<string, unknown>).height}m)` : "");
++      (next ? ` | Next: ${(next as unknown as Record<string, unknown>).type} at ${next.time} (${(next as unknown as Record<string, unknown>).height}m)` : "");
+   },
+ });
+ 
+@@ -204,7 +203,7 @@ const collectSolarWind = makeCollector({
+   label: "Solar Wind", collection: "solar_wind",
+   fetchFn: fetchSolarWind,
+   updateFn: updateSolarWind,
+-  setErrorFn: setSolarWindError,
++  setErrorFn: (e) => setSolarWindError(e instanceof Error ? e : new Error(errorMessage(e))),
+   logFn: (d) => `${d.counts.plasma}p/${d.counts.magnetic}m pts | Speed: ${d.latest.speed ?? "?"}km/s | Bz: ${d.latest.bz ?? "?"}nT`,
+ });
+ 
+@@ -212,7 +211,7 @@ const collectGoogleAirQuality = makeCollector({
+   label: "Google AQ", collection: "google_air_quality",
+   fetchFn: fetchGoogleAirQuality,
+   updateFn: updateGoogleAirQuality,
+-  setErrorFn: setGoogleAirQualityError,
++  setErrorFn: (e) => setGoogleAirQualityError(e instanceof Error ? e : new Error(errorMessage(e))),
+   logFn: (d) => `AQI: ${d.usEpaAqi ?? "?"} (${d.usEpaCategory ?? "?"}) | Dominant: ${d.usEpaDominantPollutant ?? "?"}`,
+ });
+ 
+@@ -220,7 +219,7 @@ const collectPollen = makeCollector({
+   label: "Pollen", collection: "pollen",
+   fetchFn: fetchPollen,
+   updateFn: updatePollen,
+-  setErrorFn: setPollenError,
++  setErrorFn: (e) => setPollenError(e instanceof Error ? e : new Error(errorMessage(e))),
+   logFn: (d) => {
+     const today = d.daily?.[0];
+     return `${d.daily?.length || 0}-day forecast | Grass: ${today?.grass?.indexInfo?.category ?? "?"} | Tree: ${today?.tree?.indexInfo?.category ?? "?"} | Weed: ${today?.weed?.indexInfo?.category ?? "?"}`;
+@@ -231,7 +230,7 @@ const collectApod = makeCollector({
+   label: "APOD", collection: "apod",
+   fetchFn: fetchApod,
+   updateFn: updateApod,
+-  setErrorFn: setApodError,
++  setErrorFn: (e) => setApodError(e instanceof Error ? e : new Error(errorMessage(e))),
+   logFn: (d) => d.title,
+ });
+ 
+@@ -239,7 +238,7 @@ const collectLaunches = makeCollector({
+   label: "Launches", collection: "launches",
+   fetchFn: fetchUpcomingLaunches,
+   updateFn: updateLaunches,
+-  setErrorFn: setLaunchError,
++  setErrorFn: (e) => setLaunchError(e instanceof Error ? e : new Error(errorMessage(e))),
+   logFn: (d) => `${d.length} upcoming` + (d[0] ? ` | Next: ${d[0].name} (${d[0].status})` : ""),
+ });
+ 
+@@ -247,7 +246,7 @@ const collectTwilight = makeCollector({
+   label: "Twilight", collection: "twilight",
+   fetchFn: fetchTwilight,
+   updateFn: updateTwilight,
+-  setErrorFn: setTwilightError,
++  setErrorFn: (e) => setTwilightError(e instanceof Error ? e : new Error(errorMessage(e))),
+   logFn: (d) => `Civil: ${d.civilTwilightBegin} → ${d.civilTwilightEnd}`,
+ });
+ 
+@@ -255,7 +254,7 @@ const collectEnvironmentCanada = makeCollector({
+   label: "Env Canada", collection: "env_canada_warnings",
+   fetchFn: fetchEnvironmentCanadaWarnings,
+   updateFn: updateWarnings,
+-  setErrorFn: setWarningError,
++  setErrorFn: (e) => setWarningError(e instanceof Error ? e : new Error(errorMessage(e))),
+   logFn: (d) => `${d.length} active warnings/watches`,
+ });
+ 
+@@ -263,7 +262,7 @@ const collectAvalanche = makeCollector({
+   label: "Avalanche", collection: "avalanche_forecasts",
+   fetchFn: fetchAvalancheForecast,
+   updateFn: updateAvalanche,
+-  setErrorFn: setAvalancheError,
++  setErrorFn: (e) => setAvalancheError(e instanceof Error ? e : new Error(errorMessage(e))),
+   logFn: (d) => `${d.length} forecast regions`,
+ });
+ 
+@@ -325,10 +324,10 @@ async function collectDonki() {
+ // ─── Startup Definitions ──────────────────────────────────────────
+ 
+ const STARTUP_TASKS = [
+-  { label: "OpenMeteo", collection: "openmeteo", ttl: OPEN_METEO_INTERVAL_MS, collectFn: collectOpenMeteo, restoreFn: (d: any) => restore("openmeteo", d), delay: 0 },
+-  { label: "AirQuality", collection: "air_quality", ttl: AIR_QUALITY_INTERVAL_MS, collectFn: collectAirQuality, restoreFn: (d: any) => restore("airquality", d), delay: 2_000 },
+-  { label: "Tomorrow.io", collection: "tomorrowio", ttl: TOMORROWIO_REALTIME_INTERVAL_MS, collectFn: collectTomorrowIORealtime, restoreFn: (d: any) => restore("tomorrowio", d), delay: 4_000 },
+-  { label: "Tomorrow.io Daily", collection: "tomorrowio_daily", ttl: TOMORROWIO_FORECAST_INTERVAL_MS, collectFn: collectTomorrowIODaily, restoreFn: (d: any) => restore("tomorrowio_daily", d), delay: 6_000 },
++  { label: "OpenMeteo", collection: "openmeteo", ttl: OPEN_METEO_INTERVAL_MS, collectFn: collectOpenMeteo, restoreFn: (d: Record<string, unknown>) => restore("openmeteo", d), delay: 0 },
++  { label: "AirQuality", collection: "air_quality", ttl: AIR_QUALITY_INTERVAL_MS, collectFn: collectAirQuality, restoreFn: (d: Record<string, unknown>) => restore("airquality", d), delay: 2_000 },
++  { label: "Tomorrow.io", collection: "tomorrowio", ttl: TOMORROWIO_REALTIME_INTERVAL_MS, collectFn: collectTomorrowIORealtime, restoreFn: (d: Record<string, unknown>) => restore("tomorrowio", d), delay: 4_000 },
++  { label: "Tomorrow.io Daily", collection: "tomorrowio_daily", ttl: TOMORROWIO_FORECAST_INTERVAL_MS, collectFn: collectTomorrowIODaily, restoreFn: (d: Record<string, unknown>) => restore("tomorrowio_daily", d), delay: 6_000 },
+   { label: "Earthquake", collection: "earthquakes_cache", ttl: EARTHQUAKE_INTERVAL_MS, collectFn: collectEarthquakes, restoreFn: restoreEarthquakes, delay: 8_000 },
+   { label: "NEO", collection: "neos_cache", ttl: NEO_INTERVAL_MS, collectFn: collectNeos, restoreFn: restoreNeos, delay: 10_000 },
+   { label: "DONKI", collection: "space_weather", ttl: DONKI_INTERVAL_MS, collectFn: collectDonki, restoreFn: restoreSpaceWeather, delay: 12_000 },
+diff --git a/src/fetchers/utility/CurrencyFetcher.ts b/src/fetchers/utility/CurrencyFetcher.ts
+index ac4615a..e15d27b 100644
+--- a/src/fetchers/utility/CurrencyFetcher.ts
++++ b/src/fetchers/utility/CurrencyFetcher.ts
+@@ -8,7 +8,14 @@ import { EXCHANGE_RATE_BASE_URL } from "../../constants.ts";
+ 
+ // ─── In-Memory Rate Cache ──────────────────────────────────────────
+ 
+-const rateCache = new Map();
++interface CachedRates {
++  base: string;
++  lastUpdate: string;
++  nextUpdate: string;
++  rates: Record<string, number>;
++}
++
++const rateCache = new Map<string, { data: CachedRates; fetchedAt: number }>();
+ const RATE_CACHE_TTL_MS = 3_600_000; // 1 hour — rates update daily on free tier
+ 
+ // ─── Fetch Latest Rates ────────────────────────────────────────────
+@@ -18,7 +25,7 @@ const RATE_CACHE_TTL_MS = 3_600_000; // 1 hour — rates update daily on free ti
+ 
+ 
+  */
+-async function fetchRates(base: any = "USD") {
++async function fetchRates(base: string = "USD"): Promise<CachedRates> {
+   const upperBase = base.toUpperCase();
+ 
+   // Check cache
+@@ -60,7 +67,7 @@ async function fetchRates(base: any = "USD") {
+ 
+ 
+  */
+-export async function convertCurrency(amount: any, from: any, to: any) {
++export async function convertCurrency(amount: number, from: string, to: string) {
+   const upperFrom = from.toUpperCase();
+   const upperTo = to.toUpperCase();
+ 
+diff --git a/src/fetchers/utility/TimezoneFetcher.ts b/src/fetchers/utility/TimezoneFetcher.ts
+index c43d8b7..06e717b 100644
+--- a/src/fetchers/utility/TimezoneFetcher.ts
++++ b/src/fetchers/utility/TimezoneFetcher.ts
+@@ -13,7 +13,7 @@ import { TIMEZONE_BASE_URL } from "../../constants.ts";
+ 
+ 
+  */
+-export async function getTimeInTimezone(timezone: any) {
++export async function getTimeInTimezone(timezone: string) {
+   const url = `${TIMEZONE_BASE_URL}/timezone/${encodeURIComponent(timezone)}`;
+   const response = await fetch(url);
+ 
+@@ -50,7 +50,7 @@ export async function getTimeInTimezone(timezone: any) {
+ 
+ 
+  */
+-export async function listTimezones(area: any) {
++export async function listTimezones(area?: string) {
+   const path = area ? `/timezone/${encodeURIComponent(area)}` : "/timezone";
+   const url = `${TIMEZONE_BASE_URL}${path}`;
+   const response = await fetch(url);
+diff --git a/src/fetchers/utility/webcams/sources/_511_helper.ts b/src/fetchers/utility/webcams/sources/_511_helper.ts
+index e93b7b7..93911b7 100644
+--- a/src/fetchers/utility/webcams/sources/_511_helper.ts
++++ b/src/fetchers/utility/webcams/sources/_511_helper.ts
+@@ -6,7 +6,37 @@ import { upsertWebcams, type WebcamDocument } from "../../../../models/Webcam.ts
+  * These APIs return JSON arrays of camera objects with Views arrays
+  * containing CCTV page URLs.
+  */
+-export async function fetch511Cameras({ apiUrl, city, country, source, idPrefix, bounds }: any) {
++interface Fetch511CamerasParams {
++  apiUrl: string;
++  city: string;
++  country: string;
++  source: string;
++  idPrefix: string;
++  bounds?: {
++    minLat: number;
++    maxLat: number;
++    minLon: number;
++    maxLon: number;
++  };
++}
++
++interface CameraView {
++  Id: number | string;
++  Status: string;
++  Description?: string;
++  Url: string;
++}
++
++interface CameraItem {
++  Id: number | string;
++  Latitude: number;
++  Longitude: number;
++  Location?: string;
++  Roadway?: string;
++  Views: CameraView[];
++}
++
++export async function fetch511Cameras({ apiUrl, city, country, source, idPrefix, bounds }: Fetch511CamerasParams) {
+   const url = `${apiUrl}?format=json`;
+   const response = await fetch(url, {
+     headers: buildScraperHeaders(),
+@@ -17,7 +47,7 @@ export async function fetch511Cameras({ apiUrl, city, country, source, idPrefix,
+     throw new Error(`Failed to fetch ${city} webcams from ${source}: ${response.status}`);
+   }
+ 
+-  const data = await response.json();
++  const data = await response.json() as CameraItem[];
+   if (!Array.isArray(data) || data.length === 0) {
+     return;
+   }
+diff --git a/src/fetchers/utility/webcams/sources/_ny511_helper.ts b/src/fetchers/utility/webcams/sources/_ny511_helper.ts
+index 3958a7f..d6574b4 100644
+--- a/src/fetchers/utility/webcams/sources/_ny511_helper.ts
++++ b/src/fetchers/utility/webcams/sources/_ny511_helper.ts
+@@ -7,7 +7,30 @@ const API_URL = "https://511ny.org/api/getcameras?key=public&format=json";
+  * Shared fetcher for New York 511 cameras.
+  * Filters by geographic bounding box and upserts results.
+  */
+-export async function fetchNY511Cameras({ city, idPrefix, bounds }: any) {
++interface FetchNY511CamerasParams {
++  city: string;
++  idPrefix: string;
++  bounds: {
++    minLat: number;
++    maxLat: number;
++    minLon: number;
++    maxLon: number;
++  };
++}
++
++interface NY511CameraItem {
++  ID: string | number;
++  Latitude: number;
++  Longitude: number;
++  Disabled?: boolean;
++  Blocked?: boolean;
++  Name?: string;
++  VideoUrl?: string;
++  Url: string;
++  RoadwayName?: string;
++}
++
++export async function fetchNY511Cameras({ city, idPrefix, bounds }: FetchNY511CamerasParams) {
+   const response = await fetch(API_URL, {
+     headers: buildScraperHeaders(),
+     signal: AbortSignal.timeout(30000),
+@@ -17,7 +40,7 @@ export async function fetchNY511Cameras({ city, idPrefix, bounds }: any) {
+     throw new Error(`Failed to fetch NY511 cameras for ${city}: ${response.status}`);
+   }
+ 
+-  const data = await response.json();
++  const data = await response.json() as NY511CameraItem[];
+   if (!Array.isArray(data) || data.length === 0) return;
+ 
+   const parsedWebcams: WebcamDocument[] = [];
+diff --git a/src/fetchers/utility/webcams/sources/austin.ts b/src/fetchers/utility/webcams/sources/austin.ts
+index 758c475..9e69a60 100644
+--- a/src/fetchers/utility/webcams/sources/austin.ts
++++ b/src/fetchers/utility/webcams/sources/austin.ts
+@@ -1,5 +1,5 @@
+ import { buildScraperHeaders } from "../../../../utilities.ts";
+-import { upsertWebcams } from "../../../../models/Webcam.ts";
++import { upsertWebcams, type WebcamDocument } from "../../../../models/Webcam.ts";
+ 
+ export async function refreshAustinWebcams() {
+   // City of Austin Open Data (Socrata SODA API)
+@@ -16,7 +16,19 @@ export async function refreshAustinWebcams() {
+     return;
+   }
+ 
+-  const parsedWebcams = data.map((cam: any) => {
++interface AustinCamera {
++  camera_id?: string | number;
++  id?: string | number;
++  location_name?: string;
++  screenshot_address?: string;
++  signal_eng_area?: string;
++  camera_status?: string;
++  location?: {
++    coordinates?: [number, number];
++  };
++}
++
++  const parsedWebcams = (data as AustinCamera[]).map((cam: AustinCamera): WebcamDocument | null => {
+     const lat = cam.location?.coordinates ? cam.location.coordinates[1] : null;
+     const lon = cam.location?.coordinates ? cam.location.coordinates[0] : null;
+ 
+@@ -36,7 +48,7 @@ export async function refreshAustinWebcams() {
+       country: "US",
+       source: "data.austintexas.gov"
+     };
+-  }).filter((c: any) => c && c.url);
++  }).filter((c): c is WebcamDocument => !!(c && c.url));
+ 
+-  await upsertWebcams(parsedWebcams as any);
++  await upsertWebcams(parsedWebcams);
+ }
+diff --git a/src/fetchers/utility/webcams/sources/baton_rouge.ts b/src/fetchers/utility/webcams/sources/baton_rouge.ts
+index b43742f..8bcea9c 100644
+--- a/src/fetchers/utility/webcams/sources/baton_rouge.ts
++++ b/src/fetchers/utility/webcams/sources/baton_rouge.ts
+@@ -1,8 +1,18 @@
+ import { buildScraperHeaders } from "../../../../utilities.ts";
+-import { upsertWebcams } from "../../../../models/Webcam.ts";
++import { upsertWebcams, type WebcamDocument } from "../../../../models/Webcam.ts";
+ 
+ const API_URL = "https://data.brla.gov/resource/6z6u-ts44.json";
+ 
++interface BatonRougeCamera {
++  image_view?: string;
++  device_id?: string | number;
++  _id?: string | number;
++  device_name?: string;
++  location?: string;
++  latitude?: string;
++  longitude?: string;
++}
++
+ export async function refreshBatonRougeWebcams() {
+   const response = await fetch(`${API_URL}?$limit=500`, {
+     headers: buildScraperHeaders(),
+@@ -13,18 +23,18 @@ export async function refreshBatonRougeWebcams() {
+     throw new Error(`Failed to fetch Baton Rouge webcams: ${response.status}`);
+   }
+ 
+-  const data = await response.json();
++  const data = await response.json() as BatonRougeCamera[];
+   if (!Array.isArray(data) || data.length === 0) return;
+ 
+-  const parsedWebcams = data
+-    .filter((cam: any) => cam.image_view)
+-    .map((cam: any) => ({
++  const parsedWebcams: WebcamDocument[] = data
++    .filter((cam: BatonRougeCamera): cam is BatonRougeCamera & { image_view: string } => !!cam.image_view)
++    .map((cam: BatonRougeCamera & { image_view: string }): WebcamDocument => ({
+       id: `BTR-${cam.device_id || cam._id}`,
+       name: cam.device_name || cam.location || `Camera ${cam.device_id}`,
+       url: cam.image_view,
+       area: cam.location || "Baton Rouge",
+-      latitude: parseFloat(cam.latitude) || null,
+-      longitude: parseFloat(cam.longitude) || null,
++      latitude: cam.latitude ? parseFloat(cam.latitude) : null,
++      longitude: cam.longitude ? parseFloat(cam.longitude) : null,
+       city: "Baton Rouge",
+       country: "US",
+       source: "data.brla.gov",
+diff --git a/src/fetchers/utility/webcams/sources/calgary.ts b/src/fetchers/utility/webcams/sources/calgary.ts
+index d1e39de..3a5ee6e 100644
+--- a/src/fetchers/utility/webcams/sources/calgary.ts
++++ b/src/fetchers/utility/webcams/sources/calgary.ts
+@@ -1,6 +1,18 @@
+ import { buildScraperHeaders } from "../../../../utilities.ts";
+ import { upsertWebcams, type WebcamDocument } from "../../../../models/Webcam.ts";
+ 
++interface CalgaryCamera {
++  camera_location?: string;
++  quadrant?: string;
++  camera_url?: {
++    url?: string;
++    description?: string;
++  };
++  point?: {
++    coordinates?: [number, number];
++  };
++}
++
+ export async function refreshCalgaryWebcams() {
+   // Open Calgary SODA API (Socrata)
+   let allParsedWebcams: WebcamDocument[] = [];
+@@ -16,13 +28,13 @@ export async function refreshCalgaryWebcams() {
+       throw new Error(`Failed to fetch Calgary webcams (offset: ${offset}): ${response.status}`);
+     }
+     
+-    const data = await response.json();
++    const data = await response.json() as CalgaryCamera[];
+     if (!Array.isArray(data) || data.length === 0) {
+       hasMore = false;
+       break;
+     }
+ 
+-    const parsedWebcams = data.map((cam: any, index: any) => {
++    const parsedWebcams = data.map((cam: CalgaryCamera, index: number): WebcamDocument => {
+       const lat = cam.point?.coordinates ? cam.point.coordinates[1] : null;
+       const lon = cam.point?.coordinates ? cam.point.coordinates[0] : null;
+       
+@@ -37,7 +49,7 @@ export async function refreshCalgaryWebcams() {
+         country: "CA",
+         source: "data.calgary.ca"
+       };
+-    }).filter((c: any) => c.url);
++    }).filter((c: WebcamDocument) => !!c.url);
+ 
+     allParsedWebcams = allParsedWebcams.concat(parsedWebcams);
+     
+diff --git a/src/fetchers/utility/webcams/sources/toronto.ts b/src/fetchers/utility/webcams/sources/toronto.ts
+index b3af5fe..ae1ea02 100644
+--- a/src/fetchers/utility/webcams/sources/toronto.ts
++++ b/src/fetchers/utility/webcams/sources/toronto.ts
+@@ -1,6 +1,14 @@
+ import { buildScraperHeaders } from "../../../../utilities.ts";
+ import { upsertWebcams, type WebcamDocument } from "../../../../models/Webcam.ts";
+ 
++interface TorontoCamera {
++  REC_ID: string | number;
++  geometry?: string;
++  MAINROAD?: string;
++  CROSSROAD?: string;
++  IMAGEURL?: string;
++}
++
+ export async function refreshTorontoWebcams() {
+   // Toronto Open Data CKAN API
+   let allParsedWebcams: WebcamDocument[] = [];
+@@ -23,8 +31,8 @@ export async function refreshTorontoWebcams() {
+ 
+     totalCount = data.result.total;
+ 
+-    const parsedWebcams = data.result.records.map((cam: any) => {
+-      let lat = null, lon = null;
++    const parsedWebcams = (data.result.records as TorontoCamera[]).map((cam: TorontoCamera): WebcamDocument => {
++      let lat: number | null = null, lon: number | null = null;
+       if (cam.geometry) {
+         try {
+           const geo = JSON.parse(cam.geometry);
+@@ -42,7 +50,7 @@ export async function refreshTorontoWebcams() {
+       return {
+         id: `TOR-${cam.REC_ID}`, // Ensure uniqueness across cities just in case
+         name: name || `Camera ${cam.REC_ID}`,
+-        url: cam.IMAGEURL,
++        url: cam.IMAGEURL || "",
+         area: "Toronto", // Could be parsed if more detail is needed, but just Toronto works for now
+         latitude: lat,
+         longitude: lon,
+diff --git a/src/fetchers/utility/webcams/sources/vancouver.ts b/src/fetchers/utility/webcams/sources/vancouver.ts
+index a32bf19..5a3c892 100644
+--- a/src/fetchers/utility/webcams/sources/vancouver.ts
++++ b/src/fetchers/utility/webcams/sources/vancouver.ts
+@@ -1,6 +1,17 @@
+ import { buildScraperHeaders } from "../../../../utilities.ts";
+ import { upsertWebcams, type WebcamDocument } from "../../../../models/Webcam.ts";
+ 
++interface VancouverCamera {
++  mapid: string;
++  name: string;
++  url: string;
++  geo_local_area?: string;
++  geo_point_2d?: {
++    lat?: number;
++    lon?: number;
++  };
++}
++
+ export async function refreshVancouverWebcams() {
+   // Vancouver opendata caps at 100 per request. Paginate until we get all.
+   let allParsedWebcams: WebcamDocument[] = [];
+@@ -19,7 +30,7 @@ export async function refreshVancouverWebcams() {
+     const data = await response.json();
+     totalCount = data.total_count;
+ 
+-    const parsedWebcams = data.results.map((cam: any) => ({
++    const parsedWebcams = (data.results as VancouverCamera[]).map((cam: VancouverCamera): WebcamDocument => ({
+       id: cam.mapid,
+       name: cam.name,
+       url: cam.url, // HTML page containing the camera image
+diff --git a/src/services/AgenticLspService.ts b/src/services/AgenticLspService.ts
+index 023b548..9fb543f 100644
+--- a/src/services/AgenticLspService.ts
++++ b/src/services/AgenticLspService.ts
+@@ -3,7 +3,9 @@
+ import { readFile, stat } from "node:fs/promises";
+ import { resolve, extname, relative, dirname } from "node:path";
+ import { pathToFileURL, fileURLToPath } from "node:url";
++
+ import { getLspManager, shutdownAllLspManagers, getAllLspHealth } from "./lsp/LspServerManager.ts";
++import type { LspParams } from "./lsp/LspClient.ts";
+ import { ALLOWED_ROOTS } from "./AgenticFileService.ts";
+ import { errorMessage } from "../utilities.ts";
+ 
+@@ -228,7 +230,7 @@ export async function agenticLspAction({ operation, filePath, line, character, w
+   // ── 8. Send request ────────────────────────────────────────
+   let result: unknown;
+   try {
+-    result = await manager.sendRequest(resolvedPath, opDef.method, lspParams);
++    result = await manager.sendRequest(resolvedPath, opDef.method, lspParams as LspParams);
+   } catch (error: unknown) {
+     return { error: `LSP request '${opDef.method}' failed: ${errorMessage(error)}` };
+   }
+diff --git a/src/services/AgenticProjectService.ts b/src/services/AgenticProjectService.ts
+index a8f9b4f..e5241e0 100644
+--- a/src/services/AgenticProjectService.ts
++++ b/src/services/AgenticProjectService.ts
+@@ -18,17 +18,37 @@ const MAX_SCAN_ENTRIES = 200;
+ // Project Summary
+ // ────────────────────────────────────────────────────────────
+ 
++export interface TransformedProjectSummary {
++  path?: string;
++  name?: string;
++  packageManager?: string | null;
++  version?: string | null;
++  description?: string | null;
++  scripts?: Record<string, string>;
++  dependencies?: string[];
++  devDependencies?: string[];
++  frameworks?: string[];
++  type?: string;
++  readme?: string;
++  structure?: Record<string, number>;
++  totalFiles?: number;
++  totalDirectories?: number;
++  entryPoints?: string[];
++  configFiles?: string[];
++  error?: string;
++}
++
+ /**
+  * Scan a project root and return structured metadata.
+  */
+-export async function agenticProjectSummary(projectPath: any) {
++export async function agenticProjectSummary(projectPath: string): Promise<TransformedProjectSummary> {
+   // Agent routing
+   const agent = routeForPath(projectPath);
+   if (agent) {
+     try {
+-      return await sendRpc(agent.id, "project.summary", { path: projectPath });
+-    } catch (error: unknown) {
+-      return { error: `Agent RPC failed: ${errorMessage(error)}` };
++      return await sendRpc(agent.id, "project.summary", { path: projectPath }) as TransformedProjectSummary;
++    } catch (err: unknown) {
++      return { error: `Agent RPC failed: ${errorMessage(err)}` };
+     }
+   }
+ 
+@@ -48,7 +68,7 @@ export async function agenticProjectSummary(projectPath: any) {
+     return { error: `Directory not found: ${root}` };
+   }
+ 
+-  const result: Record<string, unknown> = {
++  const result: TransformedProjectSummary = {
+     path: root,
+     name: root.split("/").pop(),
+   };
+@@ -67,7 +87,7 @@ export async function agenticProjectSummary(projectPath: any) {
+ 
+     // Detect framework from dependencies
+     const allDeps = { ...packageJson.dependencies, ...packageJson.devDependencies };
+-    const frameworks: unknown[] = [];
++    const frameworks: string[] = [];
+     if (allDeps["next"]) frameworks.push("next.js");
+     if (allDeps["react"]) frameworks.push("react");
+     if (allDeps["vue"]) frameworks.push("vue");
+@@ -108,11 +128,11 @@ export async function agenticProjectSummary(projectPath: any) {
+   }
+ 
+   // ── Directory Structure ──────────────────────────────────
+-  const structure: Record<string, unknown> = {};
++  const structure: Record<string, number> = {};
+   let totalFiles = 0;
+   let totalDirs = 0;
+ 
+-  async function scanDir(dir: any, depth: any) {
++  async function scanDir(dir: string, depth: number) {
+     if (depth > MAX_SCAN_DEPTH || totalFiles + totalDirs > MAX_SCAN_ENTRIES) return;
+ 
+     try {
+@@ -156,7 +176,7 @@ export async function agenticProjectSummary(projectPath: any) {
+   result.totalDirectories = totalDirs;
+ 
+   // ── Entry Points ─────────────────────────────────────────
+-  const entryPoints: unknown[] = [];
++  const entryPoints: string[] = [];
+   const candidates = [
+     "src/app/layout.js", "src/app/layout.tsx", "src/app/page.js", "src/app/page.tsx",
+     "src/index.js", "src/index.ts", "src/index.tsx",
+@@ -176,7 +196,7 @@ export async function agenticProjectSummary(projectPath: any) {
+   result.entryPoints = entryPoints;
+ 
+   // ── Config Files ─────────────────────────────────────────
+-  const configFiles: unknown[] = [];
++  const configFiles: string[] = [];
+   const configCandidates = [
+     "tsconfig.json", "jsconfig.json", ".eslintrc.js", "eslint.config.js",
+     ".prettierrc", ".prettierrc.js", "prettier.config.js",
+diff --git a/src/services/AgenticToolSearchService.ts b/src/services/AgenticToolSearchService.ts
+index 184a3de..081f94f 100644
+--- a/src/services/AgenticToolSearchService.ts
++++ b/src/services/AgenticToolSearchService.ts
+@@ -19,7 +19,16 @@ export interface AgenticToolSearchOptions {
+   limit?: number;
+ }
+ 
+-export function agenticToolSearch(query: string, { domain, label, limit = 20 }: AgenticToolSearchOptions = {}) {
++export interface TransformedToolSearchResult {
++  matches?: ToolSearchMatch[];
++  total?: number;
++  query?: string | null;
++  domain?: string | null;
++  label?: string | null;
++  error?: string;
++}
++
++export function agenticToolSearch(query: string, { domain, label, limit = 20 }: AgenticToolSearchOptions = {}): TransformedToolSearchResult {
+   const allSchemas = getToolSchemas();
+ 
+   if (!allSchemas || allSchemas.length === 0) {
+diff --git a/src/services/AgenticToolTestService.ts b/src/services/AgenticToolTestService.ts
+index ffea980..c47f756 100644
+--- a/src/services/AgenticToolTestService.ts
++++ b/src/services/AgenticToolTestService.ts
+@@ -27,8 +27,18 @@ import { errorMessage } from "../utilities.ts";
+ // Lazily resolved — WORKSPACE_ROOTS may be empty at import time
+ // (e.g. when users configure workspaces via the Settings UI).
+ 
+-let _fixtureDir: any;
+-let _fixtureFile: any;
++export type ToolTestResult = Record<string, unknown> | unknown[] | string | number | boolean | null | undefined | object;
++
++export interface TransformedToolTestResult {
++  tool: string;
++  success: boolean;
++  duration: number;
++  message: string;
++  details?: ToolTestResult;
++}
++
++let _fixtureDir: string | undefined;
++let _fixtureFile: string | undefined;
+ 
+ function getFixtureDir() {
+   if (!_fixtureDir) {
+@@ -86,19 +96,19 @@ async function cleanupFixture() {
+ 
+ // ── Test Runner ──────────────────────────────────────────────
+ 
+-async function runTest(name: any, fn: any) {
++async function runTest(name: string, fn: () => Promise<ToolTestResult> | ToolTestResult): Promise<TransformedToolTestResult> {
+   const start = performance.now();
+   try {
+     const result = await fn();
+     const duration = Math.round(performance.now() - start);
+ 
+     // Check if the service returned an error object
+-    if (result?.error) {
++    if (result && typeof result === "object" && !Array.isArray(result) && "error" in result) {
+       return {
+         tool: name,
+         success: false,
+         duration,
+-        message: result.error,
++        message: String((result as { error: unknown }).error),
+         details: result,
+       };
+     }
+@@ -174,7 +184,7 @@ const TESTS = {
+ 
+   multi_file_read: () =>
+     runTest("multi_file_read", () =>
+-      agenticMultiFileRead([getFixtureFile()]),
++      agenticMultiFileRead([{ path: getFixtureFile() }]),
+     ),
+ 
+   file_info: () =>
+@@ -257,7 +267,7 @@ const TESTS = {
+   // ── Tool Discovery (meta) ────────────────────────────────
+ 
+   tool_search: () =>
+-    runTest("tool_search", () => {
++    runTest("tool_search", async () => {
+       // Synchronous — returns directly
+       return agenticToolSearch("file", { label: "coding", limit: 5 });
+     }),
+diff --git a/src/services/FreshnessService.ts b/src/services/FreshnessService.ts
+index 34851ae..aaa2802 100644
+--- a/src/services/FreshnessService.ts
++++ b/src/services/FreshnessService.ts
+@@ -19,7 +19,7 @@ export async function collectIfStale(
+   collection: string,
+   ttlMs: number,
+   collectFn: () => Promise<void>,
+-  restoreFn: (data: unknown) => void,
++  restoreFn: (data: never) => void,
+ ) {
+   const state = await loadState(collection);
+ 
+@@ -29,7 +29,7 @@ export async function collectIfStale(
+     if (ageMs < ttlMs) {
+       const ageMinutes = Math.round(ageMs / 60_000);
+       const ttlMinutes = Math.round(ttlMs / 60_000);
+-      restoreFn(state.data);
++      (restoreFn as (data: unknown) => void)(state.data);
+       logger.info(
+         `[${label}] ♻️  Restored from DB (${ageMinutes}m old, TTL: ${ttlMinutes}m)`,
+       );
+@@ -53,7 +53,7 @@ export async function collectIfStale(
+  * Handles initial stale check with staggered delays, then sets up intervals.
+  * Eliminates the need to manually write setInterval lines per collector.
+  */
+-export function startCollectorLoop(tasks: CollectorTask[]) {
++export function startCollectorLoop(tasks: CollectorTask<never>[]) {
+   for (const task of tasks) {
+     setTimeout(
+       () =>
+diff --git a/src/services/lsp/LspClient.ts b/src/services/lsp/LspClient.ts
+index 0e29869..df9badc 100644
+--- a/src/services/lsp/LspClient.ts
++++ b/src/services/lsp/LspClient.ts
+@@ -10,26 +10,29 @@ import {
+ } from "vscode-jsonrpc/node.js";
+ import { errorMessage } from "../../utilities.ts";
+ 
++export type LspParamValue = string | number | boolean | null | { [key: string]: LspParamValue } | LspParamValue[];
++export type LspParams = Record<string, LspParamValue> | LspParamValue[] | string | number | boolean | null;
++
+ export interface LspClient {
+   readonly capabilities: Record<string, unknown> | null;
+   readonly isInitialized: boolean;
+   start(command: string, args: string[], options?: { env?: Record<string, string>; cwd?: string }): Promise<void>;
+   initialize(params: Record<string, unknown>): Promise<unknown>;
+-  sendRequest(method: string, params: any): Promise<unknown>;
+-  sendNotification(method: string, params: any): Promise<void>;
+-  onNotification(method: string, handler: (...args: unknown[]) => void): void;
+-  onRequest(method: string, handler: (...args: unknown[]) => any): void;
++  sendRequest(method: string, params?: LspParams): Promise<unknown>;
++  sendNotification(method: string, params?: LspParams): Promise<void>;
++  onNotification<P = LspParams>(method: string, handler: (params: P) => void): void;
++  onRequest<P = LspParams, R = LspParamValue>(method: string, handler: (params: P) => Promise<R> | R): void;
+   stop(): Promise<void>;
+ }
+ 
+ interface PendingNotification {
+   method: string;
+-  handler: (...args: unknown[]) => void;
++  handler: (params: never) => void;
+ }
+ 
+ interface PendingRequest {
+   method: string;
+-  handler: (...args: unknown[]) => any;
++  handler: (params: never) => Promise<never> | never;
+ }
  
  /**
-  * Search for foods by name/keyword.
--
--
-  */
--export function searchFoods(query: any, opts: Record<string, any> = {}) {
-+export function searchFoods(query: string, opts: { limit?: number; kingdom?: string; foodType?: string; nutrientTypes?: string | null } = {}) {
-   ensureLoaded();
+@@ -162,12 +165,12 @@ export function createLspClient(
  
-   const { limit = 10, kingdom, foodType, nutrientTypes } = opts;
-@@ -354,13 +404,30 @@ export function searchFoods(query: any, opts: Record<string, any> = {}) {
-   if (kingdom) {
-     const k = kingdom.toLowerCase();
-     candidates = candidates.filter(
--      (f: any) => f.kingdom && f.kingdom.toLowerCase() === k,
-+      (f) => f.kingdom && f.kingdom.toLowerCase() === k,
+         // 8. Apply queued handlers
+         for (const { method, handler } of pendingNotificationHandlers) {
+-          connection.onNotification(method, handler);
++          connection.onNotification(method, handler as unknown as (params: unknown) => void);
+         }
+         pendingNotificationHandlers.length = 0;
+ 
+         for (const { method, handler } of pendingRequestHandlers) {
+-          connection.onRequest(method, handler);
++          connection.onRequest(method, handler as unknown as (params: unknown) => Promise<unknown> | unknown);
+         }
+         pendingRequestHandlers.length = 0;
+ 
+@@ -204,7 +207,7 @@ export function createLspClient(
+     /**
+      * Send an LSP request and return the result.
+      */
+-    async sendRequest(method: string, params: any): Promise<unknown> {
++    async sendRequest(method: string, params?: LspParams): Promise<unknown> {
+       if (!connection) throw new Error("LSP client not started");
+       checkStartFailed();
+       if (!isInitialized) throw new Error("LSP server not initialized");
+@@ -220,7 +223,7 @@ export function createLspClient(
+     /**
+      * Send an LSP notification (fire-and-forget).
+      */
+-    async sendNotification(method: string, params: any): Promise<void> {
++    async sendNotification(method: string, params?: LspParams): Promise<void> {
+       if (!connection) throw new Error("LSP client not started");
+       checkStartFailed();
+ 
+@@ -235,9 +238,9 @@ export function createLspClient(
+     /**
+      * Register a handler for notifications FROM the server.
+      */
+-    onNotification(method: string, handler: (...args: unknown[]) => void): void {
++    onNotification<P = LspParams>(method: string, handler: (params: P) => void): void {
+       if (!connection) {
+-        pendingNotificationHandlers.push({ method, handler });
++        pendingNotificationHandlers.push({ method, handler: handler as unknown as (params: never) => void });
+         return;
+       }
+       checkStartFailed();
+@@ -247,9 +250,9 @@ export function createLspClient(
+     /**
+      * Register a handler for requests FROM the server (reverse direction).
+      */
+-    onRequest(method: string, handler: (...args: unknown[]) => any): void {
++    onRequest<P = LspParams, R = LspParamValue>(method: string, handler: (params: P) => Promise<R> | R): void {
+       if (!connection) {
+-        pendingRequestHandlers.push({ method, handler });
++        pendingRequestHandlers.push({ method, handler: handler as unknown as (params: never) => Promise<never> | never });
+         return;
+       }
+       checkStartFailed();
+diff --git a/src/services/lsp/LspServerInstance.ts b/src/services/lsp/LspServerInstance.ts
+index 7f5a241..7a51209 100644
+--- a/src/services/lsp/LspServerInstance.ts
++++ b/src/services/lsp/LspServerInstance.ts
+@@ -2,7 +2,7 @@ import { sleep } from "@rodrigo-barraza/utilities-library";
+ // ─── Single Server Lifecycle Manager ────────────────────────
+ import { resolve } from "node:path";
+ import { pathToFileURL } from "node:url";
+-import { createLspClient, LspClient } from "./LspClient.ts";
++import { createLspClient, LspClient, LspParams, LspParamValue } from "./LspClient.ts";
+ import { LspServerConfig } from "./LspConfig.ts";
+ import logger from "../../logger.ts";
+ import { errorMessage } from "../../utilities.ts";
+@@ -26,10 +26,10 @@ export interface LspServerInstance {
+   stop(): Promise<void>;
+   restart(): Promise<void>;
+   isHealthy(): boolean;
+-  sendRequest(method: string, params: any): Promise<unknown>;
+-  sendNotification(method: string, params: any): Promise<void>;
+-  onNotification(method: string, handler: (...args: unknown[]) => void): void;
+-  onRequest(method: string, handler: (...args: unknown[]) => any): void;
++  sendRequest(method: string, params?: LspParams): Promise<unknown>;
++  sendNotification(method: string, params?: LspParams): Promise<void>;
++  onNotification<P = LspParams>(method: string, handler: (params: P) => void): void;
++  onRequest<P = LspParams, R = LspParamValue>(method: string, handler: (params: P) => Promise<R> | R): void;
+ }
+ 
+ /**
+@@ -205,20 +205,20 @@ export function createLspServerInstance(name: string, config: LspServerConfig):
+   /**
+    * Send an LSP request with exponential backoff retry on transient errors.
+    */
+-  async function sendRequest(method: string, params: any): Promise<unknown> {
++  async function sendRequest(method: string, params?: LspParams): Promise<unknown> {
+     if (!isHealthy()) {
+       throw new Error(
+         `Cannot send request to LSP server '${name}': server is ${state}` +
+         (lastError ? `, last error: ${lastError.message}` : ""),
+       );
+     }
+-    let lastAttemptError: any;
++    let lastAttemptError: unknown = null;
+     for (let attempt = 0; attempt <= MAX_RETRIES_FOR_TRANSIENT; attempt++) {
+       try {
+         return await client.sendRequest(method, params);
+       } catch (error: unknown) {
+         lastAttemptError = error;
+-        const errorCode = (error as any)?.code;
++        const errorCode = (error && typeof error === "object" && "code" in error) ? (error as { code: unknown }).code : undefined;
+         const isTransient = typeof errorCode === "number" && errorCode === LSP_ERROR_CONTENT_MODIFIED;
+         if (isTransient && attempt < MAX_RETRIES_FOR_TRANSIENT) {
+           const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
+@@ -229,23 +229,24 @@ export function createLspServerInstance(name: string, config: LspServerConfig):
+         break;
+       }
+     }
++    const errMsg = lastAttemptError instanceof Error ? lastAttemptError.message : String(lastAttemptError);
+     throw new Error(
+-      `LSP request '${method}' failed for server '${name}': ${lastAttemptError?.message ?? "unknown error"}`,
++      `LSP request '${method}' failed for server '${name}': ${errMsg}`,
      );
    }
-   if (foodType) {
-     const ft = foodType.toLowerCase();
-     candidates = candidates.filter(
--      (f: any) => f.food_type && f.food_type.toLowerCase() === ft,
-+      (f) => f.food_type && f.food_type.toLowerCase() === ft,
-+    );
-+  }
-+
-+  // Score and rank
-+  const scored = candidates
-+    .map((food) => ({ food, score: scoreMatch(food, terms) }))
-+    .filter((s) => s.score > 0)
-+    .sort((a, b) => b.score - a.score)
-+    .slice(0, limit);
-+
-+  return {
-+    count: scored.length,
-+    query,
-+    note: SOURCES_NOTE,
-+    foods: scored.map((s) => formatFood(s.food, nutrientTypes)),
-+  };
-+}_type.toLowerCase() === ft,
-     );
+ 
+-  async function sendNotification(method: string, params: any): Promise<void> {
++  async function sendNotification(method: string, params?: LspParams): Promise<void> {
+     if (!isHealthy()) {
+       throw new Error(`Cannot send notification to LSP server '${name}': server is ${state}`);
+     }
+     await client.sendNotification(method, params);
    }
  
+-  function onNotification(method: string, handler: (...args: unknown[]) => void): void {
++  function onNotification<P = LspParams>(method: string, handler: (params: P) => void): void {
+     client.onNotification(method, handler);
+   }
+ 
+-  function onRequest(method: string, handler: (...args: unknown[]) => any): void {
++  function onRequest<P = LspParams, R = LspParamValue>(method: string, handler: (params: P) => Promise<R> | R): void {
+     client.onRequest(method, handler);
+   }
+ 
+diff --git a/src/services/lsp/LspServerManager.ts b/src/services/lsp/LspServerManager.ts
+index ecb8f62..527c510 100644
+--- a/src/services/lsp/LspServerManager.ts
++++ b/src/services/lsp/LspServerManager.ts
+@@ -3,15 +3,25 @@
+ import { extname, resolve, basename } from "node:path";
+ import { pathToFileURL } from "node:url";
+ import { createLspServerInstance, LspServerInstance } from "./LspServerInstance.ts";
++import { LspParams } from "./LspClient.ts";
+ import { getLspServerConfigs } from "./LspConfig.ts";
+ import logger from "../../logger.ts";
+ import { errorMessage } from "../../utilities.ts";
+ 
++export interface LspConfigurationItem {
++  scopeUri?: string;
++  section?: string;
++}
++
++export interface LspConfigurationParams {
++  items: LspConfigurationItem[];
++}
++
+ export interface LspServerManager {
+   initialize(): void;
+   getServerForFile(filePath: string): LspServerInstance | undefined;
+   ensureServerStarted(filePath: string): Promise<LspServerInstance | undefined>;
+-  sendRequest(filePath: string, method: string, params: any): Promise<unknown>;
++  sendRequest(filePath: string, method: string, params?: LspParams): Promise<unknown>;
+   openFile(filePath: string, content: string): Promise<void>;
+   changeFile(filePath: string, content: string): Promise<void>;
+   closeFile(filePath: string): Promise<void>;
+@@ -67,7 +77,7 @@ export function createLspServerManager(workspaceFolder?: string): LspServerManag
+ 
+         // Handle workspace/configuration requests from servers that send them
+         // even when we say we don't support it (TypeScript does this)
+-        instance.onRequest("workspace/configuration", (params: any) => {
++        instance.onRequest<LspConfigurationParams, (null | undefined)[]>("workspace/configuration", (params) => {
+           return (params?.items || []).map(() => null);
+         });
+ 
+@@ -118,7 +128,7 @@ export function createLspServerManager(workspaceFolder?: string): LspServerManag
+   /**
+    * Send an LSP request to the appropriate server for the given file.
+    */
+-  async function sendRequest(filePath: string, method: string, params: any): Promise<unknown> {
++  async function sendRequest(filePath: string, method: string, params?: LspParams): Promise<unknown> {
+     const server = await ensureServerStarted(filePath);
+     if (!server) return undefined;
+ 
+diff --git a/src/types/agentic.ts b/src/types/agentic.ts
+index fd74adc..c2df957 100644
+--- a/src/types/agentic.ts
++++ b/src/types/agentic.ts
+@@ -51,14 +51,13 @@ export type SanitizedTask = Omit<AgenticTask, "_id">;
+ 
+ // ─── Collector Task (FreshnessService) ──────────────────────────
+ 
+-export interface CollectorTask {
++export interface CollectorTask<T = never> {
+   label: string;
+   collection: string;
+   ttl: number;
+   delay?: number;
+   collectFn: () => Promise<void>;
+-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Collectors pass domain-typed arrays; contravariance makes a precise generic impractical here
+-  restoreFn: (data: any) => void;
++  restoreFn: (data: T) => void;
+ }
+ 
+ // ─── Browser Script Execution ───────────────────────────────────
+diff --git a/ts_errors.txt b/ts_errors.txt
+index e69de29..22a4832 100644
+--- a/ts_errors.txt
++++ b/ts_errors.txt
+@@ -0,0 +1,4 @@
++
++> tools-service@0.2.0 typecheck
++> tsc --noEmit
++

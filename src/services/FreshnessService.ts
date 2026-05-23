@@ -19,7 +19,7 @@ export async function collectIfStale(
   collection: string,
   ttlMs: number,
   collectFn: () => Promise<void>,
-  restoreFn: (data: unknown) => void,
+  restoreFn: (data: never) => void,
 ) {
   const state = await loadState(collection);
 
@@ -29,7 +29,7 @@ export async function collectIfStale(
     if (ageMs < ttlMs) {
       const ageMinutes = Math.round(ageMs / 60_000);
       const ttlMinutes = Math.round(ttlMs / 60_000);
-      restoreFn(state.data);
+      (restoreFn as (data: unknown) => void)(state.data);
       logger.info(
         `[${label}] ♻️  Restored from DB (${ageMinutes}m old, TTL: ${ttlMinutes}m)`,
       );
@@ -53,7 +53,7 @@ export async function collectIfStale(
  * Handles initial stale check with staggered delays, then sets up intervals.
  * Eliminates the need to manually write setInterval lines per collector.
  */
-export function startCollectorLoop(tasks: CollectorTask[]) {
+export function startCollectorLoop(tasks: CollectorTask<never>[]) {
   for (const task of tasks) {
     setTimeout(
       () =>

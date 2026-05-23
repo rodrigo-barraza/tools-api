@@ -51,14 +51,13 @@ export type SanitizedTask = Omit<AgenticTask, "_id">;
 
 // ─── Collector Task (FreshnessService) ──────────────────────────
 
-export interface CollectorTask {
+export interface CollectorTask<T = never> {
   label: string;
   collection: string;
   ttl: number;
   delay?: number;
   collectFn: () => Promise<void>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Collectors pass domain-typed arrays; contravariance makes a precise generic impractical here
-  restoreFn: (data: any) => void;
+  restoreFn: (data: T) => void;
 }
 
 // ─── Browser Script Execution ───────────────────────────────────

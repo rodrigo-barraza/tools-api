@@ -18,17 +18,37 @@ const MAX_SCAN_ENTRIES = 200;
 // Project Summary
 // ────────────────────────────────────────────────────────────
 
+export interface TransformedProjectSummary {
+  path?: string;
+  name?: string;
+  packageManager?: string | null;
+  version?: string | null;
+  description?: string | null;
+  scripts?: Record<string, string>;
+  dependencies?: string[];
+  devDependencies?: string[];
+  frameworks?: string[];
+  type?: string;
+  readme?: string;
+  structure?: Record<string, number>;
+  totalFiles?: number;
+  totalDirectories?: number;
+  entryPoints?: string[];
+  configFiles?: string[];
+  error?: string;
+}
+
 /**
  * Scan a project root and return structured metadata.
  */
-export async function agenticProjectSummary(projectPath: any) {
+export async function agenticProjectSummary(projectPath: string): Promise<TransformedProjectSummary> {
   // Agent routing
   const agent = routeForPath(projectPath);
   if (agent) {
     try {
-      return await sendRpc(agent.id, "project.summary", { path: projectPath });
-    } catch (error: unknown) {
-      return { error: `Agent RPC failed: ${errorMessage(error)}` };
+      return await sendRpc(agent.id, "project.summary", { path: projectPath }) as TransformedProjectSummary;
+    } catch (err: unknown) {
+      return { error: `Agent RPC failed: ${errorMessage(err)}` };
     }
   }
 
@@ -48,7 +68,7 @@ export async function agenticProjectSummary(projectPath: any) {
     return { error: `Directory not found: ${root}` };
   }
 
-  const result: Record<string, unknown> = {
+  const result: TransformedProjectSummary = {
     path: root,
     name: root.split("/").pop(),
   };
@@ -67,7 +87,7 @@ export async function agenticProjectSummary(projectPath: any) {
 
     // Detect framework from dependencies
     const allDeps = { ...packageJson.dependencies, ...packageJson.devDependencies };
-    const frameworks: unknown[] = [];
+    const frameworks: string[] = [];
     if (allDeps["next"]) frameworks.push("next.js");
     if (allDeps["react"]) frameworks.push("react");
     if (allDeps["vue"]) frameworks.push("vue");
@@ -108,11 +128,11 @@ export async function agenticProjectSummary(projectPath: any) {
   }
 
   // ── Directory Structure ──────────────────────────────────
-  const structure: Record<string, unknown> = {};
+  const structure: Record<string, number> = {};
   let totalFiles = 0;
   let totalDirs = 0;
 
-  async function scanDir(dir: any, depth: any) {
+  async function scanDir(dir: string, depth: number) {
     if (depth > MAX_SCAN_DEPTH || totalFiles + totalDirs > MAX_SCAN_ENTRIES) return;
 
     try {
@@ -156,7 +176,7 @@ export async function agenticProjectSummary(projectPath: any) {
   result.totalDirectories = totalDirs;
 
   // ── Entry Points ─────────────────────────────────────────
-  const entryPoints: unknown[] = [];
+  const entryPoints: string[] = [];
   const candidates = [
     "src/app/layout.js", "src/app/layout.tsx", "src/app/page.js", "src/app/page.tsx",
     "src/index.js", "src/index.ts", "src/index.tsx",
@@ -176,7 +196,7 @@ export async function agenticProjectSummary(projectPath: any) {
   result.entryPoints = entryPoints;
 
   // ── Config Files ─────────────────────────────────────────
-  const configFiles: unknown[] = [];
+  const configFiles: string[] = [];
   const configCandidates = [
     "tsconfig.json", "jsconfig.json", ".eslintrc.js", "eslint.config.js",
     ".prettierrc", ".prettierrc.js", "prettier.config.js",

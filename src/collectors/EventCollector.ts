@@ -33,19 +33,18 @@ interface SourcedEvent {
 
 // ─── Collector Factory ─────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Fetcher return types are heterogeneous across sources; the EventCache normalizes them
-function createEventCollector(collection: string, source: string, fetchFn: () => Promise<any[]>) {
+function createEventCollector<T>(collection: string, source: string, fetchFn: () => Promise<T[]>) {
   return async function () {
     try {
       const events = await fetchFn();
-      const result = await updateEvents(source, events);
+      const result = await updateEvents(source, events as unknown as CachedEventParam);
       await saveState(collection, events);
       logger.info(
-        `[${collection}] ✅ ${events.length} events | ${result?.upserted || 0} new, ${result?.modified || 0} updated`,
+        `[${collection}]  ${events.length} events | ${result?.upserted || 0} new, ${result?.modified || 0} updated`,
       );
     } catch (error: unknown) {
       setError(source, { message: errorMessage(error) });
-      logger.error(`[${collection}] ❌ ${errorMessage(error)}`);
+      logger.error(`[${collection}]  ${errorMessage(error)}`);
     }
   };
 }
@@ -155,17 +154,7 @@ async function collectSports() {
 
 // ─── Startup Definitions ──────────────────────────────────────────
 
-interface CollectorTask {
-  label: string;
-  collection: string;
-  source?: string;
-  ttl: number;
-  collectFn: () => Promise<void>;
-  restoreFn?: (data: Record<string, unknown>) => void;
-  delay: number;
-}
-
-const STARTUP_TASKS: CollectorTask[] = [
+const STARTUP_TASKS = [
   {
     label: "Ticketmaster",
     collection: "events_ticketmaster",

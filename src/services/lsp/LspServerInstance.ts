@@ -2,7 +2,7 @@ import { sleep } from "@rodrigo-barraza/utilities-library";
 // ─── Single Server Lifecycle Manager ────────────────────────
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { createLspClient, LspClient } from "./LspClient.ts";
+import { createLspClient, LspClient, LspParams, LspParamValue } from "./LspClient.ts";
 import { LspServerConfig } from "./LspConfig.ts";
 import logger from "../../logger.ts";
 import { errorMessage } from "../../utilities.ts";
@@ -26,10 +26,10 @@ export interface LspServerInstance {
   stop(): Promise<void>;
   restart(): Promise<void>;
   isHealthy(): boolean;
-  sendRequest(method: string, params: any): Promise<unknown>;
-  sendNotification(method: string, params: any): Promise<void>;
-  onNotification(method: string, handler: (...args: unknown[]) => void): void;
-  onRequest(method: string, handler: (...args: unknown[]) => any): void;
+  sendRequest(method: string, params?: LspParams): Promise<unknown>;
+  sendNotification(method: string, params?: LspParams): Promise<void>;
+  onNotification<P = LspParams>(method: string, handler: (params: P) => void): void;
+  onRequest<P = LspParams, R = LspParamValue>(method: string, handler: (params: P) => Promise<R> | R): void;
 }
 
 /**
@@ -205,20 +205,20 @@ export function createLspServerInstance(name: string, config: LspServerConfig): 
   /**
    * Send an LSP request with exponential backoff retry on transient errors.
    */
-  async function sendRequest(method: string, params: any): Promise<unknown> {
+  async function sendRequest(method: string, params?: LspParams): Promise<unknown> {
     if (!isHealthy()) {
       throw new Error(
         `Cannot send request to LSP server '${name}': server is ${state}` +
         (lastError ? `, last error: ${lastError.message}` : ""),
       );
     }
-    let lastAttemptError: any;
+    let lastAttemptError: unknown = null;
     for (let attempt = 0; attempt <= MAX_RETRIES_FOR_TRANSIENT; attempt++) {
       try {
         return await client.sendRequest(method, params);
       } catch (error: unknown) {
         lastAttemptError = error;
-        const errorCode = (error as any)?.code;
+        const errorCode = (error && typeof error === "object" && "code" in error) ? (error as { code: unknown }).code : undefined;
         const isTransient = typeof errorCode === "number" && errorCode === LSP_ERROR_CONTENT_MODIFIED;
         if (isTransient && attempt < MAX_RETRIES_FOR_TRANSIENT) {
           const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
@@ -229,23 +229,24 @@ export function createLspServerInstance(name: string, config: LspServerConfig): 
         break;
       }
     }
+    const errMsg = lastAttemptError instanceof Error ? lastAttemptError.message : String(lastAttemptError);
     throw new Error(
-      `LSP request '${method}' failed for server '${name}': ${lastAttemptError?.message ?? "unknown error"}`,
+      `LSP request '${method}' failed for server '${name}': ${errMsg}`,
     );
   }
 
-  async function sendNotification(method: string, params: any): Promise<void> {
+  async function sendNotification(method: string, params?: LspParams): Promise<void> {
     if (!isHealthy()) {
       throw new Error(`Cannot send notification to LSP server '${name}': server is ${state}`);
     }
     await client.sendNotification(method, params);
   }
 
-  function onNotification(method: string, handler: (...args: unknown[]) => void): void {
+  function onNotification<P = LspParams>(method: string, handler: (params: P) => void): void {
     client.onNotification(method, handler);
   }
 
-  function onRequest(method: string, handler: (...args: unknown[]) => any): void {
+  function onRequest<P = LspParams, R = LspParamValue>(method: string, handler: (params: P) => Promise<R> | R): void {
     client.onRequest(method, handler);
   }
 

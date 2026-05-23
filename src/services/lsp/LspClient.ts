@@ -10,26 +10,29 @@ import {
 } from "vscode-jsonrpc/node.js";
 import { errorMessage } from "../../utilities.ts";
 
+export type LspParamValue = string | number | boolean | null | { [key: string]: LspParamValue } | LspParamValue[];
+export type LspParams = Record<string, LspParamValue> | LspParamValue[] | string | number | boolean | null;
+
 export interface LspClient {
   readonly capabilities: Record<string, unknown> | null;
   readonly isInitialized: boolean;
   start(command: string, args: string[], options?: { env?: Record<string, string>; cwd?: string }): Promise<void>;
   initialize(params: Record<string, unknown>): Promise<unknown>;
-  sendRequest(method: string, params: any): Promise<unknown>;
-  sendNotification(method: string, params: any): Promise<void>;
-  onNotification(method: string, handler: (...args: unknown[]) => void): void;
-  onRequest(method: string, handler: (...args: unknown[]) => any): void;
+  sendRequest(method: string, params?: LspParams): Promise<unknown>;
+  sendNotification(method: string, params?: LspParams): Promise<void>;
+  onNotification<P = LspParams>(method: string, handler: (params: P) => void): void;
+  onRequest<P = LspParams, R = LspParamValue>(method: string, handler: (params: P) => Promise<R> | R): void;
   stop(): Promise<void>;
 }
 
 interface PendingNotification {
   method: string;
-  handler: (...args: unknown[]) => void;
+  handler: (params: never) => void;
 }
 
 interface PendingRequest {
   method: string;
-  handler: (...args: unknown[]) => any;
+  handler: (params: never) => Promise<never> | never;
 }
 
 /**
@@ -162,12 +165,12 @@ export function createLspClient(
 
         // 8. Apply queued handlers
         for (const { method, handler } of pendingNotificationHandlers) {
-          connection.onNotification(method, handler);
+          connection.onNotification(method, handler as unknown as (params: unknown) => void);
         }
         pendingNotificationHandlers.length = 0;
 
         for (const { method, handler } of pendingRequestHandlers) {
-          connection.onRequest(method, handler);
+          connection.onRequest(method, handler as unknown as (params: unknown) => Promise<unknown> | unknown);
         }
         pendingRequestHandlers.length = 0;
 
@@ -204,7 +207,7 @@ export function createLspClient(
     /**
      * Send an LSP request and return the result.
      */
-    async sendRequest(method: string, params: any): Promise<unknown> {
+    async sendRequest(method: string, params?: LspParams): Promise<unknown> {
       if (!connection) throw new Error("LSP client not started");
       checkStartFailed();
       if (!isInitialized) throw new Error("LSP server not initialized");
@@ -220,7 +223,7 @@ export function createLspClient(
     /**
      * Send an LSP notification (fire-and-forget).
      */
-    async sendNotification(method: string, params: any): Promise<void> {
+    async sendNotification(method: string, params?: LspParams): Promise<void> {
       if (!connection) throw new Error("LSP client not started");
       checkStartFailed();
 
@@ -235,9 +238,9 @@ export function createLspClient(
     /**
      * Register a handler for notifications FROM the server.
      */
-    onNotification(method: string, handler: (...args: unknown[]) => void): void {
+    onNotification<P = LspParams>(method: string, handler: (params: P) => void): void {
       if (!connection) {
-        pendingNotificationHandlers.push({ method, handler });
+        pendingNotificationHandlers.push({ method, handler: handler as unknown as (params: never) => void });
         return;
       }
       checkStartFailed();
@@ -247,9 +250,9 @@ export function createLspClient(
     /**
      * Register a handler for requests FROM the server (reverse direction).
      */
-    onRequest(method: string, handler: (...args: unknown[]) => any): void {
+    onRequest<P = LspParams, R = LspParamValue>(method: string, handler: (params: P) => Promise<R> | R): void {
       if (!connection) {
-        pendingRequestHandlers.push({ method, handler });
+        pendingRequestHandlers.push({ method, handler: handler as unknown as (params: never) => Promise<never> | never });
         return;
       }
       checkStartFailed();

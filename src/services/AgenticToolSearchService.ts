@@ -19,7 +19,16 @@ export interface AgenticToolSearchOptions {
   limit?: number;
 }
 
-export function agenticToolSearch(query: string, { domain, label, limit = 20 }: AgenticToolSearchOptions = {}) {
+export interface TransformedToolSearchResult {
+  matches?: ToolSearchMatch[];
+  total?: number;
+  query?: string | null;
+  domain?: string | null;
+  label?: string | null;
+  error?: string;
+}
+
+export function agenticToolSearch(query: string, { domain, label, limit = 20 }: AgenticToolSearchOptions = {}): TransformedToolSearchResult {
   const allSchemas = getToolSchemas();
 
   if (!allSchemas || allSchemas.length === 0) {

@@ -27,8 +27,18 @@ import { errorMessage } from "../utilities.ts";
 // Lazily resolved — WORKSPACE_ROOTS may be empty at import time
 // (e.g. when users configure workspaces via the Settings UI).
 
-let _fixtureDir: any;
-let _fixtureFile: any;
+export type ToolTestResult = Record<string, unknown> | unknown[] | string | number | boolean | null | undefined | object;
+
+export interface TransformedToolTestResult {
+  tool: string;
+  success: boolean;
+  duration: number;
+  message: string;
+  details?: ToolTestResult;
+}
+
+let _fixtureDir: string | undefined;
+let _fixtureFile: string | undefined;
 
 function getFixtureDir() {
   if (!_fixtureDir) {
@@ -86,19 +96,19 @@ async function cleanupFixture() {
 
 // ── Test Runner ──────────────────────────────────────────────
 
-async function runTest(name: any, fn: any) {
+async function runTest(name: string, fn: () => Promise<ToolTestResult> | ToolTestResult): Promise<TransformedToolTestResult> {
   const start = performance.now();
   try {
     const result = await fn();
     const duration = Math.round(performance.now() - start);
 
     // Check if the service returned an error object
-    if (result?.error) {
+    if (result && typeof result === "object" && !Array.isArray(result) && "error" in result) {
       return {
         tool: name,
         success: false,
         duration,
-        message: result.error,
+        message: String((result as { error: unknown }).error),
         details: result,
       };
     }
@@ -174,7 +184,7 @@ const TESTS = {
 
   multi_file_read: () =>
     runTest("multi_file_read", () =>
-      agenticMultiFileRead([getFixtureFile()]),
+      agenticMultiFileRead([{ path: getFixtureFile() }]),
     ),
 
   file_info: () =>
@@ -257,7 +267,7 @@ const TESTS = {
   // ── Tool Discovery (meta) ────────────────────────────────
 
   tool_search: () =>
-    runTest("tool_search", () => {
+    runTest("tool_search", async () => {
       // Synchronous — returns directly
       return agenticToolSearch("file", { label: "coding", limit: 5 });
     }),

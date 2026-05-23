@@ -7,7 +7,30 @@ const API_URL = "https://511ny.org/api/getcameras?key=public&format=json";
  * Shared fetcher for New York 511 cameras.
  * Filters by geographic bounding box and upserts results.
  */
-export async function fetchNY511Cameras({ city, idPrefix, bounds }: any) {
+interface FetchNY511CamerasParams {
+  city: string;
+  idPrefix: string;
+  bounds: {
+    minLat: number;
+    maxLat: number;
+    minLon: number;
+    maxLon: number;
+  };
+}
+
+interface NY511CameraItem {
+  ID: string | number;
+  Latitude: number;
+  Longitude: number;
+  Disabled?: boolean;
+  Blocked?: boolean;
+  Name?: string;
+  VideoUrl?: string;
+  Url: string;
+  RoadwayName?: string;
+}
+
+export async function fetchNY511Cameras({ city, idPrefix, bounds }: FetchNY511CamerasParams) {
   const response = await fetch(API_URL, {
     headers: buildScraperHeaders(),
     signal: AbortSignal.timeout(30000),
@@ -17,7 +40,7 @@ export async function fetchNY511Cameras({ city, idPrefix, bounds }: any) {
     throw new Error(`Failed to fetch NY511 cameras for ${city}: ${response.status}`);
   }
 
-  const data = await response.json();
+  const data = await response.json() as NY511CameraItem[];
   if (!Array.isArray(data) || data.length === 0) return;
 
   const parsedWebcams: WebcamDocument[] = [];

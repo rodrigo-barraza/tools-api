@@ -1,6 +1,18 @@
 import { buildScraperHeaders } from "../../../../utilities.ts";
 import { upsertWebcams, type WebcamDocument } from "../../../../models/Webcam.ts";
 
+interface CalgaryCamera {
+  camera_location?: string;
+  quadrant?: string;
+  camera_url?: {
+    url?: string;
+    description?: string;
+  };
+  point?: {
+    coordinates?: [number, number];
+  };
+}
+
 export async function refreshCalgaryWebcams() {
   // Open Calgary SODA API (Socrata)
   let allParsedWebcams: WebcamDocument[] = [];
@@ -16,13 +28,13 @@ export async function refreshCalgaryWebcams() {
       throw new Error(`Failed to fetch Calgary webcams (offset: ${offset}): ${response.status}`);
     }
     
-    const data = await response.json();
+    const data = await response.json() as CalgaryCamera[];
     if (!Array.isArray(data) || data.length === 0) {
       hasMore = false;
       break;
     }
 
-    const parsedWebcams = data.map((cam: any, index: any) => {
+    const parsedWebcams = data.map((cam: CalgaryCamera, index: number): WebcamDocument => {
       const lat = cam.point?.coordinates ? cam.point.coordinates[1] : null;
       const lon = cam.point?.coordinates ? cam.point.coordinates[0] : null;
       
@@ -37,7 +49,7 @@ export async function refreshCalgaryWebcams() {
         country: "CA",
         source: "data.calgary.ca"
       };
-    }).filter((c: any) => c.url);
+    }).filter((c: WebcamDocument) => !!c.url);
 
     allParsedWebcams = allParsedWebcams.concat(parsedWebcams);
     

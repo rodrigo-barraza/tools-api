@@ -6,7 +6,37 @@ import { upsertWebcams, type WebcamDocument } from "../../../../models/Webcam.ts
  * These APIs return JSON arrays of camera objects with Views arrays
  * containing CCTV page URLs.
  */
-export async function fetch511Cameras({ apiUrl, city, country, source, idPrefix, bounds }: any) {
+interface Fetch511CamerasParams {
+  apiUrl: string;
+  city: string;
+  country: string;
+  source: string;
+  idPrefix: string;
+  bounds?: {
+    minLat: number;
+    maxLat: number;
+    minLon: number;
+    maxLon: number;
+  };
+}
+
+interface CameraView {
+  Id: number | string;
+  Status: string;
+  Description?: string;
+  Url: string;
+}
+
+interface CameraItem {
+  Id: number | string;
+  Latitude: number;
+  Longitude: number;
+  Location?: string;
+  Roadway?: string;
+  Views: CameraView[];
+}
+
+export async function fetch511Cameras({ apiUrl, city, country, source, idPrefix, bounds }: Fetch511CamerasParams) {
   const url = `${apiUrl}?format=json`;
   const response = await fetch(url, {
     headers: buildScraperHeaders(),
@@ -17,7 +47,7 @@ export async function fetch511Cameras({ apiUrl, city, country, source, idPrefix,
     throw new Error(`Failed to fetch ${city} webcams from ${source}: ${response.status}`);
   }
 
-  const data = await response.json();
+  const data = await response.json() as CameraItem[];
   if (!Array.isArray(data) || data.length === 0) {
     return;
   }

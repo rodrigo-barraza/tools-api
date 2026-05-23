@@ -1,17 +1,9 @@
-const TRAJECTORY_BUFFER_SIZE = 100;
+import { IssPosition, AstronautsResponse } from "../fetchers/weather/IssFetcher.ts";
 
-interface IssPosition {
-  latitude: number;
-  longitude: number;
-  [key: string]: unknown;
-}
+const TRAJECTORY_BUFFER_SIZE = 100;
 
 interface TrajectoryPoint extends IssPosition {
   recordedAt: Date;
-}
-
-interface AstronautData {
-  [key: string]: unknown;
 }
 
 interface CacheError {
@@ -21,7 +13,7 @@ interface CacheError {
 
 const cache: {
   position: IssPosition | null;
-  astronauts: AstronautData | null;
+  astronauts: AstronautsResponse | null;
   trajectory: TrajectoryPoint[];
   lastPositionFetch: Date | null;
   lastAstrosFetch: Date | null;
@@ -62,7 +54,7 @@ export function setIssPositionError(error: { message: string }) {
 /**
  * Update astronaut roster.
  */
-export function updateAstronauts(data: AstronautData) {
+export function updateAstronauts(data: AstronautsResponse) {
   cache.astronauts = data;
   cache.lastAstrosFetch = new Date();
   cache.astrosError = null;

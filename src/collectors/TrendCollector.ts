@@ -30,14 +30,12 @@ import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
 
 // ─── Collector Factory ─────────────────────────────────────────────
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- fetchFn returns diverse trend types per source
-function createTrendCollector(collection: string, source: string, fetchFn: () => Promise<any[]>, noun: string = "trends") {
+function createTrendCollector<T>(collection: string, source: string, fetchFn: () => Promise<T[]>, noun: string = "trends") {
   return async function () {
     try {
       const trends = await fetchFn();
-      updateTrends(source, trends);
-      const result = await upsertTrends(trends);
+      updateTrends(source, trends as unknown as CachedTrend[]);
+      const result = await upsertTrends(trends as unknown as Parameters<typeof upsertTrends>[0]);
       await saveState(collection, { source, trends });
       logger.info(
         `[${collection}] ✅ ${trends.length} ${noun} | ${result.upserted} new, ${result.modified} updated`,
@@ -48,7 +46,6 @@ function createTrendCollector(collection: string, source: string, fetchFn: () =>
     }
   };
 }
-
 // ─── Collectors ────────────────────────────────────────────────────
 
 const collectGoogleTrends = createTrendCollector("trends_google", TREND_SOURCES.GOOGLE_TRENDS, fetchGoogleTrends);

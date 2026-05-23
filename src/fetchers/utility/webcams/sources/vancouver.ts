@@ -1,6 +1,17 @@
 import { buildScraperHeaders } from "../../../../utilities.ts";
 import { upsertWebcams, type WebcamDocument } from "../../../../models/Webcam.ts";
 
+interface VancouverCamera {
+  mapid: string;
+  name: string;
+  url: string;
+  geo_local_area?: string;
+  geo_point_2d?: {
+    lat?: number;
+    lon?: number;
+  };
+}
+
 export async function refreshVancouverWebcams() {
   // Vancouver opendata caps at 100 per request. Paginate until we get all.
   let allParsedWebcams: WebcamDocument[] = [];
@@ -19,7 +30,7 @@ export async function refreshVancouverWebcams() {
     const data = await response.json();
     totalCount = data.total_count;
 
-    const parsedWebcams = data.results.map((cam: any) => ({
+    const parsedWebcams = (data.results as VancouverCamera[]).map((cam: VancouverCamera): WebcamDocument => ({
       id: cam.mapid,
       name: cam.name,
       url: cam.url, // HTML page containing the camera image

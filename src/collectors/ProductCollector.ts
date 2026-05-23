@@ -19,7 +19,7 @@ import {
   fetchAllCostcoUS,
   fetchAllCostcoCA,
 } from "../fetchers/product/CostcoFetcher.ts";
-import { updateProducts, setProductError } from "../caches/ProductCache.ts";
+import { updateProducts, setProductError, type Product } from "../caches/ProductCache.ts";
 import {
   getWatchedSkus,
   getWatchlistMetadata,
@@ -31,14 +31,12 @@ import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
 
 // ─── Collector Factory ─────────────────────────────────────────────
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Fetcher return types vary per source
-function createProductCollector(collection: string, source: string, fetchFn: () => Promise<any[]>) {
+function createProductCollector<T>(collection: string, source: string, fetchFn: () => Promise<T[]>) {
   return async function () {
     try {
       const products = await fetchFn();
-      updateProducts(source, products);
-      const result = await upsertProducts(products);
+      updateProducts(source, products as unknown as Product[]);
+      const result = await upsertProducts(products as unknown as Parameters<typeof upsertProducts>[0]);
       await saveState(collection, { source, products });
       logger.info(
         `[${collection}] ✅ ${products.length} products | ${result.upserted} new, ${result.modified} updated`,

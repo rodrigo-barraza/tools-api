@@ -1,5 +1,5 @@
 import { buildScraperHeaders } from "../../../../utilities.ts";
-import { upsertWebcams } from "../../../../models/Webcam.ts";
+import { upsertWebcams, type WebcamDocument } from "../../../../models/Webcam.ts";
 
 export async function refreshAustinWebcams() {
   // City of Austin Open Data (Socrata SODA API)
@@ -16,7 +16,19 @@ export async function refreshAustinWebcams() {
     return;
   }
 
-  const parsedWebcams = data.map((cam: any) => {
+interface AustinCamera {
+  camera_id?: string | number;
+  id?: string | number;
+  location_name?: string;
+  screenshot_address?: string;
+  signal_eng_area?: string;
+  camera_status?: string;
+  location?: {
+    coordinates?: [number, number];
+  };
+}
+
+  const parsedWebcams = (data as AustinCamera[]).map((cam: AustinCamera): WebcamDocument | null => {
     const lat = cam.location?.coordinates ? cam.location.coordinates[1] : null;
     const lon = cam.location?.coordinates ? cam.location.coordinates[0] : null;
 
@@ -36,7 +48,7 @@ export async function refreshAustinWebcams() {
       country: "US",
       source: "data.austintexas.gov"
     };
-  }).filter((c: any) => c && c.url);
+  }).filter((c): c is WebcamDocument => !!(c && c.url));
 
-  await upsertWebcams(parsedWebcams as any);
+  await upsertWebcams(parsedWebcams);
 }

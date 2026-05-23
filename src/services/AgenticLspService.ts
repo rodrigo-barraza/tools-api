@@ -3,7 +3,9 @@
 import { readFile, stat } from "node:fs/promises";
 import { resolve, extname, relative, dirname } from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
+
 import { getLspManager, shutdownAllLspManagers, getAllLspHealth } from "./lsp/LspServerManager.ts";
+import type { LspParams } from "./lsp/LspClient.ts";
 import { ALLOWED_ROOTS } from "./AgenticFileService.ts";
 import { errorMessage } from "../utilities.ts";
 
@@ -228,7 +230,7 @@ export async function agenticLspAction({ operation, filePath, line, character, w
   // ── 8. Send request ────────────────────────────────────────
   let result: unknown;
   try {
-    result = await manager.sendRequest(resolvedPath, opDef.method, lspParams);
+    result = await manager.sendRequest(resolvedPath, opDef.method, lspParams as LspParams);
   } catch (error: unknown) {
     return { error: `LSP request '${opDef.method}' failed: ${errorMessage(error)}` };
   }

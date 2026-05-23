@@ -13,7 +13,7 @@ import { TIMEZONE_BASE_URL } from "../../constants.ts";
 
 
  */
-export async function getTimeInTimezone(timezone: any) {
+export async function getTimeInTimezone(timezone: string) {
   const url = `${TIMEZONE_BASE_URL}/timezone/${encodeURIComponent(timezone)}`;
   const response = await fetch(url);
 
@@ -50,7 +50,7 @@ export async function getTimeInTimezone(timezone: any) {
 
 
  */
-export async function listTimezones(area: any) {
+export async function listTimezones(area?: string) {
   const path = area ? `/timezone/${encodeURIComponent(area)}` : "/timezone";
   const url = `${TIMEZONE_BASE_URL}${path}`;
   const response = await fetch(url);

@@ -1,6 +1,14 @@
 import { buildScraperHeaders } from "../../../../utilities.ts";
 import { upsertWebcams, type WebcamDocument } from "../../../../models/Webcam.ts";
 
+interface TorontoCamera {
+  REC_ID: string | number;
+  geometry?: string;
+  MAINROAD?: string;
+  CROSSROAD?: string;
+  IMAGEURL?: string;
+}
+
 export async function refreshTorontoWebcams() {
   // Toronto Open Data CKAN API
   let allParsedWebcams: WebcamDocument[] = [];
@@ -23,8 +31,8 @@ export async function refreshTorontoWebcams() {
 
     totalCount = data.result.total;
 
-    const parsedWebcams = data.result.records.map((cam: any) => {
-      let lat = null, lon = null;
+    const parsedWebcams = (data.result.records as TorontoCamera[]).map((cam: TorontoCamera): WebcamDocument => {
+      let lat: number | null = null, lon: number | null = null;
       if (cam.geometry) {
         try {
           const geo = JSON.parse(cam.geometry);
@@ -42,7 +50,7 @@ export async function refreshTorontoWebcams() {
       return {
         id: `TOR-${cam.REC_ID}`, // Ensure uniqueness across cities just in case
         name: name || `Camera ${cam.REC_ID}`,
-        url: cam.IMAGEURL,
+        url: cam.IMAGEURL || "",
         area: "Toronto", // Could be parsed if more detail is needed, but just Toronto works for now
         latitude: lat,
         longitude: lon,

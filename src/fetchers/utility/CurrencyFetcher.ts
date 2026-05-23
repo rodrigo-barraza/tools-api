@@ -8,7 +8,14 @@ import { EXCHANGE_RATE_BASE_URL } from "../../constants.ts";
 
 // ─── In-Memory Rate Cache ──────────────────────────────────────────
 
-const rateCache = new Map();
+interface CachedRates {
+  base: string;
+  lastUpdate: string;
+  nextUpdate: string;
+  rates: Record<string, number>;
+}
+
+const rateCache = new Map<string, { data: CachedRates; fetchedAt: number }>();
 const RATE_CACHE_TTL_MS = 3_600_000; // 1 hour — rates update daily on free tier
 
 // ─── Fetch Latest Rates ────────────────────────────────────────────
@@ -18,7 +25,7 @@ const RATE_CACHE_TTL_MS = 3_600_000; // 1 hour — rates update daily on free ti
 
 
  */
-async function fetchRates(base: any = "USD") {
+async function fetchRates(base: string = "USD"): Promise<CachedRates> {
   const upperBase = base.toUpperCase();
 
   // Check cache
@@ -60,7 +67,7 @@ async function fetchRates(base: any = "USD") {
 
 
  */
-export async function convertCurrency(amount: any, from: any, to: any) {
+export async function convertCurrency(amount: number, from: string, to: string) {
   const upperFrom = from.toUpperCase();
   const upperTo = to.toUpperCase();
 
