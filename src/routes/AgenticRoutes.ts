@@ -386,7 +386,7 @@ router.post("/command/stream", asyncHandler(async (req: Request, res: Response) 
   const result = await executeCommandStreaming(command, {
     cwd: cwd || undefined,
     timeout: timeout ? Math.min(parseInt(timeout, 10), 120_000) : undefined,
-    onChunk: (event: any, data: any) => send({ event, data }),
+    onChunk: (event: string, data: string) => send({ event, data }),
     signal: ac.signal,
   });
   // Guard: response may already be closed if the client disconnected
@@ -656,12 +656,12 @@ router.get("/task/list-all", asyncHandler(async (req: Request) => {
   const allTasks = await collection.find(summaryFilter).toArray();
   const summary = {
     total: allTasks.length,
-    pending: allTasks.filter((t: any) => t.status === "pending").length,
-    in_progress: allTasks.filter((t: any) => t.status === "in_progress").length,
-    completed: allTasks.filter((t: any) => t.status === "completed").length,
+    pending: allTasks.filter((t) => t.status === "pending").length,
+    in_progress: allTasks.filter((t) => t.status === "in_progress").length,
+    completed: allTasks.filter((t) => t.status === "completed").length,
   };
   // Sanitize _id
-  const sanitized = tasks.map(({ _id, ...rest }: any) => rest);
+  const sanitized = tasks.map(({ _id, ...rest }) => rest);
   return { tasks: sanitized, summary };
 }, "Task list-all", 500));
 // ── Get Task ──────────────────────────────────────────────────
@@ -810,8 +810,8 @@ router.post("/custom-agent/create", asyncHandler(async (req: Request, res: Respo
   }
   // ── Validate enabledTools against the tool registry ──────────
   if (Array.isArray(enabledTools) && enabledTools.length > 0) {
-    const knownToolNames = new Set(TOOL_DEFINITIONS.map((t: any) => t.name));
-    const unknownTools = enabledTools.filter((t: any) => !knownToolNames.has(t));
+    const knownToolNames = new Set(TOOL_DEFINITIONS.map((t) => t.name));
+    const unknownTools = enabledTools.filter((t: string) => !knownToolNames.has(t));
     if (unknownTools.length > 0) {
       return res.status(400).json({
         error: `Unknown tool(s) in enabledTools: ${unknownTools.join(", ")}. ` +
@@ -898,8 +898,8 @@ router.post("/custom-agent/update", asyncHandler(async (req: Request, res: Respo
   }
   // ── Validate enabledTools against the tool registry ──────────
   if (Array.isArray(enabledTools) && enabledTools.length > 0) {
-    const knownToolNames = new Set(TOOL_DEFINITIONS.map((t: any) => t.name));
-    const unknownTools = enabledTools.filter((t: any) => !knownToolNames.has(t));
+    const knownToolNames = new Set(TOOL_DEFINITIONS.map((t) => t.name));
+    const unknownTools = enabledTools.filter((t: string) => !knownToolNames.has(t));
     if (unknownTools.length > 0) {
       return res.status(400).json({
         error: `Unknown tool(s) in enabledTools: ${unknownTools.join(", ")}. ` +

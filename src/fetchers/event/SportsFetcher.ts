@@ -28,7 +28,8 @@ async function fetchCanucksGames() {
   const data = await response.json();
   const games = data.games || [];
 
-  return games.map((game: any) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- NHL API returns dynamic JSON
+  return games.map((game: Record<string, any>) => {
     const isHome = game.homeTeam?.abbrev === "VAN";
     const opponent = isHome ? game.awayTeam : game.homeTeam;
     const opponentName =
@@ -38,7 +39,7 @@ async function fetchCanucksGames() {
       sourceId: `nhl-${game.id}`,
       source: EVENT_SOURCES.NHL,
       name: isHome ? `Canucks vs ${opponentName}` : `Canucks @ ${opponentName}`,
-      description: `${game.season} NHL Regular Season${game.tvBroadcasts?.length ? ` — ${game.tvBroadcasts.map((b: any) => b.network).join(", ")}` : ""}`,
+      description: `${game.season} NHL Regular Season${game.tvBroadcasts?.length ? ` — ${game.tvBroadcasts.map((b: { network: string }) => b.network).join(", ")}` : ""}`,
       url:
         game.ticketsLink || `https://www.nhl.com${game.gameCenterLink || ""}`,
       imageUrl: isHome ? opponent?.logo || null : game.homeTeam?.logo || null,
@@ -65,7 +66,7 @@ async function fetchCanucksGames() {
 /**
  * Fetch upcoming events for a team from TheSportsDB.
  */
-async function fetchSportsDbEvents(teamId: any, source: any, teamName: any, sport: any) {
+async function fetchSportsDbEvents(teamId: string, source: string, teamName: string, sport: string) {
   const url = `${SPORTSDB_BASE}/eventsnext.php?id=${teamId}`;
   const response = await fetch(url);
 
@@ -76,7 +77,8 @@ async function fetchSportsDbEvents(teamId: any, source: any, teamName: any, spor
   const data = await response.json();
   const events = data.events || [];
 
-  return events.map((event: any) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TheSportsDB API returns dynamic JSON
+  return events.map((event: Record<string, any>) => {
     const isHome = event.idHomeTeam === teamId;
     const venueName = event.strVenue || null;
 
@@ -136,7 +138,7 @@ export async function fetchSportsEvents() {
   const events: unknown[] = [];
   const labels = ["Canucks", "Whitecaps", "BC Lions"];
 
-  results.forEach((result: any, i: any) => {
+  results.forEach((result, i) => {
     if (result.status === "fulfilled") {
       events.push(...result.value);
     } else {

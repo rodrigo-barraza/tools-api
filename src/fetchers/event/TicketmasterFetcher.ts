@@ -13,7 +13,7 @@ const BASE_URL = "https://app.ticketmaster.com/discovery/v2/events.json";
 /**
  * Map Ticketmaster segment name to our normalized category.
  */
-function normalizeCategory(segment: any) {
+function normalizeCategory(segment: string | null) {
   if (!segment) return EVENT_CATEGORIES.OTHER;
   return TICKETMASTER_CATEGORY_MAP[segment] || EVENT_CATEGORIES.OTHER;
 }
@@ -37,7 +37,8 @@ function mapTicketmasterStatus(statusCode: string | undefined): string {
 /**
  * Extract price range from Ticketmaster event.
  */
-function extractPriceRange(event: any) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Ticketmaster API returns dynamic event JSON
+function extractPriceRange(event: Record<string, any>) {
   const prices = event.priceRanges;
   if (!prices || prices.length === 0) return null;
   const first = prices[0];
@@ -51,7 +52,8 @@ function extractPriceRange(event: any) {
 /**
  * Extract venue info from Ticketmaster event.
  */
-function extractVenue(event: any) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Ticketmaster API returns dynamic event JSON
+function extractVenue(event: Record<string, any>) {
   const venues = event._embedded?.venues;
   if (!venues || venues.length === 0) {
     return {
@@ -80,7 +82,8 @@ function extractVenue(event: any) {
 /**
  * Extract genre strings from Ticketmaster classifications.
  */
-function extractGenres(event: any) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Ticketmaster API returns dynamic event JSON
+function extractGenres(event: Record<string, any>) {
   const classifications = event.classifications;
   if (!classifications) return [];
 
@@ -99,11 +102,12 @@ function extractGenres(event: any) {
 /**
  * Normalize a single Ticketmaster event to our unified schema.
  */
-function normalizeEvent(event: any) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Ticketmaster API returns dynamic event JSON
+function normalizeEvent(event: Record<string, any>) {
   const segment = event.classifications?.[0]?.segment?.name || null;
-  const images = event.images || [];
+  const images: Array<{ ratio?: string; width?: number; url?: string }> = event.images || [];
   const bestImage =
-    images.find((i: any) => i.ratio === "16_9" && i.width >= 640) ||
+    images.find((i) => i.ratio === "16_9" && (i.width ?? 0) >= 640) ||
     images[0] ||
     null;
 

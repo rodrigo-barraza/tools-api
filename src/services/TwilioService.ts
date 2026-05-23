@@ -5,7 +5,7 @@ import CONFIG from "../config.ts";
 
 // ─── Lazy Client ───────────────────────────────────────────────────
 
-let client: any = null;
+let client: ReturnType<typeof twilio> | null = null;
 
 function getClient() {
   if (!client) {
@@ -24,7 +24,7 @@ function getClient() {
 
 
  */
-export async function sendSms(to: any, body: any, from: any) {
+export async function sendSms(to: string, body: string, from: string) {
   const c = getClient();
 
   // Resolve sender if not provided
@@ -75,7 +75,7 @@ export async function listMessages(filters: Record<string, unknown> = {}) {
 
   return {
     count: messages.length,
-    messages: messages.map((m: any) => ({
+    messages: messages.map((m: Record<string, any>) => ({
       sid: m.sid,
       to: m.to,
       from: m.from,
@@ -100,7 +100,7 @@ export async function listMessages(filters: Record<string, unknown> = {}) {
  */
 export async function getAccountInfo() {
   const c = getClient();
-  const account = await c.api.accounts(CONFIG.TWILIO_ACCOUNT_SID).fetch();
+  const account = await c.api.accounts(CONFIG.TWILIO_ACCOUNT_SID!).fetch();
   const balance = await c.balance.fetch();
 
   return {
@@ -121,7 +121,7 @@ export async function getAccountInfo() {
 
 
  */
-export async function lookupPhone(phone: any) {
+export async function lookupPhone(phone: string) {
   const c = getClient();
   const result = await c.lookups.v2.phoneNumbers(phone).fetch({
     fields: "line_type_intelligence",
@@ -132,7 +132,7 @@ export async function lookupPhone(phone: any) {
     nationalFormat: result.nationalFormat,
     countryCode: result.countryCode,
     callerName: result.callerName || null,
-    carrier: result.carrier || null,
+    carrier: (result as unknown as Record<string, unknown>).carrier || null,
     lineTypeIntelligence: result.lineTypeIntelligence || null,
     valid: result.valid,
     validationErrors: result.validationErrors || [],
@@ -151,7 +151,7 @@ export async function listPhoneNumbers() {
 
   return {
     count: numbers.length,
-    phoneNumbers: numbers.map((n: any) => ({
+    phoneNumbers: numbers.map((n: Record<string, any>) => ({
       sid: n.sid,
       phoneNumber: n.phoneNumber,
       friendlyName: n.friendlyName,

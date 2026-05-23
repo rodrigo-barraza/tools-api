@@ -97,7 +97,7 @@ router.get("/products/availability/check", asyncHandler(async (req: Request, res
   }
   const skus = skusParam
     .split(",")
-    .map((s: any) => s.trim())
+    .map((s: string) => s.trim())
     .filter(Boolean);
   if (!skus.length) {
     return res.status(400).json({ error: "No valid SKUs provided" });
@@ -106,7 +106,7 @@ router.get("/products/availability/check", asyncHandler(async (req: Request, res
     const { results, errors } = await fetchBestBuyCAAvailability(skus);
     res.json({
       count: results.length,
-      inStockCount: results.filter((r: any) => r.inStock).length,
+      inStockCount: results.filter((r) => (r as Record<string, unknown>).inStock).length,
       results,
       errors: errors.length ? errors : undefined,
     });
@@ -139,7 +139,7 @@ router.delete("/products/availability/watchlist/:sku", (req: Request, res: Respo
   res.json({ ...result, watchlist: getWatchlist() });
 });
 // ─── Health ────────────────────────────────────────────────────────
-export function getProductHealth(): any {
+export function getProductHealth() {
   return {
     products: getHealth(),
     availability: getAvailabilityHealth(),

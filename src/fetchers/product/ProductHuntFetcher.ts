@@ -57,18 +57,18 @@ const POSTS_QUERY = `
 /**
  * Map Product Hunt topics to a unified category.
  */
-function mapTopicToCategory(topics: any) {
-  const topicNames = topics.map((t: any) => t.toLowerCase());
-  if (topicNames.some((t: any) => t.includes("gaming") || t.includes("game")))
+function mapTopicToCategory(topics: string[]) {
+  const topicNames = topics.map((t) => t.toLowerCase());
+  if (topicNames.some((t) => t.includes("gaming") || t.includes("game")))
     return "gaming";
-  if (topicNames.some((t: any) => t.includes("developer") || t.includes("api")))
+  if (topicNames.some((t) => t.includes("developer") || t.includes("api")))
     return "software";
-  if (topicNames.some((t: any) => t.includes("home") || t.includes("smart home")))
+  if (topicNames.some((t) => t.includes("home") || t.includes("smart home")))
     return "home";
-  if (topicNames.some((t: any) => t.includes("health") || t.includes("fitness")))
+  if (topicNames.some((t) => t.includes("health") || t.includes("fitness")))
     return "sports";
   if (
-    topicNames.some((t: any) => t.includes("productivity") || t.includes("office"))
+    topicNames.some((t) => t.includes("productivity") || t.includes("office"))
   )
     return "office";
   // Default for Product Hunt — mostly tech/software
@@ -104,13 +104,14 @@ export async function fetchProductHuntTrending() {
   const data = await response.json();
   if (data.errors) {
     throw new Error(
-      `Product Hunt GraphQL errors: ${data.errors.map((e: any) => e.message).join(", ")}`,
+      `Product Hunt GraphQL errors: ${data.errors.map((e: { message: string }) => e.message).join(", ")}`,
     );
   }
   const edges = data?.data?.posts?.edges || [];
-  const products = edges.map((edge: any, index: any) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Product Hunt GraphQL returns dynamic node shapes
+  const products = edges.map((edge: Record<string, any>, index: number) => {
     const node = edge.node;
-    const topics = node.topics?.edges?.map((e: any) => e.node.name) || [];
+    const topics: string[] = node.topics?.edges?.map((e: { node: { name: string } }) => e.node.name) || [];
     const product = {
       sourceId: node.id,
       source: PRODUCT_SOURCES.PRODUCTHUNT,

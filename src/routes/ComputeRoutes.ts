@@ -1770,13 +1770,14 @@ router.post("/image/process", asyncHandler(async (req: Request, res: Response) =
     return res.status(400).json({ error: "'operations' must be a non-empty array of operation objects" });
   }
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- processImage returns a union; we narrow dynamically
     const result = await processImage({
       input,
       operations,
       outputFormat: outputFormat || "png",
       outputQuality: outputQuality || 80,
       store: imageStore,
-    });
+    }) as Record<string, any>;
     // Metadata-only request
     if (result.metadata && !result.buffer) {
       return res.json({

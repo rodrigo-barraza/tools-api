@@ -7,8 +7,22 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { writeFile, readFile, unlink } from "node:fs/promises";
 import crypto from "node:crypto";
+import type { ImageOperation } from "../types/image.ts";
 
 const execFileAsync = promisify(execFile);
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Must accept generic EphemeralStore<T> class instances
+interface ImageStore {
+  get(id: string): any;
+}
+
+interface ProcessImageInput {
+  input: string;
+  operations: ImageOperation[];
+  outputFormat?: string;
+  outputQuality?: number;
+  store?: ImageStore;
+}
 
 // ─── Constants ─────────────────────────────────────────────────
 
@@ -25,7 +39,7 @@ const MAGICK_OPERATIONS = new Set(["text", "distort", "border", "ico"]);
  * Resolve an input source to a Sharp-compatible buffer.
  * Supports: URL, base64 data URI, or EphemeralStore ID.
  */
-async function resolveInput(input: any, store: any) {
+async function resolveInput(input: string, store?: ImageStore) {
   if (!input || typeof input !== "string") {
     throw new Error("'input' is required (URL, base64 data URI, or previous imageId)");
   }
@@ -73,9 +87,9 @@ async function resolveInput(input: any, store: any) {
 
 
  */
-async function processWithSharp(inputBuffer: any, operations: any, outputFormat: any, outputQuality: any) {
+async function processWithSharp(inputBuffer: Buffer, operations: ImageOperation[], outputFormat: string, outputQuality: number) {
   let pipeline = sharp(inputBuffer, { failOn: "none", limitInputPixels: MAX_DIMENSION * MAX_DIMENSION });
-  let metadataResult: any = null;
+  let metadataResult: Record<string, unknown> | null = null;
 
   for (const op of operations) {
     switch (op.type) {
@@ -172,7 +186,7 @@ async function processWithSharp(inputBuffer: any, operations: any, outputFormat:
 
       case "composite": {
         if (!op.overlayUrl) throw new Error("composite requires 'overlayUrl'");
-        const overlayBuf = await resolveInput(op.overlayUrl, null);
+        const overlayBuf = await resolveInput(op.overlayUrl, undefined);
         const compositeOpts: Record<string, unknown> = { input: overlayBuf };
         if (op.gravity) compositeOpts.gravity = op.gravity;
         if (op.blend) compositeOpts.blend = op.blend;
@@ -185,13 +199,10 @@ async function processWithSharp(inputBuffer: any, operations: any, outputFormat:
       }
 
       case "metadata": {
-        metadataResult = await sharp(inputBuffer).metadata();
-        // Strip buffer-based properties
-        delete metadataResult.icc;
-        delete metadataResult.iptc;
-        delete metadataResult.xmp;
-        delete metadataResult.exif;
-        delete metadataResult.tifftagPhotoshop;
+        const meta = await sharp(inputBuffer).metadata();
+        // Strip buffer-based properties and convert to plain object
+        const { icc: _icc, iptc: _iptc, xmp: _xmp, exif: _exif, tifftagPhotoshop: _tiffPs, ...cleanMeta } = meta;
+        metadataResult = cleanMeta;
         break;
       }
 
@@ -213,7 +224,7 @@ async function processWithSharp(inputBuffer: any, operations: any, outputFormat:
     formatOpts.quality = Math.min(Math.max(outputQuality, 1), 100);
   }
 
-  pipeline = pipeline.toFormat(format, formatOpts);
+  pipeline = pipeline.toFormat(format as keyof sharp.FormatEnum, formatOpts);
   const buffer = await pipeline.toBuffer();
 
   const MIME_MAP = {
@@ -239,7 +250,7 @@ async function processWithSharp(inputBuffer: any, operations: any, outputFormat:
  * Apply ImageMagick-based operations via the `convert` CLI.
  * Used for operations Sharp can't handle natively.
  */
-async function processWithMagick(inputBuffer: any, operations: any, outputFormat: any, outputQuality: any) {
+async function processWithMagick(inputBuffer: Buffer, operations: ImageOperation[], outputFormat: string, outputQuality: number) {
   const id = crypto.randomUUID().slice(0, 12);
   const inputPath = join(tmpdir(), `img-in-${id}`);
   const outputPath = join(tmpdir(), `img-out-${id}.${outputFormat || "png"}`);
@@ -348,7 +359,7 @@ async function processWithMagick(inputBuffer: any, operations: any, outputFormat
  * Automatically routes to Sharp or ImageMagick based on the
  * operation types requested.
  */
-export async function processImage({ input, operations, outputFormat = "png", outputQuality = 80, store }: any) {
+export async function processImage({ input, operations, outputFormat = "png", outputQuality = 80, store }: ProcessImageInput) {
   if (!operations || !Array.isArray(operations) || operations.length === 0) {
     throw new Error("'operations' must be a non-empty array of operation objects");
   }
@@ -373,12 +384,12 @@ export async function processImage({ input, operations, outputFormat = "png", ou
   const inputBuffer = await resolveInput(input, store);
 
   // Determine which engine to use
-  const needsMagick = operations.some((op: any) => MAGICK_OPERATIONS.has(op.type));
+  const needsMagick = operations.some((op) => MAGICK_OPERATIONS.has(op.type));
 
   // If we have a mix of Sharp and Magick operations, run Sharp first then Magick
   if (needsMagick) {
-    const sharpOps = operations.filter((op: any) => !MAGICK_OPERATIONS.has(op.type));
-    const magickOps = operations.filter((op: any) => MAGICK_OPERATIONS.has(op.type));
+    const sharpOps = operations.filter((op) => !MAGICK_OPERATIONS.has(op.type));
+    const magickOps = operations.filter((op) => MAGICK_OPERATIONS.has(op.type));
 
     let buffer = inputBuffer;
 

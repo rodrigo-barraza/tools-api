@@ -23,7 +23,7 @@ const COSTCO_CA_BASE = "https://www.costco.ca";
  * Extract the Costco product ID from a URL or href.
  * Costco URLs follow: .../product.{ID}.html
  */
-function extractProductId(href: any) {
+function extractProductId(href: string | undefined) {
   if (!href) return null;
   const match = href.match(/product\.(\d+)\.html/);
   return match ? match[1] : null;
@@ -33,7 +33,7 @@ function extractProductId(href: any) {
  * Extract rating value from Costco review stars markup.
  * Looks for patterns like "4.5 out of 5 stars" or aria-label text.
  */
-function extractRating(text: any) {
+function extractRating(text: string | undefined) {
   if (!text) return null;
   const match = text.match(/([\d.]+)\s*(?:out of|\/)\s*5/i);
   return match ? parseFloat(match[1]) : null;
@@ -42,7 +42,7 @@ function extractRating(text: any) {
 /**
  * Extract review count from text like "(40)" or "40 reviews".
  */
-function extractReviewCount(text: any) {
+function extractReviewCount(text: string | undefined) {
   if (!text) return null;
   const match = text.match(/\((\d+)\)/);
   if (match) return parseInt(match[1], 10);
@@ -57,12 +57,12 @@ function extractReviewCount(text: any) {
  * Uses multiple selector strategies to handle Costco's MUI-based layout.
  */
 async function scrapeCategory(
-  baseUrl: any,
-  slug: any,
-  categoryName: any,
-  unifiedCategory: any,
-  source: any,
-  currency: any,
+  baseUrl: string,
+  slug: string,
+  categoryName: string,
+  unifiedCategory: string,
+  source: string,
+  currency: string,
 ) {
   const url = `${baseUrl}/${slug}`;
 
@@ -92,7 +92,7 @@ async function scrapeCategory(
   const products: unknown[] = [];
 
   // ── Strategy 1: MUI-based product tiles (data-testid) ─────────
-  $('[data-testid^="ProductTile_"]').each((_i: any, element: any) => {
+  $('[data-testid^="ProductTile_"]').each((_i, element) => {
     if (products.length >= COSTCO_MAX_PRODUCTS_PER_CATEGORY) return false;
 
     const $el = $(element);
@@ -148,7 +148,7 @@ async function scrapeCategory(
 
   // ── Strategy 2: Legacy Costco layout (fallback) ───────────────
   if (products.length === 0) {
-    $(".product-tile, .product, .col-xs-6.col-lg-4.col-xl-3").each((_i: any, element: any) => {
+    $(".product-tile, .product, .col-xs-6.col-lg-4.col-xl-3").each((_i, element) => {
       if (products.length >= COSTCO_MAX_PRODUCTS_PER_CATEGORY) return false;
 
       const $el = $(element);

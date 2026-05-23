@@ -10,7 +10,7 @@ import { errorMessage } from "../../utilities.ts";
  * Fetches trending tags from a single Mastodon instance.
 
  */
-async function fetchTrendingTags(instance: any) {
+async function fetchTrendingTags(instance: string) {
   const response = await fetch(`${instance}/api/v1/trends/tags?limit=20`, {
     headers: { Accept: "application/json" },
   });
@@ -21,7 +21,7 @@ async function fetchTrendingTags(instance: any) {
  * Fetches trending statuses (posts) from a single Mastodon instance.
 
  */
-async function fetchTrendingStatuses(instance: any) {
+async function fetchTrendingStatuses(instance: string) {
   const response = await fetch(`${instance}/api/v1/trends/statuses?limit=20`, {
     headers: { Accept: "application/json" },
   });
@@ -50,10 +50,10 @@ export async function fetchMastodonTrends() {
         // Calculate total recent usage from the history array
         const recentUses = (tag.history || [])
           .slice(0, 2)
-          .reduce((sum: any, day: any) => sum + parseInt(day.uses || 0, 10), 0);
+          .reduce((sum: number, day: { uses?: string }) => sum + parseInt(day.uses || "0", 10), 0);
         const recentAccounts = (tag.history || [])
           .slice(0, 2)
-          .reduce((sum: any, day: any) => sum + parseInt(day.accounts || 0, 10), 0);
+          .reduce((sum: number, day: { accounts?: string }) => sum + parseInt(day.accounts || "0", 10), 0);
         allTrends.push({
           name,
           normalizedName: tag.name.toLowerCase(),
@@ -113,5 +113,5 @@ export async function fetchMastodonTrends() {
       );
     }
   }
-  return allTrends.sort((a: any, b: any) => (b.volume || 0) - (a.volume || 0));
+  return allTrends.sort((a, b) => ((b as { volume?: number }).volume || 0) - ((a as { volume?: number }).volume || 0));
 }

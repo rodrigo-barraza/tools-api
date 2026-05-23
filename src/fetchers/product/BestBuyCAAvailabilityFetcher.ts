@@ -9,7 +9,7 @@ import rateLimiter from "../../services/RateLimiterService.ts";
  * Build the Best Buy CA availability URL for a batch of SKUs.
  * SKUs are pipe-delimited and URL-encoded.
  */
-function buildAvailabilityUrl(skus: any) {
+function buildAvailabilityUrl(skus: string[]) {
   const skuParam = skus.join("%7C"); // pipe = %7C
   return `${BESTBUY_CA_AVAILABILITY_BASE_URL}?accept=application%2Fvnd.bestbuy.standardproduct.v1%2Bjson&skus=${skuParam}`;
 }
@@ -18,7 +18,8 @@ function buildAvailabilityUrl(skus: any) {
 
 
  */
-function normalizeAvailability(availability: any, metadata: any = null) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- BestBuy API returns dynamic availability JSON
+function normalizeAvailability(availability: Record<string, any>, metadata: Record<string, unknown> | null = null) {
   const sku = availability.sku;
   return {
     sku,
@@ -54,7 +55,7 @@ function normalizeAvailability(availability: any, metadata: any = null) {
 
 
  */
-export async function fetchBestBuyCAAvailability(skus: any, skuMetadata: Record<string, unknown> = {}) {
+export async function fetchBestBuyCAAvailability(skus: string[], skuMetadata: Record<string, unknown> = {}) {
   if (!skus.length) return { results: [], errors: [] };
   const batches = chunk(skus, BESTBUY_CA_MAX_SKUS_PER_REQUEST);
   const allResults: unknown[] = [];
@@ -80,7 +81,7 @@ export async function fetchBestBuyCAAvailability(skus: any, skuMetadata: Record<
       const data = await response.json();
       const availabilities = data.availabilities || [];
       for (const avail of availabilities) {
-        allResults.push(normalizeAvailability(avail, skuMetadata[avail.sku]));
+        allResults.push(normalizeAvailability(avail, (skuMetadata[avail.sku] as Record<string, unknown>) || null));
       }
     } catch (error: unknown) {
       errors.push(`Batch ${i + 1}/${batches.length}: ${errorMessage(error)}`);

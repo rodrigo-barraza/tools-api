@@ -15,7 +15,7 @@ const TWITTER_URL_REGEX =
  * Extract username and tweet ID from a Twitter/X URL.
 
  */
-function parseTwitterUrl(input: any) {
+function parseTwitterUrl(input: string) {
   if (!input || typeof input !== "string") return null;
   const match = input.trim().match(TWITTER_URL_REGEX);
   if (match) return { username: match[1], tweetId: match[2] };
@@ -35,7 +35,7 @@ function parseTwitterUrl(input: any) {
 
 
  */
-export async function getTwitterPost(input: any) {
+export async function getTwitterPost(input: string) {
   const parsed = parseTwitterUrl(input);
   if (!parsed) {
     return { error: `Invalid Twitter/X URL: "${input}"` };
@@ -56,7 +56,7 @@ export async function getTwitterPost(input: any) {
 
 // ─── fxtwitter Provider ──────────────────────────────────────────
 
-async function fetchFxTwitter(username: any, tweetId: any) {
+async function fetchFxTwitter(username: string, tweetId: string) {
   try {
     const response = await fetch(`${FXTWITTER_API}/${username}/status/${tweetId}`, {
       headers: { "User-Agent": USER_AGENT },
@@ -91,7 +91,8 @@ async function fetchFxTwitter(username: any, tweetId: any) {
 
     // Media
     if (tweet.media?.all?.length) {
-      result.media = tweet.media.all.map((m: any) => ({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- fxtwitter API returns dynamic media shapes
+      result.media = tweet.media.all.map((m: Record<string, any>) => ({
         type: m.type || "photo",
         url: m.url || null,
         thumbnailUrl: m.thumbnail_url || null,
@@ -121,7 +122,7 @@ async function fetchFxTwitter(username: any, tweetId: any) {
 
 // ─── Oembed Fallback ─────────────────────────────────────────────
 
-async function fetchOembed(tweetId: any) {
+async function fetchOembed(tweetId: string) {
   try {
     const tweetUrl = `https://twitter.com/i/status/${tweetId}`;
     const response = await fetch(

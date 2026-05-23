@@ -9,11 +9,12 @@ const BASE_URL = "https://api.bestbuy.com/beta/products";
 /**
  * Normalize a Best Buy product into the unified schema.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Best Buy API returns dynamic product shapes
 function normalizeBestBuyProduct(
-  item: any,
-  rank: any,
-  unifiedCategory: any,
-  sourceCategoryName: any,
+  item: Record<string, any>,
+  rank: number,
+  unifiedCategory: string,
+  sourceCategoryName: string,
 ) {
   return {
     sourceId: String(item.sku),
@@ -40,7 +41,7 @@ function normalizeBestBuyProduct(
  * Fetch trending products from Best Buy (top 10 by customer views, rolling 3h window).
  * Optionally filter by category.
  */
-export async function fetchBestBuyTrending(categoryId: any = null) {
+export async function fetchBestBuyTrending(categoryId: string | null = null) {
   if (!CONFIG.BESTBUY_API_KEY) {
     throw new Error("BESTBUY_API_KEY not configured");
   }
@@ -63,10 +64,11 @@ export async function fetchBestBuyTrending(categoryId: any = null) {
 
   // Find the matching category mapping
   const catMapping = categoryId
-    ? BESTBUY_CATEGORIES.find((c: any) => c.id === categoryId)
+    ? BESTBUY_CATEGORIES.find((c) => c.id === categoryId)
     : null;
 
-  const products = items.map((item: any, index: any) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Best Buy API returns dynamic product shapes
+  const products = items.map((item: Record<string, any>, index: number) => {
     const product = normalizeBestBuyProduct(
       item,
       index + 1,

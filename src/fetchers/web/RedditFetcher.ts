@@ -18,7 +18,7 @@ const REDD_IT_REGEX = /(?:https?:\/\/)?redd\.it\/([a-z0-9]+)/i;
 
 
  */
-function buildRedditJsonUrl(input: any) {
+function buildRedditJsonUrl(input: string) {
   if (!input || typeof input !== "string") return null;
   const trimmed = input.trim();
 
@@ -45,7 +45,7 @@ function buildRedditJsonUrl(input: any) {
 
 // ─── Comment Tree Flattening ──────────────────────────────────────
 
-function extractComments(children: any, limit: any) {
+function extractComments(children: Record<string, any>[], limit: number) {
   const comments: unknown[] = [];
 
   for (const child of children) {
@@ -82,7 +82,7 @@ function extractComments(children: any, limit: any) {
 
 
  */
-export async function getRedditThread(input: any, options: Record<string, unknown> = {}) {
+export async function getRedditThread(input: string, options: { commentLimit?: number } = {}) {
   const jsonUrl = buildRedditJsonUrl(input);
   if (!jsonUrl) {
     return { error: `Invalid Reddit URL: "${input}"` };

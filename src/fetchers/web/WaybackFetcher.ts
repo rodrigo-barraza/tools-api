@@ -6,7 +6,7 @@ const CDX_URL = "https://web.archive.org/cdx/search/cdx";
 /**
  * Check if a URL has been archived and get the closest snapshot.
  */
-export async function getSnapshot(url: any, timestamp: any) {
+export async function getSnapshot(url: string, timestamp: string | null = null) {
   const params = new URLSearchParams({ url });
   if (timestamp) params.set("timestamp", timestamp);
 
@@ -69,12 +69,12 @@ export async function getSnapshotHistory(url: string, { limit = 20, from, to }: 
   const headers = data[0];
   const rows = data.slice(1);
 
-  const snapshots = rows.map((row: any) => {
+  const snapshots = rows.map((row: string[]) => {
     const object: Record<string, unknown> = {};
-    headers.forEach((h: any, i: any) => { object[h] = row[i]; });
+    headers.forEach((h: string, i: number) => { object[h] = row[i]; });
     return {
       timestamp: object.timestamp,
-      date: formatWaybackTimestamp(object.timestamp),
+      date: formatWaybackTimestamp(object.timestamp as string),
       archiveUrl: `https://web.archive.org/web/${object.timestamp}/${url}`,
       statusCode: parseInt(String(object.statuscode)) || null,
       mimeType: object.mimetype,
@@ -94,7 +94,7 @@ export async function getSnapshotHistory(url: string, { limit = 20, from, to }: 
 
 // ── Helpers ─────────────────────────────────────────────────────
 
-function formatWaybackTimestamp(ts: any) {
+function formatWaybackTimestamp(ts: string) {
   if (!ts || ts.length < 8) return null;
   const y = ts.slice(0, 4);
   const m = ts.slice(4, 6);

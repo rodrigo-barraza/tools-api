@@ -9,7 +9,7 @@ import { TRANSLINK_BASE_URL } from "../../constants.ts";
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
-async function get(path: any) {
+async function get(path: string) {
   if (!CONFIG.TRANSLINK_API_KEY) {
     throw new Error("TransLink API key not configured");
   }
@@ -34,7 +34,7 @@ async function get(path: any) {
 
 
  */
-export async function getNextBus(stopNo: any, routeNo: any) {
+export async function getNextBus(stopNo: string | number, routeNo?: string | number) {
   let path = `/stops/${stopNo}/estimates`;
   if (routeNo) {
     path += `?routeNo=${encodeURIComponent(routeNo)}`;
@@ -46,11 +46,12 @@ export async function getNextBus(stopNo: any, routeNo: any) {
   return {
     stopNo,
     count: estimates.length,
-    routes: estimates.map((r: any) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TransLink API returns dynamic JSON
+    routes: estimates.map((r: Record<string, any>) => ({
       routeNo: r.RouteNo,
       routeName: r.RouteName,
       direction: r.Direction,
-      schedules: (r.Schedules || []).map((s: any) => ({
+      schedules: (r.Schedules || []).map((s: Record<string, any>) => ({
         expectedLeaveTime: s.ExpectedLeaveTime,
         expectedCountdown: s.ExpectedCountdown,
         scheduleStatus: s.ScheduleStatus, // "*" = on time, "-" = late, "+" = early
@@ -71,7 +72,7 @@ export async function getNextBus(stopNo: any, routeNo: any) {
 
 
  */
-export async function getStopInfo(stopNo: any) {
+export async function getStopInfo(stopNo: string | number) {
   const data = await get(`/stops/${stopNo}`);
 
   return {
@@ -88,7 +89,7 @@ export async function getStopInfo(stopNo: any) {
     routes: data.Routes
       ? String(data.Routes)
           .split(",")
-          .map((r: any) => r.trim())
+          .map((r: string) => r.trim())
       : [],
   };
 }
@@ -100,14 +101,15 @@ export async function getStopInfo(stopNo: any) {
 
 
  */
-export async function findStopsNearby(lat: any, lng: any, radius: any = 500) {
+export async function findStopsNearby(lat: number, lng: number, radius: number = 500) {
   const path = `/stops?lat=${lat}&long=${lng}&radius=${Math.min(radius, 2000)}`;
   const data = await get(path);
   const stops = Array.isArray(data) ? data : [];
 
   return {
     count: stops.length,
-    stops: stops.slice(0, 20).map((s: any) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TransLink API returns dynamic JSON
+    stops: stops.slice(0, 20).map((s: Record<string, any>) => ({
       stopNo: s.StopNo,
       name: s.Name,
       city: s.City,
@@ -119,7 +121,7 @@ export async function findStopsNearby(lat: any, lng: any, radius: any = 500) {
       routes: s.Routes
         ? String(s.Routes)
             .split(",")
-            .map((r: any) => r.trim())
+            .map((r: string) => r.trim())
         : [],
     })),
   };
@@ -132,14 +134,15 @@ export async function findStopsNearby(lat: any, lng: any, radius: any = 500) {
 
 
  */
-export async function getRouteInfo(routeNo: any) {
+export async function getRouteInfo(routeNo: string | number) {
   const data = await get(`/routes/${encodeURIComponent(routeNo)}`);
 
   return {
     routeNo: data.RouteNo,
     name: data.Name,
     operatingCompany: data.OperatingCompany,
-    patterns: (data.Patterns || []).map((p: any) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TransLink API returns dynamic JSON
+    patterns: (data.Patterns || []).map((p: Record<string, any>) => ({
       patternNo: p.PatternNo,
       destination: p.Destination,
       direction: p.Direction,

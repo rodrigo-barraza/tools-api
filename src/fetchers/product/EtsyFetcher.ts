@@ -9,7 +9,7 @@ const BASE_URL = "https://openapi.etsy.com/v3/application";
 /**
  * Map an Etsy taxonomy tag to a unified category.
  */
-function mapEtsyCategory(tags: any) {
+function mapEtsyCategory(tags: string[]) {
   if (!tags || !tags.length) return "other";
   for (const tag of tags) {
     const lower = tag.toLowerCase().replace(/\s+/g, "_");
@@ -68,7 +68,8 @@ export async function fetchEtsyTrending() {
       const data = await response.json();
       const listings = data.results || [];
 
-      const products = listings.map((item: any, index: any) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Etsy API returns dynamic listing shapes
+      const products = listings.map((item: Record<string, any>, index: number) => {
         const product = {
           sourceId: String(item.listing_id),
           source: PRODUCT_SOURCES.ETSY,

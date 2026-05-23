@@ -14,7 +14,12 @@ const TEXT_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText";
 
 // ─── In-Memory Cache ───────────────────────────────────────────────
 
-const placesCache = new Map();
+interface PlacesCacheEntry {
+  data: unknown;
+  fetchedAt: number;
+}
+
+const placesCache = new Map<string, PlacesCacheEntry>();
 const CACHE_TTL_MS = 1_800_000; // 30 minutes
 const MAX_CACHE_SIZE = 500;
 
@@ -28,7 +33,7 @@ function evictStaleEntries() {
   }
   if (placesCache.size > MAX_CACHE_SIZE) {
     const entries = [...placesCache.entries()].sort(
-      (a: any, b: any) => a[1].fetchedAt - b[1].fetchedAt,
+      (a: [string, PlacesCacheEntry], b: [string, PlacesCacheEntry]) => a[1].fetchedAt - b[1].fetchedAt,
     );
     const toRemove = Math.floor(entries.length / 2);
     for (let i = 0; i < toRemove; i++) {
@@ -60,7 +65,8 @@ const FIELD_MASK = [
 
 // ─── Normalize Response ───────────────────────────────────────────
 
-function normalizePlace(place: any) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Google Places API returns dynamic place objects
+function normalizePlace(place: Record<string, any>) {
   return {
     id: place.id,
     name: place.displayName?.text || null,
@@ -96,7 +102,13 @@ export interface PlacesStaticMapOptions {
  * Build a Google Maps Static API URL with labeled markers for each place.
  * https://developers.google.com/maps/documentation/maps-static/start
  */
-export function buildStaticMapUrl(places: unknown[], center: any, { size = "800x400", zoom, maptype = "roadmap" }: PlacesStaticMapOptions = {}) {
+interface NormalizedPlace {
+  latitude: number | null;
+  longitude: number | null;
+  [key: string]: unknown;
+}
+
+export function buildStaticMapUrl(places: NormalizedPlace[], center: { latitude: number; longitude: number } | undefined, { size = "800x400", zoom, maptype = "roadmap" }: PlacesStaticMapOptions = {}) {
   if (!places.length || !CONFIG.GOOGLE_API_KEY) return null;
 
   const params = new URLSearchParams({
@@ -112,8 +124,8 @@ export function buildStaticMapUrl(places: unknown[], center: any, { size = "800x
 
   // Add numbered markers
   const markerParams = places
-    .filter((p: any) => p.latitude != null && p.longitude != null)
-    .map((p: any, i: any) => {
+    .filter((p) => p.latitude != null && p.longitude != null)
+    .map((p, i) => {
       const color = MARKER_COLORS[i % MARKER_COLORS.length];
       const label = String(i + 1);
       return `markers=color:${color}|label:${label}|${p.latitude},${p.longitude}`;

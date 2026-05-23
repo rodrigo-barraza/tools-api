@@ -11,7 +11,7 @@ const HN_API_BASE = "https://hacker-news.firebaseio.com/v0";
  * Fetches a single Hacker News item by ID.
 
  */
-async function fetchItem(id: any) {
+async function fetchItem(id: number) {
   const response = await fetch(`${HN_API_BASE}/item/${id}.json`);
   if (!response.ok) return null;
   return response.json();
@@ -34,8 +34,8 @@ export async function fetchHackerNewsTrends() {
   const stories = await Promise.all(topIds.map(fetchItem));
 
   return stories
-    .filter((s: any) => s && s.title)
-    .map((story: any, index: any) => ({
+    .filter((s: Record<string, any> | null) => s && s.title)
+    .map((story: Record<string, any>, index: number) => ({
       name: story.title,
       normalizedName: normalizeName(story.title),
       source: SOURCES.HACKERNEWS,

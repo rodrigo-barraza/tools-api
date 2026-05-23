@@ -87,7 +87,9 @@ async function resolveLocationFromIp(): Promise<ResolvedLocation> {
   logger.info("[Location] 🌍 Resolving server location from public IP…");
   const ipData = await lookupIp("self");
 
-  if (!ipData.latitude || !ipData.longitude) {
+  const { latitude, longitude } = ipData;
+
+  if (latitude == null || longitude == null) {
     throw new Error(
       "IP geolocation did not return coordinates — cannot resolve location",
     );
@@ -95,13 +97,13 @@ async function resolveLocationFromIp(): Promise<ResolvedLocation> {
 
   logger.info(
     `[Location] 📍 IP resolved → ${ipData.city || "Unknown"}, ${ipData.region || ""} ` +
-      `(${ipData.latitude}, ${ipData.longitude}) tz=${ipData.timezone}`,
+      `(${latitude}, ${longitude}) tz=${ipData.timezone}`,
   );
 
   // Find nearest NOAA tide prediction station
   const tideStation = await findNearestTideStation(
-    ipData.latitude,
-    ipData.longitude,
+    latitude,
+    longitude,
   );
 
   if (tideStation) {
@@ -114,8 +116,8 @@ async function resolveLocationFromIp(): Promise<ResolvedLocation> {
   }
 
   return {
-    latitude: ipData.latitude,
-    longitude: ipData.longitude,
+    latitude,
+    longitude,
     timezone: ipData.timezone || "UTC",
     radiusMiles: DEFAULT_RADIUS_MILES,
     tideStationId: tideStation?.id || null,

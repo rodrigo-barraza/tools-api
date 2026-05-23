@@ -12,7 +12,26 @@ import { IPINFO_BASE_URL } from "../../constants.ts";
 
 // ─── In-Memory Cache ───────────────────────────────────────────────
 
-const ipCache = new Map();
+interface IpLookupResult {
+  ip: string;
+  hostname: string | null;
+  city: string | null;
+  region: string | null;
+  country: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  org: string | null;
+  postal: string | null;
+  timezone: string | null;
+  fetchedAt: string;
+}
+
+interface IpCacheEntry {
+  data: IpLookupResult;
+  fetchedAt: number;
+}
+
+const ipCache = new Map<string, IpCacheEntry>();
 const IP_CACHE_TTL_MS = 86_400_000; // 24 hours — IP geo rarely changes
 const MAX_CACHE_SIZE = 5_000; // prevent unbounded growth
 
@@ -29,7 +48,7 @@ function evictStaleEntries() {
   // If still over limit after TTL eviction, drop oldest half
   if (ipCache.size > MAX_CACHE_SIZE) {
     const entries = [...ipCache.entries()].sort(
-      (a: any, b: any) => a[1].fetchedAt - b[1].fetchedAt,
+      (a: [string, IpCacheEntry], b: [string, IpCacheEntry]) => a[1].fetchedAt - b[1].fetchedAt,
     );
     const toRemove = Math.floor(entries.length / 2);
     for (let i = 0; i < toRemove; i++) {
@@ -45,7 +64,7 @@ function evictStaleEntries() {
 
 
  */
-export async function lookupIp(ip: any) {
+export async function lookupIp(ip: string) {
   const targetIp = ip && ip !== "self" ? ip : "";
 
   // Check cache
@@ -70,8 +89,8 @@ export async function lookupIp(ip: any) {
   const data = await response.json();
 
   // Parse lat/lng from "loc" field (format: "49.2827,-123.1207")
-  let latitude: any = null;
-  let longitude: any = null;
+  let latitude: number | null = null;
+  let longitude: number | null = null;
   if (data.loc) {
     const [lat, lng] = data.loc.split(",").map(Number);
     latitude = lat;
@@ -106,13 +125,13 @@ export async function lookupIp(ip: any) {
 
 
  */
-export async function batchLookupIps(ips: any) {
+export async function batchLookupIps(ips: string[]) {
   const results = await Promise.allSettled(
-    ips.slice(0, 20).map((ip: any) => lookupIp(ip)),
+    ips.slice(0, 20).map((ip) => lookupIp(ip)),
   );
 
-  return results.map((r: any, i: any) => ({
+  return results.map((r, i) => ({
     ip: ips[i],
-    ...(r.status === "fulfilled" ? r.value : { error: r.reason.message }),
+    ...(r.status === "fulfilled" ? r.value : { error: (r as PromiseRejectedResult).reason.message }),
   }));
 }

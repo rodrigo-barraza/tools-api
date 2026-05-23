@@ -13,10 +13,10 @@ export function getWarningCount() {
   return {
     total: warnings.length,
     byType: {
-      warning: warnings.filter((w: any) => w.type === "warning").length,
-      watch: warnings.filter((w: any) => w.type === "watch").length,
-      advisory: warnings.filter((w: any) => w.type === "advisory").length,
-      statement: warnings.filter((w: any) => w.type === "statement").length,
+      warning: warnings.filter((w: { type: string }) => w.type === "warning").length,
+      watch: warnings.filter((w: { type: string }) => w.type === "watch").length,
+      advisory: warnings.filter((w: { type: string }) => w.type === "advisory").length,
+      statement: warnings.filter((w: { type: string }) => w.type === "statement").length,
     },
     lastFetch: cache.getLastFetch(),
   };

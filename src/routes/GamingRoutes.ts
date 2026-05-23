@@ -27,20 +27,21 @@ router.get("/dota/heroes", asyncHandler(async (req: Request, res: Response) => {
 
     if (q) {
       const query = q.toLowerCase();
-      filtered = filtered.filter((h: any) => h.name.toLowerCase().includes(query));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- OpenDota API returns dynamic hero shapes
+      filtered = filtered.filter((h: Record<string, any>) => h.name.toLowerCase().includes(query));
     }
 
     if (role) {
       const roleLower = role.toLowerCase();
-      filtered = filtered.filter((h: any) =>
-        h.roles.some((r: any) => r.toLowerCase() === roleLower),
+      filtered = filtered.filter((h: Record<string, any>) =>
+        h.roles.some((r: string) => r.toLowerCase() === roleLower),
       );
     }
 
     if (attr) {
       const attrMap: Record<string, string> = { str: "str", agi: "agi", int: "int", all: "all", universal: "all" };
       const attrKey = attrMap[attr.toLowerCase()] || attr.toLowerCase();
-      filtered = filtered.filter((h: any) => h.primaryAttr === attrKey);
+      filtered = filtered.filter((h: Record<string, any>) => h.primaryAttr === attrKey);
     }
 
     res.json({ count: filtered.length, heroes: filtered });
@@ -74,8 +75,8 @@ router.get("/dota/heroes/:heroId/matchups", asyncHandler(async (req: Request, re
       getHeroes(),
     ]);
 
-    const heroMap = new Map(heroes.map((h: any) => [h.id, h.name]));
-    const enrichMatchup = (m: any) => ({ ...m, heroName: heroMap.get(m.heroId) || "Unknown" });
+    const heroMap = new Map(heroes.map((h: Record<string, any>) => [h.id, h.name]));
+    const enrichMatchup = (m: Record<string, any>) => ({ ...m, heroName: heroMap.get(m.heroId) || "Unknown" });
 
     res.json({
       ...matchups,
@@ -115,8 +116,8 @@ router.get("/dota/players/:accountId/matches", asyncHandler(async (req: Request,
       getHeroes(),
     ]);
 
-    const heroMap = new Map(heroes.map((h: any) => [h.id, h.name]));
-    const enriched = matches.map((m: any) => ({
+    const heroMap = new Map(heroes.map((h: Record<string, any>) => [h.id, h.name]));
+    const enriched = matches.map((m: Record<string, any>) => ({
       ...m,
       heroName: heroMap.get(m.heroId) || "Unknown",
     }));
@@ -141,8 +142,8 @@ router.get("/dota/matches/:matchId", asyncHandler(async (req: Request, res: Resp
       getHeroes(),
     ]);
 
-    const heroMap = new Map(heroes.map((h: any) => [h.id, h.name]));
-    match.players = match.players.map((p: any) => ({
+    const heroMap = new Map(heroes.map((h: Record<string, any>) => [h.id, h.name]));
+    match.players = match.players.map((p: Record<string, any>) => ({
       ...p,
       heroName: heroMap.get(p.heroId) || "Unknown",
     }));
@@ -177,7 +178,7 @@ router.get("/dota", asyncHandler(async (req: Request, res: Response) => {
   }
 
   // Build query string for sub-routes
-  const qs = (params: any) => {
+  const qs = (params: Record<string, string | undefined>) => {
     const searchParams = new URLSearchParams();
     for (const [k, v] of Object.entries(params)) {
       if (v !== undefined && v !== null) searchParams.set(k, String(v));

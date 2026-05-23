@@ -15,7 +15,7 @@ const HN_URL_REGEX =
 
 
  */
-function parseHnInput(input: any) {
+function parseHnInput(input: string) {
   if (!input || typeof input !== "string") return null;
   const trimmed = input.trim();
 
@@ -35,16 +35,16 @@ function parseHnInput(input: any) {
 
 
  */
-async function fetchComments(ids: any, remaining: any, depth: any = 0) {
+async function fetchComments(ids: number[], remaining: number, depth: number = 0) {
   if (!ids?.length || remaining <= 0 || depth > 3) return [];
 
   const batch = ids.slice(0, remaining);
   const comments: unknown[] = [];
 
   const items = await Promise.all(
-    batch.map((id: any) =>
+    batch.map((id) =>
       fetch(`${HN_API}/item/${id}.json`)
-        .then((r: any) => (r.ok ? r.json() : null))
+        .then((r) => (r.ok ? r.json() : null))
         .catch(() => null),
     ),
   );
@@ -83,7 +83,7 @@ async function fetchComments(ids: any, remaining: any, depth: any = 0) {
 
 
  */
-export async function getHackerNewsThread(input: any, options: Record<string, unknown> = {}) {
+export async function getHackerNewsThread(input: string, options: { commentLimit?: number } = {}) {
   const itemId = parseHnInput(input);
   if (!itemId) {
     return { error: `Invalid Hacker News URL or ID: "${input}"` };

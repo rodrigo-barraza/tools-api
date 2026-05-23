@@ -11,7 +11,7 @@ const BASE_URL = "https://api.seatgeek.com/2/events";
 /**
  * Map SeatGeek taxonomy name to our normalized category.
  */
-function normalizeCategory(taxonomies: any) {
+function normalizeCategory(taxonomies: Array<{ parent_id?: number | null; name?: string }>) {
   if (!taxonomies || taxonomies.length === 0) {
     return EVENT_CATEGORIES.OTHER;
   }
@@ -38,7 +38,8 @@ function normalizeCategory(taxonomies: any) {
 /**
  * Extract genre strings from SeatGeek taxonomies and performers.
  */
-function extractGenres(event: any) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- SeatGeek API returns dynamic JSON
+function extractGenres(event: Record<string, any>) {
   const genres = new Set();
 
   if (event.taxonomies) {
@@ -63,7 +64,8 @@ function extractGenres(event: any) {
 /**
  * Extract venue info from SeatGeek event.
  */
-function extractVenue(venue: any) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- SeatGeek API returns dynamic JSON
+function extractVenue(venue: Record<string, any>) {
   if (!venue) {
     return {
       name: null,
@@ -90,7 +92,8 @@ function extractVenue(venue: any) {
 /**
  * Extract price range from SeatGeek event stats.
  */
-function extractPriceRange(event: any) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- SeatGeek API returns dynamic JSON
+function extractPriceRange(event: Record<string, any>) {
   const stats = event.stats;
   if (!stats) return null;
 
@@ -109,7 +112,8 @@ function extractPriceRange(event: any) {
 /**
  * Normalize a single SeatGeek event to our unified schema.
  */
-function normalizeEvent(event: any) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- SeatGeek API returns dynamic JSON
+function normalizeEvent(event: Record<string, any>) {
   const performers = event.performers || [];
   const bestImage = performers[0]?.image || performers[0]?.images?.huge || null;
 
@@ -181,7 +185,7 @@ export async function fetchSeatGeekEvents() {
 
     // Small delay between pages
     if (hasMore) {
-      await new Promise((r: any) => setTimeout(r, 200));
+      await new Promise<void>((r) => setTimeout(r, 200));
     }
   }
 

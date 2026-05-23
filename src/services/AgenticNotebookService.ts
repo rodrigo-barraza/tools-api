@@ -5,6 +5,44 @@ import { validatePath } from "./AgenticFileService.ts";
 import { errorMessage } from "../utilities.ts";
 
 // ────────────────────────────────────────────────────────────
+// Jupyter Notebook Types (nbformat 4)
+// ────────────────────────────────────────────────────────────
+
+interface NotebookCell {
+  cell_type: string;
+  source: string[] | string;
+  metadata: Record<string, unknown>;
+  outputs?: CellOutput[];
+  execution_count?: number | null;
+}
+
+interface CellOutput {
+  output_type: string;
+  text?: string[] | string;
+  data?: Record<string, string | string[]>;
+  ename?: string;
+  evalue?: string;
+  traceback?: string[];
+}
+
+interface Notebook {
+  nbformat: number;
+  nbformat_minor: number;
+  metadata: {
+    kernelspec?: { display_name?: string; language?: string; name?: string };
+    language_info?: Record<string, unknown>;
+    [key: string]: unknown;
+  };
+  cells: NotebookCell[];
+}
+
+interface NotebookEditParams {
+  cellIndex?: number;
+  content?: string;
+  cellType?: string;
+}
+
+// ────────────────────────────────────────────────────────────
 // Constants
 // ────────────────────────────────────────────────────────────
 
@@ -19,7 +57,7 @@ const MAX_NOTEBOOK_SIZE = 10_485_760; // 10 MB
 /**
  * Edit a Jupyter notebook file.
  */
-export async function agenticNotebookEdit(path: any, { action, cellIndex, content, cellType }: Record<string, unknown> = {}) {
+export async function agenticNotebookEdit(path: string, { action, cellIndex, content, cellType }: Record<string, unknown> = {}) {
   // Validate path
   const validation = validatePath(path);
   if (!validation.safe) {
@@ -38,7 +76,7 @@ export async function agenticNotebookEdit(path: any, { action, cellIndex, conten
   }
 
   // Read and parse notebook
-  let notebook: any;
+  let notebook: Notebook;
   try {
     const raw = await readFile(resolved, "utf-8");
     if (Buffer.byteLength(raw) > MAX_NOTEBOOK_SIZE) {
@@ -46,7 +84,7 @@ export async function agenticNotebookEdit(path: any, { action, cellIndex, conten
     }
     notebook = JSON.parse(raw);
   } catch (error: unknown) {
-    if ((error as any).code === "ENOENT") {
+    if (error instanceof Error && (error as NodeJS.ErrnoException).code === "ENOENT") {
       // For insert_cell on a non-existent file, create a blank notebook
       if (action === "insert_cell") {
         notebook = createBlankNotebook();
@@ -77,10 +115,10 @@ export async function agenticNotebookEdit(path: any, { action, cellIndex, conten
       return getCell(resolved, notebook, cellIndex);
 
     case "insert_cell":
-      return insertCell(resolved, notebook, { cellIndex, content, cellType });
+      return insertCell(resolved, notebook, { cellIndex: cellIndex as number | undefined, content: content as string | undefined, cellType: cellType as string | undefined });
 
     case "replace_cell":
-      return replaceCell(resolved, notebook, { cellIndex, content, cellType });
+      return replaceCell(resolved, notebook, { cellIndex: cellIndex as number | undefined, content: content as string | undefined, cellType: cellType as string | undefined });
 
     case "delete_cell":
       return deleteCell(resolved, notebook, cellIndex);
@@ -94,8 +132,8 @@ export async function agenticNotebookEdit(path: any, { action, cellIndex, conten
 // Actions
 // ────────────────────────────────────────────────────────────
 
-function listCells(filePath: any, notebook: any) {
-  const cells = notebook.cells.map((cell: any, index: any) => {
+function listCells(filePath: string, notebook: Notebook) {
+  const cells = notebook.cells.map((cell: NotebookCell, index: number) => {
     const source = Array.isArray(cell.source)
       ? cell.source.join("")
       : (cell.source || "");
@@ -120,7 +158,7 @@ function listCells(filePath: any, notebook: any) {
   };
 }
 
-function getCell(filePath: any, notebook: any, cellIndex: any) {
+function getCell(filePath: string, notebook: Notebook, cellIndex: unknown) {
   if (cellIndex == null || typeof cellIndex !== "number") {
     return { error: "'cellIndex' is required (number, 0-based)" };
   }
@@ -149,7 +187,7 @@ function getCell(filePath: any, notebook: any, cellIndex: any) {
   return result;
 }
 
-async function insertCell(filePath: any, notebook: any, { cellIndex, content, cellType }: any) {
+async function insertCell(filePath: string, notebook: Notebook, { cellIndex, content, cellType }: NotebookEditParams) {
   if (!content || typeof content !== "string") {
     return { error: "'content' is required for insert_cell (string)" };
   }
@@ -180,7 +218,7 @@ async function insertCell(filePath: any, notebook: any, { cellIndex, content, ce
   };
 }
 
-async function replaceCell(filePath: any, notebook: any, { cellIndex, content, cellType }: any) {
+async function replaceCell(filePath: string, notebook: Notebook, { cellIndex, content, cellType }: NotebookEditParams) {
   if (cellIndex == null || typeof cellIndex !== "number") {
     return { error: "'cellIndex' is required for replace_cell (number, 0-based)" };
   }
@@ -198,7 +236,7 @@ async function replaceCell(filePath: any, notebook: any, { cellIndex, content, c
   // Update the cell in place
   if (content != null) {
     existingCell.source = content.split("\n").map(
-      (line: any, i: any, array: any) => (i < array.length - 1 ? line + "\n" : line),
+      (line: string, i: number, array: string[]) => (i < array.length - 1 ? line + "\n" : line),
     );
   }
   if (cellType) {
@@ -225,7 +263,7 @@ async function replaceCell(filePath: any, notebook: any, { cellIndex, content, c
   };
 }
 
-async function deleteCell(filePath: any, notebook: any, cellIndex: any) {
+async function deleteCell(filePath: string, notebook: Notebook, cellIndex: unknown) {
   if (cellIndex == null || typeof cellIndex !== "number") {
     return { error: "'cellIndex' is required for delete_cell (number, 0-based)" };
   }
@@ -251,9 +289,9 @@ async function deleteCell(filePath: any, notebook: any, cellIndex: any) {
 // Helpers
 // ────────────────────────────────────────────────────────────
 
-function createCell(type: any, content: any) {
+function createCell(type: string, content: string) {
   const source = content.split("\n").map(
-    (line: any, i: any, array: any) => (i < array.length - 1 ? line + "\n" : line),
+    (line: string, i: number, array: string[]) => (i < array.length - 1 ? line + "\n" : line),
   );
 
   if (type === "code") {
@@ -296,7 +334,7 @@ function createBlankNotebook() {
  * Summarize a cell output for the tool response.
  * Strips large binary data (images, etc.) and truncates long text.
  */
-function summarizeOutput(output: any) {
+function summarizeOutput(output: CellOutput) {
   const summary: Record<string, unknown> = { output_type: output.output_type };
 
   if (output.output_type === "stream") {
@@ -322,7 +360,7 @@ function summarizeOutput(output: any) {
   return summary;
 }
 
-async function writeNotebook(filePath: any, notebook: any) {
+async function writeNotebook(filePath: string, notebook: Notebook) {
   // Write with 1-space indentation (Jupyter standard) and trailing newline
   const json = JSON.stringify(notebook, null, 1) + "\n";
   await writeFile(filePath, json, "utf-8");

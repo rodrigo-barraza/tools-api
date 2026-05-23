@@ -10,9 +10,9 @@ import {
  * Uses the Wikimedia REST API (completely free, no auth required).
 
  */
-export async function fetchWikipediaTrends(date: any = null) {
+export async function fetchWikipediaTrends(date: Date | string | null = null) {
   // Use yesterday's date since today's data isn't available until after midnight UTC
-  const targetDate = date || new Date(Date.now() - 86_400_000);
+  const targetDate: Date = date instanceof Date ? date : date ? new Date(date) : new Date(Date.now() - 86_400_000);
   const year = targetDate.getUTCFullYear();
   const month = String(targetDate.getUTCMonth() + 1).padStart(2, "0");
   const day = String(targetDate.getUTCDate()).padStart(2, "0");
@@ -34,9 +34,9 @@ export async function fetchWikipediaTrends(date: any = null) {
   const articles = data?.items?.[0]?.articles || [];
 
   return articles
-    .filter((a: any) => !WIKIPEDIA_EXCLUDED_PAGES.includes(a.article))
+    .filter((a: Record<string, any>) => !WIKIPEDIA_EXCLUDED_PAGES.includes(a.article))
     .slice(0, WIKIPEDIA_TOP_ARTICLES_LIMIT)
-    .map((article: any) => {
+    .map((article: Record<string, any>) => {
       const name = article.article.replace(/_/g, " ");
       return {
         name,

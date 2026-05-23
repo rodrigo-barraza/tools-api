@@ -14,7 +14,7 @@ interface AvailabilityResult {
   [key: string]: unknown;
 }
 
-interface CacheError {
+export interface CacheError {
   message: string;
   timestamp: Date;
 }

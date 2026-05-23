@@ -52,21 +52,27 @@ router.get("/messages/stream", (req: Request, res: Response) => {
   setupStreamingSSE(res);
   let closed = false;
   // Track known message IDs so we can detect deletions
-  let knownIds = new Set();
+  let knownIds = new Set<string>();
   // Track per-message reaction fingerprints to detect reaction changes
   // on existing messages (reactions don't change the message ID, so
   // the old poll missed them entirely).
-  let reactionFingerprints = new Map();
+  let reactionFingerprints = new Map<string, string>();
+
+  interface StreamMessage {
+    id: string;
+    reactions?: Array<{ emoji?: { id?: string; name?: string }; count: number }>;
+    [key: string]: unknown;
+  }
 
   /**
    * Build a lightweight fingerprint of a message's reactions array.
    * Used to detect when someone adds/removes a reaction on Discord
    * without the message ID itself changing.
    */
-  function reactionHash(message: any) {
+  function reactionHash(message: StreamMessage) {
     if (!message.reactions?.length) return "";
     return message.reactions
-      .map((r: any) => `${r.emoji?.id || r.emoji?.name}:${r.count}`)
+      .map((r) => `${r.emoji?.id || r.emoji?.name}:${r.count}`)
       .join(",");
   }
 
@@ -78,8 +84,8 @@ router.get("/messages/stream", (req: Request, res: Response) => {
       });
       if (closed) return;
       const messages = data.messages || [];
-      knownIds = new Set(messages.map((m: any) => m.id));
-      reactionFingerprints = new Map(messages.map((m: any) => [m.id, reactionHash(m)]));
+      knownIds = new Set((messages as StreamMessage[]).map((m) => m.id));
+      reactionFingerprints = new Map((messages as StreamMessage[]).map((m) => [m.id, reactionHash(m)]));
       res.write(`event: init\ndata: ${JSON.stringify({ messages })}\n\n`);
       health.markSuccess();
     } catch (error: unknown) {
@@ -98,9 +104,9 @@ router.get("/messages/stream", (req: Request, res: Response) => {
         guildId, channelId, limit, includeBots,
       });
       const messages = data.messages || [];
-      const currentIds = new Set(messages.map((m: any) => m.id));
+      const currentIds = new Set((messages as StreamMessage[]).map((m) => m.id));
       // ── Detect new messages ─────────────────────────────────
-      const newMessages = messages.filter((m: any) => !knownIds.has(m.id));
+      const newMessages = (messages as StreamMessage[]).filter((m) => !knownIds.has(m.id));
       if (newMessages.length > 0) {
         // Send newest-first (same order as searchMessages returns)
         res.write(`event: new\ndata: ${JSON.stringify({ messages: newMessages })}\n\n`);
@@ -119,7 +125,7 @@ router.get("/messages/stream", (req: Request, res: Response) => {
       // ── Detect reaction changes on existing messages ─────────
       // Compare reaction fingerprints — if they differ, the message's
       // reactions were added/removed since the last poll.
-      const updatedMessages = messages.filter((m: any) => {
+      const updatedMessages = (messages as StreamMessage[]).filter((m) => {
         if (!knownIds.has(m.id)) return false; // new messages handled above
         const oldHash = reactionFingerprints.get(m.id);
         const newHash = reactionHash(m);
@@ -130,7 +136,7 @@ router.get("/messages/stream", (req: Request, res: Response) => {
       }
       // Update tracked sets
       knownIds = currentIds;
-      reactionFingerprints = new Map(messages.map((m: any) => [m.id, reactionHash(m)]));
+      reactionFingerprints = new Map((messages as StreamMessage[]).map((m) => [m.id, reactionHash(m)]));
     } catch (error: unknown) {
       logger.error("[discord/stream] Poll error:", errorMessage(error));
       health.markError(error);
@@ -147,7 +153,7 @@ router.get("/messages/stream", (req: Request, res: Response) => {
       pollInterval = setInterval(poll, 1_000);
     }
   });
-  let pollInterval: any = null;
+  let pollInterval: ReturnType<typeof setInterval> | null = null;
   // ── Cleanup on disconnect ─────────────────────────────────────
   req.on("close", () => {
     closed = true;
