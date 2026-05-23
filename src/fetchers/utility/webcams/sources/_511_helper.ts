@@ -1,5 +1,5 @@
 import { buildScraperHeaders } from "../../../../utilities.ts";
-import { upsertWebcams } from "../../../../models/Webcam.ts";
+import { upsertWebcams, type WebcamDocument } from "../../../../models/Webcam.ts";
 
 /**
  * Shared fetcher for 511-style camera APIs (Ontario, Alberta, etc.).
@@ -22,7 +22,7 @@ export async function fetch511Cameras({ apiUrl, city, country, source, idPrefix,
     return;
   }
 
-  const parsedWebcams: any[] = [];
+  const parsedWebcams: WebcamDocument[] = [];
 
   for (const cam of data) {
     const lat = cam.Latitude;

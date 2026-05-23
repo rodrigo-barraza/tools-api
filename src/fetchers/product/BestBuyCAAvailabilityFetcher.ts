@@ -57,8 +57,8 @@ function normalizeAvailability(availability: any, metadata: any = null) {
 export async function fetchBestBuyCAAvailability(skus: any, skuMetadata: Record<string, unknown> = {}) {
   if (!skus.length) return { results: [], errors: [] };
   const batches = chunk(skus, BESTBUY_CA_MAX_SKUS_PER_REQUEST);
-  const allResults: any[] = [];
-  const errors: any[] = [];
+  const allResults: unknown[] = [];
+  const errors: unknown[] = [];
   for (let i = 0; i < batches.length; i++) {
     if (i > 0) await rateLimiter.wait("BESTBUY_CA");
     const batch = batches[i];

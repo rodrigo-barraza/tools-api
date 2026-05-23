@@ -11,7 +11,7 @@ export interface LspServerManager {
   initialize(): void;
   getServerForFile(filePath: string): LspServerInstance | undefined;
   ensureServerStarted(filePath: string): Promise<LspServerInstance | undefined>;
-  sendRequest(filePath: string, method: string, params: any): Promise<any>;
+  sendRequest(filePath: string, method: string, params: any): Promise<unknown>;
   openFile(filePath: string, content: string): Promise<void>;
   changeFile(filePath: string, content: string): Promise<void>;
   closeFile(filePath: string): Promise<void>;
@@ -118,7 +118,7 @@ export function createLspServerManager(workspaceFolder?: string): LspServerManag
   /**
    * Send an LSP request to the appropriate server for the given file.
    */
-  async function sendRequest(filePath: string, method: string, params: any): Promise<any> {
+  async function sendRequest(filePath: string, method: string, params: any): Promise<unknown> {
     const server = await ensureServerStarted(filePath);
     if (!server) return undefined;
 

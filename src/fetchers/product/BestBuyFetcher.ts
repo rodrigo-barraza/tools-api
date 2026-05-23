@@ -90,7 +90,7 @@ export async function fetchBestBuyTrending(categoryId: any = null) {
  * Rate-limited to 1 req/sec to respect Best Buy's per-second limit.
  */
 export async function fetchAllBestBuyTrending() {
-  const allProducts: any[] = [];
+  const allProducts: unknown[] = [];
 
   // Fetch general trending first
   try {

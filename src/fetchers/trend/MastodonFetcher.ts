@@ -35,7 +35,7 @@ async function fetchTrendingStatuses(instance: any) {
  * No API key required — all public endpoints.
  */
 export async function fetchMastodonTrends() {
-  const allTrends: any[] = [];
+  const allTrends: unknown[] = [];
   const seenTags = new Set();
   const seenStatuses = new Set();
   for (const instance of MASTODON_INSTANCES) {

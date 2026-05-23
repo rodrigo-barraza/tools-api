@@ -14,10 +14,10 @@ import logger from "../../logger.ts";
 
 // ─── In-Memory Cache ───────────────────────────────────────────────
 
-const seriesCache = new Map();
+const seriesCache = new Map<string, { data: unknown; fetchedAt: number }>();
 const SERIES_CACHE_TTL_MS = 3_600_000; // 1 hour — macro data updates infrequently
 
-const searchCache = new Map();
+const searchCache = new Map<string, { data: unknown; fetchedAt: number }>();
 const SEARCH_CACHE_TTL_MS = 1_800_000; // 30 minutes
 
 // ─── Helpers ───────────────────────────────────────────────────────
@@ -118,8 +118,8 @@ export async function getSeriesObservations(seriesId: string, options: FredObser
   ]);
 
   const observations = (obsData.observations || [])
-    .filter((o: any) => o.value !== ".")
-    .map((o: any) => ({
+    .filter((o: Record<string, string>) => o.value !== ".")
+    .map((o: Record<string, string>) => ({
       date: o.date,
       value: parseFloat(o.value),
     }));
@@ -162,7 +162,8 @@ export async function searchSeries(query: string, options: FredSearchOptions = {
     order_by: orderBy,
   });
 
-  const series = (data.seriess || []).map((s: any) => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- FRED API returns dynamic JSON objects
+  const series = (data.seriess || []).map((s: Record<string, any>) => ({
     id: s.id,
     title: s.title,
     frequency: s.frequency_short,
@@ -200,14 +201,14 @@ export async function getKeyIndicators() {
 
   const entries = Object.entries(FRED_DEFAULT_SERIES);
   const results = await Promise.allSettled(
-    entries.map(async ([seriesId, meta]: any) => {
+    entries.map(async ([seriesId, meta]) => {
       const data = await fredFetch("series/observations", {
         series_id: seriesId,
         limit: 1,
         sort_order: "desc",
       });
 
-      const latest = data.observations?.find((o: any) => o.value !== ".");
+      const latest = data.observations?.find((o: Record<string, string>) => o.value !== ".");
 
       return {
         id: seriesId,
@@ -220,18 +221,27 @@ export async function getKeyIndicators() {
     }),
   );
 
-  const indicators = results
-    .filter((r: any) => r.status === "fulfilled")
-    .map((r: any) => r.value);
+  interface FredIndicator {
+    id: string;
+    name: string;
+    category: string;
+    value: number | null;
+    date: string | null;
+    unit: string;
+  }
+
+  const indicators = (results
+    .filter((r): r is PromiseFulfilledResult<FredIndicator> => r.status === "fulfilled"))
+    .map((r) => r.value);
 
   const failed = results
-    .filter((r: any) => r.status === "rejected")
-    .map((r: any, i: any) => ({ seriesId: entries[i][0], error: r.reason.message }));
+    .filter((r): r is PromiseRejectedResult => r.status === "rejected")
+    .map((r, i) => ({ seriesId: entries[i][0], error: (r.reason as Error).message }));
 
   if (failed.length > 0) {
     logger.warn(
       `[FredFetcher] ⚠️ ${failed.length} indicator(s) failed:`,
-      failed.map((f: any) => f.seriesId).join(", "),
+      failed.map((f) => f.seriesId).join(", "),
     );
   }
 

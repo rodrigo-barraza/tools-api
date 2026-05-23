@@ -33,7 +33,7 @@ const WORKSPACE_COLLECTION = "workspace_config";
  * e.g. C:\Users\foo\bar → /mnt/c/Users/foo/bar
  * Returns null if the path is not a Windows path.
  */
-function windowsToWslPath(winPath: any) {
+function windowsToWslPath(winPath: string) {
   const match = winPath.match(/^([A-Za-z]):[/\\](.*)/);
   if (!match) return null;
   const drive = match[1].toLowerCase();
@@ -43,14 +43,14 @@ function windowsToWslPath(winPath: any) {
 /**
  * Detect whether a path is Windows-style.
  */
-function isWindowsPath(path: any) {
+function isWindowsPath(path: string) {
   return /^[A-Za-z]:[/\\]/.test(path);
 }
 /**
  * Resolve a user-supplied path to a WSL-native absolute path.
  * Windows paths are translated, WSL paths are resolved as-is.
  */
-function resolveWorkspacePath(rawPath: any) {
+function resolveWorkspacePath(rawPath: string) {
   if (!rawPath || typeof rawPath !== "string") return null;
   const trimmed = rawPath.trim();
   if (isWindowsPath(trimmed)) {
@@ -155,8 +155,8 @@ router.put("/config/workspaces", asyncHandler(async (req: Request, res: Response
     return res.status(400).json({ error: "'roots' must be an array of path strings" });
   }
   const staticRoots = getStaticRoots();
-  const errors: any[] = [];
-  const validRoots: any[] = [];
+  const errors: { path: string; resolved?: string; error: string }[] = [];
+  const validRoots: string[] = [];
   for (const rawPath of roots) {
     const resolved = resolveWorkspacePath(rawPath);
     if (!resolved) {

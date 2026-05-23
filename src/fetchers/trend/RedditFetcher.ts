@@ -10,6 +10,7 @@ import {
 import rateLimiter from "../../services/RateLimiterService.ts";
 import logger from "../../logger.ts";
 import { errorMessage } from "../../utilities.ts";
+import type { RawRedditPost } from "../../types/trend.ts";
 
 const redditTokenManager = new TokenManager(async () => {
   const credentials = Buffer.from(
@@ -57,7 +58,7 @@ async function fetchSubreddit(subreddit: string, token: string, limit: number) {
 
 
  */
-function normalizeTrend(post: Record<string, any>, defaultCategory: string | null) {
+function normalizeTrend(post: RawRedditPost, defaultCategory: string | null) {
   const postData = post.data;
   return {
     name: postData.title,
@@ -89,7 +90,7 @@ export async function fetchRedditTrends() {
     throw new Error("REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET not configured");
   }
   const token = await redditTokenManager.getToken();
-  const allTrends: any[] = [];
+  const allTrends: ReturnType<typeof normalizeTrend>[] = [];
   for (const sub of REDDIT_SUBREDDITS) {
     await rateLimiter.wait("REDDIT");
     try {
@@ -99,8 +100,8 @@ export async function fetchRedditTrends() {
         REDDIT_POSTS_PER_SUBREDDIT,
       );
       const trends = posts
-        .filter((p: any) => !p.data.stickied) // exclude stickied/pinned posts
-        .map((p: any) => normalizeTrend(p, sub.category));
+        .filter((p: RawRedditPost) => !p.data.stickied) // exclude stickied/pinned posts
+        .map((p: RawRedditPost) => normalizeTrend(p, sub.category));
       allTrends.push(...trends);
     } catch (error: unknown) {
       logger.error(`[Reddit] ❌ /r/${sub.name}: ${errorMessage(error)}`);

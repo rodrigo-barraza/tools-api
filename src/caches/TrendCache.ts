@@ -2,7 +2,7 @@ import { TREND_SOURCES } from "../constants.ts";
 
 // ─── Types ─────────────────────────────────────────────────────────
 
-interface CachedTrend {
+export interface CachedTrend {
   name: string;
   normalizedName: string;
   source: string;

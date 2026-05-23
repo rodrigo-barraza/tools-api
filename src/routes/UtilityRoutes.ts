@@ -36,6 +36,16 @@ import {
 import { MAX_CODE_LENGTH } from "../constants.ts";
 import { EphemeralStore, buildLocalUrl, errorMessage } from "../utilities.ts";
 import { crawlSingleStatic } from "../services/CrawlerService.ts";
+
+interface MapMarker {
+  latitude: number;
+  longitude: number;
+  name?: string;
+  label?: string;
+  address?: string;
+  shortAddress?: string;
+}
+
 const router = Router();
 // ─── Calculator (BigNumber) ────────────────────────────────────────
 router.get("/calculate", (req: Request, res: Response) => {
@@ -45,11 +55,11 @@ router.get("/calculate", (req: Request, res: Response) => {
   }
   try {
     const numA = new BigNumber(a);
-    let numB: any;
+    let numB: BigNumber | undefined;
     if (b !== undefined && b !== "") {
       numB = new BigNumber(b);
     }
-    let result: any;
+    let result: BigNumber;
     switch (operation) {
       case "add":
         if (numB === undefined) throw new Error("'b' is required for add");
@@ -190,17 +200,17 @@ router.get("/places/search", asyncHandler(async (req: Request, res: Response) =>
  * In-memory map marker store — avoids multi-kb query-param URLs.
  * Maps are keyed by short UUID, expire after 1h.
  */
-const mapStore = new EphemeralStore<{ markers: unknown[] }>();
-function storeMarkers(markerList: any) {
+const mapStore = new EphemeralStore<{ markers: MapMarker[] }>();
+function storeMarkers(markerList: MapMarker[]) {
   return mapStore.set({ markers: markerList });
 }
 /**
  * Build the interactive embed HTML for Google Maps JS API.
  * Renders numbered markers with info windows showing name + address.
  */
-function buildMapEmbedHtml(markerList: any, apiKey: any, { zoom, maptype = "roadmap" }: Record<string, unknown> = {}) {
+function buildMapEmbedHtml(markerList: MapMarker[], apiKey: string, { zoom, maptype = "roadmap" }: Record<string, unknown> = {}) {
   const markersJson = JSON.stringify(
-    markerList.map((m: any, i: any) => ({
+    markerList.map((m: MapMarker, i: number) => ({
       lat: m.latitude,
       lng: m.longitude,
       label: String(i + 1),
@@ -281,7 +291,7 @@ router.get("/map/embed", (req: Request, res: Response) => {
   if (!CONFIG.GOOGLE_API_KEY) {
     return res.status(400).send("Missing API key");
   }
-  let markerList: any;
+  let markerList: MapMarker[];
   // Resolve by stored ID (short URL) or inline JSON (backward compat)
   if (id) {
     const entry = mapStore.get(id);
@@ -314,7 +324,7 @@ router.get("/map", asyncHandler(async (req: Request, res: Response) => {
       .json({ error: "Query parameter 'markers' is required (JSON array of {latitude, longitude, label?})" });
   }
   try {
-    let markerList: any;
+    let markerList: MapMarker[];
     try {
       markerList = JSON.parse(markers);
     } catch {
@@ -422,7 +432,7 @@ router.post("/python/stream", asyncHandler(async (req: Request, res: Response) =
   send({ event: "start", language: "python" });
   const result = await executePythonStreaming(code, {
     timeout: timeout ? Math.min(Math.max(parseInt(timeout), 1000), 60_000) : undefined,
-    onChunk: (event: any, data: any) => send({ event, data }),
+    onChunk: (event: string, data: string) => send({ event, data }),
   });
   send({ event: "exit", exitCode: result.exitCode, executionTimeMs: result.executionTimeMs, success: result.success, timedOut: result.timedOut, error: result.error || undefined });
   res.end();
@@ -497,7 +507,8 @@ router.get("/scrape/metadata", asyncHandler(
       throw Object.assign(new Error("Query parameter 'url' is required"), { status: 400 });
     }
     const result = await crawlSingleStatic(url, {
-      extractFn: ($: any) => {
+      extractFn: (ctx) => {
+        const $ = ctx.$;
         const meta: Record<string, unknown> = {};
         // Title
         meta.title =
@@ -548,7 +559,8 @@ router.get("/scrape/metadata", asyncHandler(
     if (result.error) {
       throw Object.assign(new Error(result.error), { status: 502 });
     }
-    return { url, ...result.data };
+    const metadata = typeof result.data === "object" && result.data !== null ? result.data : {};
+    return { url, ...metadata };
   },
   "Page metadata scrape",
 ));

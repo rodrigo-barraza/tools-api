@@ -34,7 +34,7 @@ export async function fetchCraigslistEvents() {
 
   const html = await response.text();
   const $ = cheerio.load(html);
-  const events: any[] = [];
+  const events: unknown[] = [];
 
   $(".cl-static-search-result").each((_i: any, element: any) => {
     const $el = $(element);

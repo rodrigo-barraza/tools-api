@@ -46,7 +46,7 @@ function buildRedditJsonUrl(input: any) {
 // ─── Comment Tree Flattening ──────────────────────────────────────
 
 function extractComments(children: any, limit: any) {
-  const comments: any[] = [];
+  const comments: unknown[] = [];
 
   for (const child of children) {
     if (comments.length >= limit) break;

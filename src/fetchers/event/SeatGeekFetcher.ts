@@ -157,7 +157,7 @@ export async function fetchSeatGeekEvents() {
     "datetime_utc.lte": endDate.toISOString(),
   });
 
-  const allEvents: any[] = [];
+  const allEvents: unknown[] = [];
   let page = 1;
   let hasMore = true;
 

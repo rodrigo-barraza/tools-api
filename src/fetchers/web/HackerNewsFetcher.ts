@@ -39,7 +39,7 @@ async function fetchComments(ids: any, remaining: any, depth: any = 0) {
   if (!ids?.length || remaining <= 0 || depth > 3) return [];
 
   const batch = ids.slice(0, remaining);
-  const comments: any[] = [];
+  const comments: unknown[] = [];
 
   const items = await Promise.all(
     batch.map((id: any) =>

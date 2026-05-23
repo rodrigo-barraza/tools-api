@@ -15,9 +15,9 @@ const TIMEOUT_MS = 10_000;
 
 
  */
-async function lightsApiFetch(method: any, path: any, body: any = null) {
+async function lightsApiFetch(method: string, path: string, body: Record<string, unknown> | null = null) {
   const url = `${CONFIG.LIGHTS_SERVICE_URL}${path}`;
-  const options: Record<string, unknown> = {
+  const options: RequestInit = {
     method,
     headers: { "Content-Type": "application/json" },
     signal: AbortSignal.timeout(TIMEOUT_MS),
@@ -30,7 +30,7 @@ async function lightsApiFetch(method: any, path: any, body: any = null) {
   const response = await fetch(url, options);
 
   if (!response.ok) {
-    const errBody = await response.json().catch(() => ({}));
+    const errBody = await response.json().catch(() => ({})) as { error?: string };
     throw new Error(
       errBody.error || `Lights API returned ${response.status}: ${response.statusText}`,
     );
@@ -44,13 +44,14 @@ const LightsDataService = {
    * List lights and their current state.
 
    */
-  async listLights(selector: any = "all") {
+  async listLights(selector: string = "all") {
     const data = await lightsApiFetch("GET", `/lights/${encodeURIComponent(selector)}`);
 
     // Normalize the response into a clean shape for the agent
     if (!Array.isArray(data)) return data;
 
-    return data.map((light: any) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- LIFX API returns dynamic light objects
+    return data.map((light: Record<string, any>) => ({
       id: light.id,
       label: light.label,
       power: light.power,
@@ -75,7 +76,10 @@ const LightsDataService = {
 
 
    */
-  async setState({ selector = "all", power, color, brightness, duration, kelvin }: any) {
+  async setState({ selector = "all", power, color, brightness, duration, kelvin }: {
+    selector?: string; power?: string; color?: string;
+    brightness?: number; duration?: number; kelvin?: number;
+  }) {
     const body: Record<string, unknown> = {};
     if (power !== undefined) body.power = power;
     if (color !== undefined) body.color = color;
@@ -91,7 +95,10 @@ const LightsDataService = {
 
 
    */
-  async setStateDelta({ selector = "all", hue, saturation, brightness, kelvin, duration }: any) {
+  async setStateDelta({ selector = "all", hue, saturation, brightness, kelvin, duration }: {
+    selector?: string; hue?: number; saturation?: number;
+    brightness?: number; kelvin?: number; duration?: number;
+  }) {
     const body: Record<string, unknown> = {};
     if (hue !== undefined) body.hue = hue;
     if (saturation !== undefined) body.saturation = saturation;
@@ -107,7 +114,7 @@ const LightsDataService = {
 
 
    */
-  async setStates(states: any, defaults: any = null) {
+  async setStates(states: Record<string, unknown>[], defaults: Record<string, unknown> | null = null) {
     const body: Record<string, unknown> = { states };
     if (defaults) body.defaults = defaults;
     return lightsApiFetch("PUT", "/lights/states", body);
@@ -118,7 +125,7 @@ const LightsDataService = {
 
 
    */
-  async togglePower(selector: any = "all", duration: any = 1) {
+  async togglePower(selector: string = "all", duration: number = 1) {
     return lightsApiFetch("POST", `/lights/${encodeURIComponent(selector)}/toggle`, { duration });
   },
 
@@ -127,7 +134,11 @@ const LightsDataService = {
 
 
    */
-  async breatheEffect({ selector = "all", color, fromColor, period, cycles, persist, powerOn, peak }: any) {
+  async breatheEffect({ selector = "all", color, fromColor, period, cycles, persist, powerOn, peak }: {
+    selector?: string; color?: string; fromColor?: string;
+    period?: number; cycles?: number; persist?: boolean;
+    powerOn?: boolean; peak?: number;
+  }) {
     const body: Record<string, unknown> = {};
     if (color !== undefined) body.color = color;
     if (fromColor !== undefined) body.fromColor = fromColor;
@@ -145,7 +156,10 @@ const LightsDataService = {
 
 
    */
-  async pulseEffect({ selector = "all", color, fromColor, period, cycles, persist, powerOn }: any) {
+  async pulseEffect({ selector = "all", color, fromColor, period, cycles, persist, powerOn }: {
+    selector?: string; color?: string; fromColor?: string;
+    period?: number; cycles?: number; persist?: boolean; powerOn?: boolean;
+  }) {
     const body: Record<string, unknown> = {};
     if (color !== undefined) body.color = color;
     if (fromColor !== undefined) body.fromColor = fromColor;
@@ -162,7 +176,10 @@ const LightsDataService = {
 
 
    */
-  async moveEffect({ selector = "all", direction, period, cycles, powerOn }: any) {
+  async moveEffect({ selector = "all", direction, period, cycles, powerOn }: {
+    selector?: string; direction?: string; period?: number;
+    cycles?: number; powerOn?: boolean;
+  }) {
     const body: Record<string, unknown> = {};
     if (direction !== undefined) body.direction = direction;
     if (period !== undefined) body.period = period;
@@ -177,7 +194,9 @@ const LightsDataService = {
 
 
    */
-  async flameEffect({ selector = "all", period, duration, powerOn }: any) {
+  async flameEffect({ selector = "all", period, duration, powerOn }: {
+    selector?: string; period?: number; duration?: number; powerOn?: boolean;
+  }) {
     const body: Record<string, unknown> = {};
     if (period !== undefined) body.period = period;
     if (duration !== undefined) body.duration = duration;
@@ -191,7 +210,10 @@ const LightsDataService = {
 
 
    */
-  async morphEffect({ selector = "all", palette, period, duration, powerOn }: any) {
+  async morphEffect({ selector = "all", palette, period, duration, powerOn }: {
+    selector?: string; palette?: string[]; period?: number;
+    duration?: number; powerOn?: boolean;
+  }) {
     const body: Record<string, unknown> = {};
     if (palette !== undefined) body.palette = palette;
     if (period !== undefined) body.period = period;
@@ -206,7 +228,7 @@ const LightsDataService = {
 
 
    */
-  async effectsOff(selector: any = "all", powerOff: any = false) {
+  async effectsOff(selector: string = "all", powerOff: boolean = false) {
     const body: Record<string, unknown> = {};
     if (powerOff) body.powerOff = true;
 
@@ -222,7 +244,8 @@ const LightsDataService = {
     if (!Array.isArray(data)) return data;
 
     // Normalize into a clean shape
-    return data.map((scene: any) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- LIFX API returns dynamic scene objects
+    return data.map((scene: Record<string, any>) => ({
       uuid: scene.uuid,
       name: scene.name,
       lightCount: scene.states?.length || 0,
@@ -235,7 +258,7 @@ const LightsDataService = {
 
 
    */
-  async activateScene(sceneId: any, duration: any = 1, ignore: any = null) {
+  async activateScene(sceneId: string, duration: number = 1, ignore: string[] | null = null) {
     const body: Record<string, unknown> = {};
     if (duration !== undefined) body.duration = duration;
     if (ignore) body.ignore = ignore;
@@ -262,7 +285,7 @@ const LightsDataService = {
 
 
    */
-  async setNightLock(locked: any) {
+  async setNightLock(locked: boolean) {
     const path = locked ? "/nightlock/lock" : "/nightlock/unlock";
     return lightsApiFetch("POST", path);
   },

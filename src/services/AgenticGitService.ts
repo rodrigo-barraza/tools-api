@@ -94,7 +94,7 @@ async function tryAgentRoute(
   method: string,
   params: Record<string, unknown>,
   targetPath: string,
-): Promise<any> {
+): Promise<unknown> {
   const agent = routeForPath(targetPath);
   if (!agent) return null;
   try {
@@ -207,7 +207,7 @@ async function runGit(args: string[], cwd: string): Promise<GitRunResult> {
 export async function agenticGitStatus(repoPath: string): Promise<GitStatusResult | { error: string; path?: string }> {
   // Agent routing
   const agentResult = await tryAgentRoute("git.status", { path: repoPath }, repoPath);
-  if (agentResult) return agentResult;
+  if (agentResult) return agentResult as GitStatusResult;
 
   const validation = validatePath(repoPath);
   if (!validation.safe) {
@@ -298,7 +298,7 @@ export async function agenticGitDiff(
 ): Promise<GitDiffResult> {
   // Agent routing
   const agentResult = await tryAgentRoute("git.diff", { path: repoPath, staged, filePath, ref }, repoPath);
-  if (agentResult) return agentResult;
+  if (agentResult) return agentResult as GitDiffResult;
 
   const validation = validatePath(repoPath);
   if (!validation.safe) {
@@ -364,7 +364,7 @@ export async function agenticGitLog(
 ): Promise<GitLogResult> {
   // Agent routing
   const agentResult = await tryAgentRoute("git.log", { path: repoPath, limit, author, since, filePath }, repoPath);
-  if (agentResult) return agentResult;
+  if (agentResult) return agentResult as GitLogResult;
 
   const validation = validatePath(repoPath);
   if (!validation.safe) {

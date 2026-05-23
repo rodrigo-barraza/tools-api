@@ -26,7 +26,7 @@ export async function fetchGitHubTrending() {
  * Extracts repo name, description, language, stars, forks.
  */
 function parseGitHubTrending(html: any) {
-  const trends: any[] = [];
+  const trends: unknown[] = [];
   const articleRegex = /<article class="Box-row">([\s\S]*?)<\/article>/g;
   let match: any;
   while ((match = articleRegex.exec(html)) !== null) {

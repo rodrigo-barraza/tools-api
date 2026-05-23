@@ -28,13 +28,14 @@ import CONFIG from "../config.ts";
 import logger from "../logger.ts";
 import type { Request, Response, Application } from "express";
 import { errorMessage } from "../utilities.ts";
+import type { ToolEndpoint } from "../types/tools.ts";
 
 // ── Self base URL (vault-resolved, localhost fallback) ───────
 const SELF_BASE_URL = CONFIG.TOOLS_SERVICE_URL;
 
 // ── Build tool executor URL from endpoint metadata ──────────
-function buildUrl(endpoint: any, args: any = {}) {
-  let path = endpoint.path as string;
+function buildUrl(endpoint: ToolEndpoint, args: Record<string, unknown> = {}) {
+  let path = endpoint.path;
 
   // Handle conditional paths
   if (endpoint.conditionalPath) {
@@ -81,7 +82,7 @@ const ARG_REMAPS: Record<string, Record<string, string>> = {
 };
 
 // ── Execute tool via internal HTTP ──────────────────────────
-async function executeTool(toolName: string, endpoint: any, args: any = {}, context: Record<string, string> = {}) {
+async function executeTool(toolName: string, endpoint: ToolEndpoint, args: Record<string, unknown> = {}, context: Record<string, string> = {}) {
   const remaps = ARG_REMAPS[toolName];
   let resolvedArgs = args;
   if (remaps) {
@@ -160,7 +161,7 @@ function createMcpServer(context: Record<string, string> = {}) {
     async () => {
       const aiSchemas = getToolSchemasForAI();
       return {
-        tools: aiSchemas.map((t: Record<string, unknown>) => ({
+        tools: aiSchemas.map((t) => ({
           name: t.name,
           description: t.description || "",
           inputSchema: t.parameters || { type: "object", properties: {} },

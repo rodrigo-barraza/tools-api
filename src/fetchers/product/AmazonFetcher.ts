@@ -35,7 +35,7 @@ async function scrapeCategory(slug: any, categoryName: any, unifiedCategory: any
 
   const html = await response.text();
   const $ = cheerio.load(html);
-  const products: any[] = [];
+  const products: unknown[] = [];
 
   // Amazon Best Sellers grid items
   $("[data-asin]").each((_i: any, element: any) => {
@@ -126,7 +126,7 @@ async function scrapeCategory(slug: any, categoryName: any, unifiedCategory: any
  * Rate-limited to respect Amazon's servers.
  */
 export async function fetchAllAmazonBestSellers() {
-  const allProducts: any[] = [];
+  const allProducts: unknown[] = [];
 
   for (const cat of AMAZON_CATEGORIES) {
     try {

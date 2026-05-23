@@ -26,16 +26,27 @@ import { errorMessage } from "../../utilities.ts";
 // ─── State ─────────────────────────────────────────────────────────
 
 
-let socket: any = null;
+interface AisVessel {
+  messageType: string;
+  mmsi: number;
+  shipName: string | null;
+  latitude: number;
+  longitude: number;
+  timestamp: string;
+  receivedAt: string;
+  [key: string]: unknown;
+}
+
+let socket: WebSocket | null = null;
 
 
 let intentionalClose = false;
 
 /** Ring buffer of recent AIS messages */
-const vesselBuffer: any[] = [];
+const vesselBuffer: AisVessel[] = [];
 
 /** Map of MMSI → latest known data (position + static merged) */
-const vesselMap = new Map();
+const vesselMap = new Map<number, AisVessel>();
 
 /** Connection stats */
 const stats = {
@@ -86,16 +97,16 @@ function connect(options: AisStreamOptions = {}) {
 
     // Build subscription message — must be sent within 3 seconds
     const subscription = buildSubscription(options);
-    socket.send(JSON.stringify(subscription));
+    socket!.send(JSON.stringify(subscription));
     const bboxCount = Array.isArray(subscription.BoundingBoxes) ? subscription.BoundingBoxes.length : 0;
     logger.info(
       `[AisStream]    Subscribed to ${bboxCount} bounding box(es)`,
     );
   };
 
-  socket.onmessage = (event: any) => {
+  socket.onmessage = (event: WebSocket.MessageEvent) => {
     try {
-      const message = JSON.parse(event.data);
+      const message = JSON.parse(String(event.data));
 
       // Check for error messages
       if (message.error) {
@@ -119,7 +130,7 @@ function connect(options: AisStreamOptions = {}) {
         // Update vessel map (latest known state per MMSI)
         const mmsi = processed.mmsi;
         if (mmsi) {
-          const existing = vesselMap.get(mmsi) || {};
+          const existing = vesselMap.get(mmsi) || {} as AisVessel;
           vesselMap.set(mmsi, { ...existing, ...processed });
         }
       }
@@ -128,7 +139,7 @@ function connect(options: AisStreamOptions = {}) {
     }
   };
 
-  socket.onerror = (error: any) => {
+  socket.onerror = (error: WebSocket.ErrorEvent) => {
     stats.lastError = error.message || "WebSocket error";
     logger.error(`[AisStream] ❌ WebSocket error: ${stats.lastError}`);
   };
@@ -184,7 +195,8 @@ function buildDefaultBbox() {
 
 // ─── Message Processing ────────────────────────────────────────────
 
-function processMessage(raw: any) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- AIS Stream sends dynamic JSON with undocumented fields
+function processMessage(raw: Record<string, any>): AisVessel | null {
   const { MessageType, MetaData, Message } = raw;
   if (!MessageType || !MetaData) return null;
 
@@ -276,7 +288,7 @@ function processMessage(raw: any) {
  */
 export function getTrackedVessels(limit: number = 100) {
   const vessels = Array.from(vesselMap.values())
-    .sort((a: any, b: any) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime())
+    .sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime())
     .slice(0, limit);
 
   return vessels;
@@ -299,7 +311,7 @@ export function getVesselByMmsi(mmsi: number) {
 export function getRecentMessages(limit: number = 50, messageType: string | null = null) {
   let messages = [...vesselBuffer];
   if (messageType) {
-    messages = messages.filter((m: any) => m.messageType === messageType);
+    messages = messages.filter((m) => m.messageType === messageType);
   }
   return messages.slice(-limit);
 }
@@ -312,13 +324,13 @@ export function getRecentMessages(limit: number = 50, messageType: string | null
 export function getVesselsInArea(minLat: number, maxLat: number, minLng: number, maxLng: number, limit: number = 100) {
   return Array.from(vesselMap.values())
     .filter(
-      (v: any) =>
+      (v) =>
         v.latitude >= minLat &&
         v.latitude <= maxLat &&
         v.longitude >= minLng &&
         v.longitude <= maxLng,
     )
-    .sort((a: any, b: any) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime())
+    .sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime())
     .slice(0, limit);
 }
 
@@ -330,8 +342,8 @@ export function getVesselsInArea(minLat: number, maxLat: number, minLng: number,
 export function searchVessels(query: string, limit: number = 20) {
   const q = query.toLowerCase();
   return Array.from(vesselMap.values())
-    .filter((v: any) => v.shipName?.toLowerCase().includes(q))
-    .sort((a: any, b: any) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime())
+    .filter((v) => v.shipName?.toLowerCase().includes(q))
+    .sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime())
     .slice(0, limit);
 }
 

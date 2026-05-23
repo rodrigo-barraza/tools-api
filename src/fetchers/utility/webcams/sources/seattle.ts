@@ -1,5 +1,5 @@
 import { buildScraperHeaders } from "../../../../utilities.ts";
-import { upsertWebcams } from "../../../../models/Webcam.ts";
+import { upsertWebcams, type WebcamDocument } from "../../../../models/Webcam.ts";
 
 export async function refreshSeattleWebcams() {
   // SDOT Travelers API (Seattle Live Webcams)
@@ -11,7 +11,7 @@ export async function refreshSeattleWebcams() {
   }
   
   const data = await response.json();
-  const parsedWebcams: any[] = [];
+  const parsedWebcams: WebcamDocument[] = [];
 
   for (const feature of data.Features) {
     const lat = feature.PointCoordinate[0];

@@ -25,7 +25,7 @@ export async function fetchCityOfVancouverEvents() {
 
   const html = await response.text();
   const $ = cheerio.load(html);
-  const events: any[] = [];
+  const events: unknown[] = [];
 
   // Try multiple selectors — city websites change layouts
   const selectors = [

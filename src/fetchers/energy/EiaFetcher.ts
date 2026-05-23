@@ -19,10 +19,22 @@ import logger from "../../logger.ts";
 
 // ─── In-Memory Cache ───────────────────────────────────────────────
 
-const dataCache = new Map();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- EIA API returns dynamic data rows
+interface EiaDataResult {
+  route: string;
+  total: number;
+  dateFormat: string | null;
+  frequency: string | null;
+  count: number;
+  data: Record<string, any>[];
+  warning: string | null;
+  fetchedAt: string;
+}
+
+const dataCache = new Map<string, { data: EiaDataResult | Record<string, unknown>; fetchedAt: number }>();
 const DATA_CACHE_TTL_MS = 3_600_000; // 1 hour — energy data updates infrequently
 
-const metaCache = new Map();
+const metaCache = new Map<string, { data: unknown; fetchedAt: number }>();
 const META_CACHE_TTL_MS = 86_400_000; // 24 hours — routes/metadata rarely change
 
 // ─── Helpers ───────────────────────────────────────────────────────
@@ -90,7 +102,8 @@ export async function browseRoute(route: string = "") {
     id: resp.id,
     name: resp.name,
     description: resp.description || null,
-    routes: (resp.routes || []).map((r: any) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- EIA API returns dynamic JSON objects
+    routes: (resp.routes || []).map((r: Record<string, any>) => ({
       id: r.id,
       name: r.name,
       description: r.description || null,
@@ -123,7 +136,8 @@ export async function getFacetValues(route: string, facetId: string) {
     route,
     facetId,
     totalFacets: resp.totalFacets || 0,
-    facets: (resp.facets || []).map((f: any) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- EIA API returns dynamic facet shapes
+    facets: (resp.facets || []).map((f: Record<string, any>) => ({
       id: f.id,
       name: f.name,
       alias: f.alias || null,
@@ -190,7 +204,7 @@ export async function getData(route: string, options: EiaGetDataOptions = {}) {
   // Append data columns
   if (dataColumns?.length) {
     const dataParams = dataColumns
-      .map((d: any) => `data[]=${encodeURIComponent(d)}`)
+      .map((d: string) => `data[]=${encodeURIComponent(d)}`)
       .join("&");
     url += `&${dataParams}`;
   }
@@ -238,6 +252,16 @@ export async function getData(route: string, options: EiaGetDataOptions = {}) {
 
 // ─── Curated Energy Snapshots ──────────────────────────────────────
 
+interface EiaIndicator {
+  id: string;
+  name: string;
+  category: string;
+  value: unknown;
+  period: string | null;
+  unit: string;
+  description: string | null;
+}
+
 /**
  * Get the latest values for a curated set of key energy indicators.
  * Fetches the most recent data point for each series in EIA_DEFAULT_SERIES.
@@ -251,10 +275,10 @@ export async function getEnergyIndicators() {
 
   const entries = Object.entries(EIA_DEFAULT_SERIES);
   const results = await Promise.allSettled(
-    entries.map(async ([key, meta]: any) => {
+    entries.map(async ([key, meta]) => {
       const seriesData = await getData(meta.route, {
         data: [meta.dataColumn],
-        facets: meta.facets || undefined,
+        facets: "facets" in meta ? meta.facets : undefined,
         frequency: meta.frequency || undefined,
         length: 1,
         sort: "period:desc",
@@ -274,18 +298,19 @@ export async function getEnergyIndicators() {
     }),
   );
 
+
   const indicators = results
-    .filter((r: any) => r.status === "fulfilled")
-    .map((r: any) => r.value);
+    .filter((r): r is PromiseFulfilledResult<EiaIndicator> => r.status === "fulfilled")
+    .map((r) => r.value);
 
   const failed = results
-    .filter((r: any) => r.status === "rejected")
-    .map((r: any, i: any) => ({ series: entries[i][0], error: r.reason.message }));
+    .filter((r): r is PromiseRejectedResult => r.status === "rejected")
+    .map((r, i) => ({ series: entries[i][0], error: (r.reason as Error).message }));
 
   if (failed.length > 0) {
     logger.warn(
       `[EiaFetcher] ⚠️ ${failed.length} indicator(s) failed:`,
-      failed.map((f: any) => f.series).join(", "),
+      failed.map((f) => f.series).join(", "),
     );
   }
 

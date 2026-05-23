@@ -32,7 +32,8 @@ import { errorMessage } from "../utilities.ts";
 
 // ─── Collector Factory ─────────────────────────────────────────────
 
-function createProductCollector(collection: any, source: any, fetchFn: any) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Fetcher return types vary per source
+function createProductCollector(collection: string, source: string, fetchFn: () => Promise<any[]>) {
   return async function () {
     try {
       const products = await fetchFn();
@@ -43,7 +44,7 @@ function createProductCollector(collection: any, source: any, fetchFn: any) {
         `[${collection}] ✅ ${products.length} products | ${result.upserted} new, ${result.modified} updated`,
       );
     } catch (error: unknown) {
-      setProductError(source, error as Error);
+      setProductError(source, { message: errorMessage(error) } as Error);
       logger.error(`[${collection}] ❌ ${errorMessage(error)}`);
     }
   };
@@ -69,9 +70,9 @@ async function collectBestBuyCAAvailability() {
       skus,
       metadata,
     );
-    updateStatuses(results);
+    updateStatuses(results as Parameters<typeof updateStatuses>[0]);
     await saveState("bestbuy_ca_availability", results);
-    const inStock = results.filter((r: any) => r.inStock).length;
+    const inStock = (results as { inStock: boolean }[]).filter((r) => r.inStock).length;
     logger.info(
       `[bestbuy_ca_availability] ✅ ${results.length} SKUs checked | ${inStock} in stock`,
     );
@@ -81,7 +82,7 @@ async function collectBestBuyCAAvailability() {
       );
     }
   } catch (error: unknown) {
-    setAvailabilityError(error as Error);
+    setAvailabilityError({ message: errorMessage(error) } as Error);
     logger.error(`[bestbuy_ca_availability] ❌ ${errorMessage(error)}`);
   }
 }
@@ -101,11 +102,11 @@ const STARTUP_TASKS = [
 
 export function startProductCollectors() {
   // Set default restoreFn for standard product tasks
-  const tasks = STARTUP_TASKS.map((task: any) => ({
+  const tasks = STARTUP_TASKS.map((task) => ({
     ...task,
     restoreFn:
       task.restoreFn ||
-      ((data: any) => updateProducts(data.source, data.products)),
+      ((data: Record<string, unknown>) => updateProducts(data.source as string, data.products as Parameters<typeof updateProducts>[1])),
   }));
 
   startCollectorLoop(tasks);

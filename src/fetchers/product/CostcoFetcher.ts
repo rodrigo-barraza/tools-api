@@ -89,7 +89,7 @@ async function scrapeCategory(
   }
 
   const $ = cheerio.load(html);
-  const products: any[] = [];
+  const products: unknown[] = [];
 
   // ── Strategy 1: MUI-based product tiles (data-testid) ─────────
   $('[data-testid^="ProductTile_"]').each((_i: any, element: any) => {
@@ -214,7 +214,7 @@ async function scrapeCategory(
  * Fetch products from Costco US across all configured categories.
  */
 export async function fetchAllCostcoUS() {
-  const allProducts: any[] = [];
+  const allProducts: unknown[] = [];
 
   for (const cat of COSTCO_US_CATEGORIES) {
     try {
@@ -242,7 +242,7 @@ export async function fetchAllCostcoUS() {
  * Fetch products from Costco Canada across all configured categories.
  */
 export async function fetchAllCostcoCA() {
-  const allProducts: any[] = [];
+  const allProducts: unknown[] = [];
 
   for (const cat of COSTCO_CA_CATEGORIES) {
     try {

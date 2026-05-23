@@ -2,6 +2,7 @@ import { getDB } from "../db.ts";
 import { lookupIp } from "../fetchers/utility/IpInfoFetcher.ts";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
+import type { ResolvedLocation, LocationDocument, TideStation } from "../types/agentic.ts";
 
 // ═══════════════════════════════════════════════════════════════
 //  Location Service — Dynamic Geolocation Resolution
@@ -21,9 +22,9 @@ const NOAA_STATIONS_URL =
 
 // ─── Haversine Distance ────────────────────────────────────────
 
-function haversineDistanceKm(lat1: any, lon1: any, lat2: any, lon2: any) {
+function haversineDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371; // Earth's radius in km
-  const toRad = (deg: any) => (deg * Math.PI) / 180;
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
   const a =
@@ -34,7 +35,15 @@ function haversineDistanceKm(lat1: any, lon1: any, lat2: any, lon2: any) {
 
 // ─── NOAA: Find Nearest Tide Station ───────────────────────────
 
-async function findNearestTideStation(latitude: any, longitude: any) {
+interface RawNoaaStation {
+  id: string | number;
+  name: string;
+  state?: string | null;
+  lat: number | null;
+  lng: number | null;
+}
+
+async function findNearestTideStation(latitude: number, longitude: number): Promise<TideStation | null> {
   try {
     const response = await fetch(NOAA_STATIONS_URL);
     if (!response.ok) {
@@ -42,11 +51,11 @@ async function findNearestTideStation(latitude: any, longitude: any) {
       return null;
     }
 
-    const json = await response.json();
+    const json = await response.json() as { stations?: RawNoaaStation[] };
     const stations = json.stations || [];
     if (!stations.length) return null;
 
-    let closest: any = null;
+    let closest: TideStation | null = null;
     let minDist = Infinity;
 
     for (const s of stations) {
@@ -74,7 +83,7 @@ async function findNearestTideStation(latitude: any, longitude: any) {
 
 // ─── Resolve Location from IP ──────────────────────────────────
 
-async function resolveLocationFromIp() {
+async function resolveLocationFromIp(): Promise<ResolvedLocation> {
   logger.info("[Location] 🌍 Resolving server location from public IP…");
   const ipData = await lookupIp("self");
 
@@ -123,26 +132,26 @@ async function resolveLocationFromIp() {
 
 // ─── Load / Save ───────────────────────────────────────────────
 
-async function loadCachedLocation() {
+async function loadCachedLocation(): Promise<LocationDocument | null> {
   try {
     const db = getDB();
-    return await db.collection(COLLECTION).findOne({ _id: "current" as any });
+    return await db.collection<LocationDocument>(COLLECTION).findOne({ _id: "current" });
   } catch {
     return null;
   }
 }
 
-async function saveCachedLocation(location: any) {
+async function saveCachedLocation(location: ResolvedLocation) {
   try {
     const db = getDB();
-    const document = {
+    const document: LocationDocument = {
       _id: "current",
       ...location,
       updatedAt: new Date(),
     };
     await db
-      .collection(COLLECTION)
-      .replaceOne({ _id: "current" as any }, document, { upsert: true });
+      .collection<LocationDocument>(COLLECTION)
+      .replaceOne({ _id: "current" }, document, { upsert: true });
   } catch (error: unknown) {
     logger.error(`[Location] ⚠️ Failed to persist: ${errorMessage(error)}`);
   }
@@ -150,8 +159,7 @@ async function saveCachedLocation(location: any) {
 
 // ─── Public: Initialise on Startup ─────────────────────────────
 
-/** @type {{ latitude: number, longitude: number, timezone: string, radiusMiles: number, tideStationId: string | null }} */
-let resolvedLocation: any = null;
+let resolvedLocation: ResolvedLocation | null = null;
 
 /**
  * Initialise the location config.
@@ -167,11 +175,11 @@ export async function initLocation() {
     const ageMs = Date.now() - new Date(cached.updatedAt).getTime();
     if (ageMs < MAX_AGE_MS) {
       const { _id, updatedAt: _updatedAt, ...rest } = cached;
-      resolvedLocation = rest;
+      resolvedLocation = rest as ResolvedLocation;
       const ageHours = Math.round(ageMs / 3_600_000 * 10) / 10;
       logger.info(
         `[Location] ✅ Using cached location (${ageHours}h old) → ` +
-          `${rest.source?.city || "Unknown"} ` +
+          `${(rest as ResolvedLocation).source?.city || "Unknown"} ` +
           `(${rest.latitude}, ${rest.longitude})`,
       );
       return resolvedLocation;
@@ -189,7 +197,7 @@ export async function initLocation() {
     // Fall back to cached data even if expired (better than nothing)
     if (cached) {
       const { _id, updatedAt: _updatedAt, ...rest } = cached;
-      resolvedLocation = rest;
+      resolvedLocation = rest as ResolvedLocation;
       logger.warn(
         `[Location] ⚠️ Refresh failed (${errorMessage(error)}), using stale cache`,
       );
@@ -198,4 +206,3 @@ export async function initLocation() {
     throw new Error(`Location resolution failed: ${errorMessage(error)}`);
   }
 }
-

@@ -96,7 +96,7 @@ export interface PlacesStaticMapOptions {
  * Build a Google Maps Static API URL with labeled markers for each place.
  * https://developers.google.com/maps/documentation/maps-static/start
  */
-export function buildStaticMapUrl(places: any[], center: any, { size = "800x400", zoom, maptype = "roadmap" }: PlacesStaticMapOptions = {}) {
+export function buildStaticMapUrl(places: unknown[], center: any, { size = "800x400", zoom, maptype = "roadmap" }: PlacesStaticMapOptions = {}) {
   if (!places.length || !CONFIG.GOOGLE_API_KEY) return null;
 
   const params = new URLSearchParams({

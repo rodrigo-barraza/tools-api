@@ -497,7 +497,7 @@ router.post("/project/summary", agenticHandler(async (req: Request) => {
   if (!path || typeof path !== "string") {
     return { error: "Request body must include 'path' (string) — the project root directory" };
   }
-  return agenticProjectSummary(path);
+  return agenticProjectSummary(path) as Promise<Record<string, unknown>>;
 }));
 // ─── 9. Browser Automation ──────────────────────────────────
 router.post("/browser/action", agenticHandler(async (req: Request) => {
@@ -623,8 +623,8 @@ router.post("/task/create", asyncHandler(async (req: Request, res: Response) => 
     return res.status(400).json({ error: "Request body must include 'description' (string)" });
   }
   // Auto-inject agentSessionId from Prism telemetry header
-  const agentSessionId = req.headers["x-agent-session-id"] || null;
-  const result = await agenticTaskCreate(project, { subject, description, status, activeForm, metadata, agentSessionId });
+  const agentSessionId = (req.headers["x-agent-session-id"] as string) || null;
+  const result = await agenticTaskCreate(project, { subject, description, status, activeForm, metadata, agentSessionId: agentSessionId as string | null });
   if (result.error) return res.status(400).json(result);
   res.json(result);
 }));

@@ -89,22 +89,30 @@ import { saveState, startCollectorLoop } from "../services/FreshnessService.ts";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
 
-// ─── Collector Factory ─────────────────────────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Polymorphic factory over 20+ fetcher/cache pairs with different signatures
+interface CollectorConfig {
+  label: string;
+  collection: string;
+  fetchFn: () => Promise<any>;
+  updateFn: (data: any) => void;
+  setErrorFn: (error: any) => void;
+  logFn?: (data: any) => string;
+}
 
-function makeCollector({ label, collection, fetchFn, updateFn, setErrorFn, logFn }: any) {
+function makeCollector(config: CollectorConfig) {
   return async () => {
     try {
-      const data = await fetchFn();
-      updateFn(data);
-      await saveState(collection, data);
-      if (logFn) {
-        logger.info(`[${label}] ✅ ${logFn(data)}`);
+      const data = await config.fetchFn();
+      config.updateFn(data);
+      await saveState(config.collection, data);
+      if (config.logFn) {
+        logger.info(`[${config.label}] ✅ ${config.logFn(data)}`);
       } else {
-        logger.info(`[${label}] ✅ Collected`);
+        logger.info(`[${config.label}] ✅ Collected`);
       }
     } catch (error: unknown) {
-      setErrorFn(error);
-      logger.error(`[${label}] ❌ ${errorMessage(error)}`);
+      config.setErrorFn(error);
+      logger.error(`[${config.label}] ❌ ${errorMessage(error)}`);
     }
   };
 }
@@ -114,33 +122,33 @@ function makeCollector({ label, collection, fetchFn, updateFn, setErrorFn, logFn
 const collectOpenMeteo = makeCollector({
   label: "OpenMeteo", collection: "openmeteo",
   fetchFn: fetchOpenMeteoWeather,
-  updateFn: (d: any) => update("openmeteo", d),
-  setErrorFn: (e: any) => setError("openmeteo", e),
-  logFn: (d: any) => `${d.weatherDescription} | ${d.temperature}°C`,
+  updateFn: (d) => update("openmeteo", d),
+  setErrorFn: (e) => setError("openmeteo", e),
+  logFn: (d) => `${d.weatherDescription} | ${d.temperature}°C`,
 });
 
 const collectAirQuality = makeCollector({
   label: "AirQuality", collection: "air_quality",
   fetchFn: fetchAirQuality,
-  updateFn: (d: any) => update("airquality", d),
-  setErrorFn: (e: any) => setError("airquality", e),
-  logFn: (d: any) => `US AQI: ${d.usAqi} | PM2.5: ${d.pm25}`,
+  updateFn: (d) => update("airquality", d),
+  setErrorFn: (e) => setError("airquality", e),
+  logFn: (d) => `US AQI: ${d.usAqi} | PM2.5: ${d.pm25}`,
 });
 
 const collectTomorrowIORealtime = makeCollector({
   label: "Tomorrow.io", collection: "tomorrowio",
   fetchFn: fetchTomorrowIORealtime,
-  updateFn: (d: any) => update("tomorrowio", d),
-  setErrorFn: (e: any) => setError("tomorrowio", e),
-  logFn: (d: any) => `${d.weatherDescription} | Visibility: ${d.visibility}km | UV: ${d.uvIndex}`,
+  updateFn: (d) => update("tomorrowio", d),
+  setErrorFn: (e) => setError("tomorrowio", e),
+  logFn: (d) => `${d.weatherDescription} | Visibility: ${d.visibility}km | UV: ${d.uvIndex}`,
 });
 
 const collectTomorrowIODaily = makeCollector({
   label: "Tomorrow.io Daily", collection: "tomorrowio_daily",
   fetchFn: fetchTomorrowIODailyForecast,
-  updateFn: (d: any) => update("tomorrowio_daily", d),
-  setErrorFn: (e: any) => setError("tomorrowio_daily", e),
-  logFn: (d: any) => `Moonrise: ${d.moonrise || "N/A"} | Moonset: ${d.moonset || "N/A"}`,
+  updateFn: (d) => update("tomorrowio_daily", d),
+  setErrorFn: (e) => setError("tomorrowio_daily", e),
+  logFn: (d) => `Moonrise: ${d.moonrise || "N/A"} | Moonset: ${d.moonset || "N/A"}`,
 });
 
 const collectIssPosition = makeCollector({
@@ -148,7 +156,7 @@ const collectIssPosition = makeCollector({
   fetchFn: fetchIssPosition,
   updateFn: updateIssPosition,
   setErrorFn: setIssPositionError,
-  logFn: (d: any) => `Lat: ${d.latitude.toFixed(2)}, Lng: ${d.longitude.toFixed(2)}`,
+  logFn: (d) => `Lat: ${d.latitude.toFixed(2)}, Lng: ${d.longitude.toFixed(2)}`,
 });
 
 const collectAstronauts = makeCollector({
@@ -156,7 +164,7 @@ const collectAstronauts = makeCollector({
   fetchFn: fetchAstronauts,
   updateFn: updateAstronauts,
   setErrorFn: setAstronautsError,
-  logFn: (d: any) => `${d.total} people in space`,
+  logFn: (d) => `${d.total} people in space`,
 });
 
 const collectKpIndex = makeCollector({
@@ -164,7 +172,7 @@ const collectKpIndex = makeCollector({
   fetchFn: fetchKpIndex,
   updateFn: updateKpIndex,
   setErrorFn: setKpIndexError,
-  logFn: (d: any) => `${d.length} readings | Current Kp: ${d[d.length - 1]?.kp ?? "?"}`,
+  logFn: (d) => `${d.length} readings | Current Kp: ${d[d.length - 1]?.kp ?? "?"}`,
 });
 
 const collectWildfires = makeCollector({
@@ -172,11 +180,11 @@ const collectWildfires = makeCollector({
   fetchFn: fetchWildfires,
   updateFn: updateWildfires,
   setErrorFn: setWildfireError,
-  logFn: (d: any) => {
-    const largest = d.filter((e: any) => e.magnitudeValue != null)
-      .sort((a: any, b: any) => b.magnitudeValue - a.magnitudeValue)[0];
+  logFn: (d) => {
+    const largest = d.filter((e: { magnitudeValue?: number }) => e.magnitudeValue != null)
+      .sort((a: { magnitudeValue?: number }, b: { magnitudeValue?: number }) => (b.magnitudeValue ?? 0) - (a.magnitudeValue ?? 0))[0];
     return `${d.length} active fires` +
-      (largest ? ` | Largest: ${largest.title} (${largest.magnitudeValue} ${largest.magnitudeUnit})` : "");
+      (largest ? ` | Largest: ${(largest as Record<string, unknown>).title} (${largest.magnitudeValue} ${(largest as Record<string, unknown>).magnitudeUnit})` : "");
   },
 });
 
@@ -185,10 +193,10 @@ const collectTides = makeCollector({
   fetchFn: fetchTides,
   updateFn: updateTides,
   setErrorFn: setTideError,
-  logFn: (d: any) => {
-    const next = d.find((t: any) => new Date(t.time) > new Date());
+  logFn: (d) => {
+    const next = d.find((t: { time: string }) => new Date(t.time) > new Date());
     return `${d.length} predictions` +
-      (next ? ` | Next: ${next.type} at ${next.time} (${next.height}m)` : "");
+      (next ? ` | Next: ${(next as Record<string, unknown>).type} at ${next.time} (${(next as Record<string, unknown>).height}m)` : "");
   },
 });
 
@@ -197,7 +205,7 @@ const collectSolarWind = makeCollector({
   fetchFn: fetchSolarWind,
   updateFn: updateSolarWind,
   setErrorFn: setSolarWindError,
-  logFn: (d: any) => `${d.counts.plasma}p/${d.counts.magnetic}m pts | Speed: ${d.latest.speed ?? "?"}km/s | Bz: ${d.latest.bz ?? "?"}nT`,
+  logFn: (d) => `${d.counts.plasma}p/${d.counts.magnetic}m pts | Speed: ${d.latest.speed ?? "?"}km/s | Bz: ${d.latest.bz ?? "?"}nT`,
 });
 
 const collectGoogleAirQuality = makeCollector({
@@ -205,7 +213,7 @@ const collectGoogleAirQuality = makeCollector({
   fetchFn: fetchGoogleAirQuality,
   updateFn: updateGoogleAirQuality,
   setErrorFn: setGoogleAirQualityError,
-  logFn: (d: any) => `AQI: ${d.usEpaAqi ?? "?"} (${d.usEpaCategory ?? "?"}) | Dominant: ${d.usEpaDominantPollutant ?? "?"}`,
+  logFn: (d) => `AQI: ${d.usEpaAqi ?? "?"} (${d.usEpaCategory ?? "?"}) | Dominant: ${d.usEpaDominantPollutant ?? "?"}`,
 });
 
 const collectPollen = makeCollector({
@@ -213,7 +221,7 @@ const collectPollen = makeCollector({
   fetchFn: fetchPollen,
   updateFn: updatePollen,
   setErrorFn: setPollenError,
-  logFn: (d: any) => {
+  logFn: (d) => {
     const today = d.daily?.[0];
     return `${d.daily?.length || 0}-day forecast | Grass: ${today?.grass?.indexInfo?.category ?? "?"} | Tree: ${today?.tree?.indexInfo?.category ?? "?"} | Weed: ${today?.weed?.indexInfo?.category ?? "?"}`;
   },
@@ -224,7 +232,7 @@ const collectApod = makeCollector({
   fetchFn: fetchApod,
   updateFn: updateApod,
   setErrorFn: setApodError,
-  logFn: (d: any) => d.title,
+  logFn: (d) => d.title,
 });
 
 const collectLaunches = makeCollector({
@@ -232,7 +240,7 @@ const collectLaunches = makeCollector({
   fetchFn: fetchUpcomingLaunches,
   updateFn: updateLaunches,
   setErrorFn: setLaunchError,
-  logFn: (d: any) => `${d.length} upcoming` + (d[0] ? ` | Next: ${d[0].name} (${d[0].status})` : ""),
+  logFn: (d) => `${d.length} upcoming` + (d[0] ? ` | Next: ${d[0].name} (${d[0].status})` : ""),
 });
 
 const collectTwilight = makeCollector({
@@ -240,7 +248,7 @@ const collectTwilight = makeCollector({
   fetchFn: fetchTwilight,
   updateFn: updateTwilight,
   setErrorFn: setTwilightError,
-  logFn: (d: any) => `Civil: ${d.civilTwilightBegin} → ${d.civilTwilightEnd}`,
+  logFn: (d) => `Civil: ${d.civilTwilightBegin} → ${d.civilTwilightEnd}`,
 });
 
 const collectEnvironmentCanada = makeCollector({
@@ -248,7 +256,7 @@ const collectEnvironmentCanada = makeCollector({
   fetchFn: fetchEnvironmentCanadaWarnings,
   updateFn: updateWarnings,
   setErrorFn: setWarningError,
-  logFn: (d: any) => `${d.length} active warnings/watches`,
+  logFn: (d) => `${d.length} active warnings/watches`,
 });
 
 const collectAvalanche = makeCollector({
@@ -256,7 +264,7 @@ const collectAvalanche = makeCollector({
   fetchFn: fetchAvalancheForecast,
   updateFn: updateAvalanche,
   setErrorFn: setAvalancheError,
-  logFn: (d: any) => `${d.length} forecast regions`,
+  logFn: (d) => `${d.length} forecast regions`,
 });
 
 // ─── Complex Collectors (custom async flows) ──────────────────────
@@ -267,8 +275,8 @@ async function collectEarthquakes() {
     const result = await updateEarthquakes(events);
     await saveState("earthquakes_cache", events);
     const strongest = events.reduce(
-      (max: any, e: any) => ((e.magnitude ?? -1) > (max.magnitude ?? -1) ? e : max),
-      events[0] || {},
+      (max: typeof events[0], e: typeof events[0]) => ((e.magnitude ?? -1) > (max.magnitude ?? -1) ? e : max),
+      events[0] || ({} as typeof events[0]),
     );
     logger.info(
       `[Earthquake] ✅ ${events.length} events | ` +
@@ -276,7 +284,7 @@ async function collectEarthquakes() {
         `Strongest: M${strongest?.magnitude ?? "?"} ${strongest?.place ?? ""}`,
     );
   } catch (error: unknown) {
-    setEarthquakeError(error as any);
+    setEarthquakeError({ message: errorMessage(error) });
     logger.error(`[Earthquake] ❌ ${errorMessage(error)}`);
   }
 }
@@ -293,7 +301,7 @@ async function collectNeos() {
         `Closest: ${closest?.name ?? "?"} at ${Math.round(closest?.missDistanceKm ?? 0)} km`,
     );
   } catch (error: unknown) {
-    setNeoError(error as any);
+    setNeoError({ message: errorMessage(error) });
     logger.error(`[NEO] ❌ ${errorMessage(error)}`);
   }
 }
@@ -309,7 +317,7 @@ async function collectDonki() {
         `${data.storms.length} storms (${result.storms.upserted} new)`,
     );
   } catch (error: unknown) {
-    setSpaceWeatherError(error as any);
+    setSpaceWeatherError({ message: errorMessage(error) });
     logger.error(`[DONKI] ❌ ${errorMessage(error)}`);
   }
 }

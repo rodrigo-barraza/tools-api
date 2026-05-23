@@ -29,7 +29,7 @@ export async function fetchProductHuntTrends() {
  * Falls back to JSON-LD structured data if available.
  */
 function parseProductHunt(html: any) {
-  const trends: any[] = [];
+  const trends: unknown[] = [];
 
   // Try to extract from JSON-LD or Next.js __NEXT_DATA__
   const nextDataMatch = html.match(

@@ -24,14 +24,15 @@ import { fetchTVMazeTrends } from "../fetchers/trend/TVMazeFetcher.ts";
 import { fetchBlueskyTrends } from "../fetchers/trend/BlueskyFetcher.ts";
 import { fetchGitHubTrending } from "../fetchers/trend/GitHubTrendingFetcher.ts";
 import { fetchProductHuntTrends } from "../fetchers/trend/ProductHuntFetcher.ts";
-import { updateTrends, setTrendError } from "../caches/TrendCache.ts";
+import { updateTrends, setTrendError, type CachedTrend } from "../caches/TrendCache.ts";
 import { saveState, startCollectorLoop } from "../services/FreshnessService.ts";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
 
 // ─── Collector Factory ─────────────────────────────────────────────
 
-function createTrendCollector(collection: any, source: any, fetchFn: any, noun: any = "trends") {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- fetchFn returns diverse trend types per source
+function createTrendCollector(collection: string, source: string, fetchFn: () => Promise<any[]>, noun: string = "trends") {
   return async function () {
     try {
       const trends = await fetchFn();
@@ -42,7 +43,7 @@ function createTrendCollector(collection: any, source: any, fetchFn: any, noun: 
         `[${collection}] ✅ ${trends.length} ${noun} | ${result.upserted} new, ${result.modified} updated`,
       );
     } catch (error: unknown) {
-      setTrendError(source, error as any);
+      setTrendError(source, { message: errorMessage(error) });
       logger.error(`[${collection}] ❌ ${errorMessage(error)}`);
     }
   };
@@ -65,17 +66,17 @@ const collectProductHunt = createTrendCollector("trends_producthunt", TREND_SOUR
 // ─── Startup Definitions ──────────────────────────────────────────
 
 const STARTUP_TASKS = [
-  { label: "Google Trends", collection: "trends_google", ttl: GOOGLE_TRENDS_INTERVAL_MS, collectFn: collectGoogleTrends, restoreFn: (data: any) => updateTrends(data.source, data.trends), delay: 0 },
-  { label: "Wikipedia", collection: "trends_wikipedia", ttl: WIKIPEDIA_INTERVAL_MS, collectFn: collectWikipedia, restoreFn: (data: any) => updateTrends(data.source, data.trends), delay: 3_000 },
-  { label: "Hacker News", collection: "trends_hackernews", ttl: HACKERNEWS_INTERVAL_MS, collectFn: collectHackerNews, restoreFn: (data: any) => updateTrends(data.source, data.trends), delay: 6_000 },
-  { label: "Reddit", collection: "trends_reddit", ttl: REDDIT_INTERVAL_MS, collectFn: collectReddit, restoreFn: (data: any) => updateTrends(data.source, data.trends), delay: 9_000 },
-  { label: "X", collection: "trends_x", ttl: X_TRENDS_INTERVAL_MS, collectFn: collectXTrends, restoreFn: (data: any) => updateTrends(data.source, data.trends), delay: 12_000 },
-  { label: "Google News", collection: "trends_google_news", ttl: GOOGLE_NEWS_INTERVAL_MS, collectFn: collectGoogleNews, restoreFn: (data: any) => updateTrends(data.source, data.trends), delay: 15_000 },
-  { label: "Mastodon", collection: "trends_mastodon", ttl: MASTODON_INTERVAL_MS, collectFn: collectMastodon, restoreFn: (data: any) => updateTrends(data.source, data.trends), delay: 18_000 },
-  { label: "TVMaze", collection: "trends_tvmaze", ttl: TVMAZE_INTERVAL_MS, collectFn: collectTVMaze, restoreFn: (data: any) => updateTrends(data.source, data.trends), delay: 21_000 },
-  { label: "Bluesky", collection: "trends_bluesky", ttl: BLUESKY_INTERVAL_MS, collectFn: collectBluesky, restoreFn: (data: any) => updateTrends(data.source, data.trends), delay: 24_000 },
-  { label: "GitHub Trending", collection: "trends_github", ttl: GITHUB_TRENDING_INTERVAL_MS, collectFn: collectGitHubTrending, restoreFn: (data: any) => updateTrends(data.source, data.trends), delay: 27_000 },
-  { label: "Product Hunt", collection: "trends_producthunt", ttl: PRODUCTHUNT_TREND_INTERVAL_MS, collectFn: collectProductHunt, restoreFn: (data: any) => updateTrends(data.source, data.trends), delay: 30_000 },
+  { label: "Google Trends", collection: "trends_google", ttl: GOOGLE_TRENDS_INTERVAL_MS, collectFn: collectGoogleTrends, restoreFn: (data: { source: string; trends: CachedTrend[] }) => updateTrends(data.source, data.trends), delay: 0 },
+  { label: "Wikipedia", collection: "trends_wikipedia", ttl: WIKIPEDIA_INTERVAL_MS, collectFn: collectWikipedia, restoreFn: (data: { source: string; trends: CachedTrend[] }) => updateTrends(data.source, data.trends), delay: 3_000 },
+  { label: "Hacker News", collection: "trends_hackernews", ttl: HACKERNEWS_INTERVAL_MS, collectFn: collectHackerNews, restoreFn: (data: { source: string; trends: CachedTrend[] }) => updateTrends(data.source, data.trends), delay: 6_000 },
+  { label: "Reddit", collection: "trends_reddit", ttl: REDDIT_INTERVAL_MS, collectFn: collectReddit, restoreFn: (data: { source: string; trends: CachedTrend[] }) => updateTrends(data.source, data.trends), delay: 9_000 },
+  { label: "X", collection: "trends_x", ttl: X_TRENDS_INTERVAL_MS, collectFn: collectXTrends, restoreFn: (data: { source: string; trends: CachedTrend[] }) => updateTrends(data.source, data.trends), delay: 12_000 },
+  { label: "Google News", collection: "trends_google_news", ttl: GOOGLE_NEWS_INTERVAL_MS, collectFn: collectGoogleNews, restoreFn: (data: { source: string; trends: CachedTrend[] }) => updateTrends(data.source, data.trends), delay: 15_000 },
+  { label: "Mastodon", collection: "trends_mastodon", ttl: MASTODON_INTERVAL_MS, collectFn: collectMastodon, restoreFn: (data: { source: string; trends: CachedTrend[] }) => updateTrends(data.source, data.trends), delay: 18_000 },
+  { label: "TVMaze", collection: "trends_tvmaze", ttl: TVMAZE_INTERVAL_MS, collectFn: collectTVMaze, restoreFn: (data: { source: string; trends: CachedTrend[] }) => updateTrends(data.source, data.trends), delay: 21_000 },
+  { label: "Bluesky", collection: "trends_bluesky", ttl: BLUESKY_INTERVAL_MS, collectFn: collectBluesky, restoreFn: (data: { source: string; trends: CachedTrend[] }) => updateTrends(data.source, data.trends), delay: 24_000 },
+  { label: "GitHub Trending", collection: "trends_github", ttl: GITHUB_TRENDING_INTERVAL_MS, collectFn: collectGitHubTrending, restoreFn: (data: { source: string; trends: CachedTrend[] }) => updateTrends(data.source, data.trends), delay: 27_000 },
+  { label: "Product Hunt", collection: "trends_producthunt", ttl: PRODUCTHUNT_TREND_INTERVAL_MS, collectFn: collectProductHunt, restoreFn: (data: { source: string; trends: CachedTrend[] }) => updateTrends(data.source, data.trends), delay: 30_000 },
 ];
 
 export function startTrendCollectors() {

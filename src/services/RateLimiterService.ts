@@ -8,11 +8,11 @@ import logger from "../logger.ts";
  * Tracks last request time and enforces minimum delay between calls.
  */
 class RateLimiterService {
-  /** @type {Map<string, number>} provider → last request timestamp */
-  #lastRequestAt = new Map();
+  /** provider → last request timestamp */
+  #lastRequestAt = new Map<string, number>();
 
-  /** @type {Map<string, Promise<void>>} provider → pending wait promise (queue) */
-  #queues = new Map();
+  /** provider → pending wait promise (queue) */
+  #queues = new Map<string, Promise<void>>();
 
   /**
    * Wait until it's safe to make a request to the given provider.
@@ -20,7 +20,7 @@ class RateLimiterService {
    * Multiple concurrent callers for the same provider are serialized
    * via a promise chain to prevent thundering herd.
    */
-  async wait(provider: any) {
+  async wait(provider: string) {
     const limits = API_RATE_LIMITS[provider as keyof typeof API_RATE_LIMITS];
     if (!limits) {
       logger.warn(`[RateLimiter] ⚠️ Unknown provider: ${provider}`);
@@ -43,13 +43,13 @@ class RateLimiterService {
 
 
    */
-  async #enforce(provider: any, delayMs: any) {
+  async #enforce(provider: string, delayMs: number) {
     const last = this.#lastRequestAt.get(provider) || 0;
     const elapsed = Date.now() - last;
     const remaining = delayMs - elapsed;
 
     if (remaining > 0) {
-      await new Promise<any>((resolve: any) => setTimeout(resolve, remaining));
+      await new Promise<void>((resolve) => setTimeout(resolve, remaining));
     }
 
     this.#lastRequestAt.set(provider, Date.now());
@@ -59,7 +59,7 @@ class RateLimiterService {
    * Get the configured delay for a provider (useful for logging/diagnostics).
 
    */
-  getDelay(provider: any) {
+  getDelay(provider: string): number | null {
     return API_RATE_LIMITS[provider as keyof typeof API_RATE_LIMITS]?.requestDelayMs ?? null;
   }
 
@@ -67,7 +67,7 @@ class RateLimiterService {
    * Get current usage stats for a provider.
 
    */
-  getStats(provider: any) {
+  getStats(provider: string) {
     return {
       lastRequestAt: this.#lastRequestAt.get(provider) ?? null,
       delayMs: this.getDelay(provider),

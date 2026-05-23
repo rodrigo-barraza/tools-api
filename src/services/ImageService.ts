@@ -253,7 +253,7 @@ async function processWithMagick(inputBuffer: any, operations: any, outputFormat
       switch (op.type) {
         case "text": {
           if (!op.content) throw new Error("text requires 'content'");
-          const textArgs: any[] = [];
+          const textArgs: string[] = [];
           textArgs.push("-gravity", op.gravity || "south");
           textArgs.push("-font", op.font || "Liberation-Sans");
           textArgs.push("-pointsize", String(op.fontSize || 32));
@@ -263,9 +263,9 @@ async function processWithMagick(inputBuffer: any, operations: any, outputFormat
             textArgs.push("-strokewidth", String(op.strokeWidth || 2));
           }
           if (op.x !== undefined || op.y !== undefined) {
-            textArgs.push("-annotate", `+${op.x || 0}+${op.y || 0}`, op.content);
+            textArgs.push("-annotate", `+${op.x || 0}+${op.y || 0}`, op.content as string);
           } else {
-            textArgs.push("-annotate", "+0+20", op.content);
+            textArgs.push("-annotate", "+0+20", op.content as string);
           }
           args.push(...textArgs);
           break;

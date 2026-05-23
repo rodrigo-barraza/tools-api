@@ -67,7 +67,7 @@ export async function agenticProjectSummary(projectPath: any) {
 
     // Detect framework from dependencies
     const allDeps = { ...packageJson.dependencies, ...packageJson.devDependencies };
-    const frameworks: any[] = [];
+    const frameworks: unknown[] = [];
     if (allDeps["next"]) frameworks.push("next.js");
     if (allDeps["react"]) frameworks.push("react");
     if (allDeps["vue"]) frameworks.push("vue");
@@ -156,7 +156,7 @@ export async function agenticProjectSummary(projectPath: any) {
   result.totalDirectories = totalDirs;
 
   // ── Entry Points ─────────────────────────────────────────
-  const entryPoints: any[] = [];
+  const entryPoints: unknown[] = [];
   const candidates = [
     "src/app/layout.js", "src/app/layout.tsx", "src/app/page.js", "src/app/page.tsx",
     "src/index.js", "src/index.ts", "src/index.tsx",
@@ -176,7 +176,7 @@ export async function agenticProjectSummary(projectPath: any) {
   result.entryPoints = entryPoints;
 
   // ── Config Files ─────────────────────────────────────────
-  const configFiles: any[] = [];
+  const configFiles: unknown[] = [];
   const configCandidates = [
     "tsconfig.json", "jsconfig.json", ".eslintrc.js", "eslint.config.js",
     ".prettierrc", ".prettierrc.js", "prettier.config.js",

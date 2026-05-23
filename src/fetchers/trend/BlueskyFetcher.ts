@@ -11,7 +11,7 @@ const BLUESKY_API = "https://public.api.bsky.app/xrpc";
  */
 export async function fetchBlueskyTrends() {
   // Fetch trending topics via the public search endpoint
-  const trends: any[] = [];
+  const trends: unknown[] = [];
 
   try {
     // Use getSuggestions for popular feeds (public endpoint)

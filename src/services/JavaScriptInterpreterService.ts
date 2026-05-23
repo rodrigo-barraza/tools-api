@@ -173,7 +173,7 @@ function buildGlobals(outputBuffer: any, execution: any = "sandboxed") {
 export function executeJavaScript(code: any, { timeout = DEFAULT_TIMEOUT_MS, execution = "sandboxed" }: Record<string, unknown> = {}) {
   const clampedTimeout = Math.min(Math.max(Number(timeout), 100), MAX_TIMEOUT_MS);
   const startTime = performance.now();
-  const outputBuffer: any[] = [];
+  const outputBuffer: unknown[] = [];
 
   try {
     const sandbox = buildGlobals(outputBuffer, execution);

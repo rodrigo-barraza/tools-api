@@ -83,6 +83,29 @@ const BLOCKED_PATTERNS = [
 ];
 
 // ────────────────────────────────────────────────────────────
+// Types
+// ────────────────────────────────────────────────────────────
+
+interface ShellResult {
+  success: boolean;
+  stdout: string;
+  stderr: string;
+  exitCode: number | null;
+  executionTimeMs: number;
+  timedOut: boolean;
+  error?: string;
+}
+
+interface ShellOptions {
+  stdin?: string;
+  timeout?: number;
+}
+
+interface ShellStreamingOptions extends ShellOptions {
+  onChunk?: (stream: "stdout" | "stderr", data: string) => void;
+}
+
+// ────────────────────────────────────────────────────────────
 // Validation
 // ────────────────────────────────────────────────────────────
 
@@ -90,7 +113,7 @@ const BLOCKED_PATTERNS = [
  * Validate that a command string only uses allowed binaries.
 
  */
-function validateCommand(command: any) {
+function validateCommand(command: string) {
   // Check for blocked patterns
   for (const pattern of BLOCKED_PATTERNS) {
     if (pattern.test(command)) {
@@ -102,7 +125,7 @@ function validateCommand(command: any) {
   }
 
   // Split on pipes and validate each segment
-  const segments = command.split("|").map((s: any) => s.trim());
+  const segments = command.split("|").map((s: string) => s.trim());
   for (const segment of segments) {
     if (!segment) {
       return { valid: false, error: "Empty pipe segment" };
@@ -127,12 +150,8 @@ function validateCommand(command: any) {
 
 /**
  * Execute an allowlisted shell command.
- *
-
-
- * }>}
  */
-export async function executeShell(command: any, { stdin = "", timeout = DEFAULT_TIMEOUT_MS }: Record<string, unknown> = {}) {
+export async function executeShell(command: string, { stdin = "", timeout = DEFAULT_TIMEOUT_MS }: ShellOptions = {}): Promise<ShellResult> {
   const clampedTimeout = Math.min(Math.max(Number(timeout), 500), MAX_TIMEOUT_MS);
 
   // Validate command
@@ -150,7 +169,7 @@ export async function executeShell(command: any, { stdin = "", timeout = DEFAULT
   }
 
   // Validate stdin size
-  if (stdin && Buffer.byteLength(stdin as string) > MAX_INPUT_BYTES) {
+  if (stdin && Buffer.byteLength(stdin) > MAX_INPUT_BYTES) {
     return {
       success: false,
       stdout: "",
@@ -164,9 +183,9 @@ export async function executeShell(command: any, { stdin = "", timeout = DEFAULT
 
   const startTime = performance.now();
 
-  return new Promise<any>((resolve: any) => {
-    const stdoutChunks: any[] = [];
-    const stderrChunks: any[] = [];
+  return new Promise<ShellResult>((resolve) => {
+    const stdoutChunks: Buffer[] = [];
+    const stderrChunks: Buffer[] = [];
     let stdoutLen = 0;
     let stderrLen = 0;
     let timedOut = false;
@@ -192,14 +211,14 @@ export async function executeShell(command: any, { stdin = "", timeout = DEFAULT
     }
     child.stdin.end();
 
-    child.stdout.on("data", (chunk: any) => {
+    child.stdout.on("data", (chunk: Buffer) => {
       if (stdoutLen < MAX_OUTPUT_BYTES) {
         stdoutChunks.push(chunk);
         stdoutLen += chunk.length;
       }
     });
 
-    child.stderr.on("data", (chunk: any) => {
+    child.stderr.on("data", (chunk: Buffer) => {
       if (stderrLen < MAX_OUTPUT_BYTES) {
         stderrChunks.push(chunk);
         stderrLen += chunk.length;
@@ -211,7 +230,7 @@ export async function executeShell(command: any, { stdin = "", timeout = DEFAULT
       child.kill("SIGKILL");
     }, clampedTimeout);
 
-    function finish(exitCode: any) {
+    function finish(exitCode: number | null) {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
@@ -239,8 +258,8 @@ export async function executeShell(command: any, { stdin = "", timeout = DEFAULT
       });
     }
 
-    child.on("close", (code: any) => finish(code));
-    child.on("error", (error: any) => {
+    child.on("close", (code: number | null) => finish(code));
+    child.on("error", (error: Error) => {
       if (!settled) {
         settled = true;
         clearTimeout(timer);
@@ -263,7 +282,7 @@ export async function executeShell(command: any, { stdin = "", timeout = DEFAULT
  * Same security model as executeShell, but invokes `onChunk` for each
  * stdout/stderr data event as it arrives.
  */
-export async function executeShellStreaming(command: any, { stdin = "", timeout = DEFAULT_TIMEOUT_MS, onChunk }: Record<string, unknown> = {}) {
+export async function executeShellStreaming(command: string, { stdin = "", timeout = DEFAULT_TIMEOUT_MS, onChunk }: ShellStreamingOptions = {}): Promise<ShellResult> {
   const clampedTimeout = Math.min(Math.max(Number(timeout), 500), MAX_TIMEOUT_MS);
 
   const validation = validateCommand(command);
@@ -274,7 +293,7 @@ export async function executeShellStreaming(command: any, { stdin = "", timeout 
     };
   }
 
-  if (stdin && Buffer.byteLength(stdin as string) > MAX_INPUT_BYTES) {
+  if (stdin && Buffer.byteLength(stdin) > MAX_INPUT_BYTES) {
     return {
       success: false, stdout: "", stderr: "", exitCode: null,
       executionTimeMs: 0, timedOut: false,
@@ -284,9 +303,9 @@ export async function executeShellStreaming(command: any, { stdin = "", timeout 
 
   const startTime = performance.now();
 
-  return new Promise<any>((resolve: any) => {
-    const stdoutChunks: any[] = [];
-    const stderrChunks: any[] = [];
+  return new Promise<ShellResult>((resolve) => {
+    const stdoutChunks: Buffer[] = [];
+    const stderrChunks: Buffer[] = [];
     let stdoutLen = 0;
     let stderrLen = 0;
     let timedOut = false;
@@ -302,25 +321,25 @@ export async function executeShellStreaming(command: any, { stdin = "", timeout 
     if (stdin) child.stdin.write(stdin);
     child.stdin.end();
 
-    child.stdout.on("data", (chunk: any) => {
+    child.stdout.on("data", (chunk: Buffer) => {
       if (stdoutLen < MAX_OUTPUT_BYTES) {
         stdoutChunks.push(chunk);
         stdoutLen += chunk.length;
-        (onChunk as Function)?.("stdout", chunk.toString("utf-8"));
+        onChunk?.("stdout", chunk.toString("utf-8"));
       }
     });
 
-    child.stderr.on("data", (chunk: any) => {
+    child.stderr.on("data", (chunk: Buffer) => {
       if (stderrLen < MAX_OUTPUT_BYTES) {
         stderrChunks.push(chunk);
         stderrLen += chunk.length;
-        (onChunk as Function)?.("stderr", chunk.toString("utf-8"));
+        onChunk?.("stderr", chunk.toString("utf-8"));
       }
     });
 
     const timer = setTimeout(() => { timedOut = true; child.kill("SIGKILL"); }, clampedTimeout);
 
-    function finish(exitCode: any) {
+    function finish(exitCode: number | null) {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
@@ -337,8 +356,8 @@ export async function executeShellStreaming(command: any, { stdin = "", timeout 
       });
     }
 
-    child.on("close", (code: any) => finish(code));
-    child.on("error", (error: any) => {
+    child.on("close", (code: number | null) => finish(code));
+    child.on("error", (error: Error) => {
       if (!settled) {
         settled = true;
         clearTimeout(timer);

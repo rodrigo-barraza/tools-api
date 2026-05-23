@@ -12,7 +12,22 @@ const TRENDS_RSS_URL = "https://trends.google.com/trending/rss";
  * More stable than the unofficial npm package — RSS feeds rarely get blocked.
 
  */
-export async function fetchGoogleDailyTrends(geo: any = "US") {
+interface GoogleTrendItem {
+  name: string;
+  normalizedName: string;
+  source: string;
+  volume: number;
+  url: string;
+  context: {
+    geo: string;
+    traffic: string | null;
+    article: { title: string; url: string | null; source: string | null } | null;
+    pubDate: string | null;
+  };
+  timestamp: string;
+}
+
+export async function fetchGoogleDailyTrends(geo: string = "US") {
   const url = `${TRENDS_RSS_URL}?geo=${geo}`;
   const response = await fetch(url, {
     headers: {
@@ -35,10 +50,10 @@ export async function fetchGoogleDailyTrends(geo: any = "US") {
 
 
  */
-function parseRssTrends(xml: any, geo: any) {
-  const trends: any[] = [];
+function parseRssTrends(xml: string, geo: string) {
+  const trends: GoogleTrendItem[] = [];
   const itemRegex = /<item>([\s\S]*?)<\/item>/g;
-  let match: any;
+  let match: RegExpExecArray | null;
 
   while ((match = itemRegex.exec(xml)) !== null) {
     const item = match[1];
@@ -79,7 +94,7 @@ function parseRssTrends(xml: any, geo: any) {
  * Fetches daily trends from multiple geos and deduplicates.
  */
 export async function fetchGoogleTrends() {
-  const allTrends: any[] = [];
+  const allTrends: GoogleTrendItem[] = [];
 
   for (const geo of GOOGLE_TRENDS_GEOS) {
     try {

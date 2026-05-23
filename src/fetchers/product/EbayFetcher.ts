@@ -85,7 +85,7 @@ export async function fetchAllEbayTrending() {
     throw new Error("EBAY_CLIENT_ID and EBAY_CLIENT_SECRET not configured");
   }
   const token = await ebayTokenManager.getToken();
-  const allProducts: any[] = [];
+  const allProducts: unknown[] = [];
   for (const cat of EBAY_CATEGORIES) {
     await rateLimiter.wait("EBAY");
     try {

@@ -296,7 +296,7 @@ export async function testAllTools(toolNames?: string[]) {
   try {
     await ensureFixture();
 
-    const results: any[] = [];
+    const results: unknown[] = [];
     for (const name of names) {
             const testFn = TESTS[name as keyof typeof TESTS];
       if (!testFn) {

@@ -1,9 +1,9 @@
 import { buildScraperHeaders } from "../../../../utilities.ts";
-import { upsertWebcams } from "../../../../models/Webcam.ts";
+import { upsertWebcams, type WebcamDocument } from "../../../../models/Webcam.ts";
 
 export async function refreshTorontoWebcams() {
   // Toronto Open Data CKAN API
-  let allParsedWebcams: any[] = [];
+  let allParsedWebcams: WebcamDocument[] = [];
   let offset = 0;
   const limitPerPage = 100;
   let totalCount = 1;

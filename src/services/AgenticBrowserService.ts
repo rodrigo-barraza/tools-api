@@ -739,7 +739,7 @@ const { chromium } = require('playwright');
 
     return {
       action: "run_script",
-      ...result,
+      ...result as Record<string, unknown>,
     };
   } catch (error: unknown) {
     return { error: `run_script failed: ${errorMessage(error)}` };
@@ -758,9 +758,9 @@ const { chromium } = require('playwright');
  * Execute a Playwright script file in a subprocess.
  */
 function executeScript(scriptPath: any, wsEndpoint: any, timeoutMs: any) {
-  return new Promise<any>((resolve: any) => {
-    const stdoutChunks: any[] = [];
-    const stderrChunks: any[] = [];
+  return new Promise<unknown>((resolve: any) => {
+    const stdoutChunks: Buffer[] = [];
+    const stderrChunks: Buffer[] = [];
     let stdoutLen = 0;
     let stderrLen = 0;
     let timedOut = false;
@@ -818,7 +818,7 @@ function executeScript(scriptPath: any, wsEndpoint: any, timeoutMs: any) {
     }
 
     child.on("close", (code: any) => finish(code));
-    child.on("error", (error: any) => {
+    child.on("error", (error: unknown) => {
       if (!settled) {
         settled = true;
         clearTimeout(timer);
@@ -827,7 +827,7 @@ function executeScript(scriptPath: any, wsEndpoint: any, timeoutMs: any) {
           stdout: "",
           stderr: "",
           exitCode: null,
-          error: `Process error: ${error.message}`,
+          error: `Process error: ${errorMessage(error)}`,
         });
       }
     });
@@ -887,7 +887,7 @@ export async function agenticBrowserAction(params: any) {
     const result = await handler(session.page, actionParams);
 
     return {
-      ...result,
+      ...result as Record<string, unknown>,
       sessionId,
     };
   } catch (error: unknown) {

@@ -107,7 +107,7 @@ router.get("/messages/stream", (req: Request, res: Response) => {
         health.markSuccess();
       }
       // ── Detect deleted messages ─────────────────────────────
-      const deletedIds: any[] = [];
+      const deletedIds: unknown[] = [];
       for (const id of knownIds) {
         if (!currentIds.has(id)) {
           deletedIds.push(id);

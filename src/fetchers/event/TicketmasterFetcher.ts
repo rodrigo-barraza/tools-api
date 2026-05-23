@@ -155,7 +155,7 @@ export async function fetchTicketmasterEvents() {
     endDateTime: endDate.toISOString().replace(/\.\d{3}Z$/, "Z"),
   });
 
-  const allEvents: any[] = [];
+  const allEvents: unknown[] = [];
   let page = 0;
   let totalPages = 1;
 

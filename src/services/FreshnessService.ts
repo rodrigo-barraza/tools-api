@@ -1,5 +1,6 @@
 import { saveState, loadState } from "../models/CollectorSnapshot.ts";
 import logger from "../logger.ts";
+import type { CollectorTask } from "../types/agentic.ts";
 
 // ═══════════════════════════════════════════════════════════════
 //  Freshness Service — Cache-Aside Staleness Check
@@ -14,11 +15,11 @@ import logger from "../logger.ts";
  * If data is fresh, restores the in-memory cache from the DB.
  */
 export async function collectIfStale(
-  label: any,
-  collection: any,
-  ttlMs: any,
-  collectFn: any,
-  restoreFn: any,
+  label: string,
+  collection: string,
+  ttlMs: number,
+  collectFn: () => Promise<void>,
+  restoreFn: (data: unknown) => void,
 ) {
   const state = await loadState(collection);
 
@@ -52,7 +53,7 @@ export async function collectIfStale(
  * Handles initial stale check with staggered delays, then sets up intervals.
  * Eliminates the need to manually write setInterval lines per collector.
  */
-export function startCollectorLoop(tasks: any) {
+export function startCollectorLoop(tasks: CollectorTask[]) {
   for (const task of tasks) {
     setTimeout(
       () =>

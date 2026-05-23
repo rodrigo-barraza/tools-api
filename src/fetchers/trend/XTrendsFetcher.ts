@@ -63,7 +63,7 @@ export async function fetchAllXTrends() {
   }
 
   // On free tier (100/month), just fetch worldwide to conserve reads
-  const allTrends: any[] = [];
+  const allTrends: unknown[] = [];
 
   try {
     const trends = await fetchXTrends(X_WOEIDS.WORLDWIDE);

@@ -9,23 +9,27 @@ import { saveState, startCollectorLoop } from "../services/FreshnessService.ts";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
 
+type FetchResult = Awaited<ReturnType<typeof fetchCommodities>>;
+type QuoteItem = FetchResult[number];
+
 async function collectCommodities() {
   try {
     const quotes = await fetchCommodities();
-    const result = await updateCommodities(quotes);
+    const result = await updateCommodities(quotes as Parameters<typeof updateCommodities>[0]);
     await saveState("commodities", quotes);
 
     const topMover = [...quotes]
-      .filter((q: any) => q.changePercent != null)
-      .sort((a: any, b: any) => Math.abs(b.changePercent) - Math.abs(a.changePercent))[0];
+      .filter((q: QuoteItem) => q.changePercent != null)
+      .sort((a: QuoteItem, b: QuoteItem) => Math.abs(a.changePercent ?? 0) - Math.abs(b.changePercent ?? 0))
+      .at(-1);
 
     logger.info(
       `[Commodities] ✅ ${quotes.length} tickers | ` +
         `${result?.inserted || 0} snapshots saved | ` +
-        `Top mover: ${topMover?.name ?? "?"} (${topMover?.changePercent >= 0 ? "+" : ""}${topMover?.changePercent ?? "?"}%)`,
+        `Top mover: ${topMover?.name ?? "?"} (${(topMover?.changePercent ?? 0) >= 0 ? "+" : ""}${topMover?.changePercent ?? "?"}%)`,
     );
   } catch (error: unknown) {
-    setCommodityError(error as any);
+    setCommodityError({ message: errorMessage(error) });
     logger.error(`[Commodities] ❌ ${errorMessage(error)}`);
   }
 }

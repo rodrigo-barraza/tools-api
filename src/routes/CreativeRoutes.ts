@@ -287,7 +287,7 @@ router.post("/describe-image", asyncHandler(async (req: Request, res: Response) 
   const visionPrompt = prompts[context] || prompts.general;
 
   try {
-    const descriptions: any[] = [];
+    const descriptions: unknown[] = [];
 
     // Per-request dedup cache keyed by X-Request-Id header
     const requestId = req.headers["x-request-id"] || "default";

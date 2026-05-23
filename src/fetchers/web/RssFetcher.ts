@@ -63,7 +63,7 @@ export async function readRssFeed(url: string, options: RssOptions = {}) {
 
     return { error: "Unrecognized feed format (expected RSS 2.0 or Atom)", url };
   } catch (error: unknown) {
-    if ((error as any).name === "AbortError") {
+    if (error instanceof Error && error.name === "AbortError") {
       return { error: `Feed fetch timed out after ${FETCH_TIMEOUT_MS / 1000}s`, url };
     }
     return { error: `Feed parsing failed: ${errorMessage(error)}`, url };
@@ -72,7 +72,8 @@ export async function readRssFeed(url: string, options: RssOptions = {}) {
 
 // ─── RSS 2.0 Parser ──────────────────────────────────────────────
 
-function parseRss2(channel: any, feedUrl: any, limit: any) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- xml2js parsed objects are deeply nested dynamic shapes
+function parseRss2(channel: Record<string, any>, feedUrl: string, limit: number) {
   const items = Array.isArray(channel.item)
     ? channel.item
     : channel.item
@@ -88,7 +89,7 @@ function parseRss2(channel: any, feedUrl: any, limit: any) {
     language: channel.language || null,
     lastBuildDate: channel.lastBuildDate || null,
     itemCount: items.length,
-    items: items.slice(0, limit).map((item: any) => ({
+    items: items.slice(0, limit).map((item: Record<string, any>) => ({
       title: item.title || null,
       link: item.link || item.guid?._ || item.guid || null,
       pubDate: item.pubDate || null,
@@ -103,7 +104,8 @@ function parseRss2(channel: any, feedUrl: any, limit: any) {
 
 // ─── Atom Parser ─────────────────────────────────────────────────
 
-function parseAtom(feed: any, feedUrl: any, limit: any) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- xml2js parsed objects are deeply nested dynamic shapes
+function parseAtom(feed: Record<string, any>, feedUrl: string, limit: number) {
   const entries = Array.isArray(feed.entry)
     ? feed.entry
     : feed.entry
@@ -118,15 +120,15 @@ function parseAtom(feed: any, feedUrl: any, limit: any) {
     link: extractLink(feed.link) || null,
     updated: feed.updated || null,
     itemCount: entries.length,
-    items: entries.slice(0, limit).map((entry: any) => ({
+    items: entries.slice(0, limit).map((entry: Record<string, any>) => ({
       title: extractText(entry.title),
       link: extractLink(entry.link) || null,
       pubDate: entry.published || entry.updated || null,
       author: entry.author?.name || extractText(entry.author) || null,
       description: extractText(entry.summary) || "",
       content: extractText(entry.content) || "",
-      categories: normalizeArray(entry.category).map(
-        (c: any) => (typeof c === "object" ? c.term || c.label : c),
+      categories: (normalizeArray(entry.category) as Array<string | Record<string, string>>).map(
+        (c) => (typeof c === "object" ? c.term || c.label : c),
       ),
       id: entry.id || null,
     })),
@@ -135,30 +137,30 @@ function parseAtom(feed: any, feedUrl: any, limit: any) {
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
-function extractText(field: any) {
+function extractText(field: string | { _?: string } | null | undefined): string | null {
   if (!field) return null;
   if (typeof field === "string") return field;
   if (field._ !== undefined) return field._;
   return null;
 }
 
-function extractLink(link: any) {
+function extractLink(link: string | Array<{ rel?: string; href?: string }> | { href?: string } | null | undefined): string | null {
   if (!link) return null;
   if (typeof link === "string") return link;
   if (Array.isArray(link)) {
-    const alternate = link.find((l: any) => l.rel === "alternate") || link[0];
+    const alternate = link.find((l) => l.rel === "alternate") || link[0];
     return alternate?.href || null;
   }
   return link.href || null;
 }
 
-function normalizeArray(value: any) {
+function normalizeArray(value: unknown): unknown[] {
   if (!value) return [];
   if (Array.isArray(value)) return value;
   return [value];
 }
 
-function stripCdata(str: any) {
+function stripCdata(str: string): string {
   if (!str) return "";
   return str.replace(/<!\[CDATA\[|\]\]>/g, "").trim();
 }

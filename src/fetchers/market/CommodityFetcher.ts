@@ -5,6 +5,27 @@ import { errorMessage } from "../../utilities.ts";
 
 const yahooFinance = new YahooFinance();
 
+interface CommodityResult {
+  ticker: string;
+  name: string;
+  category: string;
+  unit: string;
+  price: number | null;
+  previousClose: number | null;
+  change: number | null;
+  changePercent: number | null;
+  dayHigh: number | null;
+  dayLow: number | null;
+  open: number | null;
+  volume: number | null;
+  marketCap: number | null;
+  fiftyTwoWeekHigh: number | null;
+  fiftyTwoWeekLow: number | null;
+  currency: string;
+  marketState: string;
+  fetchedAt: string;
+}
+
 /**
  * Batch size for Yahoo Finance quote() calls.
  * Splitting into smaller batches avoids potential timeout / payload-size
@@ -21,8 +42,8 @@ const BATCH_SIZE = 40;
  */
 export async function fetchCommodities() {
   const tickers = Object.keys(COMMODITY_TICKERS);
-  const results: any[] = [];
-  const errors: any[] = [];
+  const results: CommodityResult[] = [];
+  const errors: { batch: string; error: string }[] = [];
 
   // Process in batches
   for (let i = 0; i < tickers.length; i += BATCH_SIZE) {
@@ -93,6 +114,6 @@ export async function fetchCommodities() {
 /**
  * Round a number to a given decimal precision.
  */
-function round(value: any, decimals: any) {
+function round(value: number, decimals: number) {
   return Math.round(value * 10 ** decimals) / 10 ** decimals;
 }

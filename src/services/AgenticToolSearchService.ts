@@ -1,6 +1,14 @@
 // ─── Meta-Tool for Tool Discovery ───────────────────────────
 
 import { getToolSchemas } from "./ToolSchemaService.ts";
+import type { ToolSearchMatch } from "../types/tools.ts";
+
+type InferredToolSchema = ReturnType<typeof getToolSchemas>[number];
+
+interface ScoredMatch {
+  schema: InferredToolSchema;
+  score: number;
+}
 
 /**
  * Search all registered tool schemas by keyword, domain, or label.
@@ -20,13 +28,13 @@ export function agenticToolSearch(query: string, { domain, label, limit = 20 }: 
 
   const queryLower = (query || "").toLowerCase().trim();
 
-  let filtered = allSchemas;
+  let filtered: InferredToolSchema[] = allSchemas;
 
   // Filter by domain (exact match, case-insensitive)
   if (domain) {
     const domainLower = domain.toLowerCase();
     filtered = filtered.filter(
-      (t: any) => t.domain && t.domain.toLowerCase() === domainLower,
+      (t: InferredToolSchema) => t.domain && t.domain.toLowerCase() === domainLower,
     );
   }
 
@@ -34,18 +42,18 @@ export function agenticToolSearch(query: string, { domain, label, limit = 20 }: 
   if (label) {
     const labelLower = label.toLowerCase();
     filtered = filtered.filter(
-      (t: any) =>
+      (t: InferredToolSchema) =>
         t.labels &&
         Object.values(t.labels).some(
-          (v: any) => typeof v === "string" && v.toLowerCase() === labelLower,
+          (v: string) => typeof v === "string" && v.toLowerCase() === labelLower,
         ),
     );
   }
 
   // Keyword search on name + description
-  let scored: any;
+  let scored: ScoredMatch[];
   if (queryLower) {
-    scored = filtered.map((t: any) => {
+    scored = filtered.map((t: InferredToolSchema) => {
       const nameLower = (t.name || "").toLowerCase();
       const descLower = (t.description || "").toLowerCase();
 
@@ -66,17 +74,17 @@ export function agenticToolSearch(query: string, { domain, label, limit = 20 }: 
       }
 
       return { schema: t, score };
-    }).filter((s: any) => s.score > 0);
+    }).filter((s: ScoredMatch) => s.score > 0);
   } else {
     // No keyword query — just domain/label filtering, return all matches
-    scored = filtered.map((t: any) => ({ schema: t, score: 1 }));
+    scored = filtered.map((t: InferredToolSchema) => ({ schema: t, score: 1 }));
   }
 
   // Sort by score descending
-  scored.sort((a: any, b: any) => b.score - a.score);
+  scored.sort((a: ScoredMatch, b: ScoredMatch) => b.score - a.score);
 
   const capped = Math.min(Math.max(1, limit), 50);
-  const matches = scored.slice(0, capped).map(({ schema }: any) => ({
+  const matches = scored.slice(0, capped).map(({ schema }: ScoredMatch) => ({
     name: schema.name,
     description: schema.description,
     domain: schema.domain || null,

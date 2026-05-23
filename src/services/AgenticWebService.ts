@@ -1,9 +1,14 @@
 // ─── URL Fetching & Web Search ──────────────────────────────
 
 import * as cheerio from "cheerio";
+import type { CheerioAPI, Cheerio } from "cheerio";
+import type { AnyNode } from "domhandler";
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API responses from Brave/Google are dynamic JSON
+type ApiResponse = Record<string, any>;
 
 // ────────────────────────────────────────────────────────────
 // Constants
@@ -33,13 +38,13 @@ const GOOGLE_CSE_BASE = "https://www.googleapis.com/customsearch/v1";
 /**
  * Fetch a URL and convert its HTML content to clean markdown.
  */
-export async function agenticFetchUrl(url: any, { selector }: Record<string, unknown> = {}) {
+export async function agenticFetchUrl(url: string, { selector }: { selector?: string } = {}) {
   if (!url || typeof url !== "string") {
     return { error: "'url' is required and must be a string" };
   }
 
   // Validate URL format
-  let parsed: any;
+  let parsed: URL;
   try {
     parsed = new URL(url);
   } catch {
@@ -122,7 +127,7 @@ export async function agenticFetchUrl(url: any, { selector }: Record<string, unk
       truncated: markdown.length > MAX_OUTPUT_CHARS,
     };
   } catch (error: unknown) {
-    if ((error as any).name === "AbortError") {
+    if (error instanceof Error && error.name === "AbortError") {
       return { error: `Request timed out after ${FETCH_TIMEOUT_MS}ms`, url };
     }
     return { error: `Fetch failed: ${errorMessage(error)}`, url };
@@ -140,7 +145,7 @@ const BRAVE_SEARCH_BASE = "https://api.search.brave.com/res/v1/web/search";
  *   1. Brave Search API (whole-web, 2000 queries/month free)
  *   2. Google Custom Search (site-restricted, 100 queries/day free)
  */
-export async function agenticWebSearch(query: any, { limit = 5, dateRestrict, siteSearch }: Record<string, unknown> = {}) {
+export async function agenticWebSearch(query: string, { limit = 5, dateRestrict, siteSearch }: { limit?: number; dateRestrict?: string; siteSearch?: string } = {}) {
   if (!query || typeof query !== "string") {
     return { error: "'query' is required and must be a non-empty string" };
   }
@@ -177,7 +182,7 @@ export async function agenticWebSearch(query: any, { limit = 5, dateRestrict, si
 
 // ── Brave Search Implementation ──────────────────────────────
 
-async function _searchBrave(query: any, { limit, dateRestrict }: any) {
+async function _searchBrave(query: string, { limit, dateRestrict }: { limit: number; dateRestrict?: string }) {
   const params = new URLSearchParams({
     q: query,
     count: String(limit),
@@ -213,7 +218,7 @@ async function _searchBrave(query: any, { limit, dateRestrict }: any) {
   const data = await response.json();
   const webResults = data.web?.results || [];
 
-  const results = webResults.slice(0, limit).map((item: any) => ({
+  const results = webResults.slice(0, limit).map((item: ApiResponse) => ({
     title: item.title || "",
     url: item.url || "",
     snippet: item.description?.replace(/<\/?[^>]+(>|$)/g, "").trim() || "",
@@ -232,7 +237,7 @@ async function _searchBrave(query: any, { limit, dateRestrict }: any) {
 
 // ── Google CSE Implementation ────────────────────────────────
 
-async function _searchGoogleCSE(query: string, { limit, dateRestrict, siteSearch }: any) {
+async function _searchGoogleCSE(query: string, { limit, dateRestrict, siteSearch }: { limit: number; dateRestrict?: string; siteSearch?: string }) {
     const params = new URLSearchParams({
     key: CONFIG.GOOGLE_API_KEY as string,
     cx: CONFIG.GOOGLE_CSE_CX as string,
@@ -265,7 +270,7 @@ async function _searchGoogleCSE(query: string, { limit, dateRestrict, siteSearch
 
   const data = await response.json();
 
-  const results = (data.items || []).map((item: any) => ({
+  const results = (data.items || []).map((item: ApiResponse) => ({
     title: item.title || "",
     url: item.link || "",
     snippet: item.snippet?.replace(/\n/g, " ").trim() || "",
@@ -290,7 +295,7 @@ async function _searchGoogleCSE(query: string, { limit, dateRestrict, siteSearch
  * Convert HTML to clean markdown using cheerio.
  * Strips scripts, styles, nav, and other non-content elements.
  */
-function htmlToMarkdown(html: any, { selector }: Record<string, unknown> = {}) {
+function htmlToMarkdown(html: string, { selector }: { selector?: string } = {}) {
   const $ = cheerio.load(html);
 
   // Remove non-content elements
@@ -299,9 +304,9 @@ function htmlToMarkdown(html: any, { selector }: Record<string, unknown> = {}) {
   $(".cookie-banner, .popup, .modal, .overlay, .sidebar, .ad, .advertisement").remove();
 
   // If a CSS selector was provided, focus on that
-  let root: any = $("body");
+  let root: Cheerio<AnyNode> = $("body");
   if (selector) {
-    const selected = $(selector as string);
+    const selected = $(selector);
     if (selected.length > 0) {
       root = selected;
     }
@@ -313,12 +318,12 @@ function htmlToMarkdown(html: any, { selector }: Record<string, unknown> = {}) {
     }
   }
 
-  const lines: any[] = [];
+  const lines: string[] = [];
 
-  function processNode(element: any) {
+  function processNode(element: Cheerio<AnyNode>) {
     if (!element || !element.length) return;
 
-    element.contents().each((_: any, node: any) => {
+    element.contents().each((_: number, node: AnyNode) => {
       if (node.type === "text") {
         const text = $(node).text().trim();
         if (text) {
@@ -330,7 +335,7 @@ function htmlToMarkdown(html: any, { selector }: Record<string, unknown> = {}) {
       if (node.type !== "tag") return;
 
       const $node = $(node);
-      const tag = node.tagName?.toLowerCase();
+      const tag = (node as unknown as { tagName?: string }).tagName?.toLowerCase();
 
       switch (tag) {
         case "h1":
@@ -394,7 +399,7 @@ function htmlToMarkdown(html: any, { selector }: Record<string, unknown> = {}) {
           break;
         case "ul":
         case "ol":
-          $node.children("li").each((i: any, li: any) => {
+          $node.children("li").each((i: number, li: AnyNode) => {
             const bullet = tag === "ol" ? `${i + 1}.` : "-";
             lines.push(`${bullet} ${$(li).text().trim()}`);
           });
@@ -444,12 +449,12 @@ function htmlToMarkdown(html: any, { selector }: Record<string, unknown> = {}) {
 /**
  * Convert an HTML table to markdown table syntax.
  */
-function processTable($: any, $table: any, lines: any) {
-  const rows: any[] = [];
+function processTable($: CheerioAPI, $table: Cheerio<AnyNode>, lines: string[]) {
+  const rows: string[][] = [];
 
-  $table.find("tr").each((_: any, tr: any) => {
-    const cells: any[] = [];
-    $(tr).find("th, td").each((_: any, cell: any) => {
+  $table.find("tr").each((_: number, tr: AnyNode) => {
+    const cells: string[] = [];
+    $(tr).find("th, td").each((_: number, cell: AnyNode) => {
       cells.push($(cell).text().trim().replace(/\|/g, "\\|"));
     });
     rows.push(cells);

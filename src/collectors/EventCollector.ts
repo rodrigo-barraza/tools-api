@@ -22,9 +22,19 @@ import { saveState, startCollectorLoop } from "../services/FreshnessService.ts";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
 
+// EventCache.CachedEvent is not exported — extract it from the function signature
+type CachedEventParam = Parameters<typeof updateEvents>[1];
+
+// Helper for source-based filtering on fetcher results
+interface SourcedEvent {
+  source: string;
+  [key: string]: unknown;
+}
+
 // ─── Collector Factory ─────────────────────────────────────────────
 
-function createEventCollector(collection: any, source: any, fetchFn: any) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Fetcher return types are heterogeneous across sources; the EventCache normalizes them
+function createEventCollector(collection: string, source: string, fetchFn: () => Promise<any[]>) {
   return async function () {
     try {
       const events = await fetchFn();
@@ -34,7 +44,7 @@ function createEventCollector(collection: any, source: any, fetchFn: any) {
         `[${collection}] ✅ ${events.length} events | ${result?.upserted || 0} new, ${result?.modified || 0} updated`,
       );
     } catch (error: unknown) {
-      setError(source, error as any);
+      setError(source, { message: errorMessage(error) });
       logger.error(`[${collection}] ❌ ${errorMessage(error)}`);
     }
   };
@@ -77,9 +87,9 @@ const collectGooglePlaces = createEventCollector(
 
 async function collectUniversities() {
   try {
-    const events = await fetchUniversityEvents();
-    const ubcEvents = events.filter((e: any) => e.source === EVENT_SOURCES.UBC);
-    const sfuEvents = events.filter((e: any) => e.source === EVENT_SOURCES.SFU);
+    const events = await fetchUniversityEvents() as SourcedEvent[];
+    const ubcEvents = events.filter((e) => e.source === EVENT_SOURCES.UBC) as CachedEventParam;
+    const sfuEvents = events.filter((e) => e.source === EVENT_SOURCES.SFU) as CachedEventParam;
 
     if (ubcEvents.length > 0) {
       const r = await updateEvents(EVENT_SOURCES.UBC, ubcEvents);
@@ -99,18 +109,18 @@ async function collectUniversities() {
 
     await saveState("events_universities", { ubcEvents, sfuEvents });
   } catch (error: unknown) {
-    setError(EVENT_SOURCES.UBC, error as any);
-    setError(EVENT_SOURCES.SFU, error as any);
+    setError(EVENT_SOURCES.UBC, { message: errorMessage(error) });
+    setError(EVENT_SOURCES.SFU, { message: errorMessage(error) });
     logger.error(`[events_universities] ❌ ${errorMessage(error)}`);
   }
 }
 
 async function collectSports() {
   try {
-    const events = await fetchSportsEvents();
-    const nhl = events.filter((e: any) => e.source === EVENT_SOURCES.NHL);
-    const caps = events.filter((e: any) => e.source === EVENT_SOURCES.WHITECAPS);
-    const lions = events.filter((e: any) => e.source === EVENT_SOURCES.BC_LIONS);
+    const events = await fetchSportsEvents() as SourcedEvent[];
+    const nhl = events.filter((e) => e.source === EVENT_SOURCES.NHL) as CachedEventParam;
+    const caps = events.filter((e) => e.source === EVENT_SOURCES.WHITECAPS) as CachedEventParam;
+    const lions = events.filter((e) => e.source === EVENT_SOURCES.BC_LIONS) as CachedEventParam;
 
     if (nhl.length > 0) {
       const r = await updateEvents(EVENT_SOURCES.NHL, nhl);
@@ -136,16 +146,26 @@ async function collectSports() {
 
     await saveState("events_sports", { nhl, caps, lions });
   } catch (error: unknown) {
-    setError(EVENT_SOURCES.NHL, error as any);
-    setError(EVENT_SOURCES.WHITECAPS, error as any);
-    setError(EVENT_SOURCES.BC_LIONS, error as any);
+    setError(EVENT_SOURCES.NHL, { message: errorMessage(error) });
+    setError(EVENT_SOURCES.WHITECAPS, { message: errorMessage(error) });
+    setError(EVENT_SOURCES.BC_LIONS, { message: errorMessage(error) });
     logger.error(`[events_sports] ❌ ${errorMessage(error)}`);
   }
 }
 
 // ─── Startup Definitions ──────────────────────────────────────────
 
-const STARTUP_TASKS = [
+interface CollectorTask {
+  label: string;
+  collection: string;
+  source?: string;
+  ttl: number;
+  collectFn: () => Promise<void>;
+  restoreFn?: (data: Record<string, unknown>) => void;
+  delay: number;
+}
+
+const STARTUP_TASKS: CollectorTask[] = [
   {
     label: "Ticketmaster",
     collection: "events_ticketmaster",
@@ -175,11 +195,11 @@ const STARTUP_TASKS = [
     collection: "events_universities",
     ttl: UNIVERSITY_INTERVAL_MS,
     collectFn: collectUniversities,
-    restoreFn: (data: any) => {
-      if (data.ubcEvents?.length)
-        restoreEvents(EVENT_SOURCES.UBC, data.ubcEvents);
-      if (data.sfuEvents?.length)
-        restoreEvents(EVENT_SOURCES.SFU, data.sfuEvents);
+    restoreFn: (data: Record<string, unknown>) => {
+      if ((data.ubcEvents as CachedEventParam)?.length)
+        restoreEvents(EVENT_SOURCES.UBC, data.ubcEvents as CachedEventParam);
+      if ((data.sfuEvents as CachedEventParam)?.length)
+        restoreEvents(EVENT_SOURCES.SFU, data.sfuEvents as CachedEventParam);
     },
     delay: 9_000,
   },
@@ -196,11 +216,11 @@ const STARTUP_TASKS = [
     collection: "events_sports",
     ttl: SPORTS_INTERVAL_MS,
     collectFn: collectSports,
-    restoreFn: (data: any) => {
-      if (data.nhl?.length) restoreEvents(EVENT_SOURCES.NHL, data.nhl);
-      if (data.caps?.length) restoreEvents(EVENT_SOURCES.WHITECAPS, data.caps);
-      if (data.lions?.length)
-        restoreEvents(EVENT_SOURCES.BC_LIONS, data.lions);
+    restoreFn: (data: Record<string, unknown>) => {
+      if ((data.nhl as CachedEventParam)?.length) restoreEvents(EVENT_SOURCES.NHL, data.nhl as CachedEventParam);
+      if ((data.caps as CachedEventParam)?.length) restoreEvents(EVENT_SOURCES.WHITECAPS, data.caps as CachedEventParam);
+      if ((data.lions as CachedEventParam)?.length)
+        restoreEvents(EVENT_SOURCES.BC_LIONS, data.lions as CachedEventParam);
     },
     delay: 15_000,
   },
@@ -226,12 +246,11 @@ const STARTUP_TASKS = [
 
 export function startEventCollectors() {
   // Set default restoreFn for simple event tasks (those with a source key)
-  const tasks = STARTUP_TASKS.map((task: any) => ({
+  const tasks = STARTUP_TASKS.map((task) => ({
     ...task,
-    restoreFn: task.restoreFn || ((data: any) => restoreEvents(task.source, data)),
+    restoreFn: task.restoreFn || ((data: CachedEventParam) => restoreEvents(task.source!, data)),
   }));
 
   startCollectorLoop(tasks);
   logger.info("📅 Event collectors started");
 }
-

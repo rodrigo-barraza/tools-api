@@ -14,22 +14,22 @@ export interface LspClient {
   readonly capabilities: Record<string, unknown> | null;
   readonly isInitialized: boolean;
   start(command: string, args: string[], options?: { env?: Record<string, string>; cwd?: string }): Promise<void>;
-  initialize(params: Record<string, unknown>): Promise<any>;
-  sendRequest(method: string, params: any): Promise<any>;
+  initialize(params: Record<string, unknown>): Promise<unknown>;
+  sendRequest(method: string, params: any): Promise<unknown>;
   sendNotification(method: string, params: any): Promise<void>;
-  onNotification(method: string, handler: (...args: any[]) => void): void;
-  onRequest(method: string, handler: (...args: any[]) => any): void;
+  onNotification(method: string, handler: (...args: unknown[]) => void): void;
+  onRequest(method: string, handler: (...args: unknown[]) => any): void;
   stop(): Promise<void>;
 }
 
 interface PendingNotification {
   method: string;
-  handler: (...args: any[]) => void;
+  handler: (...args: unknown[]) => void;
 }
 
 interface PendingRequest {
   method: string;
-  handler: (...args: any[]) => any;
+  handler: (...args: unknown[]) => any;
 }
 
 /**
@@ -181,7 +181,7 @@ export function createLspClient(
     /**
      * Send the LSP `initialize` request and `initialized` notification.
      */
-    async initialize(params: Record<string, unknown>): Promise<any> {
+    async initialize(params: Record<string, unknown>): Promise<unknown> {
       if (!connection) throw new Error("LSP client not started");
       checkStartFailed();
 
@@ -204,7 +204,7 @@ export function createLspClient(
     /**
      * Send an LSP request and return the result.
      */
-    async sendRequest(method: string, params: any): Promise<any> {
+    async sendRequest(method: string, params: any): Promise<unknown> {
       if (!connection) throw new Error("LSP client not started");
       checkStartFailed();
       if (!isInitialized) throw new Error("LSP server not initialized");
@@ -235,7 +235,7 @@ export function createLspClient(
     /**
      * Register a handler for notifications FROM the server.
      */
-    onNotification(method: string, handler: (...args: any[]) => void): void {
+    onNotification(method: string, handler: (...args: unknown[]) => void): void {
       if (!connection) {
         pendingNotificationHandlers.push({ method, handler });
         return;
@@ -247,7 +247,7 @@ export function createLspClient(
     /**
      * Register a handler for requests FROM the server (reverse direction).
      */
-    onRequest(method: string, handler: (...args: any[]) => any): void {
+    onRequest(method: string, handler: (...args: unknown[]) => any): void {
       if (!connection) {
         pendingRequestHandlers.push({ method, handler });
         return;

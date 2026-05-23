@@ -1,5 +1,5 @@
 import { buildScraperHeaders } from "../../../../utilities.ts";
-import { upsertWebcams } from "../../../../models/Webcam.ts";
+import { upsertWebcams, type WebcamDocument } from "../../../../models/Webcam.ts";
 
 const API_URL = "https://511ny.org/api/getcameras?key=public&format=json";
 
@@ -20,7 +20,7 @@ export async function fetchNY511Cameras({ city, idPrefix, bounds }: any) {
   const data = await response.json();
   if (!Array.isArray(data) || data.length === 0) return;
 
-  const parsedWebcams: any[] = [];
+  const parsedWebcams: WebcamDocument[] = [];
 
   for (const cam of data) {
     if (cam.Disabled || cam.Blocked) continue;

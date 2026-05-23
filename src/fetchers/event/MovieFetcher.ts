@@ -35,7 +35,7 @@ export async function fetchMovieEvents() {
   // Also fetch upcoming movies
   const upcomingResponse = await fetch(`${BASE_URL}/movie/upcoming?${params}`);
 
-  let upcomingMovies: any[] = [];
+  let upcomingMovies: unknown[] = [];
   if (upcomingResponse.ok) {
     const upcomingData = await upcomingResponse.json();
     upcomingMovies = upcomingData.results || [];

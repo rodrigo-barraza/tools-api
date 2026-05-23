@@ -45,7 +45,7 @@ const TIMEOUT_MAP = {
 // ────────────────────────────────────────────────────────────
 
 interface PendingRpc {
-  resolve: (value: any) => void;
+  resolve: (value: unknown) => void;
   reject: (reason: Error) => void;
   timer: NodeJS.Timeout;
 }
@@ -79,9 +79,9 @@ interface AgentRpcMessage {
     source?: string;
     pathA?: string;
     cwd?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
-  result?: any;
+  result?: unknown;
   error?: {
     code?: number;
     message?: string;
@@ -396,8 +396,8 @@ function deregisterAgent(agentId: string, reason: string) {
 /**
  * Send an RPC request to an agent and wait for the response.
  */
-export function sendRpc(agentId: string, method: string, params: Record<string, unknown> = {}): Promise<any> {
-  return new Promise<any>((resolve, reject) => {
+export function sendRpc(agentId: string, method: string, params: Record<string, unknown> = {}): Promise<unknown> {
+  return new Promise<unknown>((resolve, reject) => {
     const agent = agents.get(agentId);
     if (!agent) {
       reject(new Error("Agent not found"));
@@ -437,7 +437,7 @@ export function sendRpcStreaming(
   method: string,
   params: Record<string, unknown> = {},
   onNotification: (method: string, params: Record<string, unknown>) => void,
-): Promise<any> {
+): Promise<unknown> {
   const agent = agents.get(agentId);
   if (!agent) return Promise.reject(new Error("Agent not found"));
 

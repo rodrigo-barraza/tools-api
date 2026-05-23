@@ -43,7 +43,7 @@ export async function fetchEtsyTrending() {
     "most popular",
   ];
 
-  const allProducts: any[] = [];
+  const allProducts: unknown[] = [];
 
   for (const keyword of trendingKeywords) {
     await rateLimiter.wait("ETSY");

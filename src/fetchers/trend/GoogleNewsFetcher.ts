@@ -57,7 +57,7 @@ export async function fetchGoogleNews() {
     },
   ];
 
-  const allArticles: any[] = [];
+  const allArticles: unknown[] = [];
   const seen = new Set();
 
   for (const { url, section } of sections) {

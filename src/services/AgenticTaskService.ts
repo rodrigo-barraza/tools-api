@@ -2,6 +2,15 @@
 
 import { getDB } from "../db.ts";
 import logger from "../logger.ts";
+import type { WithId, Document } from "mongodb";
+import type {
+  AgenticTask,
+  AgenticTaskCreateData,
+  AgenticTaskUpdates,
+  AgenticTaskListOptions,
+  SanitizedTask,
+  TaskCounterDocument,
+} from "../types/agentic.ts";
 
 // ────────────────────────────────────────────────────────────
 // Constants
@@ -33,14 +42,14 @@ export async function setupAgenticTaskCollection() {
 // Monotonic ID Generator (per-project)
 // ────────────────────────────────────────────────────────────
 
-async function nextTaskId(project: any) {
+async function nextTaskId(project: string): Promise<number> {
   const db = getDB();
-  const result = await db.collection(COUNTER_COLLECTION).findOneAndUpdate(
-    { _id: `task_${project}` as any },
-    { $inc: { seq: 1 } } as any,
+  const result = await db.collection<TaskCounterDocument>(COUNTER_COLLECTION).findOneAndUpdate(
+    { _id: `task_${project}` },
+    { $inc: { seq: 1 } },
     { upsert: true, returnDocument: "after" },
   );
-    return (result as any)?.seq || (result as any)?.value?.seq;
+  return result?.seq ?? 1;
 }
 
 // ────────────────────────────────────────────────────────────
@@ -50,7 +59,7 @@ async function nextTaskId(project: any) {
 /**
  * Create a new task.
  */
-export async function agenticTaskCreate(project: any, data: any) {
+export async function agenticTaskCreate(project: string, data: AgenticTaskCreateData) {
   if (!project || typeof project !== "string") {
     return { error: "'project' is required (string)" };
   }
@@ -90,8 +99,8 @@ export async function agenticTaskCreate(project: any, data: any) {
     agentSessionId: data.agentSessionId || null,
     // Swarm-ready fields (unused in single-agent mode)
     owner: data.owner || null,
-    blocks: [],
-    blockedBy: [],
+    blocks: [] as number[],
+    blockedBy: [] as number[],
     metadata: data.metadata || {},
     createdAt: now,
     updatedAt: now,
@@ -108,13 +117,13 @@ export async function agenticTaskCreate(project: any, data: any) {
 /**
  * List tasks for a project, optionally filtered by status.
  */
-export async function agenticTaskList(project: any, { status, limit = 50 }: Record<string, unknown> = {}) {
+export async function agenticTaskList(project: string, { status, limit = 50 }: AgenticTaskListOptions = {}) {
   if (!project || typeof project !== "string") {
     return { error: "'project' is required (string)" };
   }
 
-  if (status && !VALID_STATUSES.includes(status as string)) {
-    return { error: `Invalid status filter '${status as string}'. Must be one of: ${VALID_STATUSES.join(", ")}` };
+  if (status && !VALID_STATUSES.includes(status)) {
+    return { error: `Invalid status filter '${status}'. Must be one of: ${VALID_STATUSES.join(", ")}` };
   }
 
   const db = getDB();
@@ -133,9 +142,9 @@ export async function agenticTaskList(project: any, { status, limit = 50 }: Reco
   const allTasks = await collection.find({ project }).toArray();
   const summary = {
     total: allTasks.length,
-    pending: allTasks.filter((t: any) => t.status === "pending").length,
-    in_progress: allTasks.filter((t: any) => t.status === "in_progress").length,
-    completed: allTasks.filter((t: any) => t.status === "completed").length,
+    pending: allTasks.filter((t) => t.status === "pending").length,
+    in_progress: allTasks.filter((t) => t.status === "in_progress").length,
+    completed: allTasks.filter((t) => t.status === "completed").length,
   };
 
   return {
@@ -148,12 +157,12 @@ export async function agenticTaskList(project: any, { status, limit = 50 }: Reco
 /**
  * Get a single task by ID.
  */
-export async function agenticTaskGet(project: any, taskId: any) {
+export async function agenticTaskGet(project: string, taskId: string | number) {
   if (!project || typeof project !== "string") {
     return { error: "'project' is required (string)" };
   }
 
-  const id = parseInt(taskId, 10);
+  const id = parseInt(String(taskId), 10);
   if (isNaN(id)) {
     return { error: "'taskId' must be a number" };
   }
@@ -171,12 +180,12 @@ export async function agenticTaskGet(project: any, taskId: any) {
 /**
  * Update a task's status, description, or metadata.
  */
-export async function agenticTaskUpdate(project: any, taskId: any, updates: any) {
+export async function agenticTaskUpdate(project: string, taskId: string | number, updates: AgenticTaskUpdates) {
   if (!project || typeof project !== "string") {
     return { error: "'project' is required (string)" };
   }
 
-  const id = parseInt(taskId, 10);
+  const id = parseInt(String(taskId), 10);
   if (isNaN(id)) {
     return { error: "'taskId' must be a number" };
   }
@@ -238,12 +247,12 @@ export async function agenticTaskUpdate(project: any, taskId: any, updates: any)
 /**
  * Delete a task.
  */
-export async function agenticTaskDelete(project: any, taskId: any) {
+export async function agenticTaskDelete(project: string, taskId: string | number) {
   if (!project || typeof project !== "string") {
     return { error: "'project' is required (string)" };
   }
 
-  const id = parseInt(taskId, 10);
+  const id = parseInt(String(taskId), 10);
   if (isNaN(id)) {
     return { error: "'taskId' must be a number" };
   }
@@ -258,12 +267,12 @@ export async function agenticTaskDelete(project: any, taskId: any) {
 
   // Clean up references in other tasks
   await collection.updateMany(
-    { project, blocks: id } as any,
-    { $pull: { blocks: id } } as any,
+    { project, blocks: id } as Document,
+    { $pull: { blocks: id } } as Document,
   );
   await collection.updateMany(
-    { project, blockedBy: id } as any,
-    { $pull: { blockedBy: id } } as any,
+    { project, blockedBy: id } as Document,
+    { $pull: { blockedBy: id } } as Document,
   );
 
   await collection.deleteOne({ project, taskId: id });
@@ -280,8 +289,8 @@ export async function agenticTaskDelete(project: any, taskId: any) {
 // ────────────────────────────────────────────────────────────
 
 /** Strip MongoDB _id from API responses */
-function sanitize(task: any) {
+function sanitize(task: WithId<Document> | Record<string, unknown> | null): SanitizedTask | null {
   if (!task) return null;
   const { _id, ...rest } = task;
-  return rest;
+  return rest as SanitizedTask;
 }

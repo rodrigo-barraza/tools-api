@@ -32,22 +32,22 @@ import {
 
 function cached(provider: string, intervalMs: number) {
   return {
-    type: "cached",
+    type: "cached" as const,
     provider,
     intervalSeconds: Math.round(intervalMs / 1000),
   };
 }
 
 function onDemand(provider: string) {
-  return { type: "onDemand", provider };
+  return { type: "onDemand" as const, provider };
 }
 
 function staticDataset(name: string) {
-  return { type: "static", provider: "internal", dataset: name };
+  return { type: "static" as const, provider: "internal", dataset: name };
 }
 
 function compute(name: string) {
-  return { type: "compute", provider: "internal", runtime: name };
+  return { type: "compute" as const, provider: "internal", runtime: name };
 }
 
 // ────────────────────────────────────────────────────────────

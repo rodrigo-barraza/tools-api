@@ -4,18 +4,54 @@ import { MS_PER_DAY } from "@rodrigo-barraza/utilities-library";
 
 const BASE_URL = "https://api.opendota.com/api";
 
+// ─── External API Response Types ────────────────────────────
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- External OpenDota API returns dynamic JSON; typed interfaces would require maintaining parity with their undocumented schema
+type ApiResponse = Record<string, any>;
+
 // Cache hero list in memory (static data, changes only on patches)
-let heroCache: any = null;
+let heroCache: TransformedHero[] | null = null;
 let heroCacheTime = 0;
 const HERO_CACHE_TTL = MS_PER_DAY;
 
-async function fetchJson(path: string): Promise<any> {
+async function fetchJson<T = ApiResponse>(path: string): Promise<T> {
   const response = await fetch(`${BASE_URL}${path}`);
   if (!response.ok) {
     const text = await response.text();
     throw new Error(`OpenDota API error ${response.status}: ${text.slice(0, 200)}`);
   }
-  return response.json();
+  return response.json() as Promise<T>;
+}
+
+// ─── Transformed Types ──────────────────────────────────────
+
+interface TransformedHero {
+  id: number;
+  name: string;
+  internalName: string;
+  primaryAttr: string;
+  attackType: string;
+  roles: string[];
+  img: string;
+  icon: string;
+  baseHealth: number;
+  baseMana: number;
+  baseArmor: number;
+  baseAttackMin: number;
+  baseAttackMax: number;
+  moveSpeed: number;
+  legs: number;
+  proWinRate: string | null;
+  proPick: number;
+  turboPick: number;
+  turboWinRate: string | null;
+}
+
+interface TransformedMatchup {
+  heroId: number;
+  gamesPlayed: number;
+  wins: number;
+  winRate: string;
 }
 
 // ── Hero Data ──────────────────────────────────────────────────
@@ -23,19 +59,19 @@ async function fetchJson(path: string): Promise<any> {
 /**
  * Get all heroes with stats.
  */
-export async function getHeroes() {
+export async function getHeroes(): Promise<TransformedHero[]> {
   const now = Date.now();
   if (heroCache && now - heroCacheTime < HERO_CACHE_TTL) return heroCache;
 
   const [heroes, stats] = await Promise.all([
-    fetchJson("/heroes"),
-    fetchJson("/heroStats"),
+    fetchJson<ApiResponse[]>("/heroes"),
+    fetchJson<ApiResponse[]>("/heroStats"),
   ]);
 
   // Merge stats into hero objects
-  const statsMap = new Map(stats.map((s: any) => [s.id, s]));
-  heroCache = heroes.map((h: any) => {
-    const s: any = statsMap.get(h.id) || {};
+  const statsMap = new Map(stats.map((s) => [s.id, s]));
+  heroCache = heroes.map((h) => {
+    const s = statsMap.get(h.id) || ({} as ApiResponse);
     return {
       id: h.id,
       name: h.localized_name,
@@ -66,25 +102,25 @@ export async function getHeroes() {
 /**
  * Get a single hero by name or ID.
  */
-export async function getHero(query: any) {
+export async function getHero(query: string | number) {
   const heroes = await getHeroes();
   const q = String(query).toLowerCase();
 
   // Try ID match first
-  const byId = heroes.find((h: any) => h.id === parseInt(query));
+  const byId = heroes.find((h) => h.id === parseInt(String(query)));
   if (byId) return byId;
 
   // Exact name match
-  const exact = heroes.find((h: any) => h.name.toLowerCase() === q);
+  const exact = heroes.find((h) => h.name.toLowerCase() === q);
   if (exact) return exact;
 
   // Partial name match
-  const partial = heroes.filter((h: any) => h.name.toLowerCase().includes(q));
+  const partial = heroes.filter((h) => h.name.toLowerCase().includes(q));
   if (partial.length === 1) return partial[0];
   if (partial.length > 1) {
     return {
       ambiguous: true,
-      matches: partial.map((h: any) => ({ id: h.id, name: h.name })),
+      matches: partial.map((h) => ({ id: h.id, name: h.name })),
       hint: "Multiple heroes matched. Use the exact name or hero ID.",
     };
   }
@@ -97,13 +133,13 @@ export async function getHero(query: any) {
 /**
  * Get hero matchup data (best/worst opponents).
  */
-export async function getHeroMatchups(heroId: any) {
-  const matchups = await fetchJson(`/heroes/${heroId}/matchups`);
+export async function getHeroMatchups(heroId: number | string) {
+  const matchups = await fetchJson<ApiResponse[]>(`/heroes/${heroId}/matchups`);
 
   // Sort by win rate to find best/worst
-  const withRates = matchups
-    .filter((m: any) => m.games_played >= 50)
-    .map((m: any) => ({
+  const withRates: TransformedMatchup[] = matchups
+    .filter((m) => m.games_played >= 50)
+    .map((m) => ({
       heroId: m.hero_id,
       gamesPlayed: m.games_played,
       wins: m.wins,
@@ -111,7 +147,7 @@ export async function getHeroMatchups(heroId: any) {
     }));
 
   const sorted = [...withRates].sort(
-    (a: any, b: any) => parseFloat(b.winRate) - parseFloat(a.winRate),
+    (a, b) => parseFloat(b.winRate) - parseFloat(a.winRate),
   );
 
   return {
@@ -127,7 +163,7 @@ export async function getHeroMatchups(heroId: any) {
 /**
  * Get player profile by Steam account ID.
  */
-export async function getPlayer(accountId: any) {
+export async function getPlayer(accountId: number | string) {
   const [profile, wl] = await Promise.all([
     fetchJson(`/players/${accountId}`),
     fetchJson(`/players/${accountId}/wl`),
@@ -155,9 +191,9 @@ export async function getPlayer(accountId: any) {
 /**
  * Get player's recent matches.
  */
-export async function getPlayerRecentMatches(accountId: any, limit: any = 10) {
-  const matches = await fetchJson(`/players/${accountId}/recentMatches`);
-  return matches.slice(0, limit).map((m: any) => ({
+export async function getPlayerRecentMatches(accountId: number | string, limit = 10) {
+  const matches = await fetchJson<ApiResponse[]>(`/players/${accountId}/recentMatches`);
+  return matches.slice(0, limit).map((m) => ({
     matchId: m.match_id,
     heroId: m.hero_id,
     duration: m.duration,
@@ -184,7 +220,7 @@ export async function getPlayerRecentMatches(accountId: any, limit: any = 10) {
 /**
  * Get match details by match ID.
  */
-export async function getMatch(matchId: any) {
+export async function getMatch(matchId: number | string) {
   const m = await fetchJson(`/matches/${matchId}`);
 
   return {
@@ -198,7 +234,7 @@ export async function getMatch(matchId: any) {
     gameMode: m.game_mode,
     lobbyType: m.lobby_type,
     region: m.region,
-    players: (m.players || []).map((p: any) => ({
+    players: (m.players || []).map((p: ApiResponse) => ({
       accountId: p.account_id,
       personaName: p.personaname,
       heroId: p.hero_id,
@@ -224,9 +260,9 @@ export async function getMatch(matchId: any) {
 /**
  * Get recent professional matches.
  */
-export async function getProMatches(limit: any = 10) {
-  const matches = await fetchJson("/proMatches");
-  return matches.slice(0, limit).map((m: any) => ({
+export async function getProMatches(limit = 10) {
+  const matches = await fetchJson<ApiResponse[]>("/proMatches");
+  return matches.slice(0, limit).map((m) => ({
     matchId: m.match_id,
     duration: m.duration,
     durationMinutes: Math.round(m.duration / 60),

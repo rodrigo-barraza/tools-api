@@ -3,6 +3,9 @@ import { TREND_SOURCES as SOURCES, TREND_CATEGORIES } from "../../constants.ts";
 import logger from "../../logger.ts";
 import { errorMessage } from "../../utilities.ts";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- TVMaze API returns dynamic JSON
+type TvMazeEpisode = Record<string, any>;
+
 const TVMAZE_SCHEDULE_URL = "https://api.tvmaze.com/schedule";
 /**
  * Fetches today's TV schedule from TVMaze for US and CA.
@@ -11,7 +14,7 @@ const TVMAZE_SCHEDULE_URL = "https://api.tvmaze.com/schedule";
 export async function fetchTVMazeTrends() {
   const today = new Date().toISOString().split("T")[0];
   const countries = ["US", "CA"];
-  const allShows: any[] = [];
+  const allShows: TvMazeEpisode[] = [];
   for (const country of countries) {
     try {
       const url = `${TVMAZE_SCHEDULE_URL}?country=${country}&date=${today}`;
@@ -21,7 +24,7 @@ export async function fetchTVMazeTrends() {
         continue;
       }
       const episodes = await response.json();
-      allShows.push(...episodes.map((ep: any) => ({ ...ep, country })));
+      allShows.push(...episodes.map((ep: TvMazeEpisode) => ({ ...ep, country })));
     } catch (error: unknown) {
       logger.error(`[TVMaze] ❌ ${country}: ${errorMessage(error)}`);
     }
@@ -44,9 +47,9 @@ export async function fetchTVMazeTrends() {
   }
   // Sort by weight (TVMaze's popularity metric), take top 30
   const topShows = Array.from(showMap.values())
-    .sort((a: any, b: any) => b.weight - a.weight || b.rating - a.rating)
+    .sort((a, b) => b.weight - a.weight || b.rating - a.rating)
     .slice(0, 30);
-  return topShows.map((entry: any) => {
+  return topShows.map((entry) => {
     const show = entry.show;
     const ep = entry.episodes[0];
     return {

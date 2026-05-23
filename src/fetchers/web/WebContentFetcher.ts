@@ -14,35 +14,35 @@ import { fetchGenericPage } from "./GenericPageFetcher.ts";
 const PLATFORM_PATTERNS = [
   {
     platform: "youtube",
-    test: (url: any) =>
+    test: (url: string) =>
       /(?:youtube\.com|youtu\.be|youtube-nocookie\.com)/i.test(url),
   },
   {
     platform: "reddit",
-    test: (url: any) =>
+    test: (url: string) =>
       /(?:reddit\.com|redd\.it)/i.test(url) ||
       /^r\/\w+\/comments\//i.test(url),
   },
   {
     platform: "twitter",
-    test: (url: any) =>
+    test: (url: string) =>
       /(?:twitter\.com|x\.com|fixupx\.com|fxtwitter\.com|vxtwitter\.com|nitter\.\w+)/i.test(url) ||
       (/\/status\/\d+/i.test(url) && !/reddit|github|stackoverflow/i.test(url)),
   },
   {
     platform: "hackernews",
-    test: (url: any) =>
+    test: (url: string) =>
       /(?:news\.ycombinator\.com)/i.test(url),
   },
   {
     platform: "stackoverflow",
-    test: (url: any) =>
+    test: (url: string) =>
       /(?:stackoverflow\.com|stackexchange\.com)/i.test(url) ||
       /^(?:stackoverflow|so):\d+$/i.test(url),
   },
   {
     platform: "github",
-    test: (url: any) =>
+    test: (url: string) =>
       /(?:github\.com)/i.test(url) ||
       // owner/repo shorthand: must have exactly one slash, no dots in TLD pattern
       /^[a-zA-Z][a-zA-Z0-9_.-]*\/[a-zA-Z0-9_.-]+$/.test(url),
@@ -53,7 +53,7 @@ const PLATFORM_PATTERNS = [
  * Detect which platform a URL belongs to.
 
  */
-function detectPlatform(url: any) {
+function detectPlatform(url: string | null | undefined) {
   if (!url || typeof url !== "string") return null;
   const trimmed = url.trim();
   for (const { platform, test } of PLATFORM_PATTERNS) {
@@ -83,6 +83,7 @@ export interface WebContentOptions {
 export async function getWebContent(url: string, options: WebContentOptions = {}) {
   const platform = detectPlatform(url);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- result holds diverse platform-specific return types
   let result: any;
 
   switch (platform) {

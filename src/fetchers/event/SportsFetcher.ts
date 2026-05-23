@@ -133,7 +133,7 @@ export async function fetchSportsEvents() {
     ),
   ]);
 
-  const events: any[] = [];
+  const events: unknown[] = [];
   const labels = ["Canucks", "Whitecaps", "BC Lions"];
 
   results.forEach((result: any, i: any) => {

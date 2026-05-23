@@ -3,6 +3,8 @@
 import { MS_PER_HOUR } from "@rodrigo-barraza/utilities-library";
 import crypto from "node:crypto";
 import { ChartJSNodeCanvas } from "chartjs-node-canvas";
+import type { ChartConfiguration } from "chart.js";
+import type { ChartConfig, ChartDataset, ChartStoreEntry } from "../types/chart.ts";
 
 // ─── Renderer Singleton ────────────────────────────────────────
 
@@ -17,14 +19,14 @@ const renderer = new ChartJSNodeCanvas({
 
 // ─── In-Memory Store ───────────────────────────────────────────
 
-const CHART_STORE = new Map();
+const CHART_STORE = new Map<string, ChartStoreEntry>();
 const CHART_TTL_MS = MS_PER_HOUR;
 
 /**
  * Store chart config and return a short ID.
 
  */
-export function storeChart(chartConfig: any) {
+export function storeChart(chartConfig: ChartConfig): string {
   const id = crypto.randomUUID().slice(0, 12);
   CHART_STORE.set(id, { config: chartConfig, createdAt: Date.now() });
 
@@ -43,7 +45,7 @@ export function storeChart(chartConfig: any) {
 
 
  */
-export function getStoredChart(id: any) {
+export function getStoredChart(id: string): ChartConfig | null {
   const entry = CHART_STORE.get(id);
   if (!entry) return null;
   if (Date.now() - entry.createdAt > CHART_TTL_MS) {
@@ -70,22 +72,22 @@ const PALETTE = [
   "rgba(6, 182, 212, 0.85)",    // cyan
 ];
 
-const PALETTE_BORDER = PALETTE.map((c: any) => c.replace("0.85", "1"));
+const PALETTE_BORDER = PALETTE.map((c: string) => c.replace("0.85", "1"));
 
 /**
  * Assign colors to datasets that don't have explicit colors.
  */
-function assignColors(datasets: any, chartType: any) {
-  return datasets.map((ds: any, i: any) => {
+function assignColors(datasets: ChartDataset[], chartType: string): ChartDataset[] {
+  return datasets.map((ds: ChartDataset, i: number) => {
     if (chartType === "pie") {
       // Pie charts need per-slice colors on the single dataset
       const count = ds.data?.length || 0;
       return {
         ...ds,
         backgroundColor:
-          ds.backgroundColor || Array.from({ length: count }, (_: any, j: any) => PALETTE[j % PALETTE.length]),
+          ds.backgroundColor || Array.from({ length: count }, (_: unknown, j: number) => PALETTE[j % PALETTE.length]),
         borderColor:
-          ds.borderColor || Array.from({ length: count }, (_: any, j: any) => PALETTE_BORDER[j % PALETTE_BORDER.length]),
+          ds.borderColor || Array.from({ length: count }, (_: unknown, j: number) => PALETTE_BORDER[j % PALETTE_BORDER.length]),
         borderWidth: ds.borderWidth ?? 2,
       };
     }
@@ -119,7 +121,7 @@ function assignColors(datasets: any, chartType: any) {
  * Render a chart config to a PNG buffer.
 
  */
-export async function renderChartPng(chartConfig: any) {
+export async function renderChartPng(chartConfig: ChartConfig) {
   const { type, title, labels, datasets, options = {} } = chartConfig;
 
   const coloredDatasets = assignColors(datasets, type);
@@ -170,5 +172,5 @@ export async function renderChartPng(chartConfig: any) {
     },
   };
 
-  return renderer.renderToBuffer(config);
+  return renderer.renderToBuffer(config as ChartConfiguration);
 }

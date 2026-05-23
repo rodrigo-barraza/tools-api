@@ -24,7 +24,7 @@ async function fetchUbcEvents() {
 
   const html = await response.text();
   const $ = cheerio.load(html);
-  const events: any[] = [];
+  const events: unknown[] = [];
 
   $("article, .event-card, .views-row, [class*='event'], .card").each(
     (_i: any, element: any) => {
@@ -102,7 +102,7 @@ async function fetchSfuEvents() {
 
   const html = await response.text();
   const $ = cheerio.load(html);
-  const events: any[] = [];
+  const events: unknown[] = [];
 
   $("article, .event-card, .views-row, [class*='event'], .card, li").each(
     (_i: any, element: any) => {
@@ -172,7 +172,7 @@ export async function fetchUniversityEvents() {
     fetchSfuEvents(),
   ]);
 
-  const events: any[] = [];
+  const events: unknown[] = [];
   for (const result of results) {
     if (result.status === "fulfilled") {
       events.push(...result.value);

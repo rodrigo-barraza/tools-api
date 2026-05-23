@@ -1,5 +1,9 @@
 import { days as daysToMs } from "@rodrigo-barraza/utilities-library";
+import type { Document } from "mongodb";
 import { getMessagesCollection } from "../models/LuposMessage.ts";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- MongoDB documents from Discord have deeply nested dynamic shapes
+type DiscordDocument = Document;
 
 // ═══════════════════════════════════════════════════════════════
 //  Discord Data Service
@@ -41,16 +45,16 @@ const BADGE_FLAGS = [
  * The bitfield can be a number, a string-encoded number, or a
  * discord.js BitField object with a `.bitfield` property.
  */
-function extractBadges(flags: any) {
+function extractBadges(flags: number | string | { bitfield: number } | null | undefined) {
   if (!flags) return [];
   // discord.js stores BitField as { bitfield: <number> }
-  const bits = typeof flags === "object" && flags.bitfield != null
+  const bits = typeof flags === "object" && flags !== null && "bitfield" in flags
     ? Number(flags.bitfield)
     : Number(flags);
   if (!bits || isNaN(bits)) return [];
   return BADGE_FLAGS
-    .filter((f: any) => (bits & f.bit) === f.bit)
-    .map((f: any) => ({ id: f.id, label: f.label }));
+    .filter((f) => (bits & f.bit) === f.bit)
+    .map((f) => ({ id: f.id, label: f.label }));
 }
 
 /**
@@ -59,13 +63,21 @@ function extractBadges(flags: any) {
  * limited to the top 3 for UI space — matching Discord's inline
  * role badge behavior.
  */
-function extractRoleTags(roles: any, guildId: any) {
+interface DiscordRole {
+  id: string;
+  name: string;
+  position?: number;
+  hexColor?: string;
+  iconURL?: string;
+}
+
+function extractRoleTags(roles: DiscordRole[] | undefined, guildId: string | undefined) {
   if (!Array.isArray(roles) || roles.length === 0) return [];
   return roles
-    .filter((r: any) => r.id !== guildId && r.name !== "@everyone")
-    .sort((a: any, b: any) => (b.position ?? 0) - (a.position ?? 0))
+    .filter((r) => r.id !== guildId && r.name !== "@everyone")
+    .sort((a, b) => (b.position ?? 0) - (a.position ?? 0))
     .slice(0, 3)
-    .map((r: any) => ({
+    .map((r) => ({
       name: r.name,
       color: r.hexColor && r.hexColor !== "#000000" ? r.hexColor : null,
       iconUrl: r.iconURL || null,
@@ -76,7 +88,23 @@ function extractRoleTags(roles: any, guildId: any) {
  * Build a Discord CDN avatar URL from raw author data stored in MongoDB.
  * Falls back to the default avatar URL (e.g. blue/green Wumpus silhouette).
  */
-function buildAvatarUrl(author: any, member?: any, guildId?: any) {
+interface DiscordAuthor {
+  id?: string;
+  avatar?: string;
+  defaultAvatarURL?: string;
+}
+
+interface DiscordMember {
+  avatar?: string;
+  displayName?: string;
+  displayHexColor?: string;
+  roles?: DiscordRole[];
+  roleColors?: { secondary?: string; tertiary?: string };
+  premiumSince?: string;
+  premiumSinceTimestamp?: number;
+}
+
+function buildAvatarUrl(author: DiscordAuthor | undefined, member?: DiscordMember, guildId?: string) {
   if (!author) return null;
   if (member?.avatar && author.id && guildId) {
     const fileExtension = member.avatar.startsWith("a_") ? "gif" : "png";
@@ -94,7 +122,7 @@ function buildAvatarUrl(author: any, member?: any, guildId?: any) {
  * Prefers the permanent MinIO URL when the original URL was archived.
  * Falls back to the original URL otherwise.
  */
-function resolveArchivedUrl(url: any, archiveMap: any) {
+function resolveArchivedUrl(url: string | undefined, archiveMap: Record<string, { publicUrl?: string }> | null) {
   if (!url || !archiveMap) return url;
   const archiveReference = archiveMap[url];
   // If the entry was marked as expired during backfill, it has no publicUrl
@@ -115,7 +143,7 @@ function buildBaseFilter({
   after,
   includeBots = false,
 }: Record<string, unknown> = {}) {
-  const filter: Record<string, any> = {};
+  const filter: Record<string, unknown> = {};
 
   if (guildId) filter.guildId = guildId;
   if (channelId) filter.channelId = channelId;
@@ -140,9 +168,12 @@ function buildBaseFilter({
   filter["channel.parentId"] = { $nin: EXCLUDED_CATEGORY_IDS };
 
   // Time range
-  if (before || after) filter.createdTimestamp = {};
-  if (before) filter.createdTimestamp.$lte = new Date(before as string | number).getTime();
-  if (after) filter.createdTimestamp.$gte = new Date(after as string | number).getTime();
+  if (before || after) {
+    const tsFilter: { $lte?: number; $gte?: number } = {};
+    if (before) tsFilter.$lte = new Date(before as string | number).getTime();
+    if (after) tsFilter.$gte = new Date(after as string | number).getTime();
+    filter.createdTimestamp = tsFilter;
+  }
 
   // Text search — prefer $regex for reliability (text index may still be building)
   if (query) {
@@ -208,7 +239,7 @@ const DiscordDataService = {
         })
         .toArray();
 
-      const formatted = messages.map((m: any) => ({
+      const formatted = messages.map((m: DiscordDocument) => ({
         id: m.id,
         // Truncate content to 120 chars to save tokens
         content: m.content?.length > 120
@@ -279,12 +310,12 @@ const DiscordDataService = {
       .toArray();
 
     // Format into a clean shape with human-readable names
-    const formatted = messages.map((m: any) => {
+    const formatted = messages.map((m: DiscordDocument) => {
       // Build attachment list with URLs for image rendering.
       // Prefer archived MinIO URLs over potentially-expired Discord CDN URLs.
       const archive = m.mediaArchive || null;
       const attachments = Array.isArray(m.attachments) && m.attachments.length > 0
-        ? m.attachments.map((a: any) => {
+        ? m.attachments.map((a: DiscordDocument) => {
           const resolvedUrl = resolveArchivedUrl(a.url, archive) || resolveArchivedUrl(a.proxyURL, archive) || null;
           const resolvedProxy = resolveArchivedUrl(a.proxyURL, archive) || null;
           return {
@@ -305,7 +336,7 @@ const DiscordDataService = {
       // Resolve archived URLs for embed media as well (belt-and-suspenders).
       const embeds = Array.isArray(m.embeds) && m.embeds.length > 0
         ? m.embeds
-          .map((e: any) => {
+          .map((e: DiscordDocument) => {
             // Skip empty embeds
             if (!e.title && !e.description && !e.url && !e.image && !e.thumbnail && !e.video) return null;
             return {
@@ -385,7 +416,7 @@ const DiscordDataService = {
         replyTo: m.reference?.messageId || null,
         // Emoji reactions (array of { emoji, count, me })
         ...(Array.isArray(m.reactions) && m.reactions.length > 0 && {
-          reactions: m.reactions.map((r: any) => ({
+          reactions: m.reactions.map((r: DiscordDocument) => ({
             emoji: {
               id: r.emoji?.id || null,
               name: r.emoji?.name || null,
@@ -446,7 +477,8 @@ const DiscordDataService = {
     const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
     // ── Build group expression based on groupBy dimension ──────
-    let groupId: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- MongoDB aggregation expressions are dynamic objects
+    let groupId: string | Record<string, any>;
 
     switch (groupBy) {
       case "user":
@@ -523,7 +555,7 @@ const DiscordDataService = {
     ]);
 
     // ── Format results with human-readable labels ─────────────
-    const groups = results.map((r: any) => {
+    const groups = results.map((r: Document) => {
       const base: Record<string, unknown> = { count: r.count };
 
       switch (groupBy) {
@@ -665,17 +697,17 @@ const DiscordDataService = {
       avgMessagesPerUser: uniqueUsers > 0
         ? Math.round(totalMessages / uniqueUsers * 10) / 10
         : 0,
-      topUsers: topUsers.map((u: any) => ({
+      topUsers: topUsers.map((u: Document) => ({
         userId: u._id,
         username: u.username,
         messageCount: u.count,
         lastActive: new Date(u.lastActive).toISOString(),
       })),
-      channelBreakdown: channelBreakdown.map((c: any) => ({
+      channelBreakdown: channelBreakdown.map((c: Document) => ({
         channelId: c._id,
         messageCount: c.count,
       })),
-      hourlyActivity: hourlyActivity.map((h: any) => ({
+      hourlyActivity: hourlyActivity.map((h: Document) => ({
         hour: h._id,
         messageCount: h.count,
       })),

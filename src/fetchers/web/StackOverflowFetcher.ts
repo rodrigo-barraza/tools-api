@@ -14,7 +14,7 @@ const SO_URL_REGEX =
  * Extract question ID and site from a Stack Overflow URL or raw ID.
 
  */
-function parseStackOverflowInput(input: any) {
+function parseStackOverflowInput(input: string) {
   if (!input || typeof input !== "string") return null;
   const trimmed = input.trim();
 
@@ -39,13 +39,13 @@ function parseStackOverflowInput(input: any) {
 
 // ─── HTML → Text ─────────────────────────────────────────────────
 
-function htmlToText(html: any) {
+function htmlToText(html: string) {
   if (!html) return "";
   return html
-    .replace(/<pre[^>]*><code[^>]*>([\s\S]*?)<\/code><\/pre>/gi, (_: any, code: any) => {
+    .replace(/<pre[^>]*><code[^>]*>([\s\S]*?)<\/code><\/pre>/gi, (_match: string, code: string) => {
       return "\n```\n" + decodeHtmlEntities(code) + "\n```\n";
     })
-    .replace(/<code[^>]*>([\s\S]*?)<\/code>/gi, (_: any, code: any) => {
+    .replace(/<code[^>]*>([\s\S]*?)<\/code>/gi, (_match: string, code: string) => {
       return "`" + decodeHtmlEntities(code) + "`";
     })
     .replace(/<br\s*\/?>/gi, "\n")
@@ -62,7 +62,7 @@ function htmlToText(html: any) {
     .trim();
 }
 
-function decodeHtmlEntities(str: any) {
+function decodeHtmlEntities(str: string) {
   return str
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
@@ -75,6 +75,16 @@ function decodeHtmlEntities(str: any) {
 
 export interface StackOverflowOptions {
   answerLimit?: number;
+}
+
+interface SOAnswer {
+  answerId: number;
+  author: string | null;
+  authorReputation: number | null;
+  body: string;
+  score: number;
+  isAccepted: boolean;
+  createdAt: string | null;
 }
 
 /**
@@ -140,12 +150,14 @@ export async function getStackOverflowQuestion(input: string, options: StackOver
       lastActivityAt: question.last_activity_date
         ? new Date(question.last_activity_date * 1000).toISOString()
         : null,
-      answers: [] as any[],
+      answers: [] as SOAnswer[],
       quotaRemaining: qData.quota_remaining,
     };
 
     // Process answers
-    result.answers = (aData.items || []).map((a: any) => ({
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Stack Exchange API returns dynamic JSON
+    result.answers = (aData.items || []).map((a: Record<string, any>): SOAnswer => ({
       answerId: a.answer_id,
       author: a.owner?.display_name || null,
       authorReputation: a.owner?.reputation || null,
@@ -158,7 +170,7 @@ export async function getStackOverflowQuestion(input: string, options: StackOver
     }));
 
     // Sort: accepted answer first, then by score
-    result.answers.sort((a: any, b: any) => {
+    result.answers.sort((a: SOAnswer, b: SOAnswer) => {
       if (a.isAccepted !== b.isAccepted) return a.isAccepted ? -1 : 1;
       return b.score - a.score;
     });

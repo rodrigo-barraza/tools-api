@@ -1,9 +1,9 @@
 import { buildScraperHeaders } from "../../../../utilities.ts";
-import { upsertWebcams } from "../../../../models/Webcam.ts";
+import { upsertWebcams, type WebcamDocument } from "../../../../models/Webcam.ts";
 
 export async function refreshCalgaryWebcams() {
   // Open Calgary SODA API (Socrata)
-  let allParsedWebcams: any[] = [];
+  let allParsedWebcams: WebcamDocument[] = [];
   let offset = 0;
   const limitPerPage = 1000;
   let hasMore = true;

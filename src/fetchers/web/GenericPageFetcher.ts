@@ -1,6 +1,8 @@
 // ─── Lightweight Article Extraction ─────────────────────────
 
 import * as cheerio from "cheerio";
+import type { CheerioAPI } from "cheerio";
+import type { AnyNode, Element } from "domhandler";
 import { errorMessage } from "../../utilities.ts";
 
 const MAX_BODY_CHARS = 15_000;
@@ -53,7 +55,7 @@ const NOISE_SELECTORS = [
  * Score a container element for "article-ness" based on text density.
  * Higher score = more likely to be the main content.
  */
-function scoreElement($: any, element: any) {
+function scoreElement($: CheerioAPI, element: AnyNode) {
   const text = $(element).text().trim();
   const wordCount = text.split(/\s+/).length;
   const linkDensity = ($(element).find("a").text().length || 0) / (text.length || 1);
@@ -61,7 +63,7 @@ function scoreElement($: any, element: any) {
   let score = wordCount;
 
   // Bonus for article-like tags and classes
-  const tagName = (element.tagName || element.name || "").toLowerCase();
+  const tagName = ((element as Element).tagName || (element as Element).name || "").toLowerCase();
   if (tagName === "article") score *= 2;
   if (tagName === "main") score *= 1.8;
 
@@ -81,7 +83,7 @@ function scoreElement($: any, element: any) {
 /**
  * Extract the main readable text from HTML.
  */
-function extractMainContent($: any) {
+function extractMainContent($: CheerioAPI) {
   // Remove noise elements first
   $(NOISE_SELECTORS.join(", ")).remove();
 
@@ -92,8 +94,8 @@ function extractMainContent($: any) {
   }
 
   // Score all block-level containers
-  const candidates: any[] = [];
-  $("div, section, article, main").each((_: any, element: any) => {
+  const candidates: { element: AnyNode; score: number }[] = [];
+  $("div, section, article, main").each((_: number, element: AnyNode) => {
     const score = scoreElement($, element);
     if (score > 25) {
       candidates.push({ element, score });
@@ -101,10 +103,10 @@ function extractMainContent($: any) {
   });
 
   // Sort by score descending
-  candidates.sort((a: any, b: any) => b.score - a.score);
+  candidates.sort((a, b) => b.score - a.score);
 
   if (candidates.length > 0) {
-    return extractText($, $(candidates[0].el));
+    return extractText($, $(candidates[0].element));
   }
 
   // Last resort: body text
@@ -114,13 +116,13 @@ function extractMainContent($: any) {
 /**
  * Extract clean text from a Cheerio element, preserving paragraph breaks.
  */
-function extractText($: any, container: any) {
-  const paragraphs: any[] = [];
+function extractText($: CheerioAPI, container: cheerio.Cheerio<AnyNode>) {
+  const paragraphs: string[] = [];
 
-  container.find("p, h1, h2, h3, h4, h5, h6, li, blockquote, pre, td, th").each((_: any, element: any) => {
+  container.find("p, h1, h2, h3, h4, h5, h6, li, blockquote, pre, td, th").each((_: number, element: AnyNode) => {
     const text = $(element).text().trim();
     if (text.length > 10) {
-      const tagName = (element.tagName || element.name || "").toLowerCase();
+      const tagName = ((element as Element).tagName || (element as Element).name || "").toLowerCase();
       if (tagName.startsWith("h")) {
         paragraphs.push(`## ${text}`);
       } else if (tagName === "blockquote") {
@@ -144,8 +146,8 @@ function extractText($: any, container: any) {
 
 // ─── Metadata Extraction ────────────────────────────────────────────
 
-function extractMetadata($: any, url: any) {
-  const meta: Record<string, unknown> = {};
+function extractMetadata($: CheerioAPI, url: string) {
+  const meta: Record<string, string | string[] | null | undefined> = {};
 
   // Title: og:title > twitter:title > <title>
   meta.title =
@@ -188,7 +190,7 @@ function extractMetadata($: any, url: any) {
 
   // Keywords
   const keywords = $('meta[name="keywords"]').attr("content");
-  meta.keywords = keywords ? keywords.split(",").map((k: any) => k.trim()).filter(Boolean) : null;
+  meta.keywords = keywords ? keywords.split(",").map((k: string) => k.trim()).filter(Boolean) : null;
 
   // Canonical URL
   meta.canonicalUrl =
@@ -221,7 +223,7 @@ export interface GenericPageOptions {
 export async function fetchGenericPage(url: string, options: GenericPageOptions = {}) {
   const maxChars = options.maxChars ? parseInt(String(options.maxChars), 10) : MAX_BODY_CHARS;
 
-  let response: any;
+  let response: Response;
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -238,7 +240,7 @@ export async function fetchGenericPage(url: string, options: GenericPageOptions 
 
     clearTimeout(timeout);
   } catch (error: unknown) {
-    if ((error as any).name === "AbortError") {
+    if (error instanceof Error && error.name === "AbortError") {
       return { error: `Request timed out after ${FETCH_TIMEOUT_MS / 1000}s: ${url}` };
     }
     return { error: `Fetch failed: ${errorMessage(error)}` };

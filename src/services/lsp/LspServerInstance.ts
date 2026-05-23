@@ -26,10 +26,10 @@ export interface LspServerInstance {
   stop(): Promise<void>;
   restart(): Promise<void>;
   isHealthy(): boolean;
-  sendRequest(method: string, params: any): Promise<any>;
+  sendRequest(method: string, params: any): Promise<unknown>;
   sendNotification(method: string, params: any): Promise<void>;
-  onNotification(method: string, handler: (...args: any[]) => void): void;
-  onRequest(method: string, handler: (...args: any[]) => any): void;
+  onNotification(method: string, handler: (...args: unknown[]) => void): void;
+  onRequest(method: string, handler: (...args: unknown[]) => any): void;
 }
 
 /**
@@ -61,7 +61,7 @@ export function createLspServerInstance(name: string, config: LspServerConfig): 
       throw error;
     }
 
-    let initPromise: Promise<any> | undefined;
+    let initPromise: Promise<unknown> | undefined;
     try {
       state = "starting";
       logger.info(`[LSP:${name}] Starting server instance...`);
@@ -205,7 +205,7 @@ export function createLspServerInstance(name: string, config: LspServerConfig): 
   /**
    * Send an LSP request with exponential backoff retry on transient errors.
    */
-  async function sendRequest(method: string, params: any): Promise<any> {
+  async function sendRequest(method: string, params: any): Promise<unknown> {
     if (!isHealthy()) {
       throw new Error(
         `Cannot send request to LSP server '${name}': server is ${state}` +
@@ -241,11 +241,11 @@ export function createLspServerInstance(name: string, config: LspServerConfig): 
     await client.sendNotification(method, params);
   }
 
-  function onNotification(method: string, handler: (...args: any[]) => void): void {
+  function onNotification(method: string, handler: (...args: unknown[]) => void): void {
     client.onNotification(method, handler);
   }
 
-  function onRequest(method: string, handler: (...args: any[]) => any): void {
+  function onRequest(method: string, handler: (...args: unknown[]) => any): void {
     client.onRequest(method, handler);
   }
 
