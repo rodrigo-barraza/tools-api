@@ -131,7 +131,7 @@ export function generateAnsiArt(params: Required<Omit<BonfireParams, "itemToBurn
       const m2Start = 27 + m2Skew + 4;
       for (let i = 0; i < m2Stick.length; i++) {
         const column = m2Start + i;
-        if (column < width && col <= m2End) grid[m2Row][column] = m2Stick[i];
+        if (column < width && column <= m2End) grid[m2Row][column] = m2Stick[i];
       }
     }
   }
@@ -242,7 +242,7 @@ function writeStringAtGrid(grid: string[][], row: number, startCol: number, text
   if (row < 0 || row >= grid.length) return;
   for (let i = 0; i < text.length; i++) {
     const column = startCol + i;
-    if (col >= 0 && col < grid[row].length) {
+    if (column >= 0 && column < grid[row].length) {
       grid[row][column] = text[i];
     }
   }
