@@ -14,10 +14,11 @@ export function randomUserAgent() {
 }
 
 /**
- * Extracts a safe error message string from an unknown error object.
+ * Re-exported from the canonical utilities-library so all 78+ import sites
+ * across tools-service get the single-source-of-truth version.
  */
-export const errorMessage = (err: unknown): string =>
-  err instanceof Error ? err.message : String(err);
+import { errorMessage } from "@rodrigo-barraza/utilities-library";
+export { errorMessage };
 
 // ─── XML Utilities ─────────────────────────────────────────────────
 
