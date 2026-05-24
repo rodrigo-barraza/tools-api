@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
 import { EVENT_SOURCES, EVENT_CATEGORIES } from "../../constants.ts";
+import type { CachedEvent } from "../../caches/EventCache.ts";
 
 const EVENTS_URL = "https://vancouver.ca/news-calendar/upcoming-events.aspx";
 
@@ -14,7 +15,7 @@ const HEADERS = {
  * Fetch events from the City of Vancouver events page.
  * Scrapes HTML with cheerio.
  */
-export async function fetchCityOfVancouverEvents() {
+export async function fetchCityOfVancouverEvents(): Promise<CachedEvent[]> {
   const response = await fetch(EVENTS_URL, { headers: HEADERS });
 
   if (!response.ok) {
@@ -25,7 +26,7 @@ export async function fetchCityOfVancouverEvents() {
 
   const html = await response.text();
   const $ = cheerio.load(html);
-  const events: unknown[] = [];
+  const events: CachedEvent[] = [];
 
   // Try multiple selectors — city websites change layouts
   const selectors = [
@@ -38,7 +39,7 @@ export async function fetchCityOfVancouverEvents() {
   for (const selector of selectors) {
     if (events.length > 0) break;
 
-    $(selector).each((_i: any, element: any) => {
+    $(selector).each((_i, element) => {
       const $el = $(element);
       const $link = $el.find("a").first();
       const title =
@@ -63,7 +64,7 @@ export async function fetchCityOfVancouverEvents() {
         .first()
         .text()
         .trim();
-      const imageUrl = $el.find("img").first().attr("src") || null;
+      const imageUrl = $el.find("img").first().attr("src") || undefined;
 
       if (!title || title.length < 3) return;
 
@@ -71,35 +72,35 @@ export async function fetchCityOfVancouverEvents() {
         ? href.startsWith("http")
           ? href
           : `https://vancouver.ca${href}`
-        : null;
+        : undefined;
 
-      const startDate = dateText ? new Date(dateText) : null;
+      const startDate = dateText ? new Date(dateText) : undefined;
 
       events.push({
         sourceId: fullUrl || `cov-${Date.now()}-${_i}`,
         source: EVENT_SOURCES.CITY_OF_VANCOUVER,
         name: title,
-        description: description || null,
+        description: description || undefined,
         url: fullUrl,
         imageUrl: imageUrl?.startsWith("http")
           ? imageUrl
           : imageUrl
             ? `https://vancouver.ca${imageUrl}`
-            : null,
-        startDate: startDate && !isNaN(startDate.getTime()) ? startDate : null,
-        endDate: null,
+            : undefined,
+        startDate: startDate && !isNaN(startDate.getTime()) ? startDate : undefined,
+        endDate: undefined,
         venue: {
-          name: location || null,
-          address: null,
+          name: location || undefined,
+          address: undefined,
           city: "Vancouver",
           state: "BC",
           country: "CA",
-          latitude: null,
-          longitude: null,
+          latitude: undefined,
+          longitude: undefined,
         },
         category: EVENT_CATEGORIES.OTHER,
         genres: ["community", "city"],
-        priceRange: null,
+        priceRange: undefined,
         status: "onsale",
         fetchedAt: new Date(),
       });

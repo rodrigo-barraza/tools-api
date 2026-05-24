@@ -4,6 +4,7 @@ import { PRODUCT_SOURCES, EBAY_CATEGORIES } from "../../constants.ts";
 import { computeTrendingScore, errorMessage } from "../../utilities.ts";
 import rateLimiter from "../../services/RateLimiterService.ts";
 import logger from "../../logger.ts";
+import type { ProductInput } from "../../models/Product.ts";
 const BASE_URL = "https://api.ebay.com/buy/browse/v1";
 // ─── OAuth2 Token Management ──────────────────────────────────────
 const ebayTokenManager = new TokenManager(async () => {
@@ -30,10 +31,26 @@ const ebayTokenManager = new TokenManager(async () => {
     expiresInMs: 7_000_000, // ~2 hours (eBay tokens last ~2hrs)
   };
 });
+interface EbayCategory {
+  id: string;
+  name: string;
+  unified: string;
+}
+
+interface EbayItemSummary {
+  itemId: string;
+  title: string;
+  price?: { value: string; currency: string };
+  image?: { imageUrl: string };
+  thumbnailImages?: Array<{ imageUrl: string }>;
+  itemWebUrl?: string;
+  shortDescription?: string;
+}
+
 /**
  * Search eBay for popular items in a category, sorted by most watched.
  */
-async function fetchEbayCategoryTrending(token: any, category: any) {
+async function fetchEbayCategoryTrending(token: string, category: EbayCategory) {
   const params = new URLSearchParams({
     category_ids: category.id,
     sort: "-price",
@@ -52,24 +69,24 @@ async function fetchEbayCategoryTrending(token: any, category: any) {
       `eBay Browse API returned ${response.status} for ${category.name}`,
     );
   }
-  const data = await response.json();
+  const data = await response.json() as { itemSummaries?: EbayItemSummary[] };
   const items = data.itemSummaries || [];
-  return items.slice(0, 15).map((item: any, index: any) => {
-    const product = {
+  return items.slice(0, 15).map((item: EbayItemSummary, index: number) => {
+    const product: ProductInput = {
       sourceId: item.itemId,
       source: PRODUCT_SOURCES.EBAY,
       name: item.title,
       category: category.unified,
       sourceCategory: category.name,
       rank: index + 1,
-      price: item.price ? parseFloat(item.price.value) : null,
+      price: item.price ? parseFloat(item.price.value) : undefined,
       currency: item.price?.currency || "USD",
-      rating: null,
-      reviewCount: null,
+      rating: undefined,
+      reviewCount: undefined,
       imageUrl:
-        item.image?.imageUrl || item.thumbnailImages?.[0]?.imageUrl || null,
-      productUrl: item.itemWebUrl || null,
-      description: item.shortDescription || null,
+        item.image?.imageUrl || item.thumbnailImages?.[0]?.imageUrl || undefined,
+      productUrl: item.itemWebUrl || undefined,
+      description: item.shortDescription || undefined,
       trendingScore: 0,
       fetchedAt: new Date(),
     };
@@ -80,12 +97,12 @@ async function fetchEbayCategoryTrending(token: any, category: any) {
 /**
  * Fetch trending products across all eBay categories.
  */
-export async function fetchAllEbayTrending() {
+export async function fetchAllEbayTrending(): Promise<ProductInput[]> {
   if (!CONFIG.EBAY_CLIENT_ID || !CONFIG.EBAY_CLIENT_SECRET) {
     throw new Error("EBAY_CLIENT_ID and EBAY_CLIENT_SECRET not configured");
   }
   const token = await ebayTokenManager.getToken();
-  const allProducts: unknown[] = [];
+  const allProducts: ProductInput[] = [];
   for (const cat of EBAY_CATEGORIES) {
     await rateLimiter.wait("EBAY");
     try {

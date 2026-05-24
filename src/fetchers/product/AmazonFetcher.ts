@@ -10,13 +10,14 @@ import {
   computeTrendingScore, errorMessage } from "../../utilities.ts";
 import rateLimiter from "../../services/RateLimiterService.ts";
 import logger from "../../logger.ts";
+import type { ProductInput } from "../../models/Product.ts";
 
 const BASE_URL = "https://www.amazon.com/Best-Sellers/zgbs";
 
 /**
  * Scrape Amazon Best Sellers for a single category.
  */
-async function scrapeCategory(slug: any, categoryName: any, unifiedCategory: any) {
+async function scrapeCategory(slug: string, categoryName: string, unifiedCategory: string) {
   const url = `${BASE_URL}/${slug}`;
 
   const response = await fetch(url, {
@@ -35,10 +36,10 @@ async function scrapeCategory(slug: any, categoryName: any, unifiedCategory: any
 
   const html = await response.text();
   const $ = cheerio.load(html);
-  const products: unknown[] = [];
+  const products: ProductInput[] = [];
 
   // Amazon Best Sellers grid items
-  $("[data-asin]").each((_i: any, element: any) => {
+  $("[data-asin]").each((_i, element) => {
     if (products.length >= AMAZON_MAX_PRODUCTS_PER_CATEGORY) return false;
 
     const $el = $(element);
@@ -70,7 +71,7 @@ async function scrapeCategory(slug: any, categoryName: any, unifiedCategory: any
       .first()
       .text()
       .trim();
-    const price = parsePrice(priceText);
+    const price = parsePrice(priceText) ?? undefined;
 
     // Extract rating
     const ratingText =
@@ -78,26 +79,26 @@ async function scrapeCategory(slug: any, categoryName: any, unifiedCategory: any
       $el.find("[class*='a-star']").attr("class") ||
       "";
     const ratingMatch = ratingText.match(/([\d.]+)\s*out of/);
-    const rating = ratingMatch ? parseFloat(ratingMatch[1]) : null;
+    const rating = ratingMatch ? parseFloat(ratingMatch[1]) : undefined;
 
     // Extract review count
     const reviewText =
       $el.find(".a-size-small .a-link-normal").text().trim() ||
       $el.find("[class*='review'] .a-size-small").text().trim();
     const reviewCount = reviewText
-      ? parseInt(reviewText.replace(/[^0-9]/g, ""), 10) || null
-      : null;
+      ? parseInt(reviewText.replace(/[^0-9]/g, ""), 10) || undefined
+      : undefined;
 
     // Extract image
     const imageUrl =
       $el.find("img.a-dynamic-image, img[data-a-dynamic-image]").attr("src") ||
       $el.find("img").first().attr("src") ||
-      null;
+      undefined;
 
     // Build product URL
     const productUrl = `https://www.amazon.com/dp/${asin}`;
 
-    const product = {
+    const product: ProductInput = {
       sourceId: asin,
       source: PRODUCT_SOURCES.AMAZON,
       name,
@@ -110,7 +111,7 @@ async function scrapeCategory(slug: any, categoryName: any, unifiedCategory: any
       reviewCount,
       imageUrl,
       productUrl,
-      description: null,
+      description: undefined,
       trendingScore: 0,
       fetchedAt: new Date(),
     };
@@ -125,8 +126,8 @@ async function scrapeCategory(slug: any, categoryName: any, unifiedCategory: any
  * Fetch Amazon Best Sellers across all configured categories.
  * Rate-limited to respect Amazon's servers.
  */
-export async function fetchAllAmazonBestSellers() {
-  const allProducts: unknown[] = [];
+export async function fetchAllAmazonBestSellers(): Promise<ProductInput[]> {
+  const allProducts: ProductInput[] = [];
 
   for (const cat of AMAZON_CATEGORIES) {
     try {

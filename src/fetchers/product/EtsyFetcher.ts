@@ -3,8 +3,32 @@ import { PRODUCT_SOURCES, ETSY_CATEGORY_MAP } from "../../constants.ts";
 import { computeTrendingScore, errorMessage } from "../../utilities.ts";
 import rateLimiter from "../../services/RateLimiterService.ts";
 import logger from "../../logger.ts";
+import type { ProductInput } from "../../models/Product.ts";
 
 const BASE_URL = "https://openapi.etsy.com/v3/application";
+
+interface EtsyPrice {
+  amount: number;
+  divisor: number;
+  currency_code: string;
+}
+
+interface EtsyImage {
+  url_570xN: string;
+}
+
+interface EtsyListing {
+  listing_id: number;
+  title: string;
+  tags?: string[];
+  taxonomy_path?: string[];
+  price?: EtsyPrice;
+  num_favorers?: number;
+  images?: EtsyImage[];
+  url?: string;
+  description?: string;
+  views?: number;
+}
 
 /**
  * Map an Etsy taxonomy tag to a unified category.
@@ -43,7 +67,7 @@ export async function fetchEtsyTrending() {
     "most popular",
   ];
 
-  const allProducts: unknown[] = [];
+  const allProducts: ProductInput[] = [];
 
   for (const keyword of trendingKeywords) {
     await rateLimiter.wait("ETSY");
@@ -65,11 +89,10 @@ export async function fetchEtsyTrending() {
         throw new Error(`Etsy API returned ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as { results?: EtsyListing[] };
       const listings = data.results || [];
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Etsy API returns dynamic listing shapes
-      const products = listings.map((item: Record<string, any>, index: number) => {
+      const products = listings.map((item: EtsyListing, index: number) => {
         const product = {
           sourceId: String(item.listing_id),
           source: PRODUCT_SOURCES.ETSY,
@@ -79,14 +102,14 @@ export async function fetchEtsyTrending() {
           rank: index + 1,
           price: item.price?.amount
             ? item.price.amount / item.price.divisor
-            : null,
+            : undefined,
           currency: item.price?.currency_code || "USD",
-          rating: null,
+          rating: undefined,
           reviewCount: item.num_favorers || 0,
-          imageUrl: item.images?.[0]?.url_570xN || null,
+          imageUrl: item.images?.[0]?.url_570xN || undefined,
           productUrl:
             item.url || `https://www.etsy.com/listing/${item.listing_id}`,
-          description: item.description?.slice(0, 200) || null,
+          description: item.description?.slice(0, 200) || undefined,
           trendingScore: 0,
           views: item.views || 0,
           fetchedAt: new Date(),
@@ -102,8 +125,8 @@ export async function fetchEtsyTrending() {
   }
 
   // Deduplicate by listing ID
-  const seen = new Set();
-  const unique = allProducts.filter((p: any) => {
+  const seen = new Set<string>();
+  const unique = allProducts.filter((p: ProductInput) => {
     if (seen.has(p.sourceId)) return false;
     seen.add(p.sourceId);
     return true;

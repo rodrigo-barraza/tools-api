@@ -14,7 +14,7 @@ interface CacheError {
   time: string;
 }
 
-interface CachedEvent {
+export interface CachedEvent {
   name: string;
   source: string;
   sourceId: string;

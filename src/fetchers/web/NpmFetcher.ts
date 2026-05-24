@@ -4,14 +4,45 @@ const NPM_REGISTRY = "https://registry.npmjs.org";
 const NPM_DOWNLOADS = "https://api.npmjs.org/downloads/point/last-week";
 const MAX_README_CHARS = 15_000;
 
+export interface NpmMaintainer {
+  name?: string;
+  email?: string;
+  [key: string]: unknown;
+}
+
+export interface NpmPackageData {
+  name: string;
+  description?: string;
+  license?: string;
+  homepage?: string;
+  repository?: string | { url?: string };
+  keywords?: string[];
+  readme?: string;
+  maintainers?: Array<string | NpmMaintainer>;
+  "dist-tags"?: Record<string, string>;
+  versions?: Record<string, {
+    description?: string;
+    license?: string;
+    homepage?: string;
+    author?: string | { name?: string };
+    dependencies?: Record<string, string>;
+    devDependencies?: Record<string, string>;
+    peerDependencies?: Record<string, string>;
+    engines?: Record<string, string>;
+    types?: string;
+    typings?: string;
+    bin?: Record<string, string>;
+    deprecated?: string;
+  }>;
+  time?: Record<string, string>;
+}
+
 // ─── Public API ───────────────────────────────────────────────────
 
 /**
  * Fetch NPM package info including version, deps, and README.
-
-
  */
-export async function getNpmPackage(packageName: any, options: Record<string, unknown> = {}) {
+export async function getNpmPackage(packageName: string, options: Record<string, unknown> = {}) {
   if (!packageName || typeof packageName !== "string") {
     return { error: "Package name is required" };
   }
@@ -34,9 +65,9 @@ export async function getNpmPackage(packageName: any, options: Record<string, un
     return { error: `NPM Registry error: ${pkgRes.status}` };
   }
 
-  const data = await pkgRes.json();
-  const latest = data["dist-tags"]?.latest;
-  const version = data.versions?.[latest] || {};
+  const data = await pkgRes.json() as NpmPackageData;
+  const latest = data["dist-tags"]?.latest || "";
+  const version = (data.versions && latest ? data.versions[latest] : null) || {};
 
   const result: Record<string, unknown> = {
     name: data.name,
@@ -51,7 +82,10 @@ export async function getNpmPackage(packageName: any, options: Record<string, un
     author: typeof version.author === "string"
       ? version.author
       : version.author?.name || null,
-    maintainers: (data.maintainers || []).map((m: any) => m.name || m).slice(0, 10),
+    maintainers: (data.maintainers || []).map((m) => {
+      if (typeof m === "string") return m;
+      return m.name || JSON.stringify(m);
+    }).slice(0, 10),
     dependencies: version.dependencies || {},
     devDependencies: version.devDependencies || {},
     peerDependencies: version.peerDependencies || {},
@@ -65,7 +99,7 @@ export async function getNpmPackage(packageName: any, options: Record<string, un
 
   // Download stats
   if (dlRes?.ok) {
-    const dlData = await dlRes.json();
+    const dlData = await dlRes.json() as { downloads?: number };
     result.weeklyDownloads = dlData.downloads || null;
   }
 

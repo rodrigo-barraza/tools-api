@@ -12,10 +12,58 @@ import { errorMessage } from "../utilities.ts";
 
 const PRISM_SERVICE_URL = CONFIG.PRISM_SERVICE_URL;
 
+// ────────────────────────────────────────────────────────────
+// Types
+// ────────────────────────────────────────────────────────────
+
+export interface PrismChatParams {
+  project?: string;
+  username?: string;
+  model?: string;
+  messages?: Array<{ role: string; content: string; [key: string]: unknown }>;
+  temperature?: number;
+  maxTokens?: number;
+  [key: string]: unknown;
+}
+
+export interface PrismTTSParams {
+  provider?: string;
+  text: string;
+  voice?: string;
+  model?: string;
+  project?: string;
+  username?: string;
+}
+
+export interface PrismSTTParams {
+  provider?: string;
+  audio: string;
+  model?: string;
+  language?: string;
+  project?: string;
+  username?: string;
+}
+
+export interface TransformedPrismSpeechResult {
+  audioBase64: string;
+  contentType: string;
+}
+
+export interface TransformedPrismChatResult {
+  text?: string;
+  message?: { role: string; content: string; [key: string]: unknown };
+  [key: string]: unknown;
+}
+
+export interface TransformedPrismSTTResult {
+  text: string;
+  [key: string]: unknown;
+}
+
 /**
  * Call Prism's /chat endpoint for text/image generation.
  */
-export async function chat(params: any) {
+export async function chat(params: PrismChatParams): Promise<TransformedPrismChatResult> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), PRISM_CHAT_TIMEOUT_MS);
@@ -38,7 +86,7 @@ export async function chat(params: any) {
       throw new Error(`Prism returned ${response.status}: ${errText.slice(0, 200)}`);
     }
 
-    return await response.json();
+    return await response.json() as TransformedPrismChatResult;
   } catch (error: unknown) {
     logger.error(`[PrismService] chat failed: ${errorMessage(error)}`);
     throw error;
@@ -48,7 +96,7 @@ export async function chat(params: any) {
 /**
  * Check Prism health/connectivity.
  */
-export async function health() {
+export async function health(): Promise<boolean> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), PRISM_HEALTH_TIMEOUT_MS);
@@ -66,7 +114,7 @@ export async function health() {
  * Call Prism's /text-to-audio endpoint to generate speech.
  * Collects the streamed binary response into a base64-encoded buffer.
  */
-export async function textToSpeech(params: any) {
+export async function textToSpeech(params: PrismTTSParams): Promise<TransformedPrismSpeechResult> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), PRISM_TTS_TIMEOUT_MS);
@@ -106,7 +154,7 @@ export async function textToSpeech(params: any) {
 /**
  * Call Prism's /audio-to-text endpoint to transcribe audio.
  */
-export async function speechToText(params: any) {
+export async function speechToText(params: PrismSTTParams): Promise<TransformedPrismSTTResult> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), PRISM_STT_TIMEOUT_MS);
@@ -132,7 +180,7 @@ export async function speechToText(params: any) {
       throw new Error(`Prism STT returned ${response.status}: ${errText.slice(0, 200)}`);
     }
 
-    return await response.json();
+    return await response.json() as TransformedPrismSTTResult;
   } catch (error: unknown) {
     logger.error(`[PrismService] speechToText failed: ${errorMessage(error)}`);
     throw error;

@@ -8,14 +8,18 @@ import { getPyPiPackage } from "./PyPiFetcher.ts";
 /**
  * Look up a package on NPM or PyPI.
  */
-export async function getPackageInfo(name: any, registry: any, options: Record<string, unknown> = {}) {
+export async function getPackageInfo(
+  name: string,
+  registry?: string,
+  options: Record<string, unknown> = {},
+) {
   if (!name || typeof name !== "string") {
     return { error: "Package name is required" };
   }
 
   const reg = (registry || "npm").toLowerCase().trim();
 
-  let result: any;
+  let result: (Record<string, unknown> & { error?: string; registry?: string }) | null = null;
 
   switch (reg) {
     case "npm":
@@ -27,7 +31,7 @@ export async function getPackageInfo(name: any, registry: any, options: Record<s
     case "pypi":
     case "pip":
     case "python":
-      result = await getPyPiPackage(name);
+      result = await getPyPiPackage(name) as Record<string, unknown> & { error?: string };
       break;
 
     default:

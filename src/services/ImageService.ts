@@ -11,9 +11,13 @@ import type { ImageOperation } from "../types/image.ts";
 
 const execFileAsync = promisify(execFile);
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Must accept generic EphemeralStore<T> class instances
-interface ImageStore {
-  get(id: string): any;
+export interface ImageStoreEntry {
+  buffer: Buffer;
+  mimeType?: string;
+}
+
+export interface ImageStore {
+  get(id: string): ImageStoreEntry | null | undefined;
 }
 
 interface ProcessImageInput {

@@ -1,6 +1,7 @@
 import * as cheerio from "cheerio";
 import { EVENT_SOURCES, EVENT_CATEGORIES } from "../../constants.ts";
 import logger from "../../logger.ts";
+import type { CachedEvent } from "../../caches/EventCache.ts";
 
 const UBC_EVENTS_URL = "https://events.ubc.ca/";
 const SFU_EVENTS_URL = "https://www.sfu.ca/sfunews/events.html";
@@ -15,7 +16,7 @@ const HEADERS = {
 /**
  * Fetch and parse UBC events from events.ubc.ca.
  */
-async function fetchUbcEvents() {
+async function fetchUbcEvents(): Promise<CachedEvent[]> {
   const response = await fetch(UBC_EVENTS_URL, { headers: HEADERS });
 
   if (!response.ok) {
@@ -24,10 +25,10 @@ async function fetchUbcEvents() {
 
   const html = await response.text();
   const $ = cheerio.load(html);
-  const events: unknown[] = [];
+  const events: CachedEvent[] = [];
 
   $("article, .event-card, .views-row, [class*='event'], .card").each(
-    (_i: any, element: any) => {
+    (_i, element) => {
       const $el = $(element);
       const $link = $el.find("a").first();
       const title =
@@ -44,7 +45,7 @@ async function fetchUbcEvents() {
         .first()
         .text()
         .trim();
-      const imageUrl = $el.find("img").first().attr("src") || null;
+      const imageUrl = $el.find("img").first().attr("src") || undefined;
 
       if (!title || title.length < 3) return;
 
@@ -52,26 +53,26 @@ async function fetchUbcEvents() {
         ? href.startsWith("http")
           ? href
           : `https://events.ubc.ca${href}`
-        : null;
+        : undefined;
 
-      const startDate = dateText ? new Date(dateText) : null;
+      const startDate = dateText ? new Date(dateText) : undefined;
 
       events.push({
         sourceId: fullUrl || `ubc-${Date.now()}-${_i}`,
         source: EVENT_SOURCES.UBC,
         name: title,
-        description: description || null,
+        description: description || undefined,
         url: fullUrl,
         imageUrl: imageUrl?.startsWith("http")
           ? imageUrl
           : imageUrl
             ? `https://events.ubc.ca${imageUrl}`
-            : null,
-        startDate: startDate && !isNaN(startDate.getTime()) ? startDate : null,
-        endDate: null,
+            : undefined,
+        startDate: startDate && !isNaN(startDate.getTime()) ? startDate : undefined,
+        endDate: undefined,
         venue: {
           name: "University of British Columbia",
-          address: null,
+          address: undefined,
           city: "Vancouver",
           state: "BC",
           country: "CA",
@@ -80,7 +81,7 @@ async function fetchUbcEvents() {
         },
         category: EVENT_CATEGORIES.OTHER,
         genres: ["university", "education"],
-        priceRange: null,
+        priceRange: undefined,
         status: "onsale",
         fetchedAt: new Date(),
       });
@@ -93,7 +94,7 @@ async function fetchUbcEvents() {
 /**
  * Fetch and parse SFU events from sfu.ca.
  */
-async function fetchSfuEvents() {
+async function fetchSfuEvents(): Promise<CachedEvent[]> {
   const response = await fetch(SFU_EVENTS_URL, { headers: HEADERS });
 
   if (!response.ok) {
@@ -102,10 +103,10 @@ async function fetchSfuEvents() {
 
   const html = await response.text();
   const $ = cheerio.load(html);
-  const events: unknown[] = [];
+  const events: CachedEvent[] = [];
 
   $("article, .event-card, .views-row, [class*='event'], .card, li").each(
-    (_i: any, element: any) => {
+    (_i, element) => {
       const $el = $(element);
       const $link = $el.find("a").first();
       const title =
@@ -129,22 +130,22 @@ async function fetchSfuEvents() {
         ? href.startsWith("http")
           ? href
           : `https://www.sfu.ca${href}`
-        : null;
+        : undefined;
 
-      const startDate = dateText ? new Date(dateText) : null;
+      const startDate = dateText ? new Date(dateText) : undefined;
 
       events.push({
         sourceId: fullUrl || `sfu-${Date.now()}-${_i}`,
         source: EVENT_SOURCES.SFU,
         name: title,
-        description: description || null,
+        description: description || undefined,
         url: fullUrl,
-        imageUrl: null,
-        startDate: startDate && !isNaN(startDate.getTime()) ? startDate : null,
-        endDate: null,
+        imageUrl: undefined,
+        startDate: startDate && !isNaN(startDate.getTime()) ? startDate : undefined,
+        endDate: undefined,
         venue: {
           name: "Simon Fraser University",
-          address: null,
+          address: undefined,
           city: "Burnaby",
           state: "BC",
           country: "CA",
@@ -153,7 +154,7 @@ async function fetchSfuEvents() {
         },
         category: EVENT_CATEGORIES.OTHER,
         genres: ["university", "education"],
-        priceRange: null,
+        priceRange: undefined,
         status: "onsale",
         fetchedAt: new Date(),
       });
@@ -166,13 +167,13 @@ async function fetchSfuEvents() {
 /**
  * Fetch events from both UBC and SFU.
  */
-export async function fetchUniversityEvents() {
+export async function fetchUniversityEvents(): Promise<CachedEvent[]> {
   const results = await Promise.allSettled([
     fetchUbcEvents(),
     fetchSfuEvents(),
   ]);
 
-  const events: unknown[] = [];
+  const events: CachedEvent[] = [];
   for (const result of results) {
     if (result.status === "fulfilled") {
       events.push(...result.value);

@@ -1,5 +1,6 @@
 import CONFIG from "../../config.ts";
 import { EVENT_SOURCES, EVENT_CATEGORIES } from "../../constants.ts";
+import type { CachedEvent } from "../../caches/EventCache.ts";
 
 const BASE_URL = "https://places.googleapis.com/v1/places:searchNearby";
 
@@ -16,13 +17,24 @@ const INCLUDED_TYPES = [
   "convention_center",
 ];
 
+interface GooglePlace {
+  id: string;
+  displayName?: { text?: string };
+  editorialSummary?: { text?: string };
+  formattedAddress?: string;
+  websiteUri?: string;
+  location?: { latitude: number; longitude: number };
+  types?: string[];
+  primaryType?: string;
+}
+
 /**
  * Fetch event venues from Google Places API (New).
  * Returns nearby event-related venues as potential event sources.
  * Note: Google Places doesn't directly list events — it lists venues
  * that are likely hosting events. We mark these as "venues" category.
  */
-export async function fetchGooglePlacesEvents() {
+export async function fetchGooglePlacesEvents(): Promise<CachedEvent[]> {
   if (!CONFIG.GOOGLE_PLACES_API_KEY) {
     throw new Error("GOOGLE_PLACES_API_KEY is not configured");
   }
@@ -62,10 +74,10 @@ export async function fetchGooglePlacesEvents() {
     );
   }
 
-  const data = await response.json();
+  const data = await response.json() as { places?: GooglePlace[] };
   const places = data.places || [];
 
-  return places.map((place: any) => {
+  return places.map((place: GooglePlace) => {
     const category = mapPlaceTypeToCategory(
       place.primaryType || place.types?.[0],
     );
@@ -74,23 +86,23 @@ export async function fetchGooglePlacesEvents() {
       sourceId: `gplaces-${place.id}`,
       source: EVENT_SOURCES.GOOGLE_PLACES,
       name: place.displayName?.text || "Unknown Venue",
-      description: place.editorialSummary?.text || null,
-      url: place.websiteUri || null,
-      imageUrl: null,
-      startDate: null,
-      endDate: null,
+      description: place.editorialSummary?.text || undefined,
+      url: place.websiteUri || undefined,
+      imageUrl: undefined,
+      startDate: undefined,
+      endDate: undefined,
       venue: {
-        name: place.displayName?.text || null,
-        address: place.formattedAddress || null,
+        name: place.displayName?.text || undefined,
+        address: place.formattedAddress || undefined,
         city: "Vancouver",
         state: "BC",
         country: "CA",
-        latitude: place.location?.latitude ?? null,
-        longitude: place.location?.longitude ?? null,
+        latitude: place.location?.latitude ?? undefined,
+        longitude: place.location?.longitude ?? undefined,
       },
       category,
       genres: (place.types || []).slice(0, 5),
-      priceRange: null,
+      priceRange: undefined,
       status: "onsale",
       fetchedAt: new Date(),
     };

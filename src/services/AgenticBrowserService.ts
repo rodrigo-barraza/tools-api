@@ -485,8 +485,9 @@ async function actionSnapshot(page: Page, { selector }: { selector?: string }) {
     const locator = selector ? page.locator(selector) : page.locator("body");
 
     // Playwright ≥1.49 supports locator.ariaSnapshot()
-    if (typeof (locator as any).ariaSnapshot === "function") {
-      const snapshot = await (locator as any).ariaSnapshot();
+    const locWithSnapshot = locator as typeof locator & { ariaSnapshot?: () => Promise<string> };
+    if (typeof locWithSnapshot.ariaSnapshot === "function") {
+      const snapshot = await locWithSnapshot.ariaSnapshot();
       return {
         action: "snapshot",
         url: page.url(),
@@ -497,7 +498,8 @@ async function actionSnapshot(page: Page, { selector }: { selector?: string }) {
     }
 
     // Fallback: use page.accessibility.snapshot() + format ourselves
-    const tree = await (page as any).accessibility.snapshot({ interestingOnly: true });
+    const pgWithAccessibility = page as typeof page & { accessibility?: { snapshot: (options?: { interestingOnly?: boolean }) => Promise<AccessibilityNode | null> } };
+    const tree = await pgWithAccessibility.accessibility?.snapshot({ interestingOnly: true }) || null;
     const formatted = formatAccessibilityTree(tree, 0);
     return {
       action: "snapshot",
@@ -583,9 +585,9 @@ function resolveRef(page: Page, ref: string) {
   // Format: "role:name" (e.g. "button:Submit", "link:Get started")
   const colonIdx = ref.indexOf(":");
   if (colonIdx > 0) {
-    const role = ref.slice(0, colonIdx).trim();
+    const role = ref.slice(0, colonIdx).trim() as Parameters<typeof page.getByRole>[0];
     const name = ref.slice(colonIdx + 1).trim();
-    return page.getByRole(role as any, { name, exact: false });
+    return page.getByRole(role, { name, exact: false });
   }
 
   // Fallback: try as aria-label
@@ -694,7 +696,7 @@ async function actionRunScript(_page: Page, { script, timeout }: { script?: stri
 
   // Ensure the browser is running and get its WebSocket endpoint
   const b = await getBrowser();
-  const wsEndpoint = (b as any).wsEndpoint?.() || null;
+  const wsEndpoint = (b as Browser & { wsEndpoint?: () => string }).wsEndpoint?.() || null;
 
   // Wrap the user script with boilerplate for connecting to our browser
   const wrappedScript = `
@@ -724,8 +726,8 @@ const { chromium } = require('playwright');
 })();
 `;
 
-  let tmpDir: any;
-  let scriptPath: any;
+  let tmpDir: string | undefined;
+  let scriptPath: string | undefined;
 
   try {
     // Write script to temp file
@@ -749,7 +751,7 @@ const { chromium } = require('playwright');
       unlink(scriptPath).catch(() => {});
     }
     if (tmpDir) {
-      import("node:fs").then((fs: any) => fs.rmSync(tmpDir, { recursive: true, force: true })).catch(() => {});
+      import("node:fs").then((fs) => fs.rmSync(tmpDir!, { recursive: true, force: true })).catch(() => {});
     }
   }
 }
@@ -757,8 +759,8 @@ const { chromium } = require('playwright');
 /**
  * Execute a Playwright script file in a subprocess.
  */
-function executeScript(scriptPath: any, wsEndpoint: any, timeoutMs: any) {
-  return new Promise<unknown>((resolve: any) => {
+function executeScript(scriptPath: string, wsEndpoint: string | null, timeoutMs: number) {
+  return new Promise<unknown>((resolve) => {
     const stdoutChunks: Buffer[] = [];
     const stderrChunks: Buffer[] = [];
     let stdoutLen = 0;
@@ -780,14 +782,14 @@ function executeScript(scriptPath: any, wsEndpoint: any, timeoutMs: any) {
 
     child.stdin.end();
 
-    child.stdout.on("data", (chunk: any) => {
+    child.stdout.on("data", (chunk: Buffer) => {
       if (stdoutLen < BROWSER_MAX_SCRIPT_OUTPUT) {
         stdoutChunks.push(chunk);
         stdoutLen += chunk.length;
       }
     });
 
-    child.stderr.on("data", (chunk: any) => {
+    child.stderr.on("data", (chunk: Buffer) => {
       if (stderrLen < BROWSER_MAX_SCRIPT_OUTPUT) {
         stderrChunks.push(chunk);
         stderrLen += chunk.length;
@@ -799,7 +801,7 @@ function executeScript(scriptPath: any, wsEndpoint: any, timeoutMs: any) {
       child.kill("SIGKILL");
     }, timeoutMs);
 
-    function finish(exitCode: any) {
+    function finish(exitCode: number | null) {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
@@ -817,7 +819,7 @@ function executeScript(scriptPath: any, wsEndpoint: any, timeoutMs: any) {
       });
     }
 
-    child.on("close", (code: any) => finish(code));
+    child.on("close", (code: number | null) => finish(code));
     child.on("error", (error: unknown) => {
       if (!settled) {
         settled = true;
@@ -856,10 +858,31 @@ const ACTION_HANDLERS = {
   run_script: actionRunScript,
 };
 
+export interface AgenticBrowserParams {
+  action: string;
+  sessionId?: string;
+  url?: string;
+  fullPage?: boolean;
+  selector?: string;
+  text?: string;
+  pressEnter?: boolean;
+  direction?: string;
+  amount?: number;
+  expression?: string;
+  format?: string;
+  timeout?: number;
+  state?: "attached" | "detached" | "visible" | "hidden";
+  limit?: number;
+  ref?: string;
+  value?: string;
+  script?: string;
+  [key: string]: unknown;
+}
+
 /**
  * Execute a browser action.
  */
-export async function agenticBrowserAction(params: any) {
+export async function agenticBrowserAction(params: AgenticBrowserParams) {
   const { action, sessionId: requestedSessionId, ...actionParams } = params;
 
   // Handle close without needing a session

@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
 import { EVENT_SOURCES, EVENT_CATEGORIES } from "../../constants.ts";
+import type { CachedEvent } from "../../caches/EventCache.ts";
 
 const BASE_URL = "https://vancouver.craigslist.org/search/eee";
 
@@ -15,17 +16,17 @@ const HEADERS = {
  * Parse a Craigslist date string into a Date object.
  * Craigslist uses formats like "Mar 20" or "2026-03-20 10:00"
  */
-function parseDate(dateStr: string | null) {
-  if (!dateStr) return null;
+function parseDate(dateStr: string | null): Date | undefined {
+  if (!dateStr) return undefined;
   const d = new Date(dateStr);
-  return isNaN(d.getTime()) ? null : d;
+  return isNaN(d.getTime()) ? undefined : d;
 }
 
 /**
  * Fetch events from Craigslist Vancouver community events section.
  * Scrapes HTML with cheerio since Craigslist has no public API.
  */
-export async function fetchCraigslistEvents() {
+export async function fetchCraigslistEvents(): Promise<CachedEvent[]> {
   const response = await fetch(BASE_URL, { headers: HEADERS });
 
   if (!response.ok) {
@@ -34,9 +35,9 @@ export async function fetchCraigslistEvents() {
 
   const html = await response.text();
   const $ = cheerio.load(html);
-  const events: unknown[] = [];
+  const events: CachedEvent[] = [];
 
-  $(".cl-static-search-result").each((_i: number, element: any) => {
+  $(".cl-static-search-result").each((_i, element) => {
     const $el = $(element);
     const title = $el.find(".title").text().trim();
     const link = $el.attr("href");
@@ -54,29 +55,29 @@ export async function fetchCraigslistEvents() {
       sourceId: fullUrl || `craigslist-${Date.now()}-${_i}`,
       source: EVENT_SOURCES.CRAIGSLIST,
       name: title,
-      description: null,
+      description: undefined,
       url: fullUrl,
-      imageUrl: null,
+      imageUrl: undefined,
       startDate: parseDate(dateStr),
-      endDate: null,
+      endDate: undefined,
       venue: {
-        name: location || null,
-        address: null,
+        name: location || undefined,
+        address: undefined,
         city: "Vancouver",
         state: "BC",
         country: "CA",
-        latitude: null,
-        longitude: null,
+        latitude: undefined,
+        longitude: undefined,
       },
       category: EVENT_CATEGORIES.OTHER,
       genres: ["community"],
       priceRange: price
         ? {
             min: parseFloat(price.replace(/[^0-9.]/g, "")) || 0,
-            max: null,
+            max: undefined,
             currency: "CAD",
           }
-        : null,
+        : undefined,
       status: "onsale",
       fetchedAt: new Date(),
     });
@@ -84,7 +85,7 @@ export async function fetchCraigslistEvents() {
 
   // Fallback: try the gallery/list results format
   if (events.length === 0) {
-    $("li.cl-search-result, .result-row").each((_i: number, element: any) => {
+    $("li.cl-search-result, .result-row").each((_i, element) => {
       const $el = $(element);
       const $link = $el.find("a.posting-title, a.result-title, a");
       const title = $link.text().trim();
@@ -102,23 +103,23 @@ export async function fetchCraigslistEvents() {
         sourceId: fullUrl || `craigslist-${Date.now()}-${_i}`,
         source: EVENT_SOURCES.CRAIGSLIST,
         name: title,
-        description: null,
+        description: undefined,
         url: fullUrl,
-        imageUrl: null,
+        imageUrl: undefined,
         startDate: parseDate(dateStr),
-        endDate: null,
+        endDate: undefined,
         venue: {
-          name: null,
-          address: null,
+          name: undefined,
+          address: undefined,
           city: "Vancouver",
           state: "BC",
           country: "CA",
-          latitude: null,
-          longitude: null,
+          latitude: undefined,
+          longitude: undefined,
         },
         category: EVENT_CATEGORIES.OTHER,
         genres: ["community"],
-        priceRange: null,
+        priceRange: undefined,
         status: "onsale",
         fetchedAt: new Date(),
       });

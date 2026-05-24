@@ -190,7 +190,8 @@ export function createLspClient(
 
       try {
         const result = await connection.sendRequest("initialize", params);
-        capabilities = (result as any).capabilities;
+        const res = result as { capabilities?: Record<string, unknown> | null };
+        capabilities = res.capabilities || null;
 
         // Send initialized notification
         await connection.sendNotification("initialized", {});
