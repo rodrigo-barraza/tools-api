@@ -1,0 +1,1112 @@
+Found 526 potential violations across 106 files:
+
+📄 src/caches/CommodityCache.ts:
+  Line 49: Arrow parameter 'q' is single-letter violation
+    Code: quotes.map((q) => ({ ...q, fetchedAt: cache.lastFetch || new Date() })),
+  Line 87: Arrow parameter 'c' is single-letter violation
+    Code: return cache.commodities.filter((c) => c.category === category);
+  Line 95: Arrow parameter 'c' is single-letter violation
+    Code: (c) => c.ticker.toUpperCase() === ticker.toUpperCase(),
+  Line 110: Arrow parameter 'c' is single-letter violation
+    Code: const withChange = commodities.filter((c) => c.changePercent != null);
+  Line 112: Arrow parameter 'a' is single-letter violation
+    Code: (a, b) => b.changePercent - a.changePercent,
+  Line 120: Declared variable 'c' is single-letter violation
+    Code: for (const c of commodities) {
+
+📄 src/caches/EnvironmentCanadaCache.ts:
+  Line 17: Arrow parameter 'w' is single-letter violation
+    Code: warning: warnings.filter((w) => w.type === "warning").length,
+  Line 18: Arrow parameter 'w' is single-letter violation
+    Code: watch: warnings.filter((w) => w.type === "watch").length,
+  Line 19: Arrow parameter 'w' is single-letter violation
+    Code: advisory: warnings.filter((w) => w.type === "advisory").length,
+  Line 20: Arrow parameter 'w' is single-letter violation
+    Code: statement: warnings.filter((w) => w.type === "statement").length,
+
+📄 src/caches/EventCache.ts:
+  Line 123: Arrow parameter 'a' is single-letter violation
+    Code: (a: CachedEvent, b: CachedEvent) => (a.startDate?.getTime() ?? 0) - (b.startDate?.getTime() ?? 0),
+
+📄 src/caches/NeoCache.ts:
+  Line 54: Arrow parameter 'n' is single-letter violation
+    Code: const hazardous = cache.neos.filter((n: NearEarthObject) => n.isPotentiallyHazardous);
+
+📄 src/caches/ProductCache.ts:
+  Line 87: Arrow parameter 'a' is single-letter violation
+    Code: products: allProducts.sort((a, b) => b.trendingScore - a.trendingScore),
+  Line 101: Arrow parameter 'a' is single-letter violation
+    Code: products: entry.products.sort((a, b) => b.trendingScore - a.trendingScore),
+  Line 111: Arrow parameter 'p' is single-letter violation
+    Code: .filter((p) => p.category === category)
+  Line 112: Arrow parameter 'a' is single-letter violation
+    Code: .sort((a, b) => b.trendingScore - a.trendingScore);
+  Line 127: Arrow parameter 'a' is single-letter violation
+    Code: .sort((a, b) => b.trendingScore - a.trendingScore)
+  Line 154: Arrow parameter 'c' is single-letter violation
+    Code: .map((c) => ({ ...c, sources: [...c.sources] }))
+  Line 155: Arrow parameter 'a' is single-letter violation
+    Code: .sort((a, b) => b.count - a.count);
+  Line 178: Arrow parameter 'p' is single-letter violation
+    Code: .filter((p) => p.name.toLowerCase().includes(lower))
+  Line 179: Arrow parameter 'a' is single-letter violation
+    Code: .sort((a, b) => b.trendingScore - a.trendingScore);
+
+📄 src/caches/SpaceWeatherCache.ts:
+  Line 117: Arrow parameter 'c' is single-letter violation
+    Code: const earthDirectedCmes = cache.cmes.filter((c: Cme) => c.isEarthDirected);
+
+📄 src/caches/TideCache.ts:
+  Line 20: Arrow parameter 't' is single-letter violation
+    Code: const upcoming = tides.find((t) => new Date(t.time) > now);
+
+📄 src/caches/TrendCache.ts:
+  Line 91: Arrow parameter 'a' is single-letter violation
+    Code: trends: allTrends.sort((a, b) => (b.volume || 0) - (a.volume || 0)),
+  Line 108: Arrow parameter 'a' is single-letter violation
+    Code: trends: data.trends.sort((a, b) => (b.volume || 0) - (a.volume || 0)),
+  Line 121: Arrow parameter 't' is single-letter violation
+    Code: (t) =>
+  Line 130: Arrow parameter 'a' is single-letter violation
+    Code: trends: allTrends.sort((a, b) => (b.volume || 0) - (a.volume || 0)),
+  Line 163: Arrow parameter 't' is single-letter violation
+    Code: .filter((t) => t.sources.size >= 2)
+  Line 164: Arrow parameter 't' is single-letter violation
+    Code: .map((t) => ({
+  Line 173: Arrow parameter 'a' is single-letter violation
+    Code: (a, b) => b.sourceCount - a.sourceCount || b.totalVolume - a.totalVolume,
+  Line 193: Arrow parameter 't' is single-letter violation
+    Code: (t) => t.name.toLowerCase().includes(normalizedQuery) || t.normalizedName.includes(normalizedQuery),
+  Line 201: Arrow parameter 'a' is single-letter violation
+    Code: trends: allTrends.sort((a, b) => (b.volume || 0) - (a.volume || 0)),
+
+📄 src/caches/WildfireCache.ts:
+  Line 15: Arrow parameter 'w' is single-letter violation
+    Code: .filter((w) => w.magnitudeValue != null)
+  Line 16: Arrow parameter 'a' is single-letter violation
+    Code: .sort((a, b) => (b.magnitudeValue ?? 0) - (a.magnitudeValue ?? 0));
+  Line 21: Arrow parameter 'w' is single-letter violation
+    Code: openCount: wildfires.filter((w) => w.status === "open").length,
+
+📄 src/caches/createSimpleCache.ts:
+  Line 27: Arrow parameter 'T' is single-letter violation
+    Code: update: (data: T) => void;
+  Line 42: Declared variable 'T' is single-letter violation
+    Code: const cache: { data: T; lastFetch: string | null; error: CacheError | null } = {
+
+📄 src/collectors/EventCollector.ts:
+  Line 90: Arrow parameter 'e' is single-letter violation
+    Code: const ubcEvents = events.filter((e) => e.source === EVENT_SOURCES.UBC) as CachedEventParam;
+  Line 91: Arrow parameter 'e' is single-letter violation
+    Code: const sfuEvents = events.filter((e) => e.source === EVENT_SOURCES.SFU) as CachedEventParam;
+  Line 120: Arrow parameter 'e' is single-letter violation
+    Code: const nhl = events.filter((e) => e.source === EVENT_SOURCES.NHL) as CachedEventParam;
+  Line 121: Arrow parameter 'e' is single-letter violation
+    Code: const caps = events.filter((e) => e.source === EVENT_SOURCES.WHITECAPS) as CachedEventParam;
+  Line 122: Arrow parameter 'e' is single-letter violation
+    Code: const lions = events.filter((e) => e.source === EVENT_SOURCES.BC_LIONS) as CachedEventParam;
+
+📄 src/collectors/MarketCollector.ts:
+  Line 22: Arrow parameter 'q' is single-letter violation
+    Code: .filter((q: QuoteItem) => q.changePercent != null)
+  Line 23: Arrow parameter 'a' is single-letter violation
+    Code: .sort((a: QuoteItem, b: QuoteItem) => Math.abs(a.changePercent ?? 0) - Math.abs(b.changePercent ?? 0))
+
+📄 src/collectors/WeatherCollector.ts:
+  Line 96: Arrow parameter 'T' is single-letter violation
+    Code: updateFn: (data: T) => void;
+  Line 98: Arrow parameter 'T' is single-letter violation
+    Code: logFn?: (data: T) => string;
+  Line 124: Arrow parameter 'd' is single-letter violation
+    Code: updateFn: (d) => update("openmeteo", d as unknown as Record<string, unknown>),
+  Line 125: Arrow parameter 'e' is single-letter violation
+    Code: setErrorFn: (e) => setError("openmeteo", e instanceof Error ? e : { message: errorMessage(e) }),
+  Line 126: Arrow parameter 'd' is single-letter violation
+    Code: logFn: (d) => `${d.weatherDescription} | ${d.temperature}°C`,
+  Line 132: Arrow parameter 'd' is single-letter violation
+    Code: updateFn: (d) => update("airquality", d as unknown as Record<string, unknown>),
+  Line 133: Arrow parameter 'e' is single-letter violation
+    Code: setErrorFn: (e) => setError("airquality", e instanceof Error ? e : { message: errorMessage(e) }),
+  Line 134: Arrow parameter 'd' is single-letter violation
+    Code: logFn: (d) => `US AQI: ${d.usAqi} | PM2.5: ${d.pm25}`,
+  Line 140: Arrow parameter 'd' is single-letter violation
+    Code: updateFn: (d) => update("tomorrowio", d as unknown as Record<string, unknown>),
+  Line 141: Arrow parameter 'e' is single-letter violation
+    Code: setErrorFn: (e) => setError("tomorrowio", e instanceof Error ? e : { message: errorMessage(e) }),
+  Line 142: Arrow parameter 'd' is single-letter violation
+    Code: logFn: (d) => `${d.weatherDescription} | Visibility: ${d.visibility}km | UV: ${d.uvIndex}`,
+  Line 148: Arrow parameter 'd' is single-letter violation
+    Code: updateFn: (d) => update("tomorrowio_daily", d as unknown as Record<string, unknown>),
+  Line 149: Arrow parameter 'e' is single-letter violation
+    Code: setErrorFn: (e) => setError("tomorrowio_daily", e instanceof Error ? e : { message: errorMessage(e) }),
+  Line 150: Arrow parameter 'd' is single-letter violation
+    Code: logFn: (d) => `Moonrise: ${d.moonrise || "N/A"} | Moonset: ${d.moonset || "N/A"}`,
+  Line 156: Arrow parameter 'd' is single-letter violation
+    Code: updateFn: (d) => updateIssPosition(d as unknown as Parameters<typeof updateIssPosition>[0]),
+  ... and 33 more violations in this file.
+
+📄 src/fetchers/energy/EiaFetcher.ts:
+  Line 49: Arrow parameter 'v' is single-letter violation
+    Code: value.forEach((v: unknown) => url.searchParams.append(`${key}[]`, String(v)));
+  Line 193: Declared variable 'col' is abbreviation/truncation violation
+    Code: const [col, dir] = sort.split(":");
+  Line 204: Arrow parameter 'd' is single-letter violation
+    Code: .map((d: string) => `data[]=${encodeURIComponent(d)}`)
+  Line 214: Arrow parameter 'v' is single-letter violation
+    Code: (v: string) =>
+  Line 310: Arrow parameter 'f' is single-letter violation
+    Code: failed.map((f) => f.series).join(", "),
+
+📄 src/fetchers/event/CraigslistFetcher.ts:
+  Line 21: Declared variable 'd' is single-letter violation
+    Code: const d = new Date(dateStr);
+
+📄 src/fetchers/event/GeocodingService.ts:
+  Line 117: Arrow parameter 'e' is single-letter violation
+    Code: (e) => e.venue && !e.venue.latitude && !e.venue.longitude,
+
+📄 src/fetchers/event/SeatGeekFetcher.ts:
+  Line 127: Declared variable 'm' is single-letter violation
+    Code: const min = stats.lowest_price ?? stats.lowest_sg_base_price;
+
+📄 src/fetchers/event/TicketmasterFetcher.ts:
+  Line 100: Declared variable 'v' is single-letter violation
+    Code: const v = venues[0];
+  Line 120: Declared variable 'c' is single-letter violation
+    Code: for (const c of classifications) {
+
+📄 src/fetchers/finance/FredFetcher.ts:
+  Line 254: Arrow parameter 'f' is single-letter violation
+    Code: failed.map((f) => f.seriesId).join(", "),
+
+📄 src/fetchers/gaming/DotaFetcher.ts:
+  Line 213: Declared variable 'q' is single-letter violation
+    Code: const q = String(query).toLowerCase();
+  Line 247: Arrow parameter 'm' is single-letter violation
+    Code: .filter((m) => m.games_played >= 50)
+  Line 248: Arrow parameter 'm' is single-letter violation
+    Code: .map((m) => ({
+  Line 256: Arrow parameter 'a' is single-letter violation
+    Code: (a, b) => parseFloat(b.winRate) - parseFloat(a.winRate),
+  Line 302: Arrow parameter 'm' is single-letter violation
+    Code: return matches.slice(0, limit).map((m) => ({
+  Line 330: Declared variable 'm' is single-letter violation
+    Code: const m = await fetchJson<OpenDotaMatch>(`/matches/${matchId}`);
+  Line 343: Arrow parameter 'p' is single-letter violation
+    Code: players: (m.players || []).map((p: OpenDotaMatchPlayer) => ({
+  Line 371: Arrow parameter 'm' is single-letter violation
+    Code: return matches.slice(0, limit).map((m) => ({
+
+📄 src/fetchers/health/CalorieCalculatorFetcher.ts:
+  Line 248: Arrow parameter 'v' is single-letter violation
+    Code: activityLevels: Object.entries(ACTIVITY_MULTIPLIERS).map(([k, v]) => ({
+  Line 253: Arrow parameter 'v' is single-letter violation
+    Code: goals: Object.entries(GOAL_ADJUSTMENTS).map(([k, v]) => ({
+  Line 258: Arrow parameter 'v' is single-letter violation
+    Code: macroSplits: Object.entries(MACRO_PRESETS).map(([k, v]) => ({
+
+📄 src/fetchers/health/DrugNutrientFetcher.ts:
+  Line 144: Arrow parameter 'n' is single-letter violation
+    Code: ? nutrients.split(",").map((n) => normalizeSearch(n)).filter(Boolean)
+  Line 155: Arrow parameter 'n' is single-letter violation
+    Code: (n) => entryNutrient.includes(n) || n.includes(entryNutrient),
+  Line 164: Arrow parameter 'a' is single-letter violation
+    Code: (a, b) => (severityOrder[a.severity] ?? 99) - (severityOrder[b.severity] ?? 99),
+
+📄 src/fetchers/health/ExercisesFetcher.ts:
+  Line 47: Arrow parameter 'f' is single-letter violation
+    Code: files = readdirSync(dataDir).filter((f: string) => f.startsWith("digest_exercises") && f.endsWith(".csv"));
+  Line 89: Arrow parameter 'm' is single-letter violation
+    Code: row[h] = value ? value.split("|").map((m: string) => m.toLowerCase()) : [];
+  Line 144: Declared variable 'f' is single-letter violation
+    Code: const f = normalizeQuery(category);
+  Line 145: Arrow parameter 'c' is single-letter violation
+    Code: candidates = candidates.filter((c: Exercise) => normalizeQuery(c.category) === f);
+  Line 148: Declared variable 'f' is single-letter violation
+    Code: const f = normalizeQuery(equipment);
+  Line 149: Arrow parameter 'c' is single-letter violation
+    Code: candidates = candidates.filter((c: Exercise) => normalizeQuery(c.equipment) === f);
+  Line 152: Declared variable 'f' is single-letter violation
+    Code: const f = normalizeQuery(force);
+  Line 153: Arrow parameter 'c' is single-letter violation
+    Code: candidates = candidates.filter((c: Exercise) => normalizeQuery(c.force) === f);
+  Line 156: Declared variable 'f' is single-letter violation
+    Code: const f = normalizeQuery(level);
+  Line 157: Arrow parameter 'c' is single-letter violation
+    Code: candidates = candidates.filter((c: Exercise) => normalizeQuery(c.level) === f);
+  Line 160: Declared variable 'f' is single-letter violation
+    Code: const f = normalizeQuery(mechanic);
+  Line 161: Arrow parameter 'c' is single-letter violation
+    Code: candidates = candidates.filter((c: Exercise) => normalizeQuery(c.mechanic) === f);
+  Line 164: Declared variable 'f' is single-letter violation
+    Code: const f = normalizeQuery(muscle);
+  Line 166: Arrow parameter 'c' is single-letter violation
+    Code: (c: Exercise) =>
+  Line 167: Arrow parameter 'm' is single-letter violation
+    Code: c.primary_muscles.some((m: string) => normalizeQuery(m) === f) ||
+  ... and 7 more violations in this file.
+
+📄 src/fetchers/health/FdaDrugFetcher.ts:
+  Line 137: Declared variable 'q' is single-letter violation
+    Code: const q = normalizeSearch(query || "");
+  Line 145: Arrow parameter 'd' is single-letter violation
+    Code: (d: RawDrugRow) => d.dosage_form && d.dosage_form.toUpperCase().includes(df),
+  Line 151: Arrow parameter 'd' is single-letter violation
+    Code: (d: RawDrugRow) => d.product_type && d.product_type.toUpperCase().includes(pt),
+  Line 156: Arrow parameter 'd' is single-letter violation
+    Code: .map((d: RawDrugRow) => {
+  Line 175: Arrow parameter 'a' is single-letter violation
+    Code: .sort((a, b) => b.score - a.score)
+  Line 192: Declared variable 'n' is single-letter violation
+    Code: const n = ndc.trim();
+  Line 193: Declared variable 'd' is single-letter violation
+    Code: const d = DRUG_DB.find(
+  Line 194: Arrow parameter 'd' is single-letter violation
+    Code: (d: RawDrugRow) => d.product_ndc && d.product_ndc === n,
+  Line 219: Declared variable 'd' is single-letter violation
+    Code: for (const d of DRUG_DB) {
+  Line 220: Declared variable 'f' is single-letter violation
+    Code: const f = d.dosage_form || "Unknown";
+  Line 227: Arrow parameter 'a' is single-letter violation
+    Code: .sort((a, b) => b[1] - a[1])
+  Line 251: Declared variable 'q' is single-letter violation
+    Code: const q = normalizeSearch(ingredient);
+  Line 253: Arrow parameter 'd' is single-letter violation
+    Code: const matches = DRUG_DB.filter((d: RawDrugRow) => {
+  Line 284: Declared variable 'q' is single-letter violation
+    Code: const q = normalizeSearch(pharmClass);
+  Line 286: Arrow parameter 'd' is single-letter violation
+    Code: const matches = DRUG_DB.filter((d: RawDrugRow) => {
+
+📄 src/fetchers/health/FoodSubstituteFetcher.ts:
+  Line 59: Arrow parameter 'f' is single-letter violation
+    Code: (f: string) => f.startsWith("digest_food") && f.endsWith(".csv"),
+  Line 78: Declared variable 'n' is single-letter violation
+    Code: for (let n = numericStart; n < headers.length; n++) {
+  Line 184: Arrow parameter 'f' is single-letter violation
+    Code: (f: FoodItem) => normalizeSearch(f.food_name || "") === normalized,
+  Line 195: Arrow parameter 'f' is single-letter violation
+    Code: (f: FoodItem) => normalizeSearch(f.food_name || "") === matchedName,
+  Line 209: Arrow parameter 't' is single-letter violation
+    Code: .map((t: string) => t.trim().toLowerCase().replace(/[\s-]+/g, "_"))
+  Line 216: Arrow parameter 'c' is single-letter violation
+    Code: (c: string) => c === target || c.includes(target),
+  Line 231: Arrow parameter 'f' is single-letter violation
+    Code: (f: FoodItem) => f !== sourceFood,
+  Line 247: Arrow parameter 'f' is single-letter violation
+    Code: (f: FoodItem) => (f.kingdom || "").toLowerCase() !== exc,
+  Line 255: Arrow parameter 'e' is single-letter violation
+    Code: .map((e: string) => normalizeSearch(e.trim()))
+  Line 258: Arrow parameter 'f' is single-letter violation
+    Code: (f: FoodItem) => !excluded.some((e: string) => normalizeSearch(f.food_name || "").includes(e)),
+  Line 258: Arrow parameter 'e' is single-letter violation
+    Code: (f: FoodItem) => !excluded.some((e: string) => normalizeSearch(f.food_name || "").includes(e)),
+  Line 282: Arrow parameter 'a' is single-letter violation
+    Code: scored.sort((a, b) => b.similarity - a.similarity);
+
+📄 src/fetchers/health/MealPlanFetcher.ts:
+  Line 51: Arrow parameter 'f' is single-letter violation
+    Code: (f: string) => f.startsWith("digest_food") && f.endsWith(".csv"),
+  Line 70: Declared variable 'n' is single-letter violation
+    Code: for (let n = numericStart; n < headers.length; n++) {
+  Line 85: Arrow parameter 'f' is single-letter violation
+    Code: const DIET_FILTERS: Record<string, (f: FoodItem) => boolean> = {
+  Line 87: Arrow parameter 'f' is single-letter violation
+    Code: vegetarian: (f: FoodItem) => {
+  Line 89: Declared variable 't' is single-letter violation
+    Code: const t = (f.food_type || "").toLowerCase();
+  Line 92: Arrow parameter 'f' is single-letter violation
+    Code: vegan: (f: FoodItem) => (f.kingdom || "").toLowerCase() !== "animalia",
+  Line 93: Arrow parameter 'f' is single-letter violation
+    Code: pescatarian: (f: FoodItem) => {
+  Line 95: Declared variable 't' is single-letter violation
+    Code: const t = (f.food_type || "").toLowerCase();
+  Line 98: Arrow parameter 'f' is single-letter violation
+    Code: keto: (f: FoodItem) => {
+  Line 252: Arrow parameter 'e' is single-letter violation
+    Code: .map((e: string) => normalizeSearch(e.trim()))
+  Line 255: Arrow parameter 'f' is single-letter violation
+    Code: (f: FoodItem) => !excluded.some((e: string) => normalizeSearch(f.food_name || "").includes(e)),
+  Line 255: Arrow parameter 'e' is single-letter violation
+    Code: (f: FoodItem) => !excluded.some((e: string) => normalizeSearch(f.food_name || "").includes(e)),
+  Line 261: Arrow parameter 'f' is single-letter violation
+    Code: (f: FoodItem) => f.kilocalories && f.kilocalories > 10,
+  Line 269: Arrow parameter 'n' is single-letter violation
+    Code: .map((n: string) => n.trim().toLowerCase().replace(/[\s-]+/g, "_"))
+  Line 278: Declared variable 'm' is single-letter violation
+    Code: for (let m = 0; m < mealsPerDay; m++) {
+
+📄 src/fetchers/health/NutrientGapFetcher.ts:
+  Line 100: Declared variable 'col' is abbreviation/truncation violation
+    Code: for (const [col, label] of Object.entries(NUTRITION_MACRO_FIELDS)) {
+  Line 103: Declared variable 'col' is abbreviation/truncation violation
+    Code: for (const [col, label] of Object.entries(NUTRITION_MINERAL_FIELDS)) {
+  Line 106: Declared variable 'col' is abbreviation/truncation violation
+    Code: for (const [col, label] of Object.entries(NUTRITION_VITAMIN_FIELDS)) {
+  Line 109: Declared variable 'col' is abbreviation/truncation violation
+    Code: for (const [col] of Object.entries(NUTRITION_AMINO_ACID_FIELDS)) {
+  Line 112: Declared variable 'col' is abbreviation/truncation violation
+    Code: for (const [col] of Object.entries(NUTRITION_LIPID_FIELDS)) {
+  Line 115: Declared variable 'col' is abbreviation/truncation violation
+    Code: for (const [col] of Object.entries(NUTRITION_STEROL_FIELDS)) {
+  Line 260: Declared variable 'f' is single-letter violation
+    Code: for (const f of foods) {
+  Line 342: Declared variable 'col' is abbreviation/truncation violation
+    Code: for (const [col, label] of Object.entries(ALL_FIELD_MAPS)) {
+  Line 424: Arrow parameter 'a' is single-letter violation
+    Code: gaps.sort((a, b) => {
+  Line 461: Arrow parameter 'f' is single-letter violation
+    Code: foodLog: resolvedFoods.map((f) => ({
+  Line 475: Declared variable 'm' is single-letter violation
+    Code: const m = metric.toLowerCase();
+
+📄 src/fetchers/health/NutritionFetcher.ts:
+  Line 113: Arrow parameter 'f' is single-letter violation
+    Code: const SOURCES_NOTE = `All nutrient values per 100g edible portion. Sources: ${FOOD_DATA_FILES.map((f) => f.source).join(", ")}.`;
+  Line 137: Declared variable 'n' is single-letter violation
+    Code: for (let n = numericStart; n < foodHeaders.length; n++) {
+  Line 324: Arrow parameter 't' is single-letter violation
+    Code: ? nutrientTypes.split(",").map((t) => t.trim().toLowerCase())
+  Line 365: Arrow parameter 't' is single-letter violation
+    Code: const include = (t: string) => includeAll || types.includes(t);
+  Line 415: Arrow parameter 'f' is single-letter violation
+    Code: (f) => f.kingdom && f.kingdom.toLowerCase() === k,
+  Line 421: Arrow parameter 'f' is single-letter violation
+    Code: (f) => f.food_type && f.food_type.toLowerCase() === ft,
+  Line 429: Arrow parameter 'a' is single-letter violation
+    Code: .sort((a, b) => b.score - a.score)
+  Line 449: Arrow parameter 'f' is single-letter violation
+    Code: const food = FOOD_DB.find((f) => normalizeSearch(f.food_name) === normalized);
+  Line 482: Arrow parameter 'f' is single-letter violation
+    Code: (f) => f.kingdom && f.kingdom.toLowerCase() === k,
+  Line 488: Arrow parameter 'f' is single-letter violation
+    Code: (f) => f.food_type && f.food_type.toLowerCase() === ft,
+  Line 493: Arrow parameter 'f' is single-letter violation
+    Code: .filter((f) => f[nutrient] !== null && (f[nutrient] as number) > 0)
+  Line 494: Arrow parameter 'a' is single-letter violation
+    Code: .sort((a, b) => (b[nutrient] as number) - (a[nutrient] as number))
+  Line 498: Arrow parameter 'n' is single-letter violation
+    Code: const nutrientMeta = NUTRIENT_DB.find((n) => n.nutrient_id === nutrient);
+  Line 506: Arrow parameter 'f' is single-letter violation
+    Code: foods: ranked.map((f) => ({
+  Line 524: Arrow parameter 'd' is single-letter violation
+    Code: (d) => d.domain === "nutrition" && d.foods,
+  ... and 23 more violations in this file.
+
+📄 src/fetchers/health/OpenFdaFetcher.ts:
+  Line 201: Arrow parameter 'e' is single-letter violation
+    Code: events: (data.results || []).slice(0, limit).map((e: RawFdaAdverseEvent) => ({
+
+📄 src/fetchers/knowledge/ArxivFetcher.ts:
+  Line 41: Arrow parameter 'a' is single-letter violation
+    Code: .map((a) => extractXmlTag(a, "name"))
+  Line 47: Arrow parameter 'm' is single-letter violation
+    Code: const categories = categoryMatches.map((m) => m[1]);
+
+📄 src/fetchers/knowledge/DictionaryFetcher.ts:
+  Line 90: Arrow parameter 'p' is single-letter violation
+    Code: .filter((p: RawPhonetic) => p.text || p.audio)
+  Line 91: Arrow parameter 'p' is single-letter violation
+    Code: .map((p: RawPhonetic) => ({
+  Line 97: Arrow parameter 'm' is single-letter violation
+    Code: const meanings = (entry.meanings || []).map((m: RawMeaning) => ({
+  Line 99: Arrow parameter 'd' is single-letter violation
+    Code: definitions: (m.definitions || []).slice(0, 5).map((d: RawDefinition) => ({
+
+📄 src/fetchers/knowledge/ExoplanetFetcher.ts:
+  Line 163: Arrow parameter 'p' is single-letter violation
+    Code: (p: ExoplanetRecord) =>
+  Line 169: Arrow parameter 'p' is single-letter violation
+    Code: .map((p: ExoplanetRecord) => {
+  Line 184: Arrow parameter 'a' is single-letter violation
+    Code: .sort((a, b) => b.score - a.score)
+  Line 202: Arrow parameter 'p' is single-letter violation
+    Code: const planet = PLANET_DB.find((p: ExoplanetRecord) => normalizeSearch(p.pl_name || "") === normalizedQuery);
+  Line 235: Arrow parameter 'p' is single-letter violation
+    Code: const ranked = PLANET_DB.filter((p: ExoplanetRecord) => p[fieldKey] !== null)
+  Line 236: Arrow parameter 'a' is single-letter violation
+    Code: .sort((a: ExoplanetRecord, b: ExoplanetRecord) => {
+  Line 251: Arrow parameter 'p' is single-letter violation
+    Code: planets: ranked.map((p: ExoplanetRecord) => ({
+  Line 271: Declared variable 'p' is single-letter violation
+    Code: for (const p of PLANET_DB) {
+  Line 285: Arrow parameter 'a' is single-letter violation
+    Code: .sort((a, b) => b[1] - a[1])
+  Line 289: Arrow parameter 'a' is single-letter violation
+    Code: .sort((a, b) => b[1] - a[1])
+  Line 319: Arrow parameter 'p' is single-letter violation
+    Code: const habitable = PLANET_DB.filter((p: ExoplanetRecord) => {
+  Line 332: Arrow parameter 'a' is single-letter violation
+    Code: .sort((a: ExoplanetRecord, b: ExoplanetRecord) => {
+
+📄 src/fetchers/knowledge/JikanFetcher.ts:
+  Line 40: Arrow parameter 't' is single-letter violation
+    Code: themes: (anime.themes || []).map((t) => t.name),
+
+📄 src/fetchers/knowledge/MusicBrainzFetcher.ts:
+  Line 156: Arrow parameter 't' is single-letter violation
+    Code: .map((t) => t.name),
+  Line 169: Declared variable 'a' is single-letter violation
+    Code: const a = await fetchMB<RawMusicArtist>(`/artist/${mbid}`, {
+  Line 175: Declared variable 'rel' is abbreviation/truncation violation
+    Code: for (const rel of a.relations || []) {
+  Line 180: Declared variable 'u' is single-letter violation
+    Code: const u = rel.url.resource;
+  Line 186: Declared variable 'u' is single-letter violation
+    Code: const u = rel.url.resource;
+  Line 226: Arrow parameter 't' is single-letter violation
+    Code: .map((t) => t.name),
+  Line 278: Arrow parameter 'm' is single-letter violation
+    Code: tracks = (release.media || []).flatMap((m) =>
+  Line 306: Arrow parameter 't' is single-letter violation
+    Code: .map((t) => t.name),
+  Line 337: Arrow parameter 'rel' is abbreviation/truncation violation
+    Code: releases: (r.releases || []).slice(0, 3).map((rel) => ({
+
+📄 src/fetchers/knowledge/PeriodicTableFetcher.ts:
+  Line 166: Declared variable 'c' is single-letter violation
+    Code: const c = category.toLowerCase();
+  Line 212: Arrow parameter 'a' is single-letter violation
+    Code: .sort((a, b) => b.score - a.score)
+  Line 231: Arrow parameter 'e' is single-letter violation
+    Code: (e: PeriodicElement) => e.symbol && e.symbol.toLowerCase() === s.toLowerCase(),
+  Line 266: Declared variable 'c' is single-letter violation
+    Code: const c = category.toLowerCase();
+  Line 280: Arrow parameter 'a' is single-letter violation
+    Code: .sort((a: PeriodicElement, b: PeriodicElement) => {
+  Line 314: Arrow parameter 'e' is single-letter violation
+    Code: ...new Set(ELEMENT_DB.map((e: PeriodicElement) => e.category).filter(Boolean)),
+  Line 317: Arrow parameter 'e' is single-letter violation
+    Code: ...new Set(ELEMENT_DB.map((e: PeriodicElement) => e.block).filter(Boolean)),
+  Line 320: Arrow parameter 'e' is single-letter violation
+    Code: ...new Set(ELEMENT_DB.map((e: PeriodicElement) => e.phase_at_stp).filter(Boolean)),
+
+📄 src/fetchers/knowledge/RestCountriesFetcher.ts:
+  Line 18: Arrow parameter 'n' is single-letter violation
+    Code: .map((n) => n.common || "")
+
+📄 src/fetchers/knowledge/TMDbFetcher.ts:
+  Line 168: Arrow parameter 'c' is single-letter violation
+    Code: productionCompanies: (m.production_companies || []).map((c) => c.name),
+  Line 170: Arrow parameter 'c' is single-letter violation
+    Code: (c) => c.name || c.iso_3166_1 || "",
+  Line 200: Arrow parameter 'n' is single-letter violation
+    Code: networks: (tv.networks || []).map((n) => n.name),
+  Line 201: Arrow parameter 'c' is single-letter violation
+    Code: productionCompanies: (tv.production_companies || []).map((c) => c.name),
+  Line 202: Arrow parameter 'c' is single-letter violation
+    Code: createdBy: (tv.created_by || []).map((c) => c.name),
+  Line 298: Arrow parameter 'c' is single-letter violation
+    Code: .filter((c) =>
+  Line 449: Arrow parameter 'c' is single-letter violation
+    Code: .filter((c) => {
+
+📄 src/fetchers/knowledge/WikipediaSummaryFetcher.ts:
+  Line 115: Declared variable 'm' is single-letter violation
+    Code: const m = month || now.getMonth() + 1;
+  Line 116: Declared variable 'd' is single-letter violation
+    Code: const d = day || now.getDate();
+  Line 137: Arrow parameter 'e' is single-letter violation
+    Code: events: entries.slice(0, 20).map((e: RawWikipediaEvent) => ({
+  Line 140: Arrow parameter 'p' is single-letter violation
+    Code: pages: (e.pages || []).slice(0, 3).map((p: RawWikipediaPage) => ({
+
+📄 src/fetchers/knowledge/WorldBankFetcher.ts:
+  Line 157: Declared variable 'c' is single-letter violation
+    Code: const c = code.toUpperCase().trim();
+  Line 196: Arrow parameter 'c' is single-letter violation
+    Code: const ranked = COUNTRY_DB.filter((c) => c[indicator] !== null)
+  Line 197: Arrow parameter 'a' is single-letter violation
+    Code: .sort((a, b) => {
+  Line 211: Arrow parameter 'c' is single-letter violation
+    Code: countries: ranked.map((c) => ({
+  Line 238: Declared variable 'c' is single-letter violation
+    Code: const c = code.toUpperCase().trim();
+  Line 283: Arrow parameter 'c' is single-letter violation
+    Code: const nonNull = COUNTRY_DB.filter((c) => c[key] !== null).length;
+
+📄 src/fetchers/maritime/AisStreamFetcher.ts:
+  Line 333: Arrow parameter 'a' is single-letter violation
+    Code: .sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime())
+  Line 356: Arrow parameter 'm' is single-letter violation
+    Code: messages = messages.filter((m) => m.messageType === messageType);
+  Line 369: Arrow parameter 'v' is single-letter violation
+    Code: (v) =>
+  Line 375: Arrow parameter 'a' is single-letter violation
+    Code: .sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime())
+  Line 385: Declared variable 'q' is single-letter violation
+    Code: const q = query.toLowerCase();
+  Line 387: Arrow parameter 'v' is single-letter violation
+    Code: .filter((v) => v.shipName?.toLowerCase().includes(q))
+  Line 388: Arrow parameter 'a' is single-letter violation
+    Code: .sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime())
+
+📄 src/fetchers/product/BestBuyFetcher.ts:
+  Line 79: Arrow parameter 'c' is single-letter violation
+    Code: ? BESTBUY_CATEGORIES.find((c) => c.id === categoryId)
+
+📄 src/fetchers/product/EtsyFetcher.ts:
+  Line 129: Arrow parameter 'p' is single-letter violation
+    Code: const unique = allProducts.filter((p: ProductInput) => {
+
+📄 src/fetchers/product/ProductHuntFetcher.ts:
+  Line 61: Arrow parameter 't' is single-letter violation
+    Code: const topicNames = topics.map((t) => t.toLowerCase());
+  Line 62: Arrow parameter 't' is single-letter violation
+    Code: if (topicNames.some((t) => t.includes("gaming") || t.includes("game")))
+  Line 64: Arrow parameter 't' is single-letter violation
+    Code: if (topicNames.some((t) => t.includes("developer") || t.includes("api")))
+  Line 66: Arrow parameter 't' is single-letter violation
+    Code: if (topicNames.some((t) => t.includes("home") || t.includes("smart home")))
+  Line 68: Arrow parameter 't' is single-letter violation
+    Code: if (topicNames.some((t) => t.includes("health") || t.includes("fitness")))
+  Line 71: Arrow parameter 't' is single-letter violation
+    Code: topicNames.some((t) => t.includes("productivity") || t.includes("office"))
+  Line 107: Arrow parameter 'e' is single-letter violation
+    Code: `Product Hunt GraphQL errors: ${data.errors.map((e: { message: string }) => e.message).join(", ")}`,
+  Line 126: Arrow parameter 'e' is single-letter violation
+    Code: const topics: string[] = node.topics?.edges?.map((e: { node: { name: string } }) => e.node.name) || [];
+
+📄 src/fetchers/transit/TransLinkFetcher.ts:
+  Line 181: Arrow parameter 'p' is single-letter violation
+    Code: patterns: (data.Patterns || []).map((p: TransLinkPattern) => ({
+
+📄 src/fetchers/trend/MastodonFetcher.ts:
+  Line 116: Arrow parameter 'a' is single-letter violation
+    Code: return allTrends.sort((a, b) => ((b as { volume?: number }).volume || 0) - ((a as { volume?: number }).volume || 0));
+
+📄 src/fetchers/trend/ProductHuntFetcher.ts:
+  Line 62: Arrow parameter 't' is single-letter violation
+    Code: topics: (post.topics || []).map((t: { name?: string }) => t.name || String(t)).slice(0, 5),
+
+📄 src/fetchers/trend/RedditFetcher.ts:
+  Line 103: Arrow parameter 'p' is single-letter violation
+    Code: .filter((p: RawRedditPost) => !p.data.stickied) // exclude stickied/pinned posts
+  Line 104: Arrow parameter 'p' is single-letter violation
+    Code: .map((p: RawRedditPost) => normalizeTrend(p, sub.category));
+
+📄 src/fetchers/trend/TVMazeFetcher.ts:
+  Line 72: Arrow parameter 'a' is single-letter violation
+    Code: .sort((a, b) => b.weight - a.weight || b.rating - a.rating)
+
+📄 src/fetchers/trend/WikipediaFetcher.ts:
+  Line 43: Arrow parameter 'a' is single-letter violation
+    Code: .filter((a) => !WIKIPEDIA_EXCLUDED_PAGES.includes(a.article))
+
+📄 src/fetchers/utility/AirportFetcher.ts:
+  Line 51: Declared variable 'R' is single-letter violation
+    Code: const R = 6371;
+  Line 52: Arrow parameter 'd' is single-letter violation
+    Code: const toRad = (d: number) => (d * Math.PI) / 180;
+  Line 55: Declared variable 'a' is single-letter violation
+    Code: const a =
+  Line 163: Declared variable 'q' is single-letter violation
+    Code: const q = normalizeSearch(query || "");
+  Line 169: Declared variable 'c' is single-letter violation
+    Code: const c = country.toUpperCase();
+  Line 171: Arrow parameter 'a' is single-letter violation
+    Code: (a: AirportInfo) => a.country_code && a.country_code.toUpperCase() === c,
+  Line 198: Arrow parameter 'a' is single-letter violation
+    Code: .sort((a, b) => b.score - a.score)
+  Line 215: Declared variable 'c' is single-letter violation
+    Code: const c = code.toUpperCase().trim();
+  Line 218: Arrow parameter 'a' is single-letter violation
+    Code: (a: AirportInfo) => a.iata_code && a.iata_code.toUpperCase() === c,
+  Line 221: Arrow parameter 'a' is single-letter violation
+    Code: (a: AirportInfo) => a.icao_code && a.icao_code.toUpperCase() === c,
+  Line 246: Declared variable 'c' is single-letter violation
+    Code: const c = countryCode.toUpperCase().trim();
+  Line 249: Arrow parameter 'a' is single-letter violation
+    Code: (a: AirportInfo) => a.country_code && a.country_code.toUpperCase() === c,
+  Line 251: Arrow parameter 'a' is single-letter violation
+    Code: .sort((a: AirportInfo, b: AirportInfo) => {
+  Line 288: Arrow parameter 'a' is single-letter violation
+    Code: (a: AirportInfo) => a.latitude !== null && a.longitude !== null,
+  Line 289: Arrow parameter 'a' is single-letter violation
+    Code: ).map((a: AirportInfo) => ({
+  ... and 2 more violations in this file.
+
+📄 src/fetchers/utility/IpInfoFetcher.ts:
+  Line 51: Arrow parameter 'a' is single-letter violation
+    Code: (a: [string, IpCacheEntry], b: [string, IpCacheEntry]) => a[1].fetchedAt - b[1].fetchedAt,
+
+📄 src/fetchers/utility/PlacesFetcher.ts:
+  Line 36: Arrow parameter 'a' is single-letter violation
+    Code: (a: [string, PlacesCacheEntry], b: [string, PlacesCacheEntry]) => a[1].fetchedAt - b[1].fetchedAt,
+  Line 145: Arrow parameter 'p' is single-letter violation
+    Code: .filter((p) => p.latitude != null && p.longitude != null)
+  Line 146: Arrow parameter 'p' is single-letter violation
+    Code: .map((p, i) => {
+
+📄 src/fetchers/utility/webcams/sources/calgary.ts:
+  Line 52: Arrow parameter 'c' is single-letter violation
+    Code: }).filter((c: WebcamDocument) => !!c.url);
+
+📄 src/fetchers/weather/DonkiFetcher.ts:
+  Line 134: Declared variable 'd' is single-letter violation
+    Code: const d = new Date();
+  Line 163: Arrow parameter 'e' is single-letter violation
+    Code: linkedEvents: flr.linkedEvents?.map((e) => e.activityID) || [],
+  Line 186: Arrow parameter 'a' is single-letter violation
+    Code: cme.cmeAnalyses?.find((a) => a.isMostAccurate) ||
+  Line 215: Arrow parameter 'e' is single-letter violation
+    Code: linkedEvents: cme.linkedEvents?.map((e) => e.activityID) || [],
+  Line 244: Arrow parameter 'e' is single-letter violation
+    Code: linkedEvents: gst.linkedEvents?.map((e) => e.activityID) || [],
+
+📄 src/fetchers/weather/EarthquakeFetcher.ts:
+  Line 63: Declared variable 'p' is single-letter violation
+    Code: const { properties: p, geometry: g, id } = feature;
+
+📄 src/fetchers/weather/EnvironmentCanadaFetcher.ts:
+  Line 98: Arrow parameter 'w' is single-letter violation
+    Code: const existing = warnings.find((w) => content.includes(w.title));
+
+📄 src/fetchers/weather/GoogleAirQualityFetcher.ts:
+  Line 56: Declared variable 'p' is single-letter violation
+    Code: for (const p of pollutants) {
+
+📄 src/fetchers/weather/NeoFetcher.ts:
+  Line 115: Arrow parameter 'a' is single-letter violation
+    Code: (a, b) => (a.missDistanceKm ?? Infinity) - (b.missDistanceKm ?? Infinity),
+
+📄 src/fetchers/weather/SolarWindFetcher.ts:
+  Line 23: Arrow parameter 'f' is single-letter violation
+    Code: fields.forEach((f: string, i: number) => {
+  Line 29: Arrow parameter 'T' is single-letter violation
+    Code: .filter((x): x is T => x !== null);
+  Line 34: Declared variable 'T' is single-letter violation
+    Code: const result: T[] = [];
+  Line 38: Declared variable 't' is single-letter violation
+    Code: const t = new Date(point.time + "Z").getTime();
+
+📄 src/fetchers/web/GenericPageFetcher.ts:
+  Line 98: Arrow parameter '_' is single-letter violation
+    Code: $("div, section, article, main").each((_: number, element: AnyNode) => {
+  Line 106: Arrow parameter 'a' is single-letter violation
+    Code: candidates.sort((a, b) => b.score - a.score);
+  Line 122: Arrow parameter '_' is single-letter violation
+    Code: container.find("p, h1, h2, h3, h4, h5, h6, li, blockquote, pre, td, th").each((_: number, element: AnyNode) => {
+
+📄 src/fetchers/web/NpmFetcher.ts:
+  Line 85: Arrow parameter 'm' is single-letter violation
+    Code: maintainers: (data.maintainers || []).map((m) => {
+
+📄 src/fetchers/web/RedditFetcher.ts:
+  Line 69: Declared variable 'c' is single-letter violation
+    Code: const c = child.data;
+
+📄 src/fetchers/web/RssFetcher.ts:
+  Line 170: Arrow parameter 'c' is single-letter violation
+    Code: (c) => (typeof c === "object" ? c.term || c.label : c),
+
+📄 src/fetchers/web/StackOverflowFetcher.ts:
+  Line 180: Arrow parameter 'a' is single-letter violation
+    Code: result.answers.sort((a: SOAnswer, b: SOAnswer) => {
+
+📄 src/fetchers/web/TwitterFetcher.ts:
+  Line 102: Arrow parameter 'm' is single-letter violation
+    Code: result.media = tweet.media.all.map((m: FxTwitterMedia) => ({
+
+📄 src/fetchers/web/WaybackFetcher.ts:
+  Line 100: Declared variable 'm' is single-letter violation
+    Code: const m = ts.slice(4, 6);
+  Line 101: Declared variable 'd' is single-letter violation
+    Code: const d = ts.slice(6, 8);
+  Line 103: Declared variable 'm' is single-letter violation
+    Code: const min = ts.slice(10, 12) || "00";
+
+📄 src/middleware/FieldProjectionMiddleware.ts:
+  Line 119: Arrow parameter 'f' is single-letter violation
+    Code: const hasWrapperPrefix = fields.some((f) => f.startsWith(prefix));
+  Line 125: Declared variable 'f' is single-letter violation
+    Code: for (const f of fields) {
+  Line 179: Arrow parameter 'f' is single-letter violation
+    Code: .map((f) => f.trim())
+
+📄 src/middleware/RequestLoggerMiddleware.ts:
+  Line 196: Arrow parameter 'm' is single-letter violation
+    Code: byMethod: Object.fromEntries(byMethod.map((m) => [(m as AggregateDoc)._id, (m as AggregateDoc).count])),
+  Line 197: Arrow parameter 'd' is single-letter violation
+    Code: byDomain: byDomain.map((d) => ({
+
+📄 src/middleware/ToolCallLoggerMiddleware.ts:
+  Line 498: Arrow parameter 't' is single-letter violation
+    Code: byTool: byTool.map((t) => ({
+  Line 510: Arrow parameter 'd' is single-letter violation
+    Code: byDomain: byDomain.map((d) => ({
+
+📄 src/models/CommoditySnapshot.ts:
+  Line 33: Arrow parameter 'q' is single-letter violation
+    Code: const docs = quotes.map((q: CommodityQuoteInput) => ({
+
+📄 src/models/Product.ts:
+  Line 74: Arrow parameter 'p' is single-letter violation
+    Code: const ops = products.map((p: ProductInput) => ({
+
+📄 src/routes/AgentRoutes.ts:
+  Line 24: Arrow parameter 'a' is single-letter violation
+    Code: const agent = agents.find((a) => a.id === req.params.id);
+
+📄 src/routes/AgenticRoutes.ts:
+  Line 659: Arrow parameter 't' is single-letter violation
+    Code: pending: allTasks.filter((t) => t.status === "pending").length,
+  Line 660: Arrow parameter 't' is single-letter violation
+    Code: in_progress: allTasks.filter((t) => t.status === "in_progress").length,
+  Line 661: Arrow parameter 't' is single-letter violation
+    Code: completed: allTasks.filter((t) => t.status === "completed").length,
+  Line 813: Arrow parameter 't' is single-letter violation
+    Code: const knownToolNames = new Set(TOOL_DEFINITIONS.map((t) => t.name));
+  Line 814: Arrow parameter 't' is single-letter violation
+    Code: const unknownTools = enabledTools.filter((t: string) => !knownToolNames.has(t));
+  Line 901: Arrow parameter 't' is single-letter violation
+    Code: const knownToolNames = new Set(TOOL_DEFINITIONS.map((t) => t.name));
+  Line 902: Arrow parameter 't' is single-letter violation
+    Code: const unknownTools = enabledTools.filter((t: string) => !knownToolNames.has(t));
+
+📄 src/routes/ComputeRoutes.ts:
+  Line 41: Arrow parameter 'm' is single-letter violation
+    Code: const getDateFns = lazyImport<typeof import("date-fns")>("date-fns", (m: unknown) => m as typeof import("date-fns"));
+  Line 42: Arrow parameter 'm' is single-letter violation
+    Code: const getDateFnsTz = lazyImport<typeof import("date-fns-tz")>("date-fns-tz", (m: unknown) => m as typeof import("date-fns-tz"));
+  Line 43: Arrow parameter 'm' is single-letter violation
+    Code: const getJSONPath = lazyImport<typeof import("jsonpath-plus").JSONPath>("jsonpath-plus", (m: unknown) => (m as Record<string, unknown>).JSONPath as typeof import("jsonpath-plus").JSONPath);
+  Line 45: Arrow parameter 'm' is single-letter violation
+    Code: const getDiff = lazyImport<typeof import("diff")>("diff", (m: unknown) => m as typeof import("diff"));
+  Line 163: Arrow parameter 'u' is single-letter violation
+    Code: const described = units.map((u: string) => {
+  Line 171: Declared variable 'm' is single-letter violation
+    Code: for (const m of measures) {
+  Line 173: Arrow parameter 'u' is single-letter violation
+    Code: all[m] = units.map((u: string) => {
+  Line 194: Arrow parameter 'd' is single-letter violation
+    Code: const parseDate = (d: unknown) => {
+  Line 494: Arrow parameter 'c' is single-letter violation
+    Code: lines.push(cols.map((c: string) => escape((row as Record<string, unknown>)[c])).join(delim));
+  Line 867: Arrow parameter '_' is single-letter violation
+    Code: .replace(/&#x([0-9a-fA-F]+);/g, (_: string, hex: string) => String.fromCharCode(parseInt(hex, 16)))
+  Line 868: Arrow parameter '_' is single-letter violation
+    Code: .replace(/&#(\d+);/g, (_: string, dec: string) => String.fromCharCode(parseInt(dec)));
+  Line 879: Arrow parameter 'c' is single-letter violation
+    Code: result = data.replace(/[a-zA-Z]/g, (c: string) => {
+  Line 892: Arrow parameter 'c' is single-letter violation
+    Code: .map((c: string) => c.charCodeAt(0).toString(2).padStart(8, "0"))
+  Line 939: Declared variable 'm' is single-letter violation
+    Code: const min = Math.min(rNorm, gNorm, bNorm);
+  Line 1397: Declared variable 'idx' is abbreviation/truncation violation
+    Code: let idx = 0;
+  ... and 7 more violations in this file.
+
+📄 src/routes/DiscordRoutes.ts:
+  Line 87: Arrow parameter 'm' is single-letter violation
+    Code: knownIds = new Set((messages as StreamMessage[]).map((m) => m.id));
+  Line 88: Arrow parameter 'm' is single-letter violation
+    Code: reactionFingerprints = new Map((messages as StreamMessage[]).map((m) => [m.id, reactionHash(m)]));
+  Line 107: Arrow parameter 'm' is single-letter violation
+    Code: const currentIds = new Set((messages as StreamMessage[]).map((m) => m.id));
+  Line 109: Arrow parameter 'm' is single-letter violation
+    Code: const newMessages = (messages as StreamMessage[]).filter((m) => !knownIds.has(m.id));
+  Line 128: Arrow parameter 'm' is single-letter violation
+    Code: const updatedMessages = (messages as StreamMessage[]).filter((m) => {
+  Line 139: Arrow parameter 'm' is single-letter violation
+    Code: reactionFingerprints = new Map((messages as StreamMessage[]).map((m) => [m.id, reactionHash(m)]));
+
+📄 src/routes/EventRoutes.ts:
+  Line 36: Declared variable 'q' is single-letter violation
+    Code: const { q, category, city, source } = req.query as Record<string, string | undefined>;
+  Line 59: Declared variable 'q' is single-letter violation
+    Code: const { action, q, source, category, days, limit: rawLimit } = req.query as Record<string, string | undefined>;
+
+📄 src/routes/FinanceRoutes.ts:
+  Line 115: Declared variable 'q' is single-letter violation
+    Code: const { q, limit, orderBy } = req.query as Record<string, string | undefined>;
+  Line 163: Declared variable 'q' is single-letter violation
+    Code: const { action, q, seriesId, limit, orderBy, sortOrder, observationStart, observationEnd } = req.query as Record<string, string | undefined>;
+
+📄 src/routes/GamingRoutes.ts:
+  Line 24: Declared variable 'q' is single-letter violation
+    Code: const { role, attr, q } = req.query as Record<string, string | undefined>;
+  Line 119: Arrow parameter 'm' is single-letter violation
+    Code: const enriched = matches.map((m) => ({
+  Line 145: Arrow parameter 'p' is single-letter violation
+    Code: match.players = match.players.map((p) => ({
+  Line 182: Declared variable 'v' is single-letter violation
+    Code: for (const [k, v] of Object.entries(params)) {
+
+📄 src/routes/HealthRoutes.ts:
+  Line 56: Declared variable 'q' is single-letter violation
+    Code: const { q, limit, kingdom, foodType, nutrientTypes } = req.query as Record<string, string | undefined>;
+  Line 96: Arrow parameter 'f' is single-letter violation
+    Code: .map((f: string) => f.trim())
+  Line 179: Declared variable 'q' is single-letter violation
+    Code: const { q, limit } = req.query as Record<string, string | undefined>;
+  Line 200: Declared variable 'q' is single-letter violation
+    Code: const { q, limit, dosageForm, productType } = req.query as Record<string, string | undefined>;
+  Line 223: Declared variable 'q' is single-letter violation
+    Code: const { q, limit } = req.query as Record<string, string | undefined>;
+  Line 232: Declared variable 'q' is single-letter violation
+    Code: const { q, limit } = req.query as Record<string, string | undefined>;
+  Line 242: Declared variable 'q' is single-letter violation
+    Code: const { q, limit, category, equipment, force, level, mechanic, muscle } = req.query as Record<string, string | undefined>;
+  Line 452: Declared variable 'q' is single-letter violation
+    Code: const { q, searchBy, limit, dosageForm, productType } = req.query as Record<string, string | undefined>;
+
+📄 src/routes/KnowledgeRoutes.ts:
+  Line 92: Declared variable 'q' is single-letter violation
+    Code: const { q, limit } = req.query as Record<string, string | undefined>;
+  Line 117: Declared variable 'q' is single-letter violation
+    Code: const { q, category, limit, sortBy } = req.query as Record<string, string | undefined>;
+  Line 142: Declared variable 'q' is single-letter violation
+    Code: const { q, limit } = req.query as Record<string, string | undefined>;
+  Line 162: Declared variable 'q' is single-letter violation
+    Code: const { q, page, year } = req.query as Record<string, string | undefined>;
+  Line 206: Declared variable 'q' is single-letter violation
+    Code: const { q, page, firstAirDateYear } = req.query as Record<string, string | undefined>;
+  Line 261: Declared variable 'q' is single-letter violation
+    Code: const { q, limit, category, block } = req.query as Record<string, string | undefined>;
+  Line 339: Arrow parameter 'c' is single-letter violation
+    Code: .map((c: string) => c.trim())
+  Line 359: Declared variable 'q' is single-letter violation
+    Code: const { q, limit, method } = req.query as Record<string, string | undefined>;
+  Line 558: Declared variable 'q' is single-letter violation
+    Code: const { q, limit } = req.query as Record<string, string | undefined>;
+  Line 567: Declared variable 'q' is single-letter violation
+    Code: const { q, artist, limit } = req.query as Record<string, string | undefined>;
+  Line 576: Declared variable 'q' is single-letter violation
+    Code: const { q, artist, limit } = req.query as Record<string, string | undefined>;
+  Line 638: Declared variable 'q' is single-letter violation
+    Code: const { action, q, workKey, authorKey, limit } = req.query as Record<string, string | undefined>;
+  Line 685: Declared variable 'q' is single-letter violation
+    Code: const { action, q, symbol, property, limit, order, category, block } = req.query as Record<string, string | undefined>;
+  Line 707: Declared variable 'q' is single-letter violation
+    Code: const { action, q, name, field, limit, order, method } = req.query as Record<string, string | undefined>;
+  Line 731: Declared variable 'q' is single-letter violation
+    Code: const { action, q, id, limit } = req.query as Record<string, string | undefined>;
+  ... and 2 more violations in this file.
+
+📄 src/routes/MaritimeRoutes.ts:
+  Line 37: Declared variable 'q' is single-letter violation
+    Code: const { q, limit } = req.query as Record<string, string | undefined>;
+
+📄 src/routes/TorrentRoutes.ts:
+  Line 17: Declared variable 'q' is single-letter violation
+    Code: const { q, query, category, plugins, limit, timeout } = req.query as Record<string, string | undefined>;
+  Line 179: Declared variable 'q' is single-letter violation
+    Code: const { action, q, query, category, plugins, limit, filter, sort, timeout, hashes } = req.query as Record<string, string | undefined>;
+
+📄 src/routes/UtilityRoutes.ts:
+  Line 52: Declared variable 'a' is single-letter violation
+    Code: const { operation, a, b } = req.query as Record<string, string | undefined>;
+  Line 184: Declared variable 'q' is single-letter violation
+    Code: const { q, latitude, longitude, radius, limit } = req.query as Record<string, string | undefined>;
+  Line 213: Arrow parameter 'm' is single-letter violation
+    Code: markerList.map((m: MapMarker, i: number) => ({
+  Line 251: Arrow parameter 'm' is single-letter violation
+    Code: MARKERS.forEach((m,i)=>{
+  Line 368: Declared variable 'q' is single-letter violation
+    Code: const { q, limit, country } = req.query as Record<string, string | undefined>;
+  Line 584: Declared variable 'q' is single-letter violation
+    Code: const { action, q, code, country, lat, lng, limit } = req.query as Record<string, string | undefined>;
+
+📄 src/server.ts:
+  Line 121: Arrow parameter 'err' is abbreviation/truncation violation
+    Code: app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+
+📄 src/services/AgentConnectionManager.ts:
+  Line 484: Arrow parameter 'a' is single-letter violation
+    Code: return [...agents.values()].map((a) => ({
+
+📄 src/services/AgenticBrowserService.ts:
+  Line 272: Arrow parameter 'd' is single-letter violation
+    Code: await page.evaluate((d: number) => window.scrollBy(0, d), delta);
+
+📄 src/services/AgenticFileService.ts:
+  Line 224: Declared variable 'err' is abbreviation/truncation violation
+    Code: const err = error as Record<string, unknown>;
+  Line 281: Declared variable 'err' is abbreviation/truncation violation
+    Code: const err = error as Error;
+  Line 363: Declared variable 'err' is abbreviation/truncation violation
+    Code: const err = error as Record<string, unknown>;
+  Line 415: Declared variable 'err' is abbreviation/truncation violation
+    Code: const err = error as Record<string, unknown>;
+  Line 510: Declared variable 'err' is abbreviation/truncation violation
+    Code: const err = error as Record<string, unknown>;
+  Line 564: Declared variable 'err' is abbreviation/truncation violation
+    Code: const err = error as Error;
+  Line 668: Declared variable 'err' is abbreviation/truncation violation
+    Code: const err = error as Error;
+  Line 757: Declared variable 'err' is abbreviation/truncation violation
+    Code: const err = error as Error;
+  Line 784: Arrow parameter 'f' is single-letter violation
+    Code: files.map(async (f: MultiFileReadItem) => {
+  Line 840: Arrow parameter 'p' is single-letter violation
+    Code: pathList.map(async (p: string) => {
+  Line 873: Declared variable 'err' is abbreviation/truncation violation
+    Code: const err = error as Record<string, unknown>;
+  Line 960: Declared variable 'err' is abbreviation/truncation violation
+    Code: const err = error as Record<string, unknown>;
+  Line 1013: Declared variable 'err' is abbreviation/truncation violation
+    Code: const err = error as Error;
+  Line 1050: Declared variable 'err' is abbreviation/truncation violation
+    Code: const err = error as Record<string, unknown>;
+  Line 1148: Declared variable 'err' is abbreviation/truncation violation
+    Code: const err = error as Record<string, unknown>;
+  ... and 6 more violations in this file.
+
+📄 src/services/AgenticLspService.ts:
+  Line 357: Arrow parameter 'c' is single-letter violation
+    Code: const parts = result.contents.map((c) => {
+
+📄 src/services/AgenticTaskService.ts:
+  Line 145: Arrow parameter 't' is single-letter violation
+    Code: pending: allTasks.filter((t) => t.status === "pending").length,
+  Line 146: Arrow parameter 't' is single-letter violation
+    Code: in_progress: allTasks.filter((t) => t.status === "in_progress").length,
+  Line 147: Arrow parameter 't' is single-letter violation
+    Code: completed: allTasks.filter((t) => t.status === "completed").length,
+
+📄 src/services/AgenticToolSearchService.ts:
+  Line 46: Arrow parameter 't' is single-letter violation
+    Code: (t: InferredToolSchema) => t.domain && t.domain.toLowerCase() === domainLower,
+  Line 54: Arrow parameter 't' is single-letter violation
+    Code: (t: InferredToolSchema) =>
+  Line 57: Arrow parameter 'v' is single-letter violation
+    Code: (v: string) => typeof v === "string" && v.toLowerCase() === labelLower,
+  Line 65: Arrow parameter 't' is single-letter violation
+    Code: scored = filtered.map((t: InferredToolSchema) => {
+  Line 89: Arrow parameter 't' is single-letter violation
+    Code: scored = filtered.map((t: InferredToolSchema) => ({ schema: t, score: 1 }));
+  Line 93: Arrow parameter 'a' is single-letter violation
+    Code: scored.sort((a: ScoredMatch, b: ScoredMatch) => b.score - a.score);
+
+📄 src/services/AgenticToolTestService.ts:
+  Line 88: Declared variable 'f' is single-letter violation
+    Code: for (const f of candidates) {
+
+📄 src/services/AgenticWebService.ts:
+  Line 337: Arrow parameter '_' is single-letter violation
+    Code: element.contents().each((_: number, node: AnyNode) => {
+  Line 466: Arrow parameter '_' is single-letter violation
+    Code: $table.find("tr").each((_: number, tr: AnyNode) => {
+  Line 468: Arrow parameter '_' is single-letter violation
+    Code: $(tr).find("th, td").each((_: number, cell: AnyNode) => {
+
+📄 src/services/BonfireService.ts:
+  Line 65: Declared variable 'c' is single-letter violation
+    Code: for (let c = -maxFlameWidth; c <= maxFlameWidth; c++) {
+  Line 196: Declared variable 'c' is single-letter violation
+    Code: for (let c = 0; c < width; c++) {
+
+📄 src/services/ChartService.ts:
+  Line 36: Declared variable 'v' is single-letter violation
+    Code: for (const [k, v] of CHART_STORE) {
+  Line 75: Arrow parameter 'c' is single-letter violation
+    Code: const PALETTE_BORDER = PALETTE.map((c: string) => c.replace("0.85", "1"));
+  Line 88: Arrow parameter '_' is single-letter violation
+    Code: ds.backgroundColor || Array.from({ length: count }, (_: unknown, j: number) => PALETTE[j % PALETTE.length]),
+  Line 90: Arrow parameter '_' is single-letter violation
+    Code: ds.borderColor || Array.from({ length: count }, (_: unknown, j: number) => PALETTE_BORDER[j % PALETTE_BORDER.length]),
+
+📄 src/services/DiscordDataService.ts:
+  Line 101: Arrow parameter 'f' is single-letter violation
+    Code: .filter((f) => (bits & f.bit) === f.bit)
+  Line 102: Arrow parameter 'f' is single-letter violation
+    Code: .map((f) => ({ id: f.id, label: f.label }));
+  Line 123: Arrow parameter 'a' is single-letter violation
+    Code: .sort((a, b) => (b.position ?? 0) - (a.position ?? 0))
+  Line 287: Arrow parameter 'm' is single-letter violation
+    Code: const formatted = messages.map((m: Document) => ({
+  Line 358: Arrow parameter 'm' is single-letter violation
+    Code: const formatted = messages.map((m: Document) => {
+  Line 363: Arrow parameter 'a' is single-letter violation
+    Code: ? m.attachments.map((a: Document) => {
+  Line 384: Arrow parameter 'e' is single-letter violation
+    Code: .map((e: Document) => {
+  Line 744: Arrow parameter 'u' is single-letter violation
+    Code: topUsers: topUsers.map((u: Document) => ({
+  Line 750: Arrow parameter 'c' is single-letter violation
+    Code: channelBreakdown: channelBreakdown.map((c: Document) => ({
+
+📄 src/services/JavaScriptInterpreterService.ts:
+  Line 32: Arrow parameter 'a' is single-letter violation
+    Code: .map((a: unknown) =>
+  Line 49: Arrow parameter 'a' is single-letter violation
+    Code: ...args.map((a: unknown) => JSON.stringify(a, null, 2) ?? String(a)),
+
+📄 src/services/LocationService.ts:
+  Line 26: Declared variable 'R' is single-letter violation
+    Code: const R = 6371; // Earth's radius in km
+  Line 30: Declared variable 'a' is single-letter violation
+    Code: const a =
+  Line 63: Declared variable 'd' is single-letter violation
+    Code: const d = haversineDistanceKm(latitude, longitude, s.lat, s.lng);
+
+📄 src/services/McpAdapter.ts:
+  Line 164: Arrow parameter 't' is single-letter violation
+    Code: tools: aiSchemas.map((t) => ({
+
+📄 src/services/QBittorrentService.ts:
+  Line 381: Arrow parameter 'p' is single-letter violation
+    Code: return (Array.isArray(plugins) ? plugins : []).map((p) => ({
+  Line 387: Arrow parameter 'c' is single-letter violation
+    Code: supportedCategories: p.supportedCategories?.map((c) => c.name) || [],
+  Line 457: Arrow parameter 't' is single-letter violation
+    Code: return (Array.isArray(torrents) ? torrents : []).map((t) => ({
+
+📄 src/services/ToolSchemaService.ts:
+  Line 5739: Arrow parameter 'e' is single-letter violation
+    Code: "const titles = await page.$$eval('.titleline > a', els => els.slice(0,10).map(e => e.textContent));\n" +
+  Line 9039: Arrow parameter 't' is single-letter violation
+    Code: .filter((t) => isToolAvailable(t.name))
+  Line 9040: Arrow parameter 't' is single-letter violation
+    Code: .map((t) => ({
+  Line 9055: Arrow parameter 't' is single-letter violation
+    Code: .filter((t) => isToolAvailable(t.name))
+  Line 9067: Arrow parameter 't' is single-letter violation
+    Code: .filter((t) => !isToolAvailable(t.name))
+  Line 9068: Arrow parameter 't' is single-letter violation
+    Code: .map((t) => {
+
+📄 src/services/TwilioService.ts:
+  Line 78: Arrow parameter 'm' is single-letter violation
+    Code: messages: messages.map((m) => ({
+  Line 154: Arrow parameter 'n' is single-letter violation
+    Code: phoneNumbers: numbers.map((n) => ({
+
+📄 src/services/lsp/LspClient.ts:
+  Line 23: Arrow parameter 'P' is single-letter violation
+    Code: onNotification<P = LspParams>(method: string, handler: (params: P) => void): void;
+  Line 24: Arrow parameter 'P' is single-letter violation
+    Code: onRequest<P = LspParams, R = LspParamValue>(method: string, handler: (params: P) => Promise<R> | R): void;
+  Line 242: Arrow parameter 'P' is single-letter violation
+    Code: onNotification<P = LspParams>(method: string, handler: (params: P) => void): void {
+  Line 254: Arrow parameter 'P' is single-letter violation
+    Code: onRequest<P = LspParams, R = LspParamValue>(method: string, handler: (params: P) => Promise<R> | R): void {
+
+📄 src/services/lsp/LspServerInstance.ts:
+  Line 31: Arrow parameter 'P' is single-letter violation
+    Code: onNotification<P = LspParams>(method: string, handler: (params: P) => void): void;
+  Line 32: Arrow parameter 'P' is single-letter violation
+    Code: onRequest<P = LspParams, R = LspParamValue>(method: string, handler: (params: P) => Promise<R> | R): void;
+  Line 245: Arrow parameter 'P' is single-letter violation
+    Code: function onNotification<P = LspParams>(method: string, handler: (params: P) => void): void {
+  Line 249: Arrow parameter 'P' is single-letter violation
+    Code: function onRequest<P = LspParams, R = LspParamValue>(method: string, handler: (params: P) => Promise<R> | R): void {
+  Line 275: Arrow parameter '_' is single-letter violation
+    Code: const timeoutPromise = new Promise<never>((_, reject) => {
+
+📄 src/services/lsp/LspServerManager.ts:
+  Line 322: Arrow parameter 'm' is single-letter violation
+    Code: await Promise.allSettled(all.map((m) => m.shutdown()));
+
+📄 src/types/agentic.ts:
+  Line 60: Arrow parameter 'T' is single-letter violation
+    Code: restoreFn: (data: T) => void;
+
+📄 src/utilities.ts:
+  Line 163: Arrow parameter 'm' is single-letter violation
+    Code: (m) =>
+  Line 267: Declared variable 'v' is single-letter violation
+    Code: for (const [k, v] of this.#map) {
+  Line 324: Declared variable 'w' is single-letter violation
+    Code: var w = el.scrollWidth;
