@@ -28,8 +28,27 @@ async function fetchCanucksGames() {
   const data = await response.json();
   const games = data.games || [];
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- NHL API returns dynamic JSON
-  return games.map((game: Record<string, any>) => {
+interface NhlTeam {
+  abbrev?: string;
+  placeName?: { default?: string };
+  commonName?: { default?: string };
+  logo?: string;
+}
+
+interface NhlGame {
+  id: number;
+  season?: number;
+  homeTeam?: NhlTeam;
+  awayTeam?: NhlTeam;
+  startTimeUTC?: string;
+  ticketsLink?: string;
+  gameCenterLink?: string;
+  venue?: { default?: string };
+  tvBroadcasts?: Array<{ network: string }>;
+  gameState?: string;
+}
+
+  return games.map((game: NhlGame) => {
     const isHome = game.homeTeam?.abbrev === "VAN";
     const opponent = isHome ? game.awayTeam : game.homeTeam;
     const opponentName =
@@ -77,8 +96,22 @@ async function fetchSportsDbEvents(teamId: string, source: string, teamName: str
   const data = await response.json();
   const events = data.events || [];
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TheSportsDB API returns dynamic JSON
-  return events.map((event: Record<string, any>) => {
+interface SportsDbEvent {
+  idEvent?: string;
+  idHomeTeam?: string;
+  strEvent?: string;
+  strLeague?: string;
+  strSeason?: string;
+  strVenue?: string;
+  strThumb?: string;
+  strBanner?: string;
+  strTimestamp?: string;
+  dateEvent?: string;
+  strCity?: string;
+  strCountry?: string;
+}
+
+  return events.map((event: SportsDbEvent) => {
     const isHome = event.idHomeTeam === teamId;
     const venueName = event.strVenue || null;
 

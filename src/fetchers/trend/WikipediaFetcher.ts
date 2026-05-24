@@ -5,6 +5,12 @@ import {
   WIKIPEDIA_TOP_ARTICLES_LIMIT,
 } from "../../constants.ts";
 
+interface WikiArticle {
+  article: string;
+  views: number;
+  rank: number;
+}
+
 /**
  * Fetches the most-viewed Wikipedia articles for a given date.
  * Uses the Wikimedia REST API (completely free, no auth required).
@@ -33,10 +39,10 @@ export async function fetchWikipediaTrends(date: Date | string | null = null) {
   const data = await response.json();
   const articles = data?.items?.[0]?.articles || [];
 
-  return articles
-    .filter((a: Record<string, any>) => !WIKIPEDIA_EXCLUDED_PAGES.includes(a.article))
+  return (articles as WikiArticle[])
+    .filter((a) => !WIKIPEDIA_EXCLUDED_PAGES.includes(a.article))
     .slice(0, WIKIPEDIA_TOP_ARTICLES_LIMIT)
-    .map((article: Record<string, any>) => {
+    .map((article) => {
       const name = article.article.replace(/_/g, " ");
       return {
         name,

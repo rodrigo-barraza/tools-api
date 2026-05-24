@@ -155,9 +155,16 @@ export async function getStackOverflowQuestion(input: string, options: StackOver
     };
 
     // Process answers
+    interface SeApiAnswer {
+      answer_id: number;
+      owner?: { display_name?: string; reputation?: number };
+      body: string;
+      score?: number;
+      is_accepted?: boolean;
+      creation_date?: number;
+    }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Stack Exchange API returns dynamic JSON
-    result.answers = (aData.items || []).map((a: Record<string, any>): SOAnswer => ({
+    result.answers = (aData.items || []).map((a: SeApiAnswer): SOAnswer => ({
       answerId: a.answer_id,
       author: a.owner?.display_name || null,
       authorReputation: a.owner?.reputation || null,

@@ -3,8 +3,30 @@ import { TREND_SOURCES as SOURCES, TREND_CATEGORIES } from "../../constants.ts";
 import logger from "../../logger.ts";
 import { errorMessage } from "../../utilities.ts";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- TVMaze API returns dynamic JSON
-type TvMazeEpisode = Record<string, any>;
+interface TvMazeShow {
+  id: number;
+  name: string;
+  url: string;
+  officialSite?: string | null;
+  weight: number;
+  status: string;
+  genres: string[];
+  rating?: { average: number | null };
+  network?: { name: string } | null;
+  webChannel?: { name: string } | null;
+  image?: { medium: string | null } | null;
+  summary?: string | null;
+}
+
+interface TvMazeEpisode {
+  show?: TvMazeShow;
+  _embedded?: { show?: TvMazeShow };
+  season: number;
+  number: number;
+  name: string;
+  airtime: string;
+  country?: string;
+}
 
 const TVMAZE_SCHEDULE_URL = "https://api.tvmaze.com/schedule";
 /**
@@ -51,7 +73,7 @@ export async function fetchTVMazeTrends() {
     .slice(0, 30);
   return topShows.map((entry) => {
     const show = entry.show;
-    const ep = entry.episodes[0];
+    const firstEpisode = entry.episodes[0];
     return {
       name: show.name,
       normalizedName: normalizeName(show.name),
@@ -68,12 +90,12 @@ export async function fetchTVMazeTrends() {
         genres: show.genres || [],
         rating: show.rating?.average || null,
         status: show.status,
-        episode: ep
+        episode: firstEpisode
           ? {
-              season: ep.season,
-              number: ep.number,
-              name: ep.name,
-              airtime: ep.airtime,
+              season: firstEpisode.season,
+              number: firstEpisode.number,
+              name: firstEpisode.name,
+              airtime: firstEpisode.airtime,
             }
           : null,
         image: show.image?.medium || null,

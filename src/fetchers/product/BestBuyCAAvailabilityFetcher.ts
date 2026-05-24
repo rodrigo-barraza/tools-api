@@ -18,8 +18,26 @@ function buildAvailabilityUrl(skus: string[]) {
 
 
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- BestBuy API returns dynamic availability JSON
-function normalizeAvailability(availability: Record<string, any>, metadata: Record<string, unknown> | null = null) {
+interface BestBuyCAAvailability {
+  sku: string;
+  shipping?: {
+    purchasable?: boolean;
+    status?: string;
+    quantityRemaining?: number;
+    orderLimit?: number;
+    isFreeShippingEligible?: boolean;
+    isBackorderable?: boolean;
+    hasActiveCountdown?: boolean;
+  };
+  pickup?: {
+    purchasable?: boolean;
+    status?: string;
+  };
+  sellerId?: string;
+  saleChannelExclusivity?: string;
+}
+
+function normalizeAvailability(availability: BestBuyCAAvailability, metadata: Record<string, unknown> | null = null) {
   const sku = availability.sku;
   return {
     sku,

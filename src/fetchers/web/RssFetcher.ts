@@ -72,8 +72,28 @@ export async function readRssFeed(url: string, options: RssOptions = {}) {
 
 // ─── RSS 2.0 Parser ──────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- xml2js parsed objects are deeply nested dynamic shapes
-function parseRss2(channel: Record<string, any>, feedUrl: string, limit: number) {
+interface Rss2Channel {
+  item?: Rss2Item | Rss2Item[];
+  title?: string;
+  description?: string;
+  link?: string;
+  language?: string;
+  lastBuildDate?: string;
+}
+
+interface Rss2Item {
+  title?: string;
+  link?: string;
+  pubDate?: string;
+  author?: string;
+  "dc:creator"?: string;
+  description?: string;
+  "content:encoded"?: string;
+  category?: unknown;
+  guid?: string | { _?: string };
+}
+
+function parseRss2(channel: Rss2Channel, feedUrl: string, limit: number) {
   const items = Array.isArray(channel.item)
     ? channel.item
     : channel.item
@@ -89,9 +109,9 @@ function parseRss2(channel: Record<string, any>, feedUrl: string, limit: number)
     language: channel.language || null,
     lastBuildDate: channel.lastBuildDate || null,
     itemCount: items.length,
-    items: items.slice(0, limit).map((item: Record<string, any>) => ({
+    items: items.slice(0, limit).map((item: Rss2Item) => ({
       title: item.title || null,
-      link: item.link || item.guid?._ || item.guid || null,
+      link: item.link || (typeof item.guid === "object" ? item.guid?._ : item.guid) || null,
       pubDate: item.pubDate || null,
       author: item["dc:creator"] || item.author || null,
       description: stripCdata(item.description || ""),
@@ -104,8 +124,27 @@ function parseRss2(channel: Record<string, any>, feedUrl: string, limit: number)
 
 // ─── Atom Parser ─────────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- xml2js parsed objects are deeply nested dynamic shapes
-function parseAtom(feed: Record<string, any>, feedUrl: string, limit: number) {
+interface AtomFeed {
+  entry?: AtomEntry | AtomEntry[];
+  title?: string | { _?: string };
+  subtitle?: string | { _?: string };
+  link?: string | Array<{ rel?: string; href?: string }> | { href?: string };
+  updated?: string;
+}
+
+interface AtomEntry {
+  title?: string | { _?: string };
+  link?: string | Array<{ rel?: string; href?: string }> | { href?: string };
+  published?: string;
+  updated?: string;
+  author?: { name?: string } | string | { _?: string };
+  summary?: string | { _?: string };
+  content?: string | { _?: string };
+  category?: unknown;
+  id?: string;
+}
+
+function parseAtom(feed: AtomFeed, feedUrl: string, limit: number) {
   const entries = Array.isArray(feed.entry)
     ? feed.entry
     : feed.entry
@@ -120,11 +159,11 @@ function parseAtom(feed: Record<string, any>, feedUrl: string, limit: number) {
     link: extractLink(feed.link) || null,
     updated: feed.updated || null,
     itemCount: entries.length,
-    items: entries.slice(0, limit).map((entry: Record<string, any>) => ({
+    items: entries.slice(0, limit).map((entry: AtomEntry) => ({
       title: extractText(entry.title),
       link: extractLink(entry.link) || null,
       pubDate: entry.published || entry.updated || null,
-      author: entry.author?.name || extractText(entry.author) || null,
+      author: (typeof entry.author === "object" && entry.author !== null && "name" in entry.author ? entry.author.name : extractText(entry.author as string | { _?: string } | undefined)) || null,
       description: extractText(entry.summary) || "",
       content: extractText(entry.content) || "",
       categories: (normalizeArray(entry.category) as Array<string | Record<string, string>>).map(

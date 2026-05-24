@@ -27,7 +27,7 @@ router.get(
       before: req.query.before as string,
       after: req.query.after as string,
       limit: parseIntParam(req.query.limit as string, 50),
-      mode: req.query.mode as string || "messages",
+      mode: (req.query.mode as "messages" | "count" | "compact") || "messages",
       includeBots: req.query.includeBots as string === "true",
     });
   }, "Message search", options),
@@ -175,7 +175,7 @@ router.get(
       query: req.query.query as string,
       before: req.query.before as string,
       after: req.query.after as string,
-      groupBy: req.query.groupBy as string || "user",
+      groupBy: (req.query.groupBy as "user" | "channel" | "day" | "hour" | "weekday" | "month") || "user",
       topN: parseIntParam(req.query.topN as string, 25),
       includeBots: req.query.includeBots as string === "true",
     });

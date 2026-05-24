@@ -160,9 +160,16 @@ function connect(options: AisStreamOptions = {}) {
 
 // ─── Subscription Builder ──────────────────────────────────────────
 
-function buildSubscription(options: AisStreamOptions) {
-  const sub: Record<string, unknown> = {
-    APIKey: CONFIG.AIS_STREAM_API_KEY,
+interface AisSubscription {
+  APIKey: string;
+  BoundingBoxes: number[][][];
+  FiltersShipMMSI?: number[];
+  FilterMessageTypes?: string[];
+}
+
+function buildSubscription(options: AisStreamOptions): AisSubscription {
+  const sub: AisSubscription = {
+    APIKey: CONFIG.AIS_STREAM_API_KEY || "",
     BoundingBoxes: options.boundingBoxes || buildDefaultBbox(),
   };
 
@@ -195,8 +202,43 @@ function buildDefaultBbox() {
 
 // ─── Message Processing ────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- AIS Stream sends dynamic JSON with undocumented fields
-function processMessage(raw: Record<string, any>): AisVessel | null {
+/** Known fields that appear across AIS message payloads. */
+interface AisPayloadFields {
+  // Position Reports
+  Cog?: number;
+  Sog?: number;
+  TrueHeading?: number;
+  NavigationalStatus?: number;
+  RateOfTurn?: number;
+  // Ship Static Data
+  ImoNumber?: number;
+  CallSign?: string;
+  Type?: number;
+  Destination?: string;
+  MaximumStaticDraught?: number;
+  Eta?: { Month: number; Day: number; Hour: number; Minute: number };
+  Dimension?: { A: number; B: number; C: number; D: number };
+  // Safety Broadcast
+  Text?: string;
+  // SAR Aircraft
+  Altitude?: number;
+  // Base Station
+  FixType?: number;
+}
+
+interface AisRawMessage {
+  MessageType?: string;
+  MetaData?: {
+    MMSI: number;
+    ShipName?: string;
+    latitude: number;
+    longitude: number;
+    time_utc: string;
+  };
+  Message?: Record<string, AisPayloadFields>;
+}
+
+function processMessage(raw: AisRawMessage): AisVessel | null {
   const { MessageType, MetaData, Message } = raw;
   if (!MessageType || !MetaData) return null;
 

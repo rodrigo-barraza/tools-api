@@ -21,7 +21,7 @@ router.get("/", (_req: Request, res: Response) => {
  */
 router.get("/:id", (req: Request, res: Response) => {
   const agents = getConnectedAgents();
-  const agent = agents.find((a: any) => a.id === req.params.id as string);
+  const agent = agents.find((a) => a.id === req.params.id);
   if (!agent) {
     return res.status(404).json({ error: "Agent not found" });
   }

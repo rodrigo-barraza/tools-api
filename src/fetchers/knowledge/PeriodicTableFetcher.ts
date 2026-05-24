@@ -76,7 +76,7 @@ function ensureLoaded() {
     const values = parseCSVLine(lines[i]);
     if (values.length < 5) continue;
 
-    const row: any = {};
+    const row: Record<string, string | number | null> = {};
     headers.forEach((h: string, index: number) => {
       const value = values[index] || "";
       if (NUMERIC_FIELDS.has(h)) {
@@ -87,7 +87,7 @@ function ensureLoaded() {
       }
     });
 
-    ELEMENT_DB.push(row);
+    ELEMENT_DB.push(row as PeriodicElement);
   }
 
   logger.info(`⚛️  Periodic Table loaded: ${ELEMENT_DB.length} elements`);
@@ -156,9 +156,9 @@ export function searchElements(query: string, opts: SearchElementsOptions = {}) 
   ensureLoaded();
 
   const { limit = 10, category, block } = opts;
-  const q = normalizeSearch(query);
+  const normalizedQuery = normalizeSearch(query);
 
-  if (!q) return { count: 0, query, elements: [] as FormattedElement[] };
+  if (!normalizedQuery) return { count: 0, query, elements: [] as FormattedElement[] };
 
   let candidates = ELEMENT_DB;
 
@@ -176,7 +176,7 @@ export function searchElements(query: string, opts: SearchElementsOptions = {}) 
   }
 
   // Try atomic number match first
-  const numQuery = parseInt(q, 10);
+  const numQuery = parseInt(normalizedQuery, 10);
 
   const scored = candidates
     .map((element: PeriodicElement) => {
@@ -186,23 +186,23 @@ export function searchElements(query: string, opts: SearchElementsOptions = {}) 
       const cat = normalizeSearch(element.category || "");
 
       // Exact symbol match
-      if (symbol === q) score += 100;
+      if (symbol === normalizedQuery) score += 100;
       // Exact name match
-      else if (name === q) score += 90;
+      else if (name === normalizedQuery) score += 90;
       // Atomic number match
       else if (!isNaN(numQuery) && element.atomic_number === numQuery) score += 95;
       // Name starts with query
-      else if (name.startsWith(q)) score += 60;
+      else if (name.startsWith(normalizedQuery)) score += 60;
       // Symbol starts with query
-      else if (symbol.startsWith(q)) score += 55;
+      else if (symbol.startsWith(normalizedQuery)) score += 55;
       // Name contains query
-      else if (name.includes(q)) score += 30;
+      else if (name.includes(normalizedQuery)) score += 30;
       // Category contains query
-      else if (cat.includes(q)) score += 15;
+      else if (cat.includes(normalizedQuery)) score += 15;
       // Summary contains query
       else if (
         element.summary &&
-        normalizeSearch(element.summary).includes(q)
+        normalizeSearch(element.summary).includes(normalizedQuery)
       )
         score += 5;
 

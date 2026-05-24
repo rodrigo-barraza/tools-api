@@ -35,11 +35,40 @@ function normalizeCategory(taxonomies: Array<{ parent_id?: number | null; name?:
   return EVENT_CATEGORIES.OTHER;
 }
 
+interface SeatGeekPerformer {
+  image?: string;
+  images?: { huge?: string };
+  genres?: Array<{ name?: string }>;
+}
+
+interface SeatGeekVenue {
+  name?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  location?: { lat?: number; lon?: number };
+}
+
+interface SeatGeekEvent {
+  id: number;
+  title?: string;
+  short_title?: string;
+  description?: string;
+  url?: string;
+  datetime_utc?: string;
+  enddatetime_utc?: string;
+  announce_date?: string;
+  venue?: SeatGeekVenue;
+  performers?: SeatGeekPerformer[];
+  taxonomies?: Array<{ parent_id?: number | null; name?: string }>;
+  stats?: { lowest_price?: number; lowest_sg_base_price?: number; highest_price?: number };
+}
+
 /**
  * Extract genre strings from SeatGeek taxonomies and performers.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- SeatGeek API returns dynamic JSON
-function extractGenres(event: Record<string, any>) {
+function extractGenres(event: SeatGeekEvent) {
   const genres = new Set();
 
   if (event.taxonomies) {
@@ -64,8 +93,7 @@ function extractGenres(event: Record<string, any>) {
 /**
  * Extract venue info from SeatGeek event.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- SeatGeek API returns dynamic JSON
-function extractVenue(venue: Record<string, any>) {
+function extractVenue(venue: SeatGeekVenue | undefined) {
   if (!venue) {
     return {
       name: null,
@@ -92,8 +120,7 @@ function extractVenue(venue: Record<string, any>) {
 /**
  * Extract price range from SeatGeek event stats.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- SeatGeek API returns dynamic JSON
-function extractPriceRange(event: Record<string, any>) {
+function extractPriceRange(event: SeatGeekEvent) {
   const stats = event.stats;
   if (!stats) return null;
 
@@ -112,8 +139,7 @@ function extractPriceRange(event: Record<string, any>) {
 /**
  * Normalize a single SeatGeek event to our unified schema.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- SeatGeek API returns dynamic JSON
-function normalizeEvent(event: Record<string, any>) {
+function normalizeEvent(event: SeatGeekEvent) {
   const performers = event.performers || [];
   const bestImage = performers[0]?.image || performers[0]?.images?.huge || null;
 
@@ -129,7 +155,7 @@ function normalizeEvent(event: Record<string, any>) {
       ? new Date(event.enddatetime_utc + "Z")
       : null,
     venue: extractVenue(event.venue),
-    category: normalizeCategory(event.taxonomies),
+    category: normalizeCategory(event.taxonomies || []),
     genres: extractGenres(event),
     priceRange: extractPriceRange(event),
     status: event.announce_date ? "onsale" : "onsale",

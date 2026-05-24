@@ -91,8 +91,15 @@ async function fetchFxTwitter(username: string, tweetId: string) {
 
     // Media
     if (tweet.media?.all?.length) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- fxtwitter API returns dynamic media shapes
-      result.media = tweet.media.all.map((m: Record<string, any>) => ({
+      interface FxTwitterMedia {
+        type?: string;
+        url?: string;
+        thumbnail_url?: string;
+        width?: number;
+        height?: number;
+        altText?: string;
+      }
+      result.media = tweet.media.all.map((m: FxTwitterMedia) => ({
         type: m.type || "photo",
         url: m.url || null,
         thumbnailUrl: m.thumbnail_url || null,

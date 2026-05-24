@@ -25,19 +25,19 @@ function getClient() {
 
  */
 export async function sendSms(to: string, body: string, from: string) {
-  const c = getClient();
+  const twilioClient = getClient();
 
   // Resolve sender if not provided
   let fromNumber = from;
   if (!fromNumber) {
-    const numbers = await c.incomingPhoneNumbers.list({ limit: 1 });
+    const numbers = await twilioClient.incomingPhoneNumbers.list({ limit: 1 });
     if (numbers.length === 0) {
       throw new Error("No Twilio phone numbers available on this account");
     }
     fromNumber = numbers[0].phoneNumber;
   }
 
-  const message = await c.messages.create({
+  const message = await twilioClient.messages.create({
     to,
     from: fromNumber,
     body,
@@ -62,7 +62,7 @@ export async function sendSms(to: string, body: string, from: string) {
 
  */
 export async function listMessages(filters: Record<string, unknown> = {}) {
-  const c = getClient();
+  const twilioClient = getClient();
 
   const options: Record<string, unknown> = {
     limit: Math.min(parseInt(filters.limit as string) || 20, 100),
@@ -71,11 +71,11 @@ export async function listMessages(filters: Record<string, unknown> = {}) {
   if (filters.from) options.from = filters.from;
   if (filters.dateSent) options.dateSent = new Date(filters.dateSent as string);
 
-  const messages = await c.messages.list(options);
+  const messages = await twilioClient.messages.list(options);
 
   return {
     count: messages.length,
-    messages: messages.map((m: Record<string, any>) => ({
+    messages: messages.map((m) => ({
       sid: m.sid,
       to: m.to,
       from: m.from,
@@ -99,9 +99,9 @@ export async function listMessages(filters: Record<string, unknown> = {}) {
 
  */
 export async function getAccountInfo() {
-  const c = getClient();
-  const account = await c.api.accounts(CONFIG.TWILIO_ACCOUNT_SID!).fetch();
-  const balance = await c.balance.fetch();
+  const twilioClient = getClient();
+  const account = await twilioClient.api.accounts(CONFIG.TWILIO_ACCOUNT_SID!).fetch();
+  const balance = await twilioClient.balance.fetch();
 
   return {
     sid: account.sid,
@@ -122,8 +122,8 @@ export async function getAccountInfo() {
 
  */
 export async function lookupPhone(phone: string) {
-  const c = getClient();
-  const result = await c.lookups.v2.phoneNumbers(phone).fetch({
+  const twilioClient = getClient();
+  const result = await twilioClient.lookups.v2.phoneNumbers(phone).fetch({
     fields: "line_type_intelligence",
   });
 
@@ -146,12 +146,12 @@ export async function lookupPhone(phone: string) {
 
  */
 export async function listPhoneNumbers() {
-  const c = getClient();
-  const numbers = await c.incomingPhoneNumbers.list({ limit: 50 });
+  const twilioClient = getClient();
+  const numbers = await twilioClient.incomingPhoneNumbers.list({ limit: 50 });
 
   return {
     count: numbers.length,
-    phoneNumbers: numbers.map((n: Record<string, any>) => ({
+    phoneNumbers: numbers.map((n) => ({
       sid: n.sid,
       phoneNumber: n.phoneNumber,
       friendlyName: n.friendlyName,

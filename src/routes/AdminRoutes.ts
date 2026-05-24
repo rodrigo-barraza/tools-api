@@ -172,8 +172,8 @@ router.put("/config/workspaces", asyncHandler(async (req: Request, res: Response
     }
     // Must exist on disk
     try {
-      const st = await stat(resolved);
-      if (!st.isDirectory()) {
+      const statResult = await stat(resolved);
+      if (!statResult.isDirectory()) {
         errors.push({ path: rawPath, resolved, error: "Path exists but is not a directory" });
         continue;
       }
@@ -237,9 +237,9 @@ router.post("/config/workspaces/validate", asyncHandler(async (req: Request, res
   let exists = false;
   let isDirectory = false;
   try {
-    const st = await stat(resolved);
+    const statResult = await stat(resolved);
     exists = true;
-    isDirectory = st.isDirectory();
+    isDirectory = statResult.isDirectory();
   } catch {
     // does not exist
   }

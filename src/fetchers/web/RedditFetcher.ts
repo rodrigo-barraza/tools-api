@@ -45,7 +45,21 @@ function buildRedditJsonUrl(input: string) {
 
 // ─── Comment Tree Flattening ──────────────────────────────────────
 
-function extractComments(children: Record<string, any>[], limit: number) {
+interface RedditCommentChild {
+  kind: string;
+  data: {
+    author?: string;
+    score?: number;
+    body?: string;
+    created_utc?: number;
+    is_submitter?: boolean;
+    depth?: number;
+    total_awards_received?: number;
+    replies?: { data?: { children?: RedditCommentChild[] } } | string;
+  };
+}
+
+function extractComments(children: RedditCommentChild[], limit: number) {
   const comments: unknown[] = [];
 
   for (const child of children) {
@@ -53,21 +67,23 @@ function extractComments(children: Record<string, any>[], limit: number) {
     if (child.kind !== "t1") continue;
 
     const c = child.data;
+    const body = c.body || "";
     comments.push({
       author: c.author,
       score: c.score,
-      body: c.body?.length > MAX_BODY_CHARS
-        ? c.body.slice(0, MAX_BODY_CHARS) + "... [truncated]"
-        : c.body,
+      body: body.length > MAX_BODY_CHARS
+        ? body.slice(0, MAX_BODY_CHARS) + "... [truncated]"
+        : body,
       createdUtc: c.created_utc,
       isOp: c.is_submitter || false,
       depth: c.depth || 0,
       awards: c.total_awards_received || 0,
     });
 
-    // Recurse into replies (flatten tree)
-    if (c.replies?.data?.children?.length && comments.length < limit) {
-      const nested = extractComments(c.replies.data.children, limit - comments.length);
+    // Recurse into replies (flatten tree) — replies can be "" or {data:{children:[]}}
+    const replies = typeof c.replies === "object" && c.replies ? c.replies : null;
+    if (replies?.data?.children?.length && comments.length < limit) {
+      const nested = extractComments(replies.data.children, limit - comments.length);
       comments.push(...nested);
     }
   }

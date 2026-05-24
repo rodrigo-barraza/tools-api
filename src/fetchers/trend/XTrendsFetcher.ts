@@ -9,7 +9,7 @@ import { errorMessage } from "../../utilities.ts";
  * Uses X API v1.1 trends/place endpoint (available on free tier, 100 reads/month).
  * Called once per day to stay within free tier limits.
  */
-export async function fetchXTrends(woeid: any = X_WOEIDS.WORLDWIDE) {
+export async function fetchXTrends(woeid: number = X_WOEIDS.WORLDWIDE) {
   if (!CONFIG.X_BEARER_TOKEN) {
     throw new Error("X_BEARER_TOKEN not configured");
   }
@@ -36,7 +36,7 @@ export async function fetchXTrends(woeid: any = X_WOEIDS.WORLDWIDE) {
   const location = trendData.locations?.[0]?.name || "Unknown";
   const asOf = trendData.as_of || new Date().toISOString();
 
-  return (trendData.trends || []).map((trend: any) => ({
+  return (trendData.trends || []).map((trend: { name: string; tweet_volume?: number; url?: string; promoted_content?: unknown }) => ({
     name: trend.name,
     normalizedName: normalizeName(trend.name.replace(/^#/, "")),
     source: SOURCES.X,

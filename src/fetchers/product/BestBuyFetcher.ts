@@ -9,9 +9,21 @@ const BASE_URL = "https://api.bestbuy.com/beta/products";
 /**
  * Normalize a Best Buy product into the unified schema.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Best Buy API returns dynamic product shapes
+interface BestBuyProduct {
+  sku: string | number;
+  name?: string;
+  regularPrice?: number;
+  salePrice?: number;
+  customerReviewAverage?: number;
+  customerReviewCount?: number;
+  image?: string;
+  largeFrontImage?: string;
+  url?: string;
+  shortDescription?: string;
+}
+
 function normalizeBestBuyProduct(
-  item: Record<string, any>,
+  item: BestBuyProduct,
   rank: number,
   unifiedCategory: string,
   sourceCategoryName: string,
@@ -67,8 +79,7 @@ export async function fetchBestBuyTrending(categoryId: string | null = null) {
     ? BESTBUY_CATEGORIES.find((c) => c.id === categoryId)
     : null;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Best Buy API returns dynamic product shapes
-  const products = items.map((item: Record<string, any>, index: number) => {
+  const products = items.map((item: BestBuyProduct, index: number) => {
     const product = normalizeBestBuyProduct(
       item,
       index + 1,

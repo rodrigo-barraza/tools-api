@@ -19,7 +19,7 @@ function parseRows<T extends { time: string }>(rows: string[][], fields: string[
     .map((row: string[]) => {
       const time = new Date(row[0] + "Z").getTime();
       if (isNaN(time) || time < cutoff) return null;
-      const object: any = { time: row[0] };
+      const object: Record<string, string | number | null> = { time: row[0] };
       fields.forEach((f: string, i: number) => {
         const value = parseFloat(row[i + 1]);
         object[f] = isNaN(value) ? null : value;

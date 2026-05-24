@@ -71,8 +71,8 @@ function buildUrl(endpoint: ToolEndpoint, args: Record<string, unknown> = {}) {
     params.set("fields", fieldsStr);
   }
 
-  const qs = params.toString();
-  return `${SELF_BASE_URL}${path}${qs ? `?${qs}` : ""}`;
+  const queryString = params.toString();
+  return `${SELF_BASE_URL}${path}${queryString ? `?${queryString}` : ""}`;
 }
 
 // ── Arg remaps (same as Prism's ToolOrchestratorService) ────
@@ -118,8 +118,8 @@ async function executeTool(toolName: string, endpoint: ToolEndpoint, args: Recor
         return { error: `API returned ${response.status}: ${response.statusText}` };
       }
       // Check content type — some POST endpoints return binary
-      const ct = response.headers.get("content-type") || "";
-      if (ct.includes("application/json")) {
+      const contentType = response.headers.get("content-type") || "";
+      if (contentType.includes("application/json")) {
         return await response.json();
       }
       return { result: await response.text() };

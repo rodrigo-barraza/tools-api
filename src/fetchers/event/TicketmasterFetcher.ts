@@ -34,11 +34,42 @@ function mapTicketmasterStatus(statusCode: string | undefined): string {
   return code && map[code] ? map[code] : EVENT_STATUSES.ON_SALE;
 }
 
+interface TicketmasterVenue {
+  name?: string;
+  address?: { line1?: string };
+  city?: { name?: string };
+  state?: { stateCode?: string };
+  country?: { countryCode?: string };
+  location?: { latitude?: string; longitude?: string };
+}
+
+interface TicketmasterClassification {
+  segment?: { name?: string };
+  genre?: { name?: string };
+  subGenre?: { name?: string };
+}
+
+interface TicketmasterEvent {
+  id: string;
+  name?: string;
+  info?: string;
+  pleaseNote?: string;
+  url?: string;
+  images?: Array<{ ratio?: string; width?: number; url?: string }>;
+  dates?: {
+    start?: { dateTime?: string; localDate?: string };
+    end?: { dateTime?: string };
+    status?: { code?: string };
+  };
+  priceRanges?: Array<{ min?: number; max?: number; currency?: string }>;
+  classifications?: TicketmasterClassification[];
+  _embedded?: { venues?: TicketmasterVenue[] };
+}
+
 /**
  * Extract price range from Ticketmaster event.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Ticketmaster API returns dynamic event JSON
-function extractPriceRange(event: Record<string, any>) {
+function extractPriceRange(event: TicketmasterEvent) {
   const prices = event.priceRanges;
   if (!prices || prices.length === 0) return null;
   const first = prices[0];
@@ -52,8 +83,7 @@ function extractPriceRange(event: Record<string, any>) {
 /**
  * Extract venue info from Ticketmaster event.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Ticketmaster API returns dynamic event JSON
-function extractVenue(event: Record<string, any>) {
+function extractVenue(event: TicketmasterEvent) {
   const venues = event._embedded?.venues;
   if (!venues || venues.length === 0) {
     return {
@@ -82,8 +112,7 @@ function extractVenue(event: Record<string, any>) {
 /**
  * Extract genre strings from Ticketmaster classifications.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Ticketmaster API returns dynamic event JSON
-function extractGenres(event: Record<string, any>) {
+function extractGenres(event: TicketmasterEvent) {
   const classifications = event.classifications;
   if (!classifications) return [];
 
@@ -102,8 +131,7 @@ function extractGenres(event: Record<string, any>) {
 /**
  * Normalize a single Ticketmaster event to our unified schema.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Ticketmaster API returns dynamic event JSON
-function normalizeEvent(event: Record<string, any>) {
+function normalizeEvent(event: TicketmasterEvent) {
   const segment = event.classifications?.[0]?.segment?.name || null;
   const images: Array<{ ratio?: string; width?: number; url?: string }> = event.images || [];
   const bestImage =

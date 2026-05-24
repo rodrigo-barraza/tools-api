@@ -126,8 +126,8 @@ async function qbtFetch(path: string, { method = "GET", body, params }: QbtFetch
 
   let url = `${baseUrl}${path}`;
   if (params) {
-    const qs = new URLSearchParams(params).toString();
-    if (qs) url += `?${qs}`;
+    const queryString = new URLSearchParams(params).toString();
+    if (queryString) url += `?${queryString}`;
   }
 
   const headers: Record<string, string> = { Cookie: sid };
@@ -166,16 +166,16 @@ async function qbtFetch(path: string, { method = "GET", body, params }: QbtFetch
     if (!retry.ok) {
       throw new Error(`qBittorrent API error: ${retry.status} ${retry.statusText}`);
     }
-    const ct = retry.headers.get("content-type") || "";
-    return ct.includes("json") ? retry.json() : retry.text();
+    const contentType = retry.headers.get("content-type") || "";
+    return contentType.includes("json") ? retry.json() : retry.text();
   }
 
   if (!response.ok) {
     throw new Error(`qBittorrent API error: ${response.status} ${response.statusText}`);
   }
 
-  const ct = response.headers.get("content-type") || "";
-  return ct.includes("json") ? response.json() : response.text();
+  const contentType = response.headers.get("content-type") || "";
+  return contentType.includes("json") ? response.json() : response.text();
 }
 
 /**

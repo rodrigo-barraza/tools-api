@@ -356,12 +356,12 @@ router.post("/command/run", asyncHandler(async (req: Request, res: Response) => 
   }
   // Create an AbortController so we can kill the child process if the
   // upstream client disconnects (e.g. user pressed Stop in the UI).
-  const ac = new AbortController();
-  req.on("close", () => ac.abort());
+  const abortController = new AbortController();
+  req.on("close", () => abortController.abort());
   const result = await executeCommand(command, {
     cwd: cwd || undefined,
     timeout: timeout ? Math.min(parseInt(timeout, 10), 120_000) : undefined,
-    signal: ac.signal,
+    signal: abortController.signal,
     runInBackground: run_in_background === true,
   });
   // Guard: response may already be closed if the client disconnected
@@ -381,13 +381,13 @@ router.post("/command/stream", asyncHandler(async (req: Request, res: Response) 
   send({ event: "start", command });
   // Create an AbortController so we can kill the child process if the
   // upstream client disconnects (e.g. user pressed Stop in the UI).
-  const ac = new AbortController();
-  req.on("close", () => ac.abort());
+  const abortController = new AbortController();
+  req.on("close", () => abortController.abort());
   const result = await executeCommandStreaming(command, {
     cwd: cwd || undefined,
     timeout: timeout ? Math.min(parseInt(timeout, 10), 120_000) : undefined,
     onChunk: (event: string, data: string) => send({ event, data }),
-    signal: ac.signal,
+    signal: abortController.signal,
   });
   // Guard: response may already be closed if the client disconnected
   if (!res.writableEnded) {
@@ -536,7 +536,7 @@ router.post("/lsp/action", agenticHandler(async (req: Request) => {
     line: line != null ? parseInt(line, 10) : undefined,
     character: character != null ? parseInt(character, 10) : undefined,
     workspacePath,
-  } as any);
+  });
 }));
 // ── LSP Health ────────────────────────────────────────────────
 router.get("/lsp/health", (_req: Request, res: Response) => {
@@ -723,7 +723,7 @@ router.post("/test-tool", asyncHandler(async (req: Request, res: Response) => {
 router.post("/test-all-tools", asyncHandler(async (req: Request, res: Response) => {
   const { toolNames } = req.body;
   const results = await testAllTools(toolNames || undefined);
-  const passed = results.filter((r: any) => r.success).length;
+  const passed = results.filter((r) => r.success).length;
   res.json({
     total: results.length,
     passed,

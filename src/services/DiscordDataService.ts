@@ -2,8 +2,53 @@ import { days as daysToMs } from "@rodrigo-barraza/utilities-library";
 import type { Document } from "mongodb";
 import { getMessagesCollection } from "../models/LuposMessage.ts";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- MongoDB documents from Discord have deeply nested dynamic shapes
-type DiscordDocument = Document;
+// ── Parameter Interfaces ─────────────────────────────────────
+
+interface MessageSearchParams {
+  guildId?: string;
+  channelId?: string;
+  userId?: string;
+  username?: string;
+  query?: string;
+  before?: string | number;
+  after?: string | number;
+  limit?: number;
+  mode?: "messages" | "count" | "compact";
+  includeBots?: boolean;
+}
+
+interface MessageAnalyticsParams {
+  guildId?: string;
+  channelId?: string;
+  userId?: string;
+  username?: string;
+  query?: string;
+  before?: string | number;
+  after?: string | number;
+  groupBy?: "user" | "channel" | "day" | "hour" | "weekday" | "month";
+  topN?: number;
+  includeBots?: boolean;
+}
+
+interface ServerActivityParams {
+  guildId?: string;
+  channelId?: string;
+  days?: number;
+  topN?: number;
+}
+
+/** MongoDB $dateToString expression. */
+interface MongoDateToString {
+  $dateToString: { format: string; date: { $toDate: string } };
+}
+
+/** MongoDB $hour/$dayOfWeek extraction expression. */
+interface MongoDatePart {
+  $hour?: { $toDate: string };
+  $dayOfWeek?: { $toDate: string };
+}
+
+type MongoGroupId = string | MongoDateToString | MongoDatePart;
 
 // ═══════════════════════════════════════════════════════════════
 //  Discord Data Service
@@ -142,8 +187,8 @@ function buildBaseFilter({
   before,
   after,
   includeBots = false,
-}: Record<string, unknown> = {}) {
-  const filter: Record<string, unknown> = {};
+}: MessageSearchParams = {}) {
+  const filter: Document = {};
 
   if (guildId) filter.guildId = guildId;
   if (channelId) filter.channelId = channelId;
@@ -170,8 +215,8 @@ function buildBaseFilter({
   // Time range
   if (before || after) {
     const tsFilter: { $lte?: number; $gte?: number } = {};
-    if (before) tsFilter.$lte = new Date(before as string | number).getTime();
-    if (after) tsFilter.$gte = new Date(after as string | number).getTime();
+    if (before) tsFilter.$lte = new Date(before).getTime();
+    if (after) tsFilter.$gte = new Date(after).getTime();
     filter.createdTimestamp = tsFilter;
   }
 
@@ -204,7 +249,7 @@ const DiscordDataService = {
     limit = 50,
     mode = "messages",
     includeBots = false,
-  }: Record<string, unknown> = {}) {
+  }: MessageSearchParams = {}) {
     const collection = getMessagesCollection();
     const filter = buildBaseFilter({ guildId, channelId, userId, username, query, before, after, includeBots });
     const cappedLimit = Math.min(Number(limit), 500);
@@ -239,7 +284,7 @@ const DiscordDataService = {
         })
         .toArray();
 
-      const formatted = messages.map((m: DiscordDocument) => ({
+      const formatted = messages.map((m: Document) => ({
         id: m.id,
         // Truncate content to 120 chars to save tokens
         content: m.content?.length > 120
@@ -310,12 +355,12 @@ const DiscordDataService = {
       .toArray();
 
     // Format into a clean shape with human-readable names
-    const formatted = messages.map((m: DiscordDocument) => {
+    const formatted = messages.map((m: Document) => {
       // Build attachment list with URLs for image rendering.
       // Prefer archived MinIO URLs over potentially-expired Discord CDN URLs.
       const archive = m.mediaArchive || null;
       const attachments = Array.isArray(m.attachments) && m.attachments.length > 0
-        ? m.attachments.map((a: DiscordDocument) => {
+        ? m.attachments.map((a: Document) => {
           const resolvedUrl = resolveArchivedUrl(a.url, archive) || resolveArchivedUrl(a.proxyURL, archive) || null;
           const resolvedProxy = resolveArchivedUrl(a.proxyURL, archive) || null;
           return {
@@ -336,7 +381,7 @@ const DiscordDataService = {
       // Resolve archived URLs for embed media as well (belt-and-suspenders).
       const embeds = Array.isArray(m.embeds) && m.embeds.length > 0
         ? m.embeds
-          .map((e: DiscordDocument) => {
+          .map((e: Document) => {
             // Skip empty embeds
             if (!e.title && !e.description && !e.url && !e.image && !e.thumbnail && !e.video) return null;
             return {
@@ -416,7 +461,7 @@ const DiscordDataService = {
         replyTo: m.reference?.messageId || null,
         // Emoji reactions (array of { emoji, count, me })
         ...(Array.isArray(m.reactions) && m.reactions.length > 0 && {
-          reactions: m.reactions.map((r: DiscordDocument) => ({
+          reactions: m.reactions.map((r: Document) => ({
             emoji: {
               id: r.emoji?.id || null,
               name: r.emoji?.name || null,
@@ -468,7 +513,7 @@ const DiscordDataService = {
     groupBy = "user",
     topN = 25,
     includeBots = false,
-  }: Record<string, unknown> = {}) {
+  }: MessageAnalyticsParams = {}) {
     const collection = getMessagesCollection();
     const filter = buildBaseFilter({ guildId, channelId, userId, username, query, before, after, includeBots });
     const cappedTopN = Math.min(Number(topN), 100);
@@ -477,8 +522,7 @@ const DiscordDataService = {
     const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
     // ── Build group expression based on groupBy dimension ──────
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- MongoDB aggregation expressions are dynamic objects
-    let groupId: string | Record<string, any>;
+    let groupId: MongoGroupId;
 
     switch (groupBy) {
       case "user":
@@ -556,7 +600,7 @@ const DiscordDataService = {
 
     // ── Format results with human-readable labels ─────────────
     const groups = results.map((r: Document) => {
-      const base: Record<string, unknown> = { count: r.count };
+      const base: Document = { count: r.count };
 
       switch (groupBy) {
         case "user":
@@ -612,12 +656,12 @@ const DiscordDataService = {
     channelId,
     days = 7,
     topN = 15,
-  }: Record<string, unknown> = {}) {
+  }: ServerActivityParams = {}) {
     const collection = getMessagesCollection();
     const cappedDays = Math.min(Number(days), 365);
     const sinceTimestamp = Date.now() - daysToMs(cappedDays);
 
-    const match: Record<string, unknown> = {
+    const match: Document = {
       guildId,
       createdTimestamp: { $gte: sinceTimestamp },
       "author.bot": { $ne: true },

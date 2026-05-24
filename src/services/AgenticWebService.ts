@@ -7,8 +7,19 @@ import CONFIG from "../config.ts";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API responses from Brave/Google are dynamic JSON
-type ApiResponse = Record<string, any>;
+interface BraveSearchItem {
+  title?: string;
+  url?: string;
+  description?: string;
+  age?: string;
+}
+
+interface GoogleCseItem {
+  title?: string;
+  link?: string;
+  snippet?: string;
+  displayLink?: string;
+}
 
 // ────────────────────────────────────────────────────────────
 // Constants
@@ -218,7 +229,7 @@ async function _searchBrave(query: string, { limit, dateRestrict }: { limit: num
   const data = await response.json();
   const webResults = data.web?.results || [];
 
-  const results = webResults.slice(0, limit).map((item: ApiResponse) => ({
+  const results = webResults.slice(0, limit).map((item: BraveSearchItem) => ({
     title: item.title || "",
     url: item.url || "",
     snippet: item.description?.replace(/<\/?[^>]+(>|$)/g, "").trim() || "",
@@ -270,7 +281,7 @@ async function _searchGoogleCSE(query: string, { limit, dateRestrict, siteSearch
 
   const data = await response.json();
 
-  const results = (data.items || []).map((item: ApiResponse) => ({
+  const results = (data.items || []).map((item: GoogleCseItem) => ({
     title: item.title || "",
     url: item.link || "",
     snippet: item.snippet?.replace(/\n/g, " ").trim() || "",

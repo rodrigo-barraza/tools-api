@@ -7,6 +7,45 @@ import { TRANSLINK_BASE_URL } from "../../constants.ts";
  * Returns real-time bus arrivals, stop info, and route data for Metro Vancouver.
  */
 
+// ─── TransLink API Response Types ──────────────────────────────────
+
+interface TransLinkSchedule {
+  ExpectedLeaveTime?: string;
+  ExpectedCountdown?: number;
+  ScheduleStatus?: string;
+  CancelledTrip?: boolean;
+  CancelledStop?: string;
+  AddedTrip?: boolean;
+  AddedStop?: string;
+  Destination?: string;
+}
+
+interface TransLinkEstimate {
+  RouteNo?: string;
+  RouteName?: string;
+  Direction?: string;
+  Schedules?: TransLinkSchedule[];
+}
+
+interface TransLinkStop {
+  StopNo?: number;
+  Name?: string;
+  City?: string;
+  OnStreet?: string;
+  AtStreet?: string;
+  Latitude?: number;
+  Longitude?: number;
+  Distance?: number;
+  Routes?: string;
+}
+
+interface TransLinkPattern {
+  PatternNo?: string;
+  Destination?: string;
+  Direction?: string;
+  RouteMap?: { Href?: string };
+}
+
 // ─── Helpers ───────────────────────────────────────────────────────
 
 async function get(path: string) {
@@ -46,12 +85,11 @@ export async function getNextBus(stopNo: string | number, routeNo?: string | num
   return {
     stopNo,
     count: estimates.length,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TransLink API returns dynamic JSON
-    routes: estimates.map((r: Record<string, any>) => ({
+    routes: estimates.map((r: TransLinkEstimate) => ({
       routeNo: r.RouteNo,
       routeName: r.RouteName,
       direction: r.Direction,
-      schedules: (r.Schedules || []).map((s: Record<string, any>) => ({
+      schedules: (r.Schedules || []).map((s: TransLinkSchedule) => ({
         expectedLeaveTime: s.ExpectedLeaveTime,
         expectedCountdown: s.ExpectedCountdown,
         scheduleStatus: s.ScheduleStatus, // "*" = on time, "-" = late, "+" = early
@@ -108,8 +146,7 @@ export async function findStopsNearby(lat: number, lng: number, radius: number =
 
   return {
     count: stops.length,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TransLink API returns dynamic JSON
-    stops: stops.slice(0, 20).map((s: Record<string, any>) => ({
+    stops: stops.slice(0, 20).map((s: TransLinkStop) => ({
       stopNo: s.StopNo,
       name: s.Name,
       city: s.City,
@@ -141,8 +178,7 @@ export async function getRouteInfo(routeNo: string | number) {
     routeNo: data.RouteNo,
     name: data.Name,
     operatingCompany: data.OperatingCompany,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TransLink API returns dynamic JSON
-    patterns: (data.Patterns || []).map((p: Record<string, any>) => ({
+    patterns: (data.Patterns || []).map((p: TransLinkPattern) => ({
       patternNo: p.PatternNo,
       destination: p.Destination,
       direction: p.Direction,

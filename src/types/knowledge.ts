@@ -205,7 +205,7 @@ export interface MusicArtist {
   score?: number;
   gender?: string | null;
   urls?: Record<string, string>;
-  discography?: Record<string, any[]>;
+  discography?: Record<string, MusicAlbum[]>;
   totalReleaseGroups?: number;
 }
 

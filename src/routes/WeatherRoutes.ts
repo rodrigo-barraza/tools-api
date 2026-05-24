@@ -236,10 +236,10 @@ router.get("/environment", (req: Request, res: Response) => {
     });
   }
   const data = handler();
-  res.json({ source, ...(data as any) });
+  res.json({ source, ...(data as Record<string, unknown>) });
 });
 // ─── Domain Health ─────────────────────────────────────────────────
-export function getWeatherHealth(): any {
+export function getWeatherHealth(): Record<string, unknown> {
   return {
     weather: getWeatherCacheHealth(),
     earthquake: getEarthquakeHealth(),

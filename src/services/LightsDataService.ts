@@ -50,8 +50,20 @@ const LightsDataService = {
     // Normalize the response into a clean shape for the agent
     if (!Array.isArray(data)) return data;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- LIFX API returns dynamic light objects
-    return data.map((light: Record<string, any>) => ({
+interface LifxLight {
+  id?: string;
+  label?: string;
+  power?: string;
+  brightness?: number;
+  color?: { hue: number; saturation: number; kelvin: number };
+  group?: { name?: string };
+  location?: { name?: string };
+  connected?: boolean;
+  product?: { name?: string };
+  effect?: string;
+}
+
+    return data.map((light: LifxLight) => ({
       id: light.id,
       label: light.label,
       power: light.power,
@@ -244,8 +256,14 @@ const LightsDataService = {
     if (!Array.isArray(data)) return data;
 
     // Normalize into a clean shape
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- LIFX API returns dynamic scene objects
-    return data.map((scene: Record<string, any>) => ({
+interface LifxScene {
+  uuid?: string;
+  name?: string;
+  states?: unknown[];
+  updated_at?: string;
+}
+
+    return data.map((scene: LifxScene) => ({
       uuid: scene.uuid,
       name: scene.name,
       lightCount: scene.states?.length || 0,

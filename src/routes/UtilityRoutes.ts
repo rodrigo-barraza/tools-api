@@ -158,8 +158,8 @@ router.get("/ip", asyncHandler(
 router.get("/ip/:ip", asyncHandler(
   (req: Request) => {
     const raw = req.params.ip as string;
-    const ip = raw === "self" || raw === ":ip" ? "" : raw;
-    return lookupIp(ip);
+    const clientIp = raw === "self" || raw === ":ip" ? "" : raw;
+    return lookupIp(clientIp);
   },
   "IP lookup",
 ));

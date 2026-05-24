@@ -190,7 +190,7 @@ router.post("/datetime/parse", asyncHandler(async (req: Request, res: Response) 
   }
   try {
     const fns = await getDateFns();
-    const tz = await getDateFnsTz();
+    const timeZoneLib = await getDateFnsTz();
     const parseDate = (d: unknown) => {
       if (!d) return new Date();
       if (d === "now") return new Date();
@@ -198,11 +198,11 @@ router.post("/datetime/parse", asyncHandler(async (req: Request, res: Response) 
       if (isNaN(parsed.getTime())) throw new Error(`Invalid date: ${d}`);
       return parsed;
     };
-    const formatDate = (d: Date) => {
+    const formatDate = (dateValue: Date) => {
       if (timezone) {
-        return tz.formatInTimeZone(d, timezone, format || "yyyy-MM-dd'T'HH:mm:ssXXX");
+        return timeZoneLib.formatInTimeZone(dateValue, timezone, format || "yyyy-MM-dd'T'HH:mm:ssXXX");
       }
-      return format ? fns.format(d, format) : d.toISOString();
+      return format ? fns.format(dateValue, format) : dateValue.toISOString();
     };
     let result: unknown;
     switch (operation) {
@@ -214,27 +214,27 @@ router.post("/datetime/parse", asyncHandler(async (req: Request, res: Response) 
           formatted: formatDate(now),
         };
         if (timezone) {
-          (result as Record<string, unknown>).inTimezone = tz.formatInTimeZone(now, timezone, "yyyy-MM-dd HH:mm:ss zzz");
+          (result as Record<string, unknown>).inTimezone = timeZoneLib.formatInTimeZone(now, timezone, "yyyy-MM-dd HH:mm:ss zzz");
         }
         break;
       }
       case "parse": {
-        const d = parseDate(date);
+        const parsedDate = parseDate(date);
         result = {
-          iso: d.toISOString(),
-          unix: d.getTime(),
-          formatted: formatDate(d),
-          dayOfWeek: fns.format(d, "EEEE"),
-          dayOfYear: fns.getDayOfYear(d),
-          weekNumber: fns.getISOWeek(d),
-          isLeapYear: fns.isLeapYear(d),
-          isWeekend: fns.isWeekend(d),
+          iso: parsedDate.toISOString(),
+          unix: parsedDate.getTime(),
+          formatted: formatDate(parsedDate),
+          dayOfWeek: fns.format(parsedDate, "EEEE"),
+          dayOfYear: fns.getDayOfYear(parsedDate),
+          weekNumber: fns.getISOWeek(parsedDate),
+          isLeapYear: fns.isLeapYear(parsedDate),
+          isWeekend: fns.isWeekend(parsedDate),
         };
         break;
       }
       case "format": {
-        const d = parseDate(date);
-        result = { formatted: formatDate(d) };
+        const parsedDate = parseDate(date);
+        result = { formatted: formatDate(parsedDate) };
         break;
       }
       case "diff": {
@@ -255,7 +255,7 @@ router.post("/datetime/parse", asyncHandler(async (req: Request, res: Response) 
         break;
       }
       case "add": {
-        const d = parseDate(date);
+        const parsedDate = parseDate(date);
         if (!amount || !unit) throw new Error("'amount' and 'unit' are required for add");
         const ADDERS: Record<string, (date: Date, amount: number) => Date> = {
           years: fns.addYears,
@@ -268,12 +268,12 @@ router.post("/datetime/parse", asyncHandler(async (req: Request, res: Response) 
         };
         const adder = ADDERS[unit];
         if (!adder) throw new Error(`Invalid unit: ${unit}. Use: ${Object.keys(ADDERS).join(", ")}`);
-        const added = adder(d, parseInt(amount));
-        result = { original: formatDate(d), result: formatDate(added), iso: added.toISOString() };
+        const added = adder(parsedDate, parseInt(amount));
+        result = { original: formatDate(parsedDate), result: formatDate(added), iso: added.toISOString() };
         break;
       }
       case "subtract": {
-        const d = parseDate(date);
+        const parsedDate = parseDate(date);
         if (!amount || !unit) throw new Error("'amount' and 'unit' are required for subtract");
         const SUBBERS: Record<string, (date: Date, amount: number) => Date> = {
           years: fns.subYears,
@@ -286,12 +286,12 @@ router.post("/datetime/parse", asyncHandler(async (req: Request, res: Response) 
         };
         const subber = SUBBERS[unit];
         if (!subber) throw new Error(`Invalid unit: ${unit}. Use: ${Object.keys(SUBBERS).join(", ")}`);
-        const subtracted = subber(d, parseInt(amount));
-        result = { original: formatDate(d), result: formatDate(subtracted), iso: subtracted.toISOString() };
+        const subtracted = subber(parsedDate, parseInt(amount));
+        result = { original: formatDate(parsedDate), result: formatDate(subtracted), iso: subtracted.toISOString() };
         break;
       }
       case "startOf": {
-        const d = parseDate(date);
+        const parsedDate = parseDate(date);
         if (!unit) throw new Error("'unit' is required for startOf");
         const STARTERS: Record<string, (date: Date) => Date> = {
           year: fns.startOfYear,
@@ -301,14 +301,14 @@ router.post("/datetime/parse", asyncHandler(async (req: Request, res: Response) 
           hour: fns.startOfHour,
           minute: fns.startOfMinute,
         };
-        const fn = STARTERS[unit];
-        if (!fn) throw new Error(`Invalid unit: ${unit}. Use: ${Object.keys(STARTERS).join(", ")}`);
-        const started = fn(d);
-        result = { original: formatDate(d), result: formatDate(started), iso: started.toISOString() };
+        const startFunction = STARTERS[unit];
+        if (!startFunction) throw new Error(`Invalid unit: ${unit}. Use: ${Object.keys(STARTERS).join(", ")}`);
+        const started = startFunction(parsedDate);
+        result = { original: formatDate(parsedDate), result: formatDate(started), iso: started.toISOString() };
         break;
       }
       case "endOf": {
-        const d = parseDate(date);
+        const parsedDate = parseDate(date);
         if (!unit) throw new Error("'unit' is required for endOf");
         const ENDERS: Record<string, (date: Date) => Date> = {
           year: fns.endOfYear,
@@ -318,16 +318,16 @@ router.post("/datetime/parse", asyncHandler(async (req: Request, res: Response) 
           hour: fns.endOfHour,
           minute: fns.endOfMinute,
         };
-        const fn = ENDERS[unit];
-        if (!fn) throw new Error(`Invalid unit: ${unit}. Use: ${Object.keys(ENDERS).join(", ")}`);
-        const ended = fn(d);
-        result = { original: formatDate(d), result: formatDate(ended), iso: ended.toISOString() };
+        const endFunction = ENDERS[unit];
+        if (!endFunction) throw new Error(`Invalid unit: ${unit}. Use: ${Object.keys(ENDERS).join(", ")}`);
+        const ended = endFunction(parsedDate);
+        result = { original: formatDate(parsedDate), result: formatDate(ended), iso: ended.toISOString() };
         break;
       }
       case "isValid": {
         try {
-          const d = parseDate(date);
-          result = { valid: !isNaN(d.getTime()), parsed: d.toISOString() };
+          const parsedDate = parseDate(date);
+          result = { valid: !isNaN(parsedDate.getTime()), parsed: parsedDate.toISOString() };
         } catch {
           result = { valid: false, parsed: null };
         }
@@ -351,10 +351,9 @@ router.post("/json/transform", asyncHandler(async (req: Request, res: Response) 
   }
   try {
     let result = data;
-    // JSONPath expression
     if (expression) {
-      const jp = await getJSONPath();
-      result = jp({ path: expression, json: data, wrap: true });
+      const jsonPathLib = await getJSONPath();
+      result = jsonPathLib({ path: expression, json: data, wrap: true });
     }
     // Chained operations
     if (operations && Array.isArray(operations)) {
@@ -371,10 +370,10 @@ router.post("/json/transform", asyncHandler(async (req: Request, res: Response) 
               const key = op.key;
               const order = op.order === "desc" ? -1 : 1;
               result = [...result].sort((a: Record<string, unknown> | number | string, b: Record<string, unknown> | number | string) => {
-                const va = key ? (a as Record<string, unknown>)?.[key] : a;
-                const vb = key ? (b as Record<string, unknown>)?.[key] : b;
-                if (typeof va === "number" && typeof vb === "number") return (va - vb) * order;
-                return String(va).localeCompare(String(vb)) * order;
+                const valueA = key ? (a as Record<string, unknown>)?.[key] : a;
+                const valueB = key ? (b as Record<string, unknown>)?.[key] : b;
+                if (typeof valueA === "number" && typeof valueB === "number") return (valueA - valueB) * order;
+                return String(valueA).localeCompare(String(valueB)) * order;
               });
             }
             break;
@@ -430,9 +429,9 @@ router.post("/json/transform", asyncHandler(async (req: Request, res: Response) 
             if (Array.isArray(result) && op.key) {
               const groups: Record<string, unknown> = {};
               for (const item of result) {
-                const k = String(item?.[op.key] ?? "undefined");
-                if (!groups[k]) groups[k] = [];
-                (groups[k] as unknown[]).push(item);
+                const groupKey = String(item?.[op.key] ?? "undefined");
+                if (!groups[groupKey]) groups[groupKey] = [];
+                (groups[groupKey] as unknown[]).push(item);
               }
               result = groups;
             }
@@ -933,39 +932,39 @@ interface HslColor {
 
 // ─── Color Math (service-specific — not in shared library) ──
 function rgbToHsv({ r, g, b }: { r: number; g: number; b: number }) {
-  const rn = r / 255;
-  const gn = g / 255;
-  const bn = b / 255;
-  const max = Math.max(rn, gn, bn);
-  const min = Math.min(rn, gn, bn);
-  const d = max - min;
-  let h = 0;
-  const s = max === 0 ? 0 : d / max;
-  const v = max;
+  const rNorm = r / 255;
+  const gNorm = g / 255;
+  const bNorm = b / 255;
+  const max = Math.max(rNorm, gNorm, bNorm);
+  const min = Math.min(rNorm, gNorm, bNorm);
+  const delta = max - min;
+  let hue = 0;
+  const saturation = max === 0 ? 0 : delta / max;
+  const value = max;
   if (max !== min) {
     switch (max) {
-      case rn: h = ((gn - bn) / d + (gn < bn ? 6 : 0)) / 6; break;
-      case gn: h = ((bn - rn) / d + 2) / 6; break;
-      case bn: h = ((rn - gn) / d + 4) / 6; break;
+      case rNorm: hue = ((gNorm - bNorm) / delta + (gNorm < bNorm ? 6 : 0)) / 6; break;
+      case gNorm: hue = ((bNorm - rNorm) / delta + 2) / 6; break;
+      case bNorm: hue = ((rNorm - gNorm) / delta + 4) / 6; break;
     }
   }
   return {
-    h: Math.round(h * 360),
-    s: Math.round(s * 100),
-    v: Math.round(v * 100),
+    h: Math.round(hue * 360),
+    s: Math.round(saturation * 100),
+    v: Math.round(value * 100),
   };
 }
 function rgbToCmyk({ r, g, b }: { r: number; g: number; b: number }) {
-  const rn = r / 255;
-  const gn = g / 255;
-  const bn = b / 255;
-  const k = 1 - Math.max(rn, gn, bn);
-  if (k === 1) return { c: 0, m: 0, y: 0, k: 100 };
+  const rNorm = r / 255;
+  const gNorm = g / 255;
+  const bNorm = b / 255;
+  const blackLevel = 1 - Math.max(rNorm, gNorm, bNorm);
+  if (blackLevel === 1) return { c: 0, m: 0, y: 0, k: 100 };
   return {
-    c: Math.round(((1 - rn - k) / (1 - k)) * 100),
-    m: Math.round(((1 - gn - k) / (1 - k)) * 100),
-    y: Math.round(((1 - bn - k) / (1 - k)) * 100),
-    k: Math.round(k * 100),
+    c: Math.round(((1 - rNorm - blackLevel) / (1 - blackLevel)) * 100),
+    m: Math.round(((1 - gNorm - blackLevel) / (1 - blackLevel)) * 100),
+    y: Math.round(((1 - bNorm - blackLevel) / (1 - blackLevel)) * 100),
+    k: Math.round(blackLevel * 100),
   };
 }
 /**
@@ -1219,37 +1218,37 @@ function buildTurtleEmbedHtml(commands: string[], options: Record<string, unknow
     const val2 = cmd.value2 !== undefined ? cmd.value2 : cmd.extent || 0;
     switch (action) {
       case "forward": case "fd": {
-        const d = Number(val);
+        const distanceValue = Number(val);
         const rad = deg2rad(angle);
-        const nx = x + Math.cos(rad) * d;
-        const ny = y + Math.sin(rad) * d;
+        const nextX = x + Math.cos(rad) * distanceValue;
+        const nextY = y + Math.sin(rad) * distanceValue;
         if (penDown) {
           drawCtx.beginPath();
           drawCtx.moveTo(x, y);
-          drawCtx.lineTo(nx, ny);
+          drawCtx.lineTo(nextX, nextY);
           drawCtx.strokeStyle = penColor;
           drawCtx.lineWidth = penWidth;
           drawCtx.stroke();
         }
-        if (filling) fillPath.push({ x: nx, y: ny });
-        x = nx; y = ny;
+        if (filling) fillPath.push({ x: nextX, y: nextY });
+        x = nextX; y = nextY;
         break;
       }
       case "backward": case "bk": case "back": {
-        const d = -Number(val);
+        const distanceValue = -Number(val);
         const rad = deg2rad(angle);
-        const nx = x + Math.cos(rad) * d;
-        const ny = y + Math.sin(rad) * d;
+        const nextX = x + Math.cos(rad) * distanceValue;
+        const nextY = y + Math.sin(rad) * distanceValue;
         if (penDown) {
           drawCtx.beginPath();
           drawCtx.moveTo(x, y);
-          drawCtx.lineTo(nx, ny);
+          drawCtx.lineTo(nextX, nextY);
           drawCtx.strokeStyle = penColor;
           drawCtx.lineWidth = penWidth;
           drawCtx.stroke();
         }
-        if (filling) fillPath.push({ x: nx, y: ny });
-        x = nx; y = ny;
+        if (filling) fillPath.push({ x: nextX, y: nextY });
+        x = nextX; y = nextY;
         break;
       }
       case "right": case "rt":
@@ -1271,18 +1270,18 @@ function buildTurtleEmbedHtml(commands: string[], options: Record<string, unknow
         penWidth = Number(val) || 2;
         break;
       case "goto": case "setposition": case "setpos": {
-        const gx = canvas.width / 2 + Number(cmd.x !== undefined ? cmd.x : val);
-        const gy = canvas.height / 2 - Number(cmd.y !== undefined ? cmd.y : val2);
+        const goalX = canvas.width / 2 + Number(cmd.x !== undefined ? cmd.x : val);
+        const goalY = canvas.height / 2 - Number(cmd.y !== undefined ? cmd.y : val2);
         if (penDown) {
           drawCtx.beginPath();
           drawCtx.moveTo(x, y);
-          drawCtx.lineTo(gx, gy);
+          drawCtx.lineTo(goalX, goalY);
           drawCtx.strokeStyle = penColor;
           drawCtx.lineWidth = penWidth;
           drawCtx.stroke();
         }
-        if (filling) fillPath.push({ x: gx, y: gy });
-        x = gx; y = gy;
+        if (filling) fillPath.push({ x: goalX, y: goalY });
+        x = goalX; y = goalY;
         break;
       }
       case "setheading": case "seth":
@@ -1310,10 +1309,10 @@ function buildTurtleEmbedHtml(commands: string[], options: Record<string, unknow
         if (penDown) {
           const startRad = deg2rad(angle - 90);
           const endRad = startRad + deg2rad(extent);
-          const cx = x - Math.sin(deg2rad(angle)) * arcR;
-          const cy = y + Math.cos(deg2rad(angle)) * arcR;
+          const centerX = x - Math.sin(deg2rad(angle)) * arcR;
+          const centerY = y + Math.cos(deg2rad(angle)) * arcR;
           drawCtx.beginPath();
-          drawCtx.arc(cx, cy, Math.abs(arcR), startRad, endRad, arcR < 0);
+          drawCtx.arc(centerX, centerY, Math.abs(arcR), startRad, endRad, arcR < 0);
           drawCtx.strokeStyle = penColor;
           drawCtx.lineWidth = penWidth;
           drawCtx.stroke();
@@ -1415,8 +1414,8 @@ function buildTurtleEmbedHtml(commands: string[], options: Record<string, unknow
     step();
   }
   function reportSize() {
-    var el = document.body;
-    window.parent.postMessage({ type: "embed-resize", width: el.scrollWidth, height: el.scrollHeight }, "*");
+    var element = document.body;
+    window.parent.postMessage({ type: "embed-resize", width: element.scrollWidth, height: element.scrollHeight }, "*");
   }
   run();
 })();
@@ -1588,13 +1587,13 @@ function explainCronField(values: number[], fieldIdx: number) {
   if (values.length === max - min + 1) return `every ${name}`;
   // Single value
   if (values.length === 1) {
-    const v = values[0];
-    if (fieldIdx === 3) return `in ${MONTH_NAMES[v]}`;
-    if (fieldIdx === 4) return `on ${DAY_NAMES[v]}`;
-    if (fieldIdx === 0) return `at minute ${v}`;
-    if (fieldIdx === 1) return `at hour ${v}`;
-    if (fieldIdx === 2) return `on day ${v}`;
-    return `${name} ${v}`;
+    const firstValue = values[0];
+    if (fieldIdx === 3) return `in ${MONTH_NAMES[firstValue]}`;
+    if (fieldIdx === 4) return `on ${DAY_NAMES[firstValue]}`;
+    if (fieldIdx === 0) return `at minute ${firstValue}`;
+    if (fieldIdx === 1) return `at hour ${firstValue}`;
+    if (fieldIdx === 2) return `on day ${firstValue}`;
+    return `${name} ${firstValue}`;
   }
   // Step pattern detection
   if (values.length > 2) {
@@ -1693,35 +1692,35 @@ router.post("/sleep", asyncHandler(async (req: Request, res: Response) => {
 // Lightweight validator — handles type, required, enum, nested objects/arrays.
 function validateJsonSchema(data: unknown, schema: Record<string, unknown>, path: string = "", errors: string[] = []) {
   if (!schema || typeof schema !== "object") return;
-  const at = path || "root";
+  const currentPath = path || "root";
   if (schema.type) {
     const expected = schema.type;
     if (expected === "object" && (typeof data !== "object" || data === null || Array.isArray(data))) {
-      errors.push(`${at}: expected object, got ${Array.isArray(data) ? "array" : typeof data}`);
+      errors.push(`${currentPath}: expected object, got ${Array.isArray(data) ? "array" : typeof data}`);
       return;
     }
     if (expected === "array" && !Array.isArray(data)) {
-      errors.push(`${at}: expected array, got ${typeof data}`);
+      errors.push(`${currentPath}: expected array, got ${typeof data}`);
       return;
     }
-    if (expected === "string" && typeof data !== "string") errors.push(`${at}: expected string, got ${typeof data}`);
-    if (expected === "number" && typeof data !== "number") errors.push(`${at}: expected number, got ${typeof data}`);
-    if (expected === "boolean" && typeof data !== "boolean") errors.push(`${at}: expected boolean, got ${typeof data}`);
+    if (expected === "string" && typeof data !== "string") errors.push(`${currentPath}: expected string, got ${typeof data}`);
+    if (expected === "number" && typeof data !== "number") errors.push(`${currentPath}: expected number, got ${typeof data}`);
+    if (expected === "boolean" && typeof data !== "boolean") errors.push(`${currentPath}: expected boolean, got ${typeof data}`);
   }
   if (schema.enum && Array.isArray(schema.enum) && !schema.enum.includes(data)) {
-    errors.push(`${at}: value must be one of [${schema.enum.join(", ")}]`);
+    errors.push(`${currentPath}: value must be one of [${schema.enum.join(", ")}]`);
   }
   if (typeof data === "string") {
-    if (schema.minLength !== undefined && (data as string).length < (schema.minLength as number)) errors.push(`${at}: string length ${(data as string).length} < minLength ${schema.minLength}`);
-    if (schema.maxLength !== undefined && (data as string).length > (schema.maxLength as number)) errors.push(`${at}: string length ${(data as string).length} > maxLength ${schema.maxLength}`);
+    if (schema.minLength !== undefined && (data as string).length < (schema.minLength as number)) errors.push(`${currentPath}: string length ${(data as string).length} < minLength ${schema.minLength}`);
+    if (schema.maxLength !== undefined && (data as string).length > (schema.maxLength as number)) errors.push(`${currentPath}: string length ${(data as string).length} > maxLength ${schema.maxLength}`);
   }
   if (typeof data === "number") {
-    if (schema.minimum !== undefined && (data as number) < (schema.minimum as number)) errors.push(`${at}: ${data} < minimum ${schema.minimum}`);
-    if (schema.maximum !== undefined && (data as number) > (schema.maximum as number)) errors.push(`${at}: ${data} > maximum ${schema.maximum}`);
+    if (schema.minimum !== undefined && (data as number) < (schema.minimum as number)) errors.push(`${currentPath}: ${data} < minimum ${schema.minimum}`);
+    if (schema.maximum !== undefined && (data as number) > (schema.maximum as number)) errors.push(`${currentPath}: ${data} > maximum ${schema.maximum}`);
   }
   if (schema.required && Array.isArray(schema.required) && typeof data === "object" && data !== null) {
     for (const key of schema.required) {
-      if ((data as Record<string, unknown>)[key] === undefined) errors.push(`${at}: missing required field "${key}"`);
+      if ((data as Record<string, unknown>)[key] === undefined) errors.push(`${currentPath}: missing required field "${key}"`);
     }
   }
   if (schema.properties && typeof data === "object" && data !== null && !Array.isArray(data)) {
@@ -1770,14 +1769,14 @@ router.post("/image/process", asyncHandler(async (req: Request, res: Response) =
     return res.status(400).json({ error: "'operations' must be a non-empty array of operation objects" });
   }
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- processImage returns a union; we narrow dynamically
+    // processImage returns a union of metadata-only or buffer result shapes
     const result = await processImage({
       input,
       operations,
       outputFormat: outputFormat || "png",
       outputQuality: outputQuality || 80,
       store: imageStore,
-    }) as Record<string, any>;
+    }) as { buffer?: Buffer; mimeType?: string; metadata?: Record<string, unknown> };
     // Metadata-only request
     if (result.metadata && !result.buffer) {
       return res.json({
@@ -1785,7 +1784,7 @@ router.post("/image/process", asyncHandler(async (req: Request, res: Response) =
         metadata: result.metadata,
       });
     }
-    const id = imageStore.set({ buffer: result.buffer, mimeType: result.mimeType });
+    const id = imageStore.set({ buffer: result.buffer!, mimeType: result.mimeType! });
     const imageUrl = buildLocalUrl("compute/image/render", { id });
     const response: Record<string, unknown> = {
       success: true,

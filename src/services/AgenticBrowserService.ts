@@ -107,8 +107,8 @@ async function getSession(sessionId: string): Promise<BrowserSession> {
     if (oldestId) await closeSession(oldestId);
   }
 
-  const b = await getBrowser();
-  const context = await b.newContext({
+  const browserInstance = await getBrowser();
+  const context = await browserInstance.newContext({
     viewport: VIEWPORT,
     userAgent:
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
@@ -695,8 +695,8 @@ async function actionRunScript(_page: Page, { script, timeout }: { script?: stri
   if (!script) return { error: "Missing required parameter: script" };
 
   // Ensure the browser is running and get its WebSocket endpoint
-  const b = await getBrowser();
-  const wsEndpoint = (b as Browser & { wsEndpoint?: () => string }).wsEndpoint?.() || null;
+  const browserInstance = await getBrowser();
+  const wsEndpoint = (browserInstance as Browser & { wsEndpoint?: () => string }).wsEndpoint?.() || null;
 
   // Wrap the user script with boilerplate for connecting to our browser
   const wrappedScript = `

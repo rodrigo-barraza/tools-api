@@ -8724,7 +8724,7 @@ const TOOL_REQUIRED_KEYS = {
 function isToolAvailable(toolName: string) {
   const keys = TOOL_REQUIRED_KEYS[toolName as keyof typeof TOOL_REQUIRED_KEYS];
   if (!keys) return true;
-  return keys.every((key: string) => Boolean((CONFIG as Record<string, any>)[key]));
+  return keys.every((key: string) => Boolean((CONFIG as unknown as Record<string, unknown>)[key]));
 }
 
 // ────────────────────────────────────────────────────────────
@@ -9070,7 +9070,7 @@ export function getDisabledTools() {
       return {
         name: t.name,
         domain: TOOL_DOMAINS[t.name as keyof typeof TOOL_DOMAINS] || "Other",
-        missingKeys: requiredKeys.filter((key: string) => !(CONFIG as Record<string, any>)[key]),
+        missingKeys: requiredKeys.filter((key: string) => !(CONFIG as unknown as Record<string, unknown>)[key]),
       };
     });
 }

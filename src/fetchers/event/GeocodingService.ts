@@ -63,8 +63,20 @@ export async function geocodeAddress(address: string) {
  * Enrich an event with geocoded coordinates if missing.
  * Only geocodes if the event has a venue name/city but no lat/lng.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic event objects from multiple sources
-export async function enrichEventWithGeocode(event: Record<string, any>) {
+export interface GeocodableEvent {
+  venue?: {
+    name?: string | null;
+    address?: string | null;
+    city?: string | null;
+    state?: string | null;
+    country?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+  };
+  [key: string]: unknown;
+}
+
+export async function enrichEventWithGeocode(event: GeocodableEvent) {
   if (!event?.venue) return event;
 
   // Skip if already geocoded
@@ -100,8 +112,7 @@ export async function enrichEventWithGeocode(event: Record<string, any>) {
 
 
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic event objects from multiple sources
-export async function batchGeocodeEvents(events: Record<string, any>[], maxPerBatch: number = 5) {
+export async function batchGeocodeEvents(events: GeocodableEvent[], maxPerBatch: number = 5) {
   const needsGeocode = events.filter(
     (e) => e.venue && !e.venue.latitude && !e.venue.longitude,
   );

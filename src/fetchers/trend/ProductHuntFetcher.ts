@@ -28,7 +28,7 @@ export async function fetchProductHuntTrends() {
  * Parses Product Hunt HTML for product listings.
  * Falls back to JSON-LD structured data if available.
  */
-function parseProductHunt(html: any) {
+function parseProductHunt(html: string) {
   const trends: unknown[] = [];
 
   // Try to extract from JSON-LD or Next.js __NEXT_DATA__
@@ -59,7 +59,7 @@ function parseProductHunt(html: any) {
             votesCount: post.votesCount || post.votes_count || 0,
             commentsCount: post.commentsCount || post.comments_count || 0,
             thumbnail: post.thumbnail?.url || null,
-            topics: (post.topics || []).map((t: any) => t.name || t).slice(0, 5),
+            topics: (post.topics || []).map((t: { name?: string }) => t.name || String(t)).slice(0, 5),
           },
           category: TREND_CATEGORIES.TECHNOLOGY,
           timestamp: new Date().toISOString(),
@@ -75,7 +75,7 @@ function parseProductHunt(html: any) {
     // Look for product links with data attributes
     const productRegex =
       /data-test="post-name"[^>]*>([^<]+)<|class="[^"]*styles_title[^"]*"[^>]*>([^<]+)</g;
-    let match: any;
+    let match: RegExpExecArray | null;
 
     while ((match = productRegex.exec(html)) !== null) {
       const name = (match[1] || match[2] || "").trim();

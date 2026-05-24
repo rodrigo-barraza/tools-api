@@ -60,9 +60,9 @@ router.get("/news", asyncHandler(async (req: Request, res: Response) => {
   if (symbol) {
     try {
       const now = new Date();
-      const to = toISODate(now);
-      const from = toISODate(new Date(now.getTime() - 7 * 86_400_000));
-      const news = await fetchCompanyNews(symbol.toUpperCase(), from, to);
+      const toDate = toISODate(now);
+      const fromDate = toISODate(new Date(now.getTime() - 7 * 86_400_000));
+      const news = await fetchCompanyNews(symbol.toUpperCase(), fromDate, toDate);
       return res.json({
         symbol: symbol.toUpperCase(),
         count: news.length,

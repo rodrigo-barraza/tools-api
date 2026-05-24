@@ -162,8 +162,18 @@ export async function searchSeries(query: string, options: FredSearchOptions = {
     order_by: orderBy,
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- FRED API returns dynamic JSON objects
-  const series = (data.seriess || []).map((s: Record<string, any>) => ({
+  interface FredSeriesResult {
+    id: string;
+    title: string;
+    frequency_short?: string;
+    units_short?: string;
+    seasonal_adjustment_short?: string;
+    last_updated?: string;
+    popularity?: number;
+    notes?: string;
+  }
+
+  const series = (data.seriess || []).map((s: FredSeriesResult) => ({
     id: s.id,
     title: s.title,
     frequency: s.frequency_short,

@@ -29,7 +29,7 @@ interface EventCacheEntry {
   error: CacheError | null;
 }
 
-interface EventHealthEntry {
+export interface EventHealthEntry {
   lastFetch: Date | null;
   error: CacheError | null;
   eventCount: number;

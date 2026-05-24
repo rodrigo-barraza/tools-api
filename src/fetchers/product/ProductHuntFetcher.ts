@@ -108,8 +108,20 @@ export async function fetchProductHuntTrending() {
     );
   }
   const edges = data?.data?.posts?.edges || [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Product Hunt GraphQL returns dynamic node shapes
-  const products = edges.map((edge: Record<string, any>, index: number) => {
+  interface ProductHuntNode {
+    id: string;
+    name: string;
+    tagline?: string;
+    description?: string;
+    url?: string;
+    votesCount?: number;
+    commentsCount?: number;
+    website?: string;
+    thumbnail?: { url?: string };
+    topics?: { edges?: Array<{ node: { name: string } }> };
+  }
+
+  const products = edges.map((edge: { node: ProductHuntNode }, index: number) => {
     const node = edge.node;
     const topics: string[] = node.topics?.edges?.map((e: { node: { name: string } }) => e.node.name) || [];
     const product = {

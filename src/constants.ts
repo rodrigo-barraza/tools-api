@@ -1249,7 +1249,7 @@ const COSTCO_CA_SLUG_OVERRIDES = {
 
 export const COSTCO_US_CATEGORIES = COSTCO_BASE_CATEGORIES;
 
-export const COSTCO_CA_CATEGORIES = COSTCO_BASE_CATEGORIES.map((cat: any) => ({
+export const COSTCO_CA_CATEGORIES = COSTCO_BASE_CATEGORIES.map((cat) => ({
   ...cat,
   slug: COSTCO_CA_SLUG_OVERRIDES[cat.slug as keyof typeof COSTCO_CA_SLUG_OVERRIDES] || cat.slug,
 }));

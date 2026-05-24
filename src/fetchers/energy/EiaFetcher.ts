@@ -19,14 +19,13 @@ import logger from "../../logger.ts";
 
 // ─── In-Memory Cache ───────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- EIA API returns dynamic data rows
 interface EiaDataResult {
   route: string;
   total: number;
   dateFormat: string | null;
   frequency: string | null;
   count: number;
-  data: Record<string, any>[];
+  data: Record<string, unknown>[];
   warning: string | null;
   fetchedAt: string;
 }
@@ -102,8 +101,7 @@ export async function browseRoute(route: string = "") {
     id: resp.id,
     name: resp.name,
     description: resp.description || null,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- EIA API returns dynamic JSON objects
-    routes: (resp.routes || []).map((r: Record<string, any>) => ({
+    routes: (resp.routes || []).map((r: { id?: string; name?: string; description?: string }) => ({
       id: r.id,
       name: r.name,
       description: r.description || null,
@@ -136,8 +134,7 @@ export async function getFacetValues(route: string, facetId: string) {
     route,
     facetId,
     totalFacets: resp.totalFacets || 0,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- EIA API returns dynamic facet shapes
-    facets: (resp.facets || []).map((f: Record<string, any>) => ({
+    facets: (resp.facets || []).map((f: { id?: string; name?: string; alias?: string }) => ({
       id: f.id,
       name: f.name,
       alias: f.alias || null,

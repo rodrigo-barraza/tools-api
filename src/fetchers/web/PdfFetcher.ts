@@ -24,7 +24,15 @@ export async function readPdfUrl(url: string, options: PdfOptions = {}) {
     return { error: "URL is required" };
   }
 
-  let parser: any;
+  // pdf-parse v2 types mark .load()/.getInfo()/.getText()/.destroy() as private,
+  // but they are the documented public API — define a local interface to bypass.
+  interface PdfParser {
+    load(): Promise<void>;
+    getInfo(): Promise<{ numPages?: number; info?: Record<string, string> }>;
+    getText(params?: Record<string, unknown>): Promise<{ text: string; total?: number }>;
+    destroy(): Promise<void>;
+  }
+  let parser: PdfParser | undefined;
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -63,7 +71,7 @@ export async function readPdfUrl(url: string, options: PdfOptions = {}) {
     }
 
     // pdf-parse v2: pass data in constructor, then load + extract
-    parser = new PDFParse({ data });
+    parser = new PDFParse({ data }) as unknown as PdfParser;
     await parser.load();
 
     const info = await parser.getInfo();
@@ -102,7 +110,7 @@ export async function readPdfUrl(url: string, options: PdfOptions = {}) {
       truncated,
     };
   } catch (error: unknown) {
-    if ((error as any).name === "AbortError") {
+    if (error instanceof Error && error.name === "AbortError") {
       return { error: `PDF download timed out after ${FETCH_TIMEOUT_MS / 1000}s`, url };
     }
     return { error: `PDF extraction failed: ${errorMessage(error)}`, url };

@@ -50,8 +50,8 @@ interface LspSymbol {
 interface LspActionParams {
   operation: string;
   filePath: string;
-  line: number;
-  character: number;
+  line?: number;
+  character?: number;
   workspacePath?: string;
 }
 
@@ -211,8 +211,8 @@ export async function agenticLspAction({ operation, filePath, line, character, w
     lspParams = {
       textDocument: { uri: fileUri },
       position: {
-        line: line - 1,
-        character: character - 1,
+        line: line! - 1,
+        character: character! - 1,
       },
     };
 

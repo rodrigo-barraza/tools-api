@@ -15,7 +15,7 @@ const GOOGLE_NEWS_RSS_URL = "https://news.google.com/rss";
  * Categorize a Google News article based on its source tag or section.
 
  */
-function categorizeArticle(section: any) {
+function categorizeArticle(section: string | null) {
   if (!section) return "general";
 
   const lower = section.toLowerCase();
@@ -57,7 +57,7 @@ export async function fetchGoogleNews() {
     },
   ];
 
-  const allArticles: unknown[] = [];
+  const allArticles: Array<{ title: string; link: string | null; pubDate: string | null; source: string | null; section: string }> = [];
   const seen = new Set();
 
   for (const { url, section } of sections) {
@@ -103,7 +103,7 @@ export async function fetchGoogleNews() {
 
   return allArticles
     .slice(0, GOOGLE_NEWS_ARTICLE_LIMIT)
-    .map((article: any, index: any) => ({
+    .map((article, index) => ({
       name: article.title,
       normalizedName: normalizeName(article.title),
       source: SOURCES.GOOGLE_NEWS,

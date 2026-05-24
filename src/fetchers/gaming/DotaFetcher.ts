@@ -6,15 +6,121 @@ const BASE_URL = "https://api.opendota.com/api";
 
 // ─── External API Response Types ────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- External OpenDota API returns dynamic JSON; typed interfaces would require maintaining parity with their undocumented schema
-type ApiResponse = Record<string, any>;
+interface OpenDotaHero {
+  id: number;
+  localized_name: string;
+  name: string;
+  primary_attr: string;
+  attack_type: string;
+  roles: string[];
+  legs: number;
+}
+
+interface OpenDotaHeroStats extends OpenDotaHero {
+  img?: string;
+  icon?: string;
+  base_health: number;
+  base_mana: number;
+  base_armor: number;
+  base_attack_min: number;
+  base_attack_max: number;
+  move_speed: number;
+  pro_win: number;
+  pro_pick: number;
+  turbo_picks: number;
+  turbo_wins: number;
+}
+
+interface OpenDotaMatchup {
+  hero_id: number;
+  games_played: number;
+  wins: number;
+}
+
+interface OpenDotaPlayer {
+  profile?: {
+    account_id?: number;
+    personaname?: string;
+    avatarfull?: string;
+    steamid?: string;
+    profileurl?: string;
+    loccountrycode?: string;
+  };
+  mmr_estimate?: { estimate?: number };
+  rank_tier?: number;
+  leaderboard_rank?: number;
+}
+
+interface OpenDotaWinLoss {
+  win: number;
+  lose: number;
+}
+
+interface OpenDotaRecentMatch {
+  match_id: number;
+  hero_id: number;
+  duration: number;
+  kills: number;
+  deaths: number;
+  assists: number;
+  last_hits: number;
+  denies: number;
+  xp_per_min: number;
+  gold_per_min: number;
+  player_slot: number;
+  radiant_win: boolean;
+  start_time: number;
+}
+
+interface OpenDotaMatchPlayer {
+  account_id?: number;
+  personaname?: string;
+  hero_id: number;
+  kills: number;
+  deaths: number;
+  assists: number;
+  last_hits: number;
+  denies: number;
+  gold_per_min: number;
+  xp_per_min: number;
+  hero_damage: number;
+  tower_damage: number;
+  hero_healing: number;
+  level: number;
+  isRadiant: boolean;
+}
+
+interface OpenDotaMatch {
+  match_id: number;
+  duration: number;
+  radiant_win: boolean;
+  radiant_score: number;
+  dire_score: number;
+  start_time: number;
+  game_mode: number;
+  lobby_type: number;
+  region: number;
+  players: OpenDotaMatchPlayer[];
+}
+
+interface OpenDotaProMatch {
+  match_id: number;
+  duration: number;
+  radiant_name?: string;
+  dire_name?: string;
+  radiant_win: boolean;
+  radiant_score: number;
+  dire_score: number;
+  league_name?: string;
+  start_time: number;
+}
 
 // Cache hero list in memory (static data, changes only on patches)
 let heroCache: TransformedHero[] | null = null;
 let heroCacheTime = 0;
 const HERO_CACHE_TTL = MS_PER_DAY;
 
-async function fetchJson<T = ApiResponse>(path: string): Promise<T> {
+async function fetchJson<T = Record<string, unknown>>(path: string): Promise<T> {
   const response = await fetch(`${BASE_URL}${path}`);
   if (!response.ok) {
     const text = await response.text();
@@ -64,14 +170,14 @@ export async function getHeroes(): Promise<TransformedHero[]> {
   if (heroCache && now - heroCacheTime < HERO_CACHE_TTL) return heroCache;
 
   const [heroes, stats] = await Promise.all([
-    fetchJson<ApiResponse[]>("/heroes"),
-    fetchJson<ApiResponse[]>("/heroStats"),
+    fetchJson<OpenDotaHero[]>("/heroes"),
+    fetchJson<OpenDotaHeroStats[]>("/heroStats"),
   ]);
 
   // Merge stats into hero objects
   const statsMap = new Map(stats.map((s) => [s.id, s]));
   heroCache = heroes.map((h) => {
-    const s = statsMap.get(h.id) || ({} as ApiResponse);
+    const s = statsMap.get(h.id) || ({} as Partial<OpenDotaHeroStats>);
     return {
       id: h.id,
       name: h.localized_name,
@@ -81,18 +187,18 @@ export async function getHeroes(): Promise<TransformedHero[]> {
       roles: h.roles,
       img: `https://cdn.cloudflare.steamstatic.com${s.img || ""}`,
       icon: `https://cdn.cloudflare.steamstatic.com${s.icon || ""}`,
-      baseHealth: s.base_health,
-      baseMana: s.base_mana,
-      baseArmor: s.base_armor,
-      baseAttackMin: s.base_attack_min,
-      baseAttackMax: s.base_attack_max,
-      moveSpeed: s.move_speed,
+      baseHealth: s.base_health || 0,
+      baseMana: s.base_mana || 0,
+      baseArmor: s.base_armor || 0,
+      baseAttackMin: s.base_attack_min || 0,
+      baseAttackMax: s.base_attack_max || 0,
+      moveSpeed: s.move_speed || 0,
       legs: h.legs,
       // Win rates across brackets
-      proWinRate: s.pro_pick ? ((s.pro_win / s.pro_pick) * 100).toFixed(1) + "%" : null,
+      proWinRate: s.pro_pick ? (((s.pro_win || 0) / s.pro_pick) * 100).toFixed(1) + "%" : null,
       proPick: s.pro_pick || 0,
       turboPick: s.turbo_picks || 0,
-      turboWinRate: s.turbo_picks ? ((s.turbo_wins / s.turbo_picks) * 100).toFixed(1) + "%" : null,
+      turboWinRate: s.turbo_picks ? (((s.turbo_wins || 0) / s.turbo_picks) * 100).toFixed(1) + "%" : null,
     };
   });
   heroCacheTime = now;
@@ -134,7 +240,7 @@ export async function getHero(query: string | number) {
  * Get hero matchup data (best/worst opponents).
  */
 export async function getHeroMatchups(heroId: number | string) {
-  const matchups = await fetchJson<ApiResponse[]>(`/heroes/${heroId}/matchups`);
+  const matchups = await fetchJson<OpenDotaMatchup[]>(`/heroes/${heroId}/matchups`);
 
   // Sort by win rate to find best/worst
   const withRates: TransformedMatchup[] = matchups
@@ -165,8 +271,8 @@ export async function getHeroMatchups(heroId: number | string) {
  */
 export async function getPlayer(accountId: number | string) {
   const [profile, wl] = await Promise.all([
-    fetchJson(`/players/${accountId}`),
-    fetchJson(`/players/${accountId}/wl`),
+    fetchJson<OpenDotaPlayer>(`/players/${accountId}`),
+    fetchJson<OpenDotaWinLoss>(`/players/${accountId}/wl`),
   ]);
 
   return {
@@ -192,7 +298,7 @@ export async function getPlayer(accountId: number | string) {
  * Get player's recent matches.
  */
 export async function getPlayerRecentMatches(accountId: number | string, limit = 10) {
-  const matches = await fetchJson<ApiResponse[]>(`/players/${accountId}/recentMatches`);
+  const matches = await fetchJson<OpenDotaRecentMatch[]>(`/players/${accountId}/recentMatches`);
   return matches.slice(0, limit).map((m) => ({
     matchId: m.match_id,
     heroId: m.hero_id,
@@ -221,7 +327,7 @@ export async function getPlayerRecentMatches(accountId: number | string, limit =
  * Get match details by match ID.
  */
 export async function getMatch(matchId: number | string) {
-  const m = await fetchJson(`/matches/${matchId}`);
+  const m = await fetchJson<OpenDotaMatch>(`/matches/${matchId}`);
 
   return {
     matchId: m.match_id,
@@ -234,7 +340,7 @@ export async function getMatch(matchId: number | string) {
     gameMode: m.game_mode,
     lobbyType: m.lobby_type,
     region: m.region,
-    players: (m.players || []).map((p: ApiResponse) => ({
+    players: (m.players || []).map((p: OpenDotaMatchPlayer) => ({
       accountId: p.account_id,
       personaName: p.personaname,
       heroId: p.hero_id,
@@ -261,7 +367,7 @@ export async function getMatch(matchId: number | string) {
  * Get recent professional matches.
  */
 export async function getProMatches(limit = 10) {
-  const matches = await fetchJson<ApiResponse[]>("/proMatches");
+  const matches = await fetchJson<OpenDotaProMatch[]>("/proMatches");
   return matches.slice(0, limit).map((m) => ({
     matchId: m.match_id,
     duration: m.duration,

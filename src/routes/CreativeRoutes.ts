@@ -29,7 +29,7 @@ const MAX_SAFETY_RETRIES = 3;
 // are replaced with policy-compliant creative alternatives.
 // ────────────────────────────────────────────────────────────
 
-const SAFETY_SOFTENING_TIERS = [
+const SAFETY_SOFTENING_TIERS: [RegExp, string][][] = [
   // ── Tier 1: Direct substitutions (nudity → clothing, violence → calm) ──
   [
     [/\bnaked\b/gi, "wearing flowing silk robes"],
@@ -105,10 +105,10 @@ const SAFETY_SOFTENING_TIERS = [
 
 
  */
-function softenPrompt(prompt: any, tier: any) {
+function softenPrompt(prompt: string, tier: number) {
   let softened = prompt;
-  for (let t = 0; t <= tier && t < SAFETY_SOFTENING_TIERS.length; t++) {
-    for (const [pattern, replacement] of SAFETY_SOFTENING_TIERS[t]) {
+  for (let tierIndex = 0; tierIndex <= tier && tierIndex < SAFETY_SOFTENING_TIERS.length; tierIndex++) {
+    for (const [pattern, replacement] of SAFETY_SOFTENING_TIERS[tierIndex]) {
       softened = softened.replace(pattern, replacement);
     }
   }
@@ -139,7 +139,7 @@ router.post("/generate-image", asyncHandler(async (req: Request, res: Response) 
 
   try {
     let currentPrompt = prompt;
-    let result: any = null;
+    let result: { text?: string; images?: { data: string; mimeType?: string }[]; safetyBlock?: boolean } | undefined;
     let safetyRetries = 0;
 
     for (let attempt = 0; attempt <= MAX_SAFETY_RETRIES; attempt++) {
@@ -182,7 +182,7 @@ router.post("/generate-image", asyncHandler(async (req: Request, res: Response) 
       }
 
       // Success — we got an image
-      if (!result.safetyBlock && result.images?.length > 0) {
+      if (!result.safetyBlock && (result.images?.length ?? 0) > 0) {
         break;
       }
 
@@ -208,7 +208,7 @@ router.post("/generate-image", asyncHandler(async (req: Request, res: Response) 
     }
 
     // All attempts exhausted — still blocked
-    if (result.safetyBlock) {
+    if (!result || result.safetyBlock) {
       return res.status(422).json({
         success: false,
         error:

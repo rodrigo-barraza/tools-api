@@ -65,8 +65,26 @@ const FIELD_MASK = [
 
 // ─── Normalize Response ───────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Google Places API returns dynamic place objects
-function normalizePlace(place: Record<string, any>) {
+interface GooglePlace {
+  id?: string;
+  displayName?: { text?: string };
+  primaryTypeDisplayName?: { text?: string };
+  primaryType?: string;
+  types?: string[];
+  formattedAddress?: string;
+  shortFormattedAddress?: string;
+  location?: { latitude?: number; longitude?: number };
+  rating?: number;
+  userRatingCount?: number;
+  priceLevel?: string;
+  nationalPhoneNumber?: string;
+  websiteUri?: string;
+  googleMapsUri?: string;
+  editorialSummary?: { text?: string };
+  currentOpeningHours?: { openNow?: boolean };
+}
+
+function normalizePlace(place: GooglePlace) {
   return {
     id: place.id,
     name: place.displayName?.text || null,

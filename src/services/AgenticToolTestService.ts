@@ -306,7 +306,7 @@ export async function testAllTools(toolNames?: string[]) {
   try {
     await ensureFixture();
 
-    const results: unknown[] = [];
+    const results: TransformedToolTestResult[] = [];
     for (const name of names) {
             const testFn = TESTS[name as keyof typeof TESTS];
       if (!testFn) {

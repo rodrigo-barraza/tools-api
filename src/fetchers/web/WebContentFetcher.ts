@@ -76,15 +76,26 @@ export interface WebContentOptions {
 }
 
 /**
+ * Common result shape returned by all platform fetchers.
+ * Each fetcher returns an object with optional `error` plus platform-specific fields.
+ */
+interface WebContentResult {
+  error?: string;
+  platform?: string;
+  [key: string]: unknown;
+}
+
+/**
  * Extract structured content from any URL.
  * Auto-detects GitHub, Reddit, Twitter/X, Hacker News, Stack Overflow,
  * or YouTube. Falls back to generic HTML extraction for unknown sites.
  */
-export async function getWebContent(url: string, options: WebContentOptions = {}) {
+export async function getWebContent(url: string, options: WebContentOptions = {}): Promise<WebContentResult> {
   const platform = detectPlatform(url);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- result holds diverse platform-specific return types
-  let result: any;
+  // Each platform fetcher returns a distinct shape — `as WebContentResult` is
+  // type-widening (every return is a structural subtype of WebContentResult).
+  let result: WebContentResult;
 
   switch (platform) {
     case "youtube":
@@ -92,23 +103,23 @@ export async function getWebContent(url: string, options: WebContentOptions = {}
         lang: options.lang,
         includeTranscript: options.transcript !== "false",
         includeTimestamps: true,
-      });
+      }) as WebContentResult;
       break;
 
     case "reddit":
       result = await getRedditThread(url, {
         commentLimit: options.commentLimit ? parseInt(options.commentLimit, 10) : undefined,
-      });
+      }) as WebContentResult;
       break;
 
     case "twitter":
-      result = await getTwitterPost(url);
+      result = await getTwitterPost(url) as WebContentResult;
       break;
 
     case "hackernews":
       result = await getHackerNewsThread(url, {
         commentLimit: options.commentLimit ? parseInt(options.commentLimit, 10) : undefined,
-      });
+      }) as WebContentResult;
       break;
 
     case "stackoverflow": {
@@ -116,7 +127,7 @@ export async function getWebContent(url: string, options: WebContentOptions = {}
       const soUrl = url.replace(/^(?:stackoverflow|so):/i, "");
       result = await getStackOverflowQuestion(soUrl, {
         answerLimit: options.answerLimit ? parseInt(options.answerLimit, 10) : undefined,
-      });
+      }) as WebContentResult;
       break;
     }
 
@@ -124,14 +135,14 @@ export async function getWebContent(url: string, options: WebContentOptions = {}
       result = await getGitHubRepo(url, {
         includeReadme: options.readme !== "false",
         includeLanguages: options.languages !== "false",
-      });
+      }) as WebContentResult;
       break;
 
     default:
       // Generic fallback — fetch + Cheerio extraction
       result = await fetchGenericPage(url, {
         maxChars: options.maxChars,
-      });
+      }) as WebContentResult;
       break;
   }
 
@@ -144,3 +155,4 @@ export async function getWebContent(url: string, options: WebContentOptions = {}
 }
 
 export { detectPlatform };
+

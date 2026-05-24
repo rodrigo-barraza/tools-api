@@ -35,6 +35,7 @@ import {
   getCaloricNeedsOptions,
 } from "../fetchers/health/CalorieCalculatorFetcher.ts";
 import { analyzeNutrientGaps } from "../fetchers/health/NutrientGapFetcher.ts";
+import type { FoodLogInputItem } from "../fetchers/health/NutrientGapFetcher.ts";
 import {
   findFoodSubstitutes,
   getDietaryPreferences,
@@ -309,7 +310,7 @@ router.get("/nutrition/gap-analysis", (req: Request, res: Response) => {
       error: "'foods' is required — JSON array of {name, grams} objects. Example: [{\"name\":\"chicken\",\"grams\":200}]",
     });
   }
-  let parsedFoods: any;
+  let parsedFoods: FoodLogInputItem[];
   try {
     parsedFoods = JSON.parse(foods);
   } catch {

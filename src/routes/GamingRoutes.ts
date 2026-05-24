@@ -27,13 +27,12 @@ router.get("/dota/heroes", asyncHandler(async (req: Request, res: Response) => {
 
     if (q) {
       const query = q.toLowerCase();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- OpenDota API returns dynamic hero shapes
-      filtered = filtered.filter((h: Record<string, any>) => h.name.toLowerCase().includes(query));
+      filtered = filtered.filter((h) => h.name.toLowerCase().includes(query));
     }
 
     if (role) {
       const roleLower = role.toLowerCase();
-      filtered = filtered.filter((h: Record<string, any>) =>
+      filtered = filtered.filter((h) =>
         h.roles.some((r: string) => r.toLowerCase() === roleLower),
       );
     }
@@ -41,7 +40,7 @@ router.get("/dota/heroes", asyncHandler(async (req: Request, res: Response) => {
     if (attr) {
       const attrMap: Record<string, string> = { str: "str", agi: "agi", int: "int", all: "all", universal: "all" };
       const attrKey = attrMap[attr.toLowerCase()] || attr.toLowerCase();
-      filtered = filtered.filter((h: Record<string, any>) => h.primaryAttr === attrKey);
+      filtered = filtered.filter((h) => h.primaryAttr === attrKey);
     }
 
     res.json({ count: filtered.length, heroes: filtered });
@@ -75,8 +74,8 @@ router.get("/dota/heroes/:heroId/matchups", asyncHandler(async (req: Request, re
       getHeroes(),
     ]);
 
-    const heroMap = new Map(heroes.map((h: Record<string, any>) => [h.id, h.name]));
-    const enrichMatchup = (m: Record<string, any>) => ({ ...m, heroName: heroMap.get(m.heroId) || "Unknown" });
+    const heroMap = new Map(heroes.map((h) => [h.id, h.name]));
+    const enrichMatchup = (m: { heroId: number; gamesPlayed: number; wins: number; winRate: string }) => ({ ...m, heroName: heroMap.get(m.heroId) || "Unknown" });
 
     res.json({
       ...matchups,
@@ -116,8 +115,8 @@ router.get("/dota/players/:accountId/matches", asyncHandler(async (req: Request,
       getHeroes(),
     ]);
 
-    const heroMap = new Map(heroes.map((h: Record<string, any>) => [h.id, h.name]));
-    const enriched = matches.map((m: Record<string, any>) => ({
+    const heroMap = new Map(heroes.map((h) => [h.id, h.name]));
+    const enriched = matches.map((m) => ({
       ...m,
       heroName: heroMap.get(m.heroId) || "Unknown",
     }));
@@ -142,8 +141,8 @@ router.get("/dota/matches/:matchId", asyncHandler(async (req: Request, res: Resp
       getHeroes(),
     ]);
 
-    const heroMap = new Map(heroes.map((h: Record<string, any>) => [h.id, h.name]));
-    match.players = match.players.map((p: Record<string, any>) => ({
+    const heroMap = new Map(heroes.map((h) => [h.id, h.name]));
+    match.players = match.players.map((p) => ({
       ...p,
       heroName: heroMap.get(p.heroId) || "Unknown",
     }));
@@ -178,7 +177,7 @@ router.get("/dota", asyncHandler(async (req: Request, res: Response) => {
   }
 
   // Build query string for sub-routes
-  const qs = (params: Record<string, string | undefined>) => {
+  const buildQueryString = (params: Record<string, string | undefined>) => {
     const searchParams = new URLSearchParams();
     for (const [k, v] of Object.entries(params)) {
       if (v !== undefined && v !== null) searchParams.set(k, String(v));
@@ -189,7 +188,7 @@ router.get("/dota", asyncHandler(async (req: Request, res: Response) => {
 
   switch (action) {
     case "heroes":
-      req.url = `/dota/heroes${qs({ q: query, role, attr })}`;
+      req.url = `/dota/heroes${buildQueryString({ q: query, role, attr })}`;
       return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
     case "hero":
       if (!query) return res.status(400).json({ error: "'query' is required for action=hero (hero name or ID)" });
@@ -208,7 +207,7 @@ router.get("/dota", asyncHandler(async (req: Request, res: Response) => {
       return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
     case "player_matches":
       if (!accountId) return res.status(400).json({ error: "'accountId' is required for action=player_matches" });
-      req.url = `/dota/players/${accountId}/matches${qs({ limit })}`;
+      req.url = `/dota/players/${accountId}/matches${buildQueryString({ limit })}`;
       req.params.accountId = String(accountId);
       return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
     case "match":
@@ -217,7 +216,7 @@ router.get("/dota", asyncHandler(async (req: Request, res: Response) => {
       req.params.matchId = String(matchId);
       return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
     case "pro_matches":
-      req.url = `/dota/pro-matches${qs({ limit })}`;
+      req.url = `/dota/pro-matches${buildQueryString({ limit })}`;
       return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
     default:
       return res.status(400).json({
