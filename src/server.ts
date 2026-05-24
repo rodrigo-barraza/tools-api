@@ -2,7 +2,7 @@ import http from "node:http";
 import express, { type Request, type Response, type NextFunction } from "express";
 import logger from "./logger.ts";
 import CONFIG, { applyLocation } from "./config.ts";
-import { connectDB } from "./db.ts";
+import { connectDB } from "@rodrigo-barraza/utilities-library/mongo";
 import { initLocation } from "./services/LocationService.ts";
 import { requestLoggerMiddleware, setupRequestsCollection } from "./middleware/RequestLoggerMiddleware.ts";
 import { toolCallLoggerMiddleware } from "./middleware/ToolCallLoggerMiddleware.ts";

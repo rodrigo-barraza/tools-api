@@ -1,6 +1,6 @@
 import type { Collection, Db } from "mongodb";
 import { days as daysToMs } from "@rodrigo-barraza/utilities-library";
-import { getDB } from "../db.ts";
+import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
 

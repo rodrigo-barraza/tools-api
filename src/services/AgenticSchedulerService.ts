@@ -1,6 +1,6 @@
 // ─── Cron + Remote Trigger System ───────────────────────────
 
-import { getDB } from "../db.ts";
+import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
 

@@ -21,7 +21,7 @@ import {
   refreshAllowedRoots,
 } from "../services/AgenticFileService.ts";
 import { getConnectedAgents } from "../services/AgentConnectionManager.ts";
-import { getDB } from "../db.ts";
+import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
 

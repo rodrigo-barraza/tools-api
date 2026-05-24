@@ -2,7 +2,7 @@ import { performance } from "node:perf_hooks";
 import type { Request, Response, NextFunction } from "express";
 import { formatBytes } from "@rodrigo-barraza/utilities-library";
 import logger from "../logger.ts";
-import { getDB } from "../db.ts";
+import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
 import { errorMessage } from "../utilities.ts";
 
 const COLLECTION = "requests";

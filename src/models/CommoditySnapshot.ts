@@ -1,5 +1,5 @@
 import { hours as hoursToMs } from "@rodrigo-barraza/utilities-library";
-import { getDB } from "../db.ts";
+import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
 import logger from "../logger.ts";
 
 // ─── Types ──────────────────────────────────────────────────────

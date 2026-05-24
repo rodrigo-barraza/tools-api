@@ -1,4 +1,4 @@
-import { getDB } from "../db.ts";
+import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
 import { lookupIp } from "../fetchers/utility/IpInfoFetcher.ts";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
