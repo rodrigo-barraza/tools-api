@@ -280,8 +280,8 @@ export function buildLocalUrl(routePath: string, params?: Record<string, string>
   const selfBaseUrl = CONFIG.TOOLS_SERVICE_URL;
   const base = `${selfBaseUrl}/${routePath}`;
   if (!params || Object.keys(params).length === 0) return base;
-  const qs = new URLSearchParams(params).toString();
-  return `${base}?${qs}`;
+  const queryString = new URLSearchParams(params).toString();
+  return `${base}?${queryString}`;
 }
 
 // ─── HTML Embed Shell ─────────────────────────────────────────

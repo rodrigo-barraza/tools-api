@@ -118,8 +118,8 @@ export function generateAnsiArt(params: Required<Omit<BonfireParams, "itemToBurn
     const m1Start = 10;
     const m1Stick = "=========(O)";
     for (let i = 0; i < mStickLength(m1Stick, 27 + m1Skew - 4); i++) {
-      const col = m1Start + i;
-      if (col < width) grid[m1Row][col] = m1Stick[i] || "=";
+      const column = m1Start + i;
+      if (column < width) grid[m1Row][column] = m1Stick[i] || "=";
     }
 
     // Marshmallow 2 (Right side, if > 1)
@@ -130,8 +130,8 @@ export function generateAnsiArt(params: Required<Omit<BonfireParams, "itemToBurn
       const m2Stick = "(O)=========";
       const m2Start = 27 + m2Skew + 4;
       for (let i = 0; i < m2Stick.length; i++) {
-        const col = m2Start + i;
-        if (col < width && col <= m2End) grid[m2Row][col] = m2Stick[i];
+        const column = m2Start + i;
+        if (column < width && col <= m2End) grid[m2Row][column] = m2Stick[i];
       }
     }
   }
@@ -241,9 +241,9 @@ export function generateAnsiArt(params: Required<Omit<BonfireParams, "itemToBurn
 function writeStringAtGrid(grid: string[][], row: number, startCol: number, text: string) {
   if (row < 0 || row >= grid.length) return;
   for (let i = 0; i < text.length; i++) {
-    const col = startCol + i;
+    const column = startCol + i;
     if (col >= 0 && col < grid[row].length) {
-      grid[row][col] = text[i];
+      grid[row][column] = text[i];
     }
   }
 }

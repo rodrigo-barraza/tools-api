@@ -377,12 +377,12 @@ export function buildMealPlan({
     if (target <= 0) continue;
     const remaining = remainingGaps[nutrient] || 0;
     const consumed = target - remaining;
-    const pct = (consumed / target) * 100;
+    const percentage = (consumed / target) * 100;
     coverage[nutrient] = {
       consumed: Number(consumed.toFixed(2)),
       target: Number(target.toFixed(2)),
-      pctCovered: Number(pct.toFixed(1)),
-      status: pct >= 90 ? "✅" : pct >= 50 ? "⚠️" : "❌",
+      pctCovered: Number(percentage.toFixed(1)),
+      status: percentage >= 90 ? "✅" : percentage >= 50 ? "⚠️" : "❌",
     };
   }
 

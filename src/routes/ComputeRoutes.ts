@@ -483,11 +483,11 @@ router.post("/csv", (req: Request, res: Response) => {
     // Escape CSV values
     const escape = (value: unknown) => {
       if (value === null || value === undefined) return "";
-      const str = String(value);
-      if (str.includes(delim) || str.includes('"') || str.includes("\n")) {
-        return `"${str.replace(/"/g, '""')}"`;
+      const stringValue = String(value);
+      if (stringValue.includes(delim) || stringValue.includes('"') || stringValue.includes("\n")) {
+        return `"${stringValue.replace(/"/g, '""')}"`;
       }
-      return str;
+      return stringValue;
     };
     const lines = [cols.map(escape).join(delim)];
     for (const row of data) {

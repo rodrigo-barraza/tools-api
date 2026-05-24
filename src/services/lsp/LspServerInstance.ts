@@ -229,9 +229,9 @@ export function createLspServerInstance(name: string, config: LspServerConfig): 
         break;
       }
     }
-    const errMsg = lastAttemptError instanceof Error ? lastAttemptError.message : String(lastAttemptError);
+    const errorMessage = lastAttemptError instanceof Error ? lastAttemptError.message : String(lastAttemptError);
     throw new Error(
-      `LSP request '${method}' failed for server '${name}': ${errMsg}`,
+      `LSP request '${method}' failed for server '${name}': ${errorMessage}`,
     );
   }
 
