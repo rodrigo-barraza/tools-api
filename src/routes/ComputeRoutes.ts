@@ -1117,16 +1117,33 @@ function buildTurtleEmbedHtml(commands: string[], options: Record<string, unknow
   const commandsJson = JSON.stringify(commands);
   return buildEmbedHtml({
     styles: `
-  canvas {
-    border-radius: 12px;
-    box-shadow: 0 0 40px rgba(56, 189, 248, 0.08);
+  html, body {
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 12px !important;
+    overflow: hidden !important;
   }
   #container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
     max-width: 100%;
+    max-height: 100%;
+    gap: 8px;
+    overflow: hidden;
+  }
+  canvas {
+    max-width: 100%;
+    max-height: calc(100% - 40px);
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 12px;
+    box-shadow: 0 0 40px rgba(56, 189, 248, 0.08);
   }
   #title {
     color: #94a3b8;
