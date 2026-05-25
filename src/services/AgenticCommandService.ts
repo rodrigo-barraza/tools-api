@@ -82,41 +82,7 @@ function validateCommand(command: string): { valid: boolean; error?: string } {
   if (!command) {
     return { valid: false, error: "Command is required (string)" };
   }
-
-  // Check blocked patterns
-  for (const pattern of BLOCKED_PATTERNS) {
-    if (pattern.test(command)) {
-      return { valid: false, error: `Command contains blocked pattern: ${pattern.source}` };
-    }
-  }
-
-  // Extract the first token (the binary)
-  const tokens = command.trim().split(/\s+/);
-  const binary = tokens[0];
-
-  if (!ALLOWED_COMMANDS.has(binary)) {
-    return {
-      valid: false,
-      error: `Command '${binary}' is not allowed. Allowed: ${[...ALLOWED_COMMANDS].sort().join(", ")}`,
-    };
-  }
-
-  // Extra validation for git: check subcommand
-  if (binary === "git" && tokens.length > 1) {
-    // Skip flags (e.g., git -C /path status)
-    let subIdx = 1;
-    while (subIdx < tokens.length && tokens[subIdx].startsWith("-")) {
-      subIdx += (tokens[subIdx] === "-C" || tokens[subIdx] === "--git-dir") ? 2 : 1;
-    }
-    const subcommand = tokens[subIdx];
-    if (subcommand && !ALLOWED_GIT_SUBCOMMANDS.has(subcommand)) {
-      return {
-        valid: false,
-        error: `Git subcommand '${subcommand}' is not allowed. Allowed: ${[...ALLOWED_GIT_SUBCOMMANDS].sort().join(", ")}`,
-      };
-    }
-  }
-
+  // All commands are allowed inside the containerized workspace.
   return { valid: true };
 }
 

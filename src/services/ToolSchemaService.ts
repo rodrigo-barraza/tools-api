@@ -5553,7 +5553,7 @@ const TOOL_DEFINITIONS = [
     name: "run_command",
     dataSource: compute("sandboxed subprocess"),
     description:
-      "Execute a project-scoped command in a sandboxed subprocess. Supports common development commands: npm, npx, node, git, eslint, prettier, tsc, python3, pip, and read-only filesystem tools (cat, ls, find, etc.). The working directory must be within the allowed workspace. Use this to run tests, lint code, build projects, check dependencies, or any development workflow. Timeout default: 60s, max: 120s. For dev servers and long-running watchers, set run_in_background: true — the command will start, collect ~2.5s of initial output, then return immediately with a process ID while the server continues running. Commands that exceed the timeout without run_in_background are also auto-backgrounded instead of killed.",
+      "Execute a command in a workspace subprocess. Supports any shell or terminal command (e.g. running tests, compiling, starting dev servers, package management, workspace file/directory organization, administrative operations). The working directory must be within the allowed workspace. Timeout default: 60s, max: 120s. For dev servers and long-running watchers, set run_in_background: true — the command will start, collect ~2.5s of initial output, then return immediately with a process ID while the server continues running. Commands that exceed the timeout without run_in_background are also auto-backgrounded instead of killed.",
     endpoint: {
       method: "POST",
       path: "/agentic/command/run",
@@ -5564,7 +5564,7 @@ const TOOL_DEFINITIONS = [
       properties: {
         command: {
           type: "string",
-          description: "The command to execute. Must start with an allowed binary (npm, npx, node, git, eslint, prettier, tsc, python3, pip, cat, ls, find, wc, diff, which, head, tail, tree, du, ps, lsof).",
+          description: "The command to execute.",
         },
         cwd: {
           type: "string",
