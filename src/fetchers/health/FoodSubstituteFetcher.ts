@@ -122,8 +122,8 @@ function cosineSimilarity(a: number[], b: number[]): number {
   return dot / (Math.sqrt(magA) * Math.sqrt(magB));
 }
 
-function normalizeSearch(str: string): string {
-  return str.toLowerCase().replace(/[^a-z0-9\s]/g, "");
+function normalizeSearch(searchText: string): string {
+  return searchText.toLowerCase().replace(/[^a-z0-9\s]/g, "");
 }
 
 // ─── Kingdom/Type Filters ──────────────────────────────────────

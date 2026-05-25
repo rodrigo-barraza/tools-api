@@ -109,8 +109,8 @@ const INTERACTION_DB: DrugNutrientInteraction[] = [
 
 // ─── Search Helpers ────────────────────────────────────────────
 
-function normalizeSearch(str: string): string {
-  return str.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
+function normalizeSearch(searchText: string): string {
+  return searchText.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
 }
 
 // ─── Public API ────────────────────────────────────────────────

@@ -129,8 +129,8 @@ function computeGapScore(remainingGaps: Record<string, number>, food: FoodItem, 
   return score;
 }
 
-function normalizeSearch(str: string): string {
-  return str.toLowerCase().replace(/[^a-z0-9\s]/g, "");
+function normalizeSearch(searchText: string): string {
+  return searchText.toLowerCase().replace(/[^a-z0-9\s]/g, "");
 }
 
 // ─── Public API ────────────────────────────────────────────────

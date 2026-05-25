@@ -178,18 +178,18 @@ export function calculateCaloricNeeds({
     protein: {
       grams: Math.round(proteinKcal / 4),
       kcal: Math.round(proteinKcal),
-      pct: Math.round(split.protein * 100),
+      percentage: Math.round(split.protein * 100),
       perKgBodyweight: Number((proteinKcal / 4 / weightKg).toFixed(1)),
     },
     carbohydrates: {
       grams: Math.round(carbsKcal / 4),
       kcal: Math.round(carbsKcal),
-      pct: Math.round(split.carbs * 100),
+      percentage: Math.round(split.carbs * 100),
     },
     fat: {
       grams: Math.round(fatKcal / 9),
       kcal: Math.round(fatKcal),
-      pct: Math.round(split.fat * 100),
+      percentage: Math.round(split.fat * 100),
     },
   };
 

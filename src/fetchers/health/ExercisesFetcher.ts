@@ -100,12 +100,12 @@ function ensureLoaded(): void {
   logger.info(`🏋️ Exercises DB loaded: ${totalCount} exercises from ${files.length} sources`);
 }
 
-function normalizeSearch(str: string): string {
-  return str.toLowerCase().replace(/[^a-z0-9\s]/g, "");
+function normalizeSearch(searchText: string): string {
+  return searchText.toLowerCase().replace(/[^a-z0-9\s]/g, "");
 }
 
-function normalizeQuery(str: string | undefined | null): string {
-  return str ? str.toLowerCase().trim() : "";
+function normalizeQuery(searchText: string | undefined | null): string {
+  return searchText ? searchText.toLowerCase().trim() : "";
 }
 
 export interface SearchExercisesOptions {

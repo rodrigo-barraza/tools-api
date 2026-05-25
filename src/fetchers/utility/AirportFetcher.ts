@@ -119,8 +119,8 @@ function ensureLoaded(): void {
 
 // ─── Helpers ───────────────────────────────────────────────────
 
-function normalizeSearch(str: string): string {
-  return str.toLowerCase().replace(/[^a-z0-9\s]/g, "");
+function normalizeSearch(searchText: string): string {
+  return searchText.toLowerCase().replace(/[^a-z0-9\s]/g, "");
 }
 
 function formatAirport(ap: AirportInfo): FormattedAirport {

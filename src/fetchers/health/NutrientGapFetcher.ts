@@ -97,23 +97,23 @@ const REQUIREMENT_TO_FOOD_COLUMN = {
 const FOOD_COLUMN_UNITS: Record<string, string> = {};
 
 // Build from all field maps
-for (const [col, label] of Object.entries(NUTRITION_MACRO_FIELDS)) {
-  FOOD_COLUMN_UNITS[col] = label.endsWith("_g") ? "g" : label.endsWith("_kcal") ? "kcal" : label.endsWith("_kj") ? "kj" : "g";
+for (const [columnKey, label] of Object.entries(NUTRITION_MACRO_FIELDS)) {
+  FOOD_COLUMN_UNITS[columnKey] = label.endsWith("_g") ? "g" : label.endsWith("_kcal") ? "kcal" : label.endsWith("_kj") ? "kj" : "g";
 }
-for (const [col, label] of Object.entries(NUTRITION_MINERAL_FIELDS)) {
-  FOOD_COLUMN_UNITS[col] = label.endsWith("_mcg") ? "mcg" : "mg";
+for (const [columnKey, label] of Object.entries(NUTRITION_MINERAL_FIELDS)) {
+  FOOD_COLUMN_UNITS[columnKey] = label.endsWith("_mcg") ? "mcg" : "mg";
 }
-for (const [col, label] of Object.entries(NUTRITION_VITAMIN_FIELDS)) {
-  FOOD_COLUMN_UNITS[col] = label.endsWith("_mcg") ? "mcg" : label.endsWith("_IU") ? "IU" : "mg";
+for (const [columnKey, label] of Object.entries(NUTRITION_VITAMIN_FIELDS)) {
+  FOOD_COLUMN_UNITS[columnKey] = label.endsWith("_mcg") ? "mcg" : label.endsWith("_IU") ? "IU" : "mg";
 }
-for (const [col] of Object.entries(NUTRITION_AMINO_ACID_FIELDS)) {
-  FOOD_COLUMN_UNITS[col] = "g";
+for (const [columnKey] of Object.entries(NUTRITION_AMINO_ACID_FIELDS)) {
+  FOOD_COLUMN_UNITS[columnKey] = "g";
 }
-for (const [col] of Object.entries(NUTRITION_LIPID_FIELDS)) {
-  FOOD_COLUMN_UNITS[col] = "g";
+for (const [columnKey] of Object.entries(NUTRITION_LIPID_FIELDS)) {
+  FOOD_COLUMN_UNITS[columnKey] = "g";
 }
-for (const [col] of Object.entries(NUTRITION_STEROL_FIELDS)) {
-  FOOD_COLUMN_UNITS[col] = "mg";
+for (const [columnKey] of Object.entries(NUTRITION_STEROL_FIELDS)) {
+  FOOD_COLUMN_UNITS[columnKey] = "mg";
 }
 
 // ─── Unit Conversion Helpers ───────────────────────────────────
@@ -339,8 +339,8 @@ export function analyzeNutrientGaps({
   };
 
   const labelToColumn: Record<string, string> = {};
-  for (const [col, label] of Object.entries(ALL_FIELD_MAPS)) {
-    labelToColumn[label] = col;
+  for (const [columnKey, label] of Object.entries(ALL_FIELD_MAPS)) {
+    labelToColumn[label] = columnKey;
   }
 
   // ── Gap analysis per nutrient ────────────────────────────────

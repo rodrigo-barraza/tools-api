@@ -62,8 +62,8 @@ function htmlToText(html: string) {
     .trim();
 }
 
-function decodeHtmlEntities(str: string) {
-  return str
+function decodeHtmlEntities(htmlString: string) {
+  return htmlString
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")

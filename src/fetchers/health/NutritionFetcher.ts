@@ -187,8 +187,8 @@ function ensureLoaded(): void {
 
 // ─── Search Helpers ────────────────────────────────────────────
 
-function normalizeSearch(str: string): string {
-  return str.toLowerCase().replace(/[^a-z0-9\s]/g, "");
+function normalizeSearch(searchText: string): string {
+  return searchText.toLowerCase().replace(/[^a-z0-9\s]/g, "");
 }
 
 function scoreMatch(food: FoodRow, terms: string[]): number {
@@ -629,16 +629,16 @@ function resolveNutrientColumn(category: string, nutrient: string) {
   }
 
   // Match by label value (e.g. "calcium_mg" → "calcium")
-  for (const [col, label] of Object.entries(fields)) {
+  for (const [columnKey, label] of Object.entries(fields)) {
     if ((label as string).toLowerCase() === lower) {
-      return { column: col, label };
+      return { column: columnKey, label };
     }
   }
 
   // Partial match on column or label
-  for (const [col, label] of Object.entries(fields)) {
-    if (col.includes(lower) || (label as string).toLowerCase().includes(lower)) {
-      return { column: col, label };
+  for (const [columnKey, label] of Object.entries(fields)) {
+    if (columnKey.includes(lower) || (label as string).toLowerCase().includes(lower)) {
+      return { column: columnKey, label };
     }
   }
 
@@ -668,8 +668,8 @@ export function getTopFoodsByCategory(category: string, nutrient: string, opts: 
   if (!resolved) {
     return {
       error: `Unknown nutrient "${nutrient}" in category "${category}"`,
-      availableNutrients: Object.entries(fields).map(([col, label]) => ({
-        column: col,
+      availableNutrients: Object.entries(fields).map(([columnKey, label]) => ({
+        column: columnKey,
         label,
       })),
     };

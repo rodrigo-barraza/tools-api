@@ -199,7 +199,7 @@ function normalizeArray(value: unknown): unknown[] {
   return [value];
 }
 
-function stripCdata(str: string): string {
-  if (!str) return "";
-  return str.replace(/<!\[CDATA\[|\]\]>/g, "").trim();
+function stripCdata(cdataString: string): string {
+  if (!cdataString) return "";
+  return cdataString.replace(/<!\[CDATA\[|\]\]>/g, "").trim();
 }
