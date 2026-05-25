@@ -1,4 +1,6 @@
+import { describe, it, expect } from "vitest";
 import express from "express";
+import request from "supertest";
 import { fieldProjectionMiddleware } from "../src/middleware/FieldProjectionMiddleware.ts";
 
 // ─── Test Fixtures ─────────────────────────────────────────────
@@ -86,33 +88,17 @@ const MOCK_PRODUCTS = {
 
 // ─── Test Server ───────────────────────────────────────────────
 
-let server;
-let baseUrl;
+const app = express();
+app.use(fieldProjectionMiddleware);
 
-beforeAll(async () => {
-  const app = express();
-  app.use(fieldProjectionMiddleware);
+app.get("/nutrition/search", (_req, res) => res.json(MOCK_NUTRITION_SEARCH));
+app.get("/nutrition/compare", (_req, res) => res.json(MOCK_COMPARISON));
+app.get("/nutrition/rank", (_req, res) => res.json(MOCK_RANKED));
+app.get("/products", (_req, res) => res.json(MOCK_PRODUCTS));
 
-  app.get("/nutrition/search", (_req, res) => res.json(MOCK_NUTRITION_SEARCH));
-  app.get("/nutrition/compare", (_req, res) => res.json(MOCK_COMPARISON));
-  app.get("/nutrition/rank", (_req, res) => res.json(MOCK_RANKED));
-  app.get("/products", (_req, res) => res.json(MOCK_PRODUCTS));
-
-  await new Promise((resolve) => {
-    server = app.listen(0, () => {
-      baseUrl = `http://localhost:${server.address().port}`;
-      resolve();
-    });
-  });
-});
-
-afterAll(() => {
-  server?.close();
-});
-
-async function fetchJson(path) {
-  const res = await fetch(`${baseUrl}${path}`);
-  return res.json();
+async function fetchJson(path: string) {
+  const res = await request(app).get(path);
+  return res.body;
 }
 
 // ─── foods wrapper ─────────────────────────────────────────────
@@ -129,11 +115,11 @@ describe("FieldProjection — foods wrapper", () => {
 
   it("projects name only from foods array items", async () => {
     const data = await fetchJson("/nutrition/search?fields=name");
-    expect(data.count).toBe(2, "metadata preserved");
-    expect(data.query).toBe("banana", "metadata preserved");
+    expect(data.count).toBe(2);
+    expect(data.query).toBe("banana");
     expect(data.foods.length).toBe(2);
     expect(data.foods[0].name).toBe("banana");
-    expect(data.foods[0].description).toBe(undefined, "non-requested field stripped");
+    expect(data.foods[0].description).toBe(undefined);
     expect(data.foods[0].kingdom).toBe(undefined);
     expect(data.foods[0].perHundredGrams).toBe(undefined);
   });
@@ -148,9 +134,9 @@ describe("FieldProjection — foods wrapper", () => {
     expect(food.name).toBe("banana");
     expect(food.perHundredGrams.macros).toBeTruthy();
     expect(food.perHundredGrams.macros.calories_kcal).toBe(89);
-    expect(food.perHundredGrams.minerals).toBe(undefined, "minerals excluded");
-    expect(food.perHundredGrams.vitamins).toBe(undefined, "vitamins excluded");
-    expect(food.description).toBe(undefined, "description excluded");
+    expect(food.perHundredGrams.minerals).toBe(undefined);
+    expect(food.perHundredGrams.vitamins).toBe(undefined);
+    expect(food.description).toBe(undefined);
   });
 
   it("projects multiple nested paths", async () => {
@@ -161,7 +147,7 @@ describe("FieldProjection — foods wrapper", () => {
     expect(food.name).toBe("banana");
     expect(food.perHundredGrams.macros).toBeTruthy();
     expect(food.perHundredGrams.minerals).toBeTruthy();
-    expect(food.perHundredGrams.vitamins).toBe(undefined, "vitamins excluded");
+    expect(food.perHundredGrams.vitamins).toBe(undefined);
   });
 
   it("projects name and description together", async () => {
@@ -182,7 +168,7 @@ describe("FieldProjection — foods wrapper", () => {
     const food = data.foods[0];
     expect(food.name).toBe("banana");
     expect(food.taxonomy.genus).toBe("Musa");
-    expect(food.taxonomy.species).toBe(undefined, "species not requested");
+    expect(food.taxonomy.species).toBe(undefined);
   });
 
   it("preserves top-level metadata when projecting foods", async () => {
@@ -213,8 +199,8 @@ describe("FieldProjection — comparison wrapper", () => {
     expect(item.query).toBe("chicken");
     expect(item.name).toBe("chicken");
     expect(item.perHundredGrams.macros).toBeTruthy();
-    expect(item.perHundredGrams.minerals).toBe(undefined, "minerals excluded");
-    expect(item.found).toBe(undefined, "found excluded");
+    expect(item.perHundredGrams.minerals).toBe(undefined);
+    expect(item.found).toBe(undefined);
   });
 
   it("preserves comparison metadata", async () => {
@@ -234,7 +220,7 @@ describe("FieldProjection — ranked foods wrapper", () => {
     const food = data.foods[0];
     expect(food.name).toBe("spirulina");
     expect(food.value).toBe(57.47);
-    expect(food.kingdom).toBe(undefined, "kingdom excluded");
+    expect(food.kingdom).toBe(undefined);
   });
 
   it("preserves nutrient metadata", async () => {
@@ -251,8 +237,8 @@ describe("FieldProjection — internal field stripping", () => {
     const data = await fetchJson("/products");
     expect(data.products.length).toBe(1);
     expect(data.products[0].name).toBe("Test Product");
-    expect(data.products[0]._id).toBe(undefined, "_id should be stripped");
-    expect(data.products[0].__v).toBe(undefined, "__v should be stripped");
+    expect(data.products[0]._id).toBe(undefined);
+    expect(data.products[0].__v).toBe(undefined);
   });
 
   it("strips _id and __v from array items with fields param", async () => {
@@ -262,7 +248,7 @@ describe("FieldProjection — internal field stripping", () => {
     expect(product.brand).toBe("TestBrand");
     expect(product._id).toBe(undefined);
     expect(product.__v).toBe(undefined);
-    expect(product.code).toBe(undefined, "non-requested field excluded");
+    expect(product.code).toBe(undefined);
   });
 });
 
@@ -307,9 +293,9 @@ describe("FieldProjection — wrapper-prefix dot-notation", () => {
     const data = await fetchJson("/nutrition/search?fields=foods.name");
     expect(data.foods.length).toBe(2);
     expect(data.foods[0].name).toBe("banana");
-    expect(data.foods[0].description).toBe(undefined, "description excluded");
-    expect(data.foods[0].kingdom).toBe(undefined, "kingdom excluded");
-    expect(data.foods[0].perHundredGrams).toBe(undefined, "nutrients excluded");
+    expect(data.foods[0].description).toBe(undefined);
+    expect(data.foods[0].kingdom).toBe(undefined);
+    expect(data.foods[0].perHundredGrams).toBe(undefined);
   });
 
   it("projects foods.name,foods.description → multiple wrapper-prefixed fields", async () => {
@@ -328,7 +314,7 @@ describe("FieldProjection — wrapper-prefix dot-notation", () => {
     expect(data.foods.length).toBe(2);
     expect(data.foods[0].name).toBe("spirulina");
     expect(data.foods[0].value).toBe(57.47);
-    expect(data.foods[0].kingdom).toBe(undefined, "kingdom excluded");
+    expect(data.foods[0].kingdom).toBe(undefined);
   });
 
   it("preserves top-level metadata when using wrapper-prefixed fields", async () => {
@@ -351,7 +337,7 @@ describe("FieldProjection — wrapper-prefix dot-notation", () => {
     expect(data.foods[0].value).toBe(57.47);
     expect(data.foods[0].kingdom).toBe(undefined);
     // Non-requested top-level metadata should be stripped
-    expect(data.note).toBe(undefined, "note not requested");
+    expect(data.note).toBe(undefined);
   });
 
   it("projects wrapper-prefixed nested paths (foods.perHundredGrams.macros)", async () => {
@@ -360,7 +346,7 @@ describe("FieldProjection — wrapper-prefix dot-notation", () => {
     );
     expect(data.foods[0].name).toBe("banana");
     expect(data.foods[0].perHundredGrams.macros).toBeTruthy();
-    expect(data.foods[0].perHundredGrams.minerals).toBe(undefined, "minerals excluded");
+    expect(data.foods[0].perHundredGrams.minerals).toBe(undefined);
   });
 
   it("bare 'foods' alongside prefixed fields keeps full array unprojected", async () => {
@@ -388,8 +374,8 @@ describe("FieldProjection — wrapper-prefix dot-notation", () => {
     expect(data.comparison.length).toBe(2);
     expect(data.comparison[0].query).toBe("chicken");
     expect(data.comparison[0].name).toBe("chicken");
-    expect(data.comparison[0].found).toBe(undefined, "found excluded");
-    expect(data.comparison[0].perHundredGrams).toBe(undefined, "nutrients excluded");
+    expect(data.comparison[0].found).toBe(undefined);
+    expect(data.comparison[0].perHundredGrams).toBe(undefined);
   });
 });
 
