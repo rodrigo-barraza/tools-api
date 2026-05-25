@@ -7483,68 +7483,122 @@ const TOOL_DEFINITIONS = [
 
   // ── Scheduling ────────────────────────────────────────────
   {
-    name: "cron_create",
+    name: "scheduled_task_create",
     dataSource: onDemand("AgenticSchedulerService"),
     description:
-      "Create a scheduled or triggered task. Schedules persist across sessions and fire " +
-      "automatically when due. Use type 'once' for a one-shot delayed task, 'cron' for " +
-      "recurring tasks, or 'trigger' for named triggers that fire on external events. " +
-      "Schedule expressions use delay format: '5m', '30m', '1h', '2h', '24h', '1d', '7d'. " +
-      "Triggers don't need a schedule expression — fire them with remote_trigger.",
+      "Create a scheduled background task or a manual/event-driven remote trigger. " +
+      "Schedules persist across sessions and execute unattended in the background. " +
+      "Supports hourly, daily (at scheduleTime), weekly (on scheduleDay at scheduleTime), " +
+      "cron expression (via cronExpression), or trigger (fire manually/remotely using scheduled_task_trigger).",
     endpoint: {
       method: "POST",
-      path: "/agentic/schedule/create",
-      bodyParams: ["project", "name", "schedule", "prompt", "type", "agent", "model"],
+      path: "/agentic/scheduled-task/create",
+      bodyParams: [
+        "project",
+        "name",
+        "prompt",
+        "scheduleType",
+        "cronExpression",
+        "scheduleTime",
+        "scheduleDay",
+        "agent",
+        "provider",
+        "model",
+      ],
     },
     parameters: {
       type: "object",
       properties: {
         name: {
           type: "string",
-          description: "Human-readable name for this schedule (e.g. 'Daily test run', 'Deploy check').",
-        },
-        schedule: {
-          type: "string",
-          description:
-            "Delay expression for when to run. Format: <number><unit> where unit is " +
-            "s (seconds), m (minutes), h (hours), d (days). Examples: '30m', '2h', '1d'. " +
-            "Not required for type 'trigger'.",
+          description: "Human-readable name for this scheduled task (e.g. 'Daily Git Status check').",
         },
         prompt: {
           type: "string",
           description:
-            "The prompt to send to the agent when the schedule fires. " +
-            "Should be self-contained — the scheduled run has no prior conversation context.",
+            "The prompt to send to the background agent. Must be self-contained since " +
+            "there is no prior conversation context for the background run.",
         },
-        type: {
+        scheduleType: {
           type: "string",
-          enum: ["once", "cron", "trigger"],
+          enum: ["hourly", "daily", "weekly", "cron", "trigger"],
           description:
-            "Schedule type. 'once': fires once then disables. 'cron': repeats at interval. " +
-            "'trigger': fires only when remote_trigger is called. Default: 'once'.",
+            "The schedule type: 'hourly' runs at minute 0; 'daily' runs every day at scheduleTime; " +
+            "'weekly' runs on scheduleDay at scheduleTime; 'cron' uses standard 5-field cronExpression; " +
+            "'trigger' only fires when triggered manually or remotely.",
+        },
+        cronExpression: {
+          type: "string",
+          description: "Standard 5-field cron expression (e.g. '0 9 * * *' for daily at 9 AM). Required for 'cron' type.",
+        },
+        scheduleTime: {
+          type: "string",
+          description: "Time of day in HH:MM format (e.g. '09:00' or '17:30'). Used for 'daily' and 'weekly' types.",
+        },
+        scheduleDay: {
+          type: "number",
+          description: "Day of the week as 0-6 (0 is Sunday, 6 is Saturday). Used for 'weekly' type.",
         },
         agent: {
           type: "string",
-          description: "Agent persona to use when firing (e.g. 'CODING'). Default: 'CODING'.",
+          description: "Optional agent persona to run (e.g. 'CODING'). Default: 'CODING'.",
+        },
+        provider: {
+          type: "string",
+          description: "Optional LLM provider (e.g. 'anthropic', 'openai', 'google'). Default: 'anthropic'.",
         },
         model: {
           type: "string",
-          description: "Optional model override for the scheduled run.",
+          description: "Optional LLM model (e.g. 'claude-sonnet-4-5-20250929', 'gpt-5.4').",
         },
       },
-      required: ["name", "prompt"],
+      required: ["name", "prompt", "scheduleType"],
     },
   },
   {
-    name: "remote_trigger",
+    name: "scheduled_task_list",
     dataSource: onDemand("AgenticSchedulerService"),
-    description:
-      "Fire a named remote trigger. The trigger must have been previously created with " +
-      "cron_create using type 'trigger'. When fired, the trigger's stored prompt is sent " +
-      "to the agent for execution. An optional payload object is appended to the prompt.",
+    description: "List all scheduled tasks and background triggers currently configured in the workspace project.",
     endpoint: {
       method: "POST",
-      path: "/agentic/trigger/fire",
+      path: "/agentic/scheduled-task/list",
+      bodyParams: ["project"],
+    },
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: "scheduled_task_delete",
+    dataSource: onDemand("AgenticSchedulerService"),
+    description: "Delete an existing scheduled task or trigger by its UUID or unique name.",
+    endpoint: {
+      method: "POST",
+      path: "/agentic/scheduled-task/delete",
+      bodyParams: ["project", "scheduleId"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        scheduleId: {
+          type: "string",
+          description: "The unique UUID or exact name of the scheduled task to delete.",
+        },
+      },
+      required: ["scheduleId"],
+    },
+  },
+  {
+    name: "scheduled_task_trigger",
+    dataSource: onDemand("AgenticSchedulerService"),
+    description:
+      "Trigger a manual or remote-only task to run in the background immediately. " +
+      "Optionally pass context payload variables to be appended to the agent run prompt.",
+    endpoint: {
+      method: "POST",
+      path: "/agentic/scheduled-task/trigger",
       bodyParams: ["project", "triggerName", "payload"],
     },
     parameters: {
@@ -7552,13 +7606,13 @@ const TOOL_DEFINITIONS = [
       properties: {
         triggerName: {
           type: "string",
-          description: "Name of the trigger to fire (must match a trigger created with cron_create).",
+          description: "The unique UUID or exact name of the scheduled task or trigger to fire.",
         },
         payload: {
           type: "object",
           description:
-            "Optional key-value payload appended to the trigger's prompt as context. " +
-            "Example: { event: 'deploy_complete', version: '2.1.0' }.",
+            "Optional key-value object containing context details appended to the run prompt. " +
+            "Example: { trigger: 'webhook', ref: 'main', status: 'success' }.",
         },
       },
       required: ["triggerName"],

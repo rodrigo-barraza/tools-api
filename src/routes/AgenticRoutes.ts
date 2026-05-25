@@ -950,9 +950,9 @@ router.post("/tool/search", agenticHandler(async (req: Request) => {
   });
 }));
 // ─── 17. Scheduling (Cron + Remote Trigger) ─────────────────
-// ── Create Schedule ───────────────────────────────────────────
-router.post("/schedule/create", agenticHandler(async (req: Request) => {
-  const { project, name, schedule, prompt, type, agent, model } = req.body;
+// ── Create Scheduled Task ─────────────────────────────────────
+router.post("/scheduled-task/create", agenticHandler(async (req: Request) => {
+  const { project, name, prompt, scheduleType, cronExpression, scheduleTime, scheduleDay, agent, provider, model, schedule, type } = req.body;
   if (!project || typeof project !== "string") {
     return { error: "Request body must include 'project' (string)" };
   }
@@ -962,32 +962,45 @@ router.post("/schedule/create", agenticHandler(async (req: Request) => {
   if (!prompt || typeof prompt !== "string") {
     return { error: "Request body must include 'prompt' (string)" };
   }
-  return agenticScheduleCreate({ project, name, schedule, prompt, type, agent, model });
+  return agenticScheduleCreate({
+    project,
+    name,
+    prompt,
+    scheduleType,
+    cronExpression,
+    scheduleTime,
+    scheduleDay,
+    agent,
+    provider,
+    model,
+    schedule,
+    type,
+  });
 }));
-// ── List Schedules ────────────────────────────────────────────
-router.post("/schedule/list", agenticHandler(async (req: Request) => {
-  const { project, type, limit } = req.body;
+
+// ── List Scheduled Tasks ──────────────────────────────────────
+router.post("/scheduled-task/list", agenticHandler(async (req: Request) => {
+  const { project } = req.body;
   if (!project || typeof project !== "string") {
     return { error: "Request body must include 'project' (string)" };
   }
-  return agenticScheduleList(project, {
-    type: type || undefined,
-    limit: limit ? parseInt(limit, 10) : undefined,
-  });
+  return agenticScheduleList(project);
 }));
-// ── Delete Schedule ───────────────────────────────────────────
-router.post("/schedule/delete", agenticHandler(async (req: Request) => {
+
+// ── Delete Scheduled Task ──────────────────────────────────────
+router.post("/scheduled-task/delete", agenticHandler(async (req: Request) => {
   const { project, scheduleId } = req.body;
   if (!project || typeof project !== "string") {
     return { error: "Request body must include 'project' (string)" };
   }
-  if (scheduleId == null) {
-    return { error: "Request body must include 'scheduleId' (number)" };
+  if (!scheduleId) {
+    return { error: "Request body must include 'scheduleId' (string)" };
   }
   return agenticScheduleDelete(project, scheduleId);
 }));
-// ── Fire Remote Trigger ───────────────────────────────────────
-router.post("/trigger/fire", agenticHandler(async (req: Request) => {
+
+// ── Trigger Scheduled Task / Remote Trigger ───────────────────
+router.post("/scheduled-task/trigger", agenticHandler(async (req: Request) => {
   const { project, triggerName, payload } = req.body;
   if (!project || typeof project !== "string") {
     return { error: "Request body must include 'project' (string)" };
@@ -995,6 +1008,24 @@ router.post("/trigger/fire", agenticHandler(async (req: Request) => {
   if (!triggerName || typeof triggerName !== "string") {
     return { error: "Request body must include 'triggerName' (string)" };
   }
+  return agenticTriggerFire(project, triggerName, payload || {});
+}));
+
+// ── Legacy Schedule Aliases ──────────────────────────────────
+router.post("/schedule/create", agenticHandler(async (req: Request) => {
+  const { project, name, schedule, prompt, type, agent, model } = req.body;
+  return agenticScheduleCreate({ project, name, schedule, prompt, type, agent, model });
+}));
+router.post("/schedule/list", agenticHandler(async (req: Request) => {
+  const { project } = req.body;
+  return agenticScheduleList(project);
+}));
+router.post("/schedule/delete", agenticHandler(async (req: Request) => {
+  const { project, scheduleId } = req.body;
+  return agenticScheduleDelete(project, scheduleId);
+}));
+router.post("/trigger/fire", agenticHandler(async (req: Request) => {
+  const { project, triggerName, payload } = req.body;
   return agenticTriggerFire(project, triggerName, payload || {});
 }));
 // ─── 18. Notebook Editing ───────────────────────────────────
