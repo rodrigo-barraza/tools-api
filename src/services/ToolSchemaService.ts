@@ -4243,6 +4243,52 @@ const TOOL_DEFINITIONS = [
     },
   },
 
+  // ── Image to ASCII Art ──────────────────────────────────────
+  {
+    name: "convert_image_to_ascii",
+    dataSource: compute("sharp"),
+    description:
+      "Convert an image into high-fidelity ASCII art. Supports loading images from URLs, base64 data URIs, or " +
+      "previous imageId tokens. Features customizable output character width, custom character sets, contrast " +
+      "enhancements, density inversion, and truecolor support. Returns raw ASCII text, ANSI terminal string, and a " +
+      "dynamic, interactive HTML embedUrl (render using ![ASCII Art](embedUrl)).",
+    endpoint: {
+      method: "POST",
+      path: "/compute/image/ascii",
+      bodyParams: ["input", "width", "chars", "contrast", "reverse"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        input: {
+          type: "string",
+          description:
+            "The input image source: public HTTP/HTTPS URL, base64 data URI (data:image/png;base64,...), " +
+            "or an imageId from a prior manipulate_image/image_process call.",
+        },
+        width: {
+          type: "integer",
+          description: "Number of output characters wide (aspect ratio is automatically adjusted). Default: 100, Range: 10-250.",
+        },
+        chars: {
+          type: "string",
+          description:
+            "Custom character gradient string ordered from densest to sparsest. " +
+            "Default: high-fidelity gradient containing 70 distinct structural weights.",
+        },
+        contrast: {
+          type: "number",
+          description: "Contrast adjustment factor (e.g. 1.5 increases contrast, 0.5 decreases). Default: 1.0.",
+        },
+        reverse: {
+          type: "boolean",
+          description: "Invert density/brightness mapping (useful when displaying on light vs dark terminal themes). Default: false.",
+        },
+      },
+      required: ["input"],
+    },
+  },
+
   // ── LOGO Turtle Graphics ───────────────────────────────────
   {
     name: "turtle_draw",
@@ -8189,6 +8235,7 @@ const TOOL_DOMAINS = {
   encode_decode: "Compute",
   convert_color: "Compute",
   manipulate_image: "Compute",
+  convert_image_to_ascii: "Compute",
   parse_cron_expression: "Compute",
   turtle_draw: "Compute",
   think: "Reasoning",
@@ -8482,6 +8529,7 @@ const TOOL_EMOJIS = {
   encode_decode: "🔁",
   convert_color: "🎨",
   manipulate_image: "🖼️",
+  convert_image_to_ascii: "🎨",
   parse_cron_expression: "⏰",
   turtle_draw: "🐢",
 
@@ -8888,6 +8936,7 @@ const TOOL_LABELS = {
   encode_decode: ["coding", "data"],
   convert_color: ["data"],
   manipulate_image: ["data", "creative"],
+  convert_image_to_ascii: ["data", "creative"],
   parse_cron_expression: ["coding", "automation", "data"],
   turtle_draw: ["coding", "creative", "data"],
   think: ["coding"],

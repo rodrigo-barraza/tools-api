@@ -21,7 +21,7 @@ import {
 import { MAX_CODE_LENGTH, MAX_COMMAND_LENGTH } from "../constants.ts";
 import crypto from "node:crypto";
 import { EphemeralStore, buildLocalUrl, buildEmbedHtml, errorMessage } from "../utilities.ts";
-import { processImage } from "../services/ImageService.ts";
+import { processImage, convertToAscii } from "../services/ImageService.ts";
 // ─── Lazy-loaded dependencies ──────────────────────────────────────
 // These are loaded on first use to avoid blocking startup.
 interface ConvertUnitsInstance {
@@ -1809,6 +1809,398 @@ router.get("/image/render", (req: Request, res: Response) => {
   res.setHeader("Cache-Control", "public, max-age=3600");
   res.send(entry.buffer);
 });
+// ─── Image to ASCII Art ─────────────────────────────────────
+interface AsciiStoreEntry {
+  ascii: string;
+  ansi: string;
+  width: number;
+  height: number;
+  pixels: any[][];
+}
+const asciiStore = new EphemeralStore<AsciiStoreEntry>();
+
+function buildAsciiEmbedHtml(entry: AsciiStoreEntry) {
+  const pixelsJson = JSON.stringify(entry.pixels);
+  
+  return buildEmbedHtml({
+    headExtra: `<title>High-Fidelity ASCII Art Generator</title>`,
+    styles: `
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    color: #e2e8f0;
+    margin: 0;
+    padding: 24px;
+    min-height: 100vh;
+    background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+  }
+  #app {
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+  }
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px 28px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 800px;
+  }
+  .control-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .control-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+  .control-group input[type="range"] {
+    accent-color: #38bdf8;
+    width: 120px;
+    height: 6px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  #font-size-val {
+    font-size: 12px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    color: #38bdf8;
+    font-weight: 600;
+    min-width: 38px;
+  }
+  .control-group select {
+    background: #0f172a;
+    color: #e2e8f0;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .control-group select:hover {
+    border-color: #38bdf8;
+    background: #1e293b;
+  }
+  .toggles {
+    gap: 24px;
+  }
+  .toggle-switch {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #e2e8f0;
+    cursor: pointer;
+    user-select: none;
+  }
+  .toggle-switch input {
+    display: none;
+  }
+  .toggle-switch .slider {
+    width: 40px;
+    height: 22px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 22px;
+    position: relative;
+    transition: background-color 0.3s;
+  }
+  .toggle-switch .slider::before {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    left: 3px;
+    bottom: 3px;
+    background-color: #e2e8f0;
+    border-radius: 50%;
+    transition: transform 0.3s;
+  }
+  .toggle-switch input:checked + .slider {
+    background-color: #38bdf8;
+  }
+  .toggle-switch input:checked + .slider::before {
+    transform: translateX(18px);
+    background-color: #0f172a;
+  }
+  #copy-btn {
+    background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+    color: #0f172a;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(56, 189, 248, 0.3);
+    transition: all 0.2s;
+  }
+  #copy-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
+  }
+  #copy-btn:active {
+    transform: translateY(0);
+  }
+  #ascii-container {
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    max-width: 100%;
+    width: fit-content;
+    overflow: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  #ascii-pre {
+    margin: 0;
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    font-weight: 700;
+    line-height: 0.9;
+    letter-spacing: 0px;
+    text-align: left;
+    white-space: pre;
+    transition: font-size 0.15s;
+  }
+`,
+    bodyContent: `
+<div id="app">
+  <div class="toolbar">
+    <div class="control-group">
+      <label for="font-size">Zoom</label>
+      <input type="range" id="font-size" min="4" max="24" value="8" step="1" oninput="updateFont(this.value)">
+      <span id="font-size-val">8px</span>
+    </div>
+    
+    <div class="control-group">
+      <label for="charset-select">Style</label>
+      <select id="charset-select" onchange="changeCharset(this.value)">
+        <option value="high">High Fidelity</option>
+        <option value="medium">Medium Fidelity</option>
+        <option value="simple">Simple</option>
+        <option value="blocks">Blocks (Text Image)</option>
+      </select>
+    </div>
+    
+    <div class="control-group toggles">
+      <label class="toggle-switch">
+        <input type="checkbox" id="color-toggle" checked onchange="toggleColor(this.checked)">
+        <span class="slider"></span>
+        Color
+      </label>
+      
+      <label class="toggle-switch">
+        <input type="checkbox" id="reverse-toggle" onchange="toggleReverse(this.checked)">
+        <span class="slider"></span>
+        Invert
+      </label>
+    </div>
+
+    <button id="copy-btn" onclick="copyRawAscii()">Copy Raw ASCII</button>
+  </div>
+  
+  <div id="ascii-container">
+    <pre id="ascii-pre"></pre>
+  </div>
+</div>
+`,
+    scripts: `
+<script>
+(function() {
+  const PIXELS = ${pixelsJson};
+  const CHARSETS = {
+    high: "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\\\|()1{}[]?-_+~<>i!lI;:,\\"^\\\`'. ",
+    medium: "@#S%?*+;:-. ",
+    simple: "@#*+=-:.  ",
+    blocks: "█▓▒░ "
+  };
+
+  let currentSize = 8;
+  let currentCharset = 'high';
+  let isColored = true;
+  let isReversed = false;
+
+  window.updateFont = function(size) {
+    currentSize = parseInt(size);
+    document.getElementById('font-size-val').textContent = size + 'px';
+    document.getElementById('ascii-pre').style.fontSize = size + 'px';
+    reportSize();
+  };
+
+  window.changeCharset = function(val) {
+    currentCharset = val;
+    renderAscii();
+  };
+
+  window.toggleColor = function(checked) {
+    isColored = checked;
+    renderAscii();
+  };
+
+  window.toggleReverse = function(checked) {
+    isReversed = checked;
+    renderAscii();
+  };
+
+  function renderAscii() {
+    const pre = document.getElementById('ascii-pre');
+    const charset = CHARSETS[currentCharset];
+    const charLen = charset.length;
+    
+    let html = '';
+    
+    for (let y = 0; y < PIXELS.length; y++) {
+      const row = PIXELS[y];
+      for (let x = 0; x < row.length; x++) {
+        const pixel = row[x];
+        const brightness = pixel.brightness;
+        
+        let charIdx = Math.floor((brightness / 255) * (charLen - 1));
+        if (isReversed) {
+          charIdx = (charLen - 1) - charIdx;
+        }
+        const char = charset[charIdx];
+        
+        // Escape HTML special characters
+        let escChar = char;
+        if (char === '<') escChar = '&lt;';
+        else if (char === '>') escChar = '&gt;';
+        else if (char === '&') escChar = '&amp;';
+        else if (char === ' ') escChar = '&nbsp;';
+        
+        if (isColored) {
+          html += '<span style="color: ' + pixel.hex + '">' + escChar + '</span>';
+        } else {
+          html += escChar;
+        }
+      }
+      html += '\\n';
+    }
+    
+    pre.innerHTML = html;
+    reportSize();
+  }
+
+  window.copyRawAscii = function() {
+    const charset = CHARSETS[currentCharset];
+    const charLen = charset.length;
+    let text = '';
+    
+    for (let y = 0; y < PIXELS.length; y++) {
+      const row = PIXELS[y];
+      for (let x = 0; x < row.length; x++) {
+        const pixel = row[x];
+        let charIdx = Math.floor((pixel.brightness / 255) * (charLen - 1));
+        if (isReversed) {
+          charIdx = (charLen - 1) - charIdx;
+        }
+        text += charset[charIdx];
+      }
+      text += '\\n';
+    }
+    
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copy-btn');
+      const oldText = btn.textContent;
+      btn.textContent = 'Copied!';
+      btn.style.background = 'linear-gradient(135deg, #4ade80 0%, #16a34a 100%)';
+      setTimeout(() => {
+        btn.textContent = oldText;
+        btn.style.background = '';
+      }, 2000);
+    });
+  };
+
+  function reportSize() {
+    var element = document.body;
+    window.parent.postMessage({ type: "embed-resize", width: element.scrollWidth, height: element.scrollHeight }, "*");
+  }
+
+  // Initial render
+  updateFont(currentSize);
+  renderAscii();
+})();
+</script>
+`
+  });
+}
+
+router.post("/image/ascii", asyncHandler(async (req: Request, res: Response) => {
+  const { input, width, chars, contrast, reverse } = req.body;
+  if (!input) {
+    return res.status(400).json({ error: "'input' is required (URL, base64 data URI, or previous imageId)" });
+  }
+
+  try {
+    const result = await convertToAscii({
+      input,
+      width: width ? parseInt(width) : undefined,
+      chars,
+      contrast: contrast ? parseFloat(contrast) : undefined,
+      reverse: reverse === true,
+      store: imageStore,
+    });
+
+    const id = asciiStore.set({
+      ascii: result.ascii,
+      ansi: result.ansi,
+      width: result.width,
+      height: result.height,
+      pixels: result.pixels,
+    });
+
+    const asciiEmbedUrl = buildLocalUrl("compute/image/ascii/embed", { id });
+
+    res.json({
+      success: true,
+      ascii: result.ascii,
+      ansi: result.ansi,
+      width: result.width,
+      height: result.height,
+      asciiEmbedUrl,
+      asciiId: id,
+    });
+  } catch (error: unknown) {
+    res.status(400).json({ error: `ASCII conversion failed: ${errorMessage(error)}` });
+  }
+}));
+
+router.get("/image/ascii/embed", (req: Request, res: Response) => {
+  const { id } = req.query as Record<string, string>;
+  if (!id) return res.status(400).send("Missing 'id' parameter");
+  const entry = asciiStore.get(id);
+  if (!entry) {
+    return res.status(404).send("ASCII drawing not found or expired");
+  }
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.send(buildAsciiEmbedHtml(entry));
+});
+
 // ─── Health ─────────────────────────────────────────────────
 export function getComputeHealth() {
   return {
@@ -1832,6 +2224,7 @@ export function getComputeHealth() {
     sleep: "on-demand (timer)",
     syntheticOutput: "on-demand (json-schema)",
     imageProcessor: "on-demand (sharp + imagemagick)",
+    imageToAscii: "on-demand (sharp + canvas/html overlay)",
   };
 }
 export default router;

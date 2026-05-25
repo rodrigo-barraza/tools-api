@@ -424,3 +424,112 @@ export async function checkMagickAvailability() {
     return { available: false };
   }
 }
+
+export interface ConvertToAsciiInput {
+  input: string;
+  width?: number;
+  chars?: string;
+  contrast?: number;
+  reverse?: boolean;
+  colorMode?: "plain" | "ansi" | "html";
+  store?: ImageStore;
+}
+
+export interface AsciiPixel {
+  char: string;
+  hex: string;
+  brightness: number;
+}
+
+export interface ConvertToAsciiResult {
+  ascii: string;
+  ansi: string;
+  width: number;
+  height: number;
+  pixels: AsciiPixel[][];
+}
+
+/**
+ * Convert an image (URL, base64, or imageId) to ASCII art using high-fidelity luminance mapping.
+ * Supports custom character gradients, color modes, contrast, and inversion.
+ */
+export async function convertToAscii({
+  input,
+  width = 100,
+  chars,
+  contrast = 1.0,
+  reverse = false,
+  store,
+}: ConvertToAsciiInput): Promise<ConvertToAsciiResult> {
+  const inputBuffer = await resolveInput(input, store);
+  const image = sharp(inputBuffer);
+  const metadata = await image.metadata();
+
+  if (!metadata.width || !metadata.height) {
+    throw new Error("Invalid or unsupported image dimensions");
+  }
+
+  // Width safety checks (min: 10, max: 250 to keep it printable and clean)
+  const charWidth = Math.min(Math.max(width, 10), 250);
+
+  // Monospace font character aspect ratio is ~0.55 (height > width)
+  const fontAspectRatio = 0.55;
+  const aspectRatio = metadata.width / metadata.height;
+  const charHeight = Math.round(charWidth / (aspectRatio * fontAspectRatio));
+
+  // Resize and extract raw RGB pixels
+  const { data, info } = await image
+    .resize(charWidth, charHeight, { fit: "fill" })
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  const channels = info.channels;
+  const charSet = chars || "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
+  const charLen = charSet.length;
+
+  let asciiStr = "";
+  let ansiStr = "";
+  const pixels: AsciiPixel[][] = [];
+
+  for (let y = 0; y < info.height; y++) {
+    const row: AsciiPixel[] = [];
+    for (let x = 0; x < info.width; x++) {
+      const idx = (y * info.width + x) * channels;
+      const r = data[idx];
+      const g = data[idx + 1];
+      const b = data[idx + 2];
+
+      // Relative luminance formula
+      let brightness = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+      if (contrast !== 1.0) {
+        brightness = 128 + (brightness - 128) * contrast;
+        brightness = Math.min(Math.max(brightness, 0), 255);
+      }
+
+      // Map to character index (inverted standard mapping: 0 -> dark, 255 -> light)
+      let charIdx = Math.floor((brightness / 255) * (charLen - 1));
+      if (reverse) {
+        charIdx = (charLen - 1) - charIdx;
+      }
+      const char = charSet[charIdx];
+
+      asciiStr += char;
+      ansiStr += `\x1b[38;2;${r};${g};${b}m${char}`;
+
+      const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+      row.push({ char, hex, brightness });
+    }
+    asciiStr += "\n";
+    ansiStr += "\x1b[0m\n";
+    pixels.push(row);
+  }
+
+  return {
+    ascii: asciiStr,
+    ansi: ansiStr,
+    width: info.width,
+    height: info.height,
+    pixels,
+  };
+}
