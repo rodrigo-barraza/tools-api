@@ -91,21 +91,82 @@ const PREVIEW_IMAGE_EXTENSIONS = new Set([
 ]);
 
 // ────────────────────────────────────────────────────────────
+// Dynamic Security Settings Caching
+// ────────────────────────────────────────────────────────────
+
+import { MongoClient } from "mongodb";
+import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
+
+let settingsClient: MongoClient | null = null;
+let cachedAllowEnvFiles = false;
+let lastSecuritySettingsCheck = 0;
+let settingsFetchPromise: Promise<void> | null = null;
+
+async function getSecuritySettings(): Promise<{ allowEnvFiles: boolean }> {
+  try {
+    const db = getDB();
+    // Reuse MongoClient from the shared connection pool if available
+    const client = (db as any).client || (db as any).s?.client;
+    const prismDb = client ? client.db("prism") : null;
+    if (prismDb) {
+      const collection = prismDb.collection("settings");
+      const doc = await collection.findOne({ _key: "global" });
+      if (doc && doc.data && doc.data.security) {
+        return { allowEnvFiles: !!doc.data.security.allowEnvFiles };
+      }
+    } else {
+      // Fallback: lazily establish a new connection if needed
+      if (!settingsClient) {
+        const { default: CONFIG } = await import("../config.ts");
+        if (CONFIG.MONGODB_URI) {
+          settingsClient = new MongoClient(CONFIG.MONGODB_URI);
+          await settingsClient.connect();
+        }
+      }
+      if (settingsClient) {
+        const doc = await settingsClient.db("prism").collection("settings").findOne({ _key: "global" });
+        if (doc && doc.data && doc.data.security) {
+          return { allowEnvFiles: !!doc.data.security.allowEnvFiles };
+        }
+      }
+    }
+  } catch (error) {
+    logger.warn(`[AgenticFileService] Failed to fetch security settings: ${error}`);
+  }
+  return { allowEnvFiles: false };
+}
+
+function triggerSecuritySettingsRefresh() {
+  if (settingsFetchPromise) return;
+  const now = Date.now();
+  if (now - lastSecuritySettingsCheck < 5000) return; // 5s TTL
+
+  settingsFetchPromise = getSecuritySettings()
+    .then((settings) => {
+      cachedAllowEnvFiles = settings.allowEnvFiles;
+      lastSecuritySettingsCheck = Date.now();
+    })
+    .finally(() => {
+      settingsFetchPromise = null;
+    });
+}
+
+// ────────────────────────────────────────────────────────────
 // Path Validation
 // ────────────────────────────────────────────────────────────
 
 /**
  * Validate and resolve a path against the sandbox.
-
  */
 function validatePath(inputPath: string | unknown) {
   if (!inputPath || typeof inputPath !== "string") {
     return { safe: false, resolved: "", error: "Path is required (string)" };
   }
 
+  // Trigger non-blocking lazy refresh of security settings
+  triggerSecuritySettingsRefresh();
+
   // Resolve relative paths against the primary workspace root, NOT process.cwd().
-  // Models often send "./file.js" or "file.js" — without this, resolve() uses
-  // the tools-api process directory as the base, which is outside the sandbox.
   const isRelative = !inputPath.startsWith("/");
   const resolved = isRelative
     ? resolve(ALLOWED_ROOTS[0], inputPath)
@@ -126,6 +187,20 @@ function validatePath(inputPath: string | unknown) {
 
   // Check against blocked patterns
   for (const pattern of BLOCKED_PATTERNS) {
+    if (cachedAllowEnvFiles) {
+      const src = pattern.source;
+      // Skip environment configurations, keys, and private credentials
+      if (
+        src === "\\.env$" ||
+        src === "\\.env\\..+$" ||
+        src === "\\.pem$" ||
+        src === "\\.key$" ||
+        src === "id_rsa" ||
+        src === "id_ed25519"
+      ) {
+        continue;
+      }
+    }
     if (pattern.test(resolved)) {
       return {
         safe: false,
