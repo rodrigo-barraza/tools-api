@@ -1430,7 +1430,7 @@ function fieldsParam(fieldEnum: string[]) {
 // Tool Definitions — JSON Schema + endpoint metadata
 // ────────────────────────────────────────────────────────────
 
-const TOOL_DEFINITIONS = [
+const TOOL_DEFINITIONS: any[] = [
   // ── Weather / Environment ──────────────────────────────────
   {
     name: "get_weather_forecast",
@@ -6321,6 +6321,125 @@ const TOOL_DEFINITIONS = [
       required: ["text"],
     },
   },
+  {
+    name: "generate_audio",
+    dataSource: compute("SoundSynthesizerService"),
+    description:
+      "Generate creative audio/sound clips (in WAV format) natively in JavaScript. " +
+      "Use this to generate custom sounds, chiptunes, retro arcade effects (lasers, explosions, coins, jumps, powerups), " +
+      "or musical melodies/arpeggios. Returns a base64-encoded WAV audio clip. " +
+      "You can configure complex FM (frequency modulation) synthesis, ADSR envelopes, additive harmonics, LFOs, and feedback delay lines.",
+    endpoint: {
+      path: "/creative/generate-audio",
+      method: "POST",
+      bodyParams: [
+        "soundType",
+        "presetEffect",
+        "duration",
+        "waveform",
+        "frequency",
+        "endFrequency",
+        "modulatorFrequency",
+        "modulationIndex",
+        "envelope",
+        "harmonics",
+        "lfo",
+        "melody",
+        "delay",
+        "sampleRate",
+      ],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        soundType: {
+          type: "string",
+          enum: ["synthesizer", "arpeggio", "melody", "sound_effect"],
+          description: "The synthesis mode. Use 'sound_effect' or omit for quick presets; 'synthesizer' for custom single tones; 'arpeggio' or 'melody' for multi-note sequences.",
+        },
+        presetEffect: {
+          type: "string",
+          enum: ["laser", "coin", "powerup", "jump", "explosion", "synthwave_bass", "ambient_pad", "sci_fi_sweep"],
+          description: "High-fidelity retro game sound preset. If provided, this overrides custom waveform synthesizer parameters.",
+        },
+        duration: {
+          type: "number",
+          description: "Total sound duration in seconds (default: 1.0, range: 0.1 to 10.0).",
+        },
+        waveform: {
+          type: "string",
+          enum: ["sine", "triangle", "sawtooth", "square", "noise"],
+          description: "Primary carrier oscillator wave shape (default: 'sine').",
+        },
+        frequency: {
+          type: "string",
+          description: "Starting carrier frequency in Hz (e.g. '440' or 440) or note pitch name (e.g., 'C4', 'A#3').",
+        },
+        endFrequency: {
+          type: "string",
+          description: "Ending frequency for exponential pitch sweep / glide (e.g., '220' or 'A3'). Perfect for lasers or jump sounds.",
+        },
+        modulatorFrequency: {
+          type: "number",
+          description: "FM Synthesizer: Modulator wave frequency in Hz.",
+        },
+        modulationIndex: {
+          type: "number",
+          description: "FM Synthesizer: Depth of frequency modulation (suggested range: 0 to 500).",
+        },
+        envelope: {
+          type: "object",
+          description: "ADSR Amplitude Envelope controls volume over time.",
+          properties: {
+            attack: { type: "number", description: "Attack ramp-up duration in seconds (default: 0.05)." },
+            decay: { type: "number", description: "Decay ramp-down duration in seconds (default: 0.1)." },
+            sustain: { type: "number", description: "Sustain amplitude hold level, from 0.0 to 1.0 (default: 0.8)." },
+            release: { type: "number", description: "Release ramp-down duration in seconds (default: 0.15)." },
+          },
+        },
+        harmonics: {
+          type: "array",
+          items: { type: "number" },
+          description: "Additive Synthesis: Relative amplitude of upper harmonics (e.g. [1.0, 0.5, 0.25]).",
+        },
+        lfo: {
+          type: "object",
+          description: "Low-Frequency Oscillator configurations.",
+          properties: {
+            frequency: { type: "number", description: "LFO oscillation rate in Hz (e.g., 5.0)." },
+            pitchDepth: { type: "number", description: "Vibrato depth in Hz." },
+            amplitudeDepth: { type: "number", description: "Tremolo depth from 0.0 to 1.0." },
+          },
+          required: ["frequency"],
+        },
+        melody: {
+          type: "array",
+          description: "Melodic note sequence. Used if soundType is 'melody' or 'arpeggio'.",
+          items: {
+            type: "object",
+            properties: {
+              note: { type: "string", description: "Note name (e.g. 'C4') or raw frequency in Hz." },
+              duration: { type: "number", description: "Duration of this note step in seconds." },
+            },
+            required: ["note", "duration"],
+          },
+        },
+        delay: {
+          type: "object",
+          description: "Echo/Feedback Delay effect.",
+          properties: {
+            delayTime: { type: "number", description: "Echo delay offset in seconds (e.g., 0.25)." },
+            feedback: { type: "number", description: "Feedback feedback coefficient from 0.0 to 0.95 (default: 0.4)." },
+          },
+          required: ["delayTime", "feedback"],
+        },
+        sampleRate: {
+          type: "number",
+          description: "Audio sample rate in Hz (default: 44100, range: 8000 to 48000).",
+        },
+      },
+    },
+  },
 
   // ── Speech-to-Text ──────────────────────────────────────────
   {
@@ -8474,6 +8593,7 @@ const TOOL_DOMAINS = {
 
   describe_image: "Creative",
   text_to_speech: "Creative",
+  generate_audio: "Creative",
   speech_to_text: "Creative",
 
   // Discord (Lupos DB)
@@ -8769,6 +8889,7 @@ const TOOL_EMOJIS = {
 
   describe_image: "👁️",
   text_to_speech: "🔊",
+  generate_audio: "🔊",
   speech_to_text: "🎤",
 
   // Discord
@@ -9188,6 +9309,7 @@ const TOOL_LABELS = {
 
   describe_image: ["creative", "media"],
   text_to_speech: ["creative", "media"],
+  generate_audio: ["creative", "media"],
   speech_to_text: ["creative", "media"],
 
   // ── Discord ──────────────────────────────────────────────

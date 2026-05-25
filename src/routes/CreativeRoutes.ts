@@ -3,6 +3,7 @@ import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 
 import { Request, Response, Router } from "express";
 import PrismService from "../services/PrismService.ts";
+import { generateAudioWav } from "../services/SoundSynthesizerService.ts";
 import logger from "../logger.ts";
 import { extractCallerContext, errorMessage } from "../utilities.ts";
 import CONFIG from "../config.ts";
@@ -445,6 +446,70 @@ router.post("/speech-to-text", asyncHandler(async (req: Request, res: Response) 
   } catch (error: unknown) {
     logger.error(`[CreativeRoutes] speech-to-text failed: ${errorMessage(error)}`);
     res.status(500).json({ error: `Speech-to-text failed: ${errorMessage(error)}` });
+  }
+}));
+
+// ────────────────────────────────────────────────────────────
+// POST /creative/generate-audio
+// ────────────────────────────────────────────────────────────
+
+router.post("/generate-audio", asyncHandler(async (req: Request, res: Response) => {
+  const {
+    soundType,
+    presetEffect,
+    duration = 1.0,
+    waveform = "sine",
+    frequency = 440,
+    endFrequency,
+    modulatorFrequency,
+    modulationIndex,
+    envelope,
+    harmonics,
+    lfo,
+    melody,
+    delay,
+    sampleRate = 44100
+  } = req.body;
+
+  // Enforce parameter range bounds to prevent DoS via massive sample memory allocation
+  const boundedDuration = Math.min(Math.max(Number(duration) || 1.0, 0.1), 10.0);
+  const boundedSampleRate = Math.min(Math.max(Number(sampleRate) || 44100, 8000), 48000);
+
+  try {
+    const result = generateAudioWav({
+      soundType,
+      presetEffect,
+      duration: boundedDuration,
+      waveform,
+      frequency,
+      endFrequency,
+      modulatorFrequency,
+      modulationIndex,
+      envelope,
+      harmonics,
+      lfo,
+      melody,
+      delay,
+      sampleRate: boundedSampleRate,
+    });
+
+    const actualDuration = result.sampleCount / boundedSampleRate;
+
+    res.json({
+      success: true,
+      message: presetEffect
+        ? `Successfully generated retro sound preset: '${presetEffect}'.`
+        : `Successfully generated custom audio clip (${actualDuration.toFixed(2)}s, ${boundedSampleRate}Hz).`,
+      audio: {
+        data: result.audioBase64,
+        mimeType: "audio/wav",
+      },
+      duration: actualDuration,
+      sampleCount: result.sampleCount,
+    });
+  } catch (error: unknown) {
+    logger.error(`[CreativeRoutes] generate-audio failed: ${errorMessage(error)}`);
+    res.status(500).json({ error: `Audio generation failed: ${errorMessage(error)}` });
   }
 }));
 
