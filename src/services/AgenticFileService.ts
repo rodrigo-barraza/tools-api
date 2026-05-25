@@ -1,7 +1,7 @@
 import { escapeRegex } from "@rodrigo-barraza/utilities-library";
 // ─── Sandboxed File Operations ──────────────────────────────
 
-import { readFile, writeFile, stat, readdir, mkdir, rename, unlink } from "node:fs/promises";
+import { readFile, writeFile, stat, readdir, mkdir, rename, unlink, rm } from "node:fs/promises";
 import { resolve, relative, extname, dirname } from "node:path";
 import { existsSync } from "node:fs";
 import { WORKSPACE_ROOTS as WORKSPACE_ROOTS_RAW } from "../config.ts";
@@ -1097,9 +1097,9 @@ export async function agenticMoveFile(
 /**
  * Delete a file within allowed roots.
  */
-export async function agenticDeleteFile(filePath: string) {
+export async function agenticDeleteFile(filePath: string, { recursive = false }: { recursive?: boolean } = {}) {
   // Agent routing
-  const agentResult = await tryAgentRoute("file.delete", { path: filePath }, filePath);
+  const agentResult = await tryAgentRoute("file.delete", { path: filePath, recursive }, filePath);
   if (agentResult) return agentResult;
 
   const validation = validatePath(filePath);
@@ -1109,22 +1109,27 @@ export async function agenticDeleteFile(filePath: string) {
 
   try {
     const stats = await stat(validation.resolved);
-    if (stats.isDirectory()) {
-      return { error: `'${validation.resolved}' is a directory. Only files can be deleted with this tool.` };
-    }
+    const sizeBytes = stats.isDirectory() ? 0 : stats.size;
 
-    const sizeBytes = stats.size;
-    await unlink(validation.resolved);
+    if (stats.isDirectory()) {
+      if (!recursive) {
+        return { error: `'${validation.resolved}' is a directory. Only files can be deleted with this tool, unless the 'recursive' parameter is set to true.` };
+      }
+      await rm(validation.resolved, { recursive: true, force: true });
+    } else {
+      await unlink(validation.resolved);
+    }
 
     return {
       filePath: validation.resolved,
       deleted: true,
+      isDirectory: stats.isDirectory(),
       sizeBytes,
     };
   } catch (error: unknown) {
     const err = error as Record<string, unknown>;
     if (err.code === "ENOENT") {
-      return { error: `File not found: ${validation.resolved}` };
+      return { error: `File or directory not found: ${validation.resolved}` };
     }
     return { error: `delete_file failed: ${err.message || String(error)}` };
   }

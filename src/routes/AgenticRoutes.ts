@@ -342,11 +342,11 @@ router.post("/file/move", agenticHandler(async (req: Request) => {
 }));
 // ── Delete File ───────────────────────────────────────────────
 router.post("/file/delete", agenticHandler(async (req: Request) => {
-  const { path } = req.body;
+  const { path, recursive } = req.body;
   if (!path || typeof path !== "string") {
     return { error: "Request body must include 'path' (string)" };
   }
-  return agenticDeleteFile(path);
+  return agenticDeleteFile(path, { recursive: recursive === true });
 }));
 // ─── 6. Command Execution ───────────────────────────────────
 router.post("/command/run", asyncHandler(async (req: Request, res: Response) => {

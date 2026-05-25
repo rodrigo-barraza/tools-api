@@ -5532,18 +5532,23 @@ const TOOL_DEFINITIONS = [
     name: "delete_file",
     dataSource: compute("sandboxed fs"),
     description:
-      "Delete a file from the allowed workspace. Only files can be deleted — directories are not supported for safety. Returns the file size that was deleted. Use this when cleaning up generated files or removing obsolete code.",
+      "Delete a file or directory from the allowed workspace. Returns the file size that was deleted (or 0 for directories). Use this when cleaning up generated files, removing folders, or deleting obsolete code.",
     endpoint: {
       method: "POST",
       path: "/agentic/file/delete",
-      bodyParams: ["path"],
+      bodyParams: ["path", "recursive"],
     },
     parameters: {
       type: "object",
       properties: {
         path: {
           type: "string",
-          description: "Absolute path of the file to delete.",
+          description: "Absolute path of the file or directory to delete.",
+        },
+        recursive: {
+          type: "boolean",
+          description:
+            "If true, recursively delete a directory and all of its contents. If false (default), only delete individual files.",
         },
       },
       required: ["path"],

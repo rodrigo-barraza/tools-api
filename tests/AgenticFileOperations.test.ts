@@ -183,4 +183,52 @@ describe("Agentic File Operations Router — block-replace and multi-replace", (
       expect(res.body.error).toContain("does not match targetContent");
     });
   });
+
+  describe("POST /agentic/file/delete", () => {
+    const subFolder = path.join(testRoot, "sub-folder-to-delete");
+    const subFile = path.join(subFolder, "temp-file.txt");
+
+    it("successfully deletes a file", async () => {
+      const tempDelFile = path.join(testRoot, "delete-temp.txt");
+      fs.writeFileSync(tempDelFile, "to delete", "utf8");
+
+      const res = await request(app)
+        .post("/agentic/file/delete")
+        .send({ path: tempDelFile });
+
+      expect(res.status).toBe(200);
+      expect(res.body.deleted).toBe(true);
+      expect(fs.existsSync(tempDelFile)).toBe(false);
+    });
+
+    it("fails to delete a directory when recursive is false", async () => {
+      if (!fs.existsSync(subFolder)) {
+        fs.mkdirSync(subFolder, { recursive: true });
+      }
+      fs.writeFileSync(subFile, "data", "utf8");
+
+      const res = await request(app)
+        .post("/agentic/file/delete")
+        .send({ path: subFolder });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain("is a directory");
+      expect(fs.existsSync(subFolder)).toBe(true);
+    });
+
+    it("successfully deletes a directory recursively when recursive is true", async () => {
+      if (!fs.existsSync(subFolder)) {
+        fs.mkdirSync(subFolder, { recursive: true });
+      }
+      fs.writeFileSync(subFile, "data", "utf8");
+
+      const res = await request(app)
+        .post("/agentic/file/delete")
+        .send({ path: subFolder, recursive: true });
+
+      expect(res.status).toBe(200);
+      expect(res.body.deleted).toBe(true);
+      expect(fs.existsSync(subFolder)).toBe(false);
+    });
+  });
 });
