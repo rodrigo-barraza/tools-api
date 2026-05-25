@@ -2166,9 +2166,22 @@ router.post("/image/ascii", asyncHandler(async (req: Request, res: Response) => 
       store: imageStore,
     });
 
+    const asciiId = asciiStore.set({
+      ascii: result.ascii,
+      ansi: result.ansi,
+      width: result.width,
+      height: result.height,
+      pixels: result.pixels,
+    });
+
+    const asciiEmbedUrl = buildLocalUrl("compute/image/ascii/embed", { id: asciiId });
+
     res.json({
       success: true,
       ascii: result.ascii,
+      ansi: result.ansi,
+      asciiId,
+      asciiEmbedUrl,
       width: result.width,
       height: result.height,
     });
