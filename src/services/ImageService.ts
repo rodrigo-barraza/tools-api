@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { writeFile, readFile, unlink } from "node:fs/promises";
 import crypto from "node:crypto";
 import type { ImageOperation } from "../types/image.ts";
+import { validatePath } from "./AgenticFileService.ts";
 
 const execFileAsync = promisify(execFile);
 
@@ -41,11 +42,11 @@ const MAGICK_OPERATIONS = new Set(["text", "distort", "border", "ico"]);
 
 /**
  * Resolve an input source to a Sharp-compatible buffer.
- * Supports: URL, base64 data URI, or EphemeralStore ID.
+ * Supports: URL, base64 data URI, previous imageId, or local workspace paths.
  */
 async function resolveInput(input: string, store?: ImageStore) {
   if (!input || typeof input !== "string") {
-    throw new Error("'input' is required (URL, base64 data URI, or previous imageId)");
+    throw new Error("'input' is required (URL, base64 data URI, local path, or previous imageId)");
   }
 
   // ── Data URI ──────────────────────────────────────────────
@@ -78,9 +79,30 @@ async function resolveInput(input: string, store?: ImageStore) {
     const entry = store.get(input);
     if (entry?.buffer) return entry.buffer;
   }
+
+  // ── Local File Path (absolute path or file:// URL) ──────────
+  let diskPath = input;
+  if (input.startsWith("file://")) {
+    diskPath = decodeURIComponent(input.replace(/^file:\/\/\/?/, "/"));
+  }
+
+  if (diskPath.startsWith("/") || !/^[A-Za-z]+:\/\//.test(input)) {
+    const validation = validatePath(diskPath);
+    if (validation.safe && validation.resolved) {
+      try {
+        const buffer = await readFile(validation.resolved);
+        return buffer;
+      } catch (err: any) {
+        throw new Error(`Failed to read local image file: ${err.message}`);
+      }
+    } else {
+      throw new Error(`Local path validation failed: ${validation.error}`);
+    }
+  }
+
   throw new Error(
     "Invalid input: must be a URL (http/https), base64 data URI (data:image/...;base64,...), " +
-    "or a previous imageId from a prior manipulate_image call.",
+    "local workspace path, or a previous imageId from a prior manipulate_image call.",
   );
 }
 
