@@ -8390,6 +8390,10 @@ const TOOL_DOMAINS = {
   // Agentic — Scheduling
   cron_create: "Agentic: Scheduling",
   remote_trigger: "Agentic: Scheduling",
+  scheduled_task_create: "Agentic: Scheduling",
+  scheduled_task_list: "Agentic: Scheduling",
+  scheduled_task_delete: "Agentic: Scheduling",
+  scheduled_task_trigger: "Agentic: Scheduling",
 
   // Agentic — Notebook Editing
   notebook_edit: "Agentic: File Operations",
@@ -8681,6 +8685,10 @@ const TOOL_EMOJIS = {
   // Agentic — Scheduling
   cron_create: "⏰",
   remote_trigger: "📡",
+  scheduled_task_create: "🗓️",
+  scheduled_task_list: "📋",
+  scheduled_task_delete: "🗑️",
+  scheduled_task_trigger: "🚀",
 
   // Communication (Twilio)
   send_sms: "💬",
@@ -9090,6 +9098,10 @@ const TOOL_LABELS = {
   // ── Agentic: Scheduling ──────────────────────────────────
   cron_create: ["coding", "automation"],
   remote_trigger: ["coding", "automation"],
+  scheduled_task_create: ["coding", "automation"],
+  scheduled_task_list: ["coding", "automation"],
+  scheduled_task_delete: ["coding", "automation"],
+  scheduled_task_trigger: ["coding", "automation"],
 
   // ── Agentic: Notebook Editing ────────────────────────────
   notebook_edit: ["coding", "data_science"],
