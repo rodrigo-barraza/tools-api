@@ -2166,24 +2166,11 @@ router.post("/image/ascii", asyncHandler(async (req: Request, res: Response) => 
       store: imageStore,
     });
 
-    const id = asciiStore.set({
-      ascii: result.ascii,
-      ansi: result.ansi,
-      width: result.width,
-      height: result.height,
-      pixels: result.pixels,
-    });
-
-    const asciiEmbedUrl = buildLocalUrl("compute/image/ascii/embed", { id });
-
     res.json({
       success: true,
       ascii: result.ascii,
-      ansi: result.ansi,
       width: result.width,
       height: result.height,
-      asciiEmbedUrl,
-      asciiId: id,
     });
   } catch (error: unknown) {
     res.status(400).json({ error: `ASCII conversion failed: ${errorMessage(error)}` });
