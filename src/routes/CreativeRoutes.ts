@@ -6,8 +6,14 @@ import PrismService from "../services/PrismService.ts";
 import logger from "../logger.ts";
 import { extractCallerContext, errorMessage } from "../utilities.ts";
 import CONFIG from "../config.ts";
+import {
+  queryEmojiCombination,
+  queryEmojiCombinations,
+  getEmojiKitchenHealth,
+} from "../caches/EmojiKitchenCache.ts";
 
 const router = Router();
+
 
 // ────────────────────────────────────────────────────────────
 // Constants
@@ -443,16 +449,84 @@ router.post("/speech-to-text", asyncHandler(async (req: Request, res: Response) 
 }));
 
 // ────────────────────────────────────────────────────────────
+// Emoji Kitchen Domain
+// ────────────────────────────────────────────────────────────
+
+/**
+ * GET /creative/emoji-kitchen/combine
+ * Combines two emojis and returns the static PNG URL and metadata.
+ */
+router.get("/emoji-kitchen/combine", asyncHandler(async (req: Request, res: Response) => {
+  const { left, right } = req.query;
+
+  if (!left || !right) {
+    return res.status(400).json({ error: "Missing required query parameters: left and right" });
+  }
+
+  const combination = queryEmojiCombination(left as string, right as string);
+  if (!combination) {
+    return res.status(404).json({
+      error: `No Emoji Kitchen combination found for "${left}" and "${right}"`,
+      left,
+      right
+    });
+  }
+
+  res.json({
+    success: true,
+    ...combination
+  });
+}));
+
+/**
+ * GET /creative/emoji-kitchen/combinations
+ * Lists all possible GBoard combinations for a single emoji.
+ */
+router.get("/emoji-kitchen/combinations", asyncHandler(async (req: Request, res: Response) => {
+  const { emoji, limit } = req.query;
+
+  if (!emoji) {
+    return res.status(400).json({ error: "Missing required query parameter: emoji" });
+  }
+
+  const maxLimit = limit ? Math.min(Math.max(parseInt(limit as string, 10), 1), 500) : 50;
+  const options = queryEmojiCombinations(emoji as string, maxLimit);
+
+  res.json({
+    success: true,
+    emoji,
+    count: options.length,
+    combinations: options
+  });
+}));
+
+/**
+ * GET /creative/emoji-kitchen/metadata
+ * Retrieve cache/health overview of the Emoji Kitchen metadata collector.
+ */
+router.get("/emoji-kitchen/metadata", asyncHandler(async (_req: Request, res: Response) => {
+  res.json(getEmojiKitchenHealth());
+}));
+
+// ────────────────────────────────────────────────────────────
 // Health
 // ────────────────────────────────────────────────────────────
 
 export function getCreativeHealth() {
+  const emojiHealth = getEmojiKitchenHealth();
   return {
     generateImage: "on-demand (Google Gemini via Prism)",
     describeImage: "on-demand (Google Gemini via Prism)",
     textToSpeech: "on-demand (ElevenLabs/OpenAI via Prism)",
     speechToText: "on-demand (OpenAI Whisper via Prism)",
+    emojiKitchen: {
+      lastFetch: emojiHealth.lastFetch,
+      hasData: emojiHealth.hasData,
+      count: emojiHealth.count,
+      error: emojiHealth.error
+    }
   };
 }
 
 export default router;
+

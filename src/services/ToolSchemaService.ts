@@ -16,7 +16,9 @@ import {
   // Finance domain
   FINNHUB_NEWS_INTERVAL_MS,
   FINNHUB_EARNINGS_INTERVAL_MS,
+  EMOJI_KITCHEN_INTERVAL_MS,
 } from "../constants.ts";
+
 
 // ────────────────────────────────────────────────────────────
 // Data Source Helpers — builds the dataSource metadata
@@ -6157,7 +6159,62 @@ const TOOL_DEFINITIONS = [
   },
 
   {
+    name: "get_emoji_combination",
+    dataSource: cached("Google Emoji Kitchen", EMOJI_KITCHEN_INTERVAL_MS),
+    description:
+      "Combine two emojis to get their Google Emoji Kitchen mashup image. " +
+      "Accepts emoji characters (e.g. '🐼', '❄️') or hex codepoint strings (e.g. '1f43c', '2744-fe0f'). " +
+      "Returns the static PNG image URL, GBoard order, and metadata.",
+    endpoint: {
+      method: "GET",
+      path: "/creative/emoji-kitchen/combine",
+      queryParams: ["left", "right"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        left: {
+          type: "string",
+          description: "The first emoji character or hex codepoint (e.g., '🐼' or '1f43c')",
+        },
+        right: {
+          type: "string",
+          description: "The second emoji character or hex codepoint (e.g., '❄️' or '2744-fe0f')",
+        },
+      },
+      required: ["left", "right"],
+    },
+  },
+  {
+    name: "get_emoji_combinations",
+    dataSource: cached("Google Emoji Kitchen", EMOJI_KITCHEN_INTERVAL_MS),
+    description:
+      "Get all supported GBoard Emoji Kitchen combinations for a single emoji. " +
+      "Accepts an emoji character (e.g. '🐼') or a hex codepoint (e.g. '1f43c'). " +
+      "Returns a list of other emojis it can combine with, along with their mashup image URLs.",
+    endpoint: {
+      method: "GET",
+      path: "/creative/emoji-kitchen/combinations",
+      queryParams: ["emoji", "limit"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        emoji: {
+          type: "string",
+          description: "The emoji character or hex codepoint to check (e.g., '🐼' or '1f43c')",
+        },
+        limit: {
+          type: "number",
+          description: "Maximum number of combinations to return (default: 50, max: 500)",
+        },
+      },
+      required: ["emoji"],
+    },
+  },
+  {
     name: "generate_image",
+
     dataSource: onDemand("Google Gemini via Prism"),
     description:
       "Generate or edit an image using AI image generation. " +
@@ -8411,7 +8468,10 @@ const TOOL_DOMAINS = {
   list_twilio_numbers: "Communication",
 
   // Creative (Image Generation, Vision, Audio)
+  get_emoji_combination: "Creative",
+  get_emoji_combinations: "Creative",
   generate_image: "Creative",
+
   describe_image: "Creative",
   text_to_speech: "Creative",
   speech_to_text: "Creative",
@@ -8703,7 +8763,10 @@ const TOOL_EMOJIS = {
   list_twilio_numbers: "📲",
 
   // Creative
+  get_emoji_combination: "🍳",
+  get_emoji_combinations: "🧑‍🍳",
   generate_image: "🖼️",
+
   describe_image: "👁️",
   text_to_speech: "🔊",
   speech_to_text: "🎤",
@@ -9119,7 +9182,10 @@ const TOOL_LABELS = {
   list_twilio_numbers: ["communication"],
 
   // ── Creative (Image Generation & Vision) ────────────────────
+  get_emoji_combination: ["creative", "media"],
+  get_emoji_combinations: ["creative", "media"],
   generate_image: ["creative", "media"],
+
   describe_image: ["creative", "media"],
   text_to_speech: ["creative", "media"],
   speech_to_text: ["creative", "media"],
@@ -9159,7 +9225,7 @@ export { TOOL_DOMAINS, TOOL_LABELS, TOOL_EMOJIS, TOOL_DEFINITIONS };
  * Used by clients (like Prism Client) to build dynamic executors.
  * Filters out tools whose required API keys are not configured.
  */
-export function getToolSchemas() {
+export function getToolSchemas(): any[] {
   return TOOL_DEFINITIONS
     .filter((t) => isToolAvailable(t.name))
     .map((t) => ({
@@ -9175,7 +9241,7 @@ export function getToolSchemas() {
  * Strips the `endpoint` property since the AI doesn't need routing info.
  * Filters out tools whose required API keys are not configured.
  */
-export function getToolSchemasForAI() {
+export function getToolSchemasForAI(): any[] {
   return TOOL_DEFINITIONS
     .filter((t) => isToolAvailable(t.name))
     .map(
@@ -9187,11 +9253,12 @@ export function getToolSchemasForAI() {
  * Get tools that are disabled due to missing API keys.
  * Useful for admin diagnostics and health checks.
  */
-export function getDisabledTools() {
+export function getDisabledTools(): any[] {
   return TOOL_DEFINITIONS
     .filter((t) => !isToolAvailable(t.name))
     .map((t) => {
       const requiredKeys = TOOL_REQUIRED_KEYS[t.name as keyof typeof TOOL_REQUIRED_KEYS] || [];
+
       return {
         name: t.name,
         domain: TOOL_DOMAINS[t.name as keyof typeof TOOL_DOMAINS] || "Other",

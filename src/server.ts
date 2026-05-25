@@ -65,7 +65,9 @@ import { startMarketCollectors } from "./collectors/MarketCollector.ts";
 import { startProductCollectors } from "./collectors/ProductCollector.ts";
 import { startTrendCollectors } from "./collectors/TrendCollector.ts";
 import { startWeatherCollectors } from "./collectors/WeatherCollector.ts";
+import { startEmojiKitchenCollectors } from "./collectors/EmojiKitchenCollector.ts";
 import { startAisStream } from "./fetchers/maritime/AisStreamFetcher.ts";
+
 import { errorMessage } from "./utilities.ts";
 
 // ─── Express App ───────────────────────────────────────────────────
@@ -208,6 +210,8 @@ async function start() {
   startProductCollectors();
   startTrendCollectors();
   startWeatherCollectors();
+  startEmojiKitchenCollectors();
+
 
   // Start AIS Stream WebSocket (if API key is configured)
   startAisStream();

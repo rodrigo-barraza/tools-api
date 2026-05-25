@@ -1508,6 +1508,8 @@ export const LAUNCH_INTERVAL_MS = 1_800_000; // 30 minutes
 export const TWILIGHT_INTERVAL_MS = 3_600_000; // 1 hour
 export const ENV_CANADA_INTERVAL_MS = 300_000; // 5 minutes
 export const AVALANCHE_INTERVAL_MS = 3_600_000; // 1 hour
+export const EMOJI_KITCHEN_INTERVAL_MS = 86_400_000; // 24 hours
+
 
 export const SOLAR_FLARE_CLASSES = ["A", "B", "C", "M", "X"];
 

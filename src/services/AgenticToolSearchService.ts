@@ -54,8 +54,9 @@ export function agenticToolSearch(query: string, { domain, label, limit = 20 }: 
       (t: InferredToolSchema) =>
         t.labels &&
         Object.values(t.labels).some(
-          (v: string) => typeof v === "string" && v.toLowerCase() === labelLower,
+          (v: any) => typeof v === "string" && v.toLowerCase() === labelLower,
         ),
+
     );
   }
 
