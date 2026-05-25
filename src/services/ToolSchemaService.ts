@@ -4251,7 +4251,7 @@ const TOOL_DEFINITIONS = [
       "Convert an image into high-fidelity ASCII art. Supports loading images from URLs, base64 data URIs, or " +
       "previous imageId tokens. Features customizable output character width, custom character sets, contrast " +
       "enhancements, density inversion, and truecolor support. Returns raw ASCII text, ANSI terminal string, and a " +
-      "dynamic, interactive HTML embedUrl (render using ![ASCII Art](embedUrl)).",
+      "dynamic, interactive HTML embed that renders automatically in the tool result panel.",
     endpoint: {
       method: "POST",
       path: "/compute/image/ascii",
