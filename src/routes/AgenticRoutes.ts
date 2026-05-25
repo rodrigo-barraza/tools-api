@@ -952,7 +952,7 @@ router.post("/tool/search", agenticHandler(async (req: Request) => {
 // ─── 17. Scheduling (Cron + Remote Trigger) ─────────────────
 // ── Create Scheduled Task ─────────────────────────────────────
 router.post("/scheduled-task/create", agenticHandler(async (req: Request) => {
-  const { project, name, prompt, scheduleType, cronExpression, scheduleTime, scheduleDay, agent, provider, model, schedule, type } = req.body;
+  const { project, name, prompt, scheduleType, cronExpression, scheduleTime, scheduleDay, scheduleDate, agent, provider, model, schedule, type } = req.body;
   if (!project || typeof project !== "string") {
     return { error: "Request body must include 'project' (string)" };
   }
@@ -970,6 +970,7 @@ router.post("/scheduled-task/create", agenticHandler(async (req: Request) => {
     cronExpression,
     scheduleTime,
     scheduleDay,
+    scheduleDate,
     agent,
     provider,
     model,

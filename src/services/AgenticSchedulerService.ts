@@ -56,7 +56,7 @@ function getPrismUrl() {
 export async function agenticScheduleCreate(data: Record<string, unknown>) {
   const {
     project, name, schedule, prompt, type = "once",
-    agent, model, provider, scheduleType, scheduleTime, scheduleDay, cronExpression
+    agent, model, provider, scheduleType, scheduleTime, scheduleDay, scheduleDate, cronExpression
   } = data;
 
   if (!project || typeof project !== "string") {
@@ -71,13 +71,12 @@ export async function agenticScheduleCreate(data: Record<string, unknown>) {
 
   // Determine the scheduled parameters
   let sType = scheduleType || type; // fallback
-  if (sType === "once") {
-    // once is modeled as cron or delay in the unified scheduler
-    sType = "cron";
-  }
-
   let cronExpr = cronExpression;
-  if (!cronExpr && schedule && typeof schedule === "string") {
+  const sDate = scheduleDate;
+
+  if (sType === "once" && !sDate && schedule && typeof schedule === "string") {
+    // once with a relative delay (e.g. "5m") remains modeled as cron
+    sType = "cron";
     cronExpr = delayToCron(schedule);
   }
 
@@ -91,6 +90,7 @@ export async function agenticScheduleCreate(data: Record<string, unknown>) {
     scheduleType: sType,
     scheduleTime,
     scheduleDay,
+    scheduleDate: sDate,
     cronExpression: cronExpr,
   };
 

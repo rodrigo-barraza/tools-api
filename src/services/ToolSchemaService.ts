@@ -7501,6 +7501,7 @@ const TOOL_DEFINITIONS = [
         "cronExpression",
         "scheduleTime",
         "scheduleDay",
+        "scheduleDate",
         "agent",
         "provider",
         "model",
@@ -7521,11 +7522,11 @@ const TOOL_DEFINITIONS = [
         },
         scheduleType: {
           type: "string",
-          enum: ["hourly", "daily", "weekly", "cron", "trigger"],
+          enum: ["hourly", "daily", "weekly", "cron", "trigger", "once"],
           description:
             "The schedule type: 'hourly' runs at minute 0; 'daily' runs every day at scheduleTime; " +
             "'weekly' runs on scheduleDay at scheduleTime; 'cron' uses standard 5-field cronExpression; " +
-            "'trigger' only fires when triggered manually or remotely.",
+            "'trigger' only fires when triggered manually or remotely; 'once' runs a single time at a specific scheduleDate and scheduleTime.",
         },
         cronExpression: {
           type: "string",
@@ -7533,11 +7534,15 @@ const TOOL_DEFINITIONS = [
         },
         scheduleTime: {
           type: "string",
-          description: "Time of day in HH:MM format (e.g. '09:00' or '17:30'). Used for 'daily' and 'weekly' types.",
+          description: "Time of day in HH:MM format (e.g. '09:00' or '17:30'). Used for 'daily', 'weekly', and 'once' types.",
         },
         scheduleDay: {
           type: "number",
           description: "Day of the week as 0-6 (0 is Sunday, 6 is Saturday). Used for 'weekly' type.",
+        },
+        scheduleDate: {
+          type: "string",
+          description: "Date of the single execution in YYYY-MM-DD format (e.g. '2026-05-25'). Required for 'once' type.",
         },
         agent: {
           type: "string",
