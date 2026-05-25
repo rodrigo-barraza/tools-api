@@ -7,7 +7,7 @@ const NHL_SCHEDULE_URL =
 const NHL_MONTH_URL = "https://api-web.nhle.com/v1/club-schedule/VAN/month/now";
 
 // TheSportsDB — free API key "123"
-const SPORTSDB_BASE = "https://www.thesportsdb.com/api/v1/json/123";
+const SPORTSDB_BASE = "https://www.thesportsdatabase.com/api/v1/json/123";
 const WHITECAPS_ID = "134147"; // Vancouver Whitecaps FC
 const BC_LIONS_ID = "135006"; // BC Lions CFL
 

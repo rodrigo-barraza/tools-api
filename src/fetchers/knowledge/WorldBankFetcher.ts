@@ -154,13 +154,13 @@ function formatCountry(country: WorldBankCountry): FormattedCountry {
 export function getCountryIndicators(code: string): FormattedCountry | null {
   ensureLoaded();
 
-  const c = code.toUpperCase().trim();
+  const normalizedCountryCode = code.toUpperCase().trim();
   const country =
-    COUNTRY_DB.find((r) => r.country_code === c) ||
+    COUNTRY_DB.find((row) => row.country_code === normalizedCountryCode) ||
     COUNTRY_DB.find(
-      (r) =>
-        r.country_name &&
-        normalizeSearch(r.country_name).includes(normalizeSearch(code)),
+      (row) =>
+        row.country_name &&
+        normalizeSearch(row.country_name).includes(normalizeSearch(code)),
     );
 
   if (!country) return null;
@@ -235,13 +235,13 @@ export function compareCountries(countryCodes: string[], indicator: string | nul
   }
 
   const results = countryCodes.map((code) => {
-    const c = code.toUpperCase().trim();
+    const normalizedCountryCode = code.toUpperCase().trim();
     const country =
-      COUNTRY_DB.find((r) => r.country_code === c) ||
+      COUNTRY_DB.find((row) => row.country_code === normalizedCountryCode) ||
       COUNTRY_DB.find(
-        (r) =>
-          r.country_name &&
-          normalizeSearch(r.country_name).includes(normalizeSearch(code)),
+        (row) =>
+          row.country_name &&
+          normalizeSearch(row.country_name).includes(normalizeSearch(code)),
       );
 
     if (!country) return { query: code, found: false };

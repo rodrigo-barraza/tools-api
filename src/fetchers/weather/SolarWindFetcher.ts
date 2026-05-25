@@ -20,13 +20,13 @@ function parseRows<T extends { time: string }>(rows: string[][], fields: string[
       const time = new Date(row[0] + "Z").getTime();
       if (isNaN(time) || time < cutoff) return null;
       const object: Record<string, string | number | null> = { time: row[0] };
-      fields.forEach((f: string, i: number) => {
+      fields.forEach((fieldName: string, i: number) => {
         const value = parseFloat(row[i + 1]);
-        object[f] = isNaN(value) ? null : value;
+        object[fieldName] = isNaN(value) ? null : value;
       });
       return object as T;
     })
-    .filter((x): x is T => x !== null);
+    .filter((item): item is T => item !== null);
 }
 
 function downsample<T extends { time: string }>(array: T[], intervalMinutes: number): T[] {
@@ -35,8 +35,8 @@ function downsample<T extends { time: string }>(array: T[], intervalMinutes: num
   let lastBucket: number | null = null;
 
   for (const point of array) {
-    const t = new Date(point.time + "Z").getTime();
-    const bucket = Math.floor(t / (intervalMinutes * 60_000));
+    const pointTimestamp = new Date(point.time + "Z").getTime();
+    const bucket = Math.floor(pointTimestamp / (intervalMinutes * 60_000));
     if (bucket !== lastBucket) {
       result.push(point);
       lastBucket = bucket;

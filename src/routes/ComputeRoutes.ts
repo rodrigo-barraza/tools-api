@@ -1626,18 +1626,18 @@ function explainCronField(values: number[], fieldIdx: number) {
 }
 function getNextCronExecutions(parsed: number[][], count: number, fromDate: Date) {
   const results: Date[] = [];
-  const dt = new Date(fromDate);
-  dt.setSeconds(0, 0);
-  dt.setMinutes(dt.getMinutes() + 1); // Start from next minute
+  const currentDate = new Date(fromDate);
+  currentDate.setSeconds(0, 0);
+  currentDate.setMinutes(currentDate.getMinutes() + 1); // Start from next minute
   const maxIterations = 525960; // ~1 year of minutes
   let iterations = 0;
   while (results.length < count && iterations < maxIterations) {
     iterations++;
-    const month = dt.getMonth() + 1;
-    const dom = dt.getDate();
-    const dow = dt.getDay();
-    const hour = dt.getHours();
-    const minute = dt.getMinutes();
+    const month = currentDate.getMonth() + 1;
+    const dom = currentDate.getDate();
+    const dow = currentDate.getDay();
+    const hour = currentDate.getHours();
+    const minute = currentDate.getMinutes();
     if (
       parsed[3].includes(month) &&
       parsed[2].includes(dom) &&
@@ -1645,9 +1645,9 @@ function getNextCronExecutions(parsed: number[][], count: number, fromDate: Date
       parsed[1].includes(hour) &&
       parsed[0].includes(minute)
     ) {
-      results.push(new Date(dt));
+      results.push(new Date(currentDate));
     }
-    dt.setMinutes(dt.getMinutes() + 1);
+    currentDate.setMinutes(currentDate.getMinutes() + 1);
   }
   return results;
 }

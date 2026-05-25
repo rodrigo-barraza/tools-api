@@ -140,21 +140,21 @@ export async function searchArtists(query: string, limit: number = 10) {
   return {
     count: data.count,
     artists: (data.artists || []).map(
-      (a): MusicArtist => ({
-        id: a.id,
-        name: a.name,
-        sortName: a["sort-name"],
-        type: a.type,
-        country: a.country,
-        disambiguation: a.disambiguation || null,
-        beginDate: a["life-span"]?.begin || null,
-        endDate: a["life-span"]?.end || null,
-        ended: a["life-span"]?.ended || false,
-        tags: (a.tags || [])
+      (artist): MusicArtist => ({
+        id: artist.id,
+        name: artist.name,
+        sortName: artist["sort-name"],
+        type: artist.type,
+        country: artist.country,
+        disambiguation: artist.disambiguation || null,
+        beginDate: artist["life-span"]?.begin || null,
+        endDate: artist["life-span"]?.end || null,
+        ended: artist["life-span"]?.ended || false,
+        tags: (artist.tags || [])
           .sort((x, y) => (y.count || 0) - (x.count || 0))
           .slice(0, 10)
-          .map((t) => t.name),
-        score: a.score,
+          .map((tag) => tag.name),
+        score: artist.score,
       }),
     ),
   };
@@ -166,43 +166,43 @@ export async function searchArtists(query: string, limit: number = 10) {
  * Get detailed artist info by MusicBrainz ID (MBID).
  */
 export async function getArtist(mbid: string) {
-  const a = await fetchMB<RawMusicArtist>(`/artist/${mbid}`, {
+  const artistData = await fetchMB<RawMusicArtist>(`/artist/${mbid}`, {
     inc: "url-rels+release-groups+tags",
   });
 
   // Extract useful URLs
   const urls: Record<string, string> = {};
-  for (const rel of a.relations || []) {
-    if (rel.type === "wikipedia" && rel.url?.resource) urls.wikipedia = rel.url.resource;
-    if (rel.type === "wikidata" && rel.url?.resource) urls.wikidata = rel.url.resource;
-    if (rel.type === "official homepage" && rel.url?.resource) urls.website = rel.url.resource;
-    if (rel.type === "social network" && rel.url?.resource) {
-      const u = rel.url.resource;
-      if (u.includes("twitter.com") || u.includes("x.com")) urls.twitter = u;
-      if (u.includes("instagram.com")) urls.instagram = u;
-      if (u.includes("facebook.com")) urls.facebook = u;
+  for (const relation of artistData.relations || []) {
+    if (relation.type === "wikipedia" && relation.url?.resource) urls.wikipedia = relation.url.resource;
+    if (relation.type === "wikidata" && relation.url?.resource) urls.wikidata = relation.url.resource;
+    if (relation.type === "official homepage" && relation.url?.resource) urls.website = relation.url.resource;
+    if (relation.type === "social network" && relation.url?.resource) {
+      const socialUrl = relation.url.resource;
+      if (socialUrl.includes("twitter.com") || socialUrl.includes("x.com")) urls.twitter = socialUrl;
+      if (socialUrl.includes("instagram.com")) urls.instagram = socialUrl;
+      if (socialUrl.includes("facebook.com")) urls.facebook = socialUrl;
     }
-    if ((rel.type === "streaming music" || rel.type === "free streaming") && rel.url?.resource) {
-      const u = rel.url.resource;
-      if (u.includes("spotify.com")) urls.spotify = u;
-      if (u.includes("music.apple.com")) urls.appleMusic = u;
-      if (u.includes("soundcloud.com")) urls.soundcloud = u;
+    if ((relation.type === "streaming music" || relation.type === "free streaming") && relation.url?.resource) {
+      const streamingUrl = relation.url.resource;
+      if (streamingUrl.includes("spotify.com")) urls.spotify = streamingUrl;
+      if (streamingUrl.includes("music.apple.com")) urls.appleMusic = streamingUrl;
+      if (streamingUrl.includes("soundcloud.com")) urls.soundcloud = streamingUrl;
     }
   }
 
   // Group release groups by type
-  const releaseGroups: ReleaseGroupItem[] = (a["release-groups"] || []).map((rg) => ({
-    id: rg.id,
-    title: rg.title,
-    type: rg["primary-type"] || "Other",
-    firstReleaseDate: rg["first-release-date"] || null,
+  const releaseGroups: ReleaseGroupItem[] = (artistData["release-groups"] || []).map((releaseGroup) => ({
+    id: releaseGroup.id,
+    title: releaseGroup.title,
+    type: releaseGroup["primary-type"] || "Other",
+    firstReleaseDate: releaseGroup["first-release-date"] || null,
   }));
 
   const byType: Record<string, ReleaseGroupItem[]> = {};
-  for (const rg of releaseGroups) {
-    const type = rg.type;
+  for (const releaseGroup of releaseGroups) {
+    const type = releaseGroup.type;
     if (!byType[type]) byType[type] = [];
-    byType[type].push(rg);
+    byType[type].push(releaseGroup);
   }
   // Sort each type by date
   for (const type of Object.keys(byType)) {
@@ -210,20 +210,20 @@ export async function getArtist(mbid: string) {
   }
 
   return {
-    id: a.id,
-    name: a.name,
-    sortName: a["sort-name"],
-    type: a.type,
-    country: a.country,
-    disambiguation: a.disambiguation || null,
-    beginDate: a["life-span"]?.begin || null,
-    endDate: a["life-span"]?.end || null,
-    ended: a["life-span"]?.ended || false,
-    gender: a.gender || null,
-    tags: (a.tags || [])
+    id: artistData.id,
+    name: artistData.name,
+    sortName: artistData["sort-name"],
+    type: artistData.type,
+    country: artistData.country,
+    disambiguation: artistData.disambiguation || null,
+    beginDate: artistData["life-span"]?.begin || null,
+    endDate: artistData["life-span"]?.end || null,
+    ended: artistData["life-span"]?.ended || false,
+    gender: artistData.gender || null,
+    tags: (artistData.tags || [])
       .sort((x, y) => (y.count || 0) - (x.count || 0))
       .slice(0, 15)
-      .map((t) => t.name),
+      .map((tag) => tag.name),
     urls,
     discography: byType,
     totalReleaseGroups: releaseGroups.length,
@@ -244,17 +244,17 @@ export async function searchAlbums(query: string, artist?: string, limit: number
   return {
     count: data.count,
     albums: (data["release-groups"] || []).map(
-      (rg): MusicAlbum => ({
-        id: rg.id,
-        title: rg.title,
-        type: rg["primary-type"] || "Other",
-        firstReleaseDate: rg["first-release-date"] || null,
-        artists: (rg["artist-credit"] || []).map((ac) => ({
-          id: ac.artist?.id || "",
-          name: ac.artist?.name || "",
+      (releaseGroup): MusicAlbum => ({
+        id: releaseGroup.id,
+        title: releaseGroup.title,
+        type: releaseGroup["primary-type"] || "Other",
+        firstReleaseDate: releaseGroup["first-release-date"] || null,
+        artists: (releaseGroup["artist-credit"] || []).map((artistCredit) => ({
+          id: artistCredit.artist?.id || "",
+          name: artistCredit.artist?.name || "",
         })),
-        coverArtUrl: `${COVER_ART_BASE}/release-group/${rg.id}/front-250`,
-        score: rg.score,
+        coverArtUrl: `${COVER_ART_BASE}/release-group/${releaseGroup.id}/front-250`,
+        score: releaseGroup.score,
       }),
     ),
   };
@@ -264,24 +264,24 @@ export async function searchAlbums(query: string, artist?: string, limit: number
  * Get album details by release-group MBID.
  */
 export async function getAlbum(mbid: string) {
-  const rg = await fetchMB<RawReleaseGroup>(`/release-group/${mbid}`, {
+  const releaseGroupData = await fetchMB<RawReleaseGroup>(`/release-group/${mbid}`, {
     inc: "releases+artist-credits+tags",
   });
 
   // Get the first release's tracklist
   let tracks: MusicTrack[] = [];
-  if (rg.releases?.[0]) {
+  if (releaseGroupData.releases?.[0]) {
     try {
-      const release = await fetchMB<RawReleaseDetail>(`/release/${rg.releases[0].id}`, {
+      const release = await fetchMB<RawReleaseDetail>(`/release/${releaseGroupData.releases[0].id}`, {
         inc: "recordings",
       });
-      tracks = (release.media || []).flatMap((m) =>
-        (m.tracks || []).map(
-          (t): MusicTrack => ({
-            position: t.position,
-            title: t.title,
-            durationMs: t.length || null,
-            duration: t.length ? formatMediaTimestamp(Math.round(t.length / 1000)) : null,
+      tracks = (release.media || []).flatMap((media) =>
+        (media.tracks || []).map(
+          (track): MusicTrack => ({
+            position: track.position,
+            title: track.title,
+            durationMs: track.length || null,
+            duration: track.length ? formatMediaTimestamp(Math.round(track.length / 1000)) : null,
           }),
         ),
       );
@@ -291,21 +291,21 @@ export async function getAlbum(mbid: string) {
   }
 
   return {
-    id: rg.id,
-    title: rg.title,
-    type: rg["primary-type"] || "Other",
-    secondaryTypes: rg["secondary-types"] || [],
-    firstReleaseDate: rg["first-release-date"] || null,
-    artists: (rg["artist-credit"] || []).map((ac) => ({
-      id: ac.artist?.id || "",
-      name: ac.artist?.name || "",
+    id: releaseGroupData.id,
+    title: releaseGroupData.title,
+    type: releaseGroupData["primary-type"] || "Other",
+    secondaryTypes: releaseGroupData["secondary-types"] || [],
+    firstReleaseDate: releaseGroupData["first-release-date"] || null,
+    artists: (releaseGroupData["artist-credit"] || []).map((artistCredit) => ({
+      id: artistCredit.artist?.id || "",
+      name: artistCredit.artist?.name || "",
     })),
-    tags: (rg.tags || [])
+    tags: (releaseGroupData.tags || [])
       .sort((x, y) => (y.count || 0) - (x.count || 0))
       .slice(0, 10)
-      .map((t) => t.name),
-    coverArtUrl: `${COVER_ART_BASE}/release-group/${rg.id}/front-500`,
-    releaseCount: rg.releases?.length || 0,
+      .map((tag) => tag.name),
+    coverArtUrl: `${COVER_ART_BASE}/release-group/${releaseGroupData.id}/front-500`,
+    releaseCount: releaseGroupData.releases?.length || 0,
     tracks,
     trackCount: tracks.length,
   };
@@ -325,21 +325,21 @@ export async function searchTracks(query: string, artist?: string, limit: number
   return {
     count: data.count,
     tracks: (data.recordings || []).map(
-      (r): MusicTrack => ({
-        id: r.id,
-        title: r.title,
-        durationMs: r.length || null,
-        duration: r.length ? formatMediaTimestamp(Math.round(r.length / 1000)) : null,
-        artists: (r["artist-credit"] || []).map((ac) => ({
-          id: ac.artist?.id || "",
-          name: ac.artist?.name || "",
+      (recording): MusicTrack => ({
+        id: recording.id,
+        title: recording.title,
+        durationMs: recording.length || null,
+        duration: recording.length ? formatMediaTimestamp(Math.round(recording.length / 1000)) : null,
+        artists: (recording["artist-credit"] || []).map((artistCredit) => ({
+          id: artistCredit.artist?.id || "",
+          name: artistCredit.artist?.name || "",
         })),
-        releases: (r.releases || []).slice(0, 3).map((rel) => ({
-          id: rel.id,
-          title: rel.title,
-          date: rel.date || null,
+        releases: (recording.releases || []).slice(0, 3).map((release) => ({
+          id: release.id,
+          title: release.title,
+          date: release.date || null,
         })),
-        score: r.score,
+        score: recording.score,
       }),
     ),
   };

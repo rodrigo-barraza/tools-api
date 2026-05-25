@@ -18,8 +18,8 @@ const HEADERS = {
  */
 function parseDate(dateStr: string | null): Date | undefined {
   if (!dateStr) return undefined;
-  const d = new Date(dateStr);
-  return isNaN(d.getTime()) ? undefined : d;
+  const parsedDate = new Date(dateStr);
+  return isNaN(parsedDate.getTime()) ? undefined : parsedDate;
 }
 
 /**

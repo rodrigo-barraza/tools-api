@@ -155,11 +155,11 @@ export function getEventSummary() {
     }
 
     // Time bucket counts
-    const ts = event.startDate?.getTime() ?? 0;
-    if (ts >= todayStart.getTime() && ts <= todayEnd.getTime()) {
+    const timestamp = event.startDate?.getTime() ?? 0;
+    if (timestamp >= todayStart.getTime() && timestamp <= todayEnd.getTime()) {
       todayCount++;
     }
-    if (ts > now.getTime()) {
+    if (timestamp > now.getTime()) {
       upcomingCount++;
     }
   }

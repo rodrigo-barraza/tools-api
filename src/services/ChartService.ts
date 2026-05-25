@@ -72,7 +72,7 @@ const PALETTE = [
   "rgba(6, 182, 212, 0.85)",    // cyan
 ];
 
-const PALETTE_BORDER = PALETTE.map((c: string) => c.replace("0.85", "1"));
+const PALETTE_BORDER = PALETTE.map((colorValue: string) => colorValue.replace("0.85", "1"));
 
 /**
  * Assign colors to datasets that don't have explicit colors.
@@ -93,12 +93,12 @@ function assignColors(datasets: ChartDataset[], chartType: string): ChartDataset
     }
 
     // Bar & Line — one color per dataset
-    const bg = PALETTE[i % PALETTE.length];
+    const backgroundColor = PALETTE[i % PALETTE.length];
     const border = PALETTE_BORDER[i % PALETTE_BORDER.length];
 
     return {
       ...ds,
-      backgroundColor: ds.backgroundColor || bg,
+      backgroundColor: ds.backgroundColor || backgroundColor,
       borderColor: ds.borderColor || border,
       borderWidth: ds.borderWidth ?? 2,
       ...(chartType === "line"

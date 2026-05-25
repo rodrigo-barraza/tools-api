@@ -62,12 +62,12 @@ export function generateAnsiArt(params: Required<Omit<BonfireParams, "itemToBurn
     // Flame width narrows as it goes up
     const maxFlameWidth = Math.max(1, Math.floor((flameHeight - r) * 1.6));
 
-    for (let c = -maxFlameWidth; c <= maxFlameWidth; c++) {
-      const colIdx = baseCenter + c;
+    for (let column = -maxFlameWidth; column <= maxFlameWidth; column++) {
+      const colIdx = baseCenter + column;
       if (colIdx < 0 || colIdx >= width) continue;
 
       // Choose flame characters based on distance from core and height
-      const dist = Math.abs(c);
+      const dist = Math.abs(column);
       const ratio = dist / maxFlameWidth;
 
       if (ratio < 0.3 && r < flameHeight * 0.6) {
@@ -193,8 +193,8 @@ export function generateAnsiArt(params: Required<Omit<BonfireParams, "itemToBurn
   let output = "";
   for (let r = 0; r < height; r++) {
     let line = "";
-    for (let c = 0; c < width; c++) {
-      const char = grid[r][c];
+    for (let column = 0; column < width; column++) {
+      const char = grid[r][column];
       if (char === " ") {
         line += " ";
         continue;

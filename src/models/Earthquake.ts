@@ -21,10 +21,10 @@ let collection: Collection<EarthquakeDocument> | null = null;
  * Called once during startup after MongoDB connection is established.
  */
 export async function setupEarthquakeCollection() {
-  const db = getDB();
-  if (!db) throw new Error("Database not connected");
+  const database = getDB();
+  if (!database) throw new Error("Database not connected");
 
-  collection = db.collection<EarthquakeDocument>("earthquakes");
+  collection = database.collection<EarthquakeDocument>("earthquakes");
 
   await collection.createIndex({ usgsId: 1 }, { unique: true });
   await collection.createIndex({ time: -1 });

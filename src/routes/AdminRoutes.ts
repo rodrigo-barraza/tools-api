@@ -186,8 +186,8 @@ router.put("/config/workspaces", asyncHandler(async (req: Request, res: Response
     }
   }
   // Persist to MongoDB
-  const db = getDB();
-  const collection = db.collection(WORKSPACE_COLLECTION);
+  const database = getDB();
+  const collection = database.collection(WORKSPACE_COLLECTION);
   await collection.updateOne(
     { _key: "user_roots" },
     {
@@ -260,8 +260,8 @@ router.post("/config/workspaces/validate", asyncHandler(async (req: Request, res
  */
 export async function loadUserWorkspaceRoots() {
   try {
-    const db = getDB();
-    const collection = db.collection(WORKSPACE_COLLECTION);
+    const database = getDB();
+    const collection = database.collection(WORKSPACE_COLLECTION);
     const document = await collection.findOne({ _key: "user_roots" });
     if (document && Array.isArray(document.roots) && document.roots.length > 0) {
       refreshAllowedRoots(document.roots);

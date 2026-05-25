@@ -15,10 +15,10 @@ export interface WebcamDocument {
 let collection: Collection<WebcamDocument> | null = null;
 
 export async function setupWebcamCollection() {
-  const db = getDB();
-  if (!db) return;
+  const database = getDB();
+  if (!database) return;
   
-  collection = db.collection<WebcamDocument>("webcams");
+  collection = database.collection<WebcamDocument>("webcams");
 
   await collection.createIndex({ id: 1 }, { unique: true });
   await collection.createIndex({ city: 1 });

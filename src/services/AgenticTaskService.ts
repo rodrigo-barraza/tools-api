@@ -28,8 +28,8 @@ const MAX_TASKS_PER_PROJECT = 200;
 // ────────────────────────────────────────────────────────────
 
 export async function setupAgenticTaskCollection() {
-  const db = getDB();
-  const collection = db.collection(COLLECTION);
+  const database = getDB();
+  const collection = database.collection(COLLECTION);
 
   await collection.createIndex({ project: 1, taskId: 1 }, { unique: true });
   await collection.createIndex({ project: 1, status: 1 });
@@ -43,8 +43,8 @@ export async function setupAgenticTaskCollection() {
 // ────────────────────────────────────────────────────────────
 
 async function nextTaskId(project: string): Promise<number> {
-  const db = getDB();
-  const result = await db.collection<TaskCounterDocument>(COUNTER_COLLECTION).findOneAndUpdate(
+  const database = getDB();
+  const result = await database.collection<TaskCounterDocument>(COUNTER_COLLECTION).findOneAndUpdate(
     { _id: `task_${project}` },
     { $inc: { seq: 1 } },
     { upsert: true, returnDocument: "after" },
@@ -75,8 +75,8 @@ export async function agenticTaskCreate(project: string, data: AgenticTaskCreate
     return { error: `Invalid status '${status}'. Must be one of: ${VALID_STATUSES.join(", ")}` };
   }
 
-  const db = getDB();
-  const collection = db.collection(COLLECTION);
+  const database = getDB();
+  const collection = database.collection(COLLECTION);
 
   // Guard: cap tasks per project
   const count = await collection.countDocuments({ project });
@@ -126,8 +126,8 @@ export async function agenticTaskList(project: string, { status, limit = 50 }: A
     return { error: `Invalid status filter '${status}'. Must be one of: ${VALID_STATUSES.join(", ")}` };
   }
 
-  const db = getDB();
-  const collection = db.collection(COLLECTION);
+  const database = getDB();
+  const collection = database.collection(COLLECTION);
 
   const filter: Record<string, unknown> = { project };
   if (status) filter.status = status;
@@ -167,8 +167,8 @@ export async function agenticTaskGet(project: string, taskId: string | number) {
     return { error: "'taskId' must be a number" };
   }
 
-  const db = getDB();
-  const task = await db.collection(COLLECTION).findOne({ project, taskId: id });
+  const database = getDB();
+  const task = await database.collection(COLLECTION).findOne({ project, taskId: id });
 
   if (!task) {
     return { error: `Task #${id} not found in project '${project}'` };
@@ -198,8 +198,8 @@ export async function agenticTaskUpdate(project: string, taskId: string | number
     return { error: `Invalid status '${updates.status}'. Must be one of: ${VALID_STATUSES.join(", ")}, deleted` };
   }
 
-  const db = getDB();
-  const collection = db.collection(COLLECTION);
+  const database = getDB();
+  const collection = database.collection(COLLECTION);
 
   const existing = await collection.findOne({ project, taskId: id });
   if (!existing) {
@@ -257,8 +257,8 @@ export async function agenticTaskDelete(project: string, taskId: string | number
     return { error: "'taskId' must be a number" };
   }
 
-  const db = getDB();
-  const collection = db.collection(COLLECTION);
+  const database = getDB();
+  const collection = database.collection(COLLECTION);
 
   const existing = await collection.findOne({ project, taskId: id });
   if (!existing) {

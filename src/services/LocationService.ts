@@ -27,10 +27,10 @@ function haversineDistanceKm(lat1: number, lon1: number, lat2: number, lon2: num
   const toRad = (deg: number) => (deg * Math.PI) / 180;
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
-  const a =
+  const haversineA =
     Math.sin(dLat / 2) ** 2 +
     Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * 2 * Math.atan2(Math.sqrt(haversineA), Math.sqrt(1 - haversineA));
 }
 
 // ─── NOAA: Find Nearest Tide Station ───────────────────────────
@@ -58,18 +58,18 @@ async function findNearestTideStation(latitude: number, longitude: number): Prom
     let closest: TideStation | null = null;
     let minDist = Infinity;
 
-    for (const s of stations) {
-      if (s.lat == null || s.lng == null) continue;
-      const d = haversineDistanceKm(latitude, longitude, s.lat, s.lng);
-      if (d < minDist) {
-        minDist = d;
+    for (const station of stations) {
+      if (station.lat == null || station.lng == null) continue;
+      const distance = haversineDistanceKm(latitude, longitude, station.lat, station.lng);
+      if (distance < minDist) {
+        minDist = distance;
         closest = {
-          id: String(s.id),
-          name: s.name,
-          state: s.state || null,
-          latitude: s.lat,
-          longitude: s.lng,
-          distanceKm: Math.round(d * 100) / 100,
+          id: String(station.id),
+          name: station.name,
+          state: station.state || null,
+          latitude: station.lat,
+          longitude: station.lng,
+          distanceKm: Math.round(distance * 100) / 100,
         };
       }
     }
@@ -136,8 +136,8 @@ async function resolveLocationFromIp(): Promise<ResolvedLocation> {
 
 async function loadCachedLocation(): Promise<LocationDocument | null> {
   try {
-    const db = getDB();
-    return await db.collection<LocationDocument>(COLLECTION).findOne({ _id: "current" });
+    const database = getDB();
+    return await database.collection<LocationDocument>(COLLECTION).findOne({ _id: "current" });
   } catch {
     return null;
   }
@@ -145,13 +145,13 @@ async function loadCachedLocation(): Promise<LocationDocument | null> {
 
 async function saveCachedLocation(location: ResolvedLocation) {
   try {
-    const db = getDB();
+    const database = getDB();
     const document: LocationDocument = {
       _id: "current",
       ...location,
       updatedAt: new Date(),
     };
-    await db
+    await database
       .collection<LocationDocument>(COLLECTION)
       .replaceOne({ _id: "current" }, document, { upsert: true });
   } catch (error: unknown) {

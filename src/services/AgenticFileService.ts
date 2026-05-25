@@ -104,9 +104,9 @@ let settingsFetchPromise: Promise<void> | null = null;
 
 async function getSecuritySettings(): Promise<{ allowEnvFiles: boolean }> {
   try {
-    const db = getDB();
+    const database = getDB();
     // Reuse MongoClient from the shared connection pool if available
-    const client = (db as any).client || (db as any).s?.client;
+    const client = (database as any).client || (database as any).s?.client;
     const prismDb = client ? client.db("prism") : null;
     if (prismDb) {
       const collection = prismDb.collection("settings");
@@ -1263,17 +1263,17 @@ export async function agenticMultiReplace(filePath: string, chunks: MultiReplace
 
   // Validate each chunk parameter type
   for (let i = 0; i < chunks.length; i++) {
-    const c = chunks[i];
-    if (typeof c.startLine !== "number" || c.startLine <= 0) {
+    const chunk = chunks[i];
+    if (typeof chunk.startLine !== "number" || chunk.startLine <= 0) {
       return { error: `Chunk ${i}: 'startLine' must be a positive integer` };
     }
-    if (typeof c.endLine !== "number" || c.endLine < c.startLine) {
+    if (typeof chunk.endLine !== "number" || chunk.endLine < chunk.startLine) {
       return { error: `Chunk ${i}: 'endLine' must be an integer greater than or equal to startLine` };
     }
-    if (typeof c.targetContent !== "string") {
+    if (typeof chunk.targetContent !== "string") {
       return { error: `Chunk ${i}: 'targetContent' must be a string` };
     }
-    if (typeof c.replacementContent !== "string") {
+    if (typeof chunk.replacementContent !== "string") {
       return { error: `Chunk ${i}: 'replacementContent' must be a string` };
     }
   }
@@ -1301,43 +1301,43 @@ export async function agenticMultiReplace(filePath: string, chunks: MultiReplace
     let overallLineDelta = 0;
 
     for (let idx = 0; idx < sortedDesc.length; idx++) {
-      const c = sortedDesc[idx];
+      const chunk = sortedDesc[idx];
       const totalLines = lines.length;
 
-      if (c.startLine > totalLines || c.endLine > totalLines) {
+      if (chunk.startLine > totalLines || chunk.endLine > totalLines) {
         return {
-          error: `Chunk range [${c.startLine}, ${c.endLine}] exceeds total file lines (${totalLines})`,
+          error: `Chunk range [${chunk.startLine}, ${chunk.endLine}] exceeds total file lines (${totalLines})`,
           filePath: resolved,
         };
       }
 
-      const segment = lines.slice(c.startLine - 1, c.endLine).join("\n");
-      if (segment !== c.targetContent) {
+      const segment = lines.slice(chunk.startLine - 1, chunk.endLine).join("\n");
+      if (segment !== chunk.targetContent) {
         const numberedActual = lines
-          .slice(c.startLine - 1, c.endLine)
-          .map((l: string, i: number) => `${c.startLine + i}: ${l}`)
+          .slice(chunk.startLine - 1, chunk.endLine)
+          .map((l: string, i: number) => `${chunk.startLine + i}: ${l}`)
           .join("\n");
         return {
-          error: `Chunk in range [${c.startLine}, ${c.endLine}] does not match targetContent.`,
+          error: `Chunk in range [${chunk.startLine}, ${chunk.endLine}] does not match targetContent.`,
           filePath: resolved,
           actualContentInRange: numberedActual,
         };
       }
 
       // Perform replace
-      const before = lines.slice(0, c.startLine - 1);
-      const after = lines.slice(c.endLine);
-      const newSegmentLines = c.replacementContent.split("\n");
+      const before = lines.slice(0, chunk.startLine - 1);
+      const after = lines.slice(chunk.endLine);
+      const newSegmentLines = chunk.replacementContent.split("\n");
       lines = [...before, ...newSegmentLines, ...after];
 
-      const oldLinesCount = c.endLine - c.startLine + 1;
+      const oldLinesCount = chunk.endLine - chunk.startLine + 1;
       const newLinesCount = newSegmentLines.length;
       const delta = newLinesCount - oldLinesCount;
       overallLineDelta += delta;
 
       chunkResults.push({
-        startLine: c.startLine,
-        endLine: c.endLine,
+        startLine: chunk.startLine,
+        endLine: chunk.endLine,
         oldLines: oldLinesCount,
         newLines: newLinesCount,
         lineDelta: delta,

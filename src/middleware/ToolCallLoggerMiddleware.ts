@@ -330,8 +330,8 @@ function sanitizeResult(body: Record<string, unknown> | null): Record<string, un
  */
 export async function persistToolCall(entry: ToolCallLogEntry) {
   try {
-    const db = getDB();
-    await db.collection(COLLECTION).insertOne(entry);
+    const database = getDB();
+    await database.collection(COLLECTION).insertOne(entry);
   } catch {
     // Silently fail — logging should never break the app
   }
@@ -345,7 +345,7 @@ export async function persistToolCall(entry: ToolCallLogEntry) {
  * Query tool-call logs with optional filters.
  */
 export async function queryToolCallLogs(filters: ToolCallFilters = {}) {
-  const db = getDB();
+  const database = getDB();
   const query: Record<string, unknown> = {};
 
   if (filters.toolName) query.toolName = filters.toolName;
@@ -370,14 +370,14 @@ export async function queryToolCallLogs(filters: ToolCallFilters = {}) {
   const skip = parseInt(filters.skip || "0", 10);
 
   const [toolCalls, total] = await Promise.all([
-    db
+    database
       .collection(COLLECTION)
       .find(query)
       .sort({ timestamp: -1 })
       .skip(skip)
       .limit(limit)
       .toArray(),
-    db.collection(COLLECTION).countDocuments(query),
+    database.collection(COLLECTION).countDocuments(query),
   ]);
 
   return { total, count: toolCalls.length, toolCalls };
@@ -387,7 +387,7 @@ export async function queryToolCallLogs(filters: ToolCallFilters = {}) {
  * Get aggregated tool-call statistics.
  */
 export async function getToolCallStats(since?: string) {
-  const db = getDB();
+  const database = getDB();
   const match = since ? { timestamp: { $gte: new Date(since) } } : {};
 
   const [
@@ -399,10 +399,10 @@ export async function getToolCallStats(since?: string) {
     errorRate,
   ] = await Promise.all([
     // Total count
-    db.collection(COLLECTION).countDocuments(match),
+    database.collection(COLLECTION).countDocuments(match),
 
     // By tool name — count + avg/p95/max latency
-    db
+    database
       .collection(COLLECTION)
       .aggregate([
         { $match: match },
@@ -424,7 +424,7 @@ export async function getToolCallStats(since?: string) {
       .toArray(),
 
     // By domain
-    db
+    database
       .collection(COLLECTION)
       .aggregate([
         { $match: match },
@@ -443,7 +443,7 @@ export async function getToolCallStats(since?: string) {
       .toArray(),
 
     // Success vs failure breakdown
-    db
+    database
       .collection(COLLECTION)
       .aggregate([
         { $match: match },
@@ -452,7 +452,7 @@ export async function getToolCallStats(since?: string) {
       .toArray(),
 
     // Top 10 slowest calls
-    db
+    database
       .collection(COLLECTION)
       .find(match)
       .sort({ elapsedMs: -1 })
@@ -469,7 +469,7 @@ export async function getToolCallStats(since?: string) {
       .toArray(),
 
     // Error rate per tool (only tools with errors)
-    db
+    database
       .collection(COLLECTION)
       .aggregate([
         { $match: { ...match, success: false } },
@@ -529,8 +529,8 @@ export async function getToolCallStats(since?: string) {
  */
 export async function setupToolCallsCollection() {
   try {
-    const db = getDB();
-    const collection = db.collection(COLLECTION);
+    const database = getDB();
+    const collection = database.collection(COLLECTION);
 
     await Promise.all([
       collection.createIndex({ timestamp: -1 }),

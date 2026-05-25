@@ -91,8 +91,8 @@ export function requestLoggerMiddleware(req: Request, res: Response, next: NextF
  */
 async function persistRequest(entry: RequestLogEntry) {
   try {
-    const db = getDB();
-    await db.collection(COLLECTION).insertOne({
+    const database = getDB();
+    await database.collection(COLLECTION).insertOne({
       ...entry,
       timestamp: new Date(),
     });
@@ -105,7 +105,7 @@ async function persistRequest(entry: RequestLogEntry) {
  * Query persisted request logs with optional filters.
  */
 export async function queryRequestLogs(filters: RequestLogFilters = {}) {
-  const db = getDB();
+  const database = getDB();
   const query: Record<string, unknown> = {};
 
   if (filters.method) query.method = filters.method.toUpperCase();
@@ -126,14 +126,14 @@ export async function queryRequestLogs(filters: RequestLogFilters = {}) {
   const skip = parseInt(filters.skip || "0", 10);
 
   const [requests, total] = await Promise.all([
-    db
+    database
       .collection(COLLECTION)
       .find(query)
       .sort({ timestamp: -1 })
       .skip(skip)
       .limit(limit)
       .toArray(),
-    db.collection(COLLECTION).countDocuments(query),
+    database.collection(COLLECTION).countDocuments(query),
   ]);
 
   return { total, count: requests.length, requests };
@@ -143,12 +143,12 @@ export async function queryRequestLogs(filters: RequestLogFilters = {}) {
  * Get aggregated request stats.
  */
 export async function getRequestStats(since?: string) {
-  const db = getDB();
+  const database = getDB();
   const match = since ? { timestamp: { $gte: new Date(since) } } : {};
 
   const [totalRequests, byStatus, byMethod, byDomain] = await Promise.all([
-    db.collection(COLLECTION).countDocuments(match),
-    db
+    database.collection(COLLECTION).countDocuments(match),
+    database
       .collection(COLLECTION)
       .aggregate([
         { $match: match },
@@ -156,7 +156,7 @@ export async function getRequestStats(since?: string) {
         { $sort: { _id: 1 } },
       ])
       .toArray(),
-    db
+    database
       .collection(COLLECTION)
       .aggregate([
         { $match: match },
@@ -164,7 +164,7 @@ export async function getRequestStats(since?: string) {
         { $sort: { count: -1 } },
       ])
       .toArray(),
-    db
+    database
       .collection(COLLECTION)
       .aggregate([
         { $match: match },
@@ -192,12 +192,12 @@ export async function getRequestStats(since?: string) {
 
   return {
     totalRequests,
-    byStatus: Object.fromEntries(byStatus.map((s) => [(s as AggregateDoc)._id, (s as AggregateDoc).count])),
-    byMethod: Object.fromEntries(byMethod.map((m) => [(m as AggregateDoc)._id, (m as AggregateDoc).count])),
-    byDomain: byDomain.map((d) => ({
-      domain: (d as AggregateDoc)._id,
-      count: (d as AggregateDoc).count,
-      avgMs: Math.round(((d as AggregateDoc).avgMs || 0) * 100) / 100,
+    byStatus: Object.fromEntries(byStatus.map((statusEntry) => [(statusEntry as AggregateDoc)._id, (statusEntry as AggregateDoc).count])),
+    byMethod: Object.fromEntries(byMethod.map((methodEntry) => [(methodEntry as AggregateDoc)._id, (methodEntry as AggregateDoc).count])),
+    byDomain: byDomain.map((domainEntry) => ({
+      domain: (domainEntry as AggregateDoc)._id,
+      count: (domainEntry as AggregateDoc).count,
+      avgMs: Math.round(((domainEntry as AggregateDoc).avgMs || 0) * 100) / 100,
     })),
   };
 }
@@ -212,8 +212,8 @@ export async function getRequestStats(since?: string) {
  */
 export async function setupRequestsCollection() {
   try {
-    const db = getDB();
-    const collection = db.collection(COLLECTION);
+    const database = getDB();
+    const collection = database.collection(COLLECTION);
 
     await Promise.all([
       collection.createIndex({ timestamp: -1 }),

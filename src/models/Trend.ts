@@ -31,8 +31,8 @@ export interface TrendDoc {
  * Sets up the trends collection with indexes.
  */
 export async function setupTrendCollection() {
-  const db = getDB();
-  const collection = db.collection("trends");
+  const database = getDB();
+  const collection = database.collection("trends");
   await collection.createIndex({ normalizedName: 1, source: 1 });
   await collection.createIndex({ lastSeen: -1 });
   await collection.createIndex({ category: 1 });
@@ -47,8 +47,8 @@ export async function setupTrendCollection() {
 export async function upsertTrends(trends: TrendInput[]) {
   if (!trends.length) return { upserted: 0, modified: 0 };
 
-  const db = getDB();
-  const collection = db.collection<TrendDoc>("trends");
+  const database = getDB();
+  const collection = database.collection<TrendDoc>("trends");
   const now = new Date();
 
   const bulkOps: AnyBulkWriteOperation<TrendDoc>[] = trends.map((trend: TrendInput) => ({
@@ -96,8 +96,8 @@ export async function getRecentTrends(
   source: string | null = null,
   limit: number = 50,
 ) {
-  const db = getDB();
-  const collection = db.collection("trends");
+  const database = getDB();
+  const collection = database.collection("trends");
   const since = new Date(Date.now() - hoursToMs(hours));
 
   const filter: Record<string, unknown> = { lastSeen: { $gte: since } };
@@ -111,8 +111,8 @@ export async function getRecentTrends(
  * Searches trends in the database by keyword.
  */
 export async function searchTrendsDB(query: string, limit: number = 50) {
-  const db = getDB();
-  const collection = db.collection("trends");
+  const database = getDB();
+  const collection = database.collection("trends");
   return collection
     .find({ name: { $regex: query, $options: "i" } })
     .sort({ lastSeen: -1, volume: -1 })
@@ -124,8 +124,8 @@ export async function searchTrendsDB(query: string, limit: number = 50) {
  * Gets top trends aggregated across all sources.
  */
 export async function getTopTrends(hours: number = 24, limit: number = 20) {
-  const db = getDB();
-  const collection = db.collection("trends");
+  const database = getDB();
+  const collection = database.collection("trends");
   const since = new Date(Date.now() - hoursToMs(hours));
 
   return collection

@@ -320,11 +320,11 @@ ${scripts}
 <script>
   // Report rendered content dimensions to parent for iframe auto-resize
   function reportSize() {
-    var el = document.body;
-    var w = el.scrollWidth;
-    var h = el.scrollHeight;
-    if (w && h) {
-      window.parent.postMessage({ type: "embed-resize", width: w, height: h }, "*");
+    var element = document.body;
+    var contentWidth = element.scrollWidth;
+    var contentHeight = element.scrollHeight;
+    if (contentWidth && contentHeight) {
+      window.parent.postMessage({ type: "embed-resize", width: contentWidth, height: contentHeight }, "*");
     }
   }
   // Report after initial render, fonts, and any async rendering (KaTeX, Mermaid)

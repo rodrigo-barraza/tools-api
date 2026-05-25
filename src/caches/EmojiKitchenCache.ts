@@ -24,9 +24,9 @@ export function emojiToCodepoints(emojiStr: string): string {
 
   const points: string[] = [];
   for (const char of emojiStr) {
-    const cp = char.codePointAt(0);
-    if (cp === undefined) continue;
-    points.push(cp.toString(16));
+    const codePoint = char.codePointAt(0);
+    if (codePoint === undefined) continue;
+    points.push(codePoint.toString(16));
   }
   return points.join("-");
 }
@@ -34,8 +34,8 @@ export function emojiToCodepoints(emojiStr: string): string {
 /**
  * Resiliently strip variation selectors (like -fe0f) for robust mapping.
  */
-export function normalizeCodepoint(cp: string): string {
-  return cp.toLowerCase().trim().replace(/^(u|0x)/, "").replace(/-fe0f/g, "");
+export function normalizeCodepoint(codepointString: string): string {
+  return codepointString.toLowerCase().trim().replace(/^(u|0x)/, "").replace(/-fe0f/g, "");
 }
 
 /**
@@ -118,11 +118,11 @@ export function queryEmojiCombinations(emoji: string, limit: number = 50): Combi
   const rawData = getEmojiKitchenRawData();
   if (!rawData || !rawData.data) return [];
 
-  const cp = emojiToCodepoints(emoji);
-  if (!cp) return [];
+  const codePoints = emojiToCodepoints(emoji);
+  if (!codePoints) return [];
 
   // Find emoji key using normalized comparison
-  const matchedKey = findNormalizedKey(rawData.data, cp);
+  const matchedKey = findNormalizedKey(rawData.data, codePoints);
   if (!matchedKey) return [];
 
   const emojiEntry = rawData.data[matchedKey];

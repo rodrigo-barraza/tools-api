@@ -75,10 +75,10 @@ function ensureFoodCache(): FoodItem[] {
       });
 
       const numericStart = 35;
-      for (let n = numericStart; n < headers.length; n++) {
-        const rawVal = row[headers[n]];
+      for (let nutrientIndex = numericStart; nutrientIndex < headers.length; nutrientIndex++) {
+        const rawVal = row[headers[nutrientIndex]];
         const value = typeof rawVal === "string" ? parseFloat(rawVal) : NaN;
-        row[headers[n]] = isNaN(value) ? null : value;
+        row[headers[nutrientIndex]] = isNaN(value) ? null : value;
       }
       foods.push(row as FoodItem);
     }

@@ -472,13 +472,13 @@ export function analyzeNutrientGaps({
 
 function priorityOf(metric: string | null): number {
   if (!metric) return -1;
-  const m = metric.toLowerCase();
-  if (m === "rda") return 10;
-  if (m === "rda_multiplier_per_kg") return 9;
-  if (m === "ai") return 8;
-  if (m.includes("min_per_1000kcal")) return 7;
-  if (m === "recommendation") return 6;
-  if (m === "guideline") return 5;
+  const normalizedMetric = metric.toLowerCase();
+  if (normalizedMetric === "rda") return 10;
+  if (normalizedMetric === "rda_multiplier_per_kg") return 9;
+  if (normalizedMetric === "ai") return 8;
+  if (normalizedMetric.includes("min_per_1000kcal")) return 7;
+  if (normalizedMetric === "recommendation") return 6;
+  if (normalizedMetric === "guideline") return 5;
   return 0;
 }
 

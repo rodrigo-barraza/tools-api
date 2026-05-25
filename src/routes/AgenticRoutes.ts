@@ -641,8 +641,8 @@ router.post("/task/list", agenticHandler(async (req: Request) => {
 }));
 router.get("/task/list-all", asyncHandler(async (req: Request) => {
   const { status, limit, agentSessionId } = req.query as Record<string, string | undefined>;
-  const db = (await import("@rodrigo-barraza/utilities-library/mongo")).getDB();
-  const collection = db.collection("agent_tasks");
+  const database = (await import("@rodrigo-barraza/utilities-library/mongo")).getDB();
+  const collection = database.collection("agent_tasks");
   const filter: Record<string, unknown> = {};
   if (status) filter.status = status;
   if (agentSessionId) filter.agentSessionId = agentSessionId;

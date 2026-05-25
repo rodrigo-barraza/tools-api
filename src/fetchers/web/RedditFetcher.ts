@@ -66,22 +66,22 @@ function extractComments(children: RedditCommentChild[], limit: number) {
     if (comments.length >= limit) break;
     if (child.kind !== "t1") continue;
 
-    const c = child.data;
-    const body = c.body || "";
+    const commentData = child.data;
+    const body = commentData.body || "";
     comments.push({
-      author: c.author,
-      score: c.score,
+      author: commentData.author,
+      score: commentData.score,
       body: body.length > MAX_BODY_CHARS
         ? body.slice(0, MAX_BODY_CHARS) + "... [truncated]"
         : body,
-      createdUtc: c.created_utc,
-      isOp: c.is_submitter || false,
-      depth: c.depth || 0,
-      awards: c.total_awards_received || 0,
+      createdUtc: commentData.created_utc,
+      isOp: commentData.is_submitter || false,
+      depth: commentData.depth || 0,
+      awards: commentData.total_awards_received || 0,
     });
 
     // Recurse into replies (flatten tree) — replies can be "" or {data:{children:[]}}
-    const replies = typeof c.replies === "object" && c.replies ? c.replies : null;
+    const replies = typeof commentData.replies === "object" && commentData.replies ? commentData.replies : null;
     if (replies?.data?.children?.length && comments.length < limit) {
       const nested = extractComments(replies.data.children, limit - comments.length);
       comments.push(...nested);

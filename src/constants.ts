@@ -1980,8 +1980,8 @@ export const ARXIV_BASE_URL = "http://export.arxiv.org/api/query";
 export const WIKIPEDIA_SUMMARY_BASE_URL =
   "https://en.wikipedia.org/api/rest_v1";
 export const JIKAN_BASE_URL = "https://api.jikan.moe/v4";
-export const TMDB_BASE_URL = "https://api.themoviedb.org/3";
-export const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p";
+export const TMDB_BASE_URL = "https://api.themoviedatabase.org/3";
+export const TMDB_IMAGE_BASE_URL = "https://image.tmdatabase.org/t/p";
 
 export const ARXIV_CATEGORIES = [
   { id: "cs.AI", name: "Artificial Intelligence" },

@@ -52,10 +52,10 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
   const toRad = (d: number) => (d * Math.PI) / 180;
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
-  const a =
+  const haversineA =
     Math.sin(dLat / 2) ** 2 +
     Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * 2 * Math.atan2(Math.sqrt(haversineA), Math.sqrt(1 - haversineA));
 }
 
 // ─── Load & Index ──────────────────────────────────────────────
@@ -70,7 +70,7 @@ function ensureLoaded(): void {
   try {
     const csvPath = join(__dirname, "data", "digest_airports.csv");
     const raw = readFileSync(csvPath, "utf-8");
-    const lines = raw.split("\n").filter((l: string) => l.trim());
+    const lines = raw.split("\n").filter((line: string) => line.trim());
     if (lines.length === 0) return;
     const headers = parseCSVLine(lines[0]);
 
@@ -98,13 +98,13 @@ function ensureLoaded(): void {
         scheduled_service: null,
       };
 
-      headers.forEach((h: string, index: number) => {
+      headers.forEach((header: string, index: number) => {
         const value = values[index] || "";
-        if (NUMERIC_FIELDS.has(h)) {
+        if (NUMERIC_FIELDS.has(header)) {
           const parsedNumber = parseFloat(value);
-          row[h] = isNaN(parsedNumber) ? null : parsedNumber;
+          row[header] = isNaN(parsedNumber) ? null : parsedNumber;
         } else {
-          row[h] = value || null;
+          row[header] = value || null;
         }
       });
 
@@ -160,41 +160,41 @@ export function searchAirports(query: string | null | undefined, opts: SearchAir
   ensureLoaded();
 
   const { limit = 10, country } = opts;
-  const q = normalizeSearch(query || "");
+  const normalizedQuery = normalizeSearch(query || "");
 
-  if (!q) return { count: 0, query, note: "No query provided.", airports: [] };
+  if (!normalizedQuery) return { count: 0, query, note: "No query provided.", airports: [] };
 
   let candidates = AIRPORT_DB;
   if (country) {
-    const c = country.toUpperCase();
+    const normalizedCountry = country.toUpperCase();
     candidates = candidates.filter(
-      (a: AirportInfo) => a.country_code && a.country_code.toUpperCase() === c,
+      (airport: AirportInfo) => airport.country_code && airport.country_code.toUpperCase() === normalizedCountry,
     );
   }
 
   const scored = candidates
-    .map((ap: AirportInfo) => {
+    .map((airport: AirportInfo) => {
       let score = 0;
-      const iata = (ap.iata_code || "").toLowerCase();
-      const icao = (ap.icao_code || "").toLowerCase();
-      const name = normalizeSearch(ap.name || "");
-      const city = normalizeSearch(ap.city || "");
+      const iata = (airport.iata_code || "").toLowerCase();
+      const icao = (airport.icao_code || "").toLowerCase();
+      const name = normalizeSearch(airport.name || "");
+      const city = normalizeSearch(airport.city || "");
 
-      if (iata === q) score += 100;
-      else if (icao === q) score += 95;
-      else if (city === q) score += 80;
-      else if (name === q) score += 75;
-      else if (iata.startsWith(q)) score += 60;
-      else if (city.startsWith(q)) score += 50;
-      else if (name.includes(q)) score += 30;
-      else if (city.includes(q)) score += 25;
+      if (iata === normalizedQuery) score += 100;
+      else if (icao === normalizedQuery) score += 95;
+      else if (city === normalizedQuery) score += 80;
+      else if (name === normalizedQuery) score += 75;
+      else if (iata.startsWith(normalizedQuery)) score += 60;
+      else if (city.startsWith(normalizedQuery)) score += 50;
+      else if (name.includes(normalizedQuery)) score += 30;
+      else if (city.includes(normalizedQuery)) score += 25;
 
       // Boost large airports
-      if (ap.type === "large_airport") score += 5;
+      if (airport.type === "large_airport") score += 5;
 
-      return { ap, score };
+      return { airport, score };
     })
-    .filter((s) => s.score > 0)
+    .filter((entry) => entry.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
 
@@ -202,7 +202,7 @@ export function searchAirports(query: string | null | undefined, opts: SearchAir
     count: scored.length,
     query,
     note: "Data from OurAirports (Public Domain). Medium and large airports with IATA codes.",
-    airports: scored.map((s) => formatAirport(s.ap)),
+    airports: scored.map((entry) => formatAirport(entry.airport)),
   };
 }
 
@@ -212,17 +212,17 @@ export function searchAirports(query: string | null | undefined, opts: SearchAir
 export function getAirportByCode(code: string): FormattedAirport | null {
   ensureLoaded();
 
-  const c = code.toUpperCase().trim();
-  const ap =
+  const normalizedCode = code.toUpperCase().trim();
+  const airport =
     AIRPORT_DB.find(
-      (a: AirportInfo) => a.iata_code && a.iata_code.toUpperCase() === c,
+      (airportEntry: AirportInfo) => airportEntry.iata_code && airportEntry.iata_code.toUpperCase() === normalizedCode,
     ) ||
     AIRPORT_DB.find(
-      (a: AirportInfo) => a.icao_code && a.icao_code.toUpperCase() === c,
+      (airportEntry: AirportInfo) => airportEntry.icao_code && airportEntry.icao_code.toUpperCase() === normalizedCode,
     );
 
-  if (!ap) return null;
-  return formatAirport(ap);
+  if (!airport) return null;
+  return formatAirport(airport);
 }
 
 export interface GetAirportsByCountryOptions {
@@ -243,10 +243,10 @@ export function getAirportsByCountry(countryCode: string, opts: GetAirportsByCou
   ensureLoaded();
 
   const { limit = 50 } = opts;
-  const c = countryCode.toUpperCase().trim();
+  const normalizedCountryCode = countryCode.toUpperCase().trim();
 
   const airports = AIRPORT_DB.filter(
-    (a: AirportInfo) => a.country_code && a.country_code.toUpperCase() === c,
+    (airport: AirportInfo) => airport.country_code && airport.country_code.toUpperCase() === normalizedCountryCode,
   )
     .sort((a: AirportInfo, b: AirportInfo) => {
       // Large airports first
@@ -257,7 +257,7 @@ export function getAirportsByCountry(countryCode: string, opts: GetAirportsByCou
     .slice(0, limit);
 
   return {
-    countryCode: c,
+    countryCode: normalizedCountryCode,
     count: airports.length,
     note: "Data from OurAirports (Public Domain).",
     airports: airports.map(formatAirport),
@@ -285,10 +285,10 @@ export function getNearestAirports(lat: number, lng: number, opts: GetNearestAir
   const { limit = 5 } = opts;
 
   const withDist = AIRPORT_DB.filter(
-    (a: AirportInfo) => a.latitude !== null && a.longitude !== null,
-  ).map((a: AirportInfo) => ({
-    airport: a,
-    distanceKm: haversineKm(lat, lng, a.latitude as number, a.longitude as number),
+    (airport: AirportInfo) => airport.latitude !== null && airport.longitude !== null,
+  ).map((airport: AirportInfo) => ({
+    airport,
+    distanceKm: haversineKm(lat, lng, airport.latitude as number, airport.longitude as number),
   }));
 
   withDist.sort((a, b) => a.distanceKm - b.distanceKm);
@@ -299,9 +299,9 @@ export function getNearestAirports(lat: number, lng: number, opts: GetNearestAir
     longitude: lng,
     count: nearest.length,
     note: "Distance calculated via Haversine formula. Data from OurAirports.",
-    airports: nearest.map((n) => ({
-      ...formatAirport(n.airport),
-      distanceKm: Math.round(n.distanceKm * 10) / 10,
+    airports: nearest.map((nearestEntry) => ({
+      ...formatAirport(nearestEntry.airport),
+      distanceKm: Math.round(nearestEntry.distanceKm * 10) / 10,
     })),
   };
 }

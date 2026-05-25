@@ -175,30 +175,30 @@ export async function getHeroes(): Promise<TransformedHero[]> {
   ]);
 
   // Merge stats into hero objects
-  const statsMap = new Map(stats.map((s) => [s.id, s]));
-  heroCache = heroes.map((h) => {
-    const s = statsMap.get(h.id) || ({} as Partial<OpenDotaHeroStats>);
+  const statsMap = new Map(stats.map((statEntry) => [statEntry.id, statEntry]));
+  heroCache = heroes.map((hero) => {
+    const heroStats = statsMap.get(hero.id) || ({} as Partial<OpenDotaHeroStats>);
     return {
-      id: h.id,
-      name: h.localized_name,
-      internalName: h.name,
-      primaryAttr: h.primary_attr,
-      attackType: h.attack_type,
-      roles: h.roles,
-      img: `https://cdn.cloudflare.steamstatic.com${s.img || ""}`,
-      icon: `https://cdn.cloudflare.steamstatic.com${s.icon || ""}`,
-      baseHealth: s.base_health || 0,
-      baseMana: s.base_mana || 0,
-      baseArmor: s.base_armor || 0,
-      baseAttackMin: s.base_attack_min || 0,
-      baseAttackMax: s.base_attack_max || 0,
-      moveSpeed: s.move_speed || 0,
-      legs: h.legs,
+      id: hero.id,
+      name: hero.localized_name,
+      internalName: hero.name,
+      primaryAttr: hero.primary_attr,
+      attackType: hero.attack_type,
+      roles: hero.roles,
+      img: `https://cdn.cloudflare.steamstatic.com${heroStats.img || ""}`,
+      icon: `https://cdn.cloudflare.steamstatic.com${heroStats.icon || ""}`,
+      baseHealth: heroStats.base_health || 0,
+      baseMana: heroStats.base_mana || 0,
+      baseArmor: heroStats.base_armor || 0,
+      baseAttackMin: heroStats.base_attack_min || 0,
+      baseAttackMax: heroStats.base_attack_max || 0,
+      moveSpeed: heroStats.move_speed || 0,
+      legs: hero.legs,
       // Win rates across brackets
-      proWinRate: s.pro_pick ? (((s.pro_win || 0) / s.pro_pick) * 100).toFixed(1) + "%" : null,
-      proPick: s.pro_pick || 0,
-      turboPick: s.turbo_picks || 0,
-      turboWinRate: s.turbo_picks ? (((s.turbo_wins || 0) / s.turbo_picks) * 100).toFixed(1) + "%" : null,
+      proWinRate: heroStats.pro_pick ? (((heroStats.pro_win || 0) / heroStats.pro_pick) * 100).toFixed(1) + "%" : null,
+      proPick: heroStats.pro_pick || 0,
+      turboPick: heroStats.turbo_picks || 0,
+      turboWinRate: heroStats.turbo_picks ? (((heroStats.turbo_wins || 0) / heroStats.turbo_picks) * 100).toFixed(1) + "%" : null,
     };
   });
   heroCacheTime = now;
@@ -210,23 +210,23 @@ export async function getHeroes(): Promise<TransformedHero[]> {
  */
 export async function getHero(query: string | number) {
   const heroes = await getHeroes();
-  const q = String(query).toLowerCase();
+  const normalizedQuery = String(query).toLowerCase();
 
   // Try ID match first
-  const byId = heroes.find((h) => h.id === parseInt(String(query)));
+  const byId = heroes.find((hero) => hero.id === parseInt(String(query)));
   if (byId) return byId;
 
   // Exact name match
-  const exact = heroes.find((h) => h.name.toLowerCase() === q);
+  const exact = heroes.find((hero) => hero.name.toLowerCase() === normalizedQuery);
   if (exact) return exact;
 
   // Partial name match
-  const partial = heroes.filter((h) => h.name.toLowerCase().includes(q));
+  const partial = heroes.filter((hero) => hero.name.toLowerCase().includes(normalizedQuery));
   if (partial.length === 1) return partial[0];
   if (partial.length > 1) {
     return {
       ambiguous: true,
-      matches: partial.map((h) => ({ id: h.id, name: h.name })),
+      matches: partial.map((hero) => ({ id: hero.id, name: hero.name })),
       hint: "Multiple heroes matched. Use the exact name or hero ID.",
     };
   }
@@ -244,12 +244,12 @@ export async function getHeroMatchups(heroId: number | string) {
 
   // Sort by win rate to find best/worst
   const withRates: TransformedMatchup[] = matchups
-    .filter((m) => m.games_played >= 50)
-    .map((m) => ({
-      heroId: m.hero_id,
-      gamesPlayed: m.games_played,
-      wins: m.wins,
-      winRate: ((m.wins / m.games_played) * 100).toFixed(1) + "%",
+    .filter((matchupEntry) => matchupEntry.games_played >= 50)
+    .map((matchupEntry) => ({
+      heroId: matchupEntry.hero_id,
+      gamesPlayed: matchupEntry.games_played,
+      wins: matchupEntry.wins,
+      winRate: ((matchupEntry.wins / matchupEntry.games_played) * 100).toFixed(1) + "%",
     }));
 
   const sorted = [...withRates].sort(
@@ -299,25 +299,25 @@ export async function getPlayer(accountId: number | string) {
  */
 export async function getPlayerRecentMatches(accountId: number | string, limit = 10) {
   const matches = await fetchJson<OpenDotaRecentMatch[]>(`/players/${accountId}/recentMatches`);
-  return matches.slice(0, limit).map((m) => ({
-    matchId: m.match_id,
-    heroId: m.hero_id,
-    duration: m.duration,
-    durationMinutes: Math.round(m.duration / 60),
-    kills: m.kills,
-    deaths: m.deaths,
-    assists: m.assists,
-    kda: m.deaths > 0
-      ? ((m.kills + m.assists) / m.deaths).toFixed(1)
-      : (m.kills + m.assists).toFixed(1),
-    lastHits: m.last_hits,
-    denies: m.denies,
-    xpm: m.xp_per_min,
-    gpm: m.gold_per_min,
-    playerSlot: m.player_slot,
-    radiantWin: m.radiant_win,
-    won: (m.player_slot < 128) === m.radiant_win,
-    startTime: new Date(m.start_time * 1000).toISOString(),
+  return matches.slice(0, limit).map((matchEntry) => ({
+    matchId: matchEntry.match_id,
+    heroId: matchEntry.hero_id,
+    duration: matchEntry.duration,
+    durationMinutes: Math.round(matchEntry.duration / 60),
+    kills: matchEntry.kills,
+    deaths: matchEntry.deaths,
+    assists: matchEntry.assists,
+    kda: matchEntry.deaths > 0
+      ? ((matchEntry.kills + matchEntry.assists) / matchEntry.deaths).toFixed(1)
+      : (matchEntry.kills + matchEntry.assists).toFixed(1),
+    lastHits: matchEntry.last_hits,
+    denies: matchEntry.denies,
+    xpm: matchEntry.xp_per_min,
+    gpm: matchEntry.gold_per_min,
+    playerSlot: matchEntry.player_slot,
+    radiantWin: matchEntry.radiant_win,
+    won: (matchEntry.player_slot < 128) === matchEntry.radiant_win,
+    startTime: new Date(matchEntry.start_time * 1000).toISOString(),
   }));
 }
 
@@ -327,36 +327,36 @@ export async function getPlayerRecentMatches(accountId: number | string, limit =
  * Get match details by match ID.
  */
 export async function getMatch(matchId: number | string) {
-  const m = await fetchJson<OpenDotaMatch>(`/matches/${matchId}`);
+  const matchData = await fetchJson<OpenDotaMatch>(`/matches/${matchId}`);
 
   return {
-    matchId: m.match_id,
-    duration: m.duration,
-    durationMinutes: Math.round(m.duration / 60),
-    radiantWin: m.radiant_win,
-    radiantScore: m.radiant_score,
-    direScore: m.dire_score,
-    startTime: new Date(m.start_time * 1000).toISOString(),
-    gameMode: m.game_mode,
-    lobbyType: m.lobby_type,
-    region: m.region,
-    players: (m.players || []).map((p: OpenDotaMatchPlayer) => ({
-      accountId: p.account_id,
-      personaName: p.personaname,
-      heroId: p.hero_id,
-      kills: p.kills,
-      deaths: p.deaths,
-      assists: p.assists,
-      lastHits: p.last_hits,
-      denies: p.denies,
-      gpm: p.gold_per_min,
-      xpm: p.xp_per_min,
-      heroDamage: p.hero_damage,
-      towerDamage: p.tower_damage,
-      heroHealing: p.hero_healing,
-      level: p.level,
-      isRadiant: p.isRadiant,
-      won: p.isRadiant === m.radiant_win,
+    matchId: matchData.match_id,
+    duration: matchData.duration,
+    durationMinutes: Math.round(matchData.duration / 60),
+    radiantWin: matchData.radiant_win,
+    radiantScore: matchData.radiant_score,
+    direScore: matchData.dire_score,
+    startTime: new Date(matchData.start_time * 1000).toISOString(),
+    gameMode: matchData.game_mode,
+    lobbyType: matchData.lobby_type,
+    region: matchData.region,
+    players: (matchData.players || []).map((player: OpenDotaMatchPlayer) => ({
+      accountId: player.account_id,
+      personaName: player.personaname,
+      heroId: player.hero_id,
+      kills: player.kills,
+      deaths: player.deaths,
+      assists: player.assists,
+      lastHits: player.last_hits,
+      denies: player.denies,
+      gpm: player.gold_per_min,
+      xpm: player.xp_per_min,
+      heroDamage: player.hero_damage,
+      towerDamage: player.tower_damage,
+      heroHealing: player.hero_healing,
+      level: player.level,
+      isRadiant: player.isRadiant,
+      won: player.isRadiant === matchData.radiant_win,
     })),
   };
 }
@@ -368,16 +368,16 @@ export async function getMatch(matchId: number | string) {
  */
 export async function getProMatches(limit = 10) {
   const matches = await fetchJson<OpenDotaProMatch[]>("/proMatches");
-  return matches.slice(0, limit).map((m) => ({
-    matchId: m.match_id,
-    duration: m.duration,
-    durationMinutes: Math.round(m.duration / 60),
-    radiantName: m.radiant_name,
-    direName: m.dire_name,
-    radiantWin: m.radiant_win,
-    radiantScore: m.radiant_score,
-    direScore: m.dire_score,
-    leagueName: m.league_name,
-    startTime: new Date(m.start_time * 1000).toISOString(),
+  return matches.slice(0, limit).map((matchEntry) => ({
+    matchId: matchEntry.match_id,
+    duration: matchEntry.duration,
+    durationMinutes: Math.round(matchEntry.duration / 60),
+    radiantName: matchEntry.radiant_name,
+    direName: matchEntry.dire_name,
+    radiantWin: matchEntry.radiant_win,
+    radiantScore: matchEntry.radiant_score,
+    direScore: matchEntry.dire_score,
+    leagueName: matchEntry.league_name,
+    startTime: new Date(matchEntry.start_time * 1000).toISOString(),
   }));
 }

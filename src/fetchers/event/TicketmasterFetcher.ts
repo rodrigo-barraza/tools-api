@@ -97,15 +97,15 @@ function extractVenue(event: TicketmasterEvent) {
     };
   }
 
-  const v = venues[0];
+  const primaryVenue = venues[0];
   return {
-    name: v.name || null,
-    address: v.address?.line1 || null,
-    city: v.city?.name || null,
-    state: v.state?.stateCode || null,
-    country: v.country?.countryCode || null,
-    latitude: v.location?.latitude ? parseFloat(v.location.latitude) : null,
-    longitude: v.location?.longitude ? parseFloat(v.location.longitude) : null,
+    name: primaryVenue.name || null,
+    address: primaryVenue.address?.line1 || null,
+    city: primaryVenue.city?.name || null,
+    state: primaryVenue.state?.stateCode || null,
+    country: primaryVenue.country?.countryCode || null,
+    latitude: primaryVenue.location?.latitude ? parseFloat(primaryVenue.location.latitude) : null,
+    longitude: primaryVenue.location?.longitude ? parseFloat(primaryVenue.location.longitude) : null,
   };
 }
 
@@ -117,12 +117,12 @@ function extractGenres(event: TicketmasterEvent) {
   if (!classifications) return [];
 
   const genres = new Set();
-  for (const c of classifications) {
-    if (c.genre?.name && c.genre.name !== "Undefined") {
-      genres.add(c.genre.name);
+  for (const classification of classifications) {
+    if (classification.genre?.name && classification.genre.name !== "Undefined") {
+      genres.add(classification.genre.name);
     }
-    if (c.subGenre?.name && c.subGenre.name !== "Undefined") {
-      genres.add(c.subGenre.name);
+    if (classification.subGenre?.name && classification.subGenre.name !== "Undefined") {
+      genres.add(classification.subGenre.name);
     }
   }
   return [...genres];

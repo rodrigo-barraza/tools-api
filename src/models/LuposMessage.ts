@@ -47,8 +47,8 @@ export function getLuposDB(): Db {
  * Index creation runs in the background (MongoDB handles large collections asynchronously).
  */
 export async function setupLuposCollections() {
-  const db = getLuposDB();
-  messagesCol = db.collection("Messages");
+  const database = getLuposDB();
+  messagesCol = database.collection("Messages");
 
   // Fire-and-forget index creation — these are additive.
   // If Lupos already created them, MongoDB noops.
@@ -85,8 +85,8 @@ export async function setupLuposCollections() {
  */
 export function getMessagesCollection(): Collection<Document> {
   if (!messagesCol) {
-    const db = getLuposDB();
-    messagesCol = db.collection("Messages");
+    const database = getLuposDB();
+    messagesCol = database.collection("Messages");
   }
   return messagesCol;
 }

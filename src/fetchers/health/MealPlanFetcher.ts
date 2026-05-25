@@ -48,13 +48,13 @@ function ensureFoodCache(): FoodItem[] {
 
   const dataDir = join(__dirname, "data");
   const files = readdirSync(dataDir).filter(
-    (f: string) => f.startsWith("digest_food") && f.endsWith(".csv"),
+    (fileName: string) => fileName.startsWith("digest_food") && fileName.endsWith(".csv"),
   );
 
   const foods: FoodItem[] = [];
   for (const file of files) {
     const raw = readFileSync(join(dataDir, file), "utf-8");
-    const lines = raw.split("\n").filter((l: string) => l.trim());
+    const lines = raw.split("\n").filter((line: string) => line.trim());
     const headers = parseCSVLine(lines[0]);
 
     for (let i = 1; i < lines.length; i++) {
@@ -62,15 +62,15 @@ function ensureFoodCache(): FoodItem[] {
       if (values.length < 40) continue;
 
       const row: Record<string, string | number | null> = {};
-      headers.forEach((h: string, index: number) => {
-        row[h] = values[index] || "";
+      headers.forEach((header: string, index: number) => {
+        row[header] = values[index] || "";
       });
 
       const numericStart = 35;
-      for (let n = numericStart; n < headers.length; n++) {
-        const rawVal = row[headers[n]];
+      for (let nutrientIndex = numericStart; nutrientIndex < headers.length; nutrientIndex++) {
+        const rawVal = row[headers[nutrientIndex]];
         const value = typeof rawVal === "string" ? parseFloat(rawVal) : NaN;
-        row[headers[n]] = isNaN(value) ? null : value;
+        row[headers[nutrientIndex]] = isNaN(value) ? null : value;
       }
       foods.push(row as FoodItem);
     }
@@ -82,22 +82,22 @@ function ensureFoodCache(): FoodItem[] {
 
 // ─── Dietary Preference Filters ────────────────────────────────
 
-const DIET_FILTERS: Record<string, (f: FoodItem) => boolean> = {
+const DIET_FILTERS: Record<string, (food: FoodItem) => boolean> = {
   omnivore: () => true,
-  vegetarian: (f: FoodItem) => {
-    const k = (f.kingdom || "").toLowerCase();
-    const t = (f.food_type || "").toLowerCase();
-    return k !== "animalia" || t === "dairy" || t === "egg";
+  vegetarian: (food: FoodItem) => {
+    const normalizedKingdom = (food.kingdom || "").toLowerCase();
+    const normalizedFoodType = (food.food_type || "").toLowerCase();
+    return normalizedKingdom !== "animalia" || normalizedFoodType === "dairy" || normalizedFoodType === "egg";
   },
-  vegan: (f: FoodItem) => (f.kingdom || "").toLowerCase() !== "animalia",
-  pescatarian: (f: FoodItem) => {
-    const k = (f.kingdom || "").toLowerCase();
-    const t = (f.food_type || "").toLowerCase();
-    return k !== "animalia" || ["fish", "seafood", "dairy", "egg"].includes(t);
+  vegan: (food: FoodItem) => (food.kingdom || "").toLowerCase() !== "animalia",
+  pescatarian: (food: FoodItem) => {
+    const normalizedKingdom = (food.kingdom || "").toLowerCase();
+    const normalizedFoodType = (food.food_type || "").toLowerCase();
+    return normalizedKingdom !== "animalia" || ["fish", "seafood", "dairy", "egg"].includes(normalizedFoodType);
   },
-  keto: (f: FoodItem) => {
+  keto: (food: FoodItem) => {
     // Low carb: prefer foods with <10g carbs per 100g
-    const carbs = f.carbohydrate || 0;
+    const carbs = food.carbohydrate || 0;
     return typeof carbs === "number" && carbs < 10;
   },
 };
@@ -252,13 +252,13 @@ export function buildMealPlan({
       .map((e: string) => normalizeSearch(e.trim()))
       .filter(Boolean);
     candidates = candidates.filter(
-      (f: FoodItem) => !excluded.some((e: string) => normalizeSearch(f.food_name || "").includes(e)),
+      (food: FoodItem) => !excluded.some((excludedName: string) => normalizeSearch(food.food_name || "").includes(excludedName)),
     );
   }
 
   // Filter out zero-calorie foods
   candidates = candidates.filter(
-    (f: FoodItem) => f.kilocalories && f.kilocalories > 10,
+    (food: FoodItem) => food.kilocalories && food.kilocalories > 10,
   );
 
   // ── Emphasized nutrients priority ────────────────────────────
@@ -266,7 +266,7 @@ export function buildMealPlan({
   if (emphasizeNutrients) {
     emphasis = emphasizeNutrients
       .split(",")
-      .map((n: string) => n.trim().toLowerCase().replace(/[\s-]+/g, "_"))
+      .map((nutrientName: string) => nutrientName.trim().toLowerCase().replace(/[\s-]+/g, "_"))
       .filter(Boolean);
   }
 
@@ -275,7 +275,7 @@ export function buildMealPlan({
   const remainingGaps = { ...targets };
   const usedFoodNames = new Set<string>();
 
-  for (let m = 0; m < mealsPerDay; m++) {
+  for (let mealIndex = 0; mealIndex < mealsPerDay; mealIndex++) {
     const mealCalBudget = caloriesPerMeal;
     let mealCalUsed = 0;
     const mealItems: MealItem[] = [];
@@ -364,8 +364,8 @@ export function buildMealPlan({
     }
 
     meals.push({
-      meal: m + 1,
-      label: getMealLabel(m, mealsPerDay),
+      meal: mealIndex + 1,
+      label: getMealLabel(mealIndex, mealsPerDay),
       totalCalories: Math.round(mealCalUsed),
       items: mealItems,
     });

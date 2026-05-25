@@ -71,7 +71,7 @@ export async function getSnapshotHistory(url: string, { limit = 20, from, to }: 
 
   const snapshots = rows.map((row: string[]) => {
     const object: Record<string, unknown> = {};
-    headers.forEach((h: string, i: number) => { object[h] = row[i]; });
+    headers.forEach((header: string, i: number) => { object[header] = row[i]; });
     return {
       timestamp: object.timestamp,
       date: formatWaybackTimestamp(object.timestamp as string),
@@ -96,11 +96,11 @@ export async function getSnapshotHistory(url: string, { limit = 20, from, to }: 
 
 function formatWaybackTimestamp(ts: string) {
   if (!ts || ts.length < 8) return null;
-  const y = ts.slice(0, 4);
-  const m = ts.slice(4, 6);
-  const d = ts.slice(6, 8);
-  const h = ts.slice(8, 10) || "00";
-  const min = ts.slice(10, 12) || "00";
-  const s = ts.slice(12, 14) || "00";
-  return `${y}-${m}-${d}T${h}:${min}:${s}Z`;
+  const year = ts.slice(0, 4);
+  const month = ts.slice(4, 6);
+  const day = ts.slice(6, 8);
+  const hours = ts.slice(8, 10) || "00";
+  const minutes = ts.slice(10, 12) || "00";
+  const seconds = ts.slice(12, 14) || "00";
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}Z`;
 }

@@ -25,12 +25,12 @@ interface StateDocument extends Document {
  */
 export async function saveState(collectionName: string, data: unknown[] | Record<string, unknown>) {
   try {
-    const db = getDB();
+    const database = getDB();
     const document: StateDocument = Array.isArray(data)
       ? { _id: "current", items: data, updatedAt: new Date() }
       : { _id: "current", ...data, updatedAt: new Date() };
 
-    await db
+    await database
       .collection<StateDocument>(collectionName)
       .replaceOne({ _id: "current" }, document, { upsert: true });
   } catch (error: unknown) {
@@ -46,8 +46,8 @@ export async function saveState(collectionName: string, data: unknown[] | Record
  */
 export async function loadState(collectionName: string) {
   try {
-    const db = getDB();
-    const document = await db
+    const database = getDB();
+    const document = await database
       .collection<StateDocument>(collectionName)
       .findOne({ _id: "current" });
     if (!document) return null;

@@ -112,10 +112,10 @@ interface RawWikipediaEvent {
  */
 export async function getOnThisDay(type: string = "selected", month?: number, day?: number): Promise<OnThisDayResult> {
   const now = new Date();
-  const m = month || now.getMonth() + 1;
-  const d = day || now.getDate();
-  const padM = String(m).padStart(2, "0");
-  const padD = String(d).padStart(2, "0");
+  const resolvedMonth = month || now.getMonth() + 1;
+  const resolvedDay = day || now.getDate();
+  const padM = String(resolvedMonth).padStart(2, "0");
+  const padD = String(resolvedDay).padStart(2, "0");
 
   const url = `${WIKIPEDIA_SUMMARY_BASE_URL}/feed/onthisday/${type}/${padM}/${padD}`;
   const response = await fetch(url, {
@@ -134,15 +134,15 @@ export async function getOnThisDay(type: string = "selected", month?: number, da
     date: `${padM}-${padD}`,
     type,
     count: entries.length,
-    events: entries.slice(0, 20).map((e: RawWikipediaEvent) => ({
-      year: e.year || null,
-      text: e.text || null,
-      pages: (e.pages || []).slice(0, 3).map((p: RawWikipediaPage) => ({
-        title: p.title,
-        description: p.description || null,
-        extract: p.extract || null,
-        thumbnail: p.thumbnail?.source || null,
-        url: p.content_urls?.desktop?.page || null,
+    events: entries.slice(0, 20).map((event: RawWikipediaEvent) => ({
+      year: event.year || null,
+      text: event.text || null,
+      pages: (event.pages || []).slice(0, 3).map((page: RawWikipediaPage) => ({
+        title: page.title,
+        description: page.description || null,
+        extract: page.extract || null,
+        thumbnail: page.thumbnail?.source || null,
+        url: page.content_urls?.desktop?.page || null,
       })),
     })),
   };

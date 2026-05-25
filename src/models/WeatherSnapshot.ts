@@ -7,8 +7,8 @@ import { errorMessage } from "../utilities.ts";
  */
 export async function insertSnapshot(data: Record<string, unknown>) {
   try {
-    const db = getDB();
-    const collection = db.collection("snapshots");
+    const database = getDB();
+    const collection = database.collection("snapshots");
     await collection.insertOne({
       ...data,
       createdAt: new Date(),

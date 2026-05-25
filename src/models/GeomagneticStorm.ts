@@ -15,10 +15,10 @@ export interface GeomagneticStormDocument {
 let collection: Collection<GeomagneticStormDocument> | null = null;
 
 export async function setupGeomagneticStormCollection() {
-  const db = getDB();
-  if (!db) throw new Error("Database not connected");
+  const database = getDB();
+  if (!database) throw new Error("Database not connected");
 
-  collection = db.collection<GeomagneticStormDocument>("geomagnetic_storms");
+  collection = database.collection<GeomagneticStormDocument>("geomagnetic_storms");
 
   await collection.createIndex({ gstId: 1 }, { unique: true });
   await collection.createIndex({ startTime: -1 });

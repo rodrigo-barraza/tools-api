@@ -13,8 +13,8 @@ export interface CommodityQuoteInput {
  * Set up the commodity_snapshots collection with a TTL index.
  */
 export async function setupCommodityCollection() {
-  const db = getDB();
-  const collection = db.collection("commodity_snapshots");
+  const database = getDB();
+  const collection = database.collection("commodity_snapshots");
 
   await collection.createIndex({ fetchedAt: -1 });
   await collection.createIndex({ ticker: 1, fetchedAt: -1 });
@@ -28,8 +28,8 @@ export async function setupCommodityCollection() {
 export async function insertSnapshots(quotes: CommodityQuoteInput[]) {
   if (!quotes.length) return;
 
-  const db = getDB();
-  const collection = db.collection("commodity_snapshots");
+  const database = getDB();
+  const collection = database.collection("commodity_snapshots");
   const docs = quotes.map((q: CommodityQuoteInput) => ({
     ...q,
     fetchedAt: new Date(q.fetchedAt),
@@ -43,8 +43,8 @@ export async function insertSnapshots(quotes: CommodityQuoteInput[]) {
  * Get historical price data for a specific ticker.
  */
 export async function getHistory(ticker: string, hours: number = 24) {
-  const db = getDB();
-  const collection = db.collection("commodity_snapshots");
+  const database = getDB();
+  const collection = database.collection("commodity_snapshots");
   const since = new Date(Date.now() - hoursToMs(hours));
 
   return collection

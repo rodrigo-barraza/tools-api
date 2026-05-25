@@ -47,8 +47,8 @@ let productCollection: Collection<ProductDocument> | null = null;
  * Set up the products collection with indexes.
  */
 export async function setupProductCollection() {
-  const db = getDB();
-  productCollection = db.collection<ProductDocument>("products");
+  const database = getDB();
+  productCollection = database.collection<ProductDocument>("products");
 
   await productCollection.createIndex(
     { sourceId: 1, source: 1 },

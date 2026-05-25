@@ -65,9 +65,9 @@ export async function fetchMovieEvents(): Promise<CachedEvent[]> {
     source: EVENT_SOURCES.TMDB,
     name: movie.title,
     description: movie.overview || undefined,
-    url: `https://www.themoviedb.org/movie/${movie.id}`,
+    url: `https://www.themoviedatabase.org/movie/${movie.id}`,
     imageUrl: movie.poster_path
-      ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+      ? `https://image.tmdatabase.org/t/p/w500${movie.poster_path}`
       : undefined,
     startDate: movie.release_date ? new Date(movie.release_date) : undefined,
     endDate: undefined,

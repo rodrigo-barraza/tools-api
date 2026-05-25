@@ -88,14 +88,14 @@ export function getEnvelopeValue(t: number, totalDuration: number, adsr: ADSREnv
     return t / attack; // Linear attack ramp up to 1.0
   } else if (t < attack + decay) {
     if (decay === 0) return sustain;
-    const dt = t - attack;
-    return 1 - (1 - sustain) * (dt / decay); // Linear decay down to sustain level
+    const deltaTime = t - attack;
+    return 1 - (1 - sustain) * (deltaTime / decay); // Linear decay down to sustain level
   } else if (t < attack + decay + sustainDuration) {
     return sustain; // Hold sustain level
   } else if (t < totalDuration) {
     if (release === 0) return 0;
-    const dt = t - (attack + decay + sustainDuration);
-    return sustain * (1 - dt / release); // Linear release ramp down to 0
+    const deltaTime = t - (attack + decay + sustainDuration);
+    return sustain * (1 - deltaTime / release); // Linear release ramp down to 0
   }
   return 0;
 }
@@ -125,20 +125,20 @@ export function synthesizeSound(config: SynthesizerConfig): Float32Array {
   };
 
   const lfo = config.lfo;
-  const dt = 1 / sampleRate;
+  const deltaTime = 1 / sampleRate;
 
   let carrierPhase = 0;
   let modulatorPhase = 0;
   let lfoPhase = 0;
 
   for (let i = 0; i < numSamples; i++) {
-    const t = i * dt;
+    const currentTime = i * deltaTime;
 
     // 1. LFO Pitch and Amplitude Modulation
     let lfoPitchOffset = 0;
     let lfoAmpMultiplier = 1.0;
     if (lfo) {
-      lfoPhase += 2 * Math.PI * lfo.frequency * dt;
+      lfoPhase += 2 * Math.PI * lfo.frequency * deltaTime;
       const lfoVal = Math.sin(lfoPhase);
       if (lfo.pitchDepth) {
         lfoPitchOffset = lfoVal * lfo.pitchDepth;
@@ -151,21 +151,21 @@ export function synthesizeSound(config: SynthesizerConfig): Float32Array {
     // 2. Frequency sweep calculation (exponential)
     let baseFreq = startFreq;
     if (startFreq !== endFreq) {
-      baseFreq = startFreq * Math.pow(endFreq / startFreq, t / duration);
+      baseFreq = startFreq * Math.pow(endFreq / startFreq, currentTime / duration);
     }
     baseFreq += lfoPitchOffset;
 
     // 3. FM Modulator phase step
     let modVal = 0;
     if (modFreq > 0 && modIndex > 0) {
-      modulatorPhase += 2 * Math.PI * modFreq * dt;
+      modulatorPhase += 2 * Math.PI * modFreq * deltaTime;
       modVal = Math.sin(modulatorPhase);
     }
 
     // 4. FM Carrier phase step
     const freqOffset = modVal * modIndex;
     const finalFreq = Math.max(1, baseFreq + freqOffset);
-    carrierPhase += 2 * Math.PI * finalFreq * dt;
+    carrierPhase += 2 * Math.PI * finalFreq * deltaTime;
 
     // 5. Additive synthesis / waveform evaluation
     let sampleVal = 0;
@@ -207,8 +207,8 @@ export function synthesizeSound(config: SynthesizerConfig): Float32Array {
     }
 
     // 6. Amplitude envelope
-    const env = getEnvelopeValue(t, duration, envelope);
-    samples[i] = sampleVal * env * lfoAmpMultiplier;
+    const envelopeValue = getEnvelopeValue(currentTime, duration, envelope);
+    samples[i] = sampleVal * envelopeValue * lfoAmpMultiplier;
   }
 
   // 7. Apply delay line if configured
@@ -241,14 +241,14 @@ export function synthesizeSequence(steps: MelodyStep[], baseConfig: SynthesizerC
   const samples = new Float32Array(numSamples);
 
   let currentSampleOffset = 0;
-  const dt = 1 / sampleRate;
+  const deltaTime = 1 / sampleRate;
 
   for (const step of parsedSteps) {
     const stepSamplesCount = Math.floor(step.duration * sampleRate);
     if (currentSampleOffset >= numSamples) break;
 
     const actualCount = Math.min(stepSamplesCount, numSamples - currentSampleOffset);
-    const stepDuration = actualCount * dt;
+    const stepDuration = actualCount * deltaTime;
 
     // Build config for this individual note step
     const stepConfig: SynthesizerConfig = {
@@ -342,7 +342,7 @@ export function synthesizePreset(preset: string, sampleRate: number): Float32Arr
       const dur = 0.8;
       const numSamples = Math.floor(dur * sampleRate);
       const samples = new Float32Array(numSamples);
-      const dt = 1 / sampleRate;
+      const deltaTime = 1 / sampleRate;
 
       // 1. Synthesize the rumble component
       const rumbleSamples = synthesizeSound({
@@ -357,10 +357,10 @@ export function synthesizePreset(preset: string, sampleRate: number): Float32Arr
       // 2. Synthesize and mix decaying white noise
       const noiseEnvelope = { attack: 0.005, decay: 0.45, sustain: 0.0, release: 0.34 };
       for (let i = 0; i < numSamples; i++) {
-        const t = i * dt;
+        const currentTime = i * deltaTime;
         const noiseVal = Math.random() * 2 - 1;
-        const noiseEnv = getEnvelopeValue(t, dur, noiseEnvelope);
-        samples[i] = rumbleSamples[i] * 0.4 + noiseVal * noiseEnv * 0.6;
+        const noiseEnvelopeValue = getEnvelopeValue(currentTime, dur, noiseEnvelope);
+        samples[i] = rumbleSamples[i] * 0.4 + noiseVal * noiseEnvelopeValue * 0.6;
       }
       return samples;
     }
@@ -444,8 +444,8 @@ export function createWavBuffer(samples: Float32Array, sampleRate: number): Buff
   const data = Buffer.alloc(subChunk2Size);
   for (let i = 0; i < samples.length; i++) {
     const sample = Math.max(-1, Math.min(1, samples[i]));
-    const val = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
-    data.writeInt16LE(Math.floor(val), i * 2);
+    const sampleValue = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+    data.writeInt16LE(Math.floor(sampleValue), i * 2);
   }
 
   return Buffer.concat([header, data]);

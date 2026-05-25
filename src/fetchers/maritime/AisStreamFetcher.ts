@@ -382,9 +382,9 @@ export function getVesselsInArea(minLat: number, maxLat: number, minLng: number,
 
  */
 export function searchVessels(query: string, limit: number = 20) {
-  const q = query.toLowerCase();
+  const normalizedQuery = query.toLowerCase();
   return Array.from(vesselMap.values())
-    .filter((v) => v.shipName?.toLowerCase().includes(q))
+    .filter((vessel) => vessel.shipName?.toLowerCase().includes(normalizedQuery))
     .sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime())
     .slice(0, limit);
 }

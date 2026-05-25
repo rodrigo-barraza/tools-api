@@ -48,8 +48,8 @@ let collection: Collection<EventDocument> | null = null;
  * Initialize the events collection with required indexes.
  */
 export async function setupEventCollection(): Promise<void> {
-  const db: Db = getDB();
-  collection = db.collection<EventDocument>("events");
+  const database: Db = getDB();
+  collection = database.collection<EventDocument>("events");
 
   await collection.createIndex({ sourceId: 1, source: 1 }, { unique: true });
   await collection.createIndex({ startDate: -1 });

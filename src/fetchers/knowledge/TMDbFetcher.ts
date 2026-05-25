@@ -10,7 +10,7 @@ import {
 
 /**
  * TMDb Fetcher — Movies & TV Series
- * https://developer.themoviedb.org/reference
+ * https://developer.themoviedatabase.org/reference
  *
  * Uses the existing TMDB_API_KEY (already in secrets/config).
  * All endpoints are on-demand (no background polling).
@@ -171,7 +171,7 @@ function normalizeMovie(m: RawTmdbMovie | null | undefined): MovieResult | null 
     ).filter(Boolean),
     homepage: m.homepage || null,
     imdbId: m.imdb_id || null,
-    url: `https://www.themoviedb.org/movie/${m.id}`,
+    url: `https://www.themoviedatabase.org/movie/${m.id}`,
   };
 }
 
@@ -204,7 +204,7 @@ function normalizeTvShow(tv: RawTmdbTvShow | null | undefined): TvShowResult | n
     originalLanguage: tv.original_language || null,
     homepage: tv.homepage || null,
     inProduction: tv.in_production || false,
-    url: `https://www.themoviedb.org/tv/${tv.id}`,
+    url: `https://www.themoviedatabase.org/tv/${tv.id}`,
   };
 }
 

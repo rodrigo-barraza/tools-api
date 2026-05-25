@@ -55,7 +55,7 @@ function ensureLoaded() {
 
   const csvPath = join(__dirname, "data", "digest_elements.csv");
   const raw = readFileSync(csvPath, "utf-8");
-  const lines = raw.split("\n").filter((l: string) => l.trim());
+  const lines = raw.split("\n").filter((line: string) => line.trim());
   const headers = parseCSVLine(lines[0]);
 
   const NUMERIC_FIELDS = new Set([
@@ -77,13 +77,13 @@ function ensureLoaded() {
     if (values.length < 5) continue;
 
     const row: Record<string, string | number | null> = {};
-    headers.forEach((h: string, index: number) => {
+    headers.forEach((header: string, index: number) => {
       const value = values[index] || "";
-      if (NUMERIC_FIELDS.has(h)) {
+      if (NUMERIC_FIELDS.has(header)) {
         const num = parseFloat(value);
-        row[h] = isNaN(num) ? null : num;
+        row[header] = isNaN(num) ? null : num;
       } else {
-        row[h] = value || null;
+        row[header] = value || null;
       }
     });
 
@@ -163,15 +163,15 @@ export function searchElements(query: string, opts: SearchElementsOptions = {}) 
   let candidates = ELEMENT_DB;
 
   if (category) {
-    const c = category.toLowerCase();
+    const normalizedCategory = category.toLowerCase();
     candidates = candidates.filter(
-      (element: PeriodicElement) => element.category && element.category.toLowerCase().includes(c),
+      (element: PeriodicElement) => element.category && element.category.toLowerCase().includes(normalizedCategory),
     );
   }
   if (block) {
-    const b = block.toLowerCase();
+    const normalizedBlock = block.toLowerCase();
     candidates = candidates.filter(
-      (element: PeriodicElement) => element.block && element.block.toLowerCase() === b,
+      (element: PeriodicElement) => element.block && element.block.toLowerCase() === normalizedBlock,
     );
   }
 
@@ -226,9 +226,9 @@ export function searchElements(query: string, opts: SearchElementsOptions = {}) 
 export function getElementBySymbol(symbol: string) {
   ensureLoaded();
 
-  const s = symbol.trim();
+  const normalizedSymbol = symbol.trim();
   const element = ELEMENT_DB.find(
-    (e: PeriodicElement) => e.symbol && e.symbol.toLowerCase() === s.toLowerCase(),
+    (elementEntry: PeriodicElement) => elementEntry.symbol && elementEntry.symbol.toLowerCase() === normalizedSymbol.toLowerCase(),
   );
 
   if (!element) return null;
@@ -263,15 +263,15 @@ export function rankElementsByProperty(property: string, opts: RankElementsOptio
   let candidates = ELEMENT_DB;
 
   if (category) {
-    const c = category.toLowerCase();
+    const normalizedCategory = category.toLowerCase();
     candidates = candidates.filter(
-      (element: PeriodicElement) => element.category && element.category.toLowerCase().includes(c),
+      (element: PeriodicElement) => element.category && element.category.toLowerCase().includes(normalizedCategory),
     );
   }
   if (block) {
-    const b = block.toLowerCase();
+    const normalizedBlock = block.toLowerCase();
     candidates = candidates.filter(
-      (element: PeriodicElement) => element.block && element.block.toLowerCase() === b,
+      (element: PeriodicElement) => element.block && element.block.toLowerCase() === normalizedBlock,
     );
   }
 
@@ -311,13 +311,13 @@ export function getElementCategories() {
   ensureLoaded();
 
   const categories = [
-    ...new Set(ELEMENT_DB.map((e: PeriodicElement) => e.category).filter(Boolean)),
+    ...new Set(ELEMENT_DB.map((element: PeriodicElement) => element.category).filter(Boolean)),
   ].sort();
   const blocks = [
-    ...new Set(ELEMENT_DB.map((e: PeriodicElement) => e.block).filter(Boolean)),
+    ...new Set(ELEMENT_DB.map((element: PeriodicElement) => element.block).filter(Boolean)),
   ].sort();
   const phases = [
-    ...new Set(ELEMENT_DB.map((e: PeriodicElement) => e.phase_at_stp).filter(Boolean)),
+    ...new Set(ELEMENT_DB.map((element: PeriodicElement) => element.phase_at_stp).filter(Boolean)),
   ].sort();
 
   return {

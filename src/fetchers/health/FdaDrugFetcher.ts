@@ -57,7 +57,7 @@ function ensureLoaded(): void {
   try {
     const csvPath = join(__dirname, "data", "digest_fda_drugs.csv");
     const raw = readFileSync(csvPath, "utf-8");
-    const lines = raw.split("\n").filter((l: string) => l.trim());
+    const lines = raw.split("\n").filter((line: string) => line.trim());
     if (lines.length === 0) return;
     const headers = parseCSVLine(lines[0]);
 
@@ -78,8 +78,8 @@ function ensureLoaded(): void {
         pharm_class: null,
       };
       
-      headers.forEach((h: string, index: number) => {
-        row[h] = values[index] || null;
+      headers.forEach((header: string, index: number) => {
+        row[header] = values[index] || null;
       });
 
       DRUG_DB.push(row);
@@ -97,18 +97,18 @@ function normalizeSearch(searchText: string): string {
   return searchText.toLowerCase().replace(/[^a-z0-9\s]/g, "");
 }
 
-function formatDrug(d: RawDrugRow): DrugProduct {
+function formatDrug(drugRow: RawDrugRow): DrugProduct {
   return {
-    productNdc: d.product_ndc || "",
-    genericName: d.generic_name || "",
-    brandName: d.brand_name || "",
-    labelerName: d.labeler_name || "",
-    dosageForm: d.dosage_form || "",
-    route: d.route || "",
-    productType: d.product_type || "",
-    marketingCategory: d.marketing_category || "",
-    activeIngredients: d.active_ingredients || "",
-    pharmClass: d.pharm_class || "",
+    productNdc: drugRow.product_ndc || "",
+    genericName: drugRow.generic_name || "",
+    brandName: drugRow.brand_name || "",
+    labelerName: drugRow.labeler_name || "",
+    dosageForm: drugRow.dosage_form || "",
+    route: drugRow.route || "",
+    productType: drugRow.product_type || "",
+    marketingCategory: drugRow.marketing_category || "",
+    activeIngredients: drugRow.active_ingredients || "",
+    pharmClass: drugRow.pharm_class || "",
   };
 }
 
@@ -134,44 +134,44 @@ export function searchDrugs(query: string | null | undefined, opts: SearchDrugsO
   ensureLoaded();
 
   const { limit = 10, dosageForm, productType } = opts;
-  const q = normalizeSearch(query || "");
+  const normalizedQuery = normalizeSearch(query || "");
 
-  if (!q) return { count: 0, query, note: "No query provided.", drugs: [] };
+  if (!normalizedQuery) return { count: 0, query, note: "No query provided.", drugs: [] };
 
   let candidates = DRUG_DB;
   if (dosageForm) {
-    const df = dosageForm.toUpperCase();
+    const normalizedDosageForm = dosageForm.toUpperCase();
     candidates = candidates.filter(
-      (d: RawDrugRow) => d.dosage_form && d.dosage_form.toUpperCase().includes(df),
+      (drugRow: RawDrugRow) => drugRow.dosage_form && drugRow.dosage_form.toUpperCase().includes(normalizedDosageForm),
     );
   }
   if (productType) {
-    const pt = productType.toUpperCase();
+    const normalizedProductType = productType.toUpperCase();
     candidates = candidates.filter(
-      (d: RawDrugRow) => d.product_type && d.product_type.toUpperCase().includes(pt),
+      (drugRow: RawDrugRow) => drugRow.product_type && drugRow.product_type.toUpperCase().includes(normalizedProductType),
     );
   }
 
   const scored = candidates
-    .map((d: RawDrugRow) => {
+    .map((drugRow: RawDrugRow) => {
       let score = 0;
-      const generic = normalizeSearch(d.generic_name || "");
-      const brand = normalizeSearch(d.brand_name || "");
-      const ingredients = normalizeSearch(d.active_ingredients || "");
-      const labeler = normalizeSearch(d.labeler_name || "");
+      const generic = normalizeSearch(drugRow.generic_name || "");
+      const brand = normalizeSearch(drugRow.brand_name || "");
+      const ingredients = normalizeSearch(drugRow.active_ingredients || "");
+      const labeler = normalizeSearch(drugRow.labeler_name || "");
 
-      if (brand === q) score += 100;
-      else if (generic === q) score += 95;
-      else if (brand.startsWith(q)) score += 70;
-      else if (generic.startsWith(q)) score += 65;
-      else if (brand.includes(q)) score += 40;
-      else if (generic.includes(q)) score += 35;
-      else if (ingredients.includes(q)) score += 25;
-      else if (labeler.includes(q)) score += 15;
+      if (brand === normalizedQuery) score += 100;
+      else if (generic === normalizedQuery) score += 95;
+      else if (brand.startsWith(normalizedQuery)) score += 70;
+      else if (generic.startsWith(normalizedQuery)) score += 65;
+      else if (brand.includes(normalizedQuery)) score += 40;
+      else if (generic.includes(normalizedQuery)) score += 35;
+      else if (ingredients.includes(normalizedQuery)) score += 25;
+      else if (labeler.includes(normalizedQuery)) score += 15;
 
-      return { d, score };
+      return { drugRow, score };
     })
-    .filter((s) => s.score > 0)
+    .filter((scored) => scored.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
 
@@ -179,7 +179,7 @@ export function searchDrugs(query: string | null | undefined, opts: SearchDrugsO
     count: scored.length,
     query,
     note: "Data from FDA openFDA NDC API (Public Domain). For informational use only — not medical advice.",
-    drugs: scored.map((s) => formatDrug(s.d)),
+    drugs: scored.map((entry) => formatDrug(entry.drugRow)),
   };
 }
 
@@ -189,13 +189,13 @@ export function searchDrugs(query: string | null | undefined, opts: SearchDrugsO
 export function getDrugByNdc(ndc: string): DrugProduct | null {
   ensureLoaded();
 
-  const n = ndc.trim();
-  const d = DRUG_DB.find(
-    (d: RawDrugRow) => d.product_ndc && d.product_ndc === n,
+  const normalizedNdc = ndc.trim();
+  const foundDrug = DRUG_DB.find(
+    (drugRow: RawDrugRow) => drugRow.product_ndc && drugRow.product_ndc === normalizedNdc,
   );
 
-  if (!d) return null;
-  return formatDrug(d);
+  if (!foundDrug) return null;
+  return formatDrug(foundDrug);
 }
 
 export interface DosageFormCount {
@@ -216,9 +216,9 @@ export function getDosageForms(): DosageFormsResult {
   ensureLoaded();
 
   const forms: Record<string, number> = {};
-  for (const d of DRUG_DB) {
-    const f = d.dosage_form || "Unknown";
-    forms[f] = (forms[f] || 0) + 1;
+  for (const drugRow of DRUG_DB) {
+    const dosageFormName = drugRow.dosage_form || "Unknown";
+    forms[dosageFormName] = (forms[dosageFormName] || 0) + 1;
   }
 
   return {
@@ -248,11 +248,11 @@ export function searchByIngredient(ingredient: string, opts: SearchByIngredientO
   ensureLoaded();
 
   const { limit = 20 } = opts;
-  const q = normalizeSearch(ingredient);
+  const normalizedIngredient = normalizeSearch(ingredient);
 
-  const matches = DRUG_DB.filter((d: RawDrugRow) => {
-    const ingredients = normalizeSearch(d.active_ingredients || "");
-    return ingredients.includes(q);
+  const matches = DRUG_DB.filter((drugRow: RawDrugRow) => {
+    const ingredients = normalizeSearch(drugRow.active_ingredients || "");
+    return ingredients.includes(normalizedIngredient);
   }).slice(0, limit);
 
   return {
@@ -281,11 +281,11 @@ export function searchByPharmClass(pharmClass: string, opts: SearchByPharmClassO
   ensureLoaded();
 
   const { limit = 20 } = opts;
-  const q = normalizeSearch(pharmClass);
+  const normalizedPharmClass = normalizeSearch(pharmClass);
 
-  const matches = DRUG_DB.filter((d: RawDrugRow) => {
-    const pc = normalizeSearch(d.pharm_class || "");
-    return pc.includes(q);
+  const matches = DRUG_DB.filter((drugRow: RawDrugRow) => {
+    const normalizedDrugPharmClass = normalizeSearch(drugRow.pharm_class || "");
+    return normalizedDrugPharmClass.includes(normalizedPharmClass);
   }).slice(0, limit);
 
   return {

@@ -16,10 +16,10 @@ export interface CmeDocument {
 let collection: Collection<CmeDocument> | null = null;
 
 export async function setupCmeCollection() {
-  const db = getDB();
-  if (!db) throw new Error("Database not connected");
+  const database = getDB();
+  if (!database) throw new Error("Database not connected");
 
-  collection = db.collection<CmeDocument>("cmes");
+  collection = database.collection<CmeDocument>("cmes");
 
   await collection.createIndex({ activityId: 1 }, { unique: true });
   await collection.createIndex({ startTime: -1 });

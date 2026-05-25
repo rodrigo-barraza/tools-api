@@ -16,10 +16,10 @@ export interface SolarFlareDocument {
 let collection: Collection<SolarFlareDocument> | null = null;
 
 export async function setupSolarFlareCollection() {
-  const db = getDB();
-  if (!db) throw new Error("Database not connected");
+  const database = getDB();
+  if (!database) throw new Error("Database not connected");
 
-  collection = db.collection<SolarFlareDocument>("solar_flares");
+  collection = database.collection<SolarFlareDocument>("solar_flares");
 
   await collection.createIndex({ flrId: 1 }, { unique: true });
   await collection.createIndex({ peakTime: -1 });

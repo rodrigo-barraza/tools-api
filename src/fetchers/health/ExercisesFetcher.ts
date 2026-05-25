@@ -44,7 +44,7 @@ function ensureLoaded(): void {
   const dataDir = join(__dirname, "data");
   let files: string[] = [];
   try {
-    files = readdirSync(dataDir).filter((f: string) => f.startsWith("digest_exercises") && f.endsWith(".csv"));
+    files = readdirSync(dataDir).filter((fileName: string) => fileName.startsWith("digest_exercises") && fileName.endsWith(".csv"));
   } catch (error) {
     logger.error(`Error reading exercises directory: ${errorMessage(error)}`);
     return;
@@ -55,7 +55,7 @@ function ensureLoaded(): void {
   for (const file of files) {
     const dataPath = join(dataDir, file);
     const rawData = readFileSync(dataPath, "utf-8");
-    const lines = rawData.split("\n").filter((l: string) => l.trim());
+    const lines = rawData.split("\n").filter((line: string) => line.trim());
     
     if (lines.length === 0) continue;
     const headers = parseCSVLine(lines[0]);
@@ -81,14 +81,14 @@ function ensureLoaded(): void {
         _source: source
       };
 
-      headers.forEach((h: string, index: number) => {
+      headers.forEach((header: string, index: number) => {
         const value = values[index] || "";
-        if (h === "category" || h === "equipment") {
-          row[h] = value.toLowerCase();
-        } else if (h === "primary_muscles" || h === "secondary_muscles") {
-          row[h] = value ? value.split("|").map((m: string) => m.toLowerCase()) : [];
+        if (header === "category" || header === "equipment") {
+          row[header] = value.toLowerCase();
+        } else if (header === "primary_muscles" || header === "secondary_muscles") {
+          row[header] = value ? value.split("|").map((muscle: string) => muscle.toLowerCase()) : [];
         } else {
-          row[h] = value;
+          row[header] = value;
         }
       });
 
@@ -141,41 +141,41 @@ export function searchExercises(query: string | null | undefined, opts: SearchEx
   let candidates = EXERCISE_DB;
 
   if (category) {
-    const f = normalizeQuery(category);
-    candidates = candidates.filter((c: Exercise) => normalizeQuery(c.category) === f);
+    const normalizedFilterValue = normalizeQuery(category);
+    candidates = candidates.filter((exercise: Exercise) => normalizeQuery(exercise.category) === normalizedFilterValue);
   }
   if (equipment) {
-    const f = normalizeQuery(equipment);
-    candidates = candidates.filter((c: Exercise) => normalizeQuery(c.equipment) === f);
+    const normalizedFilterValue = normalizeQuery(equipment);
+    candidates = candidates.filter((exercise: Exercise) => normalizeQuery(exercise.equipment) === normalizedFilterValue);
   }
   if (force) {
-    const f = normalizeQuery(force);
-    candidates = candidates.filter((c: Exercise) => normalizeQuery(c.force) === f);
+    const normalizedFilterValue = normalizeQuery(force);
+    candidates = candidates.filter((exercise: Exercise) => normalizeQuery(exercise.force) === normalizedFilterValue);
   }
   if (level) {
-    const f = normalizeQuery(level);
-    candidates = candidates.filter((c: Exercise) => normalizeQuery(c.level) === f);
+    const normalizedFilterValue = normalizeQuery(level);
+    candidates = candidates.filter((exercise: Exercise) => normalizeQuery(exercise.level) === normalizedFilterValue);
   }
   if (mechanic) {
-    const f = normalizeQuery(mechanic);
-    candidates = candidates.filter((c: Exercise) => normalizeQuery(c.mechanic) === f);
+    const normalizedFilterValue = normalizeQuery(mechanic);
+    candidates = candidates.filter((exercise: Exercise) => normalizeQuery(exercise.mechanic) === normalizedFilterValue);
   }
   if (muscle) {
-    const f = normalizeQuery(muscle);
+    const normalizedFilterValue = normalizeQuery(muscle);
     candidates = candidates.filter(
-      (c: Exercise) =>
-        c.primary_muscles.some((m: string) => normalizeQuery(m) === f) ||
-        c.secondary_muscles.some((m: string) => normalizeQuery(m) === f)
+      (exercise: Exercise) =>
+        exercise.primary_muscles.some((muscleValue: string) => normalizeQuery(muscleValue) === normalizedFilterValue) ||
+        exercise.secondary_muscles.some((muscleValue: string) => normalizeQuery(muscleValue) === normalizedFilterValue)
     );
   }
 
   if (query) {
     const term = normalizeSearch(query);
-    candidates = candidates.filter((c: Exercise) => {
+    candidates = candidates.filter((exercise: Exercise) => {
       const parts = term.split(/\s+/).filter(Boolean);
-      const name = normalizeSearch(c.name);
-      const id = normalizeSearch(c.id);
-      return parts.every((p: string) => name.includes(p) || id.includes(p));
+      const name = normalizeSearch(exercise.name);
+      const id = normalizeSearch(exercise.id);
+      return parts.every((part: string) => name.includes(part) || id.includes(part));
     });
   }
 
@@ -190,8 +190,8 @@ export function searchExercises(query: string | null | undefined, opts: SearchEx
 export function getExerciseById(id: string): Exercise | null {
   ensureLoaded();
   const normalized = normalizeQuery(id);
-  const ex = EXERCISE_DB.find((c: Exercise) => normalizeQuery(c.id) === normalized);
-  return ex || null;
+  const foundExercise = EXERCISE_DB.find((exercise: Exercise) => normalizeQuery(exercise.id) === normalized);
+  return foundExercise || null;
 }
 
 export interface ExerciseCategoriesResult {
@@ -203,10 +203,10 @@ export interface ExerciseCategoriesResult {
 
 export function getExerciseCategories(): ExerciseCategoriesResult {
   ensureLoaded();
-  const categories = [...new Set(EXERCISE_DB.map((e: Exercise) => e.category).filter(Boolean))];
-  const equipment = [...new Set(EXERCISE_DB.map((e: Exercise) => e.equipment).filter(Boolean))];
+  const categories = [...new Set(EXERCISE_DB.map((exercise: Exercise) => exercise.category).filter(Boolean))];
+  const equipment = [...new Set(EXERCISE_DB.map((exercise: Exercise) => exercise.equipment).filter(Boolean))];
   const muscles = [
-    ...new Set(EXERCISE_DB.flatMap((e: Exercise) => [...e.primary_muscles, ...e.secondary_muscles]).filter(Boolean)),
+    ...new Set(EXERCISE_DB.flatMap((exercise: Exercise) => [...exercise.primary_muscles, ...exercise.secondary_muscles]).filter(Boolean)),
   ];
 
   return {

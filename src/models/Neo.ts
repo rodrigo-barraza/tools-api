@@ -20,10 +20,10 @@ let collection: Collection<NeoDocument> | null = null;
  * Initialize the neos collection with required indexes.
  */
 export async function setupNeoCollection() {
-  const db = getDB();
-  if (!db) throw new Error("Database not connected");
+  const database = getDB();
+  if (!database) throw new Error("Database not connected");
 
-  collection = db.collection<NeoDocument>("neos");
+  collection = database.collection<NeoDocument>("neos");
 
   await collection.createIndex({ neoId: 1 }, { unique: true });
   await collection.createIndex({ closeApproachDate: -1 });
