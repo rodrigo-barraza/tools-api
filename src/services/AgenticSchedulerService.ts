@@ -95,7 +95,7 @@ export async function agenticScheduleCreate(data: Record<string, unknown>) {
   };
 
   try {
-    const res = await fetch(`${getPrismUrl()}/scheduled-tasks`, {
+    const schedulerResponse = await fetch(`${getPrismUrl()}/scheduled-tasks`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -105,9 +105,9 @@ export async function agenticScheduleCreate(data: Record<string, unknown>) {
       body: JSON.stringify(body),
     });
 
-    if (!res.ok) {
+    if (!schedulerResponse.ok) {
       const err = await res.json().catch(() => ({}));
-      return { error: err.error || `Prism returned HTTP ${res.status}` };
+      return { error: err.error || `Prism returned HTTP ${schedulerResponse.status}` };
     }
 
     const created = await res.json();
@@ -130,7 +130,7 @@ export async function agenticScheduleList(project: string, _options?: Record<str
   }
 
   try {
-    const res = await fetch(`${getPrismUrl()}/scheduled-tasks`, {
+    const schedulerResponse = await fetch(`${getPrismUrl()}/scheduled-tasks`, {
       method: "GET",
       headers: {
         "x-project": project,
@@ -138,9 +138,9 @@ export async function agenticScheduleList(project: string, _options?: Record<str
       },
     });
 
-    if (!res.ok) {
+    if (!schedulerResponse.ok) {
       const err = await res.json().catch(() => ({}));
-      return { error: err.error || `Prism returned HTTP ${res.status}` };
+      return { error: err.error || `Prism returned HTTP ${schedulerResponse.status}` };
     }
 
     const tasks = await res.json();
@@ -166,7 +166,7 @@ export async function agenticScheduleDelete(project: string, scheduleId: string 
   }
 
   try {
-    const res = await fetch(`${getPrismUrl()}/scheduled-tasks/${scheduleId}`, {
+    const schedulerResponse = await fetch(`${getPrismUrl()}/scheduled-tasks/${scheduleId}`, {
       method: "DELETE",
       headers: {
         "x-project": project,
@@ -174,9 +174,9 @@ export async function agenticScheduleDelete(project: string, scheduleId: string 
       },
     });
 
-    if (!res.ok) {
+    if (!schedulerResponse.ok) {
       const err = await res.json().catch(() => ({}));
-      return { error: err.error || `Prism returned HTTP ${res.status}` };
+      return { error: err.error || `Prism returned HTTP ${schedulerResponse.status}` };
     }
 
     const deleted = await res.json();
@@ -202,7 +202,7 @@ export async function agenticTriggerFire(project: string, triggerName: string, p
   }
 
   try {
-    const res = await fetch(`${getPrismUrl()}/scheduled-tasks/${encodeURIComponent(triggerName)}/trigger`, {
+    const schedulerResponse = await fetch(`${getPrismUrl()}/scheduled-tasks/${encodeURIComponent(triggerName)}/trigger`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -212,9 +212,9 @@ export async function agenticTriggerFire(project: string, triggerName: string, p
       body: JSON.stringify({ payload }),
     });
 
-    if (!res.ok) {
+    if (!schedulerResponse.ok) {
       const err = await res.json().catch(() => ({}));
-      return { error: err.error || `Prism returned HTTP ${res.status}` };
+      return { error: err.error || `Prism returned HTTP ${schedulerResponse.status}` };
     }
 
     const result = await res.json();
