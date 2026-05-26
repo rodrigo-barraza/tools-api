@@ -8814,7 +8814,7 @@ const TOOL_EMOJIS = {
   multi_replace_file: "🧱",
   patch_file: "🩹",
   multi_file_read: "📑",
-  file_info: "ℹ️",
+  file_info: "📄",
   file_diff: "🔀",
   move_file: "📂",
   delete_file: "🗑️",
