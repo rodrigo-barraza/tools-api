@@ -33,8 +33,8 @@ export function storeChart(chartConfig: ChartConfig): string {
   // Lazy cleanup when store gets large
   if (CHART_STORE.size > 200) {
     const now = Date.now();
-    for (const [k, v] of CHART_STORE) {
-      if (now - v.createdAt > CHART_TTL_MS) CHART_STORE.delete(k);
+    for (const [k, value] of CHART_STORE) {
+      if (now - value.createdAt > CHART_TTL_MS) CHART_STORE.delete(k);
     }
   }
   return id;

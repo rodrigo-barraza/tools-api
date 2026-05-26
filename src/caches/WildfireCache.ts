@@ -12,13 +12,13 @@ export const getWildfireHealth = cache.getHealth;
 export function getWildfireSummary() {
   const wildfires = cache.getData();
   const sorted = [...wildfires]
-    .filter((w) => w.magnitudeValue != null)
-    .sort((a, b) => (b.magnitudeValue ?? 0) - (a.magnitudeValue ?? 0));
+    .filter((item) => item.magnitudeValue != null)
+    .sort((firstItem, b) => (b.magnitudeValue ?? 0) - (firstItem.magnitudeValue ?? 0));
 
   return {
     count: wildfires.length,
     largest: sorted[0] || null,
-    openCount: wildfires.filter((w) => w.status === "open").length,
+    openCount: wildfires.filter((wildfire) => wildfire.status === "open").length,
     lastFetch: cache.getLastFetch(),
   };
 }

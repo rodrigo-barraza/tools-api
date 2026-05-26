@@ -251,7 +251,7 @@ export async function getKeyIndicators() {
   if (failed.length > 0) {
     logger.warn(
       `[FredFetcher] ⚠️ ${failed.length} indicator(s) failed:`,
-      failed.map((f) => f.seriesId).join(", "),
+      failed.map((failedItem) => failedItem.seriesId).join(", "),
     );
   }
 

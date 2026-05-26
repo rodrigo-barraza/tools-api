@@ -330,7 +330,7 @@ function processMessage(raw: AisRawMessage): AisVessel | null {
  */
 export function getTrackedVessels(limit: number = 100) {
   const vessels = Array.from(vesselMap.values())
-    .sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime())
+    .sort((firstItem, b) => new Date(b.receivedAt).getTime() - new Date(firstItem.receivedAt).getTime())
     .slice(0, limit);
 
   return vessels;
@@ -353,7 +353,7 @@ export function getVesselByMmsi(mmsi: number) {
 export function getRecentMessages(limit: number = 50, messageType: string | null = null) {
   let messages = [...vesselBuffer];
   if (messageType) {
-    messages = messages.filter((m) => m.messageType === messageType);
+    messages = messages.filter((message) => message.messageType === messageType);
   }
   return messages.slice(-limit);
 }
@@ -372,7 +372,7 @@ export function getVesselsInArea(minLat: number, maxLat: number, minLng: number,
         v.longitude >= minLng &&
         v.longitude <= maxLng,
     )
-    .sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime())
+    .sort((firstItem, b) => new Date(b.receivedAt).getTime() - new Date(firstItem.receivedAt).getTime())
     .slice(0, limit);
 }
 
@@ -385,7 +385,7 @@ export function searchVessels(query: string, limit: number = 20) {
   const normalizedQuery = query.toLowerCase();
   return Array.from(vesselMap.values())
     .filter((vessel) => vessel.shipName?.toLowerCase().includes(normalizedQuery))
-    .sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime())
+    .sort((firstItem, b) => new Date(b.receivedAt).getTime() - new Date(firstItem.receivedAt).getTime())
     .slice(0, limit);
 }
 

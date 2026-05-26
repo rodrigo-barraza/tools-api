@@ -88,7 +88,7 @@ export function getAll() {
   return {
     count: allTrends.length,
     sources: sourceSummary,
-    trends: allTrends.sort((a, b) => (b.volume || 0) - (a.volume || 0)),
+    trends: allTrends.sort((firstItem, b) => (b.volume || 0) - (firstItem.volume || 0)),
   };
 }
 
@@ -105,7 +105,7 @@ export function getBySource(source: string) {
     count: data.trends.length,
     source,
     lastFetch: data.lastFetch,
-    trends: data.trends.sort((a, b) => (b.volume || 0) - (a.volume || 0)),
+    trends: data.trends.sort((firstItem, b) => (b.volume || 0) - (firstItem.volume || 0)),
   };
 }
 
@@ -127,7 +127,7 @@ export function getByCategory(category: string) {
   return {
     count: allTrends.length,
     category,
-    trends: allTrends.sort((a, b) => (b.volume || 0) - (a.volume || 0)),
+    trends: allTrends.sort((firstItem, b) => (b.volume || 0) - (firstItem.volume || 0)),
   };
 }
 
@@ -160,14 +160,14 @@ export function getCorrelatedTrends() {
 
   // Filter to topics in 2+ sources
   const correlated = Array.from(topicMap.values())
-    .filter((t) => t.sources.size >= 2)
-    .map((t) => ({
-      name: t.name,
-      normalizedName: t.normalizedName,
-      sourceCount: t.sources.size,
-      sources: Array.from(t.sources),
-      totalVolume: t.totalVolume,
-      entries: t.entries,
+    .filter((tool) => tool.sources.size >= 2)
+    .map((tool) => ({
+      name: tool.name,
+      normalizedName: tool.normalizedName,
+      sourceCount: tool.sources.size,
+      sources: Array.from(tool.sources),
+      totalVolume: tool.totalVolume,
+      entries: tool.entries,
     }))
     .sort(
       (a, b) => b.sourceCount - a.sourceCount || b.totalVolume - a.totalVolume,
@@ -198,7 +198,7 @@ export function searchTrends(query: string) {
   return {
     count: allTrends.length,
     query,
-    trends: allTrends.sort((a, b) => (b.volume || 0) - (a.volume || 0)),
+    trends: allTrends.sort((firstItem, b) => (b.volume || 0) - (firstItem.volume || 0)),
   };
 }
 

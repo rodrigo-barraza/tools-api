@@ -34,14 +34,14 @@ export async function setupAgenticScheduleCollection() {
 function delayToCron(delayStr: string): string | null {
   const match = delayStr.trim().match(/^(\d+)(s|m|h|d)$/i);
   if (!match) return null;
-  const val = parseInt(match[1], 10);
+  const value = parseInt(match[1], 10);
   const unit = match[2].toLowerCase();
   if (unit === "m") {
-    return `*/${val} * * * *`;
+    return `*/${value} * * * *`;
   } else if (unit === "h") {
-    return `0 */${val} * * *`;
+    return `0 */${value} * * *`;
   } else if (unit === "d") {
-    return `0 0 */${val} * *`;
+    return `0 0 */${value} * *`;
   }
   return null;
 }

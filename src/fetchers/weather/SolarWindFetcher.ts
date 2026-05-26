@@ -29,9 +29,9 @@ function parseRows<T extends { time: string }>(rows: string[][], fields: string[
     .filter((item): item is T => item !== null);
 }
 
-function downsample<T extends { time: string }>(array: T[], intervalMinutes: number): T[] {
+function downsample<tool extends { time: string }>(array: tool[], intervalMinutes: number): tool[] {
   if (array.length === 0) return array;
-  const result: T[] = [];
+  const result: tool[] = [];
   let lastBucket: number | null = null;
 
   for (const point of array) {

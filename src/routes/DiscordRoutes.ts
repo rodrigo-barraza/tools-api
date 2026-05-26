@@ -84,8 +84,8 @@ router.get("/messages/stream", (req: Request, res: Response) => {
       });
       if (closed) return;
       const messages = data.messages || [];
-      knownIds = new Set((messages as StreamMessage[]).map((m) => m.id));
-      reactionFingerprints = new Map((messages as StreamMessage[]).map((m) => [m.id, reactionHash(m)]));
+      knownIds = new Set((messages as StreamMessage[]).map((message) => message.id));
+      reactionFingerprints = new Map((messages as StreamMessage[]).map((message) => [message.id, reactionHash(message)]));
       res.write(`event: init\ndata: ${JSON.stringify({ messages })}\n\n`);
       health.markSuccess();
     } catch (error: unknown) {
@@ -104,9 +104,9 @@ router.get("/messages/stream", (req: Request, res: Response) => {
         guildId, channelId, limit, includeBots,
       });
       const messages = data.messages || [];
-      const currentIds = new Set((messages as StreamMessage[]).map((m) => m.id));
+      const currentIds = new Set((messages as StreamMessage[]).map((message) => message.id));
       // ── Detect new messages ─────────────────────────────────
-      const newMessages = (messages as StreamMessage[]).filter((m) => !knownIds.has(m.id));
+      const newMessages = (messages as StreamMessage[]).filter((message) => !knownIds.has(message.id));
       if (newMessages.length > 0) {
         // Send newest-first (same order as searchMessages returns)
         res.write(`event: new\ndata: ${JSON.stringify({ messages: newMessages })}\n\n`);
@@ -125,10 +125,10 @@ router.get("/messages/stream", (req: Request, res: Response) => {
       // ── Detect reaction changes on existing messages ─────────
       // Compare reaction fingerprints — if they differ, the message's
       // reactions were added/removed since the last poll.
-      const updatedMessages = (messages as StreamMessage[]).filter((m) => {
-        if (!knownIds.has(m.id)) return false; // new messages handled above
-        const oldHash = reactionFingerprints.get(m.id);
-        const newHash = reactionHash(m);
+      const updatedMessages = (messages as StreamMessage[]).filter((message) => {
+        if (!knownIds.has(message.id)) return false; // new messages handled above
+        const oldHash = reactionFingerprints.get(message.id);
+        const newHash = reactionHash(message);
         return oldHash !== newHash;
       });
       if (updatedMessages.length > 0) {
@@ -136,7 +136,7 @@ router.get("/messages/stream", (req: Request, res: Response) => {
       }
       // Update tracked sets
       knownIds = currentIds;
-      reactionFingerprints = new Map((messages as StreamMessage[]).map((m) => [m.id, reactionHash(m)]));
+      reactionFingerprints = new Map((messages as StreamMessage[]).map((message) => [message.id, reactionHash(message)]));
     } catch (error: unknown) {
       logger.error("[discord/stream] Poll error:", errorMessage(error));
       health.markError(error);

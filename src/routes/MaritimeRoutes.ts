@@ -34,12 +34,12 @@ router.get("/vessels/:mmsi", (req: Request, res: Response) => {
 // ─── Vessel Search ─────────────────────────────────────────────────
 
 router.get("/search", (req: Request, res: Response) => {
-  const { q, limit } = req.query as Record<string, string | undefined>;
-  if (!q) {
+  const { q: query, limit } = req.query as Record<string, string | undefined>;
+  if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  const results = searchVessels(q, parseInt(limit || "", 10) || 20);
-  res.json({ query: q, count: results.length, vessels: results });
+  const results = searchVessels(query, parseInt(limit || "", 10) || 20);
+  res.json({ query: query, count: results.length, vessels: results });
 });
 
 // ─── Vessels in Area ───────────────────────────────────────────────

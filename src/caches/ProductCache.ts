@@ -84,7 +84,7 @@ export function getAll() {
   const allProducts = Object.values(store).flatMap((s) => s.products);
   return {
     count: allProducts.length,
-    products: allProducts.sort((a, b) => b.trendingScore - a.trendingScore),
+    products: allProducts.sort((firstItem, b) => b.trendingScore - firstItem.trendingScore),
   };
 }
 
@@ -98,7 +98,7 @@ export function getBySource(source: string) {
     source,
     count: entry.products.length,
     lastFetch: entry.lastFetch,
-    products: entry.products.sort((a, b) => b.trendingScore - a.trendingScore),
+    products: entry.products.sort((firstItem, b) => b.trendingScore - firstItem.trendingScore),
   };
 }
 
@@ -108,8 +108,8 @@ export function getBySource(source: string) {
 export function getByCategory(category: string) {
   const allProducts = Object.values(store)
     .flatMap((s) => s.products)
-    .filter((p) => p.category === category)
-    .sort((a, b) => b.trendingScore - a.trendingScore);
+    .filter((provider) => provider.category === category)
+    .sort((firstItem, b) => b.trendingScore - firstItem.trendingScore);
 
   return {
     category,
@@ -124,7 +124,7 @@ export function getByCategory(category: string) {
 export function getTrending(limit = 50) {
   const allProducts = Object.values(store)
     .flatMap((s) => s.products)
-    .sort((a, b) => b.trendingScore - a.trendingScore)
+    .sort((firstItem, b) => b.trendingScore - firstItem.trendingScore)
     .slice(0, limit);
 
   return {
@@ -151,8 +151,8 @@ export function getCategories() {
 
   // Convert Sets to arrays and sort by count
   const categories = Object.values(categoryMap)
-    .map((c) => ({ ...c, sources: [...c.sources] }))
-    .sort((a, b) => b.count - a.count);
+    .map((item) => ({ ...item, sources: [...item.sources] }))
+    .sort((firstItem, b) => b.count - firstItem.count);
 
   // Also include any configured categories that have no products yet
   const allCategoryValues = Object.values(PRODUCT_CATEGORIES);
@@ -175,8 +175,8 @@ export function searchByName(query: string) {
   const lower = query.toLowerCase();
   const allProducts = Object.values(store)
     .flatMap((s) => s.products)
-    .filter((p) => p.name.toLowerCase().includes(lower))
-    .sort((a, b) => b.trendingScore - a.trendingScore);
+    .filter((provider) => provider.name.toLowerCase().includes(lower))
+    .sort((firstItem, b) => b.trendingScore - firstItem.trendingScore);
 
   return {
     query,

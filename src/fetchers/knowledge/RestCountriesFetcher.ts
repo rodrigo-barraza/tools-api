@@ -15,7 +15,7 @@ function normalizeCountry(c: RawRestCountry): RestCountry {
     officialName: c.name?.official || null,
     nativeNames: c.name?.nativeName
       ? Object.values(c.name.nativeName)
-          .map((n) => n.common || "")
+          .map((item) => item.common || "")
           .filter(Boolean)
           .slice(0, 3)
       : [],

@@ -75,19 +75,19 @@ export async function listMessages(filters: Record<string, unknown> = {}) {
 
   return {
     count: messages.length,
-    messages: messages.map((m) => ({
-      sid: m.sid,
-      to: m.to,
-      from: m.from,
-      body: m.body,
-      status: m.status,
-      direction: m.direction,
-      dateCreated: m.dateCreated,
-      dateSent: m.dateSent,
-      price: m.price,
-      priceUnit: m.priceUnit,
-      errorCode: m.errorCode || null,
-      errorMessage: m.errorMessage || null,
+    messages: messages.map((message) => ({
+      sid: message.sid,
+      to: message.to,
+      from: message.from,
+      body: message.body,
+      status: message.status,
+      direction: message.direction,
+      dateCreated: message.dateCreated,
+      dateSent: message.dateSent,
+      price: message.price,
+      priceUnit: message.priceUnit,
+      errorCode: message.errorCode || null,
+      errorMessage: message.errorMessage || null,
     })),
   };
 }
@@ -151,12 +151,12 @@ export async function listPhoneNumbers() {
 
   return {
     count: numbers.length,
-    phoneNumbers: numbers.map((n) => ({
-      sid: n.sid,
-      phoneNumber: n.phoneNumber,
-      friendlyName: n.friendlyName,
-      capabilities: n.capabilities,
-      dateCreated: n.dateCreated,
+    phoneNumbers: numbers.map((item) => ({
+      sid: item.sid,
+      phoneNumber: item.phoneNumber,
+      friendlyName: item.friendlyName,
+      capabilities: item.capabilities,
+      dateCreated: item.dateCreated,
     })),
   };
 }

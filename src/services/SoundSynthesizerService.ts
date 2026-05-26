@@ -68,7 +68,7 @@ export function noteToFreq(note: number | string): number {
 /**
  * Evaluates a standard ADSR envelope at time t.
  */
-export function getEnvelopeValue(t: number, totalDuration: number, adsr: ADSREnvelope): number {
+export function getEnvelopeValue(time: number, totalDuration: number, adsr: ADSREnvelope): number {
   let { attack, decay, release } = adsr;
   const { sustain } = adsr;
   const sum = attack + decay + release;
@@ -83,18 +83,18 @@ export function getEnvelopeValue(t: number, totalDuration: number, adsr: ADSREnv
 
   const sustainDuration = Math.max(0, totalDuration - attack - decay - release);
 
-  if (t < attack) {
+  if (time < attack) {
     if (attack === 0) return 1;
-    return t / attack; // Linear attack ramp up to 1.0
-  } else if (t < attack + decay) {
+    return time / attack; // Linear attack ramp up to 1.0
+  } else if (time < attack + decay) {
     if (decay === 0) return sustain;
-    const deltaTime = t - attack;
+    const deltaTime = time - attack;
     return 1 - (1 - sustain) * (deltaTime / decay); // Linear decay down to sustain level
-  } else if (t < attack + decay + sustainDuration) {
+  } else if (time < attack + decay + sustainDuration) {
     return sustain; // Hold sustain level
-  } else if (t < totalDuration) {
+  } else if (time < totalDuration) {
     if (release === 0) return 0;
-    const deltaTime = t - (attack + decay + sustainDuration);
+    const deltaTime = time - (attack + decay + sustainDuration);
     return sustain * (1 - deltaTime / release); // Linear release ramp down to 0
   }
   return 0;
@@ -175,33 +175,33 @@ export function synthesizeSound(config: SynthesizerConfig): Float32Array {
       const amp = harmonics[h];
       if (amp <= 0) continue;
 
-      let val = 0;
+      let value = 0;
       switch (waveform) {
         case "sine":
-          val = Math.sin(phase);
+          value = Math.sin(phase);
           break;
         case "triangle": {
           const normalized = (phase % (2 * Math.PI)) / (2 * Math.PI);
-          val = 2 * Math.abs(2 * normalized - 1) - 1;
+          value = 2 * Math.abs(2 * normalized - 1) - 1;
           break;
         }
         case "sawtooth": {
           const normalized = (phase % (2 * Math.PI)) / (2 * Math.PI);
-          val = 2 * normalized - 1;
+          value = 2 * normalized - 1;
           break;
         }
         case "square":
-          val = (phase % (2 * Math.PI)) >= Math.PI ? 1.0 : -1.0;
+          value = (phase % (2 * Math.PI)) >= Math.PI ? 1.0 : -1.0;
           break;
         case "noise":
-          val = Math.random() * 2 - 1;
+          value = Math.random() * 2 - 1;
           break;
       }
-      sampleVal += val * amp;
+      sampleVal += value * amp;
     }
 
     // Normalize additive samples to avoid clipping
-    const totalHarmonicAmp = harmonics.reduce((a, b) => a + b, 0);
+    const totalHarmonicAmp = harmonics.reduce((accumulator, b) => accumulator + b, 0);
     if (totalHarmonicAmp > 1.0) {
       sampleVal /= totalHarmonicAmp;
     }

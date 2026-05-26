@@ -188,15 +188,15 @@ function validatePath(inputPath: string | unknown) {
   // Check against blocked patterns
   for (const pattern of BLOCKED_PATTERNS) {
     if (cachedAllowEnvFiles) {
-      const src = pattern.source;
+      const source = pattern.source;
       // Skip environment configurations, keys, and private credentials
       if (
-        src === "\\.env$" ||
-        src === "\\.env\\..+$" ||
-        src === "\\.pem$" ||
-        src === "\\.key$" ||
-        src === "id_rsa" ||
-        src === "id_ed25519"
+        source === "\\.env$" ||
+        source === "\\.env\\..+$" ||
+        source === "\\.pem$" ||
+        source === "\\.key$" ||
+        source === "id_rsa" ||
+        source === "id_ed25519"
       ) {
         continue;
       }
@@ -296,11 +296,11 @@ export async function agenticReadFile(
       content: numberedContent,
     };
   } catch (error: unknown) {
-    const err = error as Record<string, unknown>;
-    if (err.code === "ENOENT") {
+    const errorObject = error as Record<string, unknown>;
+    if (errorObject.code === "ENOENT") {
       return { error: `File not found: ${resolved}` };
     }
-    return { error: `Read failed: ${err.message || String(error)}` };
+    return { error: `Read failed: ${errorObject.message || String(error)}` };
   }
 }
 
@@ -353,8 +353,8 @@ export async function agenticWriteFile(
       linesWritten: lines,
     };
   } catch (error: unknown) {
-    const err = error as Error;
-    return { error: `Write failed: ${err.message || String(error)}` };
+    const errorObject = error as Error;
+    return { error: `Write failed: ${errorObject.message || String(error)}` };
   }
 }
 
@@ -435,11 +435,11 @@ export async function agenticStrReplace(
       lineDelta: newLines - oldLines,
     };
   } catch (error: unknown) {
-    const err = error as Record<string, unknown>;
-    if (err.code === "ENOENT") {
+    const errorObject = error as Record<string, unknown>;
+    if (errorObject.code === "ENOENT") {
       return { error: `File not found: ${resolved}` };
     }
-    return { error: `str_replace failed: ${err.message || String(error)}` };
+    return { error: `str_replace failed: ${errorObject.message || String(error)}` };
   }
 }
 
@@ -487,11 +487,11 @@ export async function agenticPatchFile(filePath: string, patch: string) {
       lineDelta: newLines - oldLines,
     };
   } catch (error: unknown) {
-    const err = error as Record<string, unknown>;
-    if (err.code === "ENOENT") {
+    const errorObject = error as Record<string, unknown>;
+    if (errorObject.code === "ENOENT") {
       return { error: `File not found: ${resolved}` };
     }
-    return { error: `patch_file failed: ${err.message || String(error)}` };
+    return { error: `patch_file failed: ${errorObject.message || String(error)}` };
   }
 }
 
@@ -582,11 +582,11 @@ export async function agenticListDirectory(
       entries,
     };
   } catch (error: unknown) {
-    const err = error as Record<string, unknown>;
-    if (err.code === "ENOENT") {
+    const errorObject = error as Record<string, unknown>;
+    if (errorObject.code === "ENOENT") {
       return { error: `Directory not found: ${resolved}` };
     }
-    return { error: `list_directory failed: ${err.message || String(error)}` };
+    return { error: `list_directory failed: ${errorObject.message || String(error)}` };
   }
 }
 
@@ -636,8 +636,8 @@ export async function agenticGrepSearch(
         ? new RegExp(pattern, caseInsensitive ? "gi" : "g")
         : new RegExp(escapeRegex(pattern), caseInsensitive ? "gi" : "g");
     } catch (error: unknown) {
-      const err = error as Error;
-      return { error: `Invalid regex pattern: ${err.message || String(error)}` };
+      const errorObject = error as Error;
+      return { error: `Invalid regex pattern: ${errorObject.message || String(error)}` };
     }
 
     const results: GrepResult[] = [];
@@ -740,8 +740,8 @@ export async function agenticGrepSearch(
       results,
     };
   } catch (error: unknown) {
-    const err = error as Error;
-    return { error: `grep_search failed: ${err.message || String(error)}` };
+    const errorObject = error as Error;
+    return { error: `grep_search failed: ${errorObject.message || String(error)}` };
   }
 }
 
@@ -829,8 +829,8 @@ export async function agenticGlobFiles(pattern: string, searchPath: string) {
       matches,
     };
   } catch (error: unknown) {
-    const err = error as Error;
-    return { error: `glob_files failed: ${err.message || String(error)}` };
+    const errorObject = error as Error;
+    return { error: `glob_files failed: ${errorObject.message || String(error)}` };
   }
 }
 
@@ -945,11 +945,11 @@ export async function agenticFileInfo(paths: string | string[]) {
 
         return info;
       } catch (error: unknown) {
-        const err = error as Record<string, unknown>;
-        if (err.code === "ENOENT") {
+        const errorObject = error as Record<string, unknown>;
+        if (errorObject.code === "ENOENT") {
           return { path: resolved, exists: false };
         }
-        return { path: resolved, exists: false, error: err.message || String(error) };
+        return { path: resolved, exists: false, error: errorObject.message || String(error) };
       }
     }),
   );
@@ -1032,11 +1032,11 @@ export async function agenticFileDiff(
       diff: hasChanges ? diff : "(files are identical)",
     };
   } catch (error: unknown) {
-    const err = error as Record<string, unknown>;
-    if (err.code === "ENOENT") {
-      return { error: `File not found: ${String(err.path || pathA)}` };
+    const errorObject = error as Record<string, unknown>;
+    if (errorObject.code === "ENOENT") {
+      return { error: `File not found: ${String(errorObject.path || pathA)}` };
     }
-    return { error: `file_diff failed: ${err.message || String(error)}` };
+    return { error: `file_diff failed: ${errorObject.message || String(error)}` };
   }
 }
 
@@ -1085,8 +1085,8 @@ export async function agenticMoveFile(
       success: true,
     };
   } catch (error: unknown) {
-    const err = error as Error;
-    return { error: `move_file failed: ${err.message || String(error)}` };
+    const errorObject = error as Error;
+    return { error: `move_file failed: ${errorObject.message || String(error)}` };
   }
 }
 
@@ -1127,11 +1127,11 @@ export async function agenticDeleteFile(filePath: string, { recursive = false }:
       sizeBytes,
     };
   } catch (error: unknown) {
-    const err = error as Record<string, unknown>;
-    if (err.code === "ENOENT") {
+    const errorObject = error as Record<string, unknown>;
+    if (errorObject.code === "ENOENT") {
       return { error: `File or directory not found: ${validation.resolved}` };
     }
-    return { error: `delete_file failed: ${err.message || String(error)}` };
+    return { error: `delete_file failed: ${errorObject.message || String(error)}` };
   }
 }
 
@@ -1225,11 +1225,11 @@ export async function agenticBlockReplace(
       lineDelta: newLinesCount - oldLinesCount,
     };
   } catch (error: unknown) {
-    const err = error as Record<string, unknown>;
-    if (err.code === "ENOENT") {
+    const errorObject = error as Record<string, unknown>;
+    if (errorObject.code === "ENOENT") {
       return { error: `File not found: ${resolved}` };
     }
-    return { error: `block_replace failed: ${err.message || String(error)}` };
+    return { error: `block_replace failed: ${errorObject.message || String(error)}` };
   }
 }
 
@@ -1285,7 +1285,7 @@ export async function agenticMultiReplace(filePath: string, chunks: MultiReplace
     let lines = raw.split("\n");
 
     // Check for overlap between chunks
-    const sortedAsc = [...chunks].sort((a, b) => a.startLine - b.startLine);
+    const sortedAsc = [...chunks].sort((firstItem, b) => firstItem.startLine - b.startLine);
     for (let i = 0; i < sortedAsc.length - 1; i++) {
       if (sortedAsc[i].endLine >= sortedAsc[i + 1].startLine) {
         return {
@@ -1296,12 +1296,12 @@ export async function agenticMultiReplace(filePath: string, chunks: MultiReplace
     }
 
     // Sort descending by startLine so we replace bottom-to-top without affecting subsequent indices
-    const sortedDesc = [...chunks].sort((a, b) => b.startLine - a.startLine);
+    const sortedDesc = [...chunks].sort((firstItem, b) => b.startLine - firstItem.startLine);
     const chunkResults = [];
     let overallLineDelta = 0;
 
-    for (let idx = 0; idx < sortedDesc.length; idx++) {
-      const chunk = sortedDesc[idx];
+    for (let index = 0; index < sortedDesc.length; index++) {
+      const chunk = sortedDesc[index];
       const totalLines = lines.length;
 
       if (chunk.startLine > totalLines || chunk.endLine > totalLines) {
@@ -1355,11 +1355,11 @@ export async function agenticMultiReplace(filePath: string, chunks: MultiReplace
       details: chunkResults.reverse(),
     };
   } catch (error: unknown) {
-    const err = error as Record<string, unknown>;
-    if (err.code === "ENOENT") {
+    const errorObject = error as Record<string, unknown>;
+    if (errorObject.code === "ENOENT") {
       return { error: `File not found: ${resolved}` };
     }
-    return { error: `multi_replace failed: ${err.message || String(error)}` };
+    return { error: `multi_replace failed: ${errorObject.message || String(error)}` };
   }
 }
 

@@ -257,10 +257,10 @@ export function analyzeNutrientGaps({
     };
   }
 
-  for (const f of foods) {
-    if (!f.name || !f.grams || f.grams <= 0) {
+  for (const item of foods) {
+    if (!item.name || !item.grams || item.grams <= 0) {
       return {
-        error: `Invalid food entry: ${JSON.stringify(f)}. Each food must have 'name' (string) and 'grams' (positive number).`,
+        error: `Invalid food entry: ${JSON.stringify(item)}. Each food must have 'name' (string) and 'grams' (positive number).`,
       };
     }
   }
@@ -421,10 +421,10 @@ export function analyzeNutrientGaps({
 
   // ── Sort: deficiencies first, then low, adequate, surplus, over_UL ──
   const statusOrder: Record<string, number> = { deficient: 0, low: 1, over_UL: 2, surplus: 3, adequate: 4, no_data: 5 };
-  gaps.sort((a, b) => {
-    const orderDiff = (statusOrder[a.status] ?? 99) - (statusOrder[b.status] ?? 99);
+  gaps.sort((firstItem, b) => {
+    const orderDiff = (statusOrder[firstItem.status] ?? 99) - (statusOrder[b.status] ?? 99);
     if (orderDiff !== 0) return orderDiff;
-    return (a.pctDRI || 0) - (b.pctDRI || 0);
+    return (firstItem.pctDRI || 0) - (b.pctDRI || 0);
   });
 
   // ── Summary ──────────────────────────────────────────────────
@@ -458,10 +458,10 @@ export function analyzeNutrientGaps({
         )
         : 0,
     },
-    foodLog: resolvedFoods.map((f) => ({
-      query: f.query,
-      matched: f.matched,
-      grams: f.grams,
+    foodLog: resolvedFoods.map((food) => ({
+      query: food.query,
+      matched: food.matched,
+      grams: food.grams,
     })),
     gaps,
     _note: "Status: 🔴 deficient (<50% DRI), 🟡 low (50-89% DRI), 🟢 adequate (90-110% DRI), 🔵 surplus (>110% DRI), ⛔ over_UL (exceeds tolerable upper limit).",

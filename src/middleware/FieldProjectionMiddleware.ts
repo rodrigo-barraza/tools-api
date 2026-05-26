@@ -116,26 +116,26 @@ function projectResponse(data: unknown, fields: string[] | null): unknown {
     // Apply field projection to array items if requested
     if (fields) {
       const prefix = wrapperKey + ".";
-      const hasWrapperPrefix = fields.some((f) => f.startsWith(prefix));
+      const hasWrapperPrefix = fields.some((field) => field.startsWith(prefix));
 
       // Separate fields targeting wrapper items vs top-level metadata
       const itemFields: string[] = [];
       const topFields: string[] = [];
 
-      for (const f of fields) {
-        if (f.startsWith(prefix)) {
+      for (const item of fields) {
+        if (item.startsWith(prefix)) {
           // "foods.name" → "name" (strip wrapper key prefix)
-          itemFields.push(f.slice(prefix.length));
-        } else if (f === wrapperKey) {
+          itemFields.push(item.slice(prefix.length));
+        } else if (item === wrapperKey) {
           // Just "foods" — keep entire array, no item projection
         } else if (hasWrapperPrefix) {
           // When wrapper-prefixed fields exist, non-prefixed fields
           // are treated as top-level metadata selectors
-          topFields.push(f);
+          topFields.push(item);
         } else {
           // No wrapper-prefixed fields at all — bare fields target items
           // (backward compatible: "name,value" → project each item)
-          itemFields.push(f);
+          itemFields.push(item);
         }
       }
 
@@ -176,7 +176,7 @@ export function fieldProjectionMiddleware(req: Request, res: Response, next: Nex
   const fields = fieldsParam
     ? fieldsParam
         .split(",")
-        .map((f) => f.trim())
+        .map((item) => item.trim())
         .filter(Boolean)
     : null;
 

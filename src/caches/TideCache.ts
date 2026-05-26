@@ -17,7 +17,7 @@ export const getTideHealth = cache.getHealth;
 export function getNextTide() {
   const tides = cache.getData();
   const now = new Date();
-  const upcoming = tides.find((t) => new Date(t.time) > now);
+  const upcoming = tides.find((tide) => new Date(tide.time) > now);
   return {
     next: upcoming || null,
     lastFetch: cache.getLastFetch(),

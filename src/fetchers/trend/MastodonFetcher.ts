@@ -113,5 +113,5 @@ export async function fetchMastodonTrends() {
       );
     }
   }
-  return allTrends.sort((a, b) => ((b as { volume?: number }).volume || 0) - ((a as { volume?: number }).volume || 0));
+  return allTrends.sort((firstItem, b) => ((b as { volume?: number }).volume || 0) - ((firstItem as { volume?: number }).volume || 0));
 }

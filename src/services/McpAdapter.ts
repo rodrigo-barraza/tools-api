@@ -161,10 +161,10 @@ function createMcpServer(context: Record<string, string> = {}) {
     async () => {
       const aiSchemas = getToolSchemasForAI();
       return {
-        tools: aiSchemas.map((t) => ({
-          name: t.name,
-          description: t.description || "",
-          inputSchema: t.parameters || { type: "object", properties: {} },
+        tools: aiSchemas.map((tool) => ({
+          name: tool.name,
+          description: tool.description || "",
+          inputSchema: tool.parameters || { type: "object", properties: {} },
         })),
       };
     },

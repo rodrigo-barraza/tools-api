@@ -142,9 +142,9 @@ export async function agenticTaskList(project: string, { status, limit = 50 }: A
   const allTasks = await collection.find({ project }).toArray();
   const summary = {
     total: allTasks.length,
-    pending: allTasks.filter((t) => t.status === "pending").length,
-    in_progress: allTasks.filter((t) => t.status === "in_progress").length,
-    completed: allTasks.filter((t) => t.status === "completed").length,
+    pending: allTasks.filter((task) => task.status === "pending").length,
+    in_progress: allTasks.filter((task) => task.status === "in_progress").length,
+    completed: allTasks.filter((task) => task.status === "completed").length,
   };
 
   return {

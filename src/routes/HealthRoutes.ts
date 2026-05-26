@@ -53,11 +53,11 @@ import {
 const router = Router();
 // ─── USDA Nutrition (raw whole foods — in-memory database) ────
 router.get("/nutrition/search", (req: Request, res: Response) => {
-  const { q, limit, kingdom, foodType, nutrientTypes } = req.query as Record<string, string | undefined>;
-  if (!q) {
+  const { q: query, limit, kingdom, foodType, nutrientTypes } = req.query as Record<string, string | undefined>;
+  if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  res.json(searchFoods(q, {
+  res.json(searchFoods(query, {
     limit: parseIntParam(limit, 10),
     kingdom,
     foodType,
@@ -176,11 +176,11 @@ router.get("/nutrition/requirements", (req: Request, res: Response) => {
 });
 // ─── Drug Info (openFDA) ───────────────────────────────────────────
 router.get("/drugs/search", asyncHandler(async (req: Request, res: Response) => {
-  const { q, limit } = req.query as Record<string, string | undefined>;
-  if (!q) {
+  const { q: query, limit } = req.query as Record<string, string | undefined>;
+  if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  res.json(await searchDrugLabels(q, parseIntParam(limit, 5)));
+  res.json(await searchDrugLabels(query, parseIntParam(limit, 5)));
 }));
 router.get("/drugs/adverse-events", asyncHandler(async (req: Request, res: Response) => {
   const { drug, limit } = req.query as Record<string, string | undefined>;
@@ -197,11 +197,11 @@ router.get("/drugs/recalls", asyncHandler(
 ));
 // ─── FDA Drug NDC Database (In-Memory) ──────────────────────────────
 router.get("/drugs/ndc/search", (req: Request, res: Response) => {
-  const { q, limit, dosageForm, productType } = req.query as Record<string, string | undefined>;
-  if (!q) {
+  const { q: query, limit, dosageForm, productType } = req.query as Record<string, string | undefined>;
+  if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  res.json(searchDrugs(q, {
+  res.json(searchDrugs(query, {
     limit: parseIntParam(limit, 10),
     dosageForm,
     productType,
@@ -220,27 +220,27 @@ router.get("/drugs/ndc/dosage-forms", asyncHandler(
   500,
 ));
 router.get("/drugs/ndc/ingredient", (req: Request, res: Response) => {
-  const { q, limit } = req.query as Record<string, string | undefined>;
-  if (!q) {
+  const { q: query, limit } = req.query as Record<string, string | undefined>;
+  if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  res.json(searchByIngredient(q, {
+  res.json(searchByIngredient(query, {
     limit: parseIntParam(limit, 20),
   }));
 });
 router.get("/drugs/ndc/pharm-class", (req: Request, res: Response) => {
-  const { q, limit } = req.query as Record<string, string | undefined>;
-  if (!q) {
+  const { q: query, limit } = req.query as Record<string, string | undefined>;
+  if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  res.json(searchByPharmClass(q, {
+  res.json(searchByPharmClass(query, {
     limit: parseIntParam(limit, 20),
   }));
 });
 // ─── Gym Exercises (Free Exercise DB) ──────────────────────────────
 router.get("/exercises/search", (req: Request, res: Response) => {
-  const { q, limit, category, equipment, force, level, mechanic, muscle } = req.query as Record<string, string | undefined>;
-  res.json(searchExercises(q, {
+  const { q: searchQuery, limit, category, equipment, force, level, mechanic, muscle } = req.query as Record<string, string | undefined>;
+  res.json(searchExercises(searchQuery, {
     limit: parseIntParam(limit, 10),
     category,
     equipment,
@@ -449,24 +449,24 @@ export function getHealthDomainHealth() {
 }
 // ── Unified Drug Search Dispatcher ─────────────────────────────────
 router.get("/drugs/unified", asyncHandler(async (req: Request, res: Response) => {
-  const { q, searchBy, limit, dosageForm, productType } = req.query as Record<string, string | undefined>;
-  if (!q) return res.status(400).json({ error: "'q' is required" });
+  const { q: searchQuery, searchBy, limit, dosageForm, productType } = req.query as Record<string, string | undefined>;
+  if (!searchQuery) return res.status(400).json({ error: "'q' is required" });
   const mode = searchBy || "name";
   switch (mode) {
     case "name":
-      req.url = `/drugs/search?q=${encodeURIComponent(q)}&limit=${limit || 10}`;
+      req.url = `/drugs/search?q=${encodeURIComponent(searchQuery)}&limit=${limit || 10}`;
       return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
     case "ndc_search":
-      req.url = `/drugs/ndc/search?q=${encodeURIComponent(q)}&limit=${limit || 10}&dosageForm=${dosageForm || ""}&productType=${productType || ""}`;
+      req.url = `/drugs/ndc/search?q=${encodeURIComponent(searchQuery)}&limit=${limit || 10}&dosageForm=${dosageForm || ""}&productType=${productType || ""}`;
       return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
     case "ndc_lookup":
-      req.url = `/drugs/ndc/lookup/${encodeURIComponent(q)}`;
+      req.url = `/drugs/ndc/lookup/${encodeURIComponent(searchQuery)}`;
       return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
     case "ingredient":
-      req.url = `/drugs/ndc/ingredient?q=${encodeURIComponent(q)}&limit=${limit || 10}`;
+      req.url = `/drugs/ndc/ingredient?q=${encodeURIComponent(searchQuery)}&limit=${limit || 10}`;
       return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
     case "pharm_class":
-      req.url = `/drugs/ndc/pharm-class?q=${encodeURIComponent(q)}&limit=${limit || 10}`;
+      req.url = `/drugs/ndc/pharm-class?q=${encodeURIComponent(searchQuery)}&limit=${limit || 10}`;
       return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
     default:
       return res.status(400).json({ error: `Unknown searchBy: ${mode}`, validModes: ["name", "ndc_search", "ndc_lookup", "ingredient", "pharm_class"] });

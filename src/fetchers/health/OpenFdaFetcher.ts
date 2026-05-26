@@ -198,25 +198,25 @@ export async function getDrugAdverseEvents(drugName: string, limit = 10) {
   return {
     found: true,
     totalResults: data.meta?.results?.total || 0,
-    events: (data.results || []).slice(0, limit).map((e: RawFdaAdverseEvent) => ({
-      safetyReportId: e.safetyreportid || null,
-      receiveDate: e.receivedate || null,
-      serious: e.serious ? parseInt(e.serious, 10) === 1 : null,
+    events: (data.results || []).slice(0, limit).map((item: RawFdaAdverseEvent) => ({
+      safetyReportId: item.safetyreportid || null,
+      receiveDate: item.receivedate || null,
+      serious: item.serious ? parseInt(item.serious, 10) === 1 : null,
       seriousnessDetails: {
-        death: e.seriousnessdeath === "1",
-        hospitalization: e.seriousnesshospitalization === "1",
-        lifeThreatening: e.seriousnesslifethreatening === "1",
-        disability: e.seriousnessdisabling === "1",
+        death: item.seriousnessdeath === "1",
+        hospitalization: item.seriousnesshospitalization === "1",
+        lifeThreatening: item.seriousnesslifethreatening === "1",
+        disability: item.seriousnessdisabling === "1",
       },
-      reactions: (e.patient?.reaction || [])
+      reactions: (item.patient?.reaction || [])
         .map((r) => r.reactionmeddrapt)
         .filter((r): r is string => typeof r === "string")
         .slice(0, 10),
-      patientAge: e.patient?.patientonsetage || null,
+      patientAge: item.patient?.patientonsetage || null,
       patientSex:
-        e.patient?.patientsex === "1"
+        item.patient?.patientsex === "1"
           ? "Male"
-          : e.patient?.patientsex === "2"
+          : item.patient?.patientsex === "2"
             ? "Female"
             : null,
     })),

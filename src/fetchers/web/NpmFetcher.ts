@@ -82,9 +82,9 @@ export async function getNpmPackage(packageName: string, options: Record<string,
     author: typeof version.author === "string"
       ? version.author
       : version.author?.name || null,
-    maintainers: (data.maintainers || []).map((m) => {
-      if (typeof m === "string") return m;
-      return m.name || JSON.stringify(m);
+    maintainers: (data.maintainers || []).map((message) => {
+      if (typeof message === "string") return message;
+      return message.name || JSON.stringify(message);
     }).slice(0, 10),
     dependencies: version.dependencies || {},
     devDependencies: version.devDependencies || {},

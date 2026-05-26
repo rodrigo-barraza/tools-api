@@ -49,12 +49,12 @@ interface MapMarker {
 const router = Router();
 // ─── Calculator (BigNumber) ────────────────────────────────────────
 router.get("/calculate", (req: Request, res: Response) => {
-  const { operation, a, b } = req.query as Record<string, string | undefined>;
-  if (!operation || !a) {
+  const { operation, a: firstOperand, b } = req.query as Record<string, string | undefined>;
+  if (!operation || !firstOperand) {
     return res.status(400).json({ error: "Query parameters 'operation' and 'a' are required" });
   }
   try {
-    const numA = new BigNumber(a);
+    const numA = new BigNumber(firstOperand);
     let numB: BigNumber | undefined;
     if (b !== undefined && b !== "") {
       numB = new BigNumber(b);
@@ -96,7 +96,7 @@ router.get("/calculate", (req: Request, res: Response) => {
     }
     res.json({
       operation,
-      a,
+      firstOperand,
       b: b || null,
       result: result.toFixed(),
     });
@@ -181,14 +181,14 @@ router.get("/places/nearby", asyncHandler(async (req: Request, res: Response) =>
 }));
 // ─── Places — Text Search (Google Places API New) ──────────────────
 router.get("/places/search", asyncHandler(async (req: Request, res: Response) => {
-  const { q, latitude, longitude, radius, limit } = req.query as Record<string, string | undefined>;
-  if (!q) {
+  const { q: query, latitude, longitude, radius, limit } = req.query as Record<string, string | undefined>;
+  if (!query) {
     return res
       .status(400)
       .json({ error: "Query parameter 'q' is required" });
   }
   res.json(await searchPlacesByText({
-    query: q,
+    query: query,
     latitude: latitude ? parseFloat(latitude) : undefined,
     longitude: longitude ? parseFloat(longitude) : undefined,
     radius: radius ? parseInt(radius) : undefined,
@@ -365,11 +365,11 @@ router.get("/webcams", asyncHandler(
 ));
 // ─── Airports ──────────────────────────────────────────────────────
 router.get("/airports/search", (req: Request, res: Response) => {
-  const { q, limit, country } = req.query as Record<string, string | undefined>;
-  if (!q) {
+  const { q: query, limit, country } = req.query as Record<string, string | undefined>;
+  if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  res.json(searchAirports(q, {
+  res.json(searchAirports(query, {
     limit: parseInt(limit || "") || 10,
     country,
   }));
@@ -581,11 +581,11 @@ export function getUtilityHealth() {
 }
 // ── Unified Airport Lookup Dispatcher ──────────────────────────────
 router.get("/airports/lookup", asyncHandler(async (req: Request, res: Response) => {
-  const { action, q, code, country, lat, lng, limit } = req.query as Record<string, string | undefined>;
+  const { action, q: searchQuery, code, country, lat, lng, limit } = req.query as Record<string, string | undefined>;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["search", "code", "country", "nearest"] });
   switch (action) {
     case "search":
-      req.url = `/airports/search?q=${q || ""}&limit=${limit || 10}&country=${country || ""}`;
+      req.url = `/airports/search?q=${searchQuery || ""}&limit=${limit || 10}&country=${country || ""}`;
       return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
     case "code":
       req.url = `/airports/code/${code || ""}`;

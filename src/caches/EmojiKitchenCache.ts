@@ -41,9 +41,9 @@ export function normalizeCodepoint(codepointString: string): string {
 /**
  * Symmetrically find a key in an object by comparing normalized versions of keys.
  */
-function findNormalizedKey<T>(obj: Record<string, T>, target: string): string | null {
+function findNormalizedKey<T>(object: Record<string, T>, target: string): string | null {
   const normTarget = normalizeCodepoint(target);
-  for (const key of Object.keys(obj)) {
+  for (const key of Object.keys(object)) {
     if (normalizeCodepoint(key) === normTarget) {
       return key;
     }
@@ -146,6 +146,6 @@ export function queryEmojiCombinations(emoji: string, limit: number = 50): Combi
 
   // Sort by GBoard order and limit results
   return options
-    .sort((a, b) => (a.combination.gBoardOrder || 999999) - (b.combination.gBoardOrder || 999999))
+    .sort((firstItem, b) => (firstItem.combination.gBoardOrder || 999999) - (b.combination.gBoardOrder || 999999))
     .slice(0, limit);
 }

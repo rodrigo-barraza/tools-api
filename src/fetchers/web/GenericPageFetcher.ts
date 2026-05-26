@@ -103,7 +103,7 @@ function extractMainContent($: CheerioAPI) {
   });
 
   // Sort by score descending
-  candidates.sort((a, b) => b.score - a.score);
+  candidates.sort((firstItem, b) => b.score - firstItem.score);
 
   if (candidates.length > 0) {
     return extractText($, $(candidates[0].element));

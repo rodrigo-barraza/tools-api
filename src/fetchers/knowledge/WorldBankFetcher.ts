@@ -280,7 +280,7 @@ export function getAvailableIndicators() {
   return {
     totalCountries: COUNTRY_DB.length,
     indicators: Object.entries(INDICATOR_META).map(([key, meta]) => {
-      const nonNull = COUNTRY_DB.filter((c) => c[key] !== null).length;
+      const nonNull = COUNTRY_DB.filter((country) => country[key] !== null).length;
       return {
         key,
         label: meta.label,

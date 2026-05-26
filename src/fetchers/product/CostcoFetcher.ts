@@ -95,13 +95,13 @@ async function scrapeCategory(
   $('[data-testid^="ProductTile_"]').each((_i, element) => {
     if (products.length >= COSTCO_MAX_PRODUCTS_PER_CATEGORY) return false;
 
-    const $el = $(element);
-    const tileText = $el.text();
+    const $element = $(element);
+    const tileText = $element.text();
 
     // Title & URL — find the main product link
     const $link =
-      $el.find('a[href*="product."]').first() ||
-      $el.find("a.MuiLink-root").first();
+      $element.find('a[href*="product."]').first() ||
+      $element.find("a.MuiLink-root").first();
     const href = $link.attr("href") || "";
     const name = $link.text().trim();
     if (!name) return;
@@ -117,8 +117,8 @@ async function scrapeCategory(
 
     // Image
     const $img =
-      $el.find('[data-testid^="ProductImage_"] img').first() ||
-      $el.find("img").first();
+      $element.find('[data-testid^="ProductImage_"] img').first() ||
+      $element.find("img").first();
     const imageUrl = $img.attr("src") || $img.attr("data-src") || null;
 
     // Rating & reviews
@@ -151,15 +151,15 @@ async function scrapeCategory(
     $(".product-tile, .product, .col-xs-6.col-lg-4.col-xl-3").each((_i, element) => {
       if (products.length >= COSTCO_MAX_PRODUCTS_PER_CATEGORY) return false;
 
-      const $el = $(element);
+      const $element = $(element);
 
       // Title & URL
-      const $link = $el
+      const $link = $element
         .find("a[href*='.product.'], a[href*='product.']")
         .first();
       const href = $link.attr("href") || "";
       const name =
-        $el.find(".description, .product-title").text().trim() ||
+        $element.find(".description, .product-title").text().trim() ||
         $link.text().trim();
       if (!name) return;
 
@@ -169,18 +169,18 @@ async function scrapeCategory(
         : `${baseUrl}${href.startsWith("/") ? "" : "/"}${href}`;
 
       // Price
-      const priceText = $el.find(".price, [class*='price']").first().text();
+      const priceText = $element.find(".price, [class*='price']").first().text();
       const price = parsePrice(priceText);
 
       // Image
       const imageUrl =
-        $el.find("img.product-img, img").first().attr("src") || null;
+        $element.find("img.product-img, img").first().attr("src") || null;
 
       // Rating
       const ratingText =
-        $el.find(".stars, [class*='star']").attr("aria-label") || "";
+        $element.find(".stars, [class*='star']").attr("aria-label") || "";
       const rating = extractRating(ratingText);
-      const reviewText = $el.find(".reviews, [class*='review']").text();
+      const reviewText = $element.find(".reviews, [class*='review']").text();
       const reviewCount = extractReviewCount(reviewText);
 
       const product = {

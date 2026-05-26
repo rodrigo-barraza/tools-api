@@ -354,9 +354,9 @@ function formatHover(result: LspHoverResult, filePath: string) {
 
   // MarkedString[] (deprecated, some servers still use it)
   if (Array.isArray(result.contents)) {
-    const parts = result.contents.map((c) => {
-      if (typeof c === "string") return c;
-      if (c.value) return `\`\`\`${c.language || ""}\n${c.value}\n\`\`\``;
+    const parts = result.contents.map((content) => {
+      if (typeof content === "string") return content;
+      if (content.value) return `\`\`\`${content.language || ""}\n${content.value}\n\`\`\``;
       return "";
     }).filter(Boolean);
 

@@ -168,9 +168,9 @@ router.get("/units/list", asyncHandler(async (req: Request, res: Response) => {
     }
     const measures = convert().measures();
     const all: Record<string, unknown> = {};
-    for (const m of measures) {
-      const units = convert().possibilities(m);
-      all[m] = units.map((u: string) => {
+    for (const measure of measures) {
+      const units = convert().possibilities(measure);
+      all[measure] = units.map((u: string) => {
         const desc = convert().describe(u);
         return { abbr: u, singular: desc.singular };
       });

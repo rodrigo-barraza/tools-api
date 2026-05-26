@@ -9349,12 +9349,12 @@ export { TOOL_DOMAINS, TOOL_LABELS, TOOL_EMOJIS, TOOL_DEFINITIONS };
  */
 export function getToolSchemas(): any[] {
   return TOOL_DEFINITIONS
-    .filter((t) => isToolAvailable(t.name))
-    .map((t) => ({
-      ...t,
-      domain: TOOL_DOMAINS[t.name as keyof typeof TOOL_DOMAINS] || "Other",
-      labels: TOOL_LABELS[t.name as keyof typeof TOOL_LABELS] || [],
-      emoji: TOOL_EMOJIS[t.name as keyof typeof TOOL_EMOJIS] || null,
+    .filter((tool) => isToolAvailable(tool.name))
+    .map((tool) => ({
+      ...tool,
+      domain: TOOL_DOMAINS[tool.name as keyof typeof TOOL_DOMAINS] || "Other",
+      labels: TOOL_LABELS[tool.name as keyof typeof TOOL_LABELS] || [],
+      emoji: TOOL_EMOJIS[tool.name as keyof typeof TOOL_EMOJIS] || null,
     }));
 }
 
@@ -9365,7 +9365,7 @@ export function getToolSchemas(): any[] {
  */
 export function getToolSchemasForAI(): any[] {
   return TOOL_DEFINITIONS
-    .filter((t) => isToolAvailable(t.name))
+    .filter((tool) => isToolAvailable(tool.name))
     .map(
       ({ endpoint: _endpoint, dataSource: _dataSource, ...rest }) => rest,
     );
@@ -9377,13 +9377,13 @@ export function getToolSchemasForAI(): any[] {
  */
 export function getDisabledTools(): any[] {
   return TOOL_DEFINITIONS
-    .filter((t) => !isToolAvailable(t.name))
-    .map((t) => {
-      const requiredKeys = TOOL_REQUIRED_KEYS[t.name as keyof typeof TOOL_REQUIRED_KEYS] || [];
+    .filter((tool) => !isToolAvailable(tool.name))
+    .map((tool) => {
+      const requiredKeys = TOOL_REQUIRED_KEYS[tool.name as keyof typeof TOOL_REQUIRED_KEYS] || [];
 
       return {
-        name: t.name,
-        domain: TOOL_DOMAINS[t.name as keyof typeof TOOL_DOMAINS] || "Other",
+        name: tool.name,
+        domain: TOOL_DOMAINS[tool.name as keyof typeof TOOL_DOMAINS] || "Other",
         missingKeys: requiredKeys.filter((key: string) => !(CONFIG as unknown as Record<string, unknown>)[key]),
       };
     });

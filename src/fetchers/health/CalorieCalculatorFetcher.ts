@@ -245,22 +245,22 @@ export function calculateCaloricNeeds({
  */
 export function getCaloricNeedsOptions() {
   return {
-    activityLevels: Object.entries(ACTIVITY_MULTIPLIERS).map(([k, v]) => ({
+    activityLevels: Object.entries(ACTIVITY_MULTIPLIERS).map(([k, value]) => ({
       key: k,
-      label: v.label,
-      factor: v.factor,
+      label: value.label,
+      factor: value.factor,
     })),
-    goals: Object.entries(GOAL_ADJUSTMENTS).map(([k, v]) => ({
+    goals: Object.entries(GOAL_ADJUSTMENTS).map(([k, value]) => ({
       key: k,
-      label: v.label,
-      dailyDelta: v.delta,
+      label: value.label,
+      dailyDelta: value.delta,
     })),
-    macroSplits: Object.entries(MACRO_PRESETS).map(([k, v]) => ({
+    macroSplits: Object.entries(MACRO_PRESETS).map(([k, value]) => ({
       key: k,
-      label: v.label,
-      protein: v.protein,
-      carbs: v.carbs,
-      fat: v.fat,
+      label: value.label,
+      protein: value.protein,
+      carbs: value.carbs,
+      fat: value.fat,
     })),
   };
 }

@@ -69,7 +69,7 @@ export async function fetchTVMazeTrends() {
   }
   // Sort by weight (TVMaze's popularity metric), take top 30
   const topShows = Array.from(showMap.values())
-    .sort((a, b) => b.weight - a.weight || b.rating - a.rating)
+    .sort((firstItem, b) => b.weight - firstItem.weight || b.rating - firstItem.rating)
     .slice(0, 30);
   return topShows.map((entry) => {
     const show = entry.show;

@@ -98,8 +98,8 @@ function extractBadges(flags: number | string | { bitfield: number } | null | un
     : Number(flags);
   if (!bits || isNaN(bits)) return [];
   return BADGE_FLAGS
-    .filter((f) => (bits & f.bit) === f.bit)
-    .map((f) => ({ id: f.id, label: f.label }));
+    .filter((flag) => (bits & flag.bit) === flag.bit)
+    .map((item) => ({ id: item.id, label: item.label }));
 }
 
 /**
@@ -120,7 +120,7 @@ function extractRoleTags(roles: DiscordRole[] | undefined, guildId: string | und
   if (!Array.isArray(roles) || roles.length === 0) return [];
   return roles
     .filter((r) => r.id !== guildId && r.name !== "@everyone")
-    .sort((a, b) => (b.position ?? 0) - (a.position ?? 0))
+    .sort((firstItem, b) => (b.position ?? 0) - (firstItem.position ?? 0))
     .slice(0, 3)
     .map((r) => ({
       name: r.name,

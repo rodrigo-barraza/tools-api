@@ -656,9 +656,9 @@ router.get("/task/list-all", asyncHandler(async (req: Request) => {
   const allTasks = await collection.find(summaryFilter).toArray();
   const summary = {
     total: allTasks.length,
-    pending: allTasks.filter((t) => t.status === "pending").length,
-    in_progress: allTasks.filter((t) => t.status === "in_progress").length,
-    completed: allTasks.filter((t) => t.status === "completed").length,
+    pending: allTasks.filter((task) => task.status === "pending").length,
+    in_progress: allTasks.filter((task) => task.status === "in_progress").length,
+    completed: allTasks.filter((task) => task.status === "completed").length,
   };
   // Sanitize _id
   const sanitized = tasks.map(({ _id, ...rest }) => rest);
@@ -810,7 +810,7 @@ router.post("/custom-agent/create", asyncHandler(async (req: Request, res: Respo
   }
   // ── Validate enabledTools against the tool registry ──────────
   if (Array.isArray(enabledTools) && enabledTools.length > 0) {
-    const knownToolNames = new Set(TOOL_DEFINITIONS.map((t) => t.name));
+    const knownToolNames = new Set(TOOL_DEFINITIONS.map((tool) => tool.name));
     const unknownTools = enabledTools.filter((t: string) => !knownToolNames.has(t));
     if (unknownTools.length > 0) {
       return res.status(400).json({
@@ -898,7 +898,7 @@ router.post("/custom-agent/update", asyncHandler(async (req: Request, res: Respo
   }
   // ── Validate enabledTools against the tool registry ──────────
   if (Array.isArray(enabledTools) && enabledTools.length > 0) {
-    const knownToolNames = new Set(TOOL_DEFINITIONS.map((t) => t.name));
+    const knownToolNames = new Set(TOOL_DEFINITIONS.map((tool) => tool.name));
     const unknownTools = enabledTools.filter((t: string) => !knownToolNames.has(t));
     if (unknownTools.length > 0) {
       return res.status(400).json({

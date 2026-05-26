@@ -33,12 +33,12 @@ router.get("/past", asyncHandler(async (req: Request, res: Response) => {
   res.json({ count: events.length, days, events });
 }));
 router.get("/search", asyncHandler(async (req: Request, res: Response) => {
-  const { q, category, city, source } = req.query as Record<string, string | undefined>;
+  const { q: searchQuery, category, city, source } = req.query as Record<string, string | undefined>;
   const limit = parseIntParam(req.query.limit as string, 100);
-  const events = await searchEvents({ q, category, city, source, limit });
+  const events = await searchEvents({ q: searchQuery, category, city, source, limit });
   res.json({
     count: events.length,
-    query: { q, category, city, source },
+    query: { q: searchQuery, category, city, source },
     events,
   });
 }));
@@ -56,13 +56,13 @@ router.get("/:source/:id", asyncHandler(async (req: Request, res: Response) => {
 }));
 // ── Unified Events Dispatcher ──────────────────────────────────────
 router.get("/events", asyncHandler(async (req: Request, res: Response) => {
-  const { action, q, source, category, days, limit: rawLimit } = req.query as Record<string, string | undefined>;
+  const { action, q: searchQuery, source, category, days, limit: rawLimit } = req.query as Record<string, string | undefined>;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["search", "upcoming", "today", "summary"] });
   const limit = rawLimit ? parseIntParam(rawLimit, 100) : undefined;
   switch (action) {
     case "search": {
-      const events = await searchEvents({ q, category, source, limit: limit || 100 });
-      return res.json({ action, count: events.length, query: { q, category, source }, events });
+      const events = await searchEvents({ q: searchQuery, category, source, limit: limit || 100 });
+      return res.json({ action, count: events.length, query: { q: searchQuery, category, source }, events });
     }
     case "upcoming": {
       const daysAhead = parseIntParam(days, 30);

@@ -21,13 +21,13 @@ const router = Router();
 router.get("/dota/heroes", asyncHandler(async (req: Request, res: Response) => {
   try {
     const heroes = await getHeroes();
-    const { role, attr, q } = req.query as Record<string, string | undefined>;
+    const { role, attr, q: query } = req.query as Record<string, string | undefined>;
 
     let filtered = heroes;
 
-    if (q) {
-      const query = q.toLowerCase();
-      filtered = filtered.filter((h) => h.name.toLowerCase().includes(query));
+    if (query) {
+      const lowerQuery = query.toLowerCase();
+      filtered = filtered.filter((h) => h.name.toLowerCase().includes(lowerQuery));
     }
 
     if (role) {
@@ -116,9 +116,9 @@ router.get("/dota/players/:accountId/matches", asyncHandler(async (req: Request,
     ]);
 
     const heroMap = new Map(heroes.map((h) => [h.id, h.name]));
-    const enriched = matches.map((m) => ({
-      ...m,
-      heroName: heroMap.get(m.heroId) || "Unknown",
+    const enriched = matches.map((match) => ({
+      ...match,
+      heroName: heroMap.get(match.heroId) || "Unknown",
     }));
 
     res.json({ count: enriched.length, matches: enriched });
@@ -142,9 +142,9 @@ router.get("/dota/matches/:matchId", asyncHandler(async (req: Request, res: Resp
     ]);
 
     const heroMap = new Map(heroes.map((h) => [h.id, h.name]));
-    match.players = match.players.map((p) => ({
-      ...p,
-      heroName: heroMap.get(p.heroId) || "Unknown",
+    match.players = match.players.map((provider) => ({
+      ...provider,
+      heroName: heroMap.get(provider.heroId) || "Unknown",
     }));
 
     res.json(match);
@@ -179,8 +179,8 @@ router.get("/dota", asyncHandler(async (req: Request, res: Response) => {
   // Build query string for sub-routes
   const buildQueryString = (params: Record<string, string | undefined>) => {
     const searchParams = new URLSearchParams();
-    for (const [k, v] of Object.entries(params)) {
-      if (v !== undefined && v !== null) searchParams.set(k, String(v));
+    for (const [k, value] of Object.entries(params)) {
+      if (value !== undefined && value !== null) searchParams.set(k, String(value));
     }
     const queryString = searchParams.toString();
     return queryString ? `?${queryString}` : "";

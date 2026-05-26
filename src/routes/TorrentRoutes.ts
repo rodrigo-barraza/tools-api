@@ -14,8 +14,8 @@ const router = Router();
 // ─── 1. Search — Full lifecycle (start → poll → results) ───
 
 router.get("/search", asyncHandler(async (req: Request, res: Response) => {
-  const { q, query, category, plugins, limit, timeout } = req.query as Record<string, string | undefined>;
-  const searchQuery = q || query;
+  const { q: qQuery, query, category, plugins, limit, timeout } = req.query as Record<string, string | undefined>;
+  const searchQuery = qQuery || query;
   if (!searchQuery) {
     return res.status(400).json({
       error: "'q' or 'query' parameter is required",
@@ -176,7 +176,7 @@ router.get("/transfer", asyncHandler(async (_req: Request, res: Response) => {
 // ─── Unified Dispatcher (for AI tool schema) ────────────────
 
 router.get("/", asyncHandler(async (req: Request, res: Response) => {
-  const { action, q, query, category, plugins, limit, filter, sort, timeout, hashes } = req.query as Record<string, string | undefined>;
+  const { action, q: qQuery, query, category, plugins, limit, filter, sort, timeout, hashes } = req.query as Record<string, string | undefined>;
   if (!action) {
     return res.status(400).json({
       error: "'action' is required",
@@ -187,7 +187,7 @@ router.get("/", asyncHandler(async (req: Request, res: Response) => {
   try {
     switch (action) {
       case "search": {
-        const searchQuery = q || query;
+        const searchQuery = qQuery || query;
         if (!searchQuery) return res.status(400).json({ error: "'q' is required for action=search" });
         const results = await qbt.search(searchQuery, {
           category: category || "all",

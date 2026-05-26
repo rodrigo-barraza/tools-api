@@ -181,7 +181,7 @@ const collectWildfires = makeCollector({
   setErrorFn: (e) => setWildfireError(e instanceof Error ? e : new Error(errorMessage(e))),
   logFn: (d) => {
     const largest = d.filter((e) => e.magnitudeValue != null)
-      .sort((a, b) => (b.magnitudeValue ?? 0) - (a.magnitudeValue ?? 0))[0];
+      .sort((firstItem, b) => (b.magnitudeValue ?? 0) - (firstItem.magnitudeValue ?? 0))[0];
     return `${d.length} active fires` +
       (largest ? ` | Largest: ${(largest as unknown as Record<string, unknown>).title} (${largest.magnitudeValue} ${(largest as unknown as Record<string, unknown>).magnitudeUnit})` : "");
   },
@@ -193,7 +193,7 @@ const collectTides = makeCollector({
   updateFn: updateTides,
   setErrorFn: (e) => setTideError(e instanceof Error ? e : new Error(errorMessage(e))),
   logFn: (d) => {
-    const next = d.find((t) => new Date(t.time) > new Date());
+    const next = d.find((time) => new Date(time.time) > new Date());
     return `${d.length} predictions` +
       (next ? ` | Next: ${(next as unknown as Record<string, unknown>).type} at ${next.time} (${(next as unknown as Record<string, unknown>).height}m)` : "");
   },

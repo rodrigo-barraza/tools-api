@@ -58,17 +58,17 @@ const POSTS_QUERY = `
  * Map Product Hunt topics to a unified category.
  */
 function mapTopicToCategory(topics: string[]) {
-  const topicNames = topics.map((t) => t.toLowerCase());
-  if (topicNames.some((t) => t.includes("gaming") || t.includes("game")))
+  const topicNames = topics.map((tool) => tool.toLowerCase());
+  if (topicNames.some((tool) => tool.includes("gaming") || tool.includes("game")))
     return "gaming";
-  if (topicNames.some((t) => t.includes("developer") || t.includes("api")))
+  if (topicNames.some((tool) => tool.includes("developer") || tool.includes("api")))
     return "software";
-  if (topicNames.some((t) => t.includes("home") || t.includes("smart home")))
+  if (topicNames.some((tool) => tool.includes("home") || tool.includes("smart home")))
     return "home";
-  if (topicNames.some((t) => t.includes("health") || t.includes("fitness")))
+  if (topicNames.some((tool) => tool.includes("health") || tool.includes("fitness")))
     return "sports";
   if (
-    topicNames.some((t) => t.includes("productivity") || t.includes("office"))
+    topicNames.some((tool) => tool.includes("productivity") || tool.includes("office"))
   )
     return "office";
   // Default for Product Hunt — mostly tech/software

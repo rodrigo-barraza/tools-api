@@ -22,9 +22,9 @@ export async function collectEmojiKitchen() {
     const count = Object.keys(metadata.data).length;
     logger.info(`[EmojiKitchen] ✅ Loaded metadata successfully | ${count} emojis cataloged`);
   } catch (error: unknown) {
-    const err = error instanceof Error ? error : new Error(errorMessage(error));
-    setEmojiKitchenError(err);
-    logger.error(`[EmojiKitchen] ❌ Collection failed: ${err.message}`);
+    const errorObject = error instanceof Error ? error : new Error(errorMessage(error));
+    setEmojiKitchenError(errorObject);
+    logger.error(`[EmojiKitchen] ❌ Collection failed: ${errorObject.message}`);
   }
 }
 

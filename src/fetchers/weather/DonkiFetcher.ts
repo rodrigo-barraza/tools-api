@@ -183,7 +183,7 @@ export async function fetchCmes(): Promise<Cme[]> {
 
   return data.map((cme): Cme => {
     const analysis =
-      cme.cmeAnalyses?.find((a) => a.isMostAccurate) ||
+      cme.cmeAnalyses?.find((first) => first.isMostAccurate) ||
       cme.cmeAnalyses?.[0] ||
       {};
     const enlil = analysis.enlilList?.[0] || {};

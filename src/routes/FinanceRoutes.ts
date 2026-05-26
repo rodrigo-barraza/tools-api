@@ -112,11 +112,11 @@ router.get("/macro/indicators", asyncHandler(
   "Key indicators fetch",
 ));
 router.get("/macro/search", asyncHandler(async (req: Request, res: Response) => {
-  const { q, limit, orderBy } = req.query as Record<string, string | undefined>;
-  if (!q) {
+  const { q: query, limit, orderBy } = req.query as Record<string, string | undefined>;
+  if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  res.json(await searchSeries(q, {
+  res.json(await searchSeries(query, {
     limit: parseInt(limit || "", 10) || 10,
     orderBy,
   }));
@@ -160,11 +160,11 @@ router.get("/stock/data", asyncHandler(async (req: Request, res: Response) => {
 }));
 // ── Unified Macro Data Dispatcher ──────────────────────────────────
 router.get("/macro/data", asyncHandler(async (req: Request, res: Response) => {
-  const { action, q, seriesId, limit, orderBy, sortOrder, observationStart, observationEnd } = req.query as Record<string, string | undefined>;
+  const { action, q: searchQuery, seriesId, limit, orderBy, sortOrder, observationStart, observationEnd } = req.query as Record<string, string | undefined>;
   if (!action) return res.status(400).json({ error: "'action' is required", actions: ["indicators", "search", "series", "observations"] });
   const pathMap: Record<string, string> = {
     indicators: "/macro/indicators",
-    search: `/macro/search?q=${q || ""}&limit=${limit || 10}&orderBy=${orderBy || ""}`,
+    search: `/macro/search?q=${searchQuery || ""}&limit=${limit || 10}&orderBy=${orderBy || ""}`,
     series: `/macro/series/${seriesId || "GDP"}`,
     observations: `/macro/series/${seriesId || "GDP"}/observations?limit=${limit || 10}&sortOrder=${sortOrder || "desc"}&observationStart=${observationStart || ""}&observationEnd=${observationEnd || ""}`,
   };

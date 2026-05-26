@@ -319,7 +319,7 @@ export function getLspManager(workspaceFolder?: string): LspServerManager {
 export async function shutdownAllLspManagers(): Promise<void> {
   const all = [...managers.values()];
   managers.clear();
-  await Promise.allSettled(all.map((m) => m.shutdown()));
+  await Promise.allSettled(all.map((message) => message.shutdown()));
   logger.info("[LSP Manager] All managers shut down");
 }
 

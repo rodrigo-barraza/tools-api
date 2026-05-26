@@ -37,7 +37,7 @@ function normalizeAnime(anime: RawJikanAnime | null | undefined): JikanAnime | n
     year: anime.year || null,
     studios: (anime.studios || []).map((s) => s.name),
     genres: (anime.genres || []).map((g) => g.name),
-    themes: (anime.themes || []).map((t) => t.name),
+    themes: (anime.themes || []).map((theme) => theme.name),
   };
 }
 

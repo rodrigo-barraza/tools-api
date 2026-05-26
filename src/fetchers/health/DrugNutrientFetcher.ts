@@ -141,7 +141,7 @@ export function checkDrugNutrientInteractions({ drug, nutrients }: CheckDrugNutr
 
   // Filter nutrients if specified
   const nutrientFilter = nutrients
-    ? nutrients.split(",").map((n) => normalizeSearch(n)).filter(Boolean)
+    ? nutrients.split(",").map((item) => normalizeSearch(item)).filter(Boolean)
     : null;
 
   // Find matching interactions

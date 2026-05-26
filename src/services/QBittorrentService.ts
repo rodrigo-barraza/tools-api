@@ -378,13 +378,13 @@ export async function search(pattern: string, { plugins = "enabled", category = 
  */
 export async function getPlugins() {
   const plugins = await qbtFetch("/api/v2/search/plugins") as QbtPlugin[];
-  return (Array.isArray(plugins) ? plugins : []).map((p) => ({
-    name: p.name,
-    fullName: p.fullName,
-    url: p.url,
-    enabled: p.enabled,
-    version: p.version,
-    supportedCategories: p.supportedCategories?.map((c) => c.name) || [],
+  return (Array.isArray(plugins) ? plugins : []).map((provider) => ({
+    name: provider.name,
+    fullName: provider.fullName,
+    url: provider.url,
+    enabled: provider.enabled,
+    version: provider.version,
+    supportedCategories: provider.supportedCategories?.map((item) => item.name) || [],
   }));
 }
 
@@ -454,25 +454,25 @@ export async function listTorrents(options: ListTorrentsOptions = {}) {
   if (options.offset) params.offset = String(options.offset);
 
   const torrents = await qbtFetch("/api/v2/torrents/info", { params }) as QbtTorrentInfo[];
-  return (Array.isArray(torrents) ? torrents : []).map((t) => ({
-    hash: t.hash,
-    name: t.name,
-    size: t.size,
-    progress: Math.round(t.progress * 100),
-    state: t.state,
-    seeds: t.num_seeds,
-    leech: t.num_leechs,
-    downloadSpeed: t.dlspeed,
-    uploadSpeed: t.upspeed,
-    eta: t.eta,
-    category: t.category,
-    tags: t.tags,
-    addedOn: new Date(t.added_on * 1000).toISOString(),
-    savePath: t.save_path,
-    ratio: t.ratio,
-    amountLeft: t.amount_left,
-    downloaded: t.downloaded,
-    uploaded: t.uploaded,
+  return (Array.isArray(torrents) ? torrents : []).map((tool) => ({
+    hash: tool.hash,
+    name: tool.name,
+    size: tool.size,
+    progress: Math.round(tool.progress * 100),
+    state: tool.state,
+    seeds: tool.num_seeds,
+    leech: tool.num_leechs,
+    downloadSpeed: tool.dlspeed,
+    uploadSpeed: tool.upspeed,
+    eta: tool.eta,
+    category: tool.category,
+    tags: tool.tags,
+    addedOn: new Date(tool.added_on * 1000).toISOString(),
+    savePath: tool.save_path,
+    ratio: tool.ratio,
+    amountLeft: tool.amount_left,
+    downloaded: tool.downloaded,
+    uploaded: tool.uploaded,
   }));
 }
 

@@ -165,7 +165,7 @@ function normalizeMovie(m: RawTmdbMovie | null | undefined): MovieResult | null 
     spokenLanguages: (m.spoken_languages || []).map(
       (l) => l.english_name || l.name || "",
     ).filter(Boolean),
-    productionCompanies: (m.production_companies || []).map((c) => c.name),
+    productionCompanies: (m.production_companies || []).map((company) => company.name),
     productionCountries: (m.production_countries || []).map(
       (c) => c.name || c.iso_3166_1 || "",
     ).filter(Boolean),
@@ -295,7 +295,7 @@ export async function getMovieCredits(id: string | number) {
     found: true,
     cast: (data.cast || []).slice(0, 20).map(normalizeCast),
     crew: (data.crew || [])
-      .filter((c) =>
+      .filter((item) =>
         [
           "Director",
           "Writer",
@@ -303,7 +303,7 @@ export async function getMovieCredits(id: string | number) {
           "Producer",
           "Director of Photography",
           "Original Music Composer",
-        ].includes(c.job || ""),
+        ].includes(item.job || ""),
       )
       .map(normalizeCrew),
   };
@@ -446,8 +446,8 @@ export async function getTvShowCredits(id: string | number) {
     found: true,
     cast: (data.cast || []).slice(0, 20).map(normalizeCast),
     crew: (data.crew || [])
-      .filter((c) => {
-        const job = c.jobs?.[0]?.job || c.job || "";
+      .filter((item) => {
+        const job = item.jobs?.[0]?.job || item.job || "";
         return [
           "Creator",
           "Director",

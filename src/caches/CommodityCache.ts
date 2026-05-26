@@ -46,7 +46,7 @@ export async function updateCommodities(quotes: CommodityQuote[]) {
   cache.error = null;
 
   const result = await insertSnapshots(
-    quotes.map((q) => ({ ...q, fetchedAt: cache.lastFetch || new Date() })),
+    quotes.map((query) => ({ ...query, fetchedAt: cache.lastFetch || new Date() })),
   );
   return result;
 }
@@ -84,7 +84,7 @@ export function getAllCommodities() {
  * Get commodities filtered by category.
  */
 export function getCommoditiesByCategory(category: string) {
-  return cache.commodities.filter((c) => c.category === category);
+  return cache.commodities.filter((item) => item.category === category);
 }
 
 /**
@@ -107,7 +107,7 @@ export function getCommoditySummary() {
   }
 
   // Sort by changePercent for gainers/losers
-  const withChange = commodities.filter((c) => c.changePercent != null);
+  const withChange = commodities.filter((item) => item.changePercent != null);
   const sorted = [...withChange].sort(
     (a, b) => b.changePercent - a.changePercent,
   );
@@ -117,11 +117,11 @@ export function getCommoditySummary() {
 
   // Group by category
   const byCategory: Record<string, CommoditySummaryEntry[]> = {};
-  for (const c of commodities) {
-    if (!byCategory[c.category]) {
-      byCategory[c.category] = [];
+  for (const item of commodities) {
+    if (!byCategory[item.category]) {
+      byCategory[item.category] = [];
     }
-    byCategory[c.category].push(summarize(c));
+    byCategory[item.category].push(summarize(item));
   }
 
   return {

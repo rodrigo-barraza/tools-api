@@ -29,23 +29,23 @@ async function fetchUbcEvents(): Promise<CachedEvent[]> {
 
   $("article, .event-card, .views-row, [class*='event'], .card").each(
     (_i, element) => {
-      const $el = $(element);
-      const $link = $el.find("a").first();
+      const $element = $(element);
+      const $link = $element.find("a").first();
       const title =
-        $el.find("h2, h3, .event-title, .card-title").first().text().trim() ||
+        $element.find("h2, h3, .event-title, .card-title").first().text().trim() ||
         $link.text().trim();
       const href = $link.attr("href");
-      const dateText = $el
+      const dateText = $element
         .find("time, .event-date, .date, [class*='date']")
         .first()
         .text()
         .trim();
-      const description = $el
+      const description = $element
         .find("p, .event-description, .summary, .card-text")
         .first()
         .text()
         .trim();
-      const imageUrl = $el.find("img").first().attr("src") || undefined;
+      const imageUrl = $element.find("img").first().attr("src") || undefined;
 
       if (!title || title.length < 3) return;
 
@@ -107,18 +107,18 @@ async function fetchSfuEvents(): Promise<CachedEvent[]> {
 
   $("article, .event-card, .views-row, [class*='event'], .card, li").each(
     (_i, element) => {
-      const $el = $(element);
-      const $link = $el.find("a").first();
+      const $element = $(element);
+      const $link = $element.find("a").first();
       const title =
-        $el.find("h2, h3, h4, .event-title").first().text().trim() ||
+        $element.find("h2, h3, h4, .event-title").first().text().trim() ||
         $link.text().trim();
       const href = $link.attr("href");
-      const dateText = $el
+      const dateText = $element
         .find("time, .event-date, .date, [class*='date']")
         .first()
         .text()
         .trim();
-      const description = $el
+      const description = $element
         .find("p, .event-description, .summary")
         .first()
         .text()

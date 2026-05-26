@@ -38,7 +38,7 @@ function parseEntry(entryXml: string): ArxivPaper {
   // Extract authors
   const authorBlocks = extractXmlItems(entryXml, "author");
   const authors = authorBlocks
-    .map((a) => extractXmlTag(a, "name"))
+    .map((first) => extractXmlTag(first, "name"))
     .filter((name): name is string => name != null)
     .slice(0, 10);
 

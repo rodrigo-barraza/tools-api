@@ -190,8 +190,8 @@ export async function getData(route: string, options: EiaGetDataOptions = {}) {
   if (start) params.start = start;
   if (end) params.end = end;
   if (sort) {
-    const [col, dir] = sort.split(":");
-    params["sort[0][column]"] = col;
+    const [collection, dir] = sort.split(":");
+    params["sort[0][column]"] = collection;
     params["sort[0][direction]"] = dir || "desc";
   }
 
@@ -307,7 +307,7 @@ export async function getEnergyIndicators() {
   if (failed.length > 0) {
     logger.warn(
       `[EiaFetcher] ⚠️ ${failed.length} indicator(s) failed:`,
-      failed.map((f) => f.series).join(", "),
+      failed.map((failedItem) => failedItem.series).join(", "),
     );
   }
 

@@ -495,23 +495,23 @@ export async function getToolCallStats(since?: string) {
     successRate: totalCalls > 0
       ? Math.round(((successMap.success || 0) / totalCalls) * 10000) / 100
       : 0,
-    byTool: byTool.map((t) => ({
-      toolName: (t as AggregateDoc)._id,
-      count: (t as AggregateDoc).count,
-      avgMs: Math.round(((t as AggregateDoc).avgMs || 0) * 100) / 100,
-      maxMs: Math.round(((t as AggregateDoc).maxMs || 0) * 100) / 100,
-      minMs: Math.round(((t as AggregateDoc).minMs || 0) * 100) / 100,
-      errors: (t as AggregateDoc).errors || 0,
-      errorRate: (t as AggregateDoc).count > 0
-        ? Math.round((((t as AggregateDoc).errors || 0) / (t as AggregateDoc).count) * 10000) / 100
+    byTool: byTool.map((tool) => ({
+      toolName: (tool as AggregateDoc)._id,
+      count: (tool as AggregateDoc).count,
+      avgMs: Math.round(((tool as AggregateDoc).avgMs || 0) * 100) / 100,
+      maxMs: Math.round(((tool as AggregateDoc).maxMs || 0) * 100) / 100,
+      minMs: Math.round(((tool as AggregateDoc).minMs || 0) * 100) / 100,
+      errors: (tool as AggregateDoc).errors || 0,
+      errorRate: (tool as AggregateDoc).count > 0
+        ? Math.round((((tool as AggregateDoc).errors || 0) / (tool as AggregateDoc).count) * 10000) / 100
         : 0,
-      totalTransferBytes: (t as AggregateDoc).totalBytes || 0,
+      totalTransferBytes: (tool as AggregateDoc).totalBytes || 0,
     })),
-    byDomain: byDomain.map((d) => ({
-      domain: (d as AggregateDoc)._id,
-      count: (d as AggregateDoc).count,
-      avgMs: Math.round(((d as AggregateDoc).avgMs || 0) * 100) / 100,
-      errors: (d as AggregateDoc).errors || 0,
+    byDomain: byDomain.map((domain) => ({
+      domain: (domain as AggregateDoc)._id,
+      count: (domain as AggregateDoc).count,
+      avgMs: Math.round(((domain as AggregateDoc).avgMs || 0) * 100) / 100,
+      errors: (domain as AggregateDoc).errors || 0,
     })),
     breakdown: successMap,
     slowest,
