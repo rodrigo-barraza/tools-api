@@ -106,11 +106,11 @@ export async function agenticScheduleCreate(data: Record<string, unknown>) {
     });
 
     if (!schedulerResponse.ok) {
-      const err = await res.json().catch(() => ({}));
-      return { error: err.error || `Prism returned HTTP ${schedulerResponse.status}` };
+      const errorPayload = await schedulerResponse.json().catch(() => ({}));
+      return { error: errorPayload.error || `Prism returned HTTP ${schedulerResponse.status}` };
     }
 
-    const created = await res.json();
+    const created = await schedulerResponse.json();
     return {
       success: true,
       schedule: created,
@@ -139,11 +139,11 @@ export async function agenticScheduleList(project: string, _options?: Record<str
     });
 
     if (!schedulerResponse.ok) {
-      const err = await res.json().catch(() => ({}));
-      return { error: err.error || `Prism returned HTTP ${schedulerResponse.status}` };
+      const errorPayload = await schedulerResponse.json().catch(() => ({}));
+      return { error: errorPayload.error || `Prism returned HTTP ${schedulerResponse.status}` };
     }
 
-    const tasks = await res.json();
+    const tasks = await schedulerResponse.json();
     return {
       project,
       schedules: tasks,
@@ -175,11 +175,11 @@ export async function agenticScheduleDelete(project: string, scheduleId: string 
     });
 
     if (!schedulerResponse.ok) {
-      const err = await res.json().catch(() => ({}));
-      return { error: err.error || `Prism returned HTTP ${schedulerResponse.status}` };
+      const errorPayload = await schedulerResponse.json().catch(() => ({}));
+      return { error: errorPayload.error || `Prism returned HTTP ${schedulerResponse.status}` };
     }
 
-    const deleted = await res.json();
+    const deleted = await schedulerResponse.json();
     return {
       deleted: deleted.success,
       scheduleId,
@@ -213,11 +213,11 @@ export async function agenticTriggerFire(project: string, triggerName: string, p
     });
 
     if (!schedulerResponse.ok) {
-      const err = await res.json().catch(() => ({}));
-      return { error: err.error || `Prism returned HTTP ${schedulerResponse.status}` };
+      const errorPayload = await schedulerResponse.json().catch(() => ({}));
+      return { error: errorPayload.error || `Prism returned HTTP ${schedulerResponse.status}` };
     }
 
-    const result = await res.json();
+    const result = await schedulerResponse.json();
     return {
       fired: true,
       trigger: triggerName,
