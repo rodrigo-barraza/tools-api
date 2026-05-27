@@ -7144,7 +7144,7 @@ const TOOL_DEFINITIONS: any[] = [
         duration: {
           type: "number",
           description:
-            "Total sound duration in seconds (default: 1.0, range: 0.1 to 10.0).",
+            "Total sound duration in seconds (default: 1.0, range: 0.1 to 60.0).",
         },
         waveform: {
           type: "string",

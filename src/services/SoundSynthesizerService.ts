@@ -744,7 +744,7 @@ export function renderModularGraph(config: SynthesizerConfig): Float32Array {
 
   let duration =
     config.duration || computeTimelineDuration(tracks, nodes, tempo);
-  duration = Math.min(Math.max(duration, 0.1), 10.0);
+  duration = Math.min(Math.max(duration, 0.1), 60.0);
 
   const numSamples = Math.floor(duration * sampleRate);
   const masterBuffer = new Float32Array(numSamples * 2);
@@ -951,7 +951,7 @@ export function getEnvelopeValue(
  */
 export function synthesizeSound(config: SynthesizerConfig): Float32Array {
   const sampleRate = config.sampleRate || 44100;
-  const duration = Math.min(Math.max(config.duration || 1.0, 0.1), 10.0);
+  const duration = Math.min(Math.max(config.duration || 1.0, 0.1), 60.0);
   const numSamples = Math.floor(duration * sampleRate);
   const samples = new Float32Array(numSamples);
 
