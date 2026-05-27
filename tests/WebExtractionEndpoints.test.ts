@@ -43,9 +43,9 @@ describe("ToolSchemaService", () => {
     const tools = getToolSchemas();
     const byName = Object.fromEntries(tools.map((t) => [t.name, t]));
 
-    expect(byName.get_web_content).toBeTruthy();
-    expect(byName.get_web_content.parameters.properties.url).toBeTruthy();
-    expect(byName.get_web_content.parameters.required).toEqual(["url"]);
+    expect(byName.read_url).toBeTruthy();
+    expect(byName.read_url.parameters.properties.url).toBeTruthy();
+    expect(byName.read_url.parameters.required).toEqual(["url"]);
 
     expect(byName.get_package_info).toBeTruthy();
     expect(byName.get_package_info.parameters.properties.name).toBeTruthy();

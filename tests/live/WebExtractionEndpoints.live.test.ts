@@ -351,7 +351,7 @@ describe("GET /stackoverflow/question", () => {
 // Unified Endpoints
 // ═══════════════════════════════════════════════════════════════
 
-// ─── get_web_content /web/content ─────────────────────────────
+// ─── read_url /web/content ─────────────────────────────
 
 describe("GET /web/content (unified)", () => {
   it("auto-detects GitHub from URL", async () => {
@@ -558,10 +558,10 @@ describe("ToolSchemaService", () => {
     const tools = getToolSchemas();
     const byName = Object.fromEntries(tools.map((t) => [t.name, t]));
 
-    // get_web_content should exist
-    assert.ok(byName.get_web_content, "get_web_content should exist");
-    assert.ok(byName.get_web_content.parameters.properties.url, "should have url param");
-    assert.deepEqual(byName.get_web_content.parameters.required, ["url"]);
+    // read_url should exist
+    assert.ok(byName.read_url, "read_url should exist");
+    assert.ok(byName.read_url.parameters.properties.url, "should have url param");
+    assert.deepEqual(byName.read_url.parameters.required, ["url"]);
 
     // get_package_info should exist
     assert.ok(byName.get_package_info, "get_package_info should exist");

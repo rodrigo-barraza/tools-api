@@ -2430,7 +2430,7 @@ const TOOL_DEFINITIONS: any[] = [
 
   // ── Unified Web Extraction Tools ─────────────────────────────
   {
-    name: "get_web_content",
+    name: "read_url",
     dataSource: onDemand("Auto-detected platform API"),
     description:
       "Extract structured content from any URL. Auto-detects platform and uses the best extraction method: GitHub (repo metadata + README + languages), Reddit (post + comments), Twitter/X (tweet + metrics + media), Hacker News (post + comments), Stack Overflow (question + answers with code blocks), YouTube (metadata + transcript). For any other URL (news articles, blogs, documentation, etc.), extracts the page title, metadata, and main readable text using lightweight HTML parsing — no headless browser needed.",
@@ -8394,7 +8394,7 @@ const TOOL_DOMAINS = {
   get_on_this_day: "Knowledge",
   list_development_indicators: "Knowledge",
   get_youtube_video: "Knowledge",
-  get_web_content: "Knowledge",
+  read_url: "Knowledge",
   get_package_info: "Knowledge",
   read_pdf_url: "Knowledge",
   read_rss_feed: "Knowledge",
@@ -8695,7 +8695,7 @@ const TOOL_EMOJIS = {
   get_on_this_day: "📜",
   list_development_indicators: "📊",
   get_youtube_video: "▶️",
-  get_web_content: "🌐",
+  read_url: "🌐",
   get_package_info: "📦",
   read_pdf_url: "📄",
   read_rss_feed: "📡",
@@ -9117,7 +9117,7 @@ const TOOL_LABELS = {
   define_word: ["reference"],
   search_papers: ["reference", "coding"],
   get_youtube_video: ["web"],
-  get_web_content: ["web", "coding"],
+  read_url: ["web", "coding"],
   get_package_info: ["coding"],
   read_pdf_url: ["web"],
   read_rss_feed: ["web"],
