@@ -15,7 +15,6 @@ import {
 
 const router = Router();
 
-
 // ────────────────────────────────────────────────────────────
 // Constants
 // ────────────────────────────────────────────────────────────
@@ -47,7 +46,10 @@ const SAFETY_SOFTENING_TIERS: [RegExp, string][][] = [
     [/\bbare[\s-]?chest(ed)?\b/gi, "in a loosely unbuttoned shirt"],
     [/\bundress(ed|ing)?\b/gi, "in minimal elegant attire"],
     [/\bstrip(ping|ped)?\b/gi, "adjusting flowing robes"],
-    [/\bexposed\s+(skin|body|flesh)\b/gi, "visible silhouette through sheer fabric"],
+    [
+      /\bexposed\s+(skin|body|flesh)\b/gi,
+      "visible silhouette through sheer fabric",
+    ],
     [/\bseductive\b/gi, "alluring"],
     [/\bsexual(ly)?\b/gi, "romantically"],
     [/\bsensual\b/gi, "graceful"],
@@ -114,7 +116,11 @@ const SAFETY_SOFTENING_TIERS: [RegExp, string][][] = [
  */
 function softenPrompt(prompt: string, tier: number) {
   let softened = prompt;
-  for (let tierIndex = 0; tierIndex <= tier && tierIndex < SAFETY_SOFTENING_TIERS.length; tierIndex++) {
+  for (
+    let tierIndex = 0;
+    tierIndex <= tier && tierIndex < SAFETY_SOFTENING_TIERS.length;
+    tierIndex++
+  ) {
     for (const [pattern, replacement] of SAFETY_SOFTENING_TIERS[tierIndex]) {
       softened = softened.replace(pattern, replacement);
     }
@@ -134,354 +140,405 @@ const VISION_CACHE_TTL_MS = 5 * 60 * 1000;
 // POST /creative/generate-image
 // ────────────────────────────────────────────────────────────
 
-router.post("/generate-image", asyncHandler(async (req: Request, res: Response) => {
-  const { prompt, referenceImages } = req.body;
+router.post(
+  "/generate-image",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { prompt, referenceImages } = req.body;
 
-  if (!prompt) {
-    return res.status(400).json({ error: "Missing required parameter: prompt" });
-  }
-
-  // Extract caller context from headers for Prism attribution
-  const { project: callerProject, username: callerUsername, agent: callerAgent, traceId: callerTraceId, agentSessionId: callerAgentSessionId } = extractCallerContext(req);
-
-  try {
-    let currentPrompt = prompt;
-    let result: { text?: string; images?: { data: string; mimeType?: string }[]; safetyBlock?: boolean } | undefined;
-    let safetyRetries = 0;
-
-    for (let attempt = 0; attempt <= MAX_SAFETY_RETRIES; attempt++) {
-      const messages = [
-        {
-          role: "user",
-          content: currentPrompt,
-          ...(referenceImages?.length > 0 && { images: referenceImages }),
-        },
-      ];
-
-      // When reference images are present, instruct the image model to
-      // preserve and edit them rather than re-imagining from scratch.
-      const systemPrompt = referenceImages?.length > 0
-        ? "You are an image editor. The user has attached reference image(s). " +
-          "Use the attached image(s) as the direct basis for your output. " +
-          "Preserve the appearance, features, and identity of subjects in the reference image(s) as closely as possible. " +
-          "Apply ONLY the specific changes described in the prompt. Do not re-imagine or reinvent the image from scratch."
-        : undefined;
-
-      try {
-        result = await PrismService.chat({
-          provider: IMAGE_PROVIDER,
-          model: IMAGE_MODEL,
-          messages,
-          forceImageGeneration: true,
-          project: callerProject,
-          username: callerUsername,
-          agent: callerAgent,
-          traceId: callerTraceId,
-          agentSessionId: callerAgentSessionId,
-          skipConversation: true,
-          ...(systemPrompt && { systemPrompt }),
-        });
-      } catch (error: unknown) {
-        logger.error(`[CreativeRoutes] Prism chat failed: ${errorMessage(error)}`);
-        return res.status(502).json({
-          error: `Image generation failed: ${errorMessage(error)}`,
-        });
-      }
-
-      // Success — we got an image
-      if (!result.safetyBlock && (result.images?.length ?? 0) > 0) {
-        break;
-      }
-
-      // Safety block — can we retry with a softer prompt?
-      if (attempt < MAX_SAFETY_RETRIES) {
-        safetyRetries++;
-        const previousPrompt = currentPrompt;
-        currentPrompt = softenPrompt(prompt, attempt);
-
-        // If softening didn't change anything, no point retrying
-        if (currentPrompt === previousPrompt) {
-          logger.warn(
-            `[CreativeRoutes] generate-image: safety softening had no effect at tier ${attempt + 1}, stopping retries`,
-          );
-          break;
-        }
-
-        logger.info(
-          `[CreativeRoutes] generate-image: safety block on attempt ${attempt + 1}, ` +
-            `retrying with softened prompt (tier ${attempt + 1}): "${currentPrompt.slice(0, 100)}…"`,
-        );
-      }
+    if (!prompt) {
+      return res
+        .status(400)
+        .json({ error: "Missing required parameter: prompt" });
     }
 
-    // All attempts exhausted — still blocked
-    if (!result || result.safetyBlock) {
-      return res.status(422).json({
-        success: false,
-        error:
-          "Image generation was blocked by content safety filters after " +
-          `${safetyRetries + 1} attempts (including softened prompts). ` +
-          "The content may be too explicit to generate even with creative alternatives.",
-      });
-    }
+    // Extract caller context from headers for Prism attribution
+    const {
+      project: callerProject,
+      username: callerUsername,
+      agent: callerAgent,
+      traceId: callerTraceId,
+      agentSessionId: callerAgentSessionId,
+    } = extractCallerContext(req);
 
-    // No image in response (model returned text instead)
-    if (!result.images || result.images.length === 0) {
-      return res.status(422).json({
-        success: false,
-        error:
-          "No image was generated. The model may have returned text instead. " +
-          "Try a more specific and descriptive prompt.",
-      });
-    }
+    try {
+      let currentPrompt = prompt;
+      let result:
+        | {
+            text?: string;
+            images?: { data: string; mimeType?: string }[];
+            safetyBlock?: boolean;
+          }
+        | undefined;
+      let safetyRetries = 0;
 
-    const image = result.images[0];
+      for (let attempt = 0; attempt <= MAX_SAFETY_RETRIES; attempt++) {
+        const messages = [
+          {
+            role: "user",
+            content: currentPrompt,
+            ...(referenceImages?.length > 0 && { images: referenceImages }),
+          },
+        ];
 
-    // Build the result message — note if prompt was softened
-    const resultMessage = safetyRetries > 0
-      ? "Image generated and delivered to the user. Note: the original prompt was " +
-        "automatically softened to comply with content safety filters (e.g., nudity " +
-        "replaced with robes/clothing, violence with calmer alternatives). The image " +
-        "captures the spirit of the request with a more tasteful interpretation."
-      : "Image generated and delivered to the user.";
+        // When reference images are present, instruct the image model to
+        // preserve and edit them rather than re-imagining from scratch.
+        const systemPrompt =
+          referenceImages?.length > 0
+            ? "You are an image editor. The user has attached reference image(s). " +
+              "Use the attached image(s) as the direct basis for your output. " +
+              "Preserve the appearance, features, and identity of subjects in the reference image(s) as closely as possible. " +
+              "Apply ONLY the specific changes described in the prompt. Do not re-imagine or reinvent the image from scratch."
+            : undefined;
 
-    res.json({
-      success: true,
-      message: resultMessage,
-      description: result.text || null,
-      image: {
-        data: image.data,
-        mimeType: image.mimeType || "image/png",
-      },
-      ...(safetyRetries > 0 && {
-        safetyRetries,
-        softenedPrompt: currentPrompt.slice(0, 200),
-      }),
-    });
-  } catch (error: unknown) {
-    logger.error(`[CreativeRoutes] generate-image failed: ${errorMessage(error)}`);
-    res.status(500).json({ error: `Image generation failed: ${errorMessage(error)}` });
-  }
-}));
-
-// ────────────────────────────────────────────────────────────
-// POST /creative/describe-image
-// ────────────────────────────────────────────────────────────
-
-router.post("/describe-image", asyncHandler(async (req: Request, res: Response) => {
-  const { imageUrls, context = "general" } = req.body;
-
-  if (!imageUrls || !Array.isArray(imageUrls) || imageUrls.length === 0) {
-    return res.status(400).json({
-      error: "Missing required parameter: imageUrls (array of URLs)",
-    });
-  }
-
-  // Extract caller context from headers for Prism attribution
-  const { project: callerProject, username: callerUsername, agent: callerAgent, traceId: callerTraceId, agentSessionId: callerAgentSessionId } = extractCallerContext(req);
-
-  // Tailor the prompt based on image context
-  const prompts: Record<string, string> = {
-    avatar:
-      "Describe this profile picture/avatar. Focus on the person's appearance, " +
-      "style, notable features, and any artistic elements. Make no mention about quality or resolution.",
-    banner:
-      "Describe this profile banner image. Focus on the scene, colors, mood, " +
-      "and notable elements. Make no mention about quality or resolution.",
-    photo: "Describe this image. Make no mention about the quality, resolution, or pixelation.",
-    general: "Describe this image. Make no mention about the quality, resolution, or pixelation.",
-  };
-  const visionPrompt = prompts[context] || prompts.general;
-
-  try {
-    const descriptions: unknown[] = [];
-
-    // Per-request dedup cache keyed by X-Request-Id header
-    const requestId = req.headers["x-request-id"] || "default";
-    if (!visionCache.has(requestId)) {
-      visionCache.set(requestId, new Map());
-      setTimeout(() => visionCache.delete(requestId), VISION_CACHE_TTL_MS);
-    }
-    const urlCache = visionCache.get(requestId);
-
-    // Deduplicate URLs within this call
-    const uniqueUrls = [...new Set(imageUrls)];
-
-    for (const url of uniqueUrls) {
-      // Singleflight: if a request for this URL is already in-flight,
-      // await it instead of firing a duplicate.
-      if (urlCache.has(url)) {
-        const cached = await urlCache.get(url);
-        descriptions.push({ url, description: cached });
-        logger.info(`[CreativeRoutes] describe-image: cache hit for ${url.slice(0, 60)}…`);
-        continue;
-      }
-
-      // Store the promise IMMEDIATELY so parallel calls can await it
-      const descriptionPromise = (async () => {
         try {
-          const result = await PrismService.chat({
-            provider: VISION_PROVIDER,
-            model: VISION_MODEL,
-            messages: [{ role: "user", content: visionPrompt, images: [url] }],
+          result = await PrismService.chat({
+            provider: IMAGE_PROVIDER,
+            model: IMAGE_MODEL,
+            messages,
+            forceImageGeneration: true,
             project: callerProject,
             username: callerUsername,
             agent: callerAgent,
             traceId: callerTraceId,
             agentSessionId: callerAgentSessionId,
             skipConversation: true,
+            ...(systemPrompt && { systemPrompt }),
           });
-
-          return result.text || "Unable to describe this image.";
         } catch (error: unknown) {
-          logger.error(`[CreativeRoutes] describe-image vision call failed: ${errorMessage(error)}`);
-          return `Failed to describe image: ${errorMessage(error)}`;
+          logger.error(
+            `[CreativeRoutes] Prism chat failed: ${errorMessage(error)}`,
+          );
+          return res.status(502).json({
+            error: `Image generation failed: ${errorMessage(error)}`,
+          });
         }
-      })();
 
-      urlCache.set(url, descriptionPromise);
+        // Success — we got an image
+        if (!result.safetyBlock && (result.images?.length ?? 0) > 0) {
+          break;
+        }
 
-      const text = await descriptionPromise;
-      descriptions.push({ url, description: text });
+        // Safety block — can we retry with a softer prompt?
+        if (attempt < MAX_SAFETY_RETRIES) {
+          safetyRetries++;
+          const previousPrompt = currentPrompt;
+          currentPrompt = softenPrompt(prompt, attempt);
+
+          // If softening didn't change anything, no point retrying
+          if (currentPrompt === previousPrompt) {
+            logger.warn(
+              `[CreativeRoutes] generate-image: safety softening had no effect at tier ${attempt + 1}, stopping retries`,
+            );
+            break;
+          }
+
+          logger.info(
+            `[CreativeRoutes] generate-image: safety block on attempt ${attempt + 1}, ` +
+              `retrying with softened prompt (tier ${attempt + 1}): "${currentPrompt.slice(0, 100)}…"`,
+          );
+        }
+      }
+
+      // All attempts exhausted — still blocked
+      if (!result || result.safetyBlock) {
+        return res.status(422).json({
+          success: false,
+          error:
+            "Image generation was blocked by content safety filters after " +
+            `${safetyRetries + 1} attempts (including softened prompts). ` +
+            "The content may be too explicit to generate even with creative alternatives.",
+        });
+      }
+
+      // No image in response (model returned text instead)
+      if (!result.images || result.images.length === 0) {
+        return res.status(422).json({
+          success: false,
+          error:
+            "No image was generated. The model may have returned text instead. " +
+            "Try a more specific and descriptive prompt.",
+        });
+      }
+
+      const image = result.images[0];
+
+      // Build the result message — note if prompt was softened
+      const resultMessage =
+        safetyRetries > 0
+          ? "Image generated and delivered to the user. Note: the original prompt was " +
+            "automatically softened to comply with content safety filters (e.g., nudity " +
+            "replaced with robes/clothing, violence with calmer alternatives). The image " +
+            "captures the spirit of the request with a more tasteful interpretation."
+          : "Image generated and delivered to the user.";
+
+      res.json({
+        success: true,
+        message: resultMessage,
+        description: result.text || null,
+        image: {
+          data: image.data,
+          mimeType: image.mimeType || "image/png",
+        },
+        ...(safetyRetries > 0 && {
+          safetyRetries,
+          softenedPrompt: currentPrompt.slice(0, 200),
+        }),
+      });
+    } catch (error: unknown) {
+      logger.error(
+        `[CreativeRoutes] generate-image failed: ${errorMessage(error)}`,
+      );
+      res
+        .status(500)
+        .json({ error: `Image generation failed: ${errorMessage(error)}` });
+    }
+  }),
+);
+
+// ────────────────────────────────────────────────────────────
+// POST /creative/describe-image
+// ────────────────────────────────────────────────────────────
+
+router.post(
+  "/describe-image",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { imageUrls, context = "general" } = req.body;
+
+    if (!imageUrls || !Array.isArray(imageUrls) || imageUrls.length === 0) {
+      return res.status(400).json({
+        error: "Missing required parameter: imageUrls (array of URLs)",
+      });
     }
 
-    logger.info(
-      `[CreativeRoutes] describe-image: described ${descriptions.length} image(s), context=${context}`,
-    );
+    // Extract caller context from headers for Prism attribution
+    const {
+      project: callerProject,
+      username: callerUsername,
+      agent: callerAgent,
+      traceId: callerTraceId,
+      agentSessionId: callerAgentSessionId,
+    } = extractCallerContext(req);
 
-    res.json({
-      success: true,
-      descriptions,
-    });
-  } catch (error: unknown) {
-    logger.error(`[CreativeRoutes] describe-image failed: ${errorMessage(error)}`);
-    res.status(500).json({ error: `Image description failed: ${errorMessage(error)}` });
-  }
-}));
+    // Tailor the prompt based on image context
+    const prompts: Record<string, string> = {
+      avatar:
+        "Describe this profile picture/avatar. Focus on the person's appearance, " +
+        "style, notable features, and any artistic elements. Make no mention about quality or resolution.",
+      banner:
+        "Describe this profile banner image. Focus on the scene, colors, mood, " +
+        "and notable elements. Make no mention about quality or resolution.",
+      photo:
+        "Describe this image. Make no mention about the quality, resolution, or pixelation.",
+      general:
+        "Describe this image. Make no mention about the quality, resolution, or pixelation.",
+    };
+    const visionPrompt = prompts[context] || prompts.general;
+
+    try {
+      const descriptions: unknown[] = [];
+
+      // Per-request dedup cache keyed by X-Request-Id header
+      const requestId = req.headers["x-request-id"] || "default";
+      if (!visionCache.has(requestId)) {
+        visionCache.set(requestId, new Map());
+        setTimeout(() => visionCache.delete(requestId), VISION_CACHE_TTL_MS);
+      }
+      const urlCache = visionCache.get(requestId);
+
+      // Deduplicate URLs within this call
+      const uniqueUrls = [...new Set(imageUrls)];
+
+      for (const url of uniqueUrls) {
+        // Singleflight: if a request for this URL is already in-flight,
+        // await it instead of firing a duplicate.
+        if (urlCache.has(url)) {
+          const cached = await urlCache.get(url);
+          descriptions.push({ url, description: cached });
+          logger.info(
+            `[CreativeRoutes] describe-image: cache hit for ${url.slice(0, 60)}…`,
+          );
+          continue;
+        }
+
+        // Store the promise IMMEDIATELY so parallel calls can await it
+        const descriptionPromise = (async () => {
+          try {
+            const result = await PrismService.chat({
+              provider: VISION_PROVIDER,
+              model: VISION_MODEL,
+              messages: [
+                { role: "user", content: visionPrompt, images: [url] },
+              ],
+              project: callerProject,
+              username: callerUsername,
+              agent: callerAgent,
+              traceId: callerTraceId,
+              agentSessionId: callerAgentSessionId,
+              skipConversation: true,
+            });
+
+            return result.text || "Unable to describe this image.";
+          } catch (error: unknown) {
+            logger.error(
+              `[CreativeRoutes] describe-image vision call failed: ${errorMessage(error)}`,
+            );
+            return `Failed to describe image: ${errorMessage(error)}`;
+          }
+        })();
+
+        urlCache.set(url, descriptionPromise);
+
+        const text = await descriptionPromise;
+        descriptions.push({ url, description: text });
+      }
+
+      logger.info(
+        `[CreativeRoutes] describe-image: described ${descriptions.length} image(s), context=${context}`,
+      );
+
+      res.json({
+        success: true,
+        descriptions,
+      });
+    } catch (error: unknown) {
+      logger.error(
+        `[CreativeRoutes] describe-image failed: ${errorMessage(error)}`,
+      );
+      res
+        .status(500)
+        .json({ error: `Image description failed: ${errorMessage(error)}` });
+    }
+  }),
+);
 
 // ────────────────────────────────────────────────────────────
 // POST /creative/text-to-speech
 // ────────────────────────────────────────────────────────────
 
-router.post("/text-to-speech", asyncHandler(async (req: Request, res: Response) => {
-  const { text, voice, provider, model } = req.body;
+router.post(
+  "/text-to-speech",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { text, voice, provider, model } = req.body;
 
-  if (!text) {
-    return res.status(400).json({ error: "Missing required parameter: text" });
-  }
+    if (!text) {
+      return res
+        .status(400)
+        .json({ error: "Missing required parameter: text" });
+    }
 
-  const { project: callerProject, username: callerUsername } = extractCallerContext(req);
+    const { project: callerProject, username: callerUsername } =
+      extractCallerContext(req);
 
-  try {
-    const result = await PrismService.textToSpeech({
-      text,
-      voice,
-      provider: provider || "elevenlabs",
-      model,
-      project: callerProject,
-      username: callerUsername,
-    });
+    try {
+      const result = await PrismService.textToSpeech({
+        text,
+        voice,
+        provider: provider || "elevenlabs",
+        model,
+        project: callerProject,
+        username: callerUsername,
+      });
 
-    res.json({
-      success: true,
-      message: "Audio generated and delivered to the user.",
-      audio: {
-        data: result.audioBase64,
-        mimeType: result.contentType,
-      },
-      textLength: text.length,
-    });
-  } catch (error: unknown) {
-    logger.error(`[CreativeRoutes] text-to-speech failed: ${errorMessage(error)}`);
-    res.status(500).json({ error: `Text-to-speech failed: ${errorMessage(error)}` });
-  }
-}));
+      res.json({
+        success: true,
+        message: "Audio generated and delivered to the user.",
+        audio: {
+          data: result.audioBase64,
+          mimeType: result.contentType,
+        },
+        textLength: text.length,
+      });
+    } catch (error: unknown) {
+      logger.error(
+        `[CreativeRoutes] text-to-speech failed: ${errorMessage(error)}`,
+      );
+      res
+        .status(500)
+        .json({ error: `Text-to-speech failed: ${errorMessage(error)}` });
+    }
+  }),
+);
 
 // ────────────────────────────────────────────────────────────
 // POST /creative/speech-to-text
 // ────────────────────────────────────────────────────────────
 
-router.post("/speech-to-text", asyncHandler(async (req: Request, res: Response) => {
-  const { audioUrl, audio, provider, model, language } = req.body;
+router.post(
+  "/speech-to-text",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { audioUrl, audio, provider, model, language } = req.body;
 
-  // Accept either a URL (we fetch it) or raw base64 audio
-  let audioData = audio;
-  if (!audioData && audioUrl) {
-    try {
-      const response = await fetch(audioUrl);
-      if (!response.ok) {
-        return res.status(400).json({ error: `Failed to fetch audio from URL: ${response.status}` });
+    // Accept either a URL (we fetch it) or raw base64 audio
+    let audioData = audio;
+    if (!audioData && audioUrl) {
+      try {
+        const response = await fetch(audioUrl);
+        if (!response.ok) {
+          return res
+            .status(400)
+            .json({
+              error: `Failed to fetch audio from URL: ${response.status}`,
+            });
+        }
+        const buffer = await response.arrayBuffer();
+        const mimeType = response.headers.get("content-type") || "audio/mpeg";
+        audioData = `data:${mimeType};base64,${Buffer.from(buffer).toString("base64")}`;
+      } catch (error: unknown) {
+        return res
+          .status(400)
+          .json({ error: `Failed to fetch audio URL: ${errorMessage(error)}` });
       }
-      const buffer = await response.arrayBuffer();
-      const mimeType = response.headers.get("content-type") || "audio/mpeg";
-      audioData = `data:${mimeType};base64,${Buffer.from(buffer).toString("base64")}`;
-    } catch (error: unknown) {
-      return res.status(400).json({ error: `Failed to fetch audio URL: ${errorMessage(error)}` });
     }
-  }
 
-  if (!audioData) {
-    return res.status(400).json({
-      error: "Missing required parameter: 'audio' (base64) or 'audioUrl' (URL to audio file)",
-    });
-  }
+    if (!audioData) {
+      return res.status(400).json({
+        error:
+          "Missing required parameter: 'audio' (base64) or 'audioUrl' (URL to audio file)",
+      });
+    }
 
-  const { project: callerProject, username: callerUsername } = extractCallerContext(req);
+    const { project: callerProject, username: callerUsername } =
+      extractCallerContext(req);
 
-  try {
-    const result = await PrismService.speechToText({
-      audio: audioData,
-      provider: provider || "openai",
-      model,
-      language,
-      project: callerProject,
-      username: callerUsername,
-    });
+    try {
+      const result = await PrismService.speechToText({
+        audio: audioData,
+        provider: provider || "openai",
+        model,
+        language,
+        project: callerProject,
+        username: callerUsername,
+      });
 
-    res.json({
-      success: true,
-      text: result.text,
-      usage: result.usage || {},
-    });
-  } catch (error: unknown) {
-    logger.error(`[CreativeRoutes] speech-to-text failed: ${errorMessage(error)}`);
-    res.status(500).json({ error: `Speech-to-text failed: ${errorMessage(error)}` });
-  }
-}));
+      res.json({
+        success: true,
+        text: result.text,
+        usage: result.usage || {},
+      });
+    } catch (error: unknown) {
+      logger.error(
+        `[CreativeRoutes] speech-to-text failed: ${errorMessage(error)}`,
+      );
+      res
+        .status(500)
+        .json({ error: `Speech-to-text failed: ${errorMessage(error)}` });
+    }
+  }),
+);
 
 // ────────────────────────────────────────────────────────────
 // POST /creative/generate-audio
 // ────────────────────────────────────────────────────────────
 
-router.post("/generate-audio", asyncHandler(async (req: Request, res: Response) => {
-  const {
-    soundType,
-    presetEffect,
-    duration = 1.0,
-    waveform = "sine",
-    frequency = 440,
-    endFrequency,
-    modulatorFrequency,
-    modulationIndex,
-    envelope,
-    harmonics,
-    lfo,
-    melody,
-    delay,
-    sampleRate = 44100
-  } = req.body;
-
-  // Enforce parameter range bounds to prevent DoS via massive sample memory allocation
-  const boundedDuration = Math.min(Math.max(Number(duration) || 1.0, 0.1), 10.0);
-  const boundedSampleRate = Math.min(Math.max(Number(sampleRate) || 44100, 8000), 48000);
-
-  try {
-    const result = generateAudioWav({
+router.post(
+  "/generate-audio",
+  asyncHandler(async (req: Request, res: Response) => {
+    const {
       soundType,
       presetEffect,
-      duration: boundedDuration,
-      waveform,
-      frequency,
+      duration,
+      waveform = "sine",
+      frequency = 440,
       endFrequency,
       modulatorFrequency,
       modulationIndex,
@@ -490,28 +547,67 @@ router.post("/generate-audio", asyncHandler(async (req: Request, res: Response) 
       lfo,
       melody,
       delay,
-      sampleRate: boundedSampleRate,
-    });
+      sampleRate = 44100,
+      tempo,
+      nodes,
+      tracks,
+    } = req.body;
 
-    const actualDuration = result.sampleCount / boundedSampleRate;
+    // Enforce parameter range bounds to prevent DoS via massive sample memory allocation
+    const requestedDuration = Number(duration);
+    const boundedDuration = isNaN(requestedDuration)
+      ? undefined
+      : Math.min(Math.max(requestedDuration, 0.1), 10.0);
+    const boundedSampleRate = Math.min(
+      Math.max(Number(sampleRate) || 44100, 8000),
+      48000,
+    );
 
-    res.json({
-      success: true,
-      message: presetEffect
-        ? `Successfully generated retro sound preset: '${presetEffect}'.`
-        : `Successfully generated custom audio clip (${actualDuration.toFixed(2)}s, ${boundedSampleRate}Hz).`,
-      audio: {
-        data: result.audioBase64,
-        mimeType: "audio/wav",
-      },
-      duration: actualDuration,
-      sampleCount: result.sampleCount,
-    });
-  } catch (error: unknown) {
-    logger.error(`[CreativeRoutes] generate-audio failed: ${errorMessage(error)}`);
-    res.status(500).json({ error: `Audio generation failed: ${errorMessage(error)}` });
-  }
-}));
+    try {
+      const result = generateAudioWav({
+        soundType,
+        presetEffect,
+        duration: boundedDuration,
+        waveform,
+        frequency,
+        endFrequency,
+        modulatorFrequency,
+        modulationIndex,
+        envelope,
+        harmonics,
+        lfo,
+        melody,
+        delay,
+        sampleRate: boundedSampleRate,
+        tempo: tempo ? Number(tempo) : undefined,
+        nodes,
+        tracks,
+      });
+
+      const actualDuration = result.sampleCount / boundedSampleRate;
+
+      res.json({
+        success: true,
+        message: presetEffect
+          ? `Successfully generated retro sound preset: '${presetEffect}'.`
+          : `Successfully generated custom audio clip (${actualDuration.toFixed(2)}s, ${boundedSampleRate}Hz).`,
+        audio: {
+          data: result.audioBase64,
+          mimeType: "audio/wav",
+        },
+        duration: actualDuration,
+        sampleCount: result.sampleCount,
+      });
+    } catch (error: unknown) {
+      logger.error(
+        `[CreativeRoutes] generate-audio failed: ${errorMessage(error)}`,
+      );
+      res
+        .status(500)
+        .json({ error: `Audio generation failed: ${errorMessage(error)}` });
+    }
+  }),
+);
 
 // ────────────────────────────────────────────────────────────
 // Emoji Kitchen Domain
@@ -521,57 +617,72 @@ router.post("/generate-audio", asyncHandler(async (req: Request, res: Response) 
  * GET /creative/emoji-kitchen/combine
  * Combines two emojis and returns the static PNG URL and metadata.
  */
-router.get("/emoji-kitchen/combine", asyncHandler(async (req: Request, res: Response) => {
-  const { left, right } = req.query;
+router.get(
+  "/emoji-kitchen/combine",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { left, right } = req.query;
 
-  if (!left || !right) {
-    return res.status(400).json({ error: "Missing required query parameters: left and right" });
-  }
+    if (!left || !right) {
+      return res
+        .status(400)
+        .json({ error: "Missing required query parameters: left and right" });
+    }
 
-  const combination = queryEmojiCombination(left as string, right as string);
-  if (!combination) {
-    return res.status(404).json({
-      error: `No Emoji Kitchen combination found for "${left}" and "${right}"`,
-      left,
-      right
+    const combination = queryEmojiCombination(left as string, right as string);
+    if (!combination) {
+      return res.status(404).json({
+        error: `No Emoji Kitchen combination found for "${left}" and "${right}"`,
+        left,
+        right,
+      });
+    }
+
+    res.json({
+      success: true,
+      ...combination,
     });
-  }
-
-  res.json({
-    success: true,
-    ...combination
-  });
-}));
+  }),
+);
 
 /**
  * GET /creative/emoji-kitchen/combinations
  * Lists all possible GBoard combinations for a single emoji.
  */
-router.get("/emoji-kitchen/combinations", asyncHandler(async (req: Request, res: Response) => {
-  const { emoji, limit } = req.query;
+router.get(
+  "/emoji-kitchen/combinations",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { emoji, limit } = req.query;
 
-  if (!emoji) {
-    return res.status(400).json({ error: "Missing required query parameter: emoji" });
-  }
+    if (!emoji) {
+      return res
+        .status(400)
+        .json({ error: "Missing required query parameter: emoji" });
+    }
 
-  const maxLimit = limit ? Math.min(Math.max(parseInt(limit as string, 10), 1), 500) : 50;
-  const options = queryEmojiCombinations(emoji as string, maxLimit);
+    const maxLimit = limit
+      ? Math.min(Math.max(parseInt(limit as string, 10), 1), 500)
+      : 50;
+    const options = queryEmojiCombinations(emoji as string, maxLimit);
 
-  res.json({
-    success: true,
-    emoji,
-    count: options.length,
-    combinations: options
-  });
-}));
+    res.json({
+      success: true,
+      emoji,
+      count: options.length,
+      combinations: options,
+    });
+  }),
+);
 
 /**
  * GET /creative/emoji-kitchen/metadata
  * Retrieve cache/health overview of the Emoji Kitchen metadata collector.
  */
-router.get("/emoji-kitchen/metadata", asyncHandler(async (_req: Request, res: Response) => {
-  res.json(getEmojiKitchenHealth());
-}));
+router.get(
+  "/emoji-kitchen/metadata",
+  asyncHandler(async (_req: Request, res: Response) => {
+    res.json(getEmojiKitchenHealth());
+  }),
+);
 
 // ────────────────────────────────────────────────────────────
 // Health
@@ -588,10 +699,9 @@ export function getCreativeHealth() {
       lastFetch: emojiHealth.lastFetch,
       hasData: emojiHealth.hasData,
       count: emojiHealth.count,
-      error: emojiHealth.error
-    }
+      error: emojiHealth.error,
+    },
   };
 }
 
 export default router;
-

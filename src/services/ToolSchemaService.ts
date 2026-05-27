@@ -19,7 +19,6 @@ import {
   EMOJI_KITCHEN_INTERVAL_MS,
 } from "../constants.ts";
 
-
 // ────────────────────────────────────────────────────────────
 // Data Source Helpers — builds the dataSource metadata
 // ────────────────────────────────────────────────────────────
@@ -728,14 +727,7 @@ const FIELDS = {
   ],
 
   // PDF: from PdfFetcher.readPdfUrl()
-  PDF: [
-    "url",
-    "pageCount",
-    "info",
-    "text",
-    "charCount",
-    "truncated",
-  ],
+  PDF: ["url", "pageCount", "info", "text", "charCount", "truncated"],
 
   // RSS Feed: from RssFetcher.readRssFeed()
   RSS_FEED: [
@@ -1316,11 +1308,7 @@ const FIELDS = {
   ],
 
   // FDA Dosage Forms: from FdaDrugFetcher.getDosageForms()
-  FDA_DOSAGE_FORMS: [
-    "totalProducts",
-    "dosageForms.form",
-    "dosageForms.count",
-  ],
+  FDA_DOSAGE_FORMS: ["totalProducts", "dosageForms.form", "dosageForms.count"],
 
   // ── Gym Exercises ──────────────────────────────────────────────
 
@@ -1405,12 +1393,7 @@ const FIELDS = {
   ],
 
   // EIA Facets: from EiaFetcher.getFacetValues()
-  EIA_FACETS: [
-    "route",
-    "facetId",
-    "totalFacets",
-    "facets",
-  ],
+  EIA_FACETS: ["route", "facetId", "totalFacets", "facets"],
 };
 
 // ────────────────────────────────────────────────────────────
@@ -1476,19 +1459,23 @@ const TOOL_DEFINITIONS: any[] = [
       properties: {
         location: {
           type: "string",
-          description: "City name, optionally with country code (e.g. 'Tokyo', 'Paris, FR', 'New York')",
+          description:
+            "City name, optionally with country code (e.g. 'Tokyo', 'Paris, FR', 'New York')",
         },
         latitude: {
           type: "number",
-          description: "Latitude (use instead of location for precise coordinates)",
+          description:
+            "Latitude (use instead of location for precise coordinates)",
         },
         longitude: {
           type: "number",
-          description: "Longitude (use instead of location for precise coordinates)",
+          description:
+            "Longitude (use instead of location for precise coordinates)",
         },
         units: {
           type: "string",
-          description: "Unit system: metric (°C, km/h, mm) or imperial (°F, mph, inch). Default: metric",
+          description:
+            "Unit system: metric (°C, km/h, mm) or imperial (°F, mph, inch). Default: metric",
           enum: ["metric", "imperial"],
         },
       },
@@ -1510,12 +1497,28 @@ const TOOL_DEFINITIONS: any[] = [
           type: "string",
           description: "Which environmental data source to query",
           enum: [
-            "current_weather", "air_quality", "earthquakes", "solar_activity",
-            "aurora", "twilight", "tides", "wildfires", "iss", "neo",
-            "solar_wind", "pollen", "apod", "launches", "warnings", "air_quality_google",
+            "current_weather",
+            "air_quality",
+            "earthquakes",
+            "solar_activity",
+            "aurora",
+            "twilight",
+            "tides",
+            "wildfires",
+            "iss",
+            "neo",
+            "solar_wind",
+            "pollen",
+            "apod",
+            "launches",
+            "warnings",
+            "air_quality_google",
           ],
         },
-        fields: { type: "string", description: "Comma-separated fields to return (varies by source)" },
+        fields: {
+          type: "string",
+          description: "Comma-separated fields to return (varies by source)",
+        },
       },
       required: ["source"],
     },
@@ -1541,7 +1544,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         minMag: {
           type: "number",
-          description: "Minimum magnitude filter (e.g. 4.0 for significant quakes only)",
+          description:
+            "Minimum magnitude filter (e.g. 4.0 for significant quakes only)",
         },
         limit: {
           type: "number",
@@ -1844,7 +1848,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         maxPages: {
           type: "number",
-          description: "Maximum number of pages to extract (default: all pages)",
+          description:
+            "Maximum number of pages to extract (default: all pages)",
         },
       },
       required: ["url"],
@@ -1896,7 +1901,8 @@ const TOOL_DEFINITIONS: any[] = [
       properties: {
         name: {
           type: "string",
-          description: "PyPI package name (e.g. 'numpy', 'requests', 'fastapi')",
+          description:
+            "PyPI package name (e.g. 'numpy', 'requests', 'fastapi')",
         },
       },
       required: ["name"],
@@ -1922,11 +1928,23 @@ const TOOL_DEFINITIONS: any[] = [
           enum: ["search", "upcoming", "today", "summary"],
         },
         q: { type: "string", description: "Search query (action=search)" },
-        source: { type: "string", description: "Event source filter (action=search)" },
-        category: { type: "string", description: "Category filter (action=search)" },
-        days: { type: "number", description: "Days ahead (action=upcoming, default: 7)" },
+        source: {
+          type: "string",
+          description: "Event source filter (action=search)",
+        },
+        category: {
+          type: "string",
+          description: "Category filter (action=search)",
+        },
+        days: {
+          type: "number",
+          description: "Days ahead (action=upcoming, default: 7)",
+        },
         limit: { type: "number", description: "Max results (default: 20)" },
-        fields: { type: "string", description: "Comma-separated fields to return" },
+        fields: {
+          type: "string",
+          description: "Comma-separated fields to return",
+        },
       },
       required: ["action"],
     },
@@ -1950,9 +1968,18 @@ const TOOL_DEFINITIONS: any[] = [
           description: "Query mode",
           enum: ["summary", "category", "ticker", "categories", "history"],
         },
-        category: { type: "string", description: "Category name (action=category)" },
-        ticker: { type: "string", description: "Commodity ticker (action=ticker or history)" },
-        hours: { type: "number", description: "Lookback hours (action=history, default: 24)" },
+        category: {
+          type: "string",
+          description: "Category name (action=category)",
+        },
+        ticker: {
+          type: "string",
+          description: "Commodity ticker (action=ticker or history)",
+        },
+        hours: {
+          type: "number",
+          description: "Lookback hours (action=history, default: 24)",
+        },
         ...fieldsParam(FIELDS.COMMODITY),
       },
       required: ["action"],
@@ -1977,8 +2004,14 @@ const TOOL_DEFINITIONS: any[] = [
           description: "Trend query mode",
           enum: ["current", "hot", "top"],
         },
-        source: { type: "string", description: "Source filter (action=current)" },
-        hours: { type: "number", description: "Lookback hours (action=top, default: 24)" },
+        source: {
+          type: "string",
+          description: "Source filter (action=current)",
+        },
+        hours: {
+          type: "number",
+          description: "Lookback hours (action=top, default: 24)",
+        },
         limit: { type: "number", description: "Max results (default: 20)" },
         ...fieldsParam(FIELDS.TRENDS),
       },
@@ -1989,7 +2022,10 @@ const TOOL_DEFINITIONS: any[] = [
   // ── Products ───────────────────────────────────────────────
   {
     name: "search_products",
-    dataSource: cached("Best Buy / Amazon / eBay / Etsy / ProductHunt / Costco", BESTBUY_INTERVAL_MS),
+    dataSource: cached(
+      "Best Buy / Amazon / eBay / Etsy / ProductHunt / Costco",
+      BESTBUY_INTERVAL_MS,
+    ),
     description:
       "Search for products with pricing, ratings, and deal information from Best Buy, Amazon, eBay, Etsy, Product Hunt, Costco US, and Costco Canada.",
     endpoint: {
@@ -2018,7 +2054,10 @@ const TOOL_DEFINITIONS: any[] = [
   },
   {
     name: "get_trending_products",
-    dataSource: cached("Best Buy / Amazon / eBay / Etsy / ProductHunt / Costco", BESTBUY_INTERVAL_MS),
+    dataSource: cached(
+      "Best Buy / Amazon / eBay / Etsy / ProductHunt / Costco",
+      BESTBUY_INTERVAL_MS,
+    ),
     description:
       "Get currently trending products ranked by trending score. Shows top deals and popular items.",
     endpoint: {
@@ -2157,7 +2196,10 @@ const TOOL_DEFINITIONS: any[] = [
           type: "string",
           description: "Stock ticker symbol (e.g. 'AAPL', 'MSFT', 'TSLA')",
         },
-        fields: { type: "string", description: "Comma-separated fields to return" },
+        fields: {
+          type: "string",
+          description: "Comma-separated fields to return",
+        },
       },
       required: ["action", "symbol"],
     },
@@ -2171,7 +2213,16 @@ const TOOL_DEFINITIONS: any[] = [
       "Access macroeconomic data from FRED. Actions: 'indicators' (key indicator summary), 'search' (search data series), 'series' (series metadata by ID), 'observations' (time series data points).",
     endpoint: {
       path: "/finance/macro/data",
-      queryParams: ["action", "q", "seriesId", "limit", "orderBy", "sortOrder", "observationStart", "observationEnd"],
+      queryParams: [
+        "action",
+        "q",
+        "seriesId",
+        "limit",
+        "orderBy",
+        "sortOrder",
+        "observationStart",
+        "observationEnd",
+      ],
     },
     parameters: {
       type: "object",
@@ -2182,13 +2233,30 @@ const TOOL_DEFINITIONS: any[] = [
           enum: ["indicators", "search", "series", "observations"],
         },
         q: { type: "string", description: "Search query (action=search)" },
-        seriesId: { type: "string", description: "FRED series ID like 'GDP', 'UNRATE' (action=series or observations)" },
+        seriesId: {
+          type: "string",
+          description:
+            "FRED series ID like 'GDP', 'UNRATE' (action=series or observations)",
+        },
         limit: { type: "number", description: "Max results (default: 10)" },
         orderBy: { type: "string", description: "Sort field (action=search)" },
-        sortOrder: { type: "string", enum: ["asc", "desc"], description: "Sort direction (action=observations)" },
-        observationStart: { type: "string", description: "Start date YYYY-MM-DD (action=observations)" },
-        observationEnd: { type: "string", description: "End date YYYY-MM-DD (action=observations)" },
-        fields: { type: "string", description: "Comma-separated fields to return" },
+        sortOrder: {
+          type: "string",
+          enum: ["asc", "desc"],
+          description: "Sort direction (action=observations)",
+        },
+        observationStart: {
+          type: "string",
+          description: "Start date YYYY-MM-DD (action=observations)",
+        },
+        observationEnd: {
+          type: "string",
+          description: "End date YYYY-MM-DD (action=observations)",
+        },
+        fields: {
+          type: "string",
+          description: "Comma-separated fields to return",
+        },
       },
       required: ["action"],
     },
@@ -2213,10 +2281,23 @@ const TOOL_DEFINITIONS: any[] = [
           enum: ["search", "work", "author"],
         },
         q: { type: "string", description: "Search query (action=search)" },
-        workKey: { type: "string", description: "Open Library work key like 'OL45804W' (action=work)" },
-        authorKey: { type: "string", description: "Open Library author key like 'OL34184A' (action=author)" },
-        limit: { type: "number", description: "Max results (action=search, default: 10)" },
-        fields: { type: "string", description: "Comma-separated fields to return" },
+        workKey: {
+          type: "string",
+          description: "Open Library work key like 'OL45804W' (action=work)",
+        },
+        authorKey: {
+          type: "string",
+          description:
+            "Open Library author key like 'OL34184A' (action=author)",
+        },
+        limit: {
+          type: "number",
+          description: "Max results (action=search, default: 10)",
+        },
+        fields: {
+          type: "string",
+          description: "Comma-separated fields to return",
+        },
       },
       required: ["action"],
     },
@@ -2228,7 +2309,15 @@ const TOOL_DEFINITIONS: any[] = [
       "Look up country info or development indicators. Actions: 'info' (by name), 'code' (by ISO code), 'indicators' (development data for a country), 'rank' (rank countries by indicator), 'compare' (compare multiple countries).",
     endpoint: {
       path: "/knowledge/countries/data",
-      queryParams: ["action", "name", "code", "indicator", "countries", "limit", "order"],
+      queryParams: [
+        "action",
+        "name",
+        "code",
+        "indicator",
+        "countries",
+        "limit",
+        "order",
+      ],
     },
     parameters: {
       type: "object",
@@ -2239,12 +2328,31 @@ const TOOL_DEFINITIONS: any[] = [
           enum: ["info", "code", "indicators", "rank", "compare"],
         },
         name: { type: "string", description: "Country name (action=info)" },
-        code: { type: "string", description: "ISO 2/3-letter code (action=code or indicators)" },
-        indicator: { type: "string", description: "World Bank indicator ID (action=rank or compare)" },
-        countries: { type: "string", description: "Comma-separated country codes (action=compare)" },
-        limit: { type: "number", description: "Max results (action=rank, default: 10)" },
-        order: { type: "string", enum: ["asc", "desc"], description: "Sort order (action=rank)" },
-        fields: { type: "string", description: "Comma-separated fields to return" },
+        code: {
+          type: "string",
+          description: "ISO 2/3-letter code (action=code or indicators)",
+        },
+        indicator: {
+          type: "string",
+          description: "World Bank indicator ID (action=rank or compare)",
+        },
+        countries: {
+          type: "string",
+          description: "Comma-separated country codes (action=compare)",
+        },
+        limit: {
+          type: "number",
+          description: "Max results (action=rank, default: 10)",
+        },
+        order: {
+          type: "string",
+          enum: ["asc", "desc"],
+          description: "Sort order (action=rank)",
+        },
+        fields: {
+          type: "string",
+          description: "Comma-separated fields to return",
+        },
       },
       required: ["action"],
     },
@@ -2256,7 +2364,16 @@ const TOOL_DEFINITIONS: any[] = [
       "Query the periodic table. Actions: 'search' (text search), 'lookup' (by symbol), 'rank' (rank by property), 'categories' (list categories).",
     endpoint: {
       path: "/knowledge/elements/data",
-      queryParams: ["action", "q", "symbol", "property", "limit", "order", "category", "block"],
+      queryParams: [
+        "action",
+        "q",
+        "symbol",
+        "property",
+        "limit",
+        "order",
+        "category",
+        "block",
+      ],
     },
     parameters: {
       type: "object",
@@ -2267,10 +2384,20 @@ const TOOL_DEFINITIONS: any[] = [
           enum: ["search", "lookup", "rank", "categories"],
         },
         q: { type: "string", description: "Search query (action=search)" },
-        symbol: { type: "string", description: "Element symbol like 'Fe', 'Au' (action=lookup)" },
-        property: { type: "string", description: "Property to rank by (action=rank)" },
+        symbol: {
+          type: "string",
+          description: "Element symbol like 'Fe', 'Au' (action=lookup)",
+        },
+        property: {
+          type: "string",
+          description: "Property to rank by (action=rank)",
+        },
         limit: { type: "number", description: "Max results (default: 10)" },
-        order: { type: "string", enum: ["asc", "desc"], description: "Sort order (action=rank)" },
+        order: {
+          type: "string",
+          enum: ["asc", "desc"],
+          description: "Sort order (action=rank)",
+        },
         category: { type: "string", description: "Filter by element category" },
         block: { type: "string", description: "Filter by block (s, p, d, f)" },
         ...fieldsParam(FIELDS.ELEMENTS),
@@ -2297,11 +2424,24 @@ const TOOL_DEFINITIONS: any[] = [
         },
         q: { type: "string", description: "Search query (action=search)" },
         name: { type: "string", description: "Planet name (action=lookup)" },
-        field: { type: "string", description: "Property to rank by (action=rank)" },
+        field: {
+          type: "string",
+          description: "Property to rank by (action=rank)",
+        },
         limit: { type: "number", description: "Max results (default: 10)" },
-        order: { type: "string", enum: ["asc", "desc"], description: "Sort order" },
-        method: { type: "string", description: "Discovery method filter (action=search)" },
-        fields: { type: "string", description: "Comma-separated fields to return" },
+        order: {
+          type: "string",
+          enum: ["asc", "desc"],
+          description: "Sort order",
+        },
+        method: {
+          type: "string",
+          description: "Discovery method filter (action=search)",
+        },
+        fields: {
+          type: "string",
+          description: "Comma-separated fields to return",
+        },
       },
       required: ["action"],
     },
@@ -2436,7 +2576,16 @@ const TOOL_DEFINITIONS: any[] = [
       "Extract structured content from any URL. Auto-detects platform and uses the best extraction method: GitHub (repo metadata + README + languages), Reddit (post + comments), Twitter/X (tweet + metrics + media), Hacker News (post + comments), Stack Overflow (question + answers with code blocks), YouTube (metadata + transcript). For any other URL (news articles, blogs, documentation, etc.), extracts the page title, metadata, and main readable text using lightweight HTML parsing — no headless browser needed.",
     endpoint: {
       path: "/knowledge/web/content",
-      queryParams: ["url", "commentLimit", "answerLimit", "readme", "languages", "transcript", "lang", "maxChars"],
+      queryParams: [
+        "url",
+        "commentLimit",
+        "answerLimit",
+        "readme",
+        "languages",
+        "transcript",
+        "lang",
+        "maxChars",
+      ],
     },
     parameters: {
       type: "object",
@@ -2473,11 +2622,13 @@ const TOOL_DEFINITIONS: any[] = [
         },
         lang: {
           type: "string",
-          description: "Preferred transcript language for YouTube (default: 'en')",
+          description:
+            "Preferred transcript language for YouTube (default: 'en')",
         },
         maxChars: {
           type: "number",
-          description: "Max characters of extracted text for generic pages (default: 15000)",
+          description:
+            "Max characters of extracted text for generic pages (default: 15000)",
         },
       },
       required: ["url"],
@@ -2497,7 +2648,8 @@ const TOOL_DEFINITIONS: any[] = [
       properties: {
         name: {
           type: "string",
-          description: "Package name (e.g. 'express', '@types/node', 'requests', 'numpy')",
+          description:
+            "Package name (e.g. 'express', '@types/node', 'requests', 'numpy')",
         },
         registry: {
           type: "string",
@@ -2570,7 +2722,8 @@ const TOOL_DEFINITIONS: any[] = [
   {
     name: "search_media",
     dataSource: onDemand("TMDB API"),
-    description: "Search for movies or TV shows by title. Returns matching results with overview, release date, ratings, and poster images.",
+    description:
+      "Search for movies or TV shows by title. Returns matching results with overview, release date, ratings, and poster images.",
     endpoint: {
       path: "/knowledge/media/search",
       queryParams: ["type", "q", "year", "page"],
@@ -2578,11 +2731,21 @@ const TOOL_DEFINITIONS: any[] = [
     parameters: {
       type: "object",
       properties: {
-        type: { type: "string", enum: ["movie", "tv"], description: "Search movies or TV shows" },
+        type: {
+          type: "string",
+          enum: ["movie", "tv"],
+          description: "Search movies or TV shows",
+        },
         q: { type: "string", description: "Search query (title)" },
-        year: { type: "number", description: "Filter by release/first air date year" },
+        year: {
+          type: "number",
+          description: "Filter by release/first air date year",
+        },
         page: { type: "number", description: "Page number (default: 1)" },
-        fields: { type: "string", description: "Comma-separated fields to return" },
+        fields: {
+          type: "string",
+          description: "Comma-separated fields to return",
+        },
       },
       required: ["type", "q"],
     },
@@ -2590,7 +2753,8 @@ const TOOL_DEFINITIONS: any[] = [
   {
     name: "get_media_details",
     dataSource: onDemand("TMDB API"),
-    description: "Get full details for a movie or TV show by TMDB ID — overview, genres, runtime, ratings, revenue, production companies, seasons (TV).",
+    description:
+      "Get full details for a movie or TV show by TMDB ID — overview, genres, runtime, ratings, revenue, production companies, seasons (TV).",
     endpoint: {
       path: "/knowledge/media/:id",
       pathParams: ["id"],
@@ -2599,9 +2763,16 @@ const TOOL_DEFINITIONS: any[] = [
     parameters: {
       type: "object",
       properties: {
-        type: { type: "string", enum: ["movie", "tv"], description: "Movie or TV show" },
+        type: {
+          type: "string",
+          enum: ["movie", "tv"],
+          description: "Movie or TV show",
+        },
         id: { type: "number", description: "TMDB ID" },
-        fields: { type: "string", description: "Comma-separated fields to return" },
+        fields: {
+          type: "string",
+          description: "Comma-separated fields to return",
+        },
       },
       required: ["type", "id"],
     },
@@ -2618,9 +2789,16 @@ const TOOL_DEFINITIONS: any[] = [
     parameters: {
       type: "object",
       properties: {
-        type: { type: "string", enum: ["movie", "tv"], description: "Movie or TV show" },
+        type: {
+          type: "string",
+          enum: ["movie", "tv"],
+          description: "Movie or TV show",
+        },
         id: { type: "number", description: "TMDB ID" },
-        fields: { type: "string", description: "Comma-separated fields to return" },
+        fields: {
+          type: "string",
+          description: "Comma-separated fields to return",
+        },
       },
       required: ["type", "id"],
     },
@@ -2636,10 +2814,21 @@ const TOOL_DEFINITIONS: any[] = [
     parameters: {
       type: "object",
       properties: {
-        type: { type: "string", enum: ["movie", "tv"], description: "Movie or TV show" },
-        timeWindow: { type: "string", enum: ["day", "week"], description: "Trending window (default: week)" },
+        type: {
+          type: "string",
+          enum: ["movie", "tv"],
+          description: "Movie or TV show",
+        },
+        timeWindow: {
+          type: "string",
+          enum: ["day", "week"],
+          description: "Trending window (default: week)",
+        },
         limit: { type: "number", description: "Max results (default: 10)" },
-        fields: { type: "string", description: "Comma-separated fields to return" },
+        fields: {
+          type: "string",
+          description: "Comma-separated fields to return",
+        },
       },
       required: ["type"],
     },
@@ -2647,22 +2836,47 @@ const TOOL_DEFINITIONS: any[] = [
   {
     name: "discover_media",
     dataSource: onDemand("TMDB API"),
-    description: "Discover movies or TV shows by genre, year, rating, and vote count. Useful for browsing, not by name.",
+    description:
+      "Discover movies or TV shows by genre, year, rating, and vote count. Useful for browsing, not by name.",
     endpoint: {
       path: "/knowledge/media/discover",
-      queryParams: ["type", "genreId", "year", "sortBy", "page", "minVoteAverage", "minVoteCount"],
+      queryParams: [
+        "type",
+        "genreId",
+        "year",
+        "sortBy",
+        "page",
+        "minVoteAverage",
+        "minVoteCount",
+      ],
     },
     parameters: {
       type: "object",
       properties: {
-        type: { type: "string", enum: ["movie", "tv"], description: "Movie or TV show" },
-        genreId: { type: "number", description: "Genre ID (use get_media_genres)" },
+        type: {
+          type: "string",
+          enum: ["movie", "tv"],
+          description: "Movie or TV show",
+        },
+        genreId: {
+          type: "number",
+          description: "Genre ID (use get_media_genres)",
+        },
         year: { type: "number", description: "Release/first air date year" },
-        sortBy: { type: "string", description: "Sort: popularity.desc, vote_average.desc, etc." },
-        minVoteAverage: { type: "number", description: "Min vote average (0-10)" },
+        sortBy: {
+          type: "string",
+          description: "Sort: popularity.desc, vote_average.desc, etc.",
+        },
+        minVoteAverage: {
+          type: "number",
+          description: "Min vote average (0-10)",
+        },
         minVoteCount: { type: "number", description: "Min vote count" },
         page: { type: "number", description: "Page number (default: 1)" },
-        fields: { type: "string", description: "Comma-separated fields to return" },
+        fields: {
+          type: "string",
+          description: "Comma-separated fields to return",
+        },
       },
       required: ["type"],
     },
@@ -2670,7 +2884,8 @@ const TOOL_DEFINITIONS: any[] = [
   {
     name: "get_media_genres",
     dataSource: onDemand("TMDB API"),
-    description: "Get the list of genre IDs and names for movies or TV shows. Use these IDs with discover_media.",
+    description:
+      "Get the list of genre IDs and names for movies or TV shows. Use these IDs with discover_media.",
     endpoint: {
       path: "/knowledge/media/genres",
       queryParams: ["type"],
@@ -2678,7 +2893,11 @@ const TOOL_DEFINITIONS: any[] = [
     parameters: {
       type: "object",
       properties: {
-        type: { type: "string", enum: ["movie", "tv"], description: "Movie or TV show" },
+        type: {
+          type: "string",
+          enum: ["movie", "tv"],
+          description: "Movie or TV show",
+        },
       },
       required: ["type"],
     },
@@ -2702,11 +2921,20 @@ const TOOL_DEFINITIONS: any[] = [
         category: {
           type: "string",
           description: "Nutrient category",
-          enum: ["macros", "minerals", "vitamins", "amino_acids", "lipids", "carbs", "sterols"],
+          enum: [
+            "macros",
+            "minerals",
+            "vitamins",
+            "amino_acids",
+            "lipids",
+            "carbs",
+            "sterols",
+          ],
         },
         nutrient: {
           type: "string",
-          description: "Specific nutrient to rank by (use list_category_nutrients for valid values)",
+          description:
+            "Specific nutrient to rank by (use list_category_nutrients for valid values)",
         },
         limit: { type: "number", description: "Max results (default: 10)" },
         kingdom: { type: "string", enum: ["animalia", "plantae", "fungi"] },
@@ -2728,16 +2956,35 @@ const TOOL_DEFINITIONS: any[] = [
     parameters: {
       type: "object",
       properties: {
-        q: { type: "string", description: "Search query — drug name, NDC code, ingredient, or class" },
+        q: {
+          type: "string",
+          description:
+            "Search query — drug name, NDC code, ingredient, or class",
+        },
         searchBy: {
           type: "string",
           description: "Search mode",
-          enum: ["name", "ndc_search", "ndc_lookup", "ingredient", "pharm_class"],
+          enum: [
+            "name",
+            "ndc_search",
+            "ndc_lookup",
+            "ingredient",
+            "pharm_class",
+          ],
         },
         limit: { type: "number", description: "Max results (default: 10)" },
-        dosageForm: { type: "string", description: "Dosage form filter (ndc_search only)" },
-        productType: { type: "string", description: "Product type filter (ndc_search only)" },
-        fields: { type: "string", description: "Comma-separated fields to return" },
+        dosageForm: {
+          type: "string",
+          description: "Dosage form filter (ndc_search only)",
+        },
+        productType: {
+          type: "string",
+          description: "Product type filter (ndc_search only)",
+        },
+        fields: {
+          type: "string",
+          description: "Comma-separated fields to return",
+        },
       },
       required: ["q"],
     },
@@ -2830,7 +3077,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         equipment: {
           type: "string",
-          description: "Filter by equipment (e.g. 'dumbbell', 'barbell', 'body only')",
+          description:
+            "Filter by equipment (e.g. 'dumbbell', 'barbell', 'body only')",
         },
         force: {
           type: "string",
@@ -2838,7 +3086,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         level: {
           type: "string",
-          description: "Filter by level (e.g. 'beginner', 'intermediate', 'expert')",
+          description:
+            "Filter by level (e.g. 'beginner', 'intermediate', 'expert')",
         },
         mechanic: {
           type: "string",
@@ -2846,7 +3095,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         muscle: {
           type: "string",
-          description: "Filter by target muscle (e.g. 'chest', 'biceps', 'abdominals')",
+          description:
+            "Filter by target muscle (e.g. 'chest', 'biceps', 'abdominals')",
         },
         ...fieldsParam(FIELDS.EXERCISES),
       },
@@ -2869,8 +3119,7 @@ const TOOL_DEFINITIONS: any[] = [
   {
     name: "get_gym_exercise_by_id",
     dataSource: staticDataset("Free Exercise DB & Wger"),
-    description:
-      "Get details for a specific gym exercise by its exact ID.",
+    description: "Get details for a specific gym exercise by its exact ID.",
     endpoint: {
       path: "/health/exercises/{id}",
       pathParams: ["id"],
@@ -3114,8 +3363,7 @@ const TOOL_DEFINITIONS: any[] = [
       properties: {
         rank: {
           type: "string",
-          description:
-            "Optional: return only values for this specific rank",
+          description: "Optional: return only values for this specific rank",
           enum: [
             "kingdom",
             "phylum",
@@ -3167,7 +3415,13 @@ const TOOL_DEFINITIONS: any[] = [
       "Calculate dynamic nutritional requirement boundaries (minimums, maximums, RDAs) across 140+ nutrients (macronutrients, vitamins, minerals, amino acids, sterols). Essential for evaluating complete diets. Required scaling parameters like body weight are handled automatically based on authoritative standards (e.g., US DRI for humans, AAFCO for dogs/cats).",
     endpoint: {
       path: "/health/nutrition/requirements",
-      queryParams: ["species", "lifeStage", "authority", "weightKg", "caloricIntake"],
+      queryParams: [
+        "species",
+        "lifeStage",
+        "authority",
+        "weightKg",
+        "caloricIntake",
+      ],
     },
     parameters: {
       type: "object",
@@ -3180,20 +3434,29 @@ const TOOL_DEFINITIONS: any[] = [
         lifeStage: {
           type: "string",
           description: "Target life stage or demographic. Default: adult_male.",
-          enum: ["adult_male", "adult_female", "adult_maintenance", "puppy", "kitten"],
+          enum: [
+            "adult_male",
+            "adult_female",
+            "adult_maintenance",
+            "puppy",
+            "kitten",
+          ],
         },
         authority: {
           type: "string",
-          description: "Authoritative standard body. Defaults to US_DRI for humans, AAFCO for pets.",
+          description:
+            "Authoritative standard body. Defaults to US_DRI for humans, AAFCO for pets.",
           enum: ["US_DRI", "AAFCO", "EFSA", "NRC", "WHO", "FEDIAF"],
         },
         weightKg: {
           type: "number",
-          description: "Target body weight in kg. Essential for scaling human amino acid limits.",
+          description:
+            "Target body weight in kg. Essential for scaling human amino acid limits.",
         },
         caloricIntake: {
           type: "number",
-          description: "Estimated daily caloric intake (kcal). Essential for scaling AAFCO standards.",
+          description:
+            "Estimated daily caloric intake (kcal). Essential for scaling AAFCO standards.",
         },
       },
     },
@@ -3207,7 +3470,16 @@ const TOOL_DEFINITIONS: any[] = [
       "Calculate Basal Metabolic Rate (BMR) and Total Daily Energy Expenditure (TDEE) using the Mifflin-St Jeor equation. Returns caloric targets, macronutrient split (protein/carbs/fat in grams), BMI, and optional body composition. Essential first step for nutrition planning — feed the TDEE into get_nutritional_requirements as caloricIntake.",
     endpoint: {
       path: "/health/calories/calculate",
-      queryParams: ["sex", "weightKg", "heightCm", "ageYears", "activityLevel", "goal", "macroSplit", "bodyFatPct"],
+      queryParams: [
+        "sex",
+        "weightKg",
+        "heightCm",
+        "ageYears",
+        "activityLevel",
+        "goal",
+        "macroSplit",
+        "bodyFatPct",
+      ],
     },
     parameters: {
       type: "object",
@@ -3261,14 +3533,22 @@ const TOOL_DEFINITIONS: any[] = [
       "Analyze dietary adequacy by comparing consumed foods against nutritional requirements. Accepts a food log (array of foods with grams eaten), calculates total nutrient intake, then diffs against DRI/AAFCO targets. Returns per-nutrient status: deficient (<50% DRI), low (50-89%), adequate (90-110%), surplus (>110%), or over_UL. Essential for identifying nutritional deficiencies.",
     endpoint: {
       path: "/health/nutrition/gap-analysis",
-      queryParams: ["foods", "species", "lifeStage", "authority", "weightKg", "caloricIntake"],
+      queryParams: [
+        "foods",
+        "species",
+        "lifeStage",
+        "authority",
+        "weightKg",
+        "caloricIntake",
+      ],
     },
     parameters: {
       type: "object",
       properties: {
         foods: {
           type: "string",
-          description: 'JSON array of foods eaten: [{"name":"chicken breast","grams":200},{"name":"brown rice","grams":150}]',
+          description:
+            'JSON array of foods eaten: [{"name":"chicken breast","grams":200},{"name":"brown rice","grams":150}]',
         },
         species: {
           type: "string",
@@ -3282,11 +3562,13 @@ const TOOL_DEFINITIONS: any[] = [
         },
         weightKg: {
           type: "number",
-          description: "Body weight in kg (for scaling amino acid requirements)",
+          description:
+            "Body weight in kg (for scaling amino acid requirements)",
         },
         caloricIntake: {
           type: "number",
-          description: "Daily caloric intake target (for scaling AAFCO standards)",
+          description:
+            "Daily caloric intake target (for scaling AAFCO standards)",
         },
       },
       required: ["foods"],
@@ -3301,18 +3583,27 @@ const TOOL_DEFINITIONS: any[] = [
       "Find nutritionally similar food substitutes using cosine similarity on nutrient profile vectors. Useful for dietary restrictions, allergies, or preferences: 'What plant foods have a similar nutrient profile to salmon?' Supports dietary preference filtering (vegetarian, vegan, pescatarian) and nutrient emphasis.",
     endpoint: {
       path: "/health/nutrition/substitutes",
-      queryParams: ["food", "targetNutrients", "dietaryPreference", "excludeKingdom", "excludeFoods", "limit"],
+      queryParams: [
+        "food",
+        "targetNutrients",
+        "dietaryPreference",
+        "excludeKingdom",
+        "excludeFoods",
+        "limit",
+      ],
     },
     parameters: {
       type: "object",
       properties: {
         food: {
           type: "string",
-          description: "Source food to find substitutes for (e.g. 'salmon', 'beef', 'milk')",
+          description:
+            "Source food to find substitutes for (e.g. 'salmon', 'beef', 'milk')",
         },
         targetNutrients: {
           type: "string",
-          description: "Comma-separated nutrients to emphasize in matching (e.g. 'protein,iron,omega3')",
+          description:
+            "Comma-separated nutrients to emphasize in matching (e.g. 'protein,iron,omega3')",
         },
         dietaryPreference: {
           type: "string",
@@ -3326,7 +3617,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         excludeFoods: {
           type: "string",
-          description: "Comma-separated food names to exclude (allergies, etc.)",
+          description:
+            "Comma-separated food names to exclude (allergies, etc.)",
         },
         limit: {
           type: "number",
@@ -3345,14 +3637,21 @@ const TOOL_DEFINITIONS: any[] = [
       "Estimate calories burned during exercise using Metabolic Equivalent of Task (MET) values from the Compendium of Physical Activities. Includes EPOC (afterburn) estimation and post-exercise recovery recommendations (protein, carbs, water). Chain with calculate_caloric_needs to adjust daily targets.",
     endpoint: {
       path: "/health/exercises/calories",
-      queryParams: ["exercise", "durationMinutes", "weightKg", "intensity", "category"],
+      queryParams: [
+        "exercise",
+        "durationMinutes",
+        "weightKg",
+        "intensity",
+        "category",
+      ],
     },
     parameters: {
       type: "object",
       properties: {
         exercise: {
           type: "string",
-          description: "Exercise name (e.g. 'barbell squat', 'running', 'swimming', 'yoga')",
+          description:
+            "Exercise name (e.g. 'barbell squat', 'running', 'swimming', 'yoga')",
         },
         durationMinutes: {
           type: "number",
@@ -3369,7 +3668,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         category: {
           type: "string",
-          description: "Optional exercise category hint (e.g. 'strength', 'cardio', 'stretching')",
+          description:
+            "Optional exercise category hint (e.g. 'strength', 'cardio', 'stretching')",
         },
       },
       required: ["exercise", "durationMinutes", "weightKg"],
@@ -3384,7 +3684,17 @@ const TOOL_DEFINITIONS: any[] = [
       "Calculate daily water intake recommendation based on body weight, activity level, climate, exercise, altitude, and special conditions (pregnancy, breastfeeding). Uses ACSM/IOM guidelines. Returns total recommendation with timing distribution.",
     endpoint: {
       path: "/health/hydration/calculate",
-      queryParams: ["weightKg", "activityLevel", "climateTemp", "exerciseMinutes", "exerciseIntensity", "altitudeM", "pregnant", "breastfeeding", "caffeineIntakeMg"],
+      queryParams: [
+        "weightKg",
+        "activityLevel",
+        "climateTemp",
+        "exerciseMinutes",
+        "exerciseIntensity",
+        "altitudeM",
+        "pregnant",
+        "breastfeeding",
+        "caffeineIntakeMg",
+      ],
     },
     parameters: {
       type: "object",
@@ -3427,7 +3737,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         caffeineIntakeMg: {
           type: "number",
-          description: "Daily caffeine intake in mg (offset for diuretic effect)",
+          description:
+            "Daily caffeine intake in mg (offset for diuretic effect)",
         },
       },
       required: ["weightKg"],
@@ -3442,7 +3753,17 @@ const TOOL_DEFINITIONS: any[] = [
       "Automatically generate a daily meal plan that covers nutritional targets within a caloric budget. Uses a greedy nutrient-coverage optimizer to select foods that maximally fill remaining nutrient gaps. Supports dietary preferences (omnivore, vegetarian, vegan, pescatarian, keto) and nutrient emphasis. Use calculate_caloric_needs first to determine the caloric target.",
     endpoint: {
       path: "/health/nutrition/meal-plan",
-      queryParams: ["caloricTarget", "mealsPerDay", "dietaryPreference", "excludeFoods", "emphasizeNutrients", "species", "lifeStage", "weightKg", "itemsPerMeal"],
+      queryParams: [
+        "caloricTarget",
+        "mealsPerDay",
+        "dietaryPreference",
+        "excludeFoods",
+        "emphasizeNutrients",
+        "species",
+        "lifeStage",
+        "weightKg",
+        "itemsPerMeal",
+      ],
     },
     parameters: {
       type: "object",
@@ -3466,7 +3787,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         emphasizeNutrients: {
           type: "string",
-          description: "Comma-separated nutrients to prioritize (e.g. 'iron,protein,calcium')",
+          description:
+            "Comma-separated nutrients to prioritize (e.g. 'iron,protein,calcium')",
         },
         species: {
           type: "string",
@@ -3506,11 +3828,13 @@ const TOOL_DEFINITIONS: any[] = [
       properties: {
         drug: {
           type: "string",
-          description: "Drug name — brand or generic (e.g. 'metformin', 'omeprazole', 'lisinopril', 'prednisone')",
+          description:
+            "Drug name — brand or generic (e.g. 'metformin', 'omeprazole', 'lisinopril', 'prednisone')",
         },
         nutrients: {
           type: "string",
-          description: "Optional: comma-separated nutrients to check specifically (e.g. 'calcium,iron'). Omit for all.",
+          description:
+            "Optional: comma-separated nutrients to check specifically (e.g. 'calcium,iron'). Omit for all.",
         },
       },
       required: ["drug"],
@@ -3657,7 +3981,15 @@ const TOOL_DEFINITIONS: any[] = [
       properties: {
         operation: {
           type: "string",
-          enum: ["add", "subtract", "multiply", "divide", "modulo", "power", "sqrt"],
+          enum: [
+            "add",
+            "subtract",
+            "multiply",
+            "divide",
+            "modulo",
+            "power",
+            "sqrt",
+          ],
           description: "The mathematical operation to perform",
         },
         a: {
@@ -3666,7 +3998,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         b: {
           type: "string",
-          description: "The second operand (must be a valid numeric string). Optional for sqrt.",
+          description:
+            "The second operand (must be a valid numeric string). Optional for sqrt.",
         },
       },
       required: ["operation", "a"],
@@ -3769,14 +4102,32 @@ const TOOL_DEFINITIONS: any[] = [
     endpoint: {
       method: "POST",
       path: "/compute/datetime/parse",
-      bodyParams: ["operation", "date", "date2", "amount", "unit", "format", "timezone"],
+      bodyParams: [
+        "operation",
+        "date",
+        "date2",
+        "amount",
+        "unit",
+        "format",
+        "timezone",
+      ],
     },
     parameters: {
       type: "object",
       properties: {
         operation: {
           type: "string",
-          enum: ["now", "parse", "format", "diff", "add", "subtract", "startOf", "endOf", "isValid"],
+          enum: [
+            "now",
+            "parse",
+            "format",
+            "diff",
+            "add",
+            "subtract",
+            "startOf",
+            "endOf",
+            "isValid",
+          ],
           description: "The date/time operation to perform",
         },
         date: {
@@ -3791,13 +4142,27 @@ const TOOL_DEFINITIONS: any[] = [
         },
         amount: {
           type: "integer",
-          description: "Amount to add/subtract (for 'add' and 'subtract' operations)",
+          description:
+            "Amount to add/subtract (for 'add' and 'subtract' operations)",
         },
         unit: {
           type: "string",
-          enum: ["years", "months", "weeks", "days", "hours", "minutes", "seconds", "year", "month", "week", "day", "hour", "minute"],
-          description:
-            "Time unit for add/subtract/startOf/endOf operations",
+          enum: [
+            "years",
+            "months",
+            "weeks",
+            "days",
+            "hours",
+            "minutes",
+            "seconds",
+            "year",
+            "month",
+            "week",
+            "day",
+            "hour",
+            "minute",
+          ],
+          description: "Time unit for add/subtract/startOf/endOf operations",
         },
         format: {
           type: "string",
@@ -3844,7 +4209,19 @@ const TOOL_DEFINITIONS: any[] = [
             properties: {
               type: {
                 type: "string",
-                enum: ["flatten", "unique", "sort", "filter", "pick", "omit", "groupBy", "count", "sum", "limit", "reverse"],
+                enum: [
+                  "flatten",
+                  "unique",
+                  "sort",
+                  "filter",
+                  "pick",
+                  "omit",
+                  "groupBy",
+                  "count",
+                  "sum",
+                  "limit",
+                  "reverse",
+                ],
               },
             },
           },
@@ -3898,7 +4275,13 @@ const TOOL_DEFINITIONS: any[] = [
     endpoint: {
       method: "POST",
       path: "/compute/qr",
-      bodyParams: ["data", "size", "errorCorrection", "darkColor", "lightColor"],
+      bodyParams: [
+        "data",
+        "size",
+        "errorCorrection",
+        "darkColor",
+        "lightColor",
+      ],
     },
     parameters: {
       type: "object",
@@ -3915,7 +4298,8 @@ const TOOL_DEFINITIONS: any[] = [
         errorCorrection: {
           type: "string",
           enum: ["L", "M", "Q", "H"],
-          description: "Error correction level: L (7%), M (15%, default), Q (25%), H (30%)",
+          description:
+            "Error correction level: L (7%), M (15%, default), Q (25%), H (30%)",
         },
         darkColor: {
           type: "string",
@@ -4031,7 +4415,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         algorithm: {
           type: "string",
-          description: "Hash algorithm: md5, sha1, sha256, sha512, sha3-256, etc. (default: sha256)",
+          description:
+            "Hash algorithm: md5, sha1, sha256, sha512, sha3-256, etc. (default: sha256)",
         },
         encoding: {
           type: "string",
@@ -4039,7 +4424,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         key: {
           type: "string",
-          description: "Optional HMAC key. If provided, computes HMAC instead of plain hash.",
+          description:
+            "Optional HMAC key. If provided, computes HMAC instead of plain hash.",
         },
       },
       required: ["data"],
@@ -4060,11 +4446,13 @@ const TOOL_DEFINITIONS: any[] = [
       properties: {
         pattern: {
           type: "string",
-          description: "Regular expression pattern (without delimiters). Example: '\\\\d{3}-\\\\d{4}' or '(?<name>[A-Z]\\\\w+)'",
+          description:
+            "Regular expression pattern (without delimiters). Example: '\\\\d{3}-\\\\d{4}' or '(?<name>[A-Z]\\\\w+)'",
         },
         flags: {
           type: "string",
-          description: "Regex flags: g (global), i (case-insensitive), m (multiline), s (dotAll), u (unicode). Default: 'g'",
+          description:
+            "Regex flags: g (global), i (case-insensitive), m (multiline), s (dotAll), u (unicode). Default: 'g'",
         },
         text: {
           type: "string",
@@ -4092,13 +4480,23 @@ const TOOL_DEFINITIONS: any[] = [
         },
         format: {
           type: "string",
-          enum: ["base64", "base64url", "hex", "url", "html", "rot13", "binary", "jwt"],
+          enum: [
+            "base64",
+            "base64url",
+            "hex",
+            "url",
+            "html",
+            "rot13",
+            "binary",
+            "jwt",
+          ],
           description: "The encoding format",
         },
         direction: {
           type: "string",
           enum: ["encode", "decode"],
-          description: "Direction of transformation (default: 'encode'). JWT only supports 'decode'.",
+          description:
+            "Direction of transformation (default: 'encode'). JWT only supports 'decode'.",
         },
       },
       required: ["data", "format"],
@@ -4123,8 +4521,16 @@ const TOOL_DEFINITIONS: any[] = [
         },
         palette: {
           type: "string",
-          enum: ["complementary", "analogous", "triadic", "splitComplementary", "tetradic", "monochromatic"],
-          description: "Optional — generate a color harmony palette based on the input color",
+          enum: [
+            "complementary",
+            "analogous",
+            "triadic",
+            "splitComplementary",
+            "tetradic",
+            "monochromatic",
+          ],
+          description:
+            "Optional — generate a color harmony palette based on the input color",
         },
       },
       required: ["color"],
@@ -4169,64 +4575,171 @@ const TOOL_DEFINITIONS: any[] = [
               type: {
                 type: "string",
                 enum: [
-                  "resize", "crop", "rotate", "flip", "blur", "sharpen",
-                  "grayscale", "negate", "tint", "adjust", "gamma", "trim",
-                  "extend", "composite", "metadata",
-                  "text", "distort", "border",
+                  "resize",
+                  "crop",
+                  "rotate",
+                  "flip",
+                  "blur",
+                  "sharpen",
+                  "grayscale",
+                  "negate",
+                  "tint",
+                  "adjust",
+                  "gamma",
+                  "trim",
+                  "extend",
+                  "composite",
+                  "metadata",
+                  "text",
+                  "distort",
+                  "border",
                 ],
                 description:
                   "The operation type. " +
                   "Sharp operations (fast): resize, crop, rotate, flip, blur, sharpen, grayscale, negate, tint, adjust, gamma, trim, extend, composite, metadata. " +
                   "ImageMagick operations (advanced): text (rich text overlay), distort (swirl/wave/implode/barrel), border.",
               },
-              width: { type: "integer", description: "Width in pixels (resize, crop, extend)" },
-              height: { type: "integer", description: "Height in pixels (resize, crop, extend)" },
+              width: {
+                type: "integer",
+                description: "Width in pixels (resize, crop, extend)",
+              },
+              height: {
+                type: "integer",
+                description: "Height in pixels (resize, crop, extend)",
+              },
               fit: {
                 type: "string",
                 enum: ["cover", "contain", "fill", "inside", "outside"],
-                description: "Resize fit strategy (resize only, default: 'cover')",
+                description:
+                  "Resize fit strategy (resize only, default: 'cover')",
               },
-              left: { type: "integer", description: "Left offset in pixels (crop, extend, composite)" },
-              top: { type: "integer", description: "Top offset in pixels (crop, extend, composite)" },
-              right: { type: "integer", description: "Right padding in pixels (extend)" },
-              bottom: { type: "integer", description: "Bottom padding in pixels (extend)" },
-              angle: { type: "number", description: "Rotation angle in degrees (rotate)" },
+              left: {
+                type: "integer",
+                description: "Left offset in pixels (crop, extend, composite)",
+              },
+              top: {
+                type: "integer",
+                description: "Top offset in pixels (crop, extend, composite)",
+              },
+              right: {
+                type: "integer",
+                description: "Right padding in pixels (extend)",
+              },
+              bottom: {
+                type: "integer",
+                description: "Bottom padding in pixels (extend)",
+              },
+              angle: {
+                type: "number",
+                description: "Rotation angle in degrees (rotate)",
+              },
               direction: {
                 type: "string",
                 enum: ["horizontal", "vertical"],
                 description: "Flip direction (flip only, default: 'vertical')",
               },
-              sigma: { type: "number", description: "Blur/sharpen sigma (blur: 0.3-100, sharpen: default 1)" },
-              color: { type: "string", description: "Color as hex string, e.g. '#ff6347' (tint, border, text)" },
-              background: { type: "string", description: "Background color as hex (rotate, resize, extend)" },
-              brightness: { type: "number", description: "Brightness multiplier (adjust, default: 1.0)" },
-              saturation: { type: "number", description: "Saturation multiplier (adjust, default: 1.0)" },
-              hue: { type: "number", description: "Hue rotation in degrees (adjust)" },
-              value: { type: "number", description: "Gamma value (gamma, default: 2.2)" },
-              threshold: { type: "integer", description: "Trim threshold (trim, default: 10)" },
-              overlayUrl: { type: "string", description: "URL of overlay image (composite)" },
+              sigma: {
+                type: "number",
+                description:
+                  "Blur/sharpen sigma (blur: 0.3-100, sharpen: default 1)",
+              },
+              color: {
+                type: "string",
+                description:
+                  "Color as hex string, e.g. '#ff6347' (tint, border, text)",
+              },
+              background: {
+                type: "string",
+                description: "Background color as hex (rotate, resize, extend)",
+              },
+              brightness: {
+                type: "number",
+                description: "Brightness multiplier (adjust, default: 1.0)",
+              },
+              saturation: {
+                type: "number",
+                description: "Saturation multiplier (adjust, default: 1.0)",
+              },
+              hue: {
+                type: "number",
+                description: "Hue rotation in degrees (adjust)",
+              },
+              value: {
+                type: "number",
+                description: "Gamma value (gamma, default: 2.2)",
+              },
+              threshold: {
+                type: "integer",
+                description: "Trim threshold (trim, default: 10)",
+              },
+              overlayUrl: {
+                type: "string",
+                description: "URL of overlay image (composite)",
+              },
               gravity: {
                 type: "string",
-                description: "Placement gravity (composite, text): north, south, east, west, center, northeast, northwest, southeast, southwest",
+                description:
+                  "Placement gravity (composite, text): north, south, east, west, center, northeast, northwest, southeast, southwest",
               },
-              blend: { type: "string", description: "Blend mode (composite): over, multiply, screen, etc." },
-              content: { type: "string", description: "Text content to render (text)" },
-              font: { type: "string", description: "Font family name (text, default: 'Liberation-Sans')" },
-              fontSize: { type: "integer", description: "Font size in points (text, default: 32)" },
-              strokeColor: { type: "string", description: "Text stroke/outline color (text)" },
-              strokeWidth: { type: "integer", description: "Text stroke width in pixels (text, default: 2)" },
-              x: { type: "integer", description: "X offset for text positioning (text)" },
-              y: { type: "integer", description: "Y offset for text positioning (text)" },
+              blend: {
+                type: "string",
+                description:
+                  "Blend mode (composite): over, multiply, screen, etc.",
+              },
+              content: {
+                type: "string",
+                description: "Text content to render (text)",
+              },
+              font: {
+                type: "string",
+                description:
+                  "Font family name (text, default: 'Liberation-Sans')",
+              },
+              fontSize: {
+                type: "integer",
+                description: "Font size in points (text, default: 32)",
+              },
+              strokeColor: {
+                type: "string",
+                description: "Text stroke/outline color (text)",
+              },
+              strokeWidth: {
+                type: "integer",
+                description: "Text stroke width in pixels (text, default: 2)",
+              },
+              x: {
+                type: "integer",
+                description: "X offset for text positioning (text)",
+              },
+              y: {
+                type: "integer",
+                description: "Y offset for text positioning (text)",
+              },
               effect: {
                 type: "string",
                 enum: ["swirl", "wave", "implode", "barrel"],
                 description: "Distortion effect type (distort)",
               },
-              degrees: { type: "number", description: "Swirl degrees (distort swirl, default: 90)" },
-              amplitude: { type: "number", description: "Wave amplitude (distort wave, default: 10)" },
-              wavelength: { type: "number", description: "Wave wavelength (distort wave, default: 100)" },
-              factor: { type: "number", description: "Implode factor (distort implode, default: 0.5)" },
-              params: { type: "string", description: "Raw distort params string (distort barrel)" },
+              degrees: {
+                type: "number",
+                description: "Swirl degrees (distort swirl, default: 90)",
+              },
+              amplitude: {
+                type: "number",
+                description: "Wave amplitude (distort wave, default: 10)",
+              },
+              wavelength: {
+                type: "number",
+                description: "Wave wavelength (distort wave, default: 100)",
+              },
+              factor: {
+                type: "number",
+                description: "Implode factor (distort implode, default: 0.5)",
+              },
+              params: {
+                type: "string",
+                description: "Raw distort params string (distort barrel)",
+              },
             },
             required: ["type"],
           },
@@ -4234,11 +4747,13 @@ const TOOL_DEFINITIONS: any[] = [
         outputFormat: {
           type: "string",
           enum: ["png", "jpeg", "webp", "avif", "tiff"],
-          description: "Output image format (default: 'png'). JPEG/WebP/AVIF use lossy compression controlled by outputQuality.",
+          description:
+            "Output image format (default: 'png'). JPEG/WebP/AVIF use lossy compression controlled by outputQuality.",
         },
         outputQuality: {
           type: "integer",
-          description: "Output quality 1-100 for lossy formats (JPEG/WebP/AVIF). Default: 80. Ignored for PNG.",
+          description:
+            "Output quality 1-100 for lossy formats (JPEG/WebP/AVIF). Default: 80. Ignored for PNG.",
         },
       },
       required: ["input", "operations"],
@@ -4270,7 +4785,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         width: {
           type: "integer",
-          description: "Number of output characters wide (aspect ratio is automatically adjusted). Default: 100, Range: 10-250.",
+          description:
+            "Number of output characters wide (aspect ratio is automatically adjusted). Default: 100, Range: 10-250.",
         },
         chars: {
           type: "string",
@@ -4280,11 +4796,13 @@ const TOOL_DEFINITIONS: any[] = [
         },
         contrast: {
           type: "number",
-          description: "Contrast adjustment factor (e.g. 1.5 increases contrast, 0.5 decreases). Default: 1.0.",
+          description:
+            "Contrast adjustment factor (e.g. 1.5 increases contrast, 0.5 decreases). Default: 1.0.",
         },
         reverse: {
           type: "boolean",
-          description: "Invert density/brightness mapping (useful when displaying on light vs dark terminal themes). Default: false.",
+          description:
+            "Invert density/brightness mapping (useful when displaying on light vs dark terminal themes). Default: false.",
         },
       },
       required: ["input"],
@@ -4339,33 +4857,74 @@ const TOOL_DEFINITIONS: any[] = [
                   "speed, hideturtle, ht, showturtle, st, home, reset, clear",
               },
               value: {
-                description: "Primary value: distance (forward/backward), angle (right/left/setheading), " +
+                description:
+                  "Primary value: distance (forward/backward), angle (right/left/setheading), " +
                   "radius (circle/arc), size (dot), speed (1-10), or CSS color string (color/fillcolor)",
               },
               value2: {
-                description: "Secondary value: arc extent in degrees, or y-coordinate for goto",
+                description:
+                  "Secondary value: arc extent in degrees, or y-coordinate for goto",
               },
-              x: { type: "number", description: "X coordinate for goto (relative to center, positive = right)" },
-              y: { type: "number", description: "Y coordinate for goto (relative to center, positive = up)" },
-              color: { type: "string", description: "CSS color for color/fillcolor commands (e.g. '#ff6347', 'red', 'hsl(120,100%,50%)')" },
-              text: { type: "string", description: "Text string for label/write commands" },
-              fontSize: { type: "number", description: "Font size in pixels for label/write (default: 14)" },
+              x: {
+                type: "number",
+                description:
+                  "X coordinate for goto (relative to center, positive = right)",
+              },
+              y: {
+                type: "number",
+                description:
+                  "Y coordinate for goto (relative to center, positive = up)",
+              },
+              color: {
+                type: "string",
+                description:
+                  "CSS color for color/fillcolor commands (e.g. '#ff6347', 'red', 'hsl(120,100%,50%)')",
+              },
+              text: {
+                type: "string",
+                description: "Text string for label/write commands",
+              },
+              fontSize: {
+                type: "number",
+                description:
+                  "Font size in pixels for label/write (default: 14)",
+              },
             },
             required: ["action"],
           },
           description:
             "Array of turtle commands to execute sequentially. " +
-            "Example: [{\"action\":\"forward\",\"value\":100},{\"action\":\"right\",\"value\":90}]",
+            'Example: [{"action":"forward","value":100},{"action":"right","value":90}]',
         },
         options: {
           type: "object",
           properties: {
-            canvasWidth: { type: "number", description: "Canvas width in pixels (default: 800, max: 1920)" },
-            canvasHeight: { type: "number", description: "Canvas height in pixels (default: 600, max: 1080)" },
-            background: { type: "string", description: "Canvas background color (default: '#0f172a')" },
-            animated: { type: "boolean", description: "Animate step-by-step (default: true). Set false for instant render." },
-            stepDelay: { type: "number", description: "Milliseconds between animated steps (default: 40, range: 5-500)" },
-            title: { type: "string", description: "Optional title displayed above the canvas" },
+            canvasWidth: {
+              type: "number",
+              description: "Canvas width in pixels (default: 800, max: 1920)",
+            },
+            canvasHeight: {
+              type: "number",
+              description: "Canvas height in pixels (default: 600, max: 1080)",
+            },
+            background: {
+              type: "string",
+              description: "Canvas background color (default: '#0f172a')",
+            },
+            animated: {
+              type: "boolean",
+              description:
+                "Animate step-by-step (default: true). Set false for instant render.",
+            },
+            stepDelay: {
+              type: "number",
+              description:
+                "Milliseconds between animated steps (default: 40, range: 5-500)",
+            },
+            title: {
+              type: "string",
+              description: "Optional title displayed above the canvas",
+            },
           },
           description: "Optional canvas configuration",
         },
@@ -4469,11 +5028,13 @@ const TOOL_DEFINITIONS: any[] = [
         },
         latitude: {
           type: "number",
-          description: "Center latitude for the search (defaults to server location)",
+          description:
+            "Center latitude for the search (defaults to server location)",
         },
         longitude: {
           type: "number",
-          description: "Center longitude for the search (defaults to server location)",
+          description:
+            "Center longitude for the search (defaults to server location)",
         },
         radius: {
           type: "number",
@@ -4502,15 +5063,18 @@ const TOOL_DEFINITIONS: any[] = [
       properties: {
         q: {
           type: "string",
-          description: "Natural language search query (e.g. 'italian restaurants', 'best coffee shops', '24 hour pharmacy near me')",
+          description:
+            "Natural language search query (e.g. 'italian restaurants', 'best coffee shops', '24 hour pharmacy near me')",
         },
         latitude: {
           type: "number",
-          description: "Bias latitude for the search (defaults to server location)",
+          description:
+            "Bias latitude for the search (defaults to server location)",
         },
         longitude: {
           type: "number",
-          description: "Bias longitude for the search (defaults to server location)",
+          description:
+            "Bias longitude for the search (defaults to server location)",
         },
         radius: {
           type: "number",
@@ -4544,11 +5108,13 @@ const TOOL_DEFINITIONS: any[] = [
         },
         zoom: {
           type: "number",
-          description: "Optional zoom level (1-20). If omitted, auto-fits to markers.",
+          description:
+            "Optional zoom level (1-20). If omitted, auto-fits to markers.",
         },
         maptype: {
           type: "string",
-          description: "Map type: roadmap, satellite, terrain, hybrid (default: roadmap)",
+          description:
+            "Map type: roadmap, satellite, terrain, hybrid (default: roadmap)",
           enum: ["roadmap", "satellite", "terrain", "hybrid"],
         },
       },
@@ -4592,7 +5158,8 @@ const TOOL_DEFINITIONS: any[] = [
             properties: {
               label: {
                 type: "string",
-                description: "Dataset name shown in the legend (e.g. \"Revenue\", \"Temperature\")",
+                description:
+                  'Dataset name shown in the legend (e.g. "Revenue", "Temperature")',
               },
               data: {
                 type: "array",
@@ -4645,12 +5212,22 @@ const TOOL_DEFINITIONS: any[] = [
           enum: ["search", "code", "country", "nearest"],
         },
         q: { type: "string", description: "Search query (action=search)" },
-        code: { type: "string", description: "IATA/ICAO code or country code (action=code or country)" },
+        code: {
+          type: "string",
+          description:
+            "IATA/ICAO code or country code (action=code or country)",
+        },
         lat: { type: "number", description: "Latitude (action=nearest)" },
         lng: { type: "number", description: "Longitude (action=nearest)" },
         limit: { type: "number", description: "Max results (default: 10)" },
-        country: { type: "string", description: "Country code filter (action=search)" },
-        fields: { type: "string", description: "Comma-separated fields to return" },
+        country: {
+          type: "string",
+          description: "Country code filter (action=search)",
+        },
+        fields: {
+          type: "string",
+          description: "Comma-separated fields to return",
+        },
       },
       required: ["action"],
     },
@@ -4667,15 +5244,42 @@ const TOOL_DEFINITIONS: any[] = [
       properties: {
         city: {
           type: "string",
-          description:
-            "City/area name. Default: vancouver.",
+          description: "City/area name. Default: vancouver.",
           enum: [
-            "vancouver", "seattle", "toronto", "calgary", "austin",
-            "ottawa", "hamilton", "london-on", "kingston", "windsor-on",
-            "kitchener", "barrie", "thunder-bay", "sudbury", "niagara", "mississauga",
-            "edmonton", "red-deer", "lethbridge", "medicine-hat", "grande-prairie", "banff", "fort-mcmurray",
+            "vancouver",
+            "seattle",
+            "toronto",
+            "calgary",
+            "austin",
+            "ottawa",
+            "hamilton",
+            "london-on",
+            "kingston",
+            "windsor-on",
+            "kitchener",
+            "barrie",
+            "thunder-bay",
+            "sudbury",
+            "niagara",
+            "mississauga",
+            "edmonton",
+            "red-deer",
+            "lethbridge",
+            "medicine-hat",
+            "grande-prairie",
+            "banff",
+            "fort-mcmurray",
             "baton-rouge",
-            "nyc", "buffalo", "syracuse", "albany", "rochester", "long-island", "westchester", "utica", "binghamton", "ithaca",
+            "nyc",
+            "buffalo",
+            "syracuse",
+            "albany",
+            "rochester",
+            "long-island",
+            "westchester",
+            "utica",
+            "binghamton",
+            "ithaca",
           ],
         },
         limit: {
@@ -4884,11 +5488,13 @@ const TOOL_DEFINITIONS: any[] = [
       properties: {
         route: {
           type: "string",
-          description: "EIA data route (e.g. 'electricity/retail-sales', 'petroleum/pri/gnd')",
+          description:
+            "EIA data route (e.g. 'electricity/retail-sales', 'petroleum/pri/gnd')",
         },
         facetId: {
           type: "string",
-          description: "Facet identifier (e.g. 'stateid', 'sectorid', 'product', 'duoarea')",
+          description:
+            "Facet identifier (e.g. 'stateid', 'sectorid', 'product', 'duoarea')",
         },
         ...fieldsParam(FIELDS.EIA_FACETS),
       },
@@ -4902,18 +5508,28 @@ const TOOL_DEFINITIONS: any[] = [
       "Query EIA energy data for a specific route with optional facet filters, date range, and frequency. Returns time-series data points. Use browse_energy_data first to discover routes and get_energy_facets to find valid filter values.",
     endpoint: {
       path: "/energy/data",
-      queryParams: ["route", "frequency", "start", "end", "sort", "length", "offset"],
+      queryParams: [
+        "route",
+        "frequency",
+        "start",
+        "end",
+        "sort",
+        "length",
+        "offset",
+      ],
     },
     parameters: {
       type: "object",
       properties: {
         route: {
           type: "string",
-          description: "EIA data route (e.g. 'electricity/retail-sales', 'petroleum/pri/gnd', 'natural-gas/pri/sum')",
+          description:
+            "EIA data route (e.g. 'electricity/retail-sales', 'petroleum/pri/gnd', 'natural-gas/pri/sum')",
         },
         frequency: {
           type: "string",
-          description: "Data frequency: 'daily', 'weekly', 'monthly', 'quarterly', 'annual'",
+          description:
+            "Data frequency: 'daily', 'weekly', 'monthly', 'quarterly', 'annual'",
         },
         start: {
           type: "string",
@@ -4925,7 +5541,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         sort: {
           type: "string",
-          description: "Sort column and direction (e.g. 'period:desc', 'value:asc')",
+          description:
+            "Sort column and direction (e.g. 'period:desc', 'value:asc')",
         },
         length: {
           type: "integer",
@@ -4953,15 +5570,18 @@ const TOOL_DEFINITIONS: any[] = [
       properties: {
         state: {
           type: "string",
-          description: "State code (e.g. 'CA', 'TX', 'NY') or 'US' for national",
+          description:
+            "State code (e.g. 'CA', 'TX', 'NY') or 'US' for national",
         },
         sector: {
           type: "string",
-          description: "Sector: 'RES' (residential), 'COM' (commercial), 'IND' (industrial), 'TRA' (transportation), 'ALL' (total)",
+          description:
+            "Sector: 'RES' (residential), 'COM' (commercial), 'IND' (industrial), 'TRA' (transportation), 'ALL' (total)",
         },
         frequency: {
           type: "string",
-          description: "Data frequency: 'monthly', 'quarterly', 'annual' (default: monthly)",
+          description:
+            "Data frequency: 'monthly', 'quarterly', 'annual' (default: monthly)",
         },
         start: {
           type: "string",
@@ -4992,11 +5612,13 @@ const TOOL_DEFINITIONS: any[] = [
       properties: {
         product: {
           type: "string",
-          description: "Product code (e.g. 'EPM0' for regular gasoline, 'EPD2DXL0' for diesel)",
+          description:
+            "Product code (e.g. 'EPM0' for regular gasoline, 'EPD2DXL0' for diesel)",
         },
         area: {
           type: "string",
-          description: "Geographic area code (e.g. 'NUS' for U.S., 'R10' for PADD 1)",
+          description:
+            "Geographic area code (e.g. 'NUS' for U.S., 'R10' for PADD 1)",
         },
         frequency: {
           type: "string",
@@ -5039,7 +5661,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         frequency: {
           type: "string",
-          description: "Data frequency: 'daily', 'weekly', 'monthly', 'annual' (default: monthly)",
+          description:
+            "Data frequency: 'daily', 'weekly', 'monthly', 'annual' (default: monthly)",
         },
         start: {
           type: "string",
@@ -5333,7 +5956,14 @@ const TOOL_DEFINITIONS: any[] = [
     endpoint: {
       method: "POST",
       path: "/agentic/search/grep",
-      bodyParams: ["pattern", "searchPath", "isRegex", "includes", "caseInsensitive", "matchPerLine"],
+      bodyParams: [
+        "pattern",
+        "searchPath",
+        "isRegex",
+        "includes",
+        "caseInsensitive",
+        "matchPerLine",
+      ],
     },
     parameters: {
       type: "object",
@@ -5345,8 +5975,7 @@ const TOOL_DEFINITIONS: any[] = [
         },
         searchPath: {
           type: "string",
-          description:
-            "Absolute path to search in (file or directory).",
+          description: "Absolute path to search in (file or directory).",
         },
         isRegex: {
           type: "boolean",
@@ -5361,7 +5990,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         caseInsensitive: {
           type: "boolean",
-          description: "If true, perform case-insensitive search (default: false).",
+          description:
+            "If true, perform case-insensitive search (default: false).",
         },
         matchPerLine: {
           type: "boolean",
@@ -5392,8 +6022,7 @@ const TOOL_DEFINITIONS: any[] = [
         },
         searchPath: {
           type: "string",
-          description:
-            "Absolute path to the root directory to search from.",
+          description: "Absolute path to the root directory to search from.",
         },
       },
       required: ["pattern", "searchPath"],
@@ -5444,15 +6073,18 @@ const TOOL_DEFINITIONS: any[] = [
         },
         limit: {
           type: "integer",
-          description: "Maximum number of results to return (default: 5, max: 10).",
+          description:
+            "Maximum number of results to return (default: 5, max: 10).",
         },
         dateRestrict: {
           type: "string",
-          description: "Restrict results by age. Examples: 'd7' (past 7 days), 'w2' (past 2 weeks), 'm1' (past month), 'y1' (past year).",
+          description:
+            "Restrict results by age. Examples: 'd7' (past 7 days), 'w2' (past 2 weeks), 'm1' (past month), 'y1' (past year).",
         },
         siteSearch: {
           type: "string",
-          description: "Restrict search to a specific domain (e.g. 'stackoverflow.com', 'developer.mozilla.org').",
+          description:
+            "Restrict search to a specific domain (e.g. 'stackoverflow.com', 'developer.mozilla.org').",
         },
       },
       required: ["query"],
@@ -5476,9 +6108,18 @@ const TOOL_DEFINITIONS: any[] = [
           items: {
             type: "object",
             properties: {
-              path: { type: "string", description: "Absolute path to the file." },
-              startLine: { type: "integer", description: "Optional 1-indexed start line." },
-              endLine: { type: "integer", description: "Optional 1-indexed end line." },
+              path: {
+                type: "string",
+                description: "Absolute path to the file.",
+              },
+              startLine: {
+                type: "integer",
+                description: "Optional 1-indexed start line.",
+              },
+              endLine: {
+                type: "integer",
+                description: "Optional 1-indexed end line.",
+              },
             },
             required: ["path"],
           },
@@ -5508,7 +6149,8 @@ const TOOL_DEFINITIONS: any[] = [
         paths: {
           type: "array",
           items: { type: "string" },
-          description: "Array of absolute paths to inspect (max 20). Use this for batch queries instead of 'path'.",
+          description:
+            "Array of absolute paths to inspect (max 20). Use this for batch queries instead of 'path'.",
         },
       },
       required: [],
@@ -5529,19 +6171,23 @@ const TOOL_DEFINITIONS: any[] = [
       properties: {
         pathA: {
           type: "string",
-          description: "Absolute path to the first file (the 'old' side of the diff).",
+          description:
+            "Absolute path to the first file (the 'old' side of the diff).",
         },
         pathB: {
           type: "string",
-          description: "Absolute path to the second file (the 'new' side). Use this OR 'content', not both.",
+          description:
+            "Absolute path to the second file (the 'new' side). Use this OR 'content', not both.",
         },
         content: {
           type: "string",
-          description: "Content string to diff against pathA. Use this OR 'pathB', not both.",
+          description:
+            "Content string to diff against pathA. Use this OR 'pathB', not both.",
         },
         contextLines: {
           type: "integer",
-          description: "Number of context lines in the diff output (default: 3, max: 10).",
+          description:
+            "Number of context lines in the diff output (default: 3, max: 10).",
         },
       },
       required: ["pathA"],
@@ -5570,7 +6216,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         createDirs: {
           type: "boolean",
-          description: "Create parent directories at destination if needed (default: true).",
+          description:
+            "Create parent directories at destination if needed (default: true).",
         },
       },
       required: ["source", "destination"],
@@ -5621,7 +6268,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         cwd: {
           type: "string",
-          description: "Absolute path of the working directory. Must be within allowed workspace roots.",
+          description:
+            "Absolute path of the working directory. Must be within allowed workspace roots.",
         },
         timeout: {
           type: "integer",
@@ -5665,7 +6313,16 @@ const TOOL_DEFINITIONS: any[] = [
     endpoint: {
       method: "POST",
       path: "/agentic/git",
-      bodyParams: ["action", "path", "staged", "file", "ref", "limit", "author", "since"],
+      bodyParams: [
+        "action",
+        "path",
+        "staged",
+        "file",
+        "ref",
+        "limit",
+        "author",
+        "since",
+      ],
     },
     parameters: {
       type: "object",
@@ -5676,18 +6333,29 @@ const TOOL_DEFINITIONS: any[] = [
           enum: ["status", "diff", "log"],
         },
         path: { type: "string", description: "Absolute path to the repo root" },
-        staged: { type: "boolean", description: "Show staged changes only (diff)" },
-        file: { type: "string", description: "Specific file to diff or filter log" },
+        staged: {
+          type: "boolean",
+          description: "Show staged changes only (diff)",
+        },
+        file: {
+          type: "string",
+          description: "Specific file to diff or filter log",
+        },
         ref: { type: "string", description: "Git ref to diff against" },
-        limit: { type: "number", description: "Max commits (log, default: 10)" },
+        limit: {
+          type: "number",
+          description: "Max commits (log, default: 10)",
+        },
         author: { type: "string", description: "Filter by author (log)" },
-        since: { type: "string", description: "Since date, e.g. '2 weeks ago' (log)" },
+        since: {
+          type: "string",
+          description: "Since date, e.g. '2 weeks ago' (log)",
+        },
       },
       required: ["action", "path"],
     },
   },
   {
-
     name: "browser_action",
     dataSource: compute("headless Chromium (Playwright)"),
     description:
@@ -5698,7 +6366,25 @@ const TOOL_DEFINITIONS: any[] = [
     endpoint: {
       method: "POST",
       path: "/agentic/browser/action",
-      bodyParams: ["action", "sessionId", "url", "selector", "text", "pressEnter", "fullPage", "direction", "amount", "expression", "format", "timeout", "state", "limit", "ref", "value", "script"],
+      bodyParams: [
+        "action",
+        "sessionId",
+        "url",
+        "selector",
+        "text",
+        "pressEnter",
+        "fullPage",
+        "direction",
+        "amount",
+        "expression",
+        "format",
+        "timeout",
+        "state",
+        "limit",
+        "ref",
+        "value",
+        "script",
+      ],
     },
     parameters: {
       type: "object",
@@ -5707,7 +6393,24 @@ const TOOL_DEFINITIONS: any[] = [
           type: "string",
           description:
             "The browser action to perform. SNAPSHOT FLOW: 'snapshot' (get ARIA accessibility tree — preferred over screenshot for page understanding), 'click_ref' (click element by role:name ref), 'type_ref' (type into element by ref), 'hover_ref' (hover element by ref), 'select_ref' (select dropdown option by ref). SELECTOR FLOW: 'click' (click by CSS selector), 'type' (type by CSS selector), 'get_elements' (discover interactive elements). GENERAL: 'navigate' (go to URL), 'screenshot' (capture viewport as image), 'scroll' (scroll page), 'evaluate' (run JS), 'get_content' (extract text/HTML), 'wait' (wait for element/time), 'run_script' (execute Playwright script), 'close' (end session).",
-          enum: ["navigate", "screenshot", "click", "type", "scroll", "evaluate", "get_content", "get_elements", "wait", "close", "snapshot", "click_ref", "type_ref", "hover_ref", "select_ref", "run_script"],
+          enum: [
+            "navigate",
+            "screenshot",
+            "click",
+            "type",
+            "scroll",
+            "evaluate",
+            "get_content",
+            "get_elements",
+            "wait",
+            "close",
+            "snapshot",
+            "click_ref",
+            "type_ref",
+            "hover_ref",
+            "select_ref",
+            "run_script",
+          ],
         },
         sessionId: {
           type: "string",
@@ -5720,7 +6423,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         selector: {
           type: "string",
-          description: "CSS selector targeting an element (used by 'click', 'type', 'screenshot', 'scroll', 'get_content', 'wait', 'snapshot').",
+          description:
+            "CSS selector targeting an element (used by 'click', 'type', 'screenshot', 'scroll', 'get_content', 'wait', 'snapshot').",
         },
         ref: {
           type: "string",
@@ -5729,23 +6433,28 @@ const TOOL_DEFINITIONS: any[] = [
         },
         text: {
           type: "string",
-          description: "Text to type (required for 'type' and 'type_ref' actions).",
+          description:
+            "Text to type (required for 'type' and 'type_ref' actions).",
         },
         value: {
           type: "string",
-          description: "Option value to select (required for 'select_ref' action).",
+          description:
+            "Option value to select (required for 'select_ref' action).",
         },
         pressEnter: {
           type: "boolean",
-          description: "If true, press Enter after typing (for 'type' and 'type_ref' actions). Useful for submitting search forms.",
+          description:
+            "If true, press Enter after typing (for 'type' and 'type_ref' actions). Useful for submitting search forms.",
         },
         fullPage: {
           type: "boolean",
-          description: "If true, capture the full scrollable page instead of just the viewport (for 'screenshot' action).",
+          description:
+            "If true, capture the full scrollable page instead of just the viewport (for 'screenshot' action).",
         },
         direction: {
           type: "string",
-          description: "Scroll direction: 'up' or 'down' (for 'scroll' action, default: 'down').",
+          description:
+            "Scroll direction: 'up' or 'down' (for 'scroll' action, default: 'down').",
         },
         amount: {
           type: "integer",
@@ -5753,23 +6462,28 @@ const TOOL_DEFINITIONS: any[] = [
         },
         expression: {
           type: "string",
-          description: "JavaScript expression to evaluate in the page context (for 'evaluate' action). The return value is serialized to JSON.",
+          description:
+            "JavaScript expression to evaluate in the page context (for 'evaluate' action). The return value is serialized to JSON.",
         },
         format: {
           type: "string",
-          description: "Content format: 'text' (default) or 'html' (for 'get_content' action).",
+          description:
+            "Content format: 'text' (default) or 'html' (for 'get_content' action).",
         },
         timeout: {
           type: "integer",
-          description: "Timeout in milliseconds (for 'wait' and 'run_script' actions, default: 10000/60000, max: 30000/120000).",
+          description:
+            "Timeout in milliseconds (for 'wait' and 'run_script' actions, default: 10000/60000, max: 30000/120000).",
         },
         state: {
           type: "string",
-          description: "Element state to wait for: 'visible' (default), 'hidden', 'attached', 'detached' (for 'wait' action).",
+          description:
+            "Element state to wait for: 'visible' (default), 'hidden', 'attached', 'detached' (for 'wait' action).",
         },
         limit: {
           type: "integer",
-          description: "Maximum number of elements to return (for 'get_elements' action, default: 50, max: 100).",
+          description:
+            "Maximum number of elements to return (for 'get_elements' action, default: 50, max: 100).",
         },
         script: {
           type: "string",
@@ -5811,7 +6525,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         timeout: {
           type: "integer",
-          description: "Script execution timeout in milliseconds (default: 60000, max: 120000).",
+          description:
+            "Script execution timeout in milliseconds (default: 60000, max: 120000).",
         },
       },
       required: ["script"],
@@ -5836,14 +6551,26 @@ const TOOL_DEFINITIONS: any[] = [
     endpoint: {
       method: "POST",
       path: "/agentic/lsp/action",
-      bodyParams: ["operation", "filePath", "line", "character", "workspacePath"],
+      bodyParams: [
+        "operation",
+        "filePath",
+        "line",
+        "character",
+        "workspacePath",
+      ],
     },
     parameters: {
       type: "object",
       properties: {
         operation: {
           type: "string",
-          enum: ["goToDefinition", "findReferences", "hover", "documentSymbol", "goToImplementation"],
+          enum: [
+            "goToDefinition",
+            "findReferences",
+            "hover",
+            "documentSymbol",
+            "goToImplementation",
+          ],
           description:
             "The LSP operation to perform. Use 'goToDefinition' to find where something is defined, " +
             "'findReferences' to find all usages, 'hover' for type info, 'documentSymbol' for file outline, " +
@@ -5887,14 +6614,22 @@ const TOOL_DEFINITIONS: any[] = [
     endpoint: {
       method: "POST",
       path: "/agentic/task/create",
-      bodyParams: ["project", "subject", "description", "status", "activeForm", "metadata"],
+      bodyParams: [
+        "project",
+        "subject",
+        "description",
+        "status",
+        "activeForm",
+        "metadata",
+      ],
     },
     parameters: {
       type: "object",
       properties: {
         subject: {
           type: "string",
-          description: "A brief title for the task (e.g. 'Migrate auth middleware to JWT').",
+          description:
+            "A brief title for the task (e.g. 'Migrate auth middleware to JWT').",
         },
         description: {
           type: "string",
@@ -5912,7 +6647,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         metadata: {
           type: "object",
-          description: "Optional arbitrary key-value metadata to attach to the task.",
+          description:
+            "Optional arbitrary key-value metadata to attach to the task.",
         },
       },
       required: ["subject", "description"],
@@ -5940,7 +6676,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         limit: {
           type: "integer",
-          description: "Maximum number of tasks to return (default: 50, max: 200).",
+          description:
+            "Maximum number of tasks to return (default: 50, max: 200).",
         },
       },
       required: [],
@@ -5980,7 +6717,15 @@ const TOOL_DEFINITIONS: any[] = [
     endpoint: {
       method: "POST",
       path: "/agentic/task/update",
-      bodyParams: ["project", "taskId", "status", "subject", "description", "activeForm", "metadata"],
+      bodyParams: [
+        "project",
+        "taskId",
+        "status",
+        "subject",
+        "description",
+        "activeForm",
+        "metadata",
+      ],
     },
     parameters: {
       type: "object",
@@ -5992,7 +6737,8 @@ const TOOL_DEFINITIONS: any[] = [
         status: {
           type: "string",
           enum: ["pending", "in_progress", "completed", "deleted"],
-          description: "New status for the task. Setting 'deleted' removes the task entirely.",
+          description:
+            "New status for the task. Setting 'deleted' removes the task entirely.",
         },
         subject: {
           type: "string",
@@ -6075,7 +6821,8 @@ const TOOL_DEFINITIONS: any[] = [
       properties: {
         to: {
           type: "string",
-          description: "Destination phone number in E.164 format (e.g. +14155551234)",
+          description:
+            "Destination phone number in E.164 format (e.g. +14155551234)",
         },
         body: {
           type: "string",
@@ -6083,7 +6830,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         from: {
           type: "string",
-          description: "Optional sender phone number in E.164 format. If omitted, uses the first available Twilio number on the account.",
+          description:
+            "Optional sender phone number in E.164 format. If omitted, uses the first available Twilio number on the account.",
         },
       },
       required: ["to", "body"],
@@ -6095,7 +6843,10 @@ const TOOL_DEFINITIONS: any[] = [
     description:
       "List recent SMS messages sent and received on the Twilio account. " +
       "Can filter by sender or recipient phone number. Returns message SIDs, bodies, statuses, and timestamps.",
-    endpoint: { path: "/communication/sms/messages", queryParams: ["to", "from", "limit"] },
+    endpoint: {
+      path: "/communication/sms/messages",
+      queryParams: ["to", "from", "limit"],
+    },
     parameters: {
       type: "object",
       properties: {
@@ -6109,7 +6860,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         limit: {
           type: "integer",
-          description: "Maximum number of messages to return (default: 20, max: 100)",
+          description:
+            "Maximum number of messages to return (default: 20, max: 100)",
         },
       },
     },
@@ -6139,7 +6891,8 @@ const TOOL_DEFINITIONS: any[] = [
       properties: {
         phone: {
           type: "string",
-          description: "Phone number to look up in E.164 format (e.g. +14155551234)",
+          description:
+            "Phone number to look up in E.164 format (e.g. +14155551234)",
         },
       },
       required: ["phone"],
@@ -6175,11 +6928,13 @@ const TOOL_DEFINITIONS: any[] = [
       properties: {
         left: {
           type: "string",
-          description: "The first emoji character or hex codepoint (e.g., '🐼' or '1f43c')",
+          description:
+            "The first emoji character or hex codepoint (e.g., '🐼' or '1f43c')",
         },
         right: {
           type: "string",
-          description: "The second emoji character or hex codepoint (e.g., '❄️' or '2744-fe0f')",
+          description:
+            "The second emoji character or hex codepoint (e.g., '❄️' or '2744-fe0f')",
         },
       },
       required: ["left", "right"],
@@ -6202,11 +6957,13 @@ const TOOL_DEFINITIONS: any[] = [
       properties: {
         emoji: {
           type: "string",
-          description: "The emoji character or hex codepoint to check (e.g., '🐼' or '1f43c')",
+          description:
+            "The emoji character or hex codepoint to check (e.g., '🐼' or '1f43c')",
         },
         limit: {
           type: "number",
-          description: "Maximum number of combinations to return (default: 50, max: 500)",
+          description:
+            "Maximum number of combinations to return (default: 50, max: 500)",
         },
       },
       required: ["emoji"],
@@ -6302,11 +7059,13 @@ const TOOL_DEFINITIONS: any[] = [
       properties: {
         text: {
           type: "string",
-          description: "The text to convert to speech. Keep under 5000 characters for best results.",
+          description:
+            "The text to convert to speech. Keep under 5000 characters for best results.",
         },
         voice: {
           type: "string",
-          description: "Voice identifier (e.g. 'alloy', 'echo', 'shimmer' for OpenAI; ElevenLabs voice ID for ElevenLabs). Omit for default voice.",
+          description:
+            "Voice identifier (e.g. 'alloy', 'echo', 'shimmer' for OpenAI; ElevenLabs voice ID for ElevenLabs). Omit for default voice.",
         },
         provider: {
           type: "string",
@@ -6347,6 +7106,9 @@ const TOOL_DEFINITIONS: any[] = [
         "melody",
         "delay",
         "sampleRate",
+        "tempo",
+        "nodes",
+        "tracks",
       ],
     },
     parameters: {
@@ -6354,30 +7116,51 @@ const TOOL_DEFINITIONS: any[] = [
       properties: {
         soundType: {
           type: "string",
-          enum: ["synthesizer", "arpeggio", "melody", "sound_effect"],
-          description: "The synthesis mode. Use 'sound_effect' or omit for quick presets; 'synthesizer' for custom single tones; 'arpeggio' or 'melody' for multi-note sequences.",
+          enum: [
+            "synthesizer",
+            "arpeggio",
+            "melody",
+            "sound_effect",
+            "modular",
+          ],
+          description:
+            "The synthesis mode. Use 'sound_effect' or omit for quick presets; 'synthesizer' for custom single tones; 'arpeggio' or 'melody' for multi-note sequences; 'modular' for advanced multi-track node graph patching.",
         },
         presetEffect: {
           type: "string",
-          enum: ["laser", "coin", "powerup", "jump", "explosion", "synthwave_bass", "ambient_pad", "sci_fi_sweep"],
-          description: "High-fidelity retro game sound preset. If provided, this overrides custom waveform synthesizer parameters.",
+          enum: [
+            "laser",
+            "coin",
+            "powerup",
+            "jump",
+            "explosion",
+            "synthwave_bass",
+            "ambient_pad",
+            "sci_fi_sweep",
+          ],
+          description:
+            "High-fidelity retro game sound preset. If provided, this overrides custom waveform synthesizer parameters.",
         },
         duration: {
           type: "number",
-          description: "Total sound duration in seconds (default: 1.0, range: 0.1 to 10.0).",
+          description:
+            "Total sound duration in seconds (default: 1.0, range: 0.1 to 10.0).",
         },
         waveform: {
           type: "string",
           enum: ["sine", "triangle", "sawtooth", "square", "noise"],
-          description: "Primary carrier oscillator wave shape (default: 'sine').",
+          description:
+            "Primary carrier oscillator wave shape (default: 'sine').",
         },
         frequency: {
           type: "string",
-          description: "Starting carrier frequency in Hz (e.g. '440' or 440) or note pitch name (e.g., 'C4', 'A#3').",
+          description:
+            "Starting carrier frequency in Hz (e.g. '440' or 440) or note pitch name (e.g., 'C4', 'A#3').",
         },
         endFrequency: {
           type: "string",
-          description: "Ending frequency for exponential pitch sweep / glide (e.g., '220' or 'A3'). Perfect for lasers or jump sounds.",
+          description:
+            "Ending frequency for exponential pitch sweep / glide (e.g., '220' or 'A3'). Perfect for lasers or jump sounds.",
         },
         modulatorFrequency: {
           type: "number",
@@ -6385,41 +7168,72 @@ const TOOL_DEFINITIONS: any[] = [
         },
         modulationIndex: {
           type: "number",
-          description: "FM Synthesizer: Depth of frequency modulation (suggested range: 0 to 500).",
+          description:
+            "FM Synthesizer: Depth of frequency modulation (suggested range: 0 to 500).",
         },
         envelope: {
           type: "object",
           description: "ADSR Amplitude Envelope controls volume over time.",
           properties: {
-            attack: { type: "number", description: "Attack ramp-up duration in seconds (default: 0.05)." },
-            decay: { type: "number", description: "Decay ramp-down duration in seconds (default: 0.1)." },
-            sustain: { type: "number", description: "Sustain amplitude hold level, from 0.0 to 1.0 (default: 0.8)." },
-            release: { type: "number", description: "Release ramp-down duration in seconds (default: 0.15)." },
+            attack: {
+              type: "number",
+              description:
+                "Attack ramp-up duration in seconds (default: 0.05).",
+            },
+            decay: {
+              type: "number",
+              description:
+                "Decay ramp-down duration in seconds (default: 0.1).",
+            },
+            sustain: {
+              type: "number",
+              description:
+                "Sustain amplitude hold level, from 0.0 to 1.0 (default: 0.8).",
+            },
+            release: {
+              type: "number",
+              description:
+                "Release ramp-down duration in seconds (default: 0.15).",
+            },
           },
         },
         harmonics: {
           type: "array",
           items: { type: "number" },
-          description: "Additive Synthesis: Relative amplitude of upper harmonics (e.g. [1.0, 0.5, 0.25]).",
+          description:
+            "Additive Synthesis: Relative amplitude of upper harmonics (e.g. [1.0, 0.5, 0.25]).",
         },
         lfo: {
           type: "object",
           description: "Low-Frequency Oscillator configurations.",
           properties: {
-            frequency: { type: "number", description: "LFO oscillation rate in Hz (e.g., 5.0)." },
+            frequency: {
+              type: "number",
+              description: "LFO oscillation rate in Hz (e.g., 5.0).",
+            },
             pitchDepth: { type: "number", description: "Vibrato depth in Hz." },
-            amplitudeDepth: { type: "number", description: "Tremolo depth from 0.0 to 1.0." },
+            amplitudeDepth: {
+              type: "number",
+              description: "Tremolo depth from 0.0 to 1.0.",
+            },
           },
           required: ["frequency"],
         },
         melody: {
           type: "array",
-          description: "Melodic note sequence. Used if soundType is 'melody' or 'arpeggio'.",
+          description:
+            "Melodic note sequence. Used if soundType is 'melody' or 'arpeggio'.",
           items: {
             type: "object",
             properties: {
-              note: { type: "string", description: "Note name (e.g. 'C4') or raw frequency in Hz." },
-              duration: { type: "number", description: "Duration of this note step in seconds." },
+              note: {
+                type: "string",
+                description: "Note name (e.g. 'C4') or raw frequency in Hz.",
+              },
+              duration: {
+                type: "number",
+                description: "Duration of this note step in seconds.",
+              },
             },
             required: ["note", "duration"],
           },
@@ -6428,14 +7242,73 @@ const TOOL_DEFINITIONS: any[] = [
           type: "object",
           description: "Echo/Feedback Delay effect.",
           properties: {
-            delayTime: { type: "number", description: "Echo delay offset in seconds (e.g., 0.25)." },
-            feedback: { type: "number", description: "Feedback feedback coefficient from 0.0 to 0.95 (default: 0.4)." },
+            delayTime: {
+              type: "number",
+              description: "Echo delay offset in seconds (e.g., 0.25).",
+            },
+            feedback: {
+              type: "number",
+              description:
+                "Feedback feedback coefficient from 0.0 to 0.95 (default: 0.4).",
+            },
           },
           required: ["delayTime", "feedback"],
         },
         sampleRate: {
           type: "number",
-          description: "Audio sample rate in Hz (default: 44100, range: 8000 to 48000).",
+          description:
+            "Audio sample rate in Hz (default: 44100, range: 8000 to 48000).",
+        },
+        tempo: {
+          type: "number",
+          description:
+            "Tempo in beats per minute (BPM) for resolving bar-beat-sixteenth grid markers (default: 120).",
+        },
+        nodes: {
+          type: "object",
+          description:
+            "Modular Audio Graph Nodes definition. Keys are unique custom node names (e.g. 'synth_osc', 'filter_env'). Values describe the node type and properties.",
+        },
+        tracks: {
+          type: "array",
+          description:
+            "Timeline sequences for polyphonic multi-tracking. Each track has a nodeChain list of node names connected to 'destination', and a notes list containing triggering details.",
+          items: {
+            type: "object",
+            properties: {
+              nodeChain: {
+                type: "array",
+                items: { type: "string" },
+                description:
+                  "Array of node names in series connecting generator to effects, ending with 'destination' (e.g., ['sub_osc', 'lpf', 'destination']).",
+              },
+              notes: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    time: {
+                      type: "string",
+                      description:
+                        "Grid marker time to trigger (e.g. '1.1.1' or numeric seconds).",
+                    },
+                    duration: {
+                      type: "string",
+                      description:
+                        "Grid duration of the note (e.g. '0.2.0' or numeric seconds).",
+                    },
+                    note: {
+                      type: "string",
+                      description:
+                        "Note name (e.g. 'C4', 'A#3'), raw frequency, or drum trigger name ('KICK', 'SNARE', 'HAT').",
+                    },
+                  },
+                  required: ["time", "duration", "note"],
+                },
+              },
+            },
+            required: ["nodeChain", "notes"],
+          },
         },
       },
     },
@@ -6459,11 +7332,13 @@ const TOOL_DEFINITIONS: any[] = [
       properties: {
         audioUrl: {
           type: "string",
-          description: "URL to the audio file to transcribe (MP3, WAV, M4A, WEBM, etc.)",
+          description:
+            "URL to the audio file to transcribe (MP3, WAV, M4A, WEBM, etc.)",
         },
         audio: {
           type: "string",
-          description: "Base64-encoded audio data (alternative to audioUrl). Can be a data URL.",
+          description:
+            "Base64-encoded audio data (alternative to audioUrl). Can be a data URL.",
         },
         provider: {
           type: "string",
@@ -6472,11 +7347,13 @@ const TOOL_DEFINITIONS: any[] = [
         },
         model: {
           type: "string",
-          description: "Model name (optional — uses provider default, e.g. 'whisper-1')",
+          description:
+            "Model name (optional — uses provider default, e.g. 'whisper-1')",
         },
         language: {
           type: "string",
-          description: "Language hint in ISO 639-1 format (e.g. 'en', 'es', 'fr'). Improves accuracy for non-English audio.",
+          description:
+            "Language hint in ISO 639-1 format (e.g. 'en', 'es', 'fr'). Improves accuracy for non-English audio.",
         },
       },
     },
@@ -6496,7 +7373,17 @@ const TOOL_DEFINITIONS: any[] = [
       "Max 200 results per call in messages/compact modes.",
     endpoint: {
       path: "/discord/messages/search",
-      queryParams: ["guildId", "channelId", "userId", "username", "query", "before", "after", "limit", "mode"],
+      queryParams: [
+        "guildId",
+        "channelId",
+        "userId",
+        "username",
+        "query",
+        "before",
+        "after",
+        "limit",
+        "mode",
+      ],
     },
     parameters: {
       type: "object",
@@ -6526,15 +7413,18 @@ const TOOL_DEFINITIONS: any[] = [
         },
         before: {
           type: "string",
-          description: "ISO date string — only messages before this date (e.g. '2025-03-01')",
+          description:
+            "ISO date string — only messages before this date (e.g. '2025-03-01')",
         },
         after: {
           type: "string",
-          description: "ISO date string — only messages after this date (e.g. '2025-01-01')",
+          description:
+            "ISO date string — only messages after this date (e.g. '2025-01-01')",
         },
         limit: {
           type: "number",
-          description: "Max results to return (default: 50, max: 200). Not used in 'count' mode.",
+          description:
+            "Max results to return (default: 50, max: 200). Not used in 'count' mode.",
         },
         mode: {
           type: "string",
@@ -6562,7 +7452,17 @@ const TOOL_DEFINITIONS: any[] = [
       "'what day of the week has the most messages?', or 'show monthly message trends'.",
     endpoint: {
       path: "/discord/messages/analytics",
-      queryParams: ["guildId", "channelId", "userId", "username", "query", "before", "after", "groupBy", "topN"],
+      queryParams: [
+        "guildId",
+        "channelId",
+        "userId",
+        "username",
+        "query",
+        "before",
+        "after",
+        "groupBy",
+        "topN",
+      ],
     },
     parameters: {
       type: "object",
@@ -6581,8 +7481,7 @@ const TOOL_DEFINITIONS: any[] = [
         },
         username: {
           type: "string",
-          description:
-            "Filter by username or display name (case-insensitive)",
+          description: "Filter by username or display name (case-insensitive)",
         },
         query: {
           type: "string",
@@ -6713,11 +7612,13 @@ const TOOL_DEFINITIONS: any[] = [
         },
         brightness: {
           type: "number",
-          description: "Brightness level from 0.0 (off) to 1.0 (max). Overrides brightness in color if set.",
+          description:
+            "Brightness level from 0.0 (off) to 1.0 (max). Overrides brightness in color if set.",
         },
         duration: {
           type: "number",
-          description: "Transition time in seconds (default: 1). Use 0 for instant, larger values for smooth fades.",
+          description:
+            "Transition time in seconds (default: 1). Use 0 for instant, larger values for smooth fades.",
         },
         kelvin: {
           type: "number",
@@ -6774,27 +7675,33 @@ const TOOL_DEFINITIONS: any[] = [
         },
         color: {
           type: "string",
-          description: "Target color for the breathe peak. Required. Examples: 'blue', '#FF0000', 'kelvin:2700'.",
+          description:
+            "Target color for the breathe peak. Required. Examples: 'blue', '#FF0000', 'kelvin:2700'.",
         },
         fromColor: {
           type: "string",
-          description: "Starting color. If omitted, uses the light's current color.",
+          description:
+            "Starting color. If omitted, uses the light's current color.",
         },
         period: {
           type: "number",
-          description: "Time in seconds for one full breathe cycle (default: 1). Use 3-5 for relaxing, 0.5-1 for energetic.",
+          description:
+            "Time in seconds for one full breathe cycle (default: 1). Use 3-5 for relaxing, 0.5-1 for energetic.",
         },
         cycles: {
           type: "number",
-          description: "Number of breathe cycles to perform (default: 1). Use 10+ for extended ambient effects.",
+          description:
+            "Number of breathe cycles to perform (default: 1). Use 10+ for extended ambient effects.",
         },
         persist: {
           type: "boolean",
-          description: "If true, keep the final color after the effect ends. If false (default), revert to the original color.",
+          description:
+            "If true, keep the final color after the effect ends. If false (default), revert to the original color.",
         },
         powerOn: {
           type: "boolean",
-          description: "If true (default), turn the light on if it's off before starting the effect.",
+          description:
+            "If true (default), turn the light on if it's off before starting the effect.",
         },
         peak: {
           type: "number",
@@ -6826,23 +7733,28 @@ const TOOL_DEFINITIONS: any[] = [
         },
         color: {
           type: "string",
-          description: "Target flash color. Required. Examples: 'red', '#00FF00', 'hue:0 saturation:1'.",
+          description:
+            "Target flash color. Required. Examples: 'red', '#00FF00', 'hue:0 saturation:1'.",
         },
         fromColor: {
           type: "string",
-          description: "Starting color between flashes. If omitted, uses the light's current color.",
+          description:
+            "Starting color between flashes. If omitted, uses the light's current color.",
         },
         period: {
           type: "number",
-          description: "Time in seconds for one flash cycle (default: 1). Use 0.3-0.5 for rapid strobe, 1-2 for slow pulse.",
+          description:
+            "Time in seconds for one flash cycle (default: 1). Use 0.3-0.5 for rapid strobe, 1-2 for slow pulse.",
         },
         cycles: {
           type: "number",
-          description: "Number of flash cycles (default: 1). Use 5-10 for a noticeable alert.",
+          description:
+            "Number of flash cycles (default: 1). Use 5-10 for a noticeable alert.",
         },
         persist: {
           type: "boolean",
-          description: "If true, keep the flash color after the effect ends. Default: false.",
+          description:
+            "If true, keep the flash color after the effect ends. Default: false.",
         },
         powerOn: {
           type: "boolean",
@@ -6871,7 +7783,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         powerOff: {
           type: "boolean",
-          description: "If true, also turn off the lights after stopping effects. Default: false.",
+          description:
+            "If true, also turn off the lights after stopping effects. Default: false.",
         },
       },
       required: [],
@@ -6913,7 +7826,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         duration: {
           type: "number",
-          description: "Transition time in seconds to fade into the scene (default: 1).",
+          description:
+            "Transition time in seconds to fade into the scene (default: 1).",
         },
         ignore: {
           type: "array",
@@ -6947,15 +7861,18 @@ const TOOL_DEFINITIONS: any[] = [
         direction: {
           type: "string",
           enum: ["forward", "backward"],
-          description: "Direction of movement along the strip. Default: 'forward'.",
+          description:
+            "Direction of movement along the strip. Default: 'forward'.",
         },
         period: {
           type: "number",
-          description: "Seconds per movement cycle (default: 1). Lower = faster flow.",
+          description:
+            "Seconds per movement cycle (default: 1). Lower = faster flow.",
         },
         cycles: {
           type: "number",
-          description: "Number of cycles to run. Omit for infinite (until stopped with lifx_effects_off).",
+          description:
+            "Number of cycles to run. Omit for infinite (until stopped with lifx_effects_off).",
         },
         powerOn: {
           type: "boolean",
@@ -6985,11 +7902,13 @@ const TOOL_DEFINITIONS: any[] = [
         },
         period: {
           type: "number",
-          description: "Speed of the flame in seconds (default: 5). Lower = more active flame.",
+          description:
+            "Speed of the flame in seconds (default: 5). Lower = more active flame.",
         },
         duration: {
           type: "number",
-          description: "How long to run in seconds. Omit for indefinite (until stopped with lifx_effects_off).",
+          description:
+            "How long to run in seconds. Omit for indefinite (until stopped with lifx_effects_off).",
         },
         powerOn: {
           type: "boolean",
@@ -7026,11 +7945,13 @@ const TOOL_DEFINITIONS: any[] = [
         },
         period: {
           type: "number",
-          description: "Seconds per blend cycle (default: 5). Lower = faster transitions.",
+          description:
+            "Seconds per blend cycle (default: 5). Lower = faster transitions.",
         },
         duration: {
           type: "number",
-          description: "How long to run in seconds. Omit for indefinite (until stopped with lifx_effects_off).",
+          description:
+            "How long to run in seconds. Omit for indefinite (until stopped with lifx_effects_off).",
         },
         powerOn: {
           type: "boolean",
@@ -7060,12 +7981,18 @@ const TOOL_DEFINITIONS: any[] = [
           items: {
             type: "object",
             properties: {
-              selector: { type: "string", description: "LIFX selector for this state entry." },
+              selector: {
+                type: "string",
+                description: "LIFX selector for this state entry.",
+              },
               power: { type: "string", enum: ["on", "off"] },
               color: { type: "string", description: "Color string." },
               brightness: { type: "number", description: "0.0 to 1.0." },
               duration: { type: "number", description: "Transition seconds." },
-              kelvin: { type: "number", description: "Color temperature 2500-9000." },
+              kelvin: {
+                type: "number",
+                description: "Color temperature 2500-9000.",
+              },
             },
           },
           description:
@@ -7111,11 +8038,13 @@ const TOOL_DEFINITIONS: any[] = [
         },
         brightness: {
           type: "number",
-          description: "Brightness adjustment from -1.0 to 1.0. Positive = brighter, negative = dimmer.",
+          description:
+            "Brightness adjustment from -1.0 to 1.0. Positive = brighter, negative = dimmer.",
         },
         kelvin: {
           type: "number",
-          description: "Color temperature adjustment from -9000 to 9000. Positive = cooler, negative = warmer.",
+          description:
+            "Color temperature adjustment from -9000 to 9000. Positive = cooler, negative = warmer.",
         },
         duration: {
           type: "number",
@@ -7143,11 +8072,13 @@ const TOOL_DEFINITIONS: any[] = [
         action: {
           type: "string",
           enum: ["status", "toggle", "set"],
-          description: "Action to perform. 'status': check current state. 'toggle': flip lock. 'set': explicitly set.",
+          description:
+            "Action to perform. 'status': check current state. 'toggle': flip lock. 'set': explicitly set.",
         },
         locked: {
           type: "boolean",
-          description: "Required when action is 'set'. True to lock, false to unlock.",
+          description:
+            "Required when action is 'set'. True to lock, false to unlock.",
         },
       },
       required: ["action"],
@@ -7184,9 +8115,18 @@ const TOOL_DEFINITIONS: any[] = [
       method: "POST",
       path: "/agentic/custom-agent/create",
       bodyParams: [
-        "name", "description", "project", "icon", "color", "backgroundImage",
-        "identity", "guidelines", "toolPolicy", "enabledTools",
-        "usesDirectoryTree", "usesCodingGuidelines",
+        "name",
+        "description",
+        "project",
+        "icon",
+        "color",
+        "backgroundImage",
+        "identity",
+        "guidelines",
+        "toolPolicy",
+        "enabledTools",
+        "usesDirectoryTree",
+        "usesCodingGuidelines",
       ],
     },
     parameters: {
@@ -7305,9 +8245,19 @@ const TOOL_DEFINITIONS: any[] = [
       method: "POST",
       path: "/agentic/custom-agent/update",
       bodyParams: [
-        "id", "name", "description", "project", "icon", "color", "backgroundImage",
-        "identity", "guidelines", "toolPolicy", "enabledTools",
-        "usesDirectoryTree", "usesCodingGuidelines",
+        "id",
+        "name",
+        "description",
+        "project",
+        "icon",
+        "color",
+        "backgroundImage",
+        "identity",
+        "guidelines",
+        "toolPolicy",
+        "enabledTools",
+        "usesDirectoryTree",
+        "usesCodingGuidelines",
       ],
     },
     parameters: {
@@ -7315,11 +8265,13 @@ const TOOL_DEFINITIONS: any[] = [
       properties: {
         id: {
           type: "string",
-          description: "MongoDB ObjectId of the agent to update (from list_custom_agents).",
+          description:
+            "MongoDB ObjectId of the agent to update (from list_custom_agents).",
         },
         name: {
           type: "string",
-          description: "Updated display name. Leave unset to keep the current name.",
+          description:
+            "Updated display name. Leave unset to keep the current name.",
         },
         description: {
           type: "string",
@@ -7331,7 +8283,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         icon: {
           type: "string",
-          description: "Updated Lucide icon name (e.g. 'Brain', 'Rocket', 'Code2').",
+          description:
+            "Updated Lucide icon name (e.g. 'Brain', 'Rocket', 'Code2').",
         },
         color: {
           type: "string",
@@ -7364,11 +8317,13 @@ const TOOL_DEFINITIONS: any[] = [
         },
         usesDirectoryTree: {
           type: "boolean",
-          description: "Whether to inject workspace structure into the agent's context.",
+          description:
+            "Whether to inject workspace structure into the agent's context.",
         },
         usesCodingGuidelines: {
           type: "boolean",
-          description: "Whether to inject coding conventions into the system prompt.",
+          description:
+            "Whether to inject coding conventions into the system prompt.",
         },
       },
       required: ["id"],
@@ -7425,18 +8380,38 @@ const TOOL_DEFINITIONS: any[] = [
           items: {
             type: "object",
             properties: {
-              name: { type: "string", description: "Parameter name (becomes a key on the `args` object)" },
-              type: { type: "string", description: "JSON Schema type", enum: ["string", "number", "boolean", "integer"] },
-              description: { type: "string", description: "Description shown to the LLM for this parameter" },
-              required: { type: "boolean", description: "Whether this parameter is required. Default: false" },
-              enum: { type: "array", items: { type: "string" }, description: "Optional array of allowed values" },
+              name: {
+                type: "string",
+                description:
+                  "Parameter name (becomes a key on the `args` object)",
+              },
+              type: {
+                type: "string",
+                description: "JSON Schema type",
+                enum: ["string", "number", "boolean", "integer"],
+              },
+              description: {
+                type: "string",
+                description: "Description shown to the LLM for this parameter",
+              },
+              required: {
+                type: "boolean",
+                description:
+                  "Whether this parameter is required. Default: false",
+              },
+              enum: {
+                type: "array",
+                items: { type: "string" },
+                description: "Optional array of allowed values",
+              },
             },
             required: ["name", "type", "description"],
           },
         },
         enabled: {
           type: "boolean",
-          description: "Whether the tool is active and available for use. Default: true.",
+          description:
+            "Whether the tool is active and available for use. Default: true.",
         },
       },
       required: ["name", "description", "code"],
@@ -7493,18 +8468,38 @@ const TOOL_DEFINITIONS: any[] = [
           items: {
             type: "object",
             properties: {
-              name: { type: "string", description: "Parameter name (becomes a key on the `args` object)" },
-              type: { type: "string", description: "JSON Schema type", enum: ["string", "number", "boolean", "integer"] },
-              description: { type: "string", description: "Description shown to the LLM for this parameter" },
-              required: { type: "boolean", description: "Whether this parameter is required. Default: false" },
-              enum: { type: "array", items: { type: "string" }, description: "Optional array of allowed values" },
+              name: {
+                type: "string",
+                description:
+                  "Parameter name (becomes a key on the `args` object)",
+              },
+              type: {
+                type: "string",
+                description: "JSON Schema type",
+                enum: ["string", "number", "boolean", "integer"],
+              },
+              description: {
+                type: "string",
+                description: "Description shown to the LLM for this parameter",
+              },
+              required: {
+                type: "boolean",
+                description:
+                  "Whether this parameter is required. Default: false",
+              },
+              enum: {
+                type: "array",
+                items: { type: "string" },
+                description: "Optional array of allowed values",
+              },
             },
             required: ["name", "type", "description"],
           },
         },
         enabled: {
           type: "boolean",
-          description: "Whether the tool is active and available for use. Default: true.",
+          description:
+            "Whether the tool is active and available for use. Default: true.",
         },
       },
       required: ["name", "description", "code"],
@@ -7538,35 +8533,51 @@ const TOOL_DEFINITIONS: any[] = [
     endpoint: {
       method: "POST",
       path: "/agentic/custom-tool/update",
-      bodyParams: ["id", "name", "description", "code", "parameters", "execution", "enabled"],
+      bodyParams: [
+        "id",
+        "name",
+        "description",
+        "code",
+        "parameters",
+        "execution",
+        "enabled",
+      ],
     },
     parameters: {
       type: "object",
       properties: {
         id: {
           type: "string",
-          description: "MongoDB ObjectId of the tool to update (from list_custom_tools).",
+          description:
+            "MongoDB ObjectId of the tool to update (from list_custom_tools).",
         },
         name: {
           type: "string",
-          description: "New tool name (snake_case). Leave unset to keep the current name.",
+          description:
+            "New tool name (snake_case). Leave unset to keep the current name.",
         },
         description: {
           type: "string",
-          description: "Updated description. Leave unset to keep the current description.",
+          description:
+            "Updated description. Leave unset to keep the current description.",
         },
         code: {
           type: "string",
-          description: "Updated JavaScript code. Leave unset to keep the current code.",
+          description:
+            "Updated JavaScript code. Leave unset to keep the current code.",
         },
         parameters: {
           type: "array",
-          description: "Updated parameter definitions (replaces existing parameters entirely).",
+          description:
+            "Updated parameter definitions (replaces existing parameters entirely).",
           items: {
             type: "object",
             properties: {
               name: { type: "string" },
-              type: { type: "string", enum: ["string", "number", "boolean", "integer"] },
+              type: {
+                type: "string",
+                enum: ["string", "number", "boolean", "integer"],
+              },
               description: { type: "string" },
               required: { type: "boolean" },
               enum: { type: "array", items: { type: "string" } },
@@ -7607,7 +8618,8 @@ const TOOL_DEFINITIONS: any[] = [
       properties: {
         id: {
           type: "string",
-          description: "MongoDB ObjectId of the tool to delete (from list_custom_tools).",
+          description:
+            "MongoDB ObjectId of the tool to delete (from list_custom_tools).",
         },
       },
       required: ["id"],
@@ -7646,7 +8658,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         label: {
           type: "string",
-          description: "Filter by label category (e.g. 'coding', 'web', 'smart_home').",
+          description:
+            "Filter by label category (e.g. 'coding', 'web', 'smart_home').",
         },
         limit: {
           type: "number",
@@ -7688,7 +8701,8 @@ const TOOL_DEFINITIONS: any[] = [
       properties: {
         name: {
           type: "string",
-          description: "Human-readable name for this scheduled task (e.g. 'Daily Git Status check').",
+          description:
+            "Human-readable name for this scheduled task (e.g. 'Daily Git Status check').",
         },
         prompt: {
           type: "string",
@@ -7706,31 +8720,38 @@ const TOOL_DEFINITIONS: any[] = [
         },
         cronExpression: {
           type: "string",
-          description: "Standard 5-field cron expression (e.g. '0 9 * * *' for daily at 9 AM). Required for 'cron' type.",
+          description:
+            "Standard 5-field cron expression (e.g. '0 9 * * *' for daily at 9 AM). Required for 'cron' type.",
         },
         scheduleTime: {
           type: "string",
-          description: "Time of day in HH:MM format (e.g. '09:00' or '17:30'). Used for 'daily', 'weekly', and 'once' types.",
+          description:
+            "Time of day in HH:MM format (e.g. '09:00' or '17:30'). Used for 'daily', 'weekly', and 'once' types.",
         },
         scheduleDay: {
           type: "number",
-          description: "Day of the week as 0-6 (0 is Sunday, 6 is Saturday). Used for 'weekly' type.",
+          description:
+            "Day of the week as 0-6 (0 is Sunday, 6 is Saturday). Used for 'weekly' type.",
         },
         scheduleDate: {
           type: "string",
-          description: "Date of the single execution in YYYY-MM-DD format (e.g. '2026-05-25'). Required for 'once' type.",
+          description:
+            "Date of the single execution in YYYY-MM-DD format (e.g. '2026-05-25'). Required for 'once' type.",
         },
         agent: {
           type: "string",
-          description: "Optional agent persona to run (e.g. 'CODING'). Default: 'CODING'.",
+          description:
+            "Optional agent persona to run (e.g. 'CODING'). Default: 'CODING'.",
         },
         provider: {
           type: "string",
-          description: "Optional LLM provider (e.g. 'anthropic', 'openai', 'google'). Default: 'anthropic'.",
+          description:
+            "Optional LLM provider (e.g. 'anthropic', 'openai', 'google'). Default: 'anthropic'.",
         },
         model: {
           type: "string",
-          description: "Optional LLM model (e.g. 'claude-sonnet-4-5-20250929', 'gpt-5.4').",
+          description:
+            "Optional LLM model (e.g. 'claude-sonnet-4-5-20250929', 'gpt-5.4').",
         },
       },
       required: ["name", "prompt", "scheduleType"],
@@ -7739,7 +8760,8 @@ const TOOL_DEFINITIONS: any[] = [
   {
     name: "scheduled_task_list",
     dataSource: onDemand("AgenticSchedulerService"),
-    description: "List all scheduled tasks and background triggers currently configured in the workspace project.",
+    description:
+      "List all scheduled tasks and background triggers currently configured in the workspace project.",
     endpoint: {
       method: "POST",
       path: "/agentic/scheduled-task/list",
@@ -7754,7 +8776,8 @@ const TOOL_DEFINITIONS: any[] = [
   {
     name: "scheduled_task_delete",
     dataSource: onDemand("AgenticSchedulerService"),
-    description: "Delete an existing scheduled task or trigger by its UUID or unique name.",
+    description:
+      "Delete an existing scheduled task or trigger by its UUID or unique name.",
     endpoint: {
       method: "POST",
       path: "/agentic/scheduled-task/delete",
@@ -7765,7 +8788,8 @@ const TOOL_DEFINITIONS: any[] = [
       properties: {
         scheduleId: {
           type: "string",
-          description: "The unique UUID or exact name of the scheduled task to delete.",
+          description:
+            "The unique UUID or exact name of the scheduled task to delete.",
         },
       },
       required: ["scheduleId"],
@@ -7787,7 +8811,8 @@ const TOOL_DEFINITIONS: any[] = [
       properties: {
         triggerName: {
           type: "string",
-          description: "The unique UUID or exact name of the scheduled task or trigger to fire.",
+          description:
+            "The unique UUID or exact name of the scheduled task or trigger to fire.",
         },
         payload: {
           type: "object",
@@ -7823,7 +8848,13 @@ const TOOL_DEFINITIONS: any[] = [
         },
         action: {
           type: "string",
-          enum: ["list_cells", "get_cell", "insert_cell", "replace_cell", "delete_cell"],
+          enum: [
+            "list_cells",
+            "get_cell",
+            "insert_cell",
+            "replace_cell",
+            "delete_cell",
+          ],
           description:
             "Operation to perform. 'list_cells': overview of all cells. 'get_cell': read one cell. " +
             "'insert_cell': add a cell at position. 'replace_cell': update a cell. 'delete_cell': remove a cell.",
@@ -7836,12 +8867,14 @@ const TOOL_DEFINITIONS: any[] = [
         },
         content: {
           type: "string",
-          description: "Cell source content. Required for insert_cell, optional for replace_cell.",
+          description:
+            "Cell source content. Required for insert_cell, optional for replace_cell.",
         },
         cellType: {
           type: "string",
           enum: ["code", "markdown", "raw"],
-          description: "Cell type. Default: 'code' for insert, unchanged for replace.",
+          description:
+            "Cell type. Default: 'code' for insert, unchanged for replace.",
         },
       },
       required: ["path", "action"],
@@ -7871,7 +8904,8 @@ const TOOL_DEFINITIONS: any[] = [
       properties: {
         thought: {
           type: "string",
-          description: "Your private reasoning, analysis, or plan. Be thorough — this is your scratchpad.",
+          description:
+            "Your private reasoning, analysis, or plan. Be thorough — this is your scratchpad.",
         },
       },
       required: ["thought"],
@@ -7898,7 +8932,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         reason: {
           type: "string",
-          description: "Brief explanation of why you are waiting (shown to the user).",
+          description:
+            "Brief explanation of why you are waiting (shown to the user).",
         },
       },
       required: ["duration_seconds"],
@@ -7935,7 +8970,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         label: {
           type: "string",
-          description: "Optional label for this output (e.g. 'analysis_result', 'extracted_entities').",
+          description:
+            "Optional label for this output (e.g. 'analysis_result', 'extracted_entities').",
         },
       },
       required: ["data"],
@@ -7965,11 +9001,13 @@ const TOOL_DEFINITIONS: any[] = [
         },
         count: {
           type: "number",
-          description: "Number of next execution times to compute (default: 5, max: 25)",
+          description:
+            "Number of next execution times to compute (default: 5, max: 25)",
         },
         from: {
           type: "string",
-          description: "ISO date to compute next executions from (default: now). E.g. '2026-01-01T00:00:00Z'",
+          description:
+            "ISO date to compute next executions from (default: now). E.g. '2026-01-01T00:00:00Z'",
         },
       },
       required: ["expression"],
@@ -7991,19 +9029,37 @@ const TOOL_DEFINITIONS: any[] = [
       "pro_matches (get recent professional matches).",
     endpoint: {
       path: "/gaming/dota",
-      queryParams: ["action", "query", "heroId", "accountId", "matchId", "limit", "role", "attr"],
+      queryParams: [
+        "action",
+        "query",
+        "heroId",
+        "accountId",
+        "matchId",
+        "limit",
+        "role",
+        "attr",
+      ],
     },
     parameters: {
       type: "object",
       properties: {
         action: {
           type: "string",
-          enum: ["heroes", "hero", "matchups", "player", "player_matches", "match", "pro_matches"],
+          enum: [
+            "heroes",
+            "hero",
+            "matchups",
+            "player",
+            "player_matches",
+            "match",
+            "pro_matches",
+          ],
           description: "What data to retrieve",
         },
         query: {
           type: "string",
-          description: "Hero name or partial name (for action=hero or action=heroes with q filter)",
+          description:
+            "Hero name or partial name (for action=hero or action=heroes with q filter)",
         },
         heroId: {
           type: "number",
@@ -8011,7 +9067,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         accountId: {
           type: "number",
-          description: "Steam32 Account ID (for action=player or action=player_matches)",
+          description:
+            "Steam32 Account ID (for action=player or action=player_matches)",
         },
         matchId: {
           type: "number",
@@ -8023,7 +9080,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         role: {
           type: "string",
-          description: "Filter heroes by role (for action=heroes). E.g. 'Carry', 'Support', 'Nuker'",
+          description:
+            "Filter heroes by role (for action=heroes). E.g. 'Carry', 'Support', 'Nuker'",
         },
         attr: {
           type: "string",
@@ -8044,7 +9102,15 @@ const TOOL_DEFINITIONS: any[] = [
     endpoint: {
       method: "POST",
       path: "/gaming/bonfire",
-      bodyParams: ["woodType", "logsCount", "breezeSpeed", "fireColor", "intensity", "marshmallows", "itemToBurn"],
+      bodyParams: [
+        "woodType",
+        "logsCount",
+        "breezeSpeed",
+        "fireColor",
+        "intensity",
+        "marshmallows",
+        "itemToBurn",
+      ],
     },
     parameters: {
       type: "object",
@@ -8052,33 +9118,40 @@ const TOOL_DEFINITIONS: any[] = [
         woodType: {
           type: "string",
           enum: ["oak", "pine", "birch", "driftwood", "magical"],
-          description: "The type of wood to burn (affects logs rendering, flame characteristics, and embers). Default: 'oak'.",
+          description:
+            "The type of wood to burn (affects logs rendering, flame characteristics, and embers). Default: 'oak'.",
         },
         logsCount: {
           type: "number",
-          description: "Number of logs stacked at the base of the fire (1 to 10). Default: 4.",
+          description:
+            "Number of logs stacked at the base of the fire (1 to 10). Default: 4.",
         },
         breezeSpeed: {
           type: "number",
-          description: "Wind breeze speed in MPH (0 to 50). High breeze tilts the flames and blows sparks horizontally to the right. Default: 5.",
+          description:
+            "Wind breeze speed in MPH (0 to 50). High breeze tilts the flames and blows sparks horizontally to the right. Default: 5.",
         },
         fireColor: {
           type: "string",
           enum: ["classic", "emerald", "sapphire", "amethyst", "ghostly"],
-          description: "The chemical color chemistry of the flame (classic orange-red, green emerald, blue sapphire, purple amethyst, cyan-white ghostly). Default: 'classic'.",
+          description:
+            "The chemical color chemistry of the flame (classic orange-red, green emerald, blue sapphire, purple amethyst, cyan-white ghostly). Default: 'classic'.",
         },
         intensity: {
           type: "string",
           enum: ["ember", "spark", "cozy", "blazing", "inferno"],
-          description: "The fire's heat and size (ember, spark, cozy, blazing, or inferno). Default: 'cozy'.",
+          description:
+            "The fire's heat and size (ember, spark, cozy, blazing, or inferno). Default: 'cozy'.",
         },
         marshmallows: {
           type: "number",
-          description: "Number of marshmallows to toast on sticks over the fire (0, 1, or 2). Default: 0.",
+          description:
+            "Number of marshmallows to toast on sticks over the fire (0, 1, or 2). Default: 0.",
         },
         itemToBurn: {
           type: "string",
-          description: "An optional custom item name to toss into the fire and incinerate (e.g. 'bugs', 'homework').",
+          description:
+            "An optional custom item name to toss into the fire and incinerate (e.g. 'bugs', 'homework').",
         },
       },
     },
@@ -8104,12 +9177,19 @@ const TOOL_DEFINITIONS: any[] = [
       properties: {
         action: {
           type: "string",
-          enum: ["search_artists", "artist", "search_albums", "album", "search_tracks"],
+          enum: [
+            "search_artists",
+            "artist",
+            "search_albums",
+            "album",
+            "search_tracks",
+          ],
           description: "What music data to retrieve",
         },
         q: {
           type: "string",
-          description: "Search query — artist name, album title, or track title (for search actions)",
+          description:
+            "Search query — artist name, album title, or track title (for search actions)",
         },
         mbid: {
           type: "string",
@@ -8117,7 +9197,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         artist: {
           type: "string",
-          description: "Artist name to narrow album/track search results (for action=search_albums or action=search_tracks)",
+          description:
+            "Artist name to narrow album/track search results (for action=search_albums or action=search_tracks)",
         },
         limit: {
           type: "number",
@@ -8147,19 +9228,23 @@ const TOOL_DEFINITIONS: any[] = [
         action: {
           type: "string",
           enum: ["snapshot", "history"],
-          description: "'snapshot' for closest available capture, 'history' for capture timeline",
+          description:
+            "'snapshot' for closest available capture, 'history' for capture timeline",
         },
         url: {
           type: "string",
-          description: "The URL to look up in the Wayback Machine (e.g. 'https://example.com')",
+          description:
+            "The URL to look up in the Wayback Machine (e.g. 'https://example.com')",
         },
         timestamp: {
           type: "string",
-          description: "For action=snapshot: find the closest snapshot to this date (YYYYMMDD format)",
+          description:
+            "For action=snapshot: find the closest snapshot to this date (YYYYMMDD format)",
         },
         limit: {
           type: "number",
-          description: "For action=history: max number of snapshots to return (default: 20, max: 100)",
+          description:
+            "For action=history: max number of snapshots to return (default: 20, max: 100)",
         },
         from: {
           type: "string",
@@ -8204,7 +9289,17 @@ const TOOL_DEFINITIONS: any[] = [
         },
         category: {
           type: "string",
-          enum: ["all", "movies", "tv", "music", "games", "anime", "software", "pictures", "books"],
+          enum: [
+            "all",
+            "movies",
+            "tv",
+            "music",
+            "games",
+            "anime",
+            "software",
+            "pictures",
+            "books",
+          ],
           description: "Category filter to narrow results. Default: 'all'.",
         },
         plugins: {
@@ -8219,7 +9314,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         timeout: {
           type: "number",
-          description: "Search timeout in milliseconds (max 60000). Default: 30000.",
+          description:
+            "Search timeout in milliseconds (max 60000). Default: 30000.",
         },
       },
       required: ["action", "q"],
@@ -8255,7 +9351,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         category: {
           type: "string",
-          description: "Category label for the torrent (e.g. 'movies', 'software', 'linux-isos').",
+          description:
+            "Category label for the torrent (e.g. 'movies', 'software', 'linux-isos').",
         },
         tags: {
           type: "string",
@@ -8263,7 +9360,8 @@ const TOOL_DEFINITIONS: any[] = [
         },
         paused: {
           type: "boolean",
-          description: "If true, add the torrent in paused state. Default: false (starts immediately).",
+          description:
+            "If true, add the torrent in paused state. Default: false (starts immediately).",
         },
       },
       required: ["url"],
@@ -8294,8 +9392,18 @@ const TOOL_DEFINITIONS: any[] = [
         },
         filter: {
           type: "string",
-          enum: ["all", "downloading", "seeding", "completed", "paused", "active", "inactive", "errored"],
-          description: "For action=status: filter torrents by state. Default: 'all'.",
+          enum: [
+            "all",
+            "downloading",
+            "seeding",
+            "completed",
+            "paused",
+            "active",
+            "inactive",
+            "errored",
+          ],
+          description:
+            "For action=status: filter torrents by state. Default: 'all'.",
         },
         category: {
           type: "string",
@@ -8303,15 +9411,18 @@ const TOOL_DEFINITIONS: any[] = [
         },
         sort: {
           type: "string",
-          description: "For action=status: sort field (e.g. 'name', 'size', 'progress', 'added_on'). Default: 'added_on'.",
+          description:
+            "For action=status: sort field (e.g. 'name', 'size', 'progress', 'added_on'). Default: 'added_on'.",
         },
         limit: {
           type: "number",
-          description: "For action=status: max torrents to return (1–200). Default: 50.",
+          description:
+            "For action=status: max torrents to return (1–200). Default: 50.",
         },
         hashes: {
           type: "string",
-          description: "For action=pause/resume: pipe-separated torrent hashes, or 'all'.",
+          description:
+            "For action=pause/resume: pipe-separated torrent hashes, or 'all'.",
         },
       },
       required: ["action"],
@@ -9028,7 +10139,9 @@ const TOOL_REQUIRED_KEYS = {
 function isToolAvailable(toolName: string) {
   const keys = TOOL_REQUIRED_KEYS[toolName as keyof typeof TOOL_REQUIRED_KEYS];
   if (!keys) return true;
-  return keys.every((key: string) => Boolean((CONFIG as unknown as Record<string, unknown>)[key]));
+  return keys.every((key: string) =>
+    Boolean((CONFIG as unknown as Record<string, unknown>)[key]),
+  );
 }
 
 // ────────────────────────────────────────────────────────────
@@ -9348,14 +10461,14 @@ export { TOOL_DOMAINS, TOOL_LABELS, TOOL_EMOJIS, TOOL_DEFINITIONS };
  * Filters out tools whose required API keys are not configured.
  */
 export function getToolSchemas(): any[] {
-  return TOOL_DEFINITIONS
-    .filter((tool) => isToolAvailable(tool.name))
-    .map((tool) => ({
+  return TOOL_DEFINITIONS.filter((tool) => isToolAvailable(tool.name)).map(
+    (tool) => ({
       ...tool,
       domain: TOOL_DOMAINS[tool.name as keyof typeof TOOL_DOMAINS] || "Other",
       labels: TOOL_LABELS[tool.name as keyof typeof TOOL_LABELS] || [],
       emoji: TOOL_EMOJIS[tool.name as keyof typeof TOOL_EMOJIS] || null,
-    }));
+    }),
+  );
 }
 
 /**
@@ -9364,11 +10477,9 @@ export function getToolSchemas(): any[] {
  * Filters out tools whose required API keys are not configured.
  */
 export function getToolSchemasForAI(): any[] {
-  return TOOL_DEFINITIONS
-    .filter((tool) => isToolAvailable(tool.name))
-    .map(
-      ({ endpoint: _endpoint, dataSource: _dataSource, ...rest }) => rest,
-    );
+  return TOOL_DEFINITIONS.filter((tool) => isToolAvailable(tool.name)).map(
+    ({ endpoint: _endpoint, dataSource: _dataSource, ...rest }) => rest,
+  );
 }
 
 /**
@@ -9376,17 +10487,20 @@ export function getToolSchemasForAI(): any[] {
  * Useful for admin diagnostics and health checks.
  */
 export function getDisabledTools(): any[] {
-  return TOOL_DEFINITIONS
-    .filter((tool) => !isToolAvailable(tool.name))
-    .map((tool) => {
-      const requiredKeys = TOOL_REQUIRED_KEYS[tool.name as keyof typeof TOOL_REQUIRED_KEYS] || [];
+  return TOOL_DEFINITIONS.filter((tool) => !isToolAvailable(tool.name)).map(
+    (tool) => {
+      const requiredKeys =
+        TOOL_REQUIRED_KEYS[tool.name as keyof typeof TOOL_REQUIRED_KEYS] || [];
 
       return {
         name: tool.name,
         domain: TOOL_DOMAINS[tool.name as keyof typeof TOOL_DOMAINS] || "Other",
-        missingKeys: requiredKeys.filter((key: string) => !(CONFIG as unknown as Record<string, unknown>)[key]),
+        missingKeys: requiredKeys.filter(
+          (key: string) => !(CONFIG as unknown as Record<string, unknown>)[key],
+        ),
       };
-    });
+    },
+  );
 }
 
 /**
@@ -9395,4 +10509,3 @@ export function getDisabledTools(): any[] {
 export function getFields() {
   return FIELDS;
 }
-
