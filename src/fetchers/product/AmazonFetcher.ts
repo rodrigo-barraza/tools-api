@@ -129,13 +129,13 @@ async function scrapeCategory(slug: string, categoryName: string, unifiedCategor
 export async function fetchAllAmazonBestSellers(): Promise<ProductInput[]> {
   const allProducts: ProductInput[] = [];
 
-  for (const cat of AMAZON_CATEGORIES) {
+  for (const amazonCategory of AMAZON_CATEGORIES) {
     try {
-      const products = await scrapeCategory(cat.slug, cat.name, cat.unified);
+      const products = await scrapeCategory(amazonCategory.slug, amazonCategory.name, amazonCategory.unified);
       allProducts.push(...products);
-      logger.info(`[Amazon] ✅ ${cat.name}: ${products.length} products`);
+      logger.info(`[Amazon] ✅ ${amazonCategory.name}: ${products.length} products`);
     } catch (error: unknown) {
-      logger.error(`[Amazon] ❌ ${cat.name}: ${errorMessage(error)}`);
+      logger.error(`[Amazon] ❌ ${amazonCategory.name}: ${errorMessage(error)}`);
     }
 
     // Rate limit between category requests

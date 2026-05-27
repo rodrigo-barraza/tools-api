@@ -183,7 +183,7 @@ export function searchElements(query: string, opts: SearchElementsOptions = {}) 
       let score = 0;
       const name = normalizeSearch(element.name || "");
       const symbol = (element.symbol || "").toLowerCase();
-      const cat = normalizeSearch(element.category || "");
+      const normalizedElementCategory = normalizeSearch(element.category || "");
 
       // Exact symbol match
       if (symbol === normalizedQuery) score += 100;
@@ -198,7 +198,7 @@ export function searchElements(query: string, opts: SearchElementsOptions = {}) 
       // Name contains query
       else if (name.includes(normalizedQuery)) score += 30;
       // Category contains query
-      else if (cat.includes(normalizedQuery)) score += 15;
+      else if (normalizedElementCategory.includes(normalizedQuery)) score += 15;
       // Summary contains query
       else if (
         element.summary &&
@@ -208,7 +208,7 @@ export function searchElements(query: string, opts: SearchElementsOptions = {}) 
 
       return { element, score };
     })
-    .filter((s) => s.score > 0)
+    .filter((scoredEntry) => scoredEntry.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
 
@@ -216,7 +216,7 @@ export function searchElements(query: string, opts: SearchElementsOptions = {}) 
     count: scored.length,
     query,
     note: "Data from Bowserinator Periodic Table JSON (CC BY-SA 3.0). Temperatures in Kelvin, densities in g/cm³.",
-    elements: scored.map((s) => formatElement(s.element)),
+    elements: scored.map((scoredEntry) => formatElement(scoredEntry.element)),
   };
 }
 

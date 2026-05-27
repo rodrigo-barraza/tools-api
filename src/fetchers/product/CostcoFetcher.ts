@@ -216,20 +216,20 @@ async function scrapeCategory(
 export async function fetchAllCostcoUS() {
   const allProducts: unknown[] = [];
 
-  for (const cat of COSTCO_US_CATEGORIES) {
+  for (const costcoUsCategory of COSTCO_US_CATEGORIES) {
     try {
       const products = await scrapeCategory(
         COSTCO_US_BASE,
-        cat.slug,
-        cat.name,
-        cat.unified,
+        costcoUsCategory.slug,
+        costcoUsCategory.name,
+        costcoUsCategory.unified,
         PRODUCT_SOURCES.COSTCO_US,
         "USD",
       );
       allProducts.push(...products);
-      logger.info(`[Costco US] ✅ ${cat.name}: ${products.length} products`);
+      logger.info(`[Costco US] ✅ ${costcoUsCategory.name}: ${products.length} products`);
     } catch (error: unknown) {
-      logger.error(`[Costco US] ❌ ${cat.name}: ${errorMessage(error)}`);
+      logger.error(`[Costco US] ❌ ${costcoUsCategory.name}: ${errorMessage(error)}`);
     }
 
     await rateLimiter.wait("COSTCO");
@@ -244,20 +244,20 @@ export async function fetchAllCostcoUS() {
 export async function fetchAllCostcoCA() {
   const allProducts: unknown[] = [];
 
-  for (const cat of COSTCO_CA_CATEGORIES) {
+  for (const costcoCaCategory of COSTCO_CA_CATEGORIES) {
     try {
       const products = await scrapeCategory(
         COSTCO_CA_BASE,
-        cat.slug,
-        cat.name,
-        cat.unified,
+        costcoCaCategory.slug,
+        costcoCaCategory.name,
+        costcoCaCategory.unified,
         PRODUCT_SOURCES.COSTCO_CA,
         "CAD",
       );
       allProducts.push(...products);
-      logger.info(`[Costco CA] ✅ ${cat.name}: ${products.length} products`);
+      logger.info(`[Costco CA] ✅ ${costcoCaCategory.name}: ${products.length} products`);
     } catch (error: unknown) {
-      logger.error(`[Costco CA] ❌ ${cat.name}: ${errorMessage(error)}`);
+      logger.error(`[Costco CA] ❌ ${costcoCaCategory.name}: ${errorMessage(error)}`);
     }
 
     await rateLimiter.wait("COSTCO");

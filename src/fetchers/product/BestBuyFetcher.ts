@@ -114,13 +114,13 @@ export async function fetchAllBestBuyTrending() {
   }
 
   // Fetch per-category trending with rate limiting
-  for (const cat of BESTBUY_CATEGORIES) {
+  for (const bestBuyCategory of BESTBUY_CATEGORIES) {
     await rateLimiter.wait("BESTBUY");
     try {
-      const result = await fetchBestBuyTrending(cat.id);
+      const result = await fetchBestBuyTrending(bestBuyCategory.id);
       allProducts.push(...result.products);
     } catch (error: unknown) {
-      logger.error(`[BestBuy] ❌ ${cat.name}: ${errorMessage(error)}`);
+      logger.error(`[BestBuy] ❌ ${bestBuyCategory.name}: ${errorMessage(error)}`);
     }
   }
 

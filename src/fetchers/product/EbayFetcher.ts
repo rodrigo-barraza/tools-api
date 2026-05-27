@@ -103,14 +103,14 @@ export async function fetchAllEbayTrending(): Promise<ProductInput[]> {
   }
   const token = await ebayTokenManager.getToken();
   const allProducts: ProductInput[] = [];
-  for (const cat of EBAY_CATEGORIES) {
+  for (const ebayCategory of EBAY_CATEGORIES) {
     await rateLimiter.wait("EBAY");
     try {
-      const products = await fetchEbayCategoryTrending(token, cat);
+      const products = await fetchEbayCategoryTrending(token, ebayCategory);
       allProducts.push(...products);
-      logger.info(`[eBay] ✅ ${cat.name}: ${products.length} products`);
+      logger.info(`[eBay] ✅ ${ebayCategory.name}: ${products.length} products`);
     } catch (error: unknown) {
-      logger.error(`[eBay] ❌ ${cat.name}: ${errorMessage(error)}`);
+      logger.error(`[eBay] ❌ ${ebayCategory.name}: ${errorMessage(error)}`);
     }
   }
   return allProducts;

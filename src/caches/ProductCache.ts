@@ -81,10 +81,10 @@ export function setProductError(source: string, error: Error): void {
  * Get all products across all sources, sorted by trending score.
  */
 export function getAll() {
-  const allProducts = Object.values(store).flatMap((s) => s.products);
+  const allProducts = Object.values(store).flatMap((storeEntry) => storeEntry.products);
   return {
     count: allProducts.length,
-    products: allProducts.sort((firstItem, b) => b.trendingScore - firstItem.trendingScore),
+    products: allProducts.sort((firstItem, secondItem) => secondItem.trendingScore - firstItem.trendingScore),
   };
 }
 
@@ -98,7 +98,7 @@ export function getBySource(source: string) {
     source,
     count: entry.products.length,
     lastFetch: entry.lastFetch,
-    products: entry.products.sort((firstItem, b) => b.trendingScore - firstItem.trendingScore),
+    products: entry.products.sort((firstItem, secondItem) => secondItem.trendingScore - firstItem.trendingScore),
   };
 }
 
@@ -107,9 +107,9 @@ export function getBySource(source: string) {
  */
 export function getByCategory(category: string) {
   const allProducts = Object.values(store)
-    .flatMap((s) => s.products)
+    .flatMap((storeEntry) => storeEntry.products)
     .filter((provider) => provider.category === category)
-    .sort((firstItem, b) => b.trendingScore - firstItem.trendingScore);
+    .sort((firstItem, secondItem) => secondItem.trendingScore - firstItem.trendingScore);
 
   return {
     category,
@@ -123,8 +123,8 @@ export function getByCategory(category: string) {
  */
 export function getTrending(limit = 50) {
   const allProducts = Object.values(store)
-    .flatMap((s) => s.products)
-    .sort((firstItem, b) => b.trendingScore - firstItem.trendingScore)
+    .flatMap((storeEntry) => storeEntry.products)
+    .sort((firstItem, secondItem) => secondItem.trendingScore - firstItem.trendingScore)
     .slice(0, limit);
 
   return {
@@ -137,28 +137,28 @@ export function getTrending(limit = 50) {
  * List all available categories with product counts.
  */
 export function getCategories() {
-  const allProducts = Object.values(store).flatMap((s) => s.products);
+  const allProducts = Object.values(store).flatMap((storeEntry) => storeEntry.products);
   const categoryMap: Record<string, { category: string; count: number; sources: Set<string> }> = {};
 
   for (const product of allProducts) {
-    const cat = product.category || "other";
-    if (!categoryMap[cat]) {
-      categoryMap[cat] = { category: cat, count: 0, sources: new Set<string>() };
+    const productCategory = product.category || "other";
+    if (!categoryMap[productCategory]) {
+      categoryMap[productCategory] = { category: productCategory, count: 0, sources: new Set<string>() };
     }
-    categoryMap[cat].count++;
-    categoryMap[cat].sources.add(product.source);
+    categoryMap[productCategory].count++;
+    categoryMap[productCategory].sources.add(product.source);
   }
 
   // Convert Sets to arrays and sort by count
   const categories = Object.values(categoryMap)
     .map((item) => ({ ...item, sources: [...item.sources] }))
-    .sort((firstItem, b) => b.count - firstItem.count);
+    .sort((firstItem, secondItem) => secondItem.count - firstItem.count);
 
   // Also include any configured categories that have no products yet
   const allCategoryValues = Object.values(PRODUCT_CATEGORIES);
-  for (const cat of allCategoryValues) {
-    if (!categoryMap[cat]) {
-      categories.push({ category: cat, count: 0, sources: [] });
+  for (const configuredCategory of allCategoryValues) {
+    if (!categoryMap[configuredCategory]) {
+      categories.push({ category: configuredCategory, count: 0, sources: [] });
     }
   }
 
@@ -174,9 +174,9 @@ export function getCategories() {
 export function searchByName(query: string) {
   const lower = query.toLowerCase();
   const allProducts = Object.values(store)
-    .flatMap((s) => s.products)
+    .flatMap((storeEntry) => storeEntry.products)
     .filter((provider) => provider.name.toLowerCase().includes(lower))
-    .sort((firstItem, b) => b.trendingScore - firstItem.trendingScore);
+    .sort((firstItem, secondItem) => secondItem.trendingScore - firstItem.trendingScore);
 
   return {
     query,

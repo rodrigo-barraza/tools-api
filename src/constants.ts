@@ -1249,9 +1249,9 @@ const COSTCO_CA_SLUG_OVERRIDES = {
 
 export const COSTCO_US_CATEGORIES = COSTCO_BASE_CATEGORIES;
 
-export const COSTCO_CA_CATEGORIES = COSTCO_BASE_CATEGORIES.map((cat) => ({
-  ...cat,
-  slug: COSTCO_CA_SLUG_OVERRIDES[cat.slug as keyof typeof COSTCO_CA_SLUG_OVERRIDES] || cat.slug,
+export const COSTCO_CA_CATEGORIES = COSTCO_BASE_CATEGORIES.map((baseCategory) => ({
+  ...baseCategory,
+  slug: COSTCO_CA_SLUG_OVERRIDES[baseCategory.slug as keyof typeof COSTCO_CA_SLUG_OVERRIDES] || baseCategory.slug,
 }));
 
 export const AMAZON_REQUEST_DELAY_MS = 3_000;

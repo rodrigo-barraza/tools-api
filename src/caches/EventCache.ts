@@ -136,8 +136,8 @@ export function getEventSummary() {
   todayEnd.setHours(23, 59, 59, 999);
 
   const byCategoryCount: Record<string, number> = {};
-  for (const cat of Object.values(EVENT_CATEGORIES)) {
-    byCategoryCount[cat] = 0;
+  for (const category of Object.values(EVENT_CATEGORIES)) {
+    byCategoryCount[category] = 0;
   }
 
   const bySource: Record<string, number> = {};
