@@ -551,13 +551,17 @@ router.post(
       tempo,
       nodes,
       tracks,
+      swing,
+      humanize,
+      instrument,
+      timeSignature,
     } = req.body;
 
     // Enforce parameter range bounds to prevent DoS via massive sample memory allocation
     const requestedDuration = Number(duration);
     const boundedDuration = isNaN(requestedDuration)
       ? undefined
-      : Math.min(Math.max(requestedDuration, 0.1), 10.0);
+      : Math.min(Math.max(requestedDuration, 0.1), 60.0);
     const boundedSampleRate = Math.min(
       Math.max(Number(sampleRate) || 44100, 8000),
       48000,
@@ -582,6 +586,10 @@ router.post(
         tempo: tempo ? Number(tempo) : undefined,
         nodes,
         tracks,
+        swing: swing != null ? Number(swing) : undefined,
+        humanize: humanize != null ? Number(humanize) : undefined,
+        instrument,
+        timeSignature,
       });
 
       const actualDuration = result.sampleCount / boundedSampleRate;

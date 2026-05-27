@@ -7,6 +7,304 @@ export type WaveformType =
   | "square"
   | "noise";
 
+// ────────────────────────────────────────────────────────────
+// Instrument Presets — pre-configured synthesis parameters
+// ────────────────────────────────────────────────────────────
+
+export interface InstrumentPresetConfig {
+  waveform: WaveformType;
+  harmonics: number[];
+  envelope: ADSREnvelope;
+  modulatorFrequency?: number;
+  modulationIndex?: number;
+  lfo?: { frequency: number; pitchDepth?: number; amplitudeDepth?: number };
+}
+
+export const INSTRUMENT_PRESETS: Record<string, InstrumentPresetConfig> = {
+  acoustic_guitar: {
+    waveform: "triangle",
+    harmonics: [1.0, 0.8, 0.6, 0.35, 0.2, 0.12, 0.06],
+    envelope: { attack: 0.005, decay: 0.35, sustain: 0.15, release: 0.4 },
+  },
+  electric_guitar: {
+    waveform: "sawtooth",
+    harmonics: [1.0, 0.7, 0.5, 0.35, 0.25, 0.15],
+    envelope: { attack: 0.003, decay: 0.2, sustain: 0.5, release: 0.3 },
+  },
+  nylon_guitar: {
+    waveform: "sine",
+    harmonics: [1.0, 0.6, 0.35, 0.15, 0.08],
+    envelope: { attack: 0.01, decay: 0.45, sustain: 0.12, release: 0.5 },
+  },
+  piano: {
+    waveform: "triangle",
+    harmonics: [1.0, 0.5, 0.28, 0.14, 0.07, 0.03],
+    envelope: { attack: 0.005, decay: 0.9, sustain: 0.25, release: 0.6 },
+  },
+  electric_piano: {
+    waveform: "sine",
+    harmonics: [1.0, 0.4, 0.15],
+    envelope: { attack: 0.003, decay: 0.6, sustain: 0.35, release: 0.4 },
+    modulatorFrequency: 14,
+    modulationIndex: 25,
+  },
+  organ: {
+    waveform: "sine",
+    harmonics: [1.0, 0.0, 0.8, 0.0, 0.6, 0.0, 0.4, 0.0, 0.2],
+    envelope: { attack: 0.02, decay: 0.05, sustain: 0.9, release: 0.1 },
+  },
+  trumpet: {
+    waveform: "square",
+    harmonics: [1.0, 0.7, 0.5, 0.35, 0.25, 0.15, 0.1],
+    envelope: { attack: 0.05, decay: 0.1, sustain: 0.8, release: 0.15 },
+    modulatorFrequency: 6,
+    modulationIndex: 8,
+  },
+  violin: {
+    waveform: "sawtooth",
+    harmonics: [1.0, 0.75, 0.5, 0.3, 0.2, 0.12],
+    envelope: { attack: 0.08, decay: 0.15, sustain: 0.7, release: 0.2 },
+    lfo: { frequency: 5.5, pitchDepth: 3.0 },
+  },
+  cello: {
+    waveform: "sawtooth",
+    harmonics: [1.0, 0.8, 0.55, 0.35, 0.2, 0.1],
+    envelope: { attack: 0.12, decay: 0.2, sustain: 0.65, release: 0.3 },
+    lfo: { frequency: 4.8, pitchDepth: 2.5 },
+  },
+  flute: {
+    waveform: "sine",
+    harmonics: [1.0, 0.15, 0.05],
+    envelope: { attack: 0.08, decay: 0.1, sustain: 0.75, release: 0.15 },
+    lfo: { frequency: 5.0, amplitudeDepth: 0.08 },
+  },
+  clarinet: {
+    waveform: "square",
+    harmonics: [1.0, 0.0, 0.75, 0.0, 0.5, 0.0, 0.25],
+    envelope: { attack: 0.04, decay: 0.1, sustain: 0.8, release: 0.12 },
+  },
+  synth_lead: {
+    waveform: "sawtooth",
+    harmonics: [1.0, 0.6, 0.3],
+    envelope: { attack: 0.01, decay: 0.15, sustain: 0.7, release: 0.2 },
+    lfo: { frequency: 6.0, pitchDepth: 4.0 },
+  },
+  synth_pad: {
+    waveform: "triangle",
+    harmonics: [1.0, 0.4, 0.2, 0.1],
+    envelope: { attack: 0.6, decay: 0.4, sustain: 0.7, release: 0.8 },
+    lfo: { frequency: 3.5, pitchDepth: 2.0, amplitudeDepth: 0.05 },
+  },
+  synth_bass: {
+    waveform: "sawtooth",
+    harmonics: [1.0, 0.7, 0.4, 0.2],
+    envelope: { attack: 0.005, decay: 0.2, sustain: 0.5, release: 0.15 },
+  },
+  bass_guitar: {
+    waveform: "triangle",
+    harmonics: [1.0, 0.7, 0.45, 0.2, 0.1],
+    envelope: { attack: 0.005, decay: 0.3, sustain: 0.4, release: 0.25 },
+  },
+  marimba: {
+    waveform: "sine",
+    harmonics: [1.0, 0.0, 0.3, 0.0, 0.1],
+    envelope: { attack: 0.002, decay: 0.5, sustain: 0.0, release: 0.3 },
+  },
+  vibraphone: {
+    waveform: "sine",
+    harmonics: [1.0, 0.0, 0.4, 0.0, 0.15],
+    envelope: { attack: 0.002, decay: 0.8, sustain: 0.1, release: 0.5 },
+    lfo: { frequency: 4.5, amplitudeDepth: 0.15 },
+  },
+  harmonica: {
+    waveform: "square",
+    harmonics: [1.0, 0.5, 0.3, 0.2],
+    envelope: { attack: 0.03, decay: 0.08, sustain: 0.75, release: 0.1 },
+    lfo: { frequency: 6.0, amplitudeDepth: 0.06 },
+  },
+};
+
+// ────────────────────────────────────────────────────────────
+// Music Theory — Chord & Scale Utilities
+// ────────────────────────────────────────────────────────────
+
+const CHORD_INTERVALS: Record<string, number[]> = {
+  "maj": [0, 4, 7],
+  "min": [0, 3, 7],
+  "m": [0, 3, 7],
+  "7": [0, 4, 7, 10],
+  "maj7": [0, 4, 7, 11],
+  "min7": [0, 3, 7, 10],
+  "m7": [0, 3, 7, 10],
+  "dim": [0, 3, 6],
+  "dim7": [0, 3, 6, 9],
+  "aug": [0, 4, 8],
+  "sus2": [0, 2, 7],
+  "sus4": [0, 5, 7],
+  "9": [0, 4, 7, 10, 14],
+  "maj9": [0, 4, 7, 11, 14],
+  "min9": [0, 3, 7, 10, 14],
+  "6": [0, 4, 7, 9],
+  "min6": [0, 3, 7, 9],
+  "add9": [0, 4, 7, 14],
+  "5": [0, 7],
+  "11": [0, 4, 7, 10, 14, 17],
+  "13": [0, 4, 7, 10, 14, 21],
+};
+
+const SCALE_INTERVALS: Record<string, number[]> = {
+  "major": [0, 2, 4, 5, 7, 9, 11],
+  "minor": [0, 2, 3, 5, 7, 8, 10],
+  "minor_pentatonic": [0, 3, 5, 7, 10],
+  "major_pentatonic": [0, 2, 4, 7, 9],
+  "blues": [0, 3, 5, 6, 7, 10],
+  "dorian": [0, 2, 3, 5, 7, 9, 10],
+  "mixolydian": [0, 2, 4, 5, 7, 9, 10],
+  "phrygian": [0, 1, 3, 5, 7, 8, 10],
+  "lydian": [0, 2, 4, 6, 7, 9, 11],
+  "harmonic_minor": [0, 2, 3, 5, 7, 8, 11],
+  "melodic_minor": [0, 2, 3, 5, 7, 9, 11],
+  "chromatic": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+  "whole_tone": [0, 2, 4, 6, 8, 10],
+};
+
+const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+
+const FLAT_TO_SHARP: Record<string, string> = {
+  "Db": "C#", "Eb": "D#", "Fb": "E", "Gb": "F#",
+  "Ab": "G#", "Bb": "A#", "Cb": "B",
+};
+
+function normalizeNoteName(rawNote: string): string {
+  if (rawNote.length === 2 && rawNote[1] === "b") {
+    return FLAT_TO_SHARP[rawNote] || rawNote;
+  }
+  return rawNote;
+}
+
+function noteNameToSemitone(noteName: string): number {
+  const normalized = normalizeNoteName(noteName);
+  const index = NOTE_NAMES.indexOf(normalized);
+  return index >= 0 ? index : 0;
+}
+
+function semitoneToNoteName(semitone: number, octave: number): string {
+  const wrappedSemitone = ((semitone % 12) + 12) % 12;
+  const adjustedOctave = octave + Math.floor(semitone / 12);
+  return `${NOTE_NAMES[wrappedSemitone]}${adjustedOctave}`;
+}
+
+export function isChordNotation(noteString: string): boolean {
+  return /^[A-G][#b]?(maj7|min7|dim7|aug7|maj9|min9|min6|add9|maj|min|dim|aug|sus2|sus4|m7|m9|m|7|9|11|13|6|5)(\d)?$/i.test(noteString.trim());
+}
+
+export function expandChordToNotes(chordString: string): string[] {
+  const trimmed = chordString.trim();
+  const chordMatch = trimmed.match(
+    /^([A-G][#b]?)(maj7|min7|dim7|aug7|maj9|min9|min6|add9|maj|min|dim|aug|sus2|sus4|m7|m9|m|7|9|11|13|6|5)?(\d)?$/i,
+  );
+  if (!chordMatch) return [trimmed];
+
+  const rootName = chordMatch[1];
+  const chordType = (chordMatch[2] || "maj").toLowerCase();
+  const octave = parseInt(chordMatch[3] || "4", 10);
+
+  const intervals = CHORD_INTERVALS[chordType];
+  if (!intervals) return [trimmed];
+
+  const rootSemitone = noteNameToSemitone(rootName);
+  return intervals.map((interval) =>
+    semitoneToNoteName(rootSemitone + interval, octave),
+  );
+}
+
+export function getScaleNotes(
+  rootNote: string,
+  scaleName: string,
+  octave = 4,
+  octaveCount = 1,
+): string[] {
+  const intervals = SCALE_INTERVALS[scaleName.toLowerCase().replace(/\s+/g, "_")];
+  if (!intervals) return [];
+
+  const rootSemitone = noteNameToSemitone(rootNote);
+  const scaleNotes: string[] = [];
+
+  for (let octaveOffset = 0; octaveOffset < octaveCount; octaveOffset++) {
+    for (const interval of intervals) {
+      scaleNotes.push(
+        semitoneToNoteName(rootSemitone + interval, octave + octaveOffset),
+      );
+    }
+  }
+
+  return scaleNotes;
+}
+
+// ────────────────────────────────────────────────────────────
+// Tempo-Synced Beat Duration Parsing
+// ────────────────────────────────────────────────────────────
+
+export function parseBeatDuration(
+  value: string | number,
+  tempo: number,
+): number {
+  if (typeof value === "number") return value;
+  if (!value) return 0.25;
+
+  const beatFractionMatch = value.trim().match(/^1\/(\d+)(d|t)?$/i);
+  if (beatFractionMatch) {
+    const denominator = parseInt(beatFractionMatch[1], 10);
+    const modifier = beatFractionMatch[2]?.toLowerCase();
+    const wholeNoteDuration = (60.0 / tempo) * 4.0;
+    const baseDuration = wholeNoteDuration / denominator;
+    if (modifier === "d") return baseDuration * 1.5;
+    if (modifier === "t") return baseDuration * (2.0 / 3.0);
+    return baseDuration;
+  }
+
+  const parsed = parseFloat(value);
+  return isNaN(parsed) ? 0.25 : parsed;
+}
+
+// ────────────────────────────────────────────────────────────
+// Track Repeat / Looping Expansion
+// ────────────────────────────────────────────────────────────
+
+export function expandTrackRepeats(
+  notes: NoteConfig[],
+  repeatCount: number,
+  tempo: number,
+  beatsPerBar: number,
+): NoteConfig[] {
+  if (repeatCount <= 1) return notes;
+
+  const clampedRepeats = Math.min(Math.max(repeatCount, 1), 64);
+
+  let patternDuration = 0;
+  for (const note of notes) {
+    const startTime = parseTimeMarker(note.time, tempo, beatsPerBar);
+    const noteDuration = parseTimeMarker(note.duration, tempo, beatsPerBar);
+    patternDuration = Math.max(patternDuration, startTime + noteDuration);
+  }
+
+  const paddedPatternDuration = patternDuration + 0.01;
+  const expandedNotes: NoteConfig[] = [];
+
+  for (let iteration = 0; iteration < clampedRepeats; iteration++) {
+    const timeOffset = iteration * paddedPatternDuration;
+    for (const note of notes) {
+      const originalStart = parseTimeMarker(note.time, tempo, beatsPerBar);
+      expandedNotes.push({
+        ...note,
+        time: originalStart + timeOffset,
+      });
+    }
+  }
+
+  return expandedNotes;
+}
+
 export interface ADSREnvelope {
   attack: number;
   decay: number;
@@ -28,6 +326,7 @@ export interface DelayConfig {
 export interface MelodyStep {
   note: number | string;
   duration: number;
+  velocity?: number; // 0.0–1.0, default 1.0
 }
 
 export type NodeWaveformType =
@@ -47,7 +346,8 @@ export interface NodeConfig {
     | "stereo_panner"
     | "gain"
     | "reverb"
-    | "drum_synth";
+    | "drum_synth"
+    | "distortion";
   waveform?: NodeWaveformType;
   detune?: number; // in cents
   frequency?: number | string;
@@ -67,17 +367,32 @@ export interface NodeConfig {
   gain?: number;
   wet?: number;
   decayTime?: number;
+  // Distortion-specific fields
+  algorithm?: "soft_clip" | "hard_clip" | "bitcrush";
+  drive?: number;
+  bitDepth?: number;
+  downsample?: number;
+}
+
+export interface PitchBendConfig {
+  target: string | number;
+  startTime?: number;
+  endTime?: number;
 }
 
 export interface NoteConfig {
   time: string | number; // e.g. "1.1.1" or numeric seconds
   duration: string | number; // e.g. "0.2.0" or numeric seconds
   note: string | number; // e.g. "C4", frequency, or drum name e.g. "KICK"
+  velocity?: number; // 0.0–1.0, default 1.0
+  pitchBend?: PitchBendConfig;
 }
 
 export interface TrackConfig {
   nodeChain: string[];
   notes: NoteConfig[];
+  volume?: number; // 0.0–2.0, default 1.0
+  repeat?: number; // number of times to repeat the pattern (default 1)
 }
 
 export interface SynthesizerConfig {
@@ -109,10 +424,20 @@ export interface SynthesizerConfig {
   delay?: DelayConfig;
   sampleRate?: number;
 
+  // Instrument preset shorthand
+  instrument?: string;
+
   // Advanced Modular Synthesizer additions
   tempo?: number;
   nodes?: Record<string, NodeConfig>;
   tracks?: TrackConfig[];
+
+  // Groove and humanization
+  swing?: number; // 0.0–1.0, shifts every other 16th note forward
+  humanize?: number; // 0.0–1.0, random per-note timing jitter
+
+  // Time signature: [beatsPerBar, beatUnit] e.g. [3, 4] for 3/4, [6, 8] for 6/8
+  timeSignature?: [number, number];
 }
 
 // ────────────────────────────────────────────────────────────
@@ -326,6 +651,49 @@ export class SchroederReverb {
       left: left * (1.0 - this.wet) + allpassSumLeft * this.wet,
       right: right * (1.0 - this.wet) + allpassSumRight * this.wet,
     };
+  }
+}
+
+export class DistortionNode {
+  algorithm: "soft_clip" | "hard_clip" | "bitcrush";
+  drive: number;
+  bitDepth: number;
+  downsampleFactor: number;
+  sampleCounter = 0;
+  heldSample = 0.0;
+
+  constructor(
+    algorithm: "soft_clip" | "hard_clip" | "bitcrush" = "soft_clip",
+    drive = 4.0,
+    bitDepth = 8,
+    downsampleFactor = 1,
+  ) {
+    this.algorithm = algorithm;
+    this.drive = Math.max(1.0, Math.min(drive, 100.0));
+    this.bitDepth = Math.max(2, Math.min(bitDepth, 16));
+    this.downsampleFactor = Math.max(1, Math.min(downsampleFactor, 32));
+  }
+
+  process(input: number): number {
+    switch (this.algorithm) {
+      case "soft_clip":
+        return Math.tanh(this.drive * input);
+
+      case "hard_clip":
+        return Math.max(-1.0, Math.min(1.0, this.drive * input));
+
+      case "bitcrush": {
+        this.sampleCounter++;
+        if (this.sampleCounter >= this.downsampleFactor) {
+          this.sampleCounter = 0;
+          const quantizationLevels = Math.pow(2, this.bitDepth);
+          const driven = Math.max(-1.0, Math.min(1.0, this.drive * input));
+          this.heldSample =
+            Math.round(driven * quantizationLevels) / quantizationLevels;
+        }
+        return this.heldSample;
+      }
+    }
   }
 }
 
@@ -545,12 +913,17 @@ export class ModularVoice {
   noteConfig: NoteConfig;
   elapsedTime = 0.0;
   sampleRate: number;
+  velocity: number;
+  pitchBendConfig: PitchBendConfig | undefined;
+  baseFrequency: number;
+  bendTargetFrequency: number;
 
   oscillators: Record<string, OscillatorNode> = {};
   noises: Record<string, NoiseNode> = {};
   filters: Record<string, BiquadFilter> = {};
   envelopes: Record<string, EnvelopeNode> = {};
   drumSynths: Record<string, DrumSynthNode> = {};
+  distortions: Record<string, DistortionNode> = {};
 
   constructor(
     noteConfig: NoteConfig,
@@ -559,6 +932,12 @@ export class ModularVoice {
   ) {
     this.noteConfig = noteConfig;
     this.sampleRate = sampleRate;
+    this.velocity = Math.max(0.0, Math.min(noteConfig.velocity ?? 1.0, 1.0));
+    this.pitchBendConfig = noteConfig.pitchBend;
+    this.baseFrequency = noteToFreq(noteConfig.note);
+    this.bendTargetFrequency = this.pitchBendConfig
+      ? noteToFreq(this.pitchBendConfig.target)
+      : this.baseFrequency;
 
     for (const [nodeName, nodeConfig] of Object.entries(nodeConfigs)) {
       if (nodeConfig.type === "oscillator") {
@@ -586,8 +965,36 @@ export class ModularVoice {
         const drumType =
           noteStr === "kick" ? "kick" : noteStr === "snare" ? "snare" : "hat";
         this.drumSynths[nodeName] = new DrumSynthNode(drumType, sampleRate);
+      } else if (nodeConfig.type === "distortion") {
+        this.distortions[nodeName] = new DistortionNode(
+          nodeConfig.algorithm || "soft_clip",
+          nodeConfig.drive || 4.0,
+          nodeConfig.bitDepth || 8,
+          nodeConfig.downsample || 1,
+        );
       }
     }
+  }
+
+  computeCurrentFrequency(noteDurationSeconds: number): number {
+    if (!this.pitchBendConfig) return this.baseFrequency;
+
+    const bendStart = (this.pitchBendConfig.startTime ?? 0.0) * noteDurationSeconds;
+    const bendEnd = (this.pitchBendConfig.endTime ?? 1.0) * noteDurationSeconds;
+    const bendWindow = bendEnd - bendStart;
+
+    if (bendWindow <= 0 || this.elapsedTime < bendStart) {
+      return this.baseFrequency;
+    }
+    if (this.elapsedTime >= bendEnd) {
+      return this.bendTargetFrequency;
+    }
+
+    const bendProgress = (this.elapsedTime - bendStart) / bendWindow;
+    return this.baseFrequency * Math.pow(
+      this.bendTargetFrequency / this.baseFrequency,
+      bendProgress,
+    );
   }
 
   process(
@@ -605,7 +1012,7 @@ export class ModularVoice {
       );
     }
 
-    const baseFrequency = noteToFreq(this.noteConfig.note);
+    const currentFrequency = this.computeCurrentFrequency(noteDurationSeconds);
 
     let currentSignal = 0.0;
     let stereoLeft = 0.0;
@@ -621,9 +1028,9 @@ export class ModularVoice {
       if (!nodeConfig) continue;
 
       if (nodeConfig.type === "oscillator") {
-        const osc = this.oscillators[nodeName];
-        if (osc) {
-          currentSignal = osc.process(baseFrequency);
+        const oscillator = this.oscillators[nodeName];
+        if (oscillator) {
+          currentSignal = oscillator.process(currentFrequency);
         }
       } else if (nodeConfig.type === "noise") {
         const noise = this.noises[nodeName];
@@ -658,6 +1065,11 @@ export class ModularVoice {
           gainVal *= envelopeVal;
         }
         currentSignal *= gainVal;
+      } else if (nodeConfig.type === "distortion") {
+        const distortionNode = this.distortions[nodeName];
+        if (distortionNode) {
+          currentSignal = distortionNode.process(currentSignal);
+        }
       } else if (nodeConfig.type === "stereo_panner") {
         const panVal = Math.min(Math.max(nodeConfig.pan ?? 0.0, -1.0), 1.0);
         const theta = ((panVal + 1.0) * Math.PI) / 4.0;
@@ -671,6 +1083,10 @@ export class ModularVoice {
       stereoLeft = currentSignal;
       stereoRight = currentSignal;
     }
+
+    // Apply per-note velocity scaling
+    stereoLeft *= this.velocity;
+    stereoRight *= this.velocity;
 
     return { left: stereoLeft, right: stereoRight };
   }
@@ -692,7 +1108,11 @@ export function getVoiceReleaseTime(
   return maxRelease;
 }
 
-export function parseTimeMarker(marker: string | number, tempo = 120): number {
+export function parseTimeMarker(
+  marker: string | number,
+  tempo = 120,
+  beatsPerBar = 4,
+): number {
   if (typeof marker === "number") {
     return marker;
   }
@@ -709,7 +1129,7 @@ export function parseTimeMarker(marker: string | number, tempo = 120): number {
   const sixteenth = parseInt(parts[2], 10) || 1;
 
   const beatDuration = 60.0 / tempo;
-  const barDuration = beatDuration * 4.0;
+  const barDuration = beatDuration * beatsPerBar;
   const sixteenthDuration = beatDuration / 4.0;
 
   return (
@@ -723,12 +1143,19 @@ export function computeTimelineDuration(
   tracks: TrackConfig[],
   nodeConfigs: Record<string, NodeConfig>,
   tempo = 120,
+  beatsPerBar = 4,
 ): number {
   let maxEnd = 0.0;
   for (const track of tracks) {
-    for (const note of track.notes) {
-      const start = parseTimeMarker(note.time, tempo);
-      const duration = parseTimeMarker(note.duration, tempo);
+    const effectiveNotes = expandTrackRepeats(
+      track.notes,
+      track.repeat ?? 1,
+      tempo,
+      beatsPerBar,
+    );
+    for (const note of effectiveNotes) {
+      const start = parseTimeMarker(note.time, tempo, beatsPerBar);
+      const duration = parseTimeMarker(note.duration, tempo, beatsPerBar);
       const release = getVoiceReleaseTime(nodeConfigs);
       maxEnd = Math.max(maxEnd, start + duration + release);
     }
@@ -736,14 +1163,42 @@ export function computeTimelineDuration(
   return maxEnd + 0.1;
 }
 
+export function applySwingOffset(
+  sixteenthIndex: number,
+  swingAmount: number,
+  tempo: number,
+): number {
+  if (swingAmount <= 0) return 0.0;
+  const sixteenthDuration = 60.0 / tempo / 4.0;
+  const isOffBeat = sixteenthIndex % 2 === 1;
+  return isOffBeat ? swingAmount * sixteenthDuration * 0.5 : 0.0;
+}
+
+export function applyHumanizeOffset(humanizeAmount: number): number {
+  if (humanizeAmount <= 0) return 0.0;
+  const maximumJitterSeconds = 0.02;
+  return (Math.random() * 2.0 - 1.0) * humanizeAmount * maximumJitterSeconds;
+}
+
+export function computeSixteenthIndex(
+  timeInSeconds: number,
+  tempo: number,
+): number {
+  const sixteenthDuration = 60.0 / tempo / 4.0;
+  return Math.round(timeInSeconds / sixteenthDuration);
+}
+
 export function renderModularGraph(config: SynthesizerConfig): Float32Array {
   const sampleRate = config.sampleRate || 44100;
   const tempo = config.tempo || 120;
   const nodes = config.nodes || {};
   const tracks = config.tracks || [];
+  const swingAmount = Math.max(0.0, Math.min(config.swing ?? 0.0, 1.0));
+  const humanizeAmount = Math.max(0.0, Math.min(config.humanize ?? 0.0, 1.0));
+  const beatsPerBar = config.timeSignature?.[0] ?? 4;
 
   let duration =
-    config.duration || computeTimelineDuration(tracks, nodes, tempo);
+    config.duration || computeTimelineDuration(tracks, nodes, tempo, beatsPerBar);
   duration = Math.min(Math.max(duration, 0.1), 60.0);
 
   const numSamples = Math.floor(duration * sampleRate);
@@ -758,9 +1213,11 @@ export function renderModularGraph(config: SynthesizerConfig): Float32Array {
       if (!nodeConfig) return;
 
       if (nodeConfig.type === "delay") {
-        const delaySamples = Math.floor(
-          (nodeConfig.delayTime || 0.25) * sampleRate,
-        );
+        const rawDelayTime = nodeConfig.delayTime || 0.25;
+        const resolvedDelayTime = typeof rawDelayTime === "string"
+          ? parseBeatDuration(rawDelayTime, tempo)
+          : rawDelayTime;
+        const delaySamples = Math.floor(resolvedDelayTime * sampleRate);
         trackDelayNodes[trackIndex] = new DelayNode(
           delaySamples,
           nodeConfig.feedback || 0.4,
@@ -780,6 +1237,32 @@ export function renderModularGraph(config: SynthesizerConfig): Float32Array {
     number,
     { voice: ModularVoice; startTime: number; duration: number }[]
   > = {};
+  // Pre-expand track repeats and chord notes before the sample loop
+  const expandedTrackNotes: NoteConfig[][] = tracks.map((track) => {
+    const repeatedNotes = expandTrackRepeats(
+      track.notes,
+      track.repeat ?? 1,
+      tempo,
+      beatsPerBar,
+    );
+
+    // Expand chord notation into individual simultaneous notes
+    const chordExpandedNotes: NoteConfig[] = [];
+    for (const note of repeatedNotes) {
+      const noteStr = String(note.note).trim();
+      if (isChordNotation(noteStr)) {
+        const chordNotes = expandChordToNotes(noteStr);
+        for (const constituentNote of chordNotes) {
+          chordExpandedNotes.push({ ...note, note: constituentNote });
+        }
+      } else {
+        chordExpandedNotes.push(note);
+      }
+    }
+
+    return chordExpandedNotes;
+  });
+
   tracks.forEach((_, trackIndex) => {
     activeVoicesMap[trackIndex] = [];
   });
@@ -790,9 +1273,19 @@ export function renderModularGraph(config: SynthesizerConfig): Float32Array {
     const currentTime = currentSample * deltaTime;
 
     tracks.forEach((track, trackIndex) => {
-      track.notes.forEach((note) => {
-        const noteStartTime = parseTimeMarker(note.time, tempo);
-        const noteDurationSeconds = parseTimeMarker(note.duration, tempo);
+      const notesForTrack = expandedTrackNotes[trackIndex];
+      notesForTrack.forEach((note) => {
+        let noteStartTime =
+          typeof note.time === "number"
+            ? note.time
+            : parseTimeMarker(note.time, tempo, beatsPerBar);
+        const noteDurationSeconds = parseTimeMarker(note.duration, tempo, beatsPerBar);
+
+        // Apply swing offset based on the note's position in the 16th-note grid
+        const sixteenthIndex = computeSixteenthIndex(noteStartTime, tempo);
+        noteStartTime += applySwingOffset(sixteenthIndex, swingAmount, tempo);
+        noteStartTime += applyHumanizeOffset(humanizeAmount);
+        noteStartTime = Math.max(0.0, noteStartTime);
 
         const frameOffset = Math.abs(currentTime - noteStartTime);
         if (frameOffset < deltaTime * 0.5) {
@@ -847,8 +1340,10 @@ export function renderModularGraph(config: SynthesizerConfig): Float32Array {
         trackRight = reverbed.right;
       }
 
-      masterLeft += trackLeft;
-      masterRight += trackRight;
+      // Apply per-track volume
+      const trackVolume = Math.max(0.0, Math.min(track.volume ?? 1.0, 2.0));
+      masterLeft += trackLeft * trackVolume;
+      masterRight += trackRight * trackVolume;
     });
 
     masterBuffer[currentSample * 2] = masterLeft;
@@ -878,29 +1373,33 @@ export function noteToFreq(note: number | string): number {
   if (typeof note === "number") return note;
   if (!note) return 440;
 
-  const notes = [
-    "C",
-    "C#",
-    "D",
-    "D#",
-    "E",
-    "F",
-    "F#",
-    "G",
-    "G#",
-    "A",
-    "A#",
-    "B",
-  ];
-  const match = note.trim().match(/^([A-G]#?)(-?\d+)$/i);
+  const trimmed = String(note).trim();
+
+  // REST / SILENCE produces zero frequency (silent output)
+  if (/^(rest|silence)$/i.test(trimmed)) return 0;
+
+  // Handle flat notation (e.g. Bb4, Eb3)
+  const flatMatch = trimmed.match(/^([A-G]b)(-?\d+)$/i);
+  if (flatMatch) {
+    const sharpEquivalent = FLAT_TO_SHARP[flatMatch[1].charAt(0).toUpperCase() + "b"];
+    if (sharpEquivalent) {
+      const octave = parseInt(flatMatch[2], 10);
+      const semitone = NOTE_NAMES.indexOf(sharpEquivalent);
+      const a4Index = 4 * 12 + 9;
+      const noteIndex = octave * 12 + semitone;
+      return 440 * Math.pow(2, (noteIndex - a4Index) / 12);
+    }
+  }
+
+  const match = trimmed.match(/^([A-G]#?)(-?\d+)$/i);
   if (!match) {
-    const parsed = parseFloat(note);
+    const parsed = parseFloat(trimmed);
     return isNaN(parsed) ? 440 : parsed;
   }
 
   const name = match[1].toUpperCase();
   const octave = parseInt(match[2], 10);
-  const semitone = notes.indexOf(name);
+  const semitone = NOTE_NAMES.indexOf(name);
 
   const a4Index = 4 * 12 + 9; // Octave 4, A
   const noteIndex = octave * 12 + semitone;
@@ -950,6 +1449,11 @@ export function getEnvelopeValue(
  * Synthesizes a mono Float32Array from synth parameters.
  */
 export function synthesizeSound(config: SynthesizerConfig): Float32Array {
+  // Apply instrument preset defaults (user-specified params override)
+  const instrumentPreset = config.instrument
+    ? INSTRUMENT_PRESETS[config.instrument.toLowerCase().replace(/[\s-]+/g, "_")]
+    : undefined;
+
   const sampleRate = config.sampleRate || 44100;
   const duration = Math.min(Math.max(config.duration || 1.0, 0.1), 60.0);
   const numSamples = Math.floor(duration * sampleRate);
@@ -959,20 +1463,20 @@ export function synthesizeSound(config: SynthesizerConfig): Float32Array {
   const endFreq = config.endFrequency
     ? noteToFreq(config.endFrequency)
     : startFreq;
-  const waveform = config.waveform || "sine";
-  const harmonics = config.harmonics || [1.0];
+  const waveform = config.waveform || instrumentPreset?.waveform || "sine";
+  const harmonics = config.harmonics || instrumentPreset?.harmonics || [1.0];
 
-  const modFreq = config.modulatorFrequency || 0;
-  const modIndex = config.modulationIndex || 0;
+  const modFreq = config.modulatorFrequency || instrumentPreset?.modulatorFrequency || 0;
+  const modIndex = config.modulationIndex || instrumentPreset?.modulationIndex || 0;
 
-  const envelope: ADSREnvelope = config.envelope || {
+  const envelope: ADSREnvelope = config.envelope || instrumentPreset?.envelope || {
     attack: 0.05,
     decay: 0.1,
     sustain: 0.8,
     release: 0.15,
   };
 
-  const lfo = config.lfo;
+  const lfo = config.lfo || instrumentPreset?.lfo;
   const deltaTime = 1 / sampleRate;
 
   let carrierPhase = 0;
@@ -1087,23 +1591,40 @@ export function synthesizeSequence(
   baseConfig: SynthesizerConfig,
 ): Float32Array {
   const sampleRate = baseConfig.sampleRate || 44100;
-  const parsedSteps = steps.map((step) => ({
-    freq: noteToFreq(step.note),
-    duration: Math.max(step.duration, 0.02),
-  }));
+  // Expand chords and REST in melody steps
+  const expandedSteps: { frequencies: number[]; duration: number; velocity: number }[] = [];
+  for (const step of steps) {
+    const noteStr = String(step.note).trim();
+    const stepVelocity = step.velocity ?? 1.0;
 
-  const totalDuration = parsedSteps.reduce(
-    (acc, step) => acc + step.duration,
+    if (isChordNotation(noteStr)) {
+      const chordNotes = expandChordToNotes(noteStr);
+      expandedSteps.push({
+        frequencies: chordNotes.map((chordNote) => noteToFreq(chordNote)),
+        duration: Math.max(step.duration, 0.02),
+        velocity: stepVelocity,
+      });
+    } else {
+      expandedSteps.push({
+        frequencies: [noteToFreq(step.note)],
+        duration: Math.max(step.duration, 0.02),
+        velocity: stepVelocity,
+      });
+    }
+  }
+
+  const totalDuration = expandedSteps.reduce(
+    (accumulator, step) => accumulator + step.duration,
     0,
   );
-  const cappedDuration = Math.min(totalDuration, 10.0);
+  const cappedDuration = Math.min(totalDuration, 60.0);
   const numSamples = Math.floor(cappedDuration * sampleRate);
   const samples = new Float32Array(numSamples);
 
   let currentSampleOffset = 0;
   const deltaTime = 1 / sampleRate;
 
-  for (const step of parsedSteps) {
+  for (const step of expandedSteps) {
     const stepSamplesCount = Math.floor(step.duration * sampleRate);
     if (currentSampleOffset >= numSamples) break;
 
@@ -1113,17 +1634,26 @@ export function synthesizeSequence(
     );
     const stepDuration = actualCount * deltaTime;
 
-    // Build config for this individual note step
-    const stepConfig: SynthesizerConfig = {
-      ...baseConfig,
-      duration: stepDuration,
-      frequency: step.freq,
-      endFrequency: undefined, // no sweep across step
-      sampleRate,
-    };
+    // Synthesize each constituent frequency (chords produce multiple)
+    for (const frequency of step.frequencies) {
+      if (frequency <= 0) continue; // REST note
 
-    const stepSamples = synthesizeSound(stepConfig);
-    samples.set(stepSamples.subarray(0, actualCount), currentSampleOffset);
+      const stepConfig: SynthesizerConfig = {
+        ...baseConfig,
+        duration: stepDuration,
+        frequency,
+        endFrequency: undefined,
+        sampleRate,
+      };
+
+      const stepSamples = synthesizeSound(stepConfig);
+      const velocityGain = step.velocity * (1.0 / step.frequencies.length);
+      for (let sampleIndex = 0; sampleIndex < actualCount; sampleIndex++) {
+        samples[currentSampleOffset + sampleIndex] +=
+          stepSamples[sampleIndex] * velocityGain;
+      }
+    }
+
     currentSampleOffset += actualCount;
   }
 

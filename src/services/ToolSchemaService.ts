@@ -7085,9 +7085,14 @@ const TOOL_DEFINITIONS: any[] = [
     dataSource: compute("SoundSynthesizerService"),
     description:
       "Generate creative audio/sound clips (in WAV format) natively in JavaScript. " +
-      "Use this to generate custom sounds, chiptunes, retro arcade effects (lasers, explosions, coins, jumps, powerups), " +
-      "or musical melodies/arpeggios. Returns a base64-encoded WAV audio clip. " +
-      "You can configure complex FM (frequency modulation) synthesis, ADSR envelopes, additive harmonics, LFOs, and feedback delay lines.",
+      "Use this to generate custom sounds, chiptunes, retro arcade effects, " +
+      "musical melodies/arpeggios, or full multi-track compositions. Returns a base64-encoded WAV audio clip. " +
+      "Features: FM synthesis, ADSR envelopes, additive harmonics, LFOs, filters (LP/HP/BP), distortion (soft clip/hard clip/bitcrush), " +
+      "Schroeder reverb, stereo panning, delay (tempo-synced with beat fractions like '1/8' or '1/4d'), " +
+      "per-note velocity and pitch bend, swing/humanize, track repeat/looping, " +
+      "chord notation (e.g. 'Cmaj7', 'Am', 'G7'), REST/SILENCE notes, time signatures, and " +
+      "18 instrument presets (acoustic_guitar, electric_guitar, nylon_guitar, piano, electric_piano, organ, " +
+      "trumpet, violin, cello, flute, clarinet, synth_lead, synth_pad, synth_bass, bass_guitar, marimba, vibraphone, harmonica).",
     endpoint: {
       path: "/creative/generate-audio",
       method: "POST",
@@ -7109,6 +7114,10 @@ const TOOL_DEFINITIONS: any[] = [
         "tempo",
         "nodes",
         "tracks",
+        "instrument",
+        "swing",
+        "humanize",
+        "timeSignature",
       ],
     },
     parameters: {
@@ -7222,17 +7231,24 @@ const TOOL_DEFINITIONS: any[] = [
         melody: {
           type: "array",
           description:
-            "Melodic note sequence. Used if soundType is 'melody' or 'arpeggio'.",
+            "Melodic note sequence. Used if soundType is 'melody' or 'arpeggio'. " +
+            "Notes can be pitch names ('C4'), raw Hz, chord names ('Am7'), or 'REST' for silence.",
           items: {
             type: "object",
             properties: {
               note: {
                 type: "string",
-                description: "Note name (e.g. 'C4') or raw frequency in Hz.",
+                description:
+                  "Note name (e.g. 'C4'), chord name (e.g. 'Cmaj7', 'Am', 'G7' — auto-expands to constituent notes), " +
+                  "raw frequency in Hz, or 'REST'/'SILENCE' for a silent gap.",
               },
               duration: {
                 type: "number",
                 description: "Duration of this note step in seconds.",
+              },
+              velocity: {
+                type: "number",
+                description: "Note loudness from 0.0 (silent) to 1.0 (full volume). Default: 1.0.",
               },
             },
             required: ["note", "duration"],
@@ -7249,7 +7265,7 @@ const TOOL_DEFINITIONS: any[] = [
             feedback: {
               type: "number",
               description:
-                "Feedback feedback coefficient from 0.0 to 0.95 (default: 0.4).",
+                "Feedback coefficient from 0.0 to 0.95 (default: 0.4).",
             },
           },
           required: ["delayTime", "feedback"],
@@ -7267,12 +7283,18 @@ const TOOL_DEFINITIONS: any[] = [
         nodes: {
           type: "object",
           description:
-            "Modular Audio Graph Nodes definition. Keys are unique custom node names (e.g. 'synth_osc', 'filter_env'). Values describe the node type and properties.",
+            "Modular Audio Graph Nodes definition. Keys are unique custom node names. Values describe the node type and properties. " +
+            "Supported node types: 'oscillator' (waveform, detune, frequency), 'noise' (noiseType: white|pink), " +
+            "'biquad_filter' (filterType: lowpass|highpass|bandpass, cutoff, Q, modulate: {cutoff: 'envelope_name'}), " +
+            "'envelope' (attack, decay, sustain, release), 'gain' (gain, modulate: {gain: 'envelope_name'}), " +
+            "'distortion' (algorithm: soft_clip|hard_clip|bitcrush, drive: 1-100, bitDepth: 2-16, downsample: 1-32), " +
+            "'stereo_panner' (pan: -1.0 to 1.0), 'delay' (delayTime: seconds or beat fraction '1/8'|'1/4d', feedback, pingPong), " +
+            "'reverb' (wet: 0-1, decay: 0-1), 'drum_synth' (triggered by note name: KICK, SNARE, HAT).",
         },
         tracks: {
           type: "array",
           description:
-            "Timeline sequences for polyphonic multi-tracking. Each track has a nodeChain list of node names connected to 'destination', and a notes list containing triggering details.",
+            "Timeline sequences for polyphonic multi-tracking. Each track has a nodeChain, notes list, optional volume (0.0–2.0), and optional repeat count.",
           items: {
             type: "object",
             properties: {
@@ -7280,7 +7302,7 @@ const TOOL_DEFINITIONS: any[] = [
                 type: "array",
                 items: { type: "string" },
                 description:
-                  "Array of node names in series connecting generator to effects, ending with 'destination' (e.g., ['sub_osc', 'lpf', 'destination']).",
+                  "Array of node names in series connecting generator to effects, ending with 'destination' (e.g., ['osc', 'env', 'filter', 'destination']).",
               },
               notes: {
                 type: "array",
@@ -7300,15 +7322,80 @@ const TOOL_DEFINITIONS: any[] = [
                     note: {
                       type: "string",
                       description:
-                        "Note name (e.g. 'C4', 'A#3'), raw frequency, or drum trigger name ('KICK', 'SNARE', 'HAT').",
+                        "Note name (e.g. 'C4', 'Bb3'), chord name (e.g. 'Am7', 'Cmaj7' — auto-expands), " +
+                        "raw frequency, drum trigger ('KICK', 'SNARE', 'HAT'), or 'REST'/'SILENCE'.",
+                    },
+                    velocity: {
+                      type: "number",
+                      description: "Note loudness from 0.0 to 1.0 (default: 1.0). Controls dynamics and expression.",
+                    },
+                    pitchBend: {
+                      type: "object",
+                      description: "Pitch bend/glide to a target note during playback. Enables guitar bends, slides, and portamento.",
+                      properties: {
+                        target: {
+                          type: "string",
+                          description: "Target note name or frequency to bend toward (e.g. 'G3', 440).",
+                        },
+                        startTime: {
+                          type: "number",
+                          description: "Fraction of note duration when bend starts (0.0–1.0, default: 0.0).",
+                        },
+                        endTime: {
+                          type: "number",
+                          description: "Fraction of note duration when bend reaches target (0.0–1.0, default: 1.0).",
+                        },
+                      },
+                      required: ["target"],
                     },
                   },
                   required: ["time", "duration", "note"],
                 },
               },
+              volume: {
+                type: "number",
+                description: "Track volume multiplier (0.0–2.0, default: 1.0). Use to balance tracks in the mix.",
+              },
+              repeat: {
+                type: "integer",
+                description: "Number of times to repeat this track's note pattern (default: 1). A 1-bar drum loop with repeat: 8 produces 8 bars.",
+              },
             },
             required: ["nodeChain", "notes"],
           },
+        },
+        instrument: {
+          type: "string",
+          enum: [
+            "acoustic_guitar", "electric_guitar", "nylon_guitar",
+            "piano", "electric_piano", "organ",
+            "trumpet", "violin", "cello", "flute", "clarinet",
+            "synth_lead", "synth_pad", "synth_bass", "bass_guitar",
+            "marimba", "vibraphone", "harmonica",
+          ],
+          description:
+            "Musical instrument preset. Provides pre-tuned waveform, harmonics, envelope, FM, and LFO settings " +
+            "that approximate the instrument's timbre. User-specified params (waveform, harmonics, envelope, etc.) override the preset. " +
+            "Works in 'synthesizer', 'melody', and 'arpeggio' modes.",
+        },
+        swing: {
+          type: "number",
+          description:
+            "Groove swing amount (0.0–1.0). Shifts every other 16th note forward in time. " +
+            "0.0 = straight timing, 0.5 = triplet shuffle, 1.0 = extreme swing. Only applies to modular mode.",
+        },
+        humanize: {
+          type: "number",
+          description:
+            "Timing humanization amount (0.0–1.0). Adds random per-note timing jitter (±20ms at max). " +
+            "Makes rigid grid timing feel more natural and organic. Only applies to modular mode.",
+        },
+        timeSignature: {
+          type: "array",
+          items: { type: "integer" },
+          description:
+            "Time signature as [beatsPerBar, beatUnit]. Examples: [4, 4] for 4/4, [3, 4] for 3/4 waltz, [6, 8] for 6/8. " +
+            "Affects bar duration in grid marker notation (e.g. '1.1.1'). Default: [4, 4].",
         },
       },
     },
