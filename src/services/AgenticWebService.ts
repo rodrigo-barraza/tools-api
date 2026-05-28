@@ -25,17 +25,18 @@ interface GoogleCseItem {
 // Constants
 // ────────────────────────────────────────────────────────────
 
-const FETCH_TIMEOUT_MS = 15_000;       // 15 second timeout
-const MAX_OUTPUT_CHARS = 100_000;      // Truncate final markdown output
+const FETCH_TIMEOUT_MS = 15_000; // 15 second timeout
+const MAX_OUTPUT_CHARS = 100_000; // Truncate final markdown output
 
-const USER_AGENT = "Mozilla/5.0 (compatible; SunTools/1.0; +https://github.com/sun)";
+const USER_AGENT =
+  "Mozilla/5.0 (compatible; SunTools/1.0; +https://github.com/sun)";
 
 // Domains that block automated access — skip gracefully
 const BLOCKED_DOMAINS = new Set([
   "localhost",
   "127.0.0.1",
   "0.0.0.0",
-  "169.254.169.254",  // AWS metadata
+  "169.254.169.254", // AWS metadata
   "metadata.google.internal",
 ]);
 
@@ -49,7 +50,10 @@ const GOOGLE_CSE_BASE = "https://www.googleapis.com/customsearch/v1";
 /**
  * Fetch a URL and convert its HTML content to clean markdown.
  */
-export async function agenticFetchUrl(url: string, { selector }: { selector?: string } = {}) {
+export async function agenticFetchUrl(
+  url: string,
+  { selector }: { selector?: string } = {},
+) {
   if (!url || typeof url !== "string") {
     return { error: "'url' is required and must be a string" };
   }
@@ -64,10 +68,14 @@ export async function agenticFetchUrl(url: string, { selector }: { selector?: st
 
   // Block internal/local URLs
   if (BLOCKED_DOMAINS.has(parsed.hostname)) {
-    return { error: `Domain '${parsed.hostname}' is blocked for security reasons.` };
+    return {
+      error: `Domain '${parsed.hostname}' is blocked for security reasons.`,
+    };
   }
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-    return { error: `Only http and https protocols are supported. Got: ${parsed.protocol}` };
+    return {
+      error: `Only http and https protocols are supported. Got: ${parsed.protocol}`,
+    };
   }
 
   try {
@@ -78,7 +86,8 @@ export async function agenticFetchUrl(url: string, { selector }: { selector?: st
       signal: controller.signal,
       headers: {
         "User-Agent": USER_AGENT,
-        "Accept": "text/html,application/xhtml+xml,text/plain,application/json,*/*",
+        Accept:
+          "text/html,application/xhtml+xml,text/plain,application/json,*/*",
         "Accept-Language": "en-US,en;q=0.9",
       },
       redirect: "follow",
@@ -102,9 +111,10 @@ export async function agenticFetchUrl(url: string, { selector }: { selector?: st
       return {
         url,
         contentType: "application/json",
-        content: text.length > MAX_OUTPUT_CHARS
-          ? text.slice(0, MAX_OUTPUT_CHARS) + "\n\n... [truncated]"
-          : text,
+        content:
+          text.length > MAX_OUTPUT_CHARS
+            ? text.slice(0, MAX_OUTPUT_CHARS) + "\n\n... [truncated]"
+            : text,
         charCount: text.length,
         truncated: text.length > MAX_OUTPUT_CHARS,
       };
@@ -116,9 +126,10 @@ export async function agenticFetchUrl(url: string, { selector }: { selector?: st
       return {
         url,
         contentType: "text/plain",
-        content: text.length > MAX_OUTPUT_CHARS
-          ? text.slice(0, MAX_OUTPUT_CHARS) + "\n\n... [truncated]"
-          : text,
+        content:
+          text.length > MAX_OUTPUT_CHARS
+            ? text.slice(0, MAX_OUTPUT_CHARS) + "\n\n... [truncated]"
+            : text,
         charCount: text.length,
         truncated: text.length > MAX_OUTPUT_CHARS,
       };
@@ -131,9 +142,10 @@ export async function agenticFetchUrl(url: string, { selector }: { selector?: st
     return {
       url,
       contentType: contentType.split(";")[0].trim(),
-      content: markdown.length > MAX_OUTPUT_CHARS
-        ? markdown.slice(0, MAX_OUTPUT_CHARS) + "\n\n... [truncated]"
-        : markdown,
+      content:
+        markdown.length > MAX_OUTPUT_CHARS
+          ? markdown.slice(0, MAX_OUTPUT_CHARS) + "\n\n... [truncated]"
+          : markdown,
       charCount: markdown.length,
       truncated: markdown.length > MAX_OUTPUT_CHARS,
     };
@@ -156,7 +168,14 @@ const BRAVE_SEARCH_BASE = "https://api.search.brave.com/res/v1/web/search";
  *   1. Brave Search API (whole-web, 2000 queries/month free)
  *   2. Google Custom Search (site-restricted, 100 queries/day free)
  */
-export async function agenticWebSearch(query: string, { limit = 5, dateRestrict, siteSearch }: { limit?: number; dateRestrict?: string; siteSearch?: string } = {}) {
+export async function agenticWebSearch(
+  query: string,
+  {
+    limit = 5,
+    dateRestrict,
+    siteSearch,
+  }: { limit?: number; dateRestrict?: string; siteSearch?: string } = {},
+) {
   if (!query || typeof query !== "string") {
     return { error: "'query' is required and must be a non-empty string" };
   }
@@ -168,32 +187,47 @@ export async function agenticWebSearch(query: string, { limit = 5, dateRestrict,
   // ── Provider 1: Brave Search ───────────────────────────────
   if (CONFIG.BRAVE_SEARCH_API_KEY) {
     try {
-      const result = await _searchBrave(effectiveQuery, { limit: clampedLimit, dateRestrict });
+      const result = await _searchBrave(effectiveQuery, {
+        limit: clampedLimit,
+        dateRestrict,
+      });
       if (!result.error) return result;
       // If Brave fails, fall through to Google CSE
-      logger.warn(`[AgenticWebService] Brave Search failed, trying Google CSE: ${result.error}`);
+      logger.warn(
+        `[AgenticWebService] Brave Search failed, trying Google CSE: ${result.error}`,
+      );
     } catch (error: unknown) {
-      logger.warn(`[AgenticWebService] Brave Search exception: ${errorMessage(error)}`);
+      logger.warn(
+        `[AgenticWebService] Brave Search exception: ${errorMessage(error)}`,
+      );
     }
   }
 
   // ── Provider 2: Google Custom Search ───────────────────────
   if (CONFIG.GOOGLE_API_KEY && CONFIG.GOOGLE_CSE_CX) {
-    return _searchGoogleCSE(query, { limit: clampedLimit, dateRestrict, siteSearch });
+    return _searchGoogleCSE(query, {
+      limit: clampedLimit,
+      dateRestrict,
+      siteSearch,
+    });
   }
 
   return {
     query,
     limit,
     results: [],
-    message: "No search provider configured. Set BRAVE_SEARCH_API_KEY or GOOGLE_API_KEY + GOOGLE_CSE_CX in secrets.js.",
+    message:
+      "No search provider configured. Set BRAVE_SEARCH_API_KEY or GOOGLE_API_KEY + GOOGLE_CSE_CX in secrets.js.",
     provider: null,
   };
 }
 
 // ── Brave Search Implementation ──────────────────────────────
 
-async function _searchBrave(query: string, { limit, dateRestrict }: { limit: number; dateRestrict?: string }) {
+async function _searchBrave(
+  query: string,
+  { limit, dateRestrict }: { limit: number; dateRestrict?: string },
+) {
   const params = new URLSearchParams({
     q: query,
     count: String(limit),
@@ -201,13 +235,22 @@ async function _searchBrave(query: string, { limit, dateRestrict }: { limit: num
 
   // Brave freshness: "pd" (past day), "pw" (past week), "pm" (past month), "py" (past year)
   if (dateRestrict) {
-    const freshnessMap = { d1: "pd", d7: "pw", w1: "pw", w2: "pw", m1: "pm", m3: "pm", y1: "py" };
-        const freshness = freshnessMap[dateRestrict as keyof typeof freshnessMap] || dateRestrict;
+    const freshnessMap = {
+      d1: "pd",
+      d7: "pw",
+      w1: "pw",
+      w2: "pw",
+      m1: "pm",
+      m3: "pm",
+      y1: "py",
+    };
+    const freshness =
+      freshnessMap[dateRestrict as keyof typeof freshnessMap] || dateRestrict;
     params.set("freshness", freshness);
   }
 
   const headers: Record<string, string> = {
-    "Accept": "application/json",
+    Accept: "application/json",
     "Accept-Encoding": "gzip",
   };
   if (CONFIG.BRAVE_SEARCH_API_KEY) {
@@ -215,15 +258,23 @@ async function _searchBrave(query: string, { limit, dateRestrict }: { limit: num
   }
 
   const response = await fetch(`${BRAVE_SEARCH_BASE}?${params}`, {
-        headers,
+    headers,
   });
 
   if (!response.ok) {
     const body = await response.text();
     if (response.status === 429) {
-      return { error: "Brave Search rate limit exceeded. Falling back to Google CSE.", query, provider: "brave" };
+      return {
+        error: "Brave Search rate limit exceeded. Falling back to Google CSE.",
+        query,
+        provider: "brave",
+      };
     }
-    return { error: `Brave Search API error: HTTP ${response.status} — ${body.slice(0, 500)}`, query, provider: "brave" };
+    return {
+      error: `Brave Search API error: HTTP ${response.status} — ${body.slice(0, 500)}`,
+      query,
+      provider: "brave",
+    };
   }
 
   const data = await response.json();
@@ -248,8 +299,15 @@ async function _searchBrave(query: string, { limit, dateRestrict }: { limit: num
 
 // ── Google CSE Implementation ────────────────────────────────
 
-async function _searchGoogleCSE(query: string, { limit, dateRestrict, siteSearch }: { limit: number; dateRestrict?: string; siteSearch?: string }) {
-    const params = new URLSearchParams({
+async function _searchGoogleCSE(
+  query: string,
+  {
+    limit,
+    dateRestrict,
+    siteSearch,
+  }: { limit: number; dateRestrict?: string; siteSearch?: string },
+) {
+  const params = new URLSearchParams({
     key: CONFIG.GOOGLE_API_KEY as string,
     cx: CONFIG.GOOGLE_CSE_CX as string,
     q: query,
@@ -260,7 +318,7 @@ async function _searchGoogleCSE(query: string, { limit, dateRestrict, siteSearch
   if (siteSearch) params.set("siteSearch", siteSearch);
 
   const response = await fetch(`${GOOGLE_CSE_BASE}?${params}`, {
-    headers: { "Accept": "application/json" },
+    headers: { Accept: "application/json" },
   });
 
   if (!response.ok) {
@@ -306,13 +364,22 @@ async function _searchGoogleCSE(query: string, { limit, dateRestrict, siteSearch
  * Convert HTML to clean markdown using cheerio.
  * Strips scripts, styles, nav, and other non-content elements.
  */
-function htmlToMarkdown(html: string, { selector }: { selector?: string } = {}) {
+function htmlToMarkdown(
+  html: string,
+  { selector }: { selector?: string } = {},
+) {
   const $ = cheerio.load(html);
 
   // Remove non-content elements
-  $("script, style, nav, footer, header, noscript, iframe, svg, form, button, input, select, textarea").remove();
-  $("[role='navigation'], [role='banner'], [role='complementary'], [aria-hidden='true']").remove();
-  $(".cookie-banner, .popup, .modal, .overlay, .sidebar, .ad, .advertisement").remove();
+  $(
+    "script, style, nav, footer, header, noscript, iframe, svg, form, button, input, select, textarea",
+  ).remove();
+  $(
+    "[role='navigation'], [role='banner'], [role='complementary'], [aria-hidden='true']",
+  ).remove();
+  $(
+    ".cookie-banner, .popup, .modal, .overlay, .sidebar, .ad, .advertisement",
+  ).remove();
 
   // If a CSS selector was provided, focus on that
   let root: Cheerio<AnyNode> = $("body");
@@ -323,7 +390,9 @@ function htmlToMarkdown(html: string, { selector }: { selector?: string } = {}) 
     }
   } else {
     // Try to find main content area
-    const mainContent = $("main, article, [role='main'], .content, .post-content, .entry-content, #content");
+    const mainContent = $(
+      "main, article, [role='main'], .content, .post-content, .entry-content, #content",
+    );
     if (mainContent.length > 0) {
       root = mainContent.first();
     }
@@ -346,7 +415,9 @@ function htmlToMarkdown(html: string, { selector }: { selector?: string } = {}) 
       if (node.type !== "tag") return;
 
       const $node = $(node);
-      const tag = (node as unknown as { tagName?: string }).tagName?.toLowerCase();
+      const tag = (
+        node as unknown as { tagName?: string }
+      ).tagName?.toLowerCase();
 
       switch (tag) {
         case "h1":
@@ -401,7 +472,11 @@ function htmlToMarkdown(html: string, { selector }: { selector?: string } = {}) 
           break;
         case "pre": {
           const codeText = $node.text().trim();
-          const lang = $node.find("code").attr("class")?.match(/language-(\w+)/)?.[1] || "";
+          const lang =
+            $node
+              .find("code")
+              .attr("class")
+              ?.match(/language-(\w+)/)?.[1] || "";
           lines.push(`\n\`\`\`${lang}\n${codeText}\n\`\`\`\n`);
           break;
         }
@@ -460,14 +535,20 @@ function htmlToMarkdown(html: string, { selector }: { selector?: string } = {}) 
 /**
  * Convert an HTML table to markdown table syntax.
  */
-function processTable($: CheerioAPI, $table: Cheerio<AnyNode>, lines: string[]) {
+function processTable(
+  $: CheerioAPI,
+  $table: Cheerio<AnyNode>,
+  lines: string[],
+) {
   const rows: string[][] = [];
 
   $table.find("tr").each((_: number, tr: AnyNode) => {
     const cells: string[] = [];
-    $(tr).find("th, td").each((_: number, cell: AnyNode) => {
-      cells.push($(cell).text().trim().replace(/\|/g, "\\|"));
-    });
+    $(tr)
+      .find("th, td")
+      .each((_: number, cell: AnyNode) => {
+        cells.push($(cell).text().trim().replace(/\|/g, "\\|"));
+      });
     rows.push(cells);
   });
 
@@ -482,4 +563,3 @@ function processTable($: CheerioAPI, $table: Cheerio<AnyNode>, lines: string[]) 
   }
   lines.push("");
 }
-

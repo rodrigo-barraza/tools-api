@@ -51,34 +51,36 @@ export async function upsertTrends(trends: TrendInput[]) {
   const collection = database.collection<TrendDoc>("trends");
   const now = new Date();
 
-  const bulkOps: AnyBulkWriteOperation<TrendDoc>[] = trends.map((trend: TrendInput) => ({
-    updateOne: {
-      filter: {
-        normalizedName: trend.normalizedName,
-        source: trend.source,
-      },
-      update: {
-        $set: {
-          name: trend.name,
+  const bulkOps: AnyBulkWriteOperation<TrendDoc>[] = trends.map(
+    (trend: TrendInput) => ({
+      updateOne: {
+        filter: {
           normalizedName: trend.normalizedName,
           source: trend.source,
-          category: trend.category || null,
-          volume: trend.volume || 0,
-          url: trend.url || null,
-          context: trend.context || {},
-          lastSeen: now,
         },
-        $setOnInsert: { firstSeen: now },
-        $push: {
-          appearances: {
-            $each: [{ timestamp: now, volume: trend.volume || 0 }],
-            $slice: -100,
+        update: {
+          $set: {
+            name: trend.name,
+            normalizedName: trend.normalizedName,
+            source: trend.source,
+            category: trend.category || null,
+            volume: trend.volume || 0,
+            url: trend.url || null,
+            context: trend.context || {},
+            lastSeen: now,
+          },
+          $setOnInsert: { firstSeen: now },
+          $push: {
+            appearances: {
+              $each: [{ timestamp: now, volume: trend.volume || 0 }],
+              $slice: -100,
+            },
           },
         },
+        upsert: true,
       },
-      upsert: true,
-    },
-  }));
+    }),
+  );
 
   const result = await collection.bulkWrite(bulkOps, { ordered: false });
   return {

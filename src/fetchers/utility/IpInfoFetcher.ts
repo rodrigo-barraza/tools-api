@@ -48,7 +48,8 @@ function evictStaleEntries() {
   // If still over limit after TTL eviction, drop oldest half
   if (ipCache.size > MAX_CACHE_SIZE) {
     const entries = [...ipCache.entries()].sort(
-      (a: [string, IpCacheEntry], b: [string, IpCacheEntry]) => a[1].fetchedAt - b[1].fetchedAt,
+      (a: [string, IpCacheEntry], b: [string, IpCacheEntry]) =>
+        a[1].fetchedAt - b[1].fetchedAt,
     );
     const toRemove = Math.floor(entries.length / 2);
     for (let i = 0; i < toRemove; i++) {
@@ -132,6 +133,8 @@ export async function batchLookupIps(ips: string[]) {
 
   return results.map((r, i) => ({
     ip: ips[i],
-    ...(r.status === "fulfilled" ? r.value : { error: (r as PromiseRejectedResult).reason.message }),
+    ...(r.status === "fulfilled"
+      ? r.value
+      : { error: (r as PromiseRejectedResult).reason.message }),
   }));
 }

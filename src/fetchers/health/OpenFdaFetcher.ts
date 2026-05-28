@@ -162,7 +162,9 @@ export async function searchDrugLabels(query: string, limit = 5) {
     return { found: false, query, drugs: [] as FdaDrugLabelNormalized[] };
   }
   if (!response.ok) {
-    throw new Error(`openFDA drug labels → ${response.status} ${response.statusText}`);
+    throw new Error(
+      `openFDA drug labels → ${response.status} ${response.statusText}`,
+    );
   }
 
   const data = (await response.json()) as FdaLabelApiResponse;
@@ -187,10 +189,16 @@ export async function getDrugAdverseEvents(drugName: string, limit = 10) {
   const response = await fetch(url);
 
   if (response.status === 404) {
-    return { found: false, drugName, events: [] as FdaAdverseEventNormalized[] };
+    return {
+      found: false,
+      drugName,
+      events: [] as FdaAdverseEventNormalized[],
+    };
   }
   if (!response.ok) {
-    throw new Error(`openFDA adverse events → ${response.status} ${response.statusText}`);
+    throw new Error(
+      `openFDA adverse events → ${response.status} ${response.statusText}`,
+    );
   }
 
   const data = (await response.json()) as FdaEventApiResponse;
@@ -198,28 +206,30 @@ export async function getDrugAdverseEvents(drugName: string, limit = 10) {
   return {
     found: true,
     totalResults: data.meta?.results?.total || 0,
-    events: (data.results || []).slice(0, limit).map((item: RawFdaAdverseEvent) => ({
-      safetyReportId: item.safetyreportid || null,
-      receiveDate: item.receivedate || null,
-      serious: item.serious ? parseInt(item.serious, 10) === 1 : null,
-      seriousnessDetails: {
-        death: item.seriousnessdeath === "1",
-        hospitalization: item.seriousnesshospitalization === "1",
-        lifeThreatening: item.seriousnesslifethreatening === "1",
-        disability: item.seriousnessdisabling === "1",
-      },
-      reactions: (item.patient?.reaction || [])
-        .map((r) => r.reactionmeddrapt)
-        .filter((r): r is string => typeof r === "string")
-        .slice(0, 10),
-      patientAge: item.patient?.patientonsetage || null,
-      patientSex:
-        item.patient?.patientsex === "1"
-          ? "Male"
-          : item.patient?.patientsex === "2"
-            ? "Female"
-            : null,
-    })),
+    events: (data.results || [])
+      .slice(0, limit)
+      .map((item: RawFdaAdverseEvent) => ({
+        safetyReportId: item.safetyreportid || null,
+        receiveDate: item.receivedate || null,
+        serious: item.serious ? parseInt(item.serious, 10) === 1 : null,
+        seriousnessDetails: {
+          death: item.seriousnessdeath === "1",
+          hospitalization: item.seriousnesshospitalization === "1",
+          lifeThreatening: item.seriousnesslifethreatening === "1",
+          disability: item.seriousnessdisabling === "1",
+        },
+        reactions: (item.patient?.reaction || [])
+          .map((r) => r.reactionmeddrapt)
+          .filter((r): r is string => typeof r === "string")
+          .slice(0, 10),
+        patientAge: item.patient?.patientonsetage || null,
+        patientSex:
+          item.patient?.patientsex === "1"
+            ? "Male"
+            : item.patient?.patientsex === "2"
+              ? "Female"
+              : null,
+      })),
   };
 }
 
@@ -242,7 +252,9 @@ export async function getDrugRecalls(query: string, limit = 10) {
     return { found: false, recalls: [] as FdaRecallNormalized[] };
   }
   if (!response.ok) {
-    throw new Error(`openFDA recalls → ${response.status} ${response.statusText}`);
+    throw new Error(
+      `openFDA recalls → ${response.status} ${response.statusText}`,
+    );
   }
 
   const data = (await response.json()) as FdaRecallApiResponse;

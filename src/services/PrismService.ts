@@ -63,7 +63,9 @@ export interface TransformedPrismSTTResult {
 /**
  * Call Prism's /chat endpoint for text/image generation.
  */
-export async function chat(params: PrismChatParams): Promise<TransformedPrismChatResult> {
+export async function chat(
+  params: PrismChatParams,
+): Promise<TransformedPrismChatResult> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), PRISM_CHAT_TIMEOUT_MS);
@@ -83,10 +85,12 @@ export async function chat(params: PrismChatParams): Promise<TransformedPrismCha
 
     if (!response.ok) {
       const errText = await response.text().catch(() => "");
-      throw new Error(`Prism returned ${response.status}: ${errText.slice(0, 200)}`);
+      throw new Error(
+        `Prism returned ${response.status}: ${errText.slice(0, 200)}`,
+      );
     }
 
-    return await response.json() as TransformedPrismChatResult;
+    return (await response.json()) as TransformedPrismChatResult;
   } catch (error: unknown) {
     logger.error(`[PrismService] chat failed: ${errorMessage(error)}`);
     throw error;
@@ -99,7 +103,10 @@ export async function chat(params: PrismChatParams): Promise<TransformedPrismCha
 export async function health(): Promise<boolean> {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), PRISM_HEALTH_TIMEOUT_MS);
+    const timeout = setTimeout(
+      () => controller.abort(),
+      PRISM_HEALTH_TIMEOUT_MS,
+    );
     const response = await fetch(`${PRISM_SERVICE_URL}/health`, {
       signal: controller.signal,
     });
@@ -114,7 +121,9 @@ export async function health(): Promise<boolean> {
  * Call Prism's /text-to-audio endpoint to generate speech.
  * Collects the streamed binary response into a base64-encoded buffer.
  */
-export async function textToSpeech(params: PrismTTSParams): Promise<TransformedPrismSpeechResult> {
+export async function textToSpeech(
+  params: PrismTTSParams,
+): Promise<TransformedPrismSpeechResult> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), PRISM_TTS_TIMEOUT_MS);
@@ -137,7 +146,9 @@ export async function textToSpeech(params: PrismTTSParams): Promise<TransformedP
 
     if (!response.ok) {
       const errText = await response.text().catch(() => "");
-      throw new Error(`Prism TTS returned ${response.status}: ${errText.slice(0, 200)}`);
+      throw new Error(
+        `Prism TTS returned ${response.status}: ${errText.slice(0, 200)}`,
+      );
     }
 
     const contentType = response.headers.get("content-type") || "audio/mpeg";
@@ -154,7 +165,9 @@ export async function textToSpeech(params: PrismTTSParams): Promise<TransformedP
 /**
  * Call Prism's /audio-to-text endpoint to transcribe audio.
  */
-export async function speechToText(params: PrismSTTParams): Promise<TransformedPrismSTTResult> {
+export async function speechToText(
+  params: PrismSTTParams,
+): Promise<TransformedPrismSTTResult> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), PRISM_STT_TIMEOUT_MS);
@@ -177,15 +190,43 @@ export async function speechToText(params: PrismSTTParams): Promise<TransformedP
 
     if (!response.ok) {
       const errText = await response.text().catch(() => "");
-      throw new Error(`Prism STT returned ${response.status}: ${errText.slice(0, 200)}`);
+      throw new Error(
+        `Prism STT returned ${response.status}: ${errText.slice(0, 200)}`,
+      );
     }
 
-    return await response.json() as TransformedPrismSTTResult;
+    return (await response.json()) as TransformedPrismSTTResult;
   } catch (error: unknown) {
     logger.error(`[PrismService] speechToText failed: ${errorMessage(error)}`);
     throw error;
   }
 }
 
-export default { chat, health, textToSpeech, speechToText };
+/**
+ * Fetch global user settings from Prism's /settings endpoint.
+ */
+export async function getSettings(): Promise<any> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(
+      () => controller.abort(),
+      PRISM_HEALTH_TIMEOUT_MS,
+    );
 
+    const response = await fetch(`${PRISM_SERVICE_URL}/settings`, {
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      throw new Error(`Prism returned ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error: unknown) {
+    logger.error(`[PrismService] getSettings failed: ${errorMessage(error)}`);
+    return null;
+  }
+}
+
+export default { chat, health, textToSpeech, speechToText, getSettings };

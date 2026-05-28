@@ -2,7 +2,11 @@
 
 import { spawn } from "node:child_process";
 import { validatePath } from "./AgenticFileService.ts";
-import { routeForPath, sendRpc, sendRpcStreaming } from "./AgentConnectionManager.ts";
+import {
+  routeForPath,
+  sendRpc,
+  sendRpcStreaming,
+} from "./AgentConnectionManager.ts";
 import * as BackgroundProcessRegistry from "./BackgroundProcessRegistry.ts";
 import logger from "../logger.ts";
 import {
@@ -31,47 +35,85 @@ export interface CommandResult {
 // Only these command prefixes are allowed as the first token.
 const ALLOWED_COMMANDS = new Set([
   // Node.js ecosystem
-  "npm", "npx", "node",
+  "npm",
+  "npx",
+  "node",
   // Linting / formatting
-  "eslint", "prettier", "tsc", "stylelint",
+  "eslint",
+  "prettier",
+  "tsc",
+  "stylelint",
   // Python
-  "python3", "pip", "pip3",
+  "python3",
+  "pip",
+  "pip3",
   // Git (read-only operations are safeguarded in args)
   "git",
   // File inspection (read-only)
-  "cat", "ls", "find", "wc", "diff", "which", "file", "head", "tail",
-  "tree", "du",
+  "cat",
+  "ls",
+  "find",
+  "wc",
+  "diff",
+  "which",
+  "file",
+  "head",
+  "tail",
+  "tree",
+  "du",
   // Process inspection
-  "ps", "lsof",
+  "ps",
+  "lsof",
 ]);
 
 // Git subcommands that are allowed (read-only + common safe operations)
 const ALLOWED_GIT_SUBCOMMANDS = new Set([
-  "status", "diff", "log", "show", "branch", "tag",
-  "stash", "remote", "describe", "shortlog",
-  "rev-parse", "ls-files", "ls-tree", "blame",
-  "config", "reflog",
+  "status",
+  "diff",
+  "log",
+  "show",
+  "branch",
+  "tag",
+  "stash",
+  "remote",
+  "describe",
+  "shortlog",
+  "rev-parse",
+  "ls-files",
+  "ls-tree",
+  "blame",
+  "config",
+  "reflog",
   // Allow add/commit/checkout but these need approval
-  "add", "commit", "checkout", "switch", "restore",
-  "merge", "rebase", "cherry-pick", "reset",
-  "push", "pull", "fetch",
+  "add",
+  "commit",
+  "checkout",
+  "switch",
+  "restore",
+  "merge",
+  "rebase",
+  "cherry-pick",
+  "reset",
+  "push",
+  "pull",
+  "fetch",
 ]);
 
 // Patterns that indicate abuse attempts.
 const BLOCKED_PATTERNS = [
-  /`/,                  // backtick command substitution
-  /\$\(/,              // $() command substitution
-  /\.\.\//,             // path traversal
-  /\/dev\//,            // device access
-  /\/proc\//,           // proc access
-  /\/sys\//,            // sys access
-  /\/etc\//,            // config access
-  />\s*\//,             // redirect to absolute path
-  />\s*~/,              // redirect to home
-  /rm\s+-rf/i,          // destructive rm
+  /`/, // backtick command substitution
+  /\$\(/, // $() command substitution
+  /\.\.\//, // path traversal
+  /\/dev\//, // device access
+  /\/proc\//, // proc access
+  /\/sys\//, // sys access
+  /\/etc\//, // config access
+  />\s*\//, // redirect to absolute path
+  />\s*~/, // redirect to home
+  /rm\s+-rf/i, // destructive rm
   /\|\s*(bash|sh|zsh|dash)\b/, // piping into a shell
-  /eval\s+/,            // eval calls
-  /source\s+/,          // sourcing arbitrary scripts
+  /eval\s+/, // eval calls
+  /source\s+/, // sourcing arbitrary scripts
 ];
 
 // ────────────────────────────────────────────────────────────
@@ -94,7 +136,7 @@ function validateCommand(command: string): { valid: boolean; error?: string } {
 async function tryAgentRouteCommand(
   method: string,
   params: Record<string, unknown>,
-  cwd: string | null | undefined
+  cwd: string | null | undefined,
 ): Promise<CommandResult | null> {
   if (!cwd) return null;
   const agent = routeForPath(cwd);
@@ -134,13 +176,13 @@ export async function executeCommand(
     timeout?: number;
     signal?: AbortSignal;
     runInBackground?: boolean;
-  } = {}
+  } = {},
 ): Promise<CommandResult> {
   // Agent routing — if CWD is served by a remote agent, proxy the command
   const agentResult = await tryAgentRouteCommand(
     "command.run",
     { command, cwd, timeout, runInBackground },
-    cwd
+    cwd,
   );
   if (agentResult) return agentResult;
 
@@ -202,7 +244,7 @@ export async function executeCommand(
       stdio: ["pipe", "pipe", "pipe"],
       env: {
         ...process.env,
-        CI: "true",  // Disable interactive features
+        CI: "true", // Disable interactive features
         FORCE_COLOR: "0",
         NO_COLOR: "1",
       },
@@ -223,13 +265,24 @@ export async function executeCommand(
       const executionTimeMs = Math.round(performance.now() - startTime);
 
       // Register in the background process registry
-      BackgroundProcessRegistry.register(child, { command, cwd: cwdValidation.resolved || "" });
-      logger.info(`[AgenticCommandService] Backgrounded PID ${child.pid}: ${reason} (${command.slice(0, 60)})`);
+      BackgroundProcessRegistry.register(child, {
+        command,
+        cwd: cwdValidation.resolved || "",
+      });
+      logger.info(
+        `[AgenticCommandService] Backgrounded PID ${child.pid}: ${reason} (${command.slice(0, 60)})`,
+      );
 
       resolve({
         success: true,
-        stdout: stdoutLen > MAX_OUTPUT_BYTES ? stdout + "\n... [output truncated]" : stdout,
-        stderr: stderrLen > MAX_OUTPUT_BYTES ? stderr + "\n... [output truncated]" : stderr,
+        stdout:
+          stdoutLen > MAX_OUTPUT_BYTES
+            ? stdout + "\n... [output truncated]"
+            : stdout,
+        stderr:
+          stderrLen > MAX_OUTPUT_BYTES
+            ? stderr + "\n... [output truncated]"
+            : stderr,
         exitCode: null,
         executionTimeMs,
         backgrounded: true,
@@ -293,13 +346,23 @@ export async function executeCommand(
 
       resolve({
         success: exitCode === 0 && !timedOut && !aborted,
-        stdout: stdoutLen > MAX_OUTPUT_BYTES ? stdout + "\n... [output truncated]" : stdout,
-        stderr: stderrLen > MAX_OUTPUT_BYTES ? stderr + "\n... [output truncated]" : stderr,
-        exitCode: (timedOut || aborted) ? null : exitCode,
+        stdout:
+          stdoutLen > MAX_OUTPUT_BYTES
+            ? stdout + "\n... [output truncated]"
+            : stdout,
+        stderr:
+          stderrLen > MAX_OUTPUT_BYTES
+            ? stderr + "\n... [output truncated]"
+            : stderr,
+        exitCode: timedOut || aborted ? null : exitCode,
         executionTimeMs,
         timedOut,
-        ...(aborted ? { aborted: true, error: "Command aborted (session stopped)" } : {}),
-        ...((timedOut && !aborted) ? { error: `Command timed out after ${clampedTimeout}ms` } : {}),
+        ...(aborted
+          ? { aborted: true, error: "Command aborted (session stopped)" }
+          : {}),
+        ...(timedOut && !aborted
+          ? { error: `Command timed out after ${clampedTimeout}ms` }
+          : {}),
       });
     }
 
@@ -337,7 +400,7 @@ export async function executeCommandStreaming(
     timeout?: number;
     onChunk?: (type: "stdout" | "stderr", chunk: string) => void;
     signal?: AbortSignal;
-  } = {}
+  } = {},
 ): Promise<CommandResult> {
   // Agent routing for streaming commands
   if (cwd) {
@@ -349,9 +412,11 @@ export async function executeCommandStreaming(
           "command.stream",
           { command, cwd, timeout },
           (method: string, params: Record<string, unknown>) => {
-            if (method === "command.stdout") onChunk?.("stdout", params.data as string);
-            else if (method === "command.stderr") onChunk?.("stderr", params.data as string);
-          }
+            if (method === "command.stdout")
+              onChunk?.("stdout", params.data as string);
+            else if (method === "command.stderr")
+              onChunk?.("stderr", params.data as string);
+          },
         )) as CommandResult;
       } catch (error: unknown) {
         return {
@@ -471,13 +536,23 @@ export async function executeCommandStreaming(
       const stderr = Buffer.concat(stderrChunks).toString("utf-8");
       resolve({
         success: exitCode === 0 && !timedOut && !aborted,
-        stdout: stdoutLen > MAX_OUTPUT_BYTES ? stdout + "\n... [output truncated]" : stdout,
-        stderr: stderrLen > MAX_OUTPUT_BYTES ? stderr + "\n... [output truncated]" : stderr,
-        exitCode: (timedOut || aborted) ? null : exitCode,
+        stdout:
+          stdoutLen > MAX_OUTPUT_BYTES
+            ? stdout + "\n... [output truncated]"
+            : stdout,
+        stderr:
+          stderrLen > MAX_OUTPUT_BYTES
+            ? stderr + "\n... [output truncated]"
+            : stderr,
+        exitCode: timedOut || aborted ? null : exitCode,
         executionTimeMs: Math.round(performance.now() - startTime),
         timedOut,
-        ...(aborted ? { aborted: true, error: "Command aborted (session stopped)" } : {}),
-        ...((timedOut && !aborted) ? { error: `Command timed out after ${clampedTimeout}ms` } : {}),
+        ...(aborted
+          ? { aborted: true, error: "Command aborted (session stopped)" }
+          : {}),
+        ...(timedOut && !aborted
+          ? { error: `Command timed out after ${clampedTimeout}ms` }
+          : {}),
       });
     }
 
@@ -527,22 +602,38 @@ export function getBackgroundProcess(pid: number) {
  */
 export async function killProcessTree(
   pid: number,
-  { gracePeriodMs = KILL_GRACE_PERIOD_MS }: { gracePeriodMs?: number } = {}
-): Promise<{ success: boolean; pid?: number; signal?: string; escalated?: boolean; error?: string; message?: string }> {
+  { gracePeriodMs = KILL_GRACE_PERIOD_MS }: { gracePeriodMs?: number } = {},
+): Promise<{
+  success: boolean;
+  pid?: number;
+  signal?: string;
+  escalated?: boolean;
+  error?: string;
+  message?: string;
+}> {
   if (!pid || typeof pid !== "number" || pid <= 0) {
-    return { success: false, error: "Valid PID is required (positive integer)" };
+    return {
+      success: false,
+      error: "Valid PID is required (positive integer)",
+    };
   }
 
   // Safety: refuse to kill PID 1 or our own process
   if (pid === 1 || pid === process.pid) {
-    return { success: false, error: `Refusing to kill PID ${pid} (protected process)` };
+    return {
+      success: false,
+      error: `Refusing to kill PID ${pid} (protected process)`,
+    };
   }
 
   try {
     // Check if the process exists first
     process.kill(pid, 0); // Signal 0 = existence check, no actual signal sent
   } catch {
-    return { success: false, error: `Process ${pid} not found or not accessible` };
+    return {
+      success: false,
+      error: `Process ${pid} not found or not accessible`,
+    };
   }
 
   try {
@@ -572,6 +663,10 @@ export async function killProcessTree(
       return { success: true, pid, signal: "SIGTERM", escalated: false };
     }
   } catch (error: unknown) {
-    return { success: false, pid, error: `Failed to kill process: ${errorMessage(error)}` };
+    return {
+      success: false,
+      pid,
+      error: `Failed to kill process: ${errorMessage(error)}`,
+    };
   }
 }

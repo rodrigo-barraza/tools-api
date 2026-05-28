@@ -61,7 +61,9 @@ interface AgentRegistryEntry {
   connectedAt: Date;
   lastPong: Date;
   pendingRpc: Map<string, PendingRpc>;
-  _streamCallback?: ((method: string, params: Record<string, unknown>) => void) | null;
+  _streamCallback?:
+    | ((method: string, params: Record<string, unknown>) => void)
+    | null;
 }
 
 interface AgentRpcMessage {
@@ -107,143 +109,193 @@ export function initAgentWebSocket(httpServer: Server) {
   const wss = new WebSocketServer({ noServer: true });
   const clientWss = new WebSocketServer({ noServer: true });
 
-  httpServer.on("upgrade", (req: IncomingMessage, socket: Duplex, head: Buffer) => {
-    const url = new URL(req.url || "", `http://${req.headers.host || "localhost"}`);
+  httpServer.on(
+    "upgrade",
+    (req: IncomingMessage, socket: Duplex, head: Buffer) => {
+      const url = new URL(
+        req.url || "",
+        `http://${req.headers.host || "localhost"}`,
+      );
 
-    // Auth check (shared across both endpoints)
-    const secret = req.headers["x-api-secret"];
-    const expectedSecret = CONFIG.AGENT_SECRET || CONFIG.API_SECRET;
+      // Auth check (shared across both endpoints)
+      const secret = req.headers["x-api-secret"];
+      const expectedSecret = CONFIG.AGENT_SECRET || CONFIG.API_SECRET;
 
-    if (expectedSecret && secret !== expectedSecret) {
-      logger.warn(`[AgentWS] Rejected connection — invalid secret`);
-      socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
-      socket.destroy();
-      return;
-    }
+      if (expectedSecret && secret !== expectedSecret) {
+        logger.warn(`[AgentWS] Rejected connection — invalid secret`);
+        socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
+        socket.destroy();
+        return;
+      }
 
-    // Agent connections (workspace-service sidecar → tools-service)
-    if (url.pathname === "/ws/agent") {
-      wss.handleUpgrade(req, socket, head, (ws) => {
-        wss.emit("connection", ws, req);
-      });
-      return;
-    }
+      // Agent connections (workspace-service sidecar → tools-service)
+      if (url.pathname === "/ws/agent") {
+        wss.handleUpgrade(req, socket, head, (ws) => {
+          wss.emit("connection", ws, req);
+        });
+        return;
+      }
 
-    // Client connections (VS Code extension → tools-service → agent)
-    if (url.pathname === "/ws/workspace") {
-      clientWss.handleUpgrade(req, socket, head, (ws) => {
-        clientWss.emit("connection", ws, req);
-      });
-      return;
-    }
-  });
+      // Client connections (VS Code extension → tools-service → agent)
+      if (url.pathname === "/ws/workspace") {
+        clientWss.handleUpgrade(req, socket, head, (ws) => {
+          clientWss.emit("connection", ws, req);
+        });
+        return;
+      }
+    },
+  );
 
   // ── Agent WebSocket (workspace-service sidecar) ──────────
 
-  wss.on("connection", (ws: WebSocket & { isAlive?: boolean }, req: IncomingMessage) => {
-    const clientIp = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
-      req.socket.remoteAddress?.replace(/^::ffff:/, "");
+  wss.on(
+    "connection",
+    (ws: WebSocket & { isAlive?: boolean }, req: IncomingMessage) => {
+      const clientIp =
+        (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
+        req.socket.remoteAddress?.replace(/^::ffff:/, "");
 
-    logger.info(`[AgentWS] New connection from ${clientIp}`);
+      logger.info(`[AgentWS] New connection from ${clientIp}`);
 
-    ws.isAlive = true;
-    ws.on("pong", () => { ws.isAlive = true; });
+      ws.isAlive = true;
+      ws.on("pong", () => {
+        ws.isAlive = true;
+      });
 
-    ws.on("message", (raw: unknown) => {
-      try {
-        const data = raw as Buffer | ArrayBuffer | Buffer[];
-        const message = JSON.parse(data.toString()) as AgentRpcMessage;
-        handleAgentMessage(ws, message, clientIp);
-      } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        logger.error(`[AgentWS] Invalid message: ${errorMessage}`);
-      }
-    });
-
-    ws.on("close", () => {
-      for (const [agentId, agent] of agents) {
-        if (agent.ws === ws) {
-          deregisterAgent(agentId, "disconnected");
-          break;
+      ws.on("message", (raw: unknown) => {
+        try {
+          const data = raw as Buffer | ArrayBuffer | Buffer[];
+          const message = JSON.parse(data.toString()) as AgentRpcMessage;
+          handleAgentMessage(ws, message, clientIp);
+        } catch (error: unknown) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          logger.error(`[AgentWS] Invalid message: ${errorMessage}`);
         }
-      }
-    });
+      });
 
-    ws.on("error", (error: Error) => {
-      logger.error(`[AgentWS] Connection error: ${error.message}`);
-    });
-  });
+      ws.on("close", () => {
+        for (const [agentId, agent] of agents) {
+          if (agent.ws === ws) {
+            deregisterAgent(agentId, "disconnected");
+            break;
+          }
+        }
+      });
+
+      ws.on("error", (error: Error) => {
+        logger.error(`[AgentWS] Connection error: ${error.message}`);
+      });
+    },
+  );
 
   // ── Client WebSocket (VS Code extension proxy) ──────────
 
-  clientWss.on("connection", (ws: WebSocket & { isAlive?: boolean }, req: IncomingMessage) => {
-    const clientIp = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
-      req.socket.remoteAddress?.replace(/^::ffff:/, "");
+  clientWss.on(
+    "connection",
+    (ws: WebSocket & { isAlive?: boolean }, req: IncomingMessage) => {
+      const clientIp =
+        (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
+        req.socket.remoteAddress?.replace(/^::ffff:/, "");
 
-    logger.info(`[ClientWS] New client connection from ${clientIp}`);
+      logger.info(`[ClientWS] New client connection from ${clientIp}`);
 
-    ws.isAlive = true;
-    ws.on("pong", () => { ws.isAlive = true; });
+      ws.isAlive = true;
+      ws.on("pong", () => {
+        ws.isAlive = true;
+      });
 
-    ws.on("message", async (raw: unknown) => {
-      try {
-        const data = raw as Buffer | ArrayBuffer | Buffer[];
-        const message = JSON.parse(data.toString()) as AgentRpcMessage;
-
-        // Only handle RPC requests (has id + method)
-        if (!message.id || !message.method) return;
-
-        // Meta-methods (no path routing needed)
-        if (message.method === "agents.list") {
-          sendJson(ws, { jsonrpc: "2.0", id: message.id, result: getConnectedAgents() });
-          return;
-        }
-
-        // Extract the target path from params
-        const targetPath = message.params?.path ||
-          message.params?.paths ||
-          message.params?.searchPath ||
-          message.params?.source ||
-          message.params?.pathA ||
-          message.params?.cwd;
-
-        // Resolve target path to a string for routing
-        const routePath = Array.isArray(targetPath) ? targetPath[0] : targetPath;
-
-        if (!routePath) {
-          sendJson(ws, { jsonrpc: "2.0", id: message.id, error: { code: -32602, message: "No routable path found in params" } });
-          return;
-        }
-
-        // Find the agent that serves this path
-        const route = routeForPath(routePath);
-        if (!route) {
-          sendJson(ws, { jsonrpc: "2.0", id: message.id, error: { code: -32001, message: `No agent found for path: ${routePath}` } });
-          return;
-        }
-
-        // Proxy the RPC to the agent
+      ws.on("message", async (raw: unknown) => {
         try {
-          const result = await sendRpc(route.id, message.method, message.params);
-          sendJson(ws, { jsonrpc: "2.0", id: message.id, result });
+          const data = raw as Buffer | ArrayBuffer | Buffer[];
+          const message = JSON.parse(data.toString()) as AgentRpcMessage;
+
+          // Only handle RPC requests (has id + method)
+          if (!message.id || !message.method) return;
+
+          // Meta-methods (no path routing needed)
+          if (message.method === "agents.list") {
+            sendJson(ws, {
+              jsonrpc: "2.0",
+              id: message.id,
+              result: getConnectedAgents(),
+            });
+            return;
+          }
+
+          // Extract the target path from params
+          const targetPath =
+            message.params?.path ||
+            message.params?.paths ||
+            message.params?.searchPath ||
+            message.params?.source ||
+            message.params?.pathA ||
+            message.params?.cwd;
+
+          // Resolve target path to a string for routing
+          const routePath = Array.isArray(targetPath)
+            ? targetPath[0]
+            : targetPath;
+
+          if (!routePath) {
+            sendJson(ws, {
+              jsonrpc: "2.0",
+              id: message.id,
+              error: {
+                code: -32602,
+                message: "No routable path found in params",
+              },
+            });
+            return;
+          }
+
+          // Find the agent that serves this path
+          const route = routeForPath(routePath);
+          if (!route) {
+            sendJson(ws, {
+              jsonrpc: "2.0",
+              id: message.id,
+              error: {
+                code: -32001,
+                message: `No agent found for path: ${routePath}`,
+              },
+            });
+            return;
+          }
+
+          // Proxy the RPC to the agent
+          try {
+            const result = await sendRpc(
+              route.id,
+              message.method,
+              message.params,
+            );
+            sendJson(ws, { jsonrpc: "2.0", id: message.id, result });
+          } catch (error: unknown) {
+            const errorMessage =
+              error instanceof Error ? error.message : String(error);
+            sendJson(ws, {
+              jsonrpc: "2.0",
+              id: message.id,
+              error: { code: -32000, message: errorMessage },
+            });
+          }
         } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          sendJson(ws, { jsonrpc: "2.0", id: message.id, error: { code: -32000, message: errorMessage } });
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          logger.error(`[ClientWS] Invalid message: ${errorMessage}`);
         }
-      } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        logger.error(`[ClientWS] Invalid message: ${errorMessage}`);
-      }
-    });
+      });
 
-    ws.on("close", () => {
-      logger.info(`[ClientWS] Client disconnected (${clientIp})`);
-    });
+      ws.on("close", () => {
+        logger.info(`[ClientWS] Client disconnected (${clientIp})`);
+      });
 
-    ws.on("error", (error: Error) => {
-      logger.error(`[ClientWS] Connection error: ${error.message}`);
-    });
-  });
+      ws.on("error", (error: Error) => {
+        logger.error(`[ClientWS] Connection error: ${error.message}`);
+      });
+    },
+  );
 
   // Start health check interval
   startHealthCheck(wss);
@@ -256,20 +308,33 @@ export function initAgentWebSocket(httpServer: Server) {
 // Message Handling
 // ────────────────────────────────────────────────────────────
 
-function handleAgentMessage(ws: WebSocket & { isAlive?: boolean }, message: AgentRpcMessage, clientIp?: string) {
+function handleAgentMessage(
+  ws: WebSocket & { isAlive?: boolean },
+  message: AgentRpcMessage,
+  clientIp?: string,
+) {
   // Registration
   if (message.method === "agent.register") {
-    const { agentId, name, roots, capabilities, version } = message.params || {};
+    const { agentId, name, roots, capabilities, version } =
+      message.params || {};
 
     if (!agentId || !Array.isArray(roots) || roots.length === 0) {
-      sendJson(ws, { jsonrpc: "2.0", method: "agent.error", params: { error: "Invalid registration: agentId and roots required" } });
+      sendJson(ws, {
+        jsonrpc: "2.0",
+        method: "agent.error",
+        params: { error: "Invalid registration: agentId and roots required" },
+      });
       return;
     }
 
     // Check max connections
     const maxConnections = parseInt(CONFIG.AGENT_MAX_CONNECTIONS || "5", 10);
     if (agents.size >= maxConnections) {
-      sendJson(ws, { jsonrpc: "2.0", method: "agent.error", params: { error: `Max agent connections reached (${maxConnections})` } });
+      sendJson(ws, {
+        jsonrpc: "2.0",
+        method: "agent.error",
+        params: { error: `Max agent connections reached (${maxConnections})` },
+      });
       ws.close(1008, "Max connections reached");
       return;
     }
@@ -298,10 +363,16 @@ function handleAgentMessage(ws: WebSocket & { isAlive?: boolean }, message: Agen
     // Merge agent roots into ALLOWED_ROOTS so they appear in the workspace list
     rebuildAllowedRootsFromAgents();
 
-    logger.success(`[AgentWS] Agent registered: "${entry.name}" (${agentId.slice(0, 8)}) — roots: ${roots.join(", ")}`);
+    logger.success(
+      `[AgentWS] Agent registered: "${entry.name}" (${agentId.slice(0, 8)}) — roots: ${roots.join(", ")}`,
+    );
 
     // Confirm registration
-    sendJson(ws, { jsonrpc: "2.0", method: "agent.registered", params: { agentId } });
+    sendJson(ws, {
+      jsonrpc: "2.0",
+      method: "agent.registered",
+      params: { agentId },
+    });
     return;
   }
 
@@ -396,7 +467,11 @@ function deregisterAgent(agentId: string, reason: string) {
 /**
  * Send an RPC request to an agent and wait for the response.
  */
-export function sendRpc(agentId: string, method: string, params: Record<string, unknown> = {}): Promise<unknown> {
+export function sendRpc(
+  agentId: string,
+  method: string,
+  params: Record<string, unknown> = {},
+): Promise<unknown> {
   return new Promise<unknown>((resolve, reject) => {
     const agent = agents.get(agentId);
     if (!agent) {
@@ -410,7 +485,8 @@ export function sendRpc(agentId: string, method: string, params: Record<string, 
     }
 
     const id = crypto.randomUUID();
-    const timeout = (TIMEOUT_MAP as Record<string, number>)[method] || RPC_TIMEOUT_DEFAULT_MS;
+    const timeout =
+      (TIMEOUT_MAP as Record<string, number>)[method] || RPC_TIMEOUT_DEFAULT_MS;
 
     const timer = setTimeout(() => {
       agent.pendingRpc.delete(id);
@@ -526,7 +602,9 @@ function startHealthCheck(wss: WebSocketServer) {
       // Check for stale agents
       const timeSincePong = Date.now() - agent.lastPong.getTime();
       if (timeSincePong > STALE_AGENT_TIMEOUT_MS) {
-        logger.warn(`[AgentWS] Agent "${agent.name}" stale (${(timeSincePong / 1000).toFixed(0)}s since last pong) — disconnecting`);
+        logger.warn(
+          `[AgentWS] Agent "${agent.name}" stale (${(timeSincePong / 1000).toFixed(0)}s since last pong) — disconnecting`,
+        );
         agent.ws.terminate();
         deregisterAgent(agentId, "stale");
         continue;
@@ -534,7 +612,11 @@ function startHealthCheck(wss: WebSocketServer) {
 
       // Send application-level ping
       if (agent.ws.readyState === 1) {
-        sendJson(agent.ws, { jsonrpc: "2.0", method: "agent.ping", params: {} });
+        sendJson(agent.ws, {
+          jsonrpc: "2.0",
+          method: "agent.ping",
+          params: {},
+        });
       }
     }
 
@@ -571,7 +653,8 @@ function sendJson(ws: WebSocket, object: Record<string, unknown>) {
  */
 async function rebuildAllowedRootsFromAgents() {
   try {
-    const { ALLOWED_ROOTS, refreshAllowedRoots, getStaticRoots } = await import("./AgenticFileService.ts");
+    const { ALLOWED_ROOTS, refreshAllowedRoots, getStaticRoots } =
+      await import("./AgenticFileService.ts");
 
     // Collect all agent roots
     const agentRoots: string[] = [];
@@ -590,7 +673,9 @@ async function rebuildAllowedRootsFromAgents() {
     const staticRoots = getStaticRoots();
     const staticSet = new Set(staticRoots);
     const agentSet = new Set(agentRoots);
-    const userRoots = ALLOWED_ROOTS.filter((r) => !staticSet.has(r) && !agentSet.has(r));
+    const userRoots = ALLOWED_ROOTS.filter(
+      (r) => !staticSet.has(r) && !agentSet.has(r),
+    );
 
     refreshAllowedRoots([...userRoots, ...agentRoots]);
   } catch (error: unknown) {

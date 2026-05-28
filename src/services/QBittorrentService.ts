@@ -44,7 +44,7 @@ async function authenticate(): Promise<string> {
     const remainSec = Math.ceil((authFailedUntil - now) / 1000);
     throw new Error(
       `qBittorrent auth cooldown active (${remainSec}s remaining) — ` +
-      `previous authentication failed. Check QBITTORRENT_USERNAME/PASSWORD in vault.`
+        `previous authentication failed. Check QBITTORRENT_USERNAME/PASSWORD in vault.`,
     );
   }
 
@@ -62,7 +62,9 @@ async function authenticate(): Promise<string> {
       }),
     });
   } catch (error: unknown) {
-    throw new Error(`qBittorrent unreachable at ${baseUrl}: ${errorMessage(error)}`);
+    throw new Error(
+      `qBittorrent unreachable at ${baseUrl}: ${errorMessage(error)}`,
+    );
   }
 
   // Read body for all paths — qBittorrent sends descriptive text on errors
@@ -71,19 +73,23 @@ async function authenticate(): Promise<string> {
   // Detect IP ban (qBittorrent returns 403 with specific body text)
   if (response.status === 403 && text.includes("banned")) {
     authFailedUntil = now + AUTH_COOLDOWN_MS * 5; // 5 min cooldown when banned
-    logger.error(`${LOG_PREFIX} — IP banned by qBittorrent. Backing off for 5 minutes.`);
+    logger.error(
+      `${LOG_PREFIX} — IP banned by qBittorrent. Backing off for 5 minutes.`,
+    );
     throw new Error(
       `qBittorrent IP banned: ${text.trim()}. ` +
-      `Restart qBittorrent or clear the ban list to unblock.`
+        `Restart qBittorrent or clear the ban list to unblock.`,
     );
   }
 
   if (!response.ok) {
     authFailedUntil = now + AUTH_COOLDOWN_MS;
-    logger.error(`${LOG_PREFIX} — Auth failed (${response.status}). Cooldown for 60s.`);
+    logger.error(
+      `${LOG_PREFIX} — Auth failed (${response.status}). Cooldown for 60s.`,
+    );
     throw new Error(
       `qBittorrent auth failed: ${response.status} ${response.statusText}. ` +
-      `Check QBITTORRENT_USERNAME/PASSWORD configuration.`
+        `Check QBITTORRENT_USERNAME/PASSWORD configuration.`,
     );
   }
 
@@ -120,7 +126,10 @@ interface QbtFetchOptions {
  * Automatically re-authenticates once on 403 (session expired),
  * but backs off on IP bans rather than hammering the endpoint.
  */
-async function qbtFetch(path: string, { method = "GET", body, params }: QbtFetchOptions = {}): Promise<unknown> {
+async function qbtFetch(
+  path: string,
+  { method = "GET", body, params }: QbtFetchOptions = {},
+): Promise<unknown> {
   const sid = await authenticate();
   const baseUrl = getBaseUrl();
 
@@ -136,16 +145,17 @@ async function qbtFetch(path: string, { method = "GET", body, params }: QbtFetch
 
   if (body && method !== "GET") {
     headers["Content-Type"] = "application/x-www-form-urlencoded";
-    options.body = body instanceof URLSearchParams
-      ? body
-      : new URLSearchParams(body);
+    options.body =
+      body instanceof URLSearchParams ? body : new URLSearchParams(body);
   }
 
   let response: Response;
   try {
     response = await fetch(url, options);
   } catch (error: unknown) {
-    throw new Error(`qBittorrent unreachable at ${baseUrl}: ${errorMessage(error)}`);
+    throw new Error(
+      `qBittorrent unreachable at ${baseUrl}: ${errorMessage(error)}`,
+    );
   }
 
   // Session expired — check for ban first, then re-auth once
@@ -164,14 +174,18 @@ async function qbtFetch(path: string, { method = "GET", body, params }: QbtFetch
     headers.Cookie = newSid;
     const retry = await fetch(url, { ...options, headers });
     if (!retry.ok) {
-      throw new Error(`qBittorrent API error: ${retry.status} ${retry.statusText}`);
+      throw new Error(
+        `qBittorrent API error: ${retry.status} ${retry.statusText}`,
+      );
     }
     const contentType = retry.headers.get("content-type") || "";
     return contentType.includes("json") ? retry.json() : retry.text();
   }
 
   if (!response.ok) {
-    throw new Error(`qBittorrent API error: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `qBittorrent API error: ${response.status} ${response.statusText}`,
+    );
   }
 
   const contentType = response.headers.get("content-type") || "";
@@ -276,12 +290,18 @@ interface SearchOptions {
 /**
  * Start a torrent search across installed plugins.
  */
-export async function startSearch(pattern: string, plugins = "enabled", category = "all"): Promise<QbtSearchStartResult> {
-  const result = await qbtFetch("/api/v2/search/start", {
+export async function startSearch(
+  pattern: string,
+  plugins = "enabled",
+  category = "all",
+): Promise<QbtSearchStartResult> {
+  const result = (await qbtFetch("/api/v2/search/start", {
     method: "POST",
     body: { pattern, plugins, category },
-  }) as QbtSearchStartResult;
-  logger.info(`${LOG_PREFIX} — Search started: "${pattern}" → job ${result?.id}`);
+  })) as QbtSearchStartResult;
+  logger.info(
+    `${LOG_PREFIX} — Search started: "${pattern}" → job ${result?.id}`,
+  );
   return result;
 }
 
@@ -298,7 +318,11 @@ export async function getSearchStatus(id: number): Promise<QbtSearchStatus[]> {
 /**
  * Get search results.
  */
-export async function getSearchResults(id: number, limit = 50, offset = 0): Promise<QbtSearchResults> {
+export async function getSearchResults(
+  id: number,
+  limit = 50,
+  offset = 0,
+): Promise<QbtSearchResults> {
   return qbtFetch("/api/v2/search/results", {
     method: "POST",
     body: { id: String(id), limit: String(limit), offset: String(offset) },
@@ -329,7 +353,15 @@ export async function deleteSearch(id: number): Promise<void> {
  * Run a complete search lifecycle: start → poll → get results → cleanup.
  * This is the primary method used by the route handler.
  */
-export async function search(pattern: string, { plugins = "enabled", category = "all", limit = 50, timeoutMs = 30000 }: SearchOptions = {}) {
+export async function search(
+  pattern: string,
+  {
+    plugins = "enabled",
+    category = "all",
+    limit = 50,
+    timeoutMs = 30000,
+  }: SearchOptions = {},
+) {
   const { id } = await startSearch(pattern, plugins, category);
   const deadline = Date.now() + timeoutMs;
 
@@ -339,7 +371,9 @@ export async function search(pattern: string, { plugins = "enabled", category = 
     await new Promise((r) => setTimeout(r, 1000));
     const statusRes = await getSearchStatus(id);
     // statusRes is an array of search statuses
-    const job = Array.isArray(statusRes) ? statusRes.find((s) => s.id === id) : statusRes;
+    const job = Array.isArray(statusRes)
+      ? statusRes.find((s) => s.id === id)
+      : statusRes;
     status = job?.status || "Stopped";
   }
 
@@ -377,14 +411,15 @@ export async function search(pattern: string, { plugins = "enabled", category = 
  * List installed search plugins.
  */
 export async function getPlugins() {
-  const plugins = await qbtFetch("/api/v2/search/plugins") as QbtPlugin[];
+  const plugins = (await qbtFetch("/api/v2/search/plugins")) as QbtPlugin[];
   return (Array.isArray(plugins) ? plugins : []).map((provider) => ({
     name: provider.name,
     fullName: provider.fullName,
     url: provider.url,
     enabled: provider.enabled,
     version: provider.version,
-    supportedCategories: provider.supportedCategories?.map((item) => item.name) || [],
+    supportedCategories:
+      provider.supportedCategories?.map((item) => item.name) || [],
   }));
 }
 
@@ -424,7 +459,10 @@ export async function updatePlugins() {
 /**
  * Add a torrent via magnet link or URL.
  */
-export async function addTorrent(urls: string, options: AddTorrentOptions = {}) {
+export async function addTorrent(
+  urls: string,
+  options: AddTorrentOptions = {},
+) {
   const body: Record<string, string> = { urls: urls.replace(/\|/g, "\n") };
   if (options.savePath) body.savepath = options.savePath;
   if (options.category) body.category = options.category;
@@ -453,7 +491,9 @@ export async function listTorrents(options: ListTorrentsOptions = {}) {
   if (options.limit) params.limit = String(options.limit);
   if (options.offset) params.offset = String(options.offset);
 
-  const torrents = await qbtFetch("/api/v2/torrents/info", { params }) as QbtTorrentInfo[];
+  const torrents = (await qbtFetch("/api/v2/torrents/info", {
+    params,
+  })) as QbtTorrentInfo[];
   return (Array.isArray(torrents) ? torrents : []).map((tool) => ({
     hash: tool.hash,
     name: tool.name,
@@ -521,14 +561,16 @@ export async function getTransferInfo(): Promise<unknown> {
 /**
  * Check if qBittorrent is reachable and authenticated.
  */
-export async function isHealthy(): Promise<{ healthy: boolean; version?: string }> {
+export async function isHealthy(): Promise<{
+  healthy: boolean;
+  version?: string;
+}> {
   try {
     if (!getBaseUrl()) return { healthy: false };
     await authenticate();
-    const version = await qbtFetch("/api/v2/app/version") as string;
+    const version = (await qbtFetch("/api/v2/app/version")) as string;
     return { healthy: true, version };
   } catch {
     return { healthy: false };
   }
 }
-

@@ -112,7 +112,10 @@ export async function enrichEventWithGeocode(event: GeocodableEvent) {
 
 
  */
-export async function batchGeocodeEvents(events: GeocodableEvent[], maxPerBatch: number = 5) {
+export async function batchGeocodeEvents(
+  events: GeocodableEvent[],
+  maxPerBatch: number = 5,
+) {
   const needsGeocode = events.filter(
     (e) => e.venue && !e.venue.latitude && !e.venue.longitude,
   );

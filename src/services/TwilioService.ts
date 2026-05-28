@@ -10,7 +10,9 @@ let client: ReturnType<typeof twilio> | null = null;
 function getClient() {
   if (!client) {
     if (!CONFIG.TWILIO_ACCOUNT_SID || !CONFIG.TWILIO_AUTH_TOKEN) {
-      throw new Error("Twilio credentials not configured (TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN)");
+      throw new Error(
+        "Twilio credentials not configured (TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN)",
+      );
     }
     client = twilio(CONFIG.TWILIO_ACCOUNT_SID, CONFIG.TWILIO_AUTH_TOKEN);
   }
@@ -100,7 +102,9 @@ export async function listMessages(filters: Record<string, unknown> = {}) {
  */
 export async function getAccountInfo() {
   const twilioClient = getClient();
-  const account = await twilioClient.api.accounts(CONFIG.TWILIO_ACCOUNT_SID!).fetch();
+  const account = await twilioClient.api
+    .accounts(CONFIG.TWILIO_ACCOUNT_SID!)
+    .fetch();
   const balance = await twilioClient.balance.fetch();
 
   return {

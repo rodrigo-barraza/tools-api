@@ -442,5 +442,3 @@ export interface AirQuality {
   uvIndex: number;
   hourlyAirQuality: AirQualityHourly[];
 }
-
-

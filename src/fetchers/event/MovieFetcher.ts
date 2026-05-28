@@ -38,7 +38,7 @@ export async function fetchMovieEvents(): Promise<CachedEvent[]> {
     throw new Error(`TMDb API returned ${response.status}`);
   }
 
-  const data = await response.json() as { results?: TmdBMovie[] };
+  const data = (await response.json()) as { results?: TmdBMovie[] };
   const movies = data.results || [];
 
   // Also fetch upcoming movies
@@ -46,7 +46,9 @@ export async function fetchMovieEvents(): Promise<CachedEvent[]> {
 
   let upcomingMovies: TmdBMovie[] = [];
   if (upcomingResponse.ok) {
-    const upcomingData = await upcomingResponse.json() as { results?: TmdBMovie[] };
+    const upcomingData = (await upcomingResponse.json()) as {
+      results?: TmdBMovie[];
+    };
     upcomingMovies = upcomingData.results || [];
   }
 

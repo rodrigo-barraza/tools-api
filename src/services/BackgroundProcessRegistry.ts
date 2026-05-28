@@ -85,7 +85,10 @@ export function register(child: ChildProcess, meta: BackgroundProcessMeta) {
     entry.stdoutBuffer.push(text);
     entry.stdoutBytes += chunk.length;
     // Trim to keep buffer bounded
-    while (entry.stdoutBytes > MAX_BUFFERED_BYTES && entry.stdoutBuffer.length > 1) {
+    while (
+      entry.stdoutBytes > MAX_BUFFERED_BYTES &&
+      entry.stdoutBuffer.length > 1
+    ) {
       const removed = entry.stdoutBuffer.shift()!;
       entry.stdoutBytes -= Buffer.byteLength(removed, "utf-8");
     }
@@ -95,7 +98,10 @@ export function register(child: ChildProcess, meta: BackgroundProcessMeta) {
     const text = chunk.toString("utf-8");
     entry.stderrBuffer.push(text);
     entry.stderrBytes += chunk.length;
-    while (entry.stderrBytes > MAX_BUFFERED_BYTES && entry.stderrBuffer.length > 1) {
+    while (
+      entry.stderrBytes > MAX_BUFFERED_BYTES &&
+      entry.stderrBuffer.length > 1
+    ) {
       const removed = entry.stderrBuffer.shift()!;
       entry.stderrBytes -= Buffer.byteLength(removed, "utf-8");
     }
@@ -105,17 +111,23 @@ export function register(child: ChildProcess, meta: BackgroundProcessMeta) {
     entry.exited = true;
     entry.exitCode = code;
     entry.exitReason = "exited";
-    logger.info(`[BackgroundProcessRegistry] PID ${pid} exited with code ${code} (${meta.command.slice(0, 60)})`);
+    logger.info(
+      `[BackgroundProcessRegistry] PID ${pid} exited with code ${code} (${meta.command.slice(0, 60)})`,
+    );
   });
 
   child.on("error", (error: Error) => {
     entry.exited = true;
     entry.exitReason = `error: ${error.message}`;
-    logger.warn(`[BackgroundProcessRegistry] PID ${pid} error: ${error.message}`);
+    logger.warn(
+      `[BackgroundProcessRegistry] PID ${pid} error: ${error.message}`,
+    );
   });
 
   registry.set(pid, entry);
-  logger.info(`[BackgroundProcessRegistry] Registered PID ${pid} (${meta.command.slice(0, 80)})`);
+  logger.info(
+    `[BackgroundProcessRegistry] Registered PID ${pid} (${meta.command.slice(0, 80)})`,
+  );
 
   return { pid };
 }
@@ -150,12 +162,20 @@ export function getProcess(pid: number) {
 export function kill(pid: number, signal: NodeJS.Signals = "SIGTERM") {
   const entry = registry.get(pid);
   if (!entry) {
-    return { success: false, pid, error: `PID ${pid} not found in background registry` };
+    return {
+      success: false,
+      pid,
+      error: `PID ${pid} not found in background registry`,
+    };
   }
 
   if (entry.exited) {
     registry.delete(pid);
-    return { success: true, pid, message: `Process already exited (code ${entry.exitCode})` };
+    return {
+      success: true,
+      pid,
+      message: `Process already exited (code ${entry.exitCode})`,
+    };
   }
 
   try {
@@ -165,13 +185,24 @@ export function kill(pid: number, signal: NodeJS.Signals = "SIGTERM") {
       setTimeout(() => {
         try {
           if (!entry.exited) entry.child.kill("SIGKILL");
-        } catch { /* already dead */ }
+        } catch {
+          /* already dead */
+        }
       }, FORCE_KILL_DELAY_MS);
     }
     registry.delete(pid);
-    return { success: true, pid, signal, message: `Sent ${signal} to PID ${pid}` };
+    return {
+      success: true,
+      pid,
+      signal,
+      message: `Sent ${signal} to PID ${pid}`,
+    };
   } catch (error: unknown) {
-    return { success: false, pid, error: `Failed to kill: ${errorMessage(error)}` };
+    return {
+      success: false,
+      pid,
+      error: `Failed to kill: ${errorMessage(error)}`,
+    };
   }
 }
 
@@ -202,7 +233,9 @@ export function killAll() {
   for (const [pid] of registry) {
     kill(pid, "SIGTERM");
   }
-  logger.info(`[BackgroundProcessRegistry] Killed all ${registry.size} background processes`);
+  logger.info(
+    `[BackgroundProcessRegistry] Killed all ${registry.size} background processes`,
+  );
 }
 export function activeCount() {
   let count = 0;
@@ -227,7 +260,9 @@ function cleanupStale() {
     }
     // Kill processes that exceed TTL with no reads
     if (!entry.exited && now - entry.lastReadAt > MAX_TTL_MS) {
-      logger.warn(`[BackgroundProcessRegistry] TTL expired for PID ${pid} — killing (${entry.command.slice(0, 60)})`);
+      logger.warn(
+        `[BackgroundProcessRegistry] TTL expired for PID ${pid} — killing (${entry.command.slice(0, 60)})`,
+      );
       kill(pid, "SIGTERM");
     }
   }

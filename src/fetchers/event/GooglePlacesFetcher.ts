@@ -74,7 +74,7 @@ export async function fetchGooglePlacesEvents(): Promise<CachedEvent[]> {
     );
   }
 
-  const data = await response.json() as { places?: GooglePlace[] };
+  const data = (await response.json()) as { places?: GooglePlace[] };
   const places = data.places || [];
 
   return places.map((place: GooglePlace) => {

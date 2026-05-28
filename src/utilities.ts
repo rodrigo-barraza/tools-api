@@ -2,7 +2,11 @@ import type { Request, Response } from "express";
 import CONFIG from "./config.ts";
 import crypto from "node:crypto";
 import logger from "./logger.ts";
-import { USER_AGENTS, EPHEMERAL_TTL_MS, EPHEMERAL_MAX_SIZE } from "./constants.ts";
+import {
+  USER_AGENTS,
+  EPHEMERAL_TTL_MS,
+  EPHEMERAL_MAX_SIZE,
+} from "./constants.ts";
 
 // ─── Shared Utilities ──────────────────────────────────────────────
 
@@ -156,7 +160,10 @@ interface ProductForScoring {
 /**
  * Map a source-specific category string to a unified category.
  */
-export function normalizeCategory(sourceCategory: string | undefined, categoryMappings: CategoryMapping[]): string {
+export function normalizeCategory(
+  sourceCategory: string | undefined,
+  categoryMappings: CategoryMapping[],
+): string {
   if (!sourceCategory) return "other";
   const lower = sourceCategory.toLowerCase();
   const match = categoryMappings.find(
@@ -195,7 +202,9 @@ export function computeTrendingScore(product: ProductForScoring): number {
  * maps "outside allowed"/"blocked" errors to 403, other errors to 400,
  * and sends the result as JSON on success.
  */
-export function agenticHandler<T extends object>(fn: (req: Request) => Promise<T>) {
+export function agenticHandler<T extends object>(
+  fn: (req: Request) => Promise<T>,
+) {
   return async (req: Request, res: Response) => {
     try {
       const result = await fn(req);
@@ -232,7 +241,10 @@ export class EphemeralStore<T = unknown> {
   #ttlMs: number;
   #maxSize: number;
 
-  constructor(ttlMs: number = EPHEMERAL_TTL_MS, maxSize: number = EPHEMERAL_MAX_SIZE) {
+  constructor(
+    ttlMs: number = EPHEMERAL_TTL_MS,
+    maxSize: number = EPHEMERAL_MAX_SIZE,
+  ) {
     this.#ttlMs = ttlMs;
     this.#maxSize = maxSize;
   }
@@ -276,7 +288,10 @@ export class EphemeralStore<T = unknown> {
  * Build a full local URL for this server (embed/download endpoints).
  * Uses TOOLS_SERVICE_URL from vault when available, falling back to localhost.
  */
-export function buildLocalUrl(routePath: string, params?: Record<string, string>): string {
+export function buildLocalUrl(
+  routePath: string,
+  params?: Record<string, string>,
+): string {
   const selfBaseUrl = CONFIG.TOOLS_SERVICE_URL;
   const base = `${selfBaseUrl}/${routePath}`;
   if (!params || Object.keys(params).length === 0) return base;
@@ -297,7 +312,12 @@ interface EmbedHtmlOptions {
  * Build a standard HTML embed page shell. Used by LaTeX, Mermaid,
  * and future embed renderers to avoid duplicating the HTML boilerplate.
  */
-export function buildEmbedHtml({ headExtra = "", styles, bodyContent, scripts }: EmbedHtmlOptions): string {
+export function buildEmbedHtml({
+  headExtra = "",
+  styles,
+  bodyContent,
+  scripts,
+}: EmbedHtmlOptions): string {
   return `<!DOCTYPE html>
 <html><head>
 <meta charset="utf-8">

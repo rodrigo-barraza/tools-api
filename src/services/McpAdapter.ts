@@ -20,10 +20,7 @@ import {
   ListToolsRequestSchema,
   CallToolRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import {
-  getToolSchemas,
-  getToolSchemasForAI,
-} from "./ToolSchemaService.ts";
+import { getToolSchemas, getToolSchemasForAI } from "./ToolSchemaService.ts";
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
 import type { Request, Response, Application } from "express";
@@ -82,7 +79,12 @@ const ARG_REMAPS: Record<string, Record<string, string>> = {
 };
 
 // ── Execute tool via internal HTTP ──────────────────────────
-async function executeTool(toolName: string, endpoint: ToolEndpoint, args: Record<string, unknown> = {}, context: Record<string, string> = {}) {
+async function executeTool(
+  toolName: string,
+  endpoint: ToolEndpoint,
+  args: Record<string, unknown> = {},
+  context: Record<string, string> = {},
+) {
   const remaps = ARG_REMAPS[toolName];
   let resolvedArgs = args;
   if (remaps) {
@@ -98,16 +100,20 @@ async function executeTool(toolName: string, endpoint: ToolEndpoint, args: Recor
   try {
     if (endpoint.method === "POST") {
       const url = `${SELF_BASE_URL}${endpoint.path}`;
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
       if (context.project) headers["X-Project"] = context.project;
       if (context.agent) headers["X-Agent"] = context.agent;
       if (context.username) headers["X-Username"] = context.username;
 
       // Also inject into body for endpoints that might read from body
       const bodyArgs = { ...resolvedArgs };
-      if (context.project && !bodyArgs.project) bodyArgs.project = context.project;
+      if (context.project && !bodyArgs.project)
+        bodyArgs.project = context.project;
       if (context.agent && !bodyArgs.agent) bodyArgs.agent = context.agent;
-      if (context.username && !bodyArgs.username) bodyArgs.username = context.username;
+      if (context.username && !bodyArgs.username)
+        bodyArgs.username = context.username;
 
       const response = await fetch(url, {
         method: "POST",
@@ -115,7 +121,9 @@ async function executeTool(toolName: string, endpoint: ToolEndpoint, args: Recor
         body: JSON.stringify(bodyArgs),
       });
       if (!response.ok) {
-        return { error: `API returned ${response.status}: ${response.statusText}` };
+        return {
+          error: `API returned ${response.status}: ${response.statusText}`,
+        };
       }
       // Check content type — some POST endpoints return binary
       const contentType = response.headers.get("content-type") || "";
@@ -133,7 +141,9 @@ async function executeTool(toolName: string, endpoint: ToolEndpoint, args: Recor
 
     const response = await fetch(url, { headers });
     if (!response.ok) {
-      return { error: `API returned ${response.status}: ${response.statusText}` };
+      return {
+        error: `API returned ${response.status}: ${response.statusText}`,
+      };
     }
     return await response.json();
   } catch (error: unknown) {
@@ -156,44 +166,54 @@ function createMcpServer(context: Record<string, string> = {}) {
   }
 
   // Register tools/list handler
-  server.setRequestHandler(
-    ListToolsRequestSchema,
-    async () => {
-      const aiSchemas = getToolSchemasForAI();
-      return {
-        tools: aiSchemas.map((tool) => ({
-          name: tool.name,
-          description: tool.description || "",
-          inputSchema: tool.parameters || { type: "object", properties: {} },
-        })),
-      };
-    },
-  );
+  server.setRequestHandler(ListToolsRequestSchema, async () => {
+    const aiSchemas = getToolSchemasForAI();
+    return {
+      tools: aiSchemas.map((tool) => ({
+        name: tool.name,
+        description: tool.description || "",
+        inputSchema: tool.parameters || { type: "object", properties: {} },
+      })),
+    };
+  });
 
   // Register tools/call handler
   server.setRequestHandler(
     CallToolRequestSchema,
-    async (request: { params: { name: string; arguments?: Record<string, unknown> } }) => {
+    async (request: {
+      params: { name: string; arguments?: Record<string, unknown> };
+    }) => {
       const { name, arguments: args = {} } = request.params;
       const schema = toolMap.get(name);
 
       if (!schema || !schema.endpoint) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: `Unknown tool: ${name}` }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ error: `Unknown tool: ${name}` }),
+            },
+          ],
           isError: true,
         };
       }
 
       try {
         const result = await executeTool(name, schema.endpoint, args, context);
-        const text = typeof result === "string" ? result : JSON.stringify(result);
+        const text =
+          typeof result === "string" ? result : JSON.stringify(result);
         return {
           content: [{ type: "text", text }],
           isError: !!result?.error,
         };
       } catch (error: unknown) {
         return {
-          content: [{ type: "text", text: JSON.stringify({ error: errorMessage(error) }) }],
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ error: errorMessage(error) }),
+            },
+          ],
           isError: true,
         };
       }
@@ -207,14 +227,17 @@ function createMcpServer(context: Record<string, string> = {}) {
 // LM Studio connects to the SSE endpoint for MCP communication.
 // Sessions are tracked per-connection to support multiple clients.
 export function mountMcpRoutes(app: Application) {
-  const sessions = new Map<string, { server: Server; transport: SSEServerTransport }>();
+  const sessions = new Map<
+    string,
+    { server: Server; transport: SSEServerTransport }
+  >();
 
   app.get("/mcp/sse", async (req: Request, res: Response) => {
     const transport = new SSEServerTransport("/mcp/messages", res);
     const context = {
-      project: req.query.project as string || "",
-      agent: req.query.agent as string || "",
-      username: req.query.username as string || "",
+      project: (req.query.project as string) || "",
+      agent: (req.query.agent as string) || "",
+      username: (req.query.username as string) || "",
     };
     const server = createMcpServer(context);
 

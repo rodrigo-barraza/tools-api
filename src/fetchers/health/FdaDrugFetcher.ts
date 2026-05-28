@@ -77,7 +77,7 @@ function ensureLoaded(): void {
         active_ingredients: null,
         pharm_class: null,
       };
-      
+
       headers.forEach((header: string, index: number) => {
         row[header] = values[index] || null;
       });
@@ -130,25 +130,33 @@ export interface SearchDrugsResult {
 /**
  * Search drugs by name, ingredient, or manufacturer.
  */
-export function searchDrugs(query: string | null | undefined, opts: SearchDrugsOptions = {}): SearchDrugsResult {
+export function searchDrugs(
+  query: string | null | undefined,
+  opts: SearchDrugsOptions = {},
+): SearchDrugsResult {
   ensureLoaded();
 
   const { limit = 10, dosageForm, productType } = opts;
   const normalizedQuery = normalizeSearch(query || "");
 
-  if (!normalizedQuery) return { count: 0, query, note: "No query provided.", drugs: [] };
+  if (!normalizedQuery)
+    return { count: 0, query, note: "No query provided.", drugs: [] };
 
   let candidates = DRUG_DB;
   if (dosageForm) {
     const normalizedDosageForm = dosageForm.toUpperCase();
     candidates = candidates.filter(
-      (drugRow: RawDrugRow) => drugRow.dosage_form && drugRow.dosage_form.toUpperCase().includes(normalizedDosageForm),
+      (drugRow: RawDrugRow) =>
+        drugRow.dosage_form &&
+        drugRow.dosage_form.toUpperCase().includes(normalizedDosageForm),
     );
   }
   if (productType) {
     const normalizedProductType = productType.toUpperCase();
     candidates = candidates.filter(
-      (drugRow: RawDrugRow) => drugRow.product_type && drugRow.product_type.toUpperCase().includes(normalizedProductType),
+      (drugRow: RawDrugRow) =>
+        drugRow.product_type &&
+        drugRow.product_type.toUpperCase().includes(normalizedProductType),
     );
   }
 
@@ -191,7 +199,8 @@ export function getDrugByNdc(ndc: string): DrugProduct | null {
 
   const normalizedNdc = ndc.trim();
   const foundDrug = DRUG_DB.find(
-    (drugRow: RawDrugRow) => drugRow.product_ndc && drugRow.product_ndc === normalizedNdc,
+    (drugRow: RawDrugRow) =>
+      drugRow.product_ndc && drugRow.product_ndc === normalizedNdc,
   );
 
   if (!foundDrug) return null;
@@ -244,7 +253,10 @@ export interface SearchByIngredientResult {
 /**
  * Search drugs by active ingredient.
  */
-export function searchByIngredient(ingredient: string, opts: SearchByIngredientOptions = {}): SearchByIngredientResult {
+export function searchByIngredient(
+  ingredient: string,
+  opts: SearchByIngredientOptions = {},
+): SearchByIngredientResult {
   ensureLoaded();
 
   const { limit = 20 } = opts;
@@ -277,7 +289,10 @@ export interface SearchByPharmClassResult {
 /**
  * Search drugs by pharmacological class.
  */
-export function searchByPharmClass(pharmClass: string, opts: SearchByPharmClassOptions = {}): SearchByPharmClassResult {
+export function searchByPharmClass(
+  pharmClass: string,
+  opts: SearchByPharmClassOptions = {},
+): SearchByPharmClassResult {
   ensureLoaded();
 
   const { limit = 20 } = opts;
@@ -295,4 +310,3 @@ export function searchByPharmClass(pharmClass: string, opts: SearchByPharmClassO
     drugs: matches.map(formatDrug),
   };
 }
-

@@ -29,7 +29,9 @@ export async function readPdfUrl(url: string, options: PdfOptions = {}) {
   interface PdfParser {
     load(): Promise<void>;
     getInfo(): Promise<{ numPages?: number; info?: Record<string, string> }>;
-    getText(params?: Record<string, unknown>): Promise<{ text: string; total?: number }>;
+    getText(
+      params?: Record<string, unknown>,
+    ): Promise<{ text: string; total?: number }>;
     destroy(): Promise<void>;
   }
   let parser: PdfParser | undefined;
@@ -54,20 +56,32 @@ export async function readPdfUrl(url: string, options: PdfOptions = {}) {
     // Verify content type
     const contentType = response.headers.get("content-type") || "";
     if (!contentType.includes("pdf") && !contentType.includes("octet-stream")) {
-      return { error: `URL does not point to a PDF (content-type: ${contentType})`, url };
+      return {
+        error: `URL does not point to a PDF (content-type: ${contentType})`,
+        url,
+      };
     }
 
     // Check content length
-    const contentLength = parseInt(response.headers.get("content-length") || "0", 10);
+    const contentLength = parseInt(
+      response.headers.get("content-length") || "0",
+      10,
+    );
     if (contentLength > MAX_PDF_BYTES) {
-      return { error: `PDF too large: ${(contentLength / 1_048_576).toFixed(1)} MB (max: 10 MB)`, url };
+      return {
+        error: `PDF too large: ${(contentLength / 1_048_576).toFixed(1)} MB (max: 10 MB)`,
+        url,
+      };
     }
 
     const arrayBuffer = await response.arrayBuffer();
     const data = new Uint8Array(arrayBuffer);
 
     if (data.length > MAX_PDF_BYTES) {
-      return { error: `PDF too large: ${(data.length / 1_048_576).toFixed(1)} MB (max: 10 MB)`, url };
+      return {
+        error: `PDF too large: ${(data.length / 1_048_576).toFixed(1)} MB (max: 10 MB)`,
+        url,
+      };
     }
 
     // pdf-parse v2: pass data in constructor, then load + extract
@@ -88,7 +102,9 @@ export async function readPdfUrl(url: string, options: PdfOptions = {}) {
     const charCount = text.length;
 
     // Apply max characters limit if requested
-    const charsLimit = options.maxChars ? parseInt(String(options.maxChars), 10) : MAX_TEXT_CHARS;
+    const charsLimit = options.maxChars
+      ? parseInt(String(options.maxChars), 10)
+      : MAX_TEXT_CHARS;
     const truncated = charCount > charsLimit;
     if (truncated) {
       text = text.slice(0, charsLimit) + "\n\n... [truncated]";
@@ -111,7 +127,10 @@ export async function readPdfUrl(url: string, options: PdfOptions = {}) {
     };
   } catch (error: unknown) {
     if (error instanceof Error && error.name === "AbortError") {
-      return { error: `PDF download timed out after ${FETCH_TIMEOUT_MS / 1000}s`, url };
+      return {
+        error: `PDF download timed out after ${FETCH_TIMEOUT_MS / 1000}s`,
+        url,
+      };
     }
     return { error: `PDF extraction failed: ${errorMessage(error)}`, url };
   } finally {

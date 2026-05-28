@@ -2,7 +2,12 @@ import { sleep } from "@rodrigo-barraza/utilities-library";
 // ─── Single Server Lifecycle Manager ────────────────────────
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { createLspClient, LspClient, LspParams, LspParamValue } from "./LspClient.ts";
+import {
+  createLspClient,
+  LspClient,
+  LspParams,
+  LspParamValue,
+} from "./LspClient.ts";
 import { LspServerConfig } from "./LspConfig.ts";
 import logger from "../../logger.ts";
 import { errorMessage } from "../../utilities.ts";
@@ -28,14 +33,23 @@ export interface LspServerInstance {
   isHealthy(): boolean;
   sendRequest(method: string, params?: LspParams): Promise<unknown>;
   sendNotification(method: string, params?: LspParams): Promise<void>;
-  onNotification<P = LspParams>(method: string, handler: (params: P) => void): void;
-  onRequest<P = LspParams, R = LspParamValue>(method: string, handler: (params: P) => Promise<R> | R): void;
+  onNotification<P = LspParams>(
+    method: string,
+    handler: (params: P) => void,
+  ): void;
+  onRequest<P = LspParams, R = LspParamValue>(
+    method: string,
+    handler: (params: P) => Promise<R> | R,
+  ): void;
 }
 
 /**
  * Creates and manages a single LSP server instance.
  */
-export function createLspServerInstance(name: string, config: LspServerConfig): LspServerInstance {
+export function createLspServerInstance(
+  name: string,
+  config: LspServerConfig,
+): LspServerInstance {
   // ── Private state ────────────────────────────────────────
   let state = "stopped";
   let startTime: Date | null = null;
@@ -56,7 +70,9 @@ export function createLspServerInstance(name: string, config: LspServerConfig): 
     // Guard: max crash recovery
     const maxRestarts = config.maxRestarts ?? 3;
     if (state === "error" && crashRecoveryCount > maxRestarts) {
-      const error = new Error(`LSP server '${name}' exceeded max crash recovery attempts (${maxRestarts})`);
+      const error = new Error(
+        `LSP server '${name}' exceeded max crash recovery attempts (${maxRestarts})`,
+      );
       lastError = error;
       throw error;
     }
@@ -78,10 +94,12 @@ export function createLspServerInstance(name: string, config: LspServerConfig): 
         processId: process.pid,
         initializationOptions: config.initializationOptions ?? {},
         // Modern (LSP 3.16+)
-        workspaceFolders: [{
-          uri: workspaceUri,
-          name: resolve(workspaceFolder).split("/").pop() || "workspace",
-        }],
+        workspaceFolders: [
+          {
+            uri: workspaceUri,
+            name: resolve(workspaceFolder).split("/").pop() || "workspace",
+          },
+        ],
         // Deprecated but needed by some servers
         rootPath: workspaceFolder,
         rootUri: workspaceUri,
@@ -182,18 +200,24 @@ export function createLspServerInstance(name: string, config: LspServerConfig): 
     try {
       await stop();
     } catch (error: unknown) {
-      logger.error(`[LSP:${name}] Stop during restart failed: ${errorMessage(error)}`);
+      logger.error(
+        `[LSP:${name}] Stop during restart failed: ${errorMessage(error)}`,
+      );
       throw error;
     }
     restartCount++;
     const maxRestarts = config.maxRestarts ?? 3;
     if (restartCount > maxRestarts) {
-      throw new Error(`Max restart attempts (${maxRestarts}) exceeded for server '${name}'`);
+      throw new Error(
+        `Max restart attempts (${maxRestarts}) exceeded for server '${name}'`,
+      );
     }
     try {
       await start();
     } catch (error: unknown) {
-      logger.error(`[LSP:${name}] Start during restart failed (attempt ${restartCount}/${maxRestarts}): ${errorMessage(error)}`);
+      logger.error(
+        `[LSP:${name}] Start during restart failed (attempt ${restartCount}/${maxRestarts}): ${errorMessage(error)}`,
+      );
       throw error;
     }
   }
@@ -205,11 +229,14 @@ export function createLspServerInstance(name: string, config: LspServerConfig): 
   /**
    * Send an LSP request with exponential backoff retry on transient errors.
    */
-  async function sendRequest(method: string, params?: LspParams): Promise<unknown> {
+  async function sendRequest(
+    method: string,
+    params?: LspParams,
+  ): Promise<unknown> {
     if (!isHealthy()) {
       throw new Error(
         `Cannot send request to LSP server '${name}': server is ${state}` +
-        (lastError ? `, last error: ${lastError.message}` : ""),
+          (lastError ? `, last error: ${lastError.message}` : ""),
       );
     }
     let lastAttemptError: unknown = null;
@@ -218,35 +245,56 @@ export function createLspServerInstance(name: string, config: LspServerConfig): 
         return await client.sendRequest(method, params);
       } catch (error: unknown) {
         lastAttemptError = error;
-        const errorCode = (error && typeof error === "object" && "code" in error) ? (error as { code: unknown }).code : undefined;
-        const isTransient = typeof errorCode === "number" && errorCode === LSP_ERROR_CONTENT_MODIFIED;
+        const errorCode =
+          error && typeof error === "object" && "code" in error
+            ? (error as { code: unknown }).code
+            : undefined;
+        const isTransient =
+          typeof errorCode === "number" &&
+          errorCode === LSP_ERROR_CONTENT_MODIFIED;
         if (isTransient && attempt < MAX_RETRIES_FOR_TRANSIENT) {
           const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
-          logger.info(`[LSP:${name}] ${method} got ContentModified, retrying in ${delay}ms (${attempt + 1}/${MAX_RETRIES_FOR_TRANSIENT})...`);
+          logger.info(
+            `[LSP:${name}] ${method} got ContentModified, retrying in ${delay}ms (${attempt + 1}/${MAX_RETRIES_FOR_TRANSIENT})...`,
+          );
           await sleep(delay);
           continue;
         }
         break;
       }
     }
-    const errorMessage = lastAttemptError instanceof Error ? lastAttemptError.message : String(lastAttemptError);
+    const errorMessage =
+      lastAttemptError instanceof Error
+        ? lastAttemptError.message
+        : String(lastAttemptError);
     throw new Error(
       `LSP request '${method}' failed for server '${name}': ${errorMessage}`,
     );
   }
 
-  async function sendNotification(method: string, params?: LspParams): Promise<void> {
+  async function sendNotification(
+    method: string,
+    params?: LspParams,
+  ): Promise<void> {
     if (!isHealthy()) {
-      throw new Error(`Cannot send notification to LSP server '${name}': server is ${state}`);
+      throw new Error(
+        `Cannot send notification to LSP server '${name}': server is ${state}`,
+      );
     }
     await client.sendNotification(method, params);
   }
 
-  function onNotification<P = LspParams>(method: string, handler: (params: P) => void): void {
+  function onNotification<P = LspParams>(
+    method: string,
+    handler: (params: P) => void,
+  ): void {
     client.onNotification(method, handler);
   }
 
-  function onRequest<P = LspParams, R = LspParamValue>(method: string, handler: (params: P) => Promise<R> | R): void {
+  function onRequest<P = LspParams, R = LspParamValue>(
+    method: string,
+    handler: (params: P) => Promise<R> | R,
+  ): void {
     client.onRequest(method, handler);
   }
 
@@ -254,10 +302,18 @@ export function createLspServerInstance(name: string, config: LspServerConfig): 
   return {
     name,
     config,
-    get state() { return state; },
-    get startTime() { return startTime; },
-    get lastError() { return lastError; },
-    get restartCount() { return restartCount; },
+    get state() {
+      return state;
+    },
+    get startTime() {
+      return startTime;
+    },
+    get lastError() {
+      return lastError;
+    },
+    get restartCount() {
+      return restartCount;
+    },
     start,
     stop,
     restart,
@@ -270,10 +326,16 @@ export function createLspServerInstance(name: string, config: LspServerConfig): 
 }
 
 // ── Helpers ──────────────────────────────────────────────────
-function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  message: string,
+): Promise<T> {
   let timer: NodeJS.Timeout;
   const timeoutPromise = new Promise<never>((_, reject) => {
     timer = setTimeout(() => reject(new Error(message)), ms);
   });
-  return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timer));
+  return Promise.race([promise, timeoutPromise]).finally(() =>
+    clearTimeout(timer),
+  );
 }

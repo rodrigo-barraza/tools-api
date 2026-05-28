@@ -34,7 +34,8 @@ export async function readRssFeed(url: string, options: RssOptions = {}) {
       signal: controller.signal,
       headers: {
         "User-Agent": USER_AGENT,
-        Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
+        Accept:
+          "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
       },
     });
     clearTimeout(timeout);
@@ -61,10 +62,16 @@ export async function readRssFeed(url: string, options: RssOptions = {}) {
       return parseAtom(parsed.feed, url, clampedLimit);
     }
 
-    return { error: "Unrecognized feed format (expected RSS 2.0 or Atom)", url };
+    return {
+      error: "Unrecognized feed format (expected RSS 2.0 or Atom)",
+      url,
+    };
   } catch (error: unknown) {
     if (error instanceof Error && error.name === "AbortError") {
-      return { error: `Feed fetch timed out after ${FETCH_TIMEOUT_MS / 1000}s`, url };
+      return {
+        error: `Feed fetch timed out after ${FETCH_TIMEOUT_MS / 1000}s`,
+        url,
+      };
     }
     return { error: `Feed parsing failed: ${errorMessage(error)}`, url };
   }
@@ -111,7 +118,10 @@ function parseRss2(channel: Rss2Channel, feedUrl: string, limit: number) {
     itemCount: items.length,
     items: items.slice(0, limit).map((item: Rss2Item) => ({
       title: item.title || null,
-      link: item.link || (typeof item.guid === "object" ? item.guid?._ : item.guid) || null,
+      link:
+        item.link ||
+        (typeof item.guid === "object" ? item.guid?._ : item.guid) ||
+        null,
       pubDate: item.pubDate || null,
       author: item["dc:creator"] || item.author || null,
       description: stripCdata(item.description || ""),
@@ -163,12 +173,18 @@ function parseAtom(feed: AtomFeed, feedUrl: string, limit: number) {
       title: extractText(entry.title),
       link: extractLink(entry.link) || null,
       pubDate: entry.published || entry.updated || null,
-      author: (typeof entry.author === "object" && entry.author !== null && "name" in entry.author ? entry.author.name : extractText(entry.author as string | { _?: string } | undefined)) || null,
+      author:
+        (typeof entry.author === "object" &&
+        entry.author !== null &&
+        "name" in entry.author
+          ? entry.author.name
+          : extractText(entry.author as string | { _?: string } | undefined)) ||
+        null,
       description: extractText(entry.summary) || "",
       content: extractText(entry.content) || "",
-      categories: (normalizeArray(entry.category) as Array<string | Record<string, string>>).map(
-        (c) => (typeof c === "object" ? c.term || c.label : c),
-      ),
+      categories: (
+        normalizeArray(entry.category) as Array<string | Record<string, string>>
+      ).map((c) => (typeof c === "object" ? c.term || c.label : c)),
       id: entry.id || null,
     })),
   };
@@ -176,14 +192,23 @@ function parseAtom(feed: AtomFeed, feedUrl: string, limit: number) {
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
-function extractText(field: string | { _?: string } | null | undefined): string | null {
+function extractText(
+  field: string | { _?: string } | null | undefined,
+): string | null {
   if (!field) return null;
   if (typeof field === "string") return field;
   if (field._ !== undefined) return field._;
   return null;
 }
 
-function extractLink(link: string | Array<{ rel?: string; href?: string }> | { href?: string } | null | undefined): string | null {
+function extractLink(
+  link:
+    | string
+    | Array<{ rel?: string; href?: string }>
+    | { href?: string }
+    | null
+    | undefined,
+): string | null {
   if (!link) return null;
   if (typeof link === "string") return link;
   if (Array.isArray(link)) {

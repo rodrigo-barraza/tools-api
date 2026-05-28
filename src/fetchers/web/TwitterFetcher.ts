@@ -58,9 +58,12 @@ export async function getTwitterPost(input: string) {
 
 async function fetchFxTwitter(username: string, tweetId: string) {
   try {
-    const response = await fetch(`${FXTWITTER_API}/${username}/status/${tweetId}`, {
-      headers: { "User-Agent": USER_AGENT },
-    });
+    const response = await fetch(
+      `${FXTWITTER_API}/${username}/status/${tweetId}`,
+      {
+        headers: { "User-Agent": USER_AGENT },
+      },
+    );
 
     if (!response.ok) {
       return { error: `fxtwitter API error: ${response.status}` };
@@ -74,7 +77,9 @@ async function fetchFxTwitter(username: string, tweetId: string) {
       tweetId: tweet.id || tweetId,
       url: tweet.url || `https://x.com/${username}/status/${tweetId}`,
       author: tweet.author?.name || null,
-      authorHandle: tweet.author?.screen_name ? `@${tweet.author.screen_name}` : null,
+      authorHandle: tweet.author?.screen_name
+        ? `@${tweet.author.screen_name}`
+        : null,
       authorVerified: tweet.author?.verified || false,
       text: tweet.text || null,
       createdAt: tweet.created_at || null,
@@ -144,15 +149,16 @@ async function fetchOembed(tweetId: string) {
     const data = await response.json();
 
     // Extract clean text from the HTML embed
-    const text = data.html
-      ?.replace(/<br\s*\/?>/gi, "\n")
-      ?.replace(/<[^>]+>/g, "")
-      ?.replace(/&amp;/g, "&")
-      ?.replace(/&lt;/g, "<")
-      ?.replace(/&gt;/g, ">")
-      ?.replace(/&quot;/g, '"')
-      ?.replace(/&#39;/g, "'")
-      ?.trim() || null;
+    const text =
+      data.html
+        ?.replace(/<br\s*\/?>/gi, "\n")
+        ?.replace(/<[^>]+>/g, "")
+        ?.replace(/&amp;/g, "&")
+        ?.replace(/&lt;/g, "<")
+        ?.replace(/&gt;/g, ">")
+        ?.replace(/&quot;/g, '"')
+        ?.replace(/&#39;/g, "'")
+        ?.trim() || null;
 
     return {
       tweetId,

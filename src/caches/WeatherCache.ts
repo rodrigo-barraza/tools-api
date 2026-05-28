@@ -8,7 +8,11 @@ import logger from "../logger.ts";
  * over MongoDB queries for API consumers.
  */
 
-type WeatherSource = "openmeteo" | "airquality" | "tomorrowio" | "tomorrowio_daily";
+type WeatherSource =
+  | "openmeteo"
+  | "airquality"
+  | "tomorrowio"
+  | "tomorrowio_daily";
 
 const cache = {
   // Merged current snapshot

@@ -30,7 +30,10 @@ interface EiaDataResult {
   fetchedAt: string;
 }
 
-const dataCache = new Map<string, { data: EiaDataResult | Record<string, unknown>; fetchedAt: number }>();
+const dataCache = new Map<
+  string,
+  { data: EiaDataResult | Record<string, unknown>; fetchedAt: number }
+>();
 const DATA_CACHE_TTL_MS = 3_600_000; // 1 hour — energy data updates infrequently
 
 const metaCache = new Map<string, { data: unknown; fetchedAt: number }>();
@@ -46,7 +49,9 @@ function buildUrl(route: string, params: Record<string, unknown> = {}) {
   for (const [key, value] of Object.entries(params)) {
     if (value != null) {
       if (Array.isArray(value)) {
-        value.forEach((v: unknown) => url.searchParams.append(`${key}[]`, String(v)));
+        value.forEach((v: unknown) =>
+          url.searchParams.append(`${key}[]`, String(v)),
+        );
       } else {
         url.searchParams.set(key, String(value));
       }
@@ -67,7 +72,9 @@ async function eiaFetch(route: string, params: Record<string, unknown> = {}) {
 
   if (!response.ok) {
     const body = await response.text().catch(() => "");
-    throw new Error(`EIA API → ${response.status} ${response.statusText}: ${body}`);
+    throw new Error(
+      `EIA API → ${response.status} ${response.statusText}: ${body}`,
+    );
   }
 
   const json = await response.json();
@@ -101,11 +108,13 @@ export async function browseRoute(route: string = "") {
     id: resp.id,
     name: resp.name,
     description: resp.description || null,
-    routes: (resp.routes || []).map((r: { id?: string; name?: string; description?: string }) => ({
-      id: r.id,
-      name: r.name,
-      description: r.description || null,
-    })),
+    routes: (resp.routes || []).map(
+      (r: { id?: string; name?: string; description?: string }) => ({
+        id: r.id,
+        name: r.name,
+        description: r.description || null,
+      }),
+    ),
     frequency: resp.frequency || [],
     facets: resp.facets || [],
     data: resp.data || null, // available data columns
@@ -134,11 +143,13 @@ export async function getFacetValues(route: string, facetId: string) {
     route,
     facetId,
     totalFacets: resp.totalFacets || 0,
-    facets: (resp.facets || []).map((f: { id?: string; name?: string; alias?: string }) => ({
-      id: f.id,
-      name: f.name,
-      alias: f.alias || null,
-    })),
+    facets: (resp.facets || []).map(
+      (f: { id?: string; name?: string; alias?: string }) => ({
+        id: f.id,
+        name: f.name,
+        alias: f.alias || null,
+      }),
+    ),
   };
 
   metaCache.set(cacheKey, { data: result, fetchedAt: Date.now() });
@@ -224,7 +235,9 @@ export async function getData(route: string, options: EiaGetDataOptions = {}) {
   const response = await fetch(url);
   if (!response.ok) {
     const body = await response.text().catch(() => "");
-    throw new Error(`EIA API → ${response.status} ${response.statusText}: ${body}`);
+    throw new Error(
+      `EIA API → ${response.status} ${response.statusText}: ${body}`,
+    );
   }
 
   const json = await response.json();
@@ -295,14 +308,19 @@ export async function getEnergyIndicators() {
     }),
   );
 
-
   const indicators = results
-    .filter((r): r is PromiseFulfilledResult<EiaIndicator> => r.status === "fulfilled")
+    .filter(
+      (r): r is PromiseFulfilledResult<EiaIndicator> =>
+        r.status === "fulfilled",
+    )
     .map((r) => r.value);
 
   const failed = results
     .filter((r): r is PromiseRejectedResult => r.status === "rejected")
-    .map((r, i) => ({ series: entries[i][0], error: (r.reason as Error).message }));
+    .map((r, i) => ({
+      series: entries[i][0],
+      error: (r.reason as Error).message,
+    }));
 
   if (failed.length > 0) {
     logger.warn(

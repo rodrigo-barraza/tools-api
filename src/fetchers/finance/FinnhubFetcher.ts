@@ -17,7 +17,9 @@ async function get(path: string) {
   const url = `${FINNHUB_BASE_URL}${path}`;
   const response = await fetch(url, { headers: HEADERS() });
   if (!response.ok) {
-    throw new Error(`Finnhub ${path} → ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Finnhub ${path} → ${response.status} ${response.statusText}`,
+    );
   }
   return response.json();
 }
@@ -66,7 +68,11 @@ export async function fetchMarketNews(category: string = "general") {
 
 
  */
-export async function fetchCompanyNews(symbol: string, from: string, to: string) {
+export async function fetchCompanyNews(
+  symbol: string,
+  from: string,
+  to: string,
+) {
   return get(
     `/company-news?symbol=${encodeURIComponent(symbol)}&from=${from}&to=${to}`,
   );

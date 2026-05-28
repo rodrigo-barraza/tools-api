@@ -2,7 +2,10 @@
 
 import { extname, resolve, basename } from "node:path";
 import { pathToFileURL } from "node:url";
-import { createLspServerInstance, LspServerInstance } from "./LspServerInstance.ts";
+import {
+  createLspServerInstance,
+  LspServerInstance,
+} from "./LspServerInstance.ts";
 import { LspParams } from "./LspClient.ts";
 import { getLspServerConfigs } from "./LspConfig.ts";
 import logger from "../../logger.ts";
@@ -21,7 +24,11 @@ export interface LspServerManager {
   initialize(): void;
   getServerForFile(filePath: string): LspServerInstance | undefined;
   ensureServerStarted(filePath: string): Promise<LspServerInstance | undefined>;
-  sendRequest(filePath: string, method: string, params?: LspParams): Promise<unknown>;
+  sendRequest(
+    filePath: string,
+    method: string,
+    params?: LspParams,
+  ): Promise<unknown>;
   openFile(filePath: string, content: string): Promise<void>;
   changeFile(filePath: string, content: string): Promise<void>;
   closeFile(filePath: string): Promise<void>;
@@ -34,7 +41,9 @@ export interface LspServerManager {
 /**
  * Creates an LSP server manager instance.
  */
-export function createLspServerManager(workspaceFolder?: string): LspServerManager {
+export function createLspServerManager(
+  workspaceFolder?: string,
+): LspServerManager {
   // ── Private state ──────────────────────────────────────────
   const servers = new Map<string, LspServerInstance>();
   const extensionMap = new Map<string, string[]>();
@@ -55,11 +64,18 @@ export function createLspServerManager(workspaceFolder?: string): LspServerManag
     for (const [serverName, config] of Object.entries(configs)) {
       try {
         if (!config.command) {
-          logger.warn(`[LSP Manager] Server '${serverName}' missing 'command' — skipping`);
+          logger.warn(
+            `[LSP Manager] Server '${serverName}' missing 'command' — skipping`,
+          );
           continue;
         }
-        if (!config.extensionToLanguage || Object.keys(config.extensionToLanguage).length === 0) {
-          logger.warn(`[LSP Manager] Server '${serverName}' missing 'extensionToLanguage' — skipping`);
+        if (
+          !config.extensionToLanguage ||
+          Object.keys(config.extensionToLanguage).length === 0
+        ) {
+          logger.warn(
+            `[LSP Manager] Server '${serverName}' missing 'extensionToLanguage' — skipping`,
+          );
           continue;
         }
 
@@ -77,18 +93,25 @@ export function createLspServerManager(workspaceFolder?: string): LspServerManag
 
         // Handle workspace/configuration requests from servers that send them
         // even when we say we don't support it (TypeScript does this)
-        instance.onRequest<LspConfigurationParams, (null | undefined)[]>("workspace/configuration", (params) => {
-          return (params?.items || []).map(() => null);
-        });
+        instance.onRequest<LspConfigurationParams, (null | undefined)[]>(
+          "workspace/configuration",
+          (params) => {
+            return (params?.items || []).map(() => null);
+          },
+        );
 
         servers.set(serverName, instance);
       } catch (error: unknown) {
-        logger.error(`[LSP Manager] Failed to create server '${serverName}': ${errorMessage(error)}`);
+        logger.error(
+          `[LSP Manager] Failed to create server '${serverName}': ${errorMessage(error)}`,
+        );
       }
     }
 
     initialized = true;
-    logger.info(`[LSP Manager] Initialized with ${servers.size} server(s): ${[...servers.keys()].join(", ")}`);
+    logger.info(
+      `[LSP Manager] Initialized with ${servers.size} server(s): ${[...servers.keys()].join(", ")}`,
+    );
   }
 
   // ── Routing ────────────────────────────────────────────────
@@ -107,7 +130,9 @@ export function createLspServerManager(workspaceFolder?: string): LspServerManag
    * Ensure the appropriate server is started for a file.
    * Lazy-starts the server on first request for that language.
    */
-  async function ensureServerStarted(filePath: string): Promise<LspServerInstance | undefined> {
+  async function ensureServerStarted(
+    filePath: string,
+  ): Promise<LspServerInstance | undefined> {
     const server = getServerForFile(filePath);
     if (!server) return undefined;
 
@@ -115,7 +140,9 @@ export function createLspServerManager(workspaceFolder?: string): LspServerManag
       try {
         await server.start();
       } catch (error: unknown) {
-        logger.error(`[LSP Manager] Failed to start server for ${basename(filePath)}: ${errorMessage(error)}`);
+        logger.error(
+          `[LSP Manager] Failed to start server for ${basename(filePath)}: ${errorMessage(error)}`,
+        );
         throw error;
       }
     }
@@ -128,14 +155,20 @@ export function createLspServerManager(workspaceFolder?: string): LspServerManag
   /**
    * Send an LSP request to the appropriate server for the given file.
    */
-  async function sendRequest(filePath: string, method: string, params?: LspParams): Promise<unknown> {
+  async function sendRequest(
+    filePath: string,
+    method: string,
+    params?: LspParams,
+  ): Promise<unknown> {
     const server = await ensureServerStarted(filePath);
     if (!server) return undefined;
 
     try {
       return await server.sendRequest(method, params);
     } catch (error: unknown) {
-      logger.error(`[LSP Manager] Request '${method}' failed for ${basename(filePath)}: ${errorMessage(error)}`);
+      logger.error(
+        `[LSP Manager] Request '${method}' failed for ${basename(filePath)}: ${errorMessage(error)}`,
+      );
       throw error;
     }
   }
@@ -156,7 +189,8 @@ export function createLspServerManager(workspaceFolder?: string): LspServerManag
     if (openedFiles.get(fileUri) === server.name) return;
 
     const fileExtension = extname(filePath).toLowerCase();
-    const languageId = server.config.extensionToLanguage[fileExtension] || "plaintext";
+    const languageId =
+      server.config.extensionToLanguage[fileExtension] || "plaintext";
 
     try {
       await server.sendNotification("textDocument/didOpen", {
@@ -169,7 +203,9 @@ export function createLspServerManager(workspaceFolder?: string): LspServerManag
       });
       openedFiles.set(fileUri, server.name);
     } catch (error: unknown) {
-      logger.error(`[LSP Manager] didOpen failed for ${basename(filePath)}: ${errorMessage(error)}`);
+      logger.error(
+        `[LSP Manager] didOpen failed for ${basename(filePath)}: ${errorMessage(error)}`,
+      );
       throw error;
     }
   }
@@ -196,7 +232,9 @@ export function createLspServerManager(workspaceFolder?: string): LspServerManag
         contentChanges: [{ text: content }],
       });
     } catch (error: unknown) {
-      logger.error(`[LSP Manager] didChange failed for ${basename(filePath)}: ${errorMessage(error)}`);
+      logger.error(
+        `[LSP Manager] didChange failed for ${basename(filePath)}: ${errorMessage(error)}`,
+      );
       throw error;
     }
   }
@@ -216,7 +254,9 @@ export function createLspServerManager(workspaceFolder?: string): LspServerManag
       });
       openedFiles.delete(fileUri);
     } catch (error: unknown) {
-      logger.error(`[LSP Manager] didClose failed for ${basename(filePath)}: ${errorMessage(error)}`);
+      logger.error(
+        `[LSP Manager] didClose failed for ${basename(filePath)}: ${errorMessage(error)}`,
+      );
     }
   }
 
@@ -261,7 +301,11 @@ export function createLspServerManager(workspaceFolder?: string): LspServerManag
     );
 
     const errors = results
-      .map((r, i) => r.status === "rejected" ? `${toStop[i][0]}: ${(r as PromiseRejectedResult).reason?.message}` : null)
+      .map((r, i) =>
+        r.status === "rejected"
+          ? `${toStop[i][0]}: ${(r as PromiseRejectedResult).reason?.message}`
+          : null,
+      )
       .filter(Boolean);
 
     servers.clear();

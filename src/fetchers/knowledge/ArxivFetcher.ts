@@ -100,9 +100,10 @@ export async function searchPapers(
     submittedDate: "submittedDate",
   } as const;
 
-  const resolvedSortBy = (sortBy && sortBy in sortMap)
-    ? sortMap[sortBy as keyof typeof sortMap]
-    : "relevance";
+  const resolvedSortBy =
+    sortBy && sortBy in sortMap
+      ? sortMap[sortBy as keyof typeof sortMap]
+      : "relevance";
 
   const params = new URLSearchParams({
     search_query: searchQuery,

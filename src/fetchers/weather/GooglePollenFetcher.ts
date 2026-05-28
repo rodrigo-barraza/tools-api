@@ -114,7 +114,7 @@ export async function fetchPollen(): Promise<PollenResponse> {
     throw new Error(`Google Pollen API returned ${response.status}: ${text}`);
   }
 
-  const data = await response.json() as RawGooglePollenResponse;
+  const data = (await response.json()) as RawGooglePollenResponse;
   const dailyInfo = data.dailyInfo || [];
 
   return {
@@ -130,7 +130,8 @@ export async function fetchPollen(): Promise<PollenResponse> {
       // Extract index for each pollen type
       const byType: Record<string, PollenTypeDetails> = {};
       for (const pt of pollenTypes) {
-        const key = pt.code?.toLowerCase() || pt.displayName?.toLowerCase() || "";
+        const key =
+          pt.code?.toLowerCase() || pt.displayName?.toLowerCase() || "";
         if (!key) continue;
         byType[key] = {
           displayName: pt.displayName || "",
@@ -148,22 +149,24 @@ export async function fetchPollen(): Promise<PollenResponse> {
       }
 
       // Extract individual plant contributions
-      const plants = plantInfo.map((p): PlantContribution => ({
-        code: p.code || "",
-        displayName: p.displayName || "",
-        inSeason: p.inSeason ?? false,
-        indexInfo: p.indexInfo
-          ? {
-              value: p.indexInfo.value ?? null,
-              category: p.indexInfo.category ?? null,
-              indexDescription: p.indexInfo.indexDescription ?? null,
-              color: p.indexInfo.color ?? null,
-            }
-          : null,
-        description: p.plantDescription?.type ?? null,
-        crossReaction: p.plantDescription?.crossReaction ?? null,
-        season: p.plantDescription?.season ?? null,
-      }));
+      const plants = plantInfo.map(
+        (p): PlantContribution => ({
+          code: p.code || "",
+          displayName: p.displayName || "",
+          inSeason: p.inSeason ?? false,
+          indexInfo: p.indexInfo
+            ? {
+                value: p.indexInfo.value ?? null,
+                category: p.indexInfo.category ?? null,
+                indexDescription: p.indexInfo.indexDescription ?? null,
+                color: p.indexInfo.color ?? null,
+              }
+            : null,
+          description: p.plantDescription?.type ?? null,
+          crossReaction: p.plantDescription?.crossReaction ?? null,
+          season: p.plantDescription?.season ?? null,
+        }),
+      );
 
       return {
         date: day.date

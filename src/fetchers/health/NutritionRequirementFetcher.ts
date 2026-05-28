@@ -56,9 +56,9 @@ function ensureLoaded(): void {
     "digest",
     "database",
     "data",
-    "digest_nutrient_requirement.csv"
+    "digest_nutrient_requirement.csv",
   );
-  
+
   try {
     const raw = readFileSync(datasetPath, "utf-8");
     const lines = raw.split("\n").filter((l: string) => l.trim());
@@ -78,19 +78,21 @@ function ensureLoaded(): void {
         unit: "",
         nutrient_id: "",
       };
-      
+
       headers.forEach((h: string, index: number) => {
-        const val = values[index] || "";
+        const cellValue = values[index] || "";
         if (h === "value_numeric") {
-          row.value_numeric = parseFloat(val) || 0;
+          row.value_numeric = parseFloat(cellValue) || 0;
         } else {
-          row[h] = val;
+          row[h] = cellValue;
         }
       });
-      
+
       REQUIREMENTS_DB.push(row);
     }
-    logger.info(`📊 Nutrition Requirement DB loaded: ${REQUIREMENTS_DB.length} rules.`);
+    logger.info(
+      `📊 Nutrition Requirement DB loaded: ${REQUIREMENTS_DB.length} rules.`,
+    );
   } catch (error: unknown) {
     logger.error("Failed to load digest_nutrient_requirement.csv", error);
   }
@@ -141,12 +143,16 @@ export function calculateTargetProfile({
   weightKg,
   caloricIntake,
   includeCompositional = false,
-}: CalculateTargetProfileOptions = {}): TargetProfileResult | { error: string } {
+}: CalculateTargetProfileOptions = {}):
+  | TargetProfileResult
+  | { error: string } {
   ensureLoaded();
 
   const speciesLower = (species || "human").toLowerCase();
   const lifeStageLower = (lifeStage || "adult_male").toLowerCase();
-  const targetAuth = (authority || (speciesLower === "human" ? "US_DRI" : "AAFCO")).toUpperCase();
+  const targetAuth = (
+    authority || (speciesLower === "human" ? "US_DRI" : "AAFCO")
+  ).toUpperCase();
 
   const baseRules = REQUIREMENTS_DB.filter(
     (r: RequirementRule) =>
@@ -204,4 +210,3 @@ export function calculateTargetProfile({
     requirements,
   };
 }
-

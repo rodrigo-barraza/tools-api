@@ -18,7 +18,8 @@ export async function setupGeomagneticStormCollection() {
   const database = getDB();
   if (!database) throw new Error("Database not connected");
 
-  collection = database.collection<GeomagneticStormDocument>("geomagnetic_storms");
+  collection =
+    database.collection<GeomagneticStormDocument>("geomagnetic_storms");
 
   await collection.createIndex({ gstId: 1 }, { unique: true });
   await collection.createIndex({ startTime: -1 });
@@ -26,7 +27,9 @@ export async function setupGeomagneticStormCollection() {
   logger.info("🧲 Geomagnetic storm collection indexes ready");
 }
 
-export async function upsertGeomagneticStorms(storms: GeomagneticStormDocument[]) {
+export async function upsertGeomagneticStorms(
+  storms: GeomagneticStormDocument[],
+) {
   if (!collection || storms.length === 0) return { upserted: 0, modified: 0 };
 
   const operations = storms.map((gst: GeomagneticStormDocument) => ({

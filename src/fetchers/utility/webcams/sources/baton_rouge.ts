@@ -1,5 +1,8 @@
 import { buildScraperHeaders } from "../../../../utilities.ts";
-import { upsertWebcams, type WebcamDocument } from "../../../../models/Webcam.ts";
+import {
+  upsertWebcams,
+  type WebcamDocument,
+} from "../../../../models/Webcam.ts";
 
 const API_URL = "https://data.brla.gov/resource/6z6u-ts44.json";
 
@@ -23,22 +26,28 @@ export async function refreshBatonRougeWebcams() {
     throw new Error(`Failed to fetch Baton Rouge webcams: ${response.status}`);
   }
 
-  const data = await response.json() as BatonRougeCamera[];
+  const data = (await response.json()) as BatonRougeCamera[];
   if (!Array.isArray(data) || data.length === 0) return;
 
   const parsedWebcams: WebcamDocument[] = data
-    .filter((cam: BatonRougeCamera): cam is BatonRougeCamera & { image_view: string } => !!cam.image_view)
-    .map((cam: BatonRougeCamera & { image_view: string }): WebcamDocument => ({
-      id: `BTR-${cam.device_id || cam._id}`,
-      name: cam.device_name || cam.location || `Camera ${cam.device_id}`,
-      url: cam.image_view,
-      area: cam.location || "Baton Rouge",
-      latitude: cam.latitude ? parseFloat(cam.latitude) : null,
-      longitude: cam.longitude ? parseFloat(cam.longitude) : null,
-      city: "Baton Rouge",
-      country: "US",
-      source: "data.brla.gov",
-    }));
+    .filter(
+      (
+        cam: BatonRougeCamera,
+      ): cam is BatonRougeCamera & { image_view: string } => !!cam.image_view,
+    )
+    .map(
+      (cam: BatonRougeCamera & { image_view: string }): WebcamDocument => ({
+        id: `BTR-${cam.device_id || cam._id}`,
+        name: cam.device_name || cam.location || `Camera ${cam.device_id}`,
+        url: cam.image_view,
+        area: cam.location || "Baton Rouge",
+        latitude: cam.latitude ? parseFloat(cam.latitude) : null,
+        longitude: cam.longitude ? parseFloat(cam.longitude) : null,
+        city: "Baton Rouge",
+        country: "US",
+        source: "data.brla.gov",
+      }),
+    );
 
   if (parsedWebcams.length > 0) {
     await upsertWebcams(parsedWebcams);

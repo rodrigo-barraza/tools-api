@@ -35,7 +35,11 @@ function parseHnInput(input: string) {
 
 
  */
-async function fetchComments(ids: number[], remaining: number, depth: number = 0) {
+async function fetchComments(
+  ids: number[],
+  remaining: number,
+  depth: number = 0,
+) {
   if (!ids?.length || remaining <= 0 || depth > 3) return [];
 
   const batch = ids.slice(0, remaining);
@@ -50,7 +54,8 @@ async function fetchComments(ids: number[], remaining: number, depth: number = 0
   );
 
   for (const item of items) {
-    if (!item || item.deleted || item.dead || comments.length >= remaining) continue;
+    if (!item || item.deleted || item.dead || comments.length >= remaining)
+      continue;
 
     const comment = {
       id: item.id,
@@ -83,7 +88,10 @@ async function fetchComments(ids: number[], remaining: number, depth: number = 0
 
 
  */
-export async function getHackerNewsThread(input: string, options: { commentLimit?: number } = {}) {
+export async function getHackerNewsThread(
+  input: string,
+  options: { commentLimit?: number } = {},
+) {
   const itemId = parseHnInput(input);
   if (!itemId) {
     return { error: `Invalid Hacker News URL or ID: "${input}"` };

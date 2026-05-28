@@ -27,8 +27,12 @@ export async function fetchTides(): Promise<TidePrediction[]> {
     "&units=metric&format=json&interval=hilo";
 
   const response = await fetch(url);
-  if (!response.ok) throw new Error(`NOAA CO-OPS ${response.status}: ${response.statusText}`);
-  const json = await response.json() as { predictions?: RawTidePrediction[]; error?: { message?: string } };
+  if (!response.ok)
+    throw new Error(`NOAA CO-OPS ${response.status}: ${response.statusText}`);
+  const json = (await response.json()) as {
+    predictions?: RawTidePrediction[];
+    error?: { message?: string };
+  };
 
   if (json.error) {
     throw new Error(
@@ -36,10 +40,12 @@ export async function fetchTides(): Promise<TidePrediction[]> {
     );
   }
 
-  return (json.predictions || []).map((p: RawTidePrediction): TidePrediction => ({
-    time: p.t,
-    height: parseFloat(p.v),
-    type: p.type === "H" ? "high" : "low",
-    stationId,
-  }));
+  return (json.predictions || []).map(
+    (p: RawTidePrediction): TidePrediction => ({
+      time: p.t,
+      height: parseFloat(p.v),
+      type: p.type === "H" ? "high" : "low",
+      stationId,
+    }),
+  );
 }

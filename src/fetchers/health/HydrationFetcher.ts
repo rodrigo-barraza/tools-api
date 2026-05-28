@@ -10,16 +10,21 @@
  *   - Sawka MN et al., Exercise and Fluid Replacement (2007)
  */
 
-export type HydrationActivityLevel = "sedentary" | "light" | "moderate" | "active" | "very_active";
+export type HydrationActivityLevel =
+  | "sedentary"
+  | "light"
+  | "moderate"
+  | "active"
+  | "very_active";
 export type ExerciseIntensity = "low" | "moderate" | "high";
 
 // ─── Base Water Multipliers (mL per kg body weight) ────────────
 
 const BASE_MULTIPLIERS: Record<HydrationActivityLevel, number> = {
-  sedentary: 30,   // ~30 mL/kg — WHO/EFSA baseline
-  light: 33,       // light activity
-  moderate: 35,    // moderate activity
-  active: 40,      // vigorous activity
+  sedentary: 30, // ~30 mL/kg — WHO/EFSA baseline
+  light: 33, // light activity
+  moderate: 35, // moderate activity
+  active: 40, // vigorous activity
   very_active: 45, // athlete / labor-intensive
 };
 
@@ -27,11 +32,11 @@ const BASE_MULTIPLIERS: Record<HydrationActivityLevel, number> = {
 
 function climateAdjustment(tempCelsius: number | undefined): number {
   if (tempCelsius === null || tempCelsius === undefined) return 0;
-  if (tempCelsius <= 10) return -200;   // Cold — less sweat loss
-  if (tempCelsius <= 20) return 0;      // Temperate — baseline
-  if (tempCelsius <= 30) return 300;    // Warm — moderate increase
-  if (tempCelsius <= 35) return 500;    // Hot — significant increase
-  return 750;                            // Extreme heat — maximum adjustment
+  if (tempCelsius <= 10) return -200; // Cold — less sweat loss
+  if (tempCelsius <= 20) return 0; // Temperate — baseline
+  if (tempCelsius <= 30) return 300; // Warm — moderate increase
+  if (tempCelsius <= 35) return 500; // Hot — significant increase
+  return 750; // Extreme heat — maximum adjustment
 }
 
 // ─── Altitude Adjustment ───────────────────────────────────────
@@ -46,16 +51,21 @@ function altitudeAdjustment(altitudeM: number | undefined): number {
 // ─── Exercise Fluid Replacement ────────────────────────────────
 // ACSM: 400-800 mL/hour of exercise depending on intensity and sweat rate
 
-function exerciseFluid(durationMinutes: number | undefined, intensity: string | undefined): number {
+function exerciseFluid(
+  durationMinutes: number | undefined,
+  intensity: string | undefined,
+): number {
   if (!durationMinutes || durationMinutes <= 0) return 0;
 
   const rates: Record<ExerciseIntensity, number> = {
-    low: 400,      // mL per hour
+    low: 400, // mL per hour
     moderate: 600,
     high: 800,
   };
 
-  const normIntensity = (intensity || "moderate").toLowerCase() as ExerciseIntensity;
+  const normIntensity = (
+    intensity || "moderate"
+  ).toLowerCase() as ExerciseIntensity;
   const rate = rates[normIntensity] || 600;
   return (durationMinutes / 60) * rate;
 }
@@ -112,19 +122,26 @@ export function calculateHydrationNeeds({
   const climateAdj = climateAdjustment(climateTemp);
   const altitudeAdj = altitudeAdjustment(altitudeM);
   const exerciseAdj = exerciseFluid(exerciseMinutes, exerciseIntensity);
-  const pregnancyAdj = pregnant ? 300 : 0;  // IOM: +300 mL/day during pregnancy
+  const pregnancyAdj = pregnant ? 300 : 0; // IOM: +300 mL/day during pregnancy
   const lactationAdj = breastfeeding ? 700 : 0; // IOM: +700 mL/day during lactation
   const caffeineAdj = caffeineIntakeMg ? Math.round(caffeineIntakeMg * 0.5) : 0; // ~50% of caffeine volume as diuretic offset
 
-  const totalIntake = baseIntake + climateAdj + altitudeAdj + exerciseAdj + pregnancyAdj + lactationAdj + caffeineAdj;
+  const totalIntake =
+    baseIntake +
+    climateAdj +
+    altitudeAdj +
+    exerciseAdj +
+    pregnancyAdj +
+    lactationAdj +
+    caffeineAdj;
 
   // ── Timing distribution ──────────────────────────────────────
   const waking = totalIntake - exerciseAdj;
   const timing: Record<string, number> = {
     morning: Math.round(waking * 0.25),
-    midday: Math.round(waking * 0.30),
+    midday: Math.round(waking * 0.3),
     afternoon: Math.round(waking * 0.25),
-    evening: Math.round(waking * 0.20),
+    evening: Math.round(waking * 0.2),
   };
 
   if (exerciseMinutes && exerciseMinutes > 0) {
@@ -161,6 +178,7 @@ export function calculateHydrationNeeds({
       caffeineOffsetMl: caffeineAdj,
     },
     timing,
-    _note: "Base: weight(kg) × activity multiplier. Adjustments per ACSM/IOM guidelines. Exercise fluid: 400-800 mL/hour. Timing is approximate — listen to thirst cues.",
+    _note:
+      "Base: weight(kg) × activity multiplier. Adjustments per ACSM/IOM guidelines. Exercise fluid: 400-800 mL/hour. Timing is approximate — listen to thirst cues.",
   };
 }

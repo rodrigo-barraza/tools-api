@@ -69,7 +69,8 @@ export async function setupProductCollection() {
  * Bulk upsert products.
  */
 export async function upsertProducts(products: ProductInput[]) {
-  if (!productCollection || !products.length) return { upserted: 0, modified: 0 };
+  if (!productCollection || !products.length)
+    return { upserted: 0, modified: 0 };
 
   const ops = products.map((p: ProductInput) => ({
     updateOne: {

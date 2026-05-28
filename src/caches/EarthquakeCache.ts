@@ -82,7 +82,10 @@ export function getEarthquakeSummary() {
   for (const event of cache.events) {
     // Classify into magnitude bracket
     const scale = EARTHQUAKE_MAGNITUDE_SCALE.find(
-      (s) => event.magnitude !== null && event.magnitude >= s.min && event.magnitude < s.max,
+      (s) =>
+        event.magnitude !== null &&
+        event.magnitude >= s.min &&
+        event.magnitude < s.max,
     );
     if (scale) {
       counts[scale.label]++;

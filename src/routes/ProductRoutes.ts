@@ -50,31 +50,43 @@ router.get("/products/search", (req: Request, res: Response) => {
   }
   res.json(searchByName(query));
 });
-router.get("/products/recent", asyncHandler(async (req: Request, res: Response) => {
-  const hours = parseIntParam(req.query.hours as string, 24);
-  const category = req.query.category as string || null;
-  const source = req.query.source as string || null;
-  const limit = parseIntParam(req.query.limit as string, 50);
-  res.json(await getRecentProducts(hours, category, source, limit));
-}));
-router.get("/products/db/search", asyncHandler(async (req: Request, res: Response) => {
-  const query = req.query.q as string;
-  if (!query) {
-    return res.status(400).json({ error: "Query parameter 'q' is required" });
-  }
-  const limit = parseIntParam(req.query.limit as string, 50);
-  res.json(await searchProducts(query, limit));
-}));
+router.get(
+  "/products/recent",
+  asyncHandler(async (req: Request, res: Response) => {
+    const hours = parseIntParam(req.query.hours as string, 24);
+    const category = (req.query.category as string) || null;
+    const source = (req.query.source as string) || null;
+    const limit = parseIntParam(req.query.limit as string, 50);
+    res.json(await getRecentProducts(hours, category, source, limit));
+  }),
+);
+router.get(
+  "/products/db/search",
+  asyncHandler(async (req: Request, res: Response) => {
+    const query = req.query.q as string;
+    if (!query) {
+      return res.status(400).json({ error: "Query parameter 'q' is required" });
+    }
+    const limit = parseIntParam(req.query.limit as string, 50);
+    res.json(await searchProducts(query, limit));
+  }),
+);
 // ─── Best Buy CA Availability Routes ───────────────────────────────
 router.get("/products/availability", (_req: Request, res: Response) => {
   res.json(getAvailabilityAll());
 });
-router.get("/products/availability/in-stock", (_req: Request, res: Response) => {
-  res.json(getInStock());
-});
-router.get("/products/availability/out-of-stock", (_req: Request, res: Response) => {
-  res.json(getOutOfStock());
-});
+router.get(
+  "/products/availability/in-stock",
+  (_req: Request, res: Response) => {
+    res.json(getInStock());
+  },
+);
+router.get(
+  "/products/availability/out-of-stock",
+  (_req: Request, res: Response) => {
+    res.json(getOutOfStock());
+  },
+);
 router.get("/products/availability/sku/:sku", (req: Request, res: Response) => {
   const result = getBySku(req.params.sku as string);
   if (!result) {
@@ -88,56 +100,72 @@ router.get("/products/availability/sku/:sku", (req: Request, res: Response) => {
  * On-demand availability check for arbitrary SKUs (not watchlist-dependent).
  * GET /products/availability/check?skus=SKU1,SKU2,SKU3
  */
-router.get("/products/availability/check", asyncHandler(async (req: Request, res: Response) => {
-  const skusParam = req.query.skus as string;
-  if (!skusParam) {
-    return res
-      .status(400)
-      .json({ error: "Query parameter 'skus' is required (comma-separated)" });
-  }
-  const skus = skusParam
-    .split(",")
-    .map((s: string) => s.trim())
-    .filter(Boolean);
-  if (!skus.length) {
-    return res.status(400).json({ error: "No valid SKUs provided" });
-  }
-  try {
-    const { results, errors } = await fetchBestBuyCAAvailability(skus);
-    res.json({
-      count: results.length,
-      inStockCount: results.filter((r) => (r as Record<string, unknown>).inStock).length,
-      results,
-      errors: errors.length ? errors : undefined,
-    });
-  } catch (error: unknown) {
-    logger.error(`Product availability check failed: ${errorMessage(error)}`);
-    res.status(502).json({ error: "Product search failed" });
-  }
-}));
+router.get(
+  "/products/availability/check",
+  asyncHandler(async (req: Request, res: Response) => {
+    const skusParam = req.query.skus as string;
+    if (!skusParam) {
+      return res
+        .status(400)
+        .json({
+          error: "Query parameter 'skus' is required (comma-separated)",
+        });
+    }
+    const skus = skusParam
+      .split(",")
+      .map((s: string) => s.trim())
+      .filter(Boolean);
+    if (!skus.length) {
+      return res.status(400).json({ error: "No valid SKUs provided" });
+    }
+    try {
+      const { results, errors } = await fetchBestBuyCAAvailability(skus);
+      res.json({
+        count: results.length,
+        inStockCount: results.filter(
+          (r) => (r as Record<string, unknown>).inStock,
+        ).length,
+        results,
+        errors: errors.length ? errors : undefined,
+      });
+    } catch (error: unknown) {
+      logger.error(`Product availability check failed: ${errorMessage(error)}`);
+      res.status(502).json({ error: "Product search failed" });
+    }
+  }),
+);
 // ─── Watchlist Management ──────────────────────────────────────────
-router.get("/products/availability/watchlist", (_req: Request, res: Response) => {
-  res.json(getWatchlist());
-});
+router.get(
+  "/products/availability/watchlist",
+  (_req: Request, res: Response) => {
+    res.json(getWatchlist());
+  },
+);
 /**
  * Add SKUs to the watchlist.
  * POST body: { skus: [{ sku, name?, brand?, category? }] }
  */
-router.post("/products/availability/watchlist", (req: Request, res: Response) => {
-  const { skus } = req.body || {};
-  if (!Array.isArray(skus) || !skus.length) {
-    return res.status(400).json({
-      error:
-        "Request body must contain 'skus' array: [{ sku, name?, brand?, category? }]",
-    });
-  }
-  const result = addToWatchlist(skus);
-  res.json({ ...result, watchlist: getWatchlist() });
-});
-router.delete("/products/availability/watchlist/:sku", (req: Request, res: Response) => {
-  const result = removeFromWatchlist(req.params.sku as string);
-  res.json({ ...result, watchlist: getWatchlist() });
-});
+router.post(
+  "/products/availability/watchlist",
+  (req: Request, res: Response) => {
+    const { skus } = req.body || {};
+    if (!Array.isArray(skus) || !skus.length) {
+      return res.status(400).json({
+        error:
+          "Request body must contain 'skus' array: [{ sku, name?, brand?, category? }]",
+      });
+    }
+    const result = addToWatchlist(skus);
+    res.json({ ...result, watchlist: getWatchlist() });
+  },
+);
+router.delete(
+  "/products/availability/watchlist/:sku",
+  (req: Request, res: Response) => {
+    const result = removeFromWatchlist(req.params.sku as string);
+    res.json({ ...result, watchlist: getWatchlist() });
+  },
+);
 // ─── Health ────────────────────────────────────────────────────────
 export function getProductHealth() {
   return {

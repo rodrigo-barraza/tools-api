@@ -75,7 +75,11 @@ function ensureFoodCache(): FoodItem[] {
       });
 
       const numericStart = 35;
-      for (let nutrientIndex = numericStart; nutrientIndex < headers.length; nutrientIndex++) {
+      for (
+        let nutrientIndex = numericStart;
+        nutrientIndex < headers.length;
+        nutrientIndex++
+      ) {
         const rawVal = row[headers[nutrientIndex]];
         const value = typeof rawVal === "string" ? parseFloat(rawVal) : NaN;
         row[headers[nutrientIndex]] = isNaN(value) ? null : value;
@@ -92,7 +96,10 @@ function ensureFoodCache(): FoodItem[] {
 
 const ALL_NUTRIENT_COLUMNS = [
   ...Object.keys(NUTRITION_MACRO_FIELDS).filter(
-    (k: string) => !["kilocalories", "kilojoules", "water", "mineral", "ethanol"].includes(k),
+    (k: string) =>
+      !["kilocalories", "kilojoules", "water", "mineral", "ethanol"].includes(
+        k,
+      ),
   ),
   ...Object.keys(NUTRITION_MINERAL_FIELDS),
   ...Object.keys(NUTRITION_VITAMIN_FIELDS),
@@ -105,7 +112,12 @@ const ALL_NUTRIENT_COLUMNS = [
 function extractVector(food: FoodItem, columns: string[]): number[] {
   return columns.map((column: string) => {
     const value = food[column];
-    return value !== null && value !== undefined && typeof value === "number" && !isNaN(value) ? value : 0;
+    return value !== null &&
+      value !== undefined &&
+      typeof value === "number" &&
+      !isNaN(value)
+      ? value
+      : 0;
   });
 }
 
@@ -142,7 +154,13 @@ const DIETARY_FILTERS: Record<string, (food: FoodItem) => boolean> = {
   pescatarian: (food: FoodItem) => {
     const type = (food.food_type || "").toLowerCase();
     const kingdom = (food.kingdom || "").toLowerCase();
-    return kingdom !== "animalia" || type === "fish" || type === "seafood" || type === "dairy" || type === "egg";
+    return (
+      kingdom !== "animalia" ||
+      type === "fish" ||
+      type === "seafood" ||
+      type === "dairy" ||
+      type === "egg"
+    );
   },
   plant_only: (food: FoodItem) => {
     const kingdom = (food.kingdom || "").toLowerCase();
@@ -173,7 +191,9 @@ export function findFoodSubstitutes({
   limit = 10,
 }: FindSubstitutesOptions) {
   if (!food) {
-    return { error: "'food' parameter is required (e.g. 'salmon', 'beef', 'tofu')" };
+    return {
+      error: "'food' parameter is required (e.g. 'salmon', 'beef', 'tofu')",
+    };
   }
 
   const allFoods = ensureFoodCache();
@@ -206,7 +226,12 @@ export function findFoodSubstitutes({
   if (targetNutrients) {
     const targets = targetNutrients
       .split(",")
-      .map((t: string) => t.trim().toLowerCase().replace(/[\s-]+/g, "_"))
+      .map((t: string) =>
+        t
+          .trim()
+          .toLowerCase()
+          .replace(/[\s-]+/g, "_"),
+      )
       .filter(Boolean);
 
     // Match target nutrient names to columns
@@ -227,9 +252,7 @@ export function findFoodSubstitutes({
   const sourceVector = extractVector(sourceFood, columns);
 
   // ── Filter candidates ────────────────────────────────────────
-  let candidates = allFoods.filter(
-    (f: FoodItem) => f !== sourceFood,
-  );
+  let candidates = allFoods.filter((f: FoodItem) => f !== sourceFood);
 
   // Dietary preference filter
   if (dietaryPreference) {
@@ -255,7 +278,10 @@ export function findFoodSubstitutes({
       .map((e: string) => normalizeSearch(e.trim()))
       .filter(Boolean);
     candidates = candidates.filter(
-      (f: FoodItem) => !excluded.some((e: string) => normalizeSearch(f.food_name || "").includes(e)),
+      (f: FoodItem) =>
+        !excluded.some((e: string) =>
+          normalizeSearch(f.food_name || "").includes(e),
+        ),
     );
   }
 
@@ -307,7 +333,8 @@ export function findFoodSubstitutes({
       similarity: Number((r.similarity * 100).toFixed(1)),
       nutrients: formatKeyNutrients(r.food),
     })),
-    _note: "Similarity score (0–100%) based on cosine similarity of nutrient profile vectors. All values per 100g.",
+    _note:
+      "Similarity score (0–100%) based on cosine similarity of nutrient profile vectors. All values per 100g.",
   };
 }
 

@@ -58,16 +58,22 @@ const NOISE_SELECTORS = [
 function scoreElement($: CheerioAPI, element: AnyNode) {
   const text = $(element).text().trim();
   const wordCount = text.split(/\s+/).length;
-  const linkDensity = ($(element).find("a").text().length || 0) / (text.length || 1);
+  const linkDensity =
+    ($(element).find("a").text().length || 0) / (text.length || 1);
 
   let score = wordCount;
 
   // Bonus for article-like tags and classes
-  const tagName = ((element as Element).tagName || (element as Element).name || "").toLowerCase();
+  const tagName = (
+    (element as Element).tagName ||
+    (element as Element).name ||
+    ""
+  ).toLowerCase();
   if (tagName === "article") score *= 2;
   if (tagName === "main") score *= 1.8;
 
-  const classId = `${$(element).attr("class") || ""} ${$(element).attr("id") || ""}`.toLowerCase();
+  const classId =
+    `${$(element).attr("class") || ""} ${$(element).attr("id") || ""}`.toLowerCase();
   if (/article|post|content|entry|story|body/i.test(classId)) score *= 1.5;
   if (/sidebar|nav|menu|footer|header|comment/i.test(classId)) score *= 0.1;
 
@@ -119,21 +125,27 @@ function extractMainContent($: CheerioAPI) {
 function extractText($: CheerioAPI, container: cheerio.Cheerio<AnyNode>) {
   const paragraphs: string[] = [];
 
-  container.find("p, h1, h2, h3, h4, h5, h6, li, blockquote, pre, td, th").each((_: number, element: AnyNode) => {
-    const text = $(element).text().trim();
-    if (text.length > 10) {
-      const tagName = ((element as Element).tagName || (element as Element).name || "").toLowerCase();
-      if (tagName.startsWith("h")) {
-        paragraphs.push(`## ${text}`);
-      } else if (tagName === "blockquote") {
-        paragraphs.push(`> ${text}`);
-      } else if (tagName === "li") {
-        paragraphs.push(`- ${text}`);
-      } else {
-        paragraphs.push(text);
+  container
+    .find("p, h1, h2, h3, h4, h5, h6, li, blockquote, pre, td, th")
+    .each((_: number, element: AnyNode) => {
+      const text = $(element).text().trim();
+      if (text.length > 10) {
+        const tagName = (
+          (element as Element).tagName ||
+          (element as Element).name ||
+          ""
+        ).toLowerCase();
+        if (tagName.startsWith("h")) {
+          paragraphs.push(`## ${text}`);
+        } else if (tagName === "blockquote") {
+          paragraphs.push(`> ${text}`);
+        } else if (tagName === "li") {
+          paragraphs.push(`- ${text}`);
+        } else {
+          paragraphs.push(text);
+        }
       }
-    }
-  });
+    });
 
   // If the structured extraction yielded very little, fall back to raw text
   if (paragraphs.join("\n").length < 100) {
@@ -184,13 +196,16 @@ function extractMetadata($: CheerioAPI, url: string) {
     null;
 
   // Site name
-  meta.siteName =
-    $('meta[property="og:site_name"]').attr("content") ||
-    null;
+  meta.siteName = $('meta[property="og:site_name"]').attr("content") || null;
 
   // Keywords
   const keywords = $('meta[name="keywords"]').attr("content");
-  meta.keywords = keywords ? keywords.split(",").map((k: string) => k.trim()).filter(Boolean) : null;
+  meta.keywords = keywords
+    ? keywords
+        .split(",")
+        .map((k: string) => k.trim())
+        .filter(Boolean)
+    : null;
 
   // Canonical URL
   meta.canonicalUrl =
@@ -199,8 +214,7 @@ function extractMetadata($: CheerioAPI, url: string) {
     url;
 
   // Type
-  meta.type =
-    $('meta[property="og:type"]').attr("content") || null;
+  meta.type = $('meta[property="og:type"]').attr("content") || null;
 
   // Strip null values
   for (const key of Object.keys(meta)) {
@@ -220,8 +234,13 @@ export interface GenericPageOptions {
  * Fetch and extract text/metadata from a generic web page.
  * No Puppeteer — uses fetch + Cheerio.
  */
-export async function fetchGenericPage(url: string, options: GenericPageOptions = {}) {
-  const maxChars = options.maxChars ? parseInt(String(options.maxChars), 10) : MAX_BODY_CHARS;
+export async function fetchGenericPage(
+  url: string,
+  options: GenericPageOptions = {},
+) {
+  const maxChars = options.maxChars
+    ? parseInt(String(options.maxChars), 10)
+    : MAX_BODY_CHARS;
 
   let response: Response;
   try {
@@ -231,7 +250,8 @@ export async function fetchGenericPage(url: string, options: GenericPageOptions 
     response = await fetch(url, {
       headers: {
         "User-Agent": USER_AGENT,
-        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9",
       },
       redirect: "follow",
@@ -241,7 +261,9 @@ export async function fetchGenericPage(url: string, options: GenericPageOptions 
     clearTimeout(timeout);
   } catch (error: unknown) {
     if (error instanceof Error && error.name === "AbortError") {
-      return { error: `Request timed out after ${FETCH_TIMEOUT_MS / 1000}s: ${url}` };
+      return {
+        error: `Request timed out after ${FETCH_TIMEOUT_MS / 1000}s: ${url}`,
+      };
     }
     return { error: `Fetch failed: ${errorMessage(error)}` };
   }
@@ -251,7 +273,10 @@ export async function fetchGenericPage(url: string, options: GenericPageOptions 
   }
 
   const contentType = response.headers.get("content-type") || "";
-  if (!contentType.includes("text/html") && !contentType.includes("application/xhtml")) {
+  if (
+    !contentType.includes("text/html") &&
+    !contentType.includes("application/xhtml")
+  ) {
     return {
       error: `Non-HTML content type: ${contentType}`,
       url,

@@ -89,7 +89,7 @@ export async function fetchEtsyTrending() {
         throw new Error(`Etsy API returned ${response.status}`);
       }
 
-      const data = await response.json() as { results?: EtsyListing[] };
+      const data = (await response.json()) as { results?: EtsyListing[] };
       const listings = data.results || [];
 
       const products = listings.map((item: EtsyListing, index: number) => {

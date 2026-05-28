@@ -25,7 +25,6 @@ import { errorMessage } from "../../utilities.ts";
 
 // ─── State ─────────────────────────────────────────────────────────
 
-
 interface AisVessel {
   messageType: string;
   mmsi: number;
@@ -38,7 +37,6 @@ interface AisVessel {
 }
 
 let socket: WebSocket | null = null;
-
 
 let intentionalClose = false;
 
@@ -98,10 +96,10 @@ function connect(options: AisStreamOptions = {}) {
     // Build subscription message — must be sent within 3 seconds
     const subscription = buildSubscription(options);
     socket!.send(JSON.stringify(subscription));
-    const bboxCount = Array.isArray(subscription.BoundingBoxes) ? subscription.BoundingBoxes.length : 0;
-    logger.info(
-      `[AisStream]    Subscribed to ${bboxCount} bounding box(es)`,
-    );
+    const bboxCount = Array.isArray(subscription.BoundingBoxes)
+      ? subscription.BoundingBoxes.length
+      : 0;
+    logger.info(`[AisStream]    Subscribed to ${bboxCount} bounding box(es)`);
   };
 
   socket.onmessage = (event: WebSocket.MessageEvent) => {
@@ -116,7 +114,7 @@ function connect(options: AisStreamOptions = {}) {
       }
 
       stats.messagesReceived++;
-            stats.lastMessageAt = new Date().toISOString();
+      stats.lastMessageAt = new Date().toISOString();
 
       // Process and buffer the message
       const processed = processMessage(message);
@@ -130,7 +128,7 @@ function connect(options: AisStreamOptions = {}) {
         // Update vessel map (latest known state per MMSI)
         const mmsi = processed.mmsi;
         if (mmsi) {
-          const existing = vesselMap.get(mmsi) || {} as AisVessel;
+          const existing = vesselMap.get(mmsi) || ({} as AisVessel);
           vesselMap.set(mmsi, { ...existing, ...processed });
         }
       }
@@ -330,7 +328,11 @@ function processMessage(raw: AisRawMessage): AisVessel | null {
  */
 export function getTrackedVessels(limit: number = 100) {
   const vessels = Array.from(vesselMap.values())
-    .sort((firstItem, b) => new Date(b.receivedAt).getTime() - new Date(firstItem.receivedAt).getTime())
+    .sort(
+      (firstItem, b) =>
+        new Date(b.receivedAt).getTime() -
+        new Date(firstItem.receivedAt).getTime(),
+    )
     .slice(0, limit);
 
   return vessels;
@@ -350,10 +352,15 @@ export function getVesselByMmsi(mmsi: number) {
 
 
  */
-export function getRecentMessages(limit: number = 50, messageType: string | null = null) {
+export function getRecentMessages(
+  limit: number = 50,
+  messageType: string | null = null,
+) {
   let messages = [...vesselBuffer];
   if (messageType) {
-    messages = messages.filter((message) => message.messageType === messageType);
+    messages = messages.filter(
+      (message) => message.messageType === messageType,
+    );
   }
   return messages.slice(-limit);
 }
@@ -363,7 +370,13 @@ export function getRecentMessages(limit: number = 50, messageType: string | null
 
 
  */
-export function getVesselsInArea(minLat: number, maxLat: number, minLng: number, maxLng: number, limit: number = 100) {
+export function getVesselsInArea(
+  minLat: number,
+  maxLat: number,
+  minLng: number,
+  maxLng: number,
+  limit: number = 100,
+) {
   return Array.from(vesselMap.values())
     .filter(
       (v) =>
@@ -372,7 +385,11 @@ export function getVesselsInArea(minLat: number, maxLat: number, minLng: number,
         v.longitude >= minLng &&
         v.longitude <= maxLng,
     )
-    .sort((firstItem, b) => new Date(b.receivedAt).getTime() - new Date(firstItem.receivedAt).getTime())
+    .sort(
+      (firstItem, b) =>
+        new Date(b.receivedAt).getTime() -
+        new Date(firstItem.receivedAt).getTime(),
+    )
     .slice(0, limit);
 }
 
@@ -384,8 +401,14 @@ export function getVesselsInArea(minLat: number, maxLat: number, minLng: number,
 export function searchVessels(query: string, limit: number = 20) {
   const normalizedQuery = query.toLowerCase();
   return Array.from(vesselMap.values())
-    .filter((vessel) => vessel.shipName?.toLowerCase().includes(normalizedQuery))
-    .sort((firstItem, b) => new Date(b.receivedAt).getTime() - new Date(firstItem.receivedAt).getTime())
+    .filter((vessel) =>
+      vessel.shipName?.toLowerCase().includes(normalizedQuery),
+    )
+    .sort(
+      (firstItem, b) =>
+        new Date(b.receivedAt).getTime() -
+        new Date(firstItem.receivedAt).getTime(),
+    )
     .slice(0, limit);
 }
 

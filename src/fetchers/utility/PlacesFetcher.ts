@@ -33,7 +33,8 @@ function evictStaleEntries() {
   }
   if (placesCache.size > MAX_CACHE_SIZE) {
     const entries = [...placesCache.entries()].sort(
-      (a: [string, PlacesCacheEntry], b: [string, PlacesCacheEntry]) => a[1].fetchedAt - b[1].fetchedAt,
+      (a: [string, PlacesCacheEntry], b: [string, PlacesCacheEntry]) =>
+        a[1].fetchedAt - b[1].fetchedAt,
     );
     const toRemove = Math.floor(entries.length / 2);
     for (let i = 0; i < toRemove; i++) {
@@ -126,7 +127,11 @@ interface NormalizedPlace {
   [key: string]: unknown;
 }
 
-export function buildStaticMapUrl(places: NormalizedPlace[], center: { latitude: number; longitude: number } | undefined, { size = "800x400", zoom, maptype = "roadmap" }: PlacesStaticMapOptions = {}) {
+export function buildStaticMapUrl(
+  places: NormalizedPlace[],
+  center: { latitude: number; longitude: number } | undefined,
+  { size = "800x400", zoom, maptype = "roadmap" }: PlacesStaticMapOptions = {},
+) {
   if (!places.length || !CONFIG.GOOGLE_API_KEY) return null;
 
   const params = new URLSearchParams({

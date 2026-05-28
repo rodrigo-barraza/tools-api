@@ -19,10 +19,43 @@ const router = Router();
 // Constants
 // ────────────────────────────────────────────────────────────
 
-const IMAGE_MODEL = CONFIG.TOOLS_IMAGE_MODEL;
-const IMAGE_PROVIDER = "google";
-const VISION_MODEL = CONFIG.TOOLS_VISION_MODEL;
-const VISION_PROVIDER = "google";
+/**
+ * Retrieve user's custom settings from the LLM Gateway, with fallbacks to defaults.
+ */
+async function getCreativeSettings() {
+  try {
+    const settings = await PrismService.getSettings();
+    const creative = settings?.creative || {};
+    return {
+      imageProvider: creative.imageProvider || "google",
+      imageModel:
+        creative.imageModel ||
+        CONFIG.TOOLS_IMAGE_MODEL ||
+        "gemini-3-pro-image-preview",
+      visionProvider: creative.visionProvider || "google",
+      visionModel:
+        creative.visionModel || CONFIG.TOOLS_VISION_MODEL || "gemini-3.5-flash",
+      textToSpeechProvider: creative.textToSpeechProvider || "elevenlabs",
+      textToSpeechModel: creative.textToSpeechModel || "",
+      speechToTextProvider: creative.speechToTextProvider || "openai",
+      speechToTextModel: creative.speechToTextModel || "",
+    };
+  } catch (error: unknown) {
+    logger.warn(
+      `[CreativeRoutes] Failed to fetch settings from Prism, falling back to defaults: ${errorMessage(error)}`,
+    );
+    return {
+      imageProvider: "google",
+      imageModel: CONFIG.TOOLS_IMAGE_MODEL || "gemini-3-pro-image-preview",
+      visionProvider: "google",
+      visionModel: CONFIG.TOOLS_VISION_MODEL || "gemini-3.5-flash",
+      textToSpeechProvider: "elevenlabs",
+      textToSpeechModel: "",
+      speechToTextProvider: "openai",
+      speechToTextModel: "",
+    };
+  }
+}
 
 const MAX_SAFETY_RETRIES = 3;
 
@@ -161,6 +194,7 @@ router.post(
     } = extractCallerContext(req);
 
     try {
+      const creativeSettings = await getCreativeSettings();
       let currentPrompt = prompt;
       let result:
         | {
@@ -192,8 +226,8 @@ router.post(
 
         try {
           result = await PrismService.chat({
-            provider: IMAGE_PROVIDER,
-            model: IMAGE_MODEL,
+            provider: creativeSettings.imageProvider,
+            model: creativeSettings.imageModel,
             messages,
             forceImageGeneration: true,
             project: callerProject,
@@ -335,6 +369,7 @@ router.post(
     const visionPrompt = prompts[context] || prompts.general;
 
     try {
+      const creativeSettings = await getCreativeSettings();
       const descriptions: unknown[] = [];
 
       // Per-request dedup cache keyed by X-Request-Id header
@@ -364,8 +399,8 @@ router.post(
         const descriptionPromise = (async () => {
           try {
             const result = await PrismService.chat({
-              provider: VISION_PROVIDER,
-              model: VISION_MODEL,
+              provider: creativeSettings.visionProvider,
+              model: creativeSettings.visionModel,
               messages: [
                 { role: "user", content: visionPrompt, images: [url] },
               ],
@@ -430,11 +465,17 @@ router.post(
       extractCallerContext(req);
 
     try {
+      const creativeSettings = await getCreativeSettings();
+      const resolvedProvider =
+        provider || creativeSettings.textToSpeechProvider;
+      const resolvedModel =
+        model || creativeSettings.textToSpeechModel || undefined;
+
       const result = await PrismService.textToSpeech({
         text,
         voice,
-        provider: provider || "elevenlabs",
-        model,
+        provider: resolvedProvider,
+        model: resolvedModel,
         project: callerProject,
         username: callerUsername,
       });
@@ -474,11 +515,9 @@ router.post(
       try {
         const response = await fetch(audioUrl);
         if (!response.ok) {
-          return res
-            .status(400)
-            .json({
-              error: `Failed to fetch audio from URL: ${response.status}`,
-            });
+          return res.status(400).json({
+            error: `Failed to fetch audio from URL: ${response.status}`,
+          });
         }
         const buffer = await response.arrayBuffer();
         const mimeType = response.headers.get("content-type") || "audio/mpeg";
@@ -501,10 +540,16 @@ router.post(
       extractCallerContext(req);
 
     try {
+      const creativeSettings = await getCreativeSettings();
+      const resolvedProvider =
+        provider || creativeSettings.speechToTextProvider;
+      const resolvedModel =
+        model || creativeSettings.speechToTextModel || undefined;
+
       const result = await PrismService.speechToText({
         audio: audioData,
-        provider: provider || "openai",
-        model,
+        provider: resolvedProvider,
+        model: resolvedModel,
         language,
         project: callerProject,
         username: callerUsername,

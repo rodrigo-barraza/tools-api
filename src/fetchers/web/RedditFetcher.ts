@@ -71,9 +71,10 @@ function extractComments(children: RedditCommentChild[], limit: number) {
     comments.push({
       author: commentData.author,
       score: commentData.score,
-      body: body.length > MAX_BODY_CHARS
-        ? body.slice(0, MAX_BODY_CHARS) + "... [truncated]"
-        : body,
+      body:
+        body.length > MAX_BODY_CHARS
+          ? body.slice(0, MAX_BODY_CHARS) + "... [truncated]"
+          : body,
       createdUtc: commentData.created_utc,
       isOp: commentData.is_submitter || false,
       depth: commentData.depth || 0,
@@ -81,9 +82,15 @@ function extractComments(children: RedditCommentChild[], limit: number) {
     });
 
     // Recurse into replies (flatten tree) — replies can be "" or {data:{children:[]}}
-    const replies = typeof commentData.replies === "object" && commentData.replies ? commentData.replies : null;
+    const replies =
+      typeof commentData.replies === "object" && commentData.replies
+        ? commentData.replies
+        : null;
     if (replies?.data?.children?.length && comments.length < limit) {
-      const nested = extractComments(replies.data.children, limit - comments.length);
+      const nested = extractComments(
+        replies.data.children,
+        limit - comments.length,
+      );
       comments.push(...nested);
     }
   }
@@ -98,7 +105,10 @@ function extractComments(children: RedditCommentChild[], limit: number) {
 
 
  */
-export async function getRedditThread(input: string, options: { commentLimit?: number } = {}) {
+export async function getRedditThread(
+  input: string,
+  options: { commentLimit?: number } = {},
+) {
   const jsonUrl = buildRedditJsonUrl(input);
   if (!jsonUrl) {
     return { error: `Invalid Reddit URL: "${input}"` };
@@ -115,7 +125,8 @@ export async function getRedditThread(input: string, options: { commentLimit?: n
 
     if (!response.ok) {
       if (response.status === 404) return { error: "Reddit thread not found" };
-      if (response.status === 429) return { error: "Reddit rate limit exceeded" };
+      if (response.status === 429)
+        return { error: "Reddit rate limit exceeded" };
       return { error: `Reddit API error: ${response.status}` };
     }
 
@@ -139,10 +150,14 @@ export async function getRedditThread(input: string, options: { commentLimit?: n
       score: post.score,
       upvoteRatio: post.upvote_ratio,
       url: `https://www.reddit.com${post.permalink}`,
-      externalUrl: post.url !== `https://www.reddit.com${post.permalink}` ? post.url : null,
-      selfText: selfText.length > MAX_BODY_CHARS
-        ? selfText.slice(0, MAX_BODY_CHARS) + "... [truncated]"
-        : selfText,
+      externalUrl:
+        post.url !== `https://www.reddit.com${post.permalink}`
+          ? post.url
+          : null,
+      selfText:
+        selfText.length > MAX_BODY_CHARS
+          ? selfText.slice(0, MAX_BODY_CHARS) + "... [truncated]"
+          : selfText,
       commentCount: post.num_comments,
       createdUtc: post.created_utc,
       flair: post.link_flair_text || null,

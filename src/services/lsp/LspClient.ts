@@ -10,18 +10,40 @@ import {
 } from "vscode-jsonrpc/node.js";
 import { errorMessage } from "../../utilities.ts";
 
-export type LspParamValue = string | number | boolean | null | { [key: string]: LspParamValue } | LspParamValue[];
-export type LspParams = Record<string, LspParamValue> | LspParamValue[] | string | number | boolean | null;
+export type LspParamValue =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: LspParamValue }
+  | LspParamValue[];
+export type LspParams =
+  | Record<string, LspParamValue>
+  | LspParamValue[]
+  | string
+  | number
+  | boolean
+  | null;
 
 export interface LspClient {
   readonly capabilities: Record<string, unknown> | null;
   readonly isInitialized: boolean;
-  start(command: string, args: string[], options?: { env?: Record<string, string>; cwd?: string }): Promise<void>;
+  start(
+    command: string,
+    args: string[],
+    options?: { env?: Record<string, string>; cwd?: string },
+  ): Promise<void>;
   initialize(params: Record<string, unknown>): Promise<unknown>;
   sendRequest(method: string, params?: LspParams): Promise<unknown>;
   sendNotification(method: string, params?: LspParams): Promise<void>;
-  onNotification<P = LspParams>(method: string, handler: (params: P) => void): void;
-  onRequest<P = LspParams, R = LspParamValue>(method: string, handler: (params: P) => Promise<R> | R): void;
+  onNotification<P = LspParams>(
+    method: string,
+    handler: (params: P) => void,
+  ): void;
+  onRequest<P = LspParams, R = LspParamValue>(
+    method: string,
+    handler: (params: P) => Promise<R> | R,
+  ): void;
   stop(): Promise<void>;
 }
 
@@ -75,7 +97,11 @@ export function createLspClient(
     /**
      * Spawn the LSP server process and establish JSON-RPC connection.
      */
-    async start(command: string, args: string[], options: { env?: Record<string, string>; cwd?: string } = {}): Promise<void> {
+    async start(
+      command: string,
+      args: string[],
+      options: { env?: Record<string, string>; cwd?: string } = {},
+    ): Promise<void> {
       try {
         // 1. Spawn process
         proc = spawn(command, args, {
@@ -92,8 +118,14 @@ export function createLspClient(
         // 2. Wait for successful spawn (catch ENOENT for missing binaries)
         const spawnedProc = proc;
         await new Promise<void>((resolve, reject) => {
-          const onSpawn = () => { cleanup(); resolve(); };
-          const onError = (error: Error) => { cleanup(); reject(error); };
+          const onSpawn = () => {
+            cleanup();
+            resolve();
+          };
+          const onError = (error: Error) => {
+            cleanup();
+            reject(error);
+          };
           const cleanup = () => {
             spawnedProc.removeListener("spawn", onSpawn);
             spawnedProc.removeListener("error", onError);
@@ -126,7 +158,9 @@ export function createLspClient(
             isInitialized = false;
             startFailed = false;
             startError = null;
-            const crashError = new Error(`LSP server ${serverName} crashed with exit code ${code}`);
+            const crashError = new Error(
+              `LSP server ${serverName} crashed with exit code ${code}`,
+            );
             logger.error(`[LSP:${serverName}] ${crashError.message}`);
             onCrash?.(crashError);
           }
@@ -149,7 +183,9 @@ export function createLspClient(
           if (!isStopping) {
             startFailed = true;
             startError = error;
-            logger.error(`[LSP:${serverName}] Connection error: ${error.message}`);
+            logger.error(
+              `[LSP:${serverName}] Connection error: ${error.message}`,
+            );
           }
         });
 
@@ -165,18 +201,28 @@ export function createLspClient(
 
         // 8. Apply queued handlers
         for (const { method, handler } of pendingNotificationHandlers) {
-          connection.onNotification(method, handler as unknown as (params: unknown) => void);
+          connection.onNotification(
+            method,
+            handler as unknown as (params: unknown) => void,
+          );
         }
         pendingNotificationHandlers.length = 0;
 
         for (const { method, handler } of pendingRequestHandlers) {
-          connection.onRequest(method, handler as unknown as (params: unknown) => Promise<unknown> | unknown);
+          connection.onRequest(
+            method,
+            handler as unknown as (
+              params: unknown,
+            ) => Promise<unknown> | unknown,
+          );
         }
         pendingRequestHandlers.length = 0;
 
         logger.info(`[LSP:${serverName}] Client started`);
       } catch (error: unknown) {
-        logger.error(`[LSP:${serverName}] Failed to start: ${errorMessage(error)}`);
+        logger.error(
+          `[LSP:${serverName}] Failed to start: ${errorMessage(error)}`,
+        );
         throw error;
       }
     },
@@ -190,7 +236,9 @@ export function createLspClient(
 
       try {
         const result = await connection.sendRequest("initialize", params);
-        const initializeResult = result as { capabilities?: Record<string, unknown> | null };
+        const initializeResult = result as {
+          capabilities?: Record<string, unknown> | null;
+        };
         capabilities = initializeResult.capabilities || null;
 
         // Send initialized notification
@@ -200,7 +248,9 @@ export function createLspClient(
         logger.info(`[LSP:${serverName}] Initialized`);
         return result;
       } catch (error: unknown) {
-        logger.error(`[LSP:${serverName}] Initialize failed: ${errorMessage(error)}`);
+        logger.error(
+          `[LSP:${serverName}] Initialize failed: ${errorMessage(error)}`,
+        );
         throw error;
       }
     },
@@ -216,7 +266,9 @@ export function createLspClient(
       try {
         return await connection.sendRequest(method, params);
       } catch (error: unknown) {
-        logger.error(`[LSP:${serverName}] Request ${method} failed: ${errorMessage(error)}`);
+        logger.error(
+          `[LSP:${serverName}] Request ${method} failed: ${errorMessage(error)}`,
+        );
         throw error;
       }
     },
@@ -231,7 +283,9 @@ export function createLspClient(
       try {
         await connection.sendNotification(method, params);
       } catch (error: unknown) {
-        logger.warn(`[LSP:${serverName}] Notification ${method} failed: ${errorMessage(error)}`);
+        logger.warn(
+          `[LSP:${serverName}] Notification ${method} failed: ${errorMessage(error)}`,
+        );
         // Don't re-throw — notifications are fire-and-forget
       }
     },
@@ -239,9 +293,15 @@ export function createLspClient(
     /**
      * Register a handler for notifications FROM the server.
      */
-    onNotification<P = LspParams>(method: string, handler: (params: P) => void): void {
+    onNotification<P = LspParams>(
+      method: string,
+      handler: (params: P) => void,
+    ): void {
       if (!connection) {
-        pendingNotificationHandlers.push({ method, handler: handler as unknown as (params: never) => void });
+        pendingNotificationHandlers.push({
+          method,
+          handler: handler as unknown as (params: never) => void,
+        });
         return;
       }
       checkStartFailed();
@@ -251,9 +311,17 @@ export function createLspClient(
     /**
      * Register a handler for requests FROM the server (reverse direction).
      */
-    onRequest<P = LspParams, R = LspParamValue>(method: string, handler: (params: P) => Promise<R> | R): void {
+    onRequest<P = LspParams, R = LspParamValue>(
+      method: string,
+      handler: (params: P) => Promise<R> | R,
+    ): void {
       if (!connection) {
-        pendingRequestHandlers.push({ method, handler: handler as unknown as (params: never) => Promise<never> | never });
+        pendingRequestHandlers.push({
+          method,
+          handler: handler as unknown as (
+            params: never,
+          ) => Promise<never> | never,
+        });
         return;
       }
       checkStartFailed();
@@ -273,12 +341,18 @@ export function createLspClient(
           await connection.sendNotification("exit", {});
         }
       } catch (error: unknown) {
-        logger.warn(`[LSP:${serverName}] Shutdown error: ${errorMessage(error)}`);
+        logger.warn(
+          `[LSP:${serverName}] Shutdown error: ${errorMessage(error)}`,
+        );
         shutdownError = error as Error;
       } finally {
         // Always cleanup regardless of shutdown success
         if (connection) {
-          try { connection.dispose(); } catch { /* disposal errors are non-critical */ }
+          try {
+            connection.dispose();
+          } catch {
+            /* disposal errors are non-critical */
+          }
           connection = null;
         }
 
@@ -288,7 +362,11 @@ export function createLspClient(
           if (proc.stdin) proc.stdin.removeAllListeners("error");
           if (proc.stderr) proc.stderr.removeAllListeners("data");
 
-          try { proc.kill(); } catch { /* process may already be dead */ }
+          try {
+            proc.kill();
+          } catch {
+            /* process may already be dead */
+          }
           proc = null;
         }
 

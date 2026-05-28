@@ -120,7 +120,9 @@ export async function fetchAllBestBuyTrending() {
       const result = await fetchBestBuyTrending(bestBuyCategory.id);
       allProducts.push(...result.products);
     } catch (error: unknown) {
-      logger.error(`[BestBuy] ❌ ${bestBuyCategory.name}: ${errorMessage(error)}`);
+      logger.error(
+        `[BestBuy] ❌ ${bestBuyCategory.name}: ${errorMessage(error)}`,
+      );
     }
   }
 

@@ -1,7 +1,10 @@
 import { createSimpleCache } from "./createSimpleCache.ts";
 import { Launch } from "../types/weather.ts";
 
-const cache = createSimpleCache<Launch[]>({ type: "array", itemsKey: "launches" });
+const cache = createSimpleCache<Launch[]>({
+  type: "array",
+  itemsKey: "launches",
+});
 
 export const updateLaunches = cache.update;
 export const setLaunchError = cache.setError;
@@ -25,7 +28,9 @@ export function getLaunchSummary() {
   const now = new Date();
   const upcoming = launches.filter((l) => new Date(l.net) > now);
   const providers = [
-    ...new Set(launches.map((l) => l.provider).filter((p): p is string => p !== null)),
+    ...new Set(
+      launches.map((l) => l.provider).filter((p): p is string => p !== null),
+    ),
   ];
 
   return {

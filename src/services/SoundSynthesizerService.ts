@@ -129,50 +129,68 @@ export const INSTRUMENT_PRESETS: Record<string, InstrumentPresetConfig> = {
 // ────────────────────────────────────────────────────────────
 
 const CHORD_INTERVALS: Record<string, number[]> = {
-  "maj": [0, 4, 7],
-  "min": [0, 3, 7],
-  "m": [0, 3, 7],
+  maj: [0, 4, 7],
+  min: [0, 3, 7],
+  m: [0, 3, 7],
   "7": [0, 4, 7, 10],
-  "maj7": [0, 4, 7, 11],
-  "min7": [0, 3, 7, 10],
-  "m7": [0, 3, 7, 10],
-  "dim": [0, 3, 6],
-  "dim7": [0, 3, 6, 9],
-  "aug": [0, 4, 8],
-  "sus2": [0, 2, 7],
-  "sus4": [0, 5, 7],
+  maj7: [0, 4, 7, 11],
+  min7: [0, 3, 7, 10],
+  m7: [0, 3, 7, 10],
+  dim: [0, 3, 6],
+  dim7: [0, 3, 6, 9],
+  aug: [0, 4, 8],
+  sus2: [0, 2, 7],
+  sus4: [0, 5, 7],
   "9": [0, 4, 7, 10, 14],
-  "maj9": [0, 4, 7, 11, 14],
-  "min9": [0, 3, 7, 10, 14],
+  maj9: [0, 4, 7, 11, 14],
+  min9: [0, 3, 7, 10, 14],
   "6": [0, 4, 7, 9],
-  "min6": [0, 3, 7, 9],
-  "add9": [0, 4, 7, 14],
+  min6: [0, 3, 7, 9],
+  add9: [0, 4, 7, 14],
   "5": [0, 7],
   "11": [0, 4, 7, 10, 14, 17],
   "13": [0, 4, 7, 10, 14, 21],
 };
 
 const SCALE_INTERVALS: Record<string, number[]> = {
-  "major": [0, 2, 4, 5, 7, 9, 11],
-  "minor": [0, 2, 3, 5, 7, 8, 10],
-  "minor_pentatonic": [0, 3, 5, 7, 10],
-  "major_pentatonic": [0, 2, 4, 7, 9],
-  "blues": [0, 3, 5, 6, 7, 10],
-  "dorian": [0, 2, 3, 5, 7, 9, 10],
-  "mixolydian": [0, 2, 4, 5, 7, 9, 10],
-  "phrygian": [0, 1, 3, 5, 7, 8, 10],
-  "lydian": [0, 2, 4, 6, 7, 9, 11],
-  "harmonic_minor": [0, 2, 3, 5, 7, 8, 11],
-  "melodic_minor": [0, 2, 3, 5, 7, 9, 11],
-  "chromatic": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-  "whole_tone": [0, 2, 4, 6, 8, 10],
+  major: [0, 2, 4, 5, 7, 9, 11],
+  minor: [0, 2, 3, 5, 7, 8, 10],
+  minor_pentatonic: [0, 3, 5, 7, 10],
+  major_pentatonic: [0, 2, 4, 7, 9],
+  blues: [0, 3, 5, 6, 7, 10],
+  dorian: [0, 2, 3, 5, 7, 9, 10],
+  mixolydian: [0, 2, 4, 5, 7, 9, 10],
+  phrygian: [0, 1, 3, 5, 7, 8, 10],
+  lydian: [0, 2, 4, 6, 7, 9, 11],
+  harmonic_minor: [0, 2, 3, 5, 7, 8, 11],
+  melodic_minor: [0, 2, 3, 5, 7, 9, 11],
+  chromatic: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+  whole_tone: [0, 2, 4, 6, 8, 10],
 };
 
-const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+const NOTE_NAMES = [
+  "C",
+  "C#",
+  "D",
+  "D#",
+  "E",
+  "F",
+  "F#",
+  "G",
+  "G#",
+  "A",
+  "A#",
+  "B",
+];
 
 const FLAT_TO_SHARP: Record<string, string> = {
-  "Db": "C#", "Eb": "D#", "Fb": "E", "Gb": "F#",
-  "Ab": "G#", "Bb": "A#", "Cb": "B",
+  Db: "C#",
+  Eb: "D#",
+  Fb: "E",
+  Gb: "F#",
+  Ab: "G#",
+  Bb: "A#",
+  Cb: "B",
 };
 
 function normalizeNoteName(rawNote: string): string {
@@ -195,7 +213,9 @@ function semitoneToNoteName(semitone: number, octave: number): string {
 }
 
 export function isChordNotation(noteString: string): boolean {
-  return /^[A-G][#b]?(maj7|min7|dim7|aug7|maj9|min9|min6|add9|maj|min|dim|aug|sus2|sus4|m7|m9|m|7|9|11|13|6|5)(\d)?$/i.test(noteString.trim());
+  return /^[A-G][#b]?(maj7|min7|dim7|aug7|maj9|min9|min6|add9|maj|min|dim|aug|sus2|sus4|m7|m9|m|7|9|11|13|6|5)(\d)?$/i.test(
+    noteString.trim(),
+  );
 }
 
 export function expandChordToNotes(chordString: string): string[] {
@@ -224,7 +244,8 @@ export function getScaleNotes(
   octave = 4,
   octaveCount = 1,
 ): string[] {
-  const intervals = SCALE_INTERVALS[scaleName.toLowerCase().replace(/\s+/g, "_")];
+  const intervals =
+    SCALE_INTERVALS[scaleName.toLowerCase().replace(/\s+/g, "_")];
   if (!intervals) return [];
 
   const rootSemitone = noteNameToSemitone(rootNote);
@@ -979,7 +1000,8 @@ export class ModularVoice {
   computeCurrentFrequency(noteDurationSeconds: number): number {
     if (!this.pitchBendConfig) return this.baseFrequency;
 
-    const bendStart = (this.pitchBendConfig.startTime ?? 0.0) * noteDurationSeconds;
+    const bendStart =
+      (this.pitchBendConfig.startTime ?? 0.0) * noteDurationSeconds;
     const bendEnd = (this.pitchBendConfig.endTime ?? 1.0) * noteDurationSeconds;
     const bendWindow = bendEnd - bendStart;
 
@@ -991,9 +1013,9 @@ export class ModularVoice {
     }
 
     const bendProgress = (this.elapsedTime - bendStart) / bendWindow;
-    return this.baseFrequency * Math.pow(
-      this.bendTargetFrequency / this.baseFrequency,
-      bendProgress,
+    return (
+      this.baseFrequency *
+      Math.pow(this.bendTargetFrequency / this.baseFrequency, bendProgress)
     );
   }
 
@@ -1198,7 +1220,8 @@ export function renderModularGraph(config: SynthesizerConfig): Float32Array {
   const beatsPerBar = config.timeSignature?.[0] ?? 4;
 
   let duration =
-    config.duration || computeTimelineDuration(tracks, nodes, tempo, beatsPerBar);
+    config.duration ||
+    computeTimelineDuration(tracks, nodes, tempo, beatsPerBar);
   duration = Math.min(Math.max(duration, 0.1), 60.0);
 
   const numSamples = Math.floor(duration * sampleRate);
@@ -1214,9 +1237,10 @@ export function renderModularGraph(config: SynthesizerConfig): Float32Array {
 
       if (nodeConfig.type === "delay") {
         const rawDelayTime = nodeConfig.delayTime || 0.25;
-        const resolvedDelayTime = typeof rawDelayTime === "string"
-          ? parseBeatDuration(rawDelayTime, tempo)
-          : rawDelayTime;
+        const resolvedDelayTime =
+          typeof rawDelayTime === "string"
+            ? parseBeatDuration(rawDelayTime, tempo)
+            : rawDelayTime;
         const delaySamples = Math.floor(resolvedDelayTime * sampleRate);
         trackDelayNodes[trackIndex] = new DelayNode(
           delaySamples,
@@ -1279,7 +1303,11 @@ export function renderModularGraph(config: SynthesizerConfig): Float32Array {
           typeof note.time === "number"
             ? note.time
             : parseTimeMarker(note.time, tempo, beatsPerBar);
-        const noteDurationSeconds = parseTimeMarker(note.duration, tempo, beatsPerBar);
+        const noteDurationSeconds = parseTimeMarker(
+          note.duration,
+          tempo,
+          beatsPerBar,
+        );
 
         // Apply swing offset based on the note's position in the 16th-note grid
         const sixteenthIndex = computeSixteenthIndex(noteStartTime, tempo);
@@ -1381,7 +1409,8 @@ export function noteToFreq(note: number | string): number {
   // Handle flat notation (e.g. Bb4, Eb3)
   const flatMatch = trimmed.match(/^([A-G]b)(-?\d+)$/i);
   if (flatMatch) {
-    const sharpEquivalent = FLAT_TO_SHARP[flatMatch[1].charAt(0).toUpperCase() + "b"];
+    const sharpEquivalent =
+      FLAT_TO_SHARP[flatMatch[1].charAt(0).toUpperCase() + "b"];
     if (sharpEquivalent) {
       const octave = parseInt(flatMatch[2], 10);
       const semitone = NOTE_NAMES.indexOf(sharpEquivalent);
@@ -1451,7 +1480,9 @@ export function getEnvelopeValue(
 export function synthesizeSound(config: SynthesizerConfig): Float32Array {
   // Apply instrument preset defaults (user-specified params override)
   const instrumentPreset = config.instrument
-    ? INSTRUMENT_PRESETS[config.instrument.toLowerCase().replace(/[\s-]+/g, "_")]
+    ? INSTRUMENT_PRESETS[
+        config.instrument.toLowerCase().replace(/[\s-]+/g, "_")
+      ]
     : undefined;
 
   const sampleRate = config.sampleRate || 44100;
@@ -1466,15 +1497,18 @@ export function synthesizeSound(config: SynthesizerConfig): Float32Array {
   const waveform = config.waveform || instrumentPreset?.waveform || "sine";
   const harmonics = config.harmonics || instrumentPreset?.harmonics || [1.0];
 
-  const modFreq = config.modulatorFrequency || instrumentPreset?.modulatorFrequency || 0;
-  const modIndex = config.modulationIndex || instrumentPreset?.modulationIndex || 0;
+  const modFreq =
+    config.modulatorFrequency || instrumentPreset?.modulatorFrequency || 0;
+  const modIndex =
+    config.modulationIndex || instrumentPreset?.modulationIndex || 0;
 
-  const envelope: ADSREnvelope = config.envelope || instrumentPreset?.envelope || {
-    attack: 0.05,
-    decay: 0.1,
-    sustain: 0.8,
-    release: 0.15,
-  };
+  const envelope: ADSREnvelope = config.envelope ||
+    instrumentPreset?.envelope || {
+      attack: 0.05,
+      decay: 0.1,
+      sustain: 0.8,
+      release: 0.15,
+    };
 
   const lfo = config.lfo || instrumentPreset?.lfo;
   const deltaTime = 1 / sampleRate;
@@ -1592,7 +1626,11 @@ export function synthesizeSequence(
 ): Float32Array {
   const sampleRate = baseConfig.sampleRate || 44100;
   // Expand chords and REST in melody steps
-  const expandedSteps: { frequencies: number[]; duration: number; velocity: number }[] = [];
+  const expandedSteps: {
+    frequencies: number[];
+    duration: number;
+    velocity: number;
+  }[] = [];
   for (const step of steps) {
     const noteStr = String(step.note).trim();
     const stepVelocity = step.velocity ?? 1.0;

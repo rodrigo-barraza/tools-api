@@ -86,10 +86,11 @@ export async function fetchTomorrowIORealtime(): Promise<TomorrowIORealtimeRespo
     throw new Error(`Tomorrow.io realtime returned ${response.status}`);
   }
 
-  const data = await response.json() as RawTomorrowRealtimeData;
+  const data = (await response.json()) as RawTomorrowRealtimeData;
   const values = data.data.values;
   const weatherDescription =
-    (TOMORROWIO_WEATHER_CODES as Record<number, string>)[values.weatherCode] || "Unknown";
+    (TOMORROWIO_WEATHER_CODES as Record<number, string>)[values.weatherCode] ||
+    "Unknown";
 
   return {
     source: "tomorrowio",
@@ -127,7 +128,7 @@ export async function fetchTomorrowIODailyForecast(): Promise<TomorrowIODailyFor
     throw new Error(`Tomorrow.io daily forecast returned ${response.status}`);
   }
 
-  const data = await response.json() as RawTomorrowDailyForecastResponse;
+  const data = (await response.json()) as RawTomorrowDailyForecastResponse;
   const days = data.timelines?.daily || [];
 
   // Extract today's daylight data
@@ -144,28 +145,30 @@ export async function fetchTomorrowIODailyForecast(): Promise<TomorrowIODailyFor
     moonset: today.moonsetTime || null,
 
     // Daily forecast array
-    dailyForecast: days.map((day): TomorrowIODailyForecast => ({
-      time: day.time,
-      temperatureMax: day.values.temperatureMax,
-      temperatureMin: day.values.temperatureMin,
-      temperatureAvg: day.values.temperatureAvg,
-      precipitationProbabilityAvg: day.values.precipitationProbabilityAvg,
-      precipitationProbabilityMax: day.values.precipitationProbabilityMax,
-      rainAccumulationSum: day.values.rainAccumulationSum,
-      snowAccumulationSum: day.values.snowAccumulationSum,
-      windSpeedAvg: day.values.windSpeedAvg,
-      windSpeedMax: day.values.windSpeedMax,
-      windGustMax: day.values.windGustMax,
-      visibilityAvg: day.values.visibilityAvg,
-      visibilityMin: day.values.visibilityMin,
-      uvIndexMax: day.values.uvIndexMax,
-      cloudCoverAvg: day.values.cloudCoverAvg,
-      humidityAvg: day.values.humidityAvg,
-      sunriseTime: day.values.sunriseTime,
-      sunsetTime: day.values.sunsetTime,
-      moonriseTime: day.values.moonriseTime,
-      moonsetTime: day.values.moonsetTime,
-      weatherCodeMax: day.values.weatherCodeMax,
-    })),
+    dailyForecast: days.map(
+      (day): TomorrowIODailyForecast => ({
+        time: day.time,
+        temperatureMax: day.values.temperatureMax,
+        temperatureMin: day.values.temperatureMin,
+        temperatureAvg: day.values.temperatureAvg,
+        precipitationProbabilityAvg: day.values.precipitationProbabilityAvg,
+        precipitationProbabilityMax: day.values.precipitationProbabilityMax,
+        rainAccumulationSum: day.values.rainAccumulationSum,
+        snowAccumulationSum: day.values.snowAccumulationSum,
+        windSpeedAvg: day.values.windSpeedAvg,
+        windSpeedMax: day.values.windSpeedMax,
+        windGustMax: day.values.windGustMax,
+        visibilityAvg: day.values.visibilityAvg,
+        visibilityMin: day.values.visibilityMin,
+        uvIndexMax: day.values.uvIndexMax,
+        cloudCoverAvg: day.values.cloudCoverAvg,
+        humidityAvg: day.values.humidityAvg,
+        sunriseTime: day.values.sunriseTime,
+        sunsetTime: day.values.sunsetTime,
+        moonriseTime: day.values.moonriseTime,
+        moonsetTime: day.values.moonsetTime,
+        weatherCodeMax: day.values.weatherCodeMax,
+      }),
+    ),
   };
 }

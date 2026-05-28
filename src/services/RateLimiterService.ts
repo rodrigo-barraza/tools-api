@@ -60,7 +60,10 @@ class RateLimiterService {
 
    */
   getDelay(provider: string): number | null {
-    return API_RATE_LIMITS[provider as keyof typeof API_RATE_LIMITS]?.requestDelayMs ?? null;
+    return (
+      API_RATE_LIMITS[provider as keyof typeof API_RATE_LIMITS]
+        ?.requestDelayMs ?? null
+    );
   }
 
   /**

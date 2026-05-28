@@ -93,7 +93,7 @@ export async function fetchAvalancheForecast(): Promise<AvalancheForecast[]> {
       `Avalanche Canada API returned ${response.status}: ${response.statusText}`,
     );
   }
-  const products = await response.json() as RawProduct[];
+  const products = (await response.json()) as RawProduct[];
   if (!Array.isArray(products)) {
     throw new Error("Avalanche Canada returned unexpected data format");
   }
@@ -127,16 +127,20 @@ export async function fetchAvalancheForecast(): Promise<AvalancheForecast[]> {
         validUntil: report.validUntil || null,
         highlights: report.highlights ? stripHtml(report.highlights) : null,
         confidence: report.confidence?.rating?.display || null,
-        dangerRatings: (report.dangerRatings || []).map((dr): DangerRating => ({
-          date: dr.date?.display || null,
-          alpine: dr.ratings?.alp?.rating?.display || null,
-          treeline: dr.ratings?.tln?.rating?.display || null,
-          belowTreeline: dr.ratings?.btl?.rating?.display || null,
-        })),
-        problems: (report.problems || []).map((p): AvalancheProblem => ({
-          type: p.type?.display || null,
-          comment: p.comment ? stripHtml(p.comment) : null,
-        })),
+        dangerRatings: (report.dangerRatings || []).map(
+          (dr): DangerRating => ({
+            date: dr.date?.display || null,
+            alpine: dr.ratings?.alp?.rating?.display || null,
+            treeline: dr.ratings?.tln?.rating?.display || null,
+            belowTreeline: dr.ratings?.btl?.rating?.display || null,
+          }),
+        ),
+        problems: (report.problems || []).map(
+          (p): AvalancheProblem => ({
+            type: p.type?.display || null,
+            comment: p.comment ? stripHtml(p.comment) : null,
+          }),
+        ),
         url:
           product.url ||
           `https://avalanche.ca/forecasts/${product.id || areaId}`,
@@ -155,18 +159,23 @@ export async function fetchAvalancheForecast(): Promise<AvalancheForecast[]> {
         validUntil: report.validUntil || null,
         highlights: report.highlights ? stripHtml(report.highlights) : null,
         confidence: report.confidence?.rating?.display || null,
-        dangerRatings: (report.dangerRatings || []).map((dr): DangerRating => ({
-          date: dr.date?.display || null,
-          alpine: dr.ratings?.alp?.rating?.display || null,
-          treeline: dr.ratings?.tln?.rating?.display || null,
-          belowTreeline: dr.ratings?.btl?.rating?.display || null,
-        })),
-        problems: (report.problems || []).map((p): AvalancheProblem => ({
-          type: p.type?.display || null,
-          comment: p.comment ? stripHtml(p.comment) : null,
-        })),
+        dangerRatings: (report.dangerRatings || []).map(
+          (dr): DangerRating => ({
+            date: dr.date?.display || null,
+            alpine: dr.ratings?.alp?.rating?.display || null,
+            treeline: dr.ratings?.tln?.rating?.display || null,
+            belowTreeline: dr.ratings?.btl?.rating?.display || null,
+          }),
+        ),
+        problems: (report.problems || []).map(
+          (p): AvalancheProblem => ({
+            type: p.type?.display || null,
+            comment: p.comment ? stripHtml(p.comment) : null,
+          }),
+        ),
         url:
-          product.url || `https://avalanche.ca/forecasts/${product.id || areaId || ""}`,
+          product.url ||
+          `https://avalanche.ca/forecasts/${product.id || areaId || ""}`,
       });
     }
   }

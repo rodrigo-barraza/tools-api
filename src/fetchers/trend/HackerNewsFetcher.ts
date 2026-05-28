@@ -34,7 +34,9 @@ async function fetchItem(id: number): Promise<HNItem | null> {
 export async function fetchHackerNewsTrends() {
   const response = await fetch(`${HN_API_BASE}/topstories.json`);
   if (!response.ok) {
-    throw new Error(`HN API returned ${response.status}: ${response.statusText}`);
+    throw new Error(
+      `HN API returned ${response.status}: ${response.statusText}`,
+    );
   }
 
   const storyIds = await response.json();

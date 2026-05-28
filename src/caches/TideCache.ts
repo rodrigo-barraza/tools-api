@@ -6,7 +6,10 @@ interface TidePrediction {
   type: string;
 }
 
-const cache = createSimpleCache<TidePrediction[]>({ type: "array", itemsKey: "predictions" });
+const cache = createSimpleCache<TidePrediction[]>({
+  type: "array",
+  itemsKey: "predictions",
+});
 
 export const updateTides = cache.update;
 export const setTideError = cache.setError;

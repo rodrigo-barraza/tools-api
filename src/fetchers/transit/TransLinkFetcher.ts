@@ -60,7 +60,9 @@ async function get(path: string) {
   });
 
   if (!response.ok) {
-    throw new Error(`TransLink API ${path} → ${response.status} ${response.statusText}`);
+    throw new Error(
+      `TransLink API ${path} → ${response.status} ${response.statusText}`,
+    );
   }
 
   return response.json();
@@ -73,7 +75,10 @@ async function get(path: string) {
 
 
  */
-export async function getNextBus(stopNo: string | number, routeNo?: string | number) {
+export async function getNextBus(
+  stopNo: string | number,
+  routeNo?: string | number,
+) {
   let path = `/stops/${stopNo}/estimates`;
   if (routeNo) {
     path += `?routeNo=${encodeURIComponent(routeNo)}`;
@@ -139,7 +144,11 @@ export async function getStopInfo(stopNo: string | number) {
 
 
  */
-export async function findStopsNearby(lat: number, lng: number, radius: number = 500) {
+export async function findStopsNearby(
+  lat: number,
+  lng: number,
+  radius: number = 500,
+) {
   const path = `/stops?lat=${lat}&long=${lng}&radius=${Math.min(radius, 2000)}`;
   const data = await get(path);
   const stops = Array.isArray(data) ? data : [];

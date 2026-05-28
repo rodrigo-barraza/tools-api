@@ -46,7 +46,10 @@ export async function updateCommodities(quotes: CommodityQuote[]) {
   cache.error = null;
 
   const result = await insertSnapshots(
-    quotes.map((query) => ({ ...query, fetchedAt: cache.lastFetch || new Date() })),
+    quotes.map((query) => ({
+      ...query,
+      fetchedAt: cache.lastFetch || new Date(),
+    })),
   );
   return result;
 }

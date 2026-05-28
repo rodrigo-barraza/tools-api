@@ -1,7 +1,16 @@
 import { escapeRegex } from "@rodrigo-barraza/utilities-library";
 // ─── Sandboxed File Operations ──────────────────────────────
 
-import { readFile, writeFile, stat, readdir, mkdir, rename, unlink, rm } from "node:fs/promises";
+import {
+  readFile,
+  writeFile,
+  stat,
+  readdir,
+  mkdir,
+  rename,
+  unlink,
+  rm,
+} from "node:fs/promises";
 import { resolve, relative, extname, dirname } from "node:path";
 import { existsSync } from "node:fs";
 import { WORKSPACE_ROOTS as WORKSPACE_ROOTS_RAW } from "../config.ts";
@@ -17,7 +26,11 @@ import logger from "../logger.ts";
  * If so, sends an RPC request and returns the result.
  * Returns null if the path should be handled locally.
  */
-async function tryAgentRoute(method: string, params: Record<string, unknown>, targetPath: string): Promise<unknown> {
+async function tryAgentRoute(
+  method: string,
+  params: Record<string, unknown>,
+  targetPath: string,
+): Promise<unknown> {
   const agent = routeForPath(targetPath);
   if (!agent) return null;
   try {
@@ -37,14 +50,16 @@ async function tryAgentRoute(method: string, params: Record<string, unknown>, ta
 // add workspaces via Settings UI or set the WORKSPACE_ROOTS env var to
 // match their Docker volume mounts.
 if (!Array.isArray(WORKSPACE_ROOTS_RAW) || WORKSPACE_ROOTS_RAW.length === 0) {
-  logger.warn("[AgenticFileService] WORKSPACE_ROOTS is empty — no static workspace roots configured. Users must add workspaces via the Settings UI.");
+  logger.warn(
+    "[AgenticFileService] WORKSPACE_ROOTS is empty — no static workspace roots configured. Users must add workspaces via the Settings UI.",
+  );
 }
 
 // Static roots — immutable baseline from config.js
 const STATIC_ROOTS = Object.freeze(
   (Array.isArray(WORKSPACE_ROOTS_RAW) ? WORKSPACE_ROOTS_RAW : [])
     .filter(Boolean)
-    .map((r: string) => resolve(r.trim()))
+    .map((r: string) => resolve(r.trim())),
 );
 
 // Dynamic roots — mutable array that includes static + user-configured roots.
@@ -76,18 +91,57 @@ const BLOCKED_PATTERNS = [
 
 // Binary file extensions — return metadata only, no content
 const BINARY_EXTENSIONS = new Set([
-  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".ico",
-  ".mp3", ".mp4", ".wav", ".ogg", ".webm", ".avi", ".mov",
-  ".zip", ".tar", ".gz", ".bz2", ".7z", ".rar",
-  ".woff", ".woff2", ".ttf", ".otf", ".eot",
-  ".pdf", ".doc", ".docx", ".xls", ".xlsx",
-  ".exe", ".dll", ".so", ".dylib",
-  ".wasm", ".pyc", ".class",
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".webp",
+  ".bmp",
+  ".ico",
+  ".mp3",
+  ".mp4",
+  ".wav",
+  ".ogg",
+  ".webm",
+  ".avi",
+  ".mov",
+  ".zip",
+  ".tar",
+  ".gz",
+  ".bz2",
+  ".7z",
+  ".rar",
+  ".woff",
+  ".woff2",
+  ".ttf",
+  ".otf",
+  ".eot",
+  ".pdf",
+  ".doc",
+  ".docx",
+  ".xls",
+  ".xlsx",
+  ".exe",
+  ".dll",
+  ".so",
+  ".dylib",
+  ".wasm",
+  ".pyc",
+  ".class",
 ]);
 
 // Image extensions eligible for inline base64 preview (avoids /file/raw round-trip)
 const PREVIEW_IMAGE_EXTENSIONS = new Set([
-  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".ico", ".avif", ".tiff", ".tif",
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".webp",
+  ".bmp",
+  ".ico",
+  ".avif",
+  ".tiff",
+  ".tif",
 ]);
 
 // ────────────────────────────────────────────────────────────
@@ -124,14 +178,19 @@ async function getSecuritySettings(): Promise<{ allowEnvFiles: boolean }> {
         }
       }
       if (settingsClient) {
-        const doc = await settingsClient.db("prism").collection("settings").findOne({ _key: "global" });
+        const doc = await settingsClient
+          .db("prism")
+          .collection("settings")
+          .findOne({ _key: "global" });
         if (doc && doc.data && doc.data.security) {
           return { allowEnvFiles: !!doc.data.security.allowEnvFiles };
         }
       }
     }
   } catch (error) {
-    logger.warn(`[AgenticFileService] Failed to fetch security settings: ${error}`);
+    logger.warn(
+      `[AgenticFileService] Failed to fetch security settings: ${error}`,
+    );
   }
   return { allowEnvFiles: false };
 }
@@ -173,8 +232,8 @@ function validatePath(inputPath: string | unknown) {
     : resolve(inputPath);
 
   // Check against allowed roots
-  const inAllowedRoot = ALLOWED_ROOTS.some((root: string) =>
-    resolved.startsWith(root + "/") || resolved === root,
+  const inAllowedRoot = ALLOWED_ROOTS.some(
+    (root: string) => resolved.startsWith(root + "/") || resolved === root,
   );
 
   if (!inAllowedRoot) {
@@ -225,7 +284,11 @@ export async function agenticReadFile(
   { startLine, endLine }: { startLine?: number; endLine?: number } = {},
 ) {
   // Agent routing — proxy to remote agent if path is served by one
-  const agentResult = await tryAgentRoute("file.read", { path: filePath, startLine, endLine }, filePath);
+  const agentResult = await tryAgentRoute(
+    "file.read",
+    { path: filePath, startLine, endLine },
+    filePath,
+  );
   if (agentResult) return agentResult;
 
   const validation = validatePath(filePath);
@@ -238,7 +301,9 @@ export async function agenticReadFile(
   try {
     const stats = await stat(resolved);
     if (stats.isDirectory()) {
-      return { error: `'${resolved}' is a directory, not a file. Use list_directory instead.` };
+      return {
+        error: `'${resolved}' is a directory, not a file. Use list_directory instead.`,
+      };
     }
     if (stats.size > MAX_READ_BYTES) {
       return {
@@ -257,7 +322,10 @@ export async function agenticReadFile(
       };
 
       // Auto-include base64 for previewable image files under threshold
-      if (PREVIEW_IMAGE_EXTENSIONS.has(fileExtension) && stats.size <= MAX_PREVIEW_BYTES) {
+      if (
+        PREVIEW_IMAGE_EXTENSIONS.has(fileExtension) &&
+        stats.size <= MAX_PREVIEW_BYTES
+      ) {
         const buffer = await readFile(resolved);
         result.contentBase64 = buffer.toString("base64");
       } else {
@@ -313,7 +381,11 @@ export async function agenticWriteFile(
   { createDirs = true }: { createDirs?: boolean } = {},
 ) {
   // Agent routing
-  const agentResult = await tryAgentRoute("file.write", { path: filePath, content, createDirs }, filePath);
+  const agentResult = await tryAgentRoute(
+    "file.write",
+    { path: filePath, content, createDirs },
+    filePath,
+  );
   if (agentResult) return agentResult;
 
   const validation = validatePath(filePath);
@@ -369,7 +441,11 @@ export async function agenticStrReplace(
   { allowMultiple = false }: { allowMultiple?: boolean } = {},
 ) {
   // Agent routing
-  const agentResult = await tryAgentRoute("file.strReplace", { path: filePath, oldStr, newStr, allowMultiple }, filePath);
+  const agentResult = await tryAgentRoute(
+    "file.strReplace",
+    { path: filePath, oldStr, newStr, allowMultiple },
+    filePath,
+  );
   if (agentResult) return agentResult;
 
   const validation = validatePath(filePath);
@@ -398,7 +474,8 @@ export async function agenticStrReplace(
 
     if (count === 0) {
       return {
-        error: "No match found for 'oldStr'. The exact string was not found in the file. Ensure whitespace and indentation match exactly.",
+        error:
+          "No match found for 'oldStr'. The exact string was not found in the file. Ensure whitespace and indentation match exactly.",
         filePath: resolved,
         matchCount: 0,
       };
@@ -439,7 +516,9 @@ export async function agenticStrReplace(
     if (errorObject.code === "ENOENT") {
       return { error: `File not found: ${resolved}` };
     }
-    return { error: `str_replace failed: ${errorObject.message || String(error)}` };
+    return {
+      error: `str_replace failed: ${errorObject.message || String(error)}`,
+    };
   }
 }
 
@@ -448,7 +527,11 @@ export async function agenticStrReplace(
  */
 export async function agenticPatchFile(filePath: string, patch: string) {
   // Agent routing
-  const agentResult = await tryAgentRoute("file.patch", { path: filePath, patch }, filePath);
+  const agentResult = await tryAgentRoute(
+    "file.patch",
+    { path: filePath, patch },
+    filePath,
+  );
   if (agentResult) return agentResult;
 
   const validation = validatePath(filePath);
@@ -457,7 +540,9 @@ export async function agenticPatchFile(filePath: string, patch: string) {
   }
 
   if (!patch || typeof patch !== "string") {
-    return { error: "'patch' is required and must be a string (unified diff format)" };
+    return {
+      error: "'patch' is required and must be a string (unified diff format)",
+    };
   }
 
   const resolved = validation.resolved;
@@ -469,7 +554,8 @@ export async function agenticPatchFile(filePath: string, patch: string) {
 
     if (patched === false) {
       return {
-        error: "Patch could not be applied — the file content does not match the diff context. Ensure the patch was generated against the current file version.",
+        error:
+          "Patch could not be applied — the file content does not match the diff context. Ensure the patch was generated against the current file version.",
         filePath: resolved,
       };
     }
@@ -491,7 +577,9 @@ export async function agenticPatchFile(filePath: string, patch: string) {
     if (errorObject.code === "ENOENT") {
       return { error: `File not found: ${resolved}` };
     }
-    return { error: `patch_file failed: ${errorObject.message || String(error)}` };
+    return {
+      error: `patch_file failed: ${errorObject.message || String(error)}`,
+    };
   }
 }
 
@@ -507,10 +595,17 @@ export interface DirectoryEntry {
 
 export async function agenticListDirectory(
   dirPath: string,
-  { recursive = false, maxDepth = 3 }: { recursive?: boolean; maxDepth?: number } = {},
+  {
+    recursive = false,
+    maxDepth = 3,
+  }: { recursive?: boolean; maxDepth?: number } = {},
 ) {
   // Agent routing
-  const agentResult = await tryAgentRoute("directory.list", { path: dirPath, recursive, maxDepth }, dirPath);
+  const agentResult = await tryAgentRoute(
+    "directory.list",
+    { path: dirPath, recursive, maxDepth },
+    dirPath,
+  );
   if (agentResult) return agentResult;
 
   const validation = validatePath(dirPath);
@@ -523,7 +618,9 @@ export async function agenticListDirectory(
   try {
     const stats = await stat(resolved);
     if (!stats.isDirectory()) {
-      return { error: `'${resolved}' is a file, not a directory. Use read_file instead.` };
+      return {
+        error: `'${resolved}' is a file, not a directory. Use read_file instead.`,
+      };
     }
 
     const entries: DirectoryEntry[] = [];
@@ -586,7 +683,9 @@ export async function agenticListDirectory(
     if (errorObject.code === "ENOENT") {
       return { error: `Directory not found: ${resolved}` };
     }
-    return { error: `list_directory failed: ${errorObject.message || String(error)}` };
+    return {
+      error: `list_directory failed: ${errorObject.message || String(error)}`,
+    };
   }
 }
 
@@ -615,7 +714,11 @@ export async function agenticGrepSearch(
   } = {},
 ) {
   // Agent routing
-  const agentResult = await tryAgentRoute("search.grep", { pattern, searchPath, isRegex, includes, caseInsensitive, matchPerLine }, searchPath);
+  const agentResult = await tryAgentRoute(
+    "search.grep",
+    { pattern, searchPath, isRegex, includes, caseInsensitive, matchPerLine },
+    searchPath,
+  );
   if (agentResult) return agentResult;
 
   const validation = validatePath(searchPath);
@@ -637,7 +740,9 @@ export async function agenticGrepSearch(
         : new RegExp(escapeRegex(pattern), caseInsensitive ? "gi" : "g");
     } catch (error: unknown) {
       const errorObject = error as Error;
-      return { error: `Invalid regex pattern: ${errorObject.message || String(error)}` };
+      return {
+        error: `Invalid regex pattern: ${errorObject.message || String(error)}`,
+      };
     }
 
     const results: GrepResult[] = [];
@@ -670,7 +775,10 @@ export async function agenticGrepSearch(
               results.push({
                 file: filePath,
                 line: i + 1,
-                content: lines[i].length > 500 ? lines[i].slice(0, 500) + "..." : lines[i],
+                content:
+                  lines[i].length > 500
+                    ? lines[i].slice(0, 500) + "..."
+                    : lines[i],
               });
             }
           }
@@ -693,7 +801,8 @@ export async function agenticGrepSearch(
 
           if (entry.isDirectory()) {
             // Skip node_modules, .git
-            if (entry.name === "node_modules" || entry.name === ".git") continue;
+            if (entry.name === "node_modules" || entry.name === ".git")
+              continue;
             await walkDir(fullPath);
           } else {
             // Apply include filters
@@ -741,7 +850,9 @@ export async function agenticGrepSearch(
     };
   } catch (error: unknown) {
     const errorObject = error as Error;
-    return { error: `grep_search failed: ${errorObject.message || String(error)}` };
+    return {
+      error: `grep_search failed: ${errorObject.message || String(error)}`,
+    };
   }
 }
 
@@ -757,7 +868,11 @@ export interface GlobMatch {
 
 export async function agenticGlobFiles(pattern: string, searchPath: string) {
   // Agent routing
-  const agentResult = await tryAgentRoute("search.glob", { pattern, searchPath }, searchPath);
+  const agentResult = await tryAgentRoute(
+    "search.glob",
+    { pattern, searchPath },
+    searchPath,
+  );
   if (agentResult) return agentResult;
 
   const validation = validatePath(searchPath);
@@ -830,7 +945,9 @@ export async function agenticGlobFiles(pattern: string, searchPath: string) {
     };
   } catch (error: unknown) {
     const errorObject = error as Error;
-    return { error: `glob_files failed: ${errorObject.message || String(error)}` };
+    return {
+      error: `glob_files failed: ${errorObject.message || String(error)}`,
+    };
   }
 }
 
@@ -849,10 +966,15 @@ export interface MultiFileReadItem {
 
 export async function agenticMultiFileRead(files: MultiFileReadItem[]) {
   if (!Array.isArray(files) || files.length === 0) {
-    return { error: "'files' must be a non-empty array of { path, startLine?, endLine? }" };
+    return {
+      error:
+        "'files' must be a non-empty array of { path, startLine?, endLine? }",
+    };
   }
   if (files.length > 20) {
-    return { error: `Maximum 20 files per batch read. Received ${files.length}.` };
+    return {
+      error: `Maximum 20 files per batch read. Received ${files.length}.`,
+    };
   }
 
   const results = await Promise.all(
@@ -865,8 +987,12 @@ export async function agenticMultiFileRead(files: MultiFileReadItem[]) {
     }),
   );
 
-  const succeeded = results.filter((r: Record<string, unknown> & { error?: string }) => !r.error).length;
-  const failed = results.filter((r: Record<string, unknown> & { error?: string }) => r.error).length;
+  const succeeded = results.filter(
+    (r: Record<string, unknown> & { error?: string }) => !r.error,
+  ).length;
+  const failed = results.filter(
+    (r: Record<string, unknown> & { error?: string }) => r.error,
+  ).length;
 
   return {
     totalRequested: files.length,
@@ -900,7 +1026,11 @@ export async function agenticFileInfo(paths: string | string[]) {
   const pathList: string[] = Array.isArray(paths) ? paths : [paths];
   // Agent routing — if first path is agent-served, proxy the entire batch
   if (pathList.length > 0) {
-    const agentResult = await tryAgentRoute("file.info", { paths: pathList }, pathList[0]);
+    const agentResult = await tryAgentRoute(
+      "file.info",
+      { paths: pathList },
+      pathList[0],
+    );
     if (agentResult) return agentResult;
   }
 
@@ -908,7 +1038,9 @@ export async function agenticFileInfo(paths: string | string[]) {
     return { error: "'paths' must be a non-empty string or array of strings" };
   }
   if (pathList.length > 20) {
-    return { error: `Maximum 20 paths per batch. Received ${pathList.length}.` };
+    return {
+      error: `Maximum 20 paths per batch. Received ${pathList.length}.`,
+    };
   }
 
   const results = await Promise.all(
@@ -934,7 +1066,11 @@ export async function agenticFileInfo(paths: string | string[]) {
         };
 
         // Line count for text files
-        if (stats.isFile() && !BINARY_EXTENSIONS.has(fileExtension) && stats.size <= MAX_READ_BYTES) {
+        if (
+          stats.isFile() &&
+          !BINARY_EXTENSIONS.has(fileExtension) &&
+          stats.size <= MAX_READ_BYTES
+        ) {
           try {
             const content = await readFile(resolved, "utf-8");
             info.lines = content.split("\n").length;
@@ -949,7 +1085,11 @@ export async function agenticFileInfo(paths: string | string[]) {
         if (errorObject.code === "ENOENT") {
           return { path: resolved, exists: false };
         }
-        return { path: resolved, exists: false, error: errorObject.message || String(error) };
+        return {
+          path: resolved,
+          exists: false,
+          error: errorObject.message || String(error),
+        };
       }
     }),
   );
@@ -973,10 +1113,18 @@ export async function agenticFileInfo(paths: string | string[]) {
  */
 export async function agenticFileDiff(
   pathA: string,
-  { pathB, content, contextLines = 3 }: { pathB?: string; content?: string; contextLines?: number } = {},
+  {
+    pathB,
+    content,
+    contextLines = 3,
+  }: { pathB?: string; content?: string; contextLines?: number } = {},
 ) {
   // Agent routing
-  const agentResult = await tryAgentRoute("file.diff", { pathA, pathB, content, contextLines }, pathA);
+  const agentResult = await tryAgentRoute(
+    "file.diff",
+    { pathA, pathB, content, contextLines },
+    pathA,
+  );
   if (agentResult) return agentResult;
 
   if (!pathA) {
@@ -1036,7 +1184,9 @@ export async function agenticFileDiff(
     if (errorObject.code === "ENOENT") {
       return { error: `File not found: ${String(errorObject.path || pathA)}` };
     }
-    return { error: `file_diff failed: ${errorObject.message || String(error)}` };
+    return {
+      error: `file_diff failed: ${errorObject.message || String(error)}`,
+    };
   }
 }
 
@@ -1053,7 +1203,11 @@ export async function agenticMoveFile(
   { createDirs = true }: { createDirs?: boolean } = {},
 ) {
   // Agent routing
-  const agentResult = await tryAgentRoute("file.move", { source, destination, createDirs }, source);
+  const agentResult = await tryAgentRoute(
+    "file.move",
+    { source, destination, createDirs },
+    source,
+  );
   if (agentResult) return agentResult;
 
   const validSrc = validatePath(source);
@@ -1070,7 +1224,9 @@ export async function agenticMoveFile(
       return { error: `Source not found: ${validSrc.resolved}` };
     }
     if (existsSync(validDst.resolved)) {
-      return { error: `Destination already exists: ${validDst.resolved}. Delete it first or choose a different path.` };
+      return {
+        error: `Destination already exists: ${validDst.resolved}. Delete it first or choose a different path.`,
+      };
     }
 
     if (createDirs) {
@@ -1086,7 +1242,9 @@ export async function agenticMoveFile(
     };
   } catch (error: unknown) {
     const errorObject = error as Error;
-    return { error: `move_file failed: ${errorObject.message || String(error)}` };
+    return {
+      error: `move_file failed: ${errorObject.message || String(error)}`,
+    };
   }
 }
 
@@ -1097,9 +1255,16 @@ export async function agenticMoveFile(
 /**
  * Delete a file within allowed roots.
  */
-export async function agenticDeleteFile(filePath: string, { recursive = false }: { recursive?: boolean } = {}) {
+export async function agenticDeleteFile(
+  filePath: string,
+  { recursive = false }: { recursive?: boolean } = {},
+) {
   // Agent routing
-  const agentResult = await tryAgentRoute("file.delete", { path: filePath, recursive }, filePath);
+  const agentResult = await tryAgentRoute(
+    "file.delete",
+    { path: filePath, recursive },
+    filePath,
+  );
   if (agentResult) return agentResult;
 
   const validation = validatePath(filePath);
@@ -1113,7 +1278,9 @@ export async function agenticDeleteFile(filePath: string, { recursive = false }:
 
     if (stats.isDirectory()) {
       if (!recursive) {
-        return { error: `'${validation.resolved}' is a directory. Only files can be deleted with this tool, unless the 'recursive' parameter is set to true.` };
+        return {
+          error: `'${validation.resolved}' is a directory. Only files can be deleted with this tool, unless the 'recursive' parameter is set to true.`,
+        };
       }
       await rm(validation.resolved, { recursive: true, force: true });
     } else {
@@ -1131,7 +1298,9 @@ export async function agenticDeleteFile(filePath: string, { recursive = false }:
     if (errorObject.code === "ENOENT") {
       return { error: `File or directory not found: ${validation.resolved}` };
     }
-    return { error: `delete_file failed: ${errorObject.message || String(error)}` };
+    return {
+      error: `delete_file failed: ${errorObject.message || String(error)}`,
+    };
   }
 }
 
@@ -1167,7 +1336,9 @@ export async function agenticBlockReplace(
     return { error: "'startLine' must be a positive integer" };
   }
   if (typeof endLine !== "number" || endLine < startLine) {
-    return { error: "'endLine' must be an integer greater than or equal to startLine" };
+    return {
+      error: "'endLine' must be an integer greater than or equal to startLine",
+    };
   }
   if (typeof targetContent !== "string") {
     return { error: "'targetContent' must be a string" };
@@ -1229,7 +1400,9 @@ export async function agenticBlockReplace(
     if (errorObject.code === "ENOENT") {
       return { error: `File not found: ${resolved}` };
     }
-    return { error: `block_replace failed: ${errorObject.message || String(error)}` };
+    return {
+      error: `block_replace failed: ${errorObject.message || String(error)}`,
+    };
   }
 }
 
@@ -1244,9 +1417,16 @@ export interface MultiReplaceChunk {
  * Perform multiple non-contiguous block replacements in a single file atomically.
  * Processed from bottom-to-top to ensure subsequent line index stability.
  */
-export async function agenticMultiReplace(filePath: string, chunks: MultiReplaceChunk[]) {
+export async function agenticMultiReplace(
+  filePath: string,
+  chunks: MultiReplaceChunk[],
+) {
   // Agent routing
-  const agentResult = await tryAgentRoute("file.multiReplace", { path: filePath, chunks }, filePath);
+  const agentResult = await tryAgentRoute(
+    "file.multiReplace",
+    { path: filePath, chunks },
+    filePath,
+  );
   if (agentResult) return agentResult;
 
   const validation = validatePath(filePath);
@@ -1255,7 +1435,9 @@ export async function agenticMultiReplace(filePath: string, chunks: MultiReplace
   }
 
   if (!Array.isArray(chunks) || chunks.length === 0) {
-    return { error: "'chunks' must be a non-empty array of replacement chunks" };
+    return {
+      error: "'chunks' must be a non-empty array of replacement chunks",
+    };
   }
   if (chunks.length > 30) {
     return { error: `Maximum 30 chunks per batch. Received ${chunks.length}.` };
@@ -1268,7 +1450,9 @@ export async function agenticMultiReplace(filePath: string, chunks: MultiReplace
       return { error: `Chunk ${i}: 'startLine' must be a positive integer` };
     }
     if (typeof chunk.endLine !== "number" || chunk.endLine < chunk.startLine) {
-      return { error: `Chunk ${i}: 'endLine' must be an integer greater than or equal to startLine` };
+      return {
+        error: `Chunk ${i}: 'endLine' must be an integer greater than or equal to startLine`,
+      };
     }
     if (typeof chunk.targetContent !== "string") {
       return { error: `Chunk ${i}: 'targetContent' must be a string` };
@@ -1285,7 +1469,9 @@ export async function agenticMultiReplace(filePath: string, chunks: MultiReplace
     let lines = raw.split("\n");
 
     // Check for overlap between chunks
-    const sortedAsc = [...chunks].sort((firstItem, b) => firstItem.startLine - b.startLine);
+    const sortedAsc = [...chunks].sort(
+      (firstItem, b) => firstItem.startLine - b.startLine,
+    );
     for (let i = 0; i < sortedAsc.length - 1; i++) {
       if (sortedAsc[i].endLine >= sortedAsc[i + 1].startLine) {
         return {
@@ -1296,7 +1482,9 @@ export async function agenticMultiReplace(filePath: string, chunks: MultiReplace
     }
 
     // Sort descending by startLine so we replace bottom-to-top without affecting subsequent indices
-    const sortedDesc = [...chunks].sort((firstItem, b) => b.startLine - firstItem.startLine);
+    const sortedDesc = [...chunks].sort(
+      (firstItem, b) => b.startLine - firstItem.startLine,
+    );
     const chunkResults = [];
     let overallLineDelta = 0;
 
@@ -1311,7 +1499,9 @@ export async function agenticMultiReplace(filePath: string, chunks: MultiReplace
         };
       }
 
-      const segment = lines.slice(chunk.startLine - 1, chunk.endLine).join("\n");
+      const segment = lines
+        .slice(chunk.startLine - 1, chunk.endLine)
+        .join("\n");
       if (segment !== chunk.targetContent) {
         const numberedActual = lines
           .slice(chunk.startLine - 1, chunk.endLine)
@@ -1359,7 +1549,9 @@ export async function agenticMultiReplace(filePath: string, chunks: MultiReplace
     if (errorObject.code === "ENOENT") {
       return { error: `File not found: ${resolved}` };
     }
-    return { error: `multi_replace failed: ${errorObject.message || String(error)}` };
+    return {
+      error: `multi_replace failed: ${errorObject.message || String(error)}`,
+    };
   }
 }
 

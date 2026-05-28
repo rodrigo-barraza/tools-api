@@ -46,8 +46,12 @@ export interface SharpenOp {
   jagged?: number;
 }
 
-export interface GrayscaleOp { type: "grayscale"; }
-export interface NegateOp { type: "negate"; }
+export interface GrayscaleOp {
+  type: "grayscale";
+}
+export interface NegateOp {
+  type: "negate";
+}
 
 export interface TintOp {
   type: "tint";
@@ -90,7 +94,9 @@ export interface CompositeOp {
   top?: number;
 }
 
-export interface MetadataOp { type: "metadata"; }
+export interface MetadataOp {
+  type: "metadata";
+}
 
 export interface TextOp {
   type: "text";
@@ -121,13 +127,30 @@ export interface BorderOp {
   width?: number;
 }
 
-export interface IcoOp { type: "ico"; }
+export interface IcoOp {
+  type: "ico";
+}
 
 export type ImageOperation =
-  | ResizeOp | CropOp | RotateOp | FlipOp | BlurOp | SharpenOp
-  | GrayscaleOp | NegateOp | TintOp | AdjustOp | GammaOp | TrimOp
-  | ExtendOp | CompositeOp | MetadataOp
-  | TextOp | DistortOp | BorderOp | IcoOp;
+  | ResizeOp
+  | CropOp
+  | RotateOp
+  | FlipOp
+  | BlurOp
+  | SharpenOp
+  | GrayscaleOp
+  | NegateOp
+  | TintOp
+  | AdjustOp
+  | GammaOp
+  | TrimOp
+  | ExtendOp
+  | CompositeOp
+  | MetadataOp
+  | TextOp
+  | DistortOp
+  | BorderOp
+  | IcoOp;
 
 // ─── Image Store Entry ──────────────────────────────────────────
 

@@ -50,7 +50,10 @@ interface EbayItemSummary {
 /**
  * Search eBay for popular items in a category, sorted by most watched.
  */
-async function fetchEbayCategoryTrending(token: string, category: EbayCategory) {
+async function fetchEbayCategoryTrending(
+  token: string,
+  category: EbayCategory,
+) {
   const params = new URLSearchParams({
     category_ids: category.id,
     sort: "-price",
@@ -69,7 +72,7 @@ async function fetchEbayCategoryTrending(token: string, category: EbayCategory) 
       `eBay Browse API returned ${response.status} for ${category.name}`,
     );
   }
-  const data = await response.json() as { itemSummaries?: EbayItemSummary[] };
+  const data = (await response.json()) as { itemSummaries?: EbayItemSummary[] };
   const items = data.itemSummaries || [];
   return items.slice(0, 15).map((item: EbayItemSummary, index: number) => {
     const product: ProductInput = {
@@ -84,7 +87,9 @@ async function fetchEbayCategoryTrending(token: string, category: EbayCategory) 
       rating: undefined,
       reviewCount: undefined,
       imageUrl:
-        item.image?.imageUrl || item.thumbnailImages?.[0]?.imageUrl || undefined,
+        item.image?.imageUrl ||
+        item.thumbnailImages?.[0]?.imageUrl ||
+        undefined,
       productUrl: item.itemWebUrl || undefined,
       description: item.shortDescription || undefined,
       trendingScore: 0,
@@ -108,7 +113,9 @@ export async function fetchAllEbayTrending(): Promise<ProductInput[]> {
     try {
       const products = await fetchEbayCategoryTrending(token, ebayCategory);
       allProducts.push(...products);
-      logger.info(`[eBay] ✅ ${ebayCategory.name}: ${products.length} products`);
+      logger.info(
+        `[eBay] ✅ ${ebayCategory.name}: ${products.length} products`,
+      );
     } catch (error: unknown) {
       logger.error(`[eBay] ❌ ${ebayCategory.name}: ${errorMessage(error)}`);
     }

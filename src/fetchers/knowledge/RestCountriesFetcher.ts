@@ -66,7 +66,9 @@ export async function searchCountries(name: string) {
     return { found: false, countries: [] as RestCountry[] };
   }
   if (!response.ok) {
-    throw new Error(`Rest Countries API → ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Rest Countries API → ${response.status} ${response.statusText}`,
+    );
   }
 
   const data = (await response.json()) as RawRestCountry[];
@@ -87,10 +89,41 @@ export async function getCountryByCode(code: string) {
   const response = await fetch(url);
 
   if (response.status === 404) {
-    return { found: false, code, name: null, officialName: null, nativeNames: [] as string[], cca2: null, cca3: null, capital: [] as string[], region: null, subregion: null, population: 0, area: null, languages: [] as string[], currencies: [] as Array<{ code: string, name: string, symbol?: string }>, timezones: [] as string[], borders: [] as string[], flag: null, flagPng: null, flagSvg: null, coatOfArms: null, googleMaps: null, callingCodes: [] as string[], continent: null, independent: null, unMember: null, landlocked: null, carSide: null, startOfWeek: null };
+    return {
+      found: false,
+      code,
+      name: null,
+      officialName: null,
+      nativeNames: [] as string[],
+      cca2: null,
+      cca3: null,
+      capital: [] as string[],
+      region: null,
+      subregion: null,
+      population: 0,
+      area: null,
+      languages: [] as string[],
+      currencies: [] as Array<{ code: string; name: string; symbol?: string }>,
+      timezones: [] as string[],
+      borders: [] as string[],
+      flag: null,
+      flagPng: null,
+      flagSvg: null,
+      coatOfArms: null,
+      googleMaps: null,
+      callingCodes: [] as string[],
+      continent: null,
+      independent: null,
+      unMember: null,
+      landlocked: null,
+      carSide: null,
+      startOfWeek: null,
+    };
   }
   if (!response.ok) {
-    throw new Error(`Rest Countries API → ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Rest Countries API → ${response.status} ${response.statusText}`,
+    );
   }
 
   const data = (await response.json()) as RawRestCountry | RawRestCountry[];

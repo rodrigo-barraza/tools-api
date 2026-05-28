@@ -20,20 +20,23 @@ export interface NpmPackageData {
   readme?: string;
   maintainers?: Array<string | NpmMaintainer>;
   "dist-tags"?: Record<string, string>;
-  versions?: Record<string, {
-    description?: string;
-    license?: string;
-    homepage?: string;
-    author?: string | { name?: string };
-    dependencies?: Record<string, string>;
-    devDependencies?: Record<string, string>;
-    peerDependencies?: Record<string, string>;
-    engines?: Record<string, string>;
-    types?: string;
-    typings?: string;
-    bin?: Record<string, string>;
-    deprecated?: string;
-  }>;
+  versions?: Record<
+    string,
+    {
+      description?: string;
+      license?: string;
+      homepage?: string;
+      author?: string | { name?: string };
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+      peerDependencies?: Record<string, string>;
+      engines?: Record<string, string>;
+      types?: string;
+      typings?: string;
+      bin?: Record<string, string>;
+      deprecated?: string;
+    }
+  >;
   time?: Record<string, string>;
 }
 
@@ -42,7 +45,10 @@ export interface NpmPackageData {
 /**
  * Fetch NPM package info including version, deps, and README.
  */
-export async function getNpmPackage(packageName: string, options: Record<string, unknown> = {}) {
+export async function getNpmPackage(
+  packageName: string,
+  options: Record<string, unknown> = {},
+) {
   if (!packageName || typeof packageName !== "string") {
     return { error: "Package name is required" };
   }
@@ -65,9 +71,10 @@ export async function getNpmPackage(packageName: string, options: Record<string,
     return { error: `NPM Registry error: ${pkgRes.status}` };
   }
 
-  const data = await pkgRes.json() as NpmPackageData;
+  const data = (await pkgRes.json()) as NpmPackageData;
   const latest = data["dist-tags"]?.latest || "";
-  const version = (data.versions && latest ? data.versions[latest] : null) || {};
+  const version =
+    (data.versions && latest ? data.versions[latest] : null) || {};
 
   const result: Record<string, unknown> = {
     name: data.name,
@@ -75,17 +82,22 @@ export async function getNpmPackage(packageName: string, options: Record<string,
     description: data.description || version.description || null,
     license: version.license || data.license || null,
     homepage: data.homepage || version.homepage || null,
-    repository: typeof data.repository === "string"
-      ? data.repository
-      : data.repository?.url?.replace(/^git\+/, "").replace(/\.git$/, "") || null,
+    repository:
+      typeof data.repository === "string"
+        ? data.repository
+        : data.repository?.url?.replace(/^git\+/, "").replace(/\.git$/, "") ||
+          null,
     keywords: data.keywords || [],
-    author: typeof version.author === "string"
-      ? version.author
-      : version.author?.name || null,
-    maintainers: (data.maintainers || []).map((message) => {
-      if (typeof message === "string") return message;
-      return message.name || JSON.stringify(message);
-    }).slice(0, 10),
+    author:
+      typeof version.author === "string"
+        ? version.author
+        : version.author?.name || null,
+    maintainers: (data.maintainers || [])
+      .map((message) => {
+        if (typeof message === "string") return message;
+        return message.name || JSON.stringify(message);
+      })
+      .slice(0, 10),
     dependencies: version.dependencies || {},
     devDependencies: version.devDependencies || {},
     peerDependencies: version.peerDependencies || {},
@@ -99,7 +111,7 @@ export async function getNpmPackage(packageName: string, options: Record<string,
 
   // Download stats
   if (dlRes?.ok) {
-    const dlData = await dlRes.json() as { downloads?: number };
+    const dlData = (await dlRes.json()) as { downloads?: number };
     result.weeklyDownloads = dlData.downloads || null;
   }
 
@@ -110,9 +122,10 @@ export async function getNpmPackage(packageName: string, options: Record<string,
 
   // README
   if (includeReadme && data.readme) {
-    result.readme = data.readme.length > MAX_README_CHARS
-      ? data.readme.slice(0, MAX_README_CHARS) + "\n\n... [truncated]"
-      : data.readme;
+    result.readme =
+      data.readme.length > MAX_README_CHARS
+        ? data.readme.slice(0, MAX_README_CHARS) + "\n\n... [truncated]"
+        : data.readme;
     result.readmeTruncated = data.readme.length > MAX_README_CHARS;
   }
 

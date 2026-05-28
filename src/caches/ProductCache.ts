@@ -81,10 +81,15 @@ export function setProductError(source: string, error: Error): void {
  * Get all products across all sources, sorted by trending score.
  */
 export function getAll() {
-  const allProducts = Object.values(store).flatMap((storeEntry) => storeEntry.products);
+  const allProducts = Object.values(store).flatMap(
+    (storeEntry) => storeEntry.products,
+  );
   return {
     count: allProducts.length,
-    products: allProducts.sort((firstItem, secondItem) => secondItem.trendingScore - firstItem.trendingScore),
+    products: allProducts.sort(
+      (firstItem, secondItem) =>
+        secondItem.trendingScore - firstItem.trendingScore,
+    ),
   };
 }
 
@@ -98,7 +103,10 @@ export function getBySource(source: string) {
     source,
     count: entry.products.length,
     lastFetch: entry.lastFetch,
-    products: entry.products.sort((firstItem, secondItem) => secondItem.trendingScore - firstItem.trendingScore),
+    products: entry.products.sort(
+      (firstItem, secondItem) =>
+        secondItem.trendingScore - firstItem.trendingScore,
+    ),
   };
 }
 
@@ -109,7 +117,10 @@ export function getByCategory(category: string) {
   const allProducts = Object.values(store)
     .flatMap((storeEntry) => storeEntry.products)
     .filter((provider) => provider.category === category)
-    .sort((firstItem, secondItem) => secondItem.trendingScore - firstItem.trendingScore);
+    .sort(
+      (firstItem, secondItem) =>
+        secondItem.trendingScore - firstItem.trendingScore,
+    );
 
   return {
     category,
@@ -124,7 +135,10 @@ export function getByCategory(category: string) {
 export function getTrending(limit = 50) {
   const allProducts = Object.values(store)
     .flatMap((storeEntry) => storeEntry.products)
-    .sort((firstItem, secondItem) => secondItem.trendingScore - firstItem.trendingScore)
+    .sort(
+      (firstItem, secondItem) =>
+        secondItem.trendingScore - firstItem.trendingScore,
+    )
     .slice(0, limit);
 
   return {
@@ -137,13 +151,22 @@ export function getTrending(limit = 50) {
  * List all available categories with product counts.
  */
 export function getCategories() {
-  const allProducts = Object.values(store).flatMap((storeEntry) => storeEntry.products);
-  const categoryMap: Record<string, { category: string; count: number; sources: Set<string> }> = {};
+  const allProducts = Object.values(store).flatMap(
+    (storeEntry) => storeEntry.products,
+  );
+  const categoryMap: Record<
+    string,
+    { category: string; count: number; sources: Set<string> }
+  > = {};
 
   for (const product of allProducts) {
     const productCategory = product.category || "other";
     if (!categoryMap[productCategory]) {
-      categoryMap[productCategory] = { category: productCategory, count: 0, sources: new Set<string>() };
+      categoryMap[productCategory] = {
+        category: productCategory,
+        count: 0,
+        sources: new Set<string>(),
+      };
     }
     categoryMap[productCategory].count++;
     categoryMap[productCategory].sources.add(product.source);
@@ -176,7 +199,10 @@ export function searchByName(query: string) {
   const allProducts = Object.values(store)
     .flatMap((storeEntry) => storeEntry.products)
     .filter((provider) => provider.name.toLowerCase().includes(lower))
-    .sort((firstItem, secondItem) => secondItem.trendingScore - firstItem.trendingScore);
+    .sort(
+      (firstItem, secondItem) =>
+        secondItem.trendingScore - firstItem.trendingScore,
+    );
 
   return {
     query,
@@ -188,7 +214,14 @@ export function searchByName(query: string) {
 // ─── Health ────────────────────────────────────────────────────────
 
 export function getHealth() {
-  const health: Record<string, { productCount: number; lastFetch: Date | null; error: { message: string; timestamp: Date } | null }> = {};
+  const health: Record<
+    string,
+    {
+      productCount: number;
+      lastFetch: Date | null;
+      error: { message: string; timestamp: Date } | null;
+    }
+  > = {};
   for (const [source, entry] of Object.entries(store)) {
     health[source] = {
       productCount: entry.products.length,

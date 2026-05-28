@@ -19,7 +19,9 @@ export async function getPackageInfo(
 
   const reg = (registry || "npm").toLowerCase().trim();
 
-  let result: (Record<string, unknown> & { error?: string; registry?: string }) | null = null;
+  let result:
+    | (Record<string, unknown> & { error?: string; registry?: string })
+    | null = null;
 
   switch (reg) {
     case "npm":
@@ -31,11 +33,15 @@ export async function getPackageInfo(
     case "pypi":
     case "pip":
     case "python":
-      result = await getPyPiPackage(name) as Record<string, unknown> & { error?: string };
+      result = (await getPyPiPackage(name)) as Record<string, unknown> & {
+        error?: string;
+      };
       break;
 
     default:
-      return { error: `Unknown registry: "${registry}". Supported: "npm", "pypi".` };
+      return {
+        error: `Unknown registry: "${registry}". Supported: "npm", "pypi".`,
+      };
   }
 
   // Tag the result with the registry

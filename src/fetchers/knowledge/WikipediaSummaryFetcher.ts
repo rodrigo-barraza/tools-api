@@ -27,7 +27,9 @@ export interface WikipediaSummaryResultNotFound {
   message: string;
 }
 
-export type WikipediaSummaryResult = WikipediaSummaryResultSuccess | WikipediaSummaryResultNotFound;
+export type WikipediaSummaryResult =
+  | WikipediaSummaryResultSuccess
+  | WikipediaSummaryResultNotFound;
 
 export interface OnThisDayPage {
   title: string;
@@ -56,7 +58,9 @@ export interface OnThisDayResult {
  * Get a summary of a Wikipedia article by title.
  * Returns the lead section with extract text, thumbnail, and content URLs.
  */
-export async function getArticleSummary(title: string): Promise<WikipediaSummaryResult> {
+export async function getArticleSummary(
+  title: string,
+): Promise<WikipediaSummaryResult> {
   const encoded = encodeURIComponent(title.replace(/\s+/g, "_"));
   const url = `${WIKIPEDIA_SUMMARY_BASE_URL}/page/summary/${encoded}`;
   const response = await fetch(url, {
@@ -67,7 +71,9 @@ export async function getArticleSummary(title: string): Promise<WikipediaSummary
     return { found: false, title, message: "Article not found" };
   }
   if (!response.ok) {
-    throw new Error(`Wikipedia REST API → ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Wikipedia REST API → ${response.status} ${response.statusText}`,
+    );
   }
 
   const data = await response.json();
@@ -110,7 +116,11 @@ interface RawWikipediaEvent {
 /**
  * Get historical events that happened on this day.
  */
-export async function getOnThisDay(type: string = "selected", month?: number, day?: number): Promise<OnThisDayResult> {
+export async function getOnThisDay(
+  type: string = "selected",
+  month?: number,
+  day?: number,
+): Promise<OnThisDayResult> {
   const now = new Date();
   const resolvedMonth = month || now.getMonth() + 1;
   const resolvedDay = day || now.getDate();
@@ -123,10 +133,12 @@ export async function getOnThisDay(type: string = "selected", month?: number, da
   });
 
   if (!response.ok) {
-    throw new Error(`Wikipedia On This Day → ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Wikipedia On This Day → ${response.status} ${response.statusText}`,
+    );
   }
 
-  const data = await response.json() as Record<string, RawWikipediaEvent[]>;
+  const data = (await response.json()) as Record<string, RawWikipediaEvent[]>;
   const key = Object.keys(data)[0]; // "selected", "births", etc.
   const entries = data[key] || [];
 

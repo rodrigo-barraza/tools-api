@@ -148,20 +148,25 @@ export interface SearchExoplanetsOptions {
 /**
  * Search exoplanets by name or host star.
  */
-export function searchExoplanets(query: string, opts: SearchExoplanetsOptions = {}) {
+export function searchExoplanets(
+  query: string,
+  opts: SearchExoplanetsOptions = {},
+) {
   ensureLoaded();
 
   const { limit = 10, method } = opts;
   const normalizedQuery = normalizeSearch(query);
 
-  if (!normalizedQuery) return { count: 0, query, planets: [] as FormattedPlanet[] };
+  if (!normalizedQuery)
+    return { count: 0, query, planets: [] as FormattedPlanet[] };
 
   let candidates = PLANET_DB;
   if (method) {
     const normalizedMethod = method.toLowerCase();
     candidates = candidates.filter(
       (p: ExoplanetRecord) =>
-        p.discoverymethod && p.discoverymethod.toLowerCase().includes(normalizedMethod),
+        p.discoverymethod &&
+        p.discoverymethod.toLowerCase().includes(normalizedMethod),
     );
   }
 
@@ -199,7 +204,10 @@ export function getExoplanetByName(name: string) {
   ensureLoaded();
 
   const normalizedQuery = normalizeSearch(name);
-  const planet = PLANET_DB.find((p: ExoplanetRecord) => normalizeSearch(p.pl_name || "") === normalizedQuery);
+  const planet = PLANET_DB.find(
+    (p: ExoplanetRecord) =>
+      normalizeSearch(p.pl_name || "") === normalizedQuery,
+  );
 
   if (!planet) return null;
   return formatPlanet(planet);
@@ -213,7 +221,10 @@ export interface RankExoplanetsOptions {
 /**
  * Rank exoplanets by a specific field.
  */
-export function rankExoplanets(field: string, opts: RankExoplanetsOptions = {}) {
+export function rankExoplanets(
+  field: string,
+  opts: RankExoplanetsOptions = {},
+) {
   ensureLoaded();
 
   const { limit = 10, order = "desc" } = opts;
@@ -236,7 +247,13 @@ export function rankExoplanets(field: string, opts: RankExoplanetsOptions = {}) 
     .sort((a: ExoplanetRecord, b: ExoplanetRecord) => {
       const valA = a[fieldKey];
       const valB = b[fieldKey];
-      if (valA === null || valA === undefined || valB === null || valB === undefined) return 0;
+      if (
+        valA === null ||
+        valA === undefined ||
+        valB === null ||
+        valB === undefined
+      )
+        return 0;
       return order === "asc" ? valA - valB : valB - valA;
     })
     .slice(0, limit);
@@ -309,7 +326,9 @@ export interface GetHabitableZonePlanetsOptions {
 /**
  * Find potentially habitable exoplanets (conservative habitable zone).
  */
-export function getHabitableZonePlanets(opts: GetHabitableZonePlanetsOptions = {}) {
+export function getHabitableZonePlanets(
+  opts: GetHabitableZonePlanetsOptions = {},
+) {
   ensureLoaded();
 
   const { limit = 20 } = opts;
@@ -339,7 +358,8 @@ export function getHabitableZonePlanets(opts: GetHabitableZonePlanetsOptions = {
 
   return {
     count: habitable.length,
-    criteria: "Equilibrium temperature 200-320K OR semi-major axis ~0.7-1.8 AU around sun-like star (4000-7000K)",
+    criteria:
+      "Equilibrium temperature 200-320K OR semi-major axis ~0.7-1.8 AU around sun-like star (4000-7000K)",
     note: "Data from NASA Exoplanet Archive (Public Domain). This is a simplified heuristic, not a definitive habitability assessment.",
     planets: habitable.map(formatPlanet),
   };

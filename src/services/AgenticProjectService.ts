@@ -41,12 +41,16 @@ export interface TransformedProjectSummary {
 /**
  * Scan a project root and return structured metadata.
  */
-export async function agenticProjectSummary(projectPath: string): Promise<TransformedProjectSummary> {
+export async function agenticProjectSummary(
+  projectPath: string,
+): Promise<TransformedProjectSummary> {
   // Agent routing
   const agent = routeForPath(projectPath);
   if (agent) {
     try {
-      return await sendRpc(agent.id, "project.summary", { path: projectPath }) as TransformedProjectSummary;
+      return (await sendRpc(agent.id, "project.summary", {
+        path: projectPath,
+      })) as TransformedProjectSummary;
     } catch (err: unknown) {
       return { error: `Agent RPC failed: ${errorMessage(err)}` };
     }
@@ -86,7 +90,10 @@ export async function agenticProjectSummary(projectPath: string): Promise<Transf
     result.devDependencies = Object.keys(packageJson.devDependencies || {});
 
     // Detect framework from dependencies
-    const allDeps = { ...packageJson.dependencies, ...packageJson.devDependencies };
+    const allDeps = {
+      ...packageJson.dependencies,
+      ...packageJson.devDependencies,
+    };
     const frameworks: string[] = [];
     if (allDeps["next"]) frameworks.push("next.js");
     if (allDeps["react"]) frameworks.push("react");
@@ -118,9 +125,10 @@ export async function agenticProjectSummary(projectPath: string): Promise<Transf
   for (const name of ["README.md", "readme.md", "README.txt", "README"]) {
     try {
       const content = await readFile(join(root, name), "utf-8");
-      result.readme = content.length > README_MAX_CHARS
-        ? content.slice(0, README_MAX_CHARS) + "\n... [truncated]"
-        : content;
+      result.readme =
+        content.length > README_MAX_CHARS
+          ? content.slice(0, README_MAX_CHARS) + "\n... [truncated]"
+          : content;
       break;
     } catch {
       // Try next
@@ -133,7 +141,8 @@ export async function agenticProjectSummary(projectPath: string): Promise<Transf
   let totalDirs = 0;
 
   async function scanDir(dir: string, depth: number) {
-    if (depth > MAX_SCAN_DEPTH || totalFiles + totalDirs > MAX_SCAN_ENTRIES) return;
+    if (depth > MAX_SCAN_DEPTH || totalFiles + totalDirs > MAX_SCAN_ENTRIES)
+      return;
 
     try {
       const entries = await readdir(dir, { withFileTypes: true });
@@ -142,10 +151,15 @@ export async function agenticProjectSummary(projectPath: string): Promise<Transf
         if (totalFiles + totalDirs > MAX_SCAN_ENTRIES) break;
 
         // Skip non-essential dirs
-        if (entry.name === "node_modules" || entry.name === ".git" ||
-            entry.name === ".next" || entry.name === "__pycache__" ||
-            entry.name === "dist" || entry.name === "build" ||
-            entry.name === ".cache") {
+        if (
+          entry.name === "node_modules" ||
+          entry.name === ".git" ||
+          entry.name === ".next" ||
+          entry.name === "__pycache__" ||
+          entry.name === "dist" ||
+          entry.name === "build" ||
+          entry.name === ".cache"
+        ) {
           continue;
         }
 
@@ -178,11 +192,21 @@ export async function agenticProjectSummary(projectPath: string): Promise<Transf
   // ── Entry Points ─────────────────────────────────────────
   const entryPoints: string[] = [];
   const candidates = [
-    "src/app/layout.js", "src/app/layout.tsx", "src/app/page.js", "src/app/page.tsx",
-    "src/index.js", "src/index.ts", "src/index.tsx",
-    "src/main.js", "src/main.ts",
-    "index.js", "index.ts", "server.js", "app.js",
-    "main.py", "app.py",
+    "src/app/layout.js",
+    "src/app/layout.tsx",
+    "src/app/page.js",
+    "src/app/page.tsx",
+    "src/index.js",
+    "src/index.ts",
+    "src/index.tsx",
+    "src/main.js",
+    "src/main.ts",
+    "index.js",
+    "index.ts",
+    "server.js",
+    "app.js",
+    "main.py",
+    "app.py",
   ];
 
   for (const candidate of candidates) {
@@ -198,12 +222,24 @@ export async function agenticProjectSummary(projectPath: string): Promise<Transf
   // ── Config Files ─────────────────────────────────────────
   const configFiles: string[] = [];
   const configCandidates = [
-    "tsconfig.json", "jsconfig.json", ".eslintrc.js", "eslint.config.js",
-    ".prettierrc", ".prettierrc.js", "prettier.config.js",
-    "next.config.js", "next.config.mjs", "vite.config.js",
-    "tailwind.config.js", "postcss.config.js",
-    ".gitignore", "Dockerfile", "docker-compose.yml",
-    "Makefile", ".env.example", "secrets.example.js",
+    "tsconfig.json",
+    "jsconfig.json",
+    ".eslintrc.js",
+    "eslint.config.js",
+    ".prettierrc",
+    ".prettierrc.js",
+    "prettier.config.js",
+    "next.config.js",
+    "next.config.mjs",
+    "vite.config.js",
+    "tailwind.config.js",
+    "postcss.config.js",
+    ".gitignore",
+    "Dockerfile",
+    "docker-compose.yml",
+    "Makefile",
+    ".env.example",
+    "secrets.example.js",
   ];
 
   for (const name of configCandidates) {

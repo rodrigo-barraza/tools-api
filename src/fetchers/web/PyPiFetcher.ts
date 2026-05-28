@@ -30,20 +30,24 @@ export async function getPyPiPackage(packageName: string) {
   const info = data.info || {};
 
   // Extract classifier categories
-  const classifiers = (info.classifiers || []).reduce((acc: Record<string, string[]>, c: string) => {
-    const parts = c.split(" :: ");
-    const category = parts[0];
-    if (!acc[category]) acc[category] = [];
-    acc[category].push(parts.slice(1).join(" :: "));
-    return acc;
-  }, {});
+  const classifiers = (info.classifiers || []).reduce(
+    (acc: Record<string, string[]>, c: string) => {
+      const parts = c.split(" :: ");
+      const category = parts[0];
+      if (!acc[category]) acc[category] = [];
+      acc[category].push(parts.slice(1).join(" :: "));
+      return acc;
+    },
+    {},
+  );
 
   return {
     name: info.name,
     version: info.version,
     summary: info.summary || null,
     description: info.description
-      ? info.description.slice(0, 15_000) + (info.description.length > 15_000 ? "\n\n... [truncated]" : "")
+      ? info.description.slice(0, 15_000) +
+        (info.description.length > 15_000 ? "\n\n... [truncated]" : "")
       : null,
     descriptionContentType: info.description_content_type || null,
     author: info.author || info.author_email || null,
@@ -51,7 +55,12 @@ export async function getPyPiPackage(packageName: string) {
     license: info.license || null,
     homepage: info.home_page || info.project_url || null,
     projectUrls: info.project_urls || {},
-    keywords: info.keywords ? info.keywords.split(",").map((k: string) => k.trim()).filter(Boolean) : [],
+    keywords: info.keywords
+      ? info.keywords
+          .split(",")
+          .map((k: string) => k.trim())
+          .filter(Boolean)
+      : [],
     requiresPython: info.requires_python || null,
     requiresDist: info.requires_dist || [],
     packageUrl: info.package_url || null,

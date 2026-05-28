@@ -6,7 +6,10 @@ const CDX_URL = "https://web.archive.org/cdx/search/cdx";
 /**
  * Check if a URL has been archived and get the closest snapshot.
  */
-export async function getSnapshot(url: string, timestamp: string | null = null) {
+export async function getSnapshot(
+  url: string,
+  timestamp: string | null = null,
+) {
   const params = new URLSearchParams({ url });
   if (timestamp) params.set("timestamp", timestamp);
 
@@ -46,7 +49,10 @@ export interface WaybackOptions {
 /**
  * Get snapshot history for a URL — list of archived captures.
  */
-export async function getSnapshotHistory(url: string, { limit = 20, from, to }: WaybackOptions = {}) {
+export async function getSnapshotHistory(
+  url: string,
+  { limit = 20, from, to }: WaybackOptions = {},
+) {
   const params = new URLSearchParams({
     url,
     output: "json",
@@ -71,7 +77,9 @@ export async function getSnapshotHistory(url: string, { limit = 20, from, to }: 
 
   const snapshots = rows.map((row: string[]) => {
     const object: Record<string, unknown> = {};
-    headers.forEach((header: string, i: number) => { object[header] = row[i]; });
+    headers.forEach((header: string, i: number) => {
+      object[header] = row[i];
+    });
     return {
       timestamp: object.timestamp,
       date: formatWaybackTimestamp(object.timestamp as string),

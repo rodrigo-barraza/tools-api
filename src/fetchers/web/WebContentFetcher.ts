@@ -20,19 +20,19 @@ const PLATFORM_PATTERNS = [
   {
     platform: "reddit",
     test: (url: string) =>
-      /(?:reddit\.com|redd\.it)/i.test(url) ||
-      /^r\/\w+\/comments\//i.test(url),
+      /(?:reddit\.com|redd\.it)/i.test(url) || /^r\/\w+\/comments\//i.test(url),
   },
   {
     platform: "twitter",
     test: (url: string) =>
-      /(?:twitter\.com|x\.com|fixupx\.com|fxtwitter\.com|vxtwitter\.com|nitter\.\w+)/i.test(url) ||
+      /(?:twitter\.com|x\.com|fixupx\.com|fxtwitter\.com|vxtwitter\.com|nitter\.\w+)/i.test(
+        url,
+      ) ||
       (/\/status\/\d+/i.test(url) && !/reddit|github|stackoverflow/i.test(url)),
   },
   {
     platform: "hackernews",
-    test: (url: string) =>
-      /(?:news\.ycombinator\.com)/i.test(url),
+    test: (url: string) => /(?:news\.ycombinator\.com)/i.test(url),
   },
   {
     platform: "stackoverflow",
@@ -90,7 +90,10 @@ interface WebContentResult {
  * Auto-detects GitHub, Reddit, Twitter/X, Hacker News, Stack Overflow,
  * or YouTube. Falls back to generic HTML extraction for unknown sites.
  */
-export async function getWebContent(url: string, options: WebContentOptions = {}): Promise<WebContentResult> {
+export async function getWebContent(
+  url: string,
+  options: WebContentOptions = {},
+): Promise<WebContentResult> {
   const platform = detectPlatform(url);
 
   // Each platform fetcher returns a distinct shape — `as WebContentResult` is
@@ -99,50 +102,56 @@ export async function getWebContent(url: string, options: WebContentOptions = {}
 
   switch (platform) {
     case "youtube":
-      result = await getYouTubeVideoInfo(url, {
+      result = (await getYouTubeVideoInfo(url, {
         lang: options.lang,
         includeTranscript: options.transcript !== "false",
         includeTimestamps: true,
-      }) as WebContentResult;
+      })) as WebContentResult;
       break;
 
     case "reddit":
-      result = await getRedditThread(url, {
-        commentLimit: options.commentLimit ? parseInt(options.commentLimit, 10) : undefined,
-      }) as WebContentResult;
+      result = (await getRedditThread(url, {
+        commentLimit: options.commentLimit
+          ? parseInt(options.commentLimit, 10)
+          : undefined,
+      })) as WebContentResult;
       break;
 
     case "twitter":
-      result = await getTwitterPost(url) as WebContentResult;
+      result = (await getTwitterPost(url)) as WebContentResult;
       break;
 
     case "hackernews":
-      result = await getHackerNewsThread(url, {
-        commentLimit: options.commentLimit ? parseInt(options.commentLimit, 10) : undefined,
-      }) as WebContentResult;
+      result = (await getHackerNewsThread(url, {
+        commentLimit: options.commentLimit
+          ? parseInt(options.commentLimit, 10)
+          : undefined,
+      })) as WebContentResult;
       break;
 
     case "stackoverflow": {
       // Strip "so:" or "stackoverflow:" prefix if used
       const soUrl = url.replace(/^(?:stackoverflow|so):/i, "");
-      result = await getStackOverflowQuestion(soUrl, {
-        answerLimit: options.answerLimit ? parseInt(options.answerLimit, 10) : undefined,
-      }) as WebContentResult;
+      result = (await getStackOverflowQuestion(soUrl, {
+        answerLimit: options.answerLimit
+          ? parseInt(options.answerLimit, 10)
+          : undefined,
+      })) as WebContentResult;
       break;
     }
 
     case "github":
-      result = await getGitHubRepo(url, {
+      result = (await getGitHubRepo(url, {
         includeReadme: options.readme !== "false",
         includeLanguages: options.languages !== "false",
-      }) as WebContentResult;
+      })) as WebContentResult;
       break;
 
     default:
       // Generic fallback — fetch + Cheerio extraction
-      result = await fetchGenericPage(url, {
+      result = (await fetchGenericPage(url, {
         maxChars: options.maxChars,
-      }) as WebContentResult;
+      })) as WebContentResult;
       break;
   }
 
@@ -155,4 +164,3 @@ export async function getWebContent(url: string, options: WebContentOptions = {}
 }
 
 export { detectPlatform };
-

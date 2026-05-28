@@ -28,25 +28,25 @@ async function fetchCanucksGames() {
   const data = await response.json();
   const games = data.games || [];
 
-interface NhlTeam {
-  abbrev?: string;
-  placeName?: { default?: string };
-  commonName?: { default?: string };
-  logo?: string;
-}
+  interface NhlTeam {
+    abbrev?: string;
+    placeName?: { default?: string };
+    commonName?: { default?: string };
+    logo?: string;
+  }
 
-interface NhlGame {
-  id: number;
-  season?: number;
-  homeTeam?: NhlTeam;
-  awayTeam?: NhlTeam;
-  startTimeUTC?: string;
-  ticketsLink?: string;
-  gameCenterLink?: string;
-  venue?: { default?: string };
-  tvBroadcasts?: Array<{ network: string }>;
-  gameState?: string;
-}
+  interface NhlGame {
+    id: number;
+    season?: number;
+    homeTeam?: NhlTeam;
+    awayTeam?: NhlTeam;
+    startTimeUTC?: string;
+    ticketsLink?: string;
+    gameCenterLink?: string;
+    venue?: { default?: string };
+    tvBroadcasts?: Array<{ network: string }>;
+    gameState?: string;
+  }
 
   return games.map((game: NhlGame) => {
     const isHome = game.homeTeam?.abbrev === "VAN";
@@ -85,7 +85,12 @@ interface NhlGame {
 /**
  * Fetch upcoming events for a team from TheSportsDB.
  */
-async function fetchSportsDbEvents(teamId: string, source: string, teamName: string, sport: string) {
+async function fetchSportsDbEvents(
+  teamId: string,
+  source: string,
+  teamName: string,
+  sport: string,
+) {
   const url = `${SPORTSDB_BASE}/eventsnext.php?id=${teamId}`;
   const response = await fetch(url);
 
@@ -96,20 +101,20 @@ async function fetchSportsDbEvents(teamId: string, source: string, teamName: str
   const data = await response.json();
   const events = data.events || [];
 
-interface SportsDbEvent {
-  idEvent?: string;
-  idHomeTeam?: string;
-  strEvent?: string;
-  strLeague?: string;
-  strSeason?: string;
-  strVenue?: string;
-  strThumb?: string;
-  strBanner?: string;
-  strTimestamp?: string;
-  dateEvent?: string;
-  strCity?: string;
-  strCountry?: string;
-}
+  interface SportsDbEvent {
+    idEvent?: string;
+    idHomeTeam?: string;
+    strEvent?: string;
+    strLeague?: string;
+    strSeason?: string;
+    strVenue?: string;
+    strThumb?: string;
+    strBanner?: string;
+    strTimestamp?: string;
+    dateEvent?: string;
+    strCity?: string;
+    strCountry?: string;
+  }
 
   return events.map((event: SportsDbEvent) => {
     const isHome = event.idHomeTeam === teamId;

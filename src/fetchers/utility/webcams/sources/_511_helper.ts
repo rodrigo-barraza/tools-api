@@ -1,5 +1,8 @@
 import { buildScraperHeaders } from "../../../../utilities.ts";
-import { upsertWebcams, type WebcamDocument } from "../../../../models/Webcam.ts";
+import {
+  upsertWebcams,
+  type WebcamDocument,
+} from "../../../../models/Webcam.ts";
 
 /**
  * Shared fetcher for 511-style camera APIs (Ontario, Alberta, etc.).
@@ -36,7 +39,14 @@ interface CameraItem {
   Views: CameraView[];
 }
 
-export async function fetch511Cameras({ apiUrl, city, country, source, idPrefix, bounds }: Fetch511CamerasParams) {
+export async function fetch511Cameras({
+  apiUrl,
+  city,
+  country,
+  source,
+  idPrefix,
+  bounds,
+}: Fetch511CamerasParams) {
   const url = `${apiUrl}?format=json`;
   const response = await fetch(url, {
     headers: buildScraperHeaders(),
@@ -44,10 +54,12 @@ export async function fetch511Cameras({ apiUrl, city, country, source, idPrefix,
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch ${city} webcams from ${source}: ${response.status}`);
+    throw new Error(
+      `Failed to fetch ${city} webcams from ${source}: ${response.status}`,
+    );
   }
 
-  const data = await response.json() as CameraItem[];
+  const data = (await response.json()) as CameraItem[];
   if (!Array.isArray(data) || data.length === 0) {
     return;
   }
@@ -60,7 +72,12 @@ export async function fetch511Cameras({ apiUrl, city, country, source, idPrefix,
 
     // Filter by geographic bounding box
     if (bounds) {
-      if (lat < bounds.minLat || lat > bounds.maxLat || lon < bounds.minLon || lon > bounds.maxLon) {
+      if (
+        lat < bounds.minLat ||
+        lat > bounds.maxLat ||
+        lon < bounds.minLon ||
+        lon > bounds.maxLon
+      ) {
         continue;
       }
     }

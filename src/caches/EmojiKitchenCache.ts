@@ -1,5 +1,8 @@
 import { createSimpleCache } from "./createSimpleCache.ts";
-import type { EmojiKitchenMetadata, EmojiCombination } from "../fetchers/creative/EmojiKitchenFetcher.ts";
+import type {
+  EmojiKitchenMetadata,
+  EmojiCombination,
+} from "../fetchers/creative/EmojiKitchenFetcher.ts";
 
 const cache = createSimpleCache<EmojiKitchenMetadata>();
 
@@ -16,7 +19,7 @@ export const getEmojiKitchenRawData = cache.getData;
  */
 export function emojiToCodepoints(emojiStr: string): string {
   if (!emojiStr) return "";
-  
+
   // If it's already a hex codepoint string (e.g. "1f600" or "1f43c-1f3fb"), return it lowercased
   if (/^[0-9a-fA-F-]+$/.test(emojiStr)) {
     return emojiStr.toLowerCase().trim();
@@ -35,13 +38,20 @@ export function emojiToCodepoints(emojiStr: string): string {
  * Resiliently strip variation selectors (like -fe0f) for robust mapping.
  */
 export function normalizeCodepoint(codepointString: string): string {
-  return codepointString.toLowerCase().trim().replace(/^(u|0x)/, "").replace(/-fe0f/g, "");
+  return codepointString
+    .toLowerCase()
+    .trim()
+    .replace(/^(u|0x)/, "")
+    .replace(/-fe0f/g, "");
 }
 
 /**
  * Symmetrically find a key in an object by comparing normalized versions of keys.
  */
-function findNormalizedKey<T>(object: Record<string, T>, target: string): string | null {
+function findNormalizedKey<T>(
+  object: Record<string, T>,
+  target: string,
+): string | null {
   const normTarget = normalizeCodepoint(target);
   for (const key of Object.keys(object)) {
     if (normalizeCodepoint(key) === normTarget) {
@@ -55,7 +65,10 @@ function findNormalizedKey<T>(object: Record<string, T>, target: string): string
  * Get the Emoji Kitchen combination of two emojis.
  * Matches symmetrically (either order) and handles FE0F normalization.
  */
-export function queryEmojiCombination(left: string, right: string): EmojiCombination | null {
+export function queryEmojiCombination(
+  left: string,
+  right: string,
+): EmojiCombination | null {
   const rawData = getEmojiKitchenRawData();
   if (!rawData || !rawData.data) return null;
 
@@ -68,12 +81,12 @@ export function queryEmojiCombination(left: string, right: string): EmojiCombina
   function lookup(c1: string, c2: string): EmojiCombination | null {
     const emojiEntry = rawData.data[c1];
     if (!emojiEntry || !emojiEntry.combinations) return null;
-    
+
     const combos = emojiEntry.combinations[c2];
     if (!combos || combos.length === 0) return null;
 
     // Pick latest design version
-    const latest = combos.find(c => c.isLatest);
+    const latest = combos.find((c) => c.isLatest);
     return latest || combos[0];
   }
 
@@ -114,7 +127,10 @@ export interface CombinedOption {
   combination: EmojiCombination;
 }
 
-export function queryEmojiCombinations(emoji: string, limit: number = 50): CombinedOption[] {
+export function queryEmojiCombinations(
+  emoji: string,
+  limit: number = 50,
+): CombinedOption[] {
   const rawData = getEmojiKitchenRawData();
   if (!rawData || !rawData.data) return [];
 
@@ -129,14 +145,17 @@ export function queryEmojiCombinations(emoji: string, limit: number = 50): Combi
   if (!emojiEntry || !emojiEntry.combinations) return [];
 
   const options: CombinedOption[] = [];
-  
+
   for (const [otherCp, combos] of Object.entries(emojiEntry.combinations)) {
     if (!combos || combos.length === 0) continue;
-    const latest = combos.find(c => c.isLatest) || combos[0];
-    
+    const latest = combos.find((c) => c.isLatest) || combos[0];
+
     // Determine which side of the combination represents the other emoji
-    const otherEmoji = latest.leftEmojiCodepoint === matchedKey ? latest.rightEmoji : latest.leftEmoji;
-    
+    const otherEmoji =
+      latest.leftEmojiCodepoint === matchedKey
+        ? latest.rightEmoji
+        : latest.leftEmoji;
+
     options.push({
       emoji: otherEmoji,
       codepoint: otherCp,
@@ -146,6 +165,10 @@ export function queryEmojiCombinations(emoji: string, limit: number = 50): Combi
 
   // Sort by GBoard order and limit results
   return options
-    .sort((firstItem, b) => (firstItem.combination.gBoardOrder || 999999) - (b.combination.gBoardOrder || 999999))
+    .sort(
+      (firstItem, b) =>
+        (firstItem.combination.gBoardOrder || 999999) -
+        (b.combination.gBoardOrder || 999999),
+    )
     .slice(0, limit);
 }

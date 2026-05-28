@@ -11,7 +11,13 @@ const EC_WARNINGS_PAGE = "https://weather.gc.ca/warnings/report_e.html?bc74";
 // Backup: the city forecast page which includes warning banners
 const EC_CITY_PAGE = "https://weather.gc.ca/city/pages/bc-74_metric_e.html";
 
-export type WarningType = "warning" | "watch" | "advisory" | "statement" | "ended" | "info";
+export type WarningType =
+  | "warning"
+  | "watch"
+  | "advisory"
+  | "statement"
+  | "ended"
+  | "info";
 
 export interface CanadaWarning {
   title: string;
@@ -21,7 +27,9 @@ export interface CanadaWarning {
   url: string;
 }
 
-export async function fetchEnvironmentCanadaWarnings(): Promise<CanadaWarning[]> {
+export async function fetchEnvironmentCanadaWarnings(): Promise<
+  CanadaWarning[]
+> {
   // Try the main warnings page first
   let warnings = await tryWarningsPage();
   // Fallback to city page warning banners

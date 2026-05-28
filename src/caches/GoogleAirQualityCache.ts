@@ -1,7 +1,8 @@
 import { createSimpleCache } from "./createSimpleCache.ts";
 import { GoogleAirQuality } from "../types/weather.ts";
 
-const { update, setError, get, getHealth } = createSimpleCache<GoogleAirQuality>();
+const { update, setError, get, getHealth } =
+  createSimpleCache<GoogleAirQuality>();
 
 export {
   update as updateGoogleAirQuality,

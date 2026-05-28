@@ -118,7 +118,10 @@ interface RawTmdbSeason {
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
-function img(path: string | null | undefined, size: string = "w500"): string | null {
+function img(
+  path: string | null | undefined,
+  size: string = "w500",
+): string | null {
   return path ? `${TMDB_IMAGE_BASE_URL}/${size}${path}` : null;
 }
 
@@ -141,7 +144,9 @@ async function fetchTMDb<T>(endpoint: string): Promise<T | null> {
 
 // ─── Normalizers ───────────────────────────────────────────────────
 
-function normalizeMovie(m: RawTmdbMovie | null | undefined): MovieResult | null {
+function normalizeMovie(
+  m: RawTmdbMovie | null | undefined,
+): MovieResult | null {
   if (!m) return null;
   return {
     tmdbId: m.id,
@@ -159,23 +164,28 @@ function normalizeMovie(m: RawTmdbMovie | null | undefined): MovieResult | null 
     popularity: m.popularity || null,
     posterUrl: img(m.poster_path),
     backdropUrl: img(m.backdrop_path, "w1280"),
-    genres: (m.genres || []).map((g) => g.name)
+    genres: (m.genres || [])
+      .map((g) => g.name)
       .concat((m.genre_ids || []).map((id) => String(id))),
     originalLanguage: m.original_language || null,
-    spokenLanguages: (m.spoken_languages || []).map(
-      (l) => l.english_name || l.name || "",
-    ).filter(Boolean),
-    productionCompanies: (m.production_companies || []).map((company) => company.name),
-    productionCountries: (m.production_countries || []).map(
-      (c) => c.name || c.iso_3166_1 || "",
-    ).filter(Boolean),
+    spokenLanguages: (m.spoken_languages || [])
+      .map((l) => l.english_name || l.name || "")
+      .filter(Boolean),
+    productionCompanies: (m.production_companies || []).map(
+      (company) => company.name,
+    ),
+    productionCountries: (m.production_countries || [])
+      .map((c) => c.name || c.iso_3166_1 || "")
+      .filter(Boolean),
     homepage: m.homepage || null,
     imdbId: m.imdb_id || null,
     url: `https://www.themoviedatabase.org/movie/${m.id}`,
   };
 }
 
-function normalizeTvShow(tv: RawTmdbTvShow | null | undefined): TvShowResult | null {
+function normalizeTvShow(
+  tv: RawTmdbTvShow | null | undefined,
+): TvShowResult | null {
   if (!tv) return null;
   return {
     tmdbId: tv.id,
@@ -195,7 +205,8 @@ function normalizeTvShow(tv: RawTmdbTvShow | null | undefined): TvShowResult | n
     popularity: tv.popularity || null,
     posterUrl: img(tv.poster_path),
     backdropUrl: img(tv.backdrop_path, "w1280"),
-    genres: (tv.genres || []).map((g) => g.name)
+    genres: (tv.genres || [])
+      .map((g) => g.name)
       .concat((tv.genre_ids || []).map((id) => String(id))),
     networks: (tv.networks || []).map((n) => n.name),
     productionCompanies: (tv.production_companies || []).map((c) => c.name),
@@ -239,7 +250,10 @@ export interface SearchMoviesOptions {
 /**
  * Search movies by title
  */
-export async function searchMovies(query: string, { page = 1, year }: SearchMoviesOptions = {}) {
+export async function searchMovies(
+  query: string,
+  { page = 1, year }: SearchMoviesOptions = {},
+) {
   let endpoint = `/search/movie?query=${encodeURIComponent(query)}&page=${page}&language=en-US`;
   if (year) endpoint += `&year=${year}`;
 
@@ -289,7 +303,8 @@ export async function getMovieCredits(id: string | number) {
     crew?: RawTmdbCrew[];
   }>(`/movie/${id}/credits?language=en-US`);
 
-  if (!data) return { found: false, cast: [] as CastMember[], crew: [] as CrewMember[] };
+  if (!data)
+    return { found: false, cast: [] as CastMember[], crew: [] as CrewMember[] };
 
   return {
     found: true,
@@ -312,15 +327,24 @@ export async function getMovieCredits(id: string | number) {
 /**
  * Get trending movies (day or week)
  */
-export async function getTrendingMovies(timeWindow: string = "day", limit: number = 10) {
-  const data = await fetchTMDb<{ results?: RawTmdbMovie[] }>(`/trending/movie/${timeWindow}?language=en-US`);
-  if (!data || !data.results) return { found: false, results: [] as MovieResult[] };
+export async function getTrendingMovies(
+  timeWindow: string = "day",
+  limit: number = 10,
+) {
+  const data = await fetchTMDb<{ results?: RawTmdbMovie[] }>(
+    `/trending/movie/${timeWindow}?language=en-US`,
+  );
+  if (!data || !data.results)
+    return { found: false, results: [] as MovieResult[] };
 
   return {
     found: true,
     timeWindow,
     count: Math.min(data.results.length, limit),
-    results: data.results.slice(0, limit).map(normalizeMovie).filter(Boolean) as MovieResult[],
+    results: data.results
+      .slice(0, limit)
+      .map(normalizeMovie)
+      .filter(Boolean) as MovieResult[],
   };
 }
 
@@ -417,7 +441,9 @@ export async function searchTvShows(
     totalResults: data.total_results,
     page: data.page,
     totalPages: data.total_pages,
-    results: data.results.map(normalizeTvShow).filter(Boolean) as TvShowResult[],
+    results: data.results
+      .map(normalizeTvShow)
+      .filter(Boolean) as TvShowResult[],
   };
 }
 
@@ -440,7 +466,8 @@ export async function getTvShowCredits(id: string | number) {
     crew?: RawTmdbCrew[];
   }>(`/tv/${id}/aggregate_credits?language=en-US`);
 
-  if (!data) return { found: false, cast: [] as CastMember[], crew: [] as CrewMember[] };
+  if (!data)
+    return { found: false, cast: [] as CastMember[], crew: [] as CrewMember[] };
 
   return {
     found: true,
@@ -463,7 +490,10 @@ export async function getTvShowCredits(id: string | number) {
 /**
  * Get TV season details
  */
-export async function getTvSeasonDetails(tvId: string | number, seasonNumber: string | number) {
+export async function getTvSeasonDetails(
+  tvId: string | number,
+  seasonNumber: string | number,
+) {
   const data = await fetchTMDb<RawTmdbSeason>(
     `/tv/${tvId}/season/${seasonNumber}?language=en-US`,
   );
@@ -494,15 +524,24 @@ export async function getTvSeasonDetails(tvId: string | number, seasonNumber: st
 /**
  * Get trending TV shows (day or week)
  */
-export async function getTrendingTvShows(timeWindow: string = "day", limit: number = 10) {
-  const data = await fetchTMDb<{ results?: RawTmdbTvShow[] }>(`/trending/tv/${timeWindow}?language=en-US`);
-  if (!data || !data.results) return { found: false, results: [] as TvShowResult[] };
+export async function getTrendingTvShows(
+  timeWindow: string = "day",
+  limit: number = 10,
+) {
+  const data = await fetchTMDb<{ results?: RawTmdbTvShow[] }>(
+    `/trending/tv/${timeWindow}?language=en-US`,
+  );
+  if (!data || !data.results)
+    return { found: false, results: [] as TvShowResult[] };
 
   return {
     found: true,
     timeWindow,
     count: Math.min(data.results.length, limit),
-    results: data.results.slice(0, limit).map(normalizeTvShow).filter(Boolean) as TvShowResult[],
+    results: data.results
+      .slice(0, limit)
+      .map(normalizeTvShow)
+      .filter(Boolean) as TvShowResult[],
   };
 }
 
@@ -555,7 +594,9 @@ export async function discoverTvShows({
     totalResults: data.total_results,
     page: data.page,
     totalPages: data.total_pages,
-    results: data.results.map(normalizeTvShow).filter(Boolean) as TvShowResult[],
+    results: data.results
+      .map(normalizeTvShow)
+      .filter(Boolean) as TvShowResult[],
   };
 }
 
@@ -565,7 +606,9 @@ export async function discoverTvShows({
  * Get movie genre list (useful for discover filters)
  */
 export async function getMovieGenres() {
-  const data = await fetchTMDb<{ genres: TmdbGenre[] }>("/genre/movie/list?language=en-US");
+  const data = await fetchTMDb<{ genres: TmdbGenre[] }>(
+    "/genre/movie/list?language=en-US",
+  );
   if (!data || !data.genres) return { found: false, genres: [] as TmdbGenre[] };
   return { found: true, genres: data.genres };
 }
@@ -574,7 +617,9 @@ export async function getMovieGenres() {
  * Get TV genre list
  */
 export async function getTvGenres() {
-  const data = await fetchTMDb<{ genres: TmdbGenre[] }>("/genre/tv/list?language=en-US");
+  const data = await fetchTMDb<{ genres: TmdbGenre[] }>(
+    "/genre/tv/list?language=en-US",
+  );
   if (!data || !data.genres) return { found: false, genres: [] as TmdbGenre[] };
   return { found: true, genres: data.genres };
 }

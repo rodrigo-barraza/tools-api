@@ -122,7 +122,9 @@ async function fetchMB<T>(
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`MusicBrainz API error ${response.status}: ${text.slice(0, 200)}`);
+    throw new Error(
+      `MusicBrainz API error ${response.status}: ${text.slice(0, 200)}`,
+    );
   }
   return response.json() as Promise<T>;
 }
@@ -133,10 +135,13 @@ async function fetchMB<T>(
  * Search for artists by name.
  */
 export async function searchArtists(query: string, limit: number = 10) {
-  const data = await fetchMB<{ count: number; artists?: RawMusicArtist[] }>("/artist", {
-    query,
-    limit,
-  });
+  const data = await fetchMB<{ count: number; artists?: RawMusicArtist[] }>(
+    "/artist",
+    {
+      query,
+      limit,
+    },
+  );
   return {
     count: data.count,
     artists: (data.artists || []).map(
@@ -173,25 +178,37 @@ export async function getArtist(mbid: string) {
   // Extract useful URLs
   const urls: Record<string, string> = {};
   for (const relation of artistData.relations || []) {
-    if (relation.type === "wikipedia" && relation.url?.resource) urls.wikipedia = relation.url.resource;
-    if (relation.type === "wikidata" && relation.url?.resource) urls.wikidata = relation.url.resource;
-    if (relation.type === "official homepage" && relation.url?.resource) urls.website = relation.url.resource;
+    if (relation.type === "wikipedia" && relation.url?.resource)
+      urls.wikipedia = relation.url.resource;
+    if (relation.type === "wikidata" && relation.url?.resource)
+      urls.wikidata = relation.url.resource;
+    if (relation.type === "official homepage" && relation.url?.resource)
+      urls.website = relation.url.resource;
     if (relation.type === "social network" && relation.url?.resource) {
       const socialUrl = relation.url.resource;
-      if (socialUrl.includes("twitter.com") || socialUrl.includes("x.com")) urls.twitter = socialUrl;
+      if (socialUrl.includes("twitter.com") || socialUrl.includes("x.com"))
+        urls.twitter = socialUrl;
       if (socialUrl.includes("instagram.com")) urls.instagram = socialUrl;
       if (socialUrl.includes("facebook.com")) urls.facebook = socialUrl;
     }
-    if ((relation.type === "streaming music" || relation.type === "free streaming") && relation.url?.resource) {
+    if (
+      (relation.type === "streaming music" ||
+        relation.type === "free streaming") &&
+      relation.url?.resource
+    ) {
       const streamingUrl = relation.url.resource;
       if (streamingUrl.includes("spotify.com")) urls.spotify = streamingUrl;
-      if (streamingUrl.includes("music.apple.com")) urls.appleMusic = streamingUrl;
-      if (streamingUrl.includes("soundcloud.com")) urls.soundcloud = streamingUrl;
+      if (streamingUrl.includes("music.apple.com"))
+        urls.appleMusic = streamingUrl;
+      if (streamingUrl.includes("soundcloud.com"))
+        urls.soundcloud = streamingUrl;
     }
   }
 
   // Group release groups by type
-  const releaseGroups: ReleaseGroupItem[] = (artistData["release-groups"] || []).map((releaseGroup) => ({
+  const releaseGroups: ReleaseGroupItem[] = (
+    artistData["release-groups"] || []
+  ).map((releaseGroup) => ({
     id: releaseGroup.id,
     title: releaseGroup.title,
     type: releaseGroup["primary-type"] || "Other",
@@ -206,7 +223,9 @@ export async function getArtist(mbid: string) {
   }
   // Sort each type by date
   for (const type of Object.keys(byType)) {
-    byType[type].sort((x, y) => (x.firstReleaseDate || "").localeCompare(y.firstReleaseDate || ""));
+    byType[type].sort((x, y) =>
+      (x.firstReleaseDate || "").localeCompare(y.firstReleaseDate || ""),
+    );
   }
 
   return {
@@ -235,12 +254,16 @@ export async function getArtist(mbid: string) {
 /**
  * Search for albums/releases by title.
  */
-export async function searchAlbums(query: string, artist?: string, limit: number = 10) {
+export async function searchAlbums(
+  query: string,
+  artist?: string,
+  limit: number = 10,
+) {
   const searchQuery = artist ? `${query} AND artist:${artist}` : query;
-  const data = await fetchMB<{ count: number; "release-groups"?: RawReleaseGroup[] }>(
-    "/release-group",
-    { query: searchQuery, limit },
-  );
+  const data = await fetchMB<{
+    count: number;
+    "release-groups"?: RawReleaseGroup[];
+  }>("/release-group", { query: searchQuery, limit });
   return {
     count: data.count,
     albums: (data["release-groups"] || []).map(
@@ -264,24 +287,32 @@ export async function searchAlbums(query: string, artist?: string, limit: number
  * Get album details by release-group MBID.
  */
 export async function getAlbum(mbid: string) {
-  const releaseGroupData = await fetchMB<RawReleaseGroup>(`/release-group/${mbid}`, {
-    inc: "releases+artist-credits+tags",
-  });
+  const releaseGroupData = await fetchMB<RawReleaseGroup>(
+    `/release-group/${mbid}`,
+    {
+      inc: "releases+artist-credits+tags",
+    },
+  );
 
   // Get the first release's tracklist
   let tracks: MusicTrack[] = [];
   if (releaseGroupData.releases?.[0]) {
     try {
-      const release = await fetchMB<RawReleaseDetail>(`/release/${releaseGroupData.releases[0].id}`, {
-        inc: "recordings",
-      });
+      const release = await fetchMB<RawReleaseDetail>(
+        `/release/${releaseGroupData.releases[0].id}`,
+        {
+          inc: "recordings",
+        },
+      );
       tracks = (release.media || []).flatMap((media) =>
         (media.tracks || []).map(
           (track): MusicTrack => ({
             position: track.position,
             title: track.title,
             durationMs: track.length || null,
-            duration: track.length ? formatMediaTimestamp(Math.round(track.length / 1000)) : null,
+            duration: track.length
+              ? formatMediaTimestamp(Math.round(track.length / 1000))
+              : null,
           }),
         ),
       );
@@ -316,12 +347,19 @@ export async function getAlbum(mbid: string) {
 /**
  * Search for tracks/recordings by title.
  */
-export async function searchTracks(query: string, artist?: string, limit: number = 10) {
+export async function searchTracks(
+  query: string,
+  artist?: string,
+  limit: number = 10,
+) {
   const searchQuery = artist ? `${query} AND artist:${artist}` : query;
-  const data = await fetchMB<{ count: number; recordings?: RawRecording[] }>("/recording", {
-    query: searchQuery,
-    limit,
-  });
+  const data = await fetchMB<{ count: number; recordings?: RawRecording[] }>(
+    "/recording",
+    {
+      query: searchQuery,
+      limit,
+    },
+  );
   return {
     count: data.count,
     tracks: (data.recordings || []).map(
@@ -329,7 +367,9 @@ export async function searchTracks(query: string, artist?: string, limit: number
         id: recording.id,
         title: recording.title,
         durationMs: recording.length || null,
-        duration: recording.length ? formatMediaTimestamp(Math.round(recording.length / 1000)) : null,
+        duration: recording.length
+          ? formatMediaTimestamp(Math.round(recording.length / 1000))
+          : null,
         artists: (recording["artist-credit"] || []).map((artistCredit) => ({
           id: artistCredit.artist?.id || "",
           name: artistCredit.artist?.name || "",

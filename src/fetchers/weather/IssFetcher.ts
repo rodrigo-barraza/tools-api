@@ -42,7 +42,7 @@ export async function fetchIssPosition(): Promise<IssPosition> {
     throw new Error(`ISS position API returned ${response.status}`);
   }
 
-  const data = await response.json() as RawIssPositionResponse;
+  const data = (await response.json()) as RawIssPositionResponse;
 
   if (data.message !== "success") {
     throw new Error("ISS position API returned non-success message");
@@ -65,7 +65,7 @@ export async function fetchAstronauts(): Promise<AstronautsResponse> {
     throw new Error(`Astronauts API returned ${response.status}`);
   }
 
-  const data = await response.json() as RawAstronautsResponse;
+  const data = (await response.json()) as RawAstronautsResponse;
 
   if (data.message !== "success") {
     throw new Error("Astronauts API returned non-success message");
@@ -73,9 +73,11 @@ export async function fetchAstronauts(): Promise<AstronautsResponse> {
 
   return {
     total: data.number,
-    people: data.people.map((p): Astronaut => ({
-      name: p.name,
-      craft: p.craft,
-    })),
+    people: data.people.map(
+      (p): Astronaut => ({
+        name: p.name,
+        craft: p.craft,
+      }),
+    ),
   };
 }

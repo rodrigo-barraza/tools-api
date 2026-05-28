@@ -14,7 +14,10 @@
  */
 
 import { searchFoods } from "./NutritionFetcher.ts";
-import { calculateTargetProfile, TargetProfileResult } from "./NutritionRequirementFetcher.ts";
+import {
+  calculateTargetProfile,
+  TargetProfileResult,
+} from "./NutritionRequirementFetcher.ts";
 import {
   NUTRITION_MACRO_FIELDS,
   NUTRITION_MINERAL_FIELDS,
@@ -98,13 +101,23 @@ const FOOD_COLUMN_UNITS: Record<string, string> = {};
 
 // Build from all field maps
 for (const [columnKey, label] of Object.entries(NUTRITION_MACRO_FIELDS)) {
-  FOOD_COLUMN_UNITS[columnKey] = label.endsWith("_g") ? "g" : label.endsWith("_kcal") ? "kcal" : label.endsWith("_kj") ? "kj" : "g";
+  FOOD_COLUMN_UNITS[columnKey] = label.endsWith("_g")
+    ? "g"
+    : label.endsWith("_kcal")
+      ? "kcal"
+      : label.endsWith("_kj")
+        ? "kj"
+        : "g";
 }
 for (const [columnKey, label] of Object.entries(NUTRITION_MINERAL_FIELDS)) {
   FOOD_COLUMN_UNITS[columnKey] = label.endsWith("_mcg") ? "mcg" : "mg";
 }
 for (const [columnKey, label] of Object.entries(NUTRITION_VITAMIN_FIELDS)) {
-  FOOD_COLUMN_UNITS[columnKey] = label.endsWith("_mcg") ? "mcg" : label.endsWith("_IU") ? "IU" : "mg";
+  FOOD_COLUMN_UNITS[columnKey] = label.endsWith("_mcg")
+    ? "mcg"
+    : label.endsWith("_IU")
+      ? "IU"
+      : "mg";
 }
 for (const [columnKey] of Object.entries(NUTRITION_AMINO_ACID_FIELDS)) {
   FOOD_COLUMN_UNITS[columnKey] = "g";
@@ -118,24 +131,39 @@ for (const [columnKey] of Object.entries(NUTRITION_STEROL_FIELDS)) {
 
 // ─── Unit Conversion Helpers ───────────────────────────────────
 
-function convertToTarget(value: number, fromUnit: string, toUnit: string): number {
+function convertToTarget(
+  value: number,
+  fromUnit: string,
+  toUnit: string,
+): number {
   if (fromUnit === toUnit) return value;
 
   const normalized = `${fromUnit}→${toUnit}`;
   switch (normalized) {
-    case "g→mg": return value * 1000;
-    case "mg→g": return value / 1000;
-    case "g→mcg": return value * 1_000_000;
-    case "mcg→g": return value / 1_000_000;
-    case "mg→mcg": return value * 1000;
-    case "mcg→mg": return value / 1000;
-    default: return value; // can't convert, pass through
+    case "g→mg":
+      return value * 1000;
+    case "mg→g":
+      return value / 1000;
+    case "g→mcg":
+      return value * 1_000_000;
+    case "mcg→g":
+      return value / 1_000_000;
+    case "mg→mcg":
+      return value * 1000;
+    case "mcg→mg":
+      return value / 1000;
+    default:
+      return value; // can't convert, pass through
   }
 }
 
 // ─── Status Classification ─────────────────────────────────────
 
-function classifyStatus(pctDRI: number | null, hasUL: boolean, pctUL: number | null): string {
+function classifyStatus(
+  pctDRI: number | null,
+  hasUL: boolean,
+  pctUL: number | null,
+): string {
   if (pctDRI === null) return "no_data";
   if (hasUL && pctUL !== null && pctUL > 100) return "over_UL";
   if (pctDRI >= 90 && pctDRI <= 110) return "adequate";
@@ -146,13 +174,20 @@ function classifyStatus(pctDRI: number | null, hasUL: boolean, pctUL: number | n
 
 function statusEmoji(status: string): string {
   switch (status) {
-    case "deficient": return "🔴";
-    case "low": return "🟡";
-    case "adequate": return "🟢";
-    case "surplus": return "🔵";
-    case "over_UL": return "⛔";
-    case "no_data": return "⚪";
-    default: return "❓";
+    case "deficient":
+      return "🔴";
+    case "low":
+      return "🟡";
+    case "adequate":
+      return "🟢";
+    case "surplus":
+      return "🔵";
+    case "over_UL":
+      return "⛔";
+    case "no_data":
+      return "⚪";
+    default:
+      return "❓";
   }
 }
 
@@ -253,7 +288,8 @@ export function analyzeNutrientGaps({
   // ── Validate ─────────────────────────────────────────────────
   if (!foods || !Array.isArray(foods) || foods.length === 0) {
     return {
-      error: "Parameter 'foods' is required — provide an array of {name, grams} objects. Example: [{name: 'chicken breast', grams: 200}, {name: 'brown rice', grams: 150}]",
+      error:
+        "Parameter 'foods' is required — provide an array of {name, grams} objects. Example: [{name: 'chicken breast', grams: 200}, {name: 'brown rice', grams: 150}]",
     };
   }
 
@@ -349,7 +385,10 @@ export function analyzeNutrientGaps({
 
   for (const [nutrientId, metrics] of Object.entries(reqMap)) {
     // Find the food column for this requirement nutrient
-    const foodColumn = REQUIREMENT_TO_FOOD_COLUMN[nutrientId as keyof typeof REQUIREMENT_TO_FOOD_COLUMN];
+    const foodColumn =
+      REQUIREMENT_TO_FOOD_COLUMN[
+        nutrientId as keyof typeof REQUIREMENT_TO_FOOD_COLUMN
+      ];
     if (!foodColumn) continue;
 
     // Find the label used in consumed data
@@ -394,12 +433,17 @@ export function analyzeNutrientGaps({
     const foodBaseUnit = foodUnit.toLowerCase();
 
     if (targetBaseUnit && foodBaseUnit && targetBaseUnit !== foodBaseUnit) {
-      consumedConverted = convertToTarget(consumedValue, foodBaseUnit, targetBaseUnit);
+      consumedConverted = convertToTarget(
+        consumedValue,
+        foodBaseUnit,
+        targetBaseUnit,
+      );
     }
 
-    const pctDRI = targetValue > 0
-      ? Number(((consumedConverted / targetValue) * 100).toFixed(1))
-      : null;
+    const pctDRI =
+      targetValue > 0
+        ? Number(((consumedConverted / targetValue) * 100).toFixed(1))
+        : null;
     const pctUL = ulValue
       ? Number(((consumedConverted / ulValue) * 100).toFixed(1))
       : null;
@@ -420,9 +464,17 @@ export function analyzeNutrientGaps({
   }
 
   // ── Sort: deficiencies first, then low, adequate, surplus, over_UL ──
-  const statusOrder: Record<string, number> = { deficient: 0, low: 1, over_UL: 2, surplus: 3, adequate: 4, no_data: 5 };
+  const statusOrder: Record<string, number> = {
+    deficient: 0,
+    low: 1,
+    over_UL: 2,
+    surplus: 3,
+    adequate: 4,
+    no_data: 5,
+  };
   gaps.sort((firstItem, b) => {
-    const orderDiff = (statusOrder[firstItem.status] ?? 99) - (statusOrder[b.status] ?? 99);
+    const orderDiff =
+      (statusOrder[firstItem.status] ?? 99) - (statusOrder[b.status] ?? 99);
     if (orderDiff !== 0) return orderDiff;
     return (firstItem.pctDRI || 0) - (b.pctDRI || 0);
   });
@@ -448,15 +500,18 @@ export function analyzeNutrientGaps({
       adequate: adequate.length,
       surplus: surplus.length,
       overUL: overUL.length,
-      overallScore: gaps.length > 0
-        ? Number(
-          (
-            (gaps.filter((g) => g.status === "adequate" || g.status === "surplus").length /
-              gaps.length) *
-            100
-          ).toFixed(1),
-        )
-        : 0,
+      overallScore:
+        gaps.length > 0
+          ? Number(
+              (
+                (gaps.filter(
+                  (g) => g.status === "adequate" || g.status === "surplus",
+                ).length /
+                  gaps.length) *
+                100
+              ).toFixed(1),
+            )
+          : 0,
     },
     foodLog: resolvedFoods.map((food) => ({
       query: food.query,
@@ -464,7 +519,8 @@ export function analyzeNutrientGaps({
       grams: food.grams,
     })),
     gaps,
-    _note: "Status: 🔴 deficient (<50% DRI), 🟡 low (50-89% DRI), 🟢 adequate (90-110% DRI), 🔵 surplus (>110% DRI), ⛔ over_UL (exceeds tolerable upper limit).",
+    _note:
+      "Status: 🔴 deficient (<50% DRI), 🟡 low (50-89% DRI), 🟢 adequate (90-110% DRI), 🔵 surplus (>110% DRI), ⛔ over_UL (exceeds tolerable upper limit).",
   };
 }
 
@@ -481,4 +537,3 @@ function priorityOf(metric: string | null): number {
   if (normalizedMetric === "guideline") return 5;
   return 0;
 }
-

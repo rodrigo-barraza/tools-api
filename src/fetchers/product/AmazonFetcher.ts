@@ -7,7 +7,9 @@ import {
 import { parsePrice } from "@rodrigo-barraza/utilities-library";
 import {
   randomUserAgent,
-  computeTrendingScore, errorMessage } from "../../utilities.ts";
+  computeTrendingScore,
+  errorMessage,
+} from "../../utilities.ts";
 import rateLimiter from "../../services/RateLimiterService.ts";
 import logger from "../../logger.ts";
 import type { ProductInput } from "../../models/Product.ts";
@@ -17,7 +19,11 @@ const BASE_URL = "https://www.amazon.com/Best-Sellers/zgbs";
 /**
  * Scrape Amazon Best Sellers for a single category.
  */
-async function scrapeCategory(slug: string, categoryName: string, unifiedCategory: string) {
+async function scrapeCategory(
+  slug: string,
+  categoryName: string,
+  unifiedCategory: string,
+) {
   const url = `${BASE_URL}/${slug}`;
 
   const response = await fetch(url, {
@@ -131,11 +137,19 @@ export async function fetchAllAmazonBestSellers(): Promise<ProductInput[]> {
 
   for (const amazonCategory of AMAZON_CATEGORIES) {
     try {
-      const products = await scrapeCategory(amazonCategory.slug, amazonCategory.name, amazonCategory.unified);
+      const products = await scrapeCategory(
+        amazonCategory.slug,
+        amazonCategory.name,
+        amazonCategory.unified,
+      );
       allProducts.push(...products);
-      logger.info(`[Amazon] ✅ ${amazonCategory.name}: ${products.length} products`);
+      logger.info(
+        `[Amazon] ✅ ${amazonCategory.name}: ${products.length} products`,
+      );
     } catch (error: unknown) {
-      logger.error(`[Amazon] ❌ ${amazonCategory.name}: ${errorMessage(error)}`);
+      logger.error(
+        `[Amazon] ❌ ${amazonCategory.name}: ${errorMessage(error)}`,
+      );
     }
 
     // Rate limit between category requests

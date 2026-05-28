@@ -1,22 +1,25 @@
 import { buildScraperHeaders } from "../../../../utilities.ts";
-import { upsertWebcams, type WebcamDocument } from "../../../../models/Webcam.ts";
+import {
+  upsertWebcams,
+  type WebcamDocument,
+} from "../../../../models/Webcam.ts";
 
 export async function refreshSeattleWebcams() {
   // SDOT Travelers API (Seattle Live Webcams)
   const url = `https://web.seattle.gov/Travelers/api/Map/Data?zoomId=13&type=2`;
   const response = await fetch(url, { headers: buildScraperHeaders() });
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch Seattle webcams: ${response.status}`);
   }
-  
+
   const data = await response.json();
   const parsedWebcams: WebcamDocument[] = [];
 
   for (const feature of data.Features) {
     const lat = feature.PointCoordinate[0];
     const lon = feature.PointCoordinate[1];
-    
+
     for (const cam of feature.Cameras) {
       let imageUrl = cam.ImageUrl;
       if (!imageUrl.startsWith("http")) {
@@ -32,7 +35,7 @@ export async function refreshSeattleWebcams() {
         longitude: lon,
         city: "Seattle",
         country: "US",
-        source: "web.seattle.gov"
+        source: "web.seattle.gov",
       });
     }
   }

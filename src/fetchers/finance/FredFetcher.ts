@@ -34,7 +34,10 @@ function buildUrl(endpoint: string, params: Record<string, unknown> = {}) {
   return url.toString();
 }
 
-async function fredFetch(endpoint: string, params: Record<string, unknown> = {}) {
+async function fredFetch(
+  endpoint: string,
+  params: Record<string, unknown> = {},
+) {
   if (!CONFIG.FRED_API_KEY) {
     throw new Error("FRED_API_KEY is not configured");
   }
@@ -44,7 +47,9 @@ async function fredFetch(endpoint: string, params: Record<string, unknown> = {})
 
   if (!response.ok) {
     const body = await response.text().catch(() => "");
-    throw new Error(`FRED API → ${response.status} ${response.statusText}: ${body}`);
+    throw new Error(
+      `FRED API → ${response.status} ${response.statusText}: ${body}`,
+    );
   }
 
   return response.json();
@@ -89,7 +94,10 @@ export interface FredObservationOptions {
 
 
  */
-export async function getSeriesObservations(seriesId: string, options: FredObservationOptions = {}) {
+export async function getSeriesObservations(
+  seriesId: string,
+  options: FredObservationOptions = {},
+) {
   const {
     limit = 50,
     sortOrder = "desc",
@@ -147,7 +155,10 @@ export interface FredSearchOptions {
 
 
  */
-export async function searchSeries(query: string, options: FredSearchOptions = {}) {
+export async function searchSeries(
+  query: string,
+  options: FredSearchOptions = {},
+) {
   const { limit = 10, orderBy = "search_rank" } = options;
 
   const cacheKey = `search:${query}:${limit}:${orderBy}`;
@@ -218,7 +229,9 @@ export async function getKeyIndicators() {
         sort_order: "desc",
       });
 
-      const latest = data.observations?.find((o: Record<string, string>) => o.value !== ".");
+      const latest = data.observations?.find(
+        (o: Record<string, string>) => o.value !== ".",
+      );
 
       return {
         id: seriesId,
@@ -240,13 +253,19 @@ export async function getKeyIndicators() {
     unit: string;
   }
 
-  const indicators = (results
-    .filter((r): r is PromiseFulfilledResult<FredIndicator> => r.status === "fulfilled"))
+  const indicators = results
+    .filter(
+      (r): r is PromiseFulfilledResult<FredIndicator> =>
+        r.status === "fulfilled",
+    )
     .map((r) => r.value);
 
   const failed = results
     .filter((r): r is PromiseRejectedResult => r.status === "rejected")
-    .map((r, i) => ({ seriesId: entries[i][0], error: (r.reason as Error).message }));
+    .map((r, i) => ({
+      seriesId: entries[i][0],
+      error: (r.reason as Error).message,
+    }));
 
   if (failed.length > 0) {
     logger.warn(

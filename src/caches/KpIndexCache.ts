@@ -3,7 +3,10 @@ import { MS_PER_DAY } from "@rodrigo-barraza/utilities-library";
 import { KP_STORM_SCALE } from "../constants.ts";
 import { KpReading } from "../types/weather.ts";
 
-const cache = createSimpleCache<KpReading[]>({ type: "array", itemsKey: "readings" });
+const cache = createSimpleCache<KpReading[]>({
+  type: "array",
+  itemsKey: "readings",
+});
 
 export const updateKpIndex = cache.update;
 export const setKpIndexError = cache.setError;
@@ -24,7 +27,9 @@ interface KpClassification {
  * Classify a Kp value into its storm scale level.
  */
 function classifyKp(kp: number): KpClassification {
-  const entry = (KP_STORM_SCALE as KpStormScale[]).find((s) => kp >= s.min && kp < s.max);
+  const entry = (KP_STORM_SCALE as KpStormScale[]).find(
+    (s) => kp >= s.min && kp < s.max,
+  );
   return entry || { level: "Unknown", storm: null };
 }
 

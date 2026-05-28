@@ -57,7 +57,13 @@ export interface ComputeDataSource {
   runtime: string;
 }
 
-export type ToolDataSource = CachedDataSource | OnDemandDataSource | StaticDataSource | ComputeDataSource;
+export type ToolDataSource =
+  | CachedDataSource
+  | OnDemandDataSource
+  | StaticDataSource
+  | ComputeDataSource;
+
+export type ToolIntelligenceTier = "low" | "medium" | "high" | "frontier";
 
 // ─── Tool Definition ───────────────────────────────────────────
 
@@ -67,6 +73,7 @@ export interface ToolDefinition {
   dataSource?: ToolDataSource;
   endpoint?: ToolEndpoint;
   parameters?: ToolParameters;
+  intelligenceTier?: ToolIntelligenceTier;
 }
 
 // ─── Enriched Tool Schema (returned by getToolSchemas) ─────────
@@ -75,11 +82,17 @@ export interface ToolSchema extends ToolDefinition {
   domain: string;
   labels: string[];
   emoji: string | null;
+  intelligenceTier: ToolIntelligenceTier;
 }
 
 // ─── Stripped schema for AI consumption ─────────────────────────
 
-export type ToolSchemaForAI = Omit<ToolDefinition, "endpoint" | "dataSource">;
+export type ToolSchemaForAI = Omit<
+  ToolDefinition,
+  "endpoint" | "dataSource"
+> & {
+  intelligenceTier: ToolIntelligenceTier;
+};
 
 // ─── Scored match from AgenticToolSearchService ─────────────────
 

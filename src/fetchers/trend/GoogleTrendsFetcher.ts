@@ -2,7 +2,11 @@ import {
   TREND_SOURCES as SOURCES,
   GOOGLE_TRENDS_GEOS,
 } from "../../constants.ts";
-import { extractXmlTag, randomUserAgent, errorMessage } from "../../utilities.ts";
+import {
+  extractXmlTag,
+  randomUserAgent,
+  errorMessage,
+} from "../../utilities.ts";
 import logger from "../../logger.ts";
 
 const TRENDS_RSS_URL = "https://trends.google.com/trending/rss";
@@ -21,7 +25,11 @@ interface GoogleTrendItem {
   context: {
     geo: string;
     traffic: string | null;
-    article: { title: string; url: string | null; source: string | null } | null;
+    article: {
+      title: string;
+      url: string | null;
+      source: string | null;
+    } | null;
     pubDate: string | null;
   };
   timestamp: string;

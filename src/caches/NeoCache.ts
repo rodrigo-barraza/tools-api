@@ -51,7 +51,9 @@ export function getLatestNeos() {
  * Summary: total count, hazardous count, closest approach, largest object.
  */
 export function getNeoSummary() {
-  const hazardous = cache.neos.filter((n: NearEarthObject) => n.isPotentiallyHazardous);
+  const hazardous = cache.neos.filter(
+    (n: NearEarthObject) => n.isPotentiallyHazardous,
+  );
   const closest = cache.neos[0] || null; // already sorted by miss distance
   const largest = cache.neos.reduce(
     (max: NearEarthObject | null, n: NearEarthObject) =>

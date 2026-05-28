@@ -9,9 +9,17 @@
  */
 import type { Request, Response, NextFunction } from "express";
 
-export function headerPropagationMiddleware(req: Request, res: Response, next: NextFunction) {
+export function headerPropagationMiddleware(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   // Project: from query param, body, or x-project header
-  req.project = (req.query?.project as string) || req.body?.project || (req.headers["x-project"] as string) || "default";
+  req.project =
+    (req.query?.project as string) ||
+    req.body?.project ||
+    (req.headers["x-project"] as string) ||
+    "default";
 
   // Username: from x-username header
   req.username = (req.headers["x-username"] as string) || "anonymous";

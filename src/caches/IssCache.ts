@@ -1,4 +1,7 @@
-import { IssPosition, AstronautsResponse } from "../fetchers/weather/IssFetcher.ts";
+import {
+  IssPosition,
+  AstronautsResponse,
+} from "../fetchers/weather/IssFetcher.ts";
 
 const TRAJECTORY_BUFFER_SIZE = 100;
 
@@ -48,7 +51,10 @@ export function updateIssPosition(position: IssPosition) {
 }
 
 export function setIssPositionError(error: { message: string }) {
-  cache.positionError = { message: error.message, time: new Date().toISOString() };
+  cache.positionError = {
+    message: error.message,
+    time: new Date().toISOString(),
+  };
 }
 
 /**
@@ -61,7 +67,10 @@ export function updateAstronauts(data: AstronautsResponse) {
 }
 
 export function setAstronautsError(error: { message: string }) {
-  cache.astrosError = { message: error.message, time: new Date().toISOString() };
+  cache.astrosError = {
+    message: error.message,
+    time: new Date().toISOString(),
+  };
 }
 
 /**

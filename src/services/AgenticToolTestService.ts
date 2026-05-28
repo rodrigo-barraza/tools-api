@@ -27,7 +27,15 @@ import { errorMessage } from "../utilities.ts";
 // Lazily resolved — WORKSPACE_ROOTS may be empty at import time
 // (e.g. when users configure workspaces via the Settings UI).
 
-export type ToolTestResult = Record<string, unknown> | unknown[] | string | number | boolean | null | undefined | object;
+export type ToolTestResult =
+  | Record<string, unknown>
+  | unknown[]
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | object;
 
 export interface TransformedToolTestResult {
   tool: string;
@@ -43,7 +51,8 @@ let _fixtureFile: string | undefined;
 function getFixtureDir() {
   if (!_fixtureDir) {
     const root = WORKSPACE_ROOTS[0];
-    if (!root) throw new Error("Cannot run tool tests — no WORKSPACE_ROOTS configured.");
+    if (!root)
+      throw new Error("Cannot run tool tests — no WORKSPACE_ROOTS configured.");
     _fixtureDir = join(resolve(root), ".tool-test-fixtures");
   }
   return _fixtureDir;
@@ -86,24 +95,38 @@ async function cleanupFixture() {
     join(getFixtureDir(), "diff_b.js"),
   ];
   for (const f of candidates) {
-    try { await unlink(f); } catch { /* ignore */ }
+    try {
+      await unlink(f);
+    } catch {
+      /* ignore */
+    }
   }
   try {
     const { rmdir } = await import("node:fs/promises");
     await rmdir(getFixtureDir());
-  } catch { /* ignore — dir might not be empty */ }
+  } catch {
+    /* ignore — dir might not be empty */
+  }
 }
 
 // ── Test Runner ──────────────────────────────────────────────
 
-async function runTest(name: string, fn: () => Promise<ToolTestResult> | ToolTestResult): Promise<TransformedToolTestResult> {
+async function runTest(
+  name: string,
+  fn: () => Promise<ToolTestResult> | ToolTestResult,
+): Promise<TransformedToolTestResult> {
   const start = performance.now();
   try {
     const result = await fn();
     const duration = Math.round(performance.now() - start);
 
     // Check if the service returned an error object
-    if (result && typeof result === "object" && !Array.isArray(result) && "error" in result) {
+    if (
+      result &&
+      typeof result === "object" &&
+      !Array.isArray(result) &&
+      "error" in result
+    ) {
       return {
         tool: name,
         success: false,
@@ -142,15 +165,17 @@ const TESTS = {
   // ── File Operations ──────────────────────────────────────
 
   read_file: () =>
-    runTest("read_file", () =>
-      agenticReadFile(getFixtureFile()),
-    ),
+    runTest("read_file", () => agenticReadFile(getFixtureFile())),
 
   write_file: () =>
     runTest("write_file", async () => {
       const testFile = join(getFixtureDir(), "write_test.txt");
       const result = await agenticWriteFile(testFile, "smoke test\n");
-      try { await unlink(testFile); } catch { /* ignore */ }
+      try {
+        await unlink(testFile);
+      } catch {
+        /* ignore */
+      }
       return result;
     }),
 
@@ -160,7 +185,11 @@ const TESTS = {
       const testFile = join(getFixtureDir(), "str_replace_test.js");
       await writeFile(testFile, FIXTURE_CONTENT, "utf-8");
       const result = await agenticStrReplace(testFile, "3.14159", "3.14");
-      try { await unlink(testFile); } catch { /* ignore */ }
+      try {
+        await unlink(testFile);
+      } catch {
+        /* ignore */
+      }
       return result;
     }),
 
@@ -178,7 +207,11 @@ const TESTS = {
         "+PATCHED\n" +
         " line3\n";
       const result = await agenticPatchFile(testFile, unifiedPatch);
-      try { await unlink(testFile); } catch { /* ignore */ }
+      try {
+        await unlink(testFile);
+      } catch {
+        /* ignore */
+      }
       return result;
     }),
 
@@ -188,16 +221,22 @@ const TESTS = {
     ),
 
   file_info: () =>
-    runTest("file_info", () =>
-      agenticFileInfo([getFixtureFile()]),
-    ),
+    runTest("file_info", () => agenticFileInfo([getFixtureFile()])),
 
   file_diff: () =>
     runTest("file_diff", async () => {
       const fileB = join(getFixtureDir(), "diff_b.js");
-      await writeFile(fileB, FIXTURE_CONTENT.replace("3.14159", "2.71828"), "utf-8");
+      await writeFile(
+        fileB,
+        FIXTURE_CONTENT.replace("3.14159", "2.71828"),
+        "utf-8",
+      );
       const result = await agenticFileDiff(getFixtureFile(), { pathB: fileB });
-      try { await unlink(fileB); } catch { /* ignore */ }
+      try {
+        await unlink(fileB);
+      } catch {
+        /* ignore */
+      }
       return result;
     }),
 
@@ -208,8 +247,16 @@ const TESTS = {
       await writeFile(sourcePath, "move test\n", "utf-8");
       const result = await agenticMoveFile(sourcePath, destinationPath);
       // Cleanup destination
-      try { await unlink(destinationPath); } catch { /* ignore */ }
-      try { await unlink(sourcePath); } catch { /* ignore */ }
+      try {
+        await unlink(destinationPath);
+      } catch {
+        /* ignore */
+      }
+      try {
+        await unlink(sourcePath);
+      } catch {
+        /* ignore */
+      }
       return result;
     }),
 
@@ -223,19 +270,13 @@ const TESTS = {
   // ── Search & Discovery ───────────────────────────────────
 
   list_directory: () =>
-    runTest("list_directory", () =>
-      agenticListDirectory(getFixtureDir()),
-    ),
+    runTest("list_directory", () => agenticListDirectory(getFixtureDir())),
 
   grep_search: () =>
-    runTest("grep_search", () =>
-      agenticGrepSearch("greet", getFixtureDir()),
-    ),
+    runTest("grep_search", () => agenticGrepSearch("greet", getFixtureDir())),
 
   glob_files: () =>
-    runTest("glob_files", () =>
-      agenticGlobFiles("*.js", getFixtureDir()),
-    ),
+    runTest("glob_files", () => agenticGlobFiles("*.js", getFixtureDir())),
 
   project_summary: () =>
     runTest("project_summary", () =>
@@ -245,14 +286,10 @@ const TESTS = {
   // ── Web ──────────────────────────────────────────────────
 
   fetch_url: () =>
-    runTest("fetch_url", () =>
-      agenticFetchUrl("https://httpbin.org/get"),
-    ),
+    runTest("fetch_url", () => agenticFetchUrl("https://httpbin.org/get")),
 
   web_search: () =>
-    runTest("web_search", () =>
-      agenticWebSearch("test", { limit: 1 }),
-    ),
+    runTest("web_search", () => agenticWebSearch("test", { limit: 1 })),
 
   // ── Command Execution ────────────────────────────────────
 
@@ -279,7 +316,7 @@ const TESTS = {
  * Run a smoke test for a single tool.
  */
 export async function testTool(toolName: string) {
-    const testFn = TESTS[toolName as keyof typeof TESTS];
+  const testFn = TESTS[toolName as keyof typeof TESTS];
   if (!testFn) {
     return {
       tool: toolName,
@@ -308,7 +345,7 @@ export async function testAllTools(toolNames?: string[]) {
 
     const results: TransformedToolTestResult[] = [];
     for (const name of names) {
-            const testFn = TESTS[name as keyof typeof TESTS];
+      const testFn = TESTS[name as keyof typeof TESTS];
       if (!testFn) {
         results.push({
           tool: name,

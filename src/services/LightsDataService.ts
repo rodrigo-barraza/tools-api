@@ -15,7 +15,11 @@ const TIMEOUT_MS = 10_000;
 
 
  */
-async function lightsApiFetch(method: string, path: string, body: Record<string, unknown> | null = null) {
+async function lightsApiFetch(
+  method: string,
+  path: string,
+  body: Record<string, unknown> | null = null,
+) {
   const url = `${CONFIG.LIGHTS_SERVICE_URL}${path}`;
   const options: RequestInit = {
     method,
@@ -30,9 +34,12 @@ async function lightsApiFetch(method: string, path: string, body: Record<string,
   const response = await fetch(url, options);
 
   if (!response.ok) {
-    const errBody = await response.json().catch(() => ({})) as { error?: string };
+    const errBody = (await response.json().catch(() => ({}))) as {
+      error?: string;
+    };
     throw new Error(
-      errBody.error || `Lights API returned ${response.status}: ${response.statusText}`,
+      errBody.error ||
+        `Lights API returned ${response.status}: ${response.statusText}`,
     );
   }
 
@@ -45,23 +52,26 @@ const LightsDataService = {
 
    */
   async listLights(selector: string = "all") {
-    const data = await lightsApiFetch("GET", `/lights/${encodeURIComponent(selector)}`);
+    const data = await lightsApiFetch(
+      "GET",
+      `/lights/${encodeURIComponent(selector)}`,
+    );
 
     // Normalize the response into a clean shape for the agent
     if (!Array.isArray(data)) return data;
 
-interface LifxLight {
-  id?: string;
-  label?: string;
-  power?: string;
-  brightness?: number;
-  color?: { hue: number; saturation: number; kelvin: number };
-  group?: { name?: string };
-  location?: { name?: string };
-  connected?: boolean;
-  product?: { name?: string };
-  effect?: string;
-}
+    interface LifxLight {
+      id?: string;
+      label?: string;
+      power?: string;
+      brightness?: number;
+      color?: { hue: number; saturation: number; kelvin: number };
+      group?: { name?: string };
+      location?: { name?: string };
+      connected?: boolean;
+      product?: { name?: string };
+      effect?: string;
+    }
 
     return data.map((light: LifxLight) => ({
       id: light.id,
@@ -70,10 +80,10 @@ interface LifxLight {
       brightness: light.brightness,
       color: light.color
         ? {
-          hue: Math.round(light.color.hue),
-          saturation: Math.round(light.color.saturation * 100) / 100,
-          kelvin: light.color.kelvin,
-        }
+            hue: Math.round(light.color.hue),
+            saturation: Math.round(light.color.saturation * 100) / 100,
+            kelvin: light.color.kelvin,
+          }
         : null,
       group: light.group?.name || null,
       location: light.location?.name || null,
@@ -88,9 +98,20 @@ interface LifxLight {
 
 
    */
-  async setState({ selector = "all", power, color, brightness, duration, kelvin }: {
-    selector?: string; power?: string; color?: string;
-    brightness?: number; duration?: number; kelvin?: number;
+  async setState({
+    selector = "all",
+    power,
+    color,
+    brightness,
+    duration,
+    kelvin,
+  }: {
+    selector?: string;
+    power?: string;
+    color?: string;
+    brightness?: number;
+    duration?: number;
+    kelvin?: number;
   }) {
     const body: Record<string, unknown> = {};
     if (power !== undefined) body.power = power;
@@ -99,7 +120,11 @@ interface LifxLight {
     if (duration !== undefined) body.duration = duration;
     if (kelvin !== undefined) body.color = `kelvin:${kelvin}`;
 
-    return lightsApiFetch("PUT", `/lights/${encodeURIComponent(selector)}/state`, body);
+    return lightsApiFetch(
+      "PUT",
+      `/lights/${encodeURIComponent(selector)}/state`,
+      body,
+    );
   },
 
   /**
@@ -107,9 +132,20 @@ interface LifxLight {
 
 
    */
-  async setStateDelta({ selector = "all", hue, saturation, brightness, kelvin, duration }: {
-    selector?: string; hue?: number; saturation?: number;
-    brightness?: number; kelvin?: number; duration?: number;
+  async setStateDelta({
+    selector = "all",
+    hue,
+    saturation,
+    brightness,
+    kelvin,
+    duration,
+  }: {
+    selector?: string;
+    hue?: number;
+    saturation?: number;
+    brightness?: number;
+    kelvin?: number;
+    duration?: number;
   }) {
     const body: Record<string, unknown> = {};
     if (hue !== undefined) body.hue = hue;
@@ -118,7 +154,11 @@ interface LifxLight {
     if (kelvin !== undefined) body.kelvin = kelvin;
     if (duration !== undefined) body.duration = duration;
 
-    return lightsApiFetch("POST", `/lights/${encodeURIComponent(selector)}/state/delta`, body);
+    return lightsApiFetch(
+      "POST",
+      `/lights/${encodeURIComponent(selector)}/state/delta`,
+      body,
+    );
   },
 
   /**
@@ -126,7 +166,10 @@ interface LifxLight {
 
 
    */
-  async setStates(states: Record<string, unknown>[], defaults: Record<string, unknown> | null = null) {
+  async setStates(
+    states: Record<string, unknown>[],
+    defaults: Record<string, unknown> | null = null,
+  ) {
     const body: Record<string, unknown> = { states };
     if (defaults) body.defaults = defaults;
     return lightsApiFetch("PUT", "/lights/states", body);
@@ -138,7 +181,11 @@ interface LifxLight {
 
    */
   async togglePower(selector: string = "all", duration: number = 1) {
-    return lightsApiFetch("POST", `/lights/${encodeURIComponent(selector)}/toggle`, { duration });
+    return lightsApiFetch(
+      "POST",
+      `/lights/${encodeURIComponent(selector)}/toggle`,
+      { duration },
+    );
   },
 
   /**
@@ -146,10 +193,24 @@ interface LifxLight {
 
 
    */
-  async breatheEffect({ selector = "all", color, fromColor, period, cycles, persist, powerOn, peak }: {
-    selector?: string; color?: string; fromColor?: string;
-    period?: number; cycles?: number; persist?: boolean;
-    powerOn?: boolean; peak?: number;
+  async breatheEffect({
+    selector = "all",
+    color,
+    fromColor,
+    period,
+    cycles,
+    persist,
+    powerOn,
+    peak,
+  }: {
+    selector?: string;
+    color?: string;
+    fromColor?: string;
+    period?: number;
+    cycles?: number;
+    persist?: boolean;
+    powerOn?: boolean;
+    peak?: number;
   }) {
     const body: Record<string, unknown> = {};
     if (color !== undefined) body.color = color;
@@ -160,7 +221,11 @@ interface LifxLight {
     if (powerOn !== undefined) body.powerOn = powerOn;
     if (peak !== undefined) body.peak = peak;
 
-    return lightsApiFetch("POST", `/lights/${encodeURIComponent(selector)}/effects/breathe`, body);
+    return lightsApiFetch(
+      "POST",
+      `/lights/${encodeURIComponent(selector)}/effects/breathe`,
+      body,
+    );
   },
 
   /**
@@ -168,9 +233,22 @@ interface LifxLight {
 
 
    */
-  async pulseEffect({ selector = "all", color, fromColor, period, cycles, persist, powerOn }: {
-    selector?: string; color?: string; fromColor?: string;
-    period?: number; cycles?: number; persist?: boolean; powerOn?: boolean;
+  async pulseEffect({
+    selector = "all",
+    color,
+    fromColor,
+    period,
+    cycles,
+    persist,
+    powerOn,
+  }: {
+    selector?: string;
+    color?: string;
+    fromColor?: string;
+    period?: number;
+    cycles?: number;
+    persist?: boolean;
+    powerOn?: boolean;
   }) {
     const body: Record<string, unknown> = {};
     if (color !== undefined) body.color = color;
@@ -180,7 +258,11 @@ interface LifxLight {
     if (persist !== undefined) body.persist = persist;
     if (powerOn !== undefined) body.powerOn = powerOn;
 
-    return lightsApiFetch("POST", `/lights/${encodeURIComponent(selector)}/effects/pulse`, body);
+    return lightsApiFetch(
+      "POST",
+      `/lights/${encodeURIComponent(selector)}/effects/pulse`,
+      body,
+    );
   },
 
   /**
@@ -188,9 +270,18 @@ interface LifxLight {
 
 
    */
-  async moveEffect({ selector = "all", direction, period, cycles, powerOn }: {
-    selector?: string; direction?: string; period?: number;
-    cycles?: number; powerOn?: boolean;
+  async moveEffect({
+    selector = "all",
+    direction,
+    period,
+    cycles,
+    powerOn,
+  }: {
+    selector?: string;
+    direction?: string;
+    period?: number;
+    cycles?: number;
+    powerOn?: boolean;
   }) {
     const body: Record<string, unknown> = {};
     if (direction !== undefined) body.direction = direction;
@@ -198,7 +289,11 @@ interface LifxLight {
     if (cycles !== undefined) body.cycles = cycles;
     if (powerOn !== undefined) body.powerOn = powerOn;
 
-    return lightsApiFetch("POST", `/lights/${encodeURIComponent(selector)}/effects/move`, body);
+    return lightsApiFetch(
+      "POST",
+      `/lights/${encodeURIComponent(selector)}/effects/move`,
+      body,
+    );
   },
 
   /**
@@ -206,15 +301,27 @@ interface LifxLight {
 
 
    */
-  async flameEffect({ selector = "all", period, duration, powerOn }: {
-    selector?: string; period?: number; duration?: number; powerOn?: boolean;
+  async flameEffect({
+    selector = "all",
+    period,
+    duration,
+    powerOn,
+  }: {
+    selector?: string;
+    period?: number;
+    duration?: number;
+    powerOn?: boolean;
   }) {
     const body: Record<string, unknown> = {};
     if (period !== undefined) body.period = period;
     if (duration !== undefined) body.duration = duration;
     if (powerOn !== undefined) body.powerOn = powerOn;
 
-    return lightsApiFetch("POST", `/lights/${encodeURIComponent(selector)}/effects/flame`, body);
+    return lightsApiFetch(
+      "POST",
+      `/lights/${encodeURIComponent(selector)}/effects/flame`,
+      body,
+    );
   },
 
   /**
@@ -222,9 +329,18 @@ interface LifxLight {
 
 
    */
-  async morphEffect({ selector = "all", palette, period, duration, powerOn }: {
-    selector?: string; palette?: string[]; period?: number;
-    duration?: number; powerOn?: boolean;
+  async morphEffect({
+    selector = "all",
+    palette,
+    period,
+    duration,
+    powerOn,
+  }: {
+    selector?: string;
+    palette?: string[];
+    period?: number;
+    duration?: number;
+    powerOn?: boolean;
   }) {
     const body: Record<string, unknown> = {};
     if (palette !== undefined) body.palette = palette;
@@ -232,7 +348,11 @@ interface LifxLight {
     if (duration !== undefined) body.duration = duration;
     if (powerOn !== undefined) body.powerOn = powerOn;
 
-    return lightsApiFetch("POST", `/lights/${encodeURIComponent(selector)}/effects/morph`, body);
+    return lightsApiFetch(
+      "POST",
+      `/lights/${encodeURIComponent(selector)}/effects/morph`,
+      body,
+    );
   },
 
   /**
@@ -244,7 +364,11 @@ interface LifxLight {
     const body: Record<string, unknown> = {};
     if (powerOff) body.powerOff = true;
 
-    return lightsApiFetch("POST", `/lights/${encodeURIComponent(selector)}/effects/off`, body);
+    return lightsApiFetch(
+      "POST",
+      `/lights/${encodeURIComponent(selector)}/effects/off`,
+      body,
+    );
   },
 
   /**
@@ -256,12 +380,12 @@ interface LifxLight {
     if (!Array.isArray(data)) return data;
 
     // Normalize into a clean shape
-interface LifxScene {
-  uuid?: string;
-  name?: string;
-  states?: unknown[];
-  updated_at?: string;
-}
+    interface LifxScene {
+      uuid?: string;
+      name?: string;
+      states?: unknown[];
+      updated_at?: string;
+    }
 
     return data.map((scene: LifxScene) => ({
       uuid: scene.uuid,
@@ -276,7 +400,11 @@ interface LifxScene {
 
 
    */
-  async activateScene(sceneId: string, duration: number = 1, ignore: string[] | null = null) {
+  async activateScene(
+    sceneId: string,
+    duration: number = 1,
+    ignore: string[] | null = null,
+  ) {
     const body: Record<string, unknown> = {};
     if (duration !== undefined) body.duration = duration;
     if (ignore) body.ignore = ignore;

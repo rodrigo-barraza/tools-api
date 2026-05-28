@@ -28,7 +28,9 @@ const YOUTUBE_ID_REGEX =
 /**
  * Extract a YouTube video ID from a URL or raw ID string.
  */
-export function extractVideoId(input: string | null | undefined): string | null {
+export function extractVideoId(
+  input: string | null | undefined,
+): string | null {
   if (!input || typeof input !== "string") return null;
   const trimmed = input.trim();
   const match = trimmed.match(YOUTUBE_ID_REGEX);
@@ -54,7 +56,9 @@ interface RawOembedResponse {
  * Fetch video metadata via YouTube's public oEmbed endpoint.
  * Returns title, author, thumbnail — no API key needed.
  */
-async function fetchOembedMetadata(videoId: string): Promise<YouTubeOembed | null> {
+async function fetchOembedMetadata(
+  videoId: string,
+): Promise<YouTubeOembed | null> {
   const url = `${OEMBED_URL}?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
   const response = await fetch(url);
   if (!response.ok) return null;
@@ -77,7 +81,9 @@ async function fetchOembedMetadata(videoId: string): Promise<YouTubeOembed | nul
  * Scrape additional metadata from the YouTube video page HTML.
  * Gets description and other OG tags not available via oEmbed.
  */
-async function fetchPageMetadata(videoId: string): Promise<YouTubePageMetadata> {
+async function fetchPageMetadata(
+  videoId: string,
+): Promise<YouTubePageMetadata> {
   const url = `https://www.youtube.com/watch?v=${videoId}`;
   try {
     const response = await fetch(url, {
@@ -103,7 +109,9 @@ async function fetchPageMetadata(videoId: string): Promise<YouTubePageMetadata> 
 
     const extract = (pattern: RegExp): string | null => {
       const match = html.match(pattern);
-      return match ? match[1]?.replace(/\\u0026/g, "&")?.replace(/\\"/g, '"') : null;
+      return match
+        ? match[1]?.replace(/\\u0026/g, "&")?.replace(/\\"/g, '"')
+        : null;
     };
 
     // Extract from meta tags and JSON-LD
@@ -113,16 +121,13 @@ async function fetchPageMetadata(videoId: string): Promise<YouTubePageMetadata> 
       null;
 
     const publishDate =
-      extract(/<meta\s+itemprop="datePublished"\s+content="([^"]*)"/) ||
-      null;
+      extract(/<meta\s+itemprop="datePublished"\s+content="([^"]*)"/) || null;
 
     const genre =
-      extract(/<meta\s+itemprop="genre"\s+content="([^"]*)"/) ||
-      null;
+      extract(/<meta\s+itemprop="genre"\s+content="([^"]*)"/) || null;
 
     const duration =
-      extract(/<meta\s+itemprop="duration"\s+content="([^"]*)"/) ||
-      null;
+      extract(/<meta\s+itemprop="duration"\s+content="([^"]*)"/) || null;
 
     const isFamilyFriendly =
       extract(/<meta\s+itemprop="isFamilyFriendly"\s+content="([^"]*)"/) ||
@@ -133,21 +138,29 @@ async function fetchPageMetadata(videoId: string): Promise<YouTubePageMetadata> 
       null;
 
     const keywords =
-      extract(/<meta\s+name="keywords"\s+content="([^"]*)"/) ||
-      null;
+      extract(/<meta\s+name="keywords"\s+content="([^"]*)"/) || null;
 
     const channelId =
-      extract(/<meta\s+itemprop="channelId"\s+content="([^"]*)"/) ||
-      null;
+      extract(/<meta\s+itemprop="channelId"\s+content="([^"]*)"/) || null;
 
     return {
       description,
       publishDate,
       genre,
       duration,
-      isFamilyFriendly: isFamilyFriendly === "true" ? true : isFamilyFriendly === "false" ? false : null,
+      isFamilyFriendly:
+        isFamilyFriendly === "true"
+          ? true
+          : isFamilyFriendly === "false"
+            ? false
+            : null,
       viewCount: viewCount ? parseInt(viewCount, 10) || null : null,
-      keywords: keywords ? keywords.split(",").map((k) => k.trim()).filter(Boolean) : null,
+      keywords: keywords
+        ? keywords
+            .split(",")
+            .map((k) => k.trim())
+            .filter(Boolean)
+        : null,
       channelId,
     };
   } catch {
@@ -175,7 +188,10 @@ interface RawTranscriptEntry {
 /**
  * Fetch the transcript/captions for a YouTube video.
  */
-async function fetchTranscript(videoId: string, lang?: string): Promise<YouTubeTranscriptResult> {
+async function fetchTranscript(
+  videoId: string,
+  lang?: string,
+): Promise<YouTubeTranscriptResult> {
   try {
     const config = { lang: lang || "en" };
     const entries = (await YoutubeTranscript.fetchTranscript(

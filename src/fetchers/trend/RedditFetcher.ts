@@ -26,7 +26,9 @@ const redditTokenManager = new TokenManager(async () => {
     body: "grant_type=client_credentials",
   });
   if (!response.ok) {
-    throw new Error(`Reddit auth failed: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Reddit auth failed: ${response.status} ${response.statusText}`,
+    );
   }
   const data = await response.json();
   return {
@@ -48,7 +50,9 @@ async function fetchSubreddit(subreddit: string, token: string, limit: number) {
     },
   });
   if (!response.ok) {
-    throw new Error(`Reddit /r/${subreddit}: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Reddit /r/${subreddit}: ${response.status} ${response.statusText}`,
+    );
   }
   const data = await response.json();
   return data?.data?.children || [];
@@ -73,7 +77,9 @@ function normalizeTrend(post: RawRedditPost, defaultCategory: string | null) {
       upvoteRatio: postData.upvote_ratio || 0,
       flair: postData.link_flair_text || null,
       thumbnail:
-        postData.thumbnail && postData.thumbnail.startsWith("http") ? postData.thumbnail : null,
+        postData.thumbnail && postData.thumbnail.startsWith("http")
+          ? postData.thumbnail
+          : null,
       isVideo: postData.is_video || false,
       created: new Date(postData.created_utc * 1000).toISOString(),
     },

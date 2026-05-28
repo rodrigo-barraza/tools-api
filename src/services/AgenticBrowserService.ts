@@ -14,7 +14,7 @@ import {
   BROWSER_DOM_TIMEOUT_MS,
   BROWSER_SCRIPT_TIMEOUT_MS,
   BROWSER_MAX_SCRIPT_OUTPUT,
-  BROWSER_MAX_CONTENT_LENGTH
+  BROWSER_MAX_CONTENT_LENGTH,
 } from "../constants.ts";
 import { errorMessage } from "../utilities.ts";
 
@@ -45,7 +45,9 @@ async function getBrowser() {
   // Browser died or never existed — purge all stale sessions that belonged
   // to the old instance before launching a fresh one
   if (sessions.size > 0) {
-    logger.warn(`[AgenticBrowser] Browser disconnected, purging ${sessions.size} stale sessions`);
+    logger.warn(
+      `[AgenticBrowser] Browser disconnected, purging ${sessions.size} stale sessions`,
+    );
     sessions.clear();
   }
 
@@ -89,8 +91,14 @@ async function getSession(sessionId: string): Promise<BrowserSession> {
     }
 
     // Stale session — evict silently and fall through to create a new one
-    logger.warn(`[AgenticBrowser] Session "${sessionId}" stale (page=${pageAlive}, browser=${browserAlive}), recreating`);
-    try { await existingSession.context.close(); } catch { /* already dead */ }
+    logger.warn(
+      `[AgenticBrowser] Session "${sessionId}" stale (page=${pageAlive}, browser=${browserAlive}), recreating`,
+    );
+    try {
+      await existingSession.context.close();
+    } catch {
+      /* already dead */
+    }
     sessions.delete(sessionId);
   }
 
@@ -118,7 +126,9 @@ async function getSession(sessionId: string): Promise<BrowserSession> {
   const session = { page, context, lastUsed: Date.now() };
   sessions.set(sessionId, session);
 
-  logger.info(`[AgenticBrowser] Session "${sessionId}" created (${sessions.size}/${MAX_SESSIONS})`);
+  logger.info(
+    `[AgenticBrowser] Session "${sessionId}" created (${sessions.size}/${MAX_SESSIONS})`,
+  );
   return session;
 }
 
@@ -131,9 +141,13 @@ async function closeSession(sessionId: string): Promise<boolean> {
 
   try {
     await session.context.close();
-  } catch { /* page may already be closed */ }
+  } catch {
+    /* page may already be closed */
+  }
   sessions.delete(sessionId);
-  logger.info(`[AgenticBrowser] Session "${sessionId}" closed (${sessions.size}/${MAX_SESSIONS})`);
+  logger.info(
+    `[AgenticBrowser] Session "${sessionId}" closed (${sessions.size}/${MAX_SESSIONS})`,
+  );
   return true;
 }
 
@@ -169,7 +183,11 @@ async function actionNavigate(page: Page, { url }: { url?: string }) {
     });
 
     // Wait a bit more for dynamic content
-    await page.waitForLoadState("networkidle", { timeout: BROWSER_NETWORK_IDLE_TIMEOUT_MS }).catch(() => {});
+    await page
+      .waitForLoadState("networkidle", {
+        timeout: BROWSER_NETWORK_IDLE_TIMEOUT_MS,
+      })
+      .catch(() => {});
 
     return {
       action: "navigate",
@@ -182,7 +200,10 @@ async function actionNavigate(page: Page, { url }: { url?: string }) {
   }
 }
 
-async function actionScreenshot(page: Page, { fullPage, selector }: { fullPage?: boolean; selector?: string }) {
+async function actionScreenshot(
+  page: Page,
+  { fullPage, selector }: { fullPage?: boolean; selector?: string },
+) {
   try {
     let screenshotBuffer: Buffer;
     if (selector) {
@@ -215,7 +236,9 @@ async function actionClick(page: Page, { selector }: { selector?: string }) {
     await page.click(selector, { timeout: BROWSER_ACTION_TIMEOUT_MS });
 
     // Wait for potential navigation or re-render
-    await page.waitForLoadState("domcontentloaded", { timeout: BROWSER_DOM_TIMEOUT_MS }).catch(() => {});
+    await page
+      .waitForLoadState("domcontentloaded", { timeout: BROWSER_DOM_TIMEOUT_MS })
+      .catch(() => {});
 
     return {
       action: "click",
@@ -228,9 +251,17 @@ async function actionClick(page: Page, { selector }: { selector?: string }) {
   }
 }
 
-async function actionType(page: Page, { selector, text, pressEnter }: { selector?: string; text?: string; pressEnter?: boolean }) {
+async function actionType(
+  page: Page,
+  {
+    selector,
+    text,
+    pressEnter,
+  }: { selector?: string; text?: string; pressEnter?: boolean },
+) {
   if (!selector) return { error: "Missing required parameter: selector" };
-  if (text === undefined || text === null) return { error: "Missing required parameter: text" };
+  if (text === undefined || text === null)
+    return { error: "Missing required parameter: text" };
 
   try {
     // Clear existing content and type new text
@@ -239,7 +270,11 @@ async function actionType(page: Page, { selector, text, pressEnter }: { selector
 
     if (pressEnter) {
       await page.press(selector, "Enter");
-      await page.waitForLoadState("domcontentloaded", { timeout: BROWSER_DOM_TIMEOUT_MS }).catch(() => {});
+      await page
+        .waitForLoadState("domcontentloaded", {
+          timeout: BROWSER_DOM_TIMEOUT_MS,
+        })
+        .catch(() => {});
     }
 
     return {
@@ -255,20 +290,28 @@ async function actionType(page: Page, { selector, text, pressEnter }: { selector
   }
 }
 
-async function actionScroll(page: Page, { direction, selector, amount }: { direction?: string; selector?: string; amount?: number }) {
+async function actionScroll(
+  page: Page,
+  {
+    direction,
+    selector,
+    amount,
+  }: { direction?: string; selector?: string; amount?: number },
+) {
   try {
     if (selector) {
       await page.evaluate(
         ({ sel }: { sel: string }) => {
           const element = document.querySelector(sel);
-          if (element) element.scrollIntoView({ behavior: "smooth", block: "center" });
+          if (element)
+            element.scrollIntoView({ behavior: "smooth", block: "center" });
         },
         { sel: selector },
       );
     } else {
       const pixels = amount || 500;
       const delta = direction === "up" ? -pixels : pixels;
-       
+
       await page.evaluate((d: number) => window.scrollBy(0, d), delta);
     }
 
@@ -277,7 +320,7 @@ async function actionScroll(page: Page, { direction, selector, amount }: { direc
 
     return {
       action: "scroll",
-      direction: selector ? "to element" : (direction || "down"),
+      direction: selector ? "to element" : direction || "down",
       url: page.url(),
     };
   } catch (error: unknown) {
@@ -285,7 +328,10 @@ async function actionScroll(page: Page, { direction, selector, amount }: { direc
   }
 }
 
-async function actionEvaluate(page: Page, { expression }: { expression?: string }) {
+async function actionEvaluate(
+  page: Page,
+  { expression }: { expression?: string },
+) {
   if (!expression) return { error: "Missing required parameter: expression" };
 
   try {
@@ -293,7 +339,10 @@ async function actionEvaluate(page: Page, { expression }: { expression?: string 
 
     return {
       action: "evaluate",
-      result: typeof result === "object" ? JSON.stringify(result, null, 2) : String(result),
+      result:
+        typeof result === "object"
+          ? JSON.stringify(result, null, 2)
+          : String(result),
       url: page.url(),
     };
   } catch (error: unknown) {
@@ -301,19 +350,25 @@ async function actionEvaluate(page: Page, { expression }: { expression?: string 
   }
 }
 
-async function actionGetContent(page: Page, { selector, format }: { selector?: string; format?: string }) {
+async function actionGetContent(
+  page: Page,
+  { selector, format }: { selector?: string; format?: string },
+) {
   try {
     let content: string | null;
 
     if (format === "html") {
       content = selector
-        ? await page.$eval(selector, (element: HTMLElement) => element.innerHTML).catch(() => null)
+        ? await page
+            .$eval(selector, (element: HTMLElement) => element.innerHTML)
+            .catch(() => null)
         : await page.content();
     } else {
       // Default: extract text content
       content = selector
-        ? await page.$eval(selector, (element: HTMLElement) => element.innerText).catch(() => null)
-         
+        ? await page
+            .$eval(selector, (element: HTMLElement) => element.innerText)
+            .catch(() => null)
         : await page.evaluate(() => document.body.innerText);
     }
 
@@ -340,7 +395,18 @@ async function actionGetContent(page: Page, { selector, format }: { selector?: s
   }
 }
 
-async function actionWait(page: Page, { selector, timeout, state }: { selector?: string; timeout?: number; state?: "attached" | "detached" | "visible" | "hidden" }) {
+async function actionWait(
+  page: Page,
+  {
+    selector,
+    timeout,
+    state,
+  }: {
+    selector?: string;
+    timeout?: number;
+    state?: "attached" | "detached" | "visible" | "hidden";
+  },
+) {
   try {
     if (selector) {
       await page.waitForSelector(selector, {
@@ -367,14 +433,16 @@ async function actionWait(page: Page, { selector, timeout, state }: { selector?:
   }
 }
 
-async function actionGetElements(page: Page, { selector, limit }: { selector?: string; limit?: number }) {
+async function actionGetElements(
+  page: Page,
+  { selector, limit }: { selector?: string; limit?: number },
+) {
   try {
     const maxElements = Math.min(limit || 50, 100);
     const scope = selector || "body";
 
     const elements = await page.evaluate(
       ({ scope, max }: { scope: string; max: number }) => {
-         
         const root = document.querySelector(scope) || document.body;
 
         // All interactive elements worth reporting to an LLM
@@ -397,7 +465,9 @@ async function actionGetElements(page: Page, { selector, limit }: { selector?: s
           "[contenteditable='true']",
         ];
 
-        const allElements = root.querySelectorAll(interactiveSelectors.join(", "));
+        const allElements = root.querySelectorAll(
+          interactiveSelectors.join(", "),
+        );
         const results: Record<string, unknown>[] = [];
 
         for (const element of allElements) {
@@ -405,13 +475,14 @@ async function actionGetElements(page: Page, { selector, limit }: { selector?: s
 
           // Skip invisible elements
           const rect = element.getBoundingClientRect();
-           
+
           const style = window.getComputedStyle(element);
           if (
             style.display === "none" ||
             style.visibility === "hidden" ||
             (rect.width === 0 && rect.height === 0)
-          ) continue;
+          )
+            continue;
 
           // Build the best CSS selector for this element
           let cssSelector = "";
@@ -423,7 +494,10 @@ async function actionGetElements(page: Page, { selector, limit }: { selector?: s
             cssSelector = `${element.tagName.toLowerCase()}[name="${element.getAttribute("name")}"]`;
           } else if (element.getAttribute("aria-label")) {
             cssSelector = `[aria-label="${element.getAttribute("aria-label")}"]`;
-          } else if (element.className && typeof element.className === "string") {
+          } else if (
+            element.className &&
+            typeof element.className === "string"
+          ) {
             // Use first meaningful class
             const cls = element.className.trim().split(/\s+/)[0];
             if (cls) cssSelector = `${element.tagName.toLowerCase()}.${cls}`;
@@ -439,13 +513,19 @@ async function actionGetElements(page: Page, { selector, limit }: { selector?: s
           const entry: Record<string, unknown> = { tag, selector: cssSelector };
 
           if (text) entry.text = text;
-          if (element.getAttribute("type")) entry.type = element.getAttribute("type");
-          if (element.getAttribute("placeholder")) entry.placeholder = element.getAttribute("placeholder");
-          if (element.getAttribute("href")) entry.href = element.getAttribute("href")?.slice(0, 120);
-          if (element.getAttribute("value")) entry.value = element.getAttribute("value")?.slice(0, 60);
-          if (element.getAttribute("role")) entry.role = element.getAttribute("role");
+          if (element.getAttribute("type"))
+            entry.type = element.getAttribute("type");
+          if (element.getAttribute("placeholder"))
+            entry.placeholder = element.getAttribute("placeholder");
+          if (element.getAttribute("href"))
+            entry.href = element.getAttribute("href")?.slice(0, 120);
+          if (element.getAttribute("value"))
+            entry.value = element.getAttribute("value")?.slice(0, 60);
+          if (element.getAttribute("role"))
+            entry.role = element.getAttribute("role");
           if ((element as HTMLInputElement).disabled) entry.disabled = true;
-          if (element.getAttribute("aria-label")) entry.ariaLabel = element.getAttribute("aria-label");
+          if (element.getAttribute("aria-label"))
+            entry.ariaLabel = element.getAttribute("aria-label");
 
           results.push(entry);
         }
@@ -485,7 +565,9 @@ async function actionSnapshot(page: Page, { selector }: { selector?: string }) {
     const locator = selector ? page.locator(selector) : page.locator("body");
 
     // Playwright ≥1.49 supports locator.ariaSnapshot()
-    const locWithSnapshot = locator as typeof locator & { ariaSnapshot?: () => Promise<string> };
+    const locWithSnapshot = locator as typeof locator & {
+      ariaSnapshot?: () => Promise<string>;
+    };
     if (typeof locWithSnapshot.ariaSnapshot === "function") {
       const snapshot = await locWithSnapshot.ariaSnapshot();
       return {
@@ -498,8 +580,17 @@ async function actionSnapshot(page: Page, { selector }: { selector?: string }) {
     }
 
     // Fallback: use page.accessibility.snapshot() + format ourselves
-    const pgWithAccessibility = page as typeof page & { accessibility?: { snapshot: (options?: { interestingOnly?: boolean }) => Promise<AccessibilityNode | null> } };
-    const tree = await pgWithAccessibility.accessibility?.snapshot({ interestingOnly: true }) || null;
+    const pgWithAccessibility = page as typeof page & {
+      accessibility?: {
+        snapshot: (options?: {
+          interestingOnly?: boolean;
+        }) => Promise<AccessibilityNode | null>;
+      };
+    };
+    const tree =
+      (await pgWithAccessibility.accessibility?.snapshot({
+        interestingOnly: true,
+      })) || null;
     const formatted = formatAccessibilityTree(tree, 0);
     return {
       action: "snapshot",
@@ -532,7 +623,10 @@ interface AccessibilityNode {
  * Format an accessibility tree node into a readable indented text representation.
  * Fallback for when locator.ariaSnapshot() is unavailable.
  */
-function formatAccessibilityTree(node: AccessibilityNode | null, depth: number): string {
+function formatAccessibilityTree(
+  node: AccessibilityNode | null,
+  depth: number,
+): string {
   if (!node) return "";
   const indent = "  ".repeat(depth);
   const parts: string[] = [];
@@ -553,7 +647,8 @@ function formatAccessibilityTree(node: AccessibilityNode | null, depth: number):
   if (node.selected != null) attrs.push(`selected=${node.selected}`);
   if (node.required) attrs.push("required");
   if (node.valuetext) attrs.push(`value="${node.valuetext}"`);
-  if (node.value != null && !node.valuetext) attrs.push(`value="${node.value}"`);
+  if (node.value != null && !node.valuetext)
+    attrs.push(`value="${node.value}"`);
   if (attrs.length) line += ` [${attrs.join("][")}]`;
 
   parts.push(line);
@@ -585,7 +680,9 @@ function resolveRef(page: Page, ref: string) {
   // Format: "role:name" (e.g. "button:Submit", "link:Get started")
   const colonIdx = ref.indexOf(":");
   if (colonIdx > 0) {
-    const role = ref.slice(0, colonIdx).trim() as Parameters<typeof page.getByRole>[0];
+    const role = ref.slice(0, colonIdx).trim() as Parameters<
+      typeof page.getByRole
+    >[0];
     const name = ref.slice(colonIdx + 1).trim();
     return page.getByRole(role, { name, exact: false });
   }
@@ -600,7 +697,9 @@ async function actionClickRef(page: Page, { ref }: { ref?: string }) {
   try {
     const locator = resolveRef(page, ref);
     await locator.click({ timeout: BROWSER_ACTION_TIMEOUT_MS });
-    await page.waitForLoadState("domcontentloaded", { timeout: BROWSER_DOM_TIMEOUT_MS }).catch(() => {});
+    await page
+      .waitForLoadState("domcontentloaded", { timeout: BROWSER_DOM_TIMEOUT_MS })
+      .catch(() => {});
 
     return {
       action: "click_ref",
@@ -613,9 +712,17 @@ async function actionClickRef(page: Page, { ref }: { ref?: string }) {
   }
 }
 
-async function actionTypeRef(page: Page, { ref, text, pressEnter }: { ref?: string; text?: string; pressEnter?: boolean }) {
+async function actionTypeRef(
+  page: Page,
+  {
+    ref,
+    text,
+    pressEnter,
+  }: { ref?: string; text?: string; pressEnter?: boolean },
+) {
   if (!ref) return { error: "Missing required parameter: ref" };
-  if (text === undefined || text === null) return { error: "Missing required parameter: text" };
+  if (text === undefined || text === null)
+    return { error: "Missing required parameter: text" };
 
   try {
     const locator = resolveRef(page, ref);
@@ -624,7 +731,11 @@ async function actionTypeRef(page: Page, { ref, text, pressEnter }: { ref?: stri
 
     if (pressEnter) {
       await locator.press("Enter");
-      await page.waitForLoadState("domcontentloaded", { timeout: BROWSER_DOM_TIMEOUT_MS }).catch(() => {});
+      await page
+        .waitForLoadState("domcontentloaded", {
+          timeout: BROWSER_DOM_TIMEOUT_MS,
+        })
+        .catch(() => {});
     }
 
     return {
@@ -657,7 +768,10 @@ async function actionHoverRef(page: Page, { ref }: { ref?: string }) {
   }
 }
 
-async function actionSelectRef(page: Page, { ref, value }: { ref?: string; value?: string }) {
+async function actionSelectRef(
+  page: Page,
+  { ref, value }: { ref?: string; value?: string },
+) {
   if (!ref) return { error: "Missing required parameter: ref" };
   if (!value) return { error: "Missing required parameter: value" };
 
@@ -691,12 +805,18 @@ async function actionSelectRef(page: Page, { ref, value }: { ref?: string; value
  * Scripts should use `chromium.connectOverCDP(process.env.BROWSER_WS_ENDPOINT)`
  * to connect.
  */
-async function actionRunScript(_page: Page, { script, timeout }: { script?: string; timeout?: number }) {
+async function actionRunScript(
+  _page: Page,
+  { script, timeout }: { script?: string; timeout?: number },
+) {
   if (!script) return { error: "Missing required parameter: script" };
 
   // Ensure the browser is running and get its WebSocket endpoint
   const browserInstance = await getBrowser();
-  const wsEndpoint = (browserInstance as Browser & { wsEndpoint?: () => string }).wsEndpoint?.() || null;
+  const wsEndpoint =
+    (
+      browserInstance as Browser & { wsEndpoint?: () => string }
+    ).wsEndpoint?.() || null;
 
   // Wrap the user script with boilerplate for connecting to our browser
   const wrappedScript = `
@@ -736,12 +856,15 @@ const { chromium } = require('playwright');
     await writeFile(scriptPath, wrappedScript, "utf-8");
 
     // Execute in subprocess
-    const clampedTimeout = Math.min(Math.max(timeout || BROWSER_SCRIPT_TIMEOUT_MS, 5_000), 120_000);
+    const clampedTimeout = Math.min(
+      Math.max(timeout || BROWSER_SCRIPT_TIMEOUT_MS, 5_000),
+      120_000,
+    );
     const result = await executeScript(scriptPath, wsEndpoint, clampedTimeout);
 
     return {
       action: "run_script",
-      ...result as Record<string, unknown>,
+      ...(result as Record<string, unknown>),
     };
   } catch (error: unknown) {
     return { error: `run_script failed: ${errorMessage(error)}` };
@@ -751,7 +874,9 @@ const { chromium } = require('playwright');
       unlink(scriptPath).catch(() => {});
     }
     if (tmpDir) {
-      import("node:fs").then((fs) => fs.rmSync(tmpDir!, { recursive: true, force: true })).catch(() => {});
+      import("node:fs")
+        .then((fs) => fs.rmSync(tmpDir!, { recursive: true, force: true }))
+        .catch(() => {});
     }
   }
 }
@@ -759,7 +884,11 @@ const { chromium } = require('playwright');
 /**
  * Execute a Playwright script file in a subprocess.
  */
-function executeScript(scriptPath: string, wsEndpoint: string | null, timeoutMs: number) {
+function executeScript(
+  scriptPath: string,
+  wsEndpoint: string | null,
+  timeoutMs: number,
+) {
   return new Promise<unknown>((resolve) => {
     const stdoutChunks: Buffer[] = [];
     const stderrChunks: Buffer[] = [];
@@ -811,8 +940,14 @@ function executeScript(scriptPath: string, wsEndpoint: string | null, timeoutMs:
 
       resolve({
         success: exitCode === 0 && !timedOut,
-        stdout: stdoutLen > BROWSER_MAX_SCRIPT_OUTPUT ? stdout + "\n... [output truncated]" : stdout,
-        stderr: stderrLen > BROWSER_MAX_SCRIPT_OUTPUT ? stderr + "\n... [output truncated]" : stderr,
+        stdout:
+          stdoutLen > BROWSER_MAX_SCRIPT_OUTPUT
+            ? stdout + "\n... [output truncated]"
+            : stdout,
+        stderr:
+          stderrLen > BROWSER_MAX_SCRIPT_OUTPUT
+            ? stderr + "\n... [output truncated]"
+            : stderr,
         exitCode: timedOut ? null : exitCode,
         timedOut,
         ...(timedOut && { error: `Script timed out after ${timeoutMs}ms` }),
@@ -910,7 +1045,7 @@ export async function agenticBrowserAction(params: AgenticBrowserParams) {
     const result = await handler(session.page, actionParams);
 
     return {
-      ...result as Record<string, unknown>,
+      ...(result as Record<string, unknown>),
       sessionId,
     };
   } catch (error: unknown) {

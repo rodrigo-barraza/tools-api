@@ -50,10 +50,18 @@ export async function fetchMastodonTrends() {
         // Calculate total recent usage from the history array
         const recentUses = (tag.history || [])
           .slice(0, 2)
-          .reduce((sum: number, day: { uses?: string }) => sum + parseInt(day.uses || "0", 10), 0);
+          .reduce(
+            (sum: number, day: { uses?: string }) =>
+              sum + parseInt(day.uses || "0", 10),
+            0,
+          );
         const recentAccounts = (tag.history || [])
           .slice(0, 2)
-          .reduce((sum: number, day: { accounts?: string }) => sum + parseInt(day.accounts || "0", 10), 0);
+          .reduce(
+            (sum: number, day: { accounts?: string }) =>
+              sum + parseInt(day.accounts || "0", 10),
+            0,
+          );
         allTrends.push({
           name,
           normalizedName: tag.name.toLowerCase(),
@@ -113,5 +121,9 @@ export async function fetchMastodonTrends() {
       );
     }
   }
-  return allTrends.sort((firstItem, b) => ((b as { volume?: number }).volume || 0) - ((firstItem as { volume?: number }).volume || 0));
+  return allTrends.sort(
+    (firstItem, b) =>
+      ((b as { volume?: number }).volume || 0) -
+      ((firstItem as { volume?: number }).volume || 0),
+  );
 }

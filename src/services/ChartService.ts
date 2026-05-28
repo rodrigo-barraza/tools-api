@@ -4,7 +4,11 @@ import { MS_PER_HOUR } from "@rodrigo-barraza/utilities-library";
 import crypto from "node:crypto";
 import { ChartJSNodeCanvas } from "chartjs-node-canvas";
 import type { ChartConfiguration } from "chart.js";
-import type { ChartConfig, ChartDataset, ChartStoreEntry } from "../types/chart.ts";
+import type {
+  ChartConfig,
+  ChartDataset,
+  ChartStoreEntry,
+} from "../types/chart.ts";
 
 // ─── Renderer Singleton ────────────────────────────────────────
 
@@ -58,26 +62,31 @@ export function getStoredChart(id: string): ChartConfig | null {
 // ─── Color Palette ─────────────────────────────────────────────
 
 const PALETTE = [
-  "rgba(99, 102, 241, 0.85)",   // indigo
-  "rgba(16, 185, 129, 0.85)",   // emerald
-  "rgba(244, 63, 94, 0.85)",    // rose
-  "rgba(245, 158, 11, 0.85)",   // amber
-  "rgba(59, 130, 246, 0.85)",   // blue
-  "rgba(168, 85, 247, 0.85)",   // purple
-  "rgba(20, 184, 166, 0.85)",   // teal
-  "rgba(251, 113, 133, 0.85)",  // pink
-  "rgba(34, 197, 94, 0.85)",    // green
-  "rgba(234, 179, 8, 0.85)",    // yellow
-  "rgba(239, 68, 68, 0.85)",    // red
-  "rgba(6, 182, 212, 0.85)",    // cyan
+  "rgba(99, 102, 241, 0.85)", // indigo
+  "rgba(16, 185, 129, 0.85)", // emerald
+  "rgba(244, 63, 94, 0.85)", // rose
+  "rgba(245, 158, 11, 0.85)", // amber
+  "rgba(59, 130, 246, 0.85)", // blue
+  "rgba(168, 85, 247, 0.85)", // purple
+  "rgba(20, 184, 166, 0.85)", // teal
+  "rgba(251, 113, 133, 0.85)", // pink
+  "rgba(34, 197, 94, 0.85)", // green
+  "rgba(234, 179, 8, 0.85)", // yellow
+  "rgba(239, 68, 68, 0.85)", // red
+  "rgba(6, 182, 212, 0.85)", // cyan
 ];
 
-const PALETTE_BORDER = PALETTE.map((colorValue: string) => colorValue.replace("0.85", "1"));
+const PALETTE_BORDER = PALETTE.map((colorValue: string) =>
+  colorValue.replace("0.85", "1"),
+);
 
 /**
  * Assign colors to datasets that don't have explicit colors.
  */
-function assignColors(datasets: ChartDataset[], chartType: string): ChartDataset[] {
+function assignColors(
+  datasets: ChartDataset[],
+  chartType: string,
+): ChartDataset[] {
   return datasets.map((ds: ChartDataset, i: number) => {
     if (chartType === "pie") {
       // Pie charts need per-slice colors on the single dataset
@@ -85,9 +94,18 @@ function assignColors(datasets: ChartDataset[], chartType: string): ChartDataset
       return {
         ...ds,
         backgroundColor:
-          ds.backgroundColor || Array.from({ length: count }, (_: unknown, j: number) => PALETTE[j % PALETTE.length]),
+          ds.backgroundColor ||
+          Array.from(
+            { length: count },
+            (_: unknown, j: number) => PALETTE[j % PALETTE.length],
+          ),
         borderColor:
-          ds.borderColor || Array.from({ length: count }, (_: unknown, j: number) => PALETTE_BORDER[j % PALETTE_BORDER.length]),
+          ds.borderColor ||
+          Array.from(
+            { length: count },
+            (_: unknown, j: number) =>
+              PALETTE_BORDER[j % PALETTE_BORDER.length],
+          ),
         borderWidth: ds.borderWidth ?? 2,
       };
     }
@@ -144,7 +162,7 @@ export async function renderChartPng(chartConfig: ChartConfig) {
           padding: { top: 16, bottom: 24 },
         },
         legend: {
-          display: type === "pie" || (datasets.length > 1),
+          display: type === "pie" || datasets.length > 1,
           labels: {
             color: "#cbd5e1",
             font: { size: 12, family: "sans-serif" },

@@ -104,7 +104,10 @@ export const ASSET_CATEGORIES: Record<string, string> = {
   VOLATILITY: "volatility",
 };
 
-export const COMMODITY_TICKERS: Record<string, {name: string, category: string, unit: string}> = {
+export const COMMODITY_TICKERS: Record<
+  string,
+  { name: string; category: string; unit: string }
+> = {
   // Energy
   "CL=F": {
     name: "Crude Oil WTI",
@@ -1227,18 +1230,66 @@ export const PRODUCT_SOURCES: Record<string, string> = {
 
 // Costco — shared base categories (US and CA differ only in 2 slugs)
 const COSTCO_BASE_CATEGORIES = [
-  { slug: "laptops.html", name: "Laptops", unified: PRODUCT_CATEGORIES.COMPUTERS },
-  { slug: "desktop-computers.html", name: "Desktops", unified: PRODUCT_CATEGORIES.COMPUTERS },
-  { slug: "computer-monitors.html", name: "Monitors", unified: PRODUCT_CATEGORIES.ELECTRONICS },
-  { slug: "tvs.html", name: "TVs", unified: PRODUCT_CATEGORIES.TV_HOME_THEATER },
-  { slug: "cell-phones.html", name: "Cell Phones", unified: PRODUCT_CATEGORIES.PHONES },
-  { slug: "tablets.html", name: "Tablets", unified: PRODUCT_CATEGORIES.COMPUTERS },
-  { slug: "headphones.html", name: "Headphones", unified: PRODUCT_CATEGORIES.AUDIO },
-  { slug: "speakers.html", name: "Speakers", unified: PRODUCT_CATEGORIES.AUDIO },
-  { slug: "cameras-camcorders.html", name: "Cameras", unified: PRODUCT_CATEGORIES.CAMERAS },
-  { slug: "video-games.html", name: "Video Games", unified: PRODUCT_CATEGORIES.GAMING },
-  { slug: "major-appliances.html", name: "Major Appliances", unified: PRODUCT_CATEGORIES.APPLIANCES },
-  { slug: "small-appliances.html", name: "Small Appliances", unified: PRODUCT_CATEGORIES.APPLIANCES },
+  {
+    slug: "laptops.html",
+    name: "Laptops",
+    unified: PRODUCT_CATEGORIES.COMPUTERS,
+  },
+  {
+    slug: "desktop-computers.html",
+    name: "Desktops",
+    unified: PRODUCT_CATEGORIES.COMPUTERS,
+  },
+  {
+    slug: "computer-monitors.html",
+    name: "Monitors",
+    unified: PRODUCT_CATEGORIES.ELECTRONICS,
+  },
+  {
+    slug: "tvs.html",
+    name: "TVs",
+    unified: PRODUCT_CATEGORIES.TV_HOME_THEATER,
+  },
+  {
+    slug: "cell-phones.html",
+    name: "Cell Phones",
+    unified: PRODUCT_CATEGORIES.PHONES,
+  },
+  {
+    slug: "tablets.html",
+    name: "Tablets",
+    unified: PRODUCT_CATEGORIES.COMPUTERS,
+  },
+  {
+    slug: "headphones.html",
+    name: "Headphones",
+    unified: PRODUCT_CATEGORIES.AUDIO,
+  },
+  {
+    slug: "speakers.html",
+    name: "Speakers",
+    unified: PRODUCT_CATEGORIES.AUDIO,
+  },
+  {
+    slug: "cameras-camcorders.html",
+    name: "Cameras",
+    unified: PRODUCT_CATEGORIES.CAMERAS,
+  },
+  {
+    slug: "video-games.html",
+    name: "Video Games",
+    unified: PRODUCT_CATEGORIES.GAMING,
+  },
+  {
+    slug: "major-appliances.html",
+    name: "Major Appliances",
+    unified: PRODUCT_CATEGORIES.APPLIANCES,
+  },
+  {
+    slug: "small-appliances.html",
+    name: "Small Appliances",
+    unified: PRODUCT_CATEGORIES.APPLIANCES,
+  },
 ];
 
 // Country-specific slug overrides (CA site uses different URL slugs for 2 categories)
@@ -1249,10 +1300,15 @@ const COSTCO_CA_SLUG_OVERRIDES = {
 
 export const COSTCO_US_CATEGORIES = COSTCO_BASE_CATEGORIES;
 
-export const COSTCO_CA_CATEGORIES = COSTCO_BASE_CATEGORIES.map((baseCategory) => ({
-  ...baseCategory,
-  slug: COSTCO_CA_SLUG_OVERRIDES[baseCategory.slug as keyof typeof COSTCO_CA_SLUG_OVERRIDES] || baseCategory.slug,
-}));
+export const COSTCO_CA_CATEGORIES = COSTCO_BASE_CATEGORIES.map(
+  (baseCategory) => ({
+    ...baseCategory,
+    slug:
+      COSTCO_CA_SLUG_OVERRIDES[
+        baseCategory.slug as keyof typeof COSTCO_CA_SLUG_OVERRIDES
+      ] || baseCategory.slug,
+  }),
+);
 
 export const AMAZON_REQUEST_DELAY_MS = 3_000;
 export const AMAZON_MAX_PRODUCTS_PER_CATEGORY = 20;
@@ -1509,7 +1565,6 @@ export const TWILIGHT_INTERVAL_MS = 3_600_000; // 1 hour
 export const ENV_CANADA_INTERVAL_MS = 300_000; // 5 minutes
 export const AVALANCHE_INTERVAL_MS = 3_600_000; // 1 hour
 export const EMOJI_KITCHEN_INTERVAL_MS = 86_400_000; // 24 hours
-
 
 export const SOLAR_FLARE_CLASSES = ["A", "B", "C", "M", "X"];
 
@@ -2240,7 +2295,8 @@ export const DATASET_REGISTRY = [
     name: "Japan MEXT Standard Tables",
     domain: "nutrition",
     file: "fetchers/health/data/digest_food_japan.csv",
-    source: "Ministry of Education, Culture, Sports, Science and Technology (MEXT), Japan",
+    source:
+      "Ministry of Education, Culture, Sports, Science and Technology (MEXT), Japan",
     url: "https://www.mext.go.jp/a_menu/syokuhinseibun/mext_01110.html",
     version: "8th Revision (2020)",
     dataYear: 2020,

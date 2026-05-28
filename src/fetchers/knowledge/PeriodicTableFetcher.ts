@@ -152,26 +152,33 @@ export interface SearchElementsOptions {
 /**
  * Search elements by name, symbol, or atomic number.
  */
-export function searchElements(query: string, opts: SearchElementsOptions = {}) {
+export function searchElements(
+  query: string,
+  opts: SearchElementsOptions = {},
+) {
   ensureLoaded();
 
   const { limit = 10, category, block } = opts;
   const normalizedQuery = normalizeSearch(query);
 
-  if (!normalizedQuery) return { count: 0, query, elements: [] as FormattedElement[] };
+  if (!normalizedQuery)
+    return { count: 0, query, elements: [] as FormattedElement[] };
 
   let candidates = ELEMENT_DB;
 
   if (category) {
     const normalizedCategory = category.toLowerCase();
     candidates = candidates.filter(
-      (element: PeriodicElement) => element.category && element.category.toLowerCase().includes(normalizedCategory),
+      (element: PeriodicElement) =>
+        element.category &&
+        element.category.toLowerCase().includes(normalizedCategory),
     );
   }
   if (block) {
     const normalizedBlock = block.toLowerCase();
     candidates = candidates.filter(
-      (element: PeriodicElement) => element.block && element.block.toLowerCase() === normalizedBlock,
+      (element: PeriodicElement) =>
+        element.block && element.block.toLowerCase() === normalizedBlock,
     );
   }
 
@@ -190,7 +197,8 @@ export function searchElements(query: string, opts: SearchElementsOptions = {}) 
       // Exact name match
       else if (name === normalizedQuery) score += 90;
       // Atomic number match
-      else if (!isNaN(numQuery) && element.atomic_number === numQuery) score += 95;
+      else if (!isNaN(numQuery) && element.atomic_number === numQuery)
+        score += 95;
       // Name starts with query
       else if (name.startsWith(normalizedQuery)) score += 60;
       // Symbol starts with query
@@ -228,7 +236,9 @@ export function getElementBySymbol(symbol: string) {
 
   const normalizedSymbol = symbol.trim();
   const element = ELEMENT_DB.find(
-    (elementEntry: PeriodicElement) => elementEntry.symbol && elementEntry.symbol.toLowerCase() === normalizedSymbol.toLowerCase(),
+    (elementEntry: PeriodicElement) =>
+      elementEntry.symbol &&
+      elementEntry.symbol.toLowerCase() === normalizedSymbol.toLowerCase(),
   );
 
   if (!element) return null;
@@ -245,7 +255,10 @@ export interface RankElementsOptions {
 /**
  * Rank elements by a numeric property (highest first by default).
  */
-export function rankElementsByProperty(property: string, opts: RankElementsOptions = {}) {
+export function rankElementsByProperty(
+  property: string,
+  opts: RankElementsOptions = {},
+) {
   ensureLoaded();
 
   const { limit = 10, order = "desc", category, block } = opts;
@@ -265,13 +278,16 @@ export function rankElementsByProperty(property: string, opts: RankElementsOptio
   if (category) {
     const normalizedCategory = category.toLowerCase();
     candidates = candidates.filter(
-      (element: PeriodicElement) => element.category && element.category.toLowerCase().includes(normalizedCategory),
+      (element: PeriodicElement) =>
+        element.category &&
+        element.category.toLowerCase().includes(normalizedCategory),
     );
   }
   if (block) {
     const normalizedBlock = block.toLowerCase();
     candidates = candidates.filter(
-      (element: PeriodicElement) => element.block && element.block.toLowerCase() === normalizedBlock,
+      (element: PeriodicElement) =>
+        element.block && element.block.toLowerCase() === normalizedBlock,
     );
   }
 
@@ -280,7 +296,13 @@ export function rankElementsByProperty(property: string, opts: RankElementsOptio
     .sort((a: PeriodicElement, b: PeriodicElement) => {
       const valA = a[propKey];
       const valB = b[propKey];
-      if (valA === null || valA === undefined || valB === null || valB === undefined) return 0;
+      if (
+        valA === null ||
+        valA === undefined ||
+        valB === null ||
+        valB === undefined
+      )
+        return 0;
       if (typeof valA === "number" && typeof valB === "number") {
         return order === "asc" ? valA - valB : valB - valA;
       }
@@ -311,13 +333,25 @@ export function getElementCategories() {
   ensureLoaded();
 
   const categories = [
-    ...new Set(ELEMENT_DB.map((element: PeriodicElement) => element.category).filter(Boolean)),
+    ...new Set(
+      ELEMENT_DB.map((element: PeriodicElement) => element.category).filter(
+        Boolean,
+      ),
+    ),
   ].sort();
   const blocks = [
-    ...new Set(ELEMENT_DB.map((element: PeriodicElement) => element.block).filter(Boolean)),
+    ...new Set(
+      ELEMENT_DB.map((element: PeriodicElement) => element.block).filter(
+        Boolean,
+      ),
+    ),
   ].sort();
   const phases = [
-    ...new Set(ELEMENT_DB.map((element: PeriodicElement) => element.phase_at_stp).filter(Boolean)),
+    ...new Set(
+      ELEMENT_DB.map((element: PeriodicElement) => element.phase_at_stp).filter(
+        Boolean,
+      ),
+    ),
   ].sort();
 
   return {

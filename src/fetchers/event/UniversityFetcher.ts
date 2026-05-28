@@ -32,8 +32,11 @@ async function fetchUbcEvents(): Promise<CachedEvent[]> {
       const $element = $(element);
       const $link = $element.find("a").first();
       const title =
-        $element.find("h2, h3, .event-title, .card-title").first().text().trim() ||
-        $link.text().trim();
+        $element
+          .find("h2, h3, .event-title, .card-title")
+          .first()
+          .text()
+          .trim() || $link.text().trim();
       const href = $link.attr("href");
       const dateText = $element
         .find("time, .event-date, .date, [class*='date']")
@@ -68,7 +71,8 @@ async function fetchUbcEvents(): Promise<CachedEvent[]> {
           : imageUrl
             ? `https://events.ubc.ca${imageUrl}`
             : undefined,
-        startDate: startDate && !isNaN(startDate.getTime()) ? startDate : undefined,
+        startDate:
+          startDate && !isNaN(startDate.getTime()) ? startDate : undefined,
         endDate: undefined,
         venue: {
           name: "University of British Columbia",
@@ -141,7 +145,8 @@ async function fetchSfuEvents(): Promise<CachedEvent[]> {
         description: description || undefined,
         url: fullUrl,
         imageUrl: undefined,
-        startDate: startDate && !isNaN(startDate.getTime()) ? startDate : undefined,
+        startDate:
+          startDate && !isNaN(startDate.getTime()) ? startDate : undefined,
         endDate: undefined,
         venue: {
           name: "Simon Fraser University",
@@ -178,9 +183,7 @@ export async function fetchUniversityEvents(): Promise<CachedEvent[]> {
     if (result.status === "fulfilled") {
       events.push(...result.value);
     } else {
-      logger.warn(
-        `[University] ⚠️ Partial failure: ${result.reason?.message}`,
-      );
+      logger.warn(`[University] ⚠️ Partial failure: ${result.reason?.message}`);
     }
   }
 

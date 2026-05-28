@@ -21,7 +21,10 @@ const GITHUB_REPO_REGEX =
  */
 function parseGitHubInput(input: string) {
   if (!input || typeof input !== "string") return null;
-  const trimmed = input.trim().replace(/\.git$/, "").replace(/\/$/, "");
+  const trimmed = input
+    .trim()
+    .replace(/\.git$/, "")
+    .replace(/\/$/, "");
 
   const match = trimmed.match(GITHUB_REPO_REGEX);
   if (match) return { owner: match[1], repo: match[2].replace(/\.git$/, "") };
@@ -42,7 +45,10 @@ function parseGitHubInput(input: string) {
 
 
  */
-export async function getGitHubRepo(input: string, options: Record<string, unknown> = {}) {
+export async function getGitHubRepo(
+  input: string,
+  options: Record<string, unknown> = {},
+) {
   const parsed = parseGitHubInput(input);
   if (!parsed) {
     return { error: `Invalid GitHub URL or owner/repo: "${input}"` };
@@ -52,7 +58,9 @@ export async function getGitHubRepo(input: string, options: Record<string, unkno
   const { includeReadme = true, includeLanguages = true } = options;
 
   // Fetch repo metadata + optional README + languages concurrently
-  const repoPromise = fetch(`${GITHUB_API}/repos/${owner}/${repo}`, { headers: GITHUB_HEADERS });
+  const repoPromise = fetch(`${GITHUB_API}/repos/${owner}/${repo}`, {
+    headers: GITHUB_HEADERS,
+  });
 
   const readmePromise = includeReadme
     ? fetch(`${GITHUB_API}/repos/${owner}/${repo}/readme`, {
@@ -66,16 +74,24 @@ export async function getGitHubRepo(input: string, options: Record<string, unkno
       }).catch(() => null)
     : Promise.resolve(null);
 
-  const [repoRes, readmeRes, langsRes] = await Promise.all([repoPromise, readmePromise, langsPromise]);
+  const [repoRes, readmeRes, langsRes] = await Promise.all([
+    repoPromise,
+    readmePromise,
+    langsPromise,
+  ]);
 
   if (!repoRes.ok) {
     if (repoRes.status === 404) {
       return { error: `Repository not found: ${owner}/${repo}` };
     }
     if (repoRes.status === 403) {
-      return { error: "GitHub API rate limit exceeded (60 req/hr unauthenticated)" };
+      return {
+        error: "GitHub API rate limit exceeded (60 req/hr unauthenticated)",
+      };
     }
-    return { error: `GitHub API error: ${repoRes.status} ${repoRes.statusText}` };
+    return {
+      error: `GitHub API error: ${repoRes.status} ${repoRes.statusText}`,
+    };
   }
 
   const data = await repoRes.json();

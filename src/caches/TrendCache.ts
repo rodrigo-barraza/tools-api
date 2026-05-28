@@ -75,7 +75,10 @@ export function setTrendError(source: string, error: { message: string }) {
  */
 export function getAll() {
   const allTrends: CachedTrend[] = [];
-  const sourceSummary: Record<string, { count: number; lastFetch: string | null }> = {};
+  const sourceSummary: Record<
+    string,
+    { count: number; lastFetch: string | null }
+  > = {};
 
   for (const [source, data] of Object.entries(cache)) {
     allTrends.push(...data.trends);
@@ -88,7 +91,9 @@ export function getAll() {
   return {
     count: allTrends.length,
     sources: sourceSummary,
-    trends: allTrends.sort((firstItem, b) => (b.volume || 0) - (firstItem.volume || 0)),
+    trends: allTrends.sort(
+      (firstItem, b) => (b.volume || 0) - (firstItem.volume || 0),
+    ),
   };
 }
 
@@ -105,7 +110,9 @@ export function getBySource(source: string) {
     count: data.trends.length,
     source,
     lastFetch: data.lastFetch,
-    trends: data.trends.sort((firstItem, b) => (b.volume || 0) - (firstItem.volume || 0)),
+    trends: data.trends.sort(
+      (firstItem, b) => (b.volume || 0) - (firstItem.volume || 0),
+    ),
   };
 }
 
@@ -127,7 +134,9 @@ export function getByCategory(category: string) {
   return {
     count: allTrends.length,
     category,
-    trends: allTrends.sort((firstItem, b) => (b.volume || 0) - (firstItem.volume || 0)),
+    trends: allTrends.sort(
+      (firstItem, b) => (b.volume || 0) - (firstItem.volume || 0),
+    ),
   };
 }
 
@@ -190,7 +199,9 @@ export function searchTrends(query: string) {
   for (const data of Object.values(cache)) {
     allTrends.push(
       ...data.trends.filter(
-        (t) => t.name.toLowerCase().includes(normalizedQuery) || t.normalizedName.includes(normalizedQuery),
+        (t) =>
+          t.name.toLowerCase().includes(normalizedQuery) ||
+          t.normalizedName.includes(normalizedQuery),
       ),
     );
   }
@@ -198,7 +209,9 @@ export function searchTrends(query: string) {
   return {
     count: allTrends.length,
     query,
-    trends: allTrends.sort((firstItem, b) => (b.volume || 0) - (firstItem.volume || 0)),
+    trends: allTrends.sort(
+      (firstItem, b) => (b.volume || 0) - (firstItem.volume || 0),
+    ),
   };
 }
 
@@ -206,7 +219,14 @@ export function searchTrends(query: string) {
  * Returns health status for all collectors.
  */
 export function getHealth() {
-  const health: Record<string, { trendCount: number; lastFetch: string | null; error: TrendSourceData["error"] }> = {};
+  const health: Record<
+    string,
+    {
+      trendCount: number;
+      lastFetch: string | null;
+      error: TrendSourceData["error"];
+    }
+  > = {};
   for (const [source, data] of Object.entries(cache)) {
     health[source] = {
       trendCount: data.trends.length,

@@ -20,7 +20,10 @@ import {
 /**
  * Search for books by title, author, or general query.
  */
-export async function searchBooks(query: string, limit = 10): Promise<OpenLibrarySearchResponse> {
+export async function searchBooks(
+  query: string,
+  limit = 10,
+): Promise<OpenLibrarySearchResponse> {
   const params = new URLSearchParams({
     q: query,
     limit: String(limit),
@@ -30,28 +33,32 @@ export async function searchBooks(query: string, limit = 10): Promise<OpenLibrar
   const url = `${OPEN_LIBRARY_BASE_URL}/search.json?${params}`;
   const response = await fetch(url);
   if (!response.ok) {
-    throw new Error(`Open Library search → ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Open Library search → ${response.status} ${response.statusText}`,
+    );
   }
   const data = (await response.json()) as RawOpenLibrarySearchResponse;
   return {
     totalResults: data.numFound || 0,
-    books: (data.docs || []).slice(0, limit).map((document: RawOpenLibraryDoc) => ({
-      key: document.key,
-      title: document.title,
-      authors: document.author_name || [],
-      firstPublishYear: document.first_publish_year || null,
-      coverUrl: document.cover_i
-        ? `https://covers.openlibrary.org/b/id/${document.cover_i}-M.jpg`
-        : null,
-      subjects: (document.subject || []).slice(0, 5),
-      languages: (document.language || []).slice(0, 5),
-      editionCount: document.edition_count || 0,
-      rating: document.ratings_average
-        ? Math.round(document.ratings_average * 10) / 10
-        : null,
-      ratingCount: document.ratings_count || 0,
-      isbn: document.isbn?.[0] || null,
-    })),
+    books: (data.docs || [])
+      .slice(0, limit)
+      .map((document: RawOpenLibraryDoc) => ({
+        key: document.key,
+        title: document.title,
+        authors: document.author_name || [],
+        firstPublishYear: document.first_publish_year || null,
+        coverUrl: document.cover_i
+          ? `https://covers.openlibrary.org/b/id/${document.cover_i}-M.jpg`
+          : null,
+        subjects: (document.subject || []).slice(0, 5),
+        languages: (document.language || []).slice(0, 5),
+        editionCount: document.edition_count || 0,
+        rating: document.ratings_average
+          ? Math.round(document.ratings_average * 10) / 10
+          : null,
+        ratingCount: document.ratings_count || 0,
+        isbn: document.isbn?.[0] || null,
+      })),
   };
 }
 
@@ -59,7 +66,9 @@ export async function searchBooks(query: string, limit = 10): Promise<OpenLibrar
 /**
  * Get detailed book info by Open Library work key (e.g., "/works/OL45883W").
  */
-export async function getBookDetails(workKey: string): Promise<OpenLibraryBookDetails> {
+export async function getBookDetails(
+  workKey: string,
+): Promise<OpenLibraryBookDetails> {
   const key = workKey.startsWith("/works/") ? workKey : `/works/${workKey}`;
   const url = `${OPEN_LIBRARY_BASE_URL}${key}.json`;
   const response = await fetch(url);
@@ -93,7 +102,9 @@ export async function getBookDetails(workKey: string): Promise<OpenLibraryBookDe
 /**
  * Get author info by Open Library author key (e.g., "OL23919A").
  */
-export async function getAuthorInfo(authorKey: string): Promise<OpenLibraryAuthor> {
+export async function getAuthorInfo(
+  authorKey: string,
+): Promise<OpenLibraryAuthor> {
   const key = authorKey.startsWith("/authors/")
     ? authorKey
     : `/authors/${authorKey}`;

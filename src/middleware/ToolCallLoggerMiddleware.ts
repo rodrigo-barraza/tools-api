@@ -121,7 +121,10 @@ function rebuildPathMap() {
 /**
  * Resolve a request to its tool metadata.
  */
-function resolveToolFromRequest(method: string, path: string): ToolEntry | null {
+function resolveToolFromRequest(
+  method: string,
+  path: string,
+): ToolEntry | null {
   // Rebuild map periodically
   if (Date.now() - lastMapBuild > MAP_REBUILD_INTERVAL_MS) {
     rebuildPathMap();
@@ -144,11 +147,7 @@ function resolveToolFromRequest(method: string, path: string): ToolEntry | null 
 
     // Build regex from pattern
     const regexStr =
-      "^" +
-      pattern
-        .replace(/\*/g, "[^/]+")
-        .replace(/\//g, "\\/") +
-      "$";
+      "^" + pattern.replace(/\*/g, "[^/]+").replace(/\//g, "\\/") + "$";
 
     if (new RegExp(regexStr).test(cleanPath)) {
       return entry;
@@ -167,7 +166,11 @@ function resolveToolFromRequest(method: string, path: string): ToolEntry | null 
  * Intercepts responses, identifies which tool was called,
  * and persists structured telemetry to MongoDB.
  */
-export function toolCallLoggerMiddleware(req: Request, res: Response, next: NextFunction) {
+export function toolCallLoggerMiddleware(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   const start = performance.now();
 
   // Capture the response body by monkey-patching res.json
@@ -201,16 +204,24 @@ export function toolCallLoggerMiddleware(req: Request, res: Response, next: Next
     const callerUsername = (req.headers["x-username"] as string) || null;
     const callerAgent = (req.headers["x-agent"] as string) || null;
     const callerRequestId = (req.headers["x-request-id"] as string) || null;
-    const callerConversationId = (req.headers["x-conversation-id"] as string) || null;
+    const callerConversationId =
+      (req.headers["x-conversation-id"] as string) || null;
     const callerIteration = req.headers["x-iteration"]
       ? parseInt(req.headers["x-iteration"] as string, 10)
       : null;
     const clientIp =
-      (req.headers["x-forwarded-for"] as string | undefined)?.split(",")[0]?.trim() || req.ip || "unknown";
+      (req.headers["x-forwarded-for"] as string | undefined)
+        ?.split(",")[0]
+        ?.trim() ||
+      req.ip ||
+      "unknown";
 
     // Request / response sizes
     const inBytes = parseInt(req.headers["content-length"] || "0", 10);
-    const outBytes = parseInt(String(res.getHeader("content-length") || "0"), 10);
+    const outBytes = parseInt(
+      String(res.getHeader("content-length") || "0"),
+      10,
+    );
 
     // Determine success from status code AND response body
     const success = status >= 200 && status < 400 && !responseBody?.error;
@@ -268,13 +279,16 @@ const MAX_RESULT_ITEMS = 3;
  * Sanitize tool arguments for storage. Caps long strings,
  * strips base64 data, keeps structure readable.
  */
-function sanitizeArgs(args: Record<string, unknown> | null): Record<string, unknown> | null {
+function sanitizeArgs(
+  args: Record<string, unknown> | null,
+): Record<string, unknown> | null {
   if (!args || typeof args !== "object") return args;
 
   const sanitized: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(args)) {
     if (typeof value === "string" && value.length > MAX_ARG_LENGTH) {
-      sanitized[key] = value.slice(0, MAX_ARG_LENGTH) + `… [${value.length} chars]`;
+      sanitized[key] =
+        value.slice(0, MAX_ARG_LENGTH) + `… [${value.length} chars]`;
     } else if (typeof value === "string" && value.startsWith("data:")) {
       sanitized[key] = "[base64 data]";
     } else {
@@ -288,7 +302,9 @@ function sanitizeArgs(args: Record<string, unknown> | null): Record<string, unkn
  * Sanitize the response body for storage. Keeps metadata
  * (count, total, etc.) but truncates large arrays/objects.
  */
-function sanitizeResult(body: Record<string, unknown> | null): Record<string, unknown> | null {
+function sanitizeResult(
+  body: Record<string, unknown> | null,
+): Record<string, unknown> | null {
   if (!body || typeof body !== "object") return body;
 
   const result: Record<string, unknown> = {};
@@ -350,20 +366,29 @@ export async function queryToolCallLogs(filters: ToolCallFilters = {}) {
 
   if (filters.toolName) query.toolName = filters.toolName;
   if (filters.domain) query.domain = filters.domain;
-  if (filters.success !== undefined) query.success = filters.success === "true" || filters.success === true;
+  if (filters.success !== undefined)
+    query.success = filters.success === "true" || filters.success === true;
   if (filters.callerAgent) query.callerAgent = filters.callerAgent;
   if (filters.callerProject) query.callerProject = filters.callerProject;
 
   if (filters.minMs || filters.maxMs) {
     query.elapsedMs = {};
-    if (filters.minMs) (query.elapsedMs as Record<string, number>).$gte = parseFloat(filters.minMs);
-    if (filters.maxMs) (query.elapsedMs as Record<string, number>).$lte = parseFloat(filters.maxMs);
+    if (filters.minMs)
+      (query.elapsedMs as Record<string, number>).$gte = parseFloat(
+        filters.minMs,
+      );
+    if (filters.maxMs)
+      (query.elapsedMs as Record<string, number>).$lte = parseFloat(
+        filters.maxMs,
+      );
   }
 
   if (filters.since || filters.until) {
     query.timestamp = {};
-    if (filters.since) (query.timestamp as Record<string, Date>).$gte = new Date(filters.since);
-    if (filters.until) (query.timestamp as Record<string, Date>).$lte = new Date(filters.until);
+    if (filters.since)
+      (query.timestamp as Record<string, Date>).$gte = new Date(filters.since);
+    if (filters.until)
+      (query.timestamp as Record<string, Date>).$lte = new Date(filters.until);
   }
 
   const limit = parseInt(filters.limit || "100", 10);
@@ -390,111 +415,109 @@ export async function getToolCallStats(since?: string) {
   const database = getDB();
   const match = since ? { timestamp: { $gte: new Date(since) } } : {};
 
-  const [
-    totalCalls,
-    byTool,
-    byDomain,
-    bySuccess,
-    slowest,
-    errorRate,
-  ] = await Promise.all([
-    // Total count
-    database.collection(COLLECTION).countDocuments(match),
+  const [totalCalls, byTool, byDomain, bySuccess, slowest, errorRate] =
+    await Promise.all([
+      // Total count
+      database.collection(COLLECTION).countDocuments(match),
 
-    // By tool name — count + avg/p95/max latency
-    database
-      .collection(COLLECTION)
-      .aggregate([
-        { $match: match },
-        {
-          $group: {
-            _id: "$toolName",
-            count: { $sum: 1 },
-            avgMs: { $avg: "$elapsedMs" },
-            maxMs: { $max: "$elapsedMs" },
-            minMs: { $min: "$elapsedMs" },
-            errors: {
-              $sum: { $cond: [{ $eq: ["$success", false] }, 1, 0] },
-            },
-            totalBytes: { $sum: { $add: ["$inBytes", "$outBytes"] } },
-          },
-        },
-        { $sort: { count: -1 } },
-      ])
-      .toArray(),
-
-    // By domain
-    database
-      .collection(COLLECTION)
-      .aggregate([
-        { $match: match },
-        {
-          $group: {
-            _id: "$domain",
-            count: { $sum: 1 },
-            avgMs: { $avg: "$elapsedMs" },
-            errors: {
-              $sum: { $cond: [{ $eq: ["$success", false] }, 1, 0] },
+      // By tool name — count + avg/p95/max latency
+      database
+        .collection(COLLECTION)
+        .aggregate([
+          { $match: match },
+          {
+            $group: {
+              _id: "$toolName",
+              count: { $sum: 1 },
+              avgMs: { $avg: "$elapsedMs" },
+              maxMs: { $max: "$elapsedMs" },
+              minMs: { $min: "$elapsedMs" },
+              errors: {
+                $sum: { $cond: [{ $eq: ["$success", false] }, 1, 0] },
+              },
+              totalBytes: { $sum: { $add: ["$inBytes", "$outBytes"] } },
             },
           },
-        },
-        { $sort: { count: -1 } },
-      ])
-      .toArray(),
+          { $sort: { count: -1 } },
+        ])
+        .toArray(),
 
-    // Success vs failure breakdown
-    database
-      .collection(COLLECTION)
-      .aggregate([
-        { $match: match },
-        { $group: { _id: "$success", count: { $sum: 1 } } },
-      ])
-      .toArray(),
-
-    // Top 10 slowest calls
-    database
-      .collection(COLLECTION)
-      .find(match)
-      .sort({ elapsedMs: -1 })
-      .limit(10)
-      .project({
-        toolName: 1,
-        domain: 1,
-        elapsedMs: 1,
-        success: 1,
-        errorMessage: 1,
-        callerAgent: 1,
-        timestamp: 1,
-      })
-      .toArray(),
-
-    // Error rate per tool (only tools with errors)
-    database
-      .collection(COLLECTION)
-      .aggregate([
-        { $match: { ...match, success: false } },
-        {
-          $group: {
-            _id: "$toolName",
-            errorCount: { $sum: 1 },
-            lastError: { $last: "$errorMessage" },
-            lastErrorAt: { $max: "$timestamp" },
+      // By domain
+      database
+        .collection(COLLECTION)
+        .aggregate([
+          { $match: match },
+          {
+            $group: {
+              _id: "$domain",
+              count: { $sum: 1 },
+              avgMs: { $avg: "$elapsedMs" },
+              errors: {
+                $sum: { $cond: [{ $eq: ["$success", false] }, 1, 0] },
+              },
+            },
           },
-        },
-        { $sort: { errorCount: -1 } },
-      ])
-      .toArray(),
-  ]);
+          { $sort: { count: -1 } },
+        ])
+        .toArray(),
+
+      // Success vs failure breakdown
+      database
+        .collection(COLLECTION)
+        .aggregate([
+          { $match: match },
+          { $group: { _id: "$success", count: { $sum: 1 } } },
+        ])
+        .toArray(),
+
+      // Top 10 slowest calls
+      database
+        .collection(COLLECTION)
+        .find(match)
+        .sort({ elapsedMs: -1 })
+        .limit(10)
+        .project({
+          toolName: 1,
+          domain: 1,
+          elapsedMs: 1,
+          success: 1,
+          errorMessage: 1,
+          callerAgent: 1,
+          timestamp: 1,
+        })
+        .toArray(),
+
+      // Error rate per tool (only tools with errors)
+      database
+        .collection(COLLECTION)
+        .aggregate([
+          { $match: { ...match, success: false } },
+          {
+            $group: {
+              _id: "$toolName",
+              errorCount: { $sum: 1 },
+              lastError: { $last: "$errorMessage" },
+              lastErrorAt: { $max: "$timestamp" },
+            },
+          },
+          { $sort: { errorCount: -1 } },
+        ])
+        .toArray(),
+    ]);
 
   const successMap = Object.fromEntries(
-    bySuccess.map((s) => [(s as AggregateDoc)._id ? "success" : "failure", (s as AggregateDoc).count]),
+    bySuccess.map((s) => [
+      (s as AggregateDoc)._id ? "success" : "failure",
+      (s as AggregateDoc).count,
+    ]),
   );
 
   return {
     totalCalls,
-    successRate: totalCalls > 0
-      ? Math.round(((successMap.success || 0) / totalCalls) * 10000) / 100
-      : 0,
+    successRate:
+      totalCalls > 0
+        ? Math.round(((successMap.success || 0) / totalCalls) * 10000) / 100
+        : 0,
     byTool: byTool.map((tool) => ({
       toolName: (tool as AggregateDoc)._id,
       count: (tool as AggregateDoc).count,
@@ -502,9 +525,14 @@ export async function getToolCallStats(since?: string) {
       maxMs: Math.round(((tool as AggregateDoc).maxMs || 0) * 100) / 100,
       minMs: Math.round(((tool as AggregateDoc).minMs || 0) * 100) / 100,
       errors: (tool as AggregateDoc).errors || 0,
-      errorRate: (tool as AggregateDoc).count > 0
-        ? Math.round((((tool as AggregateDoc).errors || 0) / (tool as AggregateDoc).count) * 10000) / 100
-        : 0,
+      errorRate:
+        (tool as AggregateDoc).count > 0
+          ? Math.round(
+              (((tool as AggregateDoc).errors || 0) /
+                (tool as AggregateDoc).count) *
+                10000,
+            ) / 100
+          : 0,
       totalTransferBytes: (tool as AggregateDoc).totalBytes || 0,
     })),
     byDomain: byDomain.map((domain) => ({

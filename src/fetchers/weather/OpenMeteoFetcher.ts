@@ -177,7 +177,7 @@ export async function fetchOpenMeteoWeather(): Promise<OpenMeteoResponse> {
     throw new Error(`Open-Meteo returned ${response.status}`);
   }
 
-  const data = await response.json() as RawOpenMeteoResponse;
+  const data = (await response.json()) as RawOpenMeteoResponse;
   const current = data.current;
   const daily = data.daily;
   const hourly = data.hourly;
@@ -185,7 +185,8 @@ export async function fetchOpenMeteoWeather(): Promise<OpenMeteoResponse> {
   // Find today's daily data
   const todayIndex = 0;
   const weatherDescription =
-    (WMO_WEATHER_CODES as Record<number, string>)[current.weather_code] || "Unknown";
+    (WMO_WEATHER_CODES as Record<number, string>)[current.weather_code] ||
+    "Unknown";
 
   return {
     source: "openmeteo",
@@ -216,90 +217,94 @@ export async function fetchOpenMeteoWeather(): Promise<OpenMeteoResponse> {
 
     // Hourly forecast (all variables)
     hourlyForecast: hourly
-      ? hourly.time.map((time, i): OpenMeteoHourlyForecast => ({
-          time,
+      ? hourly.time.map(
+          (time, i): OpenMeteoHourlyForecast => ({
+            time,
 
-          // Temperature & humidity
-          temperature: hourly.temperature_2m[i],
-          relativeHumidity: hourly.relative_humidity_2m[i],
-          dewpoint: hourly.dewpoint_2m[i],
-          apparentTemperature: hourly.apparent_temperature[i],
+            // Temperature & humidity
+            temperature: hourly.temperature_2m[i],
+            relativeHumidity: hourly.relative_humidity_2m[i],
+            dewpoint: hourly.dewpoint_2m[i],
+            apparentTemperature: hourly.apparent_temperature[i],
 
-          // Precipitation
-          precipitationProbability: hourly.precipitation_probability[i],
-          precipitation: hourly.precipitation[i],
-          rain: hourly.rain[i],
-          showers: hourly.showers[i],
-          snowfall: hourly.snowfall[i],
-          snowDepth: hourly.snow_depth[i],
+            // Precipitation
+            precipitationProbability: hourly.precipitation_probability[i],
+            precipitation: hourly.precipitation[i],
+            rain: hourly.rain[i],
+            showers: hourly.showers[i],
+            snowfall: hourly.snowfall[i],
+            snowDepth: hourly.snow_depth[i],
 
-          // General
-          weatherCode: hourly.weather_code[i],
+            // General
+            weatherCode: hourly.weather_code[i],
 
-          // Pressure
-          seaLevelPressure: hourly.pressure_msl[i],
-          surfacePressure: hourly.surface_pressure[i],
+            // Pressure
+            seaLevelPressure: hourly.pressure_msl[i],
+            surfacePressure: hourly.surface_pressure[i],
 
-          // Cloud cover
-          cloudCover: hourly.cloud_cover[i],
-          cloudCoverLow: hourly.cloud_cover_low[i],
-          cloudCoverMid: hourly.cloud_cover_mid[i],
-          cloudCoverHigh: hourly.cloud_cover_high[i],
+            // Cloud cover
+            cloudCover: hourly.cloud_cover[i],
+            cloudCoverLow: hourly.cloud_cover_low[i],
+            cloudCoverMid: hourly.cloud_cover_mid[i],
+            cloudCoverHigh: hourly.cloud_cover_high[i],
 
-          // Visibility & evapotranspiration
-          visibility: hourly.visibility[i],
-          evapotranspiration: hourly.evapotranspiration[i],
-          referenceEvapotranspiration: hourly.et0_fao_evapotranspiration[i],
-          vapourPressureDeficit: hourly.vapour_pressure_deficit[i],
+            // Visibility & evapotranspiration
+            visibility: hourly.visibility[i],
+            evapotranspiration: hourly.evapotranspiration[i],
+            referenceEvapotranspiration: hourly.et0_fao_evapotranspiration[i],
+            vapourPressureDeficit: hourly.vapour_pressure_deficit[i],
 
-          // Wind (multi-level)
-          windSpeed10m: hourly.wind_speed_10m[i],
-          windSpeed80m: hourly.wind_speed_80m[i],
-          windSpeed120m: hourly.wind_speed_120m[i],
-          windSpeed180m: hourly.wind_speed_180m[i],
-          windDirection10m: hourly.wind_direction_10m[i],
-          windDirection80m: hourly.wind_direction_80m[i],
-          windDirection120m: hourly.wind_direction_120m[i],
-          windDirection180m: hourly.wind_direction_180m[i],
-          windGusts10m: hourly.wind_gusts_10m[i],
+            // Wind (multi-level)
+            windSpeed10m: hourly.wind_speed_10m[i],
+            windSpeed80m: hourly.wind_speed_80m[i],
+            windSpeed120m: hourly.wind_speed_120m[i],
+            windSpeed180m: hourly.wind_speed_180m[i],
+            windDirection10m: hourly.wind_direction_10m[i],
+            windDirection80m: hourly.wind_direction_80m[i],
+            windDirection120m: hourly.wind_direction_120m[i],
+            windDirection180m: hourly.wind_direction_180m[i],
+            windGusts10m: hourly.wind_gusts_10m[i],
 
-          // Temperature (multi-level)
-          temperature80m: hourly.temperature_80m[i],
-          temperature120m: hourly.temperature_120m[i],
-          temperature180m: hourly.temperature_180m[i],
+            // Temperature (multi-level)
+            temperature80m: hourly.temperature_80m[i],
+            temperature120m: hourly.temperature_120m[i],
+            temperature180m: hourly.temperature_180m[i],
 
-          // Soil temperature
-          soilTemperature0cm: hourly.soil_temperature_0cm[i],
-          soilTemperature6cm: hourly.soil_temperature_6cm[i],
-          soilTemperature18cm: hourly.soil_temperature_18cm[i],
-          soilTemperature54cm: hourly.soil_temperature_54cm[i],
+            // Soil temperature
+            soilTemperature0cm: hourly.soil_temperature_0cm[i],
+            soilTemperature6cm: hourly.soil_temperature_6cm[i],
+            soilTemperature18cm: hourly.soil_temperature_18cm[i],
+            soilTemperature54cm: hourly.soil_temperature_54cm[i],
 
-          // Soil moisture
-          soilMoisture0to1cm: hourly.soil_moisture_0_to_1cm[i],
-          soilMoisture1to3cm: hourly.soil_moisture_1_to_3cm[i],
-          soilMoisture3to9cm: hourly.soil_moisture_3_to_9cm[i],
-          soilMoisture9to27cm: hourly.soil_moisture_9_to_27cm[i],
-          soilMoisture27to81cm: hourly.soil_moisture_27_to_81cm[i],
+            // Soil moisture
+            soilMoisture0to1cm: hourly.soil_moisture_0_to_1cm[i],
+            soilMoisture1to3cm: hourly.soil_moisture_1_to_3cm[i],
+            soilMoisture3to9cm: hourly.soil_moisture_3_to_9cm[i],
+            soilMoisture9to27cm: hourly.soil_moisture_9_to_27cm[i],
+            soilMoisture27to81cm: hourly.soil_moisture_27_to_81cm[i],
 
-          // UV
-          uvIndex: hourly.uv_index[i],
-        }))
+            // UV
+            uvIndex: hourly.uv_index[i],
+          }),
+        )
       : [],
 
     // Daily forecast
     dailyForecast: daily.time
-      ? daily.time.map((time, i): OpenMeteoDailyForecast => ({
-          time,
-          weatherCode: daily.weather_code[i],
-          temperatureMax: daily.temperature_2m_max[i],
-          temperatureMin: daily.temperature_2m_min[i],
-          sunrise: daily.sunrise[i],
-          sunset: daily.sunset[i],
-          daylightDuration: daily.daylight_duration[i],
-          uvIndexMax: daily.uv_index_max[i],
-          precipitationSum: daily.precipitation_sum[i],
-          windSpeedMax: daily.wind_speed_10m_max[i],
-        }))
+      ? daily.time.map(
+          (time, i): OpenMeteoDailyForecast => ({
+            time,
+            weatherCode: daily.weather_code[i],
+            temperatureMax: daily.temperature_2m_max[i],
+            temperatureMin: daily.temperature_2m_min[i],
+            sunrise: daily.sunrise[i],
+            sunset: daily.sunset[i],
+            daylightDuration: daily.daylight_duration[i],
+            uvIndexMax: daily.uv_index_max[i],
+            precipitationSum: daily.precipitation_sum[i],
+            windSpeedMax: daily.wind_speed_10m_max[i],
+          }),
+        )
       : [],
   };
 }

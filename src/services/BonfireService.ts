@@ -26,18 +26,31 @@ export interface BonfireResult {
 }
 
 // 2 hours TTL for bonfires in memory
-export const bonfireStore = new EphemeralStore<BonfireResult>(2 * 60 * 60 * 1000);
+export const bonfireStore = new EphemeralStore<BonfireResult>(
+  2 * 60 * 60 * 1000,
+);
 
 /**
  * Generate a beautifully colored procedural ANSI representation of the bonfire.
  */
-export function generateAnsiArt(params: Required<Omit<BonfireParams, "itemToBurn">> & { itemToBurn?: string }): string {
-  const { logsCount, breezeSpeed, fireColor, intensity, marshmallows, itemToBurn } = params;
+export function generateAnsiArt(
+  params: Required<Omit<BonfireParams, "itemToBurn">> & { itemToBurn?: string },
+): string {
+  const {
+    logsCount,
+    breezeSpeed,
+    fireColor,
+    intensity,
+    marshmallows,
+    itemToBurn,
+  } = params;
 
   // Grid setup: 14 rows, 55 columns
   const height = 14;
   const width = 55;
-  const grid: string[][] = Array.from({ length: height }, () => Array(width).fill(" "));
+  const grid: string[][] = Array.from({ length: height }, () =>
+    Array(width).fill(" "),
+  );
 
   // Determine flame dimensions
   let flameHeight = 5;
@@ -90,7 +103,8 @@ export function generateAnsiArt(params: Required<Omit<BonfireParams, "itemToBurn
       const rowIdx = logsStartRow - 2 - r;
       if (rowIdx < 0) continue;
       const skew = Math.floor(r * (breezeSpeed / 12));
-      const sparkCol = 27 + skew + Math.floor((flameHeight - r) * 1.5) + 3 + (rowIdx % 3);
+      const sparkCol =
+        27 + skew + Math.floor((flameHeight - r) * 1.5) + 3 + (rowIdx % 3);
       if (sparkCol < width) {
         grid[rowIdx][sparkCol] = "*";
       }
@@ -99,10 +113,16 @@ export function generateAnsiArt(params: Required<Omit<BonfireParams, "itemToBurn
 
   // 2. Add Item to Burn (placed right above logs, nestled in the fire core)
   if (itemToBurn) {
-    const cleanedItem = itemToBurn.length > 15 ? itemToBurn.slice(0, 12) + "..." : itemToBurn;
+    const cleanedItem =
+      itemToBurn.length > 15 ? itemToBurn.slice(0, 12) + "..." : itemToBurn;
     const label = `[🔥 ${cleanedItem.toUpperCase()} 🔥]`;
     const labelRow = logsStartRow - 1;
-    const labelStart = Math.max(0, 27 - Math.floor(label.length / 2) + Math.floor((logsStartRow - labelRow) * (breezeSpeed / 12)));
+    const labelStart = Math.max(
+      0,
+      27 -
+        Math.floor(label.length / 2) +
+        Math.floor((logsStartRow - labelRow) * (breezeSpeed / 12)),
+    );
     for (let i = 0; i < label.length; i++) {
       if (labelStart + i < width) {
         grid[labelRow][labelStart + i] = label[i];
@@ -156,7 +176,12 @@ export function generateAnsiArt(params: Required<Omit<BonfireParams, "itemToBurn
   }
 
   // Add decorative campfire stones at the very base
-  writeStringAtGrid(grid, logsStartRow + 3, 11, "oo   o.o o.o.o.o o.o o.o   oo");
+  writeStringAtGrid(
+    grid,
+    logsStartRow + 3,
+    11,
+    "oo   o.o o.o.o.o o.o o.o   oo",
+  );
 
   // 5. Apply ANSI Color Code Themes
   // Color palette definitions
@@ -207,7 +232,13 @@ export function generateAnsiArt(params: Required<Omit<BonfireParams, "itemToBurn
         line += flames.mid + char + ANSI.RESET;
       } else if (char === "*" || char === "." || char === "~") {
         line += flames.outer + char + ANSI.RESET;
-      } else if (char === "[" || char === "]" || char === "=" || char === "\\" || char === "/") {
+      } else if (
+        char === "[" ||
+        char === "]" ||
+        char === "=" ||
+        char === "\\" ||
+        char === "/"
+      ) {
         // Logs or item
         if (r < logsStartRow) {
           // Could be wood logs, item, or skewers
@@ -238,7 +269,12 @@ export function generateAnsiArt(params: Required<Omit<BonfireParams, "itemToBurn
   return output;
 }
 
-function writeStringAtGrid(grid: string[][], row: number, startCol: number, text: string) {
+function writeStringAtGrid(
+  grid: string[][],
+  row: number,
+  startCol: number,
+  text: string,
+) {
   if (row < 0 || row >= grid.length) return;
   for (let i = 0; i < text.length; i++) {
     const column = startCol + i;
@@ -256,8 +292,18 @@ function mStickLength(stick: string, maxCol: number): number {
  * Generate a jaw-dropping premium GPU-accelerated responsive HTML page
  * displaying a stunning interactive bonfire animation matching parameters.
  */
-export function generateHtmlEmbed(params: Required<Omit<BonfireParams, "itemToBurn">> & { itemToBurn?: string }): string {
-  const { woodType, logsCount, breezeSpeed, fireColor, intensity, marshmallows, itemToBurn } = params;
+export function generateHtmlEmbed(
+  params: Required<Omit<BonfireParams, "itemToBurn">> & { itemToBurn?: string },
+): string {
+  const {
+    woodType,
+    logsCount,
+    breezeSpeed,
+    fireColor,
+    intensity,
+    marshmallows,
+    itemToBurn,
+  } = params;
 
   // Custom Color Themes
   const getThemePalette = () => {
@@ -896,17 +942,23 @@ export function createBonfire(params: BonfireParams): BonfireResult {
   // Validate types/enums strictly
   const validWoods = ["oak", "pine", "birch", "driftwood", "magical"];
   if (!validWoods.includes(woodType)) {
-    throw new Error(`Invalid woodType: ${woodType}. Allowed: ${validWoods.join(", ")}`);
+    throw new Error(
+      `Invalid woodType: ${woodType}. Allowed: ${validWoods.join(", ")}`,
+    );
   }
 
   const validColors = ["classic", "emerald", "sapphire", "amethyst", "ghostly"];
   if (!validColors.includes(fireColor)) {
-    throw new Error(`Invalid fireColor: ${fireColor}. Allowed: ${validColors.join(", ")}`);
+    throw new Error(
+      `Invalid fireColor: ${fireColor}. Allowed: ${validColors.join(", ")}`,
+    );
   }
 
   const validIntensities = ["ember", "spark", "cozy", "blazing", "inferno"];
   if (!validIntensities.includes(intensity)) {
-    throw new Error(`Invalid intensity: ${intensity}. Allowed: ${validIntensities.join(", ")}`);
+    throw new Error(
+      `Invalid intensity: ${intensity}. Allowed: ${validIntensities.join(", ")}`,
+    );
   }
 
   const resolvedParams = {

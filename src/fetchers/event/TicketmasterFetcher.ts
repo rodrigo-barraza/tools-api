@@ -104,8 +104,12 @@ function extractVenue(event: TicketmasterEvent) {
     city: primaryVenue.city?.name || null,
     state: primaryVenue.state?.stateCode || null,
     country: primaryVenue.country?.countryCode || null,
-    latitude: primaryVenue.location?.latitude ? parseFloat(primaryVenue.location.latitude) : null,
-    longitude: primaryVenue.location?.longitude ? parseFloat(primaryVenue.location.longitude) : null,
+    latitude: primaryVenue.location?.latitude
+      ? parseFloat(primaryVenue.location.latitude)
+      : null,
+    longitude: primaryVenue.location?.longitude
+      ? parseFloat(primaryVenue.location.longitude)
+      : null,
   };
 }
 
@@ -118,10 +122,16 @@ function extractGenres(event: TicketmasterEvent) {
 
   const genres = new Set();
   for (const classification of classifications) {
-    if (classification.genre?.name && classification.genre.name !== "Undefined") {
+    if (
+      classification.genre?.name &&
+      classification.genre.name !== "Undefined"
+    ) {
       genres.add(classification.genre.name);
     }
-    if (classification.subGenre?.name && classification.subGenre.name !== "Undefined") {
+    if (
+      classification.subGenre?.name &&
+      classification.subGenre.name !== "Undefined"
+    ) {
       genres.add(classification.subGenre.name);
     }
   }
@@ -133,7 +143,8 @@ function extractGenres(event: TicketmasterEvent) {
  */
 function normalizeEvent(event: TicketmasterEvent) {
   const segment = event.classifications?.[0]?.segment?.name || null;
-  const images: Array<{ ratio?: string; width?: number; url?: string }> = event.images || [];
+  const images: Array<{ ratio?: string; width?: number; url?: string }> =
+    event.images || [];
   const bestImage =
     images.find((i) => i.ratio === "16_9" && (i.width ?? 0) >= 640) ||
     images[0] ||

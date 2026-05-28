@@ -48,7 +48,8 @@ function ensureFoodCache(): FoodItem[] {
 
   const dataDir = join(__dirname, "data");
   const files = readdirSync(dataDir).filter(
-    (fileName: string) => fileName.startsWith("digest_food") && fileName.endsWith(".csv"),
+    (fileName: string) =>
+      fileName.startsWith("digest_food") && fileName.endsWith(".csv"),
   );
 
   const foods: FoodItem[] = [];
@@ -67,7 +68,11 @@ function ensureFoodCache(): FoodItem[] {
       });
 
       const numericStart = 35;
-      for (let nutrientIndex = numericStart; nutrientIndex < headers.length; nutrientIndex++) {
+      for (
+        let nutrientIndex = numericStart;
+        nutrientIndex < headers.length;
+        nutrientIndex++
+      ) {
         const rawVal = row[headers[nutrientIndex]];
         const value = typeof rawVal === "string" ? parseFloat(rawVal) : NaN;
         row[headers[nutrientIndex]] = isNaN(value) ? null : value;
@@ -87,13 +92,20 @@ const DIET_FILTERS: Record<string, (food: FoodItem) => boolean> = {
   vegetarian: (food: FoodItem) => {
     const normalizedKingdom = (food.kingdom || "").toLowerCase();
     const normalizedFoodType = (food.food_type || "").toLowerCase();
-    return normalizedKingdom !== "animalia" || normalizedFoodType === "dairy" || normalizedFoodType === "egg";
+    return (
+      normalizedKingdom !== "animalia" ||
+      normalizedFoodType === "dairy" ||
+      normalizedFoodType === "egg"
+    );
   },
   vegan: (food: FoodItem) => (food.kingdom || "").toLowerCase() !== "animalia",
   pescatarian: (food: FoodItem) => {
     const normalizedKingdom = (food.kingdom || "").toLowerCase();
     const normalizedFoodType = (food.food_type || "").toLowerCase();
-    return normalizedKingdom !== "animalia" || ["fish", "seafood", "dairy", "egg"].includes(normalizedFoodType);
+    return (
+      normalizedKingdom !== "animalia" ||
+      ["fish", "seafood", "dairy", "egg"].includes(normalizedFoodType)
+    );
   },
   keto: (food: FoodItem) => {
     // Low carb: prefer foods with <10g carbs per 100g
@@ -105,16 +117,34 @@ const DIET_FILTERS: Record<string, (food: FoodItem) => boolean> = {
 // ─── Key Nutrients for Score ───────────────────────────────────
 
 const SCORING_NUTRIENTS = [
-  "protein", "lipid", "carbohydrate", "fiber",
-  "calcium", "iron", "magnesium", "potassium", "zinc",
-  "ascorbic_acid", "vitamin_b6", "folate_total", "cyanocobalamin",
-  "vitamin_a_rae", "vitamin_d", "alpha_tocopherol",
-  "thiamin", "riboflavin", "niacin",
+  "protein",
+  "lipid",
+  "carbohydrate",
+  "fiber",
+  "calcium",
+  "iron",
+  "magnesium",
+  "potassium",
+  "zinc",
+  "ascorbic_acid",
+  "vitamin_b6",
+  "folate_total",
+  "cyanocobalamin",
+  "vitamin_a_rae",
+  "vitamin_d",
+  "alpha_tocopherol",
+  "thiamin",
+  "riboflavin",
+  "niacin",
 ];
 
 // ─── Scoring Functions ─────────────────────────────────────────
 
-function computeGapScore(remainingGaps: Record<string, number>, food: FoodItem, portionScale: number): number {
+function computeGapScore(
+  remainingGaps: Record<string, number>,
+  food: FoodItem,
+  portionScale: number,
+): number {
   let score = 0;
   for (const nutrient of SCORING_NUTRIENTS) {
     const remaining = remainingGaps[nutrient] || 0;
@@ -191,7 +221,9 @@ export function buildMealPlan({
 }: BuildMealPlanOptions) {
   // ── Validate ─────────────────────────────────────────────────
   if (!caloricTarget || caloricTarget <= 0) {
-    return { error: "'caloricTarget' is required (e.g. 2000 for 2000 kcal/day)" };
+    return {
+      error: "'caloricTarget' is required (e.g. 2000 for 2000 kcal/day)",
+    };
   }
   if (mealsPerDay < 1 || mealsPerDay > 8) {
     return { error: "'mealsPerDay' must be between 1 and 8" };
@@ -229,9 +261,9 @@ export function buildMealPlan({
   // Macro targets from caloric budget (30/40/30 split by default)
   const caloriesPerMeal = caloricTarget / mealsPerDay;
   const macroTargets = {
-    protein: (caloricTarget * 0.30) / 4, // 30% protein, 4 kcal/g
-    carbohydrate: (caloricTarget * 0.40) / 4, // 40% carbs
-    lipid: (caloricTarget * 0.30) / 9, // 30% fat, 9 kcal/g
+    protein: (caloricTarget * 0.3) / 4, // 30% protein, 4 kcal/g
+    carbohydrate: (caloricTarget * 0.4) / 4, // 40% carbs
+    lipid: (caloricTarget * 0.3) / 9, // 30% fat, 9 kcal/g
   };
 
   // Merge macro targets
@@ -240,7 +272,9 @@ export function buildMealPlan({
   }
 
   // ── Apply filters ────────────────────────────────────────────
-  const dietKey = (dietaryPreference || "omnivore").toLowerCase().replace(/[\s-]+/g, "_");
+  const dietKey = (dietaryPreference || "omnivore")
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
   const dietFilter = DIET_FILTERS[dietKey] || DIET_FILTERS.omnivore;
 
   let candidates = allFoods.filter(dietFilter);
@@ -252,7 +286,10 @@ export function buildMealPlan({
       .map((e: string) => normalizeSearch(e.trim()))
       .filter(Boolean);
     candidates = candidates.filter(
-      (food: FoodItem) => !excluded.some((excludedName: string) => normalizeSearch(food.food_name || "").includes(excludedName)),
+      (food: FoodItem) =>
+        !excluded.some((excludedName: string) =>
+          normalizeSearch(food.food_name || "").includes(excludedName),
+        ),
     );
   }
 
@@ -266,7 +303,12 @@ export function buildMealPlan({
   if (emphasizeNutrients) {
     emphasis = emphasizeNutrients
       .split(",")
-      .map((nutrientName: string) => nutrientName.trim().toLowerCase().replace(/[\s-]+/g, "_"))
+      .map((nutrientName: string) =>
+        nutrientName
+          .trim()
+          .toLowerCase()
+          .replace(/[\s-]+/g, "_"),
+      )
       .filter(Boolean);
   }
 
@@ -343,10 +385,26 @@ export function buildMealPlan({
         portionGrams: Math.round(bestPortion),
         calories: Math.round(portionCalories),
         macros: {
-          protein_g: Number(((typeof protVal === "number" ? protVal : 0) * portionScale).toFixed(1)),
-          carbs_g: Number(((typeof carbVal === "number" ? carbVal : 0) * portionScale).toFixed(1)),
-          fat_g: Number(((typeof lipVal === "number" ? lipVal : 0) * portionScale).toFixed(1)),
-          fiber_g: Number(((typeof fibVal === "number" ? fibVal : 0) * portionScale).toFixed(1)),
+          protein_g: Number(
+            (
+              (typeof protVal === "number" ? protVal : 0) * portionScale
+            ).toFixed(1),
+          ),
+          carbs_g: Number(
+            (
+              (typeof carbVal === "number" ? carbVal : 0) * portionScale
+            ).toFixed(1),
+          ),
+          fat_g: Number(
+            ((typeof lipVal === "number" ? lipVal : 0) * portionScale).toFixed(
+              1,
+            ),
+          ),
+          fiber_g: Number(
+            ((typeof fibVal === "number" ? fibVal : 0) * portionScale).toFixed(
+              1,
+            ),
+          ),
         },
       });
 
@@ -354,8 +412,12 @@ export function buildMealPlan({
       for (const nutrient of SCORING_NUTRIENTS) {
         if (remainingGaps[nutrient] && remainingGaps[nutrient] > 0) {
           const rawVal = bestFood[nutrient];
-          const provided = (typeof rawVal === "number" ? rawVal : 0) * portionScale;
-          remainingGaps[nutrient] = Math.max(0, remainingGaps[nutrient] - provided);
+          const provided =
+            (typeof rawVal === "number" ? rawVal : 0) * portionScale;
+          remainingGaps[nutrient] = Math.max(
+            0,
+            remainingGaps[nutrient] - provided,
+          );
         }
       }
 
@@ -386,7 +448,10 @@ export function buildMealPlan({
     };
   }
 
-  const totalCal = meals.reduce((sum: number, ml: Meal) => sum + ml.totalCalories, 0);
+  const totalCal = meals.reduce(
+    (sum: number, ml: Meal) => sum + ml.totalCalories,
+    0,
+  );
 
   return {
     plan: {
@@ -398,7 +463,8 @@ export function buildMealPlan({
     },
     meals,
     nutrientCoverage: coverage,
-    _note: "Greedy optimizer — foods selected iteratively by largest gap-coverage improvement. All portions adjustable. Use analyze_nutrient_gaps for precise post-analysis.",
+    _note:
+      "Greedy optimizer — foods selected iteratively by largest gap-coverage improvement. All portions adjustable. Use analyze_nutrient_gaps for precise post-analysis.",
   };
 }
 
@@ -409,7 +475,10 @@ function getMealLabel(index: number, total: number) {
     return ["Breakfast", "Lunch", "Dinner"][index] || `Meal ${index + 1}`;
   }
   if (total <= 5) {
-    return ["Breakfast", "Snack", "Lunch", "Snack", "Dinner"][index] || `Meal ${index + 1}`;
+    return (
+      ["Breakfast", "Snack", "Lunch", "Snack", "Dinner"][index] ||
+      `Meal ${index + 1}`
+    );
   }
   return `Meal ${index + 1}`;
 }

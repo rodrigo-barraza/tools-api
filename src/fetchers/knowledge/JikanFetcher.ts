@@ -8,7 +8,9 @@ import { JikanAnime, RawJikanAnime } from "../../types/knowledge.ts";
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
-function normalizeAnime(anime: RawJikanAnime | null | undefined): JikanAnime | null {
+function normalizeAnime(
+  anime: RawJikanAnime | null | undefined,
+): JikanAnime | null {
   if (!anime) return null;
   return {
     malId: anime.mal_id || null,

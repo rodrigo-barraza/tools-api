@@ -11,7 +11,9 @@ const BASE_URL = "https://api.seatgeek.com/2/events";
 /**
  * Map SeatGeek taxonomy name to our normalized category.
  */
-function normalizeCategory(taxonomies: Array<{ parent_id?: number | null; name?: string }>) {
+function normalizeCategory(
+  taxonomies: Array<{ parent_id?: number | null; name?: string }>,
+) {
   if (!taxonomies || taxonomies.length === 0) {
     return EVENT_CATEGORIES.OTHER;
   }
@@ -62,7 +64,11 @@ interface SeatGeekEvent {
   venue?: SeatGeekVenue;
   performers?: SeatGeekPerformer[];
   taxonomies?: Array<{ parent_id?: number | null; name?: string }>;
-  stats?: { lowest_price?: number; lowest_sg_base_price?: number; highest_price?: number };
+  stats?: {
+    lowest_price?: number;
+    lowest_sg_base_price?: number;
+    highest_price?: number;
+  };
 }
 
 /**

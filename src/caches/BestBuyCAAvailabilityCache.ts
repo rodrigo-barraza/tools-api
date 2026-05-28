@@ -61,10 +61,12 @@ export function setAvailabilityError(error: { message: string }) {
 export function getWatchlist() {
   return {
     count: Object.keys(store.watchlist).length,
-    skus: Object.entries(store.watchlist).map(([sku, meta]: [string, SkuMetadata]) => ({
-      sku,
-      ...meta,
-    })),
+    skus: Object.entries(store.watchlist).map(
+      ([sku, meta]: [string, SkuMetadata]) => ({
+        sku,
+        ...meta,
+      }),
+    ),
   };
 }
 
@@ -85,7 +87,14 @@ export function getWatchlistMetadata() {
 /**
  * Add SKUs to the watchlist.
  */
-export function addToWatchlist(items: { sku?: string | number; name?: string; brand?: string; category?: string }[]) {
+export function addToWatchlist(
+  items: {
+    sku?: string | number;
+    name?: string;
+    brand?: string;
+    category?: string;
+  }[],
+) {
   let added = 0;
   for (const item of items) {
     if (!item.sku) continue;
@@ -136,7 +145,9 @@ export function getBySku(sku: string) {
  * Get only in-stock items.
  */
 export function getInStock() {
-  const results = Object.values(store.statuses).filter((r: AvailabilityResult) => r.inStock);
+  const results = Object.values(store.statuses).filter(
+    (r: AvailabilityResult) => r.inStock,
+  );
   return {
     count: results.length,
     lastCheck: store.lastCheck,
@@ -148,7 +159,9 @@ export function getInStock() {
  * Get only out-of-stock items.
  */
 export function getOutOfStock() {
-  const results = Object.values(store.statuses).filter((r: AvailabilityResult) => !r.inStock);
+  const results = Object.values(store.statuses).filter(
+    (r: AvailabilityResult) => !r.inStock,
+  );
   return {
     count: results.length,
     lastCheck: store.lastCheck,
@@ -160,7 +173,9 @@ export function getOutOfStock() {
 
 export function getAvailabilityHealth() {
   const statusCount = Object.keys(store.statuses).length;
-  const inStock = Object.values(store.statuses).filter((r: AvailabilityResult) => r.inStock).length;
+  const inStock = Object.values(store.statuses).filter(
+    (r: AvailabilityResult) => r.inStock,
+  ).length;
 
   return {
     watchlistSize: Object.keys(store.watchlist).length,

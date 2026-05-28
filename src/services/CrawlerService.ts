@@ -1,9 +1,6 @@
 // ─── Crawlee + Playwright Orchestration ─────────────────────
 
-import {
-  CheerioCrawler,
-  Configuration,
-} from "crawlee";
+import { CheerioCrawler, Configuration } from "crawlee";
 import type { CheerioCrawlingContext, ProxyConfiguration } from "crawlee";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
@@ -37,7 +34,9 @@ const USER_AGENT =
  * Build a ProxyConfiguration for Bright Data.
  * Supports datacenter and residential zones.
  */
-function buildProxyConfig(_options: Record<string, unknown> = {}): ProxyConfiguration | null {
+function buildProxyConfig(
+  _options: Record<string, unknown> = {},
+): ProxyConfiguration | null {
   // ──────────────────────────────────────────────────────────
   // BRIGHT DATA PROXY — UNCOMMENT WHEN READY
   // ──────────────────────────────────────────────────────────
@@ -91,7 +90,9 @@ crawleeConfig.set("persistStorage", false);
 // Types
 // ────────────────────────────────────────────────────────────
 
-export type ExtractFn = (ctx: CheerioCrawlingContext) => unknown | Promise<unknown>;
+export type ExtractFn = (
+  ctx: CheerioCrawlingContext,
+) => unknown | Promise<unknown>;
 
 export interface CrawlStaticOptions {
   extractFn?: ExtractFn;
@@ -112,7 +113,10 @@ export interface CrawlResult {
  * Crawl a single URL using Cheerio (static HTML parsing).
  * Best for: Static pages, forums, blogs — much faster than Playwright.
  */
-export async function crawlSingleStatic(url: string, options: CrawlStaticOptions = {}): Promise<CrawlResult> {
+export async function crawlSingleStatic(
+  url: string,
+  options: CrawlStaticOptions = {},
+): Promise<CrawlResult> {
   const { extractFn, proxyZone } = options;
 
   if (!extractFn) {
@@ -122,7 +126,9 @@ export async function crawlSingleStatic(url: string, options: CrawlStaticOptions
   let result: unknown = null;
   let crawlError: Error | null = null;
 
-  const proxyConfiguration = proxyZone ? buildProxyConfig({ zone: proxyZone }) : null;
+  const proxyConfiguration = proxyZone
+    ? buildProxyConfig({ zone: proxyZone })
+    : null;
 
   const crawlerOptions: Record<string, unknown> = {
     maxConcurrency: 1,
@@ -144,13 +150,20 @@ export async function crawlSingleStatic(url: string, options: CrawlStaticOptions
         result = await extractFn(ctx);
       } catch (error: unknown) {
         crawlError = error instanceof Error ? error : new Error(String(error));
-        logger.error(`[Crawler] Extract failed for ${ctx.request.url}: ${errorMessage(error)}`);
+        logger.error(
+          `[Crawler] Extract failed for ${ctx.request.url}: ${errorMessage(error)}`,
+        );
       }
     },
 
-    async failedRequestHandler({ request }: CheerioCrawlingContext, error: Error) {
+    async failedRequestHandler(
+      { request }: CheerioCrawlingContext,
+      error: Error,
+    ) {
       crawlError = error;
-      logger.error(`[Crawler] Failed after retries: ${request.url} — ${error.message}`);
+      logger.error(
+        `[Crawler] Failed after retries: ${request.url} — ${error.message}`,
+      );
     },
   };
 
@@ -158,7 +171,9 @@ export async function crawlSingleStatic(url: string, options: CrawlStaticOptions
     crawlerOptions.proxyConfiguration = proxyConfiguration;
   }
 
-  const crawler = new CheerioCrawler(crawlerOptions as ConstructorParameters<typeof CheerioCrawler>[0]);
+  const crawler = new CheerioCrawler(
+    crawlerOptions as ConstructorParameters<typeof CheerioCrawler>[0],
+  );
 
   try {
     await crawler.run([url]);

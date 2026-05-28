@@ -120,7 +120,8 @@ export function getLatestEvents() {
     }
   }
   return all.sort(
-    (a: CachedEvent, b: CachedEvent) => (a.startDate?.getTime() ?? 0) - (b.startDate?.getTime() ?? 0),
+    (a: CachedEvent, b: CachedEvent) =>
+      (a.startDate?.getTime() ?? 0) - (b.startDate?.getTime() ?? 0),
   );
 }
 

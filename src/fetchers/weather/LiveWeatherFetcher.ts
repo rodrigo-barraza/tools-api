@@ -162,7 +162,9 @@ interface RawForecastResponse {
 /**
  * Geocode a location string to lat/lon using Open-Meteo's free geocoding API.
  */
-async function geocodeLocation(location: string): Promise<GeocodeResult | null> {
+async function geocodeLocation(
+  location: string,
+): Promise<GeocodeResult | null> {
   await rateLimiter.wait("OPEN_METEO");
 
   const url = `${GEOCODING_URL}?name=${encodeURIComponent(location)}&count=1&language=en&format=json`;
@@ -172,7 +174,7 @@ async function geocodeLocation(location: string): Promise<GeocodeResult | null> 
     throw new Error(`Geocoding API returned ${response.status}`);
   }
 
-  const data = await response.json() as RawGeocodeResponse;
+  const data = (await response.json()) as RawGeocodeResponse;
   if (!data.results || data.results.length === 0) {
     return null;
   }
@@ -202,7 +204,7 @@ export async function fetchLiveWeather({
   location,
   latitude,
   longitude,
-  units = "metric"
+  units = "metric",
 }: LiveWeatherOptions): Promise<LiveWeatherResult> {
   let geo: GeocodeResult | null = null;
 
@@ -217,7 +219,10 @@ export async function fetchLiveWeather({
   }
 
   if (latitude == null || longitude == null) {
-    return { error: "Either 'location' (city name) or 'latitude' + 'longitude' are required" };
+    return {
+      error:
+        "Either 'location' (city name) or 'latitude' + 'longitude' are required",
+    };
   }
 
   // Build forecast URL
@@ -241,10 +246,12 @@ export async function fetchLiveWeather({
     throw new Error(`Open-Meteo forecast API returned ${response.status}`);
   }
 
-  const data = await response.json() as RawForecastResponse;
+  const data = (await response.json()) as RawForecastResponse;
   const current = data.current;
   const daily = data.daily;
-  const weatherDescription = (WMO_WEATHER_CODES as Record<number, string>)[current.weather_code] || "Unknown";
+  const weatherDescription =
+    (WMO_WEATHER_CODES as Record<number, string>)[current.weather_code] ||
+    "Unknown";
 
   const result: LiveWeatherResult = {
     // Location info
@@ -267,9 +274,10 @@ export async function fetchLiveWeather({
         },
 
     // Units
-    units: units === "imperial"
-      ? { temperature: "°F", wind: "mph", precipitation: "inch" }
-      : { temperature: "°C", wind: "km/h", precipitation: "mm" },
+    units:
+      units === "imperial"
+        ? { temperature: "°F", wind: "mph", precipitation: "inch" }
+        : { temperature: "°C", wind: "km/h", precipitation: "mm" },
 
     // Current conditions
     current: {
@@ -297,7 +305,10 @@ export async function fetchLiveWeather({
       ? daily.time.map((time, i) => ({
           date: time,
           weatherCode: daily.weather_code[i],
-          weatherDescription: (WMO_WEATHER_CODES as Record<number, string>)[daily.weather_code[i]] || "Unknown",
+          weatherDescription:
+            (WMO_WEATHER_CODES as Record<number, string>)[
+              daily.weather_code[i]
+            ] || "Unknown",
           temperatureMax: daily.temperature_2m_max[i],
           temperatureMin: daily.temperature_2m_min[i],
           sunrise: daily.sunrise[i],

@@ -167,7 +167,11 @@ async function runGit(args: string[], cwd: string): Promise<GitRunResult> {
       child.kill("SIGKILL");
       if (!settled) {
         settled = true;
-        resolve({ stdout: "", stderr: "", error: `Git command timed out after ${GIT_TIMEOUT_MS}ms` });
+        resolve({
+          stdout: "",
+          stderr: "",
+          error: `Git command timed out after ${GIT_TIMEOUT_MS}ms`,
+        });
       }
     }, GIT_TIMEOUT_MS);
 
@@ -180,7 +184,12 @@ async function runGit(args: string[], cwd: string): Promise<GitRunResult> {
       const stderr = Buffer.concat(stderrChunks).toString("utf-8");
 
       if (code !== 0) {
-        resolve({ stdout, stderr, error: stderr.trim() || `Git exited with code ${code}`, exitCode: code });
+        resolve({
+          stdout,
+          stderr,
+          error: stderr.trim() || `Git exited with code ${code}`,
+          exitCode: code,
+        });
         return;
       }
 
@@ -191,7 +200,11 @@ async function runGit(args: string[], cwd: string): Promise<GitRunResult> {
       if (!settled) {
         settled = true;
         clearTimeout(timer);
-        resolve({ stdout: "", stderr: "", error: `Git process error: ${error.message}` });
+        resolve({
+          stdout: "",
+          stderr: "",
+          error: `Git process error: ${error.message}`,
+        });
       }
     });
   });
@@ -204,9 +217,15 @@ async function runGit(args: string[], cwd: string): Promise<GitRunResult> {
 /**
  * Get git status for a repository.
  */
-export async function agenticGitStatus(repoPath: string): Promise<GitStatusResult | { error: string; path?: string }> {
+export async function agenticGitStatus(
+  repoPath: string,
+): Promise<GitStatusResult | { error: string; path?: string }> {
   // Agent routing
-  const agentResult = await tryAgentRoute("git.status", { path: repoPath }, repoPath);
+  const agentResult = await tryAgentRoute(
+    "git.status",
+    { path: repoPath },
+    repoPath,
+  );
   if (agentResult) return agentResult as GitStatusResult;
 
   const validation = validatePath(repoPath);
@@ -217,10 +236,7 @@ export async function agenticGitStatus(repoPath: string): Promise<GitStatusResul
   const cwd = validation.resolved;
 
   // Get branch info
-  const branchResult = await runGit(
-    ["branch", "--show-current"],
-    cwd,
-  );
+  const branchResult = await runGit(["branch", "--show-current"], cwd);
   if (branchResult.error) {
     return { error: branchResult.error, path: cwd };
   }
@@ -275,7 +291,8 @@ export async function agenticGitStatus(repoPath: string): Promise<GitStatusResul
     unstaged,
     untracked,
     totalChanges: staged.length + unstaged.length + untracked.length,
-    clean: staged.length === 0 && unstaged.length === 0 && untracked.length === 0,
+    clean:
+      staged.length === 0 && unstaged.length === 0 && untracked.length === 0,
   };
 }
 
@@ -297,7 +314,11 @@ export async function agenticGitDiff(
   { staged = false, path: filePath, ref }: DiffOptions = {},
 ): Promise<GitDiffResult> {
   // Agent routing
-  const agentResult = await tryAgentRoute("git.diff", { path: repoPath, staged, filePath, ref }, repoPath);
+  const agentResult = await tryAgentRoute(
+    "git.diff",
+    { path: repoPath, staged, filePath, ref },
+    repoPath,
+  );
   if (agentResult) return agentResult as GitDiffResult;
 
   const validation = validatePath(repoPath);
@@ -363,7 +384,11 @@ export async function agenticGitLog(
   { limit = 20, author, since, path: filePath }: LogOptions = {},
 ): Promise<GitLogResult> {
   // Agent routing
-  const agentResult = await tryAgentRoute("git.log", { path: repoPath, limit, author, since, filePath }, repoPath);
+  const agentResult = await tryAgentRoute(
+    "git.log",
+    { path: repoPath, limit, author, since, filePath },
+    repoPath,
+  );
   if (agentResult) return agentResult as GitLogResult;
 
   const validation = validatePath(repoPath);
@@ -377,11 +402,7 @@ export async function agenticGitLog(
   // Use a structured format for reliable parsing
   const separator = "<<<COMMIT>>>";
   const formatStr = `${separator}%H|%h|%an|%ae|%ai|%s`;
-  const args = [
-    "log",
-    `--format=${formatStr}`,
-    `-n`, String(clampedLimit),
-  ];
+  const args = ["log", `--format=${formatStr}`, `-n`, String(clampedLimit)];
 
   if (author) args.push(`--author=${author}`);
   if (since) args.push(`--since=${since}`);
@@ -432,7 +453,10 @@ const WORKTREE_BASE = WORKTREE_DIR?.trim() || "/tmp/prism-worktrees";
 /**
  * Create a git worktree with its own branch.
  */
-export async function agenticGitWorktreeCreate(repoPath: string, branchName: string): Promise<GitWorktreeCreateResult> {
+export async function agenticGitWorktreeCreate(
+  repoPath: string,
+  branchName: string,
+): Promise<GitWorktreeCreateResult> {
   const validation = validatePath(repoPath);
   if (!validation.safe) {
     return { error: validation.error };
@@ -488,7 +512,10 @@ export async function agenticGitWorktreeRemove(
   // Get branch name from worktree before removing
   let branchName: string | null = null;
   if (deleteBranch) {
-    const branchResult = await runGit(["branch", "--show-current"], worktreePath);
+    const branchResult = await runGit(
+      ["branch", "--show-current"],
+      worktreePath,
+    );
     if (!branchResult.error) {
       branchName = branchResult.stdout.trim();
     }
@@ -554,7 +581,10 @@ export async function agenticGitWorktreeMerge(
 /**
  * Get the diff between a worktree branch and the main branch.
  */
-export async function agenticGitWorktreeDiff(repoPath: string, branch: string): Promise<GitWorktreeDiffResult> {
+export async function agenticGitWorktreeDiff(
+  repoPath: string,
+  branch: string,
+): Promise<GitWorktreeDiffResult> {
   const validation = validatePath(repoPath);
   if (!validation.safe) {
     return { error: validation.error };
@@ -564,7 +594,9 @@ export async function agenticGitWorktreeDiff(repoPath: string, branch: string): 
 
   // Get current branch name
   const currentResult = await runGit(["branch", "--show-current"], cwd);
-  const currentBranch = currentResult.error ? "HEAD" : currentResult.stdout.trim();
+  const currentBranch = currentResult.error
+    ? "HEAD"
+    : currentResult.stdout.trim();
 
   const result = await runGit(
     ["diff", `${currentBranch}...${branch}`, "--stat", "--patch"],
@@ -594,7 +626,9 @@ export async function agenticGitWorktreeDiff(repoPath: string, branch: string): 
  * Clean up any orphaned worktrees from previous runs.
  * Should be called on server startup.
  */
-export async function agenticGitWorktreeCleanup(repoPath: string): Promise<GitWorktreeCleanupResult> {
+export async function agenticGitWorktreeCleanup(
+  repoPath: string,
+): Promise<GitWorktreeCleanupResult> {
   const validation = validatePath(repoPath);
   if (!validation.safe) {
     return { error: validation.error };

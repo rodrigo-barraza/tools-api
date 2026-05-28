@@ -71,7 +71,7 @@ export async function fetchNeos(): Promise<NearEarthObject[]> {
     throw new Error(`NASA NEO API returned ${response.status}`);
   }
 
-  const data = await response.json() as RawNeoResponse;
+  const data = (await response.json()) as RawNeoResponse;
   const neos: NearEarthObject[] = [];
 
   for (const [date, objects] of Object.entries(data.near_earth_objects)) {

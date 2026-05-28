@@ -44,11 +44,13 @@ export async function setupAgenticTaskCollection() {
 
 async function nextTaskId(project: string): Promise<number> {
   const database = getDB();
-  const result = await database.collection<TaskCounterDocument>(COUNTER_COLLECTION).findOneAndUpdate(
-    { _id: `task_${project}` },
-    { $inc: { seq: 1 } },
-    { upsert: true, returnDocument: "after" },
-  );
+  const result = await database
+    .collection<TaskCounterDocument>(COUNTER_COLLECTION)
+    .findOneAndUpdate(
+      { _id: `task_${project}` },
+      { $inc: { seq: 1 } },
+      { upsert: true, returnDocument: "after" },
+    );
   return result?.seq ?? 1;
 }
 
@@ -59,7 +61,10 @@ async function nextTaskId(project: string): Promise<number> {
 /**
  * Create a new task.
  */
-export async function agenticTaskCreate(project: string, data: AgenticTaskCreateData) {
+export async function agenticTaskCreate(
+  project: string,
+  data: AgenticTaskCreateData,
+) {
   if (!project || typeof project !== "string") {
     return { error: "'project' is required (string)" };
   }
@@ -72,7 +77,9 @@ export async function agenticTaskCreate(project: string, data: AgenticTaskCreate
 
   const status = (data.status as AgenticTask["status"]) || "pending";
   if (!VALID_STATUSES.includes(status)) {
-    return { error: `Invalid status '${status}'. Must be one of: ${VALID_STATUSES.join(", ")}` };
+    return {
+      error: `Invalid status '${status}'. Must be one of: ${VALID_STATUSES.join(", ")}`,
+    };
   }
 
   const database = getDB();
@@ -81,7 +88,9 @@ export async function agenticTaskCreate(project: string, data: AgenticTaskCreate
   // Guard: cap tasks per project
   const count = await collection.countDocuments({ project });
   if (count >= MAX_TASKS_PER_PROJECT) {
-    return { error: `Task limit reached (${MAX_TASKS_PER_PROJECT}). Complete or delete existing tasks first.` };
+    return {
+      error: `Task limit reached (${MAX_TASKS_PER_PROJECT}). Complete or delete existing tasks first.`,
+    };
   }
 
   const taskId = await nextTaskId(project);
@@ -117,13 +126,18 @@ export async function agenticTaskCreate(project: string, data: AgenticTaskCreate
 /**
  * List tasks for a project, optionally filtered by status.
  */
-export async function agenticTaskList(project: string, { status, limit = 50 }: AgenticTaskListOptions = {}) {
+export async function agenticTaskList(
+  project: string,
+  { status, limit = 50 }: AgenticTaskListOptions = {},
+) {
   if (!project || typeof project !== "string") {
     return { error: "'project' is required (string)" };
   }
 
   if (status && !VALID_STATUSES.includes(status)) {
-    return { error: `Invalid status filter '${status}'. Must be one of: ${VALID_STATUSES.join(", ")}` };
+    return {
+      error: `Invalid status filter '${status}'. Must be one of: ${VALID_STATUSES.join(", ")}`,
+    };
   }
 
   const database = getDB();
@@ -143,7 +157,8 @@ export async function agenticTaskList(project: string, { status, limit = 50 }: A
   const summary = {
     total: allTasks.length,
     pending: allTasks.filter((task) => task.status === "pending").length,
-    in_progress: allTasks.filter((task) => task.status === "in_progress").length,
+    in_progress: allTasks.filter((task) => task.status === "in_progress")
+      .length,
     completed: allTasks.filter((task) => task.status === "completed").length,
   };
 
@@ -168,7 +183,9 @@ export async function agenticTaskGet(project: string, taskId: string | number) {
   }
 
   const database = getDB();
-  const task = await database.collection(COLLECTION).findOne({ project, taskId: id });
+  const task = await database
+    .collection(COLLECTION)
+    .findOne({ project, taskId: id });
 
   if (!task) {
     return { error: `Task #${id} not found in project '${project}'` };
@@ -180,7 +197,11 @@ export async function agenticTaskGet(project: string, taskId: string | number) {
 /**
  * Update a task's status, description, or metadata.
  */
-export async function agenticTaskUpdate(project: string, taskId: string | number, updates: AgenticTaskUpdates) {
+export async function agenticTaskUpdate(
+  project: string,
+  taskId: string | number,
+  updates: AgenticTaskUpdates,
+) {
   if (!project || typeof project !== "string") {
     return { error: "'project' is required (string)" };
   }
@@ -194,8 +215,14 @@ export async function agenticTaskUpdate(project: string, taskId: string | number
     return { error: "'updates' is required (object)" };
   }
 
-  if (updates.status && updates.status !== "deleted" && !VALID_STATUSES.includes(updates.status)) {
-    return { error: `Invalid status '${updates.status}'. Must be one of: ${VALID_STATUSES.join(", ")}, deleted` };
+  if (
+    updates.status &&
+    updates.status !== "deleted" &&
+    !VALID_STATUSES.includes(updates.status)
+  ) {
+    return {
+      error: `Invalid status '${updates.status}'. Must be one of: ${VALID_STATUSES.join(", ")}, deleted`,
+    };
   }
 
   const database = getDB();
@@ -247,7 +274,10 @@ export async function agenticTaskUpdate(project: string, taskId: string | number
 /**
  * Delete a task.
  */
-export async function agenticTaskDelete(project: string, taskId: string | number) {
+export async function agenticTaskDelete(
+  project: string,
+  taskId: string | number,
+) {
   if (!project || typeof project !== "string") {
     return { error: "'project' is required (string)" };
   }
@@ -289,7 +319,9 @@ export async function agenticTaskDelete(project: string, taskId: string | number
 // ────────────────────────────────────────────────────────────
 
 /** Strip MongoDB _id from API responses */
-function sanitize(task: WithId<Document> | Record<string, unknown> | null): SanitizedTask | null {
+function sanitize(
+  task: WithId<Document> | Record<string, unknown> | null,
+): SanitizedTask | null {
   if (!task) return null;
   const { _id, ...rest } = task;
   return rest as SanitizedTask;

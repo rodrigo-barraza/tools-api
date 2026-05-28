@@ -24,7 +24,9 @@ const VALID_TYPES = ["cron", "once", "trigger"];
 // ────────────────────────────────────────────────────────────
 
 export async function setupAgenticScheduleCollection() {
-  logger.info(`   ✅ Agentic schedules collection setup bypassed (authoritative scheduler is in prism-service)`);
+  logger.info(
+    `   ✅ Agentic schedules collection setup bypassed (authoritative scheduler is in prism-service)`,
+  );
 }
 
 // ────────────────────────────────────────────────────────────
@@ -55,8 +57,19 @@ function getPrismUrl() {
  */
 export async function agenticScheduleCreate(data: Record<string, unknown>) {
   const {
-    project, name, schedule, prompt, type = "once",
-    agent, model, provider, scheduleType, scheduleTime, scheduleDay, scheduleDate, cronExpression
+    project,
+    name,
+    schedule,
+    prompt,
+    type = "once",
+    agent,
+    model,
+    provider,
+    scheduleType,
+    scheduleTime,
+    scheduleDay,
+    scheduleDate,
+    cronExpression,
   } = data;
 
   if (!project || typeof project !== "string") {
@@ -84,7 +97,7 @@ export async function agenticScheduleCreate(data: Record<string, unknown>) {
   const body = {
     name,
     prompt,
-    agent: agent === "NONE" ? null : (agent || "CODING"),
+    agent: agent === "NONE" ? null : agent || "CODING",
     provider: provider || "anthropic",
     model: model || "claude-sonnet-4-5-20250929",
     scheduleType: sType,
@@ -107,7 +120,11 @@ export async function agenticScheduleCreate(data: Record<string, unknown>) {
 
     if (!schedulerResponse.ok) {
       const errorPayload = await schedulerResponse.json().catch(() => ({}));
-      return { error: errorPayload.error || `Prism returned HTTP ${schedulerResponse.status}` };
+      return {
+        error:
+          errorPayload.error ||
+          `Prism returned HTTP ${schedulerResponse.status}`,
+      };
     }
 
     const created = await schedulerResponse.json();
@@ -124,7 +141,10 @@ export async function agenticScheduleCreate(data: Record<string, unknown>) {
 /**
  * List schedules for a project. Proxy to prism-service /scheduled-tasks.
  */
-export async function agenticScheduleList(project: string, _options?: Record<string, unknown>) {
+export async function agenticScheduleList(
+  project: string,
+  _options?: Record<string, unknown>,
+) {
   if (!project || typeof project !== "string") {
     return { error: "'project' is required (string)" };
   }
@@ -140,7 +160,11 @@ export async function agenticScheduleList(project: string, _options?: Record<str
 
     if (!schedulerResponse.ok) {
       const errorPayload = await schedulerResponse.json().catch(() => ({}));
-      return { error: errorPayload.error || `Prism returned HTTP ${schedulerResponse.status}` };
+      return {
+        error:
+          errorPayload.error ||
+          `Prism returned HTTP ${schedulerResponse.status}`,
+      };
     }
 
     const tasks = await schedulerResponse.json();
@@ -157,7 +181,10 @@ export async function agenticScheduleList(project: string, _options?: Record<str
 /**
  * Delete a schedule. Proxy to prism-service /scheduled-tasks/:id.
  */
-export async function agenticScheduleDelete(project: string, scheduleId: string | number) {
+export async function agenticScheduleDelete(
+  project: string,
+  scheduleId: string | number,
+) {
   if (!project || typeof project !== "string") {
     return { error: "'project' is required (string)" };
   }
@@ -166,17 +193,24 @@ export async function agenticScheduleDelete(project: string, scheduleId: string 
   }
 
   try {
-    const schedulerResponse = await fetch(`${getPrismUrl()}/scheduled-tasks/${scheduleId}`, {
-      method: "DELETE",
-      headers: {
-        "x-project": project,
-        "x-username": "system",
+    const schedulerResponse = await fetch(
+      `${getPrismUrl()}/scheduled-tasks/${scheduleId}`,
+      {
+        method: "DELETE",
+        headers: {
+          "x-project": project,
+          "x-username": "system",
+        },
       },
-    });
+    );
 
     if (!schedulerResponse.ok) {
       const errorPayload = await schedulerResponse.json().catch(() => ({}));
-      return { error: errorPayload.error || `Prism returned HTTP ${schedulerResponse.status}` };
+      return {
+        error:
+          errorPayload.error ||
+          `Prism returned HTTP ${schedulerResponse.status}`,
+      };
     }
 
     const deleted = await schedulerResponse.json();
@@ -193,7 +227,11 @@ export async function agenticScheduleDelete(project: string, scheduleId: string 
 /**
  * Fire a named remote trigger. Proxy to prism-service /scheduled-tasks/:id/trigger.
  */
-export async function agenticTriggerFire(project: string, triggerName: string, payload: Record<string, unknown> = {}) {
+export async function agenticTriggerFire(
+  project: string,
+  triggerName: string,
+  payload: Record<string, unknown> = {},
+) {
   if (!project || typeof project !== "string") {
     return { error: "'project' is required (string)" };
   }
@@ -202,19 +240,26 @@ export async function agenticTriggerFire(project: string, triggerName: string, p
   }
 
   try {
-    const schedulerResponse = await fetch(`${getPrismUrl()}/scheduled-tasks/${encodeURIComponent(triggerName)}/trigger`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-project": project,
-        "x-username": "system",
+    const schedulerResponse = await fetch(
+      `${getPrismUrl()}/scheduled-tasks/${encodeURIComponent(triggerName)}/trigger`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-project": project,
+          "x-username": "system",
+        },
+        body: JSON.stringify({ payload }),
       },
-      body: JSON.stringify({ payload }),
-    });
+    );
 
     if (!schedulerResponse.ok) {
       const errorPayload = await schedulerResponse.json().catch(() => ({}));
-      return { error: errorPayload.error || `Prism returned HTTP ${schedulerResponse.status}` };
+      return {
+        error:
+          errorPayload.error ||
+          `Prism returned HTTP ${schedulerResponse.status}`,
+      };
     }
 
     const result = await schedulerResponse.json();
@@ -234,5 +279,7 @@ export async function agenticTriggerFire(project: string, triggerName: string, p
 // ────────────────────────────────────────────────────────────
 
 export function startSchedulePoller() {
-  logger.info("   ⏰ Local schedule poller bypassed (authoritative scheduler poller is running in prism-service)");
+  logger.info(
+    "   ⏰ Local schedule poller bypassed (authoritative scheduler poller is running in prism-service)",
+  );
 }

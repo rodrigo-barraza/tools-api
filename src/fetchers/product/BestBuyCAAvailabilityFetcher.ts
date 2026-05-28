@@ -37,7 +37,10 @@ interface BestBuyCAAvailability {
   saleChannelExclusivity?: string;
 }
 
-function normalizeAvailability(availability: BestBuyCAAvailability, metadata: Record<string, unknown> | null = null) {
+function normalizeAvailability(
+  availability: BestBuyCAAvailability,
+  metadata: Record<string, unknown> | null = null,
+) {
   const sku = availability.sku;
   return {
     sku,
@@ -73,7 +76,10 @@ function normalizeAvailability(availability: BestBuyCAAvailability, metadata: Re
 
 
  */
-export async function fetchBestBuyCAAvailability(skus: string[], skuMetadata: Record<string, unknown> = {}) {
+export async function fetchBestBuyCAAvailability(
+  skus: string[],
+  skuMetadata: Record<string, unknown> = {},
+) {
   if (!skus.length) return { results: [], errors: [] };
   const batches = chunk(skus, BESTBUY_CA_MAX_SKUS_PER_REQUEST);
   const allResults: unknown[] = [];
@@ -99,7 +105,12 @@ export async function fetchBestBuyCAAvailability(skus: string[], skuMetadata: Re
       const data = await response.json();
       const availabilities = data.availabilities || [];
       for (const avail of availabilities) {
-        allResults.push(normalizeAvailability(avail, (skuMetadata[avail.sku] as Record<string, unknown>) || null));
+        allResults.push(
+          normalizeAvailability(
+            avail,
+            (skuMetadata[avail.sku] as Record<string, unknown>) || null,
+          ),
+        );
       }
     } catch (error: unknown) {
       errors.push(`Batch ${i + 1}/${batches.length}: ${errorMessage(error)}`);

@@ -38,7 +38,9 @@ async function fetchRates(base: string = "USD"): Promise<CachedRates> {
   const response = await fetch(url);
 
   if (!response.ok) {
-    throw new Error(`Exchange Rate API → ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Exchange Rate API → ${response.status} ${response.statusText}`,
+    );
   }
 
   const data = await response.json();
@@ -67,7 +69,11 @@ async function fetchRates(base: string = "USD"): Promise<CachedRates> {
 
 
  */
-export async function convertCurrency(amount: number, from: string, to: string) {
+export async function convertCurrency(
+  amount: number,
+  from: string,
+  to: string,
+) {
   const upperFrom = from.toUpperCase();
   const upperTo = to.toUpperCase();
 

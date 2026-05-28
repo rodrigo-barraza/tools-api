@@ -4,7 +4,11 @@ import { readFile, stat } from "node:fs/promises";
 import { resolve, extname, relative, dirname } from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
 
-import { getLspManager, shutdownAllLspManagers, getAllLspHealth } from "./lsp/LspServerManager.ts";
+import {
+  getLspManager,
+  shutdownAllLspManagers,
+  getAllLspHealth,
+} from "./lsp/LspServerManager.ts";
 import type { LspParams } from "./lsp/LspClient.ts";
 import { ALLOWED_ROOTS } from "./AgenticFileService.ts";
 import { errorMessage } from "../utilities.ts";
@@ -33,7 +37,10 @@ interface LspLocation {
 }
 
 interface LspHoverResult {
-  contents: string | { kind?: string; value?: string; language?: string } | Array<string | { value?: string; language?: string }>;
+  contents:
+    | string
+    | { kind?: string; value?: string; language?: string }
+    | Array<string | { value?: string; language?: string }>;
 }
 
 interface LspSymbol {
@@ -60,16 +67,31 @@ interface LspActionParams {
 // ────────────────────────────────────────────────────────────
 
 const MAX_FILE_SIZE_FOR_OPEN = 1_048_576; // 1 MB — don't send huge files to LSP
-const MAX_LOCATIONS_RETURNED = 30;        // Cap locations in results
-const MAX_SYMBOLS_RETURNED = 100;         // Cap symbols for documentSymbol
+const MAX_LOCATIONS_RETURNED = 30; // Cap locations in results
+const MAX_SYMBOLS_RETURNED = 100; // Cap symbols for documentSymbol
 
 // Extension whitelist — only open files we can actually process
 const SUPPORTED_EXTENSIONS = new Set([
-  ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs",
-  ".py", ".pyi",
+  ".js",
+  ".jsx",
+  ".ts",
+  ".tsx",
+  ".mjs",
+  ".cjs",
+  ".py",
+  ".pyi",
   ".rs",
-  ".go", ".mod", ".sum",
-  ".c", ".h", ".cpp", ".cxx", ".cc", ".hpp", ".hxx", ".hh",
+  ".go",
+  ".mod",
+  ".sum",
+  ".c",
+  ".h",
+  ".cpp",
+  ".cxx",
+  ".cc",
+  ".hpp",
+  ".hxx",
+  ".hh",
   ".lua",
 ]);
 
@@ -99,7 +121,8 @@ const OPERATIONS: Record<string, LspOperation> = {
   goToImplementation: {
     method: "textDocument/implementation",
     needsPosition: true,
-    description: "Find concrete implementations of an interface or abstract class",
+    description:
+      "Find concrete implementations of an interface or abstract class",
   },
 };
 
@@ -118,7 +141,10 @@ function validateLspPath(inputPath: string | undefined) {
   );
 
   if (!inAllowedRoot) {
-    return { safe: false as const, error: `Path '${resolved}' is outside allowed roots` };
+    return {
+      safe: false as const,
+      error: `Path '${resolved}' is outside allowed roots`,
+    };
   }
 
   return { safe: true as const, resolved };
@@ -131,7 +157,13 @@ function validateLspPath(inputPath: string | undefined) {
 /**
  * Execute an LSP code intelligence operation.
  */
-export async function agenticLspAction({ operation, filePath, line, character, workspacePath }: LspActionParams) {
+export async function agenticLspAction({
+  operation,
+  filePath,
+  line,
+  character,
+  workspacePath,
+}: LspActionParams) {
   // ── 1. Validate operation ──────────────────────────────────
   if (!operation || !OPERATIONS[operation]) {
     return {
@@ -159,7 +191,9 @@ export async function agenticLspAction({ operation, filePath, line, character, w
   // ── 3. Validate position (if needed) ──────────────────────
   if (opDef.needsPosition) {
     if (line == null || character == null) {
-      return { error: `Operation '${operation}' requires 'line' and 'character' (1-based)` };
+      return {
+        error: `Operation '${operation}' requires 'line' and 'character' (1-based)`,
+      };
     }
     if (typeof line !== "number" || line < 1) {
       return { error: "'line' must be a positive integer (1-based)" };
@@ -177,7 +211,9 @@ export async function agenticLspAction({ operation, filePath, line, character, w
       return { error: `'${resolvedPath}' is a directory, not a file` };
     }
     if (stats.size > MAX_FILE_SIZE_FOR_OPEN) {
-      return { error: `File is too large (${(stats.size / 1024).toFixed(0)} KB). Maximum: ${MAX_FILE_SIZE_FOR_OPEN / 1024} KB` };
+      return {
+        error: `File is too large (${(stats.size / 1024).toFixed(0)} KB). Maximum: ${MAX_FILE_SIZE_FOR_OPEN / 1024} KB`,
+      };
     }
     fileContent = await readFile(resolvedPath, "utf-8");
   } catch (error: unknown) {
@@ -230,9 +266,15 @@ export async function agenticLspAction({ operation, filePath, line, character, w
   // ── 8. Send request ────────────────────────────────────────
   let result: unknown;
   try {
-    result = await manager.sendRequest(resolvedPath, opDef.method, lspParams as LspParams);
+    result = await manager.sendRequest(
+      resolvedPath,
+      opDef.method,
+      lspParams as LspParams,
+    );
   } catch (error: unknown) {
-    return { error: `LSP request '${opDef.method}' failed: ${errorMessage(error)}` };
+    return {
+      error: `LSP request '${opDef.method}' failed: ${errorMessage(error)}`,
+    };
   }
 
   // ── 9. Format & return ─────────────────────────────────────
@@ -247,22 +289,38 @@ export async function agenticLspAction({ operation, filePath, line, character, w
 // Result Formatters
 // ────────────────────────────────────────────────────────────
 
-function formatResult(operation: string, result: unknown, filePath: string, wsRoot: string) {
+function formatResult(
+  operation: string,
+  result: unknown,
+  filePath: string,
+  wsRoot: string,
+) {
   if (result === null || result === undefined) {
     return {
       operation,
       filePath,
       result: null,
-      message: "No results found — the symbol may be external, unresolvable, or the server hasn't finished indexing. Try again in a few seconds.",
+      message:
+        "No results found — the symbol may be external, unresolvable, or the server hasn't finished indexing. Try again in a few seconds.",
     };
   }
 
   switch (operation) {
     case "goToDefinition":
     case "goToImplementation":
-      return formatLocations(operation, result as LspLocation | LspLocation[], filePath, wsRoot);
+      return formatLocations(
+        operation,
+        result as LspLocation | LspLocation[],
+        filePath,
+        wsRoot,
+      );
     case "findReferences":
-      return formatLocations(operation, result as LspLocation | LspLocation[], filePath, wsRoot);
+      return formatLocations(
+        operation,
+        result as LspLocation | LspLocation[],
+        filePath,
+        wsRoot,
+      );
     case "hover":
       return formatHover(result as LspHoverResult, filePath);
     case "documentSymbol":
@@ -272,7 +330,12 @@ function formatResult(operation: string, result: unknown, filePath: string, wsRo
   }
 }
 
-function formatLocations(operation: string, result: LspLocation | LspLocation[], filePath: string, wsRoot: string) {
+function formatLocations(
+  operation: string,
+  result: LspLocation | LspLocation[],
+  filePath: string,
+  wsRoot: string,
+) {
   // Normalize to array (some servers return single Location)
   const locations = Array.isArray(result) ? result : result ? [result] : [];
 
@@ -286,31 +349,34 @@ function formatLocations(operation: string, result: LspLocation | LspLocation[],
     };
   }
 
-  const formatted = locations.slice(0, MAX_LOCATIONS_RETURNED).map((loc) => {
-    // Handle both Location and LocationLink
-    const uri = loc.targetUri || loc.uri;
-    const range = loc.targetRange || loc.targetSelectionRange || loc.range;
+  const formatted = locations
+    .slice(0, MAX_LOCATIONS_RETURNED)
+    .map((loc) => {
+      // Handle both Location and LocationLink
+      const uri = loc.targetUri || loc.uri;
+      const range = loc.targetRange || loc.targetSelectionRange || loc.range;
 
-    if (!uri || !range) return null;
+      if (!uri || !range) return null;
 
-    let targetPath: string;
-    try {
-      targetPath = fileURLToPath(uri);
-    } catch {
-      targetPath = uri;
-    }
+      let targetPath: string;
+      try {
+        targetPath = fileURLToPath(uri);
+      } catch {
+        targetPath = uri;
+      }
 
-    const relativePath = wsRoot ? relative(wsRoot, targetPath) : targetPath;
+      const relativePath = wsRoot ? relative(wsRoot, targetPath) : targetPath;
 
-    return {
-      file: targetPath,
-      relativePath,
-      line: range.start.line + 1,        // 0-based → 1-based
-      character: range.start.character + 1,
-      endLine: range.end.line + 1,
-      endCharacter: range.end.character + 1,
-    };
-  }).filter(Boolean);
+      return {
+        file: targetPath,
+        relativePath,
+        line: range.start.line + 1, // 0-based → 1-based
+        character: range.start.character + 1,
+        endLine: range.end.line + 1,
+        endCharacter: range.end.character + 1,
+      };
+    })
+    .filter(Boolean);
 
   return {
     operation,
@@ -333,7 +399,12 @@ function formatHover(result: LspHoverResult, filePath: string) {
   }
 
   // MarkupContent
-  if (typeof result.contents === "object" && !Array.isArray(result.contents) && "kind" in result.contents && result.contents.kind) {
+  if (
+    typeof result.contents === "object" &&
+    !Array.isArray(result.contents) &&
+    "kind" in result.contents &&
+    result.contents.kind
+  ) {
     return {
       operation: "hover",
       filePath,
@@ -354,11 +425,14 @@ function formatHover(result: LspHoverResult, filePath: string) {
 
   // MarkedString[] (deprecated, some servers still use it)
   if (Array.isArray(result.contents)) {
-    const parts = result.contents.map((content) => {
-      if (typeof content === "string") return content;
-      if (content.value) return `\`\`\`${content.language || ""}\n${content.value}\n\`\`\``;
-      return "";
-    }).filter(Boolean);
+    const parts = result.contents
+      .map((content) => {
+        if (typeof content === "string") return content;
+        if (content.value)
+          return `\`\`\`${content.language || ""}\n${content.value}\n\`\`\``;
+        return "";
+      })
+      .filter(Boolean);
 
     return {
       operation: "hover",
@@ -369,7 +443,11 @@ function formatHover(result: LspHoverResult, filePath: string) {
   }
 
   // Single MarkedString
-  if (typeof result.contents === "object" && "value" in result.contents && result.contents.value) {
+  if (
+    typeof result.contents === "object" &&
+    "value" in result.contents &&
+    result.contents.value
+  ) {
     return {
       operation: "hover",
       filePath,
@@ -420,7 +498,10 @@ function flattenSymbols(symbols: LspSymbol[], depth: number = 0) {
       result.push({
         name: sym.name,
         kind: symbolKindToString(sym.kind),
-        line: sym.location.range?.start?.line != null ? sym.location.range.start.line + 1 : null,
+        line:
+          sym.location.range?.start?.line != null
+            ? sym.location.range.start.line + 1
+            : null,
         container: sym.containerName || null,
         depth,
       });
@@ -452,13 +533,32 @@ function flattenSymbols(symbols: LspSymbol[], depth: number = 0) {
 // ────────────────────────────────────────────────────────────
 
 const SYMBOL_KIND_MAP: Record<number, string> = {
-  1: "File", 2: "Module", 3: "Namespace", 4: "Package",
-  5: "Class", 6: "Method", 7: "Property", 8: "Field",
-  9: "Constructor", 10: "Enum", 11: "Interface", 12: "Function",
-  13: "Variable", 14: "Constant", 15: "String", 16: "Number",
-  17: "Boolean", 18: "Array", 19: "Object", 20: "Key",
-  21: "Null", 22: "EnumMember", 23: "Struct", 24: "Event",
-  25: "Operator", 26: "TypeParameter",
+  1: "File",
+  2: "Module",
+  3: "Namespace",
+  4: "Package",
+  5: "Class",
+  6: "Method",
+  7: "Property",
+  8: "Field",
+  9: "Constructor",
+  10: "Enum",
+  11: "Interface",
+  12: "Function",
+  13: "Variable",
+  14: "Constant",
+  15: "String",
+  16: "Number",
+  17: "Boolean",
+  18: "Array",
+  19: "Object",
+  20: "Key",
+  21: "Null",
+  22: "EnumMember",
+  23: "Struct",
+  24: "Event",
+  25: "Operator",
+  26: "TypeParameter",
 };
 
 function symbolKindToString(kind: number) {
@@ -469,7 +569,10 @@ function symbolKindToString(kind: number) {
  * Determine the workspace root for a file.
  * Tries: explicit override → ALLOWED_ROOTS match → dirname fallback.
  */
-function resolvedWorkspace(filePath: string, explicitWorkspace: string | undefined) {
+function resolvedWorkspace(
+  filePath: string,
+  explicitWorkspace: string | undefined,
+) {
   if (explicitWorkspace) return resolve(explicitWorkspace);
 
   // Find the allowed root that contains this file
@@ -488,4 +591,3 @@ function resolvedWorkspace(filePath: string, explicitWorkspace: string | undefin
 
 export { shutdownAllLspManagers as agenticLspShutdown };
 export { getAllLspHealth as agenticLspHealth };
-

@@ -46,7 +46,9 @@ export async function fetchTVMazeTrends() {
         continue;
       }
       const episodes = await response.json();
-      allShows.push(...episodes.map((ep: TvMazeEpisode) => ({ ...ep, country })));
+      allShows.push(
+        ...episodes.map((ep: TvMazeEpisode) => ({ ...ep, country })),
+      );
     } catch (error: unknown) {
       logger.error(`[TVMaze] ❌ ${country}: ${errorMessage(error)}`);
     }
@@ -69,7 +71,10 @@ export async function fetchTVMazeTrends() {
   }
   // Sort by weight (TVMaze's popularity metric), take top 30
   const topShows = Array.from(showMap.values())
-    .sort((firstItem, b) => b.weight - firstItem.weight || b.rating - firstItem.rating)
+    .sort(
+      (firstItem, b) =>
+        b.weight - firstItem.weight || b.rating - firstItem.rating,
+    )
     .slice(0, 30);
   return topShows.map((entry) => {
     const show = entry.show;

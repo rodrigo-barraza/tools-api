@@ -10,7 +10,10 @@ const PLASMA_URL =
 const MAG_URL =
   "https://services.swpc.noaa.gov/products/solar-wind/mag-7-day.json";
 
-function parseRows<T extends { time: string }>(rows: string[][], fields: string[]): T[] {
+function parseRows<T extends { time: string }>(
+  rows: string[][],
+  fields: string[],
+): T[] {
   // First row is header, skip it
   const data = rows.slice(1);
   const cutoff = Date.now() - MS_PER_DAY;
@@ -29,7 +32,10 @@ function parseRows<T extends { time: string }>(rows: string[][], fields: string[
     .filter((item): item is T => item !== null);
 }
 
-function downsample<tool extends { time: string }>(array: tool[], intervalMinutes: number): tool[] {
+function downsample<tool extends { time: string }>(
+  array: tool[],
+  intervalMinutes: number,
+): tool[] {
   if (array.length === 0) return array;
   const result: tool[] = [];
   let lastBucket: number | null = null;
@@ -60,14 +66,20 @@ export async function fetchSolarWind(): Promise<SolarWindResponse> {
   if (!magRes.ok)
     throw new Error(`SWPC Mag ${magRes.status}: ${magRes.statusText}`);
 
-  const plasmaJson = await plasmaRes.json() as string[][];
-  const magJson = await magRes.json() as string[][];
+  const plasmaJson = (await plasmaRes.json()) as string[][];
+  const magJson = (await magRes.json()) as string[][];
 
   const plasmaFields = ["density", "speed", "temperature"];
   const magFields = ["bx", "by", "bz", "lonGsm", "latGsm", "bt"];
 
-  const plasma = downsample(parseRows<SolarWindPlasmaReading>(plasmaJson, plasmaFields), 5);
-  const magnetic = downsample(parseRows<SolarWindMagReading>(magJson, magFields), 5);
+  const plasma = downsample(
+    parseRows<SolarWindPlasmaReading>(plasmaJson, plasmaFields),
+    5,
+  );
+  const magnetic = downsample(
+    parseRows<SolarWindMagReading>(magJson, magFields),
+    5,
+  );
 
   const latestPlasma = plasma[plasma.length - 1] || null;
   const latestMag = magnetic[magnetic.length - 1] || null;

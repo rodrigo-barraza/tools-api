@@ -9,7 +9,8 @@ const EONET_URL =
  */
 export async function fetchWildfires(): Promise<WildfireEvent[]> {
   const response = await fetch(EONET_URL);
-  if (!response.ok) throw new Error(`EONET ${response.status}: ${response.statusText}`);
+  if (!response.ok)
+    throw new Error(`EONET ${response.status}: ${response.statusText}`);
   const json = (await response.json()) as { events?: RawWildfireEvent[] };
 
   return (json.events || []).map((event: RawWildfireEvent) => {

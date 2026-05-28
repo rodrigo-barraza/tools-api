@@ -1,4 +1,7 @@
-import { asyncHandler, setupStreamingSSE } from "@rodrigo-barraza/utilities-library/express";
+import {
+  asyncHandler,
+  setupStreamingSSE,
+} from "@rodrigo-barraza/utilities-library/express";
 import { validateMaxLength } from "@rodrigo-barraza/utilities-library";
 import { Request, Response, Router } from "express";
 import BigNumber from "bignumber.js";
@@ -49,9 +52,15 @@ interface MapMarker {
 const router = Router();
 // ─── Calculator (BigNumber) ────────────────────────────────────────
 router.get("/calculate", (req: Request, res: Response) => {
-  const { operation, a: firstOperand, b } = req.query as Record<string, string | undefined>;
+  const {
+    operation,
+    a: firstOperand,
+    b,
+  } = req.query as Record<string, string | undefined>;
   if (!operation || !firstOperand) {
-    return res.status(400).json({ error: "Query parameters 'operation' and 'a' are required" });
+    return res
+      .status(400)
+      .json({ error: "Query parameters 'operation' and 'a' are required" });
   }
   try {
     const numA = new BigNumber(firstOperand);
@@ -89,7 +98,9 @@ router.get("/calculate", (req: Request, res: Response) => {
         result = numA.squareRoot();
         break;
       default:
-        return res.status(400).json({ error: `Unsupported operation: ${operation}` });
+        return res
+          .status(400)
+          .json({ error: `Unsupported operation: ${operation}` });
     }
     if (result.isNaN()) {
       return res.status(400).json({ error: "Result is Not-a-Number (NaN)" });
@@ -101,100 +112,137 @@ router.get("/calculate", (req: Request, res: Response) => {
       result: result.toFixed(),
     });
   } catch (error: unknown) {
-    res.status(400).json({ error: `Calculation failed: ${errorMessage(error)}` });
+    res
+      .status(400)
+      .json({ error: `Calculation failed: ${errorMessage(error)}` });
   }
 });
 // ─── Currency Conversion ───────────────────────────────────────────
-router.get("/currency/convert", asyncHandler(async (req: Request, res: Response) => {
-  const { amount, from, to } = req.query as Record<string, string | undefined>;
-  if (!from || !to) {
-    return res
-      .status(400)
-      .json({ error: "Query parameters 'from' and 'to' are required" });
-  }
-  res.json(await convertCurrency(parseFloat(amount || "") || 1, from, to));
-}));
-router.get("/currency/list", asyncHandler(
-  async () => {
+router.get(
+  "/currency/convert",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { amount, from, to } = req.query as Record<
+      string,
+      string | undefined
+    >;
+    if (!from || !to) {
+      return res
+        .status(400)
+        .json({ error: "Query parameters 'from' and 'to' are required" });
+    }
+    res.json(await convertCurrency(parseFloat(amount || "") || 1, from, to));
+  }),
+);
+router.get(
+  "/currency/list",
+  asyncHandler(async () => {
     const currencies = await listCurrencies();
     return { count: currencies.length, currencies };
-  },
-  "Currency list",
-));
+  }, "Currency list"),
+);
 // ─── Timezone ──────────────────────────────────────────────────────
-router.get("/timezone/:area/:location", asyncHandler(
-  (req: Request) => getTimeInTimezone(`${req.params.area as string}/${req.params.location as string}`),
-  "Timezone lookup",
-));
-router.get("/timezone/list", asyncHandler(
-  async (req: Request) => {
+router.get(
+  "/timezone/:area/:location",
+  asyncHandler(
+    (req: Request) =>
+      getTimeInTimezone(
+        `${req.params.area as string}/${req.params.location as string}`,
+      ),
+    "Timezone lookup",
+  ),
+);
+router.get(
+  "/timezone/list",
+  asyncHandler(async (req: Request) => {
     const timezones = await listTimezones(req.query.area as string);
     return {
       count: Array.isArray(timezones) ? timezones.length : 0,
       timezones,
     };
-  },
-  "Timezone list",
-));
+  }, "Timezone list"),
+);
 // ─── IP Geolocation (IPinfo) ───────────────────────────────────────
-router.get("/ip/batch", asyncHandler(async (req: Request, res: Response) => {
-  const ips = req.query.ips as string;
-  if (!ips) {
-    return res
-      .status(400)
-      .json({ error: "Query parameter 'ips' (comma-separated) is required" });
-  }
-  const ipArray = ips
-    .split(",")
-    .map((ip: string) => ip.trim())
-    .filter(Boolean);
-  const result = await batchLookupIps(ipArray);
-  res.json({ count: result.length, results: result });
-}));
-router.get("/ip", asyncHandler(
-  async () => lookupIp(""),
-  "IP lookup",
-));
-router.get("/ip/:ip", asyncHandler(
-  (req: Request) => {
+router.get(
+  "/ip/batch",
+  asyncHandler(async (req: Request, res: Response) => {
+    const ips = req.query.ips as string;
+    if (!ips) {
+      return res
+        .status(400)
+        .json({ error: "Query parameter 'ips' (comma-separated) is required" });
+    }
+    const ipArray = ips
+      .split(",")
+      .map((ip: string) => ip.trim())
+      .filter(Boolean);
+    const result = await batchLookupIps(ipArray);
+    res.json({ count: result.length, results: result });
+  }),
+);
+router.get(
+  "/ip",
+  asyncHandler(async () => lookupIp(""), "IP lookup"),
+);
+router.get(
+  "/ip/:ip",
+  asyncHandler((req: Request) => {
     const raw = req.params.ip as string;
     const clientIp = raw === "self" || raw === ":ip" ? "" : raw;
     return lookupIp(clientIp);
-  },
-  "IP lookup",
-));
+  }, "IP lookup"),
+);
 // ─── Places — Nearby Search (Google Places API New) ────────────────
-router.get("/places/nearby", asyncHandler(async (req: Request, res: Response) => {
-  const { type, latitude, longitude, radius, limit } = req.query as Record<string, string | undefined>;
-  if (!type) {
-    return res
-      .status(400)
-      .json({ error: "Query parameter 'type' is required (e.g. restaurant, cafe, gas_station)" });
-  }
-  res.json(await searchNearbyPlaces({
-    type,
-    latitude: latitude ? parseFloat(latitude) : undefined,
-    longitude: longitude ? parseFloat(longitude) : undefined,
-    radius: radius ? parseInt(radius) : undefined,
-    limit: limit ? parseInt(limit) : undefined,
-  }));
-}));
+router.get(
+  "/places/nearby",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { type, latitude, longitude, radius, limit } = req.query as Record<
+      string,
+      string | undefined
+    >;
+    if (!type) {
+      return res
+        .status(400)
+        .json({
+          error:
+            "Query parameter 'type' is required (e.g. restaurant, cafe, gas_station)",
+        });
+    }
+    res.json(
+      await searchNearbyPlaces({
+        type,
+        latitude: latitude ? parseFloat(latitude) : undefined,
+        longitude: longitude ? parseFloat(longitude) : undefined,
+        radius: radius ? parseInt(radius) : undefined,
+        limit: limit ? parseInt(limit) : undefined,
+      }),
+    );
+  }),
+);
 // ─── Places — Text Search (Google Places API New) ──────────────────
-router.get("/places/search", asyncHandler(async (req: Request, res: Response) => {
-  const { q: query, latitude, longitude, radius, limit } = req.query as Record<string, string | undefined>;
-  if (!query) {
-    return res
-      .status(400)
-      .json({ error: "Query parameter 'q' is required" });
-  }
-  res.json(await searchPlacesByText({
-    query: query,
-    latitude: latitude ? parseFloat(latitude) : undefined,
-    longitude: longitude ? parseFloat(longitude) : undefined,
-    radius: radius ? parseInt(radius) : undefined,
-    limit: limit ? parseInt(limit) : undefined,
-  }));
-}));
+router.get(
+  "/places/search",
+  asyncHandler(async (req: Request, res: Response) => {
+    const {
+      q: query,
+      latitude,
+      longitude,
+      radius,
+      limit,
+    } = req.query as Record<string, string | undefined>;
+    if (!query) {
+      return res.status(400).json({ error: "Query parameter 'q' is required" });
+    }
+    res.json(
+      await searchPlacesByText({
+        query: query,
+        latitude: latitude ? parseFloat(latitude) : undefined,
+        longitude: longitude ? parseFloat(longitude) : undefined,
+        radius: radius ? parseInt(radius) : undefined,
+        limit: limit ? parseInt(limit) : undefined,
+      }),
+    );
+  }),
+);
 // ─── Map Generation ───────────────────────────────────────────────
 /**
  * In-memory map marker store — avoids multi-kb query-param URLs.
@@ -208,7 +256,11 @@ function storeMarkers(markerList: MapMarker[]) {
  * Build the interactive embed HTML for Google Maps JS API.
  * Renders numbered markers with info windows showing name + address.
  */
-function buildMapEmbedHtml(markerList: MapMarker[], apiKey: string, { zoom, maptype = "roadmap" }: Record<string, unknown> = {}) {
+function buildMapEmbedHtml(
+  markerList: MapMarker[],
+  apiKey: string,
+  { zoom, maptype = "roadmap" }: Record<string, unknown> = {},
+) {
   const markersJson = JSON.stringify(
     markerList.map((m: MapMarker, i: number) => ({
       lat: m.latitude,
@@ -287,7 +339,10 @@ function initMap(){
 </body></html>`;
 }
 router.get("/map/embed", (req: Request, res: Response) => {
-  const { id, markers, zoom, maptype } = req.query as Record<string, string | undefined>;
+  const { id, markers, zoom, maptype } = req.query as Record<
+    string,
+    string | undefined
+  >;
   if (!CONFIG.GOOGLE_API_KEY) {
     return res.status(400).send("Missing API key");
   }
@@ -316,127 +371,174 @@ router.get("/map/embed", (req: Request, res: Response) => {
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(html);
 });
-router.get("/map", asyncHandler(async (req: Request, res: Response) => {
-  const { markers, zoom, maptype } = req.query as Record<string, string | undefined>;
-  if (!markers) {
-    return res
-      .status(400)
-      .json({ error: "Query parameter 'markers' is required (JSON array of {latitude, longitude, label?})" });
-  }
-  try {
-    let markerList: MapMarker[];
+router.get(
+  "/map",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { markers, zoom, maptype } = req.query as Record<
+      string,
+      string | undefined
+    >;
+    if (!markers) {
+      return res
+        .status(400)
+        .json({
+          error:
+            "Query parameter 'markers' is required (JSON array of {latitude, longitude, label?})",
+        });
+    }
     try {
-      markerList = JSON.parse(markers);
-    } catch {
-      return res
-        .status(400)
-        .json({ error: "'markers' must be a valid JSON array" });
+      let markerList: MapMarker[];
+      try {
+        markerList = JSON.parse(markers);
+      } catch {
+        return res
+          .status(400)
+          .json({ error: "'markers' must be a valid JSON array" });
+      }
+      if (!Array.isArray(markerList) || markerList.length === 0) {
+        return res
+          .status(400)
+          .json({ error: "'markers' must be a non-empty array" });
+      }
+      // Store markers and build a short embed URL
+      const mapId = storeMarkers(markerList);
+      const embedParams = new URLSearchParams({ id: mapId });
+      if (zoom) embedParams.set("zoom", zoom);
+      if (maptype) embedParams.set("maptype", maptype);
+      const mapEmbedUrl = buildLocalUrl(
+        "utility/map/embed",
+        Object.fromEntries(embedParams),
+      );
+      res.json({
+        mapEmbedUrl,
+        markerCount: markerList.length,
+      });
+    } catch (error: unknown) {
+      res
+        .status(502)
+        .json({ error: `Map generation failed: ${errorMessage(error)}` });
     }
-    if (!Array.isArray(markerList) || markerList.length === 0) {
-      return res
-        .status(400)
-        .json({ error: "'markers' must be a non-empty array" });
-    }
-    // Store markers and build a short embed URL
-    const mapId = storeMarkers(markerList);
-    const embedParams = new URLSearchParams({ id: mapId });
-    if (zoom) embedParams.set("zoom", zoom);
-    if (maptype) embedParams.set("maptype", maptype);
-    const mapEmbedUrl = buildLocalUrl("utility/map/embed", Object.fromEntries(embedParams));
-    res.json({
-      mapEmbedUrl,
-      markerCount: markerList.length,
-    });
-  } catch (error: unknown) {
-    res.status(502).json({ error: `Map generation failed: ${errorMessage(error)}` });
-  }
-}));
+  }),
+);
 // ─── Webcams ───────────────────────────────────────────────────────
-router.get("/webcams", asyncHandler(
-  async (req: Request) => {
+router.get(
+  "/webcams",
+  asyncHandler(async (req: Request) => {
     const { city, limit } = req.query as Record<string, string | undefined>;
-    const webcams = await getPublicWebcams({ 
-      city: city || "vancouver", 
-      limit: parseInt(limit || "", 10) || 100 
+    const webcams = await getPublicWebcams({
+      city: city || "vancouver",
+      limit: parseInt(limit || "", 10) || 100,
     });
     return { count: webcams.length, webcams };
-  },
-  "Webcams fetch"
-));
+  }, "Webcams fetch"),
+);
 // ─── Airports ──────────────────────────────────────────────────────
 router.get("/airports/search", (req: Request, res: Response) => {
-  const { q: query, limit, country } = req.query as Record<string, string | undefined>;
+  const {
+    q: query,
+    limit,
+    country,
+  } = req.query as Record<string, string | undefined>;
   if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  res.json(searchAirports(query, {
-    limit: parseInt(limit || "") || 10,
-    country,
-  }));
+  res.json(
+    searchAirports(query, {
+      limit: parseInt(limit || "") || 10,
+      country,
+    }),
+  );
 });
 router.get("/airports/code/:code", (req: Request, res: Response) => {
   const result = getAirportByCode(req.params.code as string);
   if (!result) {
-    return res.status(404).json({ error: `Airport not found: ${req.params.code as string}` });
+    return res
+      .status(404)
+      .json({ error: `Airport not found: ${req.params.code as string}` });
   }
   res.json(result);
 });
-router.get("/airports/country/:code", asyncHandler(
-  async (req: Request) => getAirportsByCountry(req.params.code as string, {
-    limit: parseInt(req.query.limit as string) || 50,
-  }),
-  "Country airports lookup",
-  500,
-));
+router.get(
+  "/airports/country/:code",
+  asyncHandler(
+    async (req: Request) =>
+      getAirportsByCountry(req.params.code as string, {
+        limit: parseInt(req.query.limit as string) || 50,
+      }),
+    "Country airports lookup",
+    500,
+  ),
+);
 router.get("/airports/nearest", (req: Request, res: Response) => {
   const { lat, lng, limit } = req.query as Record<string, string | undefined>;
   if (!lat || !lng) {
-    return res.status(400).json({ error: "Query parameters 'lat' and 'lng' are required" });
-  }
-  res.json(getNearestAirports(
-    parseFloat(lat),
-    parseFloat(lng),
-    { limit: parseInt(limit || "") || 5 },
-  ));
-});
-// ─── Python Code Interpreter ───────────────────────────────────────
-router.post("/python/execute", asyncHandler(async (req: Request, res: Response) => {
-  const { code, timeout } = req.body;
-  if (!code || typeof code !== "string") {
     return res
       .status(400)
-      .json({ error: "Request body must include 'code' (string)" });
+      .json({ error: "Query parameters 'lat' and 'lng' are required" });
   }
-  const lengthErr = validateMaxLength(code, MAX_CODE_LENGTH, "Code");
-  if (lengthErr) {
-    return res.status(400).json({ error: lengthErr });
-  }
-  const result = await executePython(code, {
-    timeout: timeout ? Math.min(Math.max(parseInt(timeout), 1000), 60_000) : undefined,
-  });
-  res.json(result);
-}));
-router.get("/python/info", asyncHandler(
-  async () => getInterpreterInfo(),
-  "Python interpreter info",
-));
+  res.json(
+    getNearestAirports(parseFloat(lat), parseFloat(lng), {
+      limit: parseInt(limit || "") || 5,
+    }),
+  );
+});
+// ─── Python Code Interpreter ───────────────────────────────────────
+router.post(
+  "/python/execute",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { code, timeout } = req.body;
+    if (!code || typeof code !== "string") {
+      return res
+        .status(400)
+        .json({ error: "Request body must include 'code' (string)" });
+    }
+    const lengthErr = validateMaxLength(code, MAX_CODE_LENGTH, "Code");
+    if (lengthErr) {
+      return res.status(400).json({ error: lengthErr });
+    }
+    const result = await executePython(code, {
+      timeout: timeout
+        ? Math.min(Math.max(parseInt(timeout), 1000), 60_000)
+        : undefined,
+    });
+    res.json(result);
+  }),
+);
+router.get(
+  "/python/info",
+  asyncHandler(async () => getInterpreterInfo(), "Python interpreter info"),
+);
 // ── Python Streaming (SSE) ────────────────────────────────────
-router.post("/python/stream", asyncHandler(async (req: Request, res: Response) => {
-  const { code, timeout } = req.body;
-  if (!code || typeof code !== "string") {
-    return res.status(400).json({ error: "Request body must include 'code' (string)" });
-  }
-  const lengthErr = validateMaxLength(code, MAX_CODE_LENGTH, "Code");
-  if (lengthErr) return res.status(400).json({ error: lengthErr });
-  const send = setupStreamingSSE(res);
-  send({ event: "start", language: "python" });
-  const result = await executePythonStreaming(code, {
-    timeout: timeout ? Math.min(Math.max(parseInt(timeout), 1000), 60_000) : undefined,
-    onChunk: (event: string, data: string) => send({ event, data }),
-  });
-  send({ event: "exit", exitCode: result.exitCode, executionTimeMs: result.executionTimeMs, success: result.success, timedOut: result.timedOut, error: result.error || undefined });
-  res.end();
-}));
+router.post(
+  "/python/stream",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { code, timeout } = req.body;
+    if (!code || typeof code !== "string") {
+      return res
+        .status(400)
+        .json({ error: "Request body must include 'code' (string)" });
+    }
+    const lengthErr = validateMaxLength(code, MAX_CODE_LENGTH, "Code");
+    if (lengthErr) return res.status(400).json({ error: lengthErr });
+    const send = setupStreamingSSE(res);
+    send({ event: "start", language: "python" });
+    const result = await executePythonStreaming(code, {
+      timeout: timeout
+        ? Math.min(Math.max(parseInt(timeout), 1000), 60_000)
+        : undefined,
+      onChunk: (event: string, data: string) => send({ event, data }),
+    });
+    send({
+      event: "exit",
+      exitCode: result.exitCode,
+      executionTimeMs: result.executionTimeMs,
+      success: result.success,
+      timedOut: result.timedOut,
+      error: result.error || undefined,
+    });
+    res.end();
+  }),
+);
 // ─── Chart Generation ──────────────────────────────────────────────
 const VALID_CHART_TYPES = ["bar", "line", "pie"];
 router.post("/chart", (req: Request, res: Response) => {
@@ -453,7 +555,8 @@ router.post("/chart", (req: Request, res: Response) => {
   }
   if (!datasets || !Array.isArray(datasets) || datasets.length === 0) {
     return res.status(400).json({
-      error: "'datasets' is required (non-empty array of { label, data } objects)",
+      error:
+        "'datasets' is required (non-empty array of { label, data } objects)",
     });
   }
   // Validate each dataset has a data array matching labels length
@@ -481,30 +584,38 @@ router.post("/chart", (req: Request, res: Response) => {
     datasetCount: datasets.length,
   });
 });
-router.get("/chart/render", asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.query as Record<string, string | undefined>;
-  if (!id) {
-    return res.status(400).send("Missing 'id' parameter");
-  }
-  const chartConfig = getStoredChart(id);
-  if (!chartConfig) {
-    return res.status(404).send("Chart not found or expired");
-  }
-  try {
-    const pngBuffer = await renderChartPng(chartConfig);
-    res.setHeader("Content-Type", "image/png");
-    res.setHeader("Cache-Control", "public, max-age=3600");
-    res.send(pngBuffer);
-  } catch (error: unknown) {
-    res.status(500).json({ error: `Chart render failed: ${errorMessage(error)}` });
-  }
-}));
+router.get(
+  "/chart/render",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.query as Record<string, string | undefined>;
+    if (!id) {
+      return res.status(400).send("Missing 'id' parameter");
+    }
+    const chartConfig = getStoredChart(id);
+    if (!chartConfig) {
+      return res.status(404).send("Chart not found or expired");
+    }
+    try {
+      const pngBuffer = await renderChartPng(chartConfig);
+      res.setHeader("Content-Type", "image/png");
+      res.setHeader("Cache-Control", "public, max-age=3600");
+      res.send(pngBuffer);
+    } catch (error: unknown) {
+      res
+        .status(500)
+        .json({ error: `Chart render failed: ${errorMessage(error)}` });
+    }
+  }),
+);
 // ─── Page Metadata Scraper (Crawlee) ───────────────────────────────
-router.get("/scrape/metadata", asyncHandler(
-  async (req: Request) => {
+router.get(
+  "/scrape/metadata",
+  asyncHandler(async (req: Request) => {
     const { url } = req.query as Record<string, string | undefined>;
     if (!url) {
-      throw Object.assign(new Error("Query parameter 'url' is required"), { status: 400 });
+      throw Object.assign(new Error("Query parameter 'url' is required"), {
+        status: 400,
+      });
     }
     const result = await crawlSingleStatic(url, {
       extractFn: (ctx) => {
@@ -539,7 +650,10 @@ router.get("/scrape/metadata", asyncHandler(
           $('meta[itemprop="keywords"]').attr("content") ||
           null;
         meta.keywords = keywords
-          ? keywords.split(",").map((k: string) => k.trim()).filter(Boolean)
+          ? keywords
+              .split(",")
+              .map((k: string) => k.trim())
+              .filter(Boolean)
           : null;
         // Site name
         meta.siteName =
@@ -559,11 +673,13 @@ router.get("/scrape/metadata", asyncHandler(
     if (result.error) {
       throw Object.assign(new Error(result.error), { status: 502 });
     }
-    const metadata = typeof result.data === "object" && result.data !== null ? result.data : {};
+    const metadata =
+      typeof result.data === "object" && result.data !== null
+        ? result.data
+        : {};
     return { url, ...metadata };
-  },
-  "Page metadata scrape",
-));
+  }, "Page metadata scrape"),
+);
 // ─── Health ────────────────────────────────────────────────────────
 export function getUtilityHealth() {
   return {
@@ -580,24 +696,54 @@ export function getUtilityHealth() {
   };
 }
 // ── Unified Airport Lookup Dispatcher ──────────────────────────────
-router.get("/airports/lookup", asyncHandler(async (req: Request, res: Response) => {
-  const { action, q: searchQuery, code, country, lat, lng, limit } = req.query as Record<string, string | undefined>;
-  if (!action) return res.status(400).json({ error: "'action' is required", actions: ["search", "code", "country", "nearest"] });
-  switch (action) {
-    case "search":
-      req.url = `/airports/search?q=${searchQuery || ""}&limit=${limit || 10}&country=${country || ""}`;
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    case "code":
-      req.url = `/airports/code/${code || ""}`;
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    case "country":
-      req.url = `/airports/country/${code || country || ""}`;
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    case "nearest":
-      req.url = `/airports/nearest?lat=${lat || 0}&lng=${lng || 0}&limit=${limit || 10}`;
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    default:
-      return res.status(400).json({ error: `Unknown action: ${action}`, actions: ["search", "code", "country", "nearest"] });
-  }
-}));
+router.get(
+  "/airports/lookup",
+  asyncHandler(async (req: Request, res: Response) => {
+    const {
+      action,
+      q: searchQuery,
+      code,
+      country,
+      lat,
+      lng,
+      limit,
+    } = req.query as Record<string, string | undefined>;
+    if (!action)
+      return res
+        .status(400)
+        .json({
+          error: "'action' is required",
+          actions: ["search", "code", "country", "nearest"],
+        });
+    switch (action) {
+      case "search":
+        req.url = `/airports/search?q=${searchQuery || ""}&limit=${limit || 10}&country=${country || ""}`;
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "code":
+        req.url = `/airports/code/${code || ""}`;
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "country":
+        req.url = `/airports/country/${code || country || ""}`;
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "nearest":
+        req.url = `/airports/nearest?lat=${lat || 0}&lng=${lng || 0}&limit=${limit || 10}`;
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      default:
+        return res
+          .status(400)
+          .json({
+            error: `Unknown action: ${action}`,
+            actions: ["search", "code", "country", "nearest"],
+          });
+    }
+  }),
+);
 export default router;

@@ -43,6 +43,6 @@ export async function fetchUpcomingLaunches(): Promise<Launch[]> {
     padName: launch.pad?.name || null,
     padLocation: launch.pad?.location?.name || null,
     imageUrl: launch.image?.image_url || null,
-    webcastUrl: launch.webcast_live ? (launch.url || null) : null,
+    webcastUrl: launch.webcast_live ? launch.url || null : null,
   }));
 }

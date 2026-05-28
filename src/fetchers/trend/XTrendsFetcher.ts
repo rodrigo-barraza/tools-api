@@ -36,21 +36,28 @@ export async function fetchXTrends(woeid: number = X_WOEIDS.WORLDWIDE) {
   const location = trendData.locations?.[0]?.name || "Unknown";
   const asOf = trendData.as_of || new Date().toISOString();
 
-  return (trendData.trends || []).map((trend: { name: string; tweet_volume?: number; url?: string; promoted_content?: unknown }) => ({
-    name: trend.name,
-    normalizedName: normalizeName(trend.name.replace(/^#/, "")),
-    source: SOURCES.X,
-    volume: trend.tweet_volume || 0,
-    url:
-      trend.url || `https://x.com/search?q=${encodeURIComponent(trend.name)}`,
-    context: {
-      location,
-      woeid,
-      asOf,
-      promotedContent: trend.promoted_content || null,
-    },
-    timestamp: new Date().toISOString(),
-  }));
+  return (trendData.trends || []).map(
+    (trend: {
+      name: string;
+      tweet_volume?: number;
+      url?: string;
+      promoted_content?: unknown;
+    }) => ({
+      name: trend.name,
+      normalizedName: normalizeName(trend.name.replace(/^#/, "")),
+      source: SOURCES.X,
+      volume: trend.tweet_volume || 0,
+      url:
+        trend.url || `https://x.com/search?q=${encodeURIComponent(trend.name)}`,
+      context: {
+        location,
+        woeid,
+        asOf,
+        promotedContent: trend.promoted_content || null,
+      },
+      timestamp: new Date().toISOString(),
+    }),
+  );
 }
 
 /**

@@ -1,10 +1,17 @@
 import http from "node:http";
-import express, { type Request, type Response, type NextFunction } from "express";
+import express, {
+  type Request,
+  type Response,
+  type NextFunction,
+} from "express";
 import logger from "./logger.ts";
 import CONFIG, { applyLocation } from "./config.ts";
 import { connectDB } from "@rodrigo-barraza/utilities-library/mongo";
 import { initLocation } from "./services/LocationService.ts";
-import { requestLoggerMiddleware, setupRequestsCollection } from "./middleware/RequestLoggerMiddleware.ts";
+import {
+  requestLoggerMiddleware,
+  setupRequestsCollection,
+} from "./middleware/RequestLoggerMiddleware.ts";
 import { toolCallLoggerMiddleware } from "./middleware/ToolCallLoggerMiddleware.ts";
 import { fieldProjectionMiddleware } from "./middleware/FieldProjectionMiddleware.ts";
 import { headerPropagationMiddleware } from "./middleware/HeaderPropagationMiddleware.ts";
@@ -22,10 +29,16 @@ import { setupCmeCollection } from "./models/Cme.ts";
 import { setupGeomagneticStormCollection } from "./models/GeomagneticStorm.ts";
 import { setupWebcamCollection } from "./models/Webcam.ts";
 
-import { connectLuposDB, setupLuposCollections } from "./models/LuposMessage.ts";
+import {
+  connectLuposDB,
+  setupLuposCollections,
+} from "./models/LuposMessage.ts";
 import { setupToolCallsCollection } from "./middleware/ToolCallLoggerMiddleware.ts";
 import { setupAgenticTaskCollection } from "./services/AgenticTaskService.ts";
-import { setupAgenticScheduleCollection, startSchedulePoller } from "./services/AgenticSchedulerService.ts";
+import {
+  setupAgenticScheduleCollection,
+  startSchedulePoller,
+} from "./services/AgenticSchedulerService.ts";
 
 // ─── Routes ────────────────────────────────────────────────────────
 
@@ -45,7 +58,9 @@ import computeRoutes, { getComputeHealth } from "./routes/ComputeRoutes.ts";
 import maritimeRoutes, { getMaritimeHealth } from "./routes/MaritimeRoutes.ts";
 import energyRoutes, { getEnergyHealth } from "./routes/EnergyRoutes.ts";
 import agenticRoutes, { getAgenticHealth } from "./routes/AgenticRoutes.ts";
-import communicationRoutes, { getCommunicationHealth } from "./routes/CommunicationRoutes.ts";
+import communicationRoutes, {
+  getCommunicationHealth,
+} from "./routes/CommunicationRoutes.ts";
 import creativeRoutes, { getCreativeHealth } from "./routes/CreativeRoutes.ts";
 import gamingRoutes, { getGamingHealth } from "./routes/GamingRoutes.ts";
 import torrentRoutes, { getTorrentHealth } from "./routes/TorrentRoutes.ts";
@@ -78,8 +93,14 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   const origin = req.headers.origin;
   res.header("Access-Control-Allow-Origin", origin || "*");
   res.header("Access-Control-Allow-Credentials", "true");
-  res.header("Access-Control-Allow-Headers", "Content-Type, X-Project, X-Username, X-Agent, X-Request-Id, X-Conversation-Id, X-Iteration, X-Workspace-Id");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Content-Type, X-Project, X-Username, X-Agent, X-Request-Id, X-Conversation-Id, X-Iteration, X-Workspace-Id",
+  );
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+  );
   if (req.method === "OPTIONS") return res.sendStatus(204);
   next();
 });
@@ -211,7 +232,6 @@ async function start() {
   startTrendCollectors();
   startWeatherCollectors();
   startEmojiKitchenCollectors();
-
 
   // Start AIS Stream WebSocket (if API key is configured)
   startAisStream();

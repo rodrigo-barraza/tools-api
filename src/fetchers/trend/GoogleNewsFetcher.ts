@@ -7,7 +7,9 @@ import {
 import logger from "../../logger.ts";
 import {
   extractXmlTag,
-  extractXmlItems, errorMessage } from "../../utilities.ts";
+  extractXmlItems,
+  errorMessage,
+} from "../../utilities.ts";
 
 const GOOGLE_NEWS_RSS_URL = "https://news.google.com/rss";
 
@@ -57,7 +59,13 @@ export async function fetchGoogleNews() {
     },
   ];
 
-  const allArticles: Array<{ title: string; link: string | null; pubDate: string | null; source: string | null; section: string }> = [];
+  const allArticles: Array<{
+    title: string;
+    link: string | null;
+    pubDate: string | null;
+    source: string | null;
+    section: string;
+  }> = [];
   const seen = new Set();
 
   for (const { url, section } of sections) {

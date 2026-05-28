@@ -19,7 +19,11 @@ import {
   fetchAllCostcoUS,
   fetchAllCostcoCA,
 } from "../fetchers/product/CostcoFetcher.ts";
-import { updateProducts, setProductError, type Product } from "../caches/ProductCache.ts";
+import {
+  updateProducts,
+  setProductError,
+  type Product,
+} from "../caches/ProductCache.ts";
 import {
   getWatchedSkus,
   getWatchlistMetadata,
@@ -31,12 +35,18 @@ import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
 
 // ─── Collector Factory ─────────────────────────────────────────────
-function createProductCollector<T>(collection: string, source: string, fetchFn: () => Promise<T[]>) {
+function createProductCollector<T>(
+  collection: string,
+  source: string,
+  fetchFn: () => Promise<T[]>,
+) {
   return async function () {
     try {
       const products = await fetchFn();
       updateProducts(source, products as unknown as Product[]);
-      const result = await upsertProducts(products as unknown as Parameters<typeof upsertProducts>[0]);
+      const result = await upsertProducts(
+        products as unknown as Parameters<typeof upsertProducts>[0],
+      );
       await saveState(collection, { source, products });
       logger.info(
         `[${collection}] ✅ ${products.length} products | ${result.upserted} new, ${result.modified} updated`,
@@ -50,13 +60,41 @@ function createProductCollector<T>(collection: string, source: string, fetchFn: 
 
 // ─── Collectors ────────────────────────────────────────────────────
 
-const collectBestBuy = createProductCollector("products_bestbuy", PRODUCT_SOURCES.BESTBUY, fetchAllBestBuyTrending);
-const collectAmazon = createProductCollector("products_amazon", PRODUCT_SOURCES.AMAZON, fetchAllAmazonBestSellers);
-const collectProductHunt = createProductCollector("products_producthunt", PRODUCT_SOURCES.PRODUCTHUNT, fetchProductHuntTrending);
-const collectEbay = createProductCollector("products_ebay", PRODUCT_SOURCES.EBAY, fetchAllEbayTrending);
-const collectEtsy = createProductCollector("products_etsy", PRODUCT_SOURCES.ETSY, fetchEtsyTrending);
-const collectCostcoUS = createProductCollector("products_costco_us", PRODUCT_SOURCES.COSTCO_US, fetchAllCostcoUS);
-const collectCostcoCA = createProductCollector("products_costco_ca", PRODUCT_SOURCES.COSTCO_CA, fetchAllCostcoCA);
+const collectBestBuy = createProductCollector(
+  "products_bestbuy",
+  PRODUCT_SOURCES.BESTBUY,
+  fetchAllBestBuyTrending,
+);
+const collectAmazon = createProductCollector(
+  "products_amazon",
+  PRODUCT_SOURCES.AMAZON,
+  fetchAllAmazonBestSellers,
+);
+const collectProductHunt = createProductCollector(
+  "products_producthunt",
+  PRODUCT_SOURCES.PRODUCTHUNT,
+  fetchProductHuntTrending,
+);
+const collectEbay = createProductCollector(
+  "products_ebay",
+  PRODUCT_SOURCES.EBAY,
+  fetchAllEbayTrending,
+);
+const collectEtsy = createProductCollector(
+  "products_etsy",
+  PRODUCT_SOURCES.ETSY,
+  fetchEtsyTrending,
+);
+const collectCostcoUS = createProductCollector(
+  "products_costco_us",
+  PRODUCT_SOURCES.COSTCO_US,
+  fetchAllCostcoUS,
+);
+const collectCostcoCA = createProductCollector(
+  "products_costco_ca",
+  PRODUCT_SOURCES.COSTCO_CA,
+  fetchAllCostcoCA,
+);
 
 // BestBuy CA Availability
 async function collectBestBuyCAAvailability() {
@@ -70,7 +108,9 @@ async function collectBestBuyCAAvailability() {
     );
     updateStatuses(results as Parameters<typeof updateStatuses>[0]);
     await saveState("bestbuy_ca_availability", results);
-    const inStock = (results as { inStock: boolean }[]).filter((r) => r.inStock).length;
+    const inStock = (results as { inStock: boolean }[]).filter(
+      (r) => r.inStock,
+    ).length;
     logger.info(
       `[bestbuy_ca_availability] ✅ ${results.length} SKUs checked | ${inStock} in stock`,
     );
@@ -88,14 +128,63 @@ async function collectBestBuyCAAvailability() {
 // ─── Startup Definitions ──────────────────────────────────────────
 
 const STARTUP_TASKS = [
-  { label: "BestBuy", collection: "products_bestbuy", ttl: BESTBUY_INTERVAL_MS, collectFn: collectBestBuy, delay: 0 },
-  { label: "Amazon", collection: "products_amazon", ttl: AMAZON_INTERVAL_MS, collectFn: collectAmazon, delay: 15_000 },
-  { label: "ProductHunt", collection: "products_producthunt", ttl: PRODUCTHUNT_PRODUCT_INTERVAL_MS, collectFn: collectProductHunt, delay: 20_000 },
-  { label: "eBay", collection: "products_ebay", ttl: EBAY_INTERVAL_MS, collectFn: collectEbay, delay: 25_000 },
-  { label: "Etsy", collection: "products_etsy", ttl: ETSY_INTERVAL_MS, collectFn: collectEtsy, delay: 30_000 },
-  { label: "BestBuy CA", collection: "bestbuy_ca_availability", ttl: BESTBUY_CA_AVAILABILITY_INTERVAL_MS, collectFn: collectBestBuyCAAvailability, restoreFn: updateStatuses, delay: 35_000 },
-  { label: "Costco US", collection: "products_costco_us", ttl: COSTCO_INTERVAL_MS, collectFn: collectCostcoUS, delay: 40_000 },
-  { label: "Costco CA", collection: "products_costco_ca", ttl: COSTCO_INTERVAL_MS, collectFn: collectCostcoCA, delay: 45_000 },
+  {
+    label: "BestBuy",
+    collection: "products_bestbuy",
+    ttl: BESTBUY_INTERVAL_MS,
+    collectFn: collectBestBuy,
+    delay: 0,
+  },
+  {
+    label: "Amazon",
+    collection: "products_amazon",
+    ttl: AMAZON_INTERVAL_MS,
+    collectFn: collectAmazon,
+    delay: 15_000,
+  },
+  {
+    label: "ProductHunt",
+    collection: "products_producthunt",
+    ttl: PRODUCTHUNT_PRODUCT_INTERVAL_MS,
+    collectFn: collectProductHunt,
+    delay: 20_000,
+  },
+  {
+    label: "eBay",
+    collection: "products_ebay",
+    ttl: EBAY_INTERVAL_MS,
+    collectFn: collectEbay,
+    delay: 25_000,
+  },
+  {
+    label: "Etsy",
+    collection: "products_etsy",
+    ttl: ETSY_INTERVAL_MS,
+    collectFn: collectEtsy,
+    delay: 30_000,
+  },
+  {
+    label: "BestBuy CA",
+    collection: "bestbuy_ca_availability",
+    ttl: BESTBUY_CA_AVAILABILITY_INTERVAL_MS,
+    collectFn: collectBestBuyCAAvailability,
+    restoreFn: updateStatuses,
+    delay: 35_000,
+  },
+  {
+    label: "Costco US",
+    collection: "products_costco_us",
+    ttl: COSTCO_INTERVAL_MS,
+    collectFn: collectCostcoUS,
+    delay: 40_000,
+  },
+  {
+    label: "Costco CA",
+    collection: "products_costco_ca",
+    ttl: COSTCO_INTERVAL_MS,
+    collectFn: collectCostcoCA,
+    delay: 45_000,
+  },
 ];
 
 export function startProductCollectors() {
@@ -104,7 +193,11 @@ export function startProductCollectors() {
     ...task,
     restoreFn:
       task.restoreFn ||
-      ((data: Record<string, unknown>) => updateProducts(data.source as string, data.products as Parameters<typeof updateProducts>[1])),
+      ((data: Record<string, unknown>) =>
+        updateProducts(
+          data.source as string,
+          data.products as Parameters<typeof updateProducts>[1],
+        )),
   }));
 
   startCollectorLoop(tasks);

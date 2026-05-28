@@ -18,7 +18,12 @@ interface WikiArticle {
  */
 export async function fetchWikipediaTrends(date: Date | string | null = null) {
   // Use yesterday's date since today's data isn't available until after midnight UTC
-  const targetDate: Date = date instanceof Date ? date : date ? new Date(date) : new Date(Date.now() - 86_400_000);
+  const targetDate: Date =
+    date instanceof Date
+      ? date
+      : date
+        ? new Date(date)
+        : new Date(Date.now() - 86_400_000);
   const year = targetDate.getUTCFullYear();
   const month = String(targetDate.getUTCMonth() + 1).padStart(2, "0");
   const day = String(targetDate.getUTCDate()).padStart(2, "0");
@@ -33,7 +38,9 @@ export async function fetchWikipediaTrends(date: Date | string | null = null) {
   });
 
   if (!response.ok) {
-    throw new Error(`Wikipedia API returned ${response.status}: ${response.statusText}`);
+    throw new Error(
+      `Wikipedia API returned ${response.status}: ${response.statusText}`,
+    );
   }
 
   const data = await response.json();

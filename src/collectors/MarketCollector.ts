@@ -15,12 +15,17 @@ type QuoteItem = FetchResult[number];
 async function collectCommodities() {
   try {
     const quotes = await fetchCommodities();
-    const result = await updateCommodities(quotes as Parameters<typeof updateCommodities>[0]);
+    const result = await updateCommodities(
+      quotes as Parameters<typeof updateCommodities>[0],
+    );
     await saveState("commodities", quotes);
 
     const topMover = [...quotes]
       .filter((q: QuoteItem) => q.changePercent != null)
-      .sort((a: QuoteItem, b: QuoteItem) => Math.abs(a.changePercent ?? 0) - Math.abs(b.changePercent ?? 0))
+      .sort(
+        (a: QuoteItem, b: QuoteItem) =>
+          Math.abs(a.changePercent ?? 0) - Math.abs(b.changePercent ?? 0),
+      )
       .at(-1);
 
     logger.info(

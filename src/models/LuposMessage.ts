@@ -22,10 +22,7 @@ export async function connectLuposDB(baseUri: string) {
   if (luposDb) return luposDb;
 
   // Replace the database name in the URI
-  const luposUri = baseUri.replace(
-    /\/tools\b/,
-    "/lupos",
-  );
+  const luposUri = baseUri.replace(/\/tools\b/, "/lupos");
 
   client = new MongoClient(luposUri);
   await client.connect();
@@ -38,7 +35,8 @@ export async function connectLuposDB(baseUri: string) {
  * Get the Lupos database instance.
  */
 export function getLuposDB(): Db {
-  if (!luposDb) throw new Error("Lupos DB not connected — call connectLuposDB() first");
+  if (!luposDb)
+    throw new Error("Lupos DB not connected — call connectLuposDB() first");
   return luposDb;
 }
 
@@ -55,10 +53,22 @@ export async function setupLuposCollections() {
   // On 8M+ docs, new indexes may take several minutes to build in background.
   const ensureIndexes = async () => {
     try {
-      await messagesCol!.createIndex({ id: 1 }, { unique: true, background: true });
-      await messagesCol!.createIndex({ "author.id": 1, createdTimestamp: -1 }, { background: true });
-      await messagesCol!.createIndex({ guildId: 1, channelId: 1, createdTimestamp: -1 }, { background: true });
-      await messagesCol!.createIndex({ guildId: 1, createdTimestamp: -1 }, { background: true });
+      await messagesCol!.createIndex(
+        { id: 1 },
+        { unique: true, background: true },
+      );
+      await messagesCol!.createIndex(
+        { "author.id": 1, createdTimestamp: -1 },
+        { background: true },
+      );
+      await messagesCol!.createIndex(
+        { guildId: 1, channelId: 1, createdTimestamp: -1 },
+        { background: true },
+      );
+      await messagesCol!.createIndex(
+        { guildId: 1, createdTimestamp: -1 },
+        { background: true },
+      );
     } catch (error: unknown) {
       logger.warn(`🐺 Lupos index creation warning: ${errorMessage(error)}`);
     }

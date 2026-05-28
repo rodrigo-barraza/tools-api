@@ -1,5 +1,8 @@
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
-import { setupStreamingSSE, lazyImport } from "@rodrigo-barraza/utilities-library/express";
+import {
+  setupStreamingSSE,
+  lazyImport,
+} from "@rodrigo-barraza/utilities-library/express";
 import { validateMaxLength } from "@rodrigo-barraza/utilities-library";
 import {
   parseHex as hexToRgb,
@@ -20,7 +23,12 @@ import {
 } from "../services/ShellExecutorService.ts";
 import { MAX_CODE_LENGTH, MAX_COMMAND_LENGTH } from "../constants.ts";
 import crypto from "node:crypto";
-import { EphemeralStore, buildLocalUrl, buildEmbedHtml, errorMessage } from "../utilities.ts";
+import {
+  EphemeralStore,
+  buildLocalUrl,
+  buildEmbedHtml,
+  errorMessage,
+} from "../utilities.ts";
 import { processImage, convertToAscii } from "../services/ImageService.ts";
 import { convertVideoToGif } from "../services/VideoService.ts";
 // ─── Lazy-loaded dependencies ──────────────────────────────────────
@@ -32,18 +40,36 @@ interface ConvertUnitsInstance {
     };
   };
   (): {
-    describe: (unit: string) => { singular: string; plural: string; measure: string };
+    describe: (unit: string) => {
+      singular: string;
+      plural: string;
+      measure: string;
+    };
     possibilities: (measure?: string) => string[];
     measures: () => string[];
   };
 }
 
 const getConvertUnits = lazyImport<ConvertUnitsInstance>("convert-units");
-const getDateFns = lazyImport<typeof import("date-fns")>("date-fns", (m: unknown) => m as typeof import("date-fns"));
-const getDateFnsTz = lazyImport<typeof import("date-fns-tz")>("date-fns-tz", (m: unknown) => m as typeof import("date-fns-tz"));
-const getJSONPath = lazyImport<typeof import("jsonpath-plus").JSONPath>("jsonpath-plus", (m: unknown) => (m as Record<string, unknown>).JSONPath as typeof import("jsonpath-plus").JSONPath);
+const getDateFns = lazyImport<typeof import("date-fns")>(
+  "date-fns",
+  (m: unknown) => m as typeof import("date-fns"),
+);
+const getDateFnsTz = lazyImport<typeof import("date-fns-tz")>(
+  "date-fns-tz",
+  (m: unknown) => m as typeof import("date-fns-tz"),
+);
+const getJSONPath = lazyImport<typeof import("jsonpath-plus").JSONPath>(
+  "jsonpath-plus",
+  (m: unknown) =>
+    (m as Record<string, unknown>)
+      .JSONPath as typeof import("jsonpath-plus").JSONPath,
+);
 const getQRCode = lazyImport<typeof import("qrcode")>("qrcode");
-const getDiff = lazyImport<typeof import("diff")>("diff", (m: unknown) => m as typeof import("diff"));
+const getDiff = lazyImport<typeof import("diff")>(
+  "diff",
+  (m: unknown) => m as typeof import("diff"),
+);
 const router = Router();
 // ─── 1. JavaScript Interpreter (vm sandbox) ─────────────────
 router.post("/js/execute", (req: Request, res: Response) => {
@@ -69,14 +95,18 @@ router.get("/js/info", (_req: Request, res: Response) => {
 router.post("/js/stream", (req: Request, res: Response) => {
   const { code, timeout } = req.body;
   if (!code || typeof code !== "string") {
-    return res.status(400).json({ error: "Request body must include 'code' (string)" });
+    return res
+      .status(400)
+      .json({ error: "Request body must include 'code' (string)" });
   }
   const lengthErr = validateMaxLength(code, MAX_CODE_LENGTH, "Code");
   if (lengthErr) return res.status(400).json({ error: lengthErr });
   const send = setupStreamingSSE(res);
   send({ event: "start", language: "javascript" });
   const result = executeJavaScript(code, {
-    timeout: timeout ? Math.min(Math.max(parseInt(timeout), 100), 30_000) : undefined,
+    timeout: timeout
+      ? Math.min(Math.max(parseInt(timeout), 100), 30_000)
+      : undefined,
   });
   // Emit console output as stdout chunks
   if (result.output) {
@@ -85,397 +115,550 @@ router.post("/js/stream", (req: Request, res: Response) => {
   if (result.error) {
     send({ event: "stderr", data: result.error + "\n" });
   }
-  send({ event: "exit", exitCode: result.error ? 1 : 0, executionTimeMs: result.executionTimeMs, success: result.success });
+  send({
+    event: "exit",
+    exitCode: result.error ? 1 : 0,
+    executionTimeMs: result.executionTimeMs,
+    success: result.success,
+  });
   res.end();
 });
 // ─── 2. Shell Executor (allowlisted commands) ───────────────
-router.post("/shell/execute", asyncHandler(async (req: Request, res: Response) => {
-  const { command, stdin, timeout } = req.body;
-  if (!command || typeof command !== "string") {
-    return res
-      .status(400)
-      .json({ error: "Request body must include 'command' (string)" });
-  }
-  const lengthErr = validateMaxLength(command, MAX_COMMAND_LENGTH, "Command");
-  if (lengthErr) return res.status(400).json({ error: lengthErr });
-  const result = await executeShell(command, {
-    stdin: stdin || "",
-    timeout: timeout
-      ? Math.min(Math.max(parseInt(timeout), 500), 30_000)
-      : undefined,
-  });
-  res.json(result);
-}));
+router.post(
+  "/shell/execute",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { command, stdin, timeout } = req.body;
+    if (!command || typeof command !== "string") {
+      return res
+        .status(400)
+        .json({ error: "Request body must include 'command' (string)" });
+    }
+    const lengthErr = validateMaxLength(command, MAX_COMMAND_LENGTH, "Command");
+    if (lengthErr) return res.status(400).json({ error: lengthErr });
+    const result = await executeShell(command, {
+      stdin: stdin || "",
+      timeout: timeout
+        ? Math.min(Math.max(parseInt(timeout), 500), 30_000)
+        : undefined,
+    });
+    res.json(result);
+  }),
+);
 router.get("/shell/binaries", (_req: Request, res: Response) => {
   const binaries = getAllowedBinaries();
   res.json({ count: binaries.length, binaries });
 });
 // ── Shell Streaming (SSE) ─────────────────────────────────────
-router.post("/shell/stream", asyncHandler(async (req: Request, res: Response) => {
-  const { command, stdin, timeout } = req.body;
-  if (!command || typeof command !== "string") {
-    return res.status(400).json({ error: "Request body must include 'command' (string)" });
-  }
-  const lengthErr = validateMaxLength(command, MAX_COMMAND_LENGTH, "Command");
-  if (lengthErr) return res.status(400).json({ error: lengthErr });
-  const send = setupStreamingSSE(res);
-  send({ event: "start", command });
-  const result = await executeShellStreaming(command, {
-    stdin: stdin || "",
-    timeout: timeout ? Math.min(Math.max(parseInt(timeout), 500), 30_000) : undefined,
-    onChunk: (event: string, data: string) => send({ event, data }),
-  });
-  send({ event: "exit", exitCode: result.exitCode, executionTimeMs: result.executionTimeMs, success: result.success, timedOut: result.timedOut, error: result.error || undefined });
-  res.end();
-}));
+router.post(
+  "/shell/stream",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { command, stdin, timeout } = req.body;
+    if (!command || typeof command !== "string") {
+      return res
+        .status(400)
+        .json({ error: "Request body must include 'command' (string)" });
+    }
+    const lengthErr = validateMaxLength(command, MAX_COMMAND_LENGTH, "Command");
+    if (lengthErr) return res.status(400).json({ error: lengthErr });
+    const send = setupStreamingSSE(res);
+    send({ event: "start", command });
+    const result = await executeShellStreaming(command, {
+      stdin: stdin || "",
+      timeout: timeout
+        ? Math.min(Math.max(parseInt(timeout), 500), 30_000)
+        : undefined,
+      onChunk: (event: string, data: string) => send({ event, data }),
+    });
+    send({
+      event: "exit",
+      exitCode: result.exitCode,
+      executionTimeMs: result.executionTimeMs,
+      success: result.success,
+      timedOut: result.timedOut,
+      error: result.error || undefined,
+    });
+    res.end();
+  }),
+);
 // ─── 3. Unit Conversion ─────────────────────────────────────
-router.get("/units/convert", asyncHandler(async (req: Request, res: Response) => {
-  const { value, from, to } = req.query as Record<string, string>;
-  if (!value || !from || !to) {
-    return res
-      .status(400)
-      .json({ error: "Query parameters 'value', 'from', and 'to' are required" });
-  }
-  try {
-    const convert = await getConvertUnits();
-    const numValue = parseFloat(value);
-    if (isNaN(numValue)) {
-      return res.status(400).json({ error: "'value' must be a valid number" });
-    }
-    const result = convert(numValue).from(from).to(to);
-    const fromUnit = convert().describe(from);
-    const toUnit = convert().describe(to);
-    res.json({
-      value: numValue,
-      from: { abbr: from, singular: fromUnit.singular, plural: fromUnit.plural },
-      to: { abbr: to, singular: toUnit.singular, plural: toUnit.plural },
-      result,
-    });
-  } catch (error: unknown) {
-    res.status(400).json({ error: `Conversion failed: ${errorMessage(error)}` });
-  }
-}));
-router.get("/units/list", asyncHandler(async (req: Request, res: Response) => {
-  const { measure } = req.query as Record<string, string>;
-  try {
-    const convert = await getConvertUnits();
-    if (measure) {
-      const units = convert().possibilities(measure);
-      const described = units.map((u: string) => {
-        const desc = convert().describe(u);
-        return { abbr: u, singular: desc.singular, plural: desc.plural, measure: desc.measure };
-      });
-      return res.json({ measure, count: described.length, units: described });
-    }
-    const measures = convert().measures();
-    const all: Record<string, unknown> = {};
-    for (const measure of measures) {
-      const units = convert().possibilities(measure);
-      all[measure] = units.map((u: string) => {
-        const desc = convert().describe(u);
-        return { abbr: u, singular: desc.singular };
-      });
-    }
-    res.json({ measureCount: measures.length, measures: all });
-  } catch (error: unknown) {
-    res.status(400).json({ error: `Unit listing failed: ${errorMessage(error)}` });
-  }
-}));
-// ─── 4. DateTime Parsing & Arithmetic ───────────────────────
-router.post("/datetime/parse", asyncHandler(async (req: Request, res: Response) => {
-  const { operation, date, date2, amount, unit, format, timezone } = req.body;
-  if (!operation) {
-    return res.status(400).json({
-      error: "Request body must include 'operation' (parse|format|diff|add|subtract|startOf|endOf|isValid|now)",
-    });
-  }
-  try {
-    const fns = await getDateFns();
-    const timeZoneLib = await getDateFnsTz();
-    const parseDate = (d: unknown) => {
-      if (!d) return new Date();
-      if (d === "now") return new Date();
-      const parsed = typeof d === "number" ? new Date(d) : fns.parseISO(d as string);
-      if (isNaN(parsed.getTime())) throw new Error(`Invalid date: ${d}`);
-      return parsed;
-    };
-    const formatDate = (dateValue: Date) => {
-      if (timezone) {
-        return timeZoneLib.formatInTimeZone(dateValue, timezone, format || "yyyy-MM-dd'T'HH:mm:ssXXX");
-      }
-      return format ? fns.format(dateValue, format) : dateValue.toISOString();
-    };
-    let result: unknown;
-    switch (operation) {
-      case "now": {
-        const now = new Date();
-        result = {
-          iso: now.toISOString(),
-          unix: now.getTime(),
-          formatted: formatDate(now),
-        };
-        if (timezone) {
-          (result as Record<string, unknown>).inTimezone = timeZoneLib.formatInTimeZone(now, timezone, "yyyy-MM-dd HH:mm:ss zzz");
-        }
-        break;
-      }
-      case "parse": {
-        const parsedDate = parseDate(date);
-        result = {
-          iso: parsedDate.toISOString(),
-          unix: parsedDate.getTime(),
-          formatted: formatDate(parsedDate),
-          dayOfWeek: fns.format(parsedDate, "EEEE"),
-          dayOfYear: fns.getDayOfYear(parsedDate),
-          weekNumber: fns.getISOWeek(parsedDate),
-          isLeapYear: fns.isLeapYear(parsedDate),
-          isWeekend: fns.isWeekend(parsedDate),
-        };
-        break;
-      }
-      case "format": {
-        const parsedDate = parseDate(date);
-        result = { formatted: formatDate(parsedDate) };
-        break;
-      }
-      case "diff": {
-        const d1 = parseDate(date);
-        const d2 = parseDate(date2);
-        result = {
-          milliseconds: fns.differenceInMilliseconds(d2, d1),
-          seconds: fns.differenceInSeconds(d2, d1),
-          minutes: fns.differenceInMinutes(d2, d1),
-          hours: fns.differenceInHours(d2, d1),
-          days: fns.differenceInDays(d2, d1),
-          weeks: fns.differenceInWeeks(d2, d1),
-          months: fns.differenceInMonths(d2, d1),
-          years: fns.differenceInYears(d2, d1),
-          businessDays: fns.differenceInBusinessDays(d2, d1),
-          humanReadable: fns.formatDistanceStrict(d1, d2),
-        };
-        break;
-      }
-      case "add": {
-        const parsedDate = parseDate(date);
-        if (!amount || !unit) throw new Error("'amount' and 'unit' are required for add");
-        const ADDERS: Record<string, (date: Date, amount: number) => Date> = {
-          years: fns.addYears,
-          months: fns.addMonths,
-          weeks: fns.addWeeks,
-          days: fns.addDays,
-          hours: fns.addHours,
-          minutes: fns.addMinutes,
-          seconds: fns.addSeconds,
-        };
-        const adder = ADDERS[unit];
-        if (!adder) throw new Error(`Invalid unit: ${unit}. Use: ${Object.keys(ADDERS).join(", ")}`);
-        const added = adder(parsedDate, parseInt(amount));
-        result = { original: formatDate(parsedDate), result: formatDate(added), iso: added.toISOString() };
-        break;
-      }
-      case "subtract": {
-        const parsedDate = parseDate(date);
-        if (!amount || !unit) throw new Error("'amount' and 'unit' are required for subtract");
-        const SUBBERS: Record<string, (date: Date, amount: number) => Date> = {
-          years: fns.subYears,
-          months: fns.subMonths,
-          weeks: fns.subWeeks,
-          days: fns.subDays,
-          hours: fns.subHours,
-          minutes: fns.subMinutes,
-          seconds: fns.subSeconds,
-        };
-        const subber = SUBBERS[unit];
-        if (!subber) throw new Error(`Invalid unit: ${unit}. Use: ${Object.keys(SUBBERS).join(", ")}`);
-        const subtracted = subber(parsedDate, parseInt(amount));
-        result = { original: formatDate(parsedDate), result: formatDate(subtracted), iso: subtracted.toISOString() };
-        break;
-      }
-      case "startOf": {
-        const parsedDate = parseDate(date);
-        if (!unit) throw new Error("'unit' is required for startOf");
-        const STARTERS: Record<string, (date: Date) => Date> = {
-          year: fns.startOfYear,
-          month: fns.startOfMonth,
-          week: fns.startOfWeek,
-          day: fns.startOfDay,
-          hour: fns.startOfHour,
-          minute: fns.startOfMinute,
-        };
-        const startFunction = STARTERS[unit];
-        if (!startFunction) throw new Error(`Invalid unit: ${unit}. Use: ${Object.keys(STARTERS).join(", ")}`);
-        const started = startFunction(parsedDate);
-        result = { original: formatDate(parsedDate), result: formatDate(started), iso: started.toISOString() };
-        break;
-      }
-      case "endOf": {
-        const parsedDate = parseDate(date);
-        if (!unit) throw new Error("'unit' is required for endOf");
-        const ENDERS: Record<string, (date: Date) => Date> = {
-          year: fns.endOfYear,
-          month: fns.endOfMonth,
-          week: fns.endOfWeek,
-          day: fns.endOfDay,
-          hour: fns.endOfHour,
-          minute: fns.endOfMinute,
-        };
-        const endFunction = ENDERS[unit];
-        if (!endFunction) throw new Error(`Invalid unit: ${unit}. Use: ${Object.keys(ENDERS).join(", ")}`);
-        const ended = endFunction(parsedDate);
-        result = { original: formatDate(parsedDate), result: formatDate(ended), iso: ended.toISOString() };
-        break;
-      }
-      case "isValid": {
-        try {
-          const parsedDate = parseDate(date);
-          result = { valid: !isNaN(parsedDate.getTime()), parsed: parsedDate.toISOString() };
-        } catch {
-          result = { valid: false, parsed: null };
-        }
-        break;
-      }
-      default:
-        return res.status(400).json({
-          error: `Unknown operation: ${operation}. Use: now, parse, format, diff, add, subtract, startOf, endOf, isValid`,
+router.get(
+  "/units/convert",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { value, from, to } = req.query as Record<string, string>;
+    if (!value || !from || !to) {
+      return res
+        .status(400)
+        .json({
+          error: "Query parameters 'value', 'from', and 'to' are required",
         });
     }
-    res.json({ operation, ...(result as Record<string, unknown>) });
-  } catch (error: unknown) {
-    res.status(400).json({ error: `DateTime operation failed: ${errorMessage(error)}` });
-  }
-}));
-// ─── 5. JSON Transform (JSONPath) ───────────────────────────
-router.post("/json/transform", asyncHandler(async (req: Request, res: Response) => {
-  const { data, expression, operations } = req.body;
-  if (!data) {
-    return res.status(400).json({ error: "Request body must include 'data' (object or array)" });
-  }
-  try {
-    let result = data;
-    if (expression) {
-      const jsonPathLib = await getJSONPath();
-      result = jsonPathLib({ path: expression, json: data, wrap: true });
+    try {
+      const convert = await getConvertUnits();
+      const numValue = parseFloat(value);
+      if (isNaN(numValue)) {
+        return res
+          .status(400)
+          .json({ error: "'value' must be a valid number" });
+      }
+      const result = convert(numValue).from(from).to(to);
+      const fromUnit = convert().describe(from);
+      const toUnit = convert().describe(to);
+      res.json({
+        value: numValue,
+        from: {
+          abbr: from,
+          singular: fromUnit.singular,
+          plural: fromUnit.plural,
+        },
+        to: { abbr: to, singular: toUnit.singular, plural: toUnit.plural },
+        result,
+      });
+    } catch (error: unknown) {
+      res
+        .status(400)
+        .json({ error: `Conversion failed: ${errorMessage(error)}` });
     }
-    // Chained operations
-    if (operations && Array.isArray(operations)) {
-      for (const op of operations) {
-        switch (op.type) {
-          case "flatten":
-            result = Array.isArray(result) ? result.flat(op.depth ?? Infinity) : result;
-            break;
-          case "unique":
-            result = Array.isArray(result) ? [...new Set(result.map((x: unknown) => (typeof x === "object" ? JSON.stringify(x) : x)))].map((x: unknown) => { try { return JSON.parse(x as string); } catch { return x; } }) : result;
-            break;
-          case "sort":
-            if (Array.isArray(result)) {
-              const key = op.key;
-              const order = op.order === "desc" ? -1 : 1;
-              result = [...result].sort((a: Record<string, unknown> | number | string, b: Record<string, unknown> | number | string) => {
-                const valueA = key ? (a as Record<string, unknown>)?.[key] : a;
-                const valueB = key ? (b as Record<string, unknown>)?.[key] : b;
-                if (typeof valueA === "number" && typeof valueB === "number") return (valueA - valueB) * order;
-                return String(valueA).localeCompare(String(valueB)) * order;
-              });
-            }
-            break;
-          case "filter":
-            if (Array.isArray(result) && op.key && op.value !== undefined) {
-              const opType = op.operator || "eq";
-              result = result.filter((item: Record<string, unknown>) => {
-                const value = item?.[op.key];
-                switch (opType) {
-                  case "eq": return value === op.value;
-                  case "neq": return value !== op.value;
-                  case "gt": return (value as number) > (op.value as number);
-                  case "gte": return (value as number) >= (op.value as number);
-                  case "lt": return (value as number) < (op.value as number);
-                  case "lte": return (value as number) <= (op.value as number);
-                  case "contains": return String(value).includes(String(op.value));
-                  case "startsWith": return String(value).startsWith(String(op.value));
-                  default: return true;
-                }
-              });
-            }
-            break;
-          case "pick":
-            if (Array.isArray(result) && Array.isArray(op.keys)) {
-              result = result.map((item: Record<string, unknown>) => {
+  }),
+);
+router.get(
+  "/units/list",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { measure } = req.query as Record<string, string>;
+    try {
+      const convert = await getConvertUnits();
+      if (measure) {
+        const units = convert().possibilities(measure);
+        const described = units.map((u: string) => {
+          const desc = convert().describe(u);
+          return {
+            abbr: u,
+            singular: desc.singular,
+            plural: desc.plural,
+            measure: desc.measure,
+          };
+        });
+        return res.json({ measure, count: described.length, units: described });
+      }
+      const measures = convert().measures();
+      const all: Record<string, unknown> = {};
+      for (const measure of measures) {
+        const units = convert().possibilities(measure);
+        all[measure] = units.map((u: string) => {
+          const desc = convert().describe(u);
+          return { abbr: u, singular: desc.singular };
+        });
+      }
+      res.json({ measureCount: measures.length, measures: all });
+    } catch (error: unknown) {
+      res
+        .status(400)
+        .json({ error: `Unit listing failed: ${errorMessage(error)}` });
+    }
+  }),
+);
+// ─── 4. DateTime Parsing & Arithmetic ───────────────────────
+router.post(
+  "/datetime/parse",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { operation, date, date2, amount, unit, format, timezone } = req.body;
+    if (!operation) {
+      return res.status(400).json({
+        error:
+          "Request body must include 'operation' (parse|format|diff|add|subtract|startOf|endOf|isValid|now)",
+      });
+    }
+    try {
+      const fns = await getDateFns();
+      const timeZoneLib = await getDateFnsTz();
+      const parseDate = (d: unknown) => {
+        if (!d) return new Date();
+        if (d === "now") return new Date();
+        const parsed =
+          typeof d === "number" ? new Date(d) : fns.parseISO(d as string);
+        if (isNaN(parsed.getTime())) throw new Error(`Invalid date: ${d}`);
+        return parsed;
+      };
+      const formatDate = (dateValue: Date) => {
+        if (timezone) {
+          return timeZoneLib.formatInTimeZone(
+            dateValue,
+            timezone,
+            format || "yyyy-MM-dd'T'HH:mm:ssXXX",
+          );
+        }
+        return format ? fns.format(dateValue, format) : dateValue.toISOString();
+      };
+      let result: unknown;
+      switch (operation) {
+        case "now": {
+          const now = new Date();
+          result = {
+            iso: now.toISOString(),
+            unix: now.getTime(),
+            formatted: formatDate(now),
+          };
+          if (timezone) {
+            (result as Record<string, unknown>).inTimezone =
+              timeZoneLib.formatInTimeZone(
+                now,
+                timezone,
+                "yyyy-MM-dd HH:mm:ss zzz",
+              );
+          }
+          break;
+        }
+        case "parse": {
+          const parsedDate = parseDate(date);
+          result = {
+            iso: parsedDate.toISOString(),
+            unix: parsedDate.getTime(),
+            formatted: formatDate(parsedDate),
+            dayOfWeek: fns.format(parsedDate, "EEEE"),
+            dayOfYear: fns.getDayOfYear(parsedDate),
+            weekNumber: fns.getISOWeek(parsedDate),
+            isLeapYear: fns.isLeapYear(parsedDate),
+            isWeekend: fns.isWeekend(parsedDate),
+          };
+          break;
+        }
+        case "format": {
+          const parsedDate = parseDate(date);
+          result = { formatted: formatDate(parsedDate) };
+          break;
+        }
+        case "diff": {
+          const d1 = parseDate(date);
+          const d2 = parseDate(date2);
+          result = {
+            milliseconds: fns.differenceInMilliseconds(d2, d1),
+            seconds: fns.differenceInSeconds(d2, d1),
+            minutes: fns.differenceInMinutes(d2, d1),
+            hours: fns.differenceInHours(d2, d1),
+            days: fns.differenceInDays(d2, d1),
+            weeks: fns.differenceInWeeks(d2, d1),
+            months: fns.differenceInMonths(d2, d1),
+            years: fns.differenceInYears(d2, d1),
+            businessDays: fns.differenceInBusinessDays(d2, d1),
+            humanReadable: fns.formatDistanceStrict(d1, d2),
+          };
+          break;
+        }
+        case "add": {
+          const parsedDate = parseDate(date);
+          if (!amount || !unit)
+            throw new Error("'amount' and 'unit' are required for add");
+          const ADDERS: Record<string, (date: Date, amount: number) => Date> = {
+            years: fns.addYears,
+            months: fns.addMonths,
+            weeks: fns.addWeeks,
+            days: fns.addDays,
+            hours: fns.addHours,
+            minutes: fns.addMinutes,
+            seconds: fns.addSeconds,
+          };
+          const adder = ADDERS[unit];
+          if (!adder)
+            throw new Error(
+              `Invalid unit: ${unit}. Use: ${Object.keys(ADDERS).join(", ")}`,
+            );
+          const added = adder(parsedDate, parseInt(amount));
+          result = {
+            original: formatDate(parsedDate),
+            result: formatDate(added),
+            iso: added.toISOString(),
+          };
+          break;
+        }
+        case "subtract": {
+          const parsedDate = parseDate(date);
+          if (!amount || !unit)
+            throw new Error("'amount' and 'unit' are required for subtract");
+          const SUBBERS: Record<string, (date: Date, amount: number) => Date> =
+            {
+              years: fns.subYears,
+              months: fns.subMonths,
+              weeks: fns.subWeeks,
+              days: fns.subDays,
+              hours: fns.subHours,
+              minutes: fns.subMinutes,
+              seconds: fns.subSeconds,
+            };
+          const subber = SUBBERS[unit];
+          if (!subber)
+            throw new Error(
+              `Invalid unit: ${unit}. Use: ${Object.keys(SUBBERS).join(", ")}`,
+            );
+          const subtracted = subber(parsedDate, parseInt(amount));
+          result = {
+            original: formatDate(parsedDate),
+            result: formatDate(subtracted),
+            iso: subtracted.toISOString(),
+          };
+          break;
+        }
+        case "startOf": {
+          const parsedDate = parseDate(date);
+          if (!unit) throw new Error("'unit' is required for startOf");
+          const STARTERS: Record<string, (date: Date) => Date> = {
+            year: fns.startOfYear,
+            month: fns.startOfMonth,
+            week: fns.startOfWeek,
+            day: fns.startOfDay,
+            hour: fns.startOfHour,
+            minute: fns.startOfMinute,
+          };
+          const startFunction = STARTERS[unit];
+          if (!startFunction)
+            throw new Error(
+              `Invalid unit: ${unit}. Use: ${Object.keys(STARTERS).join(", ")}`,
+            );
+          const started = startFunction(parsedDate);
+          result = {
+            original: formatDate(parsedDate),
+            result: formatDate(started),
+            iso: started.toISOString(),
+          };
+          break;
+        }
+        case "endOf": {
+          const parsedDate = parseDate(date);
+          if (!unit) throw new Error("'unit' is required for endOf");
+          const ENDERS: Record<string, (date: Date) => Date> = {
+            year: fns.endOfYear,
+            month: fns.endOfMonth,
+            week: fns.endOfWeek,
+            day: fns.endOfDay,
+            hour: fns.endOfHour,
+            minute: fns.endOfMinute,
+          };
+          const endFunction = ENDERS[unit];
+          if (!endFunction)
+            throw new Error(
+              `Invalid unit: ${unit}. Use: ${Object.keys(ENDERS).join(", ")}`,
+            );
+          const ended = endFunction(parsedDate);
+          result = {
+            original: formatDate(parsedDate),
+            result: formatDate(ended),
+            iso: ended.toISOString(),
+          };
+          break;
+        }
+        case "isValid": {
+          try {
+            const parsedDate = parseDate(date);
+            result = {
+              valid: !isNaN(parsedDate.getTime()),
+              parsed: parsedDate.toISOString(),
+            };
+          } catch {
+            result = { valid: false, parsed: null };
+          }
+          break;
+        }
+        default:
+          return res.status(400).json({
+            error: `Unknown operation: ${operation}. Use: now, parse, format, diff, add, subtract, startOf, endOf, isValid`,
+          });
+      }
+      res.json({ operation, ...(result as Record<string, unknown>) });
+    } catch (error: unknown) {
+      res
+        .status(400)
+        .json({ error: `DateTime operation failed: ${errorMessage(error)}` });
+    }
+  }),
+);
+// ─── 5. JSON Transform (JSONPath) ───────────────────────────
+router.post(
+  "/json/transform",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { data, expression, operations } = req.body;
+    if (!data) {
+      return res
+        .status(400)
+        .json({ error: "Request body must include 'data' (object or array)" });
+    }
+    try {
+      let result = data;
+      if (expression) {
+        const jsonPathLib = await getJSONPath();
+        result = jsonPathLib({ path: expression, json: data, wrap: true });
+      }
+      // Chained operations
+      if (operations && Array.isArray(operations)) {
+        for (const op of operations) {
+          switch (op.type) {
+            case "flatten":
+              result = Array.isArray(result)
+                ? result.flat(op.depth ?? Infinity)
+                : result;
+              break;
+            case "unique":
+              result = Array.isArray(result)
+                ? [
+                    ...new Set(
+                      result.map((x: unknown) =>
+                        typeof x === "object" ? JSON.stringify(x) : x,
+                      ),
+                    ),
+                  ].map((x: unknown) => {
+                    try {
+                      return JSON.parse(x as string);
+                    } catch {
+                      return x;
+                    }
+                  })
+                : result;
+              break;
+            case "sort":
+              if (Array.isArray(result)) {
+                const key = op.key;
+                const order = op.order === "desc" ? -1 : 1;
+                result = [...result].sort(
+                  (
+                    a: Record<string, unknown> | number | string,
+                    b: Record<string, unknown> | number | string,
+                  ) => {
+                    const valueA = key
+                      ? (a as Record<string, unknown>)?.[key]
+                      : a;
+                    const valueB = key
+                      ? (b as Record<string, unknown>)?.[key]
+                      : b;
+                    if (
+                      typeof valueA === "number" &&
+                      typeof valueB === "number"
+                    )
+                      return (valueA - valueB) * order;
+                    return String(valueA).localeCompare(String(valueB)) * order;
+                  },
+                );
+              }
+              break;
+            case "filter":
+              if (Array.isArray(result) && op.key && op.value !== undefined) {
+                const opType = op.operator || "eq";
+                result = result.filter((item: Record<string, unknown>) => {
+                  const value = item?.[op.key];
+                  switch (opType) {
+                    case "eq":
+                      return value === op.value;
+                    case "neq":
+                      return value !== op.value;
+                    case "gt":
+                      return (value as number) > (op.value as number);
+                    case "gte":
+                      return (value as number) >= (op.value as number);
+                    case "lt":
+                      return (value as number) < (op.value as number);
+                    case "lte":
+                      return (value as number) <= (op.value as number);
+                    case "contains":
+                      return String(value).includes(String(op.value));
+                    case "startsWith":
+                      return String(value).startsWith(String(op.value));
+                    default:
+                      return true;
+                  }
+                });
+              }
+              break;
+            case "pick":
+              if (Array.isArray(result) && Array.isArray(op.keys)) {
+                result = result.map((item: Record<string, unknown>) => {
+                  const picked: Record<string, unknown> = {};
+                  for (const k of op.keys) {
+                    if (k in item) picked[k] = item[k];
+                  }
+                  return picked;
+                });
+              } else if (typeof result === "object" && Array.isArray(op.keys)) {
                 const picked: Record<string, unknown> = {};
                 for (const k of op.keys) {
-                  if (k in item) picked[k] = item[k];
+                  if (k in result) picked[k] = result[k];
                 }
-                return picked;
-              });
-            } else if (typeof result === "object" && Array.isArray(op.keys)) {
-              const picked: Record<string, unknown> = {};
-              for (const k of op.keys) {
-                if (k in result) picked[k] = result[k];
+                result = picked;
               }
-              result = picked;
-            }
-            break;
-          case "omit":
-            if (Array.isArray(result) && Array.isArray(op.keys)) {
-              result = result.map((item: Record<string, unknown>) => {
-                const omitted = { ...item };
-                for (const k of op.keys) delete omitted[k];
-                return omitted;
-              });
-            } else if (typeof result === "object" && Array.isArray(op.keys)) {
-              result = { ...result };
-              for (const k of op.keys) delete result[k];
-            }
-            break;
-          case "groupBy":
-            if (Array.isArray(result) && op.key) {
-              const groups: Record<string, unknown> = {};
-              for (const item of result) {
-                const groupKey = String(item?.[op.key] ?? "undefined");
-                if (!groups[groupKey]) groups[groupKey] = [];
-                (groups[groupKey] as unknown[]).push(item);
+              break;
+            case "omit":
+              if (Array.isArray(result) && Array.isArray(op.keys)) {
+                result = result.map((item: Record<string, unknown>) => {
+                  const omitted = { ...item };
+                  for (const k of op.keys) delete omitted[k];
+                  return omitted;
+                });
+              } else if (typeof result === "object" && Array.isArray(op.keys)) {
+                result = { ...result };
+                for (const k of op.keys) delete result[k];
               }
-              result = groups;
-            }
-            break;
-          case "count":
-            result = Array.isArray(result) ? result.length : typeof result === "object" ? Object.keys(result).length : 1;
-            break;
-          case "sum":
-            if (Array.isArray(result)) {
-              result = result.reduce((acc: number, item: Record<string, unknown>) => {
-                const value = op.key ? item?.[op.key] : item;
-                return acc + (typeof value === "number" ? value : 0);
-              }, 0);
-            }
-            break;
-          case "limit":
-            if (Array.isArray(result) && op.count) {
-              result = result.slice(0, op.count);
-            }
-            break;
-          case "reverse":
-            if (Array.isArray(result)) {
-              result = [...result].reverse();
-            }
-            break;
-          default:
-            // Skip unknown operations
-            break;
+              break;
+            case "groupBy":
+              if (Array.isArray(result) && op.key) {
+                const groups: Record<string, unknown> = {};
+                for (const item of result) {
+                  const groupKey = String(item?.[op.key] ?? "undefined");
+                  if (!groups[groupKey]) groups[groupKey] = [];
+                  (groups[groupKey] as unknown[]).push(item);
+                }
+                result = groups;
+              }
+              break;
+            case "count":
+              result = Array.isArray(result)
+                ? result.length
+                : typeof result === "object"
+                  ? Object.keys(result).length
+                  : 1;
+              break;
+            case "sum":
+              if (Array.isArray(result)) {
+                result = result.reduce(
+                  (acc: number, item: Record<string, unknown>) => {
+                    const value = op.key ? item?.[op.key] : item;
+                    return acc + (typeof value === "number" ? value : 0);
+                  },
+                  0,
+                );
+              }
+              break;
+            case "limit":
+              if (Array.isArray(result) && op.count) {
+                result = result.slice(0, op.count);
+              }
+              break;
+            case "reverse":
+              if (Array.isArray(result)) {
+                result = [...result].reverse();
+              }
+              break;
+            default:
+              // Skip unknown operations
+              break;
+          }
         }
       }
+      const count = Array.isArray(result)
+        ? result.length
+        : typeof result === "object"
+          ? Object.keys(result).length
+          : 1;
+      res.json({ count, result });
+    } catch (error: unknown) {
+      res
+        .status(400)
+        .json({ error: `JSON transform failed: ${errorMessage(error)}` });
     }
-    const count = Array.isArray(result) ? result.length : typeof result === "object" ? Object.keys(result).length : 1;
-    res.json({ count, result });
-  } catch (error: unknown) {
-    res.status(400).json({ error: `JSON transform failed: ${errorMessage(error)}` });
-  }
-}));
+  }),
+);
 // ─── 6. CSV Generation ──────────────────────────────────────
 const csvStore = new EphemeralStore<{ csv: string; filename: string }>();
 router.post("/csv", (req: Request, res: Response) => {
   const { data, columns, filename, delimiter } = req.body;
   if (!data || !Array.isArray(data) || data.length === 0) {
-    return res.status(400).json({ error: "'data' must be a non-empty array of objects" });
+    return res
+      .status(400)
+      .json({ error: "'data' must be a non-empty array of objects" });
   }
   try {
     const delim = delimiter || ",";
@@ -485,14 +668,22 @@ router.post("/csv", (req: Request, res: Response) => {
     const escape = (value: unknown) => {
       if (value === null || value === undefined) return "";
       const stringValue = String(value);
-      if (stringValue.includes(delim) || stringValue.includes('"') || stringValue.includes("\n")) {
+      if (
+        stringValue.includes(delim) ||
+        stringValue.includes('"') ||
+        stringValue.includes("\n")
+      ) {
         return `"${stringValue.replace(/"/g, '""')}"`;
       }
       return stringValue;
     };
     const lines = [cols.map(escape).join(delim)];
     for (const row of data) {
-      lines.push(cols.map((c: string) => escape((row as Record<string, unknown>)[c])).join(delim));
+      lines.push(
+        cols
+          .map((c: string) => escape((row as Record<string, unknown>)[c]))
+          .join(delim),
+      );
     }
     const csv = lines.join("\n");
     const id = csvStore.set({ csv, filename: filename || "export.csv" });
@@ -504,7 +695,9 @@ router.post("/csv", (req: Request, res: Response) => {
       columns: cols.length,
     });
   } catch (error: unknown) {
-    res.status(400).json({ error: `CSV generation failed: ${errorMessage(error)}` });
+    res
+      .status(400)
+      .json({ error: `CSV generation failed: ${errorMessage(error)}` });
   }
 });
 router.get("/csv/download", (req: Request, res: Response) => {
@@ -515,37 +708,51 @@ router.get("/csv/download", (req: Request, res: Response) => {
     return res.status(404).send("CSV not found or expired");
   }
   res.setHeader("Content-Type", "text/csv; charset=utf-8");
-  res.setHeader("Content-Disposition", `attachment; filename="${entry.filename}"`);
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="${entry.filename}"`,
+  );
   res.send(entry.csv);
 });
 // ─── 7. QR Code Generation ──────────────────────────────────
 const qrStore = new EphemeralStore<{ buffer: Buffer }>();
-router.post("/qr", asyncHandler(async (req: Request, res: Response) => {
-  const { data, size, errorCorrection, darkColor, lightColor } = req.body;
-  if (!data || typeof data !== "string") {
-    return res.status(400).json({ error: "'data' (string) is required — URL, text, WiFi config, etc." });
-  }
-  if (data.length > 4296) {
-    return res.status(400).json({ error: "Data exceeds QR code capacity (max ~4296 chars)" });
-  }
-  try {
-    const qrcode = await getQRCode();
-    const pngBuffer = await qrcode.toBuffer(data, {
-      width: Math.min(size || 400, 1024),
-      errorCorrectionLevel: errorCorrection || "M",
-      color: {
-        dark: darkColor || "#000000",
-        light: lightColor || "#ffffff",
-      },
-      margin: 2,
-    });
-    const id = qrStore.set({ buffer: pngBuffer });
-    const qrImageUrl = buildLocalUrl("compute/qr/render", { id });
-    res.json({ qrImageUrl, qrId: id, dataLength: data.length });
-  } catch (error: unknown) {
-    res.status(400).json({ error: `QR code generation failed: ${errorMessage(error)}` });
-  }
-}));
+router.post(
+  "/qr",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { data, size, errorCorrection, darkColor, lightColor } = req.body;
+    if (!data || typeof data !== "string") {
+      return res
+        .status(400)
+        .json({
+          error: "'data' (string) is required — URL, text, WiFi config, etc.",
+        });
+    }
+    if (data.length > 4296) {
+      return res
+        .status(400)
+        .json({ error: "Data exceeds QR code capacity (max ~4296 chars)" });
+    }
+    try {
+      const qrcode = await getQRCode();
+      const pngBuffer = await qrcode.toBuffer(data, {
+        width: Math.min(size || 400, 1024),
+        errorCorrectionLevel: errorCorrection || "M",
+        color: {
+          dark: darkColor || "#000000",
+          light: lightColor || "#ffffff",
+        },
+        margin: 2,
+      });
+      const id = qrStore.set({ buffer: pngBuffer });
+      const qrImageUrl = buildLocalUrl("compute/qr/render", { id });
+      res.json({ qrImageUrl, qrId: id, dataLength: data.length });
+    } catch (error: unknown) {
+      res
+        .status(400)
+        .json({ error: `QR code generation failed: ${errorMessage(error)}` });
+    }
+  }),
+);
 router.get("/qr/render", (req: Request, res: Response) => {
   const { id } = req.query as Record<string, string>;
   if (!id) return res.status(400).send("Missing 'id' parameter");
@@ -558,7 +765,10 @@ router.get("/qr/render", (req: Request, res: Response) => {
   res.send(entry.buffer);
 });
 // ─── 8. LaTeX Rendering (KaTeX CDN embed) ───────────────────
-const latexStore = new EphemeralStore<{ latex: string; displayMode: boolean }>();
+const latexStore = new EphemeralStore<{
+  latex: string;
+  displayMode: boolean;
+}>();
 function buildLatexEmbedHtml(latex: string, displayMode: boolean = true) {
   return buildEmbedHtml({
     headExtra: `<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
@@ -594,7 +804,9 @@ router.post("/latex", (req: Request, res: Response) => {
     return res.status(400).json({ error: "'latex' (string) is required" });
   }
   if (latex.length > 10_000) {
-    return res.status(400).json({ error: "LaTeX expression exceeds 10,000 characters" });
+    return res
+      .status(400)
+      .json({ error: "LaTeX expression exceeds 10,000 characters" });
   }
   const id = latexStore.set({
     latex,
@@ -614,7 +826,10 @@ router.get("/latex/embed", (req: Request, res: Response) => {
   res.send(buildLatexEmbedHtml(entry.latex, entry.displayMode));
 });
 // ─── 9. Mermaid Diagram Rendering (CDN embed) ───────────────
-const diagramStore = new EphemeralStore<{ definition: string; theme: string }>();
+const diagramStore = new EphemeralStore<{
+  definition: string;
+  theme: string;
+}>();
 function buildMermaidEmbedHtml(definition: string, theme: string = "dark") {
   return buildEmbedHtml({
     styles: `  #diagram{
@@ -646,10 +861,14 @@ function buildMermaidEmbedHtml(definition: string, theme: string = "dark") {
 router.post("/diagram", (req: Request, res: Response) => {
   const { definition, theme } = req.body;
   if (!definition || typeof definition !== "string") {
-    return res.status(400).json({ error: "'definition' (Mermaid syntax string) is required" });
+    return res
+      .status(400)
+      .json({ error: "'definition' (Mermaid syntax string) is required" });
   }
   if (definition.length > 50_000) {
-    return res.status(400).json({ error: "Diagram definition exceeds 50,000 characters" });
+    return res
+      .status(400)
+      .json({ error: "Diagram definition exceeds 50,000 characters" });
   }
   const id = diagramStore.set({
     definition,
@@ -669,71 +888,89 @@ router.get("/diagram/embed", (req: Request, res: Response) => {
   res.send(buildMermaidEmbedHtml(entry.definition, entry.theme));
 });
 // ─── 10. Text Diff ──────────────────────────────────────────
-router.post("/diff", asyncHandler(async (req: Request, res: Response) => {
-  const { textA, textB, mode } = req.body;
-  if (textA === undefined || textB === undefined) {
-    return res.status(400).json({ error: "'textA' and 'textB' are required" });
-  }
-  try {
-    const diff = await getDiff();
-    const diffMode = mode || "lines";
-    let changes: import("diff").Change[] = [];
-    switch (diffMode) {
-      case "chars":
-        changes = diff.diffChars(textA, textB);
-        break;
-      case "words":
-        changes = diff.diffWords(textA, textB);
-        break;
-      case "sentences":
-        changes = diff.diffSentences(textA, textB);
-        break;
-      case "json":
-        try {
-          const objA = typeof textA === "string" ? JSON.parse(textA) : textA;
-          const objB = typeof textB === "string" ? JSON.parse(textB) : textB;
-          changes = diff.diffJson(objA, objB);
-        } catch {
-          return res.status(400).json({ error: "For json mode, both inputs must be valid JSON" });
-        }
-        break;
-      case "lines":
-      default:
-        changes = diff.diffLines(textA, textB);
-        break;
+router.post(
+  "/diff",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { textA, textB, mode } = req.body;
+    if (textA === undefined || textB === undefined) {
+      return res
+        .status(400)
+        .json({ error: "'textA' and 'textB' are required" });
     }
-    // Also generate unified patch
-    const patch = diff.createPatch("diff", textA, textB, "original", "modified");
-    // Compute stats
-    let additions = 0;
-    let deletions = 0;
-    let unchanged = 0;
-    for (const change of changes) {
-      if (change.added) additions += change.count || 1;
-      else if (change.removed) deletions += change.count || 1;
-      else unchanged += change.count || 1;
+    try {
+      const diff = await getDiff();
+      const diffMode = mode || "lines";
+      let changes: import("diff").Change[] = [];
+      switch (diffMode) {
+        case "chars":
+          changes = diff.diffChars(textA, textB);
+          break;
+        case "words":
+          changes = diff.diffWords(textA, textB);
+          break;
+        case "sentences":
+          changes = diff.diffSentences(textA, textB);
+          break;
+        case "json":
+          try {
+            const objA = typeof textA === "string" ? JSON.parse(textA) : textA;
+            const objB = typeof textB === "string" ? JSON.parse(textB) : textB;
+            changes = diff.diffJson(objA, objB);
+          } catch {
+            return res
+              .status(400)
+              .json({ error: "For json mode, both inputs must be valid JSON" });
+          }
+          break;
+        case "lines":
+        default:
+          changes = diff.diffLines(textA, textB);
+          break;
+      }
+      // Also generate unified patch
+      const patch = diff.createPatch(
+        "diff",
+        textA,
+        textB,
+        "original",
+        "modified",
+      );
+      // Compute stats
+      let additions = 0;
+      let deletions = 0;
+      let unchanged = 0;
+      for (const change of changes) {
+        if (change.added) additions += change.count || 1;
+        else if (change.removed) deletions += change.count || 1;
+        else unchanged += change.count || 1;
+      }
+      res.json({
+        mode: diffMode,
+        identical: additions === 0 && deletions === 0,
+        stats: { additions, deletions, unchanged },
+        changes: changes.map((c: import("diff").Change) => ({
+          value: c.value,
+          added: c.added || false,
+          removed: c.removed || false,
+          count: c.count,
+        })),
+        patch,
+      });
+    } catch (error: unknown) {
+      res.status(400).json({ error: `Diff failed: ${errorMessage(error)}` });
     }
-    res.json({
-      mode: diffMode,
-      identical: additions === 0 && deletions === 0,
-      stats: { additions, deletions, unchanged },
-      changes: changes.map((c: import("diff").Change) => ({
-        value: c.value,
-        added: c.added || false,
-        removed: c.removed || false,
-        count: c.count,
-      })),
-      patch,
-    });
-  } catch (error: unknown) {
-    res.status(400).json({ error: `Diff failed: ${errorMessage(error)}` });
-  }
-}));
+  }),
+);
 // ─── 11. Cryptographic Hashing ──────────────────────────────
 router.get("/hash", (req: Request, res: Response) => {
-  const { data, algorithm, encoding, key } = req.query as Record<string, string>;
+  const { data, algorithm, encoding, key } = req.query as Record<
+    string,
+    string
+  >;
   if (!data) {
-    return res.status(400).json({ error: "Query parameter 'data' is required" });
+    return res
+      .status(400)
+      .json({ error: "Query parameter 'data' is required" });
   }
   const algo = (algorithm || "sha256").toLowerCase();
   const enc = (encoding || "hex") as crypto.BinaryToTextEncoding;
@@ -741,15 +978,9 @@ router.get("/hash", (req: Request, res: Response) => {
     let hash: string | Buffer;
     if (key) {
       // HMAC
-      hash = crypto
-        .createHmac(algo, key)
-        .update(data)
-        .digest(enc);
+      hash = crypto.createHmac(algo, key).update(data).digest(enc);
     } else {
-      hash = crypto
-        .createHash(algo)
-        .update(data)
-        .digest(enc);
+      hash = crypto.createHash(algo).update(data).digest(enc);
     }
     res.json({
       algorithm: key ? `hmac-${algo}` : algo,
@@ -831,31 +1062,37 @@ router.post("/regex", (req: Request, res: Response) => {
 router.get("/encode", (req: Request, res: Response) => {
   const { data, format, direction } = req.query as Record<string, string>;
   if (!data || !format) {
-    return res.status(400).json({ error: "Query parameters 'data' and 'format' are required" });
+    return res
+      .status(400)
+      .json({ error: "Query parameters 'data' and 'format' are required" });
   }
   const dir = direction || "encode";
   try {
     let result: unknown;
     switch (format.toLowerCase()) {
       case "base64":
-        result = dir === "decode"
-          ? Buffer.from(data, "base64").toString("utf-8")
-          : Buffer.from(data).toString("base64");
+        result =
+          dir === "decode"
+            ? Buffer.from(data, "base64").toString("utf-8")
+            : Buffer.from(data).toString("base64");
         break;
       case "base64url":
-        result = dir === "decode"
-          ? Buffer.from(data, "base64url").toString("utf-8")
-          : Buffer.from(data).toString("base64url");
+        result =
+          dir === "decode"
+            ? Buffer.from(data, "base64url").toString("utf-8")
+            : Buffer.from(data).toString("base64url");
         break;
       case "hex":
-        result = dir === "decode"
-          ? Buffer.from(data, "hex").toString("utf-8")
-          : Buffer.from(data).toString("hex");
+        result =
+          dir === "decode"
+            ? Buffer.from(data, "hex").toString("utf-8")
+            : Buffer.from(data).toString("hex");
         break;
       case "url":
-        result = dir === "decode"
-          ? decodeURIComponent(data)
-          : encodeURIComponent(data);
+        result =
+          dir === "decode"
+            ? decodeURIComponent(data)
+            : encodeURIComponent(data);
         break;
       case "html":
         if (dir === "decode") {
@@ -865,8 +1102,12 @@ router.get("/encode", (req: Request, res: Response) => {
             .replace(/&gt;/g, ">")
             .replace(/&quot;/g, '"')
             .replace(/&#39;/g, "'")
-            .replace(/&#x([0-9a-fA-F]+);/g, (_: string, hex: string) => String.fromCharCode(parseInt(hex, 16)))
-            .replace(/&#(\d+);/g, (_: string, dec: string) => String.fromCharCode(parseInt(dec)));
+            .replace(/&#x([0-9a-fA-F]+);/g, (_: string, hex: string) =>
+              String.fromCharCode(parseInt(hex, 16)),
+            )
+            .replace(/&#(\d+);/g, (_: string, dec: string) =>
+              String.fromCharCode(parseInt(dec)),
+            );
         } else {
           result = data
             .replace(/&/g, "&amp;")
@@ -879,7 +1120,9 @@ router.get("/encode", (req: Request, res: Response) => {
       case "rot13":
         result = data.replace(/[a-zA-Z]/g, (c: string) => {
           const base = c <= "Z" ? 65 : 97;
-          return String.fromCharCode(((c.charCodeAt(0) - base + 13) % 26) + base);
+          return String.fromCharCode(
+            ((c.charCodeAt(0) - base + 13) % 26) + base,
+          );
         });
         break;
       case "binary":
@@ -897,14 +1140,20 @@ router.get("/encode", (req: Request, res: Response) => {
       case "jwt": {
         // Decode only — no verify (we don't have the secret)
         if (dir !== "decode") {
-          return res.status(400).json({ error: "JWT format only supports 'decode' direction" });
+          return res
+            .status(400)
+            .json({ error: "JWT format only supports 'decode' direction" });
         }
         const parts = data.split(".");
         if (parts.length < 2) {
           return res.status(400).json({ error: "Invalid JWT format" });
         }
-        const header = JSON.parse(Buffer.from(parts[0], "base64url").toString());
-        const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
+        const header = JSON.parse(
+          Buffer.from(parts[0], "base64url").toString(),
+        );
+        const payload = JSON.parse(
+          Buffer.from(parts[1], "base64url").toString(),
+        );
         result = { header, payload, signaturePresent: parts.length === 3 };
         return res.json({ format: "jwt", direction: dir, result });
       }
@@ -944,9 +1193,15 @@ function rgbToHsv({ r, g, b }: { r: number; g: number; b: number }) {
   const value = max;
   if (max !== min) {
     switch (max) {
-      case rNorm: hue = ((gNorm - bNorm) / delta + (gNorm < bNorm ? 6 : 0)) / 6; break;
-      case gNorm: hue = ((bNorm - rNorm) / delta + 2) / 6; break;
-      case bNorm: hue = ((rNorm - gNorm) / delta + 4) / 6; break;
+      case rNorm:
+        hue = ((gNorm - bNorm) / delta + (gNorm < bNorm ? 6 : 0)) / 6;
+        break;
+      case gNorm:
+        hue = ((bNorm - rNorm) / delta + 2) / 6;
+        break;
+      case bNorm:
+        hue = ((rNorm - gNorm) / delta + 4) / 6;
+        break;
     }
   }
   return {
@@ -980,7 +1235,11 @@ function parseColorToRgb(color: string) {
   // rgb(r, g, b)
   const rgbMatch = trimmedColor.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
   if (rgbMatch) {
-    return { r: parseInt(rgbMatch[1]), g: parseInt(rgbMatch[2]), b: parseInt(rgbMatch[3]) };
+    return {
+      r: parseInt(rgbMatch[1]),
+      g: parseInt(rgbMatch[2]),
+      b: parseInt(rgbMatch[3]),
+    };
   }
   // hsl(h, s%, l%)
   const hslMatch = trimmedColor.match(/^hsla?\((\d+),\s*(\d+)%?,\s*(\d+)%?/);
@@ -993,18 +1252,42 @@ function parseColorToRgb(color: string) {
   }
   // CSS named colors (top 30)
   const NAMED: Record<string, string> = {
-    black: "#000000", white: "#ffffff", red: "#ff0000", green: "#008000",
-    blue: "#0000ff", yellow: "#ffff00", cyan: "#00ffff", magenta: "#ff00ff",
-    orange: "#ffa500", purple: "#800080", pink: "#ffc0cb", brown: "#a52a2a",
-    gray: "#808080", grey: "#808080", lime: "#00ff00", navy: "#000080",
-    teal: "#008080", maroon: "#800000", olive: "#808000", aqua: "#00ffff",
-    silver: "#c0c0c0", gold: "#ffd700", indigo: "#4b0082", violet: "#ee82ee",
-    coral: "#ff7f50", salmon: "#fa8072", khaki: "#f0e68c", tomato: "#ff6347",
-    turquoise: "#40e0d0", plum: "#dda0dd",
+    black: "#000000",
+    white: "#ffffff",
+    red: "#ff0000",
+    green: "#008000",
+    blue: "#0000ff",
+    yellow: "#ffff00",
+    cyan: "#00ffff",
+    magenta: "#ff00ff",
+    orange: "#ffa500",
+    purple: "#800080",
+    pink: "#ffc0cb",
+    brown: "#a52a2a",
+    gray: "#808080",
+    grey: "#808080",
+    lime: "#00ff00",
+    navy: "#000080",
+    teal: "#008080",
+    maroon: "#800000",
+    olive: "#808000",
+    aqua: "#00ffff",
+    silver: "#c0c0c0",
+    gold: "#ffd700",
+    indigo: "#4b0082",
+    violet: "#ee82ee",
+    coral: "#ff7f50",
+    salmon: "#fa8072",
+    khaki: "#f0e68c",
+    tomato: "#ff6347",
+    turquoise: "#40e0d0",
+    plum: "#dda0dd",
   };
   const named = NAMED[trimmedColor.toLowerCase() as keyof typeof NAMED];
   if (named) return hexToRgb(named);
-  throw new Error(`Cannot parse color: ${color}. Use HEX (#ff0000), rgb(255,0,0), hsl(0,100%,50%), or CSS named colors.`);
+  throw new Error(
+    `Cannot parse color: ${color}. Use HEX (#ff0000), rgb(255,0,0), hsl(0,100%,50%), or CSS named colors.`,
+  );
 }
 /**
  * Generate color harmonies from a base hue.
@@ -1042,7 +1325,10 @@ function generatePalette(hsl: HslColor, type: string) {
     ],
   };
   const colors = palettes[type as keyof typeof palettes];
-  if (!colors) throw new Error(`Unknown palette type: ${type}. Use: ${Object.keys(palettes).join(", ")}`);
+  if (!colors)
+    throw new Error(
+      `Unknown palette type: ${type}. Use: ${Object.keys(palettes).join(", ")}`,
+    );
   return colors.map((h: HslColor) => {
     const rgb = hslToRgb(h);
     return {
@@ -1055,7 +1341,9 @@ function generatePalette(hsl: HslColor, type: string) {
 router.get("/color/convert", (req: Request, res: Response) => {
   const { color, palette } = req.query as Record<string, string>;
   if (!color) {
-    return res.status(400).json({ error: "Query parameter 'color' is required" });
+    return res
+      .status(400)
+      .json({ error: "Query parameter 'color' is required" });
   }
   try {
     const rgb = parseColorToRgb(color);
@@ -1088,25 +1376,55 @@ router.get("/color/convert", (req: Request, res: Response) => {
   }
 });
 // ─── 15. LOGO Turtle Graphics ───────────────────────────────
-const turtleStore = new EphemeralStore<{ commands: unknown[]; options: Record<string, unknown> }>();
+const turtleStore = new EphemeralStore<{
+  commands: unknown[];
+  options: Record<string, unknown>;
+}>();
 const VALID_TURTLE_COMMANDS = new Set([
-  "forward", "fd", "backward", "bk", "back",
-  "right", "rt", "left", "lt",
-  "penup", "pu", "pendown", "pd",
-  "color", "pencolor",
-  "width", "pensize",
-  "goto", "setposition", "setpos",
-  "setheading", "seth",
-  "circle", "arc",
-  "dot", "stamp",
-  "label", "write",
-  "begin_fill", "end_fill", "fillcolor",
-  "reset", "clear",
+  "forward",
+  "fd",
+  "backward",
+  "bk",
+  "back",
+  "right",
+  "rt",
+  "left",
+  "lt",
+  "penup",
+  "pu",
+  "pendown",
+  "pd",
+  "color",
+  "pencolor",
+  "width",
+  "pensize",
+  "goto",
+  "setposition",
+  "setpos",
+  "setheading",
+  "seth",
+  "circle",
+  "arc",
+  "dot",
+  "stamp",
+  "label",
+  "write",
+  "begin_fill",
+  "end_fill",
+  "fillcolor",
+  "reset",
+  "clear",
   "speed",
-  "hideturtle", "ht", "showturtle", "st",
+  "hideturtle",
+  "ht",
+  "showturtle",
+  "st",
   "home",
 ]);
-function buildTurtleEmbedHtml(commands: string[], options: Record<string, unknown> = {}) {
+function buildTurtleEmbedHtml(
+  commands: string[],
+  options: Record<string, unknown> = {},
+) {
   const {
     canvasWidth = 800,
     canvasHeight = 600,
@@ -1450,14 +1768,16 @@ const TURTLE_SESSION_TTL_MS = 30 * 60_000; // 30 min
 function cleanupTurtleSessions() {
   const now = Date.now();
   for (const [id, session] of turtleSessions) {
-    if (now - session.updatedAt > TURTLE_SESSION_TTL_MS) turtleSessions.delete(id);
+    if (now - session.updatedAt > TURTLE_SESSION_TTL_MS)
+      turtleSessions.delete(id);
   }
 }
 router.post("/turtle", (req: Request, res: Response) => {
   const { commands, options, sessionId } = req.body;
   if (!commands || !Array.isArray(commands) || commands.length === 0) {
     return res.status(400).json({
-      error: "'commands' is required (non-empty array of turtle command objects)",
+      error:
+        "'commands' is required (non-empty array of turtle command objects)",
     });
   }
   // Validate commands
@@ -1486,18 +1806,30 @@ router.post("/turtle", (req: Request, res: Response) => {
     }
     // Merge options (new options override existing)
     if (options) {
-      if (options.canvasWidth) session.options.canvasWidth = Math.min(options.canvasWidth, 1920);
-      if (options.canvasHeight) session.options.canvasHeight = Math.min(options.canvasHeight, 1080);
+      if (options.canvasWidth)
+        session.options.canvasWidth = Math.min(options.canvasWidth, 1920);
+      if (options.canvasHeight)
+        session.options.canvasHeight = Math.min(options.canvasHeight, 1080);
       if (options.background) session.options.background = options.background;
-      if (options.animated !== undefined) session.options.animated = options.animated;
-      if (options.stepDelay) session.options.stepDelay = Math.max(5, Math.min(500, options.stepDelay));
+      if (options.animated !== undefined)
+        session.options.animated = options.animated;
+      if (options.stepDelay)
+        session.options.stepDelay = Math.max(
+          5,
+          Math.min(500, options.stepDelay),
+        );
       if (options.title) session.options.title = options.title;
     }
     session.commands.push(...commands);
     session.updatedAt = Date.now();
     // Store full accumulated drawing for the embed
-    const embedId = turtleStore.set({ commands: session.commands, options: session.options });
-    const turtleEmbedUrl = buildLocalUrl("compute/turtle/embed", { id: embedId });
+    const embedId = turtleStore.set({
+      commands: session.commands,
+      options: session.options,
+    });
+    const turtleEmbedUrl = buildLocalUrl("compute/turtle/embed", {
+      id: embedId,
+    });
     return res.json({
       turtleEmbedUrl,
       sessionId,
@@ -1569,9 +1901,34 @@ const CRON_FIELD_RANGES = [
   { min: 1, max: 12 },
   { min: 0, max: 6 },
 ];
-const MONTH_NAMES = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-function parseCronField(field: string, { min, max }: { min: number, max: number }) {
+const MONTH_NAMES = [
+  "",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+const DAY_NAMES = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
+function parseCronField(
+  field: string,
+  { min, max }: { min: number; max: number },
+) {
   const values = new Set<number>();
   for (const part of field.split(",")) {
     // Handle step syntax: */5, 1-10/2
@@ -1584,7 +1941,13 @@ function parseCronField(field: string, { min, max }: { min: number, max: number 
       const [startStr, endStr] = rangePart.split("-");
       const start = parseInt(startStr);
       const end = parseInt(endStr);
-      if (isNaN(start) || isNaN(end) || start < min || end > max || start > end) {
+      if (
+        isNaN(start) ||
+        isNaN(end) ||
+        start < min ||
+        end > max ||
+        start > end
+      ) {
         throw new Error(`Invalid range: ${part} (valid: ${min}-${max})`);
       }
       for (let i = start; i <= end; i += step) values.add(i);
@@ -1596,7 +1959,12 @@ function parseCronField(field: string, { min, max }: { min: number, max: number 
       values.add(value);
     }
   }
-  return [...values].sort((a: Record<string, unknown> | number | string, b: Record<string, unknown> | number | string) => (a as number) - (b as number));
+  return [...values].sort(
+    (
+      a: Record<string, unknown> | number | string,
+      b: Record<string, unknown> | number | string,
+    ) => (a as number) - (b as number),
+  );
 }
 function explainCronField(values: number[], fieldIdx: number) {
   const { min, max } = CRON_FIELD_RANGES[fieldIdx];
@@ -1621,11 +1989,17 @@ function explainCronField(values: number[], fieldIdx: number) {
     }
   }
   // List
-  if (fieldIdx === 3) return `in ${values.map((v: number) => MONTH_NAMES[v]).join(", ")}`;
-  if (fieldIdx === 4) return `on ${values.map((v: number) => DAY_NAMES[v]).join(", ")}`;
+  if (fieldIdx === 3)
+    return `in ${values.map((v: number) => MONTH_NAMES[v]).join(", ")}`;
+  if (fieldIdx === 4)
+    return `on ${values.map((v: number) => DAY_NAMES[v]).join(", ")}`;
   return `${name} ${values.join(", ")}`;
 }
-function getNextCronExecutions(parsed: number[][], count: number, fromDate: Date) {
+function getNextCronExecutions(
+  parsed: number[][],
+  count: number,
+  fromDate: Date,
+) {
   const results: Date[] = [];
   const currentDate = new Date(fromDate);
   currentDate.setSeconds(0, 0);
@@ -1655,7 +2029,11 @@ function getNextCronExecutions(parsed: number[][], count: number, fromDate: Date
 router.get("/cron/parse", (req: Request, res: Response) => {
   const { expression, count, from } = req.query as Record<string, string>;
   if (!expression) {
-    return res.status(400).json({ error: "Query parameter 'expression' is required (e.g. '*/5 * * * *')" });
+    return res
+      .status(400)
+      .json({
+        error: "Query parameter 'expression' is required (e.g. '*/5 * * * *')",
+      });
   }
   try {
     const fields = expression.trim().split(/\s+/);
@@ -1665,97 +2043,185 @@ router.get("/cron/parse", (req: Request, res: Response) => {
         hint: "Standard cron: minute(0-59) hour(0-23) day(1-31) month(1-12) weekday(0-6, 0=Sun)",
       });
     }
-    const parsed = fields.map((f: string, i: number) => parseCronField(f, CRON_FIELD_RANGES[i]));
-    const explanations = parsed.map((vals: number[], i: number) => explainCronField(vals, i));
-    const humanReadable = explanations.filter((e: string) => !e.startsWith("every ") || e !== `every ${CRON_FIELD_NAMES[explanations.indexOf(e)]}`).join(", ");
+    const parsed = fields.map((f: string, i: number) =>
+      parseCronField(f, CRON_FIELD_RANGES[i]),
+    );
+    const explanations = parsed.map((vals: number[], i: number) =>
+      explainCronField(vals, i),
+    );
+    const humanReadable = explanations
+      .filter(
+        (e: string) =>
+          !e.startsWith("every ") ||
+          e !== `every ${CRON_FIELD_NAMES[explanations.indexOf(e)]}`,
+      )
+      .join(", ");
     const nextCount = Math.min(Math.max(parseInt(count) || 5, 1), 25);
     const fromDate = from ? new Date(from) : new Date();
     const nextExecutions = getNextCronExecutions(parsed, nextCount, fromDate);
     res.json({
       expression,
-      fields: Object.fromEntries(CRON_FIELD_NAMES.map((name: string, i: number) => [name, { raw: fields[i], values: parsed[i] }])),
+      fields: Object.fromEntries(
+        CRON_FIELD_NAMES.map((name: string, i: number) => [
+          name,
+          { raw: fields[i], values: parsed[i] },
+        ]),
+      ),
       explanation: humanReadable,
-      descriptions: Object.fromEntries(CRON_FIELD_NAMES.map((name: string, i: number) => [name, explanations[i]])),
+      descriptions: Object.fromEntries(
+        CRON_FIELD_NAMES.map((name: string, i: number) => [
+          name,
+          explanations[i],
+        ]),
+      ),
       nextExecutions: nextExecutions.map((d: Date) => d.toISOString()),
       nextExecutionCount: nextExecutions.length,
       fromDate: fromDate.toISOString(),
     });
   } catch (error: unknown) {
-    res.status(400).json({ error: `Cron parse failed: ${errorMessage(error)}` });
+    res
+      .status(400)
+      .json({ error: `Cron parse failed: ${errorMessage(error)}` });
   }
 });
 // ─── Agentic: Sleep (Timed Pause) ───────────────────────────
 // Blocks for `duration_seconds` before responding.
 // Max 120s. AbortSignal from upstream will short-circuit.
-router.post("/sleep", asyncHandler(async (req: Request, res: Response) => {
-  const { duration_seconds, reason } = req.body;
-  const duration = Math.max(1, Math.min(120, duration_seconds || 5));
-  const durationMs = duration * 1000;
-  await new Promise<void>((resolve: () => void) => {
-    const timer = setTimeout(resolve, durationMs);
-    // If the request is aborted (client disconnect), resolve immediately
-    req.on("close", () => {
-      clearTimeout(timer);
-      resolve();
+router.post(
+  "/sleep",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { duration_seconds, reason } = req.body;
+    const duration = Math.max(1, Math.min(120, duration_seconds || 5));
+    const durationMs = duration * 1000;
+    await new Promise<void>((resolve: () => void) => {
+      const timer = setTimeout(resolve, durationMs);
+      // If the request is aborted (client disconnect), resolve immediately
+      req.on("close", () => {
+        clearTimeout(timer);
+        resolve();
+      });
     });
-  });
-  res.json({
-    acknowledged: true,
-    slept_seconds: duration,
-    reason: reason || null,
-  });
-}));
+    res.json({
+      acknowledged: true,
+      slept_seconds: duration,
+      reason: reason || null,
+    });
+  }),
+);
 // ─── Agentic: Synthetic Output (Structured JSON Response) ───
 // Validates `data` against an optional JSON Schema and returns it.
 // Lightweight validator — handles type, required, enum, nested objects/arrays.
-function validateJsonSchema(data: unknown, schema: Record<string, unknown>, path: string = "", errors: string[] = []) {
+function validateJsonSchema(
+  data: unknown,
+  schema: Record<string, unknown>,
+  path: string = "",
+  errors: string[] = [],
+) {
   if (!schema || typeof schema !== "object") return;
   const currentPath = path || "root";
   if (schema.type) {
     const expected = schema.type;
-    if (expected === "object" && (typeof data !== "object" || data === null || Array.isArray(data))) {
-      errors.push(`${currentPath}: expected object, got ${Array.isArray(data) ? "array" : typeof data}`);
+    if (
+      expected === "object" &&
+      (typeof data !== "object" || data === null || Array.isArray(data))
+    ) {
+      errors.push(
+        `${currentPath}: expected object, got ${Array.isArray(data) ? "array" : typeof data}`,
+      );
       return;
     }
     if (expected === "array" && !Array.isArray(data)) {
       errors.push(`${currentPath}: expected array, got ${typeof data}`);
       return;
     }
-    if (expected === "string" && typeof data !== "string") errors.push(`${currentPath}: expected string, got ${typeof data}`);
-    if (expected === "number" && typeof data !== "number") errors.push(`${currentPath}: expected number, got ${typeof data}`);
-    if (expected === "boolean" && typeof data !== "boolean") errors.push(`${currentPath}: expected boolean, got ${typeof data}`);
+    if (expected === "string" && typeof data !== "string")
+      errors.push(`${currentPath}: expected string, got ${typeof data}`);
+    if (expected === "number" && typeof data !== "number")
+      errors.push(`${currentPath}: expected number, got ${typeof data}`);
+    if (expected === "boolean" && typeof data !== "boolean")
+      errors.push(`${currentPath}: expected boolean, got ${typeof data}`);
   }
-  if (schema.enum && Array.isArray(schema.enum) && !schema.enum.includes(data)) {
-    errors.push(`${currentPath}: value must be one of [${schema.enum.join(", ")}]`);
+  if (
+    schema.enum &&
+    Array.isArray(schema.enum) &&
+    !schema.enum.includes(data)
+  ) {
+    errors.push(
+      `${currentPath}: value must be one of [${schema.enum.join(", ")}]`,
+    );
   }
   if (typeof data === "string") {
-    if (schema.minLength !== undefined && (data as string).length < (schema.minLength as number)) errors.push(`${currentPath}: string length ${(data as string).length} < minLength ${schema.minLength}`);
-    if (schema.maxLength !== undefined && (data as string).length > (schema.maxLength as number)) errors.push(`${currentPath}: string length ${(data as string).length} > maxLength ${schema.maxLength}`);
+    if (
+      schema.minLength !== undefined &&
+      (data as string).length < (schema.minLength as number)
+    )
+      errors.push(
+        `${currentPath}: string length ${(data as string).length} < minLength ${schema.minLength}`,
+      );
+    if (
+      schema.maxLength !== undefined &&
+      (data as string).length > (schema.maxLength as number)
+    )
+      errors.push(
+        `${currentPath}: string length ${(data as string).length} > maxLength ${schema.maxLength}`,
+      );
   }
   if (typeof data === "number") {
-    if (schema.minimum !== undefined && (data as number) < (schema.minimum as number)) errors.push(`${currentPath}: ${data} < minimum ${schema.minimum}`);
-    if (schema.maximum !== undefined && (data as number) > (schema.maximum as number)) errors.push(`${currentPath}: ${data} > maximum ${schema.maximum}`);
+    if (
+      schema.minimum !== undefined &&
+      (data as number) < (schema.minimum as number)
+    )
+      errors.push(`${currentPath}: ${data} < minimum ${schema.minimum}`);
+    if (
+      schema.maximum !== undefined &&
+      (data as number) > (schema.maximum as number)
+    )
+      errors.push(`${currentPath}: ${data} > maximum ${schema.maximum}`);
   }
-  if (schema.required && Array.isArray(schema.required) && typeof data === "object" && data !== null) {
+  if (
+    schema.required &&
+    Array.isArray(schema.required) &&
+    typeof data === "object" &&
+    data !== null
+  ) {
     for (const key of schema.required) {
-      if ((data as Record<string, unknown>)[key] === undefined) errors.push(`${currentPath}: missing required field "${key}"`);
+      if ((data as Record<string, unknown>)[key] === undefined)
+        errors.push(`${currentPath}: missing required field "${key}"`);
     }
   }
-  if (schema.properties && typeof data === "object" && data !== null && !Array.isArray(data)) {
+  if (
+    schema.properties &&
+    typeof data === "object" &&
+    data !== null &&
+    !Array.isArray(data)
+  ) {
     for (const [key, propSchema] of Object.entries(schema.properties)) {
-      if ((data as Record<string, unknown>)[key] !== undefined) validateJsonSchema((data as Record<string, unknown>)[key], propSchema, `${path ? path + "." : ""}${key}`, errors);
+      if ((data as Record<string, unknown>)[key] !== undefined)
+        validateJsonSchema(
+          (data as Record<string, unknown>)[key],
+          propSchema,
+          `${path ? path + "." : ""}${key}`,
+          errors,
+        );
     }
   }
-  if (schema.items as Record<string, unknown> && Array.isArray(data)) {
+  if ((schema.items as Record<string, unknown>) && Array.isArray(data)) {
     for (let i = 0; i < data.length; i++) {
-      validateJsonSchema((data as unknown[])[i], schema.items as Record<string, unknown>, `${path}[${i}]`, errors);
+      validateJsonSchema(
+        (data as unknown[])[i],
+        schema.items as Record<string, unknown>,
+        `${path}[${i}]`,
+        errors,
+      );
     }
   }
 }
 router.post("/synthetic-output", (req: Request, res: Response) => {
   const { schema, data, label } = req.body;
   if (!data || typeof data !== "object") {
-    return res.status(400).json({ error: "'data' is required and must be an object" });
+    return res
+      .status(400)
+      .json({ error: "'data' is required and must be an object" });
   }
   const validationErrors: string[] = [];
   if (schema && typeof schema === "object") {
@@ -1778,44 +2244,65 @@ router.post("/synthetic-output", (req: Request, res: Response) => {
 });
 // ─── Image Processing (Sharp + ImageMagick) ─────────────────
 const imageStore = new EphemeralStore<{ buffer: Buffer; mimeType: string }>();
-router.post("/image/process", asyncHandler(async (req: Request, res: Response) => {
-  const { input, operations, outputFormat, outputQuality } = req.body;
-  if (!input) {
-    return res.status(400).json({ error: "'input' is required (URL, base64 data URI, or previous imageId)" });
-  }
-  if (!operations || !Array.isArray(operations) || operations.length === 0) {
-    return res.status(400).json({ error: "'operations' must be a non-empty array of operation objects" });
-  }
-  try {
-    // processImage returns a union of metadata-only or buffer result shapes
-    const result = await processImage({
-      input,
-      operations,
-      outputFormat: outputFormat || "png",
-      outputQuality: outputQuality || 80,
-      store: imageStore,
-    }) as { buffer?: Buffer; mimeType?: string; metadata?: Record<string, unknown> };
-    // Metadata-only request
-    if (result.metadata && !result.buffer) {
-      return res.json({
-        success: true,
-        metadata: result.metadata,
-      });
+router.post(
+  "/image/process",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { input, operations, outputFormat, outputQuality } = req.body;
+    if (!input) {
+      return res
+        .status(400)
+        .json({
+          error:
+            "'input' is required (URL, base64 data URI, or previous imageId)",
+        });
     }
-    const id = imageStore.set({ buffer: result.buffer!, mimeType: result.mimeType! });
-    const imageUrl = buildLocalUrl("compute/image/render", { id });
-    const response: Record<string, unknown> = {
-      success: true,
-      imageUrl,
-      imageId: id,
-      mimeType: result.mimeType,
-    };
-    if (result.metadata) response.metadata = result.metadata;
-    res.json(response);
-  } catch (error: unknown) {
-    res.status(400).json({ error: `Image processing failed: ${errorMessage(error)}` });
-  }
-}));
+    if (!operations || !Array.isArray(operations) || operations.length === 0) {
+      return res
+        .status(400)
+        .json({
+          error: "'operations' must be a non-empty array of operation objects",
+        });
+    }
+    try {
+      // processImage returns a union of metadata-only or buffer result shapes
+      const result = (await processImage({
+        input,
+        operations,
+        outputFormat: outputFormat || "png",
+        outputQuality: outputQuality || 80,
+        store: imageStore,
+      })) as {
+        buffer?: Buffer;
+        mimeType?: string;
+        metadata?: Record<string, unknown>;
+      };
+      // Metadata-only request
+      if (result.metadata && !result.buffer) {
+        return res.json({
+          success: true,
+          metadata: result.metadata,
+        });
+      }
+      const id = imageStore.set({
+        buffer: result.buffer!,
+        mimeType: result.mimeType!,
+      });
+      const imageUrl = buildLocalUrl("compute/image/render", { id });
+      const response: Record<string, unknown> = {
+        success: true,
+        imageUrl,
+        imageId: id,
+        mimeType: result.mimeType,
+      };
+      if (result.metadata) response.metadata = result.metadata;
+      res.json(response);
+    } catch (error: unknown) {
+      res
+        .status(400)
+        .json({ error: `Image processing failed: ${errorMessage(error)}` });
+    }
+  }),
+);
 router.get("/image/render", (req: Request, res: Response) => {
   const { id } = req.query as Record<string, string>;
   if (!id) return res.status(400).send("Missing 'id' parameter");
@@ -1828,33 +2315,44 @@ router.get("/image/render", (req: Request, res: Response) => {
   res.send(entry.buffer);
 });
 // ─── Video to GIF Conversion ─────────────────────────────────
-router.post("/video/gif", asyncHandler(async (req: Request, res: Response) => {
-  const { input, quality, width, fps } = req.body;
-  if (!input) {
-    return res.status(400).json({ error: "'input' is required (URL or local path)" });
-  }
-  try {
-    const conversionResult = await convertVideoToGif({
-      input,
-      quality,
-      width: width ? parseInt(width, 10) : undefined,
-      fps: fps ? parseInt(fps, 10) : undefined,
-    });
-    const uniqueImageId = imageStore.set({
-      buffer: conversionResult.buffer,
-      mimeType: conversionResult.mimeType,
-    });
-    const gifUrl = buildLocalUrl("compute/image/render", { id: uniqueImageId });
-    res.json({
-      success: true,
-      imageUrl: gifUrl,
-      imageId: uniqueImageId,
-      mimeType: conversionResult.mimeType,
-    });
-  } catch (error: unknown) {
-    res.status(400).json({ error: `Video to GIF conversion failed: ${errorMessage(error)}` });
-  }
-}));
+router.post(
+  "/video/gif",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { input, quality, width, fps } = req.body;
+    if (!input) {
+      return res
+        .status(400)
+        .json({ error: "'input' is required (URL or local path)" });
+    }
+    try {
+      const conversionResult = await convertVideoToGif({
+        input,
+        quality,
+        width: width ? parseInt(width, 10) : undefined,
+        fps: fps ? parseInt(fps, 10) : undefined,
+      });
+      const uniqueImageId = imageStore.set({
+        buffer: conversionResult.buffer,
+        mimeType: conversionResult.mimeType,
+      });
+      const gifUrl = buildLocalUrl("compute/image/render", {
+        id: uniqueImageId,
+      });
+      res.json({
+        success: true,
+        imageUrl: gifUrl,
+        imageId: uniqueImageId,
+        mimeType: conversionResult.mimeType,
+      });
+    } catch (error: unknown) {
+      res
+        .status(400)
+        .json({
+          error: `Video to GIF conversion failed: ${errorMessage(error)}`,
+        });
+    }
+  }),
+);
 // ─── Image to ASCII Art ─────────────────────────────────────
 interface AsciiStoreEntry {
   ascii: string;
@@ -1867,7 +2365,7 @@ const asciiStore = new EphemeralStore<AsciiStoreEntry>();
 
 function buildAsciiEmbedHtml(entry: AsciiStoreEntry) {
   const pixelsJson = JSON.stringify(entry.pixels);
-  
+
   return buildEmbedHtml({
     headExtra: `<title>High-Fidelity ASCII Art Generator</title>`,
     styles: `
@@ -2192,49 +2690,61 @@ function buildAsciiEmbedHtml(entry: AsciiStoreEntry) {
   renderAscii();
 })();
 </script>
-`
+`,
   });
 }
 
-router.post("/image/ascii", asyncHandler(async (req: Request, res: Response) => {
-  const { input, width, chars, contrast, reverse } = req.body;
-  if (!input) {
-    return res.status(400).json({ error: "'input' is required (URL, base64 data URI, or previous imageId)" });
-  }
+router.post(
+  "/image/ascii",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { input, width, chars, contrast, reverse } = req.body;
+    if (!input) {
+      return res
+        .status(400)
+        .json({
+          error:
+            "'input' is required (URL, base64 data URI, or previous imageId)",
+        });
+    }
 
-  try {
-    const result = await convertToAscii({
-      input,
-      width: width ? parseInt(width) : undefined,
-      chars,
-      contrast: contrast ? parseFloat(contrast) : undefined,
-      reverse: reverse === true,
-      store: imageStore,
-    });
+    try {
+      const result = await convertToAscii({
+        input,
+        width: width ? parseInt(width) : undefined,
+        chars,
+        contrast: contrast ? parseFloat(contrast) : undefined,
+        reverse: reverse === true,
+        store: imageStore,
+      });
 
-    const asciiId = asciiStore.set({
-      ascii: result.ascii,
-      ansi: result.ansi,
-      width: result.width,
-      height: result.height,
-      pixels: result.pixels,
-    });
+      const asciiId = asciiStore.set({
+        ascii: result.ascii,
+        ansi: result.ansi,
+        width: result.width,
+        height: result.height,
+        pixels: result.pixels,
+      });
 
-    const asciiEmbedUrl = buildLocalUrl("compute/image/ascii/embed", { id: asciiId });
+      const asciiEmbedUrl = buildLocalUrl("compute/image/ascii/embed", {
+        id: asciiId,
+      });
 
-    res.json({
-      success: true,
-      ascii: result.ascii,
-      ansi: result.ansi,
-      asciiId,
-      asciiEmbedUrl,
-      width: result.width,
-      height: result.height,
-    });
-  } catch (error: unknown) {
-    res.status(400).json({ error: `ASCII conversion failed: ${errorMessage(error)}` });
-  }
-}));
+      res.json({
+        success: true,
+        ascii: result.ascii,
+        ansi: result.ansi,
+        asciiId,
+        asciiEmbedUrl,
+        width: result.width,
+        height: result.height,
+      });
+    } catch (error: unknown) {
+      res
+        .status(400)
+        .json({ error: `ASCII conversion failed: ${errorMessage(error)}` });
+    }
+  }),
+);
 
 router.get("/image/ascii/embed", (req: Request, res: Response) => {
   const { id } = req.query as Record<string, string>;

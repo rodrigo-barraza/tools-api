@@ -2,7 +2,11 @@ import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
 import { lookupIp } from "../fetchers/utility/IpInfoFetcher.ts";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
-import type { ResolvedLocation, LocationDocument, TideStation } from "../types/agentic.ts";
+import type {
+  ResolvedLocation,
+  LocationDocument,
+  TideStation,
+} from "../types/agentic.ts";
 
 // ═══════════════════════════════════════════════════════════════
 //  Location Service — Dynamic Geolocation Resolution
@@ -22,7 +26,12 @@ const NOAA_STATIONS_URL =
 
 // ─── Haversine Distance ────────────────────────────────────────
 
-function haversineDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+function haversineDistanceKm(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+) {
   const R = 6371; // Earth's radius in km
   const toRad = (deg: number) => (deg * Math.PI) / 180;
   const dLat = toRad(lat2 - lat1);
@@ -43,7 +52,10 @@ interface RawNoaaStation {
   lng: number | null;
 }
 
-async function findNearestTideStation(latitude: number, longitude: number): Promise<TideStation | null> {
+async function findNearestTideStation(
+  latitude: number,
+  longitude: number,
+): Promise<TideStation | null> {
   try {
     const response = await fetch(NOAA_STATIONS_URL);
     if (!response.ok) {
@@ -51,7 +63,7 @@ async function findNearestTideStation(latitude: number, longitude: number): Prom
       return null;
     }
 
-    const json = await response.json() as { stations?: RawNoaaStation[] };
+    const json = (await response.json()) as { stations?: RawNoaaStation[] };
     const stations = json.stations || [];
     if (!stations.length) return null;
 
@@ -60,7 +72,12 @@ async function findNearestTideStation(latitude: number, longitude: number): Prom
 
     for (const station of stations) {
       if (station.lat == null || station.lng == null) continue;
-      const distance = haversineDistanceKm(latitude, longitude, station.lat, station.lng);
+      const distance = haversineDistanceKm(
+        latitude,
+        longitude,
+        station.lat,
+        station.lng,
+      );
       if (distance < minDist) {
         minDist = distance;
         closest = {
@@ -76,7 +93,9 @@ async function findNearestTideStation(latitude: number, longitude: number): Prom
 
     return closest;
   } catch (error: unknown) {
-    logger.warn(`[Location] ⚠️ NOAA station lookup failed: ${errorMessage(error)}`);
+    logger.warn(
+      `[Location] ⚠️ NOAA station lookup failed: ${errorMessage(error)}`,
+    );
     return null;
   }
 }
@@ -101,10 +120,7 @@ async function resolveLocationFromIp(): Promise<ResolvedLocation> {
   );
 
   // Find nearest NOAA tide prediction station
-  const tideStation = await findNearestTideStation(
-    latitude,
-    longitude,
-  );
+  const tideStation = await findNearestTideStation(latitude, longitude);
 
   if (tideStation) {
     logger.info(
@@ -137,7 +153,9 @@ async function resolveLocationFromIp(): Promise<ResolvedLocation> {
 async function loadCachedLocation(): Promise<LocationDocument | null> {
   try {
     const database = getDB();
-    return await database.collection<LocationDocument>(COLLECTION).findOne({ _id: "current" });
+    return await database
+      .collection<LocationDocument>(COLLECTION)
+      .findOne({ _id: "current" });
   } catch {
     return null;
   }
@@ -178,7 +196,7 @@ export async function initLocation() {
     if (ageMs < MAX_AGE_MS) {
       const { _id, updatedAt: _updatedAt, ...rest } = cached;
       resolvedLocation = rest as ResolvedLocation;
-      const ageHours = Math.round(ageMs / 3_600_000 * 10) / 10;
+      const ageHours = Math.round((ageMs / 3_600_000) * 10) / 10;
       logger.info(
         `[Location] ✅ Using cached location (${ageHours}h old) → ` +
           `${(rest as ResolvedLocation).source?.city || "Unknown"} ` +

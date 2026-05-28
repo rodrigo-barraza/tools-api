@@ -30,7 +30,7 @@ function buildGlobals(outputBuffer: string[], execution: string = "sandboxed") {
     if (outputLen >= MAX_OUTPUT_BYTES) return;
     const line = args
       .map((a: unknown) =>
-        typeof a === "string" ? a : JSON.stringify(a, null, 2) ?? String(a),
+        typeof a === "string" ? a : (JSON.stringify(a, null, 2) ?? String(a)),
       )
       .join(" ");
     outputBuffer.push(line);
@@ -170,8 +170,17 @@ function buildGlobals(outputBuffer: string[], execution: string = "sandboxed") {
 
  * }}
  */
-export function executeJavaScript(code: string, { timeout = DEFAULT_TIMEOUT_MS, execution = "sandboxed" }: { timeout?: number; execution?: string } = {}) {
-  const clampedTimeout = Math.min(Math.max(Number(timeout), 100), MAX_TIMEOUT_MS);
+export function executeJavaScript(
+  code: string,
+  {
+    timeout = DEFAULT_TIMEOUT_MS,
+    execution = "sandboxed",
+  }: { timeout?: number; execution?: string } = {},
+) {
+  const clampedTimeout = Math.min(
+    Math.max(Number(timeout), 100),
+    MAX_TIMEOUT_MS,
+  );
   const startTime = performance.now();
   const outputBuffer: string[] = [];
 
@@ -206,9 +215,10 @@ export function executeJavaScript(code: string, { timeout = DEFAULT_TIMEOUT_MS, 
 
     return {
       success: true,
-      output: output.length > MAX_OUTPUT_BYTES
-        ? output.slice(0, MAX_OUTPUT_BYTES) + "\n... [output truncated]"
-        : output,
+      output:
+        output.length > MAX_OUTPUT_BYTES
+          ? output.slice(0, MAX_OUTPUT_BYTES) + "\n... [output truncated]"
+          : output,
       result: serializedResult,
       executionTimeMs,
       timedOut: false,
@@ -217,7 +227,9 @@ export function executeJavaScript(code: string, { timeout = DEFAULT_TIMEOUT_MS, 
   } catch (error: unknown) {
     const executionTimeMs = Math.round(performance.now() - startTime);
     const timedOut =
-      (error instanceof Error && (error as NodeJS.ErrnoException).code === "ERR_SCRIPT_EXECUTION_TIMEOUT") ||
+      (error instanceof Error &&
+        (error as NodeJS.ErrnoException).code ===
+          "ERR_SCRIPT_EXECUTION_TIMEOUT") ||
       errorMessage(error)?.includes("Script execution timed out");
 
     return {

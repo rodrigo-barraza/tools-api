@@ -87,21 +87,27 @@ router.get("/tool-schemas/disabled", (_req: Request, res: Response) => {
  * Query params: method, path, status, minStatus, maxStatus,
  *               since, until, limit, skip
  */
-router.get("/requests", asyncHandler(
-  (req: Request) => queryRequestLogs(req.query),
-  "Request log query",
-  500,
-));
+router.get(
+  "/requests",
+  asyncHandler(
+    (req: Request) => queryRequestLogs(req.query),
+    "Request log query",
+    500,
+  ),
+);
 /**
  * GET /admin/requests/stats
  * Aggregated request statistics.
  * Query params: since (ISO date for time window)
  */
-router.get("/requests/stats", asyncHandler(
-  (req: Request) => getRequestStats(req.query.since as string),
-  "Request stats",
-  500,
-));
+router.get(
+  "/requests/stats",
+  asyncHandler(
+    (req: Request) => getRequestStats(req.query.since as string),
+    "Request stats",
+    500,
+  ),
+);
 // ─── Tool Call Telemetry Endpoints ─────────────────────────────────
 /**
  * GET /admin/tool-calls
@@ -109,11 +115,14 @@ router.get("/requests/stats", asyncHandler(
  * Query params: toolName, domain, success, callerAgent, callerProject,
  *               minMs, maxMs, since, until, limit, skip
  */
-router.get("/tool-calls", asyncHandler(
-  (req: Request) => queryToolCallLogs(req.query),
-  "Tool call log query",
-  500,
-));
+router.get(
+  "/tool-calls",
+  asyncHandler(
+    (req: Request) => queryToolCallLogs(req.query),
+    "Tool call log query",
+    500,
+  ),
+);
 /**
  * GET /admin/tool-calls/stats
  * Aggregated tool-call performance statistics.
@@ -121,11 +130,14 @@ router.get("/tool-calls", asyncHandler(
  * and the top 10 slowest tool invocations.
  * Query params: since (ISO date for time window)
  */
-router.get("/tool-calls/stats", asyncHandler(
-  (req: Request) => getToolCallStats(req.query.since as string),
-  "Tool call stats",
-  500,
-));
+router.get(
+  "/tool-calls/stats",
+  asyncHandler(
+    (req: Request) => getToolCallStats(req.query.since as string),
+    "Tool call stats",
+    500,
+  ),
+);
 // ─── Config Endpoint ──────────────────────────────────────────────
 /**
  * GET /admin/config
@@ -149,68 +161,85 @@ router.get("/config", (_req: Request, res: Response) => {
  *
  * Body: { roots: string[] }
  */
-router.put("/config/workspaces", asyncHandler(async (req: Request, res: Response) => {
-  const { roots } = req.body || {};
-  if (!Array.isArray(roots)) {
-    return res.status(400).json({ error: "'roots' must be an array of path strings" });
-  }
-  const staticRoots = getStaticRoots();
-  const errors: { path: string; resolved?: string; error: string }[] = [];
-  const validRoots: string[] = [];
-  for (const rawPath of roots) {
-    const resolved = resolveWorkspacePath(rawPath);
-    if (!resolved) {
-      errors.push({ path: rawPath, error: "Invalid or empty path" });
-      continue;
+router.put(
+  "/config/workspaces",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { roots } = req.body || {};
+    if (!Array.isArray(roots)) {
+      return res
+        .status(400)
+        .json({ error: "'roots' must be an array of path strings" });
     }
-    // Skip if this is already a static root
-    if (staticRoots.includes(resolved)) continue;
-    // Must be absolute
-    if (!resolved.startsWith("/")) {
-      errors.push({ path: rawPath, resolved, error: "Path must be absolute" });
-      continue;
-    }
-    // Must exist on disk
-    try {
-      const statResult = await stat(resolved);
-      if (!statResult.isDirectory()) {
-        errors.push({ path: rawPath, resolved, error: "Path exists but is not a directory" });
+    const staticRoots = getStaticRoots();
+    const errors: { path: string; resolved?: string; error: string }[] = [];
+    const validRoots: string[] = [];
+    for (const rawPath of roots) {
+      const resolved = resolveWorkspacePath(rawPath);
+      if (!resolved) {
+        errors.push({ path: rawPath, error: "Invalid or empty path" });
         continue;
       }
-    } catch {
-      errors.push({ path: rawPath, resolved, error: "Directory does not exist" });
-      continue;
+      // Skip if this is already a static root
+      if (staticRoots.includes(resolved)) continue;
+      // Must be absolute
+      if (!resolved.startsWith("/")) {
+        errors.push({
+          path: rawPath,
+          resolved,
+          error: "Path must be absolute",
+        });
+        continue;
+      }
+      // Must exist on disk
+      try {
+        const statResult = await stat(resolved);
+        if (!statResult.isDirectory()) {
+          errors.push({
+            path: rawPath,
+            resolved,
+            error: "Path exists but is not a directory",
+          });
+          continue;
+        }
+      } catch {
+        errors.push({
+          path: rawPath,
+          resolved,
+          error: "Directory does not exist",
+        });
+        continue;
+      }
+      if (!validRoots.includes(resolved)) {
+        validRoots.push(resolved);
+      }
     }
-    if (!validRoots.includes(resolved)) {
-      validRoots.push(resolved);
-    }
-  }
-  // Persist to MongoDB
-  const database = getDB();
-  const collection = database.collection(WORKSPACE_COLLECTION);
-  await collection.updateOne(
-    { _key: "user_roots" },
-    {
-      $set: {
-        roots: validRoots,
-        updatedAt: new Date().toISOString(),
+    // Persist to MongoDB
+    const database = getDB();
+    const collection = database.collection(WORKSPACE_COLLECTION);
+    await collection.updateOne(
+      { _key: "user_roots" },
+      {
+        $set: {
+          roots: validRoots,
+          updatedAt: new Date().toISOString(),
+        },
+        $setOnInsert: {
+          _key: "user_roots",
+          createdAt: new Date().toISOString(),
+        },
       },
-      $setOnInsert: {
-        _key: "user_roots",
-        createdAt: new Date().toISOString(),
-      },
-    },
-    { upsert: true },
-  );
-  // Refresh in-memory ALLOWED_ROOTS
-  refreshAllowedRoots(validRoots);
-  res.json({
-    workspaceRoots: ALLOWED_ROOTS,
-    staticRoots: staticRoots,
-    userRoots: validRoots,
-    errors: errors.length > 0 ? errors : undefined,
-  });
-}));
+      { upsert: true },
+    );
+    // Refresh in-memory ALLOWED_ROOTS
+    refreshAllowedRoots(validRoots);
+    res.json({
+      workspaceRoots: ALLOWED_ROOTS,
+      staticRoots: staticRoots,
+      userRoots: validRoots,
+      errors: errors.length > 0 ? errors : undefined,
+    });
+  }),
+);
 /**
  * POST /admin/config/workspaces/validate
  * Validate a single workspace path without persisting.
@@ -218,42 +247,61 @@ router.put("/config/workspaces", asyncHandler(async (req: Request, res: Response
  *
  * Body: { path: string }
  */
-router.post("/config/workspaces/validate", asyncHandler(async (req: Request, res: Response) => {
-  const { path: rawPath } = req.body || {};
-  if (!rawPath || typeof rawPath !== "string") {
-    return res.status(400).json({ error: "'path' is required (string)" });
-  }
-  const isWindows = isWindowsPath(rawPath.trim());
-  const resolved = resolveWorkspacePath(rawPath);
-  if (!resolved) {
-    return res.json({ valid: false, error: "Could not resolve path", originalPath: rawPath });
-  }
-  if (!resolved.startsWith("/")) {
-    return res.json({ valid: false, error: "Path must be absolute", resolvedPath: resolved, originalPath: rawPath, isWsl: isWindows });
-  }
-  // Check if already registered
-  const alreadyRegistered = ALLOWED_ROOTS.includes(resolved);
-  // Check disk existence
-  let exists = false;
-  let isDirectory = false;
-  try {
-    const statResult = await stat(resolved);
-    exists = true;
-    isDirectory = statResult.isDirectory();
-  } catch {
-    // does not exist
-  }
-  res.json({
-    valid: exists && isDirectory && !alreadyRegistered,
-    resolvedPath: resolved,
-    originalPath: rawPath,
-    isWsl: isWindows,
-    exists,
-    isDirectory,
-    alreadyRegistered,
-    error: !exists ? "Directory does not exist" : !isDirectory ? "Path is not a directory" : alreadyRegistered ? "Already registered as a workspace" : undefined,
-  });
-}));
+router.post(
+  "/config/workspaces/validate",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { path: rawPath } = req.body || {};
+    if (!rawPath || typeof rawPath !== "string") {
+      return res.status(400).json({ error: "'path' is required (string)" });
+    }
+    const isWindows = isWindowsPath(rawPath.trim());
+    const resolved = resolveWorkspacePath(rawPath);
+    if (!resolved) {
+      return res.json({
+        valid: false,
+        error: "Could not resolve path",
+        originalPath: rawPath,
+      });
+    }
+    if (!resolved.startsWith("/")) {
+      return res.json({
+        valid: false,
+        error: "Path must be absolute",
+        resolvedPath: resolved,
+        originalPath: rawPath,
+        isWsl: isWindows,
+      });
+    }
+    // Check if already registered
+    const alreadyRegistered = ALLOWED_ROOTS.includes(resolved);
+    // Check disk existence
+    let exists = false;
+    let isDirectory = false;
+    try {
+      const statResult = await stat(resolved);
+      exists = true;
+      isDirectory = statResult.isDirectory();
+    } catch {
+      // does not exist
+    }
+    res.json({
+      valid: exists && isDirectory && !alreadyRegistered,
+      resolvedPath: resolved,
+      originalPath: rawPath,
+      isWsl: isWindows,
+      exists,
+      isDirectory,
+      alreadyRegistered,
+      error: !exists
+        ? "Directory does not exist"
+        : !isDirectory
+          ? "Path is not a directory"
+          : alreadyRegistered
+            ? "Already registered as a workspace"
+            : undefined,
+    });
+  }),
+);
 /**
  * Load user-configured workspace roots from MongoDB and merge into ALLOWED_ROOTS.
  * Called at boot time from server.js.
@@ -263,12 +311,18 @@ export async function loadUserWorkspaceRoots() {
     const database = getDB();
     const collection = database.collection(WORKSPACE_COLLECTION);
     const document = await collection.findOne({ _key: "user_roots" });
-    if (document && Array.isArray(document.roots) && document.roots.length > 0) {
+    if (
+      document &&
+      Array.isArray(document.roots) &&
+      document.roots.length > 0
+    ) {
       refreshAllowedRoots(document.roots);
       logger.info(`   📂 User workspace roots: ${document.roots.join(", ")}`);
     }
   } catch (error: unknown) {
-    logger.warn(`   ⚠️  Could not load user workspace roots: ${errorMessage(error)}`);
+    logger.warn(
+      `   ⚠️  Could not load user workspace roots: ${errorMessage(error)}`,
+    );
   }
 }
 export default router;

@@ -26,7 +26,9 @@ router.get("/vessels/:mmsi", (req: Request, res: Response) => {
   if (!vessel) {
     return res
       .status(404)
-      .json({ error: `Vessel MMSI ${req.params.mmsi as string} not found in buffer` });
+      .json({
+        error: `Vessel MMSI ${req.params.mmsi as string} not found in buffer`,
+      });
   }
   res.json(vessel);
 });
@@ -45,11 +47,16 @@ router.get("/search", (req: Request, res: Response) => {
 // ─── Vessels in Area ───────────────────────────────────────────────
 
 router.get("/area", (req: Request, res: Response) => {
-  const { minLat, maxLat, minLng, maxLng, limit } = req.query as Record<string, string | undefined>;
+  const { minLat, maxLat, minLng, maxLng, limit } = req.query as Record<
+    string,
+    string | undefined
+  >;
   if (!minLat || !maxLat || !minLng || !maxLng) {
     return res
       .status(400)
-      .json({ error: "Parameters minLat, maxLat, minLng, maxLng are required" });
+      .json({
+        error: "Parameters minLat, maxLat, minLng, maxLng are required",
+      });
   }
   const vessels = getVesselsInArea(
     parseFloat(minLat),
@@ -65,7 +72,10 @@ router.get("/area", (req: Request, res: Response) => {
 
 router.get("/messages", (req: Request, res: Response) => {
   const { limit, type } = req.query as Record<string, string | undefined>;
-  const messages = getRecentMessages(parseInt(limit || "", 10) || 50, type || null);
+  const messages = getRecentMessages(
+    parseInt(limit || "", 10) || 50,
+    type || null,
+  );
   res.json({ count: messages.length, messages });
 });
 

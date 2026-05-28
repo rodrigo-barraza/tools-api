@@ -28,11 +28,16 @@ export interface TransformedToolSearchResult {
   error?: string;
 }
 
-export function agenticToolSearch(query: string, { domain, label, limit = 20 }: AgenticToolSearchOptions = {}): TransformedToolSearchResult {
+export function agenticToolSearch(
+  query: string,
+  { domain, label, limit = 20 }: AgenticToolSearchOptions = {},
+): TransformedToolSearchResult {
   const allSchemas = getToolSchemas();
 
   if (!allSchemas || allSchemas.length === 0) {
-    return { error: "Tool schemas not loaded — tools-api may still be initializing" };
+    return {
+      error: "Tool schemas not loaded — tools-api may still be initializing",
+    };
   }
 
   const queryLower = (query || "").toLowerCase().trim();
@@ -43,7 +48,8 @@ export function agenticToolSearch(query: string, { domain, label, limit = 20 }: 
   if (domain) {
     const domainLower = domain.toLowerCase();
     filtered = filtered.filter(
-      (t: InferredToolSchema) => t.domain && t.domain.toLowerCase() === domainLower,
+      (t: InferredToolSchema) =>
+        t.domain && t.domain.toLowerCase() === domainLower,
     );
   }
 
@@ -56,35 +62,36 @@ export function agenticToolSearch(query: string, { domain, label, limit = 20 }: 
         Object.values(t.labels).some(
           (v: any) => typeof v === "string" && v.toLowerCase() === labelLower,
         ),
-
     );
   }
 
   // Keyword search on name + description
   let scored: ScoredMatch[];
   if (queryLower) {
-    scored = filtered.map((t: InferredToolSchema) => {
-      const nameLower = (t.name || "").toLowerCase();
-      const descLower = (t.description || "").toLowerCase();
+    scored = filtered
+      .map((t: InferredToolSchema) => {
+        const nameLower = (t.name || "").toLowerCase();
+        const descLower = (t.description || "").toLowerCase();
 
-      let score = 0;
-      // Exact name match → highest score
-      if (nameLower === queryLower) score += 100;
-      // Name contains query
-      else if (nameLower.includes(queryLower)) score += 50;
-      // Description contains query
-      if (descLower.includes(queryLower)) score += 20;
+        let score = 0;
+        // Exact name match → highest score
+        if (nameLower === queryLower) score += 100;
+        // Name contains query
+        else if (nameLower.includes(queryLower)) score += 50;
+        // Description contains query
+        if (descLower.includes(queryLower)) score += 20;
 
-      // Bonus: match individual words
-      const queryWords = queryLower.split(/\s+/);
-      for (const word of queryWords) {
-        if (word.length < 2) continue;
-        if (nameLower.includes(word)) score += 10;
-        if (descLower.includes(word)) score += 5;
-      }
+        // Bonus: match individual words
+        const queryWords = queryLower.split(/\s+/);
+        for (const word of queryWords) {
+          if (word.length < 2) continue;
+          if (nameLower.includes(word)) score += 10;
+          if (descLower.includes(word)) score += 5;
+        }
 
-      return { schema: t, score };
-    }).filter((s: ScoredMatch) => s.score > 0);
+        return { schema: t, score };
+      })
+      .filter((s: ScoredMatch) => s.score > 0);
   } else {
     // No keyword query — just domain/label filtering, return all matches
     scored = filtered.map((t: InferredToolSchema) => ({ schema: t, score: 1 }));
@@ -94,13 +101,17 @@ export function agenticToolSearch(query: string, { domain, label, limit = 20 }: 
   scored.sort((a: ScoredMatch, b: ScoredMatch) => b.score - a.score);
 
   const capped = Math.min(Math.max(1, limit), 50);
-  const matches: ToolSearchMatch[] = scored.slice(0, capped).map(({ schema }: ScoredMatch) => ({
-    name: schema.name,
-    description: schema.description,
-    domain: schema.domain || null,
-    labels: schema.labels ? (schema.labels as string[]) : null,
-    parameters: schema.parameters ? (schema.parameters as unknown as ToolParameters) : null,
-  }));
+  const matches: ToolSearchMatch[] = scored
+    .slice(0, capped)
+    .map(({ schema }: ScoredMatch) => ({
+      name: schema.name,
+      description: schema.description,
+      domain: schema.domain || null,
+      labels: schema.labels ? (schema.labels as string[]) : null,
+      parameters: schema.parameters
+        ? (schema.parameters as unknown as ToolParameters)
+        : null,
+    }));
 
   return {
     matches,

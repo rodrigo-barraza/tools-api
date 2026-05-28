@@ -8,7 +8,9 @@ import {
 import { parsePrice } from "@rodrigo-barraza/utilities-library";
 import {
   computeTrendingScore,
-  buildScraperHeaders, errorMessage } from "../../utilities.ts";
+  buildScraperHeaders,
+  errorMessage,
+} from "../../utilities.ts";
 import rateLimiter from "../../services/RateLimiterService.ts";
 import logger from "../../logger.ts";
 
@@ -148,61 +150,66 @@ async function scrapeCategory(
 
   // ── Strategy 2: Legacy Costco layout (fallback) ───────────────
   if (products.length === 0) {
-    $(".product-tile, .product, .col-xs-6.col-lg-4.col-xl-3").each((_i, element) => {
-      if (products.length >= COSTCO_MAX_PRODUCTS_PER_CATEGORY) return false;
+    $(".product-tile, .product, .col-xs-6.col-lg-4.col-xl-3").each(
+      (_i, element) => {
+        if (products.length >= COSTCO_MAX_PRODUCTS_PER_CATEGORY) return false;
 
-      const $element = $(element);
+        const $element = $(element);
 
-      // Title & URL
-      const $link = $element
-        .find("a[href*='.product.'], a[href*='product.']")
-        .first();
-      const href = $link.attr("href") || "";
-      const name =
-        $element.find(".description, .product-title").text().trim() ||
-        $link.text().trim();
-      if (!name) return;
+        // Title & URL
+        const $link = $element
+          .find("a[href*='.product.'], a[href*='product.']")
+          .first();
+        const href = $link.attr("href") || "";
+        const name =
+          $element.find(".description, .product-title").text().trim() ||
+          $link.text().trim();
+        if (!name) return;
 
-      const productId = extractProductId(href);
-      const productUrl = href.startsWith("http")
-        ? href
-        : `${baseUrl}${href.startsWith("/") ? "" : "/"}${href}`;
+        const productId = extractProductId(href);
+        const productUrl = href.startsWith("http")
+          ? href
+          : `${baseUrl}${href.startsWith("/") ? "" : "/"}${href}`;
 
-      // Price
-      const priceText = $element.find(".price, [class*='price']").first().text();
-      const price = parsePrice(priceText);
+        // Price
+        const priceText = $element
+          .find(".price, [class*='price']")
+          .first()
+          .text();
+        const price = parsePrice(priceText);
 
-      // Image
-      const imageUrl =
-        $element.find("img.product-img, img").first().attr("src") || null;
+        // Image
+        const imageUrl =
+          $element.find("img.product-img, img").first().attr("src") || null;
 
-      // Rating
-      const ratingText =
-        $element.find(".stars, [class*='star']").attr("aria-label") || "";
-      const rating = extractRating(ratingText);
-      const reviewText = $element.find(".reviews, [class*='review']").text();
-      const reviewCount = extractReviewCount(reviewText);
+        // Rating
+        const ratingText =
+          $element.find(".stars, [class*='star']").attr("aria-label") || "";
+        const rating = extractRating(ratingText);
+        const reviewText = $element.find(".reviews, [class*='review']").text();
+        const reviewCount = extractReviewCount(reviewText);
 
-      const product = {
-        sourceId: productId || `costco-${products.length}`,
-        source,
-        name,
-        category: unifiedCategory,
-        sourceCategory: categoryName,
-        rank: products.length + 1,
-        price,
-        currency,
-        rating,
-        reviewCount,
-        imageUrl,
-        productUrl,
-        description: null,
-        trendingScore: 0,
-        fetchedAt: new Date(),
-      };
-      product.trendingScore = computeTrendingScore(product);
-      products.push(product);
-    });
+        const product = {
+          sourceId: productId || `costco-${products.length}`,
+          source,
+          name,
+          category: unifiedCategory,
+          sourceCategory: categoryName,
+          rank: products.length + 1,
+          price,
+          currency,
+          rating,
+          reviewCount,
+          imageUrl,
+          productUrl,
+          description: null,
+          trendingScore: 0,
+          fetchedAt: new Date(),
+        };
+        product.trendingScore = computeTrendingScore(product);
+        products.push(product);
+      },
+    );
   }
 
   return products;
@@ -227,9 +234,13 @@ export async function fetchAllCostcoUS() {
         "USD",
       );
       allProducts.push(...products);
-      logger.info(`[Costco US] ✅ ${costcoUsCategory.name}: ${products.length} products`);
+      logger.info(
+        `[Costco US] ✅ ${costcoUsCategory.name}: ${products.length} products`,
+      );
     } catch (error: unknown) {
-      logger.error(`[Costco US] ❌ ${costcoUsCategory.name}: ${errorMessage(error)}`);
+      logger.error(
+        `[Costco US] ❌ ${costcoUsCategory.name}: ${errorMessage(error)}`,
+      );
     }
 
     await rateLimiter.wait("COSTCO");
@@ -255,9 +266,13 @@ export async function fetchAllCostcoCA() {
         "CAD",
       );
       allProducts.push(...products);
-      logger.info(`[Costco CA] ✅ ${costcoCaCategory.name}: ${products.length} products`);
+      logger.info(
+        `[Costco CA] ✅ ${costcoCaCategory.name}: ${products.length} products`,
+      );
     } catch (error: unknown) {
-      logger.error(`[Costco CA] ❌ ${costcoCaCategory.name}: ${errorMessage(error)}`);
+      logger.error(
+        `[Costco CA] ❌ ${costcoCaCategory.name}: ${errorMessage(error)}`,
+      );
     }
 
     await rateLimiter.wait("COSTCO");

@@ -45,7 +45,11 @@ interface AggregateDoc {
  * Modeled after Prism's RequestLoggerMiddleware, without
  * token/cost tracking (not applicable for a data API).
  */
-export function requestLoggerMiddleware(req: Request, res: Response, next: NextFunction) {
+export function requestLoggerMiddleware(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   const start = performance.now();
 
   res.on("finish", () => {
@@ -54,7 +58,9 @@ export function requestLoggerMiddleware(req: Request, res: Response, next: NextF
     const path = req.originalUrl;
     const status = res.statusCode;
     const clientIp =
-      (req.headers["x-forwarded-for"] as string | undefined)?.split(",")[0]?.trim() || req.ip;
+      (req.headers["x-forwarded-for"] as string | undefined)
+        ?.split(",")[0]
+        ?.trim() || req.ip;
 
     // Format timing
     const time =
@@ -64,7 +70,10 @@ export function requestLoggerMiddleware(req: Request, res: Response, next: NextF
 
     // Request / response sizes (from headers — zero-cost)
     const inBytes = parseInt(req.headers["content-length"] || "0", 10);
-    const outBytes = parseInt(String(res.getHeader("content-length") || "0"), 10);
+    const outBytes = parseInt(
+      String(res.getHeader("content-length") || "0"),
+      10,
+    );
     const totalBytes = inBytes + outBytes;
     const sizeTag = `(in: ${formatBytes(inBytes)}, out: ${formatBytes(outBytes)}, total: ${formatBytes(totalBytes)})`;
 
@@ -113,13 +122,23 @@ export async function queryRequestLogs(filters: RequestLogFilters = {}) {
   if (filters.status) query.status = parseInt(filters.status, 10);
   if (filters.minStatus || filters.maxStatus) {
     query.status = query.status || {};
-    if (filters.minStatus) (query.status as Record<string, number>).$gte = parseInt(filters.minStatus, 10);
-    if (filters.maxStatus) (query.status as Record<string, number>).$lte = parseInt(filters.maxStatus, 10);
+    if (filters.minStatus)
+      (query.status as Record<string, number>).$gte = parseInt(
+        filters.minStatus,
+        10,
+      );
+    if (filters.maxStatus)
+      (query.status as Record<string, number>).$lte = parseInt(
+        filters.maxStatus,
+        10,
+      );
   }
   if (filters.since || filters.until) {
     query.timestamp = {};
-    if (filters.since) (query.timestamp as Record<string, Date>).$gte = new Date(filters.since);
-    if (filters.until) (query.timestamp as Record<string, Date>).$lte = new Date(filters.until);
+    if (filters.since)
+      (query.timestamp as Record<string, Date>).$gte = new Date(filters.since);
+    if (filters.until)
+      (query.timestamp as Record<string, Date>).$lte = new Date(filters.until);
   }
 
   const limit = parseInt(filters.limit || "100", 10);
@@ -192,8 +211,18 @@ export async function getRequestStats(since?: string) {
 
   return {
     totalRequests,
-    byStatus: Object.fromEntries(byStatus.map((statusEntry) => [(statusEntry as AggregateDoc)._id, (statusEntry as AggregateDoc).count])),
-    byMethod: Object.fromEntries(byMethod.map((methodEntry) => [(methodEntry as AggregateDoc)._id, (methodEntry as AggregateDoc).count])),
+    byStatus: Object.fromEntries(
+      byStatus.map((statusEntry) => [
+        (statusEntry as AggregateDoc)._id,
+        (statusEntry as AggregateDoc).count,
+      ]),
+    ),
+    byMethod: Object.fromEntries(
+      byMethod.map((methodEntry) => [
+        (methodEntry as AggregateDoc)._id,
+        (methodEntry as AggregateDoc).count,
+      ]),
+    ),
     byDomain: byDomain.map((domainEntry) => ({
       domain: (domainEntry as AggregateDoc)._id,
       count: (domainEntry as AggregateDoc).count,

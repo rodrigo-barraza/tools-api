@@ -41,7 +41,8 @@ interface UsgsFeature {
 function classifyMagnitude(mag: number | null): string {
   if (mag === null || mag === undefined) return "Unknown";
   const entry = EARTHQUAKE_MAGNITUDE_SCALE.find(
-    (s: { min: number; max: number; label: string }) => mag >= s.min && mag < s.max,
+    (s: { min: number; max: number; label: string }) =>
+      mag >= s.min && mag < s.max,
   );
   return entry?.label || "Unknown";
 }
@@ -57,7 +58,7 @@ export async function fetchEarthquakes(): Promise<EarthquakeRecord[]> {
     throw new Error(`USGS Earthquake feed returned ${response.status}`);
   }
 
-  const data = await response.json() as { features: UsgsFeature[] };
+  const data = (await response.json()) as { features: UsgsFeature[] };
 
   return data.features.map((feature): EarthquakeRecord => {
     const { properties: provider, geometry: g, id } = feature;

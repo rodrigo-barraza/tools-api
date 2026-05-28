@@ -91,7 +91,10 @@ export interface RawTVMazeScheduleEntry {
     runtime: number | null;
     rating: { average: number | null };
     weight: number;
-    network: { name: string; country: { code: string; name: string } | null } | null;
+    network: {
+      name: string;
+      country: { code: string; name: string } | null;
+    } | null;
     webChannel: { name: string } | null;
     image: { medium: string | null; original: string | null } | null;
     url: string;

@@ -17,7 +17,9 @@ export async function fetchProductHuntTrends() {
   });
 
   if (!response.ok) {
-    throw new Error(`Product Hunt returned ${response.status}: ${response.statusText}`);
+    throw new Error(
+      `Product Hunt returned ${response.status}: ${response.statusText}`,
+    );
   }
 
   const html = await response.text();
@@ -59,7 +61,9 @@ function parseProductHunt(html: string) {
             votesCount: post.votesCount || post.votes_count || 0,
             commentsCount: post.commentsCount || post.comments_count || 0,
             thumbnail: post.thumbnail?.url || null,
-            topics: (post.topics || []).map((t: { name?: string }) => t.name || String(t)).slice(0, 5),
+            topics: (post.topics || [])
+              .map((t: { name?: string }) => t.name || String(t))
+              .slice(0, 5),
           },
           category: TREND_CATEGORIES.TECHNOLOGY,
           timestamp: new Date().toISOString(),

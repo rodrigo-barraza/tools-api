@@ -68,7 +68,9 @@ export async function setupEventCollection(): Promise<void> {
 /**
  * Bulk upsert events by sourceId + source.
  */
-export async function upsertEvents(events: EventDocument[]): Promise<{ upserted: number; modified: number }> {
+export async function upsertEvents(
+  events: EventDocument[],
+): Promise<{ upserted: number; modified: number }> {
   if (!collection || events.length === 0) return { upserted: 0, modified: 0 };
 
   const operations = events.map((event: EventDocument) => ({
@@ -97,7 +99,9 @@ export async function upsertEvents(events: EventDocument[]): Promise<{ upserted:
 /**
  * Get events happening today (local time boundaries).
  */
-export async function getEventsToday(timezone: string): Promise<EventDocument[]> {
+export async function getEventsToday(
+  timezone: string,
+): Promise<EventDocument[]> {
   if (!collection) return [];
 
   const now = new Date();
@@ -120,7 +124,10 @@ export async function getEventsToday(timezone: string): Promise<EventDocument[]>
 /**
  * Get upcoming events (next N days from now).
  */
-export async function getEventsUpcoming(days: number = 30, limit: number = 200): Promise<EventDocument[]> {
+export async function getEventsUpcoming(
+  days: number = 30,
+  limit: number = 200,
+): Promise<EventDocument[]> {
   if (!collection) return [];
 
   const now = new Date();
@@ -136,7 +143,10 @@ export async function getEventsUpcoming(days: number = 30, limit: number = 200):
 /**
  * Get past events (last N days).
  */
-export async function getEventsPast(days: number = 30, limit: number = 200): Promise<EventDocument[]> {
+export async function getEventsPast(
+  days: number = 30,
+  limit: number = 200,
+): Promise<EventDocument[]> {
   if (!collection) return [];
 
   const now = new Date();
@@ -174,7 +184,10 @@ export async function searchEvents({
 
   const cursor = q
     ? collection
-        .find(query, { score: { $meta: "textScore" } } as Record<string, unknown>)
+        .find(query, { score: { $meta: "textScore" } } as Record<
+          string,
+          unknown
+        >)
         .sort({ score: { $meta: "textScore" } })
     : collection.find(query).sort({ startDate: 1 });
 
@@ -184,7 +197,10 @@ export async function searchEvents({
 /**
  * Get a single event by source and sourceId.
  */
-export async function getEventBySourceId(source: string, sourceId: string): Promise<EventDocument | null> {
+export async function getEventBySourceId(
+  source: string,
+  sourceId: string,
+): Promise<EventDocument | null> {
   if (!collection) return null;
   return collection.findOne({ source, sourceId });
 }

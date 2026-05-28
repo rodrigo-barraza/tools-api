@@ -259,7 +259,11 @@ export async function executePythonStreaming(
 
     const child = spawn(PYTHON_BIN, ["-u", scriptPath], {
       stdio: ["pipe", "pipe", "pipe"],
-      env: { ...process.env, PYTHONDONTWRITEBYTECODE: "1", PYTHONUNBUFFERED: "1" },
+      env: {
+        ...process.env,
+        PYTHONDONTWRITEBYTECODE: "1",
+        PYTHONUNBUFFERED: "1",
+      },
       detached: false,
     });
 
@@ -306,12 +310,20 @@ export async function executePythonStreaming(
 
       resolve({
         success: exitCode === 0 && !timedOut,
-        stdout: stdoutLen > MAX_OUTPUT_BYTES ? stdout + `\n... [output truncated]` : stdout,
-        stderr: stderrLen > MAX_OUTPUT_BYTES ? stderr + `\n... [output truncated]` : stderr,
+        stdout:
+          stdoutLen > MAX_OUTPUT_BYTES
+            ? stdout + `\n... [output truncated]`
+            : stdout,
+        stderr:
+          stderrLen > MAX_OUTPUT_BYTES
+            ? stderr + `\n... [output truncated]`
+            : stderr,
         exitCode: timedOut ? null : exitCode,
         executionTimeMs: Math.round(performance.now() - startTime),
         timedOut,
-        ...(timedOut && { error: `Execution timed out after ${clampedTimeout}ms` }),
+        ...(timedOut && {
+          error: `Execution timed out after ${clampedTimeout}ms`,
+        }),
       });
     }
 
@@ -342,10 +354,9 @@ export async function executePythonStreaming(
  */
 export async function getInterpreterInfo(): Promise<InterpreterInfo> {
   try {
-    const result = await executePython(
-      "import sys; print(f'{sys.version}')",
-      { timeout: HEALTH_CHECK_TIMEOUT_MS },
-    );
+    const result = await executePython("import sys; print(f'{sys.version}')", {
+      timeout: HEALTH_CHECK_TIMEOUT_MS,
+    });
     return {
       available: result.success,
       version: result.stdout.trim(),

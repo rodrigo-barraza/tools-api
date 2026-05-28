@@ -22,8 +22,13 @@ function parseStackOverflowInput(input: string) {
   if (match) {
     // Determine site from URL
     let site = "stackoverflow";
-    if (trimmed.includes("stackexchange.com") && !trimmed.includes("stackoverflow")) {
-      const siteMatch = trimmed.match(/(?:https?:\/\/)?([a-z]+)\.stackexchange\.com/);
+    if (
+      trimmed.includes("stackexchange.com") &&
+      !trimmed.includes("stackoverflow")
+    ) {
+      const siteMatch = trimmed.match(
+        /(?:https?:\/\/)?([a-z]+)\.stackexchange\.com/,
+      );
       if (siteMatch) site = siteMatch[1];
     }
     return { questionId: match[1], site };
@@ -42,12 +47,18 @@ function parseStackOverflowInput(input: string) {
 function htmlToText(html: string) {
   if (!html) return "";
   return html
-    .replace(/<pre[^>]*><code[^>]*>([\s\S]*?)<\/code><\/pre>/gi, (_match: string, code: string) => {
-      return "\n```\n" + decodeHtmlEntities(code) + "\n```\n";
-    })
-    .replace(/<code[^>]*>([\s\S]*?)<\/code>/gi, (_match: string, code: string) => {
-      return "`" + decodeHtmlEntities(code) + "`";
-    })
+    .replace(
+      /<pre[^>]*><code[^>]*>([\s\S]*?)<\/code><\/pre>/gi,
+      (_match: string, code: string) => {
+        return "\n```\n" + decodeHtmlEntities(code) + "\n```\n";
+      },
+    )
+    .replace(
+      /<code[^>]*>([\s\S]*?)<\/code>/gi,
+      (_match: string, code: string) => {
+        return "`" + decodeHtmlEntities(code) + "`";
+      },
+    )
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<\/p>/gi, "\n\n")
     .replace(/<\/li>/gi, "\n")
@@ -92,7 +103,10 @@ interface SOAnswer {
 
 
  */
-export async function getStackOverflowQuestion(input: string, options: StackOverflowOptions = {}) {
+export async function getStackOverflowQuestion(
+  input: string,
+  options: StackOverflowOptions = {},
+) {
   const parsed = parseStackOverflowInput(input);
   if (!parsed) {
     return { error: `Invalid Stack Overflow URL or question ID: "${input}"` };
@@ -114,7 +128,9 @@ export async function getStackOverflowQuestion(input: string, options: StackOver
     // Fetch question and answers concurrently
     const [qRes, aRes] = await Promise.all([
       fetch(`${SE_API}/questions/${questionId}?${params}`),
-      fetch(`${SE_API}/questions/${questionId}/answers?${params}&pagesize=${clampedLimit}`),
+      fetch(
+        `${SE_API}/questions/${questionId}/answers?${params}&pagesize=${clampedLimit}`,
+      ),
     ]);
 
     if (!qRes.ok || !aRes.ok) {
@@ -164,17 +180,19 @@ export async function getStackOverflowQuestion(input: string, options: StackOver
       creation_date?: number;
     }
 
-    result.answers = (aData.items || []).map((a: SeApiAnswer): SOAnswer => ({
-      answerId: a.answer_id,
-      author: a.owner?.display_name || null,
-      authorReputation: a.owner?.reputation || null,
-      body: htmlToText(a.body),
-      score: a.score || 0,
-      isAccepted: a.is_accepted || false,
-      createdAt: a.creation_date
-        ? new Date(a.creation_date * 1000).toISOString()
-        : null,
-    }));
+    result.answers = (aData.items || []).map(
+      (a: SeApiAnswer): SOAnswer => ({
+        answerId: a.answer_id,
+        author: a.owner?.display_name || null,
+        authorReputation: a.owner?.reputation || null,
+        body: htmlToText(a.body),
+        score: a.score || 0,
+        isAccepted: a.is_accepted || false,
+        createdAt: a.creation_date
+          ? new Date(a.creation_date * 1000).toISOString()
+          : null,
+      }),
+    );
 
     // Sort: accepted answer first, then by score
     result.answers.sort((a: SOAnswer, b: SOAnswer) => {

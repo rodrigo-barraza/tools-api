@@ -17,7 +17,7 @@ let collection: Collection<WebcamDocument> | null = null;
 export async function setupWebcamCollection() {
   const database = getDB();
   if (!database) return;
-  
+
   collection = database.collection<WebcamDocument>("webcams");
 
   await collection.createIndex({ id: 1 }, { unique: true });
@@ -54,11 +54,18 @@ export async function upsertWebcams(webcams: WebcamDocument[]) {
 export async function getWebcamsByCity(city: string, limit: number = 100) {
   if (!collection) return [];
   // Exclude mongodb _id from results so it's clean
-  return collection.find({ city }, { projection: { _id: 0, lastUpdated: 0, firstSeen: 0 } }).limit(limit).toArray();
+  return collection
+    .find({ city }, { projection: { _id: 0, lastUpdated: 0, firstSeen: 0 } })
+    .limit(limit)
+    .toArray();
 }
 
 export async function getWebcamsLastUpdated(city: string) {
   if (!collection) return null;
-  const latest = await collection.find({ city }).sort({ lastUpdated: -1 }).limit(1).toArray();
+  const latest = await collection
+    .find({ city })
+    .sort({ lastUpdated: -1 })
+    .limit(1)
+    .toArray();
   return latest.length > 0 ? latest[0].lastUpdated : null;
 }

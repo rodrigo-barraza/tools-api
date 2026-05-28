@@ -1,5 +1,8 @@
 import { buildScraperHeaders } from "../../../../utilities.ts";
-import { upsertWebcams, type WebcamDocument } from "../../../../models/Webcam.ts";
+import {
+  upsertWebcams,
+  type WebcamDocument,
+} from "../../../../models/Webcam.ts";
 
 const API_URL = "https://511ny.org/api/getcameras?key=public&format=json";
 
@@ -30,17 +33,23 @@ interface NY511CameraItem {
   RoadwayName?: string;
 }
 
-export async function fetchNY511Cameras({ city, idPrefix, bounds }: FetchNY511CamerasParams) {
+export async function fetchNY511Cameras({
+  city,
+  idPrefix,
+  bounds,
+}: FetchNY511CamerasParams) {
   const response = await fetch(API_URL, {
     headers: buildScraperHeaders(),
     signal: AbortSignal.timeout(30000),
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch NY511 cameras for ${city}: ${response.status}`);
+    throw new Error(
+      `Failed to fetch NY511 cameras for ${city}: ${response.status}`,
+    );
   }
 
-  const data = await response.json() as NY511CameraItem[];
+  const data = (await response.json()) as NY511CameraItem[];
   if (!Array.isArray(data) || data.length === 0) return;
 
   const parsedWebcams: WebcamDocument[] = [];
@@ -52,7 +61,12 @@ export async function fetchNY511Cameras({ city, idPrefix, bounds }: FetchNY511Ca
     const lon = cam.Longitude;
     if (!lat || !lon) continue;
 
-    if (lat < bounds.minLat || lat > bounds.maxLat || lon < bounds.minLon || lon > bounds.maxLon) {
+    if (
+      lat < bounds.minLat ||
+      lat > bounds.maxLat ||
+      lon < bounds.minLon ||
+      lon > bounds.maxLon
+    ) {
       continue;
     }
 

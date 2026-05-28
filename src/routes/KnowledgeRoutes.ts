@@ -83,101 +83,168 @@ import { errorMessage } from "../utilities.ts";
 
 const router = Router();
 // ─── Dictionary ────────────────────────────────────────────────────
-router.get("/dictionary/:word", asyncHandler(
-  (req: Request) => fetchDefinition(req.params.word as string),
-  "Dictionary lookup",
-));
+router.get(
+  "/dictionary/:word",
+  asyncHandler(
+    (req: Request) => fetchDefinition(req.params.word as string),
+    "Dictionary lookup",
+  ),
+);
 // ─── Books ─────────────────────────────────────────────────────────
-router.get("/books/search", asyncHandler(async (req: Request, res: Response) => {
-  const { q: query, limit } = req.query as Record<string, string | undefined>;
-  if (!query) {
-    return res.status(400).json({ error: "Query parameter 'q' is required" });
-  }
-  res.json(await searchBooks(query, parseIntParam(limit, 10)));
-}));
-router.get("/books/work/:workKey", asyncHandler(
-  (req: Request) => getBookDetails(req.params.workKey as string),
-  "Book details",
-));
-router.get("/books/author/:authorKey", asyncHandler(
-  (req: Request) => getAuthorInfo(req.params.authorKey as string),
-  "Author info",
-));
+router.get(
+  "/books/search",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { q: query, limit } = req.query as Record<string, string | undefined>;
+    if (!query) {
+      return res.status(400).json({ error: "Query parameter 'q' is required" });
+    }
+    res.json(await searchBooks(query, parseIntParam(limit, 10)));
+  }),
+);
+router.get(
+  "/books/work/:workKey",
+  asyncHandler(
+    (req: Request) => getBookDetails(req.params.workKey as string),
+    "Book details",
+  ),
+);
+router.get(
+  "/books/author/:authorKey",
+  asyncHandler(
+    (req: Request) => getAuthorInfo(req.params.authorKey as string),
+    "Author info",
+  ),
+);
 // ─── Countries ─────────────────────────────────────────────────────
-router.get("/countries/search/:name", asyncHandler(
-  (req: Request) => searchCountries(req.params.name as string),
-  "Country search",
-));
-router.get("/countries/code/:code", asyncHandler(
-  (req: Request) => getCountryByCode(req.params.code as string),
-  "Country lookup",
-));
+router.get(
+  "/countries/search/:name",
+  asyncHandler(
+    (req: Request) => searchCountries(req.params.name as string),
+    "Country search",
+  ),
+);
+router.get(
+  "/countries/code/:code",
+  asyncHandler(
+    (req: Request) => getCountryByCode(req.params.code as string),
+    "Country lookup",
+  ),
+);
 // ─── Papers (arXiv) ────────────────────────────────────────────────
-router.get("/papers/search", asyncHandler(async (req: Request, res: Response) => {
-  const { q: query, category, limit, sortBy } = req.query as Record<string, string | undefined>;
-  if (!query) {
-    return res.status(400).json({ error: "Query parameter 'q' is required" });
-  }
-  res.json(await searchPapers(query, {
-    category,
-    limit: parseIntParam(limit, 10),
-    sortBy: sortBy || "relevance",
-  }));
-}));
+router.get(
+  "/papers/search",
+  asyncHandler(async (req: Request, res: Response) => {
+    const {
+      q: query,
+      category,
+      limit,
+      sortBy,
+    } = req.query as Record<string, string | undefined>;
+    if (!query) {
+      return res.status(400).json({ error: "Query parameter 'q' is required" });
+    }
+    res.json(
+      await searchPapers(query, {
+        category,
+        limit: parseIntParam(limit, 10),
+        sortBy: sortBy || "relevance",
+      }),
+    );
+  }),
+);
 // ─── Wikipedia Summaries ───────────────────────────────────────────
-router.get("/wikipedia/summary/:title", asyncHandler(
-  (req: Request) => getArticleSummary(req.params.title as string),
-  "Wikipedia summary",
-));
-router.get("/wikipedia/onthisday", asyncHandler(
-  (req: Request) => getOnThisDay(
-    req.query.type as string || "selected",
-    req.query.month as string ? parseInt(req.query.month as string, 10) : undefined,
-    req.query.day as string ? parseInt(req.query.day as string, 10) : undefined,
+router.get(
+  "/wikipedia/summary/:title",
+  asyncHandler(
+    (req: Request) => getArticleSummary(req.params.title as string),
+    "Wikipedia summary",
   ),
-  "On This Day",
-));
+);
+router.get(
+  "/wikipedia/onthisday",
+  asyncHandler(
+    (req: Request) =>
+      getOnThisDay(
+        (req.query.type as string) || "selected",
+        (req.query.month as string)
+          ? parseInt(req.query.month as string, 10)
+          : undefined,
+        (req.query.day as string)
+          ? parseInt(req.query.day as string, 10)
+          : undefined,
+      ),
+    "On This Day",
+  ),
+);
 // ─── Anime (Jikan / MyAnimeList) ───────────────────────────────────
-router.get("/anime/search", asyncHandler(async (req: Request, res: Response) => {
-  const { q: query, limit } = req.query as Record<string, string | undefined>;
-  if (!query) {
-    return res.status(400).json({ error: "Query parameter 'q' is required" });
-  }
-  res.json(await searchAnime(query, parseIntParam(limit, 10)));
-}));
-router.get("/anime/top", asyncHandler(
-  (req: Request) => getTopAnime(parseIntParam(req.query.limit as string, 10)),
-  "Top anime fetch",
-));
-router.get("/anime/season/now", asyncHandler(
-  (req: Request) => getCurrentSeasonAnime(parseIntParam(req.query.limit as string, 10)),
-  "Seasonal anime fetch",
-));
-router.get("/anime/:id", asyncHandler(
-  (req: Request) => getAnimeDetails(req.params.id as string),
-  "Anime details",
-));
-// ─── Movies (TMDb) ─────────────────────────────────────────────────
-router.get("/movies/search", asyncHandler(async (req: Request, res: Response) => {
-  const { q: query, page, year } = req.query as Record<string, string | undefined>;
-  if (!query) {
-    return res.status(400).json({ error: "Query parameter 'q' is required" });
-  }
-  res.json(await searchMovies(query, {
-    page: parseIntParam(page, 1),
-    year: year ? parseInt(year, 10) : undefined,
-  }));
-}));
-router.get("/movies/trending", asyncHandler(
-  (req: Request) => getTrendingMovies(
-    req.query.timeWindow as string || "day",
-    parseIntParam(req.query.limit as string, 10),
+router.get(
+  "/anime/search",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { q: query, limit } = req.query as Record<string, string | undefined>;
+    if (!query) {
+      return res.status(400).json({ error: "Query parameter 'q' is required" });
+    }
+    res.json(await searchAnime(query, parseIntParam(limit, 10)));
+  }),
+);
+router.get(
+  "/anime/top",
+  asyncHandler(
+    (req: Request) => getTopAnime(parseIntParam(req.query.limit as string, 10)),
+    "Top anime fetch",
   ),
-  "Trending movies",
-));
-router.get("/movies/discover", asyncHandler(
-  (req: Request) => {
-    const { genreId, year, sortBy, page, minVoteAverage, minVoteCount } = req.query as Record<string, string | undefined>;
+);
+router.get(
+  "/anime/season/now",
+  asyncHandler(
+    (req: Request) =>
+      getCurrentSeasonAnime(parseIntParam(req.query.limit as string, 10)),
+    "Seasonal anime fetch",
+  ),
+);
+router.get(
+  "/anime/:id",
+  asyncHandler(
+    (req: Request) => getAnimeDetails(req.params.id as string),
+    "Anime details",
+  ),
+);
+// ─── Movies (TMDb) ─────────────────────────────────────────────────
+router.get(
+  "/movies/search",
+  asyncHandler(async (req: Request, res: Response) => {
+    const {
+      q: query,
+      page,
+      year,
+    } = req.query as Record<string, string | undefined>;
+    if (!query) {
+      return res.status(400).json({ error: "Query parameter 'q' is required" });
+    }
+    res.json(
+      await searchMovies(query, {
+        page: parseIntParam(page, 1),
+        year: year ? parseInt(year, 10) : undefined,
+      }),
+    );
+  }),
+);
+router.get(
+  "/movies/trending",
+  asyncHandler(
+    (req: Request) =>
+      getTrendingMovies(
+        (req.query.timeWindow as string) || "day",
+        parseIntParam(req.query.limit as string, 10),
+      ),
+    "Trending movies",
+  ),
+);
+router.get(
+  "/movies/discover",
+  asyncHandler((req: Request) => {
+    const { genreId, year, sortBy, page, minVoteAverage, minVoteCount } =
+      req.query as Record<string, string | undefined>;
     return discoverMovies({
       genreId: genreId ? parseInt(genreId, 10) : undefined,
       year: year ? parseInt(year, 10) : undefined,
@@ -186,44 +253,70 @@ router.get("/movies/discover", asyncHandler(
       minVoteAverage: minVoteAverage ? parseFloat(minVoteAverage) : undefined,
       minVoteCount: minVoteCount ? parseInt(minVoteCount, 10) : undefined,
     });
-  },
-  "Discover movies",
-));
-router.get("/movies/genres", asyncHandler(
-  async () => getMovieGenres(),
-  "Movie genres",
-));
-router.get("/movies/:id/credits", asyncHandler(
-  (req: Request) => getMovieCredits(req.params.id as string),
-  "Movie credits",
-));
-router.get("/movies/:id", asyncHandler(
-  (req: Request) => getMovieDetails(req.params.id as string),
-  "Movie details",
-));
-// ─── TV Series (TMDb) ──────────────────────────────────────────────
-router.get("/tv/search", asyncHandler(async (req: Request, res: Response) => {
-  const { q: query, page, firstAirDateYear } = req.query as Record<string, string | undefined>;
-  if (!query) {
-    return res.status(400).json({ error: "Query parameter 'q' is required" });
-  }
-  res.json(await searchTvShows(query, {
-    page: parseIntParam(page, 1),
-    firstAirDateYear: firstAirDateYear
-      ? parseInt(firstAirDateYear, 10)
-      : undefined,
-  }));
-}));
-router.get("/tv/trending", asyncHandler(
-  (req: Request) => getTrendingTvShows(
-    req.query.timeWindow as string || "day",
-    parseIntParam(req.query.limit as string, 10),
+  }, "Discover movies"),
+);
+router.get(
+  "/movies/genres",
+  asyncHandler(async () => getMovieGenres(), "Movie genres"),
+);
+router.get(
+  "/movies/:id/credits",
+  asyncHandler(
+    (req: Request) => getMovieCredits(req.params.id as string),
+    "Movie credits",
   ),
-  "Trending TV shows",
-));
-router.get("/tv/discover", asyncHandler(
-  (req: Request) => {
-    const { genreId, firstAirDateYear, sortBy, page, minVoteAverage, minVoteCount } = req.query as Record<string, string | undefined>;
+);
+router.get(
+  "/movies/:id",
+  asyncHandler(
+    (req: Request) => getMovieDetails(req.params.id as string),
+    "Movie details",
+  ),
+);
+// ─── TV Series (TMDb) ──────────────────────────────────────────────
+router.get(
+  "/tv/search",
+  asyncHandler(async (req: Request, res: Response) => {
+    const {
+      q: query,
+      page,
+      firstAirDateYear,
+    } = req.query as Record<string, string | undefined>;
+    if (!query) {
+      return res.status(400).json({ error: "Query parameter 'q' is required" });
+    }
+    res.json(
+      await searchTvShows(query, {
+        page: parseIntParam(page, 1),
+        firstAirDateYear: firstAirDateYear
+          ? parseInt(firstAirDateYear, 10)
+          : undefined,
+      }),
+    );
+  }),
+);
+router.get(
+  "/tv/trending",
+  asyncHandler(
+    (req: Request) =>
+      getTrendingTvShows(
+        (req.query.timeWindow as string) || "day",
+        parseIntParam(req.query.limit as string, 10),
+      ),
+    "Trending TV shows",
+  ),
+);
+router.get(
+  "/tv/discover",
+  asyncHandler((req: Request) => {
+    const {
+      genreId,
+      firstAirDateYear,
+      sortBy,
+      page,
+      minVoteAverage,
+      minVoteCount,
+    } = req.query as Record<string, string | undefined>;
     return discoverTvShows({
       genreId: genreId ? parseInt(genreId, 10) : undefined,
       firstAirDateYear: firstAirDateYear
@@ -234,42 +327,61 @@ router.get("/tv/discover", asyncHandler(
       minVoteAverage: minVoteAverage ? parseFloat(minVoteAverage) : undefined,
       minVoteCount: minVoteCount ? parseInt(minVoteCount, 10) : undefined,
     });
-  },
-  "Discover TV shows",
-));
-router.get("/tv/genres", asyncHandler(
-  async () => getTvGenres(),
-  "TV genres",
-));
-router.get("/tv/:id/credits", asyncHandler(
-  (req: Request) => getTvShowCredits(req.params.id as string),
-  "TV credits",
-));
-router.get("/tv/:id/season/:seasonNumber", asyncHandler(
-  (req: Request) => getTvSeasonDetails(
-    req.params.id as string,
-    parseInt(req.params.seasonNumber as string, 10),
+  }, "Discover TV shows"),
+);
+router.get(
+  "/tv/genres",
+  asyncHandler(async () => getTvGenres(), "TV genres"),
+);
+router.get(
+  "/tv/:id/credits",
+  asyncHandler(
+    (req: Request) => getTvShowCredits(req.params.id as string),
+    "TV credits",
   ),
-  "TV season details",
-));
-router.get("/tv/:id", asyncHandler(
-  (req: Request) => getTvShowDetails(req.params.id as string),
-  "TV show details",
-));
+);
+router.get(
+  "/tv/:id/season/:seasonNumber",
+  asyncHandler(
+    (req: Request) =>
+      getTvSeasonDetails(
+        req.params.id as string,
+        parseInt(req.params.seasonNumber as string, 10),
+      ),
+    "TV season details",
+  ),
+);
+router.get(
+  "/tv/:id",
+  asyncHandler(
+    (req: Request) => getTvShowDetails(req.params.id as string),
+    "TV show details",
+  ),
+);
 // ─── Periodic Table (in-memory) ────────────────────────────────────
 router.get("/elements/search", (req: Request, res: Response) => {
-  const { q: query, limit, category, block } = req.query as Record<string, string | undefined>;
+  const {
+    q: query,
+    limit,
+    category,
+    block,
+  } = req.query as Record<string, string | undefined>;
   if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  res.json(searchElements(query, {
-    limit: parseIntParam(limit, 10),
-    category,
-    block,
-  }));
+  res.json(
+    searchElements(query, {
+      limit: parseIntParam(limit, 10),
+      category,
+      block,
+    }),
+  );
 });
 router.get("/elements/rank", (req: Request, res: Response) => {
-  const { property, limit, order, category, block } = req.query as Record<string, string | undefined>;
+  const { property, limit, order, category, block } = req.query as Record<
+    string,
+    string | undefined
+  >;
   if (!property) {
     return res
       .status(400)
@@ -277,7 +389,7 @@ router.get("/elements/rank", (req: Request, res: Response) => {
   }
   const result = rankElementsByProperty(property, {
     limit: parseIntParam(limit, 10),
-    order: (order === "asc" || order === "desc") ? order : "desc",
+    order: order === "asc" || order === "desc" ? order : "desc",
     category,
     block,
   });
@@ -286,11 +398,10 @@ router.get("/elements/rank", (req: Request, res: Response) => {
   }
   res.json(result);
 });
-router.get("/elements/categories", asyncHandler(
-  async () => getElementCategories(),
-  "Element categories",
-  500,
-));
+router.get(
+  "/elements/categories",
+  asyncHandler(async () => getElementCategories(), "Element categories", 500),
+);
 router.get("/elements/:symbol", (req: Request, res: Response) => {
   const result = getElementBySymbol(req.params.symbol as string);
   if (!result) {
@@ -311,7 +422,10 @@ router.get("/indicators/country/:code", (req: Request, res: Response) => {
   res.json(result);
 });
 router.get("/indicators/rank", (req: Request, res: Response) => {
-  const { indicator, limit, order } = req.query as Record<string, string | undefined>;
+  const { indicator, limit, order } = req.query as Record<
+    string,
+    string | undefined
+  >;
   if (!indicator) {
     return res
       .status(400)
@@ -319,7 +433,7 @@ router.get("/indicators/rank", (req: Request, res: Response) => {
   }
   const result = rankCountriesByIndicator(indicator, {
     limit: parseIntParam(limit, 10),
-    order: (order === "asc" || order === "desc") ? order : "desc",
+    order: order === "asc" || order === "desc" ? order : "desc",
   });
   if (result.error) {
     return res.status(400).json(result);
@@ -327,7 +441,10 @@ router.get("/indicators/rank", (req: Request, res: Response) => {
   res.json(result);
 });
 router.get("/indicators/compare", (req: Request, res: Response) => {
-  const { countries, indicator } = req.query as Record<string, string | undefined>;
+  const { countries, indicator } = req.query as Record<
+    string,
+    string | undefined
+  >;
   if (!countries) {
     return res.status(400).json({
       error:
@@ -349,257 +466,437 @@ router.get("/indicators/compare", (req: Request, res: Response) => {
   }
   res.json(result);
 });
-router.get("/indicators/list", asyncHandler(
-  async () => getAvailableIndicators(),
-  "Indicator list",
-  500,
-));
+router.get(
+  "/indicators/list",
+  asyncHandler(async () => getAvailableIndicators(), "Indicator list", 500),
+);
 // ─── Exoplanets ────────────────────────────────────────────────────
 router.get("/exoplanets/search", (req: Request, res: Response) => {
-  const { q: query, limit, method } = req.query as Record<string, string | undefined>;
+  const {
+    q: query,
+    limit,
+    method,
+  } = req.query as Record<string, string | undefined>;
   if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
-  res.json(searchExoplanets(query, {
-    limit: parseIntParam(limit, 10),
-    method,
-  }));
+  res.json(
+    searchExoplanets(query, {
+      limit: parseIntParam(limit, 10),
+      method,
+    }),
+  );
 });
 router.get("/exoplanets/lookup/:name", (req: Request, res: Response) => {
   const result = getExoplanetByName(req.params.name as string);
   if (!result) {
-    return res.status(404).json({ error: `Exoplanet not found: ${req.params.name as string}` });
+    return res
+      .status(404)
+      .json({ error: `Exoplanet not found: ${req.params.name as string}` });
   }
   res.json(result);
 });
 router.get("/exoplanets/rank", (req: Request, res: Response) => {
-  const { field, limit, order } = req.query as Record<string, string | undefined>;
+  const { field, limit, order } = req.query as Record<
+    string,
+    string | undefined
+  >;
   if (!field) {
-    return res.status(400).json({ error: "Query parameter 'field' is required" });
+    return res
+      .status(400)
+      .json({ error: "Query parameter 'field' is required" });
   }
-  res.json(rankExoplanets(field, {
-    limit: parseIntParam(limit, 10),
-    order: (order === "asc" || order === "desc") ? order : "desc",
-  }));
+  res.json(
+    rankExoplanets(field, {
+      limit: parseIntParam(limit, 10),
+      order: order === "asc" || order === "desc" ? order : "desc",
+    }),
+  );
 });
-router.get("/exoplanets/stats", asyncHandler(
-  async () => getDiscoveryStats(),
-  "Exoplanet stats",
-  500,
-));
-router.get("/exoplanets/habitable", asyncHandler(
-  async (req: Request) => getHabitableZonePlanets({
-    limit: parseIntParam(req.query.limit as string, 20),
-  }),
-  "Habitable zone query",
-  500,
-));
+router.get(
+  "/exoplanets/stats",
+  asyncHandler(async () => getDiscoveryStats(), "Exoplanet stats", 500),
+);
+router.get(
+  "/exoplanets/habitable",
+  asyncHandler(
+    async (req: Request) =>
+      getHabitableZonePlanets({
+        limit: parseIntParam(req.query.limit as string, 20),
+      }),
+    "Habitable zone query",
+    500,
+  ),
+);
 // ─── YouTube ───────────────────────────────────────────────────────
-router.get("/youtube/video", asyncHandler(async (req: Request, res: Response) => {
-  const { url, lang, transcript, timestamps } = req.query as Record<string, string | undefined>;
-  if (!url) {
-    return res.status(400).json({ error: "Query parameter 'url' is required (YouTube URL or video ID)" });
-  }
-  const result = await getYouTubeVideoInfo(url, {
-    lang,
-    includeTranscript: transcript !== "false",
-    includeTimestamps: timestamps !== "false",
-  });
-  if (result.error) {
-    return res.status(400).json(result);
-  }
-  res.json(result);
-}));
+router.get(
+  "/youtube/video",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { url, lang, transcript, timestamps } = req.query as Record<
+      string,
+      string | undefined
+    >;
+    if (!url) {
+      return res
+        .status(400)
+        .json({
+          error: "Query parameter 'url' is required (YouTube URL or video ID)",
+        });
+    }
+    const result = await getYouTubeVideoInfo(url, {
+      lang,
+      includeTranscript: transcript !== "false",
+      includeTimestamps: timestamps !== "false",
+    });
+    if (result.error) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  }),
+);
 // ─── GitHub ────────────────────────────────────────────────────────
-router.get("/github/repo", asyncHandler(async (req: Request, res: Response) => {
-  const { url, readme, languages } = req.query as Record<string, string | undefined>;
-  if (!url) {
-    return res.status(400).json({ error: "Query parameter 'url' is required (GitHub URL or owner/repo)" });
-  }
-  const result = await getGitHubRepo(url, {
-    includeReadme: readme !== "false",
-    includeLanguages: languages !== "false",
-  });
-  if (result.error) {
-    return res.status(400).json(result);
-  }
-  res.json(result);
-}));
+router.get(
+  "/github/repo",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { url, readme, languages } = req.query as Record<
+      string,
+      string | undefined
+    >;
+    if (!url) {
+      return res
+        .status(400)
+        .json({
+          error: "Query parameter 'url' is required (GitHub URL or owner/repo)",
+        });
+    }
+    const result = await getGitHubRepo(url, {
+      includeReadme: readme !== "false",
+      includeLanguages: languages !== "false",
+    });
+    if (result.error) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  }),
+);
 // ─── Reddit ────────────────────────────────────────────────────────
-router.get("/reddit/thread", asyncHandler(async (req: Request, res: Response) => {
-  const { url, commentLimit } = req.query as Record<string, string | undefined>;
-  if (!url) {
-    return res.status(400).json({ error: "Query parameter 'url' is required (Reddit URL)" });
-  }
-  const result = await getRedditThread(url, {
-    commentLimit: commentLimit ? parseIntParam(commentLimit, 20) : undefined,
-  });
-  if (result.error) {
-    return res.status(400).json(result);
-  }
-  res.json(result);
-}));
+router.get(
+  "/reddit/thread",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { url, commentLimit } = req.query as Record<
+      string,
+      string | undefined
+    >;
+    if (!url) {
+      return res
+        .status(400)
+        .json({ error: "Query parameter 'url' is required (Reddit URL)" });
+    }
+    const result = await getRedditThread(url, {
+      commentLimit: commentLimit ? parseIntParam(commentLimit, 20) : undefined,
+    });
+    if (result.error) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  }),
+);
 // ─── NPM ───────────────────────────────────────────────────────────
-router.get("/npm/package", asyncHandler(async (req: Request, res: Response) => {
-  const { name, readme } = req.query as Record<string, string | undefined>;
-  if (!name) {
-    return res.status(400).json({ error: "Query parameter 'name' is required (NPM package name)" });
-  }
-  const result = await getNpmPackage(name, {
-    includeReadme: readme !== "false",
-  });
-  if (result.error) {
-    return res.status(400).json(result);
-  }
-  res.json(result);
-}));
+router.get(
+  "/npm/package",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { name, readme } = req.query as Record<string, string | undefined>;
+    if (!name) {
+      return res
+        .status(400)
+        .json({
+          error: "Query parameter 'name' is required (NPM package name)",
+        });
+    }
+    const result = await getNpmPackage(name, {
+      includeReadme: readme !== "false",
+    });
+    if (result.error) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  }),
+);
 // ─── PyPI ──────────────────────────────────────────────────────────
-router.get("/pypi/package", asyncHandler(
-  (req: Request) => getPyPiPackage(req.query.name as string),
-  "PyPI lookup",
-));
+router.get(
+  "/pypi/package",
+  asyncHandler(
+    (req: Request) => getPyPiPackage(req.query.name as string),
+    "PyPI lookup",
+  ),
+);
 // ─── PDF ───────────────────────────────────────────────────────────
-router.get("/pdf/read", asyncHandler(async (req: Request, res: Response) => {
-  const { url, maxPages } = req.query as Record<string, string | undefined>;
-  if (!url) {
-    return res.status(400).json({ error: "Query parameter 'url' is required (URL to a PDF file)" });
-  }
-  const result = await readPdfUrl(url, { maxPages });
-  if (result.error) {
-    return res.status(400).json(result);
-  }
-  res.json(result);
-}));
+router.get(
+  "/pdf/read",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { url, maxPages } = req.query as Record<string, string | undefined>;
+    if (!url) {
+      return res
+        .status(400)
+        .json({
+          error: "Query parameter 'url' is required (URL to a PDF file)",
+        });
+    }
+    const result = await readPdfUrl(url, { maxPages });
+    if (result.error) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  }),
+);
 // ─── RSS ───────────────────────────────────────────────────────────
-router.get("/rss/feed", asyncHandler(async (req: Request, res: Response) => {
-  const { url, limit } = req.query as Record<string, string | undefined>;
-  if (!url) {
-    return res.status(400).json({ error: "Query parameter 'url' is required (RSS/Atom feed URL)" });
-  }
-  const result = await readRssFeed(url, {
-    limit: limit ? parseIntParam(limit, 20) : undefined,
-  });
-  if (result && typeof result === "object" && "error" in result) {
-    return res.status(400).json(result);
-  }
-  res.json(result);
-}));
+router.get(
+  "/rss/feed",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { url, limit } = req.query as Record<string, string | undefined>;
+    if (!url) {
+      return res
+        .status(400)
+        .json({
+          error: "Query parameter 'url' is required (RSS/Atom feed URL)",
+        });
+    }
+    const result = await readRssFeed(url, {
+      limit: limit ? parseIntParam(limit, 20) : undefined,
+    });
+    if (result && typeof result === "object" && "error" in result) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  }),
+);
 // ─── Twitter/X ─────────────────────────────────────────────────────
-router.get("/twitter/post", asyncHandler(async (req: Request, res: Response) => {
-  const { url } = req.query as Record<string, string | undefined>;
-  if (!url) {
-    return res.status(400).json({ error: "Query parameter 'url' is required (Twitter/X URL or tweet ID)" });
-  }
-  const result = await getTwitterPost(url);
-  if (result.error) {
-    return res.status(400).json(result);
-  }
-  res.json(result);
-}));
+router.get(
+  "/twitter/post",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { url } = req.query as Record<string, string | undefined>;
+    if (!url) {
+      return res
+        .status(400)
+        .json({
+          error:
+            "Query parameter 'url' is required (Twitter/X URL or tweet ID)",
+        });
+    }
+    const result = await getTwitterPost(url);
+    if (result.error) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  }),
+);
 // ─── Hacker News ───────────────────────────────────────────────────
-router.get("/hackernews/thread", asyncHandler(async (req: Request, res: Response) => {
-  const { url, commentLimit } = req.query as Record<string, string | undefined>;
-  if (!url) {
-    return res.status(400).json({ error: "Query parameter 'url' is required (HN URL or item ID)" });
-  }
-  const result = await getHackerNewsThread(url, {
-    commentLimit: commentLimit ? parseIntParam(commentLimit, 25) : undefined,
-  });
-  if (result.error) {
-    return res.status(400).json(result);
-  }
-  res.json(result);
-}));
+router.get(
+  "/hackernews/thread",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { url, commentLimit } = req.query as Record<
+      string,
+      string | undefined
+    >;
+    if (!url) {
+      return res
+        .status(400)
+        .json({
+          error: "Query parameter 'url' is required (HN URL or item ID)",
+        });
+    }
+    const result = await getHackerNewsThread(url, {
+      commentLimit: commentLimit ? parseIntParam(commentLimit, 25) : undefined,
+    });
+    if (result.error) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  }),
+);
 // ─── Stack Overflow ────────────────────────────────────────────────
-router.get("/stackoverflow/question", asyncHandler(async (req: Request, res: Response) => {
-  const { url, answerLimit } = req.query as Record<string, string | undefined>;
-  if (!url) {
-    return res.status(400).json({ error: "Query parameter 'url' is required (Stack Overflow URL or question ID)" });
-  }
-  const result = await getStackOverflowQuestion(url, {
-    answerLimit: answerLimit ? parseIntParam(answerLimit, 5) : undefined,
-  });
-  if (result && typeof result === "object" && "error" in result) {
-    return res.status(400).json(result);
-  }
-  res.json(result);
-}));
+router.get(
+  "/stackoverflow/question",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { url, answerLimit } = req.query as Record<
+      string,
+      string | undefined
+    >;
+    if (!url) {
+      return res
+        .status(400)
+        .json({
+          error:
+            "Query parameter 'url' is required (Stack Overflow URL or question ID)",
+        });
+    }
+    const result = await getStackOverflowQuestion(url, {
+      answerLimit: answerLimit ? parseIntParam(answerLimit, 5) : undefined,
+    });
+    if (result && typeof result === "object" && "error" in result) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  }),
+);
 // ─── Unified: Web Content (YouTube/Reddit/Twitter/HN/SO/GitHub) ───
-router.get("/web/content", asyncHandler(async (req: Request, res: Response) => {
-  const { url, commentLimit, answerLimit, transcript, lang, readme, languages, maxChars } = req.query as Record<string, string | undefined>;
-  if (!url) {
-    return res.status(400).json({ error: "Query parameter 'url' is required" });
-  }
-  const result = await getWebContent(url, {
-    commentLimit, answerLimit, transcript, lang, readme, languages, maxChars: maxChars ? parseInt(maxChars, 10) : undefined,
-  });
-  if (result.error) {
-    return res.status(400).json(result);
-  }
-  res.json(result);
-}));
+router.get(
+  "/web/content",
+  asyncHandler(async (req: Request, res: Response) => {
+    const {
+      url,
+      commentLimit,
+      answerLimit,
+      transcript,
+      lang,
+      readme,
+      languages,
+      maxChars,
+    } = req.query as Record<string, string | undefined>;
+    if (!url) {
+      return res
+        .status(400)
+        .json({ error: "Query parameter 'url' is required" });
+    }
+    const result = await getWebContent(url, {
+      commentLimit,
+      answerLimit,
+      transcript,
+      lang,
+      readme,
+      languages,
+      maxChars: maxChars ? parseInt(maxChars, 10) : undefined,
+    });
+    if (result.error) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  }),
+);
 // ─── Unified: Package Info (NPM/PyPI) ─────────────────────────────
-router.get("/package/info", asyncHandler(async (req: Request, res: Response) => {
-  const { name, registry, readme } = req.query as Record<string, string | undefined>;
-  if (!name) {
-    return res.status(400).json({ error: "Query parameter 'name' is required" });
-  }
-  if (!registry) {
-    return res.status(400).json({ error: "Query parameter 'registry' is required ('npm' or 'pypi')" });
-  }
-  const result = await getPackageInfo(name, registry, { readme });
-  if (result.error) {
-    return res.status(400).json(result);
-  }
-  res.json(result);
-}));
+router.get(
+  "/package/info",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { name, registry, readme } = req.query as Record<
+      string,
+      string | undefined
+    >;
+    if (!name) {
+      return res
+        .status(400)
+        .json({ error: "Query parameter 'name' is required" });
+    }
+    if (!registry) {
+      return res
+        .status(400)
+        .json({
+          error: "Query parameter 'registry' is required ('npm' or 'pypi')",
+        });
+    }
+    const result = await getPackageInfo(name, registry, { readme });
+    if (result.error) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  }),
+);
 // ─── Music (MusicBrainz) ───────────────────────────────────────────
-router.get("/music/artists/search", asyncHandler(async (req: Request, res: Response) => {
-  const { q: searchQuery, limit } = req.query as Record<string, string | undefined>;
-  if (!searchQuery) return res.status(400).json({ error: "Query parameter 'q' is required" });
-  res.json(await searchArtists(searchQuery, parseIntParam(limit, 10)));
-}));
-router.get("/music/artists/:mbid", asyncHandler(
-  (req: Request) => getArtist(req.params.mbid as string),
-  "Artist details",
-));
-router.get("/music/albums/search", asyncHandler(async (req: Request, res: Response) => {
-  const { q: searchQuery, artist, limit } = req.query as Record<string, string | undefined>;
-  if (!searchQuery) return res.status(400).json({ error: "Query parameter 'q' is required" });
-  res.json(await searchAlbums(searchQuery, artist, parseIntParam(limit, 10)));
-}));
-router.get("/music/albums/:mbid", asyncHandler(
-  (req: Request) => getAlbum(req.params.mbid as string),
-  "Album details",
-));
-router.get("/music/tracks/search", asyncHandler(async (req: Request, res: Response) => {
-  const { q: searchQuery, artist, limit } = req.query as Record<string, string | undefined>;
-  if (!searchQuery) return res.status(400).json({ error: "Query parameter 'q' is required" });
-  res.json(await searchTracks(searchQuery, artist, parseIntParam(limit, 10)));
-}));
+router.get(
+  "/music/artists/search",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { q: searchQuery, limit } = req.query as Record<
+      string,
+      string | undefined
+    >;
+    if (!searchQuery)
+      return res.status(400).json({ error: "Query parameter 'q' is required" });
+    res.json(await searchArtists(searchQuery, parseIntParam(limit, 10)));
+  }),
+);
+router.get(
+  "/music/artists/:mbid",
+  asyncHandler(
+    (req: Request) => getArtist(req.params.mbid as string),
+    "Artist details",
+  ),
+);
+router.get(
+  "/music/albums/search",
+  asyncHandler(async (req: Request, res: Response) => {
+    const {
+      q: searchQuery,
+      artist,
+      limit,
+    } = req.query as Record<string, string | undefined>;
+    if (!searchQuery)
+      return res.status(400).json({ error: "Query parameter 'q' is required" });
+    res.json(await searchAlbums(searchQuery, artist, parseIntParam(limit, 10)));
+  }),
+);
+router.get(
+  "/music/albums/:mbid",
+  asyncHandler(
+    (req: Request) => getAlbum(req.params.mbid as string),
+    "Album details",
+  ),
+);
+router.get(
+  "/music/tracks/search",
+  asyncHandler(async (req: Request, res: Response) => {
+    const {
+      q: searchQuery,
+      artist,
+      limit,
+    } = req.query as Record<string, string | undefined>;
+    if (!searchQuery)
+      return res.status(400).json({ error: "Query parameter 'q' is required" });
+    res.json(await searchTracks(searchQuery, artist, parseIntParam(limit, 10)));
+  }),
+);
 // ─── Wayback Machine ───────────────────────────────────────────────
-router.get("/wayback/snapshot", asyncHandler(async (req: Request, res: Response) => {
-  const { url, timestamp } = req.query as Record<string, string | undefined>;
-  if (!url) return res.status(400).json({ error: "Query parameter 'url' is required" });
-  try {
-    res.json(await getWaybackSnapshot(url, timestamp));
-  } catch (error: unknown) {
-    res.status(500).json({ error: `Wayback lookup failed: ${errorMessage(error)}` });
-  }
-}));
-router.get("/wayback/history", asyncHandler(async (req: Request, res: Response) => {
-  const { url, limit, from, to } = req.query as Record<string, string | undefined>;
-  if (!url) return res.status(400).json({ error: "Query parameter 'url' is required" });
-  try {
-    res.json(await getSnapshotHistory(url, {
-      limit: parseIntParam(limit, 20),
-      from,
-      to,
-    }));
-  } catch (error: unknown) {
-    res.status(500).json({ error: `Wayback history failed: ${errorMessage(error)}` });
-  }
-}));
+router.get(
+  "/wayback/snapshot",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { url, timestamp } = req.query as Record<string, string | undefined>;
+    if (!url)
+      return res
+        .status(400)
+        .json({ error: "Query parameter 'url' is required" });
+    try {
+      res.json(await getWaybackSnapshot(url, timestamp));
+    } catch (error: unknown) {
+      res
+        .status(500)
+        .json({ error: `Wayback lookup failed: ${errorMessage(error)}` });
+    }
+  }),
+);
+router.get(
+  "/wayback/history",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { url, limit, from, to } = req.query as Record<
+      string,
+      string | undefined
+    >;
+    if (!url)
+      return res
+        .status(400)
+        .json({ error: "Query parameter 'url' is required" });
+    try {
+      res.json(
+        await getSnapshotHistory(url, {
+          limit: parseIntParam(limit, 20),
+          from,
+          to,
+        }),
+      );
+    } catch (error: unknown) {
+      res
+        .status(500)
+        .json({ error: `Wayback history failed: ${errorMessage(error)}` });
+    }
+  }),
+);
 // ─── Health ────────────────────────────────────────────────────────
 export function getKnowledgeHealth() {
   return {
@@ -624,7 +921,8 @@ export function getKnowledgeHealth() {
     twitter: "on-demand (fxtwitter + oembed)",
     hackerNews: "on-demand (Firebase API)",
     stackOverflow: "on-demand (Stack Exchange API v2.3)",
-    webContent: "unified (YouTube/Reddit/Twitter/HN/SO/GitHub + generic fallback)",
+    webContent:
+      "unified (YouTube/Reddit/Twitter/HN/SO/GitHub + generic fallback)",
     packageInfo: "unified (NPM/PyPI)",
     musicBrainz: "on-demand (MusicBrainz API)",
     waybackMachine: "on-demand (Internet Archive)",
@@ -634,203 +932,463 @@ export function getKnowledgeHealth() {
 // UNIFIED DISPATCHERS
 // ═══════════════════════════════════════════════════════════════════
 // ── Unified Book Lookup ────────────────────────────────────────────
-router.get("/books/lookup", asyncHandler(async (req: Request, res: Response) => {
-  const { action, q: searchQuery, workKey, authorKey, limit } = req.query as Record<string, string | undefined>;
-  if (!action) return res.status(400).json({ error: "'action' is required", actions: ["search", "work", "author"] });
-  switch (action) {
-    case "search":
-      req.url = `/books/search?q=${searchQuery || ""}&limit=${limit || 10}`;
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    case "work":
-      req.url = `/books/work/${workKey || ""}`;
-      req.params.workKey = workKey || "";
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    case "author":
-      req.url = `/books/author/${authorKey || ""}`;
-      req.params.authorKey = authorKey || "";
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    default:
-      return res.status(400).json({ error: `Unknown action: ${action}`, actions: ["search", "work", "author"] });
-  }
-}));
+router.get(
+  "/books/lookup",
+  asyncHandler(async (req: Request, res: Response) => {
+    const {
+      action,
+      q: searchQuery,
+      workKey,
+      authorKey,
+      limit,
+    } = req.query as Record<string, string | undefined>;
+    if (!action)
+      return res
+        .status(400)
+        .json({
+          error: "'action' is required",
+          actions: ["search", "work", "author"],
+        });
+    switch (action) {
+      case "search":
+        req.url = `/books/search?q=${searchQuery || ""}&limit=${limit || 10}`;
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "work":
+        req.url = `/books/work/${workKey || ""}`;
+        req.params.workKey = workKey || "";
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "author":
+        req.url = `/books/author/${authorKey || ""}`;
+        req.params.authorKey = authorKey || "";
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      default:
+        return res
+          .status(400)
+          .json({
+            error: `Unknown action: ${action}`,
+            actions: ["search", "work", "author"],
+          });
+    }
+  }),
+);
 // ── Unified Country Data ───────────────────────────────────────────
-router.get("/countries/data", asyncHandler(async (req: Request, res: Response) => {
-  const { action, name, code, indicator, countries, limit, order } = req.query as Record<string, string | undefined>;
-  if (!action) return res.status(400).json({ error: "'action' is required", actions: ["info", "code", "indicators", "rank", "compare"] });
-  switch (action) {
-    case "info":
-      req.url = `/countries/search/${encodeURIComponent(name || "")}`;
-      req.params.name = name || "";
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    case "code":
-      req.url = `/countries/code/${code || ""}`;
-      req.params.code = code || "";
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    case "indicators":
-      req.url = `/indicators/country/${code || ""}`;
-      req.params.code = code || "";
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    case "rank":
-      req.url = `/indicators/rank?indicator=${indicator || ""}&limit=${limit || 10}&order=${order || "desc"}`;
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    case "compare":
-      req.url = `/indicators/compare?countries=${countries || ""}&indicator=${indicator || ""}`;
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    default:
-      return res.status(400).json({ error: `Unknown action: ${action}`, actions: ["info", "code", "indicators", "rank", "compare"] });
-  }
-}));
+router.get(
+  "/countries/data",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { action, name, code, indicator, countries, limit, order } =
+      req.query as Record<string, string | undefined>;
+    if (!action)
+      return res
+        .status(400)
+        .json({
+          error: "'action' is required",
+          actions: ["info", "code", "indicators", "rank", "compare"],
+        });
+    switch (action) {
+      case "info":
+        req.url = `/countries/search/${encodeURIComponent(name || "")}`;
+        req.params.name = name || "";
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "code":
+        req.url = `/countries/code/${code || ""}`;
+        req.params.code = code || "";
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "indicators":
+        req.url = `/indicators/country/${code || ""}`;
+        req.params.code = code || "";
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "rank":
+        req.url = `/indicators/rank?indicator=${indicator || ""}&limit=${limit || 10}&order=${order || "desc"}`;
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "compare":
+        req.url = `/indicators/compare?countries=${countries || ""}&indicator=${indicator || ""}`;
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      default:
+        return res
+          .status(400)
+          .json({
+            error: `Unknown action: ${action}`,
+            actions: ["info", "code", "indicators", "rank", "compare"],
+          });
+    }
+  }),
+);
 // ── Unified Element Data ───────────────────────────────────────────
-router.get("/elements/data", asyncHandler(async (req: Request, res: Response) => {
-  const { action, q: searchQuery, symbol, property, limit, order, category, block } = req.query as Record<string, string | undefined>;
-  if (!action) return res.status(400).json({ error: "'action' is required", actions: ["search", "lookup", "rank", "categories"] });
-  switch (action) {
-    case "search":
-      req.url = `/elements/search?q=${searchQuery || ""}&limit=${limit || 10}&category=${category || ""}&block=${block || ""}`;
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    case "lookup":
-      req.url = `/elements/${symbol || ""}`;
-      req.params.symbol = symbol || "";
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    case "rank":
-      req.url = `/elements/rank?property=${property || ""}&limit=${limit || 10}&order=${order || "desc"}&category=${category || ""}&block=${block || ""}`;
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    case "categories":
-      req.url = "/elements/categories";
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    default:
-      return res.status(400).json({ error: `Unknown action: ${action}`, actions: ["search", "lookup", "rank", "categories"] });
-  }
-}));
+router.get(
+  "/elements/data",
+  asyncHandler(async (req: Request, res: Response) => {
+    const {
+      action,
+      q: searchQuery,
+      symbol,
+      property,
+      limit,
+      order,
+      category,
+      block,
+    } = req.query as Record<string, string | undefined>;
+    if (!action)
+      return res
+        .status(400)
+        .json({
+          error: "'action' is required",
+          actions: ["search", "lookup", "rank", "categories"],
+        });
+    switch (action) {
+      case "search":
+        req.url = `/elements/search?q=${searchQuery || ""}&limit=${limit || 10}&category=${category || ""}&block=${block || ""}`;
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "lookup":
+        req.url = `/elements/${symbol || ""}`;
+        req.params.symbol = symbol || "";
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "rank":
+        req.url = `/elements/rank?property=${property || ""}&limit=${limit || 10}&order=${order || "desc"}&category=${category || ""}&block=${block || ""}`;
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "categories":
+        req.url = "/elements/categories";
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      default:
+        return res
+          .status(400)
+          .json({
+            error: `Unknown action: ${action}`,
+            actions: ["search", "lookup", "rank", "categories"],
+          });
+    }
+  }),
+);
 // ── Unified Exoplanet Data ─────────────────────────────────────────
-router.get("/exoplanets/data", asyncHandler(async (req: Request, res: Response) => {
-  const { action, q: searchQuery, name, field, limit, order, method } = req.query as Record<string, string | undefined>;
-  if (!action) return res.status(400).json({ error: "'action' is required", actions: ["search", "lookup", "rank", "stats", "habitable"] });
-  switch (action) {
-    case "search":
-      req.url = `/exoplanets/search?q=${searchQuery || ""}&limit=${limit || 10}&method=${method || ""}`;
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    case "lookup":
-      req.url = `/exoplanets/lookup/${encodeURIComponent(name || "")}`;
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    case "rank":
-      req.url = `/exoplanets/rank?field=${field || ""}&limit=${limit || 10}&order=${order || "desc"}`;
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    case "stats":
-      req.url = "/exoplanets/stats";
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    case "habitable":
-      req.url = `/exoplanets/habitable?limit=${limit || 10}`;
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    default:
-      return res.status(400).json({ error: `Unknown action: ${action}`, actions: ["search", "lookup", "rank", "stats", "habitable"] });
-  }
-}));
+router.get(
+  "/exoplanets/data",
+  asyncHandler(async (req: Request, res: Response) => {
+    const {
+      action,
+      q: searchQuery,
+      name,
+      field,
+      limit,
+      order,
+      method,
+    } = req.query as Record<string, string | undefined>;
+    if (!action)
+      return res
+        .status(400)
+        .json({
+          error: "'action' is required",
+          actions: ["search", "lookup", "rank", "stats", "habitable"],
+        });
+    switch (action) {
+      case "search":
+        req.url = `/exoplanets/search?q=${searchQuery || ""}&limit=${limit || 10}&method=${method || ""}`;
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "lookup":
+        req.url = `/exoplanets/lookup/${encodeURIComponent(name || "")}`;
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "rank":
+        req.url = `/exoplanets/rank?field=${field || ""}&limit=${limit || 10}&order=${order || "desc"}`;
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "stats":
+        req.url = "/exoplanets/stats";
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "habitable":
+        req.url = `/exoplanets/habitable?limit=${limit || 10}`;
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      default:
+        return res
+          .status(400)
+          .json({
+            error: `Unknown action: ${action}`,
+            actions: ["search", "lookup", "rank", "stats", "habitable"],
+          });
+    }
+  }),
+);
 // ── Unified Anime Data ─────────────────────────────────────────────
-router.get("/anime/data", asyncHandler(async (req: Request, res: Response) => {
-  const { action, q: searchQuery, id, limit } = req.query as Record<string, string | undefined>;
-  if (!action) return res.status(400).json({ error: "'action' is required", actions: ["search", "top", "season", "details"] });
-  switch (action) {
-    case "search":
-      req.url = `/anime/search?q=${searchQuery || ""}&limit=${limit || 10}`;
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    case "top":
-      req.url = `/anime/top?limit=${limit || 10}`;
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    case "season":
-      req.url = `/anime/season/now?limit=${limit || 10}`;
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    case "details":
-      req.url = `/anime/${id || ""}`;
-      req.params.id = id || "";
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    default:
-      return res.status(400).json({ error: `Unknown action: ${action}`, actions: ["search", "top", "season", "details"] });
-  }
-}));
+router.get(
+  "/anime/data",
+  asyncHandler(async (req: Request, res: Response) => {
+    const {
+      action,
+      q: searchQuery,
+      id,
+      limit,
+    } = req.query as Record<string, string | undefined>;
+    if (!action)
+      return res
+        .status(400)
+        .json({
+          error: "'action' is required",
+          actions: ["search", "top", "season", "details"],
+        });
+    switch (action) {
+      case "search":
+        req.url = `/anime/search?q=${searchQuery || ""}&limit=${limit || 10}`;
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "top":
+        req.url = `/anime/top?limit=${limit || 10}`;
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "season":
+        req.url = `/anime/season/now?limit=${limit || 10}`;
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "details":
+        req.url = `/anime/${id || ""}`;
+        req.params.id = id || "";
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      default:
+        return res
+          .status(400)
+          .json({
+            error: `Unknown action: ${action}`,
+            actions: ["search", "top", "season", "details"],
+          });
+    }
+  }),
+);
 // ── Unified Media (Movies & TV) ────────────────────────────────────
-router.get("/media/search", asyncHandler(async (req: Request, res: Response) => {
-  const { type, q: searchQuery, year, page } = req.query as Record<string, string | undefined>;
-  if (!type || !searchQuery) return res.status(400).json({ error: "'type' and 'q' are required" });
-  req.url = `/${type === "tv" ? "tv" : "movies"}/search?q=${searchQuery}&year=${year || ""}&page=${page || 1}${type === "tv" ? "&firstAirDateYear=" + (year || "") : ""}`;
-  return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-}));
-router.get("/media/trending", asyncHandler(async (req: Request, res: Response) => {
-  const { type, timeWindow, limit } = req.query as Record<string, string | undefined>;
-  if (!type) return res.status(400).json({ error: "'type' is required" });
-  req.url = `/${type === "tv" ? "tv" : "movies"}/trending?timeWindow=${timeWindow || "week"}&limit=${limit || 10}`;
-  return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-}));
-router.get("/media/discover", asyncHandler(async (req: Request, res: Response) => {
-  const { type, genreId, year, sortBy, page, minVoteAverage, minVoteCount } = req.query as Record<string, string | undefined>;
-  if (!type) return res.status(400).json({ error: "'type' is required" });
-  const yearParam = type === "tv" ? `firstAirDateYear=${year || ""}` : `year=${year || ""}`;
-  req.url = `/${type === "tv" ? "tv" : "movies"}/discover?${yearParam}&genreId=${genreId || ""}&sortBy=${sortBy || ""}&page=${page || 1}&minVoteAverage=${minVoteAverage || ""}&minVoteCount=${minVoteCount || ""}`;
-  return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-}));
-router.get("/media/genres", asyncHandler(async (req: Request, res: Response) => {
-  const { type } = req.query as Record<string, string | undefined>;
-  if (!type) return res.status(400).json({ error: "'type' is required" });
-  req.url = `/${type === "tv" ? "tv" : "movies"}/genres`;
-  return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-}));
-router.get("/media/:id/credits", asyncHandler(async (req: Request, res: Response) => {
-  const { type } = req.query as Record<string, string | undefined>;
-  if (!type) return res.status(400).json({ error: "'type' is required" });
-  req.url = `/${type === "tv" ? "tv" : "movies"}/${req.params.id as string}/credits`;
-  return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-}));
-router.get("/media/:id", asyncHandler(async (req: Request, res: Response) => {
-  const { type } = req.query as Record<string, string | undefined>;
-  if (!type) return res.status(400).json({ error: "'type' is required" });
-  req.url = `/${type === "tv" ? "tv" : "movies"}/${req.params.id as string}`;
-  return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-}));
+router.get(
+  "/media/search",
+  asyncHandler(async (req: Request, res: Response) => {
+    const {
+      type,
+      q: searchQuery,
+      year,
+      page,
+    } = req.query as Record<string, string | undefined>;
+    if (!type || !searchQuery)
+      return res.status(400).json({ error: "'type' and 'q' are required" });
+    req.url = `/${type === "tv" ? "tv" : "movies"}/search?q=${searchQuery}&year=${year || ""}&page=${page || 1}${type === "tv" ? "&firstAirDateYear=" + (year || "") : ""}`;
+    return router.handle(req, res, () =>
+      res.status(404).json({ error: "Route not found" }),
+    );
+  }),
+);
+router.get(
+  "/media/trending",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { type, timeWindow, limit } = req.query as Record<
+      string,
+      string | undefined
+    >;
+    if (!type) return res.status(400).json({ error: "'type' is required" });
+    req.url = `/${type === "tv" ? "tv" : "movies"}/trending?timeWindow=${timeWindow || "week"}&limit=${limit || 10}`;
+    return router.handle(req, res, () =>
+      res.status(404).json({ error: "Route not found" }),
+    );
+  }),
+);
+router.get(
+  "/media/discover",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { type, genreId, year, sortBy, page, minVoteAverage, minVoteCount } =
+      req.query as Record<string, string | undefined>;
+    if (!type) return res.status(400).json({ error: "'type' is required" });
+    const yearParam =
+      type === "tv" ? `firstAirDateYear=${year || ""}` : `year=${year || ""}`;
+    req.url = `/${type === "tv" ? "tv" : "movies"}/discover?${yearParam}&genreId=${genreId || ""}&sortBy=${sortBy || ""}&page=${page || 1}&minVoteAverage=${minVoteAverage || ""}&minVoteCount=${minVoteCount || ""}`;
+    return router.handle(req, res, () =>
+      res.status(404).json({ error: "Route not found" }),
+    );
+  }),
+);
+router.get(
+  "/media/genres",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { type } = req.query as Record<string, string | undefined>;
+    if (!type) return res.status(400).json({ error: "'type' is required" });
+    req.url = `/${type === "tv" ? "tv" : "movies"}/genres`;
+    return router.handle(req, res, () =>
+      res.status(404).json({ error: "Route not found" }),
+    );
+  }),
+);
+router.get(
+  "/media/:id/credits",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { type } = req.query as Record<string, string | undefined>;
+    if (!type) return res.status(400).json({ error: "'type' is required" });
+    req.url = `/${type === "tv" ? "tv" : "movies"}/${req.params.id as string}/credits`;
+    return router.handle(req, res, () =>
+      res.status(404).json({ error: "Route not found" }),
+    );
+  }),
+);
+router.get(
+  "/media/:id",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { type } = req.query as Record<string, string | undefined>;
+    if (!type) return res.status(400).json({ error: "'type' is required" });
+    req.url = `/${type === "tv" ? "tv" : "movies"}/${req.params.id as string}`;
+    return router.handle(req, res, () =>
+      res.status(404).json({ error: "Route not found" }),
+    );
+  }),
+);
 // ── Unified Music Data ─────────────────────────────────────────────
-router.get("/music", asyncHandler(async (req: Request, res: Response) => {
-  const { action, q: searchQuery, mbid, artist, limit } = req.query as Record<string, string | undefined>;
-  if (!action) return res.status(400).json({ error: "'action' is required", actions: ["search_artists", "artist", "search_albums", "album", "search_tracks"] });
-  switch (action) {
-    case "search_artists":
-      if (!searchQuery) return res.status(400).json({ error: "'q' is required for action=search_artists" });
-      req.url = `/music/artists/search?q=${encodeURIComponent(searchQuery)}&limit=${limit || 10}`;
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    case "artist":
-      if (!mbid) return res.status(400).json({ error: "'mbid' is required for action=artist" });
-      req.url = `/music/artists/${mbid}`;
-      req.params.mbid = mbid;
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    case "search_albums":
-      if (!searchQuery) return res.status(400).json({ error: "'q' is required for action=search_albums" });
-      req.url = `/music/albums/search?q=${encodeURIComponent(searchQuery)}&artist=${artist || ""}&limit=${limit || 10}`;
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    case "album":
-      if (!mbid) return res.status(400).json({ error: "'mbid' is required for action=album" });
-      req.url = `/music/albums/${mbid}`;
-      req.params.mbid = mbid;
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    case "search_tracks":
-      if (!searchQuery) return res.status(400).json({ error: "'q' is required for action=search_tracks" });
-      req.url = `/music/tracks/search?q=${encodeURIComponent(searchQuery)}&artist=${artist || ""}&limit=${limit || 10}`;
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    default:
-      return res.status(400).json({ error: `Unknown action: ${action}`, actions: ["search_artists", "artist", "search_albums", "album", "search_tracks"] });
-  }
-}));
+router.get(
+  "/music",
+  asyncHandler(async (req: Request, res: Response) => {
+    const {
+      action,
+      q: searchQuery,
+      mbid,
+      artist,
+      limit,
+    } = req.query as Record<string, string | undefined>;
+    if (!action)
+      return res
+        .status(400)
+        .json({
+          error: "'action' is required",
+          actions: [
+            "search_artists",
+            "artist",
+            "search_albums",
+            "album",
+            "search_tracks",
+          ],
+        });
+    switch (action) {
+      case "search_artists":
+        if (!searchQuery)
+          return res
+            .status(400)
+            .json({ error: "'q' is required for action=search_artists" });
+        req.url = `/music/artists/search?q=${encodeURIComponent(searchQuery)}&limit=${limit || 10}`;
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "artist":
+        if (!mbid)
+          return res
+            .status(400)
+            .json({ error: "'mbid' is required for action=artist" });
+        req.url = `/music/artists/${mbid}`;
+        req.params.mbid = mbid;
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "search_albums":
+        if (!searchQuery)
+          return res
+            .status(400)
+            .json({ error: "'q' is required for action=search_albums" });
+        req.url = `/music/albums/search?q=${encodeURIComponent(searchQuery)}&artist=${artist || ""}&limit=${limit || 10}`;
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "album":
+        if (!mbid)
+          return res
+            .status(400)
+            .json({ error: "'mbid' is required for action=album" });
+        req.url = `/music/albums/${mbid}`;
+        req.params.mbid = mbid;
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "search_tracks":
+        if (!searchQuery)
+          return res
+            .status(400)
+            .json({ error: "'q' is required for action=search_tracks" });
+        req.url = `/music/tracks/search?q=${encodeURIComponent(searchQuery)}&artist=${artist || ""}&limit=${limit || 10}`;
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      default:
+        return res
+          .status(400)
+          .json({
+            error: `Unknown action: ${action}`,
+            actions: [
+              "search_artists",
+              "artist",
+              "search_albums",
+              "album",
+              "search_tracks",
+            ],
+          });
+    }
+  }),
+);
 // ── Unified Wayback Machine ────────────────────────────────────────
-router.get("/wayback", asyncHandler(async (req: Request, res: Response) => {
-  const { action, url, timestamp, limit, from, to } = req.query as Record<string, string | undefined>;
-  if (!action) return res.status(400).json({ error: "'action' is required", actions: ["snapshot", "history"] });
-  if (!url) return res.status(400).json({ error: "'url' is required" });
-  switch (action) {
-    case "snapshot":
-      req.url = `/wayback/snapshot?url=${encodeURIComponent(url)}${timestamp ? "&timestamp=" + timestamp : ""}`;
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    case "history":
-      req.url = `/wayback/history?url=${encodeURIComponent(url)}&limit=${limit || 20}${from ? "&from=" + from : ""}${to ? "&to=" + to : ""}`;
-      return router.handle(req, res, () => res.status(404).json({ error: "Route not found" }));
-    default:
-      return res.status(400).json({ error: `Unknown action: ${action}`, actions: ["snapshot", "history"] });
-  }
-}));
+router.get(
+  "/wayback",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { action, url, timestamp, limit, from, to } = req.query as Record<
+      string,
+      string | undefined
+    >;
+    if (!action)
+      return res
+        .status(400)
+        .json({
+          error: "'action' is required",
+          actions: ["snapshot", "history"],
+        });
+    if (!url) return res.status(400).json({ error: "'url' is required" });
+    switch (action) {
+      case "snapshot":
+        req.url = `/wayback/snapshot?url=${encodeURIComponent(url)}${timestamp ? "&timestamp=" + timestamp : ""}`;
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "history":
+        req.url = `/wayback/history?url=${encodeURIComponent(url)}&limit=${limit || 20}${from ? "&from=" + from : ""}${to ? "&to=" + to : ""}`;
+        return router.handle(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      default:
+        return res
+          .status(400)
+          .json({
+            error: `Unknown action: ${action}`,
+            actions: ["snapshot", "history"],
+          });
+    }
+  }),
+);
 export default router;

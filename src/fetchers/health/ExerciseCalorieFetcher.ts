@@ -47,16 +47,16 @@ const MET_TABLE: Record<string, MetEntry> = {
 
   // ── Cardio ───────────────────────────────────────────────────
   running: {
-    low: 7.0,    // ~5 mph / 8 km/h
+    low: 7.0, // ~5 mph / 8 km/h
     moderate: 9.8, // ~6.5 mph / 10.5 km/h
-    high: 12.8,   // ~8 mph / 13 km/h
+    high: 12.8, // ~8 mph / 13 km/h
     default: 9.8,
     label: "Running",
   },
   cycling: {
-    low: 4.0,     // ~10 mph / 16 km/h
+    low: 4.0, // ~10 mph / 16 km/h
     moderate: 6.8, // ~12-14 mph / 19-22 km/h
-    high: 10.0,    // ~16+ mph / 26+ km/h
+    high: 10.0, // ~16+ mph / 26+ km/h
     default: 6.8,
     label: "Cycling",
   },
@@ -96,9 +96,9 @@ const MET_TABLE: Record<string, MetEntry> = {
     label: "Stair climbing",
   },
   walking: {
-    low: 2.5,     // ~2.5 mph
+    low: 2.5, // ~2.5 mph
     moderate: 3.5, // ~3.5 mph
-    high: 5.0,     // ~4.5 mph / brisk
+    high: 5.0, // ~4.5 mph / brisk
     default: 3.5,
     label: "Walking",
   },
@@ -248,7 +248,10 @@ interface NamePatternEntry {
 }
 
 const NAME_PATTERNS: NamePatternEntry[] = [
-  { pattern: /squat|deadlift|bench\s*press|overhead\s*press/i, key: "strength" },
+  {
+    pattern: /squat|deadlift|bench\s*press|overhead\s*press/i,
+    key: "strength",
+  },
   { pattern: /curl|tricep|bicep|extension|fly|raise|row/i, key: "strength" },
   { pattern: /run|sprint|jog/i, key: "running" },
   { pattern: /swim/i, key: "swimming" },
@@ -276,8 +279,15 @@ const NAME_PATTERNS: NamePatternEntry[] = [
 
 // ─── MET Resolution ───────────────────────────────────────────
 
-function resolveMET(exerciseName: string, category: string | undefined, intensity: string) {
-  const intensityKey = (intensity || "moderate").toLowerCase() as "low" | "moderate" | "high";
+function resolveMET(
+  exerciseName: string,
+  category: string | undefined,
+  intensity: string,
+) {
+  const intensityKey = (intensity || "moderate").toLowerCase() as
+    | "low"
+    | "moderate"
+    | "high";
 
   // Try name pattern matching first (most specific)
   for (const { pattern, key } of NAME_PATTERNS) {
@@ -336,7 +346,8 @@ export function estimateExerciseCalories({
   // ── Validate ─────────────────────────────────────────────────
   const errors: string[] = [];
   if (!exercise) errors.push("'exercise' is required");
-  if (!durationMinutes || durationMinutes <= 0) errors.push("'durationMinutes' must be positive");
+  if (!durationMinutes || durationMinutes <= 0)
+    errors.push("'durationMinutes' must be positive");
   if (!weightKg || weightKg <= 0) errors.push("'weightKg' must be positive");
   if (errors.length) return { error: errors.join("; ") };
 
@@ -390,9 +401,11 @@ export function estimateExerciseCalories({
       protein_g: Math.round(recoveryProtein),
       carbs_g: Math.round(recoveryCarbs),
       water_mL: Math.round(waterNeeded),
-      _note: "Post-exercise recovery: protein within 30-60min, carbs within 30min for glycogen. Water during and after.",
+      _note:
+        "Post-exercise recovery: protein within 30-60min, carbs within 30min for glycogen. Water during and after.",
     },
-    _note: "Calories = MET × bodyweight(kg) × hours. EPOC = post-exercise metabolic elevation. Source: Ainsworth et al. (2011) Compendium of Physical Activities.",
+    _note:
+      "Calories = MET × bodyweight(kg) × hours. EPOC = post-exercise metabolic elevation. Source: Ainsworth et al. (2011) Compendium of Physical Activities.",
   };
 }
 

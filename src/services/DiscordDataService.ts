@@ -70,19 +70,27 @@ const EXCLUDED_CATEGORY_IDS = [
 // Maps UserFlags bitfield values to badge identifiers used by the
 // client to render inline badge icons next to usernames.
 const BADGE_FLAGS = [
-  { bit: 1,       id: "staff",                label: "Discord Staff" },
-  { bit: 2,       id: "partner",              label: "Partnered Server Owner" },
-  { bit: 4,       id: "hypesquad",            label: "HypeSquad Events" },
-  { bit: 8,       id: "bug_hunter_1",         label: "Bug Hunter Level 1" },
-  { bit: 64,      id: "hypesquad_bravery",    label: "HypeSquad Bravery" },
-  { bit: 128,     id: "hypesquad_brilliance", label: "HypeSquad Brilliance" },
-  { bit: 256,     id: "hypesquad_balance",    label: "HypeSquad Balance" },
-  { bit: 512,     id: "early_supporter",      label: "Early Supporter" },
-  { bit: 16384,   id: "bug_hunter_2",         label: "Bug Hunter Level 2" },
-  { bit: 65536,   id: "verified_bot",         label: "Verified Bot" },
-  { bit: 131072,  id: "verified_developer",   label: "Early Verified Bot Developer" },
-  { bit: 262144,  id: "certified_moderator",  label: "Moderator Programs Alumni" },
-  { bit: 4194304, id: "active_developer",     label: "Active Developer" },
+  { bit: 1, id: "staff", label: "Discord Staff" },
+  { bit: 2, id: "partner", label: "Partnered Server Owner" },
+  { bit: 4, id: "hypesquad", label: "HypeSquad Events" },
+  { bit: 8, id: "bug_hunter_1", label: "Bug Hunter Level 1" },
+  { bit: 64, id: "hypesquad_bravery", label: "HypeSquad Bravery" },
+  { bit: 128, id: "hypesquad_brilliance", label: "HypeSquad Brilliance" },
+  { bit: 256, id: "hypesquad_balance", label: "HypeSquad Balance" },
+  { bit: 512, id: "early_supporter", label: "Early Supporter" },
+  { bit: 16384, id: "bug_hunter_2", label: "Bug Hunter Level 2" },
+  { bit: 65536, id: "verified_bot", label: "Verified Bot" },
+  {
+    bit: 131072,
+    id: "verified_developer",
+    label: "Early Verified Bot Developer",
+  },
+  {
+    bit: 262144,
+    id: "certified_moderator",
+    label: "Moderator Programs Alumni",
+  },
+  { bit: 4194304, id: "active_developer", label: "Active Developer" },
 ];
 
 /**
@@ -90,16 +98,19 @@ const BADGE_FLAGS = [
  * The bitfield can be a number, a string-encoded number, or a
  * discord.js BitField object with a `.bitfield` property.
  */
-function extractBadges(flags: number | string | { bitfield: number } | null | undefined) {
+function extractBadges(
+  flags: number | string | { bitfield: number } | null | undefined,
+) {
   if (!flags) return [];
   // discord.js stores BitField as { bitfield: <number> }
-  const bits = typeof flags === "object" && flags !== null && "bitfield" in flags
-    ? Number(flags.bitfield)
-    : Number(flags);
+  const bits =
+    typeof flags === "object" && flags !== null && "bitfield" in flags
+      ? Number(flags.bitfield)
+      : Number(flags);
   if (!bits || isNaN(bits)) return [];
-  return BADGE_FLAGS
-    .filter((flag) => (bits & flag.bit) === flag.bit)
-    .map((item) => ({ id: item.id, label: item.label }));
+  return BADGE_FLAGS.filter((flag) => (bits & flag.bit) === flag.bit).map(
+    (item) => ({ id: item.id, label: item.label }),
+  );
 }
 
 /**
@@ -116,7 +127,10 @@ interface DiscordRole {
   iconURL?: string;
 }
 
-function extractRoleTags(roles: DiscordRole[] | undefined, guildId: string | undefined) {
+function extractRoleTags(
+  roles: DiscordRole[] | undefined,
+  guildId: string | undefined,
+) {
   if (!Array.isArray(roles) || roles.length === 0) return [];
   return roles
     .filter((r) => r.id !== guildId && r.name !== "@everyone")
@@ -149,7 +163,11 @@ interface DiscordMember {
   premiumSinceTimestamp?: number;
 }
 
-function buildAvatarUrl(author: DiscordAuthor | undefined, member?: DiscordMember, guildId?: string) {
+function buildAvatarUrl(
+  author: DiscordAuthor | undefined,
+  member?: DiscordMember,
+  guildId?: string,
+) {
   if (!author) return null;
   if (member?.avatar && author.id && guildId) {
     const fileExtension = member.avatar.startsWith("a_") ? "gif" : "png";
@@ -167,7 +185,10 @@ function buildAvatarUrl(author: DiscordAuthor | undefined, member?: DiscordMembe
  * Prefers the permanent MinIO URL when the original URL was archived.
  * Falls back to the original URL otherwise.
  */
-function resolveArchivedUrl(url: string | undefined, archiveMap: Record<string, { publicUrl?: string }> | null) {
+function resolveArchivedUrl(
+  url: string | undefined,
+  archiveMap: Record<string, { publicUrl?: string }> | null,
+) {
   if (!url || !archiveMap) return url;
   const archiveReference = archiveMap[url];
   // If the entry was marked as expired during backfill, it has no publicUrl
@@ -251,7 +272,16 @@ const DiscordDataService = {
     includeBots = false,
   }: MessageSearchParams = {}) {
     const collection = getMessagesCollection();
-    const filter = buildBaseFilter({ guildId, channelId, userId, username, query, before, after, includeBots });
+    const filter = buildBaseFilter({
+      guildId,
+      channelId,
+      userId,
+      username,
+      query,
+      before,
+      after,
+      includeBots,
+    });
     const cappedLimit = Math.min(Number(limit), 500);
 
     // ── Count mode — return only the total, zero payloads ──────
@@ -287,10 +317,10 @@ const DiscordDataService = {
       const formatted = messages.map((m: Document) => ({
         id: m.id,
         // Truncate content to 120 chars to save tokens
-        content: m.content?.length > 120
-          ? m.content.slice(0, 120) + "…"
-          : m.content,
-        author: m.member?.displayName || m.author?.globalName || m.author?.username,
+        content:
+          m.content?.length > 120 ? m.content.slice(0, 120) + "…" : m.content,
+        author:
+          m.member?.displayName || m.author?.globalName || m.author?.username,
         avatarUrl: buildAvatarUrl(m.author, m.member, m.guildId),
         channel: m.channel?.name || null,
         date: m.createdTimestamp
@@ -359,68 +389,90 @@ const DiscordDataService = {
       // Build attachment list with URLs for image rendering.
       // Prefer archived MinIO URLs over potentially-expired Discord CDN URLs.
       const archive = m.mediaArchive || null;
-      const attachments = Array.isArray(m.attachments) && m.attachments.length > 0
-        ? m.attachments.map((a: Document) => {
-          const resolvedUrl = resolveArchivedUrl(a.url, archive) || resolveArchivedUrl(a.proxyURL, archive) || null;
-          const resolvedProxy = resolveArchivedUrl(a.proxyURL, archive) || null;
-          return {
-            name: a.name || null,
-            contentType: a.contentType || null,
-            size: a.size || null,
-            url: resolvedUrl,
-            proxyURL: resolvedProxy,
-            width: a.width || null,
-            height: a.height || null,
-            duration: a.duration ?? null,
-            waveform: a.waveform ?? null,
-          };
-        })
-        : undefined;
+      const attachments =
+        Array.isArray(m.attachments) && m.attachments.length > 0
+          ? m.attachments.map((a: Document) => {
+              const resolvedUrl =
+                resolveArchivedUrl(a.url, archive) ||
+                resolveArchivedUrl(a.proxyURL, archive) ||
+                null;
+              const resolvedProxy =
+                resolveArchivedUrl(a.proxyURL, archive) || null;
+              return {
+                name: a.name || null,
+                contentType: a.contentType || null,
+                size: a.size || null,
+                url: resolvedUrl,
+                proxyURL: resolvedProxy,
+                width: a.width || null,
+                height: a.height || null,
+                duration: a.duration ?? null,
+                waveform: a.waveform ?? null,
+              };
+            })
+          : undefined;
 
       // Build rich embed objects — preserve image/thumbnail/video for rendering.
       // Resolve archived URLs for embed media as well (belt-and-suspenders).
-      const embeds = Array.isArray(m.embeds) && m.embeds.length > 0
-        ? m.embeds
-          .map((e: Document) => {
-            // Skip empty embeds
-            if (!e.title && !e.description && !e.url && !e.image && !e.thumbnail && !e.video) return null;
-            return {
-              ...(e.title && { title: e.title }),
-              ...(e.description && { description: e.description }),
-              ...(e.url && { url: e.url }),
-              ...(e.image && {
-                image: {
-                  ...e.image,
-                  url: resolveArchivedUrl(e.image.url, archive),
-                  proxyURL: resolveArchivedUrl(e.image.proxyURL, archive),
-                },
-              }),
-              ...(e.thumbnail && {
-                thumbnail: {
-                  ...e.thumbnail,
-                  url: resolveArchivedUrl(e.thumbnail.url, archive),
-                  proxyURL: resolveArchivedUrl(e.thumbnail.proxyURL, archive),
-                },
-              }),
-              ...(e.video && {
-                video: {
-                  ...e.video,
-                  ...(e.video.url && { url: resolveArchivedUrl(e.video.url, archive) }),
-                  ...(e.video.proxyURL && { proxyURL: resolveArchivedUrl(e.video.proxyURL, archive) }),
-                },
-              }),
-              ...(e.provider && { provider: e.provider }),
-              ...(e.color != null && { color: e.color }),
-            };
-          })
-          .filter(Boolean)
-          .slice(0, 5)
-        : undefined;
+      const embeds =
+        Array.isArray(m.embeds) && m.embeds.length > 0
+          ? m.embeds
+              .map((e: Document) => {
+                // Skip empty embeds
+                if (
+                  !e.title &&
+                  !e.description &&
+                  !e.url &&
+                  !e.image &&
+                  !e.thumbnail &&
+                  !e.video
+                )
+                  return null;
+                return {
+                  ...(e.title && { title: e.title }),
+                  ...(e.description && { description: e.description }),
+                  ...(e.url && { url: e.url }),
+                  ...(e.image && {
+                    image: {
+                      ...e.image,
+                      url: resolveArchivedUrl(e.image.url, archive),
+                      proxyURL: resolveArchivedUrl(e.image.proxyURL, archive),
+                    },
+                  }),
+                  ...(e.thumbnail && {
+                    thumbnail: {
+                      ...e.thumbnail,
+                      url: resolveArchivedUrl(e.thumbnail.url, archive),
+                      proxyURL: resolveArchivedUrl(
+                        e.thumbnail.proxyURL,
+                        archive,
+                      ),
+                    },
+                  }),
+                  ...(e.video && {
+                    video: {
+                      ...e.video,
+                      ...(e.video.url && {
+                        url: resolveArchivedUrl(e.video.url, archive),
+                      }),
+                      ...(e.video.proxyURL && {
+                        proxyURL: resolveArchivedUrl(e.video.proxyURL, archive),
+                      }),
+                    },
+                  }),
+                  ...(e.provider && { provider: e.provider }),
+                  ...(e.color != null && { color: e.color }),
+                };
+              })
+              .filter(Boolean)
+              .slice(0, 5)
+          : undefined;
 
       // Role color — #000000 means no custom color, treat as null
-      const roleColor = m.member?.displayHexColor && m.member.displayHexColor !== "#000000"
-        ? m.member.displayHexColor
-        : null;
+      const roleColor =
+        m.member?.displayHexColor && m.member.displayHexColor !== "#000000"
+          ? m.member.displayHexColor
+          : null;
 
       return {
         id: m.id,
@@ -429,12 +481,15 @@ const DiscordDataService = {
         author: {
           id: m.author?.id,
           username: m.author?.username,
-          displayName: m.member?.displayName || m.author?.globalName || m.author?.username,
+          displayName:
+            m.member?.displayName || m.author?.globalName || m.author?.username,
           avatarUrl: buildAvatarUrl(m.author, m.member, m.guildId),
           isBot: m.author?.bot === true,
           roleColor,
           // Enhanced Role Styles — gradient (secondary) / holographic (tertiary)
-          ...(m.member?.roleColors?.secondary && { roleColors: m.member.roleColors }),
+          ...(m.member?.roleColors?.secondary && {
+            roleColors: m.member.roleColors,
+          }),
           // Profile badges (HypeSquad, Active Developer, Nitro Early Supporter, etc.)
           badges: extractBadges(m.author?.flags),
           // Top role tags displayed to the right of the username (colored pill badges)
@@ -448,32 +503,38 @@ const DiscordDataService = {
         // Guild icon/banner/splash hashes — lets clients build CDN URLs
         // e.g. https://cdn.discordapp.com/icons/{guildId}/{hash}.png
         ...(m.channel?.guild?.icon && { guildIcon: m.channel.guild.icon }),
-        ...(m.channel?.guild?.banner && { guildBanner: m.channel.guild.banner }),
-        ...(m.channel?.guild?.splash && { guildSplash: m.channel.guild.splash }),
+        ...(m.channel?.guild?.banner && {
+          guildBanner: m.channel.guild.banner,
+        }),
+        ...(m.channel?.guild?.splash && {
+          guildSplash: m.channel.guild.splash,
+        }),
         createdAtISO: m.createdTimestamp
           ? new Date(m.createdTimestamp).toISOString()
           : m.createdAt,
         // Direct link to the message in Discord
-        messageUrl: m.guildId && m.channelId && m.id
-          ? `https://discord.com/channels/${m.guildId}/${m.channelId}/${m.id}`
-          : null,
+        messageUrl:
+          m.guildId && m.channelId && m.id
+            ? `https://discord.com/channels/${m.guildId}/${m.channelId}/${m.id}`
+            : null,
         // Reply reference — so Lupos can follow conversation threads
         replyTo: m.reference?.messageId || null,
         // Emoji reactions (array of { emoji, count, me })
-        ...(Array.isArray(m.reactions) && m.reactions.length > 0 && {
-          reactions: m.reactions.map((r: Document) => ({
-            emoji: {
-              id: r.emoji?.id || null,
-              name: r.emoji?.name || null,
-              animated: r.emoji?.animated || false,
-            },
-            count: r.count || r.countDetails?.normal || 0,
-            // `me` = true when the bot (Lupos) has this reaction — used by
-            // the client to render the pill as "already reacted" (blurple,
-            // unclickable) since all website reactions go through Lupos.
-            me: r.me === true,
-          })),
-        }),
+        ...(Array.isArray(m.reactions) &&
+          m.reactions.length > 0 && {
+            reactions: m.reactions.map((r: Document) => ({
+              emoji: {
+                id: r.emoji?.id || null,
+                name: r.emoji?.name || null,
+                animated: r.emoji?.animated || false,
+              },
+              count: r.count || r.countDetails?.normal || 0,
+              // `me` = true when the bot (Lupos) has this reaction — used by
+              // the client to render the pill as "already reacted" (blurple,
+              // unclickable) since all website reactions go through Lupos.
+              me: r.me === true,
+            })),
+          }),
         // Media indicators
         ...(attachments && { attachments }),
         ...(embeds && { embeds }),
@@ -515,7 +576,16 @@ const DiscordDataService = {
     includeBots = false,
   }: MessageAnalyticsParams = {}) {
     const collection = getMessagesCollection();
-    const filter = buildBaseFilter({ guildId, channelId, userId, username, query, before, after, includeBots });
+    const filter = buildBaseFilter({
+      guildId,
+      channelId,
+      userId,
+      username,
+      query,
+      before,
+      after,
+      includeBots,
+    });
     const cappedTopN = Math.min(Number(topN), 100);
 
     // Weekday labels for the weekday grouping
@@ -672,62 +742,71 @@ const DiscordDataService = {
     const cappedTopN = Math.min(Number(topN), 50);
 
     // Run all aggregations in parallel
-    const [
-      totalMessages,
-      topUsers,
-      channelBreakdown,
-      hourlyActivity,
-    ] = await Promise.all([
-      // Total message count
-      collection.countDocuments(match),
+    const [totalMessages, topUsers, channelBreakdown, hourlyActivity] =
+      await Promise.all([
+        // Total message count
+        collection.countDocuments(match),
 
-      // Top users by message count
-      collection.aggregate([
-        { $match: match },
-        {
-          $group: {
-            _id: "$author.id",
-            username: { $last: "$author.username" },
-            count: { $sum: 1 },
-            lastActive: { $max: "$createdTimestamp" },
-          },
-        },
-        { $sort: { count: -1 } },
-        { $limit: cappedTopN },
-      ]).toArray(),
+        // Top users by message count
+        collection
+          .aggregate([
+            { $match: match },
+            {
+              $group: {
+                _id: "$author.id",
+                username: { $last: "$author.username" },
+                count: { $sum: 1 },
+                lastActive: { $max: "$createdTimestamp" },
+              },
+            },
+            { $sort: { count: -1 } },
+            { $limit: cappedTopN },
+          ])
+          .toArray(),
 
-      // Channel breakdown (top 10)
-      collection.aggregate([
-        { $match: { ...match, channelId: channelId ? channelId : { $exists: true } } },
-        {
-          $group: {
-            _id: "$channelId",
-            count: { $sum: 1 },
-          },
-        },
-        { $sort: { count: -1 } },
-        { $limit: 10 },
-      ]).toArray(),
+        // Channel breakdown (top 10)
+        collection
+          .aggregate([
+            {
+              $match: {
+                ...match,
+                channelId: channelId ? channelId : { $exists: true },
+              },
+            },
+            {
+              $group: {
+                _id: "$channelId",
+                count: { $sum: 1 },
+              },
+            },
+            { $sort: { count: -1 } },
+            { $limit: 10 },
+          ])
+          .toArray(),
 
-      // Hourly activity distribution
-      collection.aggregate([
-        { $match: match },
-        {
-          $group: {
-            _id: { $hour: { $toDate: "$createdTimestamp" } },
-            count: { $sum: 1 },
-          },
-        },
-        { $sort: { "_id": 1 } },
-      ]).toArray(),
-    ]);
+        // Hourly activity distribution
+        collection
+          .aggregate([
+            { $match: match },
+            {
+              $group: {
+                _id: { $hour: { $toDate: "$createdTimestamp" } },
+                count: { $sum: 1 },
+              },
+            },
+            { $sort: { _id: 1 } },
+          ])
+          .toArray(),
+      ]);
 
     // Unique users count
-    const uniqueUsersResult = await collection.aggregate([
-      { $match: match },
-      { $group: { _id: "$author.id" } },
-      { $count: "total" },
-    ]).toArray();
+    const uniqueUsersResult = await collection
+      .aggregate([
+        { $match: match },
+        { $group: { _id: "$author.id" } },
+        { $count: "total" },
+      ])
+      .toArray();
     const uniqueUsers = uniqueUsersResult[0]?.total || 0;
 
     return {
@@ -738,9 +817,10 @@ const DiscordDataService = {
       },
       totalMessages,
       uniqueUsers,
-      avgMessagesPerUser: uniqueUsers > 0
-        ? Math.round(totalMessages / uniqueUsers * 10) / 10
-        : 0,
+      avgMessagesPerUser:
+        uniqueUsers > 0
+          ? Math.round((totalMessages / uniqueUsers) * 10) / 10
+          : 0,
       topUsers: topUsers.map((u: Document) => ({
         userId: u._id,
         username: u.username,

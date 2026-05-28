@@ -19,6 +19,12 @@ import {
   EMOJI_KITCHEN_INTERVAL_MS,
 } from "../constants.ts";
 
+import type {
+  ToolIntelligenceTier,
+  ToolSchema,
+  ToolSchemaForAI,
+} from "../types/tools.ts";
+
 // ────────────────────────────────────────────────────────────
 // Data Source Helpers — builds the dataSource metadata
 // ────────────────────────────────────────────────────────────
@@ -7291,7 +7297,8 @@ const TOOL_DEFINITIONS: any[] = [
               },
               velocity: {
                 type: "number",
-                description: "Note loudness from 0.0 (silent) to 1.0 (full volume). Default: 1.0.",
+                description:
+                  "Note loudness from 0.0 (silent) to 1.0 (full volume). Default: 1.0.",
               },
             },
             required: ["note", "duration"],
@@ -7370,23 +7377,28 @@ const TOOL_DEFINITIONS: any[] = [
                     },
                     velocity: {
                       type: "number",
-                      description: "Note loudness from 0.0 to 1.0 (default: 1.0). Controls dynamics and expression.",
+                      description:
+                        "Note loudness from 0.0 to 1.0 (default: 1.0). Controls dynamics and expression.",
                     },
                     pitchBend: {
                       type: "object",
-                      description: "Pitch bend/glide to a target note during playback. Enables guitar bends, slides, and portamento.",
+                      description:
+                        "Pitch bend/glide to a target note during playback. Enables guitar bends, slides, and portamento.",
                       properties: {
                         target: {
                           type: "string",
-                          description: "Target note name or frequency to bend toward (e.g. 'G3', 440).",
+                          description:
+                            "Target note name or frequency to bend toward (e.g. 'G3', 440).",
                         },
                         startTime: {
                           type: "number",
-                          description: "Fraction of note duration when bend starts (0.0–1.0, default: 0.0).",
+                          description:
+                            "Fraction of note duration when bend starts (0.0–1.0, default: 0.0).",
                         },
                         endTime: {
                           type: "number",
-                          description: "Fraction of note duration when bend reaches target (0.0–1.0, default: 1.0).",
+                          description:
+                            "Fraction of note duration when bend reaches target (0.0–1.0, default: 1.0).",
                         },
                       },
                       required: ["target"],
@@ -7397,11 +7409,13 @@ const TOOL_DEFINITIONS: any[] = [
               },
               volume: {
                 type: "number",
-                description: "Track volume multiplier (0.0–2.0, default: 1.0). Use to balance tracks in the mix.",
+                description:
+                  "Track volume multiplier (0.0–2.0, default: 1.0). Use to balance tracks in the mix.",
               },
               repeat: {
                 type: "integer",
-                description: "Number of times to repeat this track's note pattern (default: 1). A 1-bar drum loop with repeat: 8 produces 8 bars.",
+                description:
+                  "Number of times to repeat this track's note pattern (default: 1). A 1-bar drum loop with repeat: 8 produces 8 bars.",
               },
             },
             required: ["nodeChain", "notes"],
@@ -7410,11 +7424,24 @@ const TOOL_DEFINITIONS: any[] = [
         instrument: {
           type: "string",
           enum: [
-            "acoustic_guitar", "electric_guitar", "nylon_guitar",
-            "piano", "electric_piano", "organ",
-            "trumpet", "violin", "cello", "flute", "clarinet",
-            "synth_lead", "synth_pad", "synth_bass", "bass_guitar",
-            "marimba", "vibraphone", "harmonica",
+            "acoustic_guitar",
+            "electric_guitar",
+            "nylon_guitar",
+            "piano",
+            "electric_piano",
+            "organ",
+            "trumpet",
+            "violin",
+            "cello",
+            "flute",
+            "clarinet",
+            "synth_lead",
+            "synth_pad",
+            "synth_bass",
+            "bass_guitar",
+            "marimba",
+            "vibraphone",
+            "harmonica",
           ],
           description:
             "Musical instrument preset. Provides pre-tuned waveform, harmonics, envelope, FM, and LFO settings " +
@@ -10582,24 +10609,131 @@ const TOOL_LABELS = {
 };
 
 // ────────────────────────────────────────────────────────────
+// Intelligence Tier Taxonomy — maps tools to required LLM capability tier
+// ────────────────────────────────────────────────────────────
+
+const TOOL_INTELLIGENCE_TIERS: Record<string, ToolIntelligenceTier> = {
+  // 🔴 Frontier — Frontier Models Only (Structured graphs, code writing, mult-tool state)
+  generate_audio: "frontier",
+  browser_action: "frontier",
+  browser_script: "frontier",
+  manipulate_image: "frontier",
+  build_meal_plan: "frontier",
+  analyze_nutrient_gaps: "frontier",
+  transform_json: "frontier",
+  turtle_draw: "frontier",
+  lsp_action: "frontier",
+  notebook_edit: "frontier",
+  query_energy_data: "frontier",
+
+  // 🟠 High — Strong Models Recommended (Complex domain enums, conditional required params)
+  get_macro_data: "high",
+  get_stock_data: "high",
+  get_country_data: "high",
+  get_element_data: "high",
+  get_exoplanet_data: "high",
+  search_drugs: "high",
+  search_foods_by_taxonomy: "high",
+  browse_food_taxonomy: "high",
+  get_nutritional_requirements: "high",
+  rank_foods: "high",
+  execute_python: "high",
+  execute_shell: "high",
+  parse_datetime: "high",
+  generate_map: "high",
+  generate_chart: "high",
+  get_commodities: "high",
+  discover_media: "high",
+  get_events: "high",
+  check_drug_nutrient_interactions: "high",
+  find_food_substitutes: "high",
+  create_custom_agent: "high",
+  cron_create: "high",
+  generate_diagram: "high",
+  regex_tester: "high",
+  str_replace_file: "high",
+  block_replace_file: "high",
+  multi_replace_file: "high",
+  get_local_environment: "high",
+  get_vessels_in_area: "high",
+
+  // 🟡 Medium — Mid-Tier Models Can Handle (Some dynamic params, enums, standard APIs)
+  get_weather: "medium",
+  get_trends: "medium",
+  search_products: "medium",
+  get_anime: "medium",
+  lookup_book: "medium",
+  search_media: "medium",
+  get_media_details: "medium",
+  get_media_credits: "medium",
+  get_trending_media: "medium",
+  execute_javascript: "medium",
+  lookup_airport: "medium",
+  search_nearby_places: "medium",
+  search_places: "medium",
+  convert_units: "medium",
+  convert_currency: "medium",
+  calculate_caloric_needs: "medium",
+  calculate_hydration_needs: "medium",
+  estimate_exercise_calories: "medium",
+  compare_food_nutrition: "medium",
+  search_usda_nutrition: "medium",
+  get_weather_forecast: "medium",
+  get_earthquakes: "medium",
+  search_gym_exercises: "medium",
+  diff_text: "medium",
+  encode_decode: "medium",
+  generate_hash: "medium",
+  convert_color: "medium",
+  read_rss_feed: "medium",
+  read_pdf_url: "medium",
+  get_next_bus: "medium",
+  get_transit_stop_info: "medium",
+  get_transit_route_info: "medium",
+  find_transit_stops_nearby: "medium",
+  get_petroleum_prices: "medium",
+  get_natural_gas_prices: "medium",
+  get_electricity_retail_sales: "medium",
+  get_energy_facets: "medium",
+  git: "medium",
+  run_command: "medium",
+  send_sms: "medium",
+  discord_message_search: "medium",
+  generate_image: "medium",
+  text_to_speech: "medium",
+  speech_to_text: "medium",
+  get_public_webcams: "medium",
+};
+
+// ────────────────────────────────────────────────────────────
 // Public API
 // ────────────────────────────────────────────────────────────
 
 // Re-export taxonomy registries for testing and downstream consumers
-export { TOOL_DOMAINS, TOOL_LABELS, TOOL_EMOJIS, TOOL_DEFINITIONS };
+export {
+  TOOL_DOMAINS,
+  TOOL_LABELS,
+  TOOL_EMOJIS,
+  TOOL_INTELLIGENCE_TIERS,
+  TOOL_DEFINITIONS,
+};
 
 /**
  * Get all tool schemas with endpoint metadata.
  * Used by clients (like Prism Client) to build dynamic executors.
  * Filters out tools whose required API keys are not configured.
  */
-export function getToolSchemas(): any[] {
+export function getToolSchemas(): ToolSchema[] {
   return TOOL_DEFINITIONS.filter((tool) => isToolAvailable(tool.name)).map(
     (tool) => ({
       ...tool,
       domain: TOOL_DOMAINS[tool.name as keyof typeof TOOL_DOMAINS] || "Other",
       labels: TOOL_LABELS[tool.name as keyof typeof TOOL_LABELS] || [],
       emoji: TOOL_EMOJIS[tool.name as keyof typeof TOOL_EMOJIS] || null,
+      intelligenceTier:
+        TOOL_INTELLIGENCE_TIERS[
+          tool.name as keyof typeof TOOL_INTELLIGENCE_TIERS
+        ] || "low",
     }),
   );
 }
@@ -10609,9 +10743,15 @@ export function getToolSchemas(): any[] {
  * Strips the `endpoint` property since the AI doesn't need routing info.
  * Filters out tools whose required API keys are not configured.
  */
-export function getToolSchemasForAI(): any[] {
+export function getToolSchemasForAI(): ToolSchemaForAI[] {
   return TOOL_DEFINITIONS.filter((tool) => isToolAvailable(tool.name)).map(
-    ({ endpoint: _endpoint, dataSource: _dataSource, ...rest }) => rest,
+    ({ endpoint: _endpoint, dataSource: _dataSource, ...rest }) => ({
+      ...rest,
+      intelligenceTier:
+        TOOL_INTELLIGENCE_TIERS[
+          rest.name as keyof typeof TOOL_INTELLIGENCE_TIERS
+        ] || "low",
+    }),
   );
 }
 

@@ -47,7 +47,12 @@ function parseCSVLine(line: string): string[] {
 
 // ─── Haversine ─────────────────────────────────────────────────
 
-function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+function haversineKm(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+): number {
   const R = 6371;
   const toRad = (d: number) => (d * Math.PI) / 180;
   const dLat = toRad(lat2 - lat1);
@@ -74,11 +79,7 @@ function ensureLoaded(): void {
     if (lines.length === 0) return;
     const headers = parseCSVLine(lines[0]);
 
-    const NUMERIC_FIELDS = new Set([
-      "latitude",
-      "longitude",
-      "elevation_ft",
-    ]);
+    const NUMERIC_FIELDS = new Set(["latitude", "longitude", "elevation_ft"]);
 
     for (let i = 1; i < lines.length; i++) {
       const values = parseCSVLine(lines[i]);
@@ -156,19 +157,25 @@ export interface SearchAirportsResult {
 /**
  * Search airports by name, IATA code, city, or country.
  */
-export function searchAirports(query: string | null | undefined, opts: SearchAirportsOptions = {}): SearchAirportsResult {
+export function searchAirports(
+  query: string | null | undefined,
+  opts: SearchAirportsOptions = {},
+): SearchAirportsResult {
   ensureLoaded();
 
   const { limit = 10, country } = opts;
   const normalizedQuery = normalizeSearch(query || "");
 
-  if (!normalizedQuery) return { count: 0, query, note: "No query provided.", airports: [] };
+  if (!normalizedQuery)
+    return { count: 0, query, note: "No query provided.", airports: [] };
 
   let candidates = AIRPORT_DB;
   if (country) {
     const normalizedCountry = country.toUpperCase();
     candidates = candidates.filter(
-      (airport: AirportInfo) => airport.country_code && airport.country_code.toUpperCase() === normalizedCountry,
+      (airport: AirportInfo) =>
+        airport.country_code &&
+        airport.country_code.toUpperCase() === normalizedCountry,
     );
   }
 
@@ -215,10 +222,14 @@ export function getAirportByCode(code: string): FormattedAirport | null {
   const normalizedCode = code.toUpperCase().trim();
   const airport =
     AIRPORT_DB.find(
-      (airportEntry: AirportInfo) => airportEntry.iata_code && airportEntry.iata_code.toUpperCase() === normalizedCode,
+      (airportEntry: AirportInfo) =>
+        airportEntry.iata_code &&
+        airportEntry.iata_code.toUpperCase() === normalizedCode,
     ) ||
     AIRPORT_DB.find(
-      (airportEntry: AirportInfo) => airportEntry.icao_code && airportEntry.icao_code.toUpperCase() === normalizedCode,
+      (airportEntry: AirportInfo) =>
+        airportEntry.icao_code &&
+        airportEntry.icao_code.toUpperCase() === normalizedCode,
     );
 
   if (!airport) return null;
@@ -239,14 +250,19 @@ export interface GetAirportsByCountryResult {
 /**
  * Get all airports in a country.
  */
-export function getAirportsByCountry(countryCode: string, opts: GetAirportsByCountryOptions = {}): GetAirportsByCountryResult {
+export function getAirportsByCountry(
+  countryCode: string,
+  opts: GetAirportsByCountryOptions = {},
+): GetAirportsByCountryResult {
   ensureLoaded();
 
   const { limit = 50 } = opts;
   const normalizedCountryCode = countryCode.toUpperCase().trim();
 
   const airports = AIRPORT_DB.filter(
-    (airport: AirportInfo) => airport.country_code && airport.country_code.toUpperCase() === normalizedCountryCode,
+    (airport: AirportInfo) =>
+      airport.country_code &&
+      airport.country_code.toUpperCase() === normalizedCountryCode,
   )
     .sort((a: AirportInfo, b: AirportInfo) => {
       // Large airports first
@@ -279,16 +295,26 @@ export interface GetNearestAirportsResult {
 /**
  * Find nearest airports to a coordinate.
  */
-export function getNearestAirports(lat: number, lng: number, opts: GetNearestAirportsOptions = {}): GetNearestAirportsResult {
+export function getNearestAirports(
+  lat: number,
+  lng: number,
+  opts: GetNearestAirportsOptions = {},
+): GetNearestAirportsResult {
   ensureLoaded();
 
   const { limit = 5 } = opts;
 
   const withDist = AIRPORT_DB.filter(
-    (airport: AirportInfo) => airport.latitude !== null && airport.longitude !== null,
+    (airport: AirportInfo) =>
+      airport.latitude !== null && airport.longitude !== null,
   ).map((airport: AirportInfo) => ({
     airport,
-    distanceKm: haversineKm(lat, lng, airport.latitude as number, airport.longitude as number),
+    distanceKm: haversineKm(
+      lat,
+      lng,
+      airport.latitude as number,
+      airport.longitude as number,
+    ),
   }));
 
   withDist.sort((a, b) => a.distanceKm - b.distanceKm);
@@ -305,4 +331,3 @@ export function getNearestAirports(lat: number, lng: number, opts: GetNearestAir
     })),
   };
 }
-

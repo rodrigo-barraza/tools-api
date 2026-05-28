@@ -71,15 +71,15 @@ const ALLOWED_BINARIES = new Set([
 
 // Patterns that indicate attempted abuse even if the binary is allowed
 const BLOCKED_PATTERNS = [
-  /[;&`$(){}[\]]/,          // shell metacharacters
-  /\.\.\//,                 // path traversal
-  /\/dev\//,                // device access
-  /\/proc\//,               // proc access
-  /\/sys\//,                // sys access
-  /\/etc\//,                // config access
-  />\s*\//,                 // redirect to absolute path
-  />\s*~/,                  // redirect to home
-  /<\s*\//,                 // redirect from absolute path
+  /[;&`$(){}[\]]/, // shell metacharacters
+  /\.\.\//, // path traversal
+  /\/dev\//, // device access
+  /\/proc\//, // proc access
+  /\/sys\//, // sys access
+  /\/etc\//, // config access
+  />\s*\//, // redirect to absolute path
+  />\s*~/, // redirect to home
+  /<\s*\//, // redirect from absolute path
 ];
 
 // ────────────────────────────────────────────────────────────
@@ -151,8 +151,14 @@ function validateCommand(command: string) {
 /**
  * Execute an allowlisted shell command.
  */
-export async function executeShell(command: string, { stdin = "", timeout = DEFAULT_TIMEOUT_MS }: ShellOptions = {}): Promise<ShellResult> {
-  const clampedTimeout = Math.min(Math.max(Number(timeout), 500), MAX_TIMEOUT_MS);
+export async function executeShell(
+  command: string,
+  { stdin = "", timeout = DEFAULT_TIMEOUT_MS }: ShellOptions = {},
+): Promise<ShellResult> {
+  const clampedTimeout = Math.min(
+    Math.max(Number(timeout), 500),
+    MAX_TIMEOUT_MS,
+  );
 
   // Validate command
   const validation = validateCommand(command);
@@ -282,21 +288,40 @@ export async function executeShell(command: string, { stdin = "", timeout = DEFA
  * Same security model as executeShell, but invokes `onChunk` for each
  * stdout/stderr data event as it arrives.
  */
-export async function executeShellStreaming(command: string, { stdin = "", timeout = DEFAULT_TIMEOUT_MS, onChunk }: ShellStreamingOptions = {}): Promise<ShellResult> {
-  const clampedTimeout = Math.min(Math.max(Number(timeout), 500), MAX_TIMEOUT_MS);
+export async function executeShellStreaming(
+  command: string,
+  {
+    stdin = "",
+    timeout = DEFAULT_TIMEOUT_MS,
+    onChunk,
+  }: ShellStreamingOptions = {},
+): Promise<ShellResult> {
+  const clampedTimeout = Math.min(
+    Math.max(Number(timeout), 500),
+    MAX_TIMEOUT_MS,
+  );
 
   const validation = validateCommand(command);
   if (!validation.valid) {
     return {
-      success: false, stdout: "", stderr: "", exitCode: null,
-      executionTimeMs: 0, timedOut: false, error: validation.error,
+      success: false,
+      stdout: "",
+      stderr: "",
+      exitCode: null,
+      executionTimeMs: 0,
+      timedOut: false,
+      error: validation.error,
     };
   }
 
   if (stdin && Buffer.byteLength(stdin) > MAX_INPUT_BYTES) {
     return {
-      success: false, stdout: "", stderr: "", exitCode: null,
-      executionTimeMs: 0, timedOut: false,
+      success: false,
+      stdout: "",
+      stderr: "",
+      exitCode: null,
+      executionTimeMs: 0,
+      timedOut: false,
       error: `stdin exceeds maximum size of ${MAX_INPUT_BYTES} bytes`,
     };
   }
@@ -313,7 +338,11 @@ export async function executeShellStreaming(command: string, { stdin = "", timeo
 
     const child = spawn("bash", ["-r", "-c", command], {
       stdio: ["pipe", "pipe", "pipe"],
-      env: { PATH: "/usr/bin:/bin:/usr/local/bin", HOME: "/tmp", LANG: "C.UTF-8" },
+      env: {
+        PATH: "/usr/bin:/bin:/usr/local/bin",
+        HOME: "/tmp",
+        LANG: "C.UTF-8",
+      },
       detached: false,
       cwd: "/tmp",
     });
@@ -337,7 +366,10 @@ export async function executeShellStreaming(command: string, { stdin = "", timeo
       }
     });
 
-    const timer = setTimeout(() => { timedOut = true; child.kill("SIGKILL"); }, clampedTimeout);
+    const timer = setTimeout(() => {
+      timedOut = true;
+      child.kill("SIGKILL");
+    }, clampedTimeout);
 
     function finish(exitCode: number | null) {
       if (settled) return;
@@ -347,12 +379,20 @@ export async function executeShellStreaming(command: string, { stdin = "", timeo
       const stderr = Buffer.concat(stderrChunks).toString("utf-8");
       resolve({
         success: exitCode === 0 && !timedOut,
-        stdout: stdoutLen > MAX_OUTPUT_BYTES ? stdout + "\n... [output truncated]" : stdout,
-        stderr: stderrLen > MAX_OUTPUT_BYTES ? stderr + "\n... [output truncated]" : stderr,
+        stdout:
+          stdoutLen > MAX_OUTPUT_BYTES
+            ? stdout + "\n... [output truncated]"
+            : stdout,
+        stderr:
+          stderrLen > MAX_OUTPUT_BYTES
+            ? stderr + "\n... [output truncated]"
+            : stderr,
         exitCode: timedOut ? null : exitCode,
         executionTimeMs: Math.round(performance.now() - startTime),
         timedOut,
-        ...(timedOut && { error: `Execution timed out after ${clampedTimeout}ms` }),
+        ...(timedOut && {
+          error: `Execution timed out after ${clampedTimeout}ms`,
+        }),
       });
     }
 
@@ -362,9 +402,13 @@ export async function executeShellStreaming(command: string, { stdin = "", timeo
         settled = true;
         clearTimeout(timer);
         resolve({
-          success: false, stdout: "", stderr: "", exitCode: null,
+          success: false,
+          stdout: "",
+          stderr: "",
+          exitCode: null,
           executionTimeMs: Math.round(performance.now() - startTime),
-          timedOut: false, error: `Process error: ${error.message}`,
+          timedOut: false,
+          error: `Process error: ${error.message}`,
         });
       }
     });

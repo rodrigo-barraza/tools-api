@@ -37,7 +37,11 @@ const cache = {
 
 // ─── TTL Helper ────────────────────────────────────────────────────
 
-function getCached<T>(map: Map<string, CacheEntry<T>>, key: string, ttl: number): T | null {
+function getCached<T>(
+  map: Map<string, CacheEntry<T>>,
+  key: string,
+  ttl: number,
+): T | null {
   const entry = map.get(key);
   if (!entry) return null;
   if (Date.now() - entry.fetchedAt > ttl) return null;
@@ -129,7 +133,10 @@ export function updateEarnings(earningsData: unknown[]) {
 }
 
 export function setEarningsError(error: { message: string }) {
-  cache.earningsError = { message: error.message, time: new Date().toISOString() };
+  cache.earningsError = {
+    message: error.message,
+    time: new Date().toISOString(),
+  };
 }
 
 // ─── Health ────────────────────────────────────────────────────────

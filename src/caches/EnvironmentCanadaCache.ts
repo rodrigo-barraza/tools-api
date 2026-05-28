@@ -1,7 +1,10 @@
 import { createSimpleCache } from "./createSimpleCache.ts";
 import { type CanadaWarning } from "../fetchers/weather/EnvironmentCanadaFetcher.ts";
 
-const cache = createSimpleCache<CanadaWarning[]>({ type: "array", itemsKey: "warnings" });
+const cache = createSimpleCache<CanadaWarning[]>({
+  type: "array",
+  itemsKey: "warnings",
+});
 
 export const updateWarnings = cache.update;
 export const setWarningError = cache.setError;
@@ -16,8 +19,10 @@ export function getWarningCount() {
     byType: {
       warning: warnings.filter((warning) => warning.type === "warning").length,
       watch: warnings.filter((warning) => warning.type === "watch").length,
-      advisory: warnings.filter((warning) => warning.type === "advisory").length,
-      statement: warnings.filter((warning) => warning.type === "statement").length,
+      advisory: warnings.filter((warning) => warning.type === "advisory")
+        .length,
+      statement: warnings.filter((warning) => warning.type === "statement")
+        .length,
     },
     lastFetch: cache.getLastFetch(),
   };

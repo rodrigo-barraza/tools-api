@@ -87,7 +87,8 @@ export async function fetchCityOfVancouverEvents(): Promise<CachedEvent[]> {
           : imageUrl
             ? `https://vancouver.ca${imageUrl}`
             : undefined,
-        startDate: startDate && !isNaN(startDate.getTime()) ? startDate : undefined,
+        startDate:
+          startDate && !isNaN(startDate.getTime()) ? startDate : undefined,
         endDate: undefined,
         venue: {
           name: location || undefined,

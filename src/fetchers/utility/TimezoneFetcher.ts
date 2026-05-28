@@ -21,7 +21,9 @@ export async function getTimeInTimezone(timezone: string) {
     return { found: false, timezone, message: "Timezone not found" };
   }
   if (!response.ok) {
-    throw new Error(`World Time API → ${response.status} ${response.statusText}`);
+    throw new Error(
+      `World Time API → ${response.status} ${response.statusText}`,
+    );
   }
 
   const data = await response.json();
@@ -56,9 +58,10 @@ export async function listTimezones(area?: string) {
   const response = await fetch(url);
 
   if (!response.ok) {
-    throw new Error(`World Time API → ${response.status} ${response.statusText}`);
+    throw new Error(
+      `World Time API → ${response.status} ${response.statusText}`,
+    );
   }
 
   return response.json();
 }
-

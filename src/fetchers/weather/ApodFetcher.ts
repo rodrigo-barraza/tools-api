@@ -11,7 +11,9 @@ export async function fetchApod() {
   const response = await fetch(url);
 
   if (!response.ok) {
-    throw new Error(`NASA APOD API returned ${response.status}: ${response.statusText}`);
+    throw new Error(
+      `NASA APOD API returned ${response.status}: ${response.statusText}`,
+    );
   }
 
   const data = await response.json();

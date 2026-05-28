@@ -59,16 +59,32 @@ const POSTS_QUERY = `
  */
 function mapTopicToCategory(topics: string[]) {
   const topicNames = topics.map((tool) => tool.toLowerCase());
-  if (topicNames.some((tool) => tool.includes("gaming") || tool.includes("game")))
+  if (
+    topicNames.some((tool) => tool.includes("gaming") || tool.includes("game"))
+  )
     return "gaming";
-  if (topicNames.some((tool) => tool.includes("developer") || tool.includes("api")))
+  if (
+    topicNames.some(
+      (tool) => tool.includes("developer") || tool.includes("api"),
+    )
+  )
     return "software";
-  if (topicNames.some((tool) => tool.includes("home") || tool.includes("smart home")))
+  if (
+    topicNames.some(
+      (tool) => tool.includes("home") || tool.includes("smart home"),
+    )
+  )
     return "home";
-  if (topicNames.some((tool) => tool.includes("health") || tool.includes("fitness")))
+  if (
+    topicNames.some(
+      (tool) => tool.includes("health") || tool.includes("fitness"),
+    )
+  )
     return "sports";
   if (
-    topicNames.some((tool) => tool.includes("productivity") || tool.includes("office"))
+    topicNames.some(
+      (tool) => tool.includes("productivity") || tool.includes("office"),
+    )
   )
     return "office";
   // Default for Product Hunt — mostly tech/software
@@ -121,29 +137,34 @@ export async function fetchProductHuntTrending() {
     topics?: { edges?: Array<{ node: { name: string } }> };
   }
 
-  const products = edges.map((edge: { node: ProductHuntNode }, index: number) => {
-    const node = edge.node;
-    const topics: string[] = node.topics?.edges?.map((e: { node: { name: string } }) => e.node.name) || [];
-    const product = {
-      sourceId: node.id,
-      source: PRODUCT_SOURCES.PRODUCTHUNT,
-      name: node.name,
-      category: mapTopicToCategory(topics),
-      sourceCategory: topics.join(", ") || "Tech",
-      rank: index + 1,
-      price: null,
-      currency: null,
-      rating: null,
-      reviewCount: node.commentsCount || 0,
-      imageUrl: node.thumbnail?.url || null,
-      productUrl: node.url || node.website || null,
-      description: node.tagline || node.description || null,
-      trendingScore: 0,
-      votesCount: node.votesCount || 0,
-      fetchedAt: new Date(),
-    };
-    product.trendingScore = computeTrendingScore(product);
-    return product;
-  });
+  const products = edges.map(
+    (edge: { node: ProductHuntNode }, index: number) => {
+      const node = edge.node;
+      const topics: string[] =
+        node.topics?.edges?.map(
+          (e: { node: { name: string } }) => e.node.name,
+        ) || [];
+      const product = {
+        sourceId: node.id,
+        source: PRODUCT_SOURCES.PRODUCTHUNT,
+        name: node.name,
+        category: mapTopicToCategory(topics),
+        sourceCategory: topics.join(", ") || "Tech",
+        rank: index + 1,
+        price: null,
+        currency: null,
+        rating: null,
+        reviewCount: node.commentsCount || 0,
+        imageUrl: node.thumbnail?.url || null,
+        productUrl: node.url || node.website || null,
+        description: node.tagline || node.description || null,
+        trendingScore: 0,
+        votesCount: node.votesCount || 0,
+        fetchedAt: new Date(),
+      };
+      product.trendingScore = computeTrendingScore(product);
+      return product;
+    },
+  );
   return products;
 }

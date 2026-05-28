@@ -46,29 +46,44 @@ const MAGICK_OPERATIONS = new Set(["text", "distort", "border", "ico"]);
  */
 async function resolveInput(input: string, store?: ImageStore) {
   if (!input || typeof input !== "string") {
-    throw new Error("'input' is required (URL, base64 data URI, local path, or previous imageId)");
+    throw new Error(
+      "'input' is required (URL, base64 data URI, local path, or previous imageId)",
+    );
   }
 
   // ── Data URI ──────────────────────────────────────────────
   if (input.startsWith("data:")) {
     const match = input.match(/^data:[^;]+;base64,(.+)$/s);
-    if (!match) throw new Error("Invalid data URI format. Expected: data:<mime>;base64,<data>");
+    if (!match)
+      throw new Error(
+        "Invalid data URI format. Expected: data:<mime>;base64,<data>",
+      );
     const imageBuffer = Buffer.from(match[1], "base64");
     if (imageBuffer.length > MAX_INPUT_BYTES) {
-      throw new Error(`Input image exceeds ${MAX_INPUT_BYTES / 1024 / 1024} MB limit`);
+      throw new Error(
+        `Input image exceeds ${MAX_INPUT_BYTES / 1024 / 1024} MB limit`,
+      );
     }
     return imageBuffer;
   }
 
   // ── URL ───────────────────────────────────────────────────
   if (input.startsWith("http://") || input.startsWith("https://")) {
-    const response = await fetch(input, { signal: AbortSignal.timeout(15_000) });
+    const response = await fetch(input, {
+      signal: AbortSignal.timeout(15_000),
+    });
     if (!response.ok) {
-      throw new Error(`Failed to fetch image from URL: HTTP ${response.status}`);
+      throw new Error(
+        `Failed to fetch image from URL: HTTP ${response.status}`,
+      );
     }
-    const contentLength = parseInt(response.headers.get("content-length") || "0");
+    const contentLength = parseInt(
+      response.headers.get("content-length") || "0",
+    );
     if (contentLength > MAX_INPUT_BYTES) {
-      throw new Error(`Remote image exceeds ${MAX_INPUT_BYTES / 1024 / 1024} MB limit`);
+      throw new Error(
+        `Remote image exceeds ${MAX_INPUT_BYTES / 1024 / 1024} MB limit`,
+      );
     }
     const arrayBuf = await response.arrayBuffer();
     return Buffer.from(arrayBuf);
@@ -102,7 +117,7 @@ async function resolveInput(input: string, store?: ImageStore) {
 
   throw new Error(
     "Invalid input: must be a URL (http/https), base64 data URI (data:image/...;base64,...), " +
-    "local workspace path, or a previous imageId from a prior manipulate_image call.",
+      "local workspace path, or a previous imageId from a prior manipulate_image call.",
   );
 }
 
@@ -113,8 +128,16 @@ async function resolveInput(input: string, store?: ImageStore) {
 
 
  */
-async function processWithSharp(inputBuffer: Buffer, operations: ImageOperation[], outputFormat: string, outputQuality: number) {
-  let pipeline = sharp(inputBuffer, { failOn: "none", limitInputPixels: MAX_DIMENSION * MAX_DIMENSION });
+async function processWithSharp(
+  inputBuffer: Buffer,
+  operations: ImageOperation[],
+  outputFormat: string,
+  outputQuality: number,
+) {
+  let pipeline = sharp(inputBuffer, {
+    failOn: "none",
+    limitInputPixels: MAX_DIMENSION * MAX_DIMENSION,
+  });
   let metadataResult: Record<string, unknown> | null = null;
 
   for (const op of operations) {
@@ -125,13 +148,15 @@ async function processWithSharp(inputBuffer: Buffer, operations: ImageOperation[
         if (op.height) options.height = Math.min(op.height, MAX_DIMENSION);
         if (op.fit) options.fit = op.fit;
         if (op.background) options.background = op.background;
-        if (op.withoutEnlargement !== undefined) options.withoutEnlargement = op.withoutEnlargement;
+        if (op.withoutEnlargement !== undefined)
+          options.withoutEnlargement = op.withoutEnlargement;
         pipeline = pipeline.resize(options);
         break;
       }
 
       case "crop": {
-        if (!op.width || !op.height) throw new Error("crop requires 'width' and 'height'");
+        if (!op.width || !op.height)
+          throw new Error("crop requires 'width' and 'height'");
         pipeline = pipeline.extract({
           left: op.left || 0,
           top: op.top || 0,
@@ -156,9 +181,7 @@ async function processWithSharp(inputBuffer: Buffer, operations: ImageOperation[
         break;
 
       case "blur":
-        pipeline = pipeline.blur(
-          Math.min(Math.max(op.sigma || 3, 0.3), 100),
-        );
+        pipeline = pipeline.blur(Math.min(Math.max(op.sigma || 3, 0.3), 100));
         break;
 
       case "sharpen":
@@ -227,7 +250,14 @@ async function processWithSharp(inputBuffer: Buffer, operations: ImageOperation[
       case "metadata": {
         const meta = await sharp(inputBuffer).metadata();
         // Strip buffer-based properties and convert to plain object
-        const { icc: _icc, iptc: _iptc, xmp: _xmp, exif: _exif, tifftagPhotoshop: _tiffPs, ...cleanMeta } = meta;
+        const {
+          icc: _icc,
+          iptc: _iptc,
+          xmp: _xmp,
+          exif: _exif,
+          tifftagPhotoshop: _tiffPs,
+          ...cleanMeta
+        } = meta;
         metadataResult = cleanMeta;
         break;
       }
@@ -265,7 +295,7 @@ async function processWithSharp(inputBuffer: Buffer, operations: ImageOperation[
 
   return {
     buffer,
-        mimeType: MIME_MAP[format as keyof typeof MIME_MAP] || "image/png",
+    mimeType: MIME_MAP[format as keyof typeof MIME_MAP] || "image/png",
     ...(metadataResult && { metadata: metadataResult }),
   };
 }
@@ -276,7 +306,12 @@ async function processWithSharp(inputBuffer: Buffer, operations: ImageOperation[
  * Apply ImageMagick-based operations via the `convert` CLI.
  * Used for operations Sharp can't handle natively.
  */
-async function processWithMagick(inputBuffer: Buffer, operations: ImageOperation[], outputFormat: string, outputQuality: number) {
+async function processWithMagick(
+  inputBuffer: Buffer,
+  operations: ImageOperation[],
+  outputFormat: string,
+  outputQuality: number,
+) {
   const id = crypto.randomUUID().slice(0, 12);
   const inputPath = join(tmpdir(), `img-in-${id}`);
   const outputPath = join(tmpdir(), `img-out-${id}.${outputFormat || "png"}`);
@@ -300,7 +335,11 @@ async function processWithMagick(inputBuffer: Buffer, operations: ImageOperation
             textArgs.push("-strokewidth", String(op.strokeWidth || 2));
           }
           if (op.x !== undefined || op.y !== undefined) {
-            textArgs.push("-annotate", `+${op.x || 0}+${op.y || 0}`, op.content as string);
+            textArgs.push(
+              "-annotate",
+              `+${op.x || 0}+${op.y || 0}`,
+              op.content as string,
+            );
           } else {
             textArgs.push("-annotate", "+0+20", op.content as string);
           }
@@ -315,7 +354,10 @@ async function processWithMagick(inputBuffer: Buffer, operations: ImageOperation
               args.push("-swirl", String(op.degrees || 90));
               break;
             case "wave":
-              args.push("-wave", `${op.amplitude || 10}x${op.wavelength || 100}`);
+              args.push(
+                "-wave",
+                `${op.amplitude || 10}x${op.wavelength || 100}`,
+              );
               break;
             case "implode":
               args.push("-implode", String(op.factor || 0.5));
@@ -324,7 +366,9 @@ async function processWithMagick(inputBuffer: Buffer, operations: ImageOperation
               args.push("-distort", "Barrel", op.params || "0.0 0.0 -0.3 1.3");
               break;
             default:
-              throw new Error(`Unknown distort effect: ${op.effect}. Use: swirl, wave, implode, barrel`);
+              throw new Error(
+                `Unknown distort effect: ${op.effect}. Use: swirl, wave, implode, barrel`,
+              );
           }
           break;
         }
@@ -369,7 +413,7 @@ async function processWithMagick(inputBuffer: Buffer, operations: ImageOperation
 
     return {
       buffer,
-            mimeType: MIME_MAP[outputFormat as keyof typeof MIME_MAP] || "image/png",
+      mimeType: MIME_MAP[outputFormat as keyof typeof MIME_MAP] || "image/png",
     };
   } finally {
     // Clean up temp files
@@ -385,17 +429,40 @@ async function processWithMagick(inputBuffer: Buffer, operations: ImageOperation
  * Automatically routes to Sharp or ImageMagick based on the
  * operation types requested.
  */
-export async function processImage({ input, operations, outputFormat = "png", outputQuality = 80, store }: ProcessImageInput) {
+export async function processImage({
+  input,
+  operations,
+  outputFormat = "png",
+  outputQuality = 80,
+  store,
+}: ProcessImageInput) {
   if (!operations || !Array.isArray(operations) || operations.length === 0) {
-    throw new Error("'operations' must be a non-empty array of operation objects");
+    throw new Error(
+      "'operations' must be a non-empty array of operation objects",
+    );
   }
 
   // Validate all operation types
   const VALID_OPS = new Set([
-    "resize", "crop", "rotate", "flip", "blur", "sharpen",
-    "grayscale", "negate", "tint", "adjust", "gamma", "trim",
-    "extend", "composite", "metadata",
-    "text", "distort", "border", "ico",
+    "resize",
+    "crop",
+    "rotate",
+    "flip",
+    "blur",
+    "sharpen",
+    "grayscale",
+    "negate",
+    "tint",
+    "adjust",
+    "gamma",
+    "trim",
+    "extend",
+    "composite",
+    "metadata",
+    "text",
+    "distort",
+    "border",
+    "ico",
   ]);
   for (const op of operations) {
     if (!op.type) throw new Error("Each operation must have a 'type' field");
@@ -426,7 +493,12 @@ export async function processImage({ input, operations, outputFormat = "png", ou
     }
 
     // Then run Magick operations
-    const result = await processWithMagick(buffer, magickOps, outputFormat, outputQuality);
+    const result = await processWithMagick(
+      buffer,
+      magickOps,
+      outputFormat,
+      outputQuality,
+    );
     return result;
   }
 
@@ -439,7 +511,9 @@ export async function processImage({ input, operations, outputFormat = "png", ou
  */
 export async function checkMagickAvailability() {
   try {
-    const { stdout } = await execFileAsync("convert", ["--version"], { timeout: 5_000 });
+    const { stdout } = await execFileAsync("convert", ["--version"], {
+      timeout: 5_000,
+    });
     const versionMatch = stdout.match(/ImageMagick\s+([\d.]+)/);
     return { available: true, version: versionMatch?.[1] || "unknown" };
   } catch {
@@ -506,7 +580,9 @@ export async function convertToAscii({
     .toBuffer({ resolveWithObject: true });
 
   const channels = info.channels;
-  const charSet = chars || "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
+  const charSet =
+    chars ||
+    "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
   const charLen = charSet.length;
 
   let asciiStr = "";
@@ -532,7 +608,7 @@ export async function convertToAscii({
       // Map to character index (inverted standard mapping: 0 -> dark, 255 -> light)
       let charIdx = Math.floor((brightness / 255) * (charLen - 1));
       if (reverse) {
-        charIdx = (charLen - 1) - charIdx;
+        charIdx = charLen - 1 - charIdx;
       }
       const char = charSet[charIdx];
 

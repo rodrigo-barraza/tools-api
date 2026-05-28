@@ -2,7 +2,11 @@ import { upsertSolarFlares } from "../models/SolarFlare.ts";
 import { upsertCmes } from "../models/Cme.ts";
 import { upsertGeomagneticStorms } from "../models/GeomagneticStorm.ts";
 import { SOLAR_FLARE_CLASSES } from "../constants.ts";
-import { SolarFlare, Cme, GeomagneticStorm } from "../fetchers/weather/DonkiFetcher.ts";
+import {
+  SolarFlare,
+  Cme,
+  GeomagneticStorm,
+} from "../fetchers/weather/DonkiFetcher.ts";
 
 interface CacheError {
   message: string;
@@ -32,7 +36,11 @@ const cache: {
 /**
  * Update all space weather caches and persist to DB.
  */
-export async function updateSpaceWeather({ flares, cmes, storms }: SpaceWeatherData) {
+export async function updateSpaceWeather({
+  flares,
+  cmes,
+  storms,
+}: SpaceWeatherData) {
   cache.flares = flares;
   cache.cmes = cmes;
   cache.storms = storms;
@@ -56,7 +64,11 @@ export function setSpaceWeatherError(error: { message: string }) {
  * Restore space weather data from a DB snapshot.
  * Memory-only — no MongoDB upserts.
  */
-export function restoreSpaceWeather({ flares, cmes, storms }: Partial<SpaceWeatherData>) {
+export function restoreSpaceWeather({
+  flares,
+  cmes,
+  storms,
+}: Partial<SpaceWeatherData>) {
   cache.flares = flares || [];
   cache.cmes = cmes || [];
   cache.storms = storms || [];
@@ -93,20 +105,23 @@ export function getLatestSpaceWeather() {
  */
 export function getSpaceWeatherSummary() {
   // Find strongest flare by class
-  const strongestFlare = cache.flares.reduce((strongest: SolarFlare | null, flr: SolarFlare) => {
-    if (!strongest) return flr;
-    const currentClass = flr.classType?.[0] || "";
-    const bestClass = strongest.classType?.[0] || "";
-    const currentIdx = SOLAR_FLARE_CLASSES.indexOf(currentClass);
-    const bestIdx = SOLAR_FLARE_CLASSES.indexOf(bestClass);
-    if (currentIdx > bestIdx) return flr;
-    if (currentIdx === bestIdx) {
-      const currentNum = parseFloat(flr.classType?.slice(1) || "0");
-      const bestNum = parseFloat(strongest.classType?.slice(1) || "0");
-      return currentNum > bestNum ? flr : strongest;
-    }
-    return strongest;
-  }, null);
+  const strongestFlare = cache.flares.reduce(
+    (strongest: SolarFlare | null, flr: SolarFlare) => {
+      if (!strongest) return flr;
+      const currentClass = flr.classType?.[0] || "";
+      const bestClass = strongest.classType?.[0] || "";
+      const currentIdx = SOLAR_FLARE_CLASSES.indexOf(currentClass);
+      const bestIdx = SOLAR_FLARE_CLASSES.indexOf(bestClass);
+      if (currentIdx > bestIdx) return flr;
+      if (currentIdx === bestIdx) {
+        const currentNum = parseFloat(flr.classType?.slice(1) || "0");
+        const bestNum = parseFloat(strongest.classType?.slice(1) || "0");
+        return currentNum > bestNum ? flr : strongest;
+      }
+      return strongest;
+    },
+    null,
+  );
 
   const fastestCme = cache.cmes.reduce(
     (fastest: Cme | null, cme: Cme) =>

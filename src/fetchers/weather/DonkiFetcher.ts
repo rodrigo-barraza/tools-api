@@ -149,21 +149,23 @@ export async function fetchSolarFlares(): Promise<SolarFlare[]> {
     throw new Error(`DONKI FLR returned ${response.status}`);
   }
 
-  const data = await response.json() as RawSolarFlare[];
+  const data = (await response.json()) as RawSolarFlare[];
 
-  return data.map((flr): SolarFlare => ({
-    flrId: flr.flrID,
-    beginTime: flr.beginTime ? new Date(flr.beginTime) : null,
-    peakTime: flr.peakTime ? new Date(flr.peakTime) : null,
-    endTime: flr.endTime ? new Date(flr.endTime) : null,
-    classType: flr.classType,
-    sourceLocation: flr.sourceLocation,
-    activeRegionNum: flr.activeRegionNum,
-    instruments: flr.instruments?.map((i) => i.displayName) || [],
-    linkedEvents: flr.linkedEvents?.map((e) => e.activityID) || [],
-    note: flr.note || null,
-    link: flr.link,
-  }));
+  return data.map(
+    (flr): SolarFlare => ({
+      flrId: flr.flrID,
+      beginTime: flr.beginTime ? new Date(flr.beginTime) : null,
+      peakTime: flr.peakTime ? new Date(flr.peakTime) : null,
+      endTime: flr.endTime ? new Date(flr.endTime) : null,
+      classType: flr.classType,
+      sourceLocation: flr.sourceLocation,
+      activeRegionNum: flr.activeRegionNum,
+      instruments: flr.instruments?.map((i) => i.displayName) || [],
+      linkedEvents: flr.linkedEvents?.map((e) => e.activityID) || [],
+      note: flr.note || null,
+      link: flr.link,
+    }),
+  );
 }
 
 /**
@@ -179,7 +181,7 @@ export async function fetchCmes(): Promise<Cme[]> {
     throw new Error(`DONKI CME returned ${response.status}`);
   }
 
-  const data = await response.json() as RawCme[];
+  const data = (await response.json()) as RawCme[];
 
   return data.map((cme): Cme => {
     const analysis =
@@ -230,26 +232,34 @@ export async function fetchGeomagneticStorms(): Promise<GeomagneticStorm[]> {
     throw new Error(`DONKI GST returned ${response.status}`);
   }
 
-  const data = await response.json() as RawGst[];
+  const data = (await response.json()) as RawGst[];
 
-  return data.map((gst): GeomagneticStorm => ({
-    gstId: gst.gstID,
-    startTime: gst.startTime ? new Date(gst.startTime) : null,
-    kpIndices:
-      gst.allKpIndex?.map((kp): GstKpIndex => ({
-        observedTime: new Date(kp.observedTime),
-        kpIndex: kp.kpIndex,
-        source: kp.source,
-      })) || [],
-    linkedEvents: gst.linkedEvents?.map((e) => e.activityID) || [],
-    link: gst.link,
-  }));
+  return data.map(
+    (gst): GeomagneticStorm => ({
+      gstId: gst.gstID,
+      startTime: gst.startTime ? new Date(gst.startTime) : null,
+      kpIndices:
+        gst.allKpIndex?.map(
+          (kp): GstKpIndex => ({
+            observedTime: new Date(kp.observedTime),
+            kpIndex: kp.kpIndex,
+            source: kp.source,
+          }),
+        ) || [],
+      linkedEvents: gst.linkedEvents?.map((e) => e.activityID) || [],
+      link: gst.link,
+    }),
+  );
 }
 
 /**
  * Fetch all DONKI data in parallel.
  */
-export async function fetchAllDonki(): Promise<{ flares: SolarFlare[]; cmes: Cme[]; storms: GeomagneticStorm[] }> {
+export async function fetchAllDonki(): Promise<{
+  flares: SolarFlare[];
+  cmes: Cme[];
+  storms: GeomagneticStorm[];
+}> {
   const [flares, cmes, storms] = await Promise.all([
     fetchSolarFlares(),
     fetchCmes(),

@@ -14,9 +14,24 @@
  *   - ISSN Position Stand on protein (Jäger et al. 2017)
  */
 
-export type ActivityLevelKey = "sedentary" | "light" | "moderate" | "active" | "very_active";
-export type GoalKey = "maintain" | "cut" | "aggressive_cut" | "lean_bulk" | "bulk";
-export type MacroSplitKey = "balanced" | "high_protein" | "keto" | "low_fat" | "zone";
+export type ActivityLevelKey =
+  | "sedentary"
+  | "light"
+  | "moderate"
+  | "active"
+  | "very_active";
+export type GoalKey =
+  | "maintain"
+  | "cut"
+  | "aggressive_cut"
+  | "lean_bulk"
+  | "bulk";
+export type MacroSplitKey =
+  | "balanced"
+  | "high_protein"
+  | "keto"
+  | "low_fat"
+  | "zone";
 
 export interface ActivityMultiplier {
   factor: number;
@@ -50,7 +65,10 @@ const ACTIVITY_MULTIPLIERS: Record<ActivityLevelKey, ActivityMultiplier> = {
 const GOAL_ADJUSTMENTS: Record<GoalKey, GoalAdjustment> = {
   maintain: { delta: 0, label: "Maintenance (isocaloric)" },
   cut: { delta: -500, label: "Fat loss (~0.45 kg/week deficit)" },
-  aggressive_cut: { delta: -750, label: "Aggressive cut (~0.68 kg/week deficit)" },
+  aggressive_cut: {
+    delta: -750,
+    label: "Aggressive cut (~0.68 kg/week deficit)",
+  },
   lean_bulk: { delta: 250, label: "Lean bulk (~0.23 kg/week surplus)" },
   bulk: { delta: 500, label: "Bulk (~0.45 kg/week surplus)" },
 };
@@ -58,16 +76,31 @@ const GOAL_ADJUSTMENTS: Record<GoalKey, GoalAdjustment> = {
 // ─── Macro Split Presets (% of total calories) ─────────────────
 
 const MACRO_PRESETS: Record<MacroSplitKey, MacroPreset> = {
-  balanced: { protein: 0.30, carbs: 0.40, fat: 0.30, label: "Balanced (30/40/30)" },
-  high_protein: { protein: 0.40, carbs: 0.30, fat: 0.30, label: "High Protein (40/30/30)" },
-  keto: { protein: 0.25, carbs: 0.05, fat: 0.70, label: "Ketogenic (25/5/70)" },
-  low_fat: { protein: 0.30, carbs: 0.50, fat: 0.20, label: "Low Fat (30/50/20)" },
-  zone: { protein: 0.30, carbs: 0.40, fat: 0.30, label: "Zone Diet (30/40/30)" },
+  balanced: {
+    protein: 0.3,
+    carbs: 0.4,
+    fat: 0.3,
+    label: "Balanced (30/40/30)",
+  },
+  high_protein: {
+    protein: 0.4,
+    carbs: 0.3,
+    fat: 0.3,
+    label: "High Protein (40/30/30)",
+  },
+  keto: { protein: 0.25, carbs: 0.05, fat: 0.7, label: "Ketogenic (25/5/70)" },
+  low_fat: { protein: 0.3, carbs: 0.5, fat: 0.2, label: "Low Fat (30/50/20)" },
+  zone: { protein: 0.3, carbs: 0.4, fat: 0.3, label: "Zone Diet (30/40/30)" },
 };
 
 // ─── Mifflin-St Jeor BMR ──────────────────────────────────────
 
-function calculateBMR(sex: string, weightKg: number, heightCm: number, ageYears: number): number {
+function calculateBMR(
+  sex: string,
+  weightKg: number,
+  heightCm: number,
+  ageYears: number,
+): number {
   // Mifflin-St Jeor (1990):
   //   Male:   10 × weight(kg) + 6.25 × height(cm) - 5 × age(y) + 5
   //   Female: 10 × weight(kg) + 6.25 × height(cm) - 5 × age(y) - 161
@@ -132,9 +165,15 @@ export function calculateCaloricNeeds({
   }
 
   const normalizedSex = sex.toLowerCase();
-  const normalizedActivity = (activityLevel || "moderate").toLowerCase().replace(/[\s-]+/g, "_") as ActivityLevelKey;
-  const normalizedGoal = (goal || "maintain").toLowerCase().replace(/[\s-]+/g, "_") as GoalKey;
-  const normalizedSplit = (macroSplit || "balanced").toLowerCase().replace(/[\s-]+/g, "_") as MacroSplitKey;
+  const normalizedActivity = (activityLevel || "moderate")
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_") as ActivityLevelKey;
+  const normalizedGoal = (goal || "maintain")
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_") as GoalKey;
+  const normalizedSplit = (macroSplit || "balanced")
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_") as MacroSplitKey;
 
   // ── Resolve activity multiplier ──────────────────────────────
   const activity = ACTIVITY_MULTIPLIERS[normalizedActivity];
@@ -236,7 +275,8 @@ export function calculateCaloricNeeds({
       value: Number(bmi.toFixed(1)),
       category: bmiCategory,
     },
-    _note: "BMR via Mifflin-St Jeor equation. TDEE = BMR × PAL factor. Macro grams derived from caloric target using 4/4/9 kcal per gram for protein/carbs/fat respectively.",
+    _note:
+      "BMR via Mifflin-St Jeor equation. TDEE = BMR × PAL factor. Macro grams derived from caloric target using 4/4/9 kcal per gram for protein/carbs/fat respectively.",
   };
 }
 

@@ -175,7 +175,10 @@ export interface RankOptions {
 /**
  * Rank countries by a specific indicator (highest first by default).
  */
-export function rankCountriesByIndicator(indicator: string, opts: RankOptions = {}) {
+export function rankCountriesByIndicator(
+  indicator: string,
+  opts: RankOptions = {},
+) {
   ensureLoaded();
 
   const { limit = 10, order = "desc" } = opts;
@@ -183,11 +186,13 @@ export function rankCountriesByIndicator(indicator: string, opts: RankOptions = 
   if (!INDICATOR_META[indicator]) {
     return {
       error: `Unknown indicator: "${indicator}"`,
-      availableIndicators: Object.entries(INDICATOR_META).map(([key, meta]) => ({
-        key,
-        label: meta.label,
-        unit: meta.unit,
-      })),
+      availableIndicators: Object.entries(INDICATOR_META).map(
+        ([key, meta]) => ({
+          key,
+          label: meta.label,
+          unit: meta.unit,
+        }),
+      ),
     };
   }
 
@@ -220,17 +225,22 @@ export function rankCountriesByIndicator(indicator: string, opts: RankOptions = 
 /**
  * Compare indicators between multiple countries.
  */
-export function compareCountries(countryCodes: string[], indicator: string | null = null) {
+export function compareCountries(
+  countryCodes: string[],
+  indicator: string | null = null,
+) {
   ensureLoaded();
 
   if (indicator && !INDICATOR_META[indicator]) {
     return {
       error: `Unknown indicator: "${indicator}"`,
-      availableIndicators: Object.entries(INDICATOR_META).map(([key, meta]) => ({
-        key,
-        label: meta.label,
-        unit: meta.unit,
-      })),
+      availableIndicators: Object.entries(INDICATOR_META).map(
+        ([key, meta]) => ({
+          key,
+          label: meta.label,
+          unit: meta.unit,
+        }),
+      ),
     };
   }
 
@@ -280,7 +290,9 @@ export function getAvailableIndicators() {
   return {
     totalCountries: COUNTRY_DB.length,
     indicators: Object.entries(INDICATOR_META).map(([key, meta]) => {
-      const nonNull = COUNTRY_DB.filter((country) => country[key] !== null).length;
+      const nonNull = COUNTRY_DB.filter(
+        (country) => country[key] !== null,
+      ).length;
       return {
         key,
         label: meta.label,

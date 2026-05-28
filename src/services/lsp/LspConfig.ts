@@ -97,7 +97,9 @@ export const LSP_SERVER_CONFIGS: Record<string, LspServerConfig> = {
 /**
  * Get all configured LSP servers, optionally scoped to a workspace folder.
  */
-export function getLspServerConfigs(workspaceFolder?: string): Record<string, LspServerConfig> {
+export function getLspServerConfigs(
+  workspaceFolder?: string,
+): Record<string, LspServerConfig> {
   const configs: Record<string, LspServerConfig> = {};
 
   for (const [name, config] of Object.entries(LSP_SERVER_CONFIGS)) {

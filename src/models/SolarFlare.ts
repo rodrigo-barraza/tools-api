@@ -51,7 +51,10 @@ export async function upsertSolarFlares(flares: SolarFlareDocument[]) {
   }
 }
 
-export async function getRecentSolarFlares(days: number = 7, limit: number = 50) {
+export async function getRecentSolarFlares(
+  days: number = 7,
+  limit: number = 50,
+) {
   if (!collection) return [];
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);

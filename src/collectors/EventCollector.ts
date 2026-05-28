@@ -33,11 +33,18 @@ interface SourcedEvent {
 
 // ─── Collector Factory ─────────────────────────────────────────────
 
-function createEventCollector<T>(collection: string, source: string, fetchFn: () => Promise<T[]>) {
+function createEventCollector<T>(
+  collection: string,
+  source: string,
+  fetchFn: () => Promise<T[]>,
+) {
   return async function () {
     try {
       const events = await fetchFn();
-      const result = await updateEvents(source, events as unknown as CachedEventParam);
+      const result = await updateEvents(
+        source,
+        events as unknown as CachedEventParam,
+      );
       await saveState(collection, events);
       logger.info(
         `[${collection}]  ${events.length} events | ${result?.upserted || 0} new, ${result?.modified || 0} updated`,
@@ -86,9 +93,13 @@ const collectGooglePlaces = createEventCollector(
 
 async function collectUniversities() {
   try {
-    const events = await fetchUniversityEvents() as SourcedEvent[];
-    const ubcEvents = events.filter((e) => e.source === EVENT_SOURCES.UBC) as CachedEventParam;
-    const sfuEvents = events.filter((e) => e.source === EVENT_SOURCES.SFU) as CachedEventParam;
+    const events = (await fetchUniversityEvents()) as SourcedEvent[];
+    const ubcEvents = events.filter(
+      (e) => e.source === EVENT_SOURCES.UBC,
+    ) as CachedEventParam;
+    const sfuEvents = events.filter(
+      (e) => e.source === EVENT_SOURCES.SFU,
+    ) as CachedEventParam;
 
     if (ubcEvents.length > 0) {
       const r = await updateEvents(EVENT_SOURCES.UBC, ubcEvents);
@@ -116,10 +127,16 @@ async function collectUniversities() {
 
 async function collectSports() {
   try {
-    const events = await fetchSportsEvents() as SourcedEvent[];
-    const nhl = events.filter((e) => e.source === EVENT_SOURCES.NHL) as CachedEventParam;
-    const caps = events.filter((e) => e.source === EVENT_SOURCES.WHITECAPS) as CachedEventParam;
-    const lions = events.filter((e) => e.source === EVENT_SOURCES.BC_LIONS) as CachedEventParam;
+    const events = (await fetchSportsEvents()) as SourcedEvent[];
+    const nhl = events.filter(
+      (e) => e.source === EVENT_SOURCES.NHL,
+    ) as CachedEventParam;
+    const caps = events.filter(
+      (e) => e.source === EVENT_SOURCES.WHITECAPS,
+    ) as CachedEventParam;
+    const lions = events.filter(
+      (e) => e.source === EVENT_SOURCES.BC_LIONS,
+    ) as CachedEventParam;
 
     if (nhl.length > 0) {
       const r = await updateEvents(EVENT_SOURCES.NHL, nhl);
@@ -206,8 +223,10 @@ const STARTUP_TASKS = [
     ttl: SPORTS_INTERVAL_MS,
     collectFn: collectSports,
     restoreFn: (data: Record<string, unknown>) => {
-      if ((data.nhl as CachedEventParam)?.length) restoreEvents(EVENT_SOURCES.NHL, data.nhl as CachedEventParam);
-      if ((data.caps as CachedEventParam)?.length) restoreEvents(EVENT_SOURCES.WHITECAPS, data.caps as CachedEventParam);
+      if ((data.nhl as CachedEventParam)?.length)
+        restoreEvents(EVENT_SOURCES.NHL, data.nhl as CachedEventParam);
+      if ((data.caps as CachedEventParam)?.length)
+        restoreEvents(EVENT_SOURCES.WHITECAPS, data.caps as CachedEventParam);
       if ((data.lions as CachedEventParam)?.length)
         restoreEvents(EVENT_SOURCES.BC_LIONS, data.lions as CachedEventParam);
     },
@@ -237,7 +256,9 @@ export function startEventCollectors() {
   // Set default restoreFn for simple event tasks (those with a source key)
   const tasks = STARTUP_TASKS.map((task) => ({
     ...task,
-    restoreFn: task.restoreFn || ((data: CachedEventParam) => restoreEvents(task.source!, data)),
+    restoreFn:
+      task.restoreFn ||
+      ((data: CachedEventParam) => restoreEvents(task.source!, data)),
   }));
 
   startCollectorLoop(tasks);

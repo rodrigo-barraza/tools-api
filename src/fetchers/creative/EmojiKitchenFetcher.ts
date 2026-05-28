@@ -1,4 +1,5 @@
-const METADATA_URL = "https://raw.githubusercontent.com/xsalazar/emoji-kitchen-backend/main/app/metadata.json";
+const METADATA_URL =
+  "https://raw.githubusercontent.com/xsalazar/emoji-kitchen-backend/main/app/metadata.json";
 
 export interface EmojiCombination {
   gStaticUrl: string;
@@ -32,9 +33,11 @@ export async function fetchEmojiKitchenMetadata(): Promise<EmojiKitchenMetadata>
   const response = await fetch(METADATA_URL);
 
   if (!response.ok) {
-    throw new Error(`Emoji Kitchen Metadata API returned ${response.status}: ${response.statusText}`);
+    throw new Error(
+      `Emoji Kitchen Metadata API returned ${response.status}: ${response.statusText}`,
+    );
   }
 
-  const data = await response.json() as EmojiKitchenMetadata;
+  const data = (await response.json()) as EmojiKitchenMetadata;
   return data;
 }

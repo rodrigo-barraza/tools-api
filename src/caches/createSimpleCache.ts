@@ -39,11 +39,12 @@ export function createSimpleCache<T = unknown>({
   type = "object",
   itemsKey = "items",
 }: SimpleCacheOptions = {}): SimpleCache<T> {
-  const cache: { data: T; lastFetch: string | null; error: CacheError | null } = {
-    data: (type === "array" ? [] : null) as T,
-    lastFetch: null,
-    error: null,
-  };
+  const cache: { data: T; lastFetch: string | null; error: CacheError | null } =
+    {
+      data: (type === "array" ? [] : null) as T,
+      lastFetch: null,
+      error: null,
+    };
 
   /** Replace cached data and reset error state. */
   function update(data: T): void {
@@ -68,7 +69,10 @@ export function createSimpleCache<T = unknown>({
       };
     }
     if (!cache.data) return { status: "no_data", lastFetch: null };
-    return { ...(cache.data as Record<string, unknown>), lastFetch: cache.lastFetch };
+    return {
+      ...(cache.data as Record<string, unknown>),
+      lastFetch: cache.lastFetch,
+    };
   }
 
   /** Get health/status info for admin endpoints. */

@@ -23,7 +23,10 @@ interface StateDocument extends Document {
  * Save the latest collector state to a dedicated collection.
  * Objects are spread at the top level. Arrays are stored under `items`.
  */
-export async function saveState(collectionName: string, data: unknown[] | Record<string, unknown>) {
+export async function saveState(
+  collectionName: string,
+  data: unknown[] | Record<string, unknown>,
+) {
   try {
     const database = getDB();
     const document: StateDocument = Array.isArray(data)

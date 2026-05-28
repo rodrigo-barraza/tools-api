@@ -44,19 +44,22 @@ function ensureLoaded(): void {
   const dataDir = join(__dirname, "data");
   let files: string[] = [];
   try {
-    files = readdirSync(dataDir).filter((fileName: string) => fileName.startsWith("digest_exercises") && fileName.endsWith(".csv"));
+    files = readdirSync(dataDir).filter(
+      (fileName: string) =>
+        fileName.startsWith("digest_exercises") && fileName.endsWith(".csv"),
+    );
   } catch (error) {
     logger.error(`Error reading exercises directory: ${errorMessage(error)}`);
     return;
   }
-  
+
   let totalCount = 0;
 
   for (const file of files) {
     const dataPath = join(dataDir, file);
     const rawData = readFileSync(dataPath, "utf-8");
     const lines = rawData.split("\n").filter((line: string) => line.trim());
-    
+
     if (lines.length === 0) continue;
     const headers = parseCSVLine(lines[0]);
 
@@ -78,15 +81,20 @@ function ensureLoaded(): void {
         mechanic: "",
         primary_muscles: [],
         secondary_muscles: [],
-        _source: source
+        _source: source,
       };
 
       headers.forEach((header: string, index: number) => {
         const value = values[index] || "";
         if (header === "category" || header === "equipment") {
           row[header] = value.toLowerCase();
-        } else if (header === "primary_muscles" || header === "secondary_muscles") {
-          row[header] = value ? value.split("|").map((muscle: string) => muscle.toLowerCase()) : [];
+        } else if (
+          header === "primary_muscles" ||
+          header === "secondary_muscles"
+        ) {
+          row[header] = value
+            ? value.split("|").map((muscle: string) => muscle.toLowerCase())
+            : [];
         } else {
           row[header] = value;
         }
@@ -97,7 +105,9 @@ function ensureLoaded(): void {
     }
   }
 
-  logger.info(`🏋️ Exercises DB loaded: ${totalCount} exercises from ${files.length} sources`);
+  logger.info(
+    `🏋️ Exercises DB loaded: ${totalCount} exercises from ${files.length} sources`,
+  );
 }
 
 function normalizeSearch(searchText: string): string {
@@ -125,7 +135,10 @@ export interface SearchExercisesResult {
   exercises: Exercise[];
 }
 
-export function searchExercises(query: string | null | undefined, opts: SearchExercisesOptions = {}): SearchExercisesResult {
+export function searchExercises(
+  query: string | null | undefined,
+  opts: SearchExercisesOptions = {},
+): SearchExercisesResult {
   ensureLoaded();
 
   const {
@@ -142,30 +155,51 @@ export function searchExercises(query: string | null | undefined, opts: SearchEx
 
   if (category) {
     const normalizedFilterValue = normalizeQuery(category);
-    candidates = candidates.filter((exercise: Exercise) => normalizeQuery(exercise.category) === normalizedFilterValue);
+    candidates = candidates.filter(
+      (exercise: Exercise) =>
+        normalizeQuery(exercise.category) === normalizedFilterValue,
+    );
   }
   if (equipment) {
     const normalizedFilterValue = normalizeQuery(equipment);
-    candidates = candidates.filter((exercise: Exercise) => normalizeQuery(exercise.equipment) === normalizedFilterValue);
+    candidates = candidates.filter(
+      (exercise: Exercise) =>
+        normalizeQuery(exercise.equipment) === normalizedFilterValue,
+    );
   }
   if (force) {
     const normalizedFilterValue = normalizeQuery(force);
-    candidates = candidates.filter((exercise: Exercise) => normalizeQuery(exercise.force) === normalizedFilterValue);
+    candidates = candidates.filter(
+      (exercise: Exercise) =>
+        normalizeQuery(exercise.force) === normalizedFilterValue,
+    );
   }
   if (level) {
     const normalizedFilterValue = normalizeQuery(level);
-    candidates = candidates.filter((exercise: Exercise) => normalizeQuery(exercise.level) === normalizedFilterValue);
+    candidates = candidates.filter(
+      (exercise: Exercise) =>
+        normalizeQuery(exercise.level) === normalizedFilterValue,
+    );
   }
   if (mechanic) {
     const normalizedFilterValue = normalizeQuery(mechanic);
-    candidates = candidates.filter((exercise: Exercise) => normalizeQuery(exercise.mechanic) === normalizedFilterValue);
+    candidates = candidates.filter(
+      (exercise: Exercise) =>
+        normalizeQuery(exercise.mechanic) === normalizedFilterValue,
+    );
   }
   if (muscle) {
     const normalizedFilterValue = normalizeQuery(muscle);
     candidates = candidates.filter(
       (exercise: Exercise) =>
-        exercise.primary_muscles.some((muscleValue: string) => normalizeQuery(muscleValue) === normalizedFilterValue) ||
-        exercise.secondary_muscles.some((muscleValue: string) => normalizeQuery(muscleValue) === normalizedFilterValue)
+        exercise.primary_muscles.some(
+          (muscleValue: string) =>
+            normalizeQuery(muscleValue) === normalizedFilterValue,
+        ) ||
+        exercise.secondary_muscles.some(
+          (muscleValue: string) =>
+            normalizeQuery(muscleValue) === normalizedFilterValue,
+        ),
     );
   }
 
@@ -175,7 +209,9 @@ export function searchExercises(query: string | null | undefined, opts: SearchEx
       const parts = term.split(/\s+/).filter(Boolean);
       const name = normalizeSearch(exercise.name);
       const id = normalizeSearch(exercise.id);
-      return parts.every((part: string) => name.includes(part) || id.includes(part));
+      return parts.every(
+        (part: string) => name.includes(part) || id.includes(part),
+      );
     });
   }
 
@@ -190,7 +226,9 @@ export function searchExercises(query: string | null | undefined, opts: SearchEx
 export function getExerciseById(id: string): Exercise | null {
   ensureLoaded();
   const normalized = normalizeQuery(id);
-  const foundExercise = EXERCISE_DB.find((exercise: Exercise) => normalizeQuery(exercise.id) === normalized);
+  const foundExercise = EXERCISE_DB.find(
+    (exercise: Exercise) => normalizeQuery(exercise.id) === normalized,
+  );
   return foundExercise || null;
 }
 
@@ -203,10 +241,27 @@ export interface ExerciseCategoriesResult {
 
 export function getExerciseCategories(): ExerciseCategoriesResult {
   ensureLoaded();
-  const categories = [...new Set(EXERCISE_DB.map((exercise: Exercise) => exercise.category).filter(Boolean))];
-  const equipment = [...new Set(EXERCISE_DB.map((exercise: Exercise) => exercise.equipment).filter(Boolean))];
+  const categories = [
+    ...new Set(
+      EXERCISE_DB.map((exercise: Exercise) => exercise.category).filter(
+        Boolean,
+      ),
+    ),
+  ];
+  const equipment = [
+    ...new Set(
+      EXERCISE_DB.map((exercise: Exercise) => exercise.equipment).filter(
+        Boolean,
+      ),
+    ),
+  ];
   const muscles = [
-    ...new Set(EXERCISE_DB.flatMap((exercise: Exercise) => [...exercise.primary_muscles, ...exercise.secondary_muscles]).filter(Boolean)),
+    ...new Set(
+      EXERCISE_DB.flatMap((exercise: Exercise) => [
+        ...exercise.primary_muscles,
+        ...exercise.secondary_muscles,
+      ]).filter(Boolean),
+    ),
   ];
 
   return {
@@ -216,4 +271,3 @@ export function getExerciseCategories(): ExerciseCategoriesResult {
     muscles: muscles.sort(),
   };
 }
-
