@@ -22,6 +22,7 @@ import { MAX_CODE_LENGTH, MAX_COMMAND_LENGTH } from "../constants.ts";
 import crypto from "node:crypto";
 import { EphemeralStore, buildLocalUrl, buildEmbedHtml, errorMessage } from "../utilities.ts";
 import { processImage, convertToAscii } from "../services/ImageService.ts";
+import { convertVideoToGif } from "../services/VideoService.ts";
 // ─── Lazy-loaded dependencies ──────────────────────────────────────
 // These are loaded on first use to avoid blocking startup.
 interface ConvertUnitsInstance {
@@ -1826,6 +1827,34 @@ router.get("/image/render", (req: Request, res: Response) => {
   res.setHeader("Cache-Control", "public, max-age=3600");
   res.send(entry.buffer);
 });
+// ─── Video to GIF Conversion ─────────────────────────────────
+router.post("/video/gif", asyncHandler(async (req: Request, res: Response) => {
+  const { input, quality, width, fps } = req.body;
+  if (!input) {
+    return res.status(400).json({ error: "'input' is required (URL or local path)" });
+  }
+  try {
+    const conversionResult = await convertVideoToGif({
+      input,
+      quality,
+      width: width ? parseInt(width, 10) : undefined,
+      fps: fps ? parseInt(fps, 10) : undefined,
+    });
+    const uniqueImageId = imageStore.set({
+      buffer: conversionResult.buffer,
+      mimeType: conversionResult.mimeType,
+    });
+    const gifUrl = buildLocalUrl("compute/image/render", { id: uniqueImageId });
+    res.json({
+      success: true,
+      imageUrl: gifUrl,
+      imageId: uniqueImageId,
+      mimeType: conversionResult.mimeType,
+    });
+  } catch (error: unknown) {
+    res.status(400).json({ error: `Video to GIF conversion failed: ${errorMessage(error)}` });
+  }
+}));
 // ─── Image to ASCII Art ─────────────────────────────────────
 interface AsciiStoreEntry {
   ascii: string;

@@ -4809,6 +4809,49 @@ const TOOL_DEFINITIONS: any[] = [
     },
   },
 
+  // ── Video to GIF Conversion ────────────────────────────────
+  {
+    name: "convert_video_to_gif",
+    dataSource: compute("ffmpeg"),
+    description:
+      "Convert a video (MP4, WebM, MOV, etc.) into an animated GIF using an optimized two-pass palette mapping pipeline. " +
+      "Supports high-quality conversion (custom 256-color palette generated dynamically from video) and low-file-size conversion " +
+      "(128 colors, reduced frame rate, no dithering). Accepts public URLs or local workspace video paths. " +
+      "Returns an imageUrl — render it with ![GIF](imageUrl) markdown syntax so the user sees the GIF inline.",
+    endpoint: {
+      method: "POST",
+      path: "/compute/video/gif",
+      bodyParams: ["input", "quality", "width", "fps"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        input: {
+          type: "string",
+          description:
+            "The source video input: a public HTTP/HTTPS URL, file:// URL, or a local workspace absolute path (e.g. /home/rodrigo/development/...)",
+        },
+        quality: {
+          type: "string",
+          enum: ["high", "low"],
+          description:
+            "Conversion quality preset. 'high' uses 256 colors and sierra2_4a dithering. 'low' uses 128 colors and no dithering to drastically reduce file size. Default: 'high'.",
+        },
+        width: {
+          type: "integer",
+          description:
+            "Target width in pixels. Aspect ratio is automatically preserved. Default: 480 for 'high', 320 for 'low'. Range: 64-1280.",
+        },
+        fps: {
+          type: "integer",
+          description:
+            "Target frame rate (frames per second). Default: 15 for 'high', 10 for 'low'. Range: 1-30.",
+        },
+      },
+      required: ["input"],
+    },
+  },
+
   // ── LOGO Turtle Graphics ───────────────────────────────────
   {
     name: "turtle_draw",
@@ -9669,6 +9712,7 @@ const TOOL_DOMAINS = {
   convert_color: "Compute",
   manipulate_image: "Compute",
   convert_image_to_ascii: "Compute",
+  convert_video_to_gif: "Compute",
   parse_cron_expression: "Compute",
   turtle_draw: "Compute",
   think: "Reasoning",
@@ -9971,6 +10015,7 @@ const TOOL_EMOJIS = {
   convert_color: "🎨",
   manipulate_image: "🖼️",
   convert_image_to_ascii: "🎨",
+  convert_video_to_gif: "🎬",
   parse_cron_expression: "⏰",
   turtle_draw: "🐢",
 
@@ -10388,6 +10433,7 @@ const TOOL_LABELS = {
   convert_color: ["data"],
   manipulate_image: ["data", "creative"],
   convert_image_to_ascii: ["data", "creative"],
+  convert_video_to_gif: ["data", "creative"],
   parse_cron_expression: ["coding", "automation", "data"],
   turtle_draw: ["coding", "creative", "data"],
   think: ["coding"],
