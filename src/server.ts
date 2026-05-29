@@ -28,6 +28,7 @@ import { setupSolarFlareCollection } from "./models/SolarFlare.ts";
 import { setupCmeCollection } from "./models/Cme.ts";
 import { setupGeomagneticStormCollection } from "./models/GeomagneticStorm.ts";
 import { setupWebcamCollection } from "./models/Webcam.ts";
+import { setupTurtleDrawingCollection } from "./models/TurtleDrawing.ts";
 
 import {
   connectLuposDB,
@@ -207,6 +208,7 @@ async function start() {
       setupCmeCollection(),
       setupGeomagneticStormCollection(),
       setupWebcamCollection(),
+      setupTurtleDrawingCollection(),
       setupToolCallsCollection(),
       setupRequestsCollection(),
       setupAgenticTaskCollection(),

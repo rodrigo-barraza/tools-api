@@ -29,6 +29,10 @@ import {
   buildEmbedHtml,
   errorMessage,
 } from "../utilities.ts";
+import {
+  saveTurtleDrawing,
+  getTurtleDrawing,
+} from "../models/TurtleDrawing.ts";
 import { processImage, convertToAscii } from "../services/ImageService.ts";
 import { convertVideoToGif } from "../services/VideoService.ts";
 // ─── Lazy-loaded dependencies ──────────────────────────────────────
@@ -1376,10 +1380,6 @@ router.get("/color/convert", (req: Request, res: Response) => {
   }
 });
 // ─── 15. LOGO Turtle Graphics ───────────────────────────────
-const turtleStore = new EphemeralStore<{
-  commands: unknown[];
-  options: Record<string, unknown>;
-}>();
 const VALID_TURTLE_COMMANDS = new Set([
   "forward",
   "fd",
@@ -1772,7 +1772,7 @@ function cleanupTurtleSessions() {
       turtleSessions.delete(id);
   }
 }
-router.post("/turtle", (req: Request, res: Response) => {
+router.post("/turtle", asyncHandler(async (req: Request, res: Response) => {
   const { commands, options, sessionId } = req.body;
   if (!commands || !Array.isArray(commands) || commands.length === 0) {
     return res.status(400).json({
@@ -1795,6 +1795,7 @@ router.post("/turtle", (req: Request, res: Response) => {
       });
     }
   }
+  const callerUsername = (req.headers["x-username"] as string) || null;
   // ── Session mode: append to existing drawing ──
   if (sessionId && turtleSessions.has(sessionId)) {
     const session = turtleSessions.get(sessionId);
@@ -1822,11 +1823,9 @@ router.post("/turtle", (req: Request, res: Response) => {
     }
     session.commands.push(...commands);
     session.updatedAt = Date.now();
-    // Store full accumulated drawing for the embed
-    const embedId = turtleStore.set({
-      commands: session.commands,
-      options: session.options,
-    });
+    // Persist full accumulated drawing to MongoDB
+    const embedId = crypto.randomUUID().slice(0, 12);
+    await saveTurtleDrawing(embedId, session.commands, session.options, sessionId, callerUsername);
     const turtleEmbedUrl = buildLocalUrl("compute/turtle/embed", {
       id: embedId,
     });
@@ -1861,7 +1860,9 @@ router.post("/turtle", (req: Request, res: Response) => {
     updatedAt: Date.now(),
   });
   cleanupTurtleSessions();
-  const embedId = turtleStore.set({ commands, options: turtleOptions });
+  // Persist to MongoDB
+  const embedId = crypto.randomUUID().slice(0, 12);
+  await saveTurtleDrawing(embedId, commands, turtleOptions, newSessionId, callerUsername);
   const turtleEmbedUrl = buildLocalUrl("compute/turtle/embed", { id: embedId });
   res.json({
     turtleEmbedUrl,
@@ -1871,17 +1872,17 @@ router.post("/turtle", (req: Request, res: Response) => {
     totalCommands: commands.length,
     canvasSize: `${turtleOptions.canvasWidth}x${turtleOptions.canvasHeight}`,
   });
-});
-router.get("/turtle/embed", (req: Request, res: Response) => {
+}));
+router.get("/turtle/embed", asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.query as Record<string, string>;
   if (!id) return res.status(400).send("Missing 'id' parameter");
-  const entry = turtleStore.get(id);
+  const entry = await getTurtleDrawing(id);
   if (!entry) {
     return res.status(404).send("Turtle drawing not found or expired");
   }
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(buildTurtleEmbedHtml(entry.commands as string[], entry.options));
-});
+}));
 // ─── Agentic: Think (Echo Scratchpad) ───────────────────────
 // No-op tool — the LLM uses this to write private reasoning.
 // We simply acknowledge receipt; the thought is already captured
