@@ -29,6 +29,9 @@ import {
   agenticFetchUrl,
   agenticWebSearch,
 } from "../services/AgenticWebService.ts";
+import { readPdfUrl } from "../fetchers/web/PdfFetcher.ts";
+import { readDocxUrl } from "../fetchers/web/DocxFetcher.ts";
+import { readSpreadsheetUrl } from "../fetchers/web/SpreadsheetFetcher.ts";
 import {
   executeCommand,
   executeCommandStreaming,
@@ -363,6 +366,41 @@ router.post(
       return { error: "Request body must include 'url' (string)" };
     }
     return agenticFetchUrl(url, { selector });
+  }),
+);
+// ── Read PDF URL ──────────────────────────────────────────────
+router.post(
+  "/web/pdf-read",
+  agenticHandler(async (req: Request) => {
+    const { url, maxPages, maxChars } = req.body;
+    if (!url || typeof url !== "string") {
+      return { error: "Request body must include 'url' (string)" };
+    }
+    return readPdfUrl(url, { maxPages, maxChars });
+  }),
+);
+
+// ── Read DOCX URL ─────────────────────────────────────────────
+router.post(
+  "/web/docx-read",
+  agenticHandler(async (req: Request) => {
+    const { url, maxChars, outputFormat } = req.body;
+    if (!url || typeof url !== "string") {
+      return { error: "Request body must include 'url' (string)" };
+    }
+    return readDocxUrl(url, { maxChars, outputFormat });
+  }),
+);
+
+// ── Read Spreadsheet URL ──────────────────────────────────────
+router.post(
+  "/web/spreadsheet-read",
+  agenticHandler(async (req: Request) => {
+    const { url, maxRows, maxChars, sheet, includeHeaders, outputFormat } = req.body;
+    if (!url || typeof url !== "string") {
+      return { error: "Request body must include 'url' (string)" };
+    }
+    return readSpreadsheetUrl(url, { maxRows, maxChars, sheet, includeHeaders, outputFormat });
   }),
 );
 // ── Web Search ────────────────────────────────────────────────
@@ -773,6 +811,9 @@ export function getAgenticHealth() {
     grepSearch: "on-demand (sandboxed fs)",
     globFiles: "on-demand (sandboxed fs)",
     fetchUrl: "on-demand (cheerio HTML→markdown)",
+    readPdf: "on-demand (pdf-parse)",
+    readDocx: "on-demand (mammoth)",
+    readSpreadsheet: "on-demand (exceljs)",
     webSearch: "brave (primary) + google_cse (fallback)",
     multiFileRead: "on-demand (batched sandboxed fs)",
     fileInfo: "on-demand (sandboxed fs stat)",

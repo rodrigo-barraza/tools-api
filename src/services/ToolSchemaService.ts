@@ -6104,6 +6104,107 @@ const TOOL_DEFINITIONS: any[] = [
     },
   },
   {
+    name: "read_pdf",
+    dataSource: onDemand("pdf-parse"),
+    description:
+      "Download a PDF from a URL and extract its text content to allow reading PDFs for models that do not support PDF input modality natively. Supports optional maxPages and maxChars parameters to control download and extraction limits. Maximum output text length is 100,000 characters by default.",
+    endpoint: {
+      method: "POST",
+      path: "/agentic/web/pdf-read",
+      bodyParams: ["url", "maxPages", "maxChars"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        url: {
+          type: "string",
+          description: "The URL of the PDF to download and read (must be http or https).",
+        },
+        maxPages: {
+          type: "integer",
+          description: "Optional maximum number of pages to extract from the PDF.",
+        },
+        maxChars: {
+          type: "integer",
+          description: "Optional maximum characters of text to return (default: 100,000).",
+        },
+      },
+      required: ["url"],
+    },
+  },
+  {
+    name: "read_docx",
+    dataSource: onDemand("mammoth"),
+    description:
+      "Download a DOCX (Microsoft Word) file from a URL and extract its content as clean markdown or plain text. Useful for reading Word documents, reports, and formatted documents that agents cannot process natively. Supports markdown output (preserving headings, bold, italic, lists, tables) or plain text extraction. Maximum output: 100,000 characters.",
+    endpoint: {
+      method: "POST",
+      path: "/agentic/web/docx-read",
+      bodyParams: ["url", "maxChars", "outputFormat"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        url: {
+          type: "string",
+          description: "The URL of the DOCX file to download and read (must be http or https).",
+        },
+        maxChars: {
+          type: "integer",
+          description: "Optional maximum characters of text to return (default: 100,000).",
+        },
+        outputFormat: {
+          type: "string",
+          description: "Output format: 'markdown' (default, preserves formatting) or 'text' (plain text only).",
+          enum: ["markdown", "text"],
+        },
+      },
+      required: ["url"],
+    },
+  },
+  {
+    name: "read_spreadsheet",
+    dataSource: onDemand("exceljs"),
+    description:
+      "Download a spreadsheet file (Excel .xlsx/.xls or CSV/TSV) from a URL and extract its tabular data as structured JSON, markdown tables, or CSV text. Supports multi-sheet workbooks, header detection, row limiting, and sheet selection. Use this to read data files, reports, and tabular documents. Maximum 1,000 rows per sheet, 100,000 characters total output.",
+    endpoint: {
+      method: "POST",
+      path: "/agentic/web/spreadsheet-read",
+      bodyParams: ["url", "maxRows", "maxChars", "sheet", "includeHeaders", "outputFormat"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        url: {
+          type: "string",
+          description: "The URL of the spreadsheet file to download and read (must be http or https). Supports .xlsx, .xls, .csv, and .tsv formats.",
+        },
+        maxRows: {
+          type: "integer",
+          description: "Maximum number of data rows to extract per sheet (default: 1000).",
+        },
+        maxChars: {
+          type: "integer",
+          description: "Maximum characters of total output to return (default: 100,000).",
+        },
+        sheet: {
+          type: "string",
+          description: "Specific sheet to extract — by name (e.g. 'Sheet1') or 0-based index (e.g. '0'). If omitted, all sheets are extracted.",
+        },
+        includeHeaders: {
+          type: "boolean",
+          description: "If true (default), treat the first row as column headers and return data rows as objects keyed by header values. If false, return raw arrays.",
+        },
+        outputFormat: {
+          type: "string",
+          description: "Output format: 'json' (default, structured objects), 'markdown' (pipe-delimited tables), or 'csv' (raw CSV text).",
+          enum: ["json", "markdown", "csv"],
+        },
+      },
+      required: ["url"],
+    },
+  },
+  {
     name: "web_search",
     dataSource: onDemand("Brave Search / Google CSE"),
     description:
@@ -9798,6 +9899,9 @@ const TOOL_DOMAINS = {
 
   // Agentic — Web
   fetch_url: "Agentic: Web",
+  read_pdf: "Agentic: Web",
+  read_docx: "Agentic: Web",
+  read_spreadsheet: "Agentic: Web",
   web_search: "Agentic: Web",
 
   // Agentic — Command Execution
@@ -10098,6 +10202,9 @@ const TOOL_EMOJIS = {
 
   // Agentic — Web
   fetch_url: "🌐",
+  read_pdf: "📄",
+  read_docx: "📝",
+  read_spreadsheet: "📊",
   web_search: "🔍",
 
   // Agentic — Command Execution
@@ -10519,6 +10626,9 @@ const TOOL_LABELS = {
 
   // ── Agentic: Web ─────────────────────────────────────────
   fetch_url: ["coding", "web"],
+  read_pdf: ["coding", "web"],
+  read_docx: ["coding", "web"],
+  read_spreadsheet: ["coding", "web", "data"],
   web_search: ["coding", "web"],
 
   // ── Agentic: Command Execution ───────────────────────────
@@ -10687,6 +10797,9 @@ const TOOL_INTELLIGENCE_TIERS: Record<string, ToolIntelligenceTier> = {
   convert_color: "medium",
   read_rss_feed: "medium",
   read_pdf_url: "medium",
+  read_pdf: "medium",
+  read_docx: "low",
+  read_spreadsheet: "medium",
   get_next_bus: "medium",
   get_transit_stop_info: "medium",
   get_transit_route_info: "medium",

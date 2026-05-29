@@ -17,6 +17,9 @@ import {
   agenticMoveFile,
 } from "./AgenticFileService.ts";
 import { agenticFetchUrl, agenticWebSearch } from "./AgenticWebService.ts";
+import { readPdfUrl } from "../fetchers/web/PdfFetcher.ts";
+import { readDocxUrl } from "../fetchers/web/DocxFetcher.ts";
+import { readSpreadsheetUrl } from "../fetchers/web/SpreadsheetFetcher.ts";
 import { executeCommand } from "./AgenticCommandService.ts";
 import { agenticProjectSummary } from "./AgenticProjectService.ts";
 import { agenticToolSearch } from "./AgenticToolSearchService.ts";
@@ -287,6 +290,27 @@ const TESTS = {
 
   fetch_url: () =>
     runTest("fetch_url", () => agenticFetchUrl("https://httpbin.org/get")),
+
+  read_pdf: () =>
+    runTest("read_pdf", () =>
+      readPdfUrl(
+        "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      ),
+    ),
+
+  read_docx: () =>
+    runTest("read_docx", () =>
+      readDocxUrl(
+        "https://calibre-ebook.com/downloads/demos/demo.docx",
+      ),
+    ),
+
+  read_spreadsheet: () =>
+    runTest("read_spreadsheet", () =>
+      readSpreadsheetUrl(
+        "https://raw.githubusercontent.com/datasets/country-list/master/data.csv",
+      ),
+    ),
 
   web_search: () =>
     runTest("web_search", () => agenticWebSearch("test", { limit: 1 })),
