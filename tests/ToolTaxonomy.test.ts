@@ -13,7 +13,7 @@ import {
   TOOL_DOMAINS,
   TOOL_LABELS,
 } from "../src/services/ToolSchemaService.ts";
-import { LABELS, DOMAINS } from "../src/services/ToolTaxonomyConstants.ts";
+import { LABELS, DOMAINS } from "@rodrigo-barraza/utilities-library/taxonomy";
 
 // ── Helpers ──────────────────────────────────────────────────
 

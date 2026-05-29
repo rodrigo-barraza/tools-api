@@ -66,56 +66,6 @@ const ALLOWED_COMMANDS = new Set([
   "lsof",
 ]);
 
-// Git subcommands that are allowed (read-only + common safe operations)
-const ALLOWED_GIT_SUBCOMMANDS = new Set([
-  "status",
-  "diff",
-  "log",
-  "show",
-  "branch",
-  "tag",
-  "stash",
-  "remote",
-  "describe",
-  "shortlog",
-  "rev-parse",
-  "ls-files",
-  "ls-tree",
-  "blame",
-  "config",
-  "reflog",
-  // Allow add/commit/checkout but these need approval
-  "add",
-  "commit",
-  "checkout",
-  "switch",
-  "restore",
-  "merge",
-  "rebase",
-  "cherry-pick",
-  "reset",
-  "push",
-  "pull",
-  "fetch",
-]);
-
-// Patterns that indicate abuse attempts.
-const BLOCKED_PATTERNS = [
-  /`/, // backtick command substitution
-  /\$\(/, // $() command substitution
-  /\.\.\//, // path traversal
-  /\/dev\//, // device access
-  /\/proc\//, // proc access
-  /\/sys\//, // sys access
-  /\/etc\//, // config access
-  />\s*\//, // redirect to absolute path
-  />\s*~/, // redirect to home
-  /rm\s+-rf/i, // destructive rm
-  /\|\s*(bash|sh|zsh|dash)\b/, // piping into a shell
-  /eval\s+/, // eval calls
-  /source\s+/, // sourcing arbitrary scripts
-];
-
 // ────────────────────────────────────────────────────────────
 // Validation
 // ────────────────────────────────────────────────────────────

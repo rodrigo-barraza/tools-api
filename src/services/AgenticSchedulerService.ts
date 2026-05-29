@@ -1,23 +1,7 @@
 // ─── Cron + Remote Trigger System ───────────────────────────
 
-import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
-
-// ────────────────────────────────────────────────────────────
-// Constants
-// ────────────────────────────────────────────────────────────
-
-const COLLECTION = "agent_schedules";
-const COUNTER_COLLECTION = "agent_schedule_counters";
-
-import {
-  SCHEDULER_MAX_PER_PROJECT as MAX_SCHEDULES_PER_PROJECT,
-  SCHEDULER_POLLER_INTERVAL_MS as POLLER_INTERVAL_MS,
-} from "../constants.ts";
-import { errorMessage } from "../utilities.ts";
-
-const VALID_TYPES = ["cron", "once", "trigger"];
 
 // ────────────────────────────────────────────────────────────
 // Collection Setup — No-op since we proxy to prism-service
