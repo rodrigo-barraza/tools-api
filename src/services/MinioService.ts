@@ -1,6 +1,8 @@
 // ─── MinIO Storage Service ──────────────────────────────────
 
 import { Client } from "minio";
+import fs from "node:fs/promises";
+import path from "node:path";
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
 
@@ -28,12 +30,101 @@ export default class MinioService {
   }
 
   static async statObject(bucketName: string, objectName: string) {
-    const client = MinioService._getClient();
-    return client.statObject(bucketName, objectName);
+    const minioClient = MinioService._getClient();
+    return minioClient.statObject(bucketName, objectName);
   }
 
   static async getObject(bucketName: string, objectName: string) {
-    const client = MinioService._getClient();
-    return client.getObject(bucketName, objectName);
+    const minioClient = MinioService._getClient();
+    return minioClient.getObject(bucketName, objectName);
+  }
+
+  static async seedWorkspaceAgent(): Promise<void> {
+    if (!CONFIG.MINIO_ENDPOINT) {
+      logger.warn(
+        "[MinioService] MinIO not configured; skipping workspace agent seed.",
+      );
+      return;
+    }
+    try {
+      const minioClient = MinioService._getClient();
+      const bucketName = "artifacts";
+      const objectName = "workspace-service/workspace-agent.mjs";
+
+      const bucketExists = await minioClient
+        .bucketExists(bucketName)
+        .catch(() => false);
+      if (!bucketExists) {
+        await minioClient.makeBucket(bucketName);
+        logger.info(`[MinioService] Created bucket: ${bucketName}`);
+      }
+
+      const publicPolicy = JSON.stringify({
+        Version: "2012-10-17",
+        Statement: [
+          {
+            Effect: "Allow",
+            Principal: { AWS: ["*"] },
+            Action: ["s3:GetObject"],
+            Resource: [`arn:aws:s3:::${bucketName}/*`],
+          },
+        ],
+      });
+      await minioClient
+        .setBucketPolicy(bucketName, publicPolicy)
+        .catch((error: Error) => {
+          logger.warn(
+            `[MinioService] Failed to set bucket policy: ${error.message}`,
+          );
+        });
+
+      const potentialPaths = [
+        path.resolve(
+          process.cwd(),
+          "../workspace-service/standalone/workspace-agent.mjs",
+        ),
+        path.resolve(
+          process.cwd(),
+          "workspace-service/standalone/workspace-agent.mjs",
+        ),
+        "/home/rodrigo/development/workspace-service/standalone/workspace-agent.mjs",
+      ];
+
+      let localFilePath = "";
+      for (const resolvedPath of potentialPaths) {
+        try {
+          await fs.access(resolvedPath);
+          localFilePath = resolvedPath;
+          break;
+        } catch {
+          // Continue trying next path
+        }
+      }
+
+      if (!localFilePath) {
+        logger.error(
+          `[MinioService] Could not locate local workspace-agent.mjs in potential paths: ${potentialPaths.join(", ")}`,
+        );
+        return;
+      }
+
+      logger.info(
+        `[MinioService] Seeding workspace agent from local file: ${localFilePath}`,
+      );
+
+      await minioClient.fPutObject(bucketName, objectName, localFilePath, {
+        "Content-Type": "application/javascript",
+      });
+
+      logger.success(
+        `[MinioService] Successfully seeded workspace-agent.mjs into MinIO bucket '${bucketName}'`,
+      );
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(
+        `[MinioService] Failed to seed workspace agent: ${errorMessage}`,
+      );
+    }
   }
 }

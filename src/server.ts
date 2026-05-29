@@ -70,6 +70,7 @@ import discordRoutes, { getDiscordHealth } from "./routes/DiscordRoutes.ts";
 import lightsRoutes, { getLightsHealth } from "./routes/LightsRoutes.ts";
 import adminRoutes, { loadUserWorkspaceRoots } from "./routes/AdminRoutes.ts";
 import agentStatusRoutes from "./routes/AgentRoutes.ts";
+import MinioService from "./services/MinioService.ts";
 import { mountMcpRoutes } from "./services/McpAdapter.ts";
 import { initAgentWebSocket } from "./services/AgentConnectionManager.ts";
 
@@ -221,6 +222,9 @@ async function start() {
 
     // Load user-configured workspace roots from MongoDB
     await loadUserWorkspaceRoots();
+
+    // Automatically seed the standalone workspace-agent.mjs file to MinIO
+    await MinioService.seedWorkspaceAgent();
   } catch (error: unknown) {
     logger.error(`Failed to connect to MongoDB: ${errorMessage(error)}`);
     process.exit(1);
