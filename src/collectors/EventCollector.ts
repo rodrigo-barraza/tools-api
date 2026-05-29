@@ -19,6 +19,7 @@ import { fetchMovieEvents } from "../fetchers/event/MovieFetcher.ts";
 import { fetchGooglePlacesEvents } from "../fetchers/event/GooglePlacesFetcher.ts";
 import { updateEvents, setError, restoreEvents } from "../caches/EventCache.ts";
 import { saveState, startCollectorLoop } from "../services/FreshnessService.ts";
+import { disableToolRuntime } from "../services/ToolSchemaService.ts";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
 
@@ -81,7 +82,30 @@ const collectCityOfVancouver = createEventCollector(
 const collectMovies = createEventCollector(
   "events_tmdb",
   EVENT_SOURCES.TMDB,
-  fetchMovieEvents,
+  async () => {
+    try {
+      return await fetchMovieEvents();
+    } catch (error: unknown) {
+      const message = errorMessage(error);
+      if (message.includes("410")) {
+        const tmdbToolNames = [
+          "search_media",
+          "get_media_details",
+          "get_media_credits",
+          "get_trending_media",
+          "discover_media",
+          "get_media_genres",
+        ];
+        for (const toolName of tmdbToolNames) {
+          disableToolRuntime(
+            toolName,
+            "TMDb API returned 410 Gone (API deprecated)",
+          );
+        }
+      }
+      throw error;
+    }
+  },
 );
 const collectGooglePlaces = createEventCollector(
   "events_google_places",

@@ -31,6 +31,7 @@ import {
   setAvailabilityError,
 } from "../caches/BestBuyCAAvailabilityCache.ts";
 import { saveState, startCollectorLoop } from "../services/FreshnessService.ts";
+import { disableToolRuntime } from "../services/ToolSchemaService.ts";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
 
@@ -88,12 +89,30 @@ const collectEtsy = createProductCollector(
 const collectCostcoUS = createProductCollector(
   "products_costco_us",
   PRODUCT_SOURCES.COSTCO_US,
-  fetchAllCostcoUS,
+  async () => {
+    const products = await fetchAllCostcoUS();
+    if (products.length === 0) {
+      disableToolRuntime(
+        "get_costco_us_products",
+        "All Costco US categories blocked (bot detection / 403)",
+      );
+    }
+    return products;
+  },
 );
 const collectCostcoCA = createProductCollector(
   "products_costco_ca",
   PRODUCT_SOURCES.COSTCO_CA,
-  fetchAllCostcoCA,
+  async () => {
+    const products = await fetchAllCostcoCA();
+    if (products.length === 0) {
+      disableToolRuntime(
+        "get_costco_ca_products",
+        "All Costco CA categories blocked (bot detection / 403)",
+      );
+    }
+    return products;
+  },
 );
 
 // BestBuy CA Availability

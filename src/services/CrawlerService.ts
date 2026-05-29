@@ -137,11 +137,16 @@ export async function crawlSingleStatic(
     useSessionPool: true,
     persistCookiesPerSession: true,
 
-    additionalHttpHeaders: {
-      "User-Agent": USER_AGENT,
-      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-      "Accept-Language": "en-US,en;q=0.9",
-    },
+    preNavigationHooks: [
+      async (_crawlingContext: CheerioCrawlingContext, gotOptions: any) => {
+        gotOptions.headers = {
+          ...gotOptions.headers,
+          "User-Agent": USER_AGENT,
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.9",
+        };
+      },
+    ],
 
     async requestHandler(ctx: CheerioCrawlingContext) {
       logger.info(`[Crawler] Processing (static): ${ctx.request.url}`);

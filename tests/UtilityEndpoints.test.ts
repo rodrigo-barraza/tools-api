@@ -114,3 +114,11 @@ describe("GET /utility/places/search (validation)", () => {
     expect(res.body.error).toBeTruthy();
   });
 });
+
+describe("GET /utility/scrape/metadata (validation)", () => {
+  it("returns 400 when url is missing", async () => {
+    const res = await request(app).get("/utility/scrape/metadata");
+    expect(res.status).toBe(400);
+  });
+});
+

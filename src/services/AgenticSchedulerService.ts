@@ -131,7 +131,7 @@ export async function agenticScheduleCreate(data: Record<string, unknown>) {
     return {
       success: true,
       schedule: created,
-      message: `Scheduled Task '${name}' created successfully in Prism.`,
+      message: `Cron Job '${name}' created successfully in Prism.`,
     };
   } catch (error: any) {
     return { error: `Failed to reach Prism Service: ${error.message}` };
@@ -217,7 +217,7 @@ export async function agenticScheduleDelete(
     return {
       deleted: deleted.success,
       scheduleId,
-      message: `Scheduled Task '${scheduleId}' deleted successfully.`,
+      message: `Cron Job '${scheduleId}' deleted successfully.`,
     };
   } catch (error: any) {
     return { error: `Failed to reach Prism Service: ${error.message}` };
@@ -266,7 +266,7 @@ export async function agenticTriggerFire(
     return {
       fired: true,
       trigger: triggerName,
-      message: `Scheduled Task/Trigger '${triggerName}' fired successfully.`,
+      message: `Cron Job/Trigger '${triggerName}' fired successfully.`,
       result,
     };
   } catch (error: any) {

@@ -86,6 +86,7 @@ import {
   setAvalancheError,
 } from "../caches/AvalancheCache.ts";
 import { saveState, startCollectorLoop } from "../services/FreshnessService.ts";
+import { disableToolRuntime } from "../services/ToolSchemaService.ts";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
 
@@ -268,10 +269,21 @@ const collectGoogleAirQuality = makeCollector({
   collection: "google_air_quality",
   fetchFn: fetchGoogleAirQuality,
   updateFn: updateGoogleAirQuality,
-  setErrorFn: (e) =>
+  setErrorFn: (e) => {
     setGoogleAirQualityError(
       e instanceof Error ? e : new Error(errorMessage(e)),
-    ),
+    );
+    const message = errorMessage(e);
+    if (
+      message.includes("API_KEY_SERVICE_BLOCKED") ||
+      message.includes("PERMISSION_DENIED")
+    ) {
+      disableToolRuntime(
+        "get_detailed_air_quality",
+        "Google Air Quality API blocked (API_KEY_SERVICE_BLOCKED)",
+      );
+    }
+  },
   logFn: (d) =>
     `AQI: ${d.usEpaAqi ?? "?"} (${d.usEpaCategory ?? "?"}) | Dominant: ${d.usEpaDominantPollutant ?? "?"}`,
 });
@@ -281,8 +293,19 @@ const collectPollen = makeCollector({
   collection: "pollen",
   fetchFn: fetchPollen,
   updateFn: updatePollen,
-  setErrorFn: (e) =>
-    setPollenError(e instanceof Error ? e : new Error(errorMessage(e))),
+  setErrorFn: (e) => {
+    setPollenError(e instanceof Error ? e : new Error(errorMessage(e)));
+    const message = errorMessage(e);
+    if (
+      message.includes("API_KEY_SERVICE_BLOCKED") ||
+      message.includes("PERMISSION_DENIED")
+    ) {
+      disableToolRuntime(
+        "get_pollen_forecast",
+        "Google Pollen API blocked (API_KEY_SERVICE_BLOCKED)",
+      );
+    }
+  },
   logFn: (d) => {
     const today = d.daily?.[0];
     return `${d.daily?.length || 0}-day forecast | Grass: ${today?.grass?.indexInfo?.category ?? "?"} | Tree: ${today?.tree?.indexInfo?.category ?? "?"} | Weed: ${today?.weed?.indexInfo?.category ?? "?"}`;

@@ -1344,8 +1344,8 @@ router.post(
     });
   }),
 );
-// ─── 17. Scheduling (Cron + Remote Trigger) ─────────────────
-// ── Create Scheduled Task ─────────────────────────────────────
+// ─── 17. Cron Jobs (Persistent Scheduling + Remote Triggers) ─
+// ── Create Cron Job ───────────────────────────────────────────
 router.post(
   "/scheduled-task/create",
   agenticHandler(async (req: Request) => {
@@ -1391,7 +1391,7 @@ router.post(
   }),
 );
 
-// ── List Scheduled Tasks ──────────────────────────────────────
+// ── List Cron Jobs ────────────────────────────────────────────
 router.post(
   "/scheduled-task/list",
   agenticHandler(async (req: Request) => {
@@ -1403,7 +1403,7 @@ router.post(
   }),
 );
 
-// ── Delete Scheduled Task ──────────────────────────────────────
+// ── Delete Cron Job ───────────────────────────────────────────
 router.post(
   "/scheduled-task/delete",
   agenticHandler(async (req: Request) => {
@@ -1418,7 +1418,7 @@ router.post(
   }),
 );
 
-// ── Trigger Scheduled Task / Remote Trigger ───────────────────
+// ── Trigger Cron Job / Remote Trigger ─────────────────────────
 router.post(
   "/scheduled-task/trigger",
   agenticHandler(async (req: Request) => {

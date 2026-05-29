@@ -8928,15 +8928,15 @@ const TOOL_DEFINITIONS: any[] = [
     },
   },
 
-  // ── Scheduling ────────────────────────────────────────────
+  // ── Cron Jobs ──────────────────────────────────────────────
   {
-    name: "scheduled_task_create",
+    name: "cron_job_create",
     dataSource: onDemand("AgenticSchedulerService"),
     description:
-      "Create a scheduled background task or a manual/event-driven remote trigger. " +
-      "Schedules persist across sessions and execute unattended in the background. " +
+      "Create a persistent cron job or a manual/event-driven remote trigger. " +
+      "Cron jobs persist across sessions and execute unattended in the background. " +
       "Supports hourly, daily (at scheduleTime), weekly (on scheduleDay at scheduleTime), " +
-      "cron expression (via cronExpression), or trigger (fire manually/remotely using scheduled_task_trigger).",
+      "cron expression (via cronExpression), or trigger (fire manually/remotely using cron_job_trigger).",
     endpoint: {
       method: "POST",
       path: "/agentic/scheduled-task/create",
@@ -8960,7 +8960,7 @@ const TOOL_DEFINITIONS: any[] = [
         name: {
           type: "string",
           description:
-            "Human-readable name for this scheduled task (e.g. 'Daily Git Status check').",
+            "Human-readable name for this cron job (e.g. 'Daily Git Status check').",
         },
         prompt: {
           type: "string",
@@ -9016,10 +9016,10 @@ const TOOL_DEFINITIONS: any[] = [
     },
   },
   {
-    name: "scheduled_task_list",
+    name: "cron_job_list",
     dataSource: onDemand("AgenticSchedulerService"),
     description:
-      "List all scheduled tasks and background triggers currently configured in the workspace project.",
+      "List all cron jobs and background triggers currently configured in the workspace project.",
     endpoint: {
       method: "POST",
       path: "/agentic/scheduled-task/list",
@@ -9032,10 +9032,10 @@ const TOOL_DEFINITIONS: any[] = [
     },
   },
   {
-    name: "scheduled_task_delete",
+    name: "cron_job_delete",
     dataSource: onDemand("AgenticSchedulerService"),
     description:
-      "Delete an existing scheduled task or trigger by its UUID or unique name.",
+      "Delete an existing cron job or trigger by its UUID or unique name.",
     endpoint: {
       method: "POST",
       path: "/agentic/scheduled-task/delete",
@@ -9047,17 +9047,17 @@ const TOOL_DEFINITIONS: any[] = [
         scheduleId: {
           type: "string",
           description:
-            "The unique UUID or exact name of the scheduled task to delete.",
+            "The unique UUID or exact name of the cron job to delete.",
         },
       },
       required: ["scheduleId"],
     },
   },
   {
-    name: "scheduled_task_trigger",
+    name: "cron_job_trigger",
     dataSource: onDemand("AgenticSchedulerService"),
     description:
-      "Trigger a manual or remote-only task to run in the background immediately. " +
+      "Trigger a cron job or remote trigger to run in the background immediately. " +
       "Optionally pass context payload variables to be appended to the agent run prompt.",
     endpoint: {
       method: "POST",
@@ -9070,7 +9070,7 @@ const TOOL_DEFINITIONS: any[] = [
         triggerName: {
           type: "string",
           description:
-            "The unique UUID or exact name of the scheduled task or trigger to fire.",
+            "The unique UUID or exact name of the cron job or trigger to fire.",
         },
         payload: {
           type: "object",
@@ -9941,13 +9941,13 @@ const TOOL_DOMAINS = {
   // Agentic — Tool Discovery
   tool_search: "Agentic: Meta",
 
-  // Agentic — Scheduling
-  cron_create: "Agentic: Scheduling",
-  remote_trigger: "Agentic: Scheduling",
-  scheduled_task_create: "Agentic: Scheduling",
-  scheduled_task_list: "Agentic: Scheduling",
-  scheduled_task_delete: "Agentic: Scheduling",
-  scheduled_task_trigger: "Agentic: Scheduling",
+  // Cron Jobs
+  cron_create: "Cron Jobs",
+  remote_trigger: "Cron Jobs",
+  cron_job_create: "Cron Jobs",
+  cron_job_list: "Cron Jobs",
+  cron_job_delete: "Cron Jobs",
+  cron_job_trigger: "Cron Jobs",
 
   // Agentic — Notebook Editing
   notebook_edit: "Agentic: File Operations",
@@ -10244,13 +10244,13 @@ const TOOL_EMOJIS = {
   // Agentic — Meta
   tool_search: "🔍",
 
-  // Agentic — Scheduling
+  // Cron Jobs
   cron_create: "⏰",
   remote_trigger: "📡",
-  scheduled_task_create: "🗓️",
-  scheduled_task_list: "📋",
-  scheduled_task_delete: "🗑️",
-  scheduled_task_trigger: "🚀",
+  cron_job_create: "🗓️",
+  cron_job_list: "📋",
+  cron_job_delete: "🗑️",
+  cron_job_trigger: "🚀",
 
   // Communication (Twilio)
   send_sms: "💬",
@@ -10302,22 +10302,16 @@ const TOOL_EMOJIS = {
 // ────────────────────────────────────────────────────────────
 
 import CONFIG from "../config.ts";
+import logger from "../logger.ts";
 
 const TOOL_REQUIRED_KEYS = {
-  // Movies & TV (all require TMDb API key)
-  search_movies: ["TMDB_API_KEY"],
-  get_movie_details: ["TMDB_API_KEY"],
-  get_movie_credits: ["TMDB_API_KEY"],
-  get_trending_movies: ["TMDB_API_KEY"],
-  discover_movies: ["TMDB_API_KEY"],
-  get_movie_genres: ["TMDB_API_KEY"],
-  search_tv_shows: ["TMDB_API_KEY"],
-  get_tv_show_details: ["TMDB_API_KEY"],
-  get_tv_show_credits: ["TMDB_API_KEY"],
-  get_tv_season_details: ["TMDB_API_KEY"],
-  get_trending_tv_shows: ["TMDB_API_KEY"],
-  discover_tv_shows: ["TMDB_API_KEY"],
-  get_tv_genres: ["TMDB_API_KEY"],
+  // Movies & TV (all require TMDb API key — unified media tools)
+  search_media: ["TMDB_API_KEY"],
+  get_media_details: ["TMDB_API_KEY"],
+  get_media_credits: ["TMDB_API_KEY"],
+  get_trending_media: ["TMDB_API_KEY"],
+  discover_media: ["TMDB_API_KEY"],
+  get_media_genres: ["TMDB_API_KEY"],
 
   // Finance — Finnhub
   get_stock_quote: ["FINNHUB_API_KEY"],
@@ -10345,8 +10339,8 @@ const TOOL_REQUIRED_KEYS = {
   generate_map: ["GOOGLE_API_KEY"],
 
   // Weather (only specific Google-powered tools)
-  get_google_air_quality: ["GOOGLE_API_KEY"],
-  get_pollen: ["GOOGLE_API_KEY"],
+  get_detailed_air_quality: ["GOOGLE_API_KEY"],
+  get_pollen_forecast: ["GOOGLE_API_KEY"],
 
   // Maritime (all require AIS Stream API key)
   get_tracked_vessels: ["AIS_STREAM_API_KEY"],
@@ -10398,11 +10392,48 @@ const TOOL_REQUIRED_KEYS = {
   torrent_status: ["QBITTORRENT_URL"],
 };
 
+// ────────────────────────────────────────────────────────────
+// Runtime Tool Health Registry
+// ────────────────────────────────────────────────────────────
+// Collectors call disableToolRuntime() when they detect
+// persistent failures (403 blocked API, 410 Gone, bot detection)
+// that make a tool permanently unusable for this session.
+// This supplements the static TOOL_REQUIRED_KEYS check.
+// ────────────────────────────────────────────────────────────
+
+const TOOL_DISABLED_RUNTIME = new Map<string, string>();
+
 /**
- * Check if a tool is available based on its required API keys.
- * Returns true if the tool has no required keys or all keys are configured.
+ * Mark a tool as disabled at runtime due to a persistent failure.
+ * The reason is logged and included in getDisabledTools() diagnostics.
+ */
+export function disableToolRuntime(toolName: string, reason: string): void {
+  if (!TOOL_DISABLED_RUNTIME.has(toolName)) {
+    TOOL_DISABLED_RUNTIME.set(toolName, reason);
+    logger.warn(
+      `[ToolSchema] 🚫 Disabled tool "${toolName}" at runtime: ${reason}`,
+    );
+  }
+}
+
+/**
+ * Re-enable a previously runtime-disabled tool (e.g., after a successful fetch).
+ */
+export function enableToolRuntime(toolName: string): void {
+  if (TOOL_DISABLED_RUNTIME.delete(toolName)) {
+    logger.info(
+      `[ToolSchema] ✅ Re-enabled tool "${toolName}" at runtime`,
+    );
+  }
+}
+
+/**
+ * Check if a tool is available.
+ * Returns false if required API keys are missing OR the tool
+ * has been disabled at runtime by a collector.
  */
 function isToolAvailable(toolName: string) {
+  if (TOOL_DISABLED_RUNTIME.has(toolName)) return false;
   const keys = TOOL_REQUIRED_KEYS[toolName as keyof typeof TOOL_REQUIRED_KEYS];
   if (!keys) return true;
   return keys.every((key: string) =>
@@ -10667,13 +10698,13 @@ const TOOL_LABELS = {
   // ── Agentic: Tool Discovery ──────────────────────────────
   tool_search: ["coding", "meta"],
 
-  // ── Agentic: Scheduling ──────────────────────────────────
+  // ── Cron Jobs ────────────────────────────────────────────
   cron_create: ["coding", "automation"],
   remote_trigger: ["coding", "automation"],
-  scheduled_task_create: ["coding", "automation"],
-  scheduled_task_list: ["coding", "automation"],
-  scheduled_task_delete: ["coding", "automation"],
-  scheduled_task_trigger: ["coding", "automation"],
+  cron_job_create: ["coding", "automation"],
+  cron_job_list: ["coding", "automation"],
+  cron_job_delete: ["coding", "automation"],
+  cron_job_trigger: ["coding", "automation"],
 
   // ── Agentic: Notebook Editing ────────────────────────────
   notebook_edit: ["coding", "data_science"],
@@ -10869,7 +10900,7 @@ export function getToolSchemasForAI(): ToolSchemaForAI[] {
 }
 
 /**
- * Get tools that are disabled due to missing API keys.
+ * Get tools that are disabled due to missing API keys or runtime failures.
  * Useful for admin diagnostics and health checks.
  */
 export function getDisabledTools(): any[] {
@@ -10877,6 +10908,7 @@ export function getDisabledTools(): any[] {
     (tool) => {
       const requiredKeys =
         TOOL_REQUIRED_KEYS[tool.name as keyof typeof TOOL_REQUIRED_KEYS] || [];
+      const runtimeReason = TOOL_DISABLED_RUNTIME.get(tool.name);
 
       return {
         name: tool.name,
@@ -10884,6 +10916,7 @@ export function getDisabledTools(): any[] {
         missingKeys: requiredKeys.filter(
           (key: string) => !(CONFIG as unknown as Record<string, unknown>)[key],
         ),
+        ...(runtimeReason && { runtimeDisabled: runtimeReason }),
       };
     },
   );
