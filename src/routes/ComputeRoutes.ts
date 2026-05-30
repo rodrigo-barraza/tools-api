@@ -33,6 +33,25 @@ import {
   saveTurtleDrawing,
   getTurtleDrawing,
 } from "../models/TurtleDrawing.ts";
+import {
+  saveThreeDimensionalScene,
+  getThreeDimensionalScene,
+} from "../models/ThreeDimensionalScene.ts";
+import {
+  validateMeshInput,
+  buildMeshEmbedHtml,
+} from "../services/ThreeDimensionalMeshService.ts";
+import type { MeshVertex, MeshFace } from "../services/ThreeDimensionalMeshService.ts";
+import {
+  validateSceneInput,
+  buildSceneEmbedHtml,
+} from "../services/ThreeDimensionalSceneService.ts";
+import type { SceneObject, SceneOptions } from "../services/ThreeDimensionalSceneService.ts";
+import {
+  validateModelInput,
+  buildModelEmbedHtml,
+} from "../services/ThreeDimensionalModelService.ts";
+import type { ModelObject, ModelSceneConfig, ModelOptions } from "../services/ThreeDimensionalModelService.ts";
 import { processImage, convertToAscii } from "../services/ImageService.ts";
 import { convertVideoToGif } from "../services/VideoService.ts";
 // ─── Lazy-loaded dependencies ──────────────────────────────────────
@@ -2758,6 +2777,128 @@ router.get("/image/ascii/embed", (req: Request, res: Response) => {
   res.send(buildAsciiEmbedHtml(entry));
 });
 
+// ─── 3D Object Creation ─────────────────────────────────────
+// ── Create 3D Mesh (Triangle-level vertex + face data) ────────
+router.post("/3d/mesh", asyncHandler(async (req: Request, res: Response) => {
+  const { vertices, faces, normals, colors, options, sessionId } = req.body;
+  const meshInput = { vertices, faces, normals, colors, options };
+  const validationError = validateMeshInput(meshInput);
+  if (validationError) {
+    return res.status(400).json({ error: validationError });
+  }
+  const callerUsername = (req.headers["x-username"] as string) || null;
+  const sceneId = crypto.randomUUID().slice(0, 12);
+  await saveThreeDimensionalScene(
+    sceneId,
+    "mesh",
+    { vertices, faces, normals: normals || null, colors: colors || null },
+    options || {},
+    sessionId || null,
+    callerUsername,
+  );
+  const sceneEmbedUrl = buildLocalUrl("compute/3d/embed", { id: sceneId, type: "mesh" });
+  res.json({
+    sceneEmbedUrl,
+    sceneId,
+    sceneType: "mesh",
+    vertexCount: vertices.length,
+    faceCount: faces.length,
+    hasVertexColors: !!colors && colors.length > 0,
+    hasCustomNormals: !!normals && normals.length > 0,
+  });
+}));
+// ── Create 3D Scene (Primitive shape composition) ─────────────
+router.post("/3d/scene", asyncHandler(async (req: Request, res: Response) => {
+  const { objects, options } = req.body;
+  const sceneInput = { objects, options };
+  const validationError = validateSceneInput(sceneInput);
+  if (validationError) {
+    return res.status(400).json({ error: validationError });
+  }
+  const callerUsername = (req.headers["x-username"] as string) || null;
+  const sceneId = crypto.randomUUID().slice(0, 12);
+  await saveThreeDimensionalScene(
+    sceneId,
+    "scene",
+    { objects },
+    options || {},
+    null,
+    callerUsername,
+  );
+  const sceneEmbedUrl = buildLocalUrl("compute/3d/embed", { id: sceneId, type: "scene" });
+  res.json({
+    sceneEmbedUrl,
+    sceneId,
+    sceneType: "scene",
+    objectCount: objects.length,
+  });
+}));
+// ── Create 3D Model (Declarative scene graph) ─────────────────
+router.post("/3d/model", asyncHandler(async (req: Request, res: Response) => {
+  const { scene: sceneConfig, objects, options } = req.body;
+  const modelInput = { scene: sceneConfig, objects, options };
+  const validationError = validateModelInput(modelInput);
+  if (validationError) {
+    return res.status(400).json({ error: validationError });
+  }
+  const callerUsername = (req.headers["x-username"] as string) || null;
+  const sceneId = crypto.randomUUID().slice(0, 12);
+  await saveThreeDimensionalScene(
+    sceneId,
+    "model",
+    { scene: sceneConfig || {}, objects },
+    options || {},
+    null,
+    callerUsername,
+  );
+  const sceneEmbedUrl = buildLocalUrl("compute/3d/embed", { id: sceneId, type: "model" });
+  res.json({
+    sceneEmbedUrl,
+    sceneId,
+    sceneType: "model",
+    objectCount: objects.length,
+    environment: sceneConfig?.environment || "studio",
+  });
+}));
+// ── Serve 3D Embed HTML ───────────────────────────────────────
+router.get("/3d/embed", asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.query as Record<string, string>;
+  if (!id) return res.status(400).send("Missing 'id' parameter");
+  const entry = await getThreeDimensionalScene(id);
+  if (!entry) {
+    return res.status(404).send("3D scene not found or expired");
+  }
+  let html: string;
+  switch (entry.sceneType) {
+    case "mesh":
+      html = buildMeshEmbedHtml({
+        vertices: entry.sceneData.vertices as unknown as MeshVertex[],
+        faces: entry.sceneData.faces as unknown as MeshFace[],
+        normals: entry.sceneData.normals as unknown as MeshVertex[] | undefined,
+        colors: entry.sceneData.colors as string[] | undefined,
+        options: entry.options,
+      });
+      break;
+    case "scene":
+      html = buildSceneEmbedHtml({
+        objects: entry.sceneData.objects as unknown as SceneObject[],
+        options: entry.options as unknown as SceneOptions,
+      });
+      break;
+    case "model":
+      html = buildModelEmbedHtml({
+        scene: entry.sceneData.scene as unknown as ModelSceneConfig | undefined,
+        objects: entry.sceneData.objects as unknown as ModelObject[],
+        options: entry.options as unknown as ModelOptions,
+      });
+      break;
+    default:
+      return res.status(400).send(`Unknown scene type: ${entry.sceneType}`);
+  }
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.send(html);
+}));
+
 // ─── Health ─────────────────────────────────────────────────
 export function getComputeHealth() {
   return {
@@ -2777,6 +2918,7 @@ export function getComputeHealth() {
     colorConverter: "on-demand (internal)",
     cronParser: "on-demand (internal)",
     turtleGraphics: "on-demand (LOGO canvas embed)",
+    threeDimensionalScene: "on-demand (Three.js WebGL embed)",
     think: "on-demand (echo)",
     sleep: "on-demand (timer)",
     syntheticOutput: "on-demand (json-schema)",

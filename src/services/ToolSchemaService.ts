@@ -4983,6 +4983,335 @@ const TOOL_DEFINITIONS: any[] = [
       required: ["commands"],
     },
   },
+
+  // ── 3D Object Creation (Triangle Mesh) ─────────────────────
+  {
+    name: "create_3d_mesh",
+    dataSource: compute("internal"),
+    description:
+      "Create a 3D object from raw triangle mesh data — vertices and face indices. This is the lowest-level 3D tool: " +
+      "every triangle is explicitly defined vertex-by-vertex, exactly how polygon mesh rendering works in 3D graphics. " +
+      "Provide an array of vertex positions [x,y,z] and face indices [v0,v1,v2] referencing those vertices. " +
+      "Optionally provide per-vertex normals for custom shading and per-vertex colors for colored meshes. " +
+      "Supports wireframe mode, flat/smooth shading, metalness, roughness, auto-rotation, and camera control. " +
+      "Use cases: procedural geometry, algorithmic shapes, mathematical surfaces, terrain heightmaps, custom topology. " +
+      "The response contains a sceneEmbedUrl — render it with ![3D Mesh](sceneEmbedUrl) markdown so the user sees the interactive 3D scene inline. " +
+      "Max 50,000 vertices and 100,000 faces per call.",
+    endpoint: {
+      method: "POST",
+      path: "/compute/3d/mesh",
+      bodyParams: ["vertices", "faces", "normals", "colors", "options"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        vertices: {
+          type: "array",
+          description:
+            "Array of vertex positions. Each vertex is [x, y, z]. Example: [[0,1,0], [1,-1,0], [-1,-1,0]]",
+          items: {
+            type: "array",
+            items: { type: "number" },
+            description: "[x, y, z] position",
+          },
+        },
+        faces: {
+          type: "array",
+          description:
+            "Array of triangle face indices. Each face is [v0, v1, v2] referencing vertex indices. Example: [[0,1,2]]",
+          items: {
+            type: "array",
+            items: { type: "integer" },
+            description: "[vertexIndex0, vertexIndex1, vertexIndex2]",
+          },
+        },
+        normals: {
+          type: "array",
+          description:
+            "Optional per-vertex normals [nx, ny, nz]. Must match vertex count. Omit to auto-compute.",
+          items: {
+            type: "array",
+            items: { type: "number" },
+          },
+        },
+        colors: {
+          type: "array",
+          description:
+            "Optional per-vertex colors as CSS color strings. Must match vertex count. Example: ['#ff6347', '#38bdf8', '#4ade80']",
+          items: { type: "string" },
+        },
+        options: {
+          type: "object",
+          properties: {
+            wireframe: { type: "boolean", description: "Render as wireframe (default: false)" },
+            flatShading: { type: "boolean", description: "Use flat shading for faceted look (default: true)" },
+            autoRotate: { type: "boolean", description: "Auto-rotate the mesh (default: true)" },
+            showGrid: { type: "boolean", description: "Show ground grid (default: true)" },
+            showAxes: { type: "boolean", description: "Show XYZ axes helper (default: false)" },
+            background: { type: "string", description: "Background color (default: '#0f172a')" },
+            meshColor: { type: "string", description: "Mesh color if no vertex colors (default: '#38bdf8')" },
+            metalness: { type: "number", description: "Material metalness 0-1 (default: 0.2)" },
+            roughness: { type: "number", description: "Material roughness 0-1 (default: 0.6)" },
+            opacity: { type: "number", description: "Material opacity 0-1 (default: 1.0)" },
+            cameraPosition: {
+              type: "array",
+              items: { type: "number" },
+              description: "Camera position [x, y, z]. Omit for auto-fit.",
+            },
+            title: { type: "string", description: "Title displayed in the overlay" },
+          },
+          description: "Rendering options",
+        },
+      },
+      required: ["vertices", "faces"],
+    },
+  },
+
+  // ── 3D Object Creation (Primitive Composition) ─────────────
+  {
+    name: "create_3d_scene",
+    dataSource: compute("internal"),
+    description:
+      "Compose a 3D scene from built-in primitive shapes with PBR materials and transforms. " +
+      "Available shapes: box, sphere, cylinder, cone, torus, torusKnot, plane, ring, circle, " +
+      "dodecahedron, icosahedron, octahedron, tetrahedron, capsule. " +
+      "Each object supports position, rotation (degrees), scale, and material properties (color, metalness, roughness, " +
+      "opacity, emissive, wireframe, flatShading). " +
+      "Use cases: architectural mockups, abstract sculptures, game prototyping, educational geometry, product showcases. " +
+      "The response contains a sceneEmbedUrl — render it with ![3D Scene](sceneEmbedUrl) markdown so the user sees the interactive 3D scene inline. " +
+      "Max 200 objects per call. Supports shadow casting, ambient/directional lighting control, and auto-orbit camera.",
+    endpoint: {
+      method: "POST",
+      path: "/compute/3d/scene",
+      bodyParams: ["objects", "options"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        objects: {
+          type: "array",
+          description: "Array of primitive shape objects to compose into a scene.",
+          items: {
+            type: "object",
+            properties: {
+              shape: {
+                type: "string",
+                enum: [
+                  "box", "sphere", "cylinder", "cone", "torus", "torusKnot",
+                  "plane", "ring", "circle", "dodecahedron", "icosahedron",
+                  "octahedron", "tetrahedron", "capsule",
+                ],
+                description: "The primitive shape type",
+              },
+              size: {
+                type: "array",
+                items: { type: "number" },
+                description: "Dimensions [width, height, depth] for box shapes",
+              },
+              radius: { type: "number", description: "Radius for spherical/cylindrical shapes (default: 0.5)" },
+              height: { type: "number", description: "Height for cylinder/cone/capsule (default: 1)" },
+              radiusTop: { type: "number", description: "Top radius for cylinder (default: radius)" },
+              radiusBottom: { type: "number", description: "Bottom radius for cylinder (default: radius)" },
+              tube: { type: "number", description: "Tube radius for torus/torusKnot (default: 0.15)" },
+              segments: { type: "integer", description: "Geometry segment count (default: 32)" },
+              position: {
+                type: "array",
+                items: { type: "number" },
+                description: "Position [x, y, z] in world space",
+              },
+              rotation: {
+                type: "array",
+                items: { type: "number" },
+                description: "Rotation [x, y, z] in degrees",
+              },
+              scale: {
+                type: "array",
+                items: { type: "number" },
+                description: "Scale [x, y, z] multipliers",
+              },
+              material: {
+                type: "object",
+                properties: {
+                  color: { type: "string", description: "CSS color (default: '#38bdf8')" },
+                  metalness: { type: "number", description: "0-1 (default: 0.2)" },
+                  roughness: { type: "number", description: "0-1 (default: 0.6)" },
+                  opacity: { type: "number", description: "0-1 (default: 1.0)" },
+                  emissive: { type: "string", description: "Emissive glow color" },
+                  emissiveIntensity: { type: "number", description: "Emissive intensity (default: 0)" },
+                  wireframe: { type: "boolean", description: "Wireframe mode" },
+                  flatShading: { type: "boolean", description: "Flat shading" },
+                },
+                description: "PBR material properties",
+              },
+              name: { type: "string", description: "Optional name for the object" },
+            },
+            required: ["shape"],
+          },
+        },
+        options: {
+          type: "object",
+          properties: {
+            autoRotate: { type: "boolean", description: "Auto-orbit camera (default: true)" },
+            showGrid: { type: "boolean", description: "Show ground grid (default: true)" },
+            background: { type: "string", description: "Background color (default: '#0f172a')" },
+            enableShadows: { type: "boolean", description: "Enable shadow casting (default: true)" },
+            ambientLightIntensity: { type: "number", description: "Ambient light intensity (default: 0.5)" },
+            directionalLightIntensity: { type: "number", description: "Key light intensity (default: 0.8)" },
+            cameraPosition: {
+              type: "array",
+              items: { type: "number" },
+              description: "Camera position [x, y, z]. Omit for auto-fit.",
+            },
+            fieldOfView: { type: "number", description: "Camera FOV in degrees (default: 50)" },
+            title: { type: "string", description: "Title displayed in the overlay" },
+          },
+          description: "Scene rendering options",
+        },
+      },
+      required: ["objects"],
+    },
+  },
+
+  // ── 3D Object Creation (Declarative Scene Graph) ───────────
+  {
+    name: "create_3d_model",
+    dataSource: compute("internal"),
+    description:
+      "Create a rich 3D scene using a declarative scene graph with hierarchical grouping, built-in animations, " +
+      "environment lighting presets, ground planes, and 3D text labels. This is the highest-level 3D tool. " +
+      "Object types: box, sphere, cylinder, cone, torus, torusKnot, plane, ring, circle, dodecahedron, " +
+      "icosahedron, octahedron, tetrahedron, capsule, group (container for children), text3d (3D text label). " +
+      "Built-in animations: spin, bounce, orbit, pulse, float — applied per-object with configurable speed/amplitude. " +
+      "Environment presets: studio, outdoor, night, sunset, dawn, warehouse, neutral — control ambient, " +
+      "directional, fill, and hemisphere lighting automatically. " +
+      "Supports ground plane with shadows, fog, camera FOV control, and auto-orbit. " +
+      "Use cases: product showcases, animated explainers, data visualization, artistic compositions, holiday scenes. " +
+      "The response contains a sceneEmbedUrl — render it with ![3D Model](sceneEmbedUrl) markdown so the user sees the interactive 3D scene inline. " +
+      "Max 300 total objects (including nested children), max 5 levels of nesting.",
+    endpoint: {
+      method: "POST",
+      path: "/compute/3d/model",
+      bodyParams: ["scene", "objects", "options"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        scene: {
+          type: "object",
+          description: "Scene-level configuration: environment, background, ground, camera, fog.",
+          properties: {
+            environment: {
+              type: "string",
+              enum: ["studio", "outdoor", "night", "sunset", "dawn", "warehouse", "neutral"],
+              description: "Lighting environment preset (default: 'studio')",
+            },
+            background: { type: "string", description: "Background color (default: '#0f172a')" },
+            ground: {
+              type: "object",
+              properties: {
+                enabled: { type: "boolean", description: "Show ground plane (default: true)" },
+                color: { type: "string", description: "Ground color (default: '#1e293b')" },
+                size: { type: "number", description: "Ground plane size (default: 10)" },
+              },
+              description: "Ground plane configuration",
+            },
+            camera: {
+              type: "object",
+              properties: {
+                position: { type: "array", items: { type: "number" }, description: "Camera [x,y,z]. Omit for auto-fit." },
+                target: { type: "array", items: { type: "number" }, description: "Look-at target [x,y,z] (default: [0,0,0])" },
+                fov: { type: "number", description: "Field of view in degrees (default: 50)" },
+                autoOrbit: { type: "boolean", description: "Auto-orbit camera (default: true)" },
+                autoOrbitSpeed: { type: "number", description: "Orbit speed (default: 1.0)" },
+              },
+              description: "Camera configuration",
+            },
+            fog: {
+              type: "object",
+              properties: {
+                enabled: { type: "boolean", description: "Enable fog (default: false)" },
+                color: { type: "string", description: "Fog color (defaults to background)" },
+                near: { type: "number", description: "Fog start distance (default: 10)" },
+                far: { type: "number", description: "Fog end distance (default: 50)" },
+              },
+              description: "Fog configuration",
+            },
+          },
+        },
+        objects: {
+          type: "array",
+          description:
+            "Array of scene objects. Each can be a shape, a group (with children), or text3d.",
+          items: {
+            type: "object",
+            properties: {
+              type: {
+                type: "string",
+                enum: [
+                  "box", "sphere", "cylinder", "cone", "torus", "torusKnot",
+                  "plane", "ring", "circle", "dodecahedron", "icosahedron",
+                  "octahedron", "tetrahedron", "capsule", "group", "text3d",
+                ],
+                description: "Object type. 'group' nests children. 'text3d' renders 3D text.",
+              },
+              name: { type: "string", description: "Optional name" },
+              size: { type: "array", items: { type: "number" }, description: "Box dimensions [w,h,d]" },
+              radius: { type: "number", description: "Radius for round shapes" },
+              height: { type: "number", description: "Height for cylinder/cone/capsule" },
+              position: { type: "array", items: { type: "number" }, description: "Position [x,y,z]" },
+              rotation: { type: "array", items: { type: "number" }, description: "Rotation [x,y,z] in degrees" },
+              scale: { type: "array", items: { type: "number" }, description: "Scale [x,y,z]" },
+              material: {
+                type: "object",
+                properties: {
+                  color: { type: "string", description: "CSS color" },
+                  metalness: { type: "number", description: "0-1" },
+                  roughness: { type: "number", description: "0-1" },
+                  opacity: { type: "number", description: "0-1" },
+                  emissive: { type: "string", description: "Emissive glow color" },
+                  wireframe: { type: "boolean" },
+                },
+                description: "PBR material",
+              },
+              animation: {
+                type: "object",
+                properties: {
+                  type: {
+                    type: "string",
+                    enum: ["spin", "bounce", "orbit", "pulse", "float"],
+                    description: "Animation type",
+                  },
+                  speed: { type: "number", description: "Animation speed multiplier (default: 1.0)" },
+                  axis: { type: "string", description: "Rotation axis for spin: 'x', 'y', or 'z' (default: 'y')" },
+                  amplitude: { type: "number", description: "Movement amplitude (default: 0.5)" },
+                  radius: { type: "number", description: "Orbit radius (default: 2)" },
+                },
+                description: "Built-in animation. Applied every frame.",
+              },
+              children: {
+                type: "array",
+                description: "Child objects (only for type='group'). Same structure as parent objects array.",
+              },
+              content: { type: "string", description: "Text content (type='text3d' only)" },
+              fontSize: { type: "number", description: "Text size (type='text3d', default: 0.5)" },
+            },
+            required: ["type"],
+          },
+        },
+        options: {
+          type: "object",
+          properties: {
+            title: { type: "string", description: "Title displayed in the overlay" },
+            showGrid: { type: "boolean", description: "Show ground grid (default: false)" },
+            showAxes: { type: "boolean", description: "Show XYZ axes (default: false)" },
+            enableShadows: { type: "boolean", description: "Enable shadow casting (default: true)" },
+          },
+          description: "Additional rendering options",
+        },
+      },
+      required: ["objects"],
+    },
+  },
   {
     name: "convert_currency",
     dataSource: onDemand("Exchange Rate API"),
@@ -9845,6 +10174,9 @@ const TOOL_DOMAINS = {
   convert_video_to_gif: "Compute",
   parse_cron_expression: "Compute",
   turtle_draw: "Compute",
+  create_3d_mesh: "Compute",
+  create_3d_scene: "Compute",
+  create_3d_model: "Compute",
   think: "Reasoning",
   sleep: "Agentic: Control Flow",
   synthetic_output: "Agentic: Structured Output",
@@ -10151,6 +10483,9 @@ const TOOL_EMOJIS = {
   convert_video_to_gif: "🎬",
   parse_cron_expression: "⏰",
   turtle_draw: "🐢",
+  create_3d_mesh: "🔺",
+  create_3d_scene: "🧊",
+  create_3d_model: "🌐",
 
   // Reasoning & Control Flow
   think: "🧠",
@@ -10603,6 +10938,9 @@ const TOOL_LABELS = {
   convert_video_to_gif: ["data", "creative"],
   parse_cron_expression: ["coding", "automation", "data"],
   turtle_draw: ["coding", "creative", "data"],
+  create_3d_mesh: ["creative", "data"],
+  create_3d_scene: ["creative", "data"],
+  create_3d_model: ["creative", "data"],
   think: ["coding"],
   sleep: ["coding"],
   synthetic_output: ["coding"],
@@ -10765,6 +11103,9 @@ const TOOL_INTELLIGENCE_TIERS: Record<string, ToolIntelligenceTier> = {
   analyze_nutrient_gaps: "frontier",
   transform_json: "frontier",
   turtle_draw: "frontier",
+  create_3d_mesh: "frontier",
+  create_3d_scene: "frontier",
+  create_3d_model: "high",
   lsp_action: "frontier",
   notebook_edit: "frontier",
   query_energy_data: "frontier",
