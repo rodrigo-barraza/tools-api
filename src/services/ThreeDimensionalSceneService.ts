@@ -4,11 +4,15 @@
 // and PBR materials.
 
 import { buildEmbedHtml } from "../utilities.ts";
+import {
+  THREE_JS_CDN,
+  CLIENT_GEOMETRY_FACTORY,
+  CLIENT_MATERIAL_FACTORY,
+} from "./ThreeDimensionalBaseService.ts";
 
 // ─── Constants ─────────────────────────────────────────────────
 
 const MAX_OBJECT_COUNT = 200;
-const THREE_JS_CDN = "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js";
 
 // ─── Types ─────────────────────────────────────────────────────
 
@@ -277,108 +281,10 @@ scene.add(fillLight);
 const hemisphereLight = new THREE.HemisphereLight(0x87ceeb, 0x362d1b, 0.3);
 scene.add(hemisphereLight);
 
-// ── Geometry Factory ──
-function createGeometry(objectDefinition) {
-  const shape = objectDefinition.shape;
-  const segmentCount = objectDefinition.segments || 32;
+// ── Geometry & Material Factories ──
+${CLIENT_GEOMETRY_FACTORY}
 
-  switch (shape) {
-    case "box": {
-      const dimensions = objectDefinition.size || [1, 1, 1];
-      return new THREE.BoxGeometry(
-        dimensions[0] || 1,
-        dimensions[1] || 1,
-        dimensions[2] || 1
-      );
-    }
-    case "sphere":
-      return new THREE.SphereGeometry(
-        objectDefinition.radius || 0.5,
-        segmentCount,
-        segmentCount
-      );
-    case "cylinder":
-      return new THREE.CylinderGeometry(
-        objectDefinition.radiusTop ?? objectDefinition.radius ?? 0.5,
-        objectDefinition.radiusBottom ?? objectDefinition.radius ?? 0.5,
-        objectDefinition.height || 1,
-        segmentCount
-      );
-    case "cone":
-      return new THREE.ConeGeometry(
-        objectDefinition.radius || 0.5,
-        objectDefinition.height || 1,
-        segmentCount
-      );
-    case "torus":
-      return new THREE.TorusGeometry(
-        objectDefinition.radius || 0.5,
-        objectDefinition.tube || 0.15,
-        objectDefinition.radialSegments || 16,
-        objectDefinition.tubularSegments || 48,
-        objectDefinition.arc ? objectDefinition.arc * Math.PI / 180 : Math.PI * 2
-      );
-    case "torusKnot":
-      return new THREE.TorusKnotGeometry(
-        objectDefinition.radius || 0.5,
-        objectDefinition.tube || 0.15,
-        objectDefinition.tubularSegments || 64,
-        objectDefinition.radialSegments || 8
-      );
-    case "plane":
-      return new THREE.PlaneGeometry(
-        objectDefinition.width || 1,
-        objectDefinition.height || 1,
-        segmentCount,
-        segmentCount
-      );
-    case "ring":
-      return new THREE.RingGeometry(
-        objectDefinition.radius ? objectDefinition.radius * 0.5 : 0.25,
-        objectDefinition.radius || 0.5,
-        segmentCount
-      );
-    case "circle":
-      return new THREE.CircleGeometry(
-        objectDefinition.radius || 0.5,
-        segmentCount
-      );
-    case "dodecahedron":
-      return new THREE.DodecahedronGeometry(objectDefinition.radius || 0.5);
-    case "icosahedron":
-      return new THREE.IcosahedronGeometry(objectDefinition.radius || 0.5);
-    case "octahedron":
-      return new THREE.OctahedronGeometry(objectDefinition.radius || 0.5);
-    case "tetrahedron":
-      return new THREE.TetrahedronGeometry(objectDefinition.radius || 0.5);
-    case "capsule":
-      return new THREE.CapsuleGeometry(
-        objectDefinition.radius || 0.3,
-        objectDefinition.height || 1,
-        segmentCount,
-        segmentCount
-      );
-    default:
-      return new THREE.BoxGeometry(1, 1, 1);
-  }
-}
-
-function createMaterial(materialDefinition = {}) {
-  return new THREE.MeshStandardMaterial({
-    color: new THREE.Color(materialDefinition.color || "#38bdf8"),
-    metalness: materialDefinition.metalness ?? 0.2,
-    roughness: materialDefinition.roughness ?? 0.6,
-    transparent: (materialDefinition.opacity ?? 1.0) < 1.0,
-    opacity: materialDefinition.opacity ?? 1.0,
-    emissive: materialDefinition.emissive
-      ? new THREE.Color(materialDefinition.emissive)
-      : new THREE.Color(0x000000),
-    emissiveIntensity: materialDefinition.emissiveIntensity ?? 0,
-    wireframe: materialDefinition.wireframe || false,
-    flatShading: materialDefinition.flatShading || false,
-    side: materialDefinition.doubleSided ? THREE.DoubleSide : THREE.FrontSide,
-  });
-}
+${CLIENT_MATERIAL_FACTORY}
 
 // ── Build Objects ──
 let totalTriangleCount = 0;

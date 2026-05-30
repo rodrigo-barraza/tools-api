@@ -97,9 +97,9 @@ async function cleanupFixture() {
     join(getFixtureDir(), "patch_test.js"),
     join(getFixtureDir(), "diff_b.js"),
   ];
-  for (const f of candidates) {
+  for (const fixturePath of candidates) {
     try {
-      await unlink(f);
+      await unlink(fixturePath);
     } catch {
       /* ignore */
     }
@@ -116,11 +116,11 @@ async function cleanupFixture() {
 
 async function runTest(
   name: string,
-  fn: () => Promise<ToolTestResult> | ToolTestResult,
+  testFunction: () => Promise<ToolTestResult> | ToolTestResult,
 ): Promise<TransformedToolTestResult> {
   const start = performance.now();
   try {
-    const result = await fn();
+    const result = await testFunction();
     const duration = Math.round(performance.now() - start);
 
     // Check if the service returned an error object

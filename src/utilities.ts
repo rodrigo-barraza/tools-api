@@ -167,10 +167,10 @@ export function normalizeCategory(
   if (!sourceCategory) return "other";
   const lower = sourceCategory.toLowerCase();
   const match = categoryMappings.find(
-    (m) =>
-      m.name.toLowerCase() === lower ||
-      m.slug?.toLowerCase() === lower ||
-      m.id?.toLowerCase() === lower,
+    (mapping) =>
+      mapping.name.toLowerCase() === lower ||
+      mapping.slug?.toLowerCase() === lower ||
+      mapping.id?.toLowerCase() === lower,
   );
   return match?.unified || "other";
 }
@@ -203,11 +203,11 @@ export function computeTrendingScore(product: ProductForScoring): number {
  * and sends the result as JSON on success.
  */
 export function agenticHandler<T extends object>(
-  fn: (req: Request) => Promise<T>,
+  toolFunction: (req: Request) => Promise<T>,
 ) {
   return async (req: Request, res: Response) => {
     try {
-      const result = await fn(req);
+      const result = await toolFunction(req);
       const errorValue = (result as Record<string, unknown>).error;
       if (typeof errorValue === "string") {
         const isForbidden =
@@ -276,8 +276,8 @@ export class EphemeralStore<T = unknown> {
   #cleanup() {
     if (this.#map.size <= this.#maxSize) return;
     const now = Date.now();
-    for (const [k, v] of this.#map) {
-      if (now - v.createdAt > this.#ttlMs) this.#map.delete(k);
+    for (const [key, entry] of this.#map) {
+      if (now - entry.createdAt > this.#ttlMs) this.#map.delete(key);
     }
   }
 }

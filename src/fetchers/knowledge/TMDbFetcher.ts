@@ -175,7 +175,7 @@ function normalizeMovie(
       (company) => company.name,
     ),
     productionCountries: (m.production_countries || [])
-      .map((c) => c.name || c.iso_3166_1 || "")
+      .map((country) => country.name || country.iso_3166_1 || "")
       .filter(Boolean),
     homepage: m.homepage || null,
     imdbId: m.imdb_id || null,
@@ -206,11 +206,11 @@ function normalizeTvShow(
     posterUrl: img(tv.poster_path),
     backdropUrl: img(tv.backdrop_path, "w1280"),
     genres: (tv.genres || [])
-      .map((g) => g.name)
+      .map((genre) => genre.name)
       .concat((tv.genre_ids || []).map((id) => String(id))),
-    networks: (tv.networks || []).map((n) => n.name),
-    productionCompanies: (tv.production_companies || []).map((c) => c.name),
-    createdBy: (tv.created_by || []).map((c) => c.name),
+    networks: (tv.networks || []).map((network) => network.name),
+    productionCompanies: (tv.production_companies || []).map((company) => company.name),
+    createdBy: (tv.created_by || []).map((creator) => creator.name),
     originCountry: tv.origin_country || [],
     originalLanguage: tv.original_language || null,
     homepage: tv.homepage || null,

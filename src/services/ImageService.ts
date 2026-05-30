@@ -107,8 +107,8 @@ async function resolveInput(input: string, store?: ImageStore) {
       try {
         const buffer = await readFile(validation.resolved);
         return buffer;
-      } catch (err: any) {
-        throw new Error(`Failed to read local image file: ${err.message}`);
+      } catch (error: any) {
+        throw new Error(`Failed to read local image file: ${error.message}`);
       }
     } else {
       throw new Error(`Local path validation failed: ${validation.error}`);
@@ -140,40 +140,40 @@ async function processWithSharp(
   });
   let metadataResult: Record<string, unknown> | null = null;
 
-  for (const op of operations) {
-    switch (op.type) {
+  for (const operation of operations) {
+    switch (operation.type) {
       case "resize": {
         const options: Record<string, unknown> = {};
-        if (op.width) options.width = Math.min(op.width, MAX_DIMENSION);
-        if (op.height) options.height = Math.min(op.height, MAX_DIMENSION);
-        if (op.fit) options.fit = op.fit;
-        if (op.background) options.background = op.background;
-        if (op.withoutEnlargement !== undefined)
-          options.withoutEnlargement = op.withoutEnlargement;
+        if (operation.width) options.width = Math.min(operation.width, MAX_DIMENSION);
+        if (operation.height) options.height = Math.min(operation.height, MAX_DIMENSION);
+        if (operation.fit) options.fit = operation.fit;
+        if (operation.background) options.background = operation.background;
+        if (operation.withoutEnlargement !== undefined)
+          options.withoutEnlargement = operation.withoutEnlargement;
         pipeline = pipeline.resize(options);
         break;
       }
 
       case "crop": {
-        if (!op.width || !op.height)
+        if (!operation.width || !operation.height)
           throw new Error("crop requires 'width' and 'height'");
         pipeline = pipeline.extract({
-          left: op.left || 0,
-          top: op.top || 0,
-          width: Math.min(op.width, MAX_DIMENSION),
-          height: Math.min(op.height, MAX_DIMENSION),
+          left: operation.left || 0,
+          top: operation.top || 0,
+          width: Math.min(operation.width, MAX_DIMENSION),
+          height: Math.min(operation.height, MAX_DIMENSION),
         });
         break;
       }
 
       case "rotate":
-        pipeline = pipeline.rotate(op.angle || 0, {
-          background: op.background || { r: 0, g: 0, b: 0, alpha: 0 },
+        pipeline = pipeline.rotate(operation.angle || 0, {
+          background: operation.background || { r: 0, g: 0, b: 0, alpha: 0 },
         });
         break;
 
       case "flip":
-        if (op.direction === "horizontal") {
+        if (operation.direction === "horizontal") {
           pipeline = pipeline.flop();
         } else {
           pipeline = pipeline.flip();
@@ -181,14 +181,14 @@ async function processWithSharp(
         break;
 
       case "blur":
-        pipeline = pipeline.blur(Math.min(Math.max(op.sigma || 3, 0.3), 100));
+        pipeline = pipeline.blur(Math.min(Math.max(operation.sigma || 3, 0.3), 100));
         break;
 
       case "sharpen":
         pipeline = pipeline.sharpen({
-          sigma: op.sigma || 1,
-          ...(op.flat !== undefined && { flat: op.flat }),
-          ...(op.jagged !== undefined && { jagged: op.jagged }),
+          sigma: operation.sigma || 1,
+          ...(operation.flat !== undefined && { flat: operation.flat }),
+          ...(operation.jagged !== undefined && { jagged: operation.jagged }),
         });
         break;
 
@@ -201,54 +201,54 @@ async function processWithSharp(
         break;
 
       case "tint":
-        if (op.color) pipeline = pipeline.tint(op.color);
+        if (operation.color) pipeline = pipeline.tint(operation.color);
         break;
 
       case "adjust":
         pipeline = pipeline.modulate({
-          ...(op.brightness !== undefined && { brightness: op.brightness }),
-          ...(op.saturation !== undefined && { saturation: op.saturation }),
-          ...(op.hue !== undefined && { hue: op.hue }),
-          ...(op.lightness !== undefined && { lightness: op.lightness }),
+          ...(operation.brightness !== undefined && { brightness: operation.brightness }),
+          ...(operation.saturation !== undefined && { saturation: operation.saturation }),
+          ...(operation.hue !== undefined && { hue: operation.hue }),
+          ...(operation.lightness !== undefined && { lightness: operation.lightness }),
         });
         break;
 
       case "gamma":
-        pipeline = pipeline.gamma(op.value || 2.2);
+        pipeline = pipeline.gamma(operation.value || 2.2);
         break;
 
       case "trim":
-        pipeline = pipeline.trim({ threshold: op.threshold || 10 });
+        pipeline = pipeline.trim({ threshold: operation.threshold || 10 });
         break;
 
       case "extend": {
-        const ext: Record<string, unknown> = {
-          top: op.top || 0,
-          right: op.right || 0,
-          bottom: op.bottom || 0,
-          left: op.left || 0,
+        const extendOptions: Record<string, unknown> = {
+          top: operation.top || 0,
+          right: operation.right || 0,
+          bottom: operation.bottom || 0,
+          left: operation.left || 0,
         };
-        if (op.background) ext.background = op.background;
-        pipeline = pipeline.extend(ext);
+        if (operation.background) extendOptions.background = operation.background;
+        pipeline = pipeline.extend(extendOptions);
         break;
       }
 
       case "composite": {
-        if (!op.overlayUrl) throw new Error("composite requires 'overlayUrl'");
-        const overlayBuf = await resolveInput(op.overlayUrl, undefined);
+        if (!operation.overlayUrl) throw new Error("composite requires 'overlayUrl'");
+        const overlayBuf = await resolveInput(operation.overlayUrl, undefined);
         const compositeOpts: Record<string, unknown> = { input: overlayBuf };
-        if (op.gravity) compositeOpts.gravity = op.gravity;
-        if (op.blend) compositeOpts.blend = op.blend;
-        if (op.left !== undefined && op.top !== undefined) {
-          compositeOpts.left = op.left;
-          compositeOpts.top = op.top;
+        if (operation.gravity) compositeOpts.gravity = operation.gravity;
+        if (operation.blend) compositeOpts.blend = operation.blend;
+        if (operation.left !== undefined && operation.top !== undefined) {
+          compositeOpts.left = operation.left;
+          compositeOpts.top = operation.top;
         }
         pipeline = pipeline.composite([compositeOpts]);
         break;
       }
 
       case "metadata": {
-        const meta = await sharp(inputBuffer).metadata();
+        const metadata = await sharp(inputBuffer).metadata();
         // Strip buffer-based properties and convert to plain object
         const {
           icc: _icc,
@@ -256,9 +256,9 @@ async function processWithSharp(
           xmp: _xmp,
           exif: _exif,
           tifftagPhotoshop: _tiffPs,
-          ...cleanMeta
-        } = meta;
-        metadataResult = cleanMeta;
+          ...cleanMetadata
+        } = metadata;
+        metadataResult = cleanMetadata;
         break;
       }
 
@@ -312,74 +312,74 @@ async function processWithMagick(
   outputFormat: string,
   outputQuality: number,
 ) {
-  const id = crypto.randomUUID().slice(0, 12);
-  const inputPath = join(tmpdir(), `img-in-${id}`);
-  const outputPath = join(tmpdir(), `img-out-${id}.${outputFormat || "png"}`);
+  const magickProcessId = crypto.randomUUID().slice(0, 12);
+  const inputPath = join(tmpdir(), `img-in-${magickProcessId}`);
+  const outputPath = join(tmpdir(), `img-out-${magickProcessId}.${outputFormat || "png"}`);
 
   try {
     await writeFile(inputPath, inputBuffer);
 
     const args = [inputPath];
 
-    for (const op of operations) {
-      switch (op.type) {
+    for (const operation of operations) {
+      switch (operation.type) {
         case "text": {
-          if (!op.content) throw new Error("text requires 'content'");
+          if (!operation.content) throw new Error("text requires 'content'");
           const textArgs: string[] = [];
-          textArgs.push("-gravity", op.gravity || "south");
-          textArgs.push("-font", op.font || "Liberation-Sans");
-          textArgs.push("-pointsize", String(op.fontSize || 32));
-          textArgs.push("-fill", op.color || "white");
-          if (op.strokeColor) {
-            textArgs.push("-stroke", op.strokeColor);
-            textArgs.push("-strokewidth", String(op.strokeWidth || 2));
+          textArgs.push("-gravity", operation.gravity || "south");
+          textArgs.push("-font", operation.font || "Liberation-Sans");
+          textArgs.push("-pointsize", String(operation.fontSize || 32));
+          textArgs.push("-fill", operation.color || "white");
+          if (operation.strokeColor) {
+            textArgs.push("-stroke", operation.strokeColor);
+            textArgs.push("-strokewidth", String(operation.strokeWidth || 2));
           }
-          if (op.x !== undefined || op.y !== undefined) {
+          if (operation.x !== undefined || operation.y !== undefined) {
             textArgs.push(
               "-annotate",
-              `+${op.x || 0}+${op.y || 0}`,
-              op.content as string,
+              `+${operation.x || 0}+${operation.y || 0}`,
+              operation.content as string,
             );
           } else {
-            textArgs.push("-annotate", "+0+20", op.content as string);
+            textArgs.push("-annotate", "+0+20", operation.content as string);
           }
           args.push(...textArgs);
           break;
         }
 
         case "distort": {
-          if (!op.effect) throw new Error("distort requires 'effect'");
-          switch (op.effect) {
+          if (!operation.effect) throw new Error("distort requires 'effect'");
+          switch (operation.effect) {
             case "swirl":
-              args.push("-swirl", String(op.degrees || 90));
+              args.push("-swirl", String(operation.degrees || 90));
               break;
             case "wave":
               args.push(
                 "-wave",
-                `${op.amplitude || 10}x${op.wavelength || 100}`,
+                `${operation.amplitude || 10}x${operation.wavelength || 100}`,
               );
               break;
             case "implode":
-              args.push("-implode", String(op.factor || 0.5));
+              args.push("-implode", String(operation.factor || 0.5));
               break;
             case "barrel":
-              args.push("-distort", "Barrel", op.params || "0.0 0.0 -0.3 1.3");
+              args.push("-distort", "Barrel", operation.params || "0.0 0.0 -0.3 1.3");
               break;
             default:
               throw new Error(
-                `Unknown distort effect: ${op.effect}. Use: swirl, wave, implode, barrel`,
+                `Unknown distort effect: ${operation.effect}. Use: swirl, wave, implode, barrel`,
               );
           }
           break;
         }
 
         case "border":
-          args.push("-bordercolor", op.color || "#000000");
-          args.push("-border", `${op.width || 5}`);
+          args.push("-bordercolor", operation.color || "#000000");
+          args.push("-border", `${operation.width || 5}`);
           break;
 
         case "resize":
-          args.push("-resize", `${op.width || ""}x${op.height || ""}`);
+          args.push("-resize", `${operation.width || ""}x${operation.height || ""}`);
           break;
 
         default:
@@ -583,7 +583,7 @@ export async function convertToAscii({
   const charSet =
     chars ||
     "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
-  const charLen = charSet.length;
+  const charSetLength = charSet.length;
 
   let asciiStr = "";
   let ansiStr = "";
@@ -592,10 +592,10 @@ export async function convertToAscii({
   for (let y = 0; y < info.height; y++) {
     const row: AsciiPixel[] = [];
     for (let x = 0; x < info.width; x++) {
-      const idx = (y * info.width + x) * channels;
-      const r = data[idx];
-      const g = data[idx + 1];
-      const b = data[idx + 2];
+      const pixelIndex = (y * info.width + x) * channels;
+      const r = data[pixelIndex];
+      const g = data[pixelIndex + 1];
+      const b = data[pixelIndex + 2];
 
       // Relative luminance formula
       let brightness = 0.2126 * r + 0.7152 * g + 0.0722 * b;
@@ -606,11 +606,11 @@ export async function convertToAscii({
       }
 
       // Map to character index (inverted standard mapping: 0 -> dark, 255 -> light)
-      let charIdx = Math.floor((brightness / 255) * (charLen - 1));
+      let characterIndex = Math.floor((brightness / 255) * (charSetLength - 1));
       if (reverse) {
-        charIdx = charLen - 1 - charIdx;
+        characterIndex = charSetLength - 1 - characterIndex;
       }
-      const char = charSet[charIdx];
+      const char = charSet[characterIndex];
 
       asciiStr += char;
       ansiStr += `\x1b[38;2;${r};${g};${b}m${char}`;

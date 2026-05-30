@@ -198,7 +198,7 @@ export function rankCountriesByIndicator(
 
   const meta = INDICATOR_META[indicator];
 
-  const ranked = COUNTRY_DB.filter((c) => c[indicator] !== null)
+  const ranked = COUNTRY_DB.filter((country) => country[indicator] !== null)
     .sort((a, b) => {
       const valA = Number(a[indicator] || 0);
       const valB = Number(b[indicator] || 0);
@@ -213,11 +213,11 @@ export function rankCountriesByIndicator(
     order,
     count: ranked.length,
     note: "Data from World Bank Open Data (CC BY 4.0). Values are most recent available year (2018-2024).",
-    countries: ranked.map((c) => ({
-      countryCode: c.country_code,
-      countryName: c.country_name,
-      value: c[indicator],
-      dataYear: c.data_year,
+    countries: ranked.map((country) => ({
+      countryCode: country.country_code,
+      countryName: country.country_name,
+      value: country[indicator],
+      dataYear: country.data_year,
     })),
   };
 }

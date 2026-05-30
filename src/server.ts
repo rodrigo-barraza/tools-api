@@ -266,4 +266,17 @@ async function start() {
   });
 }
 
+// ─── Graceful Shutdown Hooks ────────────────────────────────────────
+
+import { killAll as killAllBackgroundProcesses } from "./services/BackgroundProcessRegistry.ts";
+
+function gracefulShutdown(signal: string) {
+  logger.info(`[Server] Received ${signal}, terminating active background tasks...`);
+  killAllBackgroundProcesses();
+  process.exit(0);
+}
+
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+
 start();

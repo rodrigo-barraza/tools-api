@@ -233,16 +233,23 @@ async function _searchBrave(
     count: String(limit),
   });
 
-  // Brave freshness: "pd" (past day), "pw" (past week), "pm" (past month), "py" (past year)
+  // Brave freshness parameters: "pd" (past day), "pw" (past week), "pm" (past month), "py" (past year)
   if (dateRestrict) {
-    const freshnessMap = {
-      d1: "pd",
-      d7: "pw",
-      w1: "pw",
-      w2: "pw",
-      m1: "pm",
-      m3: "pm",
-      y1: "py",
+    const BraveFreshness = {
+      pastDay: "pd",
+      pastWeek: "pw",
+      pastMonth: "pm",
+      pastYear: "py",
+    } as const;
+
+    const freshnessMap: Record<string, string> = {
+      d1: BraveFreshness.pastDay,
+      d7: BraveFreshness.pastWeek,
+      w1: BraveFreshness.pastWeek,
+      w2: BraveFreshness.pastWeek,
+      m1: BraveFreshness.pastMonth,
+      m3: BraveFreshness.pastMonth,
+      y1: BraveFreshness.pastYear,
     };
     const freshness =
       freshnessMap[dateRestrict as keyof typeof freshnessMap] || dateRestrict;

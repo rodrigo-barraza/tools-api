@@ -3,11 +3,11 @@
 // utilizing optimized GPU-based InstancedMesh for voxel grid rendering.
 
 import { buildEmbedHtml } from "../utilities.ts";
+import { THREE_JS_CDN } from "./ThreeDimensionalBaseService.ts";
 
 // ─── Constants ─────────────────────────────────────────────────
 
 const MAX_VOXEL_COUNT = 100_000;
-const THREE_JS_CDN = "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js";
 
 // ─── Types ─────────────────────────────────────────────────────
 

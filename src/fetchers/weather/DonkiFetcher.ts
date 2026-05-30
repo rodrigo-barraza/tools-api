@@ -160,8 +160,8 @@ export async function fetchSolarFlares(): Promise<SolarFlare[]> {
       classType: flr.classType,
       sourceLocation: flr.sourceLocation,
       activeRegionNum: flr.activeRegionNum,
-      instruments: flr.instruments?.map((i) => i.displayName) || [],
-      linkedEvents: flr.linkedEvents?.map((e) => e.activityID) || [],
+      instruments: flr.instruments?.map((instrument) => instrument.displayName) || [],
+      linkedEvents: flr.linkedEvents?.map((event) => event.activityID) || [],
       note: flr.note || null,
       link: flr.link,
     }),
@@ -195,7 +195,7 @@ export async function fetchCmes(): Promise<Cme[]> {
       startTime: cme.startTime ? new Date(cme.startTime) : null,
       sourceLocation: cme.sourceLocation || null,
       activeRegionNum: cme.activeRegionNum,
-      instruments: cme.instruments?.map((i) => i.displayName) || [],
+      instruments: cme.instruments?.map((instrument) => instrument.displayName) || [],
       note: cme.note || null,
       link: cme.link,
       // Analysis data
@@ -214,7 +214,7 @@ export async function fetchCmes(): Promise<Cme[]> {
       kp90: enlil.kp_90 ?? null,
       kp135: enlil.kp_135 ?? null,
       kp180: enlil.kp_180 ?? null,
-      linkedEvents: cme.linkedEvents?.map((e) => e.activityID) || [],
+      linkedEvents: cme.linkedEvents?.map((event) => event.activityID) || [],
     };
   });
 }
@@ -246,7 +246,7 @@ export async function fetchGeomagneticStorms(): Promise<GeomagneticStorm[]> {
             source: kp.source,
           }),
         ) || [],
-      linkedEvents: gst.linkedEvents?.map((e) => e.activityID) || [],
+      linkedEvents: gst.linkedEvents?.map((event) => event.activityID) || [],
       link: gst.link,
     }),
   );

@@ -184,7 +184,7 @@ function parseAtom(feed: AtomFeed, feedUrl: string, limit: number) {
       content: extractText(entry.content) || "",
       categories: (
         normalizeArray(entry.category) as Array<string | Record<string, string>>
-      ).map((c) => (typeof c === "object" ? c.term || c.label : c)),
+      ).map((category) => (typeof category === "object" ? category.term || category.label : category)),
       id: entry.id || null,
     })),
   };

@@ -224,12 +224,12 @@ export async function agenticLspAction({
   }
 
   // ── 5. Determine workspace root ────────────────────────────
-  const wsRoot = resolvedWorkspace(resolvedPath, workspacePath);
+  const workspaceRoot = resolvedWorkspace(resolvedPath, workspacePath);
 
   // ── 6. Get manager & ensure file is open ───────────────────
   let manager: ReturnType<typeof getLspManager>;
   try {
-    manager = getLspManager(wsRoot);
+    manager = getLspManager(workspaceRoot);
     await manager.openFile(resolvedPath, fileContent);
   } catch (error: unknown) {
     return {
@@ -279,7 +279,7 @@ export async function agenticLspAction({
 
   // ── 9. Format & return ─────────────────────────────────────
   try {
-    return formatResult(operation, result, resolvedPath, wsRoot);
+    return formatResult(operation, result, resolvedPath, workspaceRoot);
   } catch (error: unknown) {
     return { error: `Failed to format result: ${errorMessage(error)}` };
   }
@@ -293,7 +293,7 @@ function formatResult(
   operation: string,
   result: unknown,
   filePath: string,
-  wsRoot: string,
+  workspaceRoot: string,
 ) {
   if (result === null || result === undefined) {
     return {
@@ -312,19 +312,19 @@ function formatResult(
         operation,
         result as LspLocation | LspLocation[],
         filePath,
-        wsRoot,
+        workspaceRoot,
       );
     case "findReferences":
       return formatLocations(
         operation,
         result as LspLocation | LspLocation[],
         filePath,
-        wsRoot,
+        workspaceRoot,
       );
     case "hover":
       return formatHover(result as LspHoverResult, filePath);
     case "documentSymbol":
-      return formatSymbols(result as LspSymbol[], filePath, wsRoot);
+      return formatSymbols(result as LspSymbol[], filePath, workspaceRoot);
     default:
       return { operation, filePath, result };
   }
@@ -334,7 +334,7 @@ function formatLocations(
   operation: string,
   result: LspLocation | LspLocation[],
   filePath: string,
-  wsRoot: string,
+  workspaceRoot: string,
 ) {
   // Normalize to array (some servers return single Location)
   const locations = Array.isArray(result) ? result : result ? [result] : [];
@@ -365,7 +365,7 @@ function formatLocations(
         targetPath = uri;
       }
 
-      const relativePath = wsRoot ? relative(wsRoot, targetPath) : targetPath;
+      const relativePath = workspaceRoot ? relative(workspaceRoot, targetPath) : targetPath;
 
       return {
         file: targetPath,
@@ -464,7 +464,7 @@ function formatHover(result: LspHoverResult, filePath: string) {
   };
 }
 
-function formatSymbols(result: LspSymbol[], filePath: string, _wsRoot: string) {
+function formatSymbols(result: LspSymbol[], filePath: string, _workspaceRoot: string) {
   if (!result || !Array.isArray(result) || result.length === 0) {
     return {
       operation: "documentSymbol",
@@ -492,36 +492,36 @@ function formatSymbols(result: LspSymbol[], filePath: string, _wsRoot: string) {
 function flattenSymbols(symbols: LspSymbol[], depth: number = 0) {
   const result: Array<Record<string, unknown>> = [];
 
-  for (const sym of symbols) {
+  for (const symbol of symbols) {
     // SymbolInformation (flat — used by some servers)
-    if (sym.location) {
+    if (symbol.location) {
       result.push({
-        name: sym.name,
-        kind: symbolKindToString(sym.kind),
+        name: symbol.name,
+        kind: symbolKindToString(symbol.kind),
         line:
-          sym.location.range?.start?.line != null
-            ? sym.location.range.start.line + 1
+          symbol.location.range?.start?.line != null
+            ? symbol.location.range.start.line + 1
             : null,
-        container: sym.containerName || null,
+        container: symbol.containerName || null,
         depth,
       });
       continue;
     }
 
     // DocumentSymbol (hierarchical)
-    const range = sym.selectionRange || sym.range;
+    const range = symbol.selectionRange || symbol.range;
     result.push({
-      name: sym.name,
-      kind: symbolKindToString(sym.kind),
-      detail: sym.detail || null,
+      name: symbol.name,
+      kind: symbolKindToString(symbol.kind),
+      detail: symbol.detail || null,
       line: range?.start?.line != null ? range.start.line + 1 : null,
       endLine: range?.end?.line != null ? range.end.line + 1 : null,
       depth,
     });
 
     // Recurse into children
-    if (sym.children && sym.children.length > 0) {
-      result.push(...flattenSymbols(sym.children, depth + 1));
+    if (symbol.children && symbol.children.length > 0) {
+      result.push(...flattenSymbols(symbol.children, depth + 1));
     }
   }
 
