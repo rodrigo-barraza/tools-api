@@ -2083,7 +2083,7 @@ const TOOL_DEFINITIONS: any[] = [
     },
   },
   {
-    name: "get_product_availability",
+    name: "get_watchlist_availability",
     dataSource: cached("Best Buy Canada", BESTBUY_CA_AVAILABILITY_INTERVAL_MS),
     description:
       "Get Best Buy Canada product availability for all monitored watchlist items. Shows in-stock/out-of-stock status.",
@@ -2095,7 +2095,7 @@ const TOOL_DEFINITIONS: any[] = [
     },
   },
   {
-    name: "check_product_availability",
+    name: "check_sku_availability",
     dataSource: onDemand("Best Buy Canada"),
     description:
       "Check Best Buy Canada availability for specific SKUs on demand. Useful for checking arbitrary products not on the watchlist.",
@@ -2182,7 +2182,7 @@ const TOOL_DEFINITIONS: any[] = [
 
   // ── Finance: Stocks (4 → 1) ───────────────────────────────────
   {
-    name: "get_stock_data",
+    name: "get_stock",
     dataSource: onDemand("Finnhub API"),
     description:
       "Get stock market data by symbol. Actions: 'quote' (real-time price/change), 'profile' (company info, sector, market cap), 'recommendation' (analyst consensus), 'financials' (key financial metrics).",
@@ -2213,7 +2213,7 @@ const TOOL_DEFINITIONS: any[] = [
 
   // ── Finance: Macro/FRED (4 → 1) ───────────────────────────────
   {
-    name: "get_macro_data",
+    name: "get_macro",
     dataSource: onDemand("FRED (Federal Reserve)"),
     description:
       "Access macroeconomic data from FRED. Actions: 'indicators' (key indicator summary), 'search' (search data series), 'series' (series metadata by ID), 'observations' (time series data points).",
@@ -2270,7 +2270,7 @@ const TOOL_DEFINITIONS: any[] = [
 
   // ── Knowledge (consolidated tools) ────────────────────────────
   {
-    name: "lookup_book",
+    name: "search_books",
     dataSource: onDemand("Open Library API"),
     description:
       "Search or look up books/authors from Open Library. Actions: 'search' (full-text search), 'work' (book details by work key), 'author' (author info by key).",
@@ -2309,7 +2309,7 @@ const TOOL_DEFINITIONS: any[] = [
     },
   },
   {
-    name: "get_country_data",
+    name: "get_country",
     dataSource: onDemand("REST Countries + World Bank"),
     description:
       "Look up country info or development indicators. Actions: 'info' (by name), 'code' (by ISO code), 'indicators' (development data for a country), 'rank' (rank countries by indicator), 'compare' (compare multiple countries).",
@@ -2364,7 +2364,7 @@ const TOOL_DEFINITIONS: any[] = [
     },
   },
   {
-    name: "get_element_data",
+    name: "get_element",
     dataSource: staticDataset("Periodic Table (119 elements)"),
     description:
       "Query the periodic table. Actions: 'search' (text search), 'lookup' (by symbol), 'rank' (rank by property), 'categories' (list categories).",
@@ -2412,7 +2412,7 @@ const TOOL_DEFINITIONS: any[] = [
     },
   },
   {
-    name: "get_exoplanet_data",
+    name: "get_exoplanet",
     dataSource: staticDataset("NASA Exoplanet Archive (~6,153 planets)"),
     description:
       "Query the NASA exoplanet database. Actions: 'search' (text search), 'lookup' (by name), 'rank' (rank by property), 'stats' (discovery statistics), 'habitable' (habitable zone planets).",
@@ -2479,7 +2479,7 @@ const TOOL_DEFINITIONS: any[] = [
   },
 
   {
-    name: "define_word",
+    name: "get_word_definition",
     dataSource: onDemand("Free Dictionary API"),
     description:
       "Look up a word's definition, pronunciation, phonetics (with audio URLs), synonyms, antonyms, etymology, and usage examples using the Free Dictionary API.",
@@ -2840,7 +2840,7 @@ const TOOL_DEFINITIONS: any[] = [
     },
   },
   {
-    name: "discover_media",
+    name: "browse_media",
     dataSource: onDemand("TMDB API"),
     description:
       "Discover movies or TV shows by genre, year, rating, and vote count. Useful for browsing, not by name.",
@@ -2891,7 +2891,7 @@ const TOOL_DEFINITIONS: any[] = [
     name: "get_media_genres",
     dataSource: onDemand("TMDB API"),
     description:
-      "Get the list of genre IDs and names for movies or TV shows. Use these IDs with discover_media.",
+      "Get the list of genre IDs and names for movies or TV shows. Use these IDs with browse_media.",
     endpoint: {
       path: "/knowledge/media/genres",
       queryParams: ["type"],
@@ -2913,7 +2913,7 @@ const TOOL_DEFINITIONS: any[] = [
 
   // ── Health (consolidated tools) ────────────────────────────────
   {
-    name: "rank_foods",
+    name: "rank_foods_by_category",
     dataSource: staticDataset("USDA SR Legacy"),
     description:
       "Find foods highest in a specific nutrient. Choose a category (macros, minerals, vitamins, amino_acids, lipids, carbs, sterols) and nutrient to rank by. Examples: 'foods high in protein' → category='macros', nutrient='protein'. 'Best omega-3 sources' → category='lipids', nutrient='c22_d6_n3_dha'. Use list_category_nutrients to discover valid nutrient names per category.",
@@ -3306,7 +3306,7 @@ const TOOL_DEFINITIONS: any[] = [
     name: "search_foods_by_taxonomy",
     dataSource: staticDataset("USDA SR Legacy"),
     description:
-      "Find all foods matching a specific biological taxonomic classification. Filter by any Linnaean rank — kingdom, phylum, class, order, family, subfamily, tribe, genus, species, subspecies, variety, cultivar, etc. Example: rank='family', value='Rosaceae' returns all rose-family foods (apples, pears, cherries, etc). Use browse_food_taxonomy first to discover available values.",
+      "Find all foods matching a specific biological taxonomic classification. Filter by any Linnaean rank — kingdom, phylum, class, order, family, subfamily, tribe, genus, species, subspecies, variety, cultivar, etc. Example: rank='family', value='Rosaceae' returns all rose-family foods (apples, pears, cherries, etc). Use get_food_taxonomy first to discover available values.",
     endpoint: {
       path: "/health/nutrition/taxonomy/search",
       queryParams: ["rank", "value", "limit", "nutrientTypes"],
@@ -3356,7 +3356,7 @@ const TOOL_DEFINITIONS: any[] = [
     },
   },
   {
-    name: "browse_food_taxonomy",
+    name: "get_food_taxonomy",
     dataSource: staticDataset("USDA SR Legacy"),
     description:
       "Discover available biological taxonomy values in the USDA food database. Without parameters, returns the full taxonomy tree with all ranks and their unique values. Optionally filter to a single rank, or scope by a parent rank (e.g. rank='genus', parentRank='family', parentValue='Rosaceae' to see all genera within the Rosaceae family). Use this to explore before using search_foods_by_taxonomy.",
@@ -3583,7 +3583,7 @@ const TOOL_DEFINITIONS: any[] = [
 
   // ── Food Substitute Finder ─────────────────────────────────────
   {
-    name: "find_food_substitutes",
+    name: "search_food_substitutes",
     dataSource: compute("Nutrient Similarity Engine"),
     description:
       "Find nutritionally similar food substitutes using cosine similarity on nutrient profile vectors. Useful for dietary restrictions, allergies, or preferences: 'What plant foods have a similar nutrient profile to salmon?' Supports dietary preference filtering (vegetarian, vegan, pescatarian) and nutrient emphasis.",
@@ -3896,7 +3896,7 @@ const TOOL_DEFINITIONS: any[] = [
     },
   },
   {
-    name: "find_transit_stops_nearby",
+    name: "search_transit_stops_nearby",
     dataSource: onDemand("TransLink RTTI"),
     description:
       "Find TransLink bus stops near a location. Returns nearby stops with names, distances, and route numbers. Defaults to Vancouver downtown if no coordinates provided.",
@@ -3974,7 +3974,7 @@ const TOOL_DEFINITIONS: any[] = [
     },
   },
   {
-    name: "precise_calculator",
+    name: "calculate_precise",
     dataSource: compute("bignumber.js"),
     description:
       "Perform highly precise mathematical calculations using bignumber.js. Supports arbitrary-precision arithmetic. Passed numbers should be strings to prevent precision loss. For sqrt, 'b' is ignored.",
@@ -4438,7 +4438,7 @@ const TOOL_DEFINITIONS: any[] = [
     },
   },
   {
-    name: "regex_tester",
+    name: "test_regex",
     dataSource: compute("native RegExp"),
     description:
       "Test a regular expression pattern against input text. Returns all matches with indices, captured groups, and named groups. Validates regex syntax. Useful for pattern matching, data extraction, and regex debugging.",
@@ -4860,7 +4860,7 @@ const TOOL_DEFINITIONS: any[] = [
 
   // ── LOGO Turtle Graphics ───────────────────────────────────
   {
-    name: "turtle_draw",
+    name: "draw_turtle",
     dataSource: compute("internal"),
     description:
       "Draw graphics using LOGO Turtle commands on an HTML5 canvas. The turtle starts at center facing north. " +
@@ -4888,7 +4888,7 @@ const TOOL_DEFINITIONS: any[] = [
         sessionId: {
           type: "string",
           description:
-            "Optional session ID returned from a previous turtle_draw call. " +
+            "Optional session ID returned from a previous draw_turtle call. " +
             "Pass this to append new commands to an existing drawing. " +
             "Omit to start a new drawing session.",
         },
@@ -5064,6 +5064,139 @@ const TOOL_DEFINITIONS: any[] = [
         },
       },
       required: ["vertices", "faces"],
+    },
+  },
+
+  // ── 3D Voxel Grid Creation ─────────────────────────────────
+  {
+    name: "create_3d_voxel",
+    dataSource: compute("internal"),
+    description:
+      "Create a 3D object from a voxel grid. You can specify a list of explicit voxel coordinates, and/or a list of declarative primitive shapes (box, sphere, cylinder, cone, pyramid, ellipsoid, torus) that will be rasterized into voxels. " +
+      "Features highly optimized rendering using GPU-based Three.js InstancedMesh for thousands of voxels. " +
+      "Supports customizable voxel sizing, spacing, outline borders, wireframes, flat shading, colors, opacity, and ambient/directional light casting. " +
+      "The response contains a sceneEmbedUrl — render it with ![3D Voxel Grid](sceneEmbedUrl) markdown so the user sees the interactive 3D voxel grid inline. " +
+      "Max 100,000 voxels per call.",
+    endpoint: {
+      method: "POST",
+      path: "/compute/3d/voxel",
+      bodyParams: ["voxels", "shapes", "options"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        voxels: {
+          type: "array",
+          description:
+            "Array of individual voxel coordinates and styling. Example: [{\"position\": [0,0,0], \"color\": \"#ff6347\"}]",
+          items: {
+            type: "object",
+            properties: {
+              position: {
+                type: "array",
+                description: "Discrete integer grid coordinate [x, y, z] for the voxel",
+                items: { type: "integer" },
+              },
+              color: {
+                type: "string",
+                description: "CSS color for the individual voxel, e.g. '#ff6347' or 'red'",
+              },
+              opacity: {
+                type: "number",
+                description: "Voxel opacity 0.0 to 1.0 (default: 1.0)",
+              },
+            },
+            required: ["position"],
+          },
+        },
+        shapes: {
+          type: "array",
+          description:
+            "Array of declarative primitive voxel shapes to be rasterized into the grid.",
+          items: {
+            type: "object",
+            properties: {
+              type: {
+                type: "string",
+                enum: ["box", "sphere", "cylinder", "cone", "pyramid", "ellipsoid", "torus"],
+                description: "The primitive shape type",
+              },
+              center: {
+                type: "array",
+                description: "Voxel grid center coordinate [x, y, z] for the shape",
+                items: { type: "number" },
+              },
+              color: {
+                type: "string",
+                description: "CSS color for the shape, e.g. '#38bdf8'",
+              },
+              opacity: {
+                type: "number",
+                description: "Shape opacity 0.0 to 1.0 (default: 1.0)",
+              },
+              hollow: {
+                type: "boolean",
+                description: "If true, only render the outer boundary shell of the shape (default: false)",
+              },
+              size: {
+                type: "array",
+                description: "Dimensions [width, height, depth] for box shape",
+                items: { type: "number" },
+              },
+              radius: {
+                type: "number",
+                description: "Radius for sphere, cylinder, or cone shape",
+              },
+              height: {
+                type: "number",
+                description: "Height for cylinder, cone, or pyramid shape",
+              },
+              radii: {
+                type: "array",
+                description: "Radii [radiusX, radiusY, radiusZ] for ellipsoid shape",
+                items: { type: "number" },
+              },
+              majorRadius: {
+                type: "number",
+                description: "Major ring radius for torus shape",
+              },
+              minorRadius: {
+                type: "number",
+                description: "Minor tube radius for torus shape",
+              },
+              axis: {
+                type: "string",
+                enum: ["x", "y", "z"],
+                description: "Orientation axis for cylinder, cone, or torus shape (default: 'y')",
+              },
+            },
+            required: ["type", "center"],
+          },
+        },
+        options: {
+          type: "object",
+          properties: {
+            wireframe: { type: "boolean", description: "Render voxels as wireframes (default: false)" },
+            flatShading: { type: "boolean", description: "Use flat shading for a clean voxel look (default: true)" },
+            showGrid: { type: "boolean", description: "Show ground grid (default: true)" },
+            showAxes: { type: "boolean", description: "Show XYZ axes helper (default: false)" },
+            background: { type: "string", description: "Background color (default: '#0f172a')" },
+            autoRotate: { type: "boolean", description: "Auto-rotate the camera (default: true)" },
+            autoRotateSpeed: { type: "number", description: "Camera auto-rotation speed (default: 1.0)" },
+            voxelSize: { type: "number", description: "Multiplier for size of each voxel cube (default: 0.95 to leave small gaps)" },
+            voxelSpacing: { type: "number", description: "Gap spacing distance multiplier between voxels (default: 0.0)" },
+            outlineColor: { type: "string", description: "Voxel outline/contour border color (default: '#000000', empty to disable)" },
+            outlineOpacity: { type: "number", description: "Voxel outline/contour opacity (default: 0.35)" },
+            cameraPosition: {
+              type: "array",
+              items: { type: "number" },
+              description: "Camera position [x, y, z]. Omit for auto-fit.",
+            },
+            title: { type: "string", description: "Title displayed in the overlay" },
+          },
+          description: "Rendering options",
+        },
+      },
     },
   },
 
@@ -5420,7 +5553,7 @@ const TOOL_DEFINITIONS: any[] = [
     },
   },
   {
-    name: "lookup_ip",
+    name: "get_ip_info",
     dataSource: onDemand("IPinfo.io"),
     description:
       "Look up geolocation and network information for an IP address. Returns city, region, country, coordinates, and ISP/organization info. For your own server IP, omit the ip parameter or use 'self'.",
@@ -5626,7 +5759,7 @@ const TOOL_DEFINITIONS: any[] = [
 
   // ── Airports (4 → 1) ──────────────────────────────────────────
   {
-    name: "lookup_airport",
+    name: "search_airports",
     dataSource: staticDataset("OpenFlights (7,698 airports)"),
     description:
       "Look up airports. Actions: 'search' (by name/city), 'code' (by IATA/ICAO code), 'country' (list by country), 'nearest' (find nearest to coordinates).",
@@ -5885,7 +6018,7 @@ const TOOL_DEFINITIONS: any[] = [
     },
   },
   {
-    name: "browse_energy_data",
+    name: "get_energy_catalog",
     dataSource: onDemand("EIA (U.S. Energy Information Administration)"),
     description:
       "Browse the EIA data catalog tree. Start with no route to see top-level categories (petroleum, electricity, natural-gas, coal, nuclear-outages, etc.), then drill down into sub-routes to discover available datasets, frequencies, and facets.",
@@ -5933,10 +6066,10 @@ const TOOL_DEFINITIONS: any[] = [
     },
   },
   {
-    name: "query_energy_data",
+    name: "search_energy",
     dataSource: onDemand("EIA (U.S. Energy Information Administration)"),
     description:
-      "Query EIA energy data for a specific route with optional facet filters, date range, and frequency. Returns time-series data points. Use browse_energy_data first to discover routes and get_energy_facets to find valid filter values.",
+      "Query EIA energy data for a specific route with optional facet filters, date range, and frequency. Returns time-series data points. Use get_energy_catalog first to discover routes and get_energy_facets to find valid filter values.",
     endpoint: {
       path: "/energy/data",
       queryParams: [
@@ -6460,7 +6593,7 @@ const TOOL_DEFINITIONS: any[] = [
     },
   },
   {
-    name: "fetch_url",
+    name: "read_web_page",
     dataSource: onDemand("HTTP fetch"),
     description:
       "Fetch content from a URL via HTTP request. Automatically converts HTML pages to clean markdown, strips scripts/styles/navigation, and extracts the main content. JSON responses are returned formatted. Use this to read documentation, web pages, and API responses. Supports optional CSS selector to extract specific page sections. Maximum output: 100,000 characters.",
@@ -6891,7 +7024,7 @@ const TOOL_DEFINITIONS: any[] = [
     name: "browser_action",
     dataSource: compute("headless Chromium (Playwright)"),
     description:
-      "Control a headless Chromium browser for web automation, E2E testing, visual QA, and interacting with JavaScript-rendered pages that fetch_url cannot handle. Each call performs ONE action. The browser session persists between calls (same sessionId) so you can build multi-step flows.\n\n" +
+      "Control a headless Chromium browser for web automation, E2E testing, visual QA, and interacting with JavaScript-rendered pages that read_web_page cannot handle. Each call performs ONE action. The browser session persists between calls (same sessionId) so you can build multi-step flows.\n\n" +
       "RECOMMENDED WORKFLOW: navigate → snapshot → click_ref/type_ref. The 'snapshot' action returns an ARIA accessibility tree (roles, names, states) which is ~4x more token-efficient than screenshots. It outputs elements like: heading \"Title\" [level=1], button \"Submit\", textbox \"Search\". Use 'click_ref' or 'type_ref' with a 'role:name' ref string (e.g. ref=\"button:Submit\") to interact with elements from the snapshot — no CSS selectors needed.\n\n" +
       "ALTERNATIVE WORKFLOW: navigate → get_elements → click/type (uses CSS selectors instead of ARIA refs).\n\n" +
       "For complex multi-step browser automation, use the 'browser_script' tool instead — it executes a full Playwright script in a single call. Sessions auto-close after 5 minutes of inactivity.",
@@ -7342,7 +7475,7 @@ const TOOL_DEFINITIONS: any[] = [
 
   // ── Communication (Twilio) ────────────────────────────────
   {
-    name: "send_sms",
+    name: "twilio_send_sms",
     dataSource: onDemand("Twilio"),
     description:
       "Send an SMS text message to a phone number. The recipient must be in E.164 international format (e.g. +14155551234). " +
@@ -7370,7 +7503,7 @@ const TOOL_DEFINITIONS: any[] = [
     },
   },
   {
-    name: "list_sms_messages",
+    name: "twilio_list_messages",
     dataSource: onDemand("Twilio"),
     description:
       "List recent SMS messages sent and received on the Twilio account. " +
@@ -7399,7 +7532,7 @@ const TOOL_DEFINITIONS: any[] = [
     },
   },
   {
-    name: "get_twilio_account",
+    name: "twilio_get_account",
     dataSource: onDemand("Twilio"),
     description:
       "Get Twilio account information including account SID, friendly name, status, " +
@@ -7411,7 +7544,7 @@ const TOOL_DEFINITIONS: any[] = [
     },
   },
   {
-    name: "lookup_phone_number",
+    name: "twilio_lookup_number",
     dataSource: onDemand("Twilio Lookup v2"),
     description:
       "Look up detailed information about a phone number using Twilio Lookup API v2. " +
@@ -7431,7 +7564,7 @@ const TOOL_DEFINITIONS: any[] = [
     },
   },
   {
-    name: "list_twilio_numbers",
+    name: "twilio_list_numbers",
     dataSource: onDemand("Twilio"),
     description:
       "List all phone numbers owned by the Twilio account. Returns phone number SIDs, " +
@@ -9268,7 +9401,7 @@ const TOOL_DEFINITIONS: any[] = [
 
   // ── Tool Discovery (Meta-Tool) ────────────────────────────
   {
-    name: "tool_search",
+    name: "search_tools",
     dataSource: onDemand("ToolSchemaService"),
     description:
       "Search for available tools by keyword, domain, or label. Returns matching tool names, " +
@@ -9656,7 +9789,7 @@ const TOOL_DEFINITIONS: any[] = [
 
   // ── Dota 2 (OpenDota) ─────────────────────────────────────────
   {
-    name: "get_dota_data",
+    name: "get_dota",
     dataSource: onDemand("OpenDota"),
     description:
       "Get Dota 2 game data from the OpenDota API. Supports multiple actions: " +
@@ -9735,7 +9868,7 @@ const TOOL_DEFINITIONS: any[] = [
 
   // ── Bonfire (Cozy Fire Pit) ───────────────────────────────────
   {
-    name: "start_bonfire",
+    name: "create_bonfire",
     dataSource: compute("Bonfire Generator"),
     description:
       "Start a cozy, custom-designed visual bonfire. You can configure the wood type, wind breeze, flame intensity, custom color chemistry, toss custom items into the fire to incinerate them, or roast marshmallows! Returns a gorgeous colorful ANSI art display for the terminal and a responsive, GPU-accelerated animated HTML/CSS embed to show the user.",
@@ -9799,7 +9932,7 @@ const TOOL_DEFINITIONS: any[] = [
 
   // ── Music (MusicBrainz) ────────────────────────────────────────
   {
-    name: "get_music_data",
+    name: "get_music",
     dataSource: onDemand("MusicBrainz"),
     description:
       "Search and retrieve music metadata from MusicBrainz — the open music encyclopedia. Supports: " +
@@ -10122,24 +10255,24 @@ const TOOL_DOMAINS = {
   // Products
   search_products: "Products",
   get_trending_products: "Products",
-  get_product_availability: "Products",
-  check_product_availability: "Products",
+  get_watchlist_availability: "Products",
+  check_sku_availability: "Products",
   get_costco_us_products: "Products",
   get_costco_ca_products: "Products",
 
   // Finance
-  get_stock_data: "Finance",
-  get_macro_data: "Finance",
+  get_stock: "Finance",
+  get_macro: "Finance",
   get_market_news: "Finance",
   get_earnings_calendar: "Finance",
 
   // Knowledge
-  lookup_book: "Knowledge",
-  get_country_data: "Knowledge",
-  get_element_data: "Knowledge",
-  get_exoplanet_data: "Knowledge",
+  search_books: "Knowledge",
+  get_country: "Knowledge",
+  get_element: "Knowledge",
+  get_exoplanet: "Knowledge",
   get_anime: "Knowledge",
-  define_word: "Knowledge",
+  get_word_definition: "Knowledge",
   search_papers: "Knowledge",
   get_wikipedia_summary: "Knowledge",
   get_on_this_day: "Knowledge",
@@ -10156,11 +10289,11 @@ const TOOL_DOMAINS = {
   get_media_details: "Movies & TV",
   get_media_credits: "Movies & TV",
   get_trending_media: "Movies & TV",
-  discover_media: "Movies & TV",
+  browse_media: "Movies & TV",
   get_media_genres: "Movies & TV",
 
   // Health
-  rank_foods: "Health",
+  rank_foods_by_category: "Health",
   search_drugs: "Health",
   get_drug_adverse_events: "Health",
   get_drug_recalls: "Health",
@@ -10171,7 +10304,7 @@ const TOOL_DOMAINS = {
   get_nutrient_types: "Health",
   list_category_nutrients: "Health",
   search_foods_by_taxonomy: "Health",
-  browse_food_taxonomy: "Health",
+  get_food_taxonomy: "Health",
   get_nutritional_requirements: "Health",
   list_drug_dosage_forms: "Health",
   search_gym_exercises: "Health",
@@ -10179,7 +10312,7 @@ const TOOL_DOMAINS = {
   get_gym_exercise_by_id: "Health",
   calculate_caloric_needs: "Health",
   analyze_nutrient_gaps: "Health",
-  find_food_substitutes: "Health",
+  search_food_substitutes: "Health",
   estimate_exercise_calories: "Health",
   calculate_hydration_needs: "Health",
   build_meal_plan: "Health",
@@ -10189,15 +10322,15 @@ const TOOL_DOMAINS = {
   // Transit
   get_next_bus: "Transit",
   get_transit_stop_info: "Transit",
-  find_transit_stops_nearby: "Transit",
+  search_transit_stops_nearby: "Transit",
   get_transit_route_info: "Transit",
 
   // Utilities
-  lookup_airport: "Utilities",
-  precise_calculator: "Utilities",
+  search_airports: "Utilities",
+  calculate_precise: "Utilities",
   convert_currency: "Utilities",
   get_time_in_timezone: "Utilities",
-  lookup_ip: "Utilities",
+  get_ip_info: "Utilities",
   search_nearby_places: "Utilities",
   search_places: "Utilities",
   generate_map: "Utilities",
@@ -10217,27 +10350,28 @@ const TOOL_DOMAINS = {
   generate_diagram: "Compute",
   diff_text: "Compute",
   generate_hash: "Compute",
-  regex_tester: "Compute",
+  test_regex: "Compute",
   encode_decode: "Compute",
   convert_color: "Compute",
   manipulate_image: "Compute",
   convert_image_to_ascii: "Compute",
   convert_video_to_gif: "Compute",
   parse_cron_expression: "Compute",
-  turtle_draw: "Compute",
+  draw_turtle: "Compute",
   create_3d_mesh: "Compute",
   create_3d_scene: "Compute",
   create_3d_model: "Compute",
+  create_3d_voxel: "Compute",
   think: "Reasoning",
   sleep: "Agentic: Control Flow",
   synthetic_output: "Agentic: Structured Output",
 
   // Gaming
-  get_dota_data: "Gaming",
-  start_bonfire: "Gaming",
+  get_dota: "Gaming",
+  create_bonfire: "Gaming",
 
   // Music
-  get_music_data: "Knowledge",
+  get_music: "Knowledge",
 
   // Wayback Machine
   get_wayback_snapshot: "Knowledge",
@@ -10256,9 +10390,9 @@ const TOOL_DOMAINS = {
 
   // Energy
   get_energy_indicators: "Energy",
-  browse_energy_data: "Energy",
+  get_energy_catalog: "Energy",
   get_energy_facets: "Energy",
-  query_energy_data: "Energy",
+  search_energy: "Energy",
   get_electricity_retail_sales: "Energy",
   get_petroleum_prices: "Energy",
   get_natural_gas_prices: "Energy",
@@ -10283,7 +10417,7 @@ const TOOL_DOMAINS = {
   project_summary: "Agentic: Search & Discovery",
 
   // Agentic — Web
-  fetch_url: "Agentic: Web",
+  read_web_page: "Agentic: Web",
   read_pdf: "Agentic: Web",
   read_docx: "Agentic: Web",
   read_spreadsheet: "Agentic: Web",
@@ -10324,7 +10458,7 @@ const TOOL_DOMAINS = {
   delete_custom_tool: "Agentic: Tool Management",
 
   // Agentic — Tool Discovery
-  tool_search: "Agentic: Meta",
+  search_tools: "Agentic: Meta",
 
   // Cron Jobs
   cron_create: "Cron Jobs",
@@ -10338,11 +10472,11 @@ const TOOL_DOMAINS = {
   notebook_edit: "Agentic: File Operations",
 
   // Communication (Twilio)
-  send_sms: "Communication",
-  list_sms_messages: "Communication",
-  get_twilio_account: "Communication",
-  lookup_phone_number: "Communication",
-  list_twilio_numbers: "Communication",
+  twilio_send_sms: "Communication",
+  twilio_list_messages: "Communication",
+  twilio_get_account: "Communication",
+  twilio_lookup_number: "Communication",
+  twilio_list_numbers: "Communication",
 
   // Creative (Image Generation, Vision, Audio)
   get_emoji_combination: "Creative",
@@ -10430,24 +10564,24 @@ const TOOL_EMOJIS = {
   // Products
   search_products: "🛒",
   get_trending_products: "🔥",
-  get_product_availability: "📋",
-  check_product_availability: "✅",
+  get_watchlist_availability: "📋",
+  check_sku_availability: "✅",
   get_costco_us_products: "🏪",
   get_costco_ca_products: "🏪",
 
   // Finance
-  get_stock_data: "💹",
-  get_macro_data: "🏛️",
+  get_stock: "💹",
+  get_macro: "🏛️",
   get_market_news: "📰",
   get_earnings_calendar: "💰",
 
   // Knowledge
-  lookup_book: "📚",
-  get_country_data: "🗺️",
-  get_element_data: "⚛️",
-  get_exoplanet_data: "🪐",
+  search_books: "📚",
+  get_country: "🗺️",
+  get_element: "⚛️",
+  get_exoplanet: "🪐",
   get_anime: "🎌",
-  define_word: "📖",
+  get_word_definition: "📖",
   search_papers: "🎓",
   get_wikipedia_summary: "📘",
   get_on_this_day: "📜",
@@ -10458,7 +10592,7 @@ const TOOL_EMOJIS = {
   read_pdf_url: "📄",
   read_rss_feed: "📡",
   get_pypi_package: "🐍",
-  get_music_data: "🎵",
+  get_music: "🎵",
   get_wayback_snapshot: "🕰️",
 
   // Movies & TV
@@ -10466,11 +10600,11 @@ const TOOL_EMOJIS = {
   get_media_details: "🎥",
   get_media_credits: "🌟",
   get_trending_media: "🔥",
-  discover_media: "🍿",
+  browse_media: "🍿",
   get_media_genres: "🎭",
 
   // Health
-  rank_foods: "🥗",
+  rank_foods_by_category: "🥗",
   search_drugs: "💊",
   get_drug_adverse_events: "⚕️",
   get_drug_recalls: "🚫",
@@ -10481,7 +10615,7 @@ const TOOL_EMOJIS = {
   get_nutrient_types: "🧬",
   list_category_nutrients: "📋",
   search_foods_by_taxonomy: "🔍",
-  browse_food_taxonomy: "🌿",
+  get_food_taxonomy: "🌿",
   get_nutritional_requirements: "📏",
   list_drug_dosage_forms: "💉",
   search_gym_exercises: "🏋️",
@@ -10489,7 +10623,7 @@ const TOOL_EMOJIS = {
   get_gym_exercise_by_id: "🎯",
   calculate_caloric_needs: "🔢",
   analyze_nutrient_gaps: "📉",
-  find_food_substitutes: "🔄",
+  search_food_substitutes: "🔄",
   estimate_exercise_calories: "🏃",
   calculate_hydration_needs: "💧",
   build_meal_plan: "🍽️",
@@ -10498,15 +10632,15 @@ const TOOL_EMOJIS = {
   // Transit
   get_next_bus: "🚌",
   get_transit_stop_info: "🚏",
-  find_transit_stops_nearby: "📍",
+  search_transit_stops_nearby: "📍",
   get_transit_route_info: "🗺️",
 
   // Utilities
-  lookup_airport: "✈️",
-  precise_calculator: "🧮",
+  search_airports: "✈️",
+  calculate_precise: "🧮",
   convert_currency: "💱",
   get_time_in_timezone: "🕐",
-  lookup_ip: "🔎",
+  get_ip_info: "🔎",
   search_nearby_places: "📍",
   search_places: "🗺️",
   generate_map: "🗺️",
@@ -10526,17 +10660,18 @@ const TOOL_EMOJIS = {
   generate_diagram: "📊",
   diff_text: "🔀",
   generate_hash: "🔐",
-  regex_tester: "🔣",
+  test_regex: "🔣",
   encode_decode: "🔁",
   convert_color: "🎨",
   manipulate_image: "🖼️",
   convert_image_to_ascii: "🎨",
   convert_video_to_gif: "🎬",
   parse_cron_expression: "⏰",
-  turtle_draw: "🐢",
+  draw_turtle: "🐢",
   create_3d_mesh: "🔺",
   create_3d_scene: "🧊",
   create_3d_model: "🌐",
+  create_3d_voxel: "🧱",
 
   // Reasoning & Control Flow
   think: "🧠",
@@ -10544,8 +10679,8 @@ const TOOL_EMOJIS = {
   synthetic_output: "📝",
 
   // Gaming
-  get_dota_data: "🎮",
-  start_bonfire: "🔥",
+  get_dota: "🎮",
+  create_bonfire: "🔥",
 
   // Torrent
   torrent_search: "🔍",
@@ -10561,9 +10696,9 @@ const TOOL_EMOJIS = {
 
   // Energy
   get_energy_indicators: "⚡",
-  browse_energy_data: "📊",
+  get_energy_catalog: "📊",
   get_energy_facets: "🔋",
-  query_energy_data: "📈",
+  search_energy: "📈",
   get_electricity_retail_sales: "🔌",
   get_petroleum_prices: "🛢️",
   get_natural_gas_prices: "🔥",
@@ -10589,7 +10724,7 @@ const TOOL_EMOJIS = {
   project_summary: "📋",
 
   // Agentic — Web
-  fetch_url: "🌐",
+  read_web_page: "🌐",
   read_pdf: "📄",
   read_docx: "📝",
   read_spreadsheet: "📊",
@@ -10630,7 +10765,7 @@ const TOOL_EMOJIS = {
   delete_custom_tool: "🗑️",
 
   // Agentic — Meta
-  tool_search: "🔍",
+  search_tools: "🔍",
 
   // Cron Jobs
   cron_create: "⏰",
@@ -10641,11 +10776,11 @@ const TOOL_EMOJIS = {
   cron_job_trigger: "🚀",
 
   // Communication (Twilio)
-  send_sms: "💬",
-  list_sms_messages: "📨",
-  get_twilio_account: "📱",
-  lookup_phone_number: "📞",
-  list_twilio_numbers: "📲",
+  twilio_send_sms: "💬",
+  twilio_list_messages: "📨",
+  twilio_get_account: "📱",
+  twilio_lookup_number: "📞",
+  twilio_list_numbers: "📲",
 
   // Creative
   get_emoji_combination: "🍳",
@@ -10698,7 +10833,7 @@ const TOOL_REQUIRED_KEYS = {
   get_media_details: ["TMDB_API_KEY"],
   get_media_credits: ["TMDB_API_KEY"],
   get_trending_media: ["TMDB_API_KEY"],
-  discover_media: ["TMDB_API_KEY"],
+  browse_media: ["TMDB_API_KEY"],
   get_media_genres: ["TMDB_API_KEY"],
 
   // Finance — Finnhub
@@ -10718,7 +10853,7 @@ const TOOL_REQUIRED_KEYS = {
   // Transit (all require TransLink API key)
   get_next_bus: ["TRANSLINK_API_KEY"],
   get_transit_stop_info: ["TRANSLINK_API_KEY"],
-  find_transit_stops_nearby: ["TRANSLINK_API_KEY"],
+  search_transit_stops_nearby: ["TRANSLINK_API_KEY"],
   get_transit_route_info: ["TRANSLINK_API_KEY"],
 
   // Places (require Google Places API key)
@@ -10739,9 +10874,9 @@ const TOOL_REQUIRED_KEYS = {
 
   // Energy (all require EIA API key)
   get_energy_indicators: ["EIA_API_KEY"],
-  browse_energy_data: ["EIA_API_KEY"],
+  get_energy_catalog: ["EIA_API_KEY"],
   get_energy_facets: ["EIA_API_KEY"],
-  query_energy_data: ["EIA_API_KEY"],
+  search_energy: ["EIA_API_KEY"],
   get_electricity_retail_sales: ["EIA_API_KEY"],
   get_petroleum_prices: ["EIA_API_KEY"],
   get_natural_gas_prices: ["EIA_API_KEY"],
@@ -10750,11 +10885,11 @@ const TOOL_REQUIRED_KEYS = {
   web_search: ["BRAVE_SEARCH_API_KEY"],
 
   // Communication (Twilio — all require account SID + auth token)
-  send_sms: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
-  list_sms_messages: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
-  get_twilio_account: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
-  lookup_phone_number: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
-  list_twilio_numbers: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
+  twilio_send_sms: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
+  twilio_list_messages: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
+  twilio_get_account: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
+  twilio_lookup_number: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
+  twilio_list_numbers: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
 
   // Creative (require Prism as LLM backend)
   generate_image: ["PRISM_SERVICE_URL"],
@@ -10840,26 +10975,26 @@ function isToolAvailable(toolName: string) {
 const TOOL_LABELS = {
   get_weather: ["location"],
   get_local_environment: ["location"],
-  rank_foods: ["health"],
+  rank_foods_by_category: ["health"],
   search_drugs: ["health"],
   search_media: ["media"],
   get_media_details: ["media"],
   get_media_credits: ["media"],
   get_trending_media: ["media"],
-  discover_media: ["media"],
+  browse_media: ["media"],
   get_media_genres: ["media"],
   git: ["coding", "git"],
-  lookup_book: ["reference"],
-  get_country_data: ["reference"],
-  get_element_data: ["reference"],
-  get_exoplanet_data: ["reference"],
-  lookup_airport: ["location"],
+  search_books: ["reference"],
+  get_country: ["reference"],
+  get_element: ["reference"],
+  get_exoplanet: ["reference"],
+  search_airports: ["location"],
   get_events: ["location"],
   get_trends: ["web"],
   get_anime: ["media"],
   get_commodities: ["finance"],
-  get_stock_data: ["finance"],
-  get_macro_data: ["finance"],
+  get_stock: ["finance"],
+  get_macro: ["finance"],
   // ── Weather & Environment ───────────────────────────────
   get_weather_forecast: ["location"],
   get_weather_history: ["location"],
@@ -10902,8 +11037,8 @@ const TOOL_LABELS = {
   // ── Products ─────────────────────────────────────────────
   search_products: ["shopping"],
   get_trending_products: ["shopping"],
-  get_product_availability: ["shopping"],
-  check_product_availability: ["shopping"],
+  get_watchlist_availability: ["shopping"],
+  check_sku_availability: ["shopping"],
   get_costco_us_products: ["shopping"],
   get_costco_ca_products: ["shopping"],
 
@@ -10912,7 +11047,7 @@ const TOOL_LABELS = {
   get_earnings_calendar: ["finance"],
 
   // ── Knowledge ────────────────────────────────────────────
-  define_word: ["reference"],
+  get_word_definition: ["reference"],
   search_papers: ["reference", "coding"],
   get_youtube_video: ["web"],
   read_url: ["web", "coding"],
@@ -10939,12 +11074,12 @@ const TOOL_LABELS = {
   get_nutrient_types: ["health"],
   list_category_nutrients: ["health"],
   search_foods_by_taxonomy: ["health"],
-  browse_food_taxonomy: ["health"],
+  get_food_taxonomy: ["health"],
   get_nutritional_requirements: ["health"],
   list_drug_dosage_forms: ["health"],
   calculate_caloric_needs: ["health"],
   analyze_nutrient_gaps: ["health"],
-  find_food_substitutes: ["health"],
+  search_food_substitutes: ["health"],
   estimate_exercise_calories: ["health"],
   calculate_hydration_needs: ["health"],
   build_meal_plan: ["health"],
@@ -10954,15 +11089,15 @@ const TOOL_LABELS = {
   // ── Transit ──────────────────────────────────────────────
   get_next_bus: ["location"],
   get_transit_stop_info: ["location"],
-  find_transit_stops_nearby: ["location"],
+  search_transit_stops_nearby: ["location"],
   get_transit_route_info: ["location"],
 
   // ── Utilities ────────────────────────────────────────────
   execute_python: ["coding", "data"],
-  precise_calculator: ["data"],
+  calculate_precise: ["data"],
   convert_currency: ["finance", "data"],
   get_time_in_timezone: ["data"],
-  lookup_ip: ["data"],
+  get_ip_info: ["data"],
   search_nearby_places: ["location"],
   search_places: ["location"],
   generate_map: ["location"],
@@ -10981,27 +11116,28 @@ const TOOL_LABELS = {
   generate_diagram: ["data"],
   diff_text: ["coding", "data"],
   generate_hash: ["coding", "data"],
-  regex_tester: ["coding"],
+  test_regex: ["coding"],
   encode_decode: ["coding", "data"],
   convert_color: ["data"],
   manipulate_image: ["data", "creative"],
   convert_image_to_ascii: ["data", "creative"],
   convert_video_to_gif: ["data", "creative"],
   parse_cron_expression: ["coding", "automation", "data"],
-  turtle_draw: ["coding", "creative", "data"],
+  draw_turtle: ["coding", "creative", "data"],
   create_3d_mesh: ["creative", "data"],
   create_3d_scene: ["creative", "data"],
   create_3d_model: ["creative", "data"],
+  create_3d_voxel: ["creative", "data"],
   think: ["coding"],
   sleep: ["coding"],
   synthetic_output: ["coding"],
 
   // ── Gaming ───────────────────────────────────────────────
-  get_dota_data: ["reference", "media"],
-  start_bonfire: ["creative"],
+  get_dota: ["reference", "media"],
+  create_bonfire: ["creative"],
 
   // ── Music ─────────────────────────────────────────────────
-  get_music_data: ["reference", "media"],
+  get_music: ["reference", "media"],
 
   // ── Wayback Machine ──────────────────────────────────────
   get_wayback_snapshot: ["web", "reference"],
@@ -11020,9 +11156,9 @@ const TOOL_LABELS = {
 
   // ── Energy ───────────────────────────────────────────────
   get_energy_indicators: ["energy"],
-  browse_energy_data: ["energy"],
+  get_energy_catalog: ["energy"],
   get_energy_facets: ["energy"],
-  query_energy_data: ["energy"],
+  search_energy: ["energy"],
   get_electricity_retail_sales: ["energy"],
   get_petroleum_prices: ["energy"],
   get_natural_gas_prices: ["energy"],
@@ -11047,7 +11183,7 @@ const TOOL_LABELS = {
   project_summary: ["coding"],
 
   // ── Agentic: Web ─────────────────────────────────────────
-  fetch_url: ["coding", "web"],
+  read_web_page: ["coding", "web"],
   read_pdf: ["coding", "web"],
   read_docx: ["coding", "web"],
   read_spreadsheet: ["coding", "web", "data"],
@@ -11087,7 +11223,7 @@ const TOOL_LABELS = {
   delete_custom_tool: ["coding", "meta"],
 
   // ── Agentic: Tool Discovery ──────────────────────────────
-  tool_search: ["coding", "meta"],
+  search_tools: ["coding", "meta"],
 
   // ── Cron Jobs ────────────────────────────────────────────
   cron_create: ["coding", "automation"],
@@ -11101,11 +11237,11 @@ const TOOL_LABELS = {
   notebook_edit: ["coding", "data_science"],
 
   // ── Communication ────────────────────────────────────────
-  send_sms: ["communication"],
-  list_sms_messages: ["communication"],
-  get_twilio_account: ["communication"],
-  lookup_phone_number: ["communication"],
-  list_twilio_numbers: ["communication"],
+  twilio_send_sms: ["communication"],
+  twilio_list_messages: ["communication"],
+  twilio_get_account: ["communication"],
+  twilio_lookup_number: ["communication"],
+  twilio_list_numbers: ["communication"],
 
   // ── Creative (Image Generation & Vision) ────────────────────
   get_emoji_combination: ["creative", "media"],
@@ -11153,39 +11289,40 @@ const TOOL_INTELLIGENCE_TIERS: Record<string, ToolIntelligenceTier> = {
   build_meal_plan: "frontier",
   analyze_nutrient_gaps: "frontier",
   transform_json: "frontier",
-  turtle_draw: "frontier",
+  draw_turtle: "frontier",
   create_3d_mesh: "frontier",
   create_3d_scene: "frontier",
   create_3d_model: "high",
+  create_3d_voxel: "high",
   lsp_action: "frontier",
   notebook_edit: "frontier",
-  query_energy_data: "frontier",
+  search_energy: "frontier",
 
   // 🟠 High — Strong Models Recommended (Complex domain enums, conditional required params)
-  get_macro_data: "high",
-  get_stock_data: "high",
-  get_country_data: "high",
-  get_element_data: "high",
-  get_exoplanet_data: "high",
+  get_macro: "high",
+  get_stock: "high",
+  get_country: "high",
+  get_element: "high",
+  get_exoplanet: "high",
   search_drugs: "high",
   search_foods_by_taxonomy: "high",
-  browse_food_taxonomy: "high",
+  get_food_taxonomy: "high",
   get_nutritional_requirements: "high",
-  rank_foods: "high",
+  rank_foods_by_category: "high",
   execute_python: "high",
   execute_shell: "high",
   parse_datetime: "high",
   generate_map: "high",
   generate_chart: "high",
   get_commodities: "high",
-  discover_media: "high",
+  browse_media: "high",
   get_events: "high",
   check_drug_nutrient_interactions: "high",
-  find_food_substitutes: "high",
+  search_food_substitutes: "high",
   create_custom_agent: "high",
   cron_create: "high",
   generate_diagram: "high",
-  regex_tester: "high",
+  test_regex: "high",
   str_replace_file: "high",
   block_replace_file: "high",
   multi_replace_file: "high",
@@ -11197,13 +11334,13 @@ const TOOL_INTELLIGENCE_TIERS: Record<string, ToolIntelligenceTier> = {
   get_trends: "medium",
   search_products: "medium",
   get_anime: "medium",
-  lookup_book: "medium",
+  search_books: "medium",
   search_media: "medium",
   get_media_details: "medium",
   get_media_credits: "medium",
   get_trending_media: "medium",
   execute_javascript: "medium",
-  lookup_airport: "medium",
+  search_airports: "medium",
   search_nearby_places: "medium",
   search_places: "medium",
   convert_units: "medium",
@@ -11228,14 +11365,14 @@ const TOOL_INTELLIGENCE_TIERS: Record<string, ToolIntelligenceTier> = {
   get_next_bus: "medium",
   get_transit_stop_info: "medium",
   get_transit_route_info: "medium",
-  find_transit_stops_nearby: "medium",
+  search_transit_stops_nearby: "medium",
   get_petroleum_prices: "medium",
   get_natural_gas_prices: "medium",
   get_electricity_retail_sales: "medium",
   get_energy_facets: "medium",
   git: "medium",
   run_command: "medium",
-  send_sms: "medium",
+  twilio_send_sms: "medium",
   discord_message_search: "medium",
   generate_image: "medium",
   text_to_speech: "medium",

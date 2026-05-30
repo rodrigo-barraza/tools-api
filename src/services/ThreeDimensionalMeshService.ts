@@ -9,8 +9,6 @@ import { buildEmbedHtml } from "../utilities.ts";
 const MAX_VERTEX_COUNT = 50_000;
 const MAX_FACE_COUNT = 100_000;
 const THREE_JS_CDN = "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js";
-const ORBIT_CONTROLS_CDN =
-  "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/controls/OrbitControls.js";
 
 // ─── Types ─────────────────────────────────────────────────────
 

@@ -4,7 +4,7 @@ import logger from "../logger.ts";
 
 // ─── Types ──────────────────────────────────────────────────────
 
-export type ThreeDimensionalSceneType = "mesh" | "scene" | "model";
+export type ThreeDimensionalSceneType = "mesh" | "scene" | "model" | "voxel";
 
 export interface ThreeDimensionalSceneDocument {
   sceneId: string;

@@ -52,6 +52,12 @@ import {
   buildModelEmbedHtml,
 } from "../services/ThreeDimensionalModelService.ts";
 import type { ModelObject, ModelSceneConfig, ModelOptions } from "../services/ThreeDimensionalModelService.ts";
+import {
+  validateVoxelInput,
+  buildVoxelEmbedHtml,
+  resolveVoxels,
+} from "../services/ThreeDimensionalVoxelService.ts";
+import type { Voxel, VoxelShape, VoxelOptions } from "../services/ThreeDimensionalVoxelService.ts";
 import { processImage, convertToAscii } from "../services/ImageService.ts";
 import { convertVideoToGif } from "../services/VideoService.ts";
 // ─── Lazy-loaded dependencies ──────────────────────────────────────
@@ -2860,6 +2866,33 @@ router.post("/3d/model", asyncHandler(async (req: Request, res: Response) => {
     environment: sceneConfig?.environment || "studio",
   });
 }));
+// ── Create 3D Voxel (Instanced voxels + primitive shape rasterization) ──
+router.post("/3d/voxel", asyncHandler(async (req: Request, res: Response) => {
+  const { voxels, shapes, options } = req.body;
+  const voxelInput = { voxels, shapes, options };
+  const validationError = validateVoxelInput(voxelInput);
+  if (validationError) {
+    return res.status(400).json({ error: validationError });
+  }
+  const callerUsername = (req.headers["x-username"] as string) || null;
+  const sceneId = crypto.randomUUID().slice(0, 12);
+  await saveThreeDimensionalScene(
+    sceneId,
+    "voxel",
+    { voxels, shapes },
+    options || {},
+    null,
+    callerUsername,
+  );
+  const sceneEmbedUrl = buildLocalUrl("compute/3d/embed", { id: sceneId, type: "voxel" });
+  const resolvedVoxelArray = resolveVoxels(voxelInput);
+  res.json({
+    sceneEmbedUrl,
+    sceneId,
+    sceneType: "voxel",
+    voxelCount: resolvedVoxelArray.length,
+  });
+}));
 // ── Serve 3D Embed HTML ───────────────────────────────────────
 router.get("/3d/embed", asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.query as Record<string, string>;
@@ -2890,6 +2923,13 @@ router.get("/3d/embed", asyncHandler(async (req: Request, res: Response) => {
         scene: entry.sceneData.scene as unknown as ModelSceneConfig | undefined,
         objects: entry.sceneData.objects as unknown as ModelObject[],
         options: entry.options as unknown as ModelOptions,
+      });
+      break;
+    case "voxel":
+      html = buildVoxelEmbedHtml({
+        voxels: entry.sceneData.voxels as unknown as Voxel[],
+        shapes: entry.sceneData.shapes as unknown as VoxelShape[],
+        options: entry.options as unknown as VoxelOptions,
       });
       break;
     default:
