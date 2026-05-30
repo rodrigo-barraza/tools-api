@@ -4906,11 +4906,13 @@ const TOOL_DEFINITIONS: any[] = [
                   "speed, hideturtle, ht, showturtle, st, home, reset, clear",
               },
               value: {
+                type: "string",
                 description:
                   "Primary value: distance (forward/backward), angle (right/left/setheading), " +
                   "radius (circle/arc), size (dot), speed (1-10), or CSS color string (color/fillcolor)",
               },
               value2: {
+                type: "string",
                 description:
                   "Secondary value: arc extent in degrees, or y-coordinate for goto",
               },
