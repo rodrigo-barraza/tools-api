@@ -5291,6 +5291,57 @@ const TOOL_DEFINITIONS: any[] = [
               children: {
                 type: "array",
                 description: "Child objects (only for type='group'). Same structure as parent objects array.",
+                items: {
+                  type: "object",
+                  properties: {
+                    type: {
+                      type: "string",
+                      enum: [
+                        "box", "sphere", "cylinder", "cone", "torus", "torusKnot",
+                        "plane", "ring", "circle", "dodecahedron", "icosahedron",
+                        "octahedron", "tetrahedron", "capsule", "group", "text3d",
+                      ],
+                      description: "Object type",
+                    },
+                    name: { type: "string", description: "Optional name" },
+                    size: { type: "array", items: { type: "number" }, description: "Box dimensions [w,h,d]" },
+                    radius: { type: "number", description: "Radius for round shapes" },
+                    height: { type: "number", description: "Height for cylinder/cone/capsule" },
+                    position: { type: "array", items: { type: "number" }, description: "Position [x,y,z]" },
+                    rotation: { type: "array", items: { type: "number" }, description: "Rotation [x,y,z] in degrees" },
+                    scale: { type: "array", items: { type: "number" }, description: "Scale [x,y,z]" },
+                    material: {
+                      type: "object",
+                      properties: {
+                        color: { type: "string", description: "CSS color" },
+                        metalness: { type: "number", description: "0-1" },
+                        roughness: { type: "number", description: "0-1" },
+                        opacity: { type: "number", description: "0-1" },
+                        emissive: { type: "string", description: "Emissive glow color" },
+                        wireframe: { type: "boolean" },
+                      },
+                      description: "PBR material",
+                    },
+                    animation: {
+                      type: "object",
+                      properties: {
+                        type: {
+                          type: "string",
+                          enum: ["spin", "bounce", "orbit", "pulse", "float"],
+                          description: "Animation type",
+                        },
+                        speed: { type: "number", description: "Animation speed multiplier (default: 1.0)" },
+                        axis: { type: "string", description: "Rotation axis for spin: 'x', 'y', or 'z' (default: 'y')" },
+                        amplitude: { type: "number", description: "Movement amplitude (default: 0.5)" },
+                        radius: { type: "number", description: "Orbit radius (default: 2)" },
+                      },
+                      description: "Built-in animation",
+                    },
+                    content: { type: "string", description: "Text content (type='text3d' only)" },
+                    fontSize: { type: "number", description: "Text size (type='text3d', default: 0.5)" },
+                  },
+                  required: ["type"],
+                },
               },
               content: { type: "string", description: "Text content (type='text3d' only)" },
               fontSize: { type: "number", description: "Text size (type='text3d', default: 0.5)" },
