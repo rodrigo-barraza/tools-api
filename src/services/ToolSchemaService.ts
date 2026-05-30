@@ -20,6 +20,7 @@ import {
 } from "../constants.ts";
 
 import type {
+  ToolDefinition,
   ToolIntelligenceTier,
   ToolSchema,
   ToolSchemaForAI,
@@ -1419,7 +1420,7 @@ function fieldsParam(fieldEnum: string[]) {
 // Tool Definitions — JSON Schema + endpoint metadata
 // ────────────────────────────────────────────────────────────
 
-const TOOL_DEFINITIONS: any[] = [
+const TOOL_DEFINITIONS: ToolDefinition[] = [
   // ── Weather / Environment ──────────────────────────────────
   {
     name: "get_weather_forecast",
@@ -9427,7 +9428,7 @@ const TOOL_DEFINITIONS: any[] = [
           description:
             "Filter by tool domain. Known domains include: 'Weather & Environment', " +
             "'Finance & Markets', 'Health & Nutrition', 'Knowledge & Reference', " +
-            "'Agentic: File Operations', 'Agentic: Search', 'Communication', 'Creative', etc.",
+            "'Workspace', 'Web', 'Browser', 'Task Management', 'Communication', 'Creative', etc.",
         },
         label: {
           type: "string",
@@ -10363,8 +10364,8 @@ const TOOL_DOMAINS = {
   create_3d_model: "Compute",
   create_3d_voxel: "Compute",
   think: "Reasoning",
-  sleep: "Agentic: Control Flow",
-  synthetic_output: "Agentic: Structured Output",
+  sleep: "Control Flow",
+  synthetic_output: "Structured Output",
 
   // Gaming
   get_dota: "Gaming",
@@ -10398,67 +10399,67 @@ const TOOL_DOMAINS = {
   get_natural_gas_prices: "Energy",
 
   // Agentic — Workspace
-  read_file: "Agentic: Workspace",
-  write_file: "Agentic: Workspace",
-  str_replace_file: "Agentic: Workspace",
-  block_replace_file: "Agentic: Workspace",
-  multi_replace_file: "Agentic: Workspace",
-  patch_file: "Agentic: Workspace",
-  multi_file_read: "Agentic: Workspace",
-  file_info: "Agentic: Workspace",
-  file_diff: "Agentic: Workspace",
-  move_file: "Agentic: Workspace",
-  delete_file: "Agentic: Workspace",
+  read_file: "Workspace",
+  write_file: "Workspace",
+  str_replace_file: "Workspace",
+  block_replace_file: "Workspace",
+  multi_replace_file: "Workspace",
+  patch_file: "Workspace",
+  multi_file_read: "Workspace",
+  file_info: "Workspace",
+  file_diff: "Workspace",
+  move_file: "Workspace",
+  delete_file: "Workspace",
 
   // Agentic — Workspace Search
-  list_directory: "Agentic: Workspace",
-  grep_search: "Agentic: Workspace",
-  glob_files: "Agentic: Workspace",
-  project_summary: "Agentic: Workspace",
+  list_directory: "Workspace",
+  grep_search: "Workspace",
+  glob_files: "Workspace",
+  project_summary: "Workspace",
 
   // Agentic — Web
-  read_web_page: "Agentic: Web",
-  read_pdf: "Agentic: Web",
-  read_docx: "Agentic: Web",
-  read_spreadsheet: "Agentic: Web",
-  web_search: "Agentic: Web",
+  read_web_page: "Web",
+  read_pdf: "Web",
+  read_docx: "Web",
+  read_spreadsheet: "Web",
+  web_search: "Web",
 
   // Agentic — Command Execution
-  run_command: "Agentic: Workspace",
+  run_command: "Workspace",
 
   // Agentic — Git
 
-  git: "Agentic: Workspace",
+  git: "Workspace",
   // Agentic — Browser Automation
-  browser_action: "Agentic: Browser",
-  browser_script: "Agentic: Browser",
+  browser_action: "Browser",
+  browser_script: "Browser",
 
   // Agentic — Code Intelligence (LSP)
-  lsp_action: "Agentic: Workspace",
+  lsp_action: "Workspace",
 
   // Agentic — Task Management
-  task_create: "Agentic: Task Management",
-  task_get: "Agentic: Task Management",
-  task_list: "Agentic: Task Management",
-  task_update: "Agentic: Task Management",
+  task_create: "Task Management",
+  task_get: "Task Management",
+  task_list: "Task Management",
+  task_update: "Task Management",
 
   // Agentic — Memory Persistence
-  upsert_memory: "Agentic: Memory",
+  upsert_memory: "Memory",
 
   // Agentic — Agent Management
-  create_custom_agent: "Agentic: Agent Management",
-  list_custom_agents: "Agentic: Agent Management",
-  update_custom_agent: "Agentic: Agent Management",
+  create_custom_agent: "Agent Management",
+  list_custom_agents: "Agent Management",
+  update_custom_agent: "Agent Management",
 
   // Agentic — Custom Tool Management
-  create_custom_tool: "Agentic: Tool Management",
-  create_privileged_tool: "Agentic: Tool Management",
-  list_custom_tools: "Agentic: Tool Management",
-  update_custom_tool: "Agentic: Tool Management",
-  delete_custom_tool: "Agentic: Tool Management",
+  create_custom_tool: "Tool Management",
+  create_privileged_tool: "Tool Management",
+  list_custom_tools: "Tool Management",
+  update_custom_tool: "Tool Management",
+  delete_custom_tool: "Tool Management",
 
   // Agentic — Tool Discovery
-  search_tools: "Agentic: Meta",
+  search_tools: "Meta",
 
   // Cron Jobs
   cron_create: "Cron Jobs",
@@ -10469,7 +10470,7 @@ const TOOL_DOMAINS = {
   cron_job_trigger: "Cron Jobs",
 
   // Agentic — Notebook Editing
-  notebook_edit: "Agentic: Workspace",
+  notebook_edit: "Workspace",
 
   // Communication (Twilio)
   twilio_send_sms: "Communication",
@@ -10824,7 +10825,7 @@ const TOOL_EMOJIS = {
 // in-memory datasets, compute tools, scrapers, etc.).
 // ────────────────────────────────────────────────────────────
 
-import CONFIG from "../config.ts";
+import CONFIG, { ToolsServiceConfig } from "../config.ts";
 import logger from "../logger.ts";
 
 const TOOL_REQUIRED_KEYS = {
@@ -10960,7 +10961,7 @@ function isToolAvailable(toolName: string) {
   const keys = TOOL_REQUIRED_KEYS[toolName as keyof typeof TOOL_REQUIRED_KEYS];
   if (!keys) return true;
   return keys.every((key: string) =>
-    Boolean((CONFIG as unknown as Record<string, unknown>)[key]),
+    Boolean(CONFIG[key as keyof ToolsServiceConfig]),
   );
 }
 
@@ -11430,11 +11431,18 @@ export function getToolSchemasForAI(): ToolSchemaForAI[] {
   );
 }
 
+export interface TransformedDisabledTool {
+  name: string;
+  domain: string;
+  missingKeys: string[];
+  runtimeDisabled?: string;
+}
+
 /**
  * Get tools that are disabled due to missing API keys or runtime failures.
  * Useful for admin diagnostics and health checks.
  */
-export function getDisabledTools(): any[] {
+export function getDisabledTools(): TransformedDisabledTool[] {
   return TOOL_DEFINITIONS.filter((tool) => !isToolAvailable(tool.name)).map(
     (tool) => {
       const requiredKeys =
@@ -11445,7 +11453,7 @@ export function getDisabledTools(): any[] {
         name: tool.name,
         domain: TOOL_DOMAINS[tool.name as keyof typeof TOOL_DOMAINS] || "Other",
         missingKeys: requiredKeys.filter(
-          (key: string) => !(CONFIG as unknown as Record<string, unknown>)[key],
+          (key: string) => !CONFIG[key as keyof ToolsServiceConfig],
         ),
         ...(runtimeReason && { runtimeDisabled: runtimeReason }),
       };

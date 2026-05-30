@@ -11,7 +11,7 @@ export interface ToolConditionalPath {
 
 export interface ToolEndpoint {
   path: string;
-  method?: "GET" | "POST";
+  method?: "GET" | "POST" | "PUT" | "DELETE";
   queryParams?: string[];
   pathParams?: string[];
   bodyParams?: string[];
@@ -24,6 +24,9 @@ export interface ToolParameterProperty {
   type: string;
   description?: string;
   enum?: string[];
+  items?: ToolParameterProperty | { type: string; properties?: Record<string, ToolParameterProperty>; required?: string[] };
+  properties?: Record<string, ToolParameterProperty>;
+  required?: string[];
 }
 
 export interface ToolParameters {
@@ -57,11 +60,17 @@ export interface ComputeDataSource {
   runtime: string;
 }
 
+export interface RealtimeDataSource {
+  type: "realtime";
+  provider: string;
+}
+
 export type ToolDataSource =
   | CachedDataSource
   | OnDemandDataSource
   | StaticDataSource
-  | ComputeDataSource;
+  | ComputeDataSource
+  | RealtimeDataSource;
 
 export type ToolIntelligenceTier = "low" | "medium" | "high" | "frontier";
 
