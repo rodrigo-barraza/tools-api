@@ -93,7 +93,7 @@ const collectMovies = createEventCollector(
           "get_media_details",
           "get_media_credits",
           "get_trending_media",
-          "discover_media",
+          "browse_media",
           "get_media_genres",
         ];
         for (const toolName of tmdbToolNames) {
