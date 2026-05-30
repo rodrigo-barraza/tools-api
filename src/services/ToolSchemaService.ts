@@ -10397,24 +10397,24 @@ const TOOL_DOMAINS = {
   get_petroleum_prices: "Energy",
   get_natural_gas_prices: "Energy",
 
-  // Agentic — File Operations
-  read_file: "Agentic: File Operations",
-  write_file: "Agentic: File Operations",
-  str_replace_file: "Agentic: File Operations",
-  block_replace_file: "Agentic: File Operations",
-  multi_replace_file: "Agentic: File Operations",
-  patch_file: "Agentic: File Operations",
-  multi_file_read: "Agentic: File Operations",
-  file_info: "Agentic: File Operations",
-  file_diff: "Agentic: File Operations",
-  move_file: "Agentic: File Operations",
-  delete_file: "Agentic: File Operations",
+  // Agentic — Workspace
+  read_file: "Agentic: Workspace",
+  write_file: "Agentic: Workspace",
+  str_replace_file: "Agentic: Workspace",
+  block_replace_file: "Agentic: Workspace",
+  multi_replace_file: "Agentic: Workspace",
+  patch_file: "Agentic: Workspace",
+  multi_file_read: "Agentic: Workspace",
+  file_info: "Agentic: Workspace",
+  file_diff: "Agentic: Workspace",
+  move_file: "Agentic: Workspace",
+  delete_file: "Agentic: Workspace",
 
-  // Agentic — Search & Discovery
-  list_directory: "Agentic: Search & Discovery",
-  grep_search: "Agentic: Search & Discovery",
-  glob_files: "Agentic: Search & Discovery",
-  project_summary: "Agentic: Search & Discovery",
+  // Agentic — Workspace Search
+  list_directory: "Agentic: Workspace",
+  grep_search: "Agentic: Workspace",
+  glob_files: "Agentic: Workspace",
+  project_summary: "Agentic: Workspace",
 
   // Agentic — Web
   read_web_page: "Agentic: Web",
@@ -10424,17 +10424,17 @@ const TOOL_DOMAINS = {
   web_search: "Agentic: Web",
 
   // Agentic — Command Execution
-  run_command: "Agentic: Command Execution",
+  run_command: "Agentic: Workspace",
 
   // Agentic — Git
 
-  git: "Agentic: Git",
+  git: "Agentic: Workspace",
   // Agentic — Browser Automation
   browser_action: "Agentic: Browser",
   browser_script: "Agentic: Browser",
 
   // Agentic — Code Intelligence (LSP)
-  lsp_action: "Agentic: Code Intelligence",
+  lsp_action: "Agentic: Workspace",
 
   // Agentic — Task Management
   task_create: "Agentic: Task Management",
@@ -10469,7 +10469,7 @@ const TOOL_DOMAINS = {
   cron_job_trigger: "Cron Jobs",
 
   // Agentic — Notebook Editing
-  notebook_edit: "Agentic: File Operations",
+  notebook_edit: "Agentic: Workspace",
 
   // Communication (Twilio)
   twilio_send_sms: "Communication",

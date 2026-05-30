@@ -1337,10 +1337,21 @@ router.post(
         error: "At least one of 'query', 'domain', or 'label' is required",
       };
     }
+    const enabledToolsHeader = req.headers["x-enabled-tools"];
+    const agentHeader = req.headers["x-agent"];
+    let enabledTools: string[] | undefined;
+    if (
+      enabledToolsHeader &&
+      typeof enabledToolsHeader === "string" &&
+      agentHeader !== "META"
+    ) {
+      enabledTools = enabledToolsHeader.split(",");
+    }
     return agenticToolSearch(query, {
       domain: domain || undefined,
       label: label || undefined,
       limit: limit ? Math.min(parseInt(limit, 10), 50) : 20,
+      enabledTools,
     });
   }),
 );

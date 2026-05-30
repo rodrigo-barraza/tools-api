@@ -17,6 +17,7 @@ export interface AgenticToolSearchOptions {
   domain?: string;
   label?: string;
   limit?: number;
+  enabledTools?: string[];
 }
 
 export interface TransformedToolSearchResult {
@@ -30,7 +31,7 @@ export interface TransformedToolSearchResult {
 
 export function agenticToolSearch(
   query: string,
-  { domain, label, limit = 20 }: AgenticToolSearchOptions = {},
+  { domain, label, limit = 20, enabledTools }: AgenticToolSearchOptions = {},
 ): TransformedToolSearchResult {
   const allSchemas = getToolSchemas();
 
@@ -44,12 +45,20 @@ export function agenticToolSearch(
 
   let filtered: InferredToolSchema[] = allSchemas;
 
+  // Filter by enabled tools for the active agent session if specified
+  if (enabledTools && Array.isArray(enabledTools)) {
+    const enabledSet = new Set(enabledTools);
+    filtered = filtered.filter((toolSchema: InferredToolSchema) =>
+      enabledSet.has(toolSchema.name),
+    );
+  }
+
   // Filter by domain (exact match, case-insensitive)
   if (domain) {
     const domainLower = domain.toLowerCase();
     filtered = filtered.filter(
-      (t: InferredToolSchema) =>
-        t.domain && t.domain.toLowerCase() === domainLower,
+      (toolSchema: InferredToolSchema) =>
+        toolSchema.domain && toolSchema.domain.toLowerCase() === domainLower,
     );
   }
 
@@ -57,10 +66,12 @@ export function agenticToolSearch(
   if (label) {
     const labelLower = label.toLowerCase();
     filtered = filtered.filter(
-      (t: InferredToolSchema) =>
-        t.labels &&
-        Object.values(t.labels).some(
-          (v: any) => typeof v === "string" && v.toLowerCase() === labelLower,
+      (toolSchema: InferredToolSchema) =>
+        toolSchema.labels &&
+        Object.values(toolSchema.labels).some(
+          (labelValue: unknown) =>
+            typeof labelValue === "string" &&
+            labelValue.toLowerCase() === labelLower,
         ),
     );
   }
