@@ -1,4 +1,0 @@
-
-> tools-service@0.2.0 build
-> tsc
-
