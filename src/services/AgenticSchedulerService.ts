@@ -54,6 +54,7 @@ export async function agenticScheduleCreate(data: Record<string, unknown>, usern
     scheduleDay,
     scheduleDate,
     cronExpression,
+    enabledTools,
   } = data;
 
   if (!project || typeof project !== "string") {
@@ -89,6 +90,7 @@ export async function agenticScheduleCreate(data: Record<string, unknown>, usern
     scheduleDay,
     scheduleDate: sDate,
     cronExpression: cronExpr,
+    toolConfig: enabledTools ? { enabledTools } : undefined,
   };
 
   try {

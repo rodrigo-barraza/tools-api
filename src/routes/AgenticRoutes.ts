@@ -1388,6 +1388,11 @@ router.post(
     const providerFromHeader = (req.headers["x-provider"] as string) || undefined;
     const modelFromHeader = (req.headers["x-model"] as string) || undefined;
     const agentFromHeader = (req.headers["x-agent"] as string) || undefined;
+    const enabledToolsHeader = req.headers["x-enabled-tools"];
+    let enabledTools: string[] | undefined;
+    if (enabledToolsHeader && typeof enabledToolsHeader === "string") {
+      enabledTools = enabledToolsHeader.split(",");
+    }
 
     return agenticScheduleCreate({
       project,
@@ -1403,6 +1408,7 @@ router.post(
       model: model || modelFromHeader,
       schedule,
       type,
+      enabledTools,
     }, username);
   }),
 );
