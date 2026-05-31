@@ -1385,6 +1385,10 @@ router.post(
       return { error: "Request body must include 'prompt' (string)" };
     }
     const username = (req.headers["x-username"] as string) || undefined;
+    const providerFromHeader = (req.headers["x-provider"] as string) || undefined;
+    const modelFromHeader = (req.headers["x-model"] as string) || undefined;
+    const agentFromHeader = (req.headers["x-agent"] as string) || undefined;
+
     return agenticScheduleCreate({
       project,
       name,
@@ -1394,9 +1398,9 @@ router.post(
       scheduleTime,
       scheduleDay,
       scheduleDate,
-      agent,
-      provider,
-      model,
+      agent: agent || agentFromHeader || null,
+      provider: provider || providerFromHeader,
+      model: model || modelFromHeader,
       schedule,
       type,
     }, username);
@@ -1454,14 +1458,18 @@ router.post(
   agenticHandler(async (req: Request) => {
     const { project, name, schedule, prompt, type, agent, model } = req.body;
     const username = (req.headers["x-username"] as string) || undefined;
+    const providerFromHeader = (req.headers["x-provider"] as string) || undefined;
+    const modelFromHeader = (req.headers["x-model"] as string) || undefined;
+    const agentFromHeader = (req.headers["x-agent"] as string) || undefined;
     return agenticScheduleCreate({
       project,
       name,
       schedule,
       prompt,
       type,
-      agent,
-      model,
+      agent: agent || agentFromHeader || null,
+      provider: providerFromHeader,
+      model: model || modelFromHeader,
     }, username);
   }),
 );
