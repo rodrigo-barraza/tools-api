@@ -54,6 +54,20 @@ function staticDataset(name: string) {
   return { type: "static" as const, provider: "internal", dataset: name };
 }
 
+import { DOMAINS } from "@rodrigo-barraza/utilities-library/taxonomy";
+
+// Reverse map: domain display name → programmatic key (e.g. "Core Tools" → "core")
+const DOMAIN_DISPLAY_NAME_TO_KEY = new Map<string, string>();
+for (const entry of Object.values(DOMAINS)) {
+  if (!DOMAIN_DISPLAY_NAME_TO_KEY.has(entry.displayName)) {
+    DOMAIN_DISPLAY_NAME_TO_KEY.set(entry.displayName, entry.key);
+  }
+}
+
+function resolveDomainKey(domain: string): string {
+  return DOMAIN_DISPLAY_NAME_TO_KEY.get(domain) || domain.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+}
+
 function compute(name: string) {
   return { type: "compute" as const, provider: "internal", runtime: name };
 }
@@ -11401,16 +11415,20 @@ export {
  */
 export function getToolSchemas(): ToolSchema[] {
   return TOOL_DEFINITIONS.filter((tool) => isToolAvailable(tool.name)).map(
-    (tool) => ({
-      ...tool,
-      domain: TOOL_DOMAINS[tool.name as keyof typeof TOOL_DOMAINS] || "Other",
-      labels: TOOL_LABELS[tool.name as keyof typeof TOOL_LABELS] || [],
-      emoji: TOOL_EMOJIS[tool.name as keyof typeof TOOL_EMOJIS] || null,
-      intelligenceTier:
-        TOOL_INTELLIGENCE_TIERS[
-          tool.name as keyof typeof TOOL_INTELLIGENCE_TIERS
-        ] || "low",
-    }),
+    (tool) => {
+      const domain = TOOL_DOMAINS[tool.name as keyof typeof TOOL_DOMAINS] || "Other";
+      return {
+        ...tool,
+        domain,
+        domainKey: resolveDomainKey(domain),
+        labels: TOOL_LABELS[tool.name as keyof typeof TOOL_LABELS] || [],
+        emoji: TOOL_EMOJIS[tool.name as keyof typeof TOOL_EMOJIS] || null,
+        intelligenceTier:
+          TOOL_INTELLIGENCE_TIERS[
+            tool.name as keyof typeof TOOL_INTELLIGENCE_TIERS
+          ] || "low",
+      };
+    },
   );
 }
 
