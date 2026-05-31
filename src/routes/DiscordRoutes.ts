@@ -430,4 +430,76 @@ router.get(
   ),
 );
 
+async function forwardPostToLuposBot(path: string, body: Record<string, unknown> = {}) {
+  const targetUrl = `${LUPOS_BOT_URL}${path}`;
+
+  const response = await fetch(targetUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    throw new Error(`Lupos-bot API returned ${response.status}: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+// ─── POST /guild/react ──────────────────────────────────────────
+router.post(
+  "/guild/react",
+  asyncHandler(
+    (req: Request) => {
+      return forwardPostToLuposBot("/guild/react", req.body);
+    },
+    "React to discord message",
+    options,
+  ),
+);
+
+// ─── GET /guild/voice-members ───────────────────────────────────
+router.get(
+  "/guild/voice-members",
+  asyncHandler(
+    (req: Request) => {
+      return forwardToLuposBot("/guild/voice-members", {
+        guildId: req.query.guildId,
+      });
+    },
+    "Get voice channel members",
+    options,
+  ),
+);
+
+// ─── GET /guild/user-profile ────────────────────────────────────
+router.get(
+  "/guild/user-profile",
+  asyncHandler(
+    (req: Request) => {
+      return forwardToLuposBot("/guild/user-profile", {
+        userId: req.query.userId,
+        guildId: req.query.guildId,
+      });
+    },
+    "Get discord user profile",
+    options,
+  ),
+);
+
+// ─── GET /guild/channel-stats ───────────────────────────────────
+router.get(
+  "/guild/channel-stats",
+  asyncHandler(
+    (req: Request) => {
+      return forwardToLuposBot("/guild/channel-stats", {
+        guildId: req.query.guildId,
+        days: req.query.days,
+      });
+    },
+    "Get channel activity stats",
+    options,
+  ),
+);
+
 export default router;

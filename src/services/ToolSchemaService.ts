@@ -8610,6 +8610,119 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       required: ["guildId", "userId"],
     },
   },
+  {
+    name: "react_to_discord_message",
+    dataSource: onDemand("Discord Live API"),
+    description:
+      "Add an emoji reaction to a specific message in a server via the Lupos bot account. " +
+      "Rate-limited to 1 reaction per 2 seconds. The reaction will automatically sync to " +
+      "the database archive.",
+    endpoint: {
+      path: "/discord/guild/react",
+      method: "POST",
+      bodyParams: ["guildId", "channelId", "messageId", "emoji"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        guildId: {
+          type: "string",
+          description: "Discord guild/server ID where the message resides",
+        },
+        channelId: {
+          type: "string",
+          description: "Discord channel ID where the message was sent",
+        },
+        messageId: {
+          type: "string",
+          description: "The unique ID of the message to react to",
+        },
+        emoji: {
+          type: "string",
+          description:
+            "The emoji to react with. Can be a standard Unicode emoji character (e.g. '👍') " +
+            "or a custom Discord emoji identifier in the format 'name:id' (e.g. 'luposLurk:1234567890')",
+        },
+      },
+      required: ["guildId", "channelId", "messageId", "emoji"],
+    },
+  },
+  {
+    name: "get_discord_voice_channel_members",
+    dataSource: onDemand("Discord Live API"),
+    description:
+      "Get a real-time list of all voice and stage channels in the Discord server that currently " +
+      "have active members, including the name/username and voice states (muted, deafened, streaming, camera) of each participant. " +
+      "Use this to see who is currently talking, streaming, or hanging out in voice.",
+    endpoint: {
+      path: "/discord/guild/voice-members",
+      queryParams: ["guildId"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        guildId: {
+          type: "string",
+          description: "Discord guild/server ID to list voice members from",
+        },
+      },
+      required: ["guildId"],
+    },
+  },
+  {
+    name: "get_discord_user_profile",
+    dataSource: onDemand("Discord Live API"),
+    description:
+      "Retrieve a comprehensive and detailed profile of a Discord user in a specific server. " +
+      "Includes display names, custom statuses, current active platform, roles list, highest role, " +
+      "voice state, joins/boost timestamps, profile/accent colors, and moderation/kickable permissions. " +
+      "Use this when you need detailed context about a user's role or server presence, replacing heavy system prompt injections.",
+    endpoint: {
+      path: "/discord/guild/user-profile",
+      queryParams: ["guildId", "userId"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        guildId: {
+          type: "string",
+          description: "Discord guild/server ID where the user is a member",
+        },
+        userId: {
+          type: "string",
+          description: "The unique Discord user ID to fetch the profile for",
+        },
+      },
+      required: ["guildId", "userId"],
+    },
+  },
+  {
+    name: "get_discord_channel_activity_stats",
+    dataSource: onDemand("Lupos MongoDB"),
+    description:
+      "Analyze historical message activity per-channel over a specified lookback window (default 7 days). " +
+      "Returns metrics for each active channel, including total message counts, unique active users, " +
+      "average messages per day, and the top yapper/contributor user. " +
+      "Use this to answer questions about channel popularity, server activity patterns, or identifying the most active rooms.",
+    endpoint: {
+      path: "/discord/guild/channel-stats",
+      queryParams: ["guildId", "days"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        guildId: {
+          type: "string",
+          description: "Discord guild/server ID to query channel stats for",
+        },
+        days: {
+          type: "number",
+          description: "Lookback window in days (default: 7, max: 90)",
+        },
+      },
+      required: ["guildId"],
+    },
+  },
   // ── Smart Home (LIFX Lights) ────────────────────────────────
   {
     name: "lifx_list_lights",
@@ -10790,6 +10903,10 @@ const TOOL_DOMAINS = {
   get_discord_mention_leaderboard: "Discord",
   get_discord_message_leaderboard: "Discord",
   get_discord_word_frequencies: "Discord",
+  react_to_discord_message: "Discord",
+  get_discord_voice_channel_members: "Discord",
+  get_discord_user_profile: "Discord",
+  get_discord_channel_activity_stats: "Discord",
 
   // Smart Home (LIFX Lights)
   lifx_list_lights: "Smart Home",
@@ -11104,6 +11221,10 @@ const TOOL_EMOJIS = {
   get_discord_mention_leaderboard: "💬",
   get_discord_message_leaderboard: "📊",
   get_discord_word_frequencies: "🗣️",
+  react_to_discord_message: "🎭",
+  get_discord_voice_channel_members: "🔊",
+  get_discord_user_profile: "👤",
+  get_discord_channel_activity_stats: "📊",
 
   // Smart Home (LIFX)
   lifx_list_lights: "💡",
@@ -11575,6 +11696,10 @@ const TOOL_LABELS = {
   get_discord_mention_leaderboard: ["discord"],
   get_discord_message_leaderboard: ["discord"],
   get_discord_word_frequencies: ["discord"],
+  react_to_discord_message: ["discord"],
+  get_discord_voice_channel_members: ["discord"],
+  get_discord_user_profile: ["discord"],
+  get_discord_channel_activity_stats: ["discord"],
 
   // ── Smart Home (LIFX) ────────────────────────────────────
   lifx_list_lights: ["smart_home", "lifx"],
@@ -11704,6 +11829,10 @@ const TOOL_INTELLIGENCE_TIERS: Record<string, ToolIntelligenceTier> = {
   get_discord_mention_leaderboard: "medium",
   get_discord_message_leaderboard: "medium",
   get_discord_word_frequencies: "medium",
+  react_to_discord_message: "medium",
+  get_discord_voice_channel_members: "medium",
+  get_discord_user_profile: "medium",
+  get_discord_channel_activity_stats: "medium",
   generate_image: "medium",
   text_to_speech: "medium",
   speech_to_text: "medium",
