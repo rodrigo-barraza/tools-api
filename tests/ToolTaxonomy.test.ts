@@ -218,7 +218,7 @@ describe("ToolTaxonomyConstants — registry alignment", () => {
   it("every DOMAINS constant appears in at least one TOOL_DOMAINS entry", () => {
     const missing = [];
     for (const [key, value] of Object.entries(DOMAINS)) {
-      if (!usedDomains.has(value)) missing.push(`DOMAINS.${key} = "${value}"`);
+      if (!usedDomains.has(value.displayName)) missing.push(`DOMAINS.${key} = "${value.displayName}"`);
     }
     if (missing.length > 0) {
       console.log(
@@ -229,13 +229,13 @@ describe("ToolTaxonomyConstants — registry alignment", () => {
   });
 
   it("every label value used in TOOL_LABELS has a LABELS constant", () => {
-    const constantValues = new Set(Object.values(LABELS));
+    const constantValues = new Set<any>(Object.values(LABELS));
     const missing = [...usedLabels].filter((l) => !constantValues.has(l));
           expect(missing.length).toBe(0);
   });
 
   it("every domain value used in TOOL_DOMAINS has a DOMAINS constant", () => {
-    const constantValues = new Set(Object.values(DOMAINS));
+    const constantValues = new Set<any>(Object.values(DOMAINS).map((entry) => entry.displayName));
     const missing = [...usedDomains].filter((d) => !constantValues.has(d));
           expect(missing.length).toBe(0);
   });
