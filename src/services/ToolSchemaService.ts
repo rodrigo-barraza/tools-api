@@ -8971,7 +8971,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           items: { type: "string" },
           description:
             "Array of tool names this agent can use. If empty, the agent has no tool access. " +
-            "Pass specific tool names from the tool schema registry (e.g. ['read_file', 'write_file', 'web_search']). " +
+            "Pass specific tool names from the tool schema registry (e.g. ['read_file', 'write_file', 'search_web']). " +
             "The user can also configure tools later via the settings UI.",
         },
         usesDirectoryTree: {
@@ -9085,7 +9085,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           items: { type: "string" },
           description:
             "Updated array of tool names this agent can use. Replaces the entire list. " +
-            "Include both built-in tool names (e.g. 'read_file', 'web_search') and " +
+            "Include both built-in tool names (e.g. 'read_file', 'search_web') and " +
             "custom tool names (created via create_custom_tool). " +
             "Use list_custom_tools to find custom tool names.",
         },
@@ -10422,7 +10422,7 @@ const TOOL_DOMAINS = {
   read_pdf: "Web",
   read_docx: "Web",
   read_spreadsheet: "Web",
-  web_search: "Web",
+  search_web: "Web",
 
   // Agentic — Command Execution
   run_command: "Workspace",
@@ -10729,7 +10729,7 @@ const TOOL_EMOJIS = {
   read_pdf: "📄",
   read_docx: "📝",
   read_spreadsheet: "📊",
-  web_search: "🔍",
+  search_web: "🔍",
 
   // Agentic — Command Execution
   run_command: "▶️",
@@ -10883,7 +10883,7 @@ const TOOL_REQUIRED_KEYS = {
   get_natural_gas_prices: ["EIA_API_KEY"],
 
   // Web Search (Brave primary — whole-web; Google CSE fallback — site-restricted)
-  web_search: ["BRAVE_SEARCH_API_KEY"],
+  search_web: ["BRAVE_SEARCH_API_KEY"],
 
   // Communication (Twilio — all require account SID + auth token)
   twilio_send_sms: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
@@ -11188,7 +11188,7 @@ const TOOL_LABELS = {
   read_pdf: ["coding", "web"],
   read_docx: ["coding", "web"],
   read_spreadsheet: ["coding", "web", "data"],
-  web_search: ["coding", "web"],
+  search_web: ["coding", "web"],
 
   // ── Agentic: Command Execution ───────────────────────────
   run_command: ["coding"],
