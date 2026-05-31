@@ -10279,7 +10279,7 @@ const TOOL_DOMAINS = {
   get_on_this_day: "Knowledge",
   list_development_indicators: "Knowledge",
   get_youtube_video: "Knowledge",
-  read_url: "Knowledge",
+  read_url: "Core Tools",
   get_package_info: "Knowledge",
   read_pdf_url: "Knowledge",
   read_rss_feed: "Knowledge",
@@ -10328,7 +10328,7 @@ const TOOL_DOMAINS = {
 
   // Utilities
   search_airports: "Utilities",
-  calculate_precise: "Utilities",
+  calculate_precise: "Core Tools",
   convert_currency: "Utilities",
   get_time_in_timezone: "Utilities",
   get_ip_info: "Utilities",
@@ -10340,7 +10340,7 @@ const TOOL_DOMAINS = {
   execute_python: "Utilities",
 
   // Compute
-  execute_javascript: "Compute",
+  execute_javascript: "Core Tools",
   execute_shell: "Compute",
   convert_units: "Compute",
   parse_datetime: "Compute",
@@ -10363,9 +10363,9 @@ const TOOL_DOMAINS = {
   create_3d_scene: "Compute",
   create_3d_model: "Compute",
   create_3d_voxel: "Compute",
-  think: "Reasoning",
-  sleep: "Control Flow",
-  synthetic_output: "Structured Output",
+  think: "Core Tools",
+  sleep: "Core Tools",
+  synthetic_output: "Core Tools",
 
   // Gaming
   get_dota: "Gaming",
@@ -10422,7 +10422,7 @@ const TOOL_DOMAINS = {
   read_pdf: "Web",
   read_docx: "Web",
   read_spreadsheet: "Web",
-  search_web: "Web",
+  search_web: "Core Tools",
 
   // Agentic — Command Execution
   run_command: "Workspace",
@@ -10438,13 +10438,13 @@ const TOOL_DOMAINS = {
   lsp_action: "Workspace",
 
   // Agentic — Task Management
-  create_task: "Task Management",
-  get_task: "Task Management",
-  list_tasks: "Task Management",
-  update_task: "Task Management",
+  create_task: "Core Tools",
+  get_task: "Core Tools",
+  list_tasks: "Core Tools",
+  update_task: "Core Tools",
 
   // Agentic — Memory Persistence
-  upsert_memory: "Memory",
+  upsert_memory: "Core Tools",
 
   // Agentic — Agent Management
   create_custom_agent: "Agent Management",
@@ -10459,7 +10459,7 @@ const TOOL_DOMAINS = {
   delete_custom_tool: "Tool Management",
 
   // Agentic — Tool Discovery
-  search_tools: "Meta",
+  search_tools: "Core Tools",
 
   // Cron Jobs
   create_cron: "Cron Jobs",
