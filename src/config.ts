@@ -114,6 +114,9 @@ interface ToolsServiceConfig {
   QBITTORRENT_URL: string | undefined;
   QBITTORRENT_USERNAME: string;
   QBITTORRENT_PASSWORD: string | undefined;
+
+  // Lupos Bot API URL
+  LUPOS_BOT_URL: string | undefined;
 }
 
 const CONFIG: ToolsServiceConfig = {
@@ -206,6 +209,9 @@ const CONFIG: ToolsServiceConfig = {
   QBITTORRENT_URL: process.env.QBITTORRENT_URL,
   QBITTORRENT_USERNAME: process.env.QBITTORRENT_USERNAME || "admin",
   QBITTORRENT_PASSWORD: process.env.QBITTORRENT_PASSWORD,
+
+  // ─── Lupos Bot API ──────────────────────────────────────────────
+  LUPOS_BOT_URL: process.env.LUPOS_BOT_URL || "http://localhost:1337",
 };
 
 /**

@@ -8228,7 +8228,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "discord_message_analytics",
+    name: "get_discord_message_analytics",
     dataSource: onDemand("Lupos MongoDB"),
     description:
       "Aggregate Discord message history with group-by queries. " +
@@ -8335,6 +8335,279 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         },
       },
       required: ["guildId"],
+    },
+  },
+  {
+    name: "get_discord_guild_channels",
+    dataSource: onDemand("Discord Live API"),
+    description:
+      "List all text channels in a Discord guild/server including their name, topic, " +
+      "category (parent ID/name), and position index. Use this to discover where to post " +
+      "or search before reading or writing to the server.",
+    endpoint: {
+      path: "/discord/guild/channels",
+      queryParams: ["guildId"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        guildId: {
+          type: "string",
+          description: "Discord guild/server ID to list channels from",
+        },
+      },
+      required: ["guildId"],
+    },
+  },
+  {
+    name: "get_discord_guild_members",
+    dataSource: onDemand("Discord Live API"),
+    description:
+      "Get the list of online/idle/dnd members in a Discord server, grouped by their hoisted roles, " +
+      "including their custom display name, status, current game/activity name, and any profile badges. " +
+      "Use this to see who is currently active or what people are playing/doing.",
+    endpoint: {
+      path: "/discord/guild/members",
+      queryParams: ["guildId"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        guildId: {
+          type: "string",
+          description: "Discord guild/server ID to list members from",
+        },
+      },
+      required: ["guildId"],
+    },
+  },
+  {
+    name: "get_discord_guild_emojis",
+    dataSource: onDemand("Discord Live API"),
+    description:
+      "List all custom emojis in a Discord server including their name, ID, and animated status. " +
+      "Use this to find custom emojis to react to messages with or include in text.",
+    endpoint: {
+      path: "/discord/guild/emojis",
+      queryParams: ["guildId"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        guildId: {
+          type: "string",
+          description: "Discord guild/server ID to list custom emojis from",
+        },
+      },
+      required: ["guildId"],
+    },
+  },
+  {
+    name: "get_bot_stats",
+    dataSource: onDemand("Discord Live API"),
+    description:
+      "Retrieve the bot's own simulated biology metrics (mood, hunger, thirst, energy, bathroom, alcohol) " +
+      "and general database telemetry (total archived messages, unique users, transcriptions, media). " +
+      "Use this to check your own internal emotional/physical state and operational statistics.",
+    endpoint: {
+      path: "/discord/bot/stats",
+      queryParams: [],
+    },
+    parameters: {
+      type: "object",
+      properties: {},
+    },
+  },
+  {
+    name: "get_bot_guilds",
+    dataSource: onDemand("Discord Live API"),
+    description:
+      "List all Discord servers/guilds that the bot is currently a member of, including their " +
+      "name, ID, member count, and owner ID.",
+    endpoint: {
+      path: "/discord/bot/guilds",
+      queryParams: [],
+    },
+    parameters: {
+      type: "object",
+      properties: {},
+    },
+  },
+  {
+    name: "get_bot_activity_timeline",
+    dataSource: onDemand("Discord Live API"),
+    description:
+      "Retrieve 24-hour activity timeline metrics for the bot, detailing hourly counts of messages, " +
+      "voice transcriptions, image generations, and active unique users.",
+    endpoint: {
+      path: "/discord/bot/activity",
+      queryParams: [],
+    },
+    parameters: {
+      type: "object",
+      properties: {},
+    },
+  },
+  {
+    name: "get_discord_user_heatmap_data",
+    dataSource: onDemand("Lupos MongoDB"),
+    description:
+      "Get hourly and monthly activity heatmap data for a user on a Discord server. " +
+      "Returns a 7x48 hourly grid (days x 30-min intervals) and month-by-month activity metrics. " +
+      "Use this to analyze when a user is most active on the server.",
+    endpoint: {
+      path: "/discord/guild/heatmap",
+      queryParams: ["guildId", "userId", "channelId", "years", "months", "days"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        guildId: {
+          type: "string",
+          description: "Discord guild/server ID to query",
+        },
+        userId: {
+          type: "string",
+          description: "Discord user ID to analyze",
+        },
+        channelId: {
+          type: "string",
+          description: "Optional channel ID to filter by",
+        },
+        years: {
+          type: "number",
+          description: "Years of history to look back",
+        },
+        months: {
+          type: "number",
+          description: "Months of history to look back",
+        },
+        days: {
+          type: "number",
+          description: "Days of history to look back",
+        },
+      },
+      required: ["guildId", "userId"],
+    },
+  },
+  {
+    name: "get_discord_mention_leaderboard",
+    dataSource: onDemand("Lupos MongoDB"),
+    description:
+      "Get the top users who mention a specific user in a server, along with unique mentioner counts, " +
+      "average mentions per user, and percentage distribution.",
+    endpoint: {
+      path: "/discord/guild/mentions",
+      queryParams: ["guildId", "userId", "years", "months", "days", "channelId"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        guildId: {
+          type: "string",
+          description: "Discord guild/server ID to query",
+        },
+        userId: {
+          type: "string",
+          description: "Discord user ID to check mentions for",
+        },
+        years: {
+          type: "number",
+          description: "Years of history to look back",
+        },
+        months: {
+          type: "number",
+          description: "Months of history to look back",
+        },
+        days: {
+          type: "number",
+          description: "Days of history to look back",
+        },
+        channelId: {
+          type: "string",
+          description: "Optional channel ID to filter by",
+        },
+      },
+      required: ["guildId", "userId"],
+    },
+  },
+  {
+    name: "get_discord_message_leaderboard",
+    dataSource: onDemand("Lupos MongoDB"),
+    description:
+      "Get the top contributors by message count on a server for a specified lookback window, " +
+      "including total messages, active users, and average messages per user.",
+    endpoint: {
+      path: "/discord/guild/leaderboard",
+      queryParams: ["guildId", "years", "months", "days", "channelId"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        guildId: {
+          type: "string",
+          description: "Discord guild/server ID to query",
+        },
+        years: {
+          type: "number",
+          description: "Years of history to look back",
+        },
+        months: {
+          type: "number",
+          description: "Months of history to look back",
+        },
+        days: {
+          type: "number",
+          description: "Days of history to look back",
+        },
+        channelId: {
+          type: "string",
+          description: "Optional channel ID to filter by (defaults to all)",
+        },
+      },
+      required: ["guildId"],
+    },
+  },
+  {
+    name: "get_discord_word_frequencies",
+    dataSource: onDemand("Lupos MongoDB"),
+    description:
+      "Get word frequency analysis (most common words) for a user in a Discord server, " +
+      "excluding common English stop words. Useful for seeing what topics or phrases a user " +
+      "uses the most.",
+    endpoint: {
+      path: "/discord/guild/word-frequencies",
+      queryParams: ["guildId", "userId", "years", "months", "days", "limit"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        guildId: {
+          type: "string",
+          description: "Discord guild/server ID to query",
+        },
+        userId: {
+          type: "string",
+          description: "Discord user ID to analyze",
+        },
+        years: {
+          type: "number",
+          description: "Years of history to look back",
+        },
+        months: {
+          type: "number",
+          description: "Months of history to look back",
+        },
+        days: {
+          type: "number",
+          description: "Days of history to look back",
+        },
+        limit: {
+          type: "number",
+          description: "Max number of words to return (default: 150)",
+        },
+      },
+      required: ["guildId", "userId"],
     },
   },
   // ── Smart Home (LIFX Lights) ────────────────────────────────
@@ -10505,8 +10778,18 @@ const TOOL_DOMAINS = {
 
   // Discord (Lupos DB)
   discord_message_search: "Discord",
-  discord_message_analytics: "Discord",
+  get_discord_message_analytics: "Discord",
   discord_server_activity: "Discord",
+  get_discord_guild_channels: "Discord",
+  get_discord_guild_members: "Discord",
+  get_discord_guild_emojis: "Discord",
+  get_bot_stats: "Discord",
+  get_bot_guilds: "Discord",
+  get_bot_activity_timeline: "Discord",
+  get_discord_user_heatmap_data: "Discord",
+  get_discord_mention_leaderboard: "Discord",
+  get_discord_message_leaderboard: "Discord",
+  get_discord_word_frequencies: "Discord",
 
   // Smart Home (LIFX Lights)
   lifx_list_lights: "Smart Home",
@@ -10809,8 +11092,18 @@ const TOOL_EMOJIS = {
 
   // Discord
   discord_message_search: "🔍",
-  discord_message_analytics: "📊",
+  get_discord_message_analytics: "📊",
   discord_server_activity: "📈",
+  get_discord_guild_channels: "📁",
+  get_discord_guild_members: "👥",
+  get_discord_guild_emojis: "😀",
+  get_bot_stats: "🤖",
+  get_bot_guilds: "🌐",
+  get_bot_activity_timeline: "📈",
+  get_discord_user_heatmap_data: "🔥",
+  get_discord_mention_leaderboard: "💬",
+  get_discord_message_leaderboard: "📊",
+  get_discord_word_frequencies: "🗣️",
 
   // Smart Home (LIFX)
   lifx_list_lights: "💡",
@@ -11270,8 +11563,18 @@ const TOOL_LABELS = {
 
   // ── Discord ──────────────────────────────────────────────
   discord_message_search: ["discord"],
-  discord_message_analytics: ["discord"],
+  get_discord_message_analytics: ["discord"],
   discord_server_activity: ["discord"],
+  get_discord_guild_channels: ["discord"],
+  get_discord_guild_members: ["discord"],
+  get_discord_guild_emojis: ["discord"],
+  get_bot_stats: ["discord"],
+  get_bot_guilds: ["discord"],
+  get_bot_activity_timeline: ["discord"],
+  get_discord_user_heatmap_data: ["discord"],
+  get_discord_mention_leaderboard: ["discord"],
+  get_discord_message_leaderboard: ["discord"],
+  get_discord_word_frequencies: ["discord"],
 
   // ── Smart Home (LIFX) ────────────────────────────────────
   lifx_list_lights: ["smart_home", "lifx"],
@@ -11389,6 +11692,18 @@ const TOOL_INTELLIGENCE_TIERS: Record<string, ToolIntelligenceTier> = {
   run_command: "medium",
   twilio_send_sms: "medium",
   discord_message_search: "medium",
+  get_discord_message_analytics: "medium",
+  discord_server_activity: "medium",
+  get_discord_guild_channels: "medium",
+  get_discord_guild_members: "medium",
+  get_discord_guild_emojis: "medium",
+  get_bot_stats: "medium",
+  get_bot_guilds: "medium",
+  get_bot_activity_timeline: "medium",
+  get_discord_user_heatmap_data: "medium",
+  get_discord_mention_leaderboard: "medium",
+  get_discord_message_leaderboard: "medium",
+  get_discord_word_frequencies: "medium",
   generate_image: "medium",
   text_to_speech: "medium",
   speech_to_text: "medium",

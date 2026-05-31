@@ -8,6 +8,7 @@ import { Request, Response, Router } from "express";
 import DiscordDataService from "../services/DiscordDataService.ts";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
+import CONFIG from "../config.ts";
 
 const router = Router();
 // ─── Health ─────────────────────────────────────────────────────
@@ -256,4 +257,177 @@ router.get(
     options,
   ),
 );
+
+const LUPOS_BOT_URL = CONFIG.LUPOS_BOT_URL || "http://localhost:1337";
+
+async function forwardToLuposBot(path: string, queryParams: Record<string, unknown> = {}) {
+  const urlParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(queryParams)) {
+    if (value !== undefined && value !== null && value !== "") {
+      urlParams.set(key, String(value));
+    }
+  }
+  const queryString = urlParams.toString();
+  const targetUrl = `${LUPOS_BOT_URL}${path}${queryString ? `?${queryString}` : ""}`;
+
+  const response = await fetch(targetUrl);
+  if (!response.ok) {
+    throw new Error(`Lupos-bot API returned ${response.status}: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+// ─── GET /guild/channels ────────────────────────────────────────
+router.get(
+  "/guild/channels",
+  asyncHandler(
+    (req: Request) => {
+      return forwardToLuposBot("/guild/channels", {
+        guildId: req.query.guildId,
+      });
+    },
+    "Get guild channels",
+    options,
+  ),
+);
+
+// ─── GET /guild/members ─────────────────────────────────────────
+router.get(
+  "/guild/members",
+  asyncHandler(
+    (req: Request) => {
+      return forwardToLuposBot("/guild/members", {
+        guildId: req.query.guildId,
+      });
+    },
+    "Get guild members",
+    options,
+  ),
+);
+
+// ─── GET /guild/emojis ──────────────────────────────────────────
+router.get(
+  "/guild/emojis",
+  asyncHandler(
+    (req: Request) => {
+      return forwardToLuposBot("/guild/emojis", {
+        guildId: req.query.guildId,
+      });
+    },
+    "Get guild emojis",
+    options,
+  ),
+);
+
+// ─── GET /bot/stats ─────────────────────────────────────────────
+router.get(
+  "/bot/stats",
+  asyncHandler(
+    () => {
+      return forwardToLuposBot("/bot/stats");
+    },
+    "Get bot stats",
+    options,
+  ),
+);
+
+// ─── GET /bot/guilds ────────────────────────────────────────────
+router.get(
+  "/bot/guilds",
+  asyncHandler(
+    () => {
+      return forwardToLuposBot("/bot/guilds");
+    },
+    "Get bot guilds",
+    options,
+  ),
+);
+
+// ─── GET /bot/activity ──────────────────────────────────────────
+router.get(
+  "/bot/activity",
+  asyncHandler(
+    () => {
+      return forwardToLuposBot("/bot/activity");
+    },
+    "Get bot activity timeline",
+    options,
+  ),
+);
+
+// ─── GET /guild/heatmap ─────────────────────────────────────────
+router.get(
+  "/guild/heatmap",
+  asyncHandler(
+    (req: Request) => {
+      return forwardToLuposBot("/guild/heatmap", {
+        guildId: req.query.guildId,
+        userId: req.query.userId,
+        channelId: req.query.channelId,
+        years: req.query.years,
+        months: req.query.months,
+        days: req.query.days,
+      });
+    },
+    "Get user heatmap data",
+    options,
+  ),
+);
+
+// ─── GET /guild/mentions ────────────────────────────────────────
+router.get(
+  "/guild/mentions",
+  asyncHandler(
+    (req: Request) => {
+      return forwardToLuposBot("/guild/mentions", {
+        guildId: req.query.guildId,
+        userId: req.query.userId,
+        years: req.query.years,
+        months: req.query.months,
+        days: req.query.days,
+        channelId: req.query.channelId,
+      });
+    },
+    "Get user mentions",
+    options,
+  ),
+);
+
+// ─── GET /guild/leaderboard ─────────────────────────────────────
+router.get(
+  "/guild/leaderboard",
+  asyncHandler(
+    (req: Request) => {
+      return forwardToLuposBot("/guild/leaderboard", {
+        guildId: req.query.guildId,
+        years: req.query.years,
+        months: req.query.months,
+        days: req.query.days,
+        channelId: req.query.channelId,
+      });
+    },
+    "Get server message leaderboard",
+    options,
+  ),
+);
+
+// ─── GET /guild/word-frequencies ────────────────────────────────
+router.get(
+  "/guild/word-frequencies",
+  asyncHandler(
+    (req: Request) => {
+      return forwardToLuposBot("/guild/word-frequencies", {
+        guildId: req.query.guildId,
+        userId: req.query.userId,
+        years: req.query.years,
+        months: req.query.months,
+        days: req.query.days,
+        limit: req.query.limit,
+      });
+    },
+    "Get user word frequencies",
+    options,
+  ),
+);
+
 export default router;
