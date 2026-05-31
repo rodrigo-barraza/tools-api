@@ -39,7 +39,7 @@ function getPrismUrl() {
 /**
  * Create a new schedule. Proxy to prism-service /scheduled-tasks.
  */
-export async function agenticScheduleCreate(data: Record<string, unknown>) {
+export async function agenticScheduleCreate(data: Record<string, unknown>, username?: string) {
   const {
     project,
     name,
@@ -96,8 +96,8 @@ export async function agenticScheduleCreate(data: Record<string, unknown>) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-project": project,
-        "x-username": "system",
+        "x-project": project as string,
+        "x-username": username || "system",
       },
       body: JSON.stringify(body),
     });
@@ -128,6 +128,7 @@ export async function agenticScheduleCreate(data: Record<string, unknown>) {
 export async function agenticScheduleList(
   project: string,
   _options?: Record<string, unknown>,
+  username?: string,
 ) {
   if (!project || typeof project !== "string") {
     return { error: "'project' is required (string)" };
@@ -138,7 +139,7 @@ export async function agenticScheduleList(
       method: "GET",
       headers: {
         "x-project": project,
-        "x-username": "system",
+        "x-username": username || "system",
       },
     });
 
@@ -168,6 +169,7 @@ export async function agenticScheduleList(
 export async function agenticScheduleDelete(
   project: string,
   scheduleId: string | number,
+  username?: string,
 ) {
   if (!project || typeof project !== "string") {
     return { error: "'project' is required (string)" };
@@ -183,7 +185,7 @@ export async function agenticScheduleDelete(
         method: "DELETE",
         headers: {
           "x-project": project,
-          "x-username": "system",
+          "x-username": username || "system",
         },
       },
     );
@@ -215,6 +217,7 @@ export async function agenticTriggerFire(
   project: string,
   triggerName: string,
   payload: Record<string, unknown> = {},
+  username?: string,
 ) {
   if (!project || typeof project !== "string") {
     return { error: "'project' is required (string)" };
@@ -231,7 +234,7 @@ export async function agenticTriggerFire(
         headers: {
           "Content-Type": "application/json",
           "x-project": project,
-          "x-username": "system",
+          "x-username": username || "system",
         },
         body: JSON.stringify({ payload }),
       },

@@ -1384,6 +1384,7 @@ router.post(
     if (!prompt || typeof prompt !== "string") {
       return { error: "Request body must include 'prompt' (string)" };
     }
+    const username = (req.headers["x-username"] as string) || undefined;
     return agenticScheduleCreate({
       project,
       name,
@@ -1398,7 +1399,7 @@ router.post(
       model,
       schedule,
       type,
-    });
+    }, username);
   }),
 );
 
@@ -1410,7 +1411,8 @@ router.post(
     if (!project || typeof project !== "string") {
       return { error: "Request body must include 'project' (string)" };
     }
-    return agenticScheduleList(project);
+    const username = (req.headers["x-username"] as string) || undefined;
+    return agenticScheduleList(project, undefined, username);
   }),
 );
 
@@ -1425,7 +1427,8 @@ router.post(
     if (!scheduleId) {
       return { error: "Request body must include 'scheduleId' (string)" };
     }
-    return agenticScheduleDelete(project, scheduleId);
+    const username = (req.headers["x-username"] as string) || undefined;
+    return agenticScheduleDelete(project, scheduleId, username);
   }),
 );
 
@@ -1440,7 +1443,8 @@ router.post(
     if (!triggerName || typeof triggerName !== "string") {
       return { error: "Request body must include 'triggerName' (string)" };
     }
-    return agenticTriggerFire(project, triggerName, payload || {});
+    const username = (req.headers["x-username"] as string) || undefined;
+    return agenticTriggerFire(project, triggerName, payload || {}, username);
   }),
 );
 
@@ -1449,6 +1453,7 @@ router.post(
   "/schedule/create",
   agenticHandler(async (req: Request) => {
     const { project, name, schedule, prompt, type, agent, model } = req.body;
+    const username = (req.headers["x-username"] as string) || undefined;
     return agenticScheduleCreate({
       project,
       name,
@@ -1457,28 +1462,31 @@ router.post(
       type,
       agent,
       model,
-    });
+    }, username);
   }),
 );
 router.post(
   "/schedule/list",
   agenticHandler(async (req: Request) => {
     const { project } = req.body;
-    return agenticScheduleList(project);
+    const username = (req.headers["x-username"] as string) || undefined;
+    return agenticScheduleList(project, undefined, username);
   }),
 );
 router.post(
   "/schedule/delete",
   agenticHandler(async (req: Request) => {
     const { project, scheduleId } = req.body;
-    return agenticScheduleDelete(project, scheduleId);
+    const username = (req.headers["x-username"] as string) || undefined;
+    return agenticScheduleDelete(project, scheduleId, username);
   }),
 );
 router.post(
   "/trigger/fire",
   agenticHandler(async (req: Request) => {
     const { project, triggerName, payload } = req.body;
-    return agenticTriggerFire(project, triggerName, payload || {});
+    const username = (req.headers["x-username"] as string) || undefined;
+    return agenticTriggerFire(project, triggerName, payload || {}, username);
   }),
 );
 // ─── 18. Notebook Editing ───────────────────────────────────
