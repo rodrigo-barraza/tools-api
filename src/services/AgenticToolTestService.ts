@@ -312,8 +312,8 @@ const TESTS = {
       ),
     ),
 
-  web_search: () =>
-    runTest("web_search", () => agenticWebSearch("test", { limit: 1 })),
+  search_web: () =>
+    runTest("search_web", () => agenticWebSearch("test", { limit: 1 })),
 
   // ── Command Execution ────────────────────────────────────
 
