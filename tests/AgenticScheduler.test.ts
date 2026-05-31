@@ -297,3 +297,339 @@ describe("AgenticScheduler — Route Integration Tests", () => {
     fetchSpy.mockRestore();
   });
 });
+
+// ─── Username Forwarding — Unit Tests ─────────────────────────────────────────
+// Verifies that the proxy functions forward the real username to Prism's
+// x-username header instead of hardcoding "system". This was the root cause
+// of cron job sessions being invisible in /chat.
+
+describe("AgenticSchedulerService — Username Forwarding", () => {
+  it("agenticScheduleCreate forwards explicit username in x-username header", async () => {
+    const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: "task-forwarded" }),
+    } as Response);
+
+    await agenticScheduleCreate(
+      { project: "test-proj", name: "Test Task", prompt: "do something", type: "once" },
+      "rodrigo",
+    );
+
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const [, fetchOptions] = fetchSpy.mock.calls[0];
+    const headers = (fetchOptions as RequestInit).headers as Record<string, string>;
+    expect(headers["x-username"]).toBe("rodrigo");
+
+    fetchSpy.mockRestore();
+  });
+
+  it("agenticScheduleCreate falls back to 'system' when username is omitted", async () => {
+    const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: "task-fallback" }),
+    } as Response);
+
+    await agenticScheduleCreate({
+      project: "test-proj",
+      name: "Fallback Task",
+      prompt: "fallback test",
+      type: "once",
+    });
+
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const [, fetchOptions] = fetchSpy.mock.calls[0];
+    const headers = (fetchOptions as RequestInit).headers as Record<string, string>;
+    expect(headers["x-username"]).toBe("system");
+
+    fetchSpy.mockRestore();
+  });
+
+  it("agenticScheduleList forwards explicit username in x-username header", async () => {
+    const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => [],
+    } as Response);
+
+    await agenticScheduleList("test-proj", undefined, "rodrigo");
+
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const [, fetchOptions] = fetchSpy.mock.calls[0];
+    const headers = (fetchOptions as RequestInit).headers as Record<string, string>;
+    expect(headers["x-username"]).toBe("rodrigo");
+
+    fetchSpy.mockRestore();
+  });
+
+  it("agenticScheduleList falls back to 'system' when username is omitted", async () => {
+    const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => [],
+    } as Response);
+
+    await agenticScheduleList("test-proj");
+
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const [, fetchOptions] = fetchSpy.mock.calls[0];
+    const headers = (fetchOptions as RequestInit).headers as Record<string, string>;
+    expect(headers["x-username"]).toBe("system");
+
+    fetchSpy.mockRestore();
+  });
+
+  it("agenticScheduleDelete forwards explicit username in x-username header", async () => {
+    const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true }),
+    } as Response);
+
+    await agenticScheduleDelete("test-proj", "task-123", "rodrigo");
+
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const [, fetchOptions] = fetchSpy.mock.calls[0];
+    const headers = (fetchOptions as RequestInit).headers as Record<string, string>;
+    expect(headers["x-username"]).toBe("rodrigo");
+
+    fetchSpy.mockRestore();
+  });
+
+  it("agenticScheduleDelete falls back to 'system' when username is omitted", async () => {
+    const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true }),
+    } as Response);
+
+    await agenticScheduleDelete("test-proj", "task-123");
+
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const [, fetchOptions] = fetchSpy.mock.calls[0];
+    const headers = (fetchOptions as RequestInit).headers as Record<string, string>;
+    expect(headers["x-username"]).toBe("system");
+
+    fetchSpy.mockRestore();
+  });
+
+  it("agenticTriggerFire forwards explicit username in x-username header", async () => {
+    const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ fired: true }),
+    } as Response);
+
+    await agenticTriggerFire("test-proj", "my-trigger", {}, "rodrigo");
+
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const [, fetchOptions] = fetchSpy.mock.calls[0];
+    const headers = (fetchOptions as RequestInit).headers as Record<string, string>;
+    expect(headers["x-username"]).toBe("rodrigo");
+
+    fetchSpy.mockRestore();
+  });
+
+  it("agenticTriggerFire falls back to 'system' when username is omitted", async () => {
+    const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ fired: true }),
+    } as Response);
+
+    await agenticTriggerFire("test-proj", "my-trigger", {});
+
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const [, fetchOptions] = fetchSpy.mock.calls[0];
+    const headers = (fetchOptions as RequestInit).headers as Record<string, string>;
+    expect(headers["x-username"]).toBe("system");
+
+    fetchSpy.mockRestore();
+  });
+});
+
+// ─── Username Forwarding — Route Integration Tests ────────────────────────────
+// Verifies the full chain: x-username header on the incoming request flows
+// through the route handler into the proxy function and onto the outbound
+// HTTP call to prism-service.
+
+describe("AgenticScheduler Routes — Username Forwarding", () => {
+  let expressApp: any;
+
+  beforeAll(async () => {
+    const { default: router } = await import("../src/routes/AgenticRoutes.ts");
+    expressApp = createTestApp("/agentic", router);
+  });
+
+  it("POST /agentic/scheduled-task/create forwards x-username header to Prism", async () => {
+    const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: "task-user-test" }),
+    } as Response);
+
+    const response = await request(expressApp)
+      .post("/agentic/scheduled-task/create")
+      .set("x-username", "rodrigo")
+      .send({ project: "test-proj", name: "User Task", prompt: "test prompt" });
+
+    expect(response.status).toBe(200);
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const [, fetchOptions] = fetchSpy.mock.calls[0];
+    const headers = (fetchOptions as RequestInit).headers as Record<string, string>;
+    expect(headers["x-username"]).toBe("rodrigo");
+
+    fetchSpy.mockRestore();
+  });
+
+  it("POST /agentic/scheduled-task/create falls back to 'system' without x-username", async () => {
+    const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: "task-no-user" }),
+    } as Response);
+
+    const response = await request(expressApp)
+      .post("/agentic/scheduled-task/create")
+      .send({ project: "test-proj", name: "No User Task", prompt: "test" });
+
+    expect(response.status).toBe(200);
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const [, fetchOptions] = fetchSpy.mock.calls[0];
+    const headers = (fetchOptions as RequestInit).headers as Record<string, string>;
+    expect(headers["x-username"]).toBe("system");
+
+    fetchSpy.mockRestore();
+  });
+
+  it("POST /agentic/scheduled-task/list forwards x-username header to Prism", async () => {
+    const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => [],
+    } as Response);
+
+    const response = await request(expressApp)
+      .post("/agentic/scheduled-task/list")
+      .set("x-username", "rodrigo")
+      .send({ project: "test-proj" });
+
+    expect(response.status).toBe(200);
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const [, fetchOptions] = fetchSpy.mock.calls[0];
+    const headers = (fetchOptions as RequestInit).headers as Record<string, string>;
+    expect(headers["x-username"]).toBe("rodrigo");
+
+    fetchSpy.mockRestore();
+  });
+
+  it("POST /agentic/scheduled-task/delete forwards x-username header to Prism", async () => {
+    const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true }),
+    } as Response);
+
+    const response = await request(expressApp)
+      .post("/agentic/scheduled-task/delete")
+      .set("x-username", "rodrigo")
+      .send({ project: "test-proj", scheduleId: "task-123" });
+
+    expect(response.status).toBe(200);
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const [, fetchOptions] = fetchSpy.mock.calls[0];
+    const headers = (fetchOptions as RequestInit).headers as Record<string, string>;
+    expect(headers["x-username"]).toBe("rodrigo");
+
+    fetchSpy.mockRestore();
+  });
+
+  it("POST /agentic/scheduled-task/trigger forwards x-username header to Prism", async () => {
+    const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ fired: true }),
+    } as Response);
+
+    const response = await request(expressApp)
+      .post("/agentic/scheduled-task/trigger")
+      .set("x-username", "rodrigo")
+      .send({ project: "test-proj", triggerName: "my-trigger" });
+
+    expect(response.status).toBe(200);
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const [, fetchOptions] = fetchSpy.mock.calls[0];
+    const headers = (fetchOptions as RequestInit).headers as Record<string, string>;
+    expect(headers["x-username"]).toBe("rodrigo");
+
+    fetchSpy.mockRestore();
+  });
+
+  it("POST /agentic/schedule/create (legacy) forwards x-username header to Prism", async () => {
+    const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: "legacy-task" }),
+    } as Response);
+
+    const response = await request(expressApp)
+      .post("/agentic/schedule/create")
+      .set("x-username", "rodrigo")
+      .send({ project: "test-proj", name: "Legacy Task", prompt: "legacy" });
+
+    expect(response.status).toBe(200);
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const [, fetchOptions] = fetchSpy.mock.calls[0];
+    const headers = (fetchOptions as RequestInit).headers as Record<string, string>;
+    expect(headers["x-username"]).toBe("rodrigo");
+
+    fetchSpy.mockRestore();
+  });
+
+  it("POST /agentic/schedule/list (legacy) forwards x-username header to Prism", async () => {
+    const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => [],
+    } as Response);
+
+    const response = await request(expressApp)
+      .post("/agentic/schedule/list")
+      .set("x-username", "rodrigo")
+      .send({ project: "test-proj" });
+
+    expect(response.status).toBe(200);
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const [, fetchOptions] = fetchSpy.mock.calls[0];
+    const headers = (fetchOptions as RequestInit).headers as Record<string, string>;
+    expect(headers["x-username"]).toBe("rodrigo");
+
+    fetchSpy.mockRestore();
+  });
+
+  it("POST /agentic/schedule/delete (legacy) forwards x-username header to Prism", async () => {
+    const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true }),
+    } as Response);
+
+    const response = await request(expressApp)
+      .post("/agentic/schedule/delete")
+      .set("x-username", "rodrigo")
+      .send({ project: "test-proj", scheduleId: "task-legacy" });
+
+    expect(response.status).toBe(200);
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const [, fetchOptions] = fetchSpy.mock.calls[0];
+    const headers = (fetchOptions as RequestInit).headers as Record<string, string>;
+    expect(headers["x-username"]).toBe("rodrigo");
+
+    fetchSpy.mockRestore();
+  });
+
+  it("POST /agentic/trigger/fire (legacy) forwards x-username header to Prism", async () => {
+    const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ fired: true }),
+    } as Response);
+
+    const response = await request(expressApp)
+      .post("/agentic/trigger/fire")
+      .set("x-username", "rodrigo")
+      .send({ project: "test-proj", triggerName: "legacy-trigger" });
+
+    expect(response.status).toBe(200);
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const [, fetchOptions] = fetchSpy.mock.calls[0];
+    const headers = (fetchOptions as RequestInit).headers as Record<string, string>;
+    expect(headers["x-username"]).toBe("rodrigo");
+
+    fetchSpy.mockRestore();
+  });
+});
