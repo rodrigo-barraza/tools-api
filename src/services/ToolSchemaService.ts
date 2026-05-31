@@ -6721,7 +6721,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "web_search",
+    name: "search_web",
     dataSource: onDemand("Brave Search / Google CSE"),
     description:
       "Search the web using Brave Search (primary, whole-web) with Google Custom Search fallback. Returns results with titles, URLs, and snippets. Use this for researching topics, finding documentation, looking up current information, or verifying facts. Supports date filtering and site-specific search.",
@@ -7269,7 +7269,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
 
   // ── Task Management ───────────────────────────────────────
   {
-    name: "task_create",
+    name: "create_task",
     dataSource: compute("MongoDB agent_tasks"),
     description:
       "Create a persistent task to track a work item across agentic iterations. Tasks survive context window " +
@@ -7321,7 +7321,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "task_list",
+    name: "list_tasks",
     dataSource: compute("MongoDB agent_tasks"),
     description:
       "List all tasks for a project, optionally filtered by status. Returns tasks sorted by ID with a summary " +
@@ -7350,7 +7350,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "task_get",
+    name: "get_task",
     dataSource: compute("MongoDB agent_tasks"),
     description:
       "Get a single task by its numeric ID. Returns the full task document including subject, description, " +
@@ -7373,7 +7373,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "task_update",
+    name: "update_task",
     dataSource: compute("MongoDB agent_tasks"),
     description:
       "Update an existing task's status, subject, description, or metadata. Use this to mark tasks as " +
@@ -9446,13 +9446,13 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
 
   // ── Cron Jobs ──────────────────────────────────────────────
   {
-    name: "cron_job_create",
+    name: "create_cron_job",
     dataSource: onDemand("AgenticSchedulerService"),
     description:
       "Create a persistent cron job or a manual/event-driven remote trigger. " +
       "Cron jobs persist across sessions and execute unattended in the background. " +
       "Supports hourly, daily (at scheduleTime), weekly (on scheduleDay at scheduleTime), " +
-      "cron expression (via cronExpression), or trigger (fire manually/remotely using cron_job_trigger).",
+      "cron expression (via cronExpression), or trigger (fire manually/remotely using trigger_cron_job).",
     endpoint: {
       method: "POST",
       path: "/agentic/scheduled-task/create",
@@ -9532,7 +9532,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "cron_job_list",
+    name: "list_cron_jobs",
     dataSource: onDemand("AgenticSchedulerService"),
     description:
       "List all cron jobs and background triggers currently configured in the workspace project.",
@@ -9548,7 +9548,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "cron_job_delete",
+    name: "delete_cron_job",
     dataSource: onDemand("AgenticSchedulerService"),
     description:
       "Delete an existing cron job or trigger by its UUID or unique name.",
@@ -9570,7 +9570,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "cron_job_trigger",
+    name: "trigger_cron_job",
     dataSource: onDemand("AgenticSchedulerService"),
     description:
       "Trigger a cron job or remote trigger to run in the background immediately. " +
@@ -10438,10 +10438,10 @@ const TOOL_DOMAINS = {
   lsp_action: "Workspace",
 
   // Agentic — Task Management
-  task_create: "Task Management",
-  task_get: "Task Management",
-  task_list: "Task Management",
-  task_update: "Task Management",
+  create_task: "Task Management",
+  get_task: "Task Management",
+  list_tasks: "Task Management",
+  update_task: "Task Management",
 
   // Agentic — Memory Persistence
   upsert_memory: "Memory",
@@ -10462,12 +10462,12 @@ const TOOL_DOMAINS = {
   search_tools: "Meta",
 
   // Cron Jobs
-  cron_create: "Cron Jobs",
+  create_cron: "Cron Jobs",
   remote_trigger: "Cron Jobs",
-  cron_job_create: "Cron Jobs",
-  cron_job_list: "Cron Jobs",
-  cron_job_delete: "Cron Jobs",
-  cron_job_trigger: "Cron Jobs",
+  create_cron_job: "Cron Jobs",
+  list_cron_jobs: "Cron Jobs",
+  delete_cron_job: "Cron Jobs",
+  trigger_cron_job: "Cron Jobs",
 
   // Agentic — Notebook Editing
   notebook_edit: "Workspace",
@@ -10745,10 +10745,10 @@ const TOOL_EMOJIS = {
   lsp_action: "🧩",
 
   // Agentic — Task Management
-  task_create: "➕",
-  task_get: "📋",
-  task_list: "📝",
-  task_update: "✏️",
+  create_task: "➕",
+  get_task: "📋",
+  list_tasks: "📝",
+  update_task: "✏️",
 
   // Agentic — Memory
   upsert_memory: "🧠",
@@ -10769,12 +10769,12 @@ const TOOL_EMOJIS = {
   search_tools: "🔍",
 
   // Cron Jobs
-  cron_create: "⏰",
+  create_cron: "⏰",
   remote_trigger: "📡",
-  cron_job_create: "🗓️",
-  cron_job_list: "📋",
-  cron_job_delete: "🗑️",
-  cron_job_trigger: "🚀",
+  create_cron_job: "🗓️",
+  list_cron_jobs: "📋",
+  delete_cron_job: "🗑️",
+  trigger_cron_job: "🚀",
 
   // Communication (Twilio)
   twilio_send_sms: "💬",
@@ -11203,10 +11203,10 @@ const TOOL_LABELS = {
   lsp_action: ["coding"],
 
   // ── Agentic: Task Management ─────────────────────────────
-  task_create: ["coding"],
-  task_get: ["coding"],
-  task_list: ["coding"],
-  task_update: ["coding"],
+  create_task: ["coding"],
+  get_task: ["coding"],
+  list_tasks: ["coding"],
+  update_task: ["coding"],
 
   // ── Agentic: Memory ──────────────────────────────────────
   upsert_memory: ["coding"],
@@ -11227,12 +11227,12 @@ const TOOL_LABELS = {
   search_tools: ["coding", "meta"],
 
   // ── Cron Jobs ────────────────────────────────────────────
-  cron_create: ["coding", "automation"],
+  create_cron: ["coding", "automation"],
   remote_trigger: ["coding", "automation"],
-  cron_job_create: ["coding", "automation"],
-  cron_job_list: ["coding", "automation"],
-  cron_job_delete: ["coding", "automation"],
-  cron_job_trigger: ["coding", "automation"],
+  create_cron_job: ["coding", "automation"],
+  list_cron_jobs: ["coding", "automation"],
+  delete_cron_job: ["coding", "automation"],
+  trigger_cron_job: ["coding", "automation"],
 
   // ── Agentic: Notebook Editing ────────────────────────────
   notebook_edit: ["coding", "data_science"],
@@ -11321,7 +11321,7 @@ const TOOL_INTELLIGENCE_TIERS: Record<string, ToolIntelligenceTier> = {
   check_drug_nutrient_interactions: "high",
   search_food_substitutes: "high",
   create_custom_agent: "high",
-  cron_create: "high",
+  create_cron: "high",
   generate_diagram: "high",
   test_regex: "high",
   str_replace_file: "high",
