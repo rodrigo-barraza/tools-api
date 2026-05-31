@@ -34,6 +34,7 @@ interface ToolsServiceConfig {
   TOOLS_SERVICE_PORT: string | undefined;
   TOOLS_SERVICE_URL: string | undefined;
   MONGODB_URI: string | undefined;
+  MONGODB_DB_NAME: string;
 
   // Location (mutable)
   LATITUDE: number;
@@ -124,6 +125,7 @@ const CONFIG: ToolsServiceConfig = {
   TOOLS_SERVICE_PORT: process.env.TOOLS_SERVICE_PORT,
   TOOLS_SERVICE_URL: process.env.TOOLS_SERVICE_URL,
   MONGODB_URI: process.env.MONGO_URI,
+  MONGODB_DB_NAME: process.env.TOOLS_SERVICE_MONGO_DB_NAME || "tools",
 
   // ─── Location (populated dynamically by LocationService.initLocation()) ───
   // Defaults act as fallbacks if initLocation() hasn't run yet.
