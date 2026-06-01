@@ -42,7 +42,10 @@ export async function saveThreeDimensionalScene(
   sessionId?: string | null,
   createdBy?: string | null,
 ): Promise<void> {
-  if (!collection) return;
+  if (!collection) {
+    logger.warn("[ThreeDimensionalScene] Collection not initialized — scene will not be persisted");
+    return;
+  }
 
   const now = new Date();
   await collection.updateOne(
@@ -69,7 +72,10 @@ export async function getThreeDimensionalScene(
   sceneData: Record<string, unknown>;
   options: Record<string, unknown>;
 } | null> {
-  if (!collection) return null;
+  if (!collection) {
+    logger.warn("[ThreeDimensionalScene] Collection not initialized — cannot retrieve scene");
+    return null;
+  }
 
   const document = await collection.findOne(
     { sceneId },

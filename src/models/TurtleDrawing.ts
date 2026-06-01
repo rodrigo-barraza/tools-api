@@ -36,7 +36,10 @@ export async function saveTurtleDrawing(
   sessionId?: string | null,
   createdBy?: string | null,
 ): Promise<void> {
-  if (!collection) return;
+  if (!collection) {
+    logger.warn("[TurtleDrawing] Collection not initialized — drawing will not be persisted");
+    return;
+  }
 
   const now = new Date();
   await collection.updateOne(
@@ -58,7 +61,10 @@ export async function saveTurtleDrawing(
 export async function getTurtleDrawing(
   drawingId: string,
 ): Promise<{ commands: unknown[]; options: Record<string, unknown> } | null> {
-  if (!collection) return null;
+  if (!collection) {
+    logger.warn("[TurtleDrawing] Collection not initialized — cannot retrieve drawing");
+    return null;
+  }
 
   const document = await collection.findOne(
     { drawingId },
