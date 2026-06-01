@@ -1,4 +1,4 @@
-import { escapeRegex } from "@rodrigo-barraza/utilities-library";
+import { escapeRegex, errorMessage } from "@rodrigo-barraza/utilities-library";
 // ─── Sandboxed File Operations ──────────────────────────────
 
 import {
@@ -425,8 +425,7 @@ export async function agenticWriteFile(
       linesWritten: lines,
     };
   } catch (error: unknown) {
-    const errorObject = error as Error;
-    return { error: `Write failed: ${errorObject.message || String(error)}` };
+    return { error: `Write failed: ${errorMessage(error)}` };
   }
 }
 
@@ -739,9 +738,8 @@ export async function agenticGrepSearch(
         ? new RegExp(pattern, caseInsensitive ? "gi" : "g")
         : new RegExp(escapeRegex(pattern), caseInsensitive ? "gi" : "g");
     } catch (error: unknown) {
-      const errorObject = error as Error;
       return {
-        error: `Invalid regex pattern: ${errorObject.message || String(error)}`,
+        error: `Invalid regex pattern: ${errorMessage(error)}`,
       };
     }
 
@@ -849,9 +847,8 @@ export async function agenticGrepSearch(
       results,
     };
   } catch (error: unknown) {
-    const errorObject = error as Error;
     return {
-      error: `grep_search failed: ${errorObject.message || String(error)}`,
+      error: `grep_search failed: ${errorMessage(error)}`,
     };
   }
 }
@@ -944,9 +941,8 @@ export async function agenticGlobFiles(pattern: string, searchPath: string) {
       matches,
     };
   } catch (error: unknown) {
-    const errorObject = error as Error;
     return {
-      error: `glob_files failed: ${errorObject.message || String(error)}`,
+      error: `glob_files failed: ${errorMessage(error)}`,
     };
   }
 }
@@ -1241,9 +1237,8 @@ export async function agenticMoveFile(
       success: true,
     };
   } catch (error: unknown) {
-    const errorObject = error as Error;
     return {
-      error: `move_file failed: ${errorObject.message || String(error)}`,
+      error: `move_file failed: ${errorMessage(error)}`,
     };
   }
 }

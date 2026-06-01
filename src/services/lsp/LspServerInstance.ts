@@ -175,7 +175,7 @@ export function createLspServerInstance(
         initPromise.catch(() => {});
       }
       state = "error";
-      lastError = error as Error;
+      lastError = error instanceof Error ? error : new Error(errorMessage(error));
       logger.error(`[LSP:${name}] Start failed: ${errorMessage(error)}`);
       throw error;
     }
@@ -190,7 +190,7 @@ export function createLspServerInstance(
       logger.info(`[LSP:${name}] Server stopped`);
     } catch (error: unknown) {
       state = "error";
-      lastError = error as Error;
+      lastError = error instanceof Error ? error : new Error(errorMessage(error));
       logger.error(`[LSP:${name}] Stop failed: ${errorMessage(error)}`);
       throw error;
     }

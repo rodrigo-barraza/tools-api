@@ -53,7 +53,7 @@ function createProductCollector<T>(
         `[${collection}] ✅ ${products.length} products | ${result.upserted} new, ${result.modified} updated`,
       );
     } catch (error: unknown) {
-      setProductError(source, { message: errorMessage(error) } as Error);
+      setProductError(source, new Error(errorMessage(error)));
       logger.error(`[${collection}] ❌ ${errorMessage(error)}`);
     }
   };
@@ -139,7 +139,7 @@ async function collectBestBuyCAAvailability() {
       );
     }
   } catch (error: unknown) {
-    setAvailabilityError({ message: errorMessage(error) } as Error);
+    setAvailabilityError({ message: errorMessage(error) });
     logger.error(`[bestbuy_ca_availability] ❌ ${errorMessage(error)}`);
   }
 }

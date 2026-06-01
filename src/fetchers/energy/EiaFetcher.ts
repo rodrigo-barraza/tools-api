@@ -2,6 +2,7 @@ import CONFIG from "../../config.ts";
 import { EIA_BASE_URL, EIA_DEFAULT_SERIES } from "../../constants.ts";
 import rateLimiter from "../../services/RateLimiterService.ts";
 import logger from "../../logger.ts";
+import { errorMessage } from "../../utilities.ts";
 
 /**
  * EIA (U.S. Energy Information Administration) APIv2 Fetcher.
@@ -319,7 +320,7 @@ export async function getEnergyIndicators() {
     .filter((r): r is PromiseRejectedResult => r.status === "rejected")
     .map((r, i) => ({
       series: entries[i][0],
-      error: (r.reason as Error).message,
+      error: errorMessage(r.reason),
     }));
 
   if (failed.length > 0) {

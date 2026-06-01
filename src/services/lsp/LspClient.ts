@@ -344,7 +344,7 @@ export function createLspClient(
         logger.warn(
           `[LSP:${serverName}] Shutdown error: ${errorMessage(error)}`,
         );
-        shutdownError = error as Error;
+        shutdownError = error instanceof Error ? error : new Error(errorMessage(error));
       } finally {
         // Always cleanup regardless of shutdown success
         if (connection) {

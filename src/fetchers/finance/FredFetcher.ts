@@ -1,6 +1,7 @@
 import CONFIG from "../../config.ts";
 import { FRED_BASE_URL, FRED_DEFAULT_SERIES } from "../../constants.ts";
 import logger from "../../logger.ts";
+import { errorMessage } from "../../utilities.ts";
 
 /**
  * FRED (Federal Reserve Economic Data) API fetcher.
@@ -264,7 +265,7 @@ export async function getKeyIndicators() {
     .filter((r): r is PromiseRejectedResult => r.status === "rejected")
     .map((r, i) => ({
       seriesId: entries[i][0],
-      error: (r.reason as Error).message,
+      error: errorMessage(r.reason),
     }));
 
   if (failed.length > 0) {
