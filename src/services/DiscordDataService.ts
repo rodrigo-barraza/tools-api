@@ -217,11 +217,11 @@ function buildBaseFilter({
 
   // Username search — match across username, globalName, and displayName
   if (username && !userId) {
-    const nameRegex = { $regex: username, $options: "i" };
+    const namePattern = { $regex: username, $options: "i" };
     filter.$or = [
-      { "author.username": nameRegex },
-      { "author.globalName": nameRegex },
-      { "member.displayName": nameRegex },
+      { "author.username": namePattern },
+      { "author.globalName": namePattern },
+      { "member.displayName": namePattern },
     ];
   }
 
@@ -235,15 +235,16 @@ function buildBaseFilter({
 
   // Time range
   if (before || after) {
-    const tsFilter: { $lte?: number; $gte?: number } = {};
-    if (before) tsFilter.$lte = new Date(before).getTime();
-    if (after) tsFilter.$gte = new Date(after).getTime();
-    filter.createdTimestamp = tsFilter;
+    const timestampFilter: { $lte?: number; $gte?: number } = {};
+    if (before) timestampFilter.$lte = new Date(before).getTime();
+    if (after) timestampFilter.$gte = new Date(after).getTime();
+    filter.createdTimestamp = timestampFilter;
   }
 
-  // Text search — prefer $regex for reliability (text index may still be building)
+  // Text search — use $text search to leverage the text index for 8M+ messages,
+  // drastically improving query performance.
   if (query) {
-    filter.content = { $regex: query, $options: "i" };
+    filter.$text = { $search: query };
   }
 
   return filter;
