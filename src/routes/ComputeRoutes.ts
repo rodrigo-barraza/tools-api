@@ -2785,85 +2785,379 @@ router.get("/image/ascii/embed", asyncHandler(async (req: Request, res: Response
 
 // ─── 3D Object Creation ─────────────────────────────────────
 // ── Create 3D Mesh (Triangle-level vertex + face data) ────────
+interface MeshSession {
+  vertices: MeshVertex[];
+  faces: MeshFace[];
+  normals?: MeshVertex[];
+  colors?: string[];
+  options: Record<string, any>;
+  updatedAt: number;
+}
+
+const meshSessions = new Map<string, MeshSession>();
+const MESH_SESSION_TTL_MS = 30 * 60_000; // 30 min
+
+function cleanupMeshSessions() {
+  const now = Date.now();
+  for (const [id, session] of meshSessions) {
+    if (now - session.updatedAt > MESH_SESSION_TTL_MS) {
+      meshSessions.delete(id);
+    }
+  }
+}
+
 router.post("/3d/mesh", asyncHandler(async (req: Request, res: Response) => {
   const { vertices, faces, normals, colors, options, sessionId } = req.body;
-  const meshInput = { vertices, faces, normals, colors, options };
-  const validationError = validateMeshInput(meshInput);
+
+  if (!vertices || !Array.isArray(vertices) || vertices.length === 0) {
+    return res.status(400).json({
+      error: "'vertices' is required (non-empty array of [x, y, z] triples)",
+    });
+  }
+  if (!faces || !Array.isArray(faces) || faces.length === 0) {
+    return res.status(400).json({
+      error: "'faces' is required (non-empty array of [v0, v1, v2] index triples)",
+    });
+  }
+
+  const callerUsername = (req.headers["x-username"] as string) || null;
+
+  let combinedVertices = vertices;
+  let combinedFaces = faces;
+  let combinedNormals = normals;
+  let combinedColors = colors;
+  let combinedOptions = options || {};
+  let finalSessionId = sessionId;
+
+  if (sessionId && meshSessions.has(sessionId)) {
+    const session = meshSessions.get(sessionId)!;
+    const previousVertexCount = session.vertices.length;
+
+    combinedOptions = { ...session.options, ...options };
+    combinedVertices = [...session.vertices, ...vertices];
+    combinedFaces = [...session.faces, ...faces];
+
+    if (session.normals || normals) {
+      const padNorm = () => [0, 1, 0] as MeshVertex;
+      const prevNorms = session.normals || Array.from({ length: previousVertexCount }, padNorm);
+      const newNorms = normals || Array.from({ length: vertices.length }, padNorm);
+      combinedNormals = [...prevNorms, ...newNorms];
+    }
+
+    if (session.colors || colors) {
+      const defaultColor = combinedOptions.meshColor || "#38bdf8";
+      const prevColors = session.colors || Array.from({ length: previousVertexCount }, () => defaultColor);
+      const newColors = colors || Array.from({ length: vertices.length }, () => defaultColor);
+      combinedColors = [...prevColors, ...newColors];
+    }
+  }
+
+  const combinedInput = {
+    vertices: combinedVertices,
+    faces: combinedFaces,
+    normals: combinedNormals,
+    colors: combinedColors,
+    options: combinedOptions,
+  };
+
+  const validationError = validateMeshInput(combinedInput);
   if (validationError) {
     return res.status(400).json({ error: validationError });
   }
-  const callerUsername = (req.headers["x-username"] as string) || null;
+
+  if (sessionId) {
+    if (meshSessions.has(sessionId)) {
+      const session = meshSessions.get(sessionId)!;
+      session.vertices = combinedVertices;
+      session.faces = combinedFaces;
+      session.normals = combinedNormals;
+      session.colors = combinedColors;
+      session.options = combinedOptions;
+      session.updatedAt = Date.now();
+    } else {
+      meshSessions.set(sessionId, {
+        vertices: combinedVertices,
+        faces: combinedFaces,
+        normals: combinedNormals,
+        colors: combinedColors,
+        options: combinedOptions,
+        updatedAt: Date.now(),
+      });
+    }
+    cleanupMeshSessions();
+  } else {
+    finalSessionId = crypto.randomUUID().slice(0, 12);
+    meshSessions.set(finalSessionId, {
+      vertices: combinedVertices,
+      faces: combinedFaces,
+      normals: combinedNormals,
+      colors: combinedColors,
+      options: combinedOptions,
+      updatedAt: Date.now(),
+    });
+    cleanupMeshSessions();
+  }
+
   const sceneId = crypto.randomUUID().slice(0, 12);
   await saveThreeDimensionalScene(
     sceneId,
     "mesh",
-    { vertices, faces, normals: normals || null, colors: colors || null },
-    options || {},
-    sessionId || null,
+    {
+      vertices: combinedVertices,
+      faces: combinedFaces,
+      normals: combinedNormals || null,
+      colors: combinedColors || null,
+    },
+    combinedOptions,
+    finalSessionId,
     callerUsername,
   );
+
   const sceneEmbedUrl = buildLocalUrl("compute/3d/embed", { id: sceneId, type: "mesh" });
+  
   res.json({
     sceneEmbedUrl,
     sceneId,
     sceneType: "mesh",
+    sessionId: finalSessionId,
     vertexCount: vertices.length,
     faceCount: faces.length,
-    hasVertexColors: !!colors && colors.length > 0,
-    hasCustomNormals: !!normals && normals.length > 0,
+    totalVertices: combinedVertices.length,
+    totalFaces: combinedFaces.length,
+    isAppend: sessionId && meshSessions.has(sessionId) ? true : false,
+    hasVertexColors: !!combinedColors && combinedColors.length > 0,
+    hasCustomNormals: !!combinedNormals && combinedNormals.length > 0,
   });
 }));
 // ── Create 3D Scene (Primitive shape composition) ─────────────
+interface SceneSession {
+  objects: SceneObject[];
+  options: Record<string, any>;
+  updatedAt: number;
+}
+
+const sceneSessions = new Map<string, SceneSession>();
+const SCENE_SESSION_TTL_MS = 30 * 60_000; // 30 min
+
+function cleanupSceneSessions() {
+  const currentTimestamp = Date.now();
+  for (const [id, session] of sceneSessions) {
+    if (currentTimestamp - session.updatedAt > SCENE_SESSION_TTL_MS) {
+      sceneSessions.delete(id);
+    }
+  }
+}
+
 router.post("/3d/scene", asyncHandler(async (req: Request, res: Response) => {
-  const { objects, options } = req.body;
-  const sceneInput = { objects, options };
-  const validationError = validateSceneInput(sceneInput);
+  const { objects: sceneObjects, options: sceneOptions, sessionId } = req.body;
+
+  if (!sceneObjects || !Array.isArray(sceneObjects) || sceneObjects.length === 0) {
+    return res.status(400).json({
+      error: "'objects' is required (non-empty array of scene primitive objects)",
+    });
+  }
+
+  const callerUsername = (req.headers["x-username"] as string) || null;
+
+  let combinedSceneObjects = sceneObjects;
+  let combinedSceneOptions = sceneOptions || {};
+  let finalSessionId = sessionId;
+
+  if (sessionId && sceneSessions.has(sessionId)) {
+    const existingSession = sceneSessions.get(sessionId)!;
+
+    // Merge options
+    combinedSceneOptions = { ...existingSession.options, ...sceneOptions };
+
+    // Append objects
+    combinedSceneObjects = [...existingSession.objects, ...sceneObjects];
+  }
+
+  const combinedSceneInput = {
+    objects: combinedSceneObjects,
+    options: combinedSceneOptions,
+  };
+
+  const validationError = validateSceneInput(combinedSceneInput);
   if (validationError) {
     return res.status(400).json({ error: validationError });
   }
-  const callerUsername = (req.headers["x-username"] as string) || null;
+
+  if (sessionId) {
+    if (sceneSessions.has(sessionId)) {
+      const existingSession = sceneSessions.get(sessionId)!;
+      existingSession.objects = combinedSceneObjects;
+      existingSession.options = combinedSceneOptions;
+      existingSession.updatedAt = Date.now();
+    } else {
+      sceneSessions.set(sessionId, {
+        objects: combinedSceneObjects,
+        options: combinedSceneOptions,
+        updatedAt: Date.now(),
+      });
+    }
+    cleanupSceneSessions();
+  } else {
+    finalSessionId = crypto.randomUUID().slice(0, 12);
+    sceneSessions.set(finalSessionId, {
+      objects: combinedSceneObjects,
+      options: combinedSceneOptions,
+      updatedAt: Date.now(),
+    });
+    cleanupSceneSessions();
+  }
+
   const sceneId = crypto.randomUUID().slice(0, 12);
   await saveThreeDimensionalScene(
     sceneId,
     "scene",
-    { objects },
-    options || {},
-    null,
+    { objects: combinedSceneObjects },
+    combinedSceneOptions,
+    finalSessionId,
     callerUsername,
   );
+
   const sceneEmbedUrl = buildLocalUrl("compute/3d/embed", { id: sceneId, type: "scene" });
+
   res.json({
     sceneEmbedUrl,
     sceneId,
     sceneType: "scene",
-    objectCount: objects.length,
+    sessionId: finalSessionId,
+    objectCount: sceneObjects.length,
+    totalObjects: combinedSceneObjects.length,
+    isAppend: sessionId && sceneSessions.has(sessionId) ? true : false,
   });
 }));
 // ── Create 3D Model (Declarative scene graph) ─────────────────
+interface ModelSession {
+  scene?: ModelSceneConfig;
+  objects: ModelObject[];
+  options?: ModelOptions;
+  updatedAt: number;
+}
+
+const modelSessions = new Map<string, ModelSession>();
+const MODEL_SESSION_TTL_MS = 30 * 60_000; // 30 min
+
+function cleanupModelSessions() {
+  const currentTimestamp = Date.now();
+  for (const [id, session] of modelSessions) {
+    if (currentTimestamp - session.updatedAt > MODEL_SESSION_TTL_MS) {
+      modelSessions.delete(id);
+    }
+  }
+}
+
 router.post("/3d/model", asyncHandler(async (req: Request, res: Response) => {
-  const { scene: sceneConfig, objects, options } = req.body;
-  const modelInput = { scene: sceneConfig, objects, options };
-  const validationError = validateModelInput(modelInput);
+  const { scene: sceneConfiguration, objects: modelObjects, options: modelOptions, sessionId } = req.body;
+
+  if (!modelObjects || !Array.isArray(modelObjects) || modelObjects.length === 0) {
+    return res.status(400).json({
+      error: "'objects' is required (non-empty array of scene objects)",
+    });
+  }
+
+  const callerUsername = (req.headers["x-username"] as string) || null;
+
+  let combinedSceneConfiguration = sceneConfiguration || {};
+  let combinedModelObjects = modelObjects;
+  let combinedModelOptions = modelOptions || {};
+  let finalSessionId = sessionId;
+
+  if (sessionId && modelSessions.has(sessionId)) {
+    const existingSession = modelSessions.get(sessionId)!;
+
+    // Merge options
+    combinedModelOptions = { ...existingSession.options, ...modelOptions };
+
+    // Deep merge scene config
+    combinedSceneConfiguration = {
+      ...existingSession.scene,
+      ...sceneConfiguration,
+    };
+    if (existingSession.scene?.ground || sceneConfiguration?.ground) {
+      combinedSceneConfiguration.ground = {
+        ...existingSession.scene?.ground,
+        ...sceneConfiguration?.ground,
+      };
+    }
+    if (existingSession.scene?.camera || sceneConfiguration?.camera) {
+      combinedSceneConfiguration.camera = {
+        ...existingSession.scene?.camera,
+        ...sceneConfiguration?.camera,
+      };
+    }
+    if (existingSession.scene?.fog || sceneConfiguration?.fog) {
+      combinedSceneConfiguration.fog = {
+        ...existingSession.scene?.fog,
+        ...sceneConfiguration?.fog,
+      };
+    }
+
+    // Append new objects
+    combinedModelObjects = [...existingSession.objects, ...modelObjects];
+  }
+
+  const combinedModelInput = {
+    scene: combinedSceneConfiguration,
+    objects: combinedModelObjects,
+    options: combinedModelOptions,
+  };
+
+  const validationError = validateModelInput(combinedModelInput);
   if (validationError) {
     return res.status(400).json({ error: validationError });
   }
-  const callerUsername = (req.headers["x-username"] as string) || null;
+
+  if (sessionId) {
+    if (modelSessions.has(sessionId)) {
+      const existingSession = modelSessions.get(sessionId)!;
+      existingSession.scene = combinedSceneConfiguration;
+      existingSession.objects = combinedModelObjects;
+      existingSession.options = combinedModelOptions;
+      existingSession.updatedAt = Date.now();
+    } else {
+      modelSessions.set(sessionId, {
+        scene: combinedSceneConfiguration,
+        objects: combinedModelObjects,
+        options: combinedModelOptions,
+        updatedAt: Date.now(),
+      });
+    }
+    cleanupModelSessions();
+  } else {
+    finalSessionId = crypto.randomUUID().slice(0, 12);
+    modelSessions.set(finalSessionId, {
+      scene: combinedSceneConfiguration,
+      objects: combinedModelObjects,
+      options: combinedModelOptions,
+      updatedAt: Date.now(),
+    });
+    cleanupModelSessions();
+  }
+
   const sceneId = crypto.randomUUID().slice(0, 12);
   await saveThreeDimensionalScene(
     sceneId,
     "model",
-    { scene: sceneConfig || {}, objects },
-    options || {},
-    null,
+    { scene: combinedSceneConfiguration || {}, objects: combinedModelObjects },
+    combinedModelOptions,
+    finalSessionId,
     callerUsername,
   );
+
   const sceneEmbedUrl = buildLocalUrl("compute/3d/embed", { id: sceneId, type: "model" });
+
   res.json({
     sceneEmbedUrl,
     sceneId,
     sceneType: "model",
-    objectCount: objects.length,
-    environment: sceneConfig?.environment || "studio",
+    sessionId: finalSessionId,
+    objectCount: modelObjects.length,
+    totalObjects: combinedModelObjects.length,
+    isAppend: sessionId && modelSessions.has(sessionId) ? true : false,
+    environment: combinedSceneConfiguration?.environment || "studio",
   });
 }));
 // ── Create 3D Voxel (Instanced voxels + primitive shape rasterization) ──

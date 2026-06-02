@@ -124,3 +124,169 @@ describe("GET /compute/image/ascii/embed", () => {
     expect(embedRes.text).toContain("ascii-pre");
   });
 });
+
+describe("POST /compute/3d/model", () => {
+  it("successfully starts a new 3D model session and returns sessionId", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/model")
+      .send({
+        objects: [
+          {
+            type: "box",
+            position: [0, 0, 0],
+            material: { color: "#ff6347" },
+          },
+        ],
+      });
+
+    expect(postResponse.status).toBe(200);
+    expect(postResponse.body.sceneEmbedUrl).toBeTruthy();
+    expect(postResponse.body.sceneId).toBeTruthy();
+    expect(postResponse.body.sessionId).toBeTruthy();
+    expect(postResponse.body.objectCount).toBe(1);
+    expect(postResponse.body.totalObjects).toBe(1);
+    expect(postResponse.body.isAppend).toBe(false);
+  });
+
+  it("successfully appends objects to an existing 3D model session", async () => {
+    const firstResponse = await request(app)
+      .post("/compute/3d/model")
+      .send({
+        objects: [
+          {
+            type: "box",
+            position: [0, 0, 0],
+          },
+        ],
+      });
+
+    expect(firstResponse.status).toBe(200);
+    const sessionId = firstResponse.body.sessionId;
+
+    const secondResponse = await request(app)
+      .post("/compute/3d/model")
+      .send({
+        sessionId,
+        objects: [
+          {
+            type: "sphere",
+            position: [1, 2, 3],
+          },
+        ],
+      });
+
+    expect(secondResponse.status).toBe(200);
+    expect(secondResponse.body.sessionId).toBe(sessionId);
+    expect(secondResponse.body.objectCount).toBe(1);
+    expect(secondResponse.body.totalObjects).toBe(2);
+    expect(secondResponse.body.isAppend).toBe(true);
+  });
+});
+
+describe("POST /compute/3d/mesh", () => {
+  it("successfully starts a new 3D mesh session and returns sessionId", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/mesh")
+      .send({
+        vertices: [[0, 1, 0], [1, -1, 0], [-1, -1, 0]],
+        faces: [[0, 1, 2]],
+      });
+
+    expect(postResponse.status).toBe(200);
+    expect(postResponse.body.sceneEmbedUrl).toBeTruthy();
+    expect(postResponse.body.sceneId).toBeTruthy();
+    expect(postResponse.body.sessionId).toBeTruthy();
+    expect(postResponse.body.vertexCount).toBe(3);
+    expect(postResponse.body.faceCount).toBe(1);
+    expect(postResponse.body.totalVertices).toBe(3);
+    expect(postResponse.body.totalFaces).toBe(1);
+    expect(postResponse.body.isAppend).toBe(false);
+  });
+
+  it("successfully appends vertices and faces to an existing 3D mesh session", async () => {
+    const firstResponse = await request(app)
+      .post("/compute/3d/mesh")
+      .send({
+        vertices: [[0, 1, 0], [1, -1, 0], [-1, -1, 0]],
+        faces: [[0, 1, 2]],
+      });
+
+    expect(firstResponse.status).toBe(200);
+    const sessionId = firstResponse.body.sessionId;
+
+    const secondResponse = await request(app)
+      .post("/compute/3d/mesh")
+      .send({
+        sessionId,
+        vertices: [[0, 2, 0], [2, -2, 0], [-2, -2, 0]],
+        faces: [[3, 4, 5]],
+      });
+
+    expect(secondResponse.status).toBe(200);
+    expect(secondResponse.body.sessionId).toBe(sessionId);
+    expect(secondResponse.body.vertexCount).toBe(3);
+    expect(secondResponse.body.faceCount).toBe(1);
+    expect(secondResponse.body.totalVertices).toBe(6);
+    expect(secondResponse.body.totalFaces).toBe(2);
+    expect(secondResponse.body.isAppend).toBe(true);
+  });
+});
+
+describe("POST /compute/3d/scene", () => {
+  it("successfully starts a new 3D scene session and returns sessionId", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/scene")
+      .send({
+        objects: [
+          {
+            shape: "box",
+            position: [0, 0, 0],
+            material: { color: "#ff6347" },
+          },
+        ],
+      });
+
+    expect(postResponse.status).toBe(200);
+    expect(postResponse.body.sceneEmbedUrl).toBeTruthy();
+    expect(postResponse.body.sceneId).toBeTruthy();
+    expect(postResponse.body.sessionId).toBeTruthy();
+    expect(postResponse.body.objectCount).toBe(1);
+    expect(postResponse.body.totalObjects).toBe(1);
+    expect(postResponse.body.isAppend).toBe(false);
+  });
+
+  it("successfully appends objects to an existing 3D scene session", async () => {
+    const firstResponse = await request(app)
+      .post("/compute/3d/scene")
+      .send({
+        objects: [
+          {
+            shape: "box",
+            position: [0, 0, 0],
+          },
+        ],
+      });
+
+    expect(firstResponse.status).toBe(200);
+    const sessionId = firstResponse.body.sessionId;
+
+    const secondResponse = await request(app)
+      .post("/compute/3d/scene")
+      .send({
+        sessionId,
+        objects: [
+          {
+            shape: "sphere",
+            position: [1, 2, 3],
+          },
+        ],
+      });
+
+    expect(secondResponse.status).toBe(200);
+    expect(secondResponse.body.sessionId).toBe(sessionId);
+    expect(secondResponse.body.objectCount).toBe(1);
+    expect(secondResponse.body.totalObjects).toBe(2);
+    expect(secondResponse.body.isAppend).toBe(true);
+  });
+});
+

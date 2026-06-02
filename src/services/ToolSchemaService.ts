@@ -5004,22 +5004,30 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     name: "create_3d_mesh",
     dataSource: compute("internal"),
     description:
-      "Create a 3D object from raw triangle mesh data — vertices and face indices. This is the lowest-level 3D tool: " +
-      "every triangle is explicitly defined vertex-by-vertex, exactly how polygon mesh rendering works in 3D graphics. " +
-      "Provide an array of vertex positions [x,y,z] and face indices [v0,v1,v2] referencing those vertices. " +
-      "Optionally provide per-vertex normals for custom shading and per-vertex colors for colored meshes. " +
-      "Supports wireframe mode, flat/smooth shading, metalness, roughness, auto-rotation, and camera control. " +
-      "Use cases: procedural geometry, algorithmic shapes, mathematical surfaces, terrain heightmaps, custom topology. " +
+      "Create a 3D object from raw triangle mesh data — vertices and face indices. " +
+      "IMPORTANT: You can build the 3D mesh incrementally — break the generation into logical parts (e.g. base, wings, " +
+      "details, sections) and call this tool multiple times using the sessionId returned from the first call. " +
+      "Pass the sessionId to append new vertices and faces. " +
+      "Note: Face indices in subsequent calls are absolute (0-based indexing relative to the total accumulated vertices). " +
+      "Between calls, briefly describe what you just added and what comes next so the user can follow along. " +
+      "Omit sessionId to start a new 3D mesh session. " +
       "The response contains a sceneEmbedUrl — render it with ![3D Mesh](sceneEmbedUrl) markdown so the user sees the interactive 3D scene inline. " +
-      "Max 50,000 vertices and 100,000 faces per call.",
+      "Max 50,000 total vertices and 100,000 total faces per session.",
     endpoint: {
       method: "POST",
       path: "/compute/3d/mesh",
-      bodyParams: ["vertices", "faces", "normals", "colors", "options"],
+      bodyParams: ["vertices", "faces", "normals", "colors", "options", "sessionId"],
     },
     parameters: {
       type: "object",
       properties: {
+        sessionId: {
+          type: "string",
+          description:
+            "Optional session ID returned from a prior create_3d_mesh call. " +
+            "Pass this to append new vertices and faces to an existing mesh. " +
+            "Omit to start a new 3D mesh session.",
+        },
         vertices: {
           type: "array",
           description:
@@ -5227,15 +5235,23 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "opacity, emissive, wireframe, flatShading). " +
       "Use cases: architectural mockups, abstract sculptures, game prototyping, educational geometry, product showcases. " +
       "The response contains a sceneEmbedUrl — render it with ![3D Scene](sceneEmbedUrl) markdown so the user sees the interactive 3D scene inline. " +
-      "Max 200 objects per call. Supports shadow casting, ambient/directional lighting control, and auto-orbit camera.",
+      "Max 200 objects per call. Supports shadow casting, ambient/directional lighting control, and auto-orbit camera. " +
+      "Supports progressive, step-by-step incremental building using a sessionId (analogous to the draw_turtle graphics tool) where subsequent calls with the same sessionId append new objects to the existing scene rather than overwriting it.",
     endpoint: {
       method: "POST",
       path: "/compute/3d/scene",
-      bodyParams: ["objects", "options"],
+      bodyParams: ["objects", "options", "sessionId"],
     },
     parameters: {
       type: "object",
       properties: {
+        sessionId: {
+          type: "string",
+          description:
+            "Optional session ID returned from a previous create_3d_scene call. " +
+            "Pass this to append new objects to an existing 3D scene progressively. " +
+            "Omit to start a new 3D scene session.",
+        },
         objects: {
           type: "array",
           description: "Array of primitive shape objects to compose into a scene.",
@@ -5335,15 +5351,23 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "Supports ground plane with shadows, fog, camera FOV control, and auto-orbit. " +
       "Use cases: product showcases, animated explainers, data visualization, artistic compositions, holiday scenes. " +
       "The response contains a sceneEmbedUrl — render it with ![3D Model](sceneEmbedUrl) markdown so the user sees the interactive 3D scene inline. " +
-      "Max 300 total objects (including nested children), max 5 levels of nesting.",
+      "Max 300 total objects (including nested children), max 5 levels of nesting. " +
+      "Supports progressive, step-by-step incremental building using a sessionId (analogous to the draw_turtle graphics tool) where subsequent calls with the same sessionId append new objects to the existing scene rather than overwriting it.",
     endpoint: {
       method: "POST",
       path: "/compute/3d/model",
-      bodyParams: ["scene", "objects", "options"],
+      bodyParams: ["scene", "objects", "options", "sessionId"],
     },
     parameters: {
       type: "object",
       properties: {
+        sessionId: {
+          type: "string",
+          description:
+            "Optional session ID returned from a previous create_3d_model call. " +
+            "Pass this to append new objects to an existing 3D scene progressively. " +
+            "Omit to start a new 3D scene session.",
+        },
         scene: {
           type: "object",
           description: "Scene-level configuration: environment, background, ground, camera, fog.",
