@@ -3,6 +3,7 @@
  */
 
 import type { EphemeralStore } from "../utilities.ts";
+import type { PersistentStore } from "../models/EmbedAsset.ts";
 
 // ─── Image Operations (Discriminated Union) ─────────────────────
 
@@ -166,7 +167,7 @@ export interface ProcessImageOptions {
   operations: ImageOperation[];
   outputFormat?: string;
   outputQuality?: number;
-  store?: EphemeralStore<ImageStoreEntry> | null;
+  store?: EphemeralStore<ImageStoreEntry> | PersistentStore<ImageStoreEntry> | null;
 }
 
 // ─── Process Result ─────────────────────────────────────────────

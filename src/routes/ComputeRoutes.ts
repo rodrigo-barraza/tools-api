@@ -24,11 +24,11 @@ import {
 import { MAX_CODE_LENGTH, MAX_COMMAND_LENGTH } from "../constants.ts";
 import crypto from "node:crypto";
 import {
-  EphemeralStore,
   buildLocalUrl,
   buildEmbedHtml,
   errorMessage,
 } from "../utilities.ts";
+import { PersistentStore } from "../models/EmbedAsset.ts";
 import {
   saveTurtleDrawing,
   getTurtleDrawing,
@@ -681,7 +681,7 @@ router.post(
   }),
 );
 // ─── 6. CSV Generation ──────────────────────────────────────
-const csvStore = new EphemeralStore<{ csv: string; filename: string }>();
+const csvStore = new PersistentStore<{ csv: string; filename: string }>("csv");
 router.post("/csv", (req: Request, res: Response) => {
   const { data, columns, filename, delimiter } = req.body;
   if (!data || !Array.isArray(data) || data.length === 0) {
@@ -729,10 +729,10 @@ router.post("/csv", (req: Request, res: Response) => {
       .json({ error: `CSV generation failed: ${errorMessage(error)}` });
   }
 });
-router.get("/csv/download", (req: Request, res: Response) => {
+router.get("/csv/download", asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.query as Record<string, string>;
   if (!id) return res.status(400).send("Missing 'id' parameter");
-  const entry = csvStore.get(id);
+  const entry = await csvStore.getWithFallback(id);
   if (!entry) {
     return res.status(404).send("CSV not found or expired");
   }
@@ -742,9 +742,9 @@ router.get("/csv/download", (req: Request, res: Response) => {
     `attachment; filename="${entry.filename}"`,
   );
   res.send(entry.csv);
-});
+}));
 // ─── 7. QR Code Generation ──────────────────────────────────
-const qrStore = new EphemeralStore<{ buffer: Buffer }>();
+const qrStore = new PersistentStore<{ buffer: Buffer }>("qr");
 router.post(
   "/qr",
   asyncHandler(async (req: Request, res: Response) => {
@@ -782,22 +782,22 @@ router.post(
     }
   }),
 );
-router.get("/qr/render", (req: Request, res: Response) => {
+router.get("/qr/render", asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.query as Record<string, string>;
   if (!id) return res.status(400).send("Missing 'id' parameter");
-  const entry = qrStore.get(id);
+  const entry = await qrStore.getWithFallback(id);
   if (!entry) {
     return res.status(404).send("QR code not found or expired");
   }
   res.setHeader("Content-Type", "image/png");
   res.setHeader("Cache-Control", "public, max-age=3600");
-  res.send(entry.buffer);
-});
+  res.send(Buffer.from(entry.buffer));
+}));
 // ─── 8. LaTeX Rendering (KaTeX CDN embed) ───────────────────
-const latexStore = new EphemeralStore<{
+const latexStore = new PersistentStore<{
   latex: string;
   displayMode: boolean;
-}>();
+}>("latex");
 function buildLatexEmbedHtml(latex: string, displayMode: boolean = true) {
   return buildEmbedHtml({
     headExtra: `<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
@@ -844,21 +844,21 @@ router.post("/latex", (req: Request, res: Response) => {
   const latexEmbedUrl = buildLocalUrl("compute/latex/embed", { id });
   res.json({ latexEmbedUrl, latexId: id });
 });
-router.get("/latex/embed", (req: Request, res: Response) => {
+router.get("/latex/embed", asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.query as Record<string, string>;
   if (!id) return res.status(400).send("Missing 'id' parameter");
-  const entry = latexStore.get(id);
+  const entry = await latexStore.getWithFallback(id);
   if (!entry) {
     return res.status(404).send("LaTeX not found or expired");
   }
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(buildLatexEmbedHtml(entry.latex, entry.displayMode));
-});
+}));
 // ─── 9. Mermaid Diagram Rendering (CDN embed) ───────────────
-const diagramStore = new EphemeralStore<{
+const diagramStore = new PersistentStore<{
   definition: string;
   theme: string;
-}>();
+}>("diagram");
 function buildMermaidEmbedHtml(definition: string, theme: string = "dark") {
   return buildEmbedHtml({
     styles: `  #diagram{
@@ -906,16 +906,16 @@ router.post("/diagram", (req: Request, res: Response) => {
   const diagramEmbedUrl = buildLocalUrl("compute/diagram/embed", { id });
   res.json({ diagramEmbedUrl, diagramId: id });
 });
-router.get("/diagram/embed", (req: Request, res: Response) => {
+router.get("/diagram/embed", asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.query as Record<string, string>;
   if (!id) return res.status(400).send("Missing 'id' parameter");
-  const entry = diagramStore.get(id);
+  const entry = await diagramStore.getWithFallback(id);
   if (!entry) {
     return res.status(404).send("Diagram not found or expired");
   }
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(buildMermaidEmbedHtml(entry.definition, entry.theme));
-});
+}));
 // ─── 10. Text Diff ──────────────────────────────────────────
 router.post(
   "/diff",
@@ -2269,7 +2269,7 @@ router.post("/synthetic-output", (req: Request, res: Response) => {
   res.json(result);
 });
 // ─── Image Processing (Sharp + ImageMagick) ─────────────────
-const imageStore = new EphemeralStore<{ buffer: Buffer; mimeType: string }>();
+const imageStore = new PersistentStore<{ buffer: Buffer; mimeType: string }>("image");
 router.post(
   "/image/process",
   asyncHandler(async (req: Request, res: Response) => {
@@ -2329,17 +2329,17 @@ router.post(
     }
   }),
 );
-router.get("/image/render", (req: Request, res: Response) => {
+router.get("/image/render", asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.query as Record<string, string>;
   if (!id) return res.status(400).send("Missing 'id' parameter");
-  const entry = imageStore.get(id);
+  const entry = await imageStore.getWithFallback(id);
   if (!entry) {
     return res.status(404).send("Image not found or expired");
   }
   res.setHeader("Content-Type", entry.mimeType || "image/png");
   res.setHeader("Cache-Control", "public, max-age=3600");
-  res.send(entry.buffer);
-});
+  res.send(Buffer.from(entry.buffer));
+}));
 // ─── Video to GIF Conversion ─────────────────────────────────
 router.post(
   "/video/gif",
@@ -2387,7 +2387,7 @@ interface AsciiStoreEntry {
   height: number;
   pixels: any[][];
 }
-const asciiStore = new EphemeralStore<AsciiStoreEntry>();
+const asciiStore = new PersistentStore<AsciiStoreEntry>("ascii");
 
 function buildAsciiEmbedHtml(entry: AsciiStoreEntry) {
   const pixelsJson = JSON.stringify(entry.pixels);
@@ -2772,16 +2772,16 @@ router.post(
   }),
 );
 
-router.get("/image/ascii/embed", (req: Request, res: Response) => {
+router.get("/image/ascii/embed", asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.query as Record<string, string>;
   if (!id) return res.status(400).send("Missing 'id' parameter");
-  const entry = asciiStore.get(id);
+  const entry = await asciiStore.getWithFallback(id);
   if (!entry) {
     return res.status(404).send("ASCII drawing not found or expired");
   }
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(buildAsciiEmbedHtml(entry));
-});
+}));
 
 // ─── 3D Object Creation ─────────────────────────────────────
 // ── Create 3D Mesh (Triangle-level vertex + face data) ────────

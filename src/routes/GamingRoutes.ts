@@ -352,18 +352,18 @@ router.post(
   }),
 );
 
-router.get("/bonfire/embed", (req: Request, res: Response) => {
+router.get("/bonfire/embed", asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.query as Record<string, string | undefined>;
   if (!id) {
     return res.status(400).send("Missing 'id' parameter");
   }
-  const bonfire = bonfireStore.get(id);
+  const bonfire = await bonfireStore.getWithFallback(id);
   if (!bonfire) {
     return res.status(404).send("Bonfire not found or expired");
   }
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(bonfire.htmlEmbed);
-});
+}));
 
 // ─── Health ─────────────────────────────────────────────────
 

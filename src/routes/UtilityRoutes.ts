@@ -37,7 +37,8 @@ import {
   renderChartPng,
 } from "../services/ChartService.ts";
 import { MAX_CODE_LENGTH } from "../constants.ts";
-import { EphemeralStore, buildLocalUrl, errorMessage } from "../utilities.ts";
+import { buildLocalUrl, errorMessage } from "../utilities.ts";
+import { PersistentStore } from "../models/EmbedAsset.ts";
 import { crawlSingleStatic } from "../services/CrawlerService.ts";
 
 interface MapMarker {
@@ -248,7 +249,7 @@ router.get(
  * In-memory map marker store — avoids multi-kb query-param URLs.
  * Maps are keyed by short UUID, expire after 1h.
  */
-const mapStore = new EphemeralStore<{ markers: MapMarker[] }>();
+const mapStore = new PersistentStore<{ markers: MapMarker[] }>("map");
 function storeMarkers(markerList: MapMarker[]) {
   return mapStore.set({ markers: markerList });
 }
@@ -338,7 +339,7 @@ function initMap(){
 <script src="https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap" async defer></script>
 </body></html>`;
 }
-router.get("/map/embed", (req: Request, res: Response) => {
+router.get("/map/embed", asyncHandler(async (req: Request, res: Response) => {
   const { id, markers, zoom, maptype } = req.query as Record<
     string,
     string | undefined
@@ -347,9 +348,8 @@ router.get("/map/embed", (req: Request, res: Response) => {
     return res.status(400).send("Missing API key");
   }
   let markerList: MapMarker[];
-  // Resolve by stored ID (short URL) or inline JSON (backward compat)
   if (id) {
-    const entry = mapStore.get(id);
+    const entry = await mapStore.getWithFallback(id);
     if (!entry) return res.status(404).send("Map not found or expired");
     markerList = entry.markers;
   } else if (markers) {
@@ -370,7 +370,7 @@ router.get("/map/embed", (req: Request, res: Response) => {
   });
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(html);
-});
+}));
 router.get(
   "/map",
   asyncHandler(async (req: Request, res: Response) => {
@@ -591,7 +591,7 @@ router.get(
     if (!id) {
       return res.status(400).send("Missing 'id' parameter");
     }
-    const chartConfig = getStoredChart(id);
+    const chartConfig = await getStoredChart(id);
     if (!chartConfig) {
       return res.status(404).send("Chart not found or expired");
     }

@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
-import { EphemeralStore, buildLocalUrl } from "../utilities.ts";
+import { buildLocalUrl } from "../utilities.ts";
+import { PersistentStore } from "../models/EmbedAsset.ts";
 
 export interface BonfireParams {
   woodType?: "oak" | "pine" | "birch" | "driftwood" | "magical";
@@ -26,7 +27,8 @@ export interface BonfireResult {
 }
 
 // 2 hours TTL for bonfires in memory
-export const bonfireStore = new EphemeralStore<BonfireResult>(
+export const bonfireStore = new PersistentStore<BonfireResult>(
+  "bonfire",
   2 * 60 * 60 * 1000,
 );
 

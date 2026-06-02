@@ -1,14 +1,11 @@
-// ─── Server-Side PNG Chart Rendering ────────────────────────
-
 import { MS_PER_HOUR } from "@rodrigo-barraza/utilities-library";
-import crypto from "node:crypto";
 import { ChartJSNodeCanvas } from "chartjs-node-canvas";
 import type { ChartConfiguration } from "chart.js";
 import type {
   ChartConfig,
   ChartDataset,
-  ChartStoreEntry,
 } from "../types/chart.ts";
+import { PersistentStore } from "../models/EmbedAsset.ts";
 
 // ─── Renderer Singleton ────────────────────────────────────────
 
@@ -21,42 +18,16 @@ const renderer = new ChartJSNodeCanvas({
   backgroundColour: "#0f172a",
 });
 
-// ─── In-Memory Store ───────────────────────────────────────────
+// ─── Persistent Chart Store ────────────────────────────────────
 
-const CHART_STORE = new Map<string, ChartStoreEntry>();
-const CHART_TTL_MS = MS_PER_HOUR;
+const chartStore = new PersistentStore<ChartConfig>("chart", MS_PER_HOUR);
 
-/**
- * Store chart config and return a short ID.
-
- */
 export function storeChart(chartConfig: ChartConfig): string {
-  const id = crypto.randomUUID().slice(0, 12);
-  CHART_STORE.set(id, { config: chartConfig, createdAt: Date.now() });
-
-  // Lazy cleanup when store gets large
-  if (CHART_STORE.size > 200) {
-    const now = Date.now();
-    for (const [k, value] of CHART_STORE) {
-      if (now - value.createdAt > CHART_TTL_MS) CHART_STORE.delete(k);
-    }
-  }
-  return id;
+  return chartStore.set(chartConfig);
 }
 
-/**
- * Retrieve a stored chart config by ID.
-
-
- */
-export function getStoredChart(id: string): ChartConfig | null {
-  const entry = CHART_STORE.get(id);
-  if (!entry) return null;
-  if (Date.now() - entry.createdAt > CHART_TTL_MS) {
-    CHART_STORE.delete(id);
-    return null;
-  }
-  return entry.config;
+export async function getStoredChart(id: string): Promise<ChartConfig | null> {
+  return chartStore.getWithFallback(id);
 }
 
 // ─── Color Palette ─────────────────────────────────────────────

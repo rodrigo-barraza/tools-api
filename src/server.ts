@@ -30,6 +30,7 @@ import { setupGeomagneticStormCollection } from "./models/GeomagneticStorm.ts";
 import { setupWebcamCollection } from "./models/Webcam.ts";
 import { setupTurtleDrawingCollection } from "./models/TurtleDrawing.ts";
 import { setupThreeDimensionalSceneCollection } from "./models/ThreeDimensionalScene.ts";
+import { setupEmbedAssetCollection } from "./models/EmbedAsset.ts";
 
 import {
   connectLuposDB,
@@ -212,6 +213,7 @@ async function start() {
       setupWebcamCollection(),
       setupTurtleDrawingCollection(),
       setupThreeDimensionalSceneCollection(),
+      setupEmbedAssetCollection(),
       setupToolCallsCollection(),
       setupRequestsCollection(),
       setupAgenticTaskCollection(),
