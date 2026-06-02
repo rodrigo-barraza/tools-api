@@ -5096,18 +5096,30 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     dataSource: compute("internal"),
     description:
       "Create a 3D object from a voxel grid. You can specify a list of explicit voxel coordinates, and/or a list of declarative primitive shapes (box, sphere, cylinder, cone, pyramid, ellipsoid, torus) that will be rasterized into voxels. " +
+      "IMPORTANT: You can build the 3D voxel grid incrementally — break the generation into logical parts (e.g. terrain, walls, " +
+      "decorations, modular additions) and call this tool multiple times using the sessionId returned from the first call. " +
+      "Pass the sessionId to append new voxels and shapes progressively. " +
+      "Between calls, briefly describe what you just added and what comes next so the user can follow along. " +
+      "Omit sessionId to start a new 3D voxel session. " +
       "Features highly optimized rendering using GPU-based Three.js InstancedMesh for thousands of voxels. " +
       "Supports customizable voxel sizing, spacing, outline borders, wireframes, flat shading, colors, opacity, and ambient/directional light casting. " +
       "The response contains a sceneEmbedUrl — render it with ![3D Voxel Grid](sceneEmbedUrl) markdown so the user sees the interactive 3D voxel grid inline. " +
-      "Max 100,000 voxels per call.",
+      "Max 100,000 total voxels per session.",
     endpoint: {
       method: "POST",
       path: "/compute/3d/voxel",
-      bodyParams: ["voxels", "shapes", "options"],
+      bodyParams: ["voxels", "shapes", "options", "sessionId"],
     },
     parameters: {
       type: "object",
       properties: {
+        sessionId: {
+          type: "string",
+          description:
+            "Optional session ID returned from a previous create_3d_voxel call. " +
+            "Pass this to append new voxels and shapes to an existing voxel grid progressively. " +
+            "Omit to start a new 3D voxel session.",
+        },
         voxels: {
           type: "array",
           description:

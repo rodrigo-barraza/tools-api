@@ -3161,30 +3161,108 @@ router.post("/3d/model", asyncHandler(async (req: Request, res: Response) => {
   });
 }));
 // ── Create 3D Voxel (Instanced voxels + primitive shape rasterization) ──
+interface VoxelSession {
+  voxels: any[];
+  shapes: any[];
+  options: Record<string, any>;
+  updatedAt: number;
+}
+
+const voxelSessions = new Map<string, VoxelSession>();
+const VOXEL_SESSION_TTL_MS = 30 * 60_000; // 30 min
+
+function cleanupVoxelSessions() {
+  const currentTimestamp = Date.now();
+  for (const [id, session] of voxelSessions) {
+    if (currentTimestamp - session.updatedAt > VOXEL_SESSION_TTL_MS) {
+      voxelSessions.delete(id);
+    }
+  }
+}
+
 router.post("/3d/voxel", asyncHandler(async (req: Request, res: Response) => {
-  const { voxels, shapes, options } = req.body;
-  const voxelInput = { voxels, shapes, options };
-  const validationError = validateVoxelInput(voxelInput);
+  const { voxels, shapes, options, sessionId } = req.body;
+
+  if ((!voxels || voxels.length === 0) && (!shapes || shapes.length === 0)) {
+    return res.status(400).json({
+      error: "At least one of 'voxels' or 'shapes' is required",
+    });
+  }
+
+  const callerUsername = (req.headers["x-username"] as string) || null;
+
+  let combinedVoxels = voxels || [];
+  let combinedShapes = shapes || [];
+  let combinedOptions = options || {};
+  let finalSessionId = sessionId;
+
+  if (sessionId && voxelSessions.has(sessionId)) {
+    const existingSession = voxelSessions.get(sessionId)!;
+
+    combinedOptions = { ...existingSession.options, ...options };
+    combinedVoxels = [...existingSession.voxels, ...(voxels || [])];
+    combinedShapes = [...existingSession.shapes, ...(shapes || [])];
+  }
+
+  const combinedVoxelInput = {
+    voxels: combinedVoxels,
+    shapes: combinedShapes,
+    options: combinedOptions,
+  };
+
+  const validationError = validateVoxelInput(combinedVoxelInput);
   if (validationError) {
     return res.status(400).json({ error: validationError });
   }
-  const callerUsername = (req.headers["x-username"] as string) || null;
+
+  if (sessionId) {
+    if (voxelSessions.has(sessionId)) {
+      const existingSession = voxelSessions.get(sessionId)!;
+      existingSession.voxels = combinedVoxels;
+      existingSession.shapes = combinedShapes;
+      existingSession.options = combinedOptions;
+      existingSession.updatedAt = Date.now();
+    } else {
+      voxelSessions.set(sessionId, {
+        voxels: combinedVoxels,
+        shapes: combinedShapes,
+        options: combinedOptions,
+        updatedAt: Date.now(),
+      });
+    }
+    cleanupVoxelSessions();
+  } else {
+    finalSessionId = crypto.randomUUID().slice(0, 12);
+    voxelSessions.set(finalSessionId, {
+      voxels: combinedVoxels,
+      shapes: combinedShapes,
+      options: combinedOptions,
+      updatedAt: Date.now(),
+    });
+    cleanupVoxelSessions();
+  }
+
   const sceneId = crypto.randomUUID().slice(0, 12);
   await saveThreeDimensionalScene(
     sceneId,
     "voxel",
-    { voxels, shapes },
-    options || {},
-    null,
+    { voxels: combinedVoxels, shapes: combinedShapes },
+    combinedOptions,
+    finalSessionId,
     callerUsername,
   );
+
   const sceneEmbedUrl = buildLocalUrl("compute/3d/embed", { id: sceneId, type: "voxel" });
-  const resolvedVoxelArray = resolveVoxels(voxelInput);
+  const resolvedVoxelArray = resolveVoxels(combinedVoxelInput);
+
   res.json({
     sceneEmbedUrl,
     sceneId,
     sceneType: "voxel",
-    voxelCount: resolvedVoxelArray.length,
+    sessionId: finalSessionId,
+    voxelCount: (voxels || []).length + (shapes || []).length,
+    totalVoxels: resolvedVoxelArray.length,
+    isAppend: sessionId && voxelSessions.has(sessionId) ? true : false,
   });
 }));
 // ── Serve 3D Embed HTML ───────────────────────────────────────

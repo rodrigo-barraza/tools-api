@@ -290,3 +290,61 @@ describe("POST /compute/3d/scene", () => {
   });
 });
 
+describe("POST /compute/3d/voxel", () => {
+  it("successfully starts a new 3D voxel session and returns sessionId", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/voxel")
+      .send({
+        voxels: [
+          {
+            position: [0, 0, 0],
+            color: "#ff6347",
+          },
+        ],
+      });
+
+    expect(postResponse.status).toBe(200);
+    expect(postResponse.body.sceneEmbedUrl).toBeTruthy();
+    expect(postResponse.body.sceneId).toBeTruthy();
+    expect(postResponse.body.sessionId).toBeTruthy();
+    expect(postResponse.body.voxelCount).toBe(1);
+    expect(postResponse.body.totalVoxels).toBe(1);
+    expect(postResponse.body.isAppend).toBe(false);
+  });
+
+  it("successfully appends voxels and shapes to an existing 3D voxel session", async () => {
+    const firstResponse = await request(app)
+      .post("/compute/3d/voxel")
+      .send({
+        voxels: [
+          {
+            position: [0, 0, 0],
+          },
+        ],
+      });
+
+    expect(firstResponse.status).toBe(200);
+    const sessionId = firstResponse.body.sessionId;
+
+    const secondResponse = await request(app)
+      .post("/compute/3d/voxel")
+      .send({
+        sessionId,
+        shapes: [
+          {
+            type: "box",
+            center: [1, 1, 1],
+            size: [1, 1, 1],
+          },
+        ],
+      });
+
+    expect(secondResponse.status).toBe(200);
+    expect(secondResponse.body.sessionId).toBe(sessionId);
+    expect(secondResponse.body.voxelCount).toBe(1);
+    expect(secondResponse.body.totalVoxels).toBe(2); // 1 from first + 1 from box center voxel rasterized
+    expect(secondResponse.body.isAppend).toBe(true);
+  });
+});
+
+
