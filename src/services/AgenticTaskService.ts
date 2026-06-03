@@ -106,6 +106,7 @@ export async function agenticTaskCreate(
     activeForm: data.activeForm || null,
     // Traceability — which agent session created/last touched this task
     agentSessionId: data.agentSessionId || null,
+    conversationId: data.conversationId || null,
     // Swarm-ready fields (unused in single-agent mode)
     owner: data.owner || null,
     blocks: [] as number[],
@@ -250,6 +251,7 @@ export async function agenticTaskUpdate(
   if (updates.description) $set.description = updates.description;
   if (updates.activeForm !== undefined) $set.activeForm = updates.activeForm;
   if (updates.agentSessionId) $set.agentSessionId = updates.agentSessionId;
+  if (updates.conversationId) $set.conversationId = updates.conversationId;
 
   // Merge metadata (don't replace entirely)
   if (updates.metadata && typeof updates.metadata === "object") {

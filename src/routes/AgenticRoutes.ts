@@ -901,9 +901,11 @@ router.post(
         .status(400)
         .json({ error: "Request body must include 'description' (string)" });
     }
-    // Auto-inject agentSessionId from Prism telemetry header
+    // Auto-inject agentSessionId and conversationId from Prism telemetry headers
     const agentSessionId =
       (req.headers["x-agent-session-id"] as string) || null;
+    const conversationId =
+      (req.headers["x-conversation-id"] as string) || null;
     const result = await agenticTaskCreate(project, {
       subject,
       description,
@@ -911,6 +913,7 @@ router.post(
       activeForm,
       metadata,
       agentSessionId: agentSessionId as string | null,
+      conversationId: conversationId as string | null,
     });
     if (result.error) return res.status(400).json(result);
     res.json(result);
@@ -934,7 +937,7 @@ router.get(
   "/task/list-all",
   asyncHandler(
     async (req: Request) => {
-      const { status, limit, agentSessionId } = req.query as Record<
+      const { status, limit, agentSessionId, conversationId } = req.query as Record<
         string,
         string | undefined
       >;
@@ -944,14 +947,23 @@ router.get(
       const collection = database.collection("agent_tasks");
       const filter: Record<string, unknown> = {};
       if (status) filter.status = status;
-      if (agentSessionId) filter.agentSessionId = agentSessionId;
+      // Support filtering by conversationId (preferred) or agentSessionId (legacy)
+      if (conversationId) {
+        filter.$or = [{ conversationId }, { agentSessionId: conversationId }];
+      } else if (agentSessionId) {
+        filter.agentSessionId = agentSessionId;
+      }
       const tasks = await collection
         .find(filter)
         .sort({ taskId: 1 })
         .limit(parseIntParam(limit, 100, 500))
         .toArray();
       // Summary counts (scoped to same filter base)
-      const summaryFilter = agentSessionId ? { agentSessionId } : {};
+      const summaryFilter = conversationId
+        ? { $or: [{ conversationId }, { agentSessionId: conversationId }] }
+        : agentSessionId
+          ? { agentSessionId }
+          : {};
       const allTasks = await collection.find(summaryFilter).toArray();
       const summary = {
         total: allTasks.length,
@@ -1008,9 +1020,11 @@ router.post(
     if (description) updates.description = description;
     if (activeForm !== undefined) updates.activeForm = activeForm;
     if (metadata) updates.metadata = metadata;
-    // Auto-inject agentSessionId from Prism telemetry header
+    // Auto-inject agentSessionId and conversationId from Prism telemetry headers
     const agentSessionId = req.headers["x-agent-session-id"];
     if (agentSessionId) updates.agentSessionId = agentSessionId;
+    const conversationId = req.headers["x-conversation-id"];
+    if (conversationId) updates.conversationId = conversationId as string;
     return agenticTaskUpdate(project, taskId, updates);
   }),
 );

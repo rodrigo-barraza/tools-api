@@ -362,6 +362,7 @@ interface CallerContext {
   agent: string | null;
   traceId: string | null;
   agentSessionId: string | null;
+  conversationId: string | null;
 }
 
 /**
@@ -376,5 +377,6 @@ export function extractCallerContext(req: Request): CallerContext {
     agent: (req.headers["x-agent"] as string) || null,
     traceId: (req.headers["x-trace-id"] as string) || null,
     agentSessionId: (req.headers["x-agent-session-id"] as string) || null,
+    conversationId: (req.headers["x-conversation-id"] as string) || null,
   };
 }

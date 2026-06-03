@@ -15,6 +15,7 @@ export interface AgenticTask extends Document {
   status: "pending" | "in_progress" | "completed";
   activeForm: string | null;
   agentSessionId: string | null;
+  conversationId: string | null;
   owner: string | null;
   blocks: number[];
   blockedBy: number[];
@@ -29,6 +30,7 @@ export interface AgenticTaskCreateData {
   status?: string;
   activeForm?: string | null;
   agentSessionId?: string | null;
+  conversationId?: string | null;
   owner?: string | null;
   metadata?: Record<string, unknown>;
 }
@@ -39,6 +41,7 @@ export interface AgenticTaskUpdates {
   description?: string;
   activeForm?: string | null;
   agentSessionId?: string;
+  conversationId?: string;
   metadata?: Record<string, unknown>;
 }
 
