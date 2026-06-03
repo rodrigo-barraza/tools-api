@@ -223,7 +223,7 @@ describe("POST /compute/3d/model", () => {
     expect(secondResponse.body.isAppend).toBe(true);
   });
 
-  it("successfully applies referenceTextureUrl to objects that lack explicit textures", async () => {
+  it("successfully applies referenceTextureUrl to objects that have placeholder or reference texture values", async () => {
     const postResponse = await request(app)
       .post("/compute/3d/model")
       .send({
@@ -232,11 +232,12 @@ describe("POST /compute/3d/model", () => {
           {
             shape: "box",
             position: [0, 0, 0],
+            material: { textureUrl: "reference" },
           },
           {
             shape: "sphere",
             position: [1, 1, 1],
-            material: { color: "#ffffff" },
+            material: { textureUrl: "placeholder", color: "#ffffff" },
           },
           {
             shape: "cone",
@@ -391,7 +392,7 @@ describe("POST /compute/3d/scene", () => {
     expect(secondResponse.body.isAppend).toBe(true);
   });
 
-  it("successfully recursively applies referenceTextureUrl to nested scene objects that lack explicit textures", async () => {
+  it("successfully recursively applies referenceTextureUrl to nested scene objects that have placeholder or reference texture values", async () => {
     const postResponse = await request(app)
       .post("/compute/3d/scene")
       .send({
@@ -404,6 +405,7 @@ describe("POST /compute/3d/scene", () => {
               {
                 type: "box",
                 position: [0, 0, 0],
+                material: { textureUrl: "reference" },
               },
               {
                 type: "sphere",
