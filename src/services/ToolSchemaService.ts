@@ -4030,7 +4030,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     name: "execute_javascript",
     dataSource: compute("Node.js vm"),
     description:
-      "Execute JavaScript code in a sandboxed Node.js vm context. Much faster than Python for quick data transforms, JSON manipulation, regex, and math. Has access to JSON, Math, Date, RegExp, Array, Object, Map, Set, typed arrays, TextEncoder/TextDecoder, console.log, and all core JS builtins. No access to require, import, process, fetch, setTimeout, filesystem, or network. Use logger.info() to produce output. Returns both captured output and the expression result.",
+      "Execute JavaScript code in a sandboxed Node.js vm context. Much faster than Python for quick data transforms, JSON manipulation, regex, and math. Has access to JSON, Math, Date, RegExp, Array, Object, Map, Set, typed arrays, TextEncoder/TextDecoder, console.log, and all core JS builtins. No access to require, import, process, fetch, setTimeout, filesystem, or network. Use console.log() to produce output. Returns both captured output and the expression result.",
     endpoint: {
       method: "POST",
       path: "/compute/js/execute",
@@ -4042,7 +4042,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         code: {
           type: "string",
           description:
-            "JavaScript source code to execute. Use logger.info() to produce output. The last expression value is returned as 'result'. Full standard JS built-ins available (JSON, Math, Date, RegExp, Array methods, Map, Set, etc.). No require/import/fetch/process/setTimeout.",
+            "JavaScript source code to execute. Use console.log() to produce output. The last expression value is returned as 'result'. Full standard JS built-ins available (JSON, Math, Date, RegExp, Array methods, Map, Set, etc.). No require/import/fetch/process/setTimeout.",
         },
         timeout: {
           type: "integer",
@@ -7212,7 +7212,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         script: {
           type: "string",
           description:
-            "Playwright script body to execute (for 'run_script' action). The script runs inside an async IIFE with 'browser', 'context', and 'page' already available. Use logger.info() for output. Example: await page.goto('https://example.com'); logger.info(await page.title());",
+            "Playwright script body to execute (for 'run_script' action). The script runs inside an async IIFE with 'browser', 'context', and 'page' already available. Use console.log() for output. Example: await page.goto('https://example.com'); console.log(await page.title());",
         },
       },
       required: ["action"],
@@ -7223,12 +7223,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     dataSource: compute("headless Chromium (Playwright subprocess)"),
     description:
       "Write and execute a complete Playwright script for complex multi-step browser automation that would be too many round-trips with browser_action. The script runs in a Node.js subprocess connected to the existing headless browser session.\n\n" +
-      "The script body executes inside an async context with 'browser', 'context', and 'page' already initialized. Use logger.info() to return data. " +
+      "The script body executes inside an async context with 'browser', 'context', and 'page' already initialized. Use console.log() to return data. " +
       "Use this for: scraping multi-page data, filling complex forms with validation, running E2E test sequences, browser-based data extraction pipelines, or any workflow requiring 3+ sequential browser actions.\n\n" +
       "Example script:\n" +
       "await page.goto('https://news.ycombinator.com');\n" +
       "const titles = await page.$$eval('.titleline > a', els => els.slice(0,10).map(e => e.textContent));\n" +
-      "logger.info(JSON.stringify(titles, null, 2));",
+      "console.log(JSON.stringify(titles, null, 2));",
     endpoint: {
       method: "POST",
       path: "/agentic/browser/script",
@@ -7240,7 +7240,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         script: {
           type: "string",
           description:
-            "The Playwright script body. Runs inside async IIFE with 'browser', 'context', 'page' pre-initialized. Use standard Playwright API: page.goto(), page.click(), page.fill(), page.$$eval(), page.locator(), etc. Use logger.info() to output results.",
+            "The Playwright script body. Runs inside async IIFE with 'browser', 'context', 'page' pre-initialized. Use standard Playwright API: page.goto(), page.click(), page.fill(), page.$$eval(), page.locator(), etc. Use console.log() to output results.",
         },
         sessionId: {
           type: "string",
