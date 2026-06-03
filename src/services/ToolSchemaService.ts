@@ -11016,9 +11016,8 @@ const TOOL_DOMAINS = {
   generate_map: "Utilities",
   generate_chart: "Utilities",
   get_public_webcams: "Utilities",
-  execute_python: "Utilities",
-
   // Compute
+  execute_python: "Core Tools",
   execute_javascript: "Core Tools",
   execute_shell: "Compute",
   convert_units: "Compute",
