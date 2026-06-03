@@ -122,3 +122,29 @@ describe("GET /utility/scrape/metadata (validation)", () => {
   });
 });
 
+describe("POST /utility/python/execute", () => {
+  it("returns 400 when code is missing", async () => {
+    const res = await request(app).post("/utility/python/execute").send({});
+    expect(res.status).toBe(400);
+  });
+
+  it("executes valid python code successfully", async () => {
+    const res = await request(app)
+      .post("/utility/python/execute")
+      .send({ code: "print('Hello, World!')" });
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.stdout.trim()).toBe("Hello, World!");
+  });
+
+  it("returns execution failure on syntax error", async () => {
+    const res = await request(app)
+      .post("/utility/python/execute")
+      .send({ code: "invalid python code!" });
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(false);
+    expect(res.body.stderr).toContain("SyntaxError");
+  });
+});
+
+

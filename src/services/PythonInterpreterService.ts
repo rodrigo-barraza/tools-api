@@ -20,8 +20,8 @@ const PYTHON_BIN = "python3";
 const PREAMBLE = `
 import resource, sys, os
 
-# ─── Memory limit (\${MEMORY_LIMIT_MB} MB) ───
-_mb = \${MEMORY_LIMIT_MB} * 1024 * 1024
+# ─── Memory limit (${MEMORY_LIMIT_MB} MB) ───
+_mb = ${MEMORY_LIMIT_MB} * 1024 * 1024
 try:
     resource.setrlimit(resource.RLIMIT_AS, (_mb, _mb))
 except (ValueError, resource.error):
