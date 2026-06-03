@@ -125,8 +125,8 @@ async function runGit(args: string[], cwd: string): Promise<GitRunResult> {
   return new Promise<GitRunResult>((resolve) => {
     const stdoutChunks: Buffer[] = [];
     const stderrChunks: Buffer[] = [];
-    let stdoutLen = 0;
-    let stderrLen = 0;
+    let stdoutLength = 0;
+    let stderrLength = 0;
     let settled = false;
 
     const child = spawn("git", args, {
@@ -147,18 +147,18 @@ async function runGit(args: string[], cwd: string): Promise<GitRunResult> {
 
     if (child.stdout) {
       child.stdout.on("data", (chunk: Buffer) => {
-        if (stdoutLen < MAX_OUTPUT_BYTES) {
+        if (stdoutLength < MAX_OUTPUT_BYTES) {
           stdoutChunks.push(chunk);
-          stdoutLen += chunk.length;
+          stdoutLength += chunk.length;
         }
       });
     }
 
     if (child.stderr) {
       child.stderr.on("data", (chunk: Buffer) => {
-        if (stderrLen < MAX_OUTPUT_BYTES) {
+        if (stderrLength < MAX_OUTPUT_BYTES) {
           stderrChunks.push(chunk);
-          stderrLen += chunk.length;
+          stderrLength += chunk.length;
         }
       });
     }
@@ -266,18 +266,18 @@ export async function agenticGitStatus(
   const untracked: string[] = [];
 
   for (const line of fileLines) {
-    const x = line[0]; // staging area
-    const y = line[1]; // working tree
+    const stagingStatus = line[0]; // staging area
+    const workingTreeStatus = line[1]; // working tree
     const file = line.slice(3);
 
-    if (x === "?" && y === "?") {
+    if (stagingStatus === "?" && workingTreeStatus === "?") {
       untracked.push(file);
     } else {
-      if (x !== " " && x !== "?") {
-        staged.push({ status: x, file });
+      if (stagingStatus !== " " && stagingStatus !== "?") {
+        staged.push({ status: stagingStatus, file });
       }
-      if (y !== " " && y !== "?") {
-        unstaged.push({ status: y, file });
+      if (workingTreeStatus !== " " && workingTreeStatus !== "?") {
+        unstaged.push({ status: workingTreeStatus, file });
       }
     }
   }
@@ -401,8 +401,8 @@ export async function agenticGitLog(
 
   // Use a structured format for reliable parsing
   const separator = "<<<COMMIT>>>";
-  const formatStr = `${separator}%H|%h|%an|%ae|%ai|%s`;
-  const args = ["log", `--format=${formatStr}`, `-n`, String(clampedLimit)];
+  const formatString = `${separator}%H|%h|%an|%ae|%ai|%s`;
+  const args = ["log", `--format=${formatString}`, `-n`, String(clampedLimit)];
 
   if (author) args.push(`--author=${author}`);
   if (since) args.push(`--since=${since}`);

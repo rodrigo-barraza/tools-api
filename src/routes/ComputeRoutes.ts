@@ -58,7 +58,7 @@ import {
   resolveVoxels,
 } from "../services/ThreeDimensionalVoxelService.ts";
 import type { Voxel, VoxelShape, VoxelOptions } from "../services/ThreeDimensionalVoxelService.ts";
-import { processImage, convertToAscii } from "../services/ImageService.ts";
+import { processImage, convertToAscii, type AsciiPixel } from "../services/ImageService.ts";
 import { convertVideoToGif } from "../services/VideoService.ts";
 // ─── Lazy-loaded dependencies ──────────────────────────────────────
 // These are loaded on first use to avoid blocking startup.
@@ -82,22 +82,22 @@ interface ConvertUnitsInstance {
 const getConvertUnits = lazyImport<ConvertUnitsInstance>("convert-units");
 const getDateFns = lazyImport<typeof import("date-fns")>(
   "date-fns",
-  (m: unknown) => m as typeof import("date-fns"),
+  (importedModule: unknown) => importedModule as typeof import("date-fns"),
 );
 const getDateFnsTz = lazyImport<typeof import("date-fns-tz")>(
   "date-fns-tz",
-  (m: unknown) => m as typeof import("date-fns-tz"),
+  (importedModule: unknown) => importedModule as typeof import("date-fns-tz"),
 );
 const getJSONPath = lazyImport<typeof import("jsonpath-plus").JSONPath>(
   "jsonpath-plus",
-  (m: unknown) =>
-    (m as Record<string, unknown>)
+  (importedModule: unknown) =>
+    (importedModule as Record<string, unknown>)
       .JSONPath as typeof import("jsonpath-plus").JSONPath,
 );
 const getQRCode = lazyImport<typeof import("qrcode")>("qrcode");
 const getDiff = lazyImport<typeof import("diff")>(
   "diff",
-  (m: unknown) => m as typeof import("diff"),
+  (importedModule: unknown) => importedModule as typeof import("diff"),
 );
 const router = Router();
 // ─── 1. JavaScript Interpreter (vm sandbox) ─────────────────
@@ -108,8 +108,8 @@ router.post("/js/execute", (req: Request, res: Response) => {
       .status(400)
       .json({ error: "Request body must include 'code' (string)" });
   }
-  const lengthErr = validateMaxLength(code, MAX_CODE_LENGTH, "Code");
-  if (lengthErr) return res.status(400).json({ error: lengthErr });
+  const lengthError = validateMaxLength(code, MAX_CODE_LENGTH, "Code");
+  if (lengthError) return res.status(400).json({ error: lengthError });
   const result = executeJavaScript(code, {
     timeout: timeout
       ? Math.min(Math.max(parseInt(timeout), 100), 30_000)
@@ -128,8 +128,8 @@ router.post("/js/stream", (req: Request, res: Response) => {
       .status(400)
       .json({ error: "Request body must include 'code' (string)" });
   }
-  const lengthErr = validateMaxLength(code, MAX_CODE_LENGTH, "Code");
-  if (lengthErr) return res.status(400).json({ error: lengthErr });
+  const lengthError = validateMaxLength(code, MAX_CODE_LENGTH, "Code");
+  if (lengthError) return res.status(400).json({ error: lengthError });
   const send = setupStreamingSSE(res);
   send({ event: "start", language: "javascript" });
   const result = executeJavaScript(code, {
@@ -162,8 +162,8 @@ router.post(
         .status(400)
         .json({ error: "Request body must include 'command' (string)" });
     }
-    const lengthErr = validateMaxLength(command, MAX_COMMAND_LENGTH, "Command");
-    if (lengthErr) return res.status(400).json({ error: lengthErr });
+    const lengthError = validateMaxLength(command, MAX_COMMAND_LENGTH, "Command");
+    if (lengthError) return res.status(400).json({ error: lengthError });
     const result = await executeShell(command, {
       stdin: stdin || "",
       timeout: timeout
@@ -187,8 +187,8 @@ router.post(
         .status(400)
         .json({ error: "Request body must include 'command' (string)" });
     }
-    const lengthErr = validateMaxLength(command, MAX_COMMAND_LENGTH, "Command");
-    if (lengthErr) return res.status(400).json({ error: lengthErr });
+    const lengthError = validateMaxLength(command, MAX_COMMAND_LENGTH, "Command");
+    if (lengthError) return res.status(400).json({ error: lengthError });
     const send = setupStreamingSSE(res);
     send({ event: "start", command });
     const result = await executeShellStreaming(command, {
@@ -223,17 +223,17 @@ router.get(
     }
     try {
       const convert = await getConvertUnits();
-      const numValue = parseFloat(value);
-      if (isNaN(numValue)) {
+      const parsedNumberValue = parseFloat(value);
+      if (isNaN(parsedNumberValue)) {
         return res
           .status(400)
           .json({ error: "'value' must be a valid number" });
       }
-      const result = convert(numValue).from(from).to(to);
+      const result = convert(parsedNumberValue).from(from).to(to);
       const fromUnit = convert().describe(from);
       const toUnit = convert().describe(to);
       res.json({
-        value: numValue,
+        value: parsedNumberValue,
         from: {
           abbr: from,
           singular: fromUnit.singular,
@@ -257,13 +257,13 @@ router.get(
       const convert = await getConvertUnits();
       if (measure) {
         const units = convert().possibilities(measure);
-        const described = units.map((u: string) => {
-          const desc = convert().describe(u);
+        const described = units.map((unit: string) => {
+          const unitDescription = convert().describe(unit);
           return {
-            abbr: u,
-            singular: desc.singular,
-            plural: desc.plural,
-            measure: desc.measure,
+            abbr: unit,
+            singular: unitDescription.singular,
+            plural: unitDescription.plural,
+            measure: unitDescription.measure,
           };
         });
         return res.json({ measure, count: described.length, units: described });
@@ -272,9 +272,9 @@ router.get(
       const all: Record<string, unknown> = {};
       for (const measure of measures) {
         const units = convert().possibilities(measure);
-        all[measure] = units.map((u: string) => {
-          const desc = convert().describe(u);
-          return { abbr: u, singular: desc.singular };
+        all[measure] = units.map((unit: string) => {
+          const unitDescription = convert().describe(unit);
+          return { abbr: unit, singular: unitDescription.singular };
         });
       }
       res.json({ measureCount: measures.length, measures: all });
@@ -299,12 +299,12 @@ router.post(
     try {
       const fns = await getDateFns();
       const timeZoneLib = await getDateFnsTz();
-      const parseDate = (d: unknown) => {
-        if (!d) return new Date();
-        if (d === "now") return new Date();
+      const parseDate = (dateInput: unknown) => {
+        if (!dateInput) return new Date();
+        if (dateInput === "now") return new Date();
         const parsed =
-          typeof d === "number" ? new Date(d) : fns.parseISO(d as string);
-        if (isNaN(parsed.getTime())) throw new Error(`Invalid date: ${d}`);
+          typeof dateInput === "number" ? new Date(dateInput) : fns.parseISO(dateInput as string);
+        if (isNaN(parsed.getTime())) throw new Error(`Invalid date: ${dateInput}`);
         return parsed;
       };
       const formatDate = (dateValue: Date) => {
@@ -546,15 +546,15 @@ router.post(
                 const order = op.order === "desc" ? -1 : 1;
                 result = [...result].sort(
                   (
-                    a: Record<string, unknown> | number | string,
-                    b: Record<string, unknown> | number | string,
+                    itemA: Record<string, unknown> | number | string,
+                    itemB: Record<string, unknown> | number | string,
                   ) => {
                     const valueA = key
-                      ? (a as Record<string, unknown>)?.[key]
-                      : a;
+                      ? (itemA as Record<string, unknown>)?.[key]
+                      : itemA;
                     const valueB = key
-                      ? (b as Record<string, unknown>)?.[key]
-                      : b;
+                      ? (itemB as Record<string, unknown>)?.[key]
+                      : itemB;
                     if (
                       typeof valueA === "number" &&
                       typeof valueB === "number"
@@ -2385,7 +2385,7 @@ interface AsciiStoreEntry {
   ansi: string;
   width: number;
   height: number;
-  pixels: any[][];
+  pixels: AsciiPixel[][];
 }
 const asciiStore = new PersistentStore<AsciiStoreEntry>("ascii");
 
@@ -3193,9 +3193,9 @@ router.post("/3d/model", asyncHandler(async (req: Request, res: Response) => {
 }));
 // ── Create 3D Voxel (Instanced voxels + primitive shape rasterization) ──
 interface VoxelSession {
-  voxels: any[];
-  shapes: any[];
-  options: Record<string, any>;
+  voxels: Voxel[];
+  shapes: VoxelShape[];
+  options: VoxelOptions;
   updatedAt: number;
 }
 

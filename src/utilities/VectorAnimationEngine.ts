@@ -1,3 +1,34 @@
+export interface GradientStop {
+  offset: number;
+  color: string;
+}
+
+export interface LinearGradient {
+  type: "linear";
+  x1?: number;
+  y1?: number;
+  x2?: number;
+  y2?: number;
+  stops?: GradientStop[];
+}
+
+export interface RadialGradient {
+  type: "radial";
+  x0?: number;
+  y0?: number;
+  r0?: number;
+  x1?: number;
+  y1?: number;
+  r1?: number;
+  stops?: GradientStop[];
+}
+
+export type GradientDefinition = LinearGradient | RadialGradient;
+
+export type ColorValue = string | GradientDefinition;
+
+export type InterpolatableValue = number | string | GradientDefinition | Array<[number, number]> | null | undefined;
+
 export interface KeyframeProperty {
   x?: number;
   y?: number;
@@ -5,17 +36,20 @@ export interface KeyframeProperty {
   scaleY?: number;
   rotation?: number;
   opacity?: number;
-  fillColor?: string | any;
-  strokeColor?: string | any;
+  fillColor?: ColorValue;
+  strokeColor?: ColorValue;
   strokeWidth?: number;
   width?: number;
   height?: number;
   radius?: number;
+  rx?: number;
+  ry?: number;
   points?: Array<[number, number]>;
   text?: string;
   fontSize?: number;
+  path?: string;
   imageUrl?: string;
-  [key: string]: any;
+  [key: string]: InterpolatableValue | string | undefined;
 }
 
 export interface MotionPath {
@@ -30,18 +64,38 @@ export interface Keyframe {
   properties: KeyframeProperty;
 }
 
+export interface ShapeData {
+  width?: number;
+  height?: number;
+  radius?: number;
+  rx?: number;
+  ry?: number;
+  x1?: number;
+  y1?: number;
+  x2?: number;
+  y2?: number;
+  points?: Array<[number, number]>;
+  path?: string;
+  text?: string;
+  fontSize?: number;
+  fontFamily?: string;
+  textAlign?: string;
+  textBaseline?: string;
+  [key: string]: InterpolatableValue | string | undefined;
+}
+
 export interface VectorLayer {
   id: string;
   shapeType: "rectangle" | "circle" | "ellipse" | "line" | "polygon" | "path" | "text";
-  shapeData?: Record<string, any>;
+  shapeData?: ShapeData;
   x?: number;
   y?: number;
   scaleX?: number;
   scaleY?: number;
   rotation?: number;
   opacity?: number;
-  fillColor?: string | any;
-  strokeColor?: string | any;
+  fillColor?: ColorValue;
+  strokeColor?: ColorValue;
   strokeWidth?: number;
   imageUrl?: string;
   keyframes?: Keyframe[];
@@ -68,14 +122,14 @@ const NAMED_COLORS: Record<string, ColorRgba> = {
   grey: { r: 128, g: 128, b: 128, a: 1 },
 };
 
-export function hueToRgbComponent(pVal: number, qVal: number, colorPercent: number): number {
+export function hueToRgbComponent(pValue: number, qValue: number, colorPercent: number): number {
   let normalizedPercent = colorPercent;
   if (normalizedPercent < 0) normalizedPercent += 1;
   if (normalizedPercent > 1) normalizedPercent -= 1;
-  if (normalizedPercent < 1 / 6) return pVal + (qVal - pVal) * 6 * normalizedPercent;
-  if (normalizedPercent < 1 / 2) return qVal;
-  if (normalizedPercent < 2 / 3) return pVal + (qVal - pVal) * (2 / 3 - normalizedPercent) * 6;
-  return pVal;
+  if (normalizedPercent < 1 / 6) return pValue + (qValue - pValue) * 6 * normalizedPercent;
+  if (normalizedPercent < 1 / 2) return qValue;
+  if (normalizedPercent < 2 / 3) return pValue + (qValue - pValue) * (2 / 3 - normalizedPercent) * 6;
+  return pValue;
 }
 
 export function hslToRgb(hue: number, saturation: number, lightness: number) {
@@ -85,11 +139,11 @@ export function hslToRgb(hue: number, saturation: number, lightness: number) {
   let blue = lightness;
 
   if (saturation !== 0) {
-    const qVal = lightness < 0.5 ? lightness * (1 + saturation) : lightness + saturation - lightness * saturation;
-    const pVal = 2 * lightness - qVal;
-    red = hueToRgbComponent(pVal, qVal, normalizedHue + 1 / 3);
-    green = hueToRgbComponent(pVal, qVal, normalizedHue);
-    blue = hueToRgbComponent(pVal, qVal, normalizedHue - 1 / 3);
+    const qValue = lightness < 0.5 ? lightness * (1 + saturation) : lightness + saturation - lightness * saturation;
+    const pValue = 2 * lightness - qValue;
+    red = hueToRgbComponent(pValue, qValue, normalizedHue + 1 / 3);
+    green = hueToRgbComponent(pValue, qValue, normalizedHue);
+    blue = hueToRgbComponent(pValue, qValue, normalizedHue - 1 / 3);
   }
 
   return {
@@ -178,46 +232,58 @@ export function interpolateColor(color1: string, color2: string, progress: numbe
   return "rgba(" + red + ", " + green + ", " + blue + ", " + alpha + ")";
 }
 
-export function isGradient(value: any): boolean {
-  return value && typeof value === "object" && (value.type === "linear" || value.type === "radial");
+export function isGradient(value: InterpolatableValue | ColorValue): value is GradientDefinition {
+  return !!value && typeof value === "object" && !Array.isArray(value) && (value.type === "linear" || value.type === "radial");
 }
 
-export function interpolateGradient(gradientA: any, gradientB: any, progress: number): any {
+export function interpolateGradient(gradientA: GradientDefinition, gradientB: GradientDefinition, progress: number): GradientDefinition {
   if (gradientA.type !== gradientB.type) return progress < 0.5 ? gradientA : gradientB;
-  const result: any = { type: gradientA.type };
-  if (gradientA.type === "linear") {
-    result.x1 = interpolate(gradientA.x1 ?? 0, gradientB.x1 ?? 0, progress);
-    result.y1 = interpolate(gradientA.y1 ?? 0, gradientB.y1 ?? 0, progress);
-    result.x2 = interpolate(gradientA.x2 ?? 0, gradientB.x2 ?? 0, progress);
-    result.y2 = interpolate(gradientA.y2 ?? 0, gradientB.y2 ?? 0, progress);
-  } else if (gradientA.type === "radial") {
-    result.x0 = interpolate(gradientA.x0 ?? 0, gradientB.x0 ?? 0, progress);
-    result.y0 = interpolate(gradientA.y0 ?? 0, gradientB.y0 ?? 0, progress);
-    result.r0 = interpolate(gradientA.r0 ?? 0, gradientB.r0 ?? 0, progress);
-    result.x1 = interpolate(gradientA.x1 ?? 0, gradientB.x1 ?? 0, progress);
-    result.y1 = interpolate(gradientA.y1 ?? 0, gradientB.y1 ?? 0, progress);
-    result.r1 = interpolate(gradientA.r1 ?? 0, gradientB.r1 ?? 0, progress);
-  }
-  
+
   const stopsA = gradientA.stops || [];
   const stopsB = gradientB.stops || [];
-  const stops = [];
+  const interpolatedStops: GradientStop[] = [];
   const maxStops = Math.max(stopsA.length, stopsB.length);
   for (let index = 0; index < maxStops; index++) {
     const stopA = stopsA[index] || stopsA[stopsA.length - 1] || { offset: 0, color: "transparent" };
     const stopB = stopsB[index] || stopsB[stopsB.length - 1] || { offset: 1, color: "transparent" };
-    stops.push({
-      offset: interpolate(stopA.offset ?? 0, stopB.offset ?? 0, progress),
+    interpolatedStops.push({
+      offset: interpolateNumber(stopA.offset ?? 0, stopB.offset ?? 0, progress),
       color: interpolateColor(stopA.color || "transparent", stopB.color || "transparent", progress),
     });
   }
-  result.stops = stops;
-  return result;
+
+  if (gradientA.type === "linear" && gradientB.type === "linear") {
+    return {
+      type: "linear",
+      x1: interpolateNumber(gradientA.x1 ?? 0, gradientB.x1 ?? 0, progress),
+      y1: interpolateNumber(gradientA.y1 ?? 0, gradientB.y1 ?? 0, progress),
+      x2: interpolateNumber(gradientA.x2 ?? 0, gradientB.x2 ?? 0, progress),
+      y2: interpolateNumber(gradientA.y2 ?? 0, gradientB.y2 ?? 0, progress),
+      stops: interpolatedStops,
+    };
+  }
+
+  const radialA = gradientA as RadialGradient;
+  const radialB = gradientB as RadialGradient;
+  return {
+    type: "radial",
+    x0: interpolateNumber(radialA.x0 ?? 0, radialB.x0 ?? 0, progress),
+    y0: interpolateNumber(radialA.y0 ?? 0, radialB.y0 ?? 0, progress),
+    r0: interpolateNumber(radialA.r0 ?? 0, radialB.r0 ?? 0, progress),
+    x1: interpolateNumber(radialA.x1 ?? 0, radialB.x1 ?? 0, progress),
+    y1: interpolateNumber(radialA.y1 ?? 0, radialB.y1 ?? 0, progress),
+    r1: interpolateNumber(radialA.r1 ?? 0, radialB.r1 ?? 0, progress),
+    stops: interpolatedStops,
+  };
 }
 
-export function interpolate(valueA: any, valueB: any, progress: number): any {
+function interpolateNumber(valueA: number, valueB: number, progress: number): number {
+  return valueA + (valueB - valueA) * progress;
+}
+
+export function interpolate(valueA: InterpolatableValue, valueB: InterpolatableValue, progress: number): InterpolatableValue {
   if (typeof valueA === "number" && typeof valueB === "number") {
-    return valueA + (valueB - valueA) * progress;
+    return interpolateNumber(valueA, valueB, progress);
   }
   if (isGradient(valueA) && isGradient(valueB)) {
     return interpolateGradient(valueA, valueB, progress);
@@ -228,30 +294,33 @@ export function interpolate(valueA: any, valueB: any, progress: number): any {
     }
   }
   if (Array.isArray(valueA) && Array.isArray(valueB)) {
-    return valueA.map((item, index) => interpolate(item, valueB[index] || item, progress));
+    return valueA.map((item, index) => {
+      const counterpart = valueB[index] || item;
+      return [interpolateNumber(item[0], counterpart[0], progress), interpolateNumber(item[1], counterpart[1], progress)] as [number, number];
+    });
   }
   return progress < 0.5 ? valueA : valueB;
 }
 
 export function solveCubicBezier(time: number, x1: number, y1: number, x2: number, y2: number): number {
-  function getX(tVal: number): number {
-    return 3 * (1 - tVal) * (1 - tVal) * tVal * x1 + 3 * (1 - tVal) * tVal * tVal * x2 + tVal * tVal * tVal;
+  function getX(tValue: number): number {
+    return 3 * (1 - tValue) * (1 - tValue) * tValue * x1 + 3 * (1 - tValue) * tValue * tValue * x2 + tValue * tValue * tValue;
   }
-  function getY(tVal: number): number {
-    return 3 * (1 - tVal) * (1 - tVal) * tVal * y1 + 3 * (1 - tVal) * tVal * tVal * y2 + tVal * tVal * tVal;
+  function getY(tValue: number): number {
+    return 3 * (1 - tValue) * (1 - tValue) * tValue * y1 + 3 * (1 - tValue) * tValue * tValue * y2 + tValue * tValue * tValue;
   }
-  function getDerivativeX(tVal: number): number {
-    return 3 * (1 - tVal) * (1 - tVal) * x1 + 6 * (1 - tVal) * tVal * (x2 - x1) + 3 * tVal * tVal * (1 - x2);
+  function getDerivativeX(tValue: number): number {
+    return 3 * (1 - tValue) * (1 - tValue) * x1 + 6 * (1 - tValue) * tValue * (x2 - x1) + 3 * tValue * tValue * (1 - x2);
   }
-  let guessT = time;
+  let estimatedTime = time;
   for (let iteration = 0; iteration < 8; iteration++) {
-    const currentX = getX(guessT) - time;
+    const currentX = getX(estimatedTime) - time;
     if (Math.abs(currentX) < 1e-5) break;
-    const dX = getDerivativeX(guessT);
-    if (Math.abs(dX) < 1e-5) break;
-    guessT -= currentX / dX;
+    const derivativeX = getDerivativeX(estimatedTime);
+    if (Math.abs(derivativeX) < 1e-5) break;
+    estimatedTime -= currentX / derivativeX;
   }
-  return getY(guessT);
+  return getY(estimatedTime);
 }
 
 export function ease(progress: number, easing: string | undefined): number {
@@ -270,28 +339,28 @@ export function ease(progress: number, easing: string | undefined): number {
   return progress;
 }
 
-const pathCache: Record<string, { svgPath: any; totalLength: number }> = {};
+const pathCache: Record<string, { svgPath: SVGPathElement; totalLength: number }> = {};
 
 export function getPathPointAt(pathString: string, progress: number, orientToPath?: boolean): { x: number; y: number; rotation: number } {
   if (typeof document !== "undefined") {
-    let pathObj = pathCache[pathString];
-    if (!pathObj) {
-      const svgPath = document.createElementNS("http://www.w3.org/2000/svg", "path") as any;
+    let pathObject = pathCache[pathString];
+    if (!pathObject) {
+      const svgPath = document.createElementNS("http://www.w3.org/2000/svg", "path") as SVGPathElement;
       svgPath.setAttribute("d", pathString);
       const totalLength = typeof svgPath.getTotalLength === "function" ? svgPath.getTotalLength() : 100;
-      pathObj = { svgPath, totalLength };
-      pathCache[pathString] = pathObj;
+      pathObject = { svgPath, totalLength };
+      pathCache[pathString] = pathObject;
     }
-    const length = progress * pathObj.totalLength;
-    const point = typeof pathObj.svgPath.getPointAtLength === "function"
-      ? pathObj.svgPath.getPointAtLength(length)
+    const length = progress * pathObject.totalLength;
+    const point = typeof pathObject.svgPath.getPointAtLength === "function"
+      ? pathObject.svgPath.getPointAtLength(length)
       : { x: length, y: length };
     
     let angle = 0;
     if (orientToPath) {
       const delta = 0.5;
-      const nextPoint = typeof pathObj.svgPath.getPointAtLength === "function"
-        ? pathObj.svgPath.getPointAtLength(Math.min(pathObj.totalLength, length + delta))
+      const nextPoint = typeof pathObject.svgPath.getPointAtLength === "function"
+        ? pathObject.svgPath.getPointAtLength(Math.min(pathObject.totalLength, length + delta))
         : { x: length + delta, y: length + delta };
       angle = (Math.atan2(nextPoint.y - point.y, nextPoint.x - point.x) * 180) / Math.PI;
     }
@@ -300,8 +369,8 @@ export function getPathPointAt(pathString: string, progress: number, orientToPat
   return { x: progress * 100, y: progress * 100, rotation: 0 };
 }
 
-export function getDefaultValue(key: string, layer: VectorLayer): any {
-  if ((layer as any)[key] !== undefined) return (layer as any)[key];
+export function getDefaultValue(key: string, layer: VectorLayer): InterpolatableValue {
+  if (key in layer) return (layer as unknown as Record<string, InterpolatableValue>)[key];
   if (key === "scaleX" || key === "scaleY" || key === "opacity") return 1;
   if (key === "x" || key === "y" || key === "rotation" || key === "strokeWidth") return 0;
   if (key === "fillColor" || key === "strokeColor") return "transparent";

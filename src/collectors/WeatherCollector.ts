@@ -93,7 +93,7 @@ import { errorMessage } from "../utilities.ts";
 interface CollectorConfig<T> {
   label: string;
   collection: string;
-  fetchFn: () => Promise<T>;
+  fetchFunction: () => Promise<T>;
   updateFn: (data: T) => void;
   setErrorFn: (error: unknown) => void;
   logFn?: (data: T) => string;
@@ -102,7 +102,7 @@ interface CollectorConfig<T> {
 function makeCollector<T>(config: CollectorConfig<T>) {
   return async () => {
     try {
-      const data = await config.fetchFn();
+      const data = await config.fetchFunction();
       config.updateFn(data);
       await saveState(
         config.collection,
@@ -125,109 +125,109 @@ function makeCollector<T>(config: CollectorConfig<T>) {
 const collectOpenMeteo = makeCollector({
   label: "OpenMeteo",
   collection: "openmeteo",
-  fetchFn: fetchOpenMeteoWeather,
-  updateFn: (d) => update("openmeteo", d as unknown as Record<string, unknown>),
-  setErrorFn: (e) =>
+  fetchFunction: fetchOpenMeteoWeather,
+  updateFn: (weatherData) => update("openmeteo", weatherData as unknown as Record<string, unknown>),
+  setErrorFn: (error) =>
     setError(
       "openmeteo",
-      e instanceof Error ? e : { message: errorMessage(e) },
+      error instanceof Error ? error : { message: errorMessage(error) },
     ),
-  logFn: (d) => `${d.weatherDescription} | ${d.temperature}°C`,
+  logFn: (weatherData) => `${weatherData.weatherDescription} | ${weatherData.temperature}°C`,
 });
 
 const collectAirQuality = makeCollector({
   label: "AirQuality",
   collection: "air_quality",
-  fetchFn: fetchAirQuality,
-  updateFn: (d) =>
-    update("airquality", d as unknown as Record<string, unknown>),
-  setErrorFn: (e) =>
+  fetchFunction: fetchAirQuality,
+  updateFn: (weatherData) =>
+    update("airquality", weatherData as unknown as Record<string, unknown>),
+  setErrorFn: (error) =>
     setError(
       "airquality",
-      e instanceof Error ? e : { message: errorMessage(e) },
+      error instanceof Error ? error : { message: errorMessage(error) },
     ),
-  logFn: (d) => `US AQI: ${d.usAqi} | PM2.5: ${d.pm25}`,
+  logFn: (weatherData) => `US AQI: ${weatherData.usAqi} | PM2.5: ${weatherData.pm25}`,
 });
 
 const collectTomorrowIORealtime = makeCollector({
   label: "Tomorrow.io",
   collection: "tomorrowio",
-  fetchFn: fetchTomorrowIORealtime,
-  updateFn: (d) =>
-    update("tomorrowio", d as unknown as Record<string, unknown>),
-  setErrorFn: (e) =>
+  fetchFunction: fetchTomorrowIORealtime,
+  updateFn: (weatherData) =>
+    update("tomorrowio", weatherData as unknown as Record<string, unknown>),
+  setErrorFn: (error) =>
     setError(
       "tomorrowio",
-      e instanceof Error ? e : { message: errorMessage(e) },
+      error instanceof Error ? error : { message: errorMessage(error) },
     ),
-  logFn: (d) =>
-    `${d.weatherDescription} | Visibility: ${d.visibility}km | UV: ${d.uvIndex}`,
+  logFn: (weatherData) =>
+    `${weatherData.weatherDescription} | Visibility: ${weatherData.visibility}km | UV: ${weatherData.uvIndex}`,
 });
 
 const collectTomorrowIODaily = makeCollector({
   label: "Tomorrow.io Daily",
   collection: "tomorrowio_daily",
-  fetchFn: fetchTomorrowIODailyForecast,
-  updateFn: (d) =>
-    update("tomorrowio_daily", d as unknown as Record<string, unknown>),
-  setErrorFn: (e) =>
+  fetchFunction: fetchTomorrowIODailyForecast,
+  updateFn: (weatherData) =>
+    update("tomorrowio_daily", weatherData as unknown as Record<string, unknown>),
+  setErrorFn: (error) =>
     setError(
       "tomorrowio_daily",
-      e instanceof Error ? e : { message: errorMessage(e) },
+      error instanceof Error ? error : { message: errorMessage(error) },
     ),
-  logFn: (d) =>
-    `Moonrise: ${d.moonrise || "N/A"} | Moonset: ${d.moonset || "N/A"}`,
+  logFn: (weatherData) =>
+    `Moonrise: ${weatherData.moonrise || "N/A"} | Moonset: ${weatherData.moonset || "N/A"}`,
 });
 
 const collectIssPosition = makeCollector({
   label: "ISS",
   collection: "iss_position",
-  fetchFn: fetchIssPosition,
-  updateFn: (d) =>
-    updateIssPosition(d as unknown as Parameters<typeof updateIssPosition>[0]),
-  setErrorFn: (e) =>
-    setIssPositionError(e instanceof Error ? e : { message: errorMessage(e) }),
-  logFn: (d) => `Lat: ${d.latitude.toFixed(2)}, Lng: ${d.longitude.toFixed(2)}`,
+  fetchFunction: fetchIssPosition,
+  updateFn: (issData) =>
+    updateIssPosition(issData as unknown as Parameters<typeof updateIssPosition>[0]),
+  setErrorFn: (error) =>
+    setIssPositionError(error instanceof Error ? error : { message: errorMessage(error) }),
+  logFn: (issData) => `Lat: ${issData.latitude.toFixed(2)}, Lng: ${issData.longitude.toFixed(2)}`,
 });
 
 const collectAstronauts = makeCollector({
   label: "Astronauts",
   collection: "astronauts",
-  fetchFn: fetchAstronauts,
-  updateFn: (d) =>
-    updateAstronauts(d as unknown as Parameters<typeof updateAstronauts>[0]),
-  setErrorFn: (e) =>
-    setAstronautsError(e instanceof Error ? e : { message: errorMessage(e) }),
-  logFn: (d) => `${d.total} people in space`,
+  fetchFunction: fetchAstronauts,
+  updateFn: (astrosData) =>
+    updateAstronauts(astrosData as unknown as Parameters<typeof updateAstronauts>[0]),
+  setErrorFn: (error) =>
+    setAstronautsError(error instanceof Error ? error : { message: errorMessage(error) }),
+  logFn: (astrosData) => `${astrosData.total} people in space`,
 });
 
 const collectKpIndex = makeCollector({
   label: "Kp Index",
   collection: "kp_index",
-  fetchFn: fetchKpIndex,
+  fetchFunction: fetchKpIndex,
   updateFn: updateKpIndex,
-  setErrorFn: (e) =>
-    setKpIndexError(e instanceof Error ? e : new Error(errorMessage(e))),
-  logFn: (d) =>
-    `${d.length} readings | Current Kp: ${d[d.length - 1]?.kp ?? "?"}`,
+  setErrorFn: (error) =>
+    setKpIndexError(error instanceof Error ? error : new Error(errorMessage(error))),
+  logFn: (kpData) =>
+    `${kpData.length} readings | Current Kp: ${kpData[kpData.length - 1]?.kp ?? "?"}`,
 });
 
 const collectWildfires = makeCollector({
   label: "Wildfire",
   collection: "wildfires",
-  fetchFn: fetchWildfires,
+  fetchFunction: fetchWildfires,
   updateFn: updateWildfires,
-  setErrorFn: (e) =>
-    setWildfireError(e instanceof Error ? e : new Error(errorMessage(e))),
-  logFn: (d) => {
-    const largest = d
+  setErrorFn: (error) =>
+    setWildfireError(error instanceof Error ? error : new Error(errorMessage(error))),
+  logFn: (wildfireData) => {
+    const largest = wildfireData
       .filter((e) => e.magnitudeValue != null)
       .sort(
         (firstItem, b) =>
           (b.magnitudeValue ?? 0) - (firstItem.magnitudeValue ?? 0),
       )[0];
     return (
-      `${d.length} active fires` +
+      `${wildfireData.length} active fires` +
       (largest
         ? ` | Largest: ${(largest as unknown as Record<string, unknown>).title} (${largest.magnitudeValue} ${(largest as unknown as Record<string, unknown>).magnitudeUnit})`
         : "")
@@ -238,14 +238,14 @@ const collectWildfires = makeCollector({
 const collectTides = makeCollector({
   label: "Tides",
   collection: "tide_predictions",
-  fetchFn: fetchTides,
+  fetchFunction: fetchTides,
   updateFn: updateTides,
-  setErrorFn: (e) =>
-    setTideError(e instanceof Error ? e : new Error(errorMessage(e))),
-  logFn: (d) => {
-    const next = d.find((time) => new Date(time.time) > new Date());
+  setErrorFn: (error) =>
+    setTideError(error instanceof Error ? error : new Error(errorMessage(error))),
+  logFn: (tideData) => {
+    const next = tideData.find((time) => new Date(time.time) > new Date());
     return (
-      `${d.length} predictions` +
+      `${tideData.length} predictions` +
       (next
         ? ` | Next: ${(next as unknown as Record<string, unknown>).type} at ${next.time} (${(next as unknown as Record<string, unknown>).height}m)`
         : "")
@@ -256,24 +256,24 @@ const collectTides = makeCollector({
 const collectSolarWind = makeCollector({
   label: "Solar Wind",
   collection: "solar_wind",
-  fetchFn: fetchSolarWind,
+  fetchFunction: fetchSolarWind,
   updateFn: updateSolarWind,
-  setErrorFn: (e) =>
-    setSolarWindError(e instanceof Error ? e : new Error(errorMessage(e))),
-  logFn: (d) =>
-    `${d.counts.plasma}p/${d.counts.magnetic}m pts | Speed: ${d.latest.speed ?? "?"}km/s | Bz: ${d.latest.bz ?? "?"}nT`,
+  setErrorFn: (error) =>
+    setSolarWindError(error instanceof Error ? error : new Error(errorMessage(error))),
+  logFn: (solarWindData) =>
+    `${solarWindData.counts.plasma}p/${solarWindData.counts.magnetic}m pts | Speed: ${solarWindData.latest.speed ?? "?"}km/s | Bz: ${solarWindData.latest.bz ?? "?"}nT`,
 });
 
 const collectGoogleAirQuality = makeCollector({
   label: "Google AQ",
   collection: "google_air_quality",
-  fetchFn: fetchGoogleAirQuality,
+  fetchFunction: fetchGoogleAirQuality,
   updateFn: updateGoogleAirQuality,
-  setErrorFn: (e) => {
+  setErrorFn: (error) => {
     setGoogleAirQualityError(
-      e instanceof Error ? e : new Error(errorMessage(e)),
+      error instanceof Error ? error : new Error(errorMessage(error)),
     );
-    const message = errorMessage(e);
+    const message = errorMessage(error);
     if (
       message.includes("API_KEY_SERVICE_BLOCKED") ||
       message.includes("PERMISSION_DENIED")
@@ -284,18 +284,18 @@ const collectGoogleAirQuality = makeCollector({
       );
     }
   },
-  logFn: (d) =>
-    `AQI: ${d.usEpaAqi ?? "?"} (${d.usEpaCategory ?? "?"}) | Dominant: ${d.usEpaDominantPollutant ?? "?"}`,
+  logFn: (googleAqiData) =>
+    `AQI: ${googleAqiData.usEpaAqi ?? "?"} (${googleAqiData.usEpaCategory ?? "?"}) | Dominant: ${googleAqiData.usEpaDominantPollutant ?? "?"}`,
 });
 
 const collectPollen = makeCollector({
   label: "Pollen",
   collection: "pollen",
-  fetchFn: fetchPollen,
+  fetchFunction: fetchPollen,
   updateFn: updatePollen,
-  setErrorFn: (e) => {
-    setPollenError(e instanceof Error ? e : new Error(errorMessage(e)));
-    const message = errorMessage(e);
+  setErrorFn: (error) => {
+    setPollenError(error instanceof Error ? error : new Error(errorMessage(error)));
+    const message = errorMessage(error);
     if (
       message.includes("API_KEY_SERVICE_BLOCKED") ||
       message.includes("PERMISSION_DENIED")
@@ -306,62 +306,62 @@ const collectPollen = makeCollector({
       );
     }
   },
-  logFn: (d) => {
-    const today = d.daily?.[0];
-    return `${d.daily?.length || 0}-day forecast | Grass: ${today?.grass?.indexInfo?.category ?? "?"} | Tree: ${today?.tree?.indexInfo?.category ?? "?"} | Weed: ${today?.weed?.indexInfo?.category ?? "?"}`;
+  logFn: (pollenData) => {
+    const today = pollenData.daily?.[0];
+    return `${pollenData.daily?.length || 0}-day forecast | Grass: ${today?.grass?.indexInfo?.category ?? "?"} | Tree: ${today?.tree?.indexInfo?.category ?? "?"} | Weed: ${today?.weed?.indexInfo?.category ?? "?"}`;
   },
 });
 
 const collectApod = makeCollector({
   label: "APOD",
   collection: "apod",
-  fetchFn: fetchApod,
+  fetchFunction: fetchApod,
   updateFn: updateApod,
-  setErrorFn: (e) =>
-    setApodError(e instanceof Error ? e : new Error(errorMessage(e))),
-  logFn: (d) => d.title,
+  setErrorFn: (error) =>
+    setApodError(error instanceof Error ? error : new Error(errorMessage(error))),
+  logFn: (apodData) => apodData.title,
 });
 
 const collectLaunches = makeCollector({
   label: "Launches",
   collection: "launches",
-  fetchFn: fetchUpcomingLaunches,
+  fetchFunction: fetchUpcomingLaunches,
   updateFn: updateLaunches,
-  setErrorFn: (e) =>
-    setLaunchError(e instanceof Error ? e : new Error(errorMessage(e))),
-  logFn: (d) =>
-    `${d.length} upcoming` +
-    (d[0] ? ` | Next: ${d[0].name} (${d[0].status})` : ""),
+  setErrorFn: (error) =>
+    setLaunchError(error instanceof Error ? error : new Error(errorMessage(error))),
+  logFn: (launchData) =>
+    `${launchData.length} upcoming` +
+    (launchData[0] ? ` | Next: ${launchData[0].name} (${launchData[0].status})` : ""),
 });
 
 const collectTwilight = makeCollector({
   label: "Twilight",
   collection: "twilight",
-  fetchFn: fetchTwilight,
+  fetchFunction: fetchTwilight,
   updateFn: updateTwilight,
-  setErrorFn: (e) =>
-    setTwilightError(e instanceof Error ? e : new Error(errorMessage(e))),
-  logFn: (d) => `Civil: ${d.civilTwilightBegin} → ${d.civilTwilightEnd}`,
+  setErrorFn: (error) =>
+    setTwilightError(error instanceof Error ? error : new Error(errorMessage(error))),
+  logFn: (twilightData) => `Civil: ${twilightData.civilTwilightBegin} → ${twilightData.civilTwilightEnd}`,
 });
 
 const collectEnvironmentCanada = makeCollector({
   label: "Env Canada",
   collection: "env_canada_warnings",
-  fetchFn: fetchEnvironmentCanadaWarnings,
+  fetchFunction: fetchEnvironmentCanadaWarnings,
   updateFn: updateWarnings,
-  setErrorFn: (e) =>
-    setWarningError(e instanceof Error ? e : new Error(errorMessage(e))),
-  logFn: (d) => `${d.length} active warnings/watches`,
+  setErrorFn: (error) =>
+    setWarningError(error instanceof Error ? error : new Error(errorMessage(error))),
+  logFn: (warningData) => `${warningData.length} active warnings/watches`,
 });
 
 const collectAvalanche = makeCollector({
   label: "Avalanche",
   collection: "avalanche_forecasts",
-  fetchFn: fetchAvalancheForecast,
+  fetchFunction: fetchAvalancheForecast,
   updateFn: updateAvalanche,
-  setErrorFn: (e) =>
-    setAvalancheError(e instanceof Error ? e : new Error(errorMessage(e))),
-  logFn: (d) => `${d.length} forecast regions`,
+  setErrorFn: (error) =>
+    setAvalancheError(error instanceof Error ? error : new Error(errorMessage(error))),
+  logFn: (avalancheData) => `${avalancheData.length} forecast regions`,
 });
 
 // ─── Complex Collectors (custom async flows) ──────────────────────
@@ -427,160 +427,160 @@ const STARTUP_TASKS = [
     label: "OpenMeteo",
     collection: "openmeteo",
     ttl: OPEN_METEO_INTERVAL_MS,
-    collectFn: collectOpenMeteo,
-    restoreFn: (d: Record<string, unknown>) => restore("openmeteo", d),
+    collectFunction: collectOpenMeteo,
+    restoreFunction: (d: Record<string, unknown>) => restore("openmeteo", d),
     delay: 0,
   },
   {
     label: "AirQuality",
     collection: "air_quality",
     ttl: AIR_QUALITY_INTERVAL_MS,
-    collectFn: collectAirQuality,
-    restoreFn: (d: Record<string, unknown>) => restore("airquality", d),
+    collectFunction: collectAirQuality,
+    restoreFunction: (d: Record<string, unknown>) => restore("airquality", d),
     delay: 2_000,
   },
   {
     label: "Tomorrow.io",
     collection: "tomorrowio",
     ttl: TOMORROWIO_REALTIME_INTERVAL_MS,
-    collectFn: collectTomorrowIORealtime,
-    restoreFn: (d: Record<string, unknown>) => restore("tomorrowio", d),
+    collectFunction: collectTomorrowIORealtime,
+    restoreFunction: (d: Record<string, unknown>) => restore("tomorrowio", d),
     delay: 4_000,
   },
   {
     label: "Tomorrow.io Daily",
     collection: "tomorrowio_daily",
     ttl: TOMORROWIO_FORECAST_INTERVAL_MS,
-    collectFn: collectTomorrowIODaily,
-    restoreFn: (d: Record<string, unknown>) => restore("tomorrowio_daily", d),
+    collectFunction: collectTomorrowIODaily,
+    restoreFunction: (d: Record<string, unknown>) => restore("tomorrowio_daily", d),
     delay: 6_000,
   },
   {
     label: "Earthquake",
     collection: "earthquakes_cache",
     ttl: EARTHQUAKE_INTERVAL_MS,
-    collectFn: collectEarthquakes,
-    restoreFn: restoreEarthquakes,
+    collectFunction: collectEarthquakes,
+    restoreFunction: restoreEarthquakes,
     delay: 8_000,
   },
   {
     label: "NEO",
     collection: "neos_cache",
     ttl: NEO_INTERVAL_MS,
-    collectFn: collectNeos,
-    restoreFn: restoreNeos,
+    collectFunction: collectNeos,
+    restoreFunction: restoreNeos,
     delay: 10_000,
   },
   {
     label: "DONKI",
     collection: "space_weather",
     ttl: DONKI_INTERVAL_MS,
-    collectFn: collectDonki,
-    restoreFn: restoreSpaceWeather,
+    collectFunction: collectDonki,
+    restoreFunction: restoreSpaceWeather,
     delay: 12_000,
   },
   {
     label: "ISS Position",
     collection: "iss_position",
     ttl: ISS_POSITION_INTERVAL_MS,
-    collectFn: collectIssPosition,
-    restoreFn: updateIssPosition,
+    collectFunction: collectIssPosition,
+    restoreFunction: updateIssPosition,
     delay: 14_000,
   },
   {
     label: "Astronauts",
     collection: "astronauts",
     ttl: ISS_ASTROS_INTERVAL_MS,
-    collectFn: collectAstronauts,
-    restoreFn: updateAstronauts,
+    collectFunction: collectAstronauts,
+    restoreFunction: updateAstronauts,
     delay: 15_000,
   },
   {
     label: "Kp Index",
     collection: "kp_index",
     ttl: KP_INDEX_INTERVAL_MS,
-    collectFn: collectKpIndex,
-    restoreFn: updateKpIndex,
+    collectFunction: collectKpIndex,
+    restoreFunction: updateKpIndex,
     delay: 16_000,
   },
   {
     label: "Wildfire",
     collection: "wildfires",
     ttl: WILDFIRE_INTERVAL_MS,
-    collectFn: collectWildfires,
-    restoreFn: updateWildfires,
+    collectFunction: collectWildfires,
+    restoreFunction: updateWildfires,
     delay: 18_000,
   },
   {
     label: "Tides",
     collection: "tide_predictions",
     ttl: TIDE_INTERVAL_MS,
-    collectFn: collectTides,
-    restoreFn: updateTides,
+    collectFunction: collectTides,
+    restoreFunction: updateTides,
     delay: 20_000,
   },
   {
     label: "Solar Wind",
     collection: "solar_wind",
     ttl: SOLAR_WIND_INTERVAL_MS,
-    collectFn: collectSolarWind,
-    restoreFn: updateSolarWind,
+    collectFunction: collectSolarWind,
+    restoreFunction: updateSolarWind,
     delay: 22_000,
   },
   {
     label: "Google AQ",
     collection: "google_air_quality",
     ttl: GOOGLE_AIR_QUALITY_INTERVAL_MS,
-    collectFn: collectGoogleAirQuality,
-    restoreFn: updateGoogleAirQuality,
+    collectFunction: collectGoogleAirQuality,
+    restoreFunction: updateGoogleAirQuality,
     delay: 24_000,
   },
   {
     label: "Pollen",
     collection: "pollen",
     ttl: GOOGLE_POLLEN_INTERVAL_MS,
-    collectFn: collectPollen,
-    restoreFn: updatePollen,
+    collectFunction: collectPollen,
+    restoreFunction: updatePollen,
     delay: 26_000,
   },
   {
     label: "APOD",
     collection: "apod",
     ttl: APOD_INTERVAL_MS,
-    collectFn: collectApod,
-    restoreFn: updateApod,
+    collectFunction: collectApod,
+    restoreFunction: updateApod,
     delay: 28_000,
   },
   {
     label: "Launches",
     collection: "launches",
     ttl: LAUNCH_INTERVAL_MS,
-    collectFn: collectLaunches,
-    restoreFn: updateLaunches,
+    collectFunction: collectLaunches,
+    restoreFunction: updateLaunches,
     delay: 30_000,
   },
   {
     label: "Twilight",
     collection: "twilight",
     ttl: TWILIGHT_INTERVAL_MS,
-    collectFn: collectTwilight,
-    restoreFn: updateTwilight,
+    collectFunction: collectTwilight,
+    restoreFunction: updateTwilight,
     delay: 32_000,
   },
   {
     label: "Env Canada",
     collection: "env_canada_warnings",
     ttl: ENV_CANADA_INTERVAL_MS,
-    collectFn: collectEnvironmentCanada,
-    restoreFn: updateWarnings,
+    collectFunction: collectEnvironmentCanada,
+    restoreFunction: updateWarnings,
     delay: 34_000,
   },
   {
     label: "Avalanche",
     collection: "avalanche_forecasts",
     ttl: AVALANCHE_INTERVAL_MS,
-    collectFn: collectAvalanche,
-    restoreFn: updateAvalanche,
+    collectFunction: collectAvalanche,
+    restoreFunction: updateAvalanche,
     delay: 36_000,
   },
 ];

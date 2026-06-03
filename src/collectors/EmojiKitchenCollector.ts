@@ -41,8 +41,8 @@ const STARTUP_TASKS = [
     label: "EmojiKitchen",
     collection: "emoji_kitchen_metadata",
     ttl: EMOJI_KITCHEN_INTERVAL_MS,
-    collectFn: collectEmojiKitchen,
-    restoreFn: updateEmojiKitchen,
+    collectFunction: collectEmojiKitchen,
+    restoreFunction: updateEmojiKitchen,
     delay: 38_000, // staggered startup delay
   },
 ];

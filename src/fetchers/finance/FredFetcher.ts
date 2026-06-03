@@ -127,10 +127,10 @@ export async function getSeriesObservations(
   ]);
 
   const observations = (obsData.observations || [])
-    .filter((o: Record<string, string>) => o.value !== ".")
-    .map((o: Record<string, string>) => ({
-      date: o.date,
-      value: parseFloat(o.value),
+    .filter((observation: Record<string, string>) => observation.value !== ".")
+    .map((observation: Record<string, string>) => ({
+      date: observation.date,
+      value: parseFloat(observation.value),
     }));
 
   const result = {
@@ -185,15 +185,15 @@ export async function searchSeries(
     notes?: string;
   }
 
-  const series = (data.seriess || []).map((s: FredSeriesResult) => ({
-    id: s.id,
-    title: s.title,
-    frequency: s.frequency_short,
-    units: s.units_short,
-    seasonalAdjustment: s.seasonal_adjustment_short,
-    lastUpdated: s.last_updated,
-    popularity: s.popularity,
-    notes: s.notes ? s.notes.slice(0, 200) : null,
+  const series = (data.seriess || []).map((seriesItem: FredSeriesResult) => ({
+    id: seriesItem.id,
+    title: seriesItem.title,
+    frequency: seriesItem.frequency_short,
+    units: seriesItem.units_short,
+    seasonalAdjustment: seriesItem.seasonal_adjustment_short,
+    lastUpdated: seriesItem.last_updated,
+    popularity: seriesItem.popularity,
+    notes: seriesItem.notes ? seriesItem.notes.slice(0, 200) : null,
   }));
 
   const result = {
@@ -231,7 +231,7 @@ export async function getKeyIndicators() {
       });
 
       const latest = data.observations?.find(
-        (o: Record<string, string>) => o.value !== ".",
+        (observation: Record<string, string>) => observation.value !== ".",
       );
 
       return {
@@ -256,16 +256,16 @@ export async function getKeyIndicators() {
 
   const indicators = results
     .filter(
-      (r): r is PromiseFulfilledResult<FredIndicator> =>
-        r.status === "fulfilled",
+      (resultItem): resultItem is PromiseFulfilledResult<FredIndicator> =>
+        resultItem.status === "fulfilled",
     )
-    .map((r) => r.value);
+    .map((resultItem) => resultItem.value);
 
   const failed = results
-    .filter((r): r is PromiseRejectedResult => r.status === "rejected")
-    .map((r, i) => ({
-      seriesId: entries[i][0],
-      error: errorMessage(r.reason),
+    .filter((resultItem): resultItem is PromiseRejectedResult => resultItem.status === "rejected")
+    .map((resultItem, index) => ({
+      seriesId: entries[index][0],
+      error: errorMessage(resultItem.reason),
     }));
 
   if (failed.length > 0) {

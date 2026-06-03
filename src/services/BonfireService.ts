@@ -67,8 +67,8 @@ export function generateAnsiArt(
   // 1. Generate Flame Structure
   // Higher wind skews the flame further to the right as we go up.
   for (let r = 0; r < flameHeight; r++) {
-    const rowIdx = logsStartRow - 1 - r;
-    if (rowIdx < 0) continue;
+    const rowIndex = logsStartRow - 1 - r;
+    if (rowIndex < 0) continue;
 
     // Wind tilt offset
     const skew = Math.floor(r * (breezeSpeed / 12));
@@ -78,23 +78,23 @@ export function generateAnsiArt(
     const maxFlameWidth = Math.max(1, Math.floor((flameHeight - r) * 1.6));
 
     for (let column = -maxFlameWidth; column <= maxFlameWidth; column++) {
-      const colIdx = baseCenter + column;
-      if (colIdx < 0 || colIdx >= width) continue;
+      const columnIndex = baseCenter + column;
+      if (columnIndex < 0 || columnIndex >= width) continue;
 
       // Choose flame characters based on distance from core and height
       const dist = Math.abs(column);
       const ratio = dist / maxFlameWidth;
 
       if (ratio < 0.3 && r < flameHeight * 0.6) {
-        grid[rowIdx][colIdx] = r % 2 === 0 ? "#" : "@"; // Hottest inner core
+        grid[rowIndex][columnIndex] = r % 2 === 0 ? "#" : "@"; // Hottest inner core
       } else if (ratio < 0.6) {
-        grid[rowIdx][colIdx] = r % 2 === 0 ? "(" : ")"; // Hot middle flame
+        grid[rowIndex][columnIndex] = r % 2 === 0 ? "(" : ")"; // Hot middle flame
       } else {
         // Flickering outer edges / sparks
-        const rand = (colIdx + rowIdx) % 5;
-        if (rand === 0) grid[rowIdx][colIdx] = "*";
-        else if (rand === 1) grid[rowIdx][colIdx] = ".";
-        else if (rand === 2 && breezeSpeed > 15) grid[rowIdx][colIdx] = "~";
+        const rand = (columnIndex + rowIndex) % 5;
+        if (rand === 0) grid[rowIndex][columnIndex] = "*";
+        else if (rand === 1) grid[rowIndex][columnIndex] = ".";
+        else if (rand === 2 && breezeSpeed > 15) grid[rowIndex][columnIndex] = "~";
       }
     }
   }
@@ -102,13 +102,13 @@ export function generateAnsiArt(
   // Add blowing sparks if wind is high
   if (breezeSpeed > 10) {
     for (let r = 0; r < flameHeight; r++) {
-      const rowIdx = logsStartRow - 2 - r;
-      if (rowIdx < 0) continue;
+      const rowIndex = logsStartRow - 2 - r;
+      if (rowIndex < 0) continue;
       const skew = Math.floor(r * (breezeSpeed / 12));
-      const sparkCol =
-        27 + skew + Math.floor((flameHeight - r) * 1.5) + 3 + (rowIdx % 3);
-      if (sparkCol < width) {
-        grid[rowIdx][sparkCol] = "*";
+      const sparklineColumn =
+        27 + skew + Math.floor((flameHeight - r) * 1.5) + 3 + (rowIndex % 3);
+      if (sparklineColumn < width) {
+        grid[rowIndex][sparklineColumn] = "*";
       }
     }
   }
@@ -274,20 +274,20 @@ export function generateAnsiArt(
 function writeStringAtGrid(
   grid: string[][],
   row: number,
-  startCol: number,
+  startColumn: number,
   text: string,
 ) {
   if (row < 0 || row >= grid.length) return;
   for (let i = 0; i < text.length; i++) {
-    const column = startCol + i;
+    const column = startColumn + i;
     if (column >= 0 && column < grid[row].length) {
       grid[row][column] = text[i];
     }
   }
 }
 
-function mStickLength(stick: string, maxCol: number): number {
-  return Math.min(stick.length, maxCol - 10);
+function mStickLength(stick: string, maxColumns: number): number {
+  return Math.min(stick.length, maxColumns - 10);
 }
 
 /**

@@ -21,10 +21,10 @@ async function collectCommodities() {
     await saveState("commodities", quotes);
 
     const topMover = [...quotes]
-      .filter((q: QuoteItem) => q.changePercent != null)
+      .filter((quoteItem: QuoteItem) => quoteItem.changePercent != null)
       .sort(
-        (a: QuoteItem, b: QuoteItem) =>
-          Math.abs(a.changePercent ?? 0) - Math.abs(b.changePercent ?? 0),
+        (firstQuote: QuoteItem, secondQuote: QuoteItem) =>
+          Math.abs(firstQuote.changePercent ?? 0) - Math.abs(secondQuote.changePercent ?? 0),
       )
       .at(-1);
 
@@ -44,8 +44,8 @@ const STARTUP_TASKS = [
     label: "Commodities",
     collection: "commodities",
     ttl: COMMODITIES_INTERVAL_MS,
-    collectFn: collectCommodities,
-    restoreFn: restoreCommodities,
+    collectFunction: collectCommodities,
+    restoreFunction: restoreCommodities,
     delay: 0,
   },
 ];

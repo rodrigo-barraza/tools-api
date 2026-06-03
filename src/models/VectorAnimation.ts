@@ -1,11 +1,28 @@
 import type { Collection } from "mongodb";
 import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
 import logger from "../logger.ts";
+import type { VectorLayer } from "../utilities/VectorAnimationEngine.ts";
+
+export interface VectorAnimationConfig {
+  width?: number;
+  height?: number;
+  duration?: number;
+  fps?: number;
+  background?: string;
+  layers: VectorLayer[];
+}
+
+export interface VectorAnimationOptions {
+  loop?: boolean;
+  autoplay?: boolean;
+  title?: string;
+  clearSession?: boolean;
+}
 
 export interface VectorAnimationDocument {
   animationId: string;
-  animation: Record<string, unknown>;
-  options: Record<string, unknown>;
+  animation: VectorAnimationConfig;
+  options: VectorAnimationOptions;
   sessionId?: string | null;
   createdBy?: string | null;
   createdAt: Date;
@@ -29,8 +46,8 @@ export async function setupVectorAnimationCollection() {
 
 export async function saveVectorAnimation(
   animationId: string,
-  animation: Record<string, unknown>,
-  options: Record<string, unknown>,
+  animation: VectorAnimationConfig,
+  options: VectorAnimationOptions,
   sessionId?: string | null,
   createdBy?: string | null,
 ): Promise<void> {
@@ -58,7 +75,7 @@ export async function saveVectorAnimation(
 
 export async function getVectorAnimation(
   animationId: string,
-): Promise<{ animation: Record<string, unknown>; options: Record<string, unknown> } | null> {
+): Promise<{ animation: VectorAnimationConfig; options: VectorAnimationOptions } | null> {
   if (!collection) {
     logger.warn("[VectorAnimation] Collection not initialized — cannot retrieve animation");
     return null;

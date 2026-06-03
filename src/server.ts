@@ -148,10 +148,10 @@ mountMcpRoutes(app);
 // Defense-in-depth — catches any unhandled route errors and returns
 // a structured JSON response instead of Express's default HTML page.
 
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  logger.error(`[GlobalErrorHandler] ${err.message}`);
+app.use((error: Error, _req: Request, res: Response, _next: NextFunction) => {
+  logger.error(`[GlobalErrorHandler] ${error.message}`);
   if (!res.headersSent) {
-    res.status(500).json({ error: err.message || "Internal server error" });
+    res.status(500).json({ error: error.message || "Internal server error" });
   }
 });
 

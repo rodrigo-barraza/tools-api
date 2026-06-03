@@ -50,8 +50,8 @@ function buildUrl(route: string, params: Record<string, unknown> = {}) {
   for (const [key, value] of Object.entries(params)) {
     if (value != null) {
       if (Array.isArray(value)) {
-        value.forEach((v: unknown) =>
-          url.searchParams.append(`${key}[]`, String(v)),
+        value.forEach((itemValue: unknown) =>
+          url.searchParams.append(`${key}[]`, String(itemValue)),
         );
       } else {
         url.searchParams.set(key, String(value));
@@ -110,10 +110,10 @@ export async function browseRoute(route: string = "") {
     name: resp.name,
     description: resp.description || null,
     routes: (resp.routes || []).map(
-      (r: { id?: string; name?: string; description?: string }) => ({
-        id: r.id,
-        name: r.name,
-        description: r.description || null,
+      (routeItem: { id?: string; name?: string; description?: string }) => ({
+        id: routeItem.id,
+        name: routeItem.name,
+        description: routeItem.description || null,
       }),
     ),
     frequency: resp.frequency || [],
@@ -145,10 +145,10 @@ export async function getFacetValues(route: string, facetId: string) {
     facetId,
     totalFacets: resp.totalFacets || 0,
     facets: (resp.facets || []).map(
-      (f: { id?: string; name?: string; alias?: string }) => ({
-        id: f.id,
-        name: f.name,
-        alias: f.alias || null,
+      (facet: { id?: string; name?: string; alias?: string }) => ({
+        id: facet.id,
+        name: facet.name,
+        alias: facet.alias || null,
       }),
     ),
   };
@@ -213,7 +213,7 @@ export async function getData(route: string, options: EiaGetDataOptions = {}) {
   // Append data columns
   if (dataColumns?.length) {
     const dataParams = dataColumns
-      .map((d: string) => `data[]=${encodeURIComponent(d)}`)
+      .map((dataColumn: string) => `data[]=${encodeURIComponent(dataColumn)}`)
       .join("&");
     url += `&${dataParams}`;
   }
@@ -223,8 +223,8 @@ export async function getData(route: string, options: EiaGetDataOptions = {}) {
     for (const [facetId, values] of Object.entries(facets)) {
       const facetParams = (Array.isArray(values) ? values : [values])
         .map(
-          (v: string) =>
-            `facets[${encodeURIComponent(facetId)}][]=${encodeURIComponent(v)}`,
+          (facetValue: string) =>
+            `facets[${encodeURIComponent(facetId)}][]=${encodeURIComponent(facetValue)}`,
         )
         .join("&");
       url += `&${facetParams}`;
@@ -311,16 +311,16 @@ export async function getEnergyIndicators() {
 
   const indicators = results
     .filter(
-      (r): r is PromiseFulfilledResult<EiaIndicator> =>
-        r.status === "fulfilled",
+      (resultItem): resultItem is PromiseFulfilledResult<EiaIndicator> =>
+        resultItem.status === "fulfilled",
     )
-    .map((r) => r.value);
+    .map((resultItem) => resultItem.value);
 
   const failed = results
-    .filter((r): r is PromiseRejectedResult => r.status === "rejected")
-    .map((r, i) => ({
-      series: entries[i][0],
-      error: errorMessage(r.reason),
+    .filter((resultItem): resultItem is PromiseRejectedResult => resultItem.status === "rejected")
+    .map((resultItem, index) => ({
+      series: entries[index][0],
+      error: errorMessage(resultItem.reason),
     }));
 
   if (failed.length > 0) {

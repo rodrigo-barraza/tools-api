@@ -11,7 +11,7 @@ import { extname } from "node:path";
 import {
   agenticReadFile,
   agenticWriteFile,
-  agenticStrReplace,
+  agenticStringReplace,
   agenticPatchFile,
   agenticListDirectory,
   agenticGrepSearch,
@@ -221,17 +221,17 @@ router.post(
 router.post(
   "/file/str-replace",
   agenticHandler(async (req: Request) => {
-    const { path, oldStr, newStr, allowMultiple } = req.body;
+    const { path, oldString, newString, allowMultiple } = req.body;
     if (!path || typeof path !== "string") {
       return { error: "Request body must include 'path' (string)" };
     }
-    if (!oldStr || typeof oldStr !== "string") {
-      return { error: "Request body must include 'oldStr' (non-empty string)" };
+    if (!oldString || typeof oldString !== "string") {
+      return { error: "Request body must include 'oldString' (non-empty string)" };
     }
-    if (typeof newStr !== "string") {
-      return { error: "Request body must include 'newStr' (string)" };
+    if (typeof newString !== "string") {
+      return { error: "Request body must include 'newString' (string)" };
     }
-    return agenticStrReplace(path, oldStr, newStr, {
+    return agenticStringReplace(path, oldString, newString, {
       allowMultiple: allowMultiple === true,
     });
   }),
@@ -1172,7 +1172,7 @@ router.post(
     if (Array.isArray(enabledTools) && enabledTools.length > 0) {
       const knownToolNames = new Set(TOOL_DEFINITIONS.map((tool) => tool.name));
       const unknownTools = enabledTools.filter(
-        (t: string) => !knownToolNames.has(t),
+        (toolName: string) => !knownToolNames.has(toolName),
       );
       if (unknownTools.length > 0) {
         return res.status(400).json({
@@ -1291,7 +1291,7 @@ router.post(
     if (Array.isArray(enabledTools) && enabledTools.length > 0) {
       const knownToolNames = new Set(TOOL_DEFINITIONS.map((tool) => tool.name));
       const unknownTools = enabledTools.filter(
-        (t: string) => !knownToolNames.has(t),
+        (toolName: string) => !knownToolNames.has(toolName),
       );
       if (unknownTools.length > 0) {
         return res.status(400).json({

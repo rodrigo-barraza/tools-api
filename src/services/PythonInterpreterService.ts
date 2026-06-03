@@ -93,11 +93,11 @@ export async function executePython(
   const startTime = performance.now();
 
   // Write code to a temp file (avoids shell injection via -c)
-  let tmpDir = "";
+  let temporaryDirectory = "";
   let scriptPath = "";
   try {
-    tmpDir = await mkdtemp(join(tmpdir(), "pyexec-"));
-    scriptPath = join(tmpDir, "script.py");
+    temporaryDirectory = await mkdtemp(join(tmpdir(), "pyexec-"));
+    scriptPath = join(temporaryDirectory, "script.py");
     await writeFile(scriptPath, PREAMBLE + "\n" + code, "utf-8");
   } catch (error: unknown) {
     return {
@@ -114,8 +114,8 @@ export async function executePython(
   return new Promise<PythonExecutionResult>((resolve) => {
     const stdoutChunks: Buffer[] = [];
     const stderrChunks: Buffer[] = [];
-    let stdoutLen = 0;
-    let stderrLen = 0;
+    let stdoutLength = 0;
+    let stderrLength = 0;
     let timedOut = false;
     let settled = false;
 
@@ -137,18 +137,18 @@ export async function executePython(
 
     if (child.stdout) {
       child.stdout.on("data", (chunk: Buffer) => {
-        if (stdoutLen < MAX_OUTPUT_BYTES) {
+        if (stdoutLength < MAX_OUTPUT_BYTES) {
           stdoutChunks.push(chunk);
-          stdoutLen += chunk.length;
+          stdoutLength += chunk.length;
         }
       });
     }
 
     if (child.stderr) {
       child.stderr.on("data", (chunk: Buffer) => {
-        if (stderrLen < MAX_OUTPUT_BYTES) {
+        if (stderrLength < MAX_OUTPUT_BYTES) {
           stderrChunks.push(chunk);
-          stderrLen += chunk.length;
+          stderrLength += chunk.length;
         }
       });
     }
@@ -168,16 +168,16 @@ export async function executePython(
       const executionTimeMs = Math.round(performance.now() - startTime);
 
       // Cleanup temp dir (includes the script file)
-      if (tmpDir) {
-        rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+      if (temporaryDirectory) {
+        rm(temporaryDirectory, { recursive: true, force: true }).catch(() => {});
       }
 
       const truncatedStdout =
-        stdoutLen > MAX_OUTPUT_BYTES
+        stdoutLength > MAX_OUTPUT_BYTES
           ? stdout + `\n... [output truncated at ${MAX_OUTPUT_BYTES} bytes]`
           : stdout;
       const truncatedStderr =
-        stderrLen > MAX_OUTPUT_BYTES
+        stderrLength > MAX_OUTPUT_BYTES
           ? stderr + `\n... [output truncated at ${MAX_OUTPUT_BYTES} bytes]`
           : stderr;
 
@@ -231,11 +231,11 @@ export async function executePythonStreaming(
   const clampedTimeout = Math.min(Math.max(timeout, 1000), MAX_TIMEOUT_MS);
   const startTime = performance.now();
 
-  let tmpDir = "";
+  let temporaryDirectory = "";
   let scriptPath = "";
   try {
-    tmpDir = await mkdtemp(join(tmpdir(), "pyexec-"));
-    scriptPath = join(tmpDir, "script.py");
+    temporaryDirectory = await mkdtemp(join(tmpdir(), "pyexec-"));
+    scriptPath = join(temporaryDirectory, "script.py");
     await writeFile(scriptPath, PREAMBLE + "\n" + code, "utf-8");
   } catch (error: unknown) {
     return {
@@ -252,8 +252,8 @@ export async function executePythonStreaming(
   return new Promise<PythonExecutionResult>((resolve) => {
     const stdoutChunks: Buffer[] = [];
     const stderrChunks: Buffer[] = [];
-    let stdoutLen = 0;
-    let stderrLen = 0;
+    let stdoutLength = 0;
+    let stderrLength = 0;
     let timedOut = false;
     let settled = false;
 
@@ -273,9 +273,9 @@ export async function executePythonStreaming(
 
     if (child.stdout) {
       child.stdout.on("data", (chunk: Buffer) => {
-        if (stdoutLen < MAX_OUTPUT_BYTES) {
+        if (stdoutLength < MAX_OUTPUT_BYTES) {
           stdoutChunks.push(chunk);
-          stdoutLen += chunk.length;
+          stdoutLength += chunk.length;
           onChunk?.("stdout", chunk.toString("utf-8"));
         }
       });
@@ -283,9 +283,9 @@ export async function executePythonStreaming(
 
     if (child.stderr) {
       child.stderr.on("data", (chunk: Buffer) => {
-        if (stderrLen < MAX_OUTPUT_BYTES) {
+        if (stderrLength < MAX_OUTPUT_BYTES) {
           stderrChunks.push(chunk);
-          stderrLen += chunk.length;
+          stderrLength += chunk.length;
           onChunk?.("stderr", chunk.toString("utf-8"));
         }
       });
@@ -304,18 +304,18 @@ export async function executePythonStreaming(
       const stdout = Buffer.concat(stdoutChunks).toString("utf-8");
       const stderr = Buffer.concat(stderrChunks).toString("utf-8");
 
-      if (tmpDir) {
-        rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+      if (temporaryDirectory) {
+        rm(temporaryDirectory, { recursive: true, force: true }).catch(() => {});
       }
 
       resolve({
         success: exitCode === 0 && !timedOut,
         stdout:
-          stdoutLen > MAX_OUTPUT_BYTES
+          stdoutLength > MAX_OUTPUT_BYTES
             ? stdout + `\n... [output truncated]`
             : stdout,
         stderr:
-          stderrLen > MAX_OUTPUT_BYTES
+          stderrLength > MAX_OUTPUT_BYTES
             ? stderr + `\n... [output truncated]`
             : stderr,
         exitCode: timedOut ? null : exitCode,

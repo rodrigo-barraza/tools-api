@@ -6374,11 +6374,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     name: "str_replace_file",
     dataSource: compute("sandboxed fs"),
     description:
-      "Perform a targeted string replacement in a file. Finds the exact 'oldStr' and replaces it with 'newStr'. The oldStr must match EXACTLY (including whitespace and indentation). This is the preferred method for editing existing files — it's safer than write_file because it can't accidentally overwrite the entire file, and it's more token-efficient. If multiple occurrences are found and allowMultiple is false, it returns an error asking you to provide more context for a unique match.",
+      "Perform a targeted string replacement in a file. Finds the exact 'oldString' and replaces it with 'newString'. The oldString must match EXACTLY (including whitespace and indentation). This is the preferred method for editing existing files — it's safer than write_file because it can't accidentally overwrite the entire file, and it's more token-efficient. If multiple occurrences are found and allowMultiple is false, it returns an error asking you to provide more context for a unique match.",
     endpoint: {
       method: "POST",
       path: "/agentic/file/str-replace",
-      bodyParams: ["path", "oldStr", "newStr", "allowMultiple"],
+      bodyParams: ["path", "oldString", "newString", "allowMultiple"],
     },
     parameters: {
       type: "object",
@@ -6387,23 +6387,23 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           type: "string",
           description: "Absolute path to the file to edit.",
         },
-        oldStr: {
+        oldString: {
           type: "string",
           description:
             "The exact string to find and replace. Must match the file content exactly, including whitespace, indentation, and line breaks. Include enough surrounding context to ensure a unique match.",
         },
-        newStr: {
+        newString: {
           type: "string",
           description:
-            "The replacement string. This replaces the oldStr entirely.",
+            "The replacement string. This replaces the oldString entirely.",
         },
         allowMultiple: {
           type: "boolean",
           description:
-            "If true, replace ALL occurrences of oldStr. If false (default), error if multiple matches are found.",
+            "If true, replace ALL occurrences of oldString. If false (default), error if multiple matches are found.",
         },
       },
-      required: ["path", "oldStr", "newStr"],
+      required: ["path", "oldString", "newString"],
     },
   },
   {

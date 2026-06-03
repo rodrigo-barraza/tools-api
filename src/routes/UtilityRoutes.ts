@@ -64,39 +64,39 @@ router.get("/calculate", (req: Request, res: Response) => {
       .json({ error: "Query parameters 'operation' and 'a' are required" });
   }
   try {
-    const numA = new BigNumber(firstOperand);
-    let numB: BigNumber | undefined;
+    const operandA = new BigNumber(firstOperand);
+    let operandB: BigNumber | undefined;
     if (b !== undefined && b !== "") {
-      numB = new BigNumber(b);
+      operandB = new BigNumber(b);
     }
     let result: BigNumber;
     switch (operation) {
       case "add":
-        if (numB === undefined) throw new Error("'b' is required for add");
-        result = numA.plus(numB);
+        if (operandB === undefined) throw new Error("'b' is required for add");
+        result = operandA.plus(operandB);
         break;
       case "subtract":
-        if (numB === undefined) throw new Error("'b' is required for subtract");
-        result = numA.minus(numB);
+        if (operandB === undefined) throw new Error("'b' is required for subtract");
+        result = operandA.minus(operandB);
         break;
       case "multiply":
-        if (numB === undefined) throw new Error("'b' is required for multiply");
-        result = numA.multipliedBy(numB);
+        if (operandB === undefined) throw new Error("'b' is required for multiply");
+        result = operandA.multipliedBy(operandB);
         break;
       case "divide":
-        if (numB === undefined) throw new Error("'b' is required for divide");
-        result = numA.dividedBy(numB);
+        if (operandB === undefined) throw new Error("'b' is required for divide");
+        result = operandA.dividedBy(operandB);
         break;
       case "modulo":
-        if (numB === undefined) throw new Error("'b' is required for modulo");
-        result = numA.modulo(numB);
+        if (operandB === undefined) throw new Error("'b' is required for modulo");
+        result = operandA.modulo(operandB);
         break;
       case "power":
-        if (numB === undefined) throw new Error("'b' is required for power");
-        result = numA.exponentiatedBy(numB);
+        if (operandB === undefined) throw new Error("'b' is required for power");
+        result = operandA.exponentiatedBy(operandB);
         break;
       case "sqrt":
-        result = numA.squareRoot();
+        result = operandA.squareRoot();
         break;
       default:
         return res
@@ -263,12 +263,12 @@ function buildMapEmbedHtml(
   { zoom, maptype = "roadmap" }: Record<string, unknown> = {},
 ) {
   const markersJson = JSON.stringify(
-    markerList.map((m: MapMarker, i: number) => ({
-      lat: m.latitude,
-      lng: m.longitude,
+    markerList.map((marker: MapMarker, i: number) => ({
+      lat: marker.latitude,
+      lng: marker.longitude,
       label: String(i + 1),
-      name: m.name || m.label || `Location ${i + 1}`,
-      address: m.address || m.shortAddress || "",
+      name: marker.name || marker.label || `Location ${i + 1}`,
+      address: marker.address || marker.shortAddress || "",
     })),
   );
   return `<!DOCTYPE html>
@@ -301,31 +301,31 @@ function initMap(){
   });
   const COLORS=["#e74c3c","#3498db","#2ecc71","#9b59b6","#e67e22","#f1c40f","#1abc9c","#e91e63","#00bcd4","#ff5722"];
   const infoWindow=new google.maps.InfoWindow();
-  MARKERS.forEach((m,i)=>{
-    const pos={lat:m.lat,lng:m.lng};
+  MARKERS.forEach((marker,index)=>{
+    const pos={lat:marker.lat,lng:marker.lng};
     bounds.extend(pos);
-    const marker=new google.maps.Marker({
+    const googleMarker=new google.maps.Marker({
       position:pos,
       map,
-      label:{text:m.label,color:"#fff",fontWeight:"700",fontSize:"12px"},
+      label:{text:marker.label,color:"#fff",fontWeight:"700",fontSize:"12px"},
       icon:{
         path:google.maps.SymbolPath.CIRCLE,
         scale:14,
-        fillColor:COLORS[i%COLORS.length],
+        fillColor:COLORS[index%COLORS.length],
         fillOpacity:1,
         strokeColor:"#fff",
         strokeWeight:2
       },
-      title:m.name
+      title:marker.name
     });
-    marker.addListener("click",()=>{
+    googleMarker.addListener("click",()=>{
       infoWindow.setContent(
         '<div style="font-family:system-ui;min-width:140px;padding:2px">'+
-        '<strong style="font-size:13px">'+m.name+'</strong>'+
-        (m.address?'<div style="font-size:11px;color:#666;margin-top:3px">'+m.address+'</div>':'')+
+        '<strong style="font-size:13px">'+marker.name+'</strong>'+
+        (marker.address?'<div style="font-size:11px;color:#666;margin-top:3px">'+marker.address+'</div>':'')+
         '</div>'
       );
-      infoWindow.open(map,marker);
+      infoWindow.open(map,googleMarker);
     });
   });
   if(ZOOM!=null){

@@ -37,11 +37,11 @@ interface SourcedEvent {
 function createEventCollector<T>(
   collection: string,
   source: string,
-  fetchFn: () => Promise<T[]>,
+  fetchFunction: () => Promise<T[]>,
 ) {
   return async function () {
     try {
-      const events = await fetchFn();
+      const events = await fetchFunction();
       const result = await updateEvents(
         source,
         events as unknown as CachedEventParam,
@@ -201,7 +201,7 @@ const STARTUP_TASKS = [
     collection: "events_ticketmaster",
     source: EVENT_SOURCES.TICKETMASTER,
     ttl: TICKETMASTER_INTERVAL_MS,
-    collectFn: collectTicketmaster,
+    collectFunction: collectTicketmaster,
     delay: 0,
   },
   {
@@ -209,7 +209,7 @@ const STARTUP_TASKS = [
     collection: "events_seatgeek",
     source: EVENT_SOURCES.SEATGEEK,
     ttl: SEATGEEK_INTERVAL_MS,
-    collectFn: collectSeatGeek,
+    collectFunction: collectSeatGeek,
     delay: 3_000,
   },
   {
@@ -217,15 +217,15 @@ const STARTUP_TASKS = [
     collection: "events_craigslist",
     source: EVENT_SOURCES.CRAIGSLIST,
     ttl: CRAIGSLIST_INTERVAL_MS,
-    collectFn: collectCraigslist,
+    collectFunction: collectCraigslist,
     delay: 6_000,
   },
   {
     label: "Universities",
     collection: "events_universities",
     ttl: UNIVERSITY_INTERVAL_MS,
-    collectFn: collectUniversities,
-    restoreFn: (data: Record<string, unknown>) => {
+    collectFunction: collectUniversities,
+    restoreFunction: (data: Record<string, unknown>) => {
       if ((data.ubcEvents as CachedEventParam)?.length)
         restoreEvents(EVENT_SOURCES.UBC, data.ubcEvents as CachedEventParam);
       if ((data.sfuEvents as CachedEventParam)?.length)
@@ -238,15 +238,15 @@ const STARTUP_TASKS = [
     collection: "events_city_of_vancouver",
     source: EVENT_SOURCES.CITY_OF_VANCOUVER,
     ttl: CITY_OF_VANCOUVER_INTERVAL_MS,
-    collectFn: collectCityOfVancouver,
+    collectFunction: collectCityOfVancouver,
     delay: 12_000,
   },
   {
     label: "Sports",
     collection: "events_sports",
     ttl: SPORTS_INTERVAL_MS,
-    collectFn: collectSports,
-    restoreFn: (data: Record<string, unknown>) => {
+    collectFunction: collectSports,
+    restoreFunction: (data: Record<string, unknown>) => {
       if ((data.nhl as CachedEventParam)?.length)
         restoreEvents(EVENT_SOURCES.NHL, data.nhl as CachedEventParam);
       if ((data.caps as CachedEventParam)?.length)
@@ -261,7 +261,7 @@ const STARTUP_TASKS = [
     collection: "events_tmdb",
     source: EVENT_SOURCES.TMDB,
     ttl: MOVIE_INTERVAL_MS,
-    collectFn: collectMovies,
+    collectFunction: collectMovies,
     delay: 18_000,
   },
   {
@@ -269,7 +269,7 @@ const STARTUP_TASKS = [
     collection: "events_google_places",
     source: EVENT_SOURCES.GOOGLE_PLACES,
     ttl: GOOGLE_PLACES_INTERVAL_MS,
-    collectFn: collectGooglePlaces,
+    collectFunction: collectGooglePlaces,
     delay: 21_000,
   },
 ];
@@ -277,11 +277,11 @@ const STARTUP_TASKS = [
 // ─── Start All Event Collectors ────────────────────────────────────
 
 export function startEventCollectors() {
-  // Set default restoreFn for simple event tasks (those with a source key)
+  // Set default restoreFunction for simple event tasks (those with a source key)
   const tasks = STARTUP_TASKS.map((task) => ({
     ...task,
-    restoreFn:
-      task.restoreFn ||
+    restoreFunction:
+      task.restoreFunction ||
       ((data: CachedEventParam) => restoreEvents(task.source!, data)),
   }));
 

@@ -59,8 +59,8 @@ export interface CollectorTask<T = never> {
   collection: string;
   ttl: number;
   delay?: number;
-  collectFn: () => Promise<void>;
-  restoreFn: (data: T) => void;
+  collectFunction: () => Promise<void>;
+  restoreFunction: (data: T) => void;
 }
 
 // ─── Browser Script Execution ───────────────────────────────────

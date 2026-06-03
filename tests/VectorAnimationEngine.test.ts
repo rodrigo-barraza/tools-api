@@ -243,9 +243,9 @@ describe("VectorAnimationEngine Calculations", () => {
           return {
             setAttribute: () => {},
             getTotalLength: () => 100,
-            getPointAtLength: (len: number) => {
+            getPointAtLength: (targetLength: number) => {
               // Simulating line y = 2x
-              return { x: len, y: len * 2 };
+              return { x: targetLength, y: targetLength * 2 };
             }
           };
         }

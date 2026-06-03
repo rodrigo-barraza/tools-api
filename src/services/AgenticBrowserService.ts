@@ -312,7 +312,7 @@ async function actionScroll(
       const pixels = amount || 500;
       const delta = direction === "up" ? -pixels : pixels;
 
-      await page.evaluate((d: number) => window.scrollBy(0, d), delta);
+      await page.evaluate((scrollDelta: number) => window.scrollBy(0, scrollDelta), delta);
     }
 
     // Small delay for scroll animation
@@ -377,9 +377,9 @@ async function actionGetContent(
     }
 
     // Truncate to max content length (same as fetch_url)
-    const maxLen = BROWSER_MAX_CONTENT_LENGTH;
-    const truncated = content.length > maxLen;
-    if (truncated) content = content.slice(0, maxLen);
+    const maxLength = BROWSER_MAX_CONTENT_LENGTH;
+    const truncated = content.length > maxLength;
+    if (truncated) content = content.slice(0, maxLength);
 
     return {
       action: "get_content",
@@ -678,12 +678,12 @@ function formatAccessibilityTree(
  */
 function resolveRef(page: Page, ref: string) {
   // Format: "role:name" (e.g. "button:Submit", "link:Get started")
-  const colonIdx = ref.indexOf(":");
-  if (colonIdx > 0) {
-    const role = ref.slice(0, colonIdx).trim() as Parameters<
+  const colonIndex = ref.indexOf(":");
+  if (colonIndex > 0) {
+    const role = ref.slice(0, colonIndex).trim() as Parameters<
       typeof page.getByRole
     >[0];
-    const name = ref.slice(colonIdx + 1).trim();
+    const name = ref.slice(colonIndex + 1).trim();
     return page.getByRole(role, { name, exact: false });
   }
 
@@ -846,13 +846,13 @@ const { chromium } = require('playwright');
 })();
 `;
 
-  let tmpDir: string | undefined;
+  let temporaryDirectory: string | undefined;
   let scriptPath: string | undefined;
 
   try {
     // Write script to temp file
-    tmpDir = await mkdtemp(join(tmpdir(), "pw-script-"));
-    scriptPath = join(tmpDir, "script.cjs");
+    temporaryDirectory = await mkdtemp(join(tmpdir(), "pw-script-"));
+    scriptPath = join(temporaryDirectory, "script.cjs");
     await writeFile(scriptPath, wrappedScript, "utf-8");
 
     // Execute in subprocess
@@ -873,9 +873,9 @@ const { chromium } = require('playwright');
     if (scriptPath) {
       unlink(scriptPath).catch(() => {});
     }
-    if (tmpDir) {
+    if (temporaryDirectory) {
       import("node:fs")
-        .then((fs) => fs.rmSync(tmpDir!, { recursive: true, force: true }))
+        .then((fs) => fs.rmSync(temporaryDirectory!, { recursive: true, force: true }))
         .catch(() => {});
     }
   }
@@ -892,8 +892,8 @@ function executeScript(
   return new Promise<unknown>((resolve) => {
     const stdoutChunks: Buffer[] = [];
     const stderrChunks: Buffer[] = [];
-    let stdoutLen = 0;
-    let stderrLen = 0;
+    let stdoutLength = 0;
+    let stderrLength = 0;
     let timedOut = false;
     let settled = false;
 
@@ -912,16 +912,16 @@ function executeScript(
     child.stdin.end();
 
     child.stdout.on("data", (chunk: Buffer) => {
-      if (stdoutLen < BROWSER_MAX_SCRIPT_OUTPUT) {
+      if (stdoutLength < BROWSER_MAX_SCRIPT_OUTPUT) {
         stdoutChunks.push(chunk);
-        stdoutLen += chunk.length;
+        stdoutLength += chunk.length;
       }
     });
 
     child.stderr.on("data", (chunk: Buffer) => {
-      if (stderrLen < BROWSER_MAX_SCRIPT_OUTPUT) {
+      if (stderrLength < BROWSER_MAX_SCRIPT_OUTPUT) {
         stderrChunks.push(chunk);
-        stderrLen += chunk.length;
+        stderrLength += chunk.length;
       }
     });
 
@@ -941,11 +941,11 @@ function executeScript(
       resolve({
         success: exitCode === 0 && !timedOut,
         stdout:
-          stdoutLen > BROWSER_MAX_SCRIPT_OUTPUT
+          stdoutLength > BROWSER_MAX_SCRIPT_OUTPUT
             ? stdout + "\n... [output truncated]"
             : stdout,
         stderr:
-          stderrLen > BROWSER_MAX_SCRIPT_OUTPUT
+          stderrLength > BROWSER_MAX_SCRIPT_OUTPUT
             ? stderr + "\n... [output truncated]"
             : stderr,
         exitCode: timedOut ? null : exitCode,

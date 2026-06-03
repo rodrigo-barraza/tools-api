@@ -315,17 +315,17 @@ const DiscordDataService = {
         })
         .toArray();
 
-      const formatted = messages.map((m: Document) => ({
-        id: m.id,
+      const formatted = messages.map((messageDoc: Document) => ({
+        id: messageDoc.id,
         // Truncate content to 120 chars to save tokens
         content:
-          m.content?.length > 120 ? m.content.slice(0, 120) + "…" : m.content,
+          messageDoc.content?.length > 120 ? messageDoc.content.slice(0, 120) + "…" : messageDoc.content,
         author:
-          m.member?.displayName || m.author?.globalName || m.author?.username,
-        avatarUrl: buildAvatarUrl(m.author, m.member, m.guildId),
-        channel: m.channel?.name || null,
-        date: m.createdTimestamp
-          ? new Date(m.createdTimestamp).toISOString().slice(0, 16)
+          messageDoc.member?.displayName || messageDoc.author?.globalName || messageDoc.author?.username,
+        avatarUrl: buildAvatarUrl(messageDoc.author, messageDoc.member, messageDoc.guildId),
+        channel: messageDoc.channel?.name || null,
+        date: messageDoc.createdTimestamp
+          ? new Date(messageDoc.createdTimestamp).toISOString().slice(0, 16)
           : null,
       }));
 
@@ -386,29 +386,29 @@ const DiscordDataService = {
       .toArray();
 
     // Format into a clean shape with human-readable names
-    const formatted = messages.map((m: Document) => {
+    const formatted = messages.map((messageDoc: Document) => {
       // Build attachment list with URLs for image rendering.
       // Prefer archived MinIO URLs over potentially-expired Discord CDN URLs.
-      const archive = m.mediaArchive || null;
+      const archive = messageDoc.mediaArchive || null;
       const attachments =
-        Array.isArray(m.attachments) && m.attachments.length > 0
-          ? m.attachments.map((a: Document) => {
+        Array.isArray(messageDoc.attachments) && messageDoc.attachments.length > 0
+          ? messageDoc.attachments.map((attachment: Document) => {
               const resolvedUrl =
-                resolveArchivedUrl(a.url, archive) ||
-                resolveArchivedUrl(a.proxyURL, archive) ||
+                resolveArchivedUrl(attachment.url, archive) ||
+                resolveArchivedUrl(attachment.proxyURL, archive) ||
                 null;
               const resolvedProxy =
-                resolveArchivedUrl(a.proxyURL, archive) || null;
+                resolveArchivedUrl(attachment.proxyURL, archive) || null;
               return {
-                name: a.name || null,
-                contentType: a.contentType || null,
-                size: a.size || null,
+                name: attachment.name || null,
+                contentType: attachment.contentType || null,
+                size: attachment.size || null,
                 url: resolvedUrl,
                 proxyURL: resolvedProxy,
-                width: a.width || null,
-                height: a.height || null,
-                duration: a.duration ?? null,
-                waveform: a.waveform ?? null,
+                width: attachment.width || null,
+                height: attachment.height || null,
+                duration: attachment.duration ?? null,
+                waveform: attachment.waveform ?? null,
               };
             })
           : undefined;
@@ -416,8 +416,8 @@ const DiscordDataService = {
       // Build rich embed objects — preserve image/thumbnail/video for rendering.
       // Resolve archived URLs for embed media as well (belt-and-suspenders).
       const embeds =
-        Array.isArray(m.embeds) && m.embeds.length > 0
-          ? m.embeds
+        Array.isArray(messageDoc.embeds) && messageDoc.embeds.length > 0
+          ? messageDoc.embeds
               .map((e: Document) => {
                 // Skip empty embeds
                 if (
@@ -471,75 +471,75 @@ const DiscordDataService = {
 
       // Role color — #000000 means no custom color, treat as null
       const roleColor =
-        m.member?.displayHexColor && m.member.displayHexColor !== "#000000"
-          ? m.member.displayHexColor
+        messageDoc.member?.displayHexColor && messageDoc.member.displayHexColor !== "#000000"
+          ? messageDoc.member.displayHexColor
           : null;
 
       return {
-        id: m.id,
-        content: m.content,
-        cleanContent: m.cleanContent,
+        id: messageDoc.id,
+        content: messageDoc.content,
+        cleanContent: messageDoc.cleanContent,
         author: {
-          id: m.author?.id,
-          username: m.author?.username,
+          id: messageDoc.author?.id,
+          username: messageDoc.author?.username,
           displayName:
-            m.member?.displayName || m.author?.globalName || m.author?.username,
-          avatarUrl: buildAvatarUrl(m.author, m.member, m.guildId),
-          isBot: m.author?.bot === true,
+            messageDoc.member?.displayName || messageDoc.author?.globalName || messageDoc.author?.username,
+          avatarUrl: buildAvatarUrl(messageDoc.author, messageDoc.member, messageDoc.guildId),
+          isBot: messageDoc.author?.bot === true,
           roleColor,
           // Enhanced Role Styles — gradient (secondary) / holographic (tertiary)
-          ...(m.member?.roleColors?.secondary && {
-            roleColors: m.member.roleColors,
+          ...(messageDoc.member?.roleColors?.secondary && {
+            roleColors: messageDoc.member.roleColors,
           }),
           // Profile badges (HypeSquad, Active Developer, Nitro Early Supporter, etc.)
-          badges: extractBadges(m.author?.flags),
+          badges: extractBadges(messageDoc.author?.flags),
           // Top role tags displayed to the right of the username (colored pill badges)
-          roleTags: extractRoleTags(m.member?.roles, m.guildId),
+          roleTags: extractRoleTags(messageDoc.member?.roles, messageDoc.guildId),
         },
-        channelId: m.channelId,
-        channelName: m.channel?.name || null,
-        parentName: m.channel?.parentName || null,
-        guildId: m.guildId,
-        guildName: m.channel?.guild?.name || null,
+        channelId: messageDoc.channelId,
+        channelName: messageDoc.channel?.name || null,
+        parentName: messageDoc.channel?.parentName || null,
+        guildId: messageDoc.guildId,
+        guildName: messageDoc.channel?.guild?.name || null,
         // Guild icon/banner/splash hashes — lets clients build CDN URLs
         // e.g. https://cdn.discordapp.com/icons/{guildId}/{hash}.png
-        ...(m.channel?.guild?.icon && { guildIcon: m.channel.guild.icon }),
-        ...(m.channel?.guild?.banner && {
-          guildBanner: m.channel.guild.banner,
+        ...(messageDoc.channel?.guild?.icon && { guildIcon: messageDoc.channel.guild.icon }),
+        ...(messageDoc.channel?.guild?.banner && {
+          guildBanner: messageDoc.channel.guild.banner,
         }),
-        ...(m.channel?.guild?.splash && {
-          guildSplash: m.channel.guild.splash,
+        ...(messageDoc.channel?.guild?.splash && {
+          guildSplash: messageDoc.channel.guild.splash,
         }),
-        createdAtISO: m.createdTimestamp
-          ? new Date(m.createdTimestamp).toISOString()
-          : m.createdAt,
+        createdAtISO: messageDoc.createdTimestamp
+          ? new Date(messageDoc.createdTimestamp).toISOString()
+          : messageDoc.createdAt,
         // Direct link to the message in Discord
         messageUrl:
-          m.guildId && m.channelId && m.id
-            ? `https://discord.com/channels/${m.guildId}/${m.channelId}/${m.id}`
+          messageDoc.guildId && messageDoc.channelId && messageDoc.id
+            ? `https://discord.com/channels/${messageDoc.guildId}/${messageDoc.channelId}/${messageDoc.id}`
             : null,
         // Reply reference — so Lupos can follow conversation threads
-        replyTo: m.reference?.messageId || null,
+        replyTo: messageDoc.reference?.messageId || null,
         // Emoji reactions (array of { emoji, count, me })
-        ...(Array.isArray(m.reactions) &&
-          m.reactions.length > 0 && {
-            reactions: m.reactions.map((r: Document) => ({
+        ...(Array.isArray(messageDoc.reactions) &&
+          messageDoc.reactions.length > 0 && {
+            reactions: messageDoc.reactions.map((reaction: Document) => ({
               emoji: {
-                id: r.emoji?.id || null,
-                name: r.emoji?.name || null,
-                animated: r.emoji?.animated || false,
+                id: reaction.emoji?.id || null,
+                name: reaction.emoji?.name || null,
+                animated: reaction.emoji?.animated || false,
               },
-              count: r.count || r.countDetails?.normal || 0,
+              count: reaction.count || reaction.countDetails?.normal || 0,
               // `me` = true when the bot (Lupos) has this reaction — used by
               // the client to render the pill as "already reacted" (blurple,
               // unclickable) since all website reactions go through Lupos.
-              me: r.me === true,
+              me: reaction.me === true,
             })),
           }),
         // Media indicators
         ...(attachments && { attachments }),
         ...(embeds && { embeds }),
-        ...(m.stickers?.length > 0 && { stickerCount: m.stickers.length }),
+        ...(messageDoc.stickers?.length > 0 && { stickerCount: messageDoc.stickers.length }),
       };
     });
 
@@ -822,19 +822,19 @@ const DiscordDataService = {
         uniqueUsers > 0
           ? Math.round((totalMessages / uniqueUsers) * 10) / 10
           : 0,
-      topUsers: topUsers.map((u: Document) => ({
-        userId: u._id,
-        username: u.username,
-        messageCount: u.count,
-        lastActive: new Date(u.lastActive).toISOString(),
+      topUsers: topUsers.map((userDoc: Document) => ({
+        userId: userDoc._id,
+        username: userDoc.username,
+        messageCount: userDoc.count,
+        lastActive: new Date(userDoc.lastActive).toISOString(),
       })),
-      channelBreakdown: channelBreakdown.map((c: Document) => ({
-        channelId: c._id,
-        messageCount: c.count,
+      channelBreakdown: channelBreakdown.map((channelDoc: Document) => ({
+        channelId: channelDoc._id,
+        messageCount: channelDoc.count,
       })),
-      hourlyActivity: hourlyActivity.map((h: Document) => ({
-        hour: h._id,
-        messageCount: h.count,
+      hourlyActivity: hourlyActivity.map((hourDoc: Document) => ({
+        hour: hourDoc._id,
+        messageCount: hourDoc.count,
       })),
     };
   },

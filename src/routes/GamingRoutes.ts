@@ -101,12 +101,12 @@ router.get(
       ]);
 
       const heroMap = new Map(heroes.map((h) => [h.id, h.name]));
-      const enrichMatchup = (m: {
+      const enrichMatchup = (matchup: {
         heroId: number;
         gamesPlayed: number;
         wins: number;
         winRate: string;
-      }) => ({ ...m, heroName: heroMap.get(m.heroId) || "Unknown" });
+      }) => ({ ...matchup, heroName: heroMap.get(matchup.heroId) || "Unknown" });
 
       res.json({
         ...matchups,

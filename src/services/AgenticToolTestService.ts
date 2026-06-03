@@ -11,7 +11,7 @@ import {
   agenticFileInfo,
   agenticWriteFile,
   agenticDeleteFile,
-  agenticStrReplace,
+  agenticStringReplace,
   agenticPatchFile,
   agenticFileDiff,
   agenticMoveFile,
@@ -187,7 +187,7 @@ const TESTS = {
       // Create a dedicated copy for this test
       const testFile = join(getFixtureDir(), "str_replace_test.js");
       await writeFile(testFile, FIXTURE_CONTENT, "utf-8");
-      const result = await agenticStrReplace(testFile, "3.14159", "3.14");
+      const result = await agenticStringReplace(testFile, "3.14159", "3.14");
       try {
         await unlink(testFile);
       } catch {
@@ -340,8 +340,8 @@ const TESTS = {
  * Run a smoke test for a single tool.
  */
 export async function testTool(toolName: string) {
-  const testFn = TESTS[toolName as keyof typeof TESTS];
-  if (!testFn) {
+  const testFunction = TESTS[toolName as keyof typeof TESTS];
+  if (!testFunction) {
     return {
       tool: toolName,
       success: false,
@@ -352,7 +352,7 @@ export async function testTool(toolName: string) {
 
   try {
     await ensureFixture();
-    const result = await testFn();
+    const result = await testFunction();
     return result;
   } finally {
     await cleanupFixture();
@@ -369,8 +369,8 @@ export async function testAllTools(toolNames?: string[]) {
 
     const results: TransformedToolTestResult[] = [];
     for (const name of names) {
-      const testFn = TESTS[name as keyof typeof TESTS];
-      if (!testFn) {
+      const testFunction = TESTS[name as keyof typeof TESTS];
+      if (!testFunction) {
         results.push({
           tool: name,
           success: false,
@@ -382,7 +382,7 @@ export async function testAllTools(toolNames?: string[]) {
 
       // Re-create fixture between tests in case a previous test mutated it
       await ensureFixture();
-      results.push(await testFn());
+      results.push(await testFunction());
     }
 
     return results;

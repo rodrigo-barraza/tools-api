@@ -39,11 +39,11 @@ import { errorMessage } from "../utilities.ts";
 function createProductCollector<T>(
   collection: string,
   source: string,
-  fetchFn: () => Promise<T[]>,
+  fetchFunction: () => Promise<T[]>,
 ) {
   return async function () {
     try {
-      const products = await fetchFn();
+      const products = await fetchFunction();
       updateProducts(source, products as unknown as Product[]);
       const result = await upsertProducts(
         products as unknown as Parameters<typeof upsertProducts>[0],
@@ -151,67 +151,67 @@ const STARTUP_TASKS = [
     label: "BestBuy",
     collection: "products_bestbuy",
     ttl: BESTBUY_INTERVAL_MS,
-    collectFn: collectBestBuy,
+    collectFunction: collectBestBuy,
     delay: 0,
   },
   {
     label: "Amazon",
     collection: "products_amazon",
     ttl: AMAZON_INTERVAL_MS,
-    collectFn: collectAmazon,
+    collectFunction: collectAmazon,
     delay: 15_000,
   },
   {
     label: "ProductHunt",
     collection: "products_producthunt",
     ttl: PRODUCTHUNT_PRODUCT_INTERVAL_MS,
-    collectFn: collectProductHunt,
+    collectFunction: collectProductHunt,
     delay: 20_000,
   },
   {
     label: "eBay",
     collection: "products_ebay",
     ttl: EBAY_INTERVAL_MS,
-    collectFn: collectEbay,
+    collectFunction: collectEbay,
     delay: 25_000,
   },
   {
     label: "Etsy",
     collection: "products_etsy",
     ttl: ETSY_INTERVAL_MS,
-    collectFn: collectEtsy,
+    collectFunction: collectEtsy,
     delay: 30_000,
   },
   {
     label: "BestBuy CA",
     collection: "bestbuy_ca_availability",
     ttl: BESTBUY_CA_AVAILABILITY_INTERVAL_MS,
-    collectFn: collectBestBuyCAAvailability,
-    restoreFn: updateStatuses,
+    collectFunction: collectBestBuyCAAvailability,
+    restoreFunction: updateStatuses,
     delay: 35_000,
   },
   {
     label: "Costco US",
     collection: "products_costco_us",
     ttl: COSTCO_INTERVAL_MS,
-    collectFn: collectCostcoUS,
+    collectFunction: collectCostcoUS,
     delay: 40_000,
   },
   {
     label: "Costco CA",
     collection: "products_costco_ca",
     ttl: COSTCO_INTERVAL_MS,
-    collectFn: collectCostcoCA,
+    collectFunction: collectCostcoCA,
     delay: 45_000,
   },
 ];
 
 export function startProductCollectors() {
-  // Set default restoreFn for standard product tasks
+  // Set default restoreFunction for standard product tasks
   const tasks = STARTUP_TASKS.map((task) => ({
     ...task,
-    restoreFn:
-      task.restoreFn ||
+    restoreFunction:
+      task.restoreFunction ||
       ((data: Record<string, unknown>) =>
         updateProducts(
           data.source as string,

@@ -6,7 +6,7 @@ import PrismService from "../services/PrismService.ts";
 import { generateAudioWav } from "../services/SoundSynthesizerService.ts";
 import logger from "../logger.ts";
 import { extractCallerContext, errorMessage, buildLocalUrl, buildEmbedHtml } from "../utilities.ts";
-import { saveVectorAnimation, getVectorAnimation } from "../models/VectorAnimation.ts";
+import { saveVectorAnimation, getVectorAnimation, type VectorAnimationConfig, type VectorAnimationOptions } from "../models/VectorAnimation.ts";
 import crypto from "node:crypto";
 import CONFIG from "../config.ts";
 import {
@@ -23,6 +23,8 @@ import {
   getPathPointAt,
   getDefaultValue,
   resolveAnimatedProperties,
+  type VectorLayer,
+  type Keyframe,
 } from "../utilities/VectorAnimationEngine.ts";
 import {
   queryEmojiCombination,
@@ -770,8 +772,8 @@ function cleanupVectorAnimationSessions() {
 }
 
 function buildVectorAnimationEmbedHtml(
-  animation: Record<string, any>,
-  options: Record<string, any> = {},
+  animation: VectorAnimationConfig,
+  options: VectorAnimationOptions = {},
 ) {
   const {
     loop = true,
@@ -1280,11 +1282,11 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
         for (const newLayer of animation.layers) {
           // Support layer deletion
           if (newLayer.action === "delete" || newLayer.deleted === true) {
-            session.animation.layers = session.animation.layers.filter((l: any) => l.id !== newLayer.id);
+            session.animation.layers = session.animation.layers.filter((layer: VectorLayer) => layer.id !== newLayer.id);
             continue;
           }
 
-          const existingLayer = session.animation.layers.find((l: any) => l.id === newLayer.id);
+          const existingLayer = session.animation.layers.find((layer: VectorLayer) => layer.id === newLayer.id);
           if (existingLayer) {
             if (newLayer.shapeType) existingLayer.shapeType = newLayer.shapeType;
             if (newLayer.shapeData) existingLayer.shapeData = { ...existingLayer.shapeData, ...newLayer.shapeData };
@@ -1299,7 +1301,7 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
               } else {
                 if (!existingLayer.keyframes) existingLayer.keyframes = [];
                 for (const newKf of newLayer.keyframes) {
-                  const existingKfIndex = existingLayer.keyframes.findIndex((k: any) => k.time === newKf.time);
+                  const existingKfIndex = existingLayer.keyframes.findIndex((keyframe: Keyframe) => keyframe.time === newKf.time);
                   if (existingKfIndex !== -1) {
                     existingLayer.keyframes[existingKfIndex].properties = {
                       ...existingLayer.keyframes[existingKfIndex].properties,
@@ -1312,7 +1314,7 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
                   }
                 }
               }
-              existingLayer.keyframes.sort((a: any, b: any) => a.time - b.time);
+              existingLayer.keyframes.sort((keyframeA: Keyframe, keyframeB: Keyframe) => keyframeA.time - keyframeB.time);
             }
           } else {
             session.animation.layers.push(newLayer);
@@ -1373,7 +1375,7 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
   cleanupVectorAnimationEmbeds();
   
   const embedUrl = buildLocalUrl("creative/vector-animation/embed", { id: embedId });
-  const totalKeyframes = sessionAnimation.layers.reduce((sum: number, l: any) => sum + (l.keyframes?.length || 0), 0);
+  const totalKeyframes = sessionAnimation.layers.reduce((sum: number, layer: VectorLayer) => sum + (layer.keyframes?.length || 0), 0);
 
   res.json({
     embedUrl,

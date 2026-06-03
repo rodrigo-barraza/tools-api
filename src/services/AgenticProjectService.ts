@@ -51,8 +51,8 @@ export async function agenticProjectSummary(
       return (await sendRpc(agent.id, "project.summary", {
         path: projectPath,
       })) as TransformedProjectSummary;
-    } catch (err: unknown) {
-      return { error: `Agent RPC failed: ${errorMessage(err)}` };
+    } catch (error: unknown) {
+      return { error: `Agent RPC failed: ${errorMessage(error)}` };
     }
   }
 
@@ -163,16 +163,16 @@ export async function agenticProjectSummary(
           continue;
         }
 
-        const relPath = relative(root, resolve(dir, entry.name));
+        const relativePath = relative(root, resolve(dir, entry.name));
 
         if (entry.isDirectory()) {
           totalDirs++;
           // Count children
           try {
             const children = await readdir(resolve(dir, entry.name));
-            structure[relPath + "/"] = children.length;
+            structure[relativePath + "/"] = children.length;
           } catch {
-            structure[relPath + "/"] = 0;
+            structure[relativePath + "/"] = 0;
           }
           await scanDir(resolve(dir, entry.name), depth + 1);
         } else {

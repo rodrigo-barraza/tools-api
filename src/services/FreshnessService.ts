@@ -18,8 +18,8 @@ export async function collectIfStale(
   label: string,
   collection: string,
   ttlMs: number,
-  collectFn: () => Promise<void>,
-  restoreFn: (data: never) => void,
+  collectFunction: () => Promise<void>,
+  restoreFunction: (data: never) => void,
 ) {
   const state = await loadState(collection);
 
@@ -29,7 +29,7 @@ export async function collectIfStale(
     if (ageMs < ttlMs) {
       const ageMinutes = Math.round(ageMs / 60_000);
       const ttlMinutes = Math.round(ttlMs / 60_000);
-      (restoreFn as (data: unknown) => void)(state.data);
+      (restoreFunction as (data: unknown) => void)(state.data);
       logger.info(
         `[${label}] ♻️  Restored from DB (${ageMinutes}m old, TTL: ${ttlMinutes}m)`,
       );
@@ -44,7 +44,7 @@ export async function collectIfStale(
     logger.info(`[${label}] 🆕 No data in DB — initial fetch`);
   }
 
-  await collectFn();
+  await collectFunction();
   return true;
 }
 
@@ -61,8 +61,8 @@ export function startCollectorLoop(tasks: CollectorTask<never>[]) {
           task.label,
           task.collection,
           task.ttl,
-          task.collectFn,
-          task.restoreFn,
+          task.collectFunction,
+          task.restoreFunction,
         ),
       task.delay || 0,
     );
@@ -72,8 +72,8 @@ export function startCollectorLoop(tasks: CollectorTask<never>[]) {
           task.label,
           task.collection,
           task.ttl,
-          task.collectFn,
-          task.restoreFn,
+          task.collectFunction,
+          task.restoreFunction,
         ),
       task.ttl,
     );

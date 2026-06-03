@@ -18,7 +18,7 @@ import { LABELS, DOMAINS } from "@rodrigo-barraza/utilities-library/taxonomy";
 
 // ── Helpers ──────────────────────────────────────────────────
 
-const schemaNames = new Set(TOOL_DEFINITIONS.map((s) => s.name));
+const schemaNames = new Set(TOOL_DEFINITIONS.map((schema) => schema.name));
 const domainKeys = new Set(Object.keys(TOOL_DOMAINS));
 const labelKeys = new Set(Object.keys(TOOL_LABELS));
 
@@ -26,35 +26,35 @@ const labelKeys = new Set(Object.keys(TOOL_LABELS));
 
 describe("Tool Schema — structural integrity", () => {
   it("every schema has a non-empty name", () => {
-    for (const s of TOOL_DEFINITIONS) {
-              expect(s.name && typeof s.name === "string").toBeTruthy();
+    for (const schema of TOOL_DEFINITIONS) {
+              expect(schema.name && typeof schema.name === "string").toBeTruthy();
     }
   });
 
   it("every schema has a non-empty description", () => {
-    for (const s of TOOL_DEFINITIONS) {
-              expect(s.description && typeof s.description === "string").toBeTruthy();
+    for (const schema of TOOL_DEFINITIONS) {
+              expect(schema.description && typeof schema.description === "string").toBeTruthy();
     }
   });
 
   it("every schema has a parameters object with type 'object'", () => {
-    for (const s of TOOL_DEFINITIONS) {
-      expect(s.parameters, `Tool "${s.name}" missing parameters`).toBeTruthy();
-              expect(s.parameters.type).toBe("object");
+    for (const schema of TOOL_DEFINITIONS) {
+      expect(schema.parameters, `Tool "${schema.name}" missing parameters`).toBeTruthy();
+              expect(schema.parameters.type).toBe("object");
     }
   });
 
   it("every schema has a properties object in parameters", () => {
-    for (const s of TOOL_DEFINITIONS) {
-              expect(s.parameters.properties && typeof s.parameters.properties === "object").toBeTruthy();
+    for (const schema of TOOL_DEFINITIONS) {
+              expect(schema.parameters.properties && typeof schema.parameters.properties === "object").toBeTruthy();
     }
   });
 
   it("schema names are unique (no duplicates)", () => {
     const seen = new Set();
-    for (const s of TOOL_DEFINITIONS) {
-      expect(seen.has(s.name)).toBe(false);
-      seen.add(s.name);
+    for (const schema of TOOL_DEFINITIONS) {
+      expect(seen.has(schema.name)).toBe(false);
+      seen.add(schema.name);
     }
   });
 });
@@ -119,8 +119,8 @@ describe("Tool Taxonomy — label coverage", () => {
   it("every label value is a non-empty array of strings", () => {
     for (const [_tool, labels] of Object.entries(TOOL_LABELS)) {
               expect(Array.isArray(labels) && labels.length > 0).toBeTruthy();
-      for (const l of labels) {
-                  expect(typeof l === "string" && l.length > 0).toBeTruthy();
+      for (const label of labels) {
+                  expect(typeof label === "string" && label.length > 0).toBeTruthy();
       }
     }
   });
@@ -130,8 +130,8 @@ describe("Tool Taxonomy — label coverage", () => {
 
 describe("Tool Taxonomy — bidirectional consistency", () => {
   it("TOOL_DOMAINS and TOOL_LABELS have the same set of keys", () => {
-    const onlyInDomains = [...domainKeys].filter((k) => !labelKeys.has(k));
-    const onlyInLabels = [...labelKeys].filter((k) => !domainKeys.has(k));
+    const onlyInDomains = [...domainKeys].filter((key) => !labelKeys.has(key));
+    const onlyInLabels = [...labelKeys].filter((key) => !domainKeys.has(key));
 
     const messages = [];
     if (onlyInDomains.length > 0) {
@@ -148,8 +148,8 @@ describe("Tool Taxonomy — bidirectional consistency", () => {
   });
 
   it("every schema key exists in both TOOL_DOMAINS and TOOL_LABELS", () => {
-    const missingDomains = [...schemaNames].filter((k) => !domainKeys.has(k));
-    const missingLabels = [...schemaNames].filter((k) => !labelKeys.has(k));
+    const missingDomains = [...schemaNames].filter((key) => !domainKeys.has(key));
+    const missingLabels = [...schemaNames].filter((key) => !labelKeys.has(key));
 
     const messages = [];
     if (missingDomains.length > 0) {
@@ -170,11 +170,11 @@ describe("Tool Taxonomy — bidirectional consistency", () => {
 
 describe("Tool Schema — parameter validation", () => {
   it("required array only references defined properties", () => {
-    for (const s of TOOL_DEFINITIONS) {
-      const required = s.parameters.required || [];
-      const props = Object.keys(s.parameters.properties || {});
-      for (const r of required) {
-                  expect(props.includes(r)).toBeTruthy();
+    for (const schema of TOOL_DEFINITIONS) {
+      const required = schema.parameters.required || [];
+      const props = Object.keys(schema.parameters.properties || {});
+      for (const requiredField of required) {
+                  expect(props.includes(requiredField)).toBeTruthy();
       }
     }
   });
@@ -197,7 +197,7 @@ describe("ToolTaxonomyConstants — registry alignment", () => {
   // Collect all label values used across TOOL_LABELS
   const usedLabels = new Set();
   for (const labels of Object.values(TOOL_LABELS)) {
-    for (const l of labels) usedLabels.add(l);
+    for (const label of labels) usedLabels.add(label);
   }
 
   // Collect all domain values used across TOOL_DOMAINS
@@ -231,13 +231,13 @@ describe("ToolTaxonomyConstants — registry alignment", () => {
 
   it("every label value used in TOOL_LABELS has a LABELS constant", () => {
     const constantValues = new Set<any>(Object.values(LABELS));
-    const missing = [...usedLabels].filter((l) => !constantValues.has(l));
+    const missing = [...usedLabels].filter((label) => !constantValues.has(label));
     expect(missing).toEqual([]);
   });
 
   it("every domain value used in TOOL_DOMAINS has a DOMAINS constant", () => {
     const constantValues = new Set<any>(Object.values(DOMAINS).map((entry) => entry.displayName));
-    const missing = [...usedDomains].filter((d) => !constantValues.has(d));
+    const missing = [...usedDomains].filter((domain) => !constantValues.has(domain));
           expect(missing.length).toBe(0);
   });
 });

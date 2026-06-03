@@ -192,8 +192,8 @@ export async function executeShell(
   return new Promise<ShellResult>((resolve) => {
     const stdoutChunks: Buffer[] = [];
     const stderrChunks: Buffer[] = [];
-    let stdoutLen = 0;
-    let stderrLen = 0;
+    let stdoutLength = 0;
+    let stderrLength = 0;
     let timedOut = false;
     let settled = false;
 
@@ -218,16 +218,16 @@ export async function executeShell(
     child.stdin.end();
 
     child.stdout.on("data", (chunk: Buffer) => {
-      if (stdoutLen < MAX_OUTPUT_BYTES) {
+      if (stdoutLength < MAX_OUTPUT_BYTES) {
         stdoutChunks.push(chunk);
-        stdoutLen += chunk.length;
+        stdoutLength += chunk.length;
       }
     });
 
     child.stderr.on("data", (chunk: Buffer) => {
-      if (stderrLen < MAX_OUTPUT_BYTES) {
+      if (stderrLength < MAX_OUTPUT_BYTES) {
         stderrChunks.push(chunk);
-        stderrLen += chunk.length;
+        stderrLength += chunk.length;
       }
     });
 
@@ -248,11 +248,11 @@ export async function executeShell(
       resolve({
         success: exitCode === 0 && !timedOut,
         stdout:
-          stdoutLen > MAX_OUTPUT_BYTES
+          stdoutLength > MAX_OUTPUT_BYTES
             ? stdout + "\n... [output truncated]"
             : stdout,
         stderr:
-          stderrLen > MAX_OUTPUT_BYTES
+          stderrLength > MAX_OUTPUT_BYTES
             ? stderr + "\n... [output truncated]"
             : stderr,
         exitCode: timedOut ? null : exitCode,
@@ -331,8 +331,8 @@ export async function executeShellStreaming(
   return new Promise<ShellResult>((resolve) => {
     const stdoutChunks: Buffer[] = [];
     const stderrChunks: Buffer[] = [];
-    let stdoutLen = 0;
-    let stderrLen = 0;
+    let stdoutLength = 0;
+    let stderrLength = 0;
     let timedOut = false;
     let settled = false;
 
@@ -351,17 +351,17 @@ export async function executeShellStreaming(
     child.stdin.end();
 
     child.stdout.on("data", (chunk: Buffer) => {
-      if (stdoutLen < MAX_OUTPUT_BYTES) {
+      if (stdoutLength < MAX_OUTPUT_BYTES) {
         stdoutChunks.push(chunk);
-        stdoutLen += chunk.length;
+        stdoutLength += chunk.length;
         onChunk?.("stdout", chunk.toString("utf-8"));
       }
     });
 
     child.stderr.on("data", (chunk: Buffer) => {
-      if (stderrLen < MAX_OUTPUT_BYTES) {
+      if (stderrLength < MAX_OUTPUT_BYTES) {
         stderrChunks.push(chunk);
-        stderrLen += chunk.length;
+        stderrLength += chunk.length;
         onChunk?.("stderr", chunk.toString("utf-8"));
       }
     });
@@ -380,11 +380,11 @@ export async function executeShellStreaming(
       resolve({
         success: exitCode === 0 && !timedOut,
         stdout:
-          stdoutLen > MAX_OUTPUT_BYTES
+          stdoutLength > MAX_OUTPUT_BYTES
             ? stdout + "\n... [output truncated]"
             : stdout,
         stderr:
-          stderrLen > MAX_OUTPUT_BYTES
+          stderrLength > MAX_OUTPUT_BYTES
             ? stderr + "\n... [output truncated]"
             : stderr,
         exitCode: timedOut ? null : exitCode,
