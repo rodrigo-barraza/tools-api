@@ -321,6 +321,47 @@ describe("POST /creative/vector-animation", () => {
     expect(step5.body.layerCount).toBe(1); // box is cleared, only fresh-layer exists
     expect(step5.body.totalKeyframes).toBe(1);
   });
+
+  it("injects referenceImageUrl into shape layers and keyframes when provided", async () => {
+    const referenceImageUrl = "data:image/png;base64,referencedataurl";
+    const response = await request(app)
+      .post("/creative/vector-animation")
+      .send({
+        referenceImageUrl,
+        animation: {
+          layers: [
+            {
+              id: "target-shape",
+              shapeType: "rectangle",
+              shapeData: { width: 100, height: 100 },
+              imageUrl: "placeholder",
+              keyframes: [
+                {
+                  time: 0,
+                  properties: { x: 50, y: 50, imageUrl: "reference" }
+                },
+                {
+                  time: 1.5,
+                  properties: { x: 150, y: 150 }
+                }
+              ]
+            },
+            {
+              id: "unrelated-shape",
+              shapeType: "text",
+              shapeData: { text: "hello" }
+            }
+          ]
+        }
+      });
+
+    expect(response.status).toBe(200);
+    const animationId = response.body.animationId;
+
+    const embedResponse = await request(app).get(`/creative/vector-animation/embed?id=${animationId}`);
+    expect(embedResponse.status).toBe(200);
+    expect(embedResponse.text).toContain(referenceImageUrl);
+  });
 });
 
 describe("GET /creative/vector-animation/embed", () => {

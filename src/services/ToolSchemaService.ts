@@ -7816,7 +7816,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     endpoint: {
       method: "POST",
       path: "/creative/vector-animation",
-      bodyParams: ["animation", "options", "sessionId"],
+      bodyParams: ["animation", "options", "sessionId", "referenceImageUrl"],
     },
     parameters: {
       type: "object",

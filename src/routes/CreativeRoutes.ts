@@ -1232,7 +1232,7 @@ function cleanupVectorAnimationEmbeds() {
 }
 
 router.post("/vector-animation", asyncHandler(async (req: Request, res: Response) => {
-  const { animation, options, sessionId } = req.body;
+  const { animation, options, sessionId, referenceImageUrl } = req.body;
   if (!animation) {
     return res.status(400).json({ error: "'animation' is required" });
   }
@@ -1336,6 +1336,39 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
       updatedAt: Date.now(),
     });
     cleanupVectorAnimationSessions();
+  }
+
+  if (referenceImageUrl && typeof referenceImageUrl === "string") {
+    const targetShapeTypes = ["rectangle", "circle", "ellipse", "polygon", "path"];
+    for (const layer of sessionAnimation.layers) {
+      if (layer && typeof layer === "object") {
+        const isCompatibleShape = targetShapeTypes.includes(layer.shapeType);
+        if (isCompatibleShape) {
+          const isPlaceholder = !layer.imageUrl || 
+            layer.imageUrl === "placeholder" || 
+            layer.imageUrl === "reference" || 
+            layer.imageUrl === "";
+          if (isPlaceholder) {
+            layer.imageUrl = referenceImageUrl;
+          }
+
+          if (layer.keyframes && Array.isArray(layer.keyframes)) {
+            for (const keyframe of layer.keyframes) {
+              if (keyframe && keyframe.properties && typeof keyframe.properties === "object") {
+                const keyframeProperties = keyframe.properties;
+                const isKeyframePlaceholder = !keyframeProperties.imageUrl || 
+                  keyframeProperties.imageUrl === "placeholder" || 
+                  keyframeProperties.imageUrl === "reference" || 
+                  keyframeProperties.imageUrl === "";
+                if (isKeyframePlaceholder) {
+                  keyframeProperties.imageUrl = referenceImageUrl;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   const embedId = crypto.randomUUID().slice(0, 12);
