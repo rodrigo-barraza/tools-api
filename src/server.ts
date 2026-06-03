@@ -29,6 +29,7 @@ import { setupCmeCollection } from "./models/Cme.ts";
 import { setupGeomagneticStormCollection } from "./models/GeomagneticStorm.ts";
 import { setupWebcamCollection } from "./models/Webcam.ts";
 import { setupTurtleDrawingCollection } from "./models/TurtleDrawing.ts";
+import { setupVectorAnimationCollection } from "./models/VectorAnimation.ts";
 import { setupThreeDimensionalSceneCollection } from "./models/ThreeDimensionalScene.ts";
 import { setupEmbedAssetCollection } from "./models/EmbedAsset.ts";
 
@@ -212,6 +213,7 @@ async function start() {
       setupGeomagneticStormCollection(),
       setupWebcamCollection(),
       setupTurtleDrawingCollection(),
+      setupVectorAnimationCollection(),
       setupThreeDimensionalSceneCollection(),
       setupEmbedAssetCollection(),
       setupToolCallsCollection(),

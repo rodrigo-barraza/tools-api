@@ -21,12 +21,13 @@ export interface ToolEndpoint {
 // ─── Tool Definition ───────────────────────────────────────────
 
 export interface ToolParameterProperty {
-  type: string;
+  type?: string;
   description?: string;
   enum?: string[];
   items?: ToolParameterProperty | { type: string; properties?: Record<string, ToolParameterProperty>; required?: string[] };
   properties?: Record<string, ToolParameterProperty>;
   required?: string[];
+  anyOf?: ToolParameterProperty[];
 }
 
 export interface ToolParameters {

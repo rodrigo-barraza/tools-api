@@ -7797,6 +7797,233 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
+    name: "create_vector_animation",
+    dataSource: onDemand("Creative Vector Animation Engine"),
+    description:
+      "Create interactive, vector-based keyframe animations in HTML5 Canvas. " +
+      "Supports multiple layers, shapes (rectangle, circle, ellipse, line, polygon, path, text), keyframes, " +
+      "frame-by-frame animations, and shape/transform tweening (translation, scale, rotation, color, opacity) " +
+      "along linear, Bezier curve, or custom paths. Subsequent calls with the same sessionId append/edit keyframes " +
+      "to build complex animations incrementally.",
+    endpoint: {
+      method: "POST",
+      path: "/creative/vector-animation",
+      bodyParams: ["animation", "options", "sessionId"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        sessionId: {
+          type: "string",
+          description: "Optional session ID to update/append to an existing animation sequence. If omitted, a new animation is started.",
+        },
+        options: {
+          type: "object",
+          properties: {
+            loop: {
+              type: "boolean",
+              description: "Whether the animation should loop during playback (default: true).",
+            },
+            autoplay: {
+              type: "boolean",
+              description: "Whether playback should start automatically (default: true).",
+            },
+            title: {
+              type: "string",
+              description: "Optional title for the animation player window.",
+            },
+          },
+        },
+        animation: {
+          type: "object",
+          description: "The vector animation definition.",
+          properties: {
+            clearSession: {
+              type: "boolean",
+              description: "Optional. If true, clears the entire session animation state and resets it to this new input definition.",
+            },
+            width: {
+              type: "integer",
+              description: "Canvas width in pixels (default: 800, max: 1920).",
+            },
+            height: {
+              type: "integer",
+              description: "Canvas height in pixels (default: 600, max: 1080).",
+            },
+            duration: {
+              type: "number",
+              description: "Total duration of the animation in seconds (default: 5.0).",
+            },
+            fps: {
+              type: "integer",
+              description: "Frames per second for calculation (default: 24, range: 12-60).",
+            },
+            background: {
+              type: "string",
+              description: "Canvas background color (CSS value, default: '#0f172a').",
+            },
+            layers: {
+              type: "array",
+              description: "List of animated vector layers/objects.",
+              items: {
+                type: "object",
+                properties: {
+                  id: {
+                    type: "string",
+                    description: "Unique identifier for this layer.",
+                  },
+                  action: {
+                    type: "string",
+                    enum: ["delete"],
+                    description: "Optional. Set to 'delete' to remove this layer from the session.",
+                  },
+                  replaceKeyframes: {
+                    type: "boolean",
+                    description: "Optional. If true, overwrites all keyframes of the layer instead of merging them.",
+                  },
+                  shapeType: {
+                    type: "string",
+                    enum: ["rectangle", "circle", "ellipse", "line", "polygon", "path", "text"],
+                    description: "The type of shape rendered by this layer.",
+                  },
+                  shapeData: {
+                    type: "object",
+                    description: "Static properties of the shape (e.g. {width: 100, height: 100} for rectangle, {radius: 50} for circle, {points: [[0,0], [50,100], [100,0]]} for polygon, {path: 'M 10 10 L 90 90'} for path, {text: 'hello'} for text).",
+                  },
+                  fillColor: {
+                    anyOf: [
+                      {
+                        type: "string",
+                        description: "Default fill color (CSS color, e.g. '#ef4444', 'rgba(0,0,0,0.5)', 'transparent').",
+                      },
+                      {
+                        type: "object",
+                        description: "Linear or radial gradient fill definition.",
+                        properties: {
+                          type: {
+                            type: "string",
+                            enum: ["linear", "radial"],
+                          },
+                          x1: { type: "number", description: "X coordinate of linear end point or radial end center." },
+                          y1: { type: "number", description: "Y coordinate of linear end point or radial end center." },
+                          x2: { type: "number", description: "X coordinate of linear end point." },
+                          y2: { type: "number", description: "Y coordinate of linear end point." },
+                          x0: { type: "number", description: "X coordinate of radial start center." },
+                          y0: { type: "number", description: "Y coordinate of radial start center." },
+                          r0: { type: "number", description: "Radius of radial start circle." },
+                          r1: { type: "number", description: "Radius of radial end circle." },
+                          stops: {
+                            type: "array",
+                            description: "Color stops for the gradient.",
+                            items: {
+                              type: "object",
+                              properties: {
+                                offset: { type: "number", description: "Stop position from 0.0 to 1.0." },
+                                color: { type: "string", description: "CSS color string." },
+                              },
+                              required: ["offset", "color"],
+                            },
+                          },
+                        },
+                        required: ["type", "stops"],
+                      },
+                    ],
+                  },
+                  strokeColor: {
+                    anyOf: [
+                      {
+                        type: "string",
+                        description: "Default stroke/outline color (CSS color, e.g. '#ffffff', 'rgba(255,255,255,0.8)', 'transparent').",
+                      },
+                      {
+                        type: "object",
+                        description: "Linear or radial gradient stroke/outline definition.",
+                        properties: {
+                          type: {
+                            type: "string",
+                            enum: ["linear", "radial"],
+                          },
+                          x1: { type: "number", description: "X coordinate of linear end point or radial end center." },
+                          y1: { type: "number", description: "Y coordinate of linear end point or radial end center." },
+                          x2: { type: "number", description: "X coordinate of linear end point." },
+                          y2: { type: "number", description: "Y coordinate of linear end point." },
+                          x0: { type: "number", description: "X coordinate of radial start center." },
+                          y0: { type: "number", description: "Y coordinate of radial start center." },
+                          r0: { type: "number", description: "Radius of radial start circle." },
+                          r1: { type: "number", description: "Radius of radial end circle." },
+                          stops: {
+                            type: "array",
+                            description: "Color stops for the gradient.",
+                            items: {
+                              type: "object",
+                              properties: {
+                                offset: { type: "number", description: "Stop position from 0.0 to 1.0." },
+                                color: { type: "string", description: "CSS color string." },
+                              },
+                              required: ["offset", "color"],
+                            },
+                          },
+                        },
+                        required: ["type", "stops"],
+                      },
+                    ],
+                  },
+                  strokeWidth: {
+                    type: "number",
+                    description: "Default outline stroke width in pixels.",
+                  },
+                  opacity: {
+                    type: "number",
+                    description: "Default opacity multiplier (0.0 to 1.0, default: 1.0).",
+                  },
+                  keyframes: {
+                    type: "array",
+                    description: "Keyframe timeline defining animated transitions for properties.",
+                    items: {
+                      type: "object",
+                      properties: {
+                        time: {
+                          type: "number",
+                          description: "Time in seconds for this keyframe (must be between 0.0 and duration).",
+                        },
+                        easing: {
+                          type: "string",
+                          description: "Easing function to transition to the NEXT keyframe (e.g. 'linear', 'ease-in', 'ease-out', 'ease-in-out', 'step', 'cubic-bezier(x1,y1,x2,y2)').",
+                        },
+                        motionPath: {
+                          type: "object",
+                          description: "Optional SVG path along which the shape's coordinate should glide to the next keyframe.",
+                          properties: {
+                            path: {
+                              type: "string",
+                              description: "SVG path data (d attribute, e.g. 'M 0 0 C 100 0, 100 200, 200 200').",
+                            },
+                            orientToPath: {
+                              type: "boolean",
+                              description: "Whether to rotate the shape automatically to follow the curve tangent (default: false).",
+                            },
+                          },
+                        },
+                        properties: {
+                          type: "object",
+                          description: "The target property values at this keyframe. Supported keys: x, y, scaleX, scaleY, rotation, opacity, fillColor, strokeColor, strokeWidth, width, height, radius, points, text, fontSize.",
+                        },
+                      },
+                      required: ["time", "properties"],
+                    },
+                  },
+                },
+                required: ["id", "shapeType"],
+              },
+            },
+          },
+          required: ["layers"],
+        },
+      },
+      required: ["animation"],
+    },
+  },
+  {
     name: "generate_audio",
     dataSource: compute("SoundSynthesizerService"),
     description:
@@ -10923,6 +11150,7 @@ const TOOL_DOMAINS = {
   describe_image: "Creative",
   text_to_speech: "Creative",
   generate_audio: "Creative",
+  create_vector_animation: "Creative",
   speech_to_text: "Creative",
 
   // Discord (Lupos DB)
@@ -11241,6 +11469,7 @@ const TOOL_EMOJIS = {
   describe_image: "👁️",
   text_to_speech: "🔊",
   generate_audio: "🔊",
+  create_vector_animation: "🎬",
   speech_to_text: "🎤",
 
   // Discord
@@ -11716,6 +11945,7 @@ const TOOL_LABELS = {
   describe_image: ["creative", "media"],
   text_to_speech: ["creative", "media"],
   generate_audio: ["creative", "media"],
+  create_vector_animation: ["creative", "media", "animation"],
   speech_to_text: ["creative", "media"],
 
   // ── Discord ──────────────────────────────────────────────
@@ -11762,6 +11992,7 @@ const TOOL_LABELS = {
 const TOOL_INTELLIGENCE_TIERS: Record<string, ToolIntelligenceTier> = {
   // 🔴 Frontier — Frontier Models Only (Structured graphs, code writing, mult-tool state)
   generate_audio: "frontier",
+  create_vector_animation: "frontier",
   browser_action: "frontier",
   browser_script: "frontier",
   manipulate_image: "frontier",

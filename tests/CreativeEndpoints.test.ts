@@ -142,3 +142,211 @@ describe("POST /creative/generate-audio", () => {
     expect(res.body.sampleCount).toBeGreaterThan(0);
   });
 });
+
+describe("POST /creative/vector-animation", () => {
+  it("successfully creates a new vector animation session", async () => {
+    const res = await request(app)
+      .post("/creative/vector-animation")
+      .send({
+        animation: {
+          width: 640,
+          height: 480,
+          duration: 3.5,
+          fps: 30,
+          background: "#1e293b",
+          layers: [
+            {
+              id: "red-circle",
+              shapeType: "circle",
+              shapeData: { radius: 25 },
+              fillColor: {
+                type: "linear",
+                x1: 0,
+                y1: 0,
+                x2: 50,
+                y2: 50,
+                stops: [
+                  { offset: 0, color: "#ef4444" },
+                  { offset: 1, color: "#b91c1c" }
+                ]
+              },
+              strokeColor: "#ffffff",
+              strokeWidth: 2,
+              keyframes: [
+                { time: 0, properties: { x: 100, y: 100 } },
+                { time: 2, properties: { x: 300, y: 100 }, easing: "ease-out" }
+              ]
+            }
+          ]
+        },
+        options: {
+          loop: true,
+          autoplay: false,
+          title: "Test Animation"
+        }
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.embedUrl).toContain("creative/vector-animation/embed");
+    expect(res.body.sessionId).toBeDefined();
+    expect(res.body.animationId).toBeDefined();
+    expect(res.body.duration).toBe(3.5);
+    expect(res.body.layerCount).toBe(1);
+    expect(res.body.totalKeyframes).toBe(2);
+    expect(res.body.canvasSize).toBe("640x480");
+    expect(res.body.isAppend).toBe(false);
+  });
+
+  it("successively appends/edits layers progressively using the same sessionId", async () => {
+    const sessionId = "session-" + Math.random().toString(36).slice(2, 8);
+
+    // Step 1: Create initial ball
+    const step1 = await request(app)
+      .post("/creative/vector-animation")
+      .send({
+        sessionId,
+        animation: {
+          layers: [
+            {
+              id: "ball",
+              shapeType: "circle",
+              shapeData: { radius: 10 },
+              keyframes: [
+                { time: 0, properties: { x: 50 } },
+                { time: 1, properties: { x: 100 } }
+              ]
+            }
+          ]
+        }
+      });
+
+    expect(step1.status).toBe(200);
+    expect(step1.body.sessionId).toBe(sessionId);
+    expect(step1.body.layerCount).toBe(1);
+    expect(step1.body.totalKeyframes).toBe(2);
+    expect(step1.body.isAppend).toBe(false);
+
+    // Step 2: Add a square layer and append a keyframe to the ball
+    const step2 = await request(app)
+      .post("/creative/vector-animation")
+      .send({
+        sessionId,
+        animation: {
+          layers: [
+            {
+              id: "ball",
+              shapeType: "circle", // Optional if existing
+              keyframes: [
+                { time: 2, properties: { x: 200 } }
+              ]
+            },
+            {
+              id: "box",
+              shapeType: "rectangle",
+              shapeData: { width: 20, height: 20 },
+              fillColor: "#3b82f6"
+            }
+          ]
+        }
+      });
+
+    expect(step2.status).toBe(200);
+    expect(step2.body.sessionId).toBe(sessionId);
+    expect(step2.body.layerCount).toBe(2);
+    expect(step2.body.totalKeyframes).toBe(3); // ball (time 0, 1, 2) = 3 keyframes, box = 0 keyframes
+    expect(step2.body.isAppend).toBe(true);
+
+    // Step 3: Replace keyframes of the ball
+    const step3 = await request(app)
+      .post("/creative/vector-animation")
+      .send({
+        sessionId,
+        animation: {
+          layers: [
+            {
+              id: "ball",
+              shapeType: "circle",
+              replaceKeyframes: true,
+              keyframes: [
+                { time: 0, properties: { x: 99 } }
+              ]
+            }
+          ]
+        }
+      });
+
+    expect(step3.status).toBe(200);
+    expect(step3.body.layerCount).toBe(2);
+    expect(step3.body.totalKeyframes).toBe(1); // ball was reset to 1 keyframe, box has 0
+    expect(step3.body.isAppend).toBe(true);
+
+    // Step 4: Delete the ball layer
+    const step4 = await request(app)
+      .post("/creative/vector-animation")
+      .send({
+        sessionId,
+        animation: {
+          layers: [
+            {
+              id: "ball",
+              shapeType: "circle",
+              action: "delete"
+            }
+          ]
+        }
+      });
+
+    expect(step4.status).toBe(200);
+    expect(step4.body.layerCount).toBe(1); // ball is deleted, only box remains
+    expect(step4.body.totalKeyframes).toBe(0);
+
+    // Step 5: Clear session
+    const step5 = await request(app)
+      .post("/creative/vector-animation")
+      .send({
+        sessionId,
+        animation: {
+          clearSession: true,
+          layers: [
+            {
+              id: "fresh-layer",
+              shapeType: "circle",
+              keyframes: [{ time: 0, properties: { x: 1 } }]
+            }
+          ]
+        }
+      });
+
+    expect(step5.status).toBe(200);
+    expect(step5.body.layerCount).toBe(1); // box is cleared, only fresh-layer exists
+    expect(step5.body.totalKeyframes).toBe(1);
+  });
+});
+
+describe("GET /creative/vector-animation/embed", () => {
+  it("returns 404 for non-existent animations", async () => {
+    const res = await request(app).get("/creative/vector-animation/embed?id=missing-id");
+    expect(res.status).toBe(404);
+  });
+
+  it("serves HTML player for a valid animation ID", async () => {
+    const createRes = await request(app)
+      .post("/creative/vector-animation")
+      .send({
+        animation: {
+          layers: [{ id: "test", shapeType: "circle" }]
+        }
+      });
+
+    const animationId = createRes.body.animationId;
+    const res = await request(app).get(`/creative/vector-animation/embed?id=${animationId}`);
+    
+    expect(res.status).toBe(200);
+    expect(res.headers["content-type"]).toContain("text/html");
+    expect(res.text).toContain("<!DOCTYPE html>");
+    expect(res.text).toContain("animation-canvas");
+    expect(res.text).toContain("resolveStyle");
+    expect(res.text).toContain("interpolateGradient");
+  });
+});
+
