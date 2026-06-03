@@ -84,7 +84,7 @@ function createGeometry(objectDefinition) {
 
 export const CLIENT_MATERIAL_FACTORY = `
 function createMaterial(materialDefinition = {}) {
-  return new THREE.MeshStandardMaterial({
+  const materialOptions = {
     color: new THREE.Color(materialDefinition.color || "#38bdf8"),
     metalness: materialDefinition.metalness ?? 0.2,
     roughness: materialDefinition.roughness ?? 0.6,
@@ -95,7 +95,19 @@ function createMaterial(materialDefinition = {}) {
     wireframe: materialDefinition.wireframe || false,
     flatShading: materialDefinition.flatShading || false,
     side: materialDefinition.doubleSided ? THREE.DoubleSide : THREE.FrontSide,
-  });
+  };
+
+  if (materialDefinition.textureUrl) {
+    try {
+      const textureLoader = new THREE.TextureLoader();
+      textureLoader.setCrossOrigin("anonymous");
+      materialOptions.map = textureLoader.load(materialDefinition.textureUrl);
+    } catch (error) {
+      console.warn("Failed to load texture:", materialDefinition.textureUrl, error);
+    }
+  }
+
+  return new THREE.MeshStandardMaterial(materialOptions);
 }
 `;
 

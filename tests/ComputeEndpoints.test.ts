@@ -1,10 +1,22 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import request from "supertest";
 import { createTestApp } from "./testApp.ts";
 import computeRoutes from "../src/routes/ComputeRoutes.ts";
 import { ALLOWED_ROOTS } from "../src/services/AgenticFileService.ts";
 import fs from "node:fs";
 import path from "node:path";
+
+const mockScenes = new Map();
+
+vi.mock("../src/models/ThreeDimensionalScene.ts", () => ({
+  saveThreeDimensionalScene: vi.fn(async (sceneId, sceneType, sceneData, options) => {
+    mockScenes.set(sceneId, { sceneType, sceneData, options });
+  }),
+  getThreeDimensionalScene: vi.fn(async (sceneId) => {
+    return mockScenes.get(sceneId) || null;
+  }),
+  setupThreeDimensionalSceneCollection: vi.fn(),
+}));
 
 const app = createTestApp("/compute", computeRoutes);
 
@@ -148,6 +160,35 @@ describe("POST /compute/3d/model", () => {
     expect(postResponse.body.isAppend).toBe(false);
   });
 
+  it("successfully creates a 3D model with a textureUrl and doubleSided material", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/model")
+      .send({
+        objects: [
+          {
+            shape: "box",
+            position: [0, 0, 0],
+            material: {
+              color: "#ff6347",
+              doubleSided: true,
+              textureUrl: "https://example.com/texture.png",
+            },
+          },
+        ],
+      });
+
+    expect(postResponse.status).toBe(200);
+    const sceneId = postResponse.body.sceneId;
+
+    // Fetch the embed to verify the texture loader script is output correctly
+    const embedResponse = await request(app)
+      .get(`/compute/3d/embed?id=${sceneId}`);
+
+    expect(embedResponse.status).toBe(200);
+    expect(embedResponse.text).toContain("textureLoader");
+    expect(embedResponse.text).toContain("https://example.com/texture.png");
+  });
+
   it("successfully appends objects to an existing 3D model session", async () => {
     const firstResponse = await request(app)
       .post("/compute/3d/model")
@@ -253,6 +294,35 @@ describe("POST /compute/3d/scene", () => {
     expect(postResponse.body.objectCount).toBe(1);
     expect(postResponse.body.totalObjects).toBe(1);
     expect(postResponse.body.isAppend).toBe(false);
+  });
+
+  it("successfully creates a 3D scene with a textureUrl and doubleSided material", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/scene")
+      .send({
+        objects: [
+          {
+            type: "box",
+            position: [0, 0, 0],
+            material: {
+              color: "#ff6347",
+              doubleSided: true,
+              textureUrl: "https://example.com/scene-texture.png",
+            },
+          },
+        ],
+      });
+
+    expect(postResponse.status).toBe(200);
+    const sceneId = postResponse.body.sceneId;
+
+    // Fetch the embed to verify the texture loader script is output correctly
+    const embedResponse = await request(app)
+      .get(`/compute/3d/embed?id=${sceneId}`);
+
+    expect(embedResponse.status).toBe(200);
+    expect(embedResponse.text).toContain("textureLoader");
+    expect(embedResponse.text).toContain("https://example.com/scene-texture.png");
   });
 
   it("successfully appends objects to an existing 3D scene session", async () => {

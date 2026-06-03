@@ -41,6 +41,7 @@ export interface ModelMaterial {
   wireframe?: boolean;
   flatShading?: boolean;
   doubleSided?: boolean;
+  textureUrl?: string;
 }
 
 export interface ModelObject {

@@ -30,6 +30,7 @@ export interface SceneMaterial {
   wireframe?: boolean;
   flatShading?: boolean;
   doubleSided?: boolean;
+  textureUrl?: string;
 }
 
 export interface SceneAnimation {
