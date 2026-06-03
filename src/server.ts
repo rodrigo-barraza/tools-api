@@ -73,6 +73,7 @@ import discordRoutes, { getDiscordHealth } from "./routes/DiscordRoutes.ts";
 import lightsRoutes, { getLightsHealth } from "./routes/LightsRoutes.ts";
 import adminRoutes, { loadUserWorkspaceRoots } from "./routes/AdminRoutes.ts";
 import agentStatusRoutes from "./routes/AgentRoutes.ts";
+import filesystemRoutes from "./routes/FilesystemRoutes.ts";
 import MinioService from "./services/MinioService.ts";
 import { mountMcpRoutes } from "./services/McpAdapter.ts";
 import { initAgentWebSocket } from "./services/AgentConnectionManager.ts";
@@ -140,6 +141,7 @@ app.use("/discord", discordRoutes);
 app.use("/lights", lightsRoutes);
 app.use("/admin", adminRoutes);
 app.use("/agents", agentStatusRoutes);
+app.use("/filesystem", filesystemRoutes);
 mountMcpRoutes(app);
 
 // ─── Global Error Handler ──────────────────────────────────────────

@@ -689,6 +689,78 @@ export async function agenticListDirectory(
 }
 
 /**
+ * Get directory tree structure.
+ * Returns nested directory tree representation for SystemPromptAssembler.
+ */
+export async function agenticGetDirectoryTree(
+  directoryPath: string,
+  maxDepth = 2,
+) {
+  const agentResult = await tryAgentRoute(
+    "directory.tree",
+    { path: directoryPath, maxDepth },
+    directoryPath,
+  );
+  if (agentResult) return agentResult as Record<string, unknown>;
+
+  const validation = validatePath(directoryPath);
+  if (!validation.safe) {
+    return { error: validation.error };
+  }
+
+  const resolved = validation.resolved;
+
+  try {
+    const fileStats = await stat(resolved);
+    if (!fileStats.isDirectory()) {
+      return {
+        error: `'${resolved}' is a file, not a directory.`,
+      };
+    }
+
+    async function buildTree(currentDirectory: string, currentDepth: number): Promise<any[]> {
+      if (currentDepth > maxDepth) return [];
+
+      const directoryEntries = await readdir(currentDirectory, { withFileTypes: true });
+      const treeEntries: any[] = [];
+
+      for (const entry of directoryEntries) {
+        const fullPath = resolve(currentDirectory, entry.name);
+        const relativePath = relative(resolved, fullPath);
+
+        const pathValidation = validatePath(fullPath);
+        if (!pathValidation.safe) continue;
+
+        if (entry.isDirectory()) {
+          const children = currentDepth < maxDepth ? await buildTree(fullPath, currentDepth + 1) : [];
+          treeEntries.push({
+            name: entry.name,
+            path: relativePath,
+            type: "directory",
+            children,
+          });
+        } else {
+          treeEntries.push({
+            name: entry.name,
+            path: relativePath,
+            type: "file",
+          });
+        }
+      }
+
+      return treeEntries;
+    }
+
+    const entries = await buildTree(resolved, 1);
+    return { entries };
+  } catch (error: unknown) {
+    return {
+      error: `Directory tree fetch failed: ${errorMessage(error)}`,
+    };
+  }
+}
+
+/**
  * Search for pattern matches within files (ripgrep-style).
  */
 export interface GrepResult {
