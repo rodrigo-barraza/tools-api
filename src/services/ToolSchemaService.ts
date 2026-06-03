@@ -5237,21 +5237,21 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
 
   // ── 3D Object Creation (Primitive Composition) ─────────────
   {
-    name: "create_3d_scene",
+    name: "create_3d_model",
     dataSource: compute("internal"),
     description:
-      "Compose a 3D scene from built-in primitive shapes with PBR materials and transforms. " +
+      "Create a 3D object/model by composing primitive shapes with PBR materials and transforms. " +
       "Available shapes: box, sphere, cylinder, cone, torus, torusKnot, plane, ring, circle, " +
       "dodecahedron, icosahedron, octahedron, tetrahedron, capsule. " +
       "Each object supports position, rotation (degrees), scale, and material properties (color, metalness, roughness, " +
       "opacity, emissive, wireframe, flatShading). " +
       "Use cases: architectural mockups, abstract sculptures, game prototyping, educational geometry, product showcases. " +
-      "The response contains a sceneEmbedUrl — render it with ![3D Scene](sceneEmbedUrl) markdown so the user sees the interactive 3D scene inline. " +
+      "The response contains a sceneEmbedUrl — render it with ![3D Model](sceneEmbedUrl) markdown so the user sees the interactive 3D model inline. " +
       "Max 200 objects per call. Supports shadow casting, ambient/directional lighting control, and auto-orbit camera. " +
-      "Supports progressive, step-by-step incremental building using a sessionId (analogous to the draw_turtle graphics tool) where subsequent calls with the same sessionId append new objects to the existing scene rather than overwriting it.",
+      "Supports progressive, step-by-step incremental building using a sessionId (analogous to the draw_turtle graphics tool) where subsequent calls with the same sessionId append new objects to the existing model rather than overwriting it.",
     endpoint: {
       method: "POST",
-      path: "/compute/3d/scene",
+      path: "/compute/3d/model",
       bodyParams: ["objects", "options", "sessionId"],
     },
     parameters: {
@@ -5260,13 +5260,13 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         sessionId: {
           type: "string",
           description:
-            "Optional session ID returned from a previous create_3d_scene call. " +
-            "Pass this to append new objects to an existing 3D scene progressively. " +
-            "Omit to start a new 3D scene session.",
+            "Optional session ID returned from a previous create_3d_model call. " +
+            "Pass this to append new objects to an existing 3D model progressively. " +
+            "Omit to start a new 3D model session.",
         },
         objects: {
           type: "array",
-          description: "Array of primitive shape objects to compose into a scene.",
+          description: "Array of primitive shape objects to compose into a 3D model.",
           items: {
             type: "object",
             properties: {
@@ -5341,7 +5341,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             fieldOfView: { type: "number", description: "Camera FOV in degrees (default: 50)" },
             title: { type: "string", description: "Title displayed in the overlay" },
           },
-          description: "Scene rendering options",
+          description: "Model rendering options",
         },
       },
       required: ["objects"],
@@ -5350,7 +5350,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
 
   // ── 3D Object Creation (Declarative Scene Graph) ───────────
   {
-    name: "create_3d_model",
+    name: "create_3d_scene",
     dataSource: compute("internal"),
     description:
       "Create a rich 3D scene using a declarative scene graph with hierarchical grouping, built-in animations, " +
@@ -5362,12 +5362,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "directional, fill, and hemisphere lighting automatically. " +
       "Supports ground plane with shadows, fog, camera FOV control, and auto-orbit. " +
       "Use cases: product showcases, animated explainers, data visualization, artistic compositions, holiday scenes. " +
-      "The response contains a sceneEmbedUrl — render it with ![3D Model](sceneEmbedUrl) markdown so the user sees the interactive 3D scene inline. " +
+      "The response contains a sceneEmbedUrl — render it with ![3D Scene](sceneEmbedUrl) markdown so the user sees the interactive 3D scene inline. " +
       "Max 300 total objects (including nested children), max 5 levels of nesting. " +
       "Supports progressive, step-by-step incremental building using a sessionId (analogous to the draw_turtle graphics tool) where subsequent calls with the same sessionId append new objects to the existing scene rather than overwriting it.",
     endpoint: {
       method: "POST",
-      path: "/compute/3d/model",
+      path: "/compute/3d/scene",
       bodyParams: ["scene", "objects", "options", "sessionId"],
     },
     parameters: {
@@ -5376,7 +5376,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         sessionId: {
           type: "string",
           description:
-            "Optional session ID returned from a previous create_3d_model call. " +
+            "Optional session ID returned from a previous create_3d_scene call. " +
             "Pass this to append new objects to an existing 3D scene progressively. " +
             "Omit to start a new 3D scene session.",
         },
@@ -5541,7 +5541,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             showAxes: { type: "boolean", description: "Show XYZ axes (default: false)" },
             enableShadows: { type: "boolean", description: "Enable shadow casting (default: true)" },
           },
-          description: "Additional rendering options",
+          description: "Scene rendering options",
         },
       },
       required: ["objects"],
@@ -11348,8 +11348,8 @@ const TOOL_EMOJIS = {
   parse_cron_expression: "⏰",
   draw_turtle: "🐢",
   create_3d_mesh: "🔺",
-  create_3d_scene: "🧊",
-  create_3d_model: "🌐",
+  create_3d_scene: "🌐",
+  create_3d_model: "🧊",
   create_3d_voxel: "🧱",
 
   // Reasoning & Control Flow

@@ -132,7 +132,7 @@ describe("POST /compute/3d/model", () => {
       .send({
         objects: [
           {
-            type: "box",
+            shape: "box",
             position: [0, 0, 0],
             material: { color: "#ff6347" },
           },
@@ -154,7 +154,7 @@ describe("POST /compute/3d/model", () => {
       .send({
         objects: [
           {
-            type: "box",
+            shape: "box",
             position: [0, 0, 0],
           },
         ],
@@ -169,7 +169,7 @@ describe("POST /compute/3d/model", () => {
         sessionId,
         objects: [
           {
-            type: "sphere",
+            shape: "sphere",
             position: [1, 2, 3],
           },
         ],
@@ -239,7 +239,7 @@ describe("POST /compute/3d/scene", () => {
       .send({
         objects: [
           {
-            shape: "box",
+            type: "box",
             position: [0, 0, 0],
             material: { color: "#ff6347" },
           },
@@ -261,7 +261,7 @@ describe("POST /compute/3d/scene", () => {
       .send({
         objects: [
           {
-            shape: "box",
+            type: "box",
             position: [0, 0, 0],
           },
         ],
@@ -276,7 +276,7 @@ describe("POST /compute/3d/scene", () => {
         sessionId,
         objects: [
           {
-            shape: "sphere",
+            type: "sphere",
             position: [1, 2, 3],
           },
         ],

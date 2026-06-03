@@ -46,12 +46,12 @@ import {
   validateSceneInput,
   buildSceneEmbedHtml,
 } from "../services/ThreeDimensionalSceneService.ts";
-import type { SceneObject, SceneOptions } from "../services/ThreeDimensionalSceneService.ts";
+import type { SceneObject, SceneConfig, SceneOptions } from "../services/ThreeDimensionalSceneService.ts";
 import {
   validateModelInput,
   buildModelEmbedHtml,
 } from "../services/ThreeDimensionalModelService.ts";
-import type { ModelObject, ModelSceneConfig, ModelOptions } from "../services/ThreeDimensionalModelService.ts";
+import type { ModelObject, ModelOptions } from "../services/ThreeDimensionalModelService.ts";
 import {
   validateVoxelInput,
   buildVoxelEmbedHtml,
@@ -2929,10 +2929,11 @@ router.post("/3d/mesh", asyncHandler(async (req: Request, res: Response) => {
     hasCustomNormals: !!combinedNormals && combinedNormals.length > 0,
   });
 }));
-// ── Create 3D Scene (Primitive shape composition) ─────────────
+// ── Create 3D Scene (Declarative scene graph) ─────────────────
 interface SceneSession {
+  scene?: SceneConfig;
   objects: SceneObject[];
-  options: Record<string, any>;
+  options?: SceneOptions;
   updatedAt: number;
 }
 
@@ -2949,16 +2950,17 @@ function cleanupSceneSessions() {
 }
 
 router.post("/3d/scene", asyncHandler(async (req: Request, res: Response) => {
-  const { objects: sceneObjects, options: sceneOptions, sessionId } = req.body;
+  const { scene: sceneConfiguration, objects: sceneObjects, options: sceneOptions, sessionId } = req.body;
 
   if (!sceneObjects || !Array.isArray(sceneObjects) || sceneObjects.length === 0) {
     return res.status(400).json({
-      error: "'objects' is required (non-empty array of scene primitive objects)",
+      error: "'objects' is required (non-empty array of scene objects)",
     });
   }
 
   const callerUsername = (req.headers["x-username"] as string) || null;
 
+  let combinedSceneConfiguration = sceneConfiguration || {};
   let combinedSceneObjects = sceneObjects;
   let combinedSceneOptions = sceneOptions || {};
   let finalSessionId = sessionId;
@@ -2968,108 +2970,6 @@ router.post("/3d/scene", asyncHandler(async (req: Request, res: Response) => {
 
     // Merge options
     combinedSceneOptions = { ...existingSession.options, ...sceneOptions };
-
-    // Append objects
-    combinedSceneObjects = [...existingSession.objects, ...sceneObjects];
-  }
-
-  const combinedSceneInput = {
-    objects: combinedSceneObjects,
-    options: combinedSceneOptions,
-  };
-
-  const validationError = validateSceneInput(combinedSceneInput);
-  if (validationError) {
-    return res.status(400).json({ error: validationError });
-  }
-
-  if (sessionId) {
-    if (sceneSessions.has(sessionId)) {
-      const existingSession = sceneSessions.get(sessionId)!;
-      existingSession.objects = combinedSceneObjects;
-      existingSession.options = combinedSceneOptions;
-      existingSession.updatedAt = Date.now();
-    } else {
-      sceneSessions.set(sessionId, {
-        objects: combinedSceneObjects,
-        options: combinedSceneOptions,
-        updatedAt: Date.now(),
-      });
-    }
-    cleanupSceneSessions();
-  } else {
-    finalSessionId = crypto.randomUUID().slice(0, 12);
-    sceneSessions.set(finalSessionId, {
-      objects: combinedSceneObjects,
-      options: combinedSceneOptions,
-      updatedAt: Date.now(),
-    });
-    cleanupSceneSessions();
-  }
-
-  const sceneId = crypto.randomUUID().slice(0, 12);
-  await saveThreeDimensionalScene(
-    sceneId,
-    "scene",
-    { objects: combinedSceneObjects },
-    combinedSceneOptions,
-    finalSessionId,
-    callerUsername,
-  );
-
-  const sceneEmbedUrl = buildLocalUrl("compute/3d/embed", { id: sceneId, type: "scene" });
-
-  res.json({
-    sceneEmbedUrl,
-    sceneId,
-    sceneType: "scene",
-    sessionId: finalSessionId,
-    objectCount: sceneObjects.length,
-    totalObjects: combinedSceneObjects.length,
-    isAppend: sessionId && sceneSessions.has(sessionId) ? true : false,
-  });
-}));
-// ── Create 3D Model (Declarative scene graph) ─────────────────
-interface ModelSession {
-  scene?: ModelSceneConfig;
-  objects: ModelObject[];
-  options?: ModelOptions;
-  updatedAt: number;
-}
-
-const modelSessions = new Map<string, ModelSession>();
-const MODEL_SESSION_TTL_MS = 30 * 60_000; // 30 min
-
-function cleanupModelSessions() {
-  const currentTimestamp = Date.now();
-  for (const [id, session] of modelSessions) {
-    if (currentTimestamp - session.updatedAt > MODEL_SESSION_TTL_MS) {
-      modelSessions.delete(id);
-    }
-  }
-}
-
-router.post("/3d/model", asyncHandler(async (req: Request, res: Response) => {
-  const { scene: sceneConfiguration, objects: modelObjects, options: modelOptions, sessionId } = req.body;
-
-  if (!modelObjects || !Array.isArray(modelObjects) || modelObjects.length === 0) {
-    return res.status(400).json({
-      error: "'objects' is required (non-empty array of scene objects)",
-    });
-  }
-
-  const callerUsername = (req.headers["x-username"] as string) || null;
-
-  let combinedSceneConfiguration = sceneConfiguration || {};
-  let combinedModelObjects = modelObjects;
-  let combinedModelOptions = modelOptions || {};
-  let finalSessionId = sessionId;
-
-  if (sessionId && modelSessions.has(sessionId)) {
-    const existingSession = modelSessions.get(sessionId)!;
-
-    // Merge options
-    combinedModelOptions = { ...existingSession.options, ...modelOptions };
 
     // Deep merge scene config
     combinedSceneConfiguration = {
@@ -3096,11 +2996,116 @@ router.post("/3d/model", asyncHandler(async (req: Request, res: Response) => {
     }
 
     // Append new objects
+    combinedSceneObjects = [...existingSession.objects, ...sceneObjects];
+  }
+
+  const combinedSceneInput = {
+    scene: combinedSceneConfiguration,
+    objects: combinedSceneObjects,
+    options: combinedSceneOptions,
+  };
+
+  const validationError = validateSceneInput(combinedSceneInput);
+  if (validationError) {
+    return res.status(400).json({ error: validationError });
+  }
+
+  if (sessionId) {
+    if (sceneSessions.has(sessionId)) {
+      const existingSession = sceneSessions.get(sessionId)!;
+      existingSession.scene = combinedSceneConfiguration;
+      existingSession.objects = combinedSceneObjects;
+      existingSession.options = combinedSceneOptions;
+      existingSession.updatedAt = Date.now();
+    } else {
+      sceneSessions.set(sessionId, {
+        scene: combinedSceneConfiguration,
+        objects: combinedSceneObjects,
+        options: combinedSceneOptions,
+        updatedAt: Date.now(),
+      });
+    }
+    cleanupSceneSessions();
+  } else {
+    finalSessionId = crypto.randomUUID().slice(0, 12);
+    sceneSessions.set(finalSessionId, {
+      scene: combinedSceneConfiguration,
+      objects: combinedSceneObjects,
+      options: combinedSceneOptions,
+      updatedAt: Date.now(),
+    });
+    cleanupSceneSessions();
+  }
+
+  const sceneId = crypto.randomUUID().slice(0, 12);
+  await saveThreeDimensionalScene(
+    sceneId,
+    "scene",
+    { scene: combinedSceneConfiguration || {}, objects: combinedSceneObjects },
+    combinedSceneOptions,
+    finalSessionId,
+    callerUsername,
+  );
+
+  const sceneEmbedUrl = buildLocalUrl("compute/3d/embed", { id: sceneId, type: "scene" });
+
+  res.json({
+    sceneEmbedUrl,
+    sceneId,
+    sceneType: "scene",
+    sessionId: finalSessionId,
+    objectCount: sceneObjects.length,
+    totalObjects: combinedSceneObjects.length,
+    isAppend: sessionId && sceneSessions.has(sessionId) ? true : false,
+    environment: combinedSceneConfiguration?.environment || "studio",
+  });
+}));
+
+// ── Create 3D Model (Primitive shape composition) ─────────────
+interface ModelSession {
+  objects: ModelObject[];
+  options: Record<string, any>;
+  updatedAt: number;
+}
+
+const modelSessions = new Map<string, ModelSession>();
+const MODEL_SESSION_TTL_MS = 30 * 60_000; // 30 min
+
+function cleanupModelSessions() {
+  const currentTimestamp = Date.now();
+  for (const [id, session] of modelSessions) {
+    if (currentTimestamp - session.updatedAt > MODEL_SESSION_TTL_MS) {
+      modelSessions.delete(id);
+    }
+  }
+}
+
+router.post("/3d/model", asyncHandler(async (req: Request, res: Response) => {
+  const { objects: modelObjects, options: modelOptions, sessionId } = req.body;
+
+  if (!modelObjects || !Array.isArray(modelObjects) || modelObjects.length === 0) {
+    return res.status(400).json({
+      error: "'objects' is required (non-empty array of model primitive objects)",
+    });
+  }
+
+  const callerUsername = (req.headers["x-username"] as string) || null;
+
+  let combinedModelObjects = modelObjects;
+  let combinedModelOptions = modelOptions || {};
+  let finalSessionId = sessionId;
+
+  if (sessionId && modelSessions.has(sessionId)) {
+    const existingSession = modelSessions.get(sessionId)!;
+
+    // Merge options
+    combinedModelOptions = { ...existingSession.options, ...modelOptions };
+
+    // Append objects
     combinedModelObjects = [...existingSession.objects, ...modelObjects];
   }
 
   const combinedModelInput = {
-    scene: combinedSceneConfiguration,
     objects: combinedModelObjects,
     options: combinedModelOptions,
   };
@@ -3113,13 +3118,11 @@ router.post("/3d/model", asyncHandler(async (req: Request, res: Response) => {
   if (sessionId) {
     if (modelSessions.has(sessionId)) {
       const existingSession = modelSessions.get(sessionId)!;
-      existingSession.scene = combinedSceneConfiguration;
       existingSession.objects = combinedModelObjects;
       existingSession.options = combinedModelOptions;
       existingSession.updatedAt = Date.now();
     } else {
       modelSessions.set(sessionId, {
-        scene: combinedSceneConfiguration,
         objects: combinedModelObjects,
         options: combinedModelOptions,
         updatedAt: Date.now(),
@@ -3129,7 +3132,6 @@ router.post("/3d/model", asyncHandler(async (req: Request, res: Response) => {
   } else {
     finalSessionId = crypto.randomUUID().slice(0, 12);
     modelSessions.set(finalSessionId, {
-      scene: combinedSceneConfiguration,
       objects: combinedModelObjects,
       options: combinedModelOptions,
       updatedAt: Date.now(),
@@ -3141,7 +3143,7 @@ router.post("/3d/model", asyncHandler(async (req: Request, res: Response) => {
   await saveThreeDimensionalScene(
     sceneId,
     "model",
-    { scene: combinedSceneConfiguration || {}, objects: combinedModelObjects },
+    { objects: combinedModelObjects },
     combinedModelOptions,
     finalSessionId,
     callerUsername,
@@ -3157,7 +3159,6 @@ router.post("/3d/model", asyncHandler(async (req: Request, res: Response) => {
     objectCount: modelObjects.length,
     totalObjects: combinedModelObjects.length,
     isAppend: sessionId && modelSessions.has(sessionId) ? true : false,
-    environment: combinedSceneConfiguration?.environment || "studio",
   });
 }));
 // ── Create 3D Voxel (Instanced voxels + primitive shape rasterization) ──
@@ -3286,13 +3287,13 @@ router.get("/3d/embed", asyncHandler(async (req: Request, res: Response) => {
       break;
     case "scene":
       html = buildSceneEmbedHtml({
+        scene: entry.sceneData.scene as unknown as SceneConfig | undefined,
         objects: entry.sceneData.objects as unknown as SceneObject[],
         options: entry.options as unknown as SceneOptions,
       });
       break;
     case "model":
       html = buildModelEmbedHtml({
-        scene: entry.sceneData.scene as unknown as ModelSceneConfig | undefined,
         objects: entry.sceneData.objects as unknown as ModelObject[],
         options: entry.options as unknown as ModelOptions,
       });
