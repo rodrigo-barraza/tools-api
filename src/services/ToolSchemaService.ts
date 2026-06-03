@@ -5248,7 +5248,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "Use cases: architectural mockups, abstract sculptures, game prototyping, educational geometry, product showcases. " +
       "The response contains a sceneEmbedUrl — render it with ![3D Model](sceneEmbedUrl) markdown so the user sees the interactive 3D model inline. " +
       "Max 200 objects per call. Supports shadow casting, ambient/directional lighting control, and auto-orbit camera. " +
-      "When the user attaches an image, it is automatically applied as a texture to all objects that don't have an explicit textureUrl set — the user does NOT need to provide a URL. " +
+      "When the user attaches an image, set textureUrl to 'reference' on the specific objects that should display it — the system will replace 'reference' with the actual image data automatically. Only mark objects that should show the user's image; leave textureUrl unset on objects that should use solid material colors. Do NOT search the web for image URLs. " +
       "Supports progressive, step-by-step incremental building using a sessionId (analogous to the draw_turtle graphics tool) where subsequent calls with the same sessionId append new objects to the existing model rather than overwriting it.",
     endpoint: {
       method: "POST",
@@ -5367,7 +5367,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "Use cases: product showcases, animated explainers, data visualization, artistic compositions, holiday scenes. " +
       "The response contains a sceneEmbedUrl — render it with ![3D Scene](sceneEmbedUrl) markdown so the user sees the interactive 3D scene inline. " +
       "Max 300 total objects (including nested children), max 5 levels of nesting. " +
-      "When the user attaches an image, it is automatically applied as a texture to all objects that don't have an explicit textureUrl set — the user does NOT need to provide a URL. " +
+      "When the user attaches an image, set textureUrl to 'reference' on the specific objects that should display it — the system will replace 'reference' with the actual image data automatically. Only mark objects that should show the user's image; leave textureUrl unset on objects that should use solid material colors. Do NOT search the web for image URLs. " +
       "Supports progressive, step-by-step incremental building using a sessionId (analogous to the draw_turtle graphics tool) where subsequent calls with the same sessionId append new objects to the existing scene rather than overwriting it.",
     endpoint: {
       method: "POST",
@@ -7812,7 +7812,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "Supports multiple layers, shapes (rectangle, circle, ellipse, line, polygon, path, text), keyframes, " +
       "frame-by-frame animations, and shape/transform tweening (translation, scale, rotation, color, opacity) " +
       "along linear, Bezier curve, or custom paths. Subsequent calls with the same sessionId append/edit keyframes " +
-      "to build complex animations incrementally.",
+      "to build complex animations incrementally. " +
+      "When the user attaches an image, set imageUrl to 'reference' on the specific layers that should display it — " +
+      "the system will replace 'reference' with the actual image data automatically. Only mark layers that should " +
+      "show the user's image; leave imageUrl unset on layers that should use solid color fills. " +
+      "Do NOT search the web for image URLs.",
     endpoint: {
       method: "POST",
       path: "/creative/vector-animation",

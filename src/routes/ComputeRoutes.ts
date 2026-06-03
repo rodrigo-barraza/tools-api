@@ -3009,14 +3009,11 @@ router.post("/3d/scene", asyncHandler(async (req: Request, res: Response) => {
   // Recursively handles group children since scene objects support hierarchical nesting.
   const { referenceTextureUrl } = req.body;
   if (referenceTextureUrl && typeof referenceTextureUrl === "string") {
+    const texturePlaceholderValues = ["reference", "placeholder"];
     const applyTextureToSceneObjects = (objectList: typeof sceneObjects) => {
       for (const sceneObject of objectList) {
-        if (sceneObject.type !== "group" && sceneObject.type !== "text3d") {
-          if (!sceneObject.material) {
-            sceneObject.material = { textureUrl: referenceTextureUrl };
-          } else if (!sceneObject.material.textureUrl) {
-            sceneObject.material.textureUrl = referenceTextureUrl;
-          }
+        if (sceneObject.material?.textureUrl && typeof sceneObject.material.textureUrl === "string" && texturePlaceholderValues.includes(sceneObject.material.textureUrl)) {
+          sceneObject.material.textureUrl = referenceTextureUrl;
         }
         if (sceneObject.children && Array.isArray(sceneObject.children)) {
           applyTextureToSceneObjects(sceneObject.children);
@@ -3135,10 +3132,9 @@ router.post("/3d/model", asyncHandler(async (req: Request, res: Response) => {
   // Injected by ToolOrchestratorService when the user attaches an image to a 3D model request.
   const { referenceTextureUrl } = req.body;
   if (referenceTextureUrl && typeof referenceTextureUrl === "string") {
+    const texturePlaceholderValues = ["reference", "placeholder"];
     for (const modelObject of combinedModelObjects) {
-      if (!modelObject.material) {
-        modelObject.material = { textureUrl: referenceTextureUrl };
-      } else if (!modelObject.material.textureUrl) {
+      if (modelObject.material?.textureUrl && typeof modelObject.material.textureUrl === "string" && texturePlaceholderValues.includes(modelObject.material.textureUrl)) {
         modelObject.material.textureUrl = referenceTextureUrl;
       }
     }

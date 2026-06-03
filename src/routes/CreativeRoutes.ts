@@ -1339,28 +1339,19 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
   }
 
   if (referenceImageUrl && typeof referenceImageUrl === "string") {
-    const targetShapeTypes = ["rectangle", "circle", "ellipse", "polygon", "path"];
+    const imageFillShapeTypes = ["rectangle", "circle", "ellipse", "polygon", "path"];
+    const imagePlaceholderValues = ["placeholder", "reference"];
     for (const layer of sessionAnimation.layers) {
       if (layer && typeof layer === "object") {
-        const isCompatibleShape = targetShapeTypes.includes(layer.shapeType);
-        if (isCompatibleShape) {
-          const isPlaceholder = !layer.imageUrl || 
-            layer.imageUrl === "placeholder" || 
-            layer.imageUrl === "reference" || 
-            layer.imageUrl === "";
-          if (isPlaceholder) {
-            layer.imageUrl = referenceImageUrl;
-          }
+        const isCompatibleShape = imageFillShapeTypes.includes(layer.shapeType);
+        if (isCompatibleShape && typeof layer.imageUrl === "string" && imagePlaceholderValues.includes(layer.imageUrl)) {
+          layer.imageUrl = referenceImageUrl;
 
           if (layer.keyframes && Array.isArray(layer.keyframes)) {
             for (const keyframe of layer.keyframes) {
-              if (keyframe && keyframe.properties && typeof keyframe.properties === "object") {
+              if (keyframe?.properties && typeof keyframe.properties === "object") {
                 const keyframeProperties = keyframe.properties;
-                const isKeyframePlaceholder = !keyframeProperties.imageUrl || 
-                  keyframeProperties.imageUrl === "placeholder" || 
-                  keyframeProperties.imageUrl === "reference" || 
-                  keyframeProperties.imageUrl === "";
-                if (isKeyframePlaceholder) {
+                if (typeof keyframeProperties.imageUrl === "string" && imagePlaceholderValues.includes(keyframeProperties.imageUrl)) {
                   keyframeProperties.imageUrl = referenceImageUrl;
                 }
               }
