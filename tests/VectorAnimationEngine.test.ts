@@ -146,7 +146,8 @@ describe("VectorAnimationEngine Calculations", () => {
         y: 20,
         fillColor: "red",
         strokeColor: "black",
-        strokeWidth: 3
+        strokeWidth: 3,
+        imageUrl: "http://example.com/texture.jpg"
       };
 
       const resolved = resolveAnimatedProperties(layer, 5.0);
@@ -156,6 +157,23 @@ describe("VectorAnimationEngine Calculations", () => {
       expect(resolved.fillColor).toBe("red");
       expect(resolved.strokeColor).toBe("black");
       expect(resolved.strokeWidth).toBe(3);
+      expect(resolved.imageUrl).toBe("http://example.com/texture.jpg");
+    });
+
+    it("handles string/image interpolation by swapping at the midpoint", () => {
+      const layer: VectorLayer = {
+        id: "ball",
+        shapeType: "circle",
+        keyframes: [
+          { time: 0, properties: { imageUrl: "img1.png" } },
+          { time: 2, properties: { imageUrl: "img2.png" }, easing: "linear" }
+        ]
+      };
+
+      // Before midpoint
+      expect(resolveAnimatedProperties(layer, 0.9).imageUrl).toBe("img1.png");
+      // After midpoint
+      expect(resolveAnimatedProperties(layer, 1.1).imageUrl).toBe("img2.png");
     });
 
     it("interpolates properties between two keyframes", () => {

@@ -8,6 +8,7 @@
 //   4. Bidirectional coverage (no orphan domains/labels)
 // ────────────────────────────────────────────────────────────
 
+import { describe, it, expect } from "vitest";
 import {
   TOOL_DEFINITIONS,
   TOOL_DOMAINS,
@@ -143,7 +144,7 @@ describe("Tool Taxonomy — bidirectional consistency", () => {
         `In TOOL_LABELS but not TOOL_DOMAINS:\n  ${onlyInLabels.join("\n  ")}`,
       );
     }
-    expect(messages.length).toBe(0, messages.join("\n\n"));
+    expect(messages.length, messages.join("\n\n")).toBe(0);
   });
 
   it("every schema key exists in both TOOL_DOMAINS and TOOL_LABELS", () => {
@@ -161,7 +162,7 @@ describe("Tool Taxonomy — bidirectional consistency", () => {
         `Schemas missing from TOOL_LABELS:\n  ${missingLabels.join("\n  ")}`,
       );
     }
-    expect(messages.length).toBe(0, messages.join("\n\n"));
+    expect(messages.length, messages.join("\n\n")).toBe(0);
   });
 });
 
@@ -231,7 +232,7 @@ describe("ToolTaxonomyConstants — registry alignment", () => {
   it("every label value used in TOOL_LABELS has a LABELS constant", () => {
     const constantValues = new Set<any>(Object.values(LABELS));
     const missing = [...usedLabels].filter((l) => !constantValues.has(l));
-          expect(missing.length).toBe(0);
+    expect(missing).toEqual([]);
   });
 
   it("every domain value used in TOOL_DOMAINS has a DOMAINS constant", () => {

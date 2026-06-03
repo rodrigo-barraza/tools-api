@@ -348,5 +348,44 @@ describe("GET /creative/vector-animation/embed", () => {
     expect(res.text).toContain("resolveStyle");
     expect(res.text).toContain("interpolateGradient");
   });
+
+  it("successfully embeds image textures and clipping logic in vector animation", async () => {
+    const testImageUrl = "https://example.com/test-texture.png";
+    const createRes = await request(app)
+      .post("/creative/vector-animation")
+      .send({
+        animation: {
+          layers: [
+            {
+              id: "image-shape",
+              shapeType: "rectangle",
+              shapeData: { width: 120, height: 80 },
+              imageUrl: testImageUrl,
+              keyframes: [
+                {
+                  time: 0,
+                  properties: { x: 50, y: 50 }
+                },
+                {
+                  time: 1.5,
+                  properties: { x: 150, y: 150, imageUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" }
+                }
+              ]
+            }
+          ]
+        }
+      });
+
+    expect(createRes.status).toBe(200);
+    const animationId = createRes.body.animationId;
+    const res = await request(app).get(`/creative/vector-animation/embed?id=${animationId}`);
+
+    expect(res.status).toBe(200);
+    expect(res.text).toContain(testImageUrl);
+    expect(res.text).toContain("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==");
+    expect(res.text).toContain("getLoadedImage");
+    expect(res.text).toContain("ctx.clip()");
+    expect(res.text).toContain("ctx.drawImage(");
+  });
 });
 

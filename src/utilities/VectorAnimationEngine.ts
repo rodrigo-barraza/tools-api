@@ -14,6 +14,7 @@ export interface KeyframeProperty {
   points?: Array<[number, number]>;
   text?: string;
   fontSize?: number;
+  imageUrl?: string;
   [key: string]: any;
 }
 
@@ -42,6 +43,7 @@ export interface VectorLayer {
   fillColor?: string | any;
   strokeColor?: string | any;
   strokeWidth?: number;
+  imageUrl?: string;
   keyframes?: Keyframe[];
 }
 
@@ -319,6 +321,7 @@ export function resolveAnimatedProperties(layer: VectorLayer, time: number): Key
       fillColor: layer.fillColor,
       strokeColor: layer.strokeColor,
       strokeWidth: layer.strokeWidth,
+      imageUrl: layer.imageUrl,
     };
   }
 

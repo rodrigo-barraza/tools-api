@@ -7982,6 +7982,10 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
                     type: "number",
                     description: "Default opacity multiplier (0.0 to 1.0, default: 1.0).",
                   },
+                  imageUrl: {
+                    type: "string",
+                    description: "Optional image URL to fill the shape with (rendered via clipping). Supports standard formats and base64 data URLs.",
+                  },
                   keyframes: {
                     type: "array",
                     description: "Keyframe timeline defining animated transitions for properties.",
@@ -8012,7 +8016,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
                         },
                         properties: {
                           type: "object",
-                          description: "The target property values at this keyframe. Supported keys: x, y, scaleX, scaleY, rotation, opacity, fillColor, strokeColor, strokeWidth, width, height, radius, points, text, fontSize.",
+                          description: "The target property values at this keyframe. Supported keys: x, y, scaleX, scaleY, rotation, opacity, fillColor, strokeColor, strokeWidth, width, height, radius, points, text, fontSize, imageUrl.",
                         },
                       },
                       required: ["time", "properties"],
@@ -11951,7 +11955,7 @@ const TOOL_LABELS = {
   describe_image: ["creative", "media"],
   text_to_speech: ["creative", "media"],
   generate_audio: ["creative", "media"],
-  create_vector_animation: ["creative", "media", "animation"],
+  create_vector_animation: ["creative", "media"],
   speech_to_text: ["creative", "media"],
 
   // ── Discord ──────────────────────────────────────────────

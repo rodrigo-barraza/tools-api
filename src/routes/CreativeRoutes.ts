@@ -955,6 +955,24 @@ function buildVectorAnimationEmbedHtml(
 
         ${engineScripts}
 
+        const imageCache = new Map();
+        function getLoadedImage(url) {
+          if (!url) return null;
+          if (imageCache.has(url)) {
+            const cached = imageCache.get(url);
+            if (cached.complete && cached.naturalWidth !== 0) {
+              return cached;
+            }
+            return null;
+          }
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => {};
+          img.src = url;
+          imageCache.set(url, img);
+          return null;
+        }
+
         // ── Render Frame at specific time ──
         function renderFrame(t) {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1048,7 +1066,16 @@ function buildVectorAnimationEmbedHtml(
             const pathStr = props.path || d.path || "";
             if (pathStr) {
               const path2d = new Path2D(pathStr);
-              if (ctx.fillStyle !== "transparent") ctx.fill(path2d);
+              const imageUrl = props.imageUrl || layer.imageUrl;
+              const imageElement = getLoadedImage(imageUrl);
+              if (imageElement) {
+                ctx.save();
+                ctx.clip(path2d);
+                ctx.drawImage(imageElement, -canvas.width, -canvas.height, canvas.width * 2, canvas.height * 2);
+                ctx.restore();
+              } else if (ctx.fillStyle !== "transparent") {
+                ctx.fill(path2d);
+              }
               if (ctx.strokeStyle !== "transparent") ctx.stroke(path2d);
               ctx.restore();
               return;
@@ -1064,10 +1091,56 @@ function buildVectorAnimationEmbedHtml(
             if (ctx.strokeStyle !== "transparent") ctx.strokeText(textVal, 0, 0);
           }
 
-          if (ctx.fillStyle !== "transparent" && type !== "line") {
+          const imageUrl = props.imageUrl || layer.imageUrl;
+          const imageElement = getLoadedImage(imageUrl);
+
+          if (imageElement && type !== "line" && type !== "text" && type !== "path") {
+            ctx.save();
+            ctx.clip();
+            let xValue = -50, yValue = -50, widthValue = 100, heightValue = 100;
+            if (type === "rectangle") {
+              const rectWidth = props.width ?? d.width ?? 100;
+              const rectHeight = props.height ?? d.height ?? 100;
+              xValue = -rectWidth / 2;
+              yValue = -rectHeight / 2;
+              widthValue = rectWidth;
+              heightValue = rectHeight;
+            } else if (type === "circle") {
+              const circleRadius = props.radius ?? d.radius ?? 50;
+              xValue = -circleRadius;
+              yValue = -circleRadius;
+              widthValue = circleRadius * 2;
+              heightValue = circleRadius * 2;
+            } else if (type === "ellipse") {
+              const ellipseRadiusX = props.rx ?? d.rx ?? 50;
+              const ellipseRadiusY = props.ry ?? d.ry ?? 30;
+              xValue = -ellipseRadiusX;
+              yValue = -ellipseRadiusY;
+              widthValue = ellipseRadiusX * 2;
+              heightValue = ellipseRadiusY * 2;
+            } else if (type === "polygon") {
+              const polygonPoints = props.points || d.points || [];
+              if (polygonPoints.length > 0) {
+                let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                for (const point of polygonPoints) {
+                  if (point[0] < minX) minX = point[0];
+                  if (point[0] > maxX) maxX = point[0];
+                  if (point[1] < minY) minY = point[1];
+                  if (point[1] > maxY) maxY = point[1];
+                }
+                xValue = minX;
+                yValue = minY;
+                widthValue = maxX - minX;
+                heightValue = maxY - minY;
+              }
+            }
+            ctx.drawImage(imageElement, xValue, yValue, widthValue, heightValue);
+            ctx.restore();
+          } else if (ctx.fillStyle !== "transparent" && type !== "line" && type !== "path") {
             ctx.fill();
           }
-          if (ctx.strokeStyle !== "transparent") {
+          
+          if (ctx.strokeStyle !== "transparent" && type !== "path") {
             ctx.stroke();
           }
 
