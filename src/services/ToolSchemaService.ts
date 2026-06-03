@@ -9572,6 +9572,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         "description",
         "project",
         "icon",
+        "avatar",
         "color",
         "backgroundImage",
         "identity",
@@ -9606,11 +9607,18 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         icon: {
           type: "string",
           description:
-            "Lucide icon name for visual branding. Default: 'Bot'. " +
+            "Lucide icon name for visual branding (used when no avatar image is set). Default: 'Bot'. " +
             "Examples: 'Brain', 'Rocket', 'Shield', 'Palette', 'Microscope', 'Code2', " +
             "'Flame', 'Zap', 'GraduationCap', 'Hammer', 'Sparkles', 'Crown', 'Atom', " +
             "'Briefcase', 'Heart', 'Star', 'Telescope', 'FlaskConical', 'Lightbulb', " +
             "'Music', 'Gamepad2', 'Camera', 'Leaf', 'Dog', 'Cat', 'Coffee', 'Swords'.",
+        },
+        avatar: {
+          type: "string",
+          description:
+            "Image URL or data URL for a custom avatar. Takes precedence over icon when rendering. " +
+            "Accepts absolute URLs, data URLs (base64), or static asset paths (e.g. '/my-avatar.png'). " +
+            "Leave empty to use the Lucide icon instead.",
         },
         color: {
           type: "string",
@@ -9703,6 +9711,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         "description",
         "project",
         "icon",
+        "avatar",
         "color",
         "backgroundImage",
         "identity",
@@ -9737,7 +9746,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         icon: {
           type: "string",
           description:
-            "Updated Lucide icon name (e.g. 'Brain', 'Rocket', 'Code2').",
+            "Updated Lucide icon name (e.g. 'Brain', 'Rocket', 'Code2'). Used when no avatar is set.",
+        },
+        avatar: {
+          type: "string",
+          description:
+            "Updated avatar image URL or data URL. Takes precedence over icon. Set to empty string to remove.",
         },
         color: {
           type: "string",
