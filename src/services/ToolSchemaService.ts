@@ -5248,11 +5248,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "Use cases: architectural mockups, abstract sculptures, game prototyping, educational geometry, product showcases. " +
       "The response contains a sceneEmbedUrl — render it with ![3D Model](sceneEmbedUrl) markdown so the user sees the interactive 3D model inline. " +
       "Max 200 objects per call. Supports shadow casting, ambient/directional lighting control, and auto-orbit camera. " +
+      "When the user attaches an image, it is automatically applied as a texture to all objects that don't have an explicit textureUrl set — the user does NOT need to provide a URL. " +
       "Supports progressive, step-by-step incremental building using a sessionId (analogous to the draw_turtle graphics tool) where subsequent calls with the same sessionId append new objects to the existing model rather than overwriting it.",
     endpoint: {
       method: "POST",
       path: "/compute/3d/model",
-      bodyParams: ["objects", "options", "sessionId"],
+      bodyParams: ["objects", "options", "sessionId", "referenceTextureUrl"],
     },
     parameters: {
       type: "object",
@@ -5366,11 +5367,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "Use cases: product showcases, animated explainers, data visualization, artistic compositions, holiday scenes. " +
       "The response contains a sceneEmbedUrl — render it with ![3D Scene](sceneEmbedUrl) markdown so the user sees the interactive 3D scene inline. " +
       "Max 300 total objects (including nested children), max 5 levels of nesting. " +
+      "When the user attaches an image, it is automatically applied as a texture to all objects that don't have an explicit textureUrl set — the user does NOT need to provide a URL. " +
       "Supports progressive, step-by-step incremental building using a sessionId (analogous to the draw_turtle graphics tool) where subsequent calls with the same sessionId append new objects to the existing scene rather than overwriting it.",
     endpoint: {
       method: "POST",
       path: "/compute/3d/scene",
-      bodyParams: ["scene", "objects", "options", "sessionId"],
+      bodyParams: ["scene", "objects", "options", "sessionId", "referenceTextureUrl"],
     },
     parameters: {
       type: "object",

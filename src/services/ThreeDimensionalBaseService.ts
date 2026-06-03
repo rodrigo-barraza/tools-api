@@ -83,6 +83,22 @@ function createGeometry(objectDefinition) {
 `;
 
 export const CLIENT_MATERIAL_FACTORY = `
+const textureCache = new Map();
+function getTexture(textureUrlString) {
+  if (!textureUrlString) return null;
+  if (textureCache.has(textureUrlString)) return textureCache.get(textureUrlString);
+  try {
+    const textureLoader = new THREE.TextureLoader();
+    textureLoader.setCrossOrigin("anonymous");
+    const texture = textureLoader.load(textureUrlString);
+    textureCache.set(textureUrlString, texture);
+    return texture;
+  } catch (error) {
+    console.warn("Failed to load texture:", textureUrlString, error);
+    return null;
+  }
+}
+
 function createMaterial(materialDefinition = {}) {
   const materialOptions = {
     color: new THREE.Color(materialDefinition.color || "#38bdf8"),
@@ -98,12 +114,9 @@ function createMaterial(materialDefinition = {}) {
   };
 
   if (materialDefinition.textureUrl) {
-    try {
-      const textureLoader = new THREE.TextureLoader();
-      textureLoader.setCrossOrigin("anonymous");
-      materialOptions.map = textureLoader.load(materialDefinition.textureUrl);
-    } catch (error) {
-      console.warn("Failed to load texture:", materialDefinition.textureUrl, error);
+    const texture = getTexture(materialDefinition.textureUrl);
+    if (texture) {
+      materialOptions.map = texture;
     }
   }
 

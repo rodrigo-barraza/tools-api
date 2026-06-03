@@ -222,6 +222,38 @@ describe("POST /compute/3d/model", () => {
     expect(secondResponse.body.totalObjects).toBe(2);
     expect(secondResponse.body.isAppend).toBe(true);
   });
+
+  it("successfully applies referenceTextureUrl to objects that lack explicit textures", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/model")
+      .send({
+        referenceTextureUrl: "data:image/png;base64,texture",
+        objects: [
+          {
+            shape: "box",
+            position: [0, 0, 0],
+          },
+          {
+            shape: "sphere",
+            position: [1, 1, 1],
+            material: { color: "#ffffff" },
+          },
+          {
+            shape: "cone",
+            position: [2, 2, 2],
+            material: { textureUrl: "https://example.com/explicit.png" },
+          },
+        ],
+      });
+
+    expect(postResponse.status).toBe(200);
+    const sceneId = postResponse.body.sceneId;
+    const savedScene = mockScenes.get(sceneId);
+    expect(savedScene).toBeTruthy();
+    expect(savedScene.sceneData.objects[0].material.textureUrl).toBe("data:image/png;base64,texture");
+    expect(savedScene.sceneData.objects[1].material.textureUrl).toBe("data:image/png;base64,texture");
+    expect(savedScene.sceneData.objects[2].material.textureUrl).toBe("https://example.com/explicit.png");
+  });
 });
 
 describe("POST /compute/3d/mesh", () => {
@@ -357,6 +389,47 @@ describe("POST /compute/3d/scene", () => {
     expect(secondResponse.body.objectCount).toBe(1);
     expect(secondResponse.body.totalObjects).toBe(2);
     expect(secondResponse.body.isAppend).toBe(true);
+  });
+
+  it("successfully recursively applies referenceTextureUrl to nested scene objects that lack explicit textures", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/scene")
+      .send({
+        referenceTextureUrl: "data:image/png;base64,texture",
+        objects: [
+          {
+            type: "group",
+            position: [0, 0, 0],
+            children: [
+              {
+                type: "box",
+                position: [0, 0, 0],
+              },
+              {
+                type: "sphere",
+                position: [1, 1, 1],
+                material: { textureUrl: "https://example.com/explicit.png" },
+              },
+              {
+                type: "text3d",
+                content: "Hello",
+                position: [2, 2, 2],
+              },
+            ],
+          },
+        ],
+      });
+
+    expect(postResponse.status).toBe(200);
+    const sceneId = postResponse.body.sceneId;
+    const savedScene = mockScenes.get(sceneId);
+    expect(savedScene).toBeTruthy();
+    
+    const groupObject = savedScene.sceneData.objects[0];
+    expect(groupObject.material).toBeUndefined();
+    expect(groupObject.children[0].material.textureUrl).toBe("data:image/png;base64,texture");
+    expect(groupObject.children[1].material.textureUrl).toBe("https://example.com/explicit.png");
+    expect(groupObject.children[2].material).toBeUndefined();
   });
 });
 
