@@ -3965,7 +3965,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     name: "execute_python",
     dataSource: compute("Python 3 subprocess"),
     description:
-      "Execute Python code in a sandboxed interpreter. Use this for complex calculations, data transformations, statistical analysis, string manipulation, date/time operations, or any task that benefits from programmatic computation. The interpreter has access to Python's standard library (math, json, datetime, collections, itertools, statistics, decimal, fractions, re, textwrap, csv, io, etc.) but network access and dangerous modules (subprocess, shutil, ctypes) are blocked. Code runs with a 30-second default timeout (max 60s) and 256 MB memory limit. Print results to stdout — the output is captured and returned.",
+      "Execute Python 3 code in a sandboxed subprocess. Ideal for complex calculations, statistical analysis, text parsing, collection manipulation, and date/time arithmetic. The environment has access to the full Python standard library (math, json, datetime, collections, itertools, statistics, re, csv, io, etc.) but blocks network access, filesystem mutation, and dangerous modules (subprocess, shutil, ctypes, multiprocessing, signal). Code runs with a 30-second default timeout (max 60s) and 256 MB memory limit. Print results to stdout — both stdout and stderr are captured and returned.",
     endpoint: {
       method: "POST",
       path: "/utility/python/execute",
@@ -3977,7 +3977,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         code: {
           type: "string",
           description:
-            "Python 3 source code to execute. Use print() to produce output. The full standard library is available (math, json, datetime, statistics, collections, itertools, decimal, fractions, re, csv, io, etc.). Network and subprocess access is blocked.",
+            "Python 3 source code to execute. Use print() to produce output. The standard library is available (math, json, datetime, statistics, collections, itertools, re, csv, etc.). Subprocess execution, filesystem modification, and network requests are blocked.",
         },
         timeout: {
           type: "integer",
@@ -4030,7 +4030,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     name: "execute_javascript",
     dataSource: compute("Node.js vm"),
     description:
-      "Execute JavaScript code in a sandboxed Node.js vm context. Much faster than Python for quick data transforms, JSON manipulation, regex, and math. Has access to JSON, Math, Date, RegExp, Array, Object, Map, Set, typed arrays, TextEncoder/TextDecoder, console.log, and all core JS builtins. No access to require, import, process, fetch, setTimeout, filesystem, or network. Use console.log() to produce output. Returns both captured output and the expression result.",
+      "Execute JavaScript (ES6+) code inside a sandboxed Node.js VM context. Extremely fast (sub-millisecond context startup) and ideal for quick data formatting, JSON transforms, RegExp pattern matching, and basic mathematical operations. Has access to standard JavaScript built-ins (JSON, Math, Date, RegExp, Map, Set, Array/Object helpers, TextEncoder/Decoder, etc.). Access to Node.js core modules, filesystem, network, fetch, require, process, and asynchronous timers (setTimeout) is blocked. Use console.log() to print to standard output; both the printed output and the final evaluated expression result are returned.",
     endpoint: {
       method: "POST",
       path: "/compute/js/execute",
@@ -4042,7 +4042,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         code: {
           type: "string",
           description:
-            "JavaScript source code to execute. Use console.log() to produce output. The last expression value is returned as 'result'. Full standard JS built-ins available (JSON, Math, Date, RegExp, Array methods, Map, Set, etc.). No require/import/fetch/process/setTimeout.",
+            "JavaScript source code to execute. Use console.log() to produce output. The last evaluated expression value is returned in the 'result' field. Access to Node.js/browser APIs (require, fetch, process, fs, setTimeout) is disabled.",
         },
         timeout: {
           type: "integer",
@@ -12064,7 +12064,7 @@ const TOOL_INTELLIGENCE_TIERS: Record<string, ToolIntelligenceTier> = {
   get_media_details: "medium",
   get_media_credits: "medium",
   get_trending_media: "medium",
-  execute_javascript: "medium",
+  execute_javascript: "high",
   search_airports: "medium",
   search_nearby_places: "medium",
   search_places: "medium",
