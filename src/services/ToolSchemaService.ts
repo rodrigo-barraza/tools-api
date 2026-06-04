@@ -10967,6 +10967,7 @@ const TOOL_DOMAINS = {
   check_sku_availability: "Products",
   get_costco_us_products: "Products",
   get_costco_ca_products: "Products",
+  search_amazon_products: "Products",
 
   // Finance
   get_stock: "Finance",
@@ -11290,6 +11291,7 @@ const TOOL_EMOJIS = {
   check_sku_availability: "✅",
   get_costco_us_products: "🏪",
   get_costco_ca_products: "🏪",
+  search_amazon_products: "🛒",
 
   // Finance
   get_stock: "💹",
@@ -11778,6 +11780,7 @@ const TOOL_LABELS = {
   check_sku_availability: ["shopping"],
   get_costco_us_products: ["shopping"],
   get_costco_ca_products: ["shopping"],
+  search_amazon_products: ["shopping"],
 
   // ── Finance ──────────────────────────────────────────────
   get_market_news: ["finance"],
