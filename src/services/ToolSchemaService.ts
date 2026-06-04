@@ -10188,8 +10188,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         prompt: {
           type: "string",
           description:
-            "The prompt to send to the background agent. Must be self-contained since " +
-            "there is no prior conversation context for the background run.",
+            "The instruction prompt sent to the background agent that will execute this job. " +
+            "Write this as a directive telling the agent what to do — NOT as a message from the user's perspective. " +
+            "Example: 'Remind the user to eat bananas and suggest healthy snack options' instead of " +
+            "'Time to eat some bananas!'. The prompt must be self-contained since there is no prior " +
+            "conversation context for the background run.",
         },
         scheduleType: {
           type: "string",
