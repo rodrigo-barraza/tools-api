@@ -15,42 +15,28 @@ import logger from "../../logger.ts";
 import type { ProductInput } from "../../models/Product.ts";
 
 const BASE_URL = "https://www.amazon.com/Best-Sellers/zgbs";
+const AMAZON_BEST_SELLERS_MAX_PAGES = 2;
 
 /**
- * Scrape Amazon Best Sellers for a single category.
+ * Parse products from a single Amazon Best Sellers HTML page.
+ * Returns parsed products and the set of ASINs found on this page.
  */
-async function scrapeCategory(
-  slug: string,
-  categoryName: string,
+function parseProductsFromPage(
+  html: string,
   unifiedCategory: string,
-) {
-  const url = `${BASE_URL}/${slug}`;
-
-  const response = await fetch(url, {
-    headers: {
-      "User-Agent": randomUserAgent(),
-      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-      "Accept-Language": "en-US,en;q=0.9",
-      "Accept-Encoding": "gzip, deflate, br",
-      "Cache-Control": "no-cache",
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Amazon returned ${response.status} for ${categoryName}`);
-  }
-
-  const html = await response.text();
+  categoryName: string,
+  existingAsinSet: Set<string>,
+  currentProductCount: number,
+): ProductInput[] {
   const $ = cheerio.load(html);
   const products: ProductInput[] = [];
 
-  // Amazon Best Sellers grid items
   $("[data-asin]").each((_i, element) => {
-    if (products.length >= AMAZON_MAX_PRODUCTS_PER_CATEGORY) return false;
+    if (currentProductCount + products.length >= AMAZON_MAX_PRODUCTS_PER_CATEGORY) return false;
 
     const $el = $(element);
     const asin = $el.attr("data-asin");
-    if (!asin) return;
+    if (!asin || existingAsinSet.has(asin)) return;
 
     // Extract product name — multiple possible selectors
     const name =
@@ -67,7 +53,7 @@ async function scrapeCategory(
       $el.find("[class*='zg-badge-text']").text().trim();
     const rank = rankText
       ? parseInt(rankText.replace("#", ""), 10)
-      : products.length + 1;
+      : currentProductCount + products.length + 1;
 
     // Extract price
     const priceText = $el
@@ -122,10 +108,73 @@ async function scrapeCategory(
       fetchedAt: new Date(),
     };
     product.trendingScore = computeTrendingScore(product);
+    existingAsinSet.add(asin);
     products.push(product);
   });
 
   return products;
+}
+
+/**
+ * Scrape Amazon Best Sellers for a single category across multiple pages.
+ * Amazon Best Sellers supports up to 2 pages per category (~50 items each).
+ */
+async function scrapeCategory(
+  slug: string,
+  categoryName: string,
+  unifiedCategory: string,
+) {
+  const allCategoryProducts: ProductInput[] = [];
+  const seenAsinSet = new Set<string>();
+
+  for (let pageNumber = 1; pageNumber <= AMAZON_BEST_SELLERS_MAX_PAGES; pageNumber++) {
+    const url =
+      pageNumber === 1
+        ? `${BASE_URL}/${slug}`
+        : `${BASE_URL}/${slug}?pg=${pageNumber}`;
+
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": randomUserAgent(),
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Cache-Control": "no-cache",
+      },
+    });
+
+    if (!response.ok) {
+      if (pageNumber === 1) {
+        throw new Error(`Amazon returned ${response.status} for ${categoryName}`);
+      }
+      break;
+    }
+
+    const html = await response.text();
+    const pageProducts = parseProductsFromPage(
+      html,
+      unifiedCategory,
+      categoryName,
+      seenAsinSet,
+      allCategoryProducts.length,
+    );
+
+    allCategoryProducts.push(...pageProducts);
+
+    if (
+      pageProducts.length === 0 ||
+      allCategoryProducts.length >= AMAZON_MAX_PRODUCTS_PER_CATEGORY
+    ) {
+      break;
+    }
+
+    // Rate limit between page requests within the same category
+    if (pageNumber < AMAZON_BEST_SELLERS_MAX_PAGES) {
+      await rateLimiter.wait("AMAZON");
+    }
+  }
+
+  return allCategoryProducts;
 }
 
 /**
@@ -158,3 +207,4 @@ export async function fetchAllAmazonBestSellers(): Promise<ProductInput[]> {
 
   return allProducts;
 }
+

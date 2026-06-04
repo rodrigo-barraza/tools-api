@@ -17,11 +17,6 @@ interface ProductCacheEntry {
 // ─── In-Memory Store ───────────────────────────────────────────────
 
 const store: Record<string, ProductCacheEntry> = {
-  [PRODUCT_SOURCES.BESTBUY]: {
-    products: [],
-    lastFetch: null,
-    error: null,
-  },
   [PRODUCT_SOURCES.AMAZON]: {
     products: [],
     lastFetch: null,

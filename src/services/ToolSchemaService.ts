@@ -10,7 +10,7 @@ import {
   OPEN_METEO_INTERVAL_MS,
   AVALANCHE_INTERVAL_MS,
   // Product domain
-  BESTBUY_INTERVAL_MS,
+  AMAZON_INTERVAL_MS,
   BESTBUY_CA_AVAILABILITY_INTERVAL_MS,
   COSTCO_INTERVAL_MS,
   // Finance domain
@@ -413,7 +413,7 @@ const FIELDS = {
     "timestamp",
   ],
 
-  // Products: from BestBuyFetcher normalized schema
+  // Products: normalized product schema
   PRODUCTS: [
     "name",
     "source",
@@ -2044,11 +2044,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "search_products",
     dataSource: cached(
-      "Best Buy / Amazon / eBay / Etsy / ProductHunt / Costco",
-      BESTBUY_INTERVAL_MS,
+      "Amazon / eBay / Etsy / ProductHunt / Costco",
+      AMAZON_INTERVAL_MS,
     ),
     description:
-      "Search for products with pricing, ratings, and deal information from Best Buy, Amazon, eBay, Etsy, Product Hunt, Costco US, and Costco Canada.",
+      "Search for products with pricing, ratings, and deal information from Amazon, eBay, Etsy, Product Hunt, Costco US, and Costco Canada.",
     endpoint: {
       path: "/product/products/search",
       queryParams: ["q", "category", "limit"],
@@ -2076,8 +2076,8 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_trending_products",
     dataSource: cached(
-      "Best Buy / Amazon / eBay / Etsy / ProductHunt / Costco",
-      BESTBUY_INTERVAL_MS,
+      "Amazon / eBay / Etsy / ProductHunt / Costco",
+      AMAZON_INTERVAL_MS,
     ),
     description:
       "Get currently trending products ranked by trending score. Shows top deals and popular items.",
@@ -2151,6 +2151,20 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "Get products from Costco Canada (costco.ca) including laptops, desktops, TVs, phones, tablets, headphones, speakers, cameras, video games, and appliances. Shows name, price (CAD), rating, and product URL.",
     endpoint: {
       path: "/product/products/source/costco_ca",
+    },
+    parameters: {
+      type: "object",
+      properties: { ...fieldsParam(FIELDS.PRODUCTS) },
+      required: ["fields"],
+    },
+  },
+  {
+    name: "search_amazon_products",
+    dataSource: cached("Amazon", AMAZON_INTERVAL_MS),
+    description:
+      "Get best-selling products from Amazon.com across electronics, computers, phones, gaming, home & kitchen, beauty, fashion, sports, toys, books, and automotive. Shows name, price (USD), rank, rating, review count, and product URL.",
+    endpoint: {
+      path: "/product/products/source/amazon",
     },
     parameters: {
       type: "object",

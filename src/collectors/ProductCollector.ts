@@ -1,5 +1,4 @@
 import {
-  BESTBUY_INTERVAL_MS,
   AMAZON_INTERVAL_MS,
   PRODUCTHUNT_PRODUCT_INTERVAL_MS,
   EBAY_INTERVAL_MS,
@@ -9,7 +8,6 @@ import {
   PRODUCT_SOURCES,
 } from "../constants.ts";
 import { upsertProducts } from "../models/Product.ts";
-import { fetchAllBestBuyTrending } from "../fetchers/product/BestBuyFetcher.ts";
 import { fetchAllAmazonBestSellers } from "../fetchers/product/AmazonFetcher.ts";
 import { fetchProductHuntTrending } from "../fetchers/product/ProductHuntFetcher.ts";
 import { fetchAllEbayTrending } from "../fetchers/product/EbayFetcher.ts";
@@ -61,11 +59,6 @@ function createProductCollector<T>(
 
 // ─── Collectors ────────────────────────────────────────────────────
 
-const collectBestBuy = createProductCollector(
-  "products_bestbuy",
-  PRODUCT_SOURCES.BESTBUY,
-  fetchAllBestBuyTrending,
-);
 const collectAmazon = createProductCollector(
   "products_amazon",
   PRODUCT_SOURCES.AMAZON,
@@ -148,39 +141,32 @@ async function collectBestBuyCAAvailability() {
 
 const STARTUP_TASKS = [
   {
-    label: "BestBuy",
-    collection: "products_bestbuy",
-    ttl: BESTBUY_INTERVAL_MS,
-    collectFunction: collectBestBuy,
-    delay: 0,
-  },
-  {
     label: "Amazon",
     collection: "products_amazon",
     ttl: AMAZON_INTERVAL_MS,
     collectFunction: collectAmazon,
-    delay: 15_000,
+    delay: 0,
   },
   {
     label: "ProductHunt",
     collection: "products_producthunt",
     ttl: PRODUCTHUNT_PRODUCT_INTERVAL_MS,
     collectFunction: collectProductHunt,
-    delay: 20_000,
+    delay: 10_000,
   },
   {
     label: "eBay",
     collection: "products_ebay",
     ttl: EBAY_INTERVAL_MS,
     collectFunction: collectEbay,
-    delay: 25_000,
+    delay: 15_000,
   },
   {
     label: "Etsy",
     collection: "products_etsy",
     ttl: ETSY_INTERVAL_MS,
     collectFunction: collectEtsy,
-    delay: 30_000,
+    delay: 20_000,
   },
   {
     label: "BestBuy CA",
@@ -188,21 +174,21 @@ const STARTUP_TASKS = [
     ttl: BESTBUY_CA_AVAILABILITY_INTERVAL_MS,
     collectFunction: collectBestBuyCAAvailability,
     restoreFunction: updateStatuses,
-    delay: 35_000,
+    delay: 25_000,
   },
   {
     label: "Costco US",
     collection: "products_costco_us",
     ttl: COSTCO_INTERVAL_MS,
     collectFunction: collectCostcoUS,
-    delay: 40_000,
+    delay: 30_000,
   },
   {
     label: "Costco CA",
     collection: "products_costco_ca",
     ttl: COSTCO_INTERVAL_MS,
     collectFunction: collectCostcoCA,
-    delay: 45_000,
+    delay: 35_000,
   },
 ];
 

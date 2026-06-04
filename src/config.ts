@@ -54,7 +54,6 @@ interface ToolsServiceConfig {
   FRED_API_KEY: string | undefined;
 
   // Product
-  BESTBUY_API_KEY: string | undefined;
   PRODUCTHUNT_API_KEY: string | undefined;
   PRODUCTHUNT_API_SECRET: string | undefined;
   EBAY_CLIENT_ID: string | undefined;
@@ -148,7 +147,6 @@ const CONFIG: ToolsServiceConfig = {
   FRED_API_KEY: process.env.FRED_API_KEY,
 
   // ─── Product ─────────────────────────────────────────────────────
-  BESTBUY_API_KEY: process.env.BESTBUY_API_KEY,
   PRODUCTHUNT_API_KEY: process.env.PRODUCTHUNT_API_KEY,
   PRODUCTHUNT_API_SECRET: process.env.PRODUCTHUNT_API_SECRET,
   EBAY_CLIENT_ID: process.env.EBAY_CLIENT_ID,

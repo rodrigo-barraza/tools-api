@@ -692,7 +692,6 @@ export const SNAPSHOT_TTL_SECONDS = 90 * 24 * 60 * 60; // 90 days
 
 // ─── PRODUCT DOMAIN ─────────────────────────────────────────
 
-export const BESTBUY_INTERVAL_MS = 1_800_000; // 30 minutes
 export const AMAZON_INTERVAL_MS = 7_200_000; // 2 hours
 export const PRODUCTHUNT_PRODUCT_INTERVAL_MS = 3_600_000; // 1 hour
 export const EBAY_INTERVAL_MS = 3_600_000; // 1 hour
@@ -1118,50 +1117,6 @@ export const PRODUCT_CATEGORIES: Record<string, string> = {
   OTHER: "other",
 };
 
-export const BESTBUY_CATEGORIES = [
-  {
-    id: "abcat0100000",
-    name: "TV & Home Theater",
-    unified: PRODUCT_CATEGORIES.TV_HOME_THEATER,
-  },
-  { id: "abcat0200000", name: "Audio", unified: PRODUCT_CATEGORIES.AUDIO },
-  {
-    id: "abcat0400000",
-    name: "Cameras & Camcorders",
-    unified: PRODUCT_CATEGORIES.CAMERAS,
-  },
-  {
-    id: "abcat0500000",
-    name: "Computers & Tablets",
-    unified: PRODUCT_CATEGORIES.COMPUTERS,
-  },
-  {
-    id: "abcat0800000",
-    name: "Cell Phones",
-    unified: PRODUCT_CATEGORIES.PHONES,
-  },
-  {
-    id: "abcat0700000",
-    name: "Video Games",
-    unified: PRODUCT_CATEGORIES.GAMING,
-  },
-  {
-    id: "abcat0900000",
-    name: "Appliances",
-    unified: PRODUCT_CATEGORIES.APPLIANCES,
-  },
-  { id: "pcmcat312300050015", name: "Home", unified: PRODUCT_CATEGORIES.HOME },
-  {
-    id: "pcmcat248700050021",
-    name: "Office & School Supplies",
-    unified: PRODUCT_CATEGORIES.OFFICE,
-  },
-  {
-    id: "pcmcat138100050018",
-    name: "Software",
-    unified: PRODUCT_CATEGORIES.SOFTWARE,
-  },
-];
 
 export const AMAZON_CATEGORIES = [
   {
@@ -1219,7 +1174,6 @@ export const AMAZON_CATEGORIES = [
 ];
 
 export const PRODUCT_SOURCES: Record<string, string> = {
-  BESTBUY: "bestbuy",
   AMAZON: "amazon",
   PRODUCTHUNT: "producthunt",
   EBAY: "ebay",
@@ -1311,7 +1265,7 @@ export const COSTCO_CA_CATEGORIES = COSTCO_BASE_CATEGORIES.map(
 );
 
 export const AMAZON_REQUEST_DELAY_MS = 3_000;
-export const AMAZON_MAX_PRODUCTS_PER_CATEGORY = 20;
+export const AMAZON_MAX_PRODUCTS_PER_CATEGORY = 50;
 
 // ─── FINANCE DOMAIN (Finnhub) ───────────────────────────────
 
