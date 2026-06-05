@@ -18,6 +18,7 @@ import {
   FINNHUB_EARNINGS_INTERVAL_MS,
   EMOJI_KITCHEN_INTERVAL_MS,
 } from "../constants.ts";
+import { queryEmojiCombination } from "../caches/EmojiKitchenCache.ts";
 
 import type {
   ToolDefinition,
@@ -12024,331 +12025,259 @@ const TOOL_DOMAINS = {
 // Tool Emojis — per-tool emoji displayed in the client UI
 // ────────────────────────────────────────────────────────────
 
-const TOOL_EMOJIS = {
-  // Weather & Environment
+const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   get_weather: "🌤️",
-  get_local_environment: "🌍",
+  get_local_environment: ["🌍", "💻"],
   get_weather_forecast: "📅",
-  get_avalanche_forecast: "🏔️",
-  get_earthquakes: "🌋",
+  get_avalanche_forecast: ["🏔️", "💻"],
+  get_earthquakes: ["🌋", "💻"],
   get_solar_activity: "☀️",
-  get_aurora_forecast: "🌌",
+  get_aurora_forecast: ["🌌", "💻"],
   get_solar_wind: "💨",
   get_twilight: "🌅",
-  get_tides: "🌊",
-  get_wildfires: "🔥",
-  get_iss_location: "🛸",
-  get_near_earth_objects: "☄️",
-  get_space_launches: "🚀",
+  get_tides: ["🌊", "💻"],
+  get_wildfires: ["🔥", "💻"],
+  get_iss_location: ["🛸", "💻"],
+  get_near_earth_objects: ["☄️", "💻"],
+  get_space_launches: ["🚀", "💻"],
   get_nasa_apod: "🔭",
-  get_weather_warnings: "⚠️",
-  get_detailed_air_quality: "🫁",
-  get_pollen_forecast: "🌸",
-  get_weather_history: "📊",
-  get_weather_marine: "⚓",
+  get_weather_warnings: ["⚠️", "💻"],
+  get_detailed_air_quality: ["🫁", "💻"],
+  get_pollen_forecast: ["🌸", "💻"],
+  get_weather_history: ["📊", "💻"],
+  get_weather_marine: ["⚓", "💻"],
   get_weather_astronomy: "🌙",
-  get_weather_alerts: "🚨",
-
-  // Events
-  get_events: "🎟️",
-
-  // Sports
-  get_live_scores: "⚽",
+  get_weather_alerts: ["🚨", "💻"],
+  get_events: ["🎟️", "💻"],
+  get_live_scores: ["⚽", "💻"],
   get_upcoming_matches: "📅",
-  get_recent_results: "🏆",
+  get_recent_results: ["🏆", "💻"],
   get_league_standings: "📋",
-  get_match_details: "📺",
+  get_match_details: ["📺", "💻"],
   get_head_to_head: "⚔️",
-  search_teams: "🏟️",
+  search_teams: ["🏟️", "💻"],
   search_players: "🧑‍🤝‍🧑",
   get_team_squad: "👥",
-  get_league_top_scorers: "⭐",
-
-  // Markets & Commodities
-  get_commodities: "📦",
-
-  // Trends
-  get_trends: "📈",
-
-  // Products
-  search_products: "🛒",
-  get_trending_products: "🔥",
+  get_league_top_scorers: ["⭐", "💻"],
+  get_commodities: ["📦", "💻"],
+  get_trends: ["📈", "💻"],
+  search_products: ["🛒", "💻"],
+  get_trending_products: ["🔥", "💻"],
   get_watchlist_availability: "📋",
-  check_sku_availability: "✅",
+  check_sku_availability: ["✅", "💻"],
   get_costco_us_products: "🏪",
   get_costco_ca_products: "🏪",
-  search_amazon_products: "🛒",
-
-  // Finance
+  search_amazon_products: ["🛒", "💻"],
   get_stock: "💹",
-  get_macro: "🏛️",
-  get_market_news: "📰",
+  get_macro: ["🏛️", "💻"],
+  get_market_news: ["📰", "💻"],
   get_earnings_calendar: "💰",
-
-  // Knowledge
-  search_books: "📚",
+  search_books: ["📚", "💻"],
   get_country: "🗺️",
   get_element: "⚛️",
-  get_exoplanet: "🪐",
+  get_exoplanet: ["🪐", "💻"],
   get_anime: "🎌",
   get_word_definition: "📖",
-  search_papers: "🎓",
+  search_papers: ["🎓", "💻"],
   get_wikipedia_summary: "📘",
   get_on_this_day: "📜",
-  list_development_indicators: "📊",
+  list_development_indicators: ["📊", "💻"],
   get_youtube_video: "▶️",
   read_url: "🌐",
-  get_package_info: "📦",
+  get_package_info: ["📦", "💻"],
   read_pdf_url: "📄",
   read_rss_feed: "📡",
-  get_pypi_package: "🐍",
+  get_pypi_package: ["🐍", "💻"],
   get_music: "🎵",
-  get_wayback_snapshot: "🕰️",
-
-  // Reddit
-  search_reddit: "🤖",
+  get_wayback_snapshot: ["🕰️", "💻"],
+  search_reddit: ["🤖", "💻"],
   search_reddit_subreddits: "🔍",
   get_reddit_subreddit_info: "ℹ️",
-  get_reddit_subreddit_feed: "📰",
-  get_reddit_subreddit_rules: "⚖️",
+  get_reddit_subreddit_feed: ["📰", "💻"],
+  get_reddit_subreddit_rules: ["⚖️", "💻"],
   get_reddit_subreddit_wiki_pages: "📄",
   get_reddit_subreddit_wiki_page: "📖",
   get_reddit_user_history: "📜",
   get_reddit_user_profile: "👤",
-
-  // Movies & TV
-  search_media: "🎬",
+  search_media: ["🎬", "💻"],
   get_media_details: "🎥",
-  get_media_credits: "🌟",
-  get_trending_media: "🔥",
-  browse_media: "🍿",
-  get_media_genres: "🎭",
-
-  // Health
-  rank_foods_by_category: "🥗",
+  get_media_credits: ["🌟", "💻"],
+  get_trending_media: ["🔥", "💻"],
+  browse_media: ["🍿", "💻"],
+  get_media_genres: ["🎭", "💻"],
+  rank_foods_by_category: ["🥗", "💻"],
   search_drugs: "💊",
   get_drug_adverse_events: "⚕️",
   get_drug_recalls: "🚫",
-  search_usda_nutrition: "🍎",
-  rank_foods_by_nutrient: "📊",
-  compare_food_nutrition: "⚖️",
+  search_usda_nutrition: ["🍎", "💻"],
+  rank_foods_by_nutrient: ["📊", "💻"],
+  compare_food_nutrition: ["⚖️", "💻"],
   get_food_categories: "🗂️",
-  get_nutrient_types: "🧬",
+  get_nutrient_types: ["🧬", "💻"],
   list_category_nutrients: "📋",
   search_foods_by_taxonomy: "🔍",
-  get_food_taxonomy: "🌿",
-  get_nutritional_requirements: "📏",
+  get_food_taxonomy: ["🌿", "💻"],
+  get_nutritional_requirements: ["📏", "💻"],
   list_drug_dosage_forms: "💉",
   search_gym_exercises: "🏋️",
   get_gym_exercise_categories: "🗂️",
-  get_gym_exercise_by_id: "🎯",
+  get_gym_exercise_by_id: ["🎯", "💻"],
   calculate_caloric_needs: "🔢",
-  analyze_nutrient_gaps: "📉",
+  analyze_nutrient_gaps: ["📉", "💻"],
   search_food_substitutes: "🔄",
   estimate_exercise_calories: "🏃",
-  calculate_hydration_needs: "💧",
-  build_meal_plan: "🍽️",
-  check_drug_nutrient_interactions: "⚠️",
-
-  // Transit
-  get_next_bus: "🚌",
+  calculate_hydration_needs: ["💧", "💻"],
+  build_meal_plan: ["🍽️", "💻"],
+  check_drug_nutrient_interactions: ["⚠️", "💻"],
+  get_next_bus: ["🚌", "💻"],
   get_transit_stop_info: "🚏",
   search_transit_stops_nearby: "📍",
   get_transit_route_info: "🗺️",
-
-  // Utilities
-  search_airports: "✈️",
+  search_airports: ["✈️", "💻"],
   calculate_precise: "🧮",
   convert_currency: "💱",
   get_time_in_timezone: "🕐",
-  get_ip_info: "🔎",
+  get_ip_info: ["🔎", "💻"],
   search_nearby_places: "📍",
   search_places: "🗺️",
   generate_map: "🗺️",
-  generate_chart: "📊",
-  get_public_webcams: "📷",
-  execute_python: "🐍",
-
-  // Compute
-  execute_javascript: "⚡",
+  generate_chart: ["📊", "💻"],
+  get_public_webcams: ["📷", "💻"],
+  execute_python: ["🐍", "💻"],
+  execute_javascript: ["⚡", "💻"],
   execute_shell: "🖥️",
   convert_units: "📐",
   parse_datetime: "📅",
   transform_json: "🔧",
   generate_csv: "📋",
-  generate_qr_code: "📱",
+  generate_qr_code: ["📱", "💻"],
   render_latex: "📐",
-  generate_diagram: "📊",
+  generate_diagram: ["📊", "💻"],
   diff_text: "🔀",
   generate_hash: "🔐",
   test_regex: "🔣",
   encode_decode: "🔁",
-  convert_color: "🎨",
-  manipulate_image: "🖼️",
-  convert_image_to_ascii: "🎨",
-  convert_video_to_gif: "🎬",
-  parse_cron_expression: "⏰",
-  draw_turtle: "🐢",
+  convert_color: ["🎨", "💻"],
+  manipulate_image: ["🖼️", "💻"],
+  convert_image_to_ascii: ["🎨", "💻"],
+  convert_video_to_gif: ["🎬", "💻"],
+  parse_cron_expression: ["⏰", "💻"],
+  draw_turtle: ["🐢", "💻"],
   create_3d_mesh: "🔺",
   create_3d_scene: "🌐",
-  create_3d_model: "🧊",
-  create_3d_voxel: "🧱",
-
-  // Reasoning & Control Flow
-  think: "🧠",
+  create_3d_model: ["🧊", "💻"],
+  create_3d_voxel: ["🧱", "💻"],
+  think: ["🧠", "💻"],
   sleep: "💤",
   synthetic_output: "📝",
-
-  // Gaming
-  get_dota: "🎮",
-  create_bonfire: "🔥",
-
-  // Torrent
+  get_dota: ["🎮", "💻"],
+  create_bonfire: ["🔥", "💻"],
   torrent_search: "🔍",
   torrent_download: "⬇️",
-  torrent_status: "📊",
-
-  // Maritime
+  torrent_status: ["📊", "💻"],
   get_tracked_vessels: "🚢",
   get_vessel_by_mmsi: "🚢",
   search_vessels: "⛵",
   get_vessels_in_area: "🗺️",
   get_ais_messages: "📡",
-
-  // Energy
-  get_energy_indicators: "⚡",
-  get_energy_catalog: "📊",
-  get_energy_facets: "🔋",
-  search_energy: "📈",
-  get_electricity_retail_sales: "🔌",
+  get_energy_indicators: ["⚡", "💻"],
+  get_energy_catalog: ["📊", "💻"],
+  get_energy_facets: ["🔋", "💻"],
+  search_energy: ["📈", "💻"],
+  get_electricity_retail_sales: ["🔌", "💻"],
   get_petroleum_prices: "🛢️",
-  get_natural_gas_prices: "🔥",
-
-  // Agentic — File Operations
+  get_natural_gas_prices: ["🔥", "💻"],
   read_file: "📄",
-  write_file: "✏️",
+  write_file: ["✏️", "💻"],
   str_replace_file: "🔧",
-  block_replace_file: "🧱",
-  multi_replace_file: "🧱",
+  block_replace_file: ["🧱", "💻"],
+  multi_replace_file: ["🧱", "💻"],
   patch_file: "🩹",
   multi_file_read: "📑",
   file_info: "📄",
   file_diff: "🔀",
   move_file: "📂",
-  delete_file: "🗑️",
+  delete_file: ["🗑️", "💻"],
   notebook_edit: "📓",
-
-  // Agentic — Search & Discovery
   list_directory: "📁",
   grep_search: "🔍",
-  glob_files: "🔎",
+  glob_files: ["🔎", "💻"],
   project_summary: "📋",
-
-  // Agentic — Web
   read_web_page: "🌐",
   read_pdf: "📄",
   read_docx: "📝",
-  read_spreadsheet: "📊",
+  read_spreadsheet: ["📊", "💻"],
   search_web: "🔍",
-
-  // Agentic — Command Execution
   run_command: "▶️",
-
-  // Agentic — Git
-  git: "📦",
-
-  // Agentic — Browser
+  git: ["📦", "💻"],
   browser_action: "🌐",
   browser_script: "📜",
-
-  // Agentic — Code Intelligence
-  lsp_action: "🧩",
-
-  // Agentic — Task Management
+  lsp_action: ["🧩", "💻"],
   create_task: "➕",
   get_task: "📋",
   list_tasks: "📝",
-  update_task: "✏️",
-
-  // Agentic — Memory
-  upsert_memory: "🧠",
-
-  // Agentic — Agent Management
-  create_custom_agent: "🤖",
+  update_task: ["✏️", "💻"],
+  upsert_memory: ["🧠", "💻"],
+  create_custom_agent: ["🤖", "💻"],
   list_custom_agents: "📋",
-  update_custom_agent: "✏️",
-
-  // Agentic — Tool Management
+  update_custom_agent: ["✏️", "💻"],
   create_custom_tool: "🔧",
   create_privileged_tool: "🔐",
   list_custom_tools: "📋",
-  update_custom_tool: "✏️",
-  delete_custom_tool: "🗑️",
-
-  // Agentic — Meta
+  update_custom_tool: ["✏️", "💻"],
+  delete_custom_tool: ["🗑️", "💻"],
   search_tools: "🔍",
-
-  // Cron Jobs
-  create_cron: "⏰",
+  create_cron: ["⏰", "💻"],
   remote_trigger: "📡",
   create_cron_job: "🗓️",
   list_cron_jobs: "📋",
-  delete_cron_job: "🗑️",
-  trigger_cron_job: "🚀",
-
-  // Communication (Twilio)
-  twilio_send_sms: "💬",
+  delete_cron_job: ["🗑️", "💻"],
+  trigger_cron_job: ["🚀", "💻"],
+  twilio_send_sms: ["💬", "💻"],
   twilio_list_messages: "📨",
-  twilio_get_account: "📱",
+  twilio_get_account: ["📱", "💻"],
   twilio_lookup_number: "📞",
   twilio_list_numbers: "📲",
-
-  // Creative
-  get_emoji_combination: "🍳",
+  get_emoji_combination: ["🍳", "💻"],
   get_emoji_combinations: "🧑‍🍳",
-  generate_image: "🖼️",
-
-  describe_image: "👁️",
+  generate_image: ["🖼️", "💻"],
+  describe_image: ["👁️", "💻"],
   text_to_speech: "🔊",
   generate_audio: "🔊",
-  create_vector_animation: "🎬",
-  speech_to_text: "🎤",
-
-  // Discord
+  create_vector_animation: ["🎬", "💻"],
+  speech_to_text: ["🎤", "💻"],
   discord_message_search: "🔍",
-  get_discord_message_analytics: "📊",
-  discord_server_activity: "📈",
+  get_discord_message_analytics: ["📊", "💻"],
+  discord_server_activity: ["📈", "💻"],
   get_discord_guild_channels: "📁",
   get_discord_guild_members: "👥",
-  get_discord_guild_emojis: "😀",
-  get_bot_stats: "🤖",
+  get_discord_guild_emojis: ["😀", "💻"],
+  get_bot_stats: ["🤖", "💻"],
   get_bot_guilds: "🌐",
-  get_bot_activity_timeline: "📈",
-  get_discord_user_heatmap_data: "🔥",
-  get_discord_mention_leaderboard: "💬",
-  get_discord_message_leaderboard: "📊",
-  get_discord_word_frequencies: "🗣️",
-  react_to_discord_message: "🎭",
+  get_bot_activity_timeline: ["📈", "💻"],
+  get_discord_user_heatmap_data: ["🔥", "💻"],
+  get_discord_mention_leaderboard: ["💬", "💻"],
+  get_discord_message_leaderboard: ["📊", "💻"],
+  get_discord_word_frequencies: ["🗣️", "💻"],
+  react_to_discord_message: ["🎭", "💻"],
   get_discord_voice_channel_members: "🔊",
   get_discord_user_profile: "👤",
-  get_discord_channel_activity_stats: "📊",
-
-  // Smart Home (LIFX)
-  lifx_list_lights: "💡",
+  get_discord_channel_activity_stats: ["📊", "💻"],
+  lifx_list_lights: ["💡", "💻"],
   lifx_set_state: "🎚️",
-  lifx_toggle_power: "🔌",
-  lifx_breathe_effect: "🌬️",
-  lifx_pulse_effect: "💥",
+  lifx_toggle_power: ["🔌", "💻"],
+  lifx_breathe_effect: ["🌬️", "💻"],
+  lifx_pulse_effect: ["💥", "💻"],
   lifx_move_effect: "🔄",
-  lifx_flame_effect: "🔥",
-  lifx_morph_effect: "🌈",
-  lifx_set_states: "💡",
-  lifx_set_state_delta: "📊",
+  lifx_flame_effect: ["🔥", "💻"],
+  lifx_morph_effect: ["🌈", "💻"],
+  lifx_set_states: ["💡", "💻"],
+  lifx_set_state_delta: ["📊", "💻"],
   lifx_effects_off: "⏹️",
-  lifx_list_scenes: "🎬",
+  lifx_list_scenes: ["🎬", "💻"],
   lifx_activate_scene: "▶️",
   lifx_night_lock: "🌙",
-  lifx_health: "❤️",
+  lifx_health: ["❤️", "💻"],
 };
 
 // ────────────────────────────────────────────────────────────
@@ -12998,6 +12927,30 @@ export {
  * Used by clients (like Prism Client) to build dynamic executors.
  * Filters out tools whose required API keys are not configured.
  */
+/**
+ * Resolves a tool's emoji. If it's mapped to a pair (like ["🌤️", "🌡️"]), it checks
+ * the Google Emoji Kitchen cache for a combined static URL. Falls back to the first
+ * emoji character in the pair if the cache is empty or the mashup isn't found.
+ */
+export function resolveToolEmoji(toolName: string): string | null {
+  const emojiVal = TOOL_EMOJIS[toolName as keyof typeof TOOL_EMOJIS];
+  if (!emojiVal) return null;
+
+  if (Array.isArray(emojiVal)) {
+    try {
+      const combination = queryEmojiCombination(emojiVal[0], emojiVal[1]);
+      if (combination && combination.gStaticUrl) {
+        return combination.gStaticUrl;
+      }
+    } catch {
+      // Graceful fallback on error
+    }
+    return emojiVal[0];
+  }
+
+  return emojiVal;
+}
+
 export function getToolSchemas(): ToolSchema[] {
   return TOOL_DEFINITIONS.filter((tool) => isToolAvailable(tool.name)).map(
     (tool) => {
@@ -13008,7 +12961,7 @@ export function getToolSchemas(): ToolSchema[] {
         domain,
         domainKey: resolveDomainKey(domain),
         labels: TOOL_LABELS[tool.name as keyof typeof TOOL_LABELS] || [],
-        emoji: TOOL_EMOJIS[tool.name as keyof typeof TOOL_EMOJIS] || null,
+        emoji: resolveToolEmoji(tool.name),
         intelligenceTier:
           TOOL_INTELLIGENCE_TIERS[
             tool.name as keyof typeof TOOL_INTELLIGENCE_TIERS
