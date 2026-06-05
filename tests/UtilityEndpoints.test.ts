@@ -1,3 +1,4 @@
+import { describe, it, expect, vi } from "vitest";
 import request from "supertest";
 import { createTestApp } from "./testApp.ts";
 import utilityRoutes from "../src/routes/UtilityRoutes.ts";
@@ -88,10 +89,27 @@ describe("GET /utility/currency/convert (validation)", () => {
 
 describe("GET /utility/currency/list", () => {
   it("returns available currencies", async () => {
+    const currencyFetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        result: "success",
+        base_code: "USD",
+        time_last_update_utc: "Thu, 04 Jun 2026 00:00:00 +0000",
+        time_next_update_utc: "Fri, 05 Jun 2026 00:00:00 +0000",
+        rates: {
+          USD: 1.0,
+          CAD: 1.37,
+          EUR: 0.92,
+        },
+      }),
+    } as Response);
+
     const res = await request(app).get("/utility/currency/list");
     expect(res.status).toBe(200);
-    expect(typeof res.body.count === "number").toBeTruthy();
-    expect(Array.isArray(res.body.currencies)).toBeTruthy();
+    expect(res.body.count).toBe(3);
+    expect(res.body.currencies).toEqual(["CAD", "EUR", "USD"]);
+
+    currencyFetchSpy.mockRestore();
   });
 });
 
