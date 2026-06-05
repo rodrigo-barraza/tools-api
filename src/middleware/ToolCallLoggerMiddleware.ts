@@ -48,6 +48,8 @@ interface ToolCallFilters {
   success?: string | boolean;
   callerAgent?: string;
   callerProject?: string;
+  callerRequestId?: string;
+  callerConversationId?: string;
   minMs?: string;
   maxMs?: string;
   since?: string;
@@ -370,6 +372,8 @@ export async function queryToolCallLogs(filters: ToolCallFilters = {}) {
     query.success = filters.success === "true" || filters.success === true;
   if (filters.callerAgent) query.callerAgent = filters.callerAgent;
   if (filters.callerProject) query.callerProject = filters.callerProject;
+  if (filters.callerRequestId) query.callerRequestId = filters.callerRequestId;
+  if (filters.callerConversationId) query.callerConversationId = filters.callerConversationId;
 
   if (filters.minMs || filters.maxMs) {
     query.elapsedMs = {};
@@ -567,6 +571,8 @@ export async function setupToolCallsCollection() {
       collection.createIndex({ success: 1, timestamp: -1 }),
       collection.createIndex({ callerAgent: 1, timestamp: -1 }),
       collection.createIndex({ elapsedMs: -1 }),
+      collection.createIndex({ callerRequestId: 1, timestamp: -1 }),
+      collection.createIndex({ callerConversationId: 1, timestamp: -1 }),
     ]);
 
     logger.info(`📊 tool_calls collection indexes ensured`);

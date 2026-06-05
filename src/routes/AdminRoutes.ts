@@ -2,6 +2,7 @@ import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { Request, Response, Router } from "express";
 import { resolve } from "node:path";
 import { stat } from "node:fs/promises";
+import { ObjectId } from "mongodb";
 import {
   queryRequestLogs,
   getRequestStats,
@@ -112,7 +113,7 @@ router.get(
 /**
  * GET /admin/tool-calls
  * Query tool-call-level telemetry logs with optional filters.
- * Query params: toolName, domain, success, callerAgent, callerProject,
+ * Query params: toolName, domain, success, callerAgent, callerProject, callerRequestId,
  *               minMs, maxMs, since, until, limit, skip
  */
 router.get(
@@ -122,6 +123,23 @@ router.get(
     "Tool call log query",
     500,
   ),
+);
+router.get(
+  "/tool-calls/:id",
+  asyncHandler(async (req: Request, res: Response) => {
+    const databaseInstance = getDB();
+    let queryObjectId: ObjectId;
+    try {
+      queryObjectId = new ObjectId(req.params.id as string);
+    } catch {
+      return res.status(400).json({ error: "Invalid ID format" });
+    }
+    const toolCallDocument = await databaseInstance.collection("tool_calls").findOne({ _id: queryObjectId });
+    if (!toolCallDocument) {
+      return res.status(404).json({ error: "Tool call not found" });
+    }
+    res.json(toolCallDocument);
+  }, "Tool call detail", 500)
 );
 /**
  * GET /admin/tool-calls/stats
