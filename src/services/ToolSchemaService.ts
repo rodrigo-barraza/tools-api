@@ -65,7 +65,13 @@ for (const entry of Object.values(DOMAINS)) {
 }
 
 function resolveDomainKey(domain: string): string {
-  return DOMAIN_DISPLAY_NAME_TO_KEY.get(domain) || domain.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+  return (
+    DOMAIN_DISPLAY_NAME_TO_KEY.get(domain) ||
+    domain
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_|_$/g, "")
+  );
 }
 
 function compute(name: string) {
@@ -2752,6 +2758,266 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       },
     },
   },
+  {
+    name: "search_reddit",
+    dataSource: onDemand("Reddit API"),
+    description:
+      "Search for posts or comments across all of Reddit or within a specific subreddit.",
+    endpoint: {
+      path: "/knowledge/reddit/search",
+      queryParams: [
+        "q",
+        "subreddit",
+        "type",
+        "sort",
+        "t",
+        "limit",
+        "maxPages",
+        "nsfw",
+      ],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        q: { type: "string", description: "Search query" },
+        subreddit: {
+          type: "string",
+          description: "Optional subreddit to restrict the search to",
+        },
+        type: {
+          type: "string",
+          enum: ["link", "comment"],
+          description: "Type of results: link (posts) or comment",
+        },
+        sort: {
+          type: "string",
+          enum: ["relevance", "new", "hot", "top", "comments"],
+          description: "Sort order",
+        },
+        t: {
+          type: "string",
+          enum: ["hour", "day", "week", "month", "year", "all"],
+          description: "Time range filter",
+        },
+        limit: {
+          type: "number",
+          description: "Results limit per page (default: 25, max: 100)",
+        },
+        maxPages: {
+          type: "number",
+          description: "Maximum pages to retrieve (default: 5)",
+        },
+        nsfw: {
+          type: "string",
+          enum: ["true", "false"],
+          description: "Whether to include NSFW results (default: false)",
+        },
+      },
+      required: ["q"],
+    },
+  },
+  {
+    name: "search_reddit_subreddits",
+    dataSource: onDemand("Reddit API"),
+    description:
+      "Search for subreddits by keyword, returning matching community names, descriptions, and subscriber counts.",
+    endpoint: {
+      path: "/knowledge/reddit/subreddits/search",
+      queryParams: ["q", "limit", "nsfw"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        q: {
+          type: "string",
+          description: "Keyword query to search subreddits",
+        },
+        limit: {
+          type: "number",
+          description: "Limit the number of results (default: 10, max: 25)",
+        },
+        nsfw: {
+          type: "string",
+          enum: ["true", "false"],
+          description: "Whether to include NSFW subreddits (default: false)",
+        },
+      },
+      required: ["q"],
+    },
+  },
+  {
+    name: "get_reddit_subreddit_info",
+    dataSource: onDemand("Reddit API"),
+    description:
+      "Get metadata for a specific subreddit including title, description, subscriber count, active user count, rules enabled, and NSFW status.",
+    endpoint: {
+      path: "/knowledge/reddit/r/:subreddit/info",
+      pathParams: ["subreddit"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        subreddit: {
+          type: "string",
+          description: "Subreddit name (e.g. 'science', 'explainlikeimfive')",
+        },
+      },
+      required: ["subreddit"],
+    },
+  },
+  {
+    name: "get_reddit_subreddit_feed",
+    dataSource: onDemand("Reddit API"),
+    description:
+      "Get hot, top, new, rising, or controversial posts from a specific subreddit.",
+    endpoint: {
+      path: "/knowledge/reddit/r/:subreddit/feed",
+      pathParams: ["subreddit"],
+      queryParams: ["sort", "t", "limit", "pinned"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        subreddit: { type: "string", description: "Subreddit name" },
+        sort: {
+          type: "string",
+          enum: ["hot", "new", "top", "rising", "controversial"],
+          description: "Sort order (default: hot)",
+        },
+        t: {
+          type: "string",
+          enum: ["hour", "day", "week", "month", "year", "all"],
+          description: "Time range (for top/controversial sort, default: day)",
+        },
+        limit: {
+          type: "number",
+          description: "Number of posts to fetch (default: 25, max: 100)",
+        },
+        pinned: {
+          type: "string",
+          enum: ["true", "false"],
+          description: "Include pinned/stickied posts (default: false)",
+        },
+      },
+      required: ["subreddit"],
+    },
+  },
+  {
+    name: "get_reddit_subreddit_rules",
+    dataSource: onDemand("Reddit API"),
+    description: "Get community rules for a specific subreddit.",
+    endpoint: {
+      path: "/knowledge/reddit/r/:subreddit/rules",
+      pathParams: ["subreddit"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        subreddit: { type: "string", description: "Subreddit name" },
+      },
+      required: ["subreddit"],
+    },
+  },
+  {
+    name: "get_reddit_subreddit_wiki_pages",
+    dataSource: onDemand("Reddit API"),
+    description:
+      "List all wiki page names for a specific subreddit (rules, guides, index, etc.).",
+    endpoint: {
+      path: "/knowledge/reddit/r/:subreddit/wiki",
+      pathParams: ["subreddit"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        subreddit: { type: "string", description: "Subreddit name" },
+      },
+      required: ["subreddit"],
+    },
+  },
+  {
+    name: "get_reddit_subreddit_wiki_page",
+    dataSource: onDemand("Reddit API"),
+    description:
+      "Get the markdown contents of a specific subreddit wiki page (e.g. 'faq' or 'index').",
+    endpoint: {
+      path: "/knowledge/reddit/r/:subreddit/wiki/:page",
+      pathParams: ["subreddit", "page"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        subreddit: { type: "string", description: "Subreddit name" },
+        page: {
+          type: "string",
+          description: "Wiki page name (default: 'index')",
+        },
+      },
+      required: ["subreddit", "page"],
+    },
+  },
+  {
+    name: "get_reddit_user_history",
+    dataSource: onDemand("Reddit API"),
+    description:
+      "Get recent activity (posts and comments) of a Reddit user, including karma levels, timestamps, subreddits, and post titles.",
+    endpoint: {
+      path: "/knowledge/reddit/user/:username",
+      pathParams: ["username"],
+      queryParams: ["category", "limit", "maxPages", "sort", "t"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        username: {
+          type: "string",
+          description: "Reddit username (without u/ prefix)",
+        },
+        category: {
+          type: "string",
+          enum: ["overview", "comments", "submitted", "gilded"],
+          description: "Category of history to fetch (default: overview)",
+        },
+        limit: {
+          type: "number",
+          description:
+            "Maximum number of items to fetch (default: 25, max: 100)",
+        },
+        maxPages: {
+          type: "number",
+          description: "Maximum number of pages to fetch (default: 10)",
+        },
+        sort: {
+          type: "string",
+          enum: ["new", "hot", "top", "controversial"],
+          description: "Sort order (default: new)",
+        },
+        t: {
+          type: "string",
+          enum: ["hour", "day", "week", "month", "year", "all"],
+          description: "Time range (default: all)",
+        },
+      },
+      required: ["username"],
+    },
+  },
+  {
+    name: "get_reddit_user_profile",
+    dataSource: onDemand("Reddit API"),
+    description:
+      "Get basic profile info for a Reddit user: username, creation date, link/comment karma, moderator status, Snoovatar, and profile description.",
+    endpoint: {
+      path: "/knowledge/reddit/user/:username/profile",
+      pathParams: ["username"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        username: { type: "string", description: "Reddit username" },
+      },
+      required: ["username"],
+    },
+  },
 
   // ── Movies & TV (12 → 6 unified + get_tv_season_details) ──────
   {
@@ -5030,7 +5296,14 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     endpoint: {
       method: "POST",
       path: "/compute/3d/mesh",
-      bodyParams: ["vertices", "faces", "normals", "colors", "options", "sessionId"],
+      bodyParams: [
+        "vertices",
+        "faces",
+        "normals",
+        "colors",
+        "options",
+        "sessionId",
+      ],
     },
     parameters: {
       type: "object",
@@ -5080,22 +5353,56 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         options: {
           type: "object",
           properties: {
-            wireframe: { type: "boolean", description: "Render as wireframe (default: false)" },
-            flatShading: { type: "boolean", description: "Use flat shading for faceted look (default: true)" },
-            autoRotate: { type: "boolean", description: "Auto-rotate the mesh (default: true)" },
-            showGrid: { type: "boolean", description: "Show ground grid (default: true)" },
-            showAxes: { type: "boolean", description: "Show XYZ axes helper (default: false)" },
-            background: { type: "string", description: "Background color (default: '#0f172a')" },
-            meshColor: { type: "string", description: "Mesh color if no vertex colors (default: '#38bdf8')" },
-            metalness: { type: "number", description: "Material metalness 0-1 (default: 0.2)" },
-            roughness: { type: "number", description: "Material roughness 0-1 (default: 0.6)" },
-            opacity: { type: "number", description: "Material opacity 0-1 (default: 1.0)" },
+            wireframe: {
+              type: "boolean",
+              description: "Render as wireframe (default: false)",
+            },
+            flatShading: {
+              type: "boolean",
+              description: "Use flat shading for faceted look (default: true)",
+            },
+            autoRotate: {
+              type: "boolean",
+              description: "Auto-rotate the mesh (default: true)",
+            },
+            showGrid: {
+              type: "boolean",
+              description: "Show ground grid (default: true)",
+            },
+            showAxes: {
+              type: "boolean",
+              description: "Show XYZ axes helper (default: false)",
+            },
+            background: {
+              type: "string",
+              description: "Background color (default: '#0f172a')",
+            },
+            meshColor: {
+              type: "string",
+              description:
+                "Mesh color if no vertex colors (default: '#38bdf8')",
+            },
+            metalness: {
+              type: "number",
+              description: "Material metalness 0-1 (default: 0.2)",
+            },
+            roughness: {
+              type: "number",
+              description: "Material roughness 0-1 (default: 0.6)",
+            },
+            opacity: {
+              type: "number",
+              description: "Material opacity 0-1 (default: 1.0)",
+            },
             cameraPosition: {
               type: "array",
               items: { type: "number" },
               description: "Camera position [x, y, z]. Omit for auto-fit.",
             },
-            title: { type: "string", description: "Title displayed in the overlay" },
+            title: {
+              type: "string",
+              description: "Title displayed in the overlay",
+            },
           },
           description: "Rendering options",
         },
@@ -5137,18 +5444,20 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         voxels: {
           type: "array",
           description:
-            "Array of individual voxel coordinates and styling. Example: [{\"position\": [0,0,0], \"color\": \"#ff6347\"}]",
+            'Array of individual voxel coordinates and styling. Example: [{"position": [0,0,0], "color": "#ff6347"}]',
           items: {
             type: "object",
             properties: {
               position: {
                 type: "array",
-                description: "Discrete integer grid coordinate [x, y, z] for the voxel",
+                description:
+                  "Discrete integer grid coordinate [x, y, z] for the voxel",
                 items: { type: "integer" },
               },
               color: {
                 type: "string",
-                description: "CSS color for the individual voxel, e.g. '#ff6347' or 'red'",
+                description:
+                  "CSS color for the individual voxel, e.g. '#ff6347' or 'red'",
               },
               opacity: {
                 type: "number",
@@ -5167,12 +5476,21 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             properties: {
               type: {
                 type: "string",
-                enum: ["box", "sphere", "cylinder", "cone", "pyramid", "ellipsoid", "torus"],
+                enum: [
+                  "box",
+                  "sphere",
+                  "cylinder",
+                  "cone",
+                  "pyramid",
+                  "ellipsoid",
+                  "torus",
+                ],
                 description: "The primitive shape type",
               },
               center: {
                 type: "array",
-                description: "Voxel grid center coordinate [x, y, z] for the shape",
+                description:
+                  "Voxel grid center coordinate [x, y, z] for the shape",
                 items: { type: "number" },
               },
               color: {
@@ -5185,7 +5503,8 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
               },
               hollow: {
                 type: "boolean",
-                description: "If true, only render the outer boundary shell of the shape (default: false)",
+                description:
+                  "If true, only render the outer boundary shell of the shape (default: false)",
               },
               size: {
                 type: "array",
@@ -5202,7 +5521,8 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
               },
               radii: {
                 type: "array",
-                description: "Radii [radiusX, radiusY, radiusZ] for ellipsoid shape",
+                description:
+                  "Radii [radiusX, radiusY, radiusZ] for ellipsoid shape",
                 items: { type: "number" },
               },
               majorRadius: {
@@ -5216,7 +5536,8 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
               axis: {
                 type: "string",
                 enum: ["x", "y", "z"],
-                description: "Orientation axis for cylinder, cone, or torus shape (default: 'y')",
+                description:
+                  "Orientation axis for cylinder, cone, or torus shape (default: 'y')",
               },
             },
             required: ["type", "center"],
@@ -5225,23 +5546,63 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         options: {
           type: "object",
           properties: {
-            wireframe: { type: "boolean", description: "Render voxels as wireframes (default: false)" },
-            flatShading: { type: "boolean", description: "Use flat shading for a clean voxel look (default: true)" },
-            showGrid: { type: "boolean", description: "Show ground grid (default: true)" },
-            showAxes: { type: "boolean", description: "Show XYZ axes helper (default: false)" },
-            background: { type: "string", description: "Background color (default: '#0f172a')" },
-            autoRotate: { type: "boolean", description: "Auto-rotate the camera (default: true)" },
-            autoRotateSpeed: { type: "number", description: "Camera auto-rotation speed (default: 1.0)" },
-            voxelSize: { type: "number", description: "Multiplier for size of each voxel cube (default: 0.95 to leave small gaps)" },
-            voxelSpacing: { type: "number", description: "Gap spacing distance multiplier between voxels (default: 0.0)" },
-            outlineColor: { type: "string", description: "Voxel outline/contour border color (default: '#000000', empty to disable)" },
-            outlineOpacity: { type: "number", description: "Voxel outline/contour opacity (default: 0.35)" },
+            wireframe: {
+              type: "boolean",
+              description: "Render voxels as wireframes (default: false)",
+            },
+            flatShading: {
+              type: "boolean",
+              description:
+                "Use flat shading for a clean voxel look (default: true)",
+            },
+            showGrid: {
+              type: "boolean",
+              description: "Show ground grid (default: true)",
+            },
+            showAxes: {
+              type: "boolean",
+              description: "Show XYZ axes helper (default: false)",
+            },
+            background: {
+              type: "string",
+              description: "Background color (default: '#0f172a')",
+            },
+            autoRotate: {
+              type: "boolean",
+              description: "Auto-rotate the camera (default: true)",
+            },
+            autoRotateSpeed: {
+              type: "number",
+              description: "Camera auto-rotation speed (default: 1.0)",
+            },
+            voxelSize: {
+              type: "number",
+              description:
+                "Multiplier for size of each voxel cube (default: 0.95 to leave small gaps)",
+            },
+            voxelSpacing: {
+              type: "number",
+              description:
+                "Gap spacing distance multiplier between voxels (default: 0.0)",
+            },
+            outlineColor: {
+              type: "string",
+              description:
+                "Voxel outline/contour border color (default: '#000000', empty to disable)",
+            },
+            outlineOpacity: {
+              type: "number",
+              description: "Voxel outline/contour opacity (default: 0.35)",
+            },
             cameraPosition: {
               type: "array",
               items: { type: "number" },
               description: "Camera position [x, y, z]. Omit for auto-fit.",
             },
-            title: { type: "string", description: "Title displayed in the overlay" },
+            title: {
+              type: "string",
+              description: "Title displayed in the overlay",
+            },
           },
           description: "Rendering options",
         },
@@ -5281,16 +5642,28 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         },
         objects: {
           type: "array",
-          description: "Array of primitive shape objects to compose into a 3D model.",
+          description:
+            "Array of primitive shape objects to compose into a 3D model.",
           items: {
             type: "object",
             properties: {
               shape: {
                 type: "string",
                 enum: [
-                  "box", "sphere", "cylinder", "cone", "torus", "torusKnot",
-                  "plane", "ring", "circle", "dodecahedron", "icosahedron",
-                  "octahedron", "tetrahedron", "capsule",
+                  "box",
+                  "sphere",
+                  "cylinder",
+                  "cone",
+                  "torus",
+                  "torusKnot",
+                  "plane",
+                  "ring",
+                  "circle",
+                  "dodecahedron",
+                  "icosahedron",
+                  "octahedron",
+                  "tetrahedron",
+                  "capsule",
                 ],
                 description: "The primitive shape type",
               },
@@ -5299,12 +5672,31 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
                 items: { type: "number" },
                 description: "Dimensions [width, height, depth] for box shapes",
               },
-              radius: { type: "number", description: "Radius for spherical/cylindrical shapes (default: 0.5)" },
-              height: { type: "number", description: "Height for cylinder/cone/capsule (default: 1)" },
-              radiusTop: { type: "number", description: "Top radius for cylinder (default: radius)" },
-              radiusBottom: { type: "number", description: "Bottom radius for cylinder (default: radius)" },
-              tube: { type: "number", description: "Tube radius for torus/torusKnot (default: 0.15)" },
-              segments: { type: "integer", description: "Geometry segment count (default: 32)" },
+              radius: {
+                type: "number",
+                description:
+                  "Radius for spherical/cylindrical shapes (default: 0.5)",
+              },
+              height: {
+                type: "number",
+                description: "Height for cylinder/cone/capsule (default: 1)",
+              },
+              radiusTop: {
+                type: "number",
+                description: "Top radius for cylinder (default: radius)",
+              },
+              radiusBottom: {
+                type: "number",
+                description: "Bottom radius for cylinder (default: radius)",
+              },
+              tube: {
+                type: "number",
+                description: "Tube radius for torus/torusKnot (default: 0.15)",
+              },
+              segments: {
+                type: "integer",
+                description: "Geometry segment count (default: 32)",
+              },
               position: {
                 type: "array",
                 items: { type: "number" },
@@ -5323,20 +5715,48 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
               material: {
                 type: "object",
                 properties: {
-                  color: { type: "string", description: "CSS color (default: '#38bdf8')" },
-                  metalness: { type: "number", description: "0-1 (default: 0.2)" },
-                  roughness: { type: "number", description: "0-1 (default: 0.6)" },
-                  opacity: { type: "number", description: "0-1 (default: 1.0)" },
-                  emissive: { type: "string", description: "Emissive glow color" },
-                  emissiveIntensity: { type: "number", description: "Emissive intensity (default: 0)" },
+                  color: {
+                    type: "string",
+                    description: "CSS color (default: '#38bdf8')",
+                  },
+                  metalness: {
+                    type: "number",
+                    description: "0-1 (default: 0.2)",
+                  },
+                  roughness: {
+                    type: "number",
+                    description: "0-1 (default: 0.6)",
+                  },
+                  opacity: {
+                    type: "number",
+                    description: "0-1 (default: 1.0)",
+                  },
+                  emissive: {
+                    type: "string",
+                    description: "Emissive glow color",
+                  },
+                  emissiveIntensity: {
+                    type: "number",
+                    description: "Emissive intensity (default: 0)",
+                  },
                   wireframe: { type: "boolean", description: "Wireframe mode" },
                   flatShading: { type: "boolean", description: "Flat shading" },
-                  doubleSided: { type: "boolean", description: "Render both sides of faces (default: false)" },
-                  textureUrl: { type: "string", description: "Optional texture image URL to wrap around the shape" },
+                  doubleSided: {
+                    type: "boolean",
+                    description: "Render both sides of faces (default: false)",
+                  },
+                  textureUrl: {
+                    type: "string",
+                    description:
+                      "Optional texture image URL to wrap around the shape",
+                  },
                 },
                 description: "PBR material properties",
               },
-              name: { type: "string", description: "Optional name for the object" },
+              name: {
+                type: "string",
+                description: "Optional name for the object",
+              },
             },
             required: ["shape"],
           },
@@ -5344,19 +5764,43 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         options: {
           type: "object",
           properties: {
-            autoRotate: { type: "boolean", description: "Auto-orbit camera (default: true)" },
-            showGrid: { type: "boolean", description: "Show ground grid (default: true)" },
-            background: { type: "string", description: "Background color (default: '#0f172a')" },
-            enableShadows: { type: "boolean", description: "Enable shadow casting (default: true)" },
-            ambientLightIntensity: { type: "number", description: "Ambient light intensity (default: 0.5)" },
-            directionalLightIntensity: { type: "number", description: "Key light intensity (default: 0.8)" },
+            autoRotate: {
+              type: "boolean",
+              description: "Auto-orbit camera (default: true)",
+            },
+            showGrid: {
+              type: "boolean",
+              description: "Show ground grid (default: true)",
+            },
+            background: {
+              type: "string",
+              description: "Background color (default: '#0f172a')",
+            },
+            enableShadows: {
+              type: "boolean",
+              description: "Enable shadow casting (default: true)",
+            },
+            ambientLightIntensity: {
+              type: "number",
+              description: "Ambient light intensity (default: 0.5)",
+            },
+            directionalLightIntensity: {
+              type: "number",
+              description: "Key light intensity (default: 0.8)",
+            },
             cameraPosition: {
               type: "array",
               items: { type: "number" },
               description: "Camera position [x, y, z]. Omit for auto-fit.",
             },
-            fieldOfView: { type: "number", description: "Camera FOV in degrees (default: 50)" },
-            title: { type: "string", description: "Title displayed in the overlay" },
+            fieldOfView: {
+              type: "number",
+              description: "Camera FOV in degrees (default: 50)",
+            },
+            title: {
+              type: "string",
+              description: "Title displayed in the overlay",
+            },
           },
           description: "Model rendering options",
         },
@@ -5386,7 +5830,13 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     endpoint: {
       method: "POST",
       path: "/compute/3d/scene",
-      bodyParams: ["scene", "objects", "options", "sessionId", "referenceTextureUrl"],
+      bodyParams: [
+        "scene",
+        "objects",
+        "options",
+        "sessionId",
+        "referenceTextureUrl",
+      ],
     },
     parameters: {
       type: "object",
@@ -5400,41 +5850,91 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         },
         scene: {
           type: "object",
-          description: "Scene-level configuration: environment, background, ground, camera, fog.",
+          description:
+            "Scene-level configuration: environment, background, ground, camera, fog.",
           properties: {
             environment: {
               type: "string",
-              enum: ["studio", "outdoor", "night", "sunset", "dawn", "warehouse", "neutral"],
+              enum: [
+                "studio",
+                "outdoor",
+                "night",
+                "sunset",
+                "dawn",
+                "warehouse",
+                "neutral",
+              ],
               description: "Lighting environment preset (default: 'studio')",
             },
-            background: { type: "string", description: "Background color (default: '#0f172a')" },
+            background: {
+              type: "string",
+              description: "Background color (default: '#0f172a')",
+            },
             ground: {
               type: "object",
               properties: {
-                enabled: { type: "boolean", description: "Show ground plane (default: true)" },
-                color: { type: "string", description: "Ground color (default: '#1e293b')" },
-                size: { type: "number", description: "Ground plane size (default: 10)" },
+                enabled: {
+                  type: "boolean",
+                  description: "Show ground plane (default: true)",
+                },
+                color: {
+                  type: "string",
+                  description: "Ground color (default: '#1e293b')",
+                },
+                size: {
+                  type: "number",
+                  description: "Ground plane size (default: 10)",
+                },
               },
               description: "Ground plane configuration",
             },
             camera: {
               type: "object",
               properties: {
-                position: { type: "array", items: { type: "number" }, description: "Camera [x,y,z]. Omit for auto-fit." },
-                target: { type: "array", items: { type: "number" }, description: "Look-at target [x,y,z] (default: [0,0,0])" },
-                fov: { type: "number", description: "Field of view in degrees (default: 50)" },
-                autoOrbit: { type: "boolean", description: "Auto-orbit camera (default: true)" },
-                autoOrbitSpeed: { type: "number", description: "Orbit speed (default: 1.0)" },
+                position: {
+                  type: "array",
+                  items: { type: "number" },
+                  description: "Camera [x,y,z]. Omit for auto-fit.",
+                },
+                target: {
+                  type: "array",
+                  items: { type: "number" },
+                  description: "Look-at target [x,y,z] (default: [0,0,0])",
+                },
+                fov: {
+                  type: "number",
+                  description: "Field of view in degrees (default: 50)",
+                },
+                autoOrbit: {
+                  type: "boolean",
+                  description: "Auto-orbit camera (default: true)",
+                },
+                autoOrbitSpeed: {
+                  type: "number",
+                  description: "Orbit speed (default: 1.0)",
+                },
               },
               description: "Camera configuration",
             },
             fog: {
               type: "object",
               properties: {
-                enabled: { type: "boolean", description: "Enable fog (default: false)" },
-                color: { type: "string", description: "Fog color (defaults to background)" },
-                near: { type: "number", description: "Fog start distance (default: 10)" },
-                far: { type: "number", description: "Fog end distance (default: 50)" },
+                enabled: {
+                  type: "boolean",
+                  description: "Enable fog (default: false)",
+                },
+                color: {
+                  type: "string",
+                  description: "Fog color (defaults to background)",
+                },
+                near: {
+                  type: "number",
+                  description: "Fog start distance (default: 10)",
+                },
+                far: {
+                  type: "number",
+                  description: "Fog end distance (default: 50)",
+                },
               },
               description: "Fog configuration",
             },
@@ -5450,19 +5950,55 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
               type: {
                 type: "string",
                 enum: [
-                  "box", "sphere", "cylinder", "cone", "torus", "torusKnot",
-                  "plane", "ring", "circle", "dodecahedron", "icosahedron",
-                  "octahedron", "tetrahedron", "capsule", "group", "text3d",
+                  "box",
+                  "sphere",
+                  "cylinder",
+                  "cone",
+                  "torus",
+                  "torusKnot",
+                  "plane",
+                  "ring",
+                  "circle",
+                  "dodecahedron",
+                  "icosahedron",
+                  "octahedron",
+                  "tetrahedron",
+                  "capsule",
+                  "group",
+                  "text3d",
                 ],
-                description: "Object type. 'group' nests children. 'text3d' renders 3D text.",
+                description:
+                  "Object type. 'group' nests children. 'text3d' renders 3D text.",
               },
               name: { type: "string", description: "Optional name" },
-              size: { type: "array", items: { type: "number" }, description: "Box dimensions [w,h,d]" },
-              radius: { type: "number", description: "Radius for round shapes" },
-              height: { type: "number", description: "Height for cylinder/cone/capsule" },
-              position: { type: "array", items: { type: "number" }, description: "Position [x,y,z]" },
-              rotation: { type: "array", items: { type: "number" }, description: "Rotation [x,y,z] in degrees" },
-              scale: { type: "array", items: { type: "number" }, description: "Scale [x,y,z]" },
+              size: {
+                type: "array",
+                items: { type: "number" },
+                description: "Box dimensions [w,h,d]",
+              },
+              radius: {
+                type: "number",
+                description: "Radius for round shapes",
+              },
+              height: {
+                type: "number",
+                description: "Height for cylinder/cone/capsule",
+              },
+              position: {
+                type: "array",
+                items: { type: "number" },
+                description: "Position [x,y,z]",
+              },
+              rotation: {
+                type: "array",
+                items: { type: "number" },
+                description: "Rotation [x,y,z] in degrees",
+              },
+              scale: {
+                type: "array",
+                items: { type: "number" },
+                description: "Scale [x,y,z]",
+              },
               material: {
                 type: "object",
                 properties: {
@@ -5470,10 +6006,20 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
                   metalness: { type: "number", description: "0-1" },
                   roughness: { type: "number", description: "0-1" },
                   opacity: { type: "number", description: "0-1" },
-                  emissive: { type: "string", description: "Emissive glow color" },
+                  emissive: {
+                    type: "string",
+                    description: "Emissive glow color",
+                  },
                   wireframe: { type: "boolean" },
-                  doubleSided: { type: "boolean", description: "Render both sides of faces (default: false)" },
-                  textureUrl: { type: "string", description: "Optional texture image URL to wrap around the shape" },
+                  doubleSided: {
+                    type: "boolean",
+                    description: "Render both sides of faces (default: false)",
+                  },
+                  textureUrl: {
+                    type: "string",
+                    description:
+                      "Optional texture image URL to wrap around the shape",
+                  },
                 },
                 description: "PBR material",
               },
@@ -5485,35 +6031,84 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
                     enum: ["spin", "bounce", "orbit", "pulse", "float"],
                     description: "Animation type",
                   },
-                  speed: { type: "number", description: "Animation speed multiplier (default: 1.0)" },
-                  axis: { type: "string", description: "Rotation axis for spin: 'x', 'y', or 'z' (default: 'y')" },
-                  amplitude: { type: "number", description: "Movement amplitude (default: 0.5)" },
-                  radius: { type: "number", description: "Orbit radius (default: 2)" },
+                  speed: {
+                    type: "number",
+                    description: "Animation speed multiplier (default: 1.0)",
+                  },
+                  axis: {
+                    type: "string",
+                    description:
+                      "Rotation axis for spin: 'x', 'y', or 'z' (default: 'y')",
+                  },
+                  amplitude: {
+                    type: "number",
+                    description: "Movement amplitude (default: 0.5)",
+                  },
+                  radius: {
+                    type: "number",
+                    description: "Orbit radius (default: 2)",
+                  },
                 },
                 description: "Built-in animation. Applied every frame.",
               },
               children: {
                 type: "array",
-                description: "Child objects (only for type='group'). Same structure as parent objects array.",
+                description:
+                  "Child objects (only for type='group'). Same structure as parent objects array.",
                 items: {
                   type: "object",
                   properties: {
                     type: {
                       type: "string",
                       enum: [
-                        "box", "sphere", "cylinder", "cone", "torus", "torusKnot",
-                        "plane", "ring", "circle", "dodecahedron", "icosahedron",
-                        "octahedron", "tetrahedron", "capsule", "group", "text3d",
+                        "box",
+                        "sphere",
+                        "cylinder",
+                        "cone",
+                        "torus",
+                        "torusKnot",
+                        "plane",
+                        "ring",
+                        "circle",
+                        "dodecahedron",
+                        "icosahedron",
+                        "octahedron",
+                        "tetrahedron",
+                        "capsule",
+                        "group",
+                        "text3d",
                       ],
                       description: "Object type",
                     },
                     name: { type: "string", description: "Optional name" },
-                    size: { type: "array", items: { type: "number" }, description: "Box dimensions [w,h,d]" },
-                    radius: { type: "number", description: "Radius for round shapes" },
-                    height: { type: "number", description: "Height for cylinder/cone/capsule" },
-                    position: { type: "array", items: { type: "number" }, description: "Position [x,y,z]" },
-                    rotation: { type: "array", items: { type: "number" }, description: "Rotation [x,y,z] in degrees" },
-                    scale: { type: "array", items: { type: "number" }, description: "Scale [x,y,z]" },
+                    size: {
+                      type: "array",
+                      items: { type: "number" },
+                      description: "Box dimensions [w,h,d]",
+                    },
+                    radius: {
+                      type: "number",
+                      description: "Radius for round shapes",
+                    },
+                    height: {
+                      type: "number",
+                      description: "Height for cylinder/cone/capsule",
+                    },
+                    position: {
+                      type: "array",
+                      items: { type: "number" },
+                      description: "Position [x,y,z]",
+                    },
+                    rotation: {
+                      type: "array",
+                      items: { type: "number" },
+                      description: "Rotation [x,y,z] in degrees",
+                    },
+                    scale: {
+                      type: "array",
+                      items: { type: "number" },
+                      description: "Scale [x,y,z]",
+                    },
                     material: {
                       type: "object",
                       properties: {
@@ -5521,10 +6116,21 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
                         metalness: { type: "number", description: "0-1" },
                         roughness: { type: "number", description: "0-1" },
                         opacity: { type: "number", description: "0-1" },
-                        emissive: { type: "string", description: "Emissive glow color" },
+                        emissive: {
+                          type: "string",
+                          description: "Emissive glow color",
+                        },
                         wireframe: { type: "boolean" },
-                        doubleSided: { type: "boolean", description: "Render both sides of faces (default: false)" },
-                        textureUrl: { type: "string", description: "Optional texture image URL to wrap around the shape" },
+                        doubleSided: {
+                          type: "boolean",
+                          description:
+                            "Render both sides of faces (default: false)",
+                        },
+                        textureUrl: {
+                          type: "string",
+                          description:
+                            "Optional texture image URL to wrap around the shape",
+                        },
                       },
                       description: "PBR material",
                     },
@@ -5536,21 +6142,47 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
                           enum: ["spin", "bounce", "orbit", "pulse", "float"],
                           description: "Animation type",
                         },
-                        speed: { type: "number", description: "Animation speed multiplier (default: 1.0)" },
-                        axis: { type: "string", description: "Rotation axis for spin: 'x', 'y', or 'z' (default: 'y')" },
-                        amplitude: { type: "number", description: "Movement amplitude (default: 0.5)" },
-                        radius: { type: "number", description: "Orbit radius (default: 2)" },
+                        speed: {
+                          type: "number",
+                          description:
+                            "Animation speed multiplier (default: 1.0)",
+                        },
+                        axis: {
+                          type: "string",
+                          description:
+                            "Rotation axis for spin: 'x', 'y', or 'z' (default: 'y')",
+                        },
+                        amplitude: {
+                          type: "number",
+                          description: "Movement amplitude (default: 0.5)",
+                        },
+                        radius: {
+                          type: "number",
+                          description: "Orbit radius (default: 2)",
+                        },
                       },
                       description: "Built-in animation",
                     },
-                    content: { type: "string", description: "Text content (type='text3d' only)" },
-                    fontSize: { type: "number", description: "Text size (type='text3d', default: 0.5)" },
+                    content: {
+                      type: "string",
+                      description: "Text content (type='text3d' only)",
+                    },
+                    fontSize: {
+                      type: "number",
+                      description: "Text size (type='text3d', default: 0.5)",
+                    },
                   },
                   required: ["type"],
                 },
               },
-              content: { type: "string", description: "Text content (type='text3d' only)" },
-              fontSize: { type: "number", description: "Text size (type='text3d', default: 0.5)" },
+              content: {
+                type: "string",
+                description: "Text content (type='text3d' only)",
+              },
+              fontSize: {
+                type: "number",
+                description: "Text size (type='text3d', default: 0.5)",
+              },
             },
             required: ["type"],
           },
@@ -5558,10 +6190,22 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         options: {
           type: "object",
           properties: {
-            title: { type: "string", description: "Title displayed in the overlay" },
-            showGrid: { type: "boolean", description: "Show ground grid (default: false)" },
-            showAxes: { type: "boolean", description: "Show XYZ axes (default: false)" },
-            enableShadows: { type: "boolean", description: "Enable shadow casting (default: true)" },
+            title: {
+              type: "string",
+              description: "Title displayed in the overlay",
+            },
+            showGrid: {
+              type: "boolean",
+              description: "Show ground grid (default: false)",
+            },
+            showAxes: {
+              type: "boolean",
+              description: "Show XYZ axes (default: false)",
+            },
+            enableShadows: {
+              type: "boolean",
+              description: "Enable shadow casting (default: true)",
+            },
           },
           description: "Scene rendering options",
         },
@@ -6706,15 +7350,18 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         url: {
           type: "string",
-          description: "The URL of the PDF to download and read (must be http or https).",
+          description:
+            "The URL of the PDF to download and read (must be http or https).",
         },
         maxPages: {
           type: "integer",
-          description: "Optional maximum number of pages to extract from the PDF.",
+          description:
+            "Optional maximum number of pages to extract from the PDF.",
         },
         maxChars: {
           type: "integer",
-          description: "Optional maximum characters of text to return (default: 100,000).",
+          description:
+            "Optional maximum characters of text to return (default: 100,000).",
         },
       },
       required: ["url"],
@@ -6735,15 +7382,18 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         url: {
           type: "string",
-          description: "The URL of the DOCX file to download and read (must be http or https).",
+          description:
+            "The URL of the DOCX file to download and read (must be http or https).",
         },
         maxChars: {
           type: "integer",
-          description: "Optional maximum characters of text to return (default: 100,000).",
+          description:
+            "Optional maximum characters of text to return (default: 100,000).",
         },
         outputFormat: {
           type: "string",
-          description: "Output format: 'markdown' (default, preserves formatting) or 'text' (plain text only).",
+          description:
+            "Output format: 'markdown' (default, preserves formatting) or 'text' (plain text only).",
           enum: ["markdown", "text"],
         },
       },
@@ -6758,34 +7408,47 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     endpoint: {
       method: "POST",
       path: "/agentic/web/spreadsheet-read",
-      bodyParams: ["url", "maxRows", "maxChars", "sheet", "includeHeaders", "outputFormat"],
+      bodyParams: [
+        "url",
+        "maxRows",
+        "maxChars",
+        "sheet",
+        "includeHeaders",
+        "outputFormat",
+      ],
     },
     parameters: {
       type: "object",
       properties: {
         url: {
           type: "string",
-          description: "The URL of the spreadsheet file to download and read (must be http or https). Supports .xlsx, .xls, .csv, and .tsv formats.",
+          description:
+            "The URL of the spreadsheet file to download and read (must be http or https). Supports .xlsx, .xls, .csv, and .tsv formats.",
         },
         maxRows: {
           type: "integer",
-          description: "Maximum number of data rows to extract per sheet (default: 1000).",
+          description:
+            "Maximum number of data rows to extract per sheet (default: 1000).",
         },
         maxChars: {
           type: "integer",
-          description: "Maximum characters of total output to return (default: 100,000).",
+          description:
+            "Maximum characters of total output to return (default: 100,000).",
         },
         sheet: {
           type: "string",
-          description: "Specific sheet to extract — by name (e.g. 'Sheet1') or 0-based index (e.g. '0'). If omitted, all sheets are extracted.",
+          description:
+            "Specific sheet to extract — by name (e.g. 'Sheet1') or 0-based index (e.g. '0'). If omitted, all sheets are extracted.",
         },
         includeHeaders: {
           type: "boolean",
-          description: "If true (default), treat the first row as column headers and return data rows as objects keyed by header values. If false, return raw arrays.",
+          description:
+            "If true (default), treat the first row as column headers and return data rows as objects keyed by header values. If false, return raw arrays.",
         },
         outputFormat: {
           type: "string",
-          description: "Output format: 'json' (default, structured objects), 'markdown' (pipe-delimited tables), or 'csv' (raw CSV text).",
+          description:
+            "Output format: 'json' (default, structured objects), 'markdown' (pipe-delimited tables), or 'csv' (raw CSV text).",
           enum: ["json", "markdown", "csv"],
         },
       },
@@ -7841,18 +8504,21 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         sessionId: {
           type: "string",
-          description: "Optional session ID to update/append to an existing animation sequence. If omitted, a new animation is started.",
+          description:
+            "Optional session ID to update/append to an existing animation sequence. If omitted, a new animation is started.",
         },
         options: {
           type: "object",
           properties: {
             loop: {
               type: "boolean",
-              description: "Whether the animation should loop during playback (default: true).",
+              description:
+                "Whether the animation should loop during playback (default: true).",
             },
             autoplay: {
               type: "boolean",
-              description: "Whether playback should start automatically (default: true).",
+              description:
+                "Whether playback should start automatically (default: true).",
             },
             title: {
               type: "string",
@@ -7866,7 +8532,8 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           properties: {
             clearSession: {
               type: "boolean",
-              description: "Optional. If true, clears the entire session animation state and resets it to this new input definition.",
+              description:
+                "Optional. If true, clears the entire session animation state and resets it to this new input definition.",
             },
             width: {
               type: "integer",
@@ -7878,15 +8545,18 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             },
             duration: {
               type: "number",
-              description: "Total duration of the animation in seconds (default: 5.0).",
+              description:
+                "Total duration of the animation in seconds (default: 5.0).",
             },
             fps: {
               type: "integer",
-              description: "Frames per second for calculation (default: 24, range: 12-60).",
+              description:
+                "Frames per second for calculation (default: 24, range: 12-60).",
             },
             background: {
               type: "string",
-              description: "Canvas background color (CSS value, default: '#0f172a').",
+              description:
+                "Canvas background color (CSS value, default: '#0f172a').",
             },
             layers: {
               type: "array",
@@ -7901,51 +8571,96 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
                   action: {
                     type: "string",
                     enum: ["delete"],
-                    description: "Optional. Set to 'delete' to remove this layer from the session.",
+                    description:
+                      "Optional. Set to 'delete' to remove this layer from the session.",
                   },
                   replaceKeyframes: {
                     type: "boolean",
-                    description: "Optional. If true, overwrites all keyframes of the layer instead of merging them.",
+                    description:
+                      "Optional. If true, overwrites all keyframes of the layer instead of merging them.",
                   },
                   shapeType: {
                     type: "string",
-                    enum: ["rectangle", "circle", "ellipse", "line", "polygon", "path", "text"],
+                    enum: [
+                      "rectangle",
+                      "circle",
+                      "ellipse",
+                      "line",
+                      "polygon",
+                      "path",
+                      "text",
+                    ],
                     description: "The type of shape rendered by this layer.",
                   },
                   shapeData: {
                     type: "object",
-                    description: "Static properties of the shape (e.g. {width: 100, height: 100} for rectangle, {radius: 50} for circle, {points: [[0,0], [50,100], [100,0]]} for polygon, {path: 'M 10 10 L 90 90'} for path, {text: 'hello'} for text).",
+                    description:
+                      "Static properties of the shape (e.g. {width: 100, height: 100} for rectangle, {radius: 50} for circle, {points: [[0,0], [50,100], [100,0]]} for polygon, {path: 'M 10 10 L 90 90'} for path, {text: 'hello'} for text).",
                   },
                   fillColor: {
                     anyOf: [
                       {
                         type: "string",
-                        description: "Default fill color (CSS color, e.g. '#ef4444', 'rgba(0,0,0,0.5)', 'transparent').",
+                        description:
+                          "Default fill color (CSS color, e.g. '#ef4444', 'rgba(0,0,0,0.5)', 'transparent').",
                       },
                       {
                         type: "object",
-                        description: "Linear or radial gradient fill definition.",
+                        description:
+                          "Linear or radial gradient fill definition.",
                         properties: {
                           type: {
                             type: "string",
                             enum: ["linear", "radial"],
                           },
-                          x1: { type: "number", description: "X coordinate of linear end point or radial end center." },
-                          y1: { type: "number", description: "Y coordinate of linear end point or radial end center." },
-                          x2: { type: "number", description: "X coordinate of linear end point." },
-                          y2: { type: "number", description: "Y coordinate of linear end point." },
-                          x0: { type: "number", description: "X coordinate of radial start center." },
-                          y0: { type: "number", description: "Y coordinate of radial start center." },
-                          r0: { type: "number", description: "Radius of radial start circle." },
-                          r1: { type: "number", description: "Radius of radial end circle." },
+                          x1: {
+                            type: "number",
+                            description:
+                              "X coordinate of linear end point or radial end center.",
+                          },
+                          y1: {
+                            type: "number",
+                            description:
+                              "Y coordinate of linear end point or radial end center.",
+                          },
+                          x2: {
+                            type: "number",
+                            description: "X coordinate of linear end point.",
+                          },
+                          y2: {
+                            type: "number",
+                            description: "Y coordinate of linear end point.",
+                          },
+                          x0: {
+                            type: "number",
+                            description: "X coordinate of radial start center.",
+                          },
+                          y0: {
+                            type: "number",
+                            description: "Y coordinate of radial start center.",
+                          },
+                          r0: {
+                            type: "number",
+                            description: "Radius of radial start circle.",
+                          },
+                          r1: {
+                            type: "number",
+                            description: "Radius of radial end circle.",
+                          },
                           stops: {
                             type: "array",
                             description: "Color stops for the gradient.",
                             items: {
                               type: "object",
                               properties: {
-                                offset: { type: "number", description: "Stop position from 0.0 to 1.0." },
-                                color: { type: "string", description: "CSS color string." },
+                                offset: {
+                                  type: "number",
+                                  description: "Stop position from 0.0 to 1.0.",
+                                },
+                                color: {
+                                  type: "string",
+                                  description: "CSS color string.",
+                                },
                               },
                               required: ["offset", "color"],
                             },
@@ -7959,32 +8674,66 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
                     anyOf: [
                       {
                         type: "string",
-                        description: "Default stroke/outline color (CSS color, e.g. '#ffffff', 'rgba(255,255,255,0.8)', 'transparent').",
+                        description:
+                          "Default stroke/outline color (CSS color, e.g. '#ffffff', 'rgba(255,255,255,0.8)', 'transparent').",
                       },
                       {
                         type: "object",
-                        description: "Linear or radial gradient stroke/outline definition.",
+                        description:
+                          "Linear or radial gradient stroke/outline definition.",
                         properties: {
                           type: {
                             type: "string",
                             enum: ["linear", "radial"],
                           },
-                          x1: { type: "number", description: "X coordinate of linear end point or radial end center." },
-                          y1: { type: "number", description: "Y coordinate of linear end point or radial end center." },
-                          x2: { type: "number", description: "X coordinate of linear end point." },
-                          y2: { type: "number", description: "Y coordinate of linear end point." },
-                          x0: { type: "number", description: "X coordinate of radial start center." },
-                          y0: { type: "number", description: "Y coordinate of radial start center." },
-                          r0: { type: "number", description: "Radius of radial start circle." },
-                          r1: { type: "number", description: "Radius of radial end circle." },
+                          x1: {
+                            type: "number",
+                            description:
+                              "X coordinate of linear end point or radial end center.",
+                          },
+                          y1: {
+                            type: "number",
+                            description:
+                              "Y coordinate of linear end point or radial end center.",
+                          },
+                          x2: {
+                            type: "number",
+                            description: "X coordinate of linear end point.",
+                          },
+                          y2: {
+                            type: "number",
+                            description: "Y coordinate of linear end point.",
+                          },
+                          x0: {
+                            type: "number",
+                            description: "X coordinate of radial start center.",
+                          },
+                          y0: {
+                            type: "number",
+                            description: "Y coordinate of radial start center.",
+                          },
+                          r0: {
+                            type: "number",
+                            description: "Radius of radial start circle.",
+                          },
+                          r1: {
+                            type: "number",
+                            description: "Radius of radial end circle.",
+                          },
                           stops: {
                             type: "array",
                             description: "Color stops for the gradient.",
                             items: {
                               type: "object",
                               properties: {
-                                offset: { type: "number", description: "Stop position from 0.0 to 1.0." },
-                                color: { type: "string", description: "CSS color string." },
+                                offset: {
+                                  type: "number",
+                                  description: "Stop position from 0.0 to 1.0.",
+                                },
+                                color: {
+                                  type: "string",
+                                  description: "CSS color string.",
+                                },
                               },
                               required: ["offset", "color"],
                             },
@@ -8000,43 +8749,52 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
                   },
                   opacity: {
                     type: "number",
-                    description: "Default opacity multiplier (0.0 to 1.0, default: 1.0).",
+                    description:
+                      "Default opacity multiplier (0.0 to 1.0, default: 1.0).",
                   },
                   imageUrl: {
                     type: "string",
-                    description: "Optional image URL to fill the shape with (rendered via clipping). Supports standard formats and base64 data URLs.",
+                    description:
+                      "Optional image URL to fill the shape with (rendered via clipping). Supports standard formats and base64 data URLs.",
                   },
                   keyframes: {
                     type: "array",
-                    description: "Keyframe timeline defining animated transitions for properties.",
+                    description:
+                      "Keyframe timeline defining animated transitions for properties.",
                     items: {
                       type: "object",
                       properties: {
                         time: {
                           type: "number",
-                          description: "Time in seconds for this keyframe (must be between 0.0 and duration).",
+                          description:
+                            "Time in seconds for this keyframe (must be between 0.0 and duration).",
                         },
                         easing: {
                           type: "string",
-                          description: "Easing function to transition to the NEXT keyframe (e.g. 'linear', 'ease-in', 'ease-out', 'ease-in-out', 'step', 'cubic-bezier(x1,y1,x2,y2)').",
+                          description:
+                            "Easing function to transition to the NEXT keyframe (e.g. 'linear', 'ease-in', 'ease-out', 'ease-in-out', 'step', 'cubic-bezier(x1,y1,x2,y2)').",
                         },
                         motionPath: {
                           type: "object",
-                          description: "Optional SVG path along which the shape's coordinate should glide to the next keyframe.",
+                          description:
+                            "Optional SVG path along which the shape's coordinate should glide to the next keyframe.",
                           properties: {
                             path: {
                               type: "string",
-                              description: "SVG path data (d attribute, e.g. 'M 0 0 C 100 0, 100 200, 200 200').",
+                              description:
+                                "SVG path data (d attribute, e.g. 'M 0 0 C 100 0, 100 200, 200 200').",
                             },
                             orientToPath: {
                               type: "boolean",
-                              description: "Whether to rotate the shape automatically to follow the curve tangent (default: false).",
+                              description:
+                                "Whether to rotate the shape automatically to follow the curve tangent (default: false).",
                             },
                           },
                         },
                         properties: {
                           type: "object",
-                          description: "The target property values at this keyframe. Supported keys: x, y, scaleX, scaleY, rotation, opacity, fillColor, strokeColor, strokeWidth, width, height, radius, points, text, fontSize, imageUrl.",
+                          description:
+                            "The target property values at this keyframe. Supported keys: x, y, scaleX, scaleY, rotation, opacity, fillColor, strokeColor, strokeWidth, width, height, radius, points, text, fontSize, imageUrl.",
                         },
                       },
                       required: ["time", "properties"],
@@ -8750,7 +9508,14 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "Use this to analyze when a user is most active on the server.",
     endpoint: {
       path: "/discord/guild/heatmap",
-      queryParams: ["guildId", "userId", "channelId", "years", "months", "days"],
+      queryParams: [
+        "guildId",
+        "userId",
+        "channelId",
+        "years",
+        "months",
+        "days",
+      ],
     },
     parameters: {
       type: "object",
@@ -8791,7 +9556,14 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "average mentions per user, and percentage distribution.",
     endpoint: {
       path: "/discord/guild/mentions",
-      queryParams: ["guildId", "userId", "years", "months", "days", "channelId"],
+      queryParams: [
+        "guildId",
+        "userId",
+        "years",
+        "months",
+        "days",
+        "channelId",
+      ],
     },
     parameters: {
       type: "object",
@@ -10996,6 +11768,17 @@ const TOOL_DOMAINS = {
   read_rss_feed: "Knowledge",
   get_pypi_package: "Knowledge",
 
+  // Reddit
+  search_reddit: "Reddit",
+  search_reddit_subreddits: "Reddit",
+  get_reddit_subreddit_info: "Reddit",
+  get_reddit_subreddit_feed: "Reddit",
+  get_reddit_subreddit_rules: "Reddit",
+  get_reddit_subreddit_wiki_pages: "Reddit",
+  get_reddit_subreddit_wiki_page: "Reddit",
+  get_reddit_user_history: "Reddit",
+  get_reddit_user_profile: "Reddit",
+
   // Movies & TV
   search_media: "Movies & TV",
   get_media_details: "Movies & TV",
@@ -11321,6 +12104,17 @@ const TOOL_EMOJIS = {
   get_pypi_package: "🐍",
   get_music: "🎵",
   get_wayback_snapshot: "🕰️",
+
+  // Reddit
+  search_reddit: "🤖",
+  search_reddit_subreddits: "🔍",
+  get_reddit_subreddit_info: "ℹ️",
+  get_reddit_subreddit_feed: "📰",
+  get_reddit_subreddit_rules: "⚖️",
+  get_reddit_subreddit_wiki_pages: "📄",
+  get_reddit_subreddit_wiki_page: "📖",
+  get_reddit_user_history: "📜",
+  get_reddit_user_profile: "👤",
 
   // Movies & TV
   search_media: "🎬",
@@ -11655,6 +12449,17 @@ const TOOL_REQUIRED_KEYS = {
   torrent_search: ["QBITTORRENT_URL"],
   torrent_download: ["QBITTORRENT_URL"],
   torrent_status: ["QBITTORRENT_URL"],
+
+  // Reddit
+  search_reddit: ["REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET"],
+  search_reddit_subreddits: ["REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET"],
+  get_reddit_subreddit_info: ["REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET"],
+  get_reddit_subreddit_feed: ["REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET"],
+  get_reddit_subreddit_rules: ["REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET"],
+  get_reddit_subreddit_wiki_pages: ["REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET"],
+  get_reddit_subreddit_wiki_page: ["REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET"],
+  get_reddit_user_history: ["REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET"],
+  get_reddit_user_profile: ["REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET"],
 };
 
 // ────────────────────────────────────────────────────────────
@@ -11686,9 +12491,7 @@ export function disableToolRuntime(toolName: string, reason: string): void {
  */
 export function enableToolRuntime(toolName: string): void {
   if (TOOL_DISABLED_RUNTIME.delete(toolName)) {
-    logger.info(
-      `[ToolSchema] ✅ Re-enabled tool "${toolName}" at runtime`,
-    );
+    logger.info(`[ToolSchema] ✅ Re-enabled tool "${toolName}" at runtime`);
   }
 }
 
@@ -11801,6 +12604,17 @@ const TOOL_LABELS = {
   get_on_this_day: ["reference"],
   list_development_indicators: ["reference"],
   get_pypi_package: ["coding", "reference"],
+
+  // ── Reddit ──
+  search_reddit: ["web", "data"],
+  search_reddit_subreddits: ["web", "data"],
+  get_reddit_subreddit_info: ["web", "data"],
+  get_reddit_subreddit_feed: ["web", "data"],
+  get_reddit_subreddit_rules: ["web", "data"],
+  get_reddit_subreddit_wiki_pages: ["web", "data"],
+  get_reddit_subreddit_wiki_page: ["web", "data"],
+  get_reddit_user_history: ["web", "data"],
+  get_reddit_user_profile: ["web", "data"],
 
   // ── Movies & TV ──────────────────────────────────────────
 
@@ -12094,6 +12908,17 @@ const TOOL_INTELLIGENCE_TIERS: Record<string, ToolIntelligenceTier> = {
   search_products: "medium",
   get_anime: "medium",
   search_books: "medium",
+
+  // Reddit
+  search_reddit: "medium",
+  search_reddit_subreddits: "medium",
+  get_reddit_subreddit_info: "medium",
+  get_reddit_subreddit_feed: "medium",
+  get_reddit_subreddit_rules: "medium",
+  get_reddit_subreddit_wiki_pages: "medium",
+  get_reddit_subreddit_wiki_page: "medium",
+  get_reddit_user_history: "medium",
+  get_reddit_user_profile: "medium",
   search_media: "medium",
   get_media_details: "medium",
   get_media_credits: "medium",
@@ -12176,7 +13001,8 @@ export {
 export function getToolSchemas(): ToolSchema[] {
   return TOOL_DEFINITIONS.filter((tool) => isToolAvailable(tool.name)).map(
     (tool) => {
-      const domain = TOOL_DOMAINS[tool.name as keyof typeof TOOL_DOMAINS] || "Other";
+      const domain =
+        TOOL_DOMAINS[tool.name as keyof typeof TOOL_DOMAINS] || "Other";
       return {
         ...tool,
         domain,

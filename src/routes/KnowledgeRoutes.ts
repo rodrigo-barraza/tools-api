@@ -59,6 +59,19 @@ import {
 import { getYouTubeVideoInfo } from "../fetchers/knowledge/YouTubeFetcher.ts";
 import { getGitHubRepo } from "../fetchers/web/GitHubFetcher.ts";
 import { getRedditThread } from "../fetchers/web/RedditFetcher.ts";
+import {
+  getRedditUserHistory,
+  getRedditUserProfile,
+} from "../fetchers/web/RedditUserFetcher.ts";
+import { searchReddit } from "../fetchers/web/RedditSearchFetcher.ts";
+import {
+  searchSubreddits,
+  getSubredditInfo,
+  getSubredditFeed,
+  getSubredditRules,
+  getSubredditWikiPages,
+  getSubredditWikiPage,
+} from "../fetchers/web/RedditSubredditFetcher.ts";
 import { getNpmPackage } from "../fetchers/web/NpmFetcher.ts";
 import { getPyPiPackage } from "../fetchers/web/PyPiFetcher.ts";
 import { readPdfUrl } from "../fetchers/web/PdfFetcher.ts";
@@ -537,11 +550,9 @@ router.get(
       string | undefined
     >;
     if (!url) {
-      return res
-        .status(400)
-        .json({
-          error: "Query parameter 'url' is required (YouTube URL or video ID)",
-        });
+      return res.status(400).json({
+        error: "Query parameter 'url' is required (YouTube URL or video ID)",
+      });
     }
     const result = await getYouTubeVideoInfo(url, {
       lang,
@@ -563,11 +574,9 @@ router.get(
       string | undefined
     >;
     if (!url) {
-      return res
-        .status(400)
-        .json({
-          error: "Query parameter 'url' is required (GitHub URL or owner/repo)",
-        });
+      return res.status(400).json({
+        error: "Query parameter 'url' is required (GitHub URL or owner/repo)",
+      });
     }
     const result = await getGitHubRepo(url, {
       includeReadme: readme !== "false",
@@ -601,17 +610,214 @@ router.get(
     res.json(result);
   }),
 );
+router.get(
+  "/reddit/user/:username",
+  asyncHandler(async (req: Request, res: Response) => {
+    const username = req.params.username as string;
+    if (!username) {
+      return res
+        .status(400)
+        .json({ error: "URL parameter 'username' is required" });
+    }
+    const {
+      category,
+      limit,
+      maxPages,
+      sort,
+      t: timeRange,
+    } = req.query as Record<string, string | undefined>;
+    const result = await getRedditUserHistory(username, {
+      category: category as
+        | "overview"
+        | "comments"
+        | "submitted"
+        | "gilded"
+        | undefined,
+      limit: limit ? parseIntParam(limit, 25) : undefined,
+      maxPages: maxPages ? parseIntParam(maxPages, 10) : undefined,
+      sort: sort as "new" | "hot" | "top" | "controversial" | undefined,
+      timeRange: timeRange as
+        | "hour"
+        | "day"
+        | "week"
+        | "month"
+        | "year"
+        | "all"
+        | undefined,
+    });
+    if ("error" in result) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  }),
+);
+router.get(
+  "/reddit/user/:username/profile",
+  asyncHandler(async (req: Request, res: Response) => {
+    const username = req.params.username as string;
+    if (!username) {
+      return res
+        .status(400)
+        .json({ error: "URL parameter 'username' is required" });
+    }
+    const result = await getRedditUserProfile(username);
+    if ("error" in result) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  }),
+);
+router.get(
+  "/reddit/search",
+  asyncHandler(async (req: Request, res: Response) => {
+    const {
+      q: query,
+      subreddit,
+      type,
+      sort,
+      t: timeRange,
+      limit,
+      maxPages,
+      nsfw,
+    } = req.query as Record<string, string | undefined>;
+    if (!query) {
+      return res.status(400).json({ error: "Query parameter 'q' is required" });
+    }
+    const result = await searchReddit(query, {
+      subreddit,
+      type: type as "link" | "comment" | undefined,
+      sort: sort as
+        | "relevance"
+        | "new"
+        | "hot"
+        | "top"
+        | "comments"
+        | undefined,
+      timeRange: timeRange as
+        | "hour"
+        | "day"
+        | "week"
+        | "month"
+        | "year"
+        | "all"
+        | undefined,
+      limit: limit ? parseIntParam(limit, 25) : undefined,
+      maxPages: maxPages ? parseIntParam(maxPages, 5) : undefined,
+      includeNsfw: nsfw === "true",
+    });
+    if ("error" in result) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  }),
+);
+router.get(
+  "/reddit/subreddits/search",
+  asyncHandler(async (req: Request, res: Response) => {
+    const {
+      q: query,
+      limit,
+      nsfw,
+    } = req.query as Record<string, string | undefined>;
+    if (!query) {
+      return res.status(400).json({ error: "Query parameter 'q' is required" });
+    }
+    const result = await searchSubreddits(query, {
+      limit: limit ? parseIntParam(limit, 10) : undefined,
+      includeNsfw: nsfw === "true",
+    });
+    if ("error" in result) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  }),
+);
+router.get(
+  "/reddit/r/:subreddit/info",
+  asyncHandler(async (req: Request, res: Response) => {
+    const result = await getSubredditInfo(req.params.subreddit as string);
+    if ("error" in result) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  }),
+);
+router.get(
+  "/reddit/r/:subreddit/feed",
+  asyncHandler(async (req: Request, res: Response) => {
+    const {
+      sort,
+      t: timeRange,
+      limit,
+      pinned,
+    } = req.query as Record<string, string | undefined>;
+    const result = await getSubredditFeed(req.params.subreddit as string, {
+      sort: sort as
+        | "hot"
+        | "new"
+        | "top"
+        | "rising"
+        | "controversial"
+        | undefined,
+      timeRange: timeRange as
+        | "hour"
+        | "day"
+        | "week"
+        | "month"
+        | "year"
+        | "all"
+        | undefined,
+      limit: limit ? parseIntParam(limit, 25) : undefined,
+      excludePinned: pinned !== "true",
+    });
+    if ("error" in result) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  }),
+);
+router.get(
+  "/reddit/r/:subreddit/rules",
+  asyncHandler(async (req: Request, res: Response) => {
+    const result = await getSubredditRules(req.params.subreddit as string);
+    if ("error" in result) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  }),
+);
+router.get(
+  "/reddit/r/:subreddit/wiki",
+  asyncHandler(async (req: Request, res: Response) => {
+    const result = await getSubredditWikiPages(req.params.subreddit as string);
+    if ("error" in result) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  }),
+);
+router.get(
+  "/reddit/r/:subreddit/wiki/:page",
+  asyncHandler(async (req: Request, res: Response) => {
+    const result = await getSubredditWikiPage(
+      req.params.subreddit as string,
+      req.params.page as string,
+    );
+    if ("error" in result) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  }),
+);
 // ─── NPM ───────────────────────────────────────────────────────────
 router.get(
   "/npm/package",
   asyncHandler(async (req: Request, res: Response) => {
     const { name, readme } = req.query as Record<string, string | undefined>;
     if (!name) {
-      return res
-        .status(400)
-        .json({
-          error: "Query parameter 'name' is required (NPM package name)",
-        });
+      return res.status(400).json({
+        error: "Query parameter 'name' is required (NPM package name)",
+      });
     }
     const result = await getNpmPackage(name, {
       includeReadme: readme !== "false",
@@ -636,11 +842,9 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const { url, maxPages } = req.query as Record<string, string | undefined>;
     if (!url) {
-      return res
-        .status(400)
-        .json({
-          error: "Query parameter 'url' is required (URL to a PDF file)",
-        });
+      return res.status(400).json({
+        error: "Query parameter 'url' is required (URL to a PDF file)",
+      });
     }
     const result = await readPdfUrl(url, { maxPages });
     if (result.error) {
@@ -655,11 +859,9 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const { url, limit } = req.query as Record<string, string | undefined>;
     if (!url) {
-      return res
-        .status(400)
-        .json({
-          error: "Query parameter 'url' is required (RSS/Atom feed URL)",
-        });
+      return res.status(400).json({
+        error: "Query parameter 'url' is required (RSS/Atom feed URL)",
+      });
     }
     const result = await readRssFeed(url, {
       limit: limit ? parseIntParam(limit, 20) : undefined,
@@ -676,12 +878,9 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const { url } = req.query as Record<string, string | undefined>;
     if (!url) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "Query parameter 'url' is required (Twitter/X URL or tweet ID)",
-        });
+      return res.status(400).json({
+        error: "Query parameter 'url' is required (Twitter/X URL or tweet ID)",
+      });
     }
     const result = await getTwitterPost(url);
     if (result.error) {
@@ -699,11 +898,9 @@ router.get(
       string | undefined
     >;
     if (!url) {
-      return res
-        .status(400)
-        .json({
-          error: "Query parameter 'url' is required (HN URL or item ID)",
-        });
+      return res.status(400).json({
+        error: "Query parameter 'url' is required (HN URL or item ID)",
+      });
     }
     const result = await getHackerNewsThread(url, {
       commentLimit: commentLimit ? parseIntParam(commentLimit, 25) : undefined,
@@ -723,12 +920,10 @@ router.get(
       string | undefined
     >;
     if (!url) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "Query parameter 'url' is required (Stack Overflow URL or question ID)",
-        });
+      return res.status(400).json({
+        error:
+          "Query parameter 'url' is required (Stack Overflow URL or question ID)",
+      });
     }
     const result = await getStackOverflowQuestion(url, {
       answerLimit: answerLimit ? parseIntParam(answerLimit, 5) : undefined,
@@ -787,11 +982,9 @@ router.get(
         .json({ error: "Query parameter 'name' is required" });
     }
     if (!registry) {
-      return res
-        .status(400)
-        .json({
-          error: "Query parameter 'registry' is required ('npm' or 'pypi')",
-        });
+      return res.status(400).json({
+        error: "Query parameter 'registry' is required ('npm' or 'pypi')",
+      });
     }
     const result = await getPackageInfo(name, registry, { readme });
     if (result.error) {
@@ -913,7 +1106,8 @@ export function getKnowledgeHealth() {
     nasaExoplanets: "on-demand (in-memory, ~6,153 planets)",
     youtube: "on-demand (oEmbed + youtube-transcript)",
     github: "on-demand (GitHub REST API v3)",
-    reddit: "on-demand (.json API)",
+    reddit:
+      "on-demand (.json API + OAuth2: user history, search, subreddit discovery/feed/wiki/rules)",
     npm: "on-demand (NPM Registry)",
     pypi: "on-demand (PyPI JSON API)",
     pdf: "on-demand (pdf-parse)",
@@ -943,12 +1137,10 @@ router.get(
       limit,
     } = req.query as Record<string, string | undefined>;
     if (!action)
-      return res
-        .status(400)
-        .json({
-          error: "'action' is required",
-          actions: ["search", "work", "author"],
-        });
+      return res.status(400).json({
+        error: "'action' is required",
+        actions: ["search", "work", "author"],
+      });
     switch (action) {
       case "search":
         req.url = `/books/search?q=${searchQuery || ""}&limit=${limit || 10}`;
@@ -968,12 +1160,10 @@ router.get(
           res.status(404).json({ error: "Route not found" }),
         );
       default:
-        return res
-          .status(400)
-          .json({
-            error: `Unknown action: ${action}`,
-            actions: ["search", "work", "author"],
-          });
+        return res.status(400).json({
+          error: `Unknown action: ${action}`,
+          actions: ["search", "work", "author"],
+        });
     }
   }),
 );
@@ -984,12 +1174,10 @@ router.get(
     const { action, name, code, indicator, countries, limit, order } =
       req.query as Record<string, string | undefined>;
     if (!action)
-      return res
-        .status(400)
-        .json({
-          error: "'action' is required",
-          actions: ["info", "code", "indicators", "rank", "compare"],
-        });
+      return res.status(400).json({
+        error: "'action' is required",
+        actions: ["info", "code", "indicators", "rank", "compare"],
+      });
     switch (action) {
       case "info":
         req.url = `/countries/search/${encodeURIComponent(name || "")}`;
@@ -1020,12 +1208,10 @@ router.get(
           res.status(404).json({ error: "Route not found" }),
         );
       default:
-        return res
-          .status(400)
-          .json({
-            error: `Unknown action: ${action}`,
-            actions: ["info", "code", "indicators", "rank", "compare"],
-          });
+        return res.status(400).json({
+          error: `Unknown action: ${action}`,
+          actions: ["info", "code", "indicators", "rank", "compare"],
+        });
     }
   }),
 );
@@ -1044,12 +1230,10 @@ router.get(
       block,
     } = req.query as Record<string, string | undefined>;
     if (!action)
-      return res
-        .status(400)
-        .json({
-          error: "'action' is required",
-          actions: ["search", "lookup", "rank", "categories"],
-        });
+      return res.status(400).json({
+        error: "'action' is required",
+        actions: ["search", "lookup", "rank", "categories"],
+      });
     switch (action) {
       case "search":
         req.url = `/elements/search?q=${searchQuery || ""}&limit=${limit || 10}&category=${category || ""}&block=${block || ""}`;
@@ -1073,12 +1257,10 @@ router.get(
           res.status(404).json({ error: "Route not found" }),
         );
       default:
-        return res
-          .status(400)
-          .json({
-            error: `Unknown action: ${action}`,
-            actions: ["search", "lookup", "rank", "categories"],
-          });
+        return res.status(400).json({
+          error: `Unknown action: ${action}`,
+          actions: ["search", "lookup", "rank", "categories"],
+        });
     }
   }),
 );
@@ -1096,12 +1278,10 @@ router.get(
       method,
     } = req.query as Record<string, string | undefined>;
     if (!action)
-      return res
-        .status(400)
-        .json({
-          error: "'action' is required",
-          actions: ["search", "lookup", "rank", "stats", "habitable"],
-        });
+      return res.status(400).json({
+        error: "'action' is required",
+        actions: ["search", "lookup", "rank", "stats", "habitable"],
+      });
     switch (action) {
       case "search":
         req.url = `/exoplanets/search?q=${searchQuery || ""}&limit=${limit || 10}&method=${method || ""}`;
@@ -1129,12 +1309,10 @@ router.get(
           res.status(404).json({ error: "Route not found" }),
         );
       default:
-        return res
-          .status(400)
-          .json({
-            error: `Unknown action: ${action}`,
-            actions: ["search", "lookup", "rank", "stats", "habitable"],
-          });
+        return res.status(400).json({
+          error: `Unknown action: ${action}`,
+          actions: ["search", "lookup", "rank", "stats", "habitable"],
+        });
     }
   }),
 );
@@ -1149,12 +1327,10 @@ router.get(
       limit,
     } = req.query as Record<string, string | undefined>;
     if (!action)
-      return res
-        .status(400)
-        .json({
-          error: "'action' is required",
-          actions: ["search", "top", "season", "details"],
-        });
+      return res.status(400).json({
+        error: "'action' is required",
+        actions: ["search", "top", "season", "details"],
+      });
     switch (action) {
       case "search":
         req.url = `/anime/search?q=${searchQuery || ""}&limit=${limit || 10}`;
@@ -1178,12 +1354,10 @@ router.get(
           res.status(404).json({ error: "Route not found" }),
         );
       default:
-        return res
-          .status(400)
-          .json({
-            error: `Unknown action: ${action}`,
-            actions: ["search", "top", "season", "details"],
-          });
+        return res.status(400).json({
+          error: `Unknown action: ${action}`,
+          actions: ["search", "top", "season", "details"],
+        });
     }
   }),
 );
@@ -1278,18 +1452,16 @@ router.get(
       limit,
     } = req.query as Record<string, string | undefined>;
     if (!action)
-      return res
-        .status(400)
-        .json({
-          error: "'action' is required",
-          actions: [
-            "search_artists",
-            "artist",
-            "search_albums",
-            "album",
-            "search_tracks",
-          ],
-        });
+      return res.status(400).json({
+        error: "'action' is required",
+        actions: [
+          "search_artists",
+          "artist",
+          "search_albums",
+          "album",
+          "search_tracks",
+        ],
+      });
     switch (action) {
       case "search_artists":
         if (!searchQuery)
@@ -1339,18 +1511,16 @@ router.get(
           res.status(404).json({ error: "Route not found" }),
         );
       default:
-        return res
-          .status(400)
-          .json({
-            error: `Unknown action: ${action}`,
-            actions: [
-              "search_artists",
-              "artist",
-              "search_albums",
-              "album",
-              "search_tracks",
-            ],
-          });
+        return res.status(400).json({
+          error: `Unknown action: ${action}`,
+          actions: [
+            "search_artists",
+            "artist",
+            "search_albums",
+            "album",
+            "search_tracks",
+          ],
+        });
     }
   }),
 );
@@ -1363,12 +1533,10 @@ router.get(
       string | undefined
     >;
     if (!action)
-      return res
-        .status(400)
-        .json({
-          error: "'action' is required",
-          actions: ["snapshot", "history"],
-        });
+      return res.status(400).json({
+        error: "'action' is required",
+        actions: ["snapshot", "history"],
+      });
     if (!url) return res.status(400).json({ error: "'url' is required" });
     switch (action) {
       case "snapshot":
@@ -1382,12 +1550,10 @@ router.get(
           res.status(404).json({ error: "Route not found" }),
         );
       default:
-        return res
-          .status(400)
-          .json({
-            error: `Unknown action: ${action}`,
-            actions: ["snapshot", "history"],
-          });
+        return res.status(400).json({
+          error: `Unknown action: ${action}`,
+          actions: ["snapshot", "history"],
+        });
     }
   }),
 );
