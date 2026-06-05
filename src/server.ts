@@ -32,6 +32,8 @@ import { setupTurtleDrawingCollection } from "./models/TurtleDrawing.ts";
 import { setupVectorAnimationCollection } from "./models/VectorAnimation.ts";
 import { setupThreeDimensionalSceneCollection } from "./models/ThreeDimensionalScene.ts";
 import { setupEmbedAssetCollection } from "./models/EmbedAsset.ts";
+import { setupCurrencyCollection } from "./models/CurrencySnapshot.ts";
+
 
 import {
   connectLuposDB,
@@ -87,6 +89,8 @@ import { startProductCollectors } from "./collectors/ProductCollector.ts";
 import { startTrendCollectors } from "./collectors/TrendCollector.ts";
 import { startWeatherCollectors } from "./collectors/WeatherCollector.ts";
 import { startEmojiKitchenCollectors } from "./collectors/EmojiKitchenCollector.ts";
+import { startCurrencyCollector } from "./collectors/CurrencyCollector.ts";
+
 import { startAisStream } from "./fetchers/maritime/AisStreamFetcher.ts";
 
 import { errorMessage } from "./utilities.ts";
@@ -218,7 +222,9 @@ async function start() {
       setupVectorAnimationCollection(),
       setupThreeDimensionalSceneCollection(),
       setupEmbedAssetCollection(),
+      setupCurrencyCollection(),
       setupToolCallsCollection(),
+
       setupRequestsCollection(),
       setupAgenticTaskCollection(),
       setupAgenticScheduleCollection(),
@@ -246,6 +252,8 @@ async function start() {
   startTrendCollectors();
   startWeatherCollectors();
   startEmojiKitchenCollectors();
+  startCurrencyCollector();
+
 
   // Start AIS Stream WebSocket (if API key is configured)
   startAisStream();

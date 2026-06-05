@@ -1,108 +1,85 @@
 import { EXCHANGE_RATE_BASE_URL } from "../../constants.ts";
 
-/**
- * Exchange Rate API fetcher.
- * https://open.er-api.com/ — no auth required (free tier).
- * Returns real-time exchange rates for 161 currencies.
- */
-
-// ─── In-Memory Rate Cache ──────────────────────────────────────────
-
-interface CachedRates {
-  base: string;
+export interface CachedExchangeRates {
+  baseCurrency: string;
   lastUpdate: string;
   nextUpdate: string;
-  rates: Record<string, number>;
+  exchangeRates: Record<string, number>;
 }
 
-const rateCache = new Map<string, { data: CachedRates; fetchedAt: number }>();
-const RATE_CACHE_TTL_MS = 3_600_000; // 1 hour — rates update daily on free tier
+const exchangeRateCache = new Map<string, { data: CachedExchangeRates; fetchedAt: number }>();
+const EXCHANGE_RATE_CACHE_TTL_MILLISECONDS = 3_600_000;
 
-// ─── Fetch Latest Rates ────────────────────────────────────────────
+export async function fetchExchangeRates(baseCurrency: string = "USD"): Promise<CachedExchangeRates> {
+  const uppercaseBaseCurrency = baseCurrency.toUpperCase();
 
-/**
- * Get latest exchange rates for a base currency.
-
-
- */
-async function fetchRates(base: string = "USD"): Promise<CachedRates> {
-  const upperBase = base.toUpperCase();
-
-  // Check cache
-  const cached = rateCache.get(upperBase);
-  if (cached && Date.now() - cached.fetchedAt < RATE_CACHE_TTL_MS) {
-    return cached.data;
+  const cachedExchangeRates = exchangeRateCache.get(uppercaseBaseCurrency);
+  if (
+    cachedExchangeRates &&
+    Date.now() - cachedExchangeRates.fetchedAt < EXCHANGE_RATE_CACHE_TTL_MILLISECONDS
+  ) {
+    return cachedExchangeRates.data;
   }
 
-  const url = `${EXCHANGE_RATE_BASE_URL}/${upperBase}`;
-  const response = await fetch(url);
+  const apiUrl = `${EXCHANGE_RATE_BASE_URL}/${uppercaseBaseCurrency}`;
+  const apiResponse = await fetch(apiUrl);
 
-  if (!response.ok) {
+  if (!apiResponse.ok) {
     throw new Error(
-      `Exchange Rate API → ${response.status} ${response.statusText}`,
+      `Exchange Rate API → ${apiResponse.status} ${apiResponse.statusText}`,
     );
   }
 
-  const data = await response.json();
+  const apiResponseBody = await apiResponse.json();
 
-  if (data.result !== "success") {
+  if (apiResponseBody.result !== "success") {
     throw new Error(
-      `Exchange Rate API → ${data["error-type"] || "unknown error"}`,
+      `Exchange Rate API → ${apiResponseBody["error-type"] || "unknown error"}`,
     );
   }
 
-  const result = {
-    base: data.base_code,
-    lastUpdate: data.time_last_update_utc,
-    nextUpdate: data.time_next_update_utc,
-    rates: data.rates,
+  const exchangeRateResult = {
+    baseCurrency: apiResponseBody.base_code,
+    lastUpdate: apiResponseBody.time_last_update_utc,
+    nextUpdate: apiResponseBody.time_next_update_utc,
+    exchangeRates: apiResponseBody.rates,
   };
 
-  rateCache.set(upperBase, { data: result, fetchedAt: Date.now() });
-  return result;
+  exchangeRateCache.set(uppercaseBaseCurrency, {
+    data: exchangeRateResult,
+    fetchedAt: Date.now(),
+  });
+  return exchangeRateResult;
 }
 
-// ─── Convert Currency ──────────────────────────────────────────────
-
-/**
- * Convert an amount from one currency to another.
-
-
- */
 export async function convertCurrency(
   amount: number,
-  from: string,
-  to: string,
+  fromCurrency: string,
+  toCurrency: string,
 ) {
-  const upperFrom = from.toUpperCase();
-  const upperTo = to.toUpperCase();
+  const uppercaseFromCurrency = fromCurrency.toUpperCase();
+  const uppercaseToCurrency = toCurrency.toUpperCase();
 
-  const rateData = await fetchRates(upperFrom);
-  const rate = rateData.rates[upperTo];
+  const exchangeRateData = await fetchExchangeRates(uppercaseFromCurrency);
+  const exchangeRate = exchangeRateData.exchangeRates[uppercaseToCurrency];
 
-  if (rate == null) {
-    throw new Error(`Currency "${upperTo}" not found`);
+  if (exchangeRate == null) {
+    throw new Error(`Currency "${uppercaseToCurrency}" not found`);
   }
 
-  const converted = Math.round(amount * rate * 100) / 100;
+  const convertedAmount = Math.round(amount * exchangeRate * 100) / 100;
 
   return {
-    from: upperFrom,
-    to: upperTo,
+    from: uppercaseFromCurrency,
+    to: uppercaseToCurrency,
     amount,
-    rate,
-    converted,
-    lastUpdate: rateData.lastUpdate,
+    rate: exchangeRate,
+    converted: convertedAmount,
+    lastUpdate: exchangeRateData.lastUpdate,
   };
 }
 
-// ─── List Available Currencies ─────────────────────────────────────
-
-/**
- * Get all available currency codes.
-
- */
 export async function listCurrencies() {
-  const rateData = await fetchRates("USD");
-  return Object.keys(rateData.rates).sort();
+  const exchangeRateData = await fetchExchangeRates("USD");
+  return Object.keys(exchangeRateData.exchangeRates).sort();
 }
