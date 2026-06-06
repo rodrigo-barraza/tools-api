@@ -368,3 +368,13 @@ describe("GET /weather/avalanche", () => {
     expect("lastFetch" in res.body).toBeTruthy();
   });
 });
+
+// ─── /weather/moon-phase ──────────────────────────────────────────
+
+describe("GET /weather/moon-phase", () => {
+  it("returns moon phase data or no_data", async () => {
+    const res = await request(app).get("/weather/moon-phase");
+    expect(res.status).toBe(200);
+    expect(typeof res.body === "object").toBeTruthy();
+  });
+});

@@ -19,6 +19,7 @@ import {
   TWILIGHT_INTERVAL_MS,
   ENV_CANADA_INTERVAL_MS,
   AVALANCHE_INTERVAL_MS,
+  MOON_PHASE_INTERVAL_MS,
 } from "../constants.ts";
 import { fetchOpenMeteoWeather } from "../fetchers/weather/OpenMeteoFetcher.ts";
 import { fetchAirQuality } from "../fetchers/weather/AirQualityFetcher.ts";
@@ -85,6 +86,11 @@ import {
   updateAvalanche,
   setAvalancheError,
 } from "../caches/AvalancheCache.ts";
+import {
+  updateMoonPhase,
+  setMoonPhaseError,
+} from "../caches/MoonPhaseCache.ts";
+import { calculateMoonPhase } from "../utilities/MoonPhaseCalculator.ts";
 import { saveState, startCollectorLoop } from "../services/FreshnessService.ts";
 import { disableToolRuntime } from "../services/ToolSchemaService.ts";
 import logger from "../logger.ts";
@@ -364,6 +370,17 @@ const collectAvalanche = makeCollector({
   logFn: (avalancheData) => `${avalancheData.length} forecast regions`,
 });
 
+const collectMoonPhase = makeCollector({
+  label: "Moon Phase",
+  collection: "moon_phase",
+  fetchFunction: async () => calculateMoonPhase(),
+  updateFn: updateMoonPhase,
+  setErrorFn: (error) =>
+    setMoonPhaseError(error instanceof Error ? error : new Error(errorMessage(error))),
+  logFn: (moonPhaseData) =>
+    `${moonPhaseData.phaseEmoji} ${moonPhaseData.phaseName} | ${moonPhaseData.illuminationPercent}% illuminated`,
+});
+
 // ─── Complex Collectors (custom async flows) ──────────────────────
 
 async function collectEarthquakes() {
@@ -582,6 +599,14 @@ const STARTUP_TASKS = [
     collectFunction: collectAvalanche,
     restoreFunction: updateAvalanche,
     delay: 36_000,
+  },
+  {
+    label: "Moon Phase",
+    collection: "moon_phase",
+    ttl: MOON_PHASE_INTERVAL_MS,
+    collectFunction: collectMoonPhase,
+    restoreFunction: updateMoonPhase,
+    delay: 38_000,
   },
 ];
 

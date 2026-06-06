@@ -80,6 +80,7 @@ import {
   getWarningHealth,
 } from "../caches/EnvironmentCanadaCache.ts";
 import { getAvalanche, getAvalancheHealth } from "../caches/AvalancheCache.ts";
+import { getMoonPhase, getMoonPhaseHealth } from "../caches/MoonPhaseCache.ts";
 import { errorMessage } from "../utilities.ts";
 
 const router = Router();
@@ -242,6 +243,10 @@ router.get("/warnings/count", (_req: Request, res: Response) =>
 router.get("/avalanche", (_req: Request, res: Response) =>
   res.json(getAvalanche()),
 );
+// ─── Moon Phase ────────────────────────────────────────────────────
+router.get("/moon-phase", (_req: Request, res: Response) =>
+  res.json(getMoonPhase()),
+);
 // ── Live Weather (on-demand, any location) ────────────────────────
 router.get(
   "/live",
@@ -298,6 +303,7 @@ const SOURCE_MAP: Record<string, () => unknown> = {
   launches: () => getLaunchSummary(),
   warnings: () => getWarnings(),
   air_quality_google: () => getGoogleAirQuality(),
+  moon_phase: () => getMoonPhase(),
 };
 router.get("/environment", (req: Request, res: Response) => {
   const { source } = req.query as Record<string, string | undefined>;
@@ -336,6 +342,7 @@ export function getWeatherHealth(): Record<string, unknown> {
     twilight: getTwilightHealth(),
     environmentCanada: getWarningHealth(),
     avalanche: getAvalancheHealth(),
+    moonPhase: getMoonPhaseHealth(),
   };
 }
 export default router;

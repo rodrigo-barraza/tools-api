@@ -208,6 +208,20 @@ const FIELDS = {
     "astronomicalTwilightEnd",
   ],
 
+  // Moon Phase: from MoonPhaseCalculator
+  MOON_PHASE: [
+    "phaseName",
+    "phaseEmoji",
+    "illuminationPercent",
+    "ageInDays",
+    "synodicPeriodDays",
+    "isWaxing",
+    "isWaning",
+    "nextNewMoonUtc",
+    "nextFullMoonUtc",
+    "currentCycleStartUtc",
+  ],
+
   // Tides: from TideCache.getTides()
   TIDES: ["time", "height", "type", "stationId"],
 
@@ -1571,7 +1585,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     name: "get_local_environment",
     dataSource: onDemand("Multiple APIs"),
     description:
-      "Get cached environmental, weather, or space data for the server's local area. This returns pre-fetched data for the server's IP-based location — for weather at a specific place, use get_weather instead. Select a source: current_weather (temp/wind/humidity), air_quality (AQI/pollutants), earthquakes (seismic), solar_activity (flares/storms), aurora (Kp index), twilight (sunrise/sunset), tides, wildfires, iss (ISS position), neo (near-Earth objects), solar_wind, pollen, apod (NASA pic of the day), launches (rockets), warnings (NWS alerts), air_quality_google.",
+      "Get cached environmental, weather, or space data for the server's local area. This returns pre-fetched data for the server's IP-based location — for weather at a specific place, use get_weather instead. Select a source: current_weather (temp/wind/humidity), air_quality (AQI/pollutants), earthquakes (seismic), solar_activity (flares/storms), aurora (Kp index), twilight (sunrise/sunset), tides, wildfires, iss (ISS position), neo (near-Earth objects), solar_wind, pollen, apod (NASA pic of the day), launches (rockets), warnings (NWS alerts), air_quality_google, moon_phase (current lunar phase/illumination).",
     endpoint: {
       path: "/weather/environment",
       queryParams: ["source"],
@@ -1599,6 +1613,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             "launches",
             "warnings",
             "air_quality_google",
+            "moon_phase",
           ],
         },
         fields: {
@@ -1849,6 +1864,27 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       type: "object",
       properties: {
         ...fieldsParam(FIELDS.APOD),
+      },
+    },
+  },
+
+  // ── Moon Phase ──────────────────────────────────────────────
+  {
+    name: "get_moon_phase",
+    dataSource: onDemand("Algorithmic (cached)"),
+    description:
+      "Get the current moon phase using a pure algorithmic calculation based on the synodic lunar cycle (~29.53 days). " +
+      "Returns phase name (New Moon, Waxing Crescent, First Quarter, Waxing Gibbous, Full Moon, Waning Gibbous, Last Quarter, Waning Crescent), " +
+      "illumination percentage, age in days, waxing/waning state, and dates for the next new moon and full moon. " +
+      "No external API dependency — computed from the synodic period relative to a known reference New Moon.",
+    endpoint: {
+      path: "/weather/moon-phase",
+      queryParams: ["fields"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        ...fieldsParam(FIELDS.MOON_PHASE),
       },
     },
   },
@@ -12007,6 +12043,7 @@ const TOOL_DOMAINS = {
   get_weather_marine: "Weather & Environment",
   get_weather_astronomy: "Weather & Environment",
   get_weather_alerts: "Weather & Environment",
+  get_moon_phase: "Weather & Environment",
 
   // Events
   get_events: "Events",
@@ -12348,6 +12385,7 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   get_weather_marine: ["⚓", "💻"],
   get_weather_astronomy: "🌙",
   get_weather_alerts: ["🚨", "💻"],
+  get_moon_phase: "🌙",
   get_events: ["🎟️", "💻"],
   get_live_scores: ["⚽", "💻"],
   get_upcoming_matches: "📅",
@@ -12789,6 +12827,7 @@ const TOOL_LABELS = {
   get_aurora_forecast: ["location"],
   get_solar_wind: ["reference"],
   get_twilight: ["location"],
+  get_moon_phase: ["reference"],
   get_tides: ["location"],
   get_wildfires: ["location"],
   get_iss_location: ["reference"],
