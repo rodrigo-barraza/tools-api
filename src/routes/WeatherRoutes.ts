@@ -119,7 +119,7 @@ router.get(
 router.get(
   "/earthquakes/:id",
   asyncHandler(async (req: Request, res: Response) => {
-    const event = await getEarthquakeById(req.params.id as string);
+    const event = await getEarthquakeById(String(req.params.id));
     if (!event) return res.status(404).json({ error: "Earthquake not found" });
     res.json(event);
   }),
@@ -313,7 +313,7 @@ router.get("/environment", (req: Request, res: Response) => {
       availableSources: Object.keys(SOURCE_MAP),
     });
   }
-  const handler = SOURCE_MAP[source as string];
+  const handler = SOURCE_MAP[source];
   if (!handler) {
     return res.status(400).json({
       error: `Unknown source: ${source}`,
@@ -324,7 +324,26 @@ router.get("/environment", (req: Request, res: Response) => {
   res.json({ source, ...(data as Record<string, unknown>) });
 });
 // ─── Domain Health ─────────────────────────────────────────────────
-export function getWeatherHealth(): Record<string, unknown> {
+interface WeatherDomainHealth {
+  weather: ReturnType<typeof getWeatherCacheHealth>;
+  earthquake: ReturnType<typeof getEarthquakeHealth>;
+  neo: ReturnType<typeof getNeoHealth>;
+  spaceWeather: ReturnType<typeof getSpaceWeatherHealth>;
+  iss: ReturnType<typeof getIssHealth>;
+  kpIndex: ReturnType<typeof getKpHealth>;
+  wildfire: ReturnType<typeof getWildfireHealth>;
+  tide: ReturnType<typeof getTideHealth>;
+  solarWind: ReturnType<typeof getSolarWindHealth>;
+  googleAirQuality: ReturnType<typeof getGoogleAirQualityHealth>;
+  pollen: ReturnType<typeof getPollenHealth>;
+  apod: ReturnType<typeof getApodHealth>;
+  launches: ReturnType<typeof getLaunchHealth>;
+  twilight: ReturnType<typeof getTwilightHealth>;
+  environmentCanada: ReturnType<typeof getWarningHealth>;
+  avalanche: ReturnType<typeof getAvalancheHealth>;
+  moonPhase: ReturnType<typeof getMoonPhaseHealth>;
+}
+export function getWeatherHealth(): WeatherDomainHealth {
   return {
     weather: getWeatherCacheHealth(),
     earthquake: getEarthquakeHealth(),

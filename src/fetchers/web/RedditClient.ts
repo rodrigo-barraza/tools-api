@@ -134,7 +134,7 @@ async function waitForRateLimit(): Promise<void> {
 // ─── Cache Layer ───────────────────────────────────────────────────
 
 interface CacheEntry {
-  data: any;
+  data: unknown;
   timestamp: number;
 }
 

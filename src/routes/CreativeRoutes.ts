@@ -45,7 +45,7 @@ const router = Router();
 async function getCreativeSettings() {
   try {
     const settings = await PrismService.getSettings();
-    const creative = settings?.creative || {};
+    const creative = (settings?.creative ?? {}) as Record<string, string | undefined>;
     return {
       imageProvider: creative.imageProvider || "google",
       imageModel:

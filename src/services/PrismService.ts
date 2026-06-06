@@ -205,7 +205,7 @@ export async function speechToText(
 /**
  * Fetch global user settings from Prism's /settings endpoint.
  */
-export async function getSettings(): Promise<any> {
+export async function getSettings(): Promise<Record<string, unknown> | null> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(

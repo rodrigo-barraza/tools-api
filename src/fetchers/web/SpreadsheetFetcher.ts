@@ -24,16 +24,39 @@ interface ExtractedSheet {
   rowCount: number;
   columnCount: number;
   headers: string[] | null;
-  rows: Record<string, unknown>[] | unknown[][];
-  rawRows: unknown[][];
+  rows: (Record<string, NormalizedCellValue> | NormalizedCellValue[])[];
+  rawRows: NormalizedCellValue[][];
   truncated: boolean;
 }
+
+interface SpreadsheetJsonSheet {
+  name: string;
+  index: number;
+  rowCount: number;
+  columnCount: number;
+  headers: string[] | null;
+  rows: (Record<string, NormalizedCellValue> | NormalizedCellValue[])[];
+  truncated: boolean;
+}
+
+interface SpreadsheetJsonResponse {
+  url: string;
+  format: string;
+  sheetCount: number;
+  sheets: SpreadsheetJsonSheet[];
+  totalRowCount: number;
+  charCount: number;
+  truncated: boolean;
+}
+
+type NormalizedCellValue = string | number | boolean | null;
 
 /**
  * Normalizes ExcelJS cell values to standard primitives.
  * Handles rich text, formulas, hyperlinks, dates, errors, and null values.
+ * Accepts ExcelJS's CellValue union which includes complex object shapes.
  */
-function normalizeCellValue(value: any): any {
+function normalizeCellValue(value: ExcelJS.CellValue): NormalizedCellValue {
   if (value === undefined || value === null) {
     return null;
   }
@@ -46,27 +69,29 @@ function normalizeCellValue(value: any): any {
   // 2. Check if object (rich text, formulas, hyperlinks, errors)
   if (typeof value === "object") {
     // Hyperlink cell: { text: string, hyperlink: string }
-    if (typeof value.hyperlink === "string" && typeof value.text === "string") {
-      return value.text;
+    if ("hyperlink" in value && typeof (value as { hyperlink: unknown }).hyperlink === "string" && "text" in value) {
+      return String((value as { text: unknown }).text ?? "");
     }
 
-    // Formula cell: { formula: string, result: any, error?: any }
+    // Formula cell: { formula: string, result: NormalizedCellValue, error?: unknown }
     if ("formula" in value || "result" in value) {
-      if (value.error) {
+      const formulaCell = value as { formula?: string; result?: ExcelJS.CellValue; error?: unknown };
+      if (formulaCell.error) {
         return "#ERROR";
       }
-      if (value.result !== undefined && value.result !== null) {
-        return normalizeCellValue(value.result);
+      if (formulaCell.result !== undefined && formulaCell.result !== null) {
+        return normalizeCellValue(formulaCell.result);
       }
-      if (typeof value.formula === "string") {
-        return `=${value.formula}`;
+      if (typeof formulaCell.formula === "string") {
+        return `=${formulaCell.formula}`;
       }
       return null;
     }
 
-    // Rich text cell: { richText: Array<{ text: string, font?: any }> }
-    if (Array.isArray(value.richText)) {
-      const textSegments = value.richText.map((segment: any) => {
+    // Rich text cell: { richText: Array<{ text: string }> }
+    if ("richText" in value && Array.isArray((value as { richText: unknown }).richText)) {
+      const richTextArray = (value as { richText: Array<{ text?: string }> }).richText;
+      const textSegments = richTextArray.map((segment) => {
         if (segment && typeof segment.text === "string") {
           return segment.text;
         }
@@ -76,7 +101,7 @@ function normalizeCellValue(value: any): any {
     }
 
     // Error value: { error: string }
-    if (value.error) {
+    if ("error" in value) {
       return "#ERROR";
     }
 
@@ -90,7 +115,7 @@ function normalizeCellValue(value: any): any {
 /**
  * Formats data rows as a markdown table.
  */
-function convertSheetToMarkdown(sheetName: string, headers: string[] | null, rows: any[][]): string {
+function convertSheetToMarkdown(sheetName: string, headers: string[] | null, rows: NormalizedCellValue[][]): string {
   let markdown = `## Sheet: ${sheetName}\n\n`;
   if (headers && headers.length > 0) {
     markdown += `| ${headers.join(" | ")} |\n`;
@@ -98,7 +123,7 @@ function convertSheetToMarkdown(sheetName: string, headers: string[] | null, row
   }
 
   for (const row of rows) {
-    markdown += `| ${row.map((cell: any) => String(cell ?? "")).join(" | ")} |\n`;
+    markdown += `| ${row.map((cell: NormalizedCellValue) => String(cell ?? "")).join(" | ")} |\n`;
   }
 
   return markdown;
@@ -107,11 +132,11 @@ function convertSheetToMarkdown(sheetName: string, headers: string[] | null, row
 /**
  * Formats data rows as standard CSV text.
  */
-function convertSheetToCsv(rows: any[][]): string {
+function convertSheetToCsv(rows: NormalizedCellValue[][]): string {
   return rows
-    .map((row: any[]) =>
+    .map((row: NormalizedCellValue[]) =>
       row
-        .map((cell: any) => {
+        .map((cell: NormalizedCellValue) => {
           const stringified = String(cell ?? "");
           // Escape double quotes and wrap in quotes if cell contains commas, quotes, or newlines
           if (
@@ -206,7 +231,7 @@ export async function readSpreadsheetUrl(url: string, options: SpreadsheetOption
     const workbook = new ExcelJS.Workbook();
     if (detectedFormat === "xlsx" || detectedFormat === "xls") {
       // ExcelJS does not natively support old binary .xls format, but we load it and catch potential zip parsing errors.
-      await workbook.xlsx.load(buffer as any);
+      await workbook.xlsx.load(buffer as unknown as Parameters<typeof workbook.xlsx.load>[0]);
     } else {
       // CSV or TSV
       const csvOptions: Partial<ExcelJS.CsvReadOptions> = {};
@@ -267,8 +292,8 @@ export async function readSpreadsheetUrl(url: string, options: SpreadsheetOption
         startingRowIndex = 2;
       }
 
-      const rows: any[] = [];
-      const rawRows: any[][] = [];
+      const rows: (Record<string, NormalizedCellValue> | NormalizedCellValue[])[] = [];
+      const rawRows: NormalizedCellValue[][] = [];
       let rowsExtracted = 0;
       let isSheetTruncated = false;
 
@@ -279,7 +304,7 @@ export async function readSpreadsheetUrl(url: string, options: SpreadsheetOption
         }
 
         const row = worksheet.getRow(rowIndex);
-        const rowValues: any[] = [];
+        const rowValues: NormalizedCellValue[] = [];
 
         for (let columnNumber = 1; columnNumber <= worksheet.columnCount; columnNumber++) {
           const cellValue = normalizeCellValue(row.getCell(columnNumber).value);
@@ -289,7 +314,7 @@ export async function readSpreadsheetUrl(url: string, options: SpreadsheetOption
         rawRows.push(rowValues);
 
         if (includeHeaders && headers) {
-          const rowObject: Record<string, any> = {};
+          const rowObject: Record<string, NormalizedCellValue> = {};
           for (let columnNumber = 0; columnNumber < headers.length; columnNumber++) {
             rowObject[headers[columnNumber]] = rowValues[columnNumber] ?? null;
           }
@@ -342,7 +367,7 @@ export async function readSpreadsheetUrl(url: string, options: SpreadsheetOption
     if (outputFormat === "csv") {
       let csvContent = extractedSheets
         .map((sheet: ExtractedSheet) => {
-          const csvRows: any[][] = [];
+          const csvRows: NormalizedCellValue[][] = [];
           if (sheet.headers) {
             csvRows.push(sheet.headers);
           }
@@ -367,7 +392,7 @@ export async function readSpreadsheetUrl(url: string, options: SpreadsheetOption
     }
 
     // Default: JSON output format
-    const jsonResponse: any = {
+    const jsonResponse: SpreadsheetJsonResponse = {
       url,
       format: detectedFormat,
       sheetCount: workbook.worksheets.length,

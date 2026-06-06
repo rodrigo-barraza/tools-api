@@ -138,9 +138,10 @@ export async function crawlSingleStatic(
     persistCookiesPerSession: true,
 
     preNavigationHooks: [
-      async (_crawlingContext: CheerioCrawlingContext, gotOptions: any) => {
+      async (_crawlingContext: CheerioCrawlingContext, gotOptions: Record<string, unknown>) => {
+        const existingHeaders = (gotOptions.headers as Record<string, string>) || {};
         gotOptions.headers = {
-          ...gotOptions.headers,
+          ...existingHeaders,
           "User-Agent": USER_AGENT,
           Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
           "Accept-Language": "en-US,en;q=0.9",

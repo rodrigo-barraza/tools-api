@@ -2,6 +2,7 @@
 
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
+import { errorMessage } from "../utilities.ts";
 
 // ────────────────────────────────────────────────────────────
 // Collection Setup — No-op since we proxy to prism-service
@@ -39,7 +40,24 @@ function getPrismUrl() {
 /**
  * Create a new schedule. Proxy to prism-service /scheduled-tasks.
  */
-export async function agenticScheduleCreate(data: Record<string, unknown>, username?: string) {
+interface ScheduleCreateData {
+  project?: string;
+  name?: string;
+  schedule?: string;
+  prompt?: string;
+  type?: string;
+  agent?: string;
+  model?: string;
+  provider?: string;
+  scheduleType?: string;
+  scheduleTime?: string;
+  scheduleDay?: string;
+  scheduleDate?: string;
+  cronExpression?: string;
+  enabledTools?: string[];
+}
+
+export async function agenticScheduleCreate(data: ScheduleCreateData, username?: string) {
   const {
     project,
     name,
@@ -69,7 +87,7 @@ export async function agenticScheduleCreate(data: Record<string, unknown>, usern
 
   // Determine the scheduled parameters
   let sType = scheduleType || type; // fallback
-  let cronExpr = cronExpression;
+  let cronExpr: string | null | undefined = cronExpression;
   const sDate = scheduleDate;
 
   if (sType === "once" && !sDate && schedule && typeof schedule === "string") {
@@ -98,7 +116,7 @@ export async function agenticScheduleCreate(data: Record<string, unknown>, usern
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-project": project as string,
+        "x-project": project,
         "x-username": username || "system",
       },
       body: JSON.stringify(body),
@@ -119,8 +137,8 @@ export async function agenticScheduleCreate(data: Record<string, unknown>, usern
       schedule: created,
       message: `Cron Job '${name}' created successfully in Prism.`,
     };
-  } catch (error: any) {
-    return { error: `Failed to reach Prism Service: ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `Failed to reach Prism Service: ${errorMessage(error)}` };
   }
 }
 
@@ -160,8 +178,8 @@ export async function agenticScheduleList(
       schedules: tasks,
       total: tasks.length,
     };
-  } catch (error: any) {
-    return { error: `Failed to reach Prism Service: ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `Failed to reach Prism Service: ${errorMessage(error)}` };
   }
 }
 
@@ -207,8 +225,8 @@ export async function agenticScheduleDelete(
       scheduleId,
       message: `Cron Job '${scheduleId}' deleted successfully.`,
     };
-  } catch (error: any) {
-    return { error: `Failed to reach Prism Service: ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `Failed to reach Prism Service: ${errorMessage(error)}` };
   }
 }
 
@@ -258,8 +276,8 @@ export async function agenticTriggerFire(
       message: `Cron Job/Trigger '${triggerName}' fired successfully.`,
       result,
     };
-  } catch (error: any) {
-    return { error: `Failed to reach Prism Service: ${error.message}` };
+  } catch (error: unknown) {
+    return { error: `Failed to reach Prism Service: ${errorMessage(error)}` };
   }
 }
 
