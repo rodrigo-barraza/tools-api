@@ -36,7 +36,7 @@ RUN npm prune --omit=dev
 FROM node:26-slim
 
 # Chromium (Playwright), Python 3 (interpreter), FFmpeg (media),
-# wget (healthcheck), git (agentic git tools)
+# wget (healthcheck), git (agentic git tools), espeak-ng (local TTS)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium \
     python3 \
@@ -46,6 +46,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     git \
     imagemagick \
+    espeak-ng \
     && rm -rf /var/lib/apt/lists/*
 
 # Point Playwright to system Chromium

@@ -1284,6 +1284,117 @@ export const FINNHUB_FINANCIALS_TTL_MS = 3_600_000; // 1 hour
 // Request pacing for any sequential batch calls
 export const FINNHUB_REQUEST_DELAY_MS = 200; // 200ms between sequential calls
 
+// ─── FINANCE DOMAIN (Volatility) ────────────────────────────
+
+export const VOLATILITY_TICKERS: Record<
+  string,
+  { name: string; description: string }
+> = {
+  "^VIX": {
+    name: "CBOE Volatility Index",
+    description: "Implied volatility of S&P 500 index options (30-day)",
+  },
+  "^VVIX": {
+    name: "VIX of VIX",
+    description: "Implied volatility of VIX options",
+  },
+  VXX: {
+    name: "iPath Series B S&P 500 VIX Short-Term Futures ETN",
+    description: "Short-term VIX futures exposure",
+  },
+  UVXY: {
+    name: "ProShares Ultra VIX Short-Term Futures ETF",
+    description: "2x leveraged short-term VIX futures",
+  },
+  SVXY: {
+    name: "ProShares Short VIX Short-Term Futures ETF",
+    description: "Inverse short-term VIX futures",
+  },
+  VIXY: {
+    name: "ProShares VIX Short-Term Futures ETF",
+    description: "1x short-term VIX futures",
+  },
+};
+
+export const VOLATILITY_REGIMES = [
+  {
+    min: 0,
+    max: 12,
+    level: "complacent",
+    description:
+      "Extremely low fear — potential mean-reversion risk, markets may be overly calm",
+  },
+  {
+    min: 12,
+    max: 20,
+    level: "normal",
+    description: "Typical market conditions — standard risk-on environment",
+  },
+  {
+    min: 20,
+    max: 30,
+    level: "elevated",
+    description:
+      "Increasing uncertainty — potential correction or sector rotation underway",
+  },
+  {
+    min: 30,
+    max: 40,
+    level: "high",
+    description:
+      "Significant market stress — usually accompanies selloffs or geopolitical events",
+  },
+  {
+    min: 40,
+    max: Infinity,
+    level: "extreme",
+    description:
+      "Crisis-level fear (COVID, GFC, etc.) — capitulation or panic selling likely",
+  },
+];
+
+export const VOLATILITY_TTL_MS = 300_000; // 5 minutes
+
+// ─── FINANCE DOMAIN (Sector Performance) ────────────────────
+
+export const SECTOR_ETFS: Record<
+  string,
+  { name: string; sector: string }
+> = {
+  XLK: { name: "Technology Select Sector SPDR", sector: "Technology" },
+  XLV: { name: "Health Care Select Sector SPDR", sector: "Health Care" },
+  XLF: { name: "Financial Select Sector SPDR", sector: "Financials" },
+  XLE: { name: "Energy Select Sector SPDR", sector: "Energy" },
+  XLY: {
+    name: "Consumer Discretionary Select Sector SPDR",
+    sector: "Consumer Discretionary",
+  },
+  XLP: {
+    name: "Consumer Staples Select Sector SPDR",
+    sector: "Consumer Staples",
+  },
+  XLI: { name: "Industrial Select Sector SPDR", sector: "Industrials" },
+  XLB: { name: "Materials Select Sector SPDR", sector: "Materials" },
+  XLRE: { name: "Real Estate Select Sector SPDR", sector: "Real Estate" },
+  XLU: { name: "Utilities Select Sector SPDR", sector: "Utilities" },
+  XLC: {
+    name: "Communication Services Select Sector SPDR",
+    sector: "Communication Services",
+  },
+};
+
+export const SECTOR_PERFORMANCE_TTL_MS = 300_000; // 5 minutes
+
+// ─── FINANCE DOMAIN (Technical Analysis) ────────────────────
+
+export const TECHNICAL_ANALYSIS_TTL_MS = 300_000; // 5 minutes
+export const HISTORICAL_PRICE_TTL_MS = 60_000; // 1 minute
+
+// ─── FINANCE DOMAIN (Fear & Greed) ──────────────────────────
+
+export const FEAR_GREED_INTERVAL_MS = 1_800_000; // 30 minutes
+export const FEAR_GREED_TTL_MS = 1_800_000; // 30 minutes
+
 // ─── FINANCE DOMAIN (FRED — Federal Reserve Economic Data) ──
 
 export const FRED_BASE_URL = "https://api.stlouisfed.org/fred";

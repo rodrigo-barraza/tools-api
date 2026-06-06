@@ -549,7 +549,65 @@ const FIELDS = {
   // Macro Observations: from FredFetcher
   MACRO_OBSERVATIONS: ["date", "value"],
 
-  // ── Knowledge Domain ──────────────────────────────────────────
+  // ── Historical Prices ──────────────────────────────────────────
+
+  HISTORICAL_PRICES: [
+    "symbol",
+    "interval",
+    "period",
+    "currency",
+    "exchangeName",
+    "count",
+    "candles",
+  ],
+
+  // ── Technical Analysis ─────────────────────────────────────────
+
+  TECHNICAL_ANALYSIS: [
+    "symbol",
+    "interval",
+    "candleCount",
+    "indicators",
+    "overallSignal",
+  ],
+
+  // ── Volatility ─────────────────────────────────────────────────
+
+  VOLATILITY: [
+    "vix",
+    "vvix",
+    "instruments",
+    "regime",
+  ],
+
+  // ── Fear & Greed ───────────────────────────────────────────────
+
+  FEAR_GREED: [
+    "current",
+    "history",
+  ],
+
+  // ── SEC Filings ────────────────────────────────────────────────
+
+  SEC_FILINGS: [
+    "filer",
+    "filings",
+    "count",
+  ],
+
+  SEC_SEARCH: [
+    "query",
+    "results",
+    "count",
+  ],
+
+  // ── Sector Performance ─────────────────────────────────────────
+
+  SECTOR_PERFORMANCE: [
+    "sectors",
+    "topPerformers",
+    "bottomPerformers",
+  ],
 
   // Dictionary: from DictionaryFetcher.fetchDefinition()
   DICTIONARY: [
@@ -2301,6 +2359,189 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         },
       },
       required: ["action"],
+    },
+  },
+
+  // ── Finance: Historical Prices ─────────────────────────────────
+  {
+    name: "get_historical_prices",
+    dataSource: onDemand("Yahoo Finance"),
+    description:
+      "Get OHLCV (Open/High/Low/Close/Volume) candlestick data for any stock, ETF, index, crypto, or commodity. " +
+      "Supports intraday (1m, 5m, 15m, 1h) through monthly intervals. Essential for price history, charting, and microtrend analysis.",
+    endpoint: {
+      path: "/finance/prices/:symbol",
+      pathParams: ["symbol"],
+      queryParams: ["interval", "period"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        symbol: {
+          type: "string",
+          description:
+            "Ticker symbol (e.g. 'AAPL', 'BTC-USD', '^VIX', 'GC=F' for gold)",
+        },
+        interval: {
+          type: "string",
+          description: "Candle timeframe",
+          enum: ["1m", "5m", "15m", "1h", "1d", "1wk", "1mo"],
+        },
+        period: {
+          type: "string",
+          description: "Lookback period",
+          enum: ["1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "ytd", "max"],
+        },
+        ...fieldsParam(FIELDS.HISTORICAL_PRICES),
+      },
+      required: ["symbol"],
+    },
+  },
+
+  // ── Finance: Technical Analysis ────────────────────────────────
+  {
+    name: "get_technical_analysis",
+    dataSource: onDemand("Yahoo Finance + technicalindicators"),
+    description:
+      "Compute technical analysis indicators for any ticker. Includes RSI, MACD, SMA, EMA, Bollinger Bands, " +
+      "Stochastic, ADX, ATR, OBV, and VWAP. Returns computed values, per-indicator signals, and an overall buy/sell consensus.",
+    endpoint: {
+      path: "/finance/technical/:symbol",
+      pathParams: ["symbol"],
+      queryParams: ["indicators", "period", "interval"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        symbol: {
+          type: "string",
+          description:
+            "Ticker symbol (e.g. 'AAPL', 'TSLA', 'BTC-USD')",
+        },
+        indicators: {
+          type: "string",
+          description:
+            "Comma-separated indicators to compute (default: rsi,macd,sma,ema,bb). Available: rsi, macd, sma, ema, bb, stoch, adx, atr, obv, vwap",
+        },
+        period: {
+          type: "number",
+          description:
+            "Indicator period / lookback window (default: 14). e.g. RSI(14), SMA(20), EMA(50)",
+        },
+        interval: {
+          type: "string",
+          description: "Candle timeframe for analysis",
+          enum: ["1d", "1wk", "1mo"],
+        },
+        ...fieldsParam(FIELDS.TECHNICAL_ANALYSIS),
+      },
+      required: ["symbol"],
+    },
+  },
+
+  // ── Finance: Volatility Dashboard ──────────────────────────────
+  {
+    name: "get_volatility",
+    dataSource: onDemand("Yahoo Finance"),
+    description:
+      "Get a volatility dashboard with VIX, VVIX, VIX-linked ETFs/ETNs (VXX, UVXY, SVXY), and a regime classification " +
+      "(complacent/normal/elevated/high/extreme). Essential for risk assessment and market sentiment.",
+    endpoint: {
+      path: "/finance/volatility",
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        ...fieldsParam(FIELDS.VOLATILITY),
+      },
+    },
+  },
+
+  // ── Finance: Fear & Greed Index ────────────────────────────────
+  {
+    name: "get_fear_greed_index",
+    dataSource: onDemand("Alternative.me (cached)"),
+    description:
+      "Get the Crypto Fear & Greed Index — a sentiment gauge from 0 (Extreme Fear) to 100 (Extreme Greed). " +
+      "Shows current value, classification, and historical trend. Useful for contrarian analysis.",
+    endpoint: {
+      path: "/finance/fear-greed",
+      queryParams: ["limit"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        limit: {
+          type: "number",
+          description:
+            "Number of historical days to include (default: 30)",
+        },
+        ...fieldsParam(FIELDS.FEAR_GREED),
+      },
+    },
+  },
+
+  // ── Finance: SEC EDGAR Filings ─────────────────────────────────
+  {
+    name: "get_sec_filings",
+    dataSource: onDemand("SEC EDGAR (public)"),
+    description:
+      "Access SEC EDGAR for institutional 13F filings (hedge fund holdings), 10-K/10-Q reports, 8-K events, " +
+      "insider transactions, and XBRL financial facts. Actions: 'filings' (by CIK), 'search' (find filers), 'facts' (XBRL financials).",
+    endpoint: {
+      path: "/finance/sec/filings/:cik",
+      pathParams: ["cik"],
+      queryParams: ["filingType", "limit"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        action: {
+          type: "string",
+          description: "Query mode",
+          enum: ["filings", "search", "facts"],
+        },
+        cik: {
+          type: "string",
+          description:
+            "SEC CIK number (action=filings or facts). e.g. '1067983' for Berkshire Hathaway",
+        },
+        q: {
+          type: "string",
+          description:
+            "Search query for finding filers (action=search). e.g. 'Berkshire', 'Renaissance'",
+        },
+        filingType: {
+          type: "string",
+          description:
+            "Filter by filing type (action=filings). e.g. '13-F', '10-K', '10-Q', '8-K'",
+        },
+        limit: {
+          type: "number",
+          description: "Max filings to return (default: 20)",
+        },
+        ...fieldsParam(FIELDS.SEC_FILINGS),
+      },
+      required: ["action"],
+    },
+  },
+
+  // ── Finance: Sector Performance ────────────────────────────────
+  {
+    name: "get_sector_performance",
+    dataSource: onDemand("Yahoo Finance (Sector SPDRs)"),
+    description:
+      "Get S&P 500 sector performance heatmap using Select Sector SPDR ETFs. " +
+      "Shows all 11 GICS sectors (Technology, Health Care, Financials, Energy, etc.) with prices, " +
+      "daily change, and top/bottom performers.",
+    endpoint: {
+      path: "/finance/sectors",
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        ...fieldsParam(FIELDS.SECTOR_PERFORMANCE),
+      },
     },
   },
 
@@ -8483,6 +8724,58 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
+    name: "local_text_to_speech",
+    dataSource: compute("espeak-ng (local)"),
+    description:
+      "Convert text into spoken audio using the local espeak-ng speech synthesizer — " +
+      "no AI models, no API keys, zero cost. Produces robotic but intelligible WAV audio instantly. " +
+      "Supports 30+ language voices (en-us, en-gb, es, fr, de, ja, ko, zh, and more), adjustable " +
+      "speech rate, pitch, volume, and word gap. Use this for quick read-aloud, accessibility, " +
+      "notification sounds, or whenever AI TTS is unavailable or unnecessary.",
+    endpoint: {
+      path: "/creative/local-text-to-speech",
+      method: "POST",
+      bodyParams: ["text", "voice", "speed", "pitch", "volume", "wordGap"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        text: {
+          type: "string",
+          description:
+            "The text to convert to speech. Maximum 10,000 characters.",
+        },
+        voice: {
+          type: "string",
+          description:
+            "Voice/language code (e.g. 'en-us', 'en-gb', 'es', 'fr', 'de', 'ja', 'ko', 'zh', 'pt-br'). " +
+            "Defaults to 'en-us'. Use GET /creative/local-text-to-speech/voices for a full list.",
+        },
+        speed: {
+          type: "integer",
+          description:
+            "Speech rate in words per minute (80–450, default: 175). Lower is slower.",
+        },
+        pitch: {
+          type: "integer",
+          description:
+            "Voice pitch (0–99, default: 50). Higher values produce a higher-pitched voice.",
+        },
+        volume: {
+          type: "integer",
+          description: "Output volume (0–200, default: 100).",
+        },
+        wordGap: {
+          type: "integer",
+          description:
+            "Extra pause between words in 10ms units (0–100, default: none). " +
+            "Set to 5–10 for slower, more deliberate speech.",
+        },
+      },
+      required: ["text"],
+    },
+  },
+  {
     name: "create_vector_animation",
     dataSource: onDemand("Creative Vector Animation Engine"),
     description:
@@ -11750,6 +12043,12 @@ const TOOL_DOMAINS = {
   get_macro: "Finance",
   get_market_news: "Finance",
   get_earnings_calendar: "Finance",
+  get_historical_prices: "Finance",
+  get_technical_analysis: "Finance",
+  get_volatility: "Finance",
+  get_fear_greed_index: "Finance",
+  get_sec_filings: "Finance",
+  get_sector_performance: "Finance",
 
   // Knowledge
   search_books: "Knowledge",
@@ -11980,6 +12279,7 @@ const TOOL_DOMAINS = {
 
   describe_image: "Creative",
   text_to_speech: "Creative",
+  local_text_to_speech: "Creative",
   generate_audio: "Creative",
   create_vector_animation: "Creative",
   speech_to_text: "Creative",
@@ -12072,6 +12372,12 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   get_macro: ["🏛️", "💻"],
   get_market_news: ["📰", "💻"],
   get_earnings_calendar: "💰",
+  get_historical_prices: "🕯️",
+  get_technical_analysis: "📊",
+  get_volatility: "🌊",
+  get_fear_greed_index: "😰",
+  get_sec_filings: "🏛️",
+  get_sector_performance: "🗺️",
   search_books: ["📚", "💻"],
   get_country: "🗺️",
   get_element: "⚛️",
@@ -12243,6 +12549,7 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   generate_image: ["🖼️", "💻"],
   describe_image: ["👁️", "💻"],
   text_to_speech: "🔊",
+  local_text_to_speech: ["🗣️", "💻"],
   generate_audio: "🔊",
   create_vector_animation: ["🎬", "💻"],
   speech_to_text: ["🎤", "💻"],
@@ -12360,6 +12667,7 @@ const TOOL_REQUIRED_KEYS = {
   generate_image: ["PRISM_SERVICE_URL"],
   describe_image: ["PRISM_SERVICE_URL"],
   text_to_speech: ["PRISM_SERVICE_URL"],
+  local_text_to_speech: [],
   speech_to_text: ["PRISM_SERVICE_URL"],
 
   // Agent Management (require Prism for CustomAgentService)
@@ -12520,6 +12828,12 @@ const TOOL_LABELS = {
   // ── Finance ──────────────────────────────────────────────
   get_market_news: ["finance"],
   get_earnings_calendar: ["finance"],
+  get_historical_prices: ["finance", "data"],
+  get_technical_analysis: ["finance", "data"],
+  get_volatility: ["finance", "data"],
+  get_fear_greed_index: ["finance"],
+  get_sec_filings: ["finance", "data"],
+  get_sector_performance: ["finance", "data"],
 
   // ── Knowledge ────────────────────────────────────────────
   get_word_definition: ["reference"],
@@ -12736,6 +13050,7 @@ const TOOL_LABELS = {
 
   describe_image: ["creative", "media"],
   text_to_speech: ["creative", "media"],
+  local_text_to_speech: ["creative", "media"],
   generate_audio: ["creative", "media"],
   create_vector_animation: ["creative", "media"],
   speech_to_text: ["creative", "media"],
@@ -12858,6 +13173,12 @@ const TOOL_INTELLIGENCE_TIERS: Record<string, ToolIntelligenceTier> = {
   search_places: "medium",
   convert_units: "medium",
   convert_currency: "medium",
+  get_historical_prices: "medium",
+  get_technical_analysis: "high",
+  get_volatility: "medium",
+  get_fear_greed_index: "medium",
+  get_sec_filings: "medium",
+  get_sector_performance: "medium",
   calculate_caloric_needs: "medium",
   calculate_hydration_needs: "medium",
   estimate_exercise_calories: "medium",
@@ -12905,6 +13226,7 @@ const TOOL_INTELLIGENCE_TIERS: Record<string, ToolIntelligenceTier> = {
   get_discord_channel_activity_stats: "medium",
   generate_image: "medium",
   text_to_speech: "medium",
+  local_text_to_speech: "low",
   speech_to_text: "medium",
   get_public_webcams: "medium",
 };

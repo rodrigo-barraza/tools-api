@@ -1,5 +1,5 @@
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
-import { toISODate } from "@rodrigo-barraza/utilities-library";
+import { parseIntParam, toISODate } from "@rodrigo-barraza/utilities-library";
 import { Request, Response, Router } from "express";
 import {
   getCachedQuote,
@@ -15,6 +15,13 @@ import {
   getFinanceHealth as getHealth,
 } from "../caches/FinnhubCache.ts";
 import {
+  getCachedFearGreed,
+  isFearGreedStale,
+  updateFearGreed,
+  setFearGreedError,
+  getFearGreedHealth,
+} from "../caches/FearGreedCache.ts";
+import {
   fetchStockQuote,
   fetchCompanyProfile,
   fetchCompanyNews,
@@ -27,6 +34,16 @@ import {
   searchSeries,
   getKeyIndicators,
 } from "../fetchers/finance/FredFetcher.ts";
+import { fetchHistoricalPrices } from "../fetchers/finance/HistoricalPriceFetcher.ts";
+import { computeTechnicalAnalysis } from "../fetchers/finance/TechnicalAnalysisFetcher.ts";
+import { fetchVolatilitySnapshot } from "../fetchers/finance/VolatilityFetcher.ts";
+import { fetchFearGreedIndex } from "../fetchers/finance/FearGreedFetcher.ts";
+import {
+  fetchSecFilings,
+  searchSecFilers,
+  fetchCompanyFactsXbrl,
+} from "../fetchers/finance/SecEdgarFetcher.ts";
+import { fetchSectorPerformance } from "../fetchers/finance/SectorPerformanceFetcher.ts";
 import { errorMessage } from "../utilities.ts";
 
 const router = Router();
@@ -171,10 +188,119 @@ router.get(
     "Series info fetch",
   ),
 );
+// ─── Historical Prices (OHLCV Candles) ────────────────────────────
+router.get(
+  "/prices/:symbol",
+  asyncHandler(async (req: Request) => {
+    const symbol = (req.params.symbol as string).toUpperCase();
+    const interval = (req.query.interval as string) || "1d";
+    const period = (req.query.period as string) || "3mo";
+    return fetchHistoricalPrices(symbol, {
+      interval: interval as "1d",
+      period: period as "3mo",
+    });
+  }, "Historical prices"),
+);
+// ─── Technical Analysis ───────────────────────────────────────────
+router.get(
+  "/technical/:symbol",
+  asyncHandler(async (req: Request) => {
+    const symbol = (req.params.symbol as string).toUpperCase();
+    const indicators = req.query.indicators
+      ? (req.query.indicators as string).split(",")
+      : undefined;
+    const period = req.query.period
+      ? parseInt(req.query.period as string, 10)
+      : undefined;
+    const interval = (req.query.interval as string) || "1d";
+    return computeTechnicalAnalysis(symbol, {
+      indicators,
+      period,
+      interval: interval as "1d",
+    });
+  }, "Technical analysis"),
+);
+// ─── Volatility Dashboard ─────────────────────────────────────────
+router.get(
+  "/volatility",
+  asyncHandler(() => fetchVolatilitySnapshot(), "Volatility snapshot"),
+);
+// ─── Fear & Greed Index ───────────────────────────────────────────
+router.get(
+  "/fear-greed",
+  asyncHandler(async (req: Request) => {
+    const limit = parseIntParam(req.query.limit as string, 30);
+    const cached = getCachedFearGreed();
+    if (!isFearGreedStale() && cached.current) {
+      return {
+        ...cached,
+        cached: true,
+        history: cached.history.slice(0, limit),
+      };
+    }
+    try {
+      const result = await fetchFearGreedIndex(limit);
+      updateFearGreed(result.current, result.history);
+      return { ...result, cached: false };
+    } catch (error: unknown) {
+      setFearGreedError({ message: errorMessage(error) });
+      if (cached.current) {
+        return {
+          ...cached,
+          cached: true,
+          stale: true,
+          history: cached.history.slice(0, limit),
+        };
+      }
+      throw error;
+    }
+  }, "Fear & Greed index"),
+);
+// ─── SEC EDGAR Filings ────────────────────────────────────────────
+router.get(
+  "/sec/filings/:cik",
+  asyncHandler(async (req: Request) => {
+    const cik = req.params.cik as string;
+    const filingType = req.query.filingType as string | undefined;
+    const limit = parseIntParam(req.query.limit as string, 20);
+    return fetchSecFilings(cik, filingType, limit);
+  }, "SEC filings"),
+);
+router.get(
+  "/sec/search",
+  asyncHandler(async (req: Request, res: Response) => {
+    const query = req.query.q as string;
+    if (!query) {
+      return res.status(400).json({ error: "Query parameter 'q' is required" });
+    }
+    const limit = parseIntParam(req.query.limit as string, 10);
+    return searchSecFilers(query, limit);
+  }, "SEC filer search"),
+);
+router.get(
+  "/sec/facts/:cik",
+  asyncHandler(async (req: Request) => {
+    return fetchCompanyFactsXbrl(req.params.cik as string);
+  }, "SEC XBRL facts"),
+);
+// ─── Sector Performance ──────────────────────────────────────────
+router.get(
+  "/sectors",
+  asyncHandler(() => fetchSectorPerformance(), "Sector performance"),
+);
 // ─── Health ────────────────────────────────────────────────────────
 export function getFinanceHealth() {
   const health = getHealth();
-  return { ...health, fred: "on-demand" };
+  return {
+    ...health,
+    fred: "on-demand",
+    fearGreed: getFearGreedHealth(),
+    volatility: "on-demand",
+    technicalAnalysis: "on-demand",
+    historicalPrices: "on-demand",
+    secEdgar: "on-demand",
+    sectorPerformance: "on-demand",
+  };
 }
 // ── Unified Stock Data Dispatcher ──────────────────────────────────
 router.get(

@@ -4,6 +4,7 @@ import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { Request, Response, Router } from "express";
 import PrismService from "../services/PrismService.ts";
 import { generateAudioWav } from "../services/SoundSynthesizerService.ts";
+import { synthesizeSpeech, getSupportedVoices, isEspeakAvailable } from "../services/TextToSpeechService.ts";
 import logger from "../logger.ts";
 import { extractCallerContext, errorMessage, buildLocalUrl, buildEmbedHtml } from "../utilities.ts";
 import { saveVectorAnimation, getVectorAnimation, type VectorAnimationConfig, type VectorAnimationOptions } from "../models/VectorAnimation.ts";
@@ -516,6 +517,66 @@ router.post(
         .status(500)
         .json({ error: `Text-to-speech failed: ${errorMessage(error)}` });
     }
+  }),
+);
+
+// ────────────────────────────────────────────────────────────
+// POST /creative/local-text-to-speech
+// Local espeak-ng based TTS — no AI models, zero cost
+// ────────────────────────────────────────────────────────────
+
+router.post(
+  "/local-text-to-speech",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { text, voice, speed, pitch, volume, wordGap } = req.body;
+
+    if (!text) {
+      return res
+        .status(400)
+        .json({ error: "Missing required parameter: text" });
+    }
+
+    try {
+      const result = await synthesizeSpeech({
+        text,
+        voice,
+        speed: speed != null ? Number(speed) : undefined,
+        pitch: pitch != null ? Number(pitch) : undefined,
+        volume: volume != null ? Number(volume) : undefined,
+        wordGap: wordGap != null ? Number(wordGap) : undefined,
+      });
+
+      res.json({
+        success: true,
+        message: "Audio generated and delivered to the user (local espeak-ng TTS).",
+        audio: {
+          data: result.audioBase64,
+          mimeType: result.mimeType,
+        },
+        voice: result.voice,
+        textLength: result.textLength,
+        durationEstimate: result.durationEstimateSeconds,
+      });
+    } catch (error: unknown) {
+      logger.error(
+        `[CreativeRoutes] local-text-to-speech failed: ${errorMessage(error)}`,
+      );
+      res
+        .status(500)
+        .json({ error: `Local text-to-speech failed: ${errorMessage(error)}` });
+    }
+  }),
+);
+
+router.get(
+  "/local-text-to-speech/voices",
+  asyncHandler(async (_req: Request, res: Response) => {
+    const isAvailable = await isEspeakAvailable();
+    res.json({
+      success: true,
+      available: isAvailable,
+      voices: getSupportedVoices(),
+    });
   }),
 );
 

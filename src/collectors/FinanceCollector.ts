@@ -2,6 +2,7 @@ import { toISODate } from "@rodrigo-barraza/utilities-library";
 import {
   FINNHUB_NEWS_INTERVAL_MS,
   FINNHUB_EARNINGS_INTERVAL_MS,
+  FEAR_GREED_INTERVAL_MS,
 } from "../constants.ts";
 import {
   fetchMarketNews,
@@ -13,6 +14,11 @@ import {
   updateEarnings,
   setEarningsError,
 } from "../caches/FinnhubCache.ts";
+import {
+  updateFearGreed,
+  setFearGreedError,
+} from "../caches/FearGreedCache.ts";
+import { fetchFearGreedIndex } from "../fetchers/finance/FearGreedFetcher.ts";
 import { saveState, startCollectorLoop } from "../services/FreshnessService.ts";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
@@ -48,6 +54,20 @@ async function collectEarnings() {
     logger.error(`[Finnhub/Earnings] ❌ ${errorMessage(error)}`);
   }
 }
+// ─── Fear & Greed Collector ───────────────────────────────────────
+async function collectFearGreed() {
+  try {
+    const result = await fetchFearGreedIndex(30);
+    updateFearGreed(result.current, result.history);
+    await saveState("fear_greed", result as unknown as Record<string, unknown>);
+    logger.info(
+      `[Fear&Greed] ✅ value=${result.current?.value ?? "?"} (${result.current?.classification ?? "unknown"})`,
+    );
+  } catch (error: unknown) {
+    setFearGreedError({ message: errorMessage(error) });
+    logger.error(`[Fear&Greed] ❌ ${errorMessage(error)}`);
+  }
+}
 // ─── Startup Definitions ──────────────────────────────────────────
 const STARTUP_TASKS = [
   {
@@ -65,6 +85,15 @@ const STARTUP_TASKS = [
     collectFunction: collectEarnings,
     restoreFunction: updateEarnings,
     delay: 2_000,
+  },
+  {
+    label: "Fear&Greed",
+    collection: "fear_greed",
+    ttl: FEAR_GREED_INTERVAL_MS,
+    collectFunction: collectFearGreed,
+    restoreFunction: (data: Awaited<ReturnType<typeof fetchFearGreedIndex>>) =>
+      updateFearGreed(data?.current ?? null, data?.history ?? []),
+    delay: 4_000,
   },
 ];
 // ─── Start Finance Collectors ──────────────────────────────────────
