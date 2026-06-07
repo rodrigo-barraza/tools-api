@@ -95,6 +95,10 @@ const collectMovies = createEventCollector(
           "get_trending_media",
           "browse_media",
           "get_media_genres",
+          "get_now_playing_media",
+          "get_media_recommendations",
+          "search_person",
+          "get_watch_providers",
         ];
         for (const toolName of tmdbToolNames) {
           disableToolRuntime(

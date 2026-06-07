@@ -96,6 +96,52 @@ export interface TvSeason {
   episodes: TvEpisode[];
 }
 
+export interface PersonResult {
+  tmdbId: number;
+  name: string | null;
+  knownForDepartment: string | null;
+  biography: string | null;
+  birthday: string | null;
+  deathday: string | null;
+  placeOfBirth: string | null;
+  gender: string | null;
+  popularity: number | null;
+  profileUrl: string | null;
+  imdbId: string | null;
+  homepage: string | null;
+  alsoKnownAs: string[];
+  url: string;
+}
+
+export interface PersonCreditEntry {
+  tmdbId: number;
+  mediaType: "movie" | "tv";
+  title: string | null;
+  character: string | null;
+  job: string | null;
+  department: string | null;
+  releaseDate: string | null;
+  voteAverage: number | null;
+  posterUrl: string | null;
+}
+
+export interface WatchProviderEntry {
+  providerName: string;
+  providerLogoUrl: string | null;
+  displayPriority: number;
+}
+
+export interface WatchProviderResult {
+  tmdbId: number;
+  title: string | null;
+  region: string;
+  link: string | null;
+  flatrate: WatchProviderEntry[];
+  rent: WatchProviderEntry[];
+  buy: WatchProviderEntry[];
+  free: WatchProviderEntry[];
+}
+
 // ─── Periodic Table Types ─────────────────────────────────────────
 
 export interface PeriodicElement {

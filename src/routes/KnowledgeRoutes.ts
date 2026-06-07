@@ -21,6 +21,7 @@ import {
   getTopAnime,
   getCurrentSeasonAnime,
   getAnimeDetails,
+  getSeasonAnime,
 } from "../fetchers/knowledge/JikanFetcher.ts";
 import {
   searchMovies,
@@ -36,6 +37,16 @@ import {
   getTrendingTvShows,
   discoverTvShows,
   getTvGenres,
+  getNowPlayingMovies,
+  getUpcomingMovies,
+  getAiringTodayTvShows,
+  getOnTheAirTvShows,
+  getMediaRecommendations,
+  getMediaSimilar,
+  searchPeople,
+  getPersonDetails,
+  getPersonCredits,
+  getWatchProviders,
 } from "../fetchers/knowledge/TMDbFetcher.ts";
 import {
   searchElements,
@@ -1325,11 +1336,13 @@ router.get(
       q: searchQuery,
       id,
       limit,
+      year,
+      season,
     } = req.query as Record<string, string | undefined>;
     if (!action)
       return res.status(400).json({
         error: "'action' is required",
-        actions: ["search", "top", "season", "details"],
+        actions: ["search", "top", "season", "schedule", "details"],
       });
     switch (action) {
       case "search":
@@ -1347,6 +1360,10 @@ router.get(
         return router.handle(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
+      case "schedule":
+        if (!year || !season)
+          return res.status(400).json({ error: "'year' and 'season' are required for action=schedule" });
+        return res.json(await getSeasonAnime(year, season, parseIntParam(limit, 25)));
       case "details":
         req.url = `/anime/${id || ""}`;
         req.params.id = id || "";
@@ -1356,7 +1373,7 @@ router.get(
       default:
         return res.status(400).json({
           error: `Unknown action: ${action}`,
-          actions: ["search", "top", "season", "details"],
+          actions: ["search", "top", "season", "schedule", "details"],
         });
     }
   }),
@@ -1438,6 +1455,111 @@ router.get(
     return router.handle(req, res, () =>
       res.status(404).json({ error: "Route not found" }),
     );
+  }),
+);
+// ── Now Playing / Upcoming / Airing Media ──────────────────────────
+router.get(
+  "/media/now-playing",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { action, region, page, limit } = req.query as Record<string, string | undefined>;
+    if (!action)
+      return res.status(400).json({
+        error: "'action' is required",
+        actions: ["now_playing", "upcoming", "airing_today", "on_the_air"],
+      });
+
+    const parsedPage = parseIntParam(page, 1);
+    const parsedLimit = parseIntParam(limit, 20);
+
+    switch (action) {
+      case "now_playing":
+        return res.json(await getNowPlayingMovies(region || "US", parsedPage, parsedLimit));
+      case "upcoming":
+        return res.json(await getUpcomingMovies(region || "US", parsedPage, parsedLimit));
+      case "airing_today":
+        return res.json(await getAiringTodayTvShows(parsedPage, parsedLimit));
+      case "on_the_air":
+        return res.json(await getOnTheAirTvShows(parsedPage, parsedLimit));
+      default:
+        return res.status(400).json({
+          error: `Unknown action '${action}'`,
+          actions: ["now_playing", "upcoming", "airing_today", "on_the_air"],
+        });
+    }
+  }),
+);
+// ── Media Recommendations & Similar ────────────────────────────────
+router.get(
+  "/media/:id/recommendations",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { type, action, limit } = req.query as Record<string, string | undefined>;
+    if (!type) return res.status(400).json({ error: "'type' is required (movie or tv)" });
+    const parsedLimit = parseIntParam(limit, 10);
+    const resolvedAction = action || "recommendations";
+    if (resolvedAction === "similar") {
+      return res.json(await getMediaSimilar(type as "movie" | "tv", req.params.id as string, parsedLimit));
+    }
+    return res.json(await getMediaRecommendations(type as "movie" | "tv", req.params.id as string, parsedLimit));
+  }),
+);
+router.get(
+  "/media/:id/similar",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { type, limit } = req.query as Record<string, string | undefined>;
+    if (!type) return res.status(400).json({ error: "'type' is required (movie or tv)" });
+    const parsedLimit = parseIntParam(limit, 10);
+    return res.json(await getMediaSimilar(type as "movie" | "tv", req.params.id as string, parsedLimit));
+  }),
+);
+// ── Person / Actor Search ──────────────────────────────────────────
+router.get(
+  "/person/search",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { action, q: searchQuery, id, limit } = req.query as Record<string, string | undefined>;
+    if (!action)
+      return res.status(400).json({
+        error: "'action' is required",
+        actions: ["search", "details", "filmography"],
+      });
+
+    switch (action) {
+      case "search":
+        if (!searchQuery) return res.status(400).json({ error: "'q' is required for action=search" });
+        return res.json(await searchPeople(searchQuery, parseIntParam(limit, 10)));
+      case "details":
+        if (!id) return res.status(400).json({ error: "'id' is required for action=details" });
+        return res.json(await getPersonDetails(id));
+      case "filmography":
+        if (!id) return res.status(400).json({ error: "'id' is required for action=filmography" });
+        return res.json(await getPersonCredits(id, parseIntParam(limit, 30)));
+      default:
+        return res.status(400).json({
+          error: `Unknown action '${action}'`,
+          actions: ["search", "details", "filmography"],
+        });
+    }
+  }),
+);
+router.get(
+  "/person/:id/credits",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { limit } = req.query as Record<string, string | undefined>;
+    return res.json(await getPersonCredits(req.params.id as string, parseIntParam(limit, 30)));
+  }),
+);
+router.get(
+  "/person/:id",
+  asyncHandler(async (req: Request, res: Response) => {
+    return res.json(await getPersonDetails(req.params.id as string));
+  }),
+);
+// ── Watch Providers ────────────────────────────────────────────────
+router.get(
+  "/media/:id/watch-providers",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { type, region } = req.query as Record<string, string | undefined>;
+    if (!type) return res.status(400).json({ error: "'type' is required (movie or tv)" });
+    return res.json(await getWatchProviders(type as "movie" | "tv", req.params.id as string, region || "US"));
   }),
 );
 // ── Unified Music Data ─────────────────────────────────────────────

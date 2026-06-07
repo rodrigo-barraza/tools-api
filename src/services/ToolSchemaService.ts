@@ -1055,6 +1055,57 @@ const FIELDS = {
     "episodes.voteAverage",
   ],
 
+  // Person: from TMDbFetcher.searchPeople() / getPersonDetails()
+  PERSON: [
+    "tmdbId",
+    "name",
+    "knownForDepartment",
+    "biography",
+    "birthday",
+    "deathday",
+    "placeOfBirth",
+    "gender",
+    "popularity",
+    "profileUrl",
+    "imdbId",
+    "homepage",
+    "alsoKnownAs",
+    "url",
+  ],
+
+  // Person Credits: from TMDbFetcher.getPersonCredits()
+  PERSON_CREDITS: [
+    "cast.tmdbId",
+    "cast.mediaType",
+    "cast.title",
+    "cast.character",
+    "cast.releaseDate",
+    "cast.voteAverage",
+    "cast.posterUrl",
+    "crew.tmdbId",
+    "crew.mediaType",
+    "crew.title",
+    "crew.job",
+    "crew.department",
+    "crew.releaseDate",
+  ],
+
+  // Watch Providers: from TMDbFetcher.getWatchProviders()
+  WATCH_PROVIDERS: [
+    "tmdbId",
+    "title",
+    "region",
+    "link",
+    "flatrate.providerName",
+    "flatrate.providerLogoUrl",
+    "rent.providerName",
+    "rent.providerLogoUrl",
+    "buy.providerName",
+    "buy.providerLogoUrl",
+    "free.providerName",
+    "free.providerLogoUrl",
+  ],
+
   // Drug Labels: from OpenFdaFetcher
   DRUG_LABEL: [
     "brandName",
@@ -2769,10 +2820,10 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     name: "get_anime",
     dataSource: onDemand("Jikan (MyAnimeList)"),
     description:
-      "Search and browse anime. Actions: 'search' (text search), 'top' (top rated), 'season' (current season), 'details' (full details by MAL ID).",
+      "Search and browse anime. Actions: 'search' (text search), 'top' (top rated), 'season' (current season), 'schedule' (specific year+season, e.g. Fall 2026), 'details' (full details by MAL ID).",
     endpoint: {
       path: "/knowledge/anime/data",
-      queryParams: ["action", "q", "id", "limit"],
+      queryParams: ["action", "q", "id", "limit", "year", "season"],
     },
     parameters: {
       type: "object",
@@ -2780,11 +2831,17 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         action: {
           type: "string",
           description: "Query mode",
-          enum: ["search", "top", "season", "details"],
+          enum: ["search", "top", "season", "schedule", "details"],
         },
         q: { type: "string", description: "Search query (action=search)" },
         id: { type: "number", description: "MyAnimeList ID (action=details)" },
-        limit: { type: "number", description: "Max results (default: 10)" },
+        year: { type: "number", description: "Year for schedule lookup (action=schedule)" },
+        season: {
+          type: "string",
+          description: "Season name (action=schedule)",
+          enum: ["winter", "spring", "summer", "fall"],
+        },
+        limit: { type: "number", description: "Max results (default: 10, schedule: 25)" },
         ...fieldsParam(FIELDS.ANIME),
       },
       required: ["action"],
@@ -3483,6 +3540,122 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   },
 
   // ── TV Series (TV-only) ────────────────────────────────────────
+
+  // ── Now Playing / Upcoming / Airing ────────────────────────────
+  {
+    name: "get_now_playing_media",
+    dataSource: onDemand("TMDB API"),
+    description:
+      "Get movies currently in theaters, upcoming movie releases, TV shows airing today, or TV shows currently on the air. Actions: 'now_playing' (movies in theaters), 'upcoming' (coming soon to theaters), 'airing_today' (TV episodes airing today), 'on_the_air' (TV shows with episodes in the last 7 days).",
+    endpoint: {
+      path: "/knowledge/media/now-playing",
+      queryParams: ["action", "region", "page", "limit"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        action: {
+          type: "string",
+          enum: ["now_playing", "upcoming", "airing_today", "on_the_air"],
+          description: "What to retrieve: now_playing (movies in theaters), upcoming (coming soon), airing_today (TV today), on_the_air (TV this week)",
+        },
+        region: {
+          type: "string",
+          description: "ISO 3166-1 country code for theatrical region (default: US). Only applies to movie actions.",
+        },
+        page: { type: "number", description: "Page number (default: 1)" },
+        limit: { type: "number", description: "Max results per page (default: 20)" },
+      },
+      required: ["action"],
+    },
+  },
+
+  // ── Media Recommendations & Similar ────────────────────────────
+  {
+    name: "get_media_recommendations",
+    dataSource: onDemand("TMDB API"),
+    description:
+      "Get recommended or similar movies/TV shows based on a given TMDB ID. Actions: 'recommendations' (algorithm-based picks), 'similar' (same genre/keyword matches). Great for 'if you liked X' suggestions.",
+    endpoint: {
+      path: "/knowledge/media/:id/recommendations",
+      pathParams: ["id"],
+      queryParams: ["type", "action", "limit"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        type: {
+          type: "string",
+          enum: ["movie", "tv"],
+          description: "Movie or TV show",
+        },
+        id: { type: "number", description: "TMDB ID of the source movie/show" },
+        action: {
+          type: "string",
+          enum: ["recommendations", "similar"],
+          description: "recommendations (TMDb algorithm picks) or similar (genre/keyword matches)",
+        },
+        limit: { type: "number", description: "Max results (default: 10)" },
+      },
+      required: ["type", "id", "action"],
+    },
+  },
+
+  // ── Person / Actor Search ──────────────────────────────────────
+  {
+    name: "search_person",
+    dataSource: onDemand("TMDB API"),
+    description:
+      "Search for actors, directors, and other people in film/TV by name, get their biography and details by TMDB ID, or get their full filmography (combined movie + TV credits). Actions: 'search' (find by name), 'details' (biography by ID), 'filmography' (all credits by ID).",
+    endpoint: {
+      path: "/knowledge/person/search",
+      queryParams: ["action", "q", "id", "limit"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        action: {
+          type: "string",
+          enum: ["search", "details", "filmography"],
+          description: "search (find by name), details (biography by ID), filmography (all credits by ID)",
+        },
+        q: { type: "string", description: "Search query — person name (action=search)" },
+        id: { type: "number", description: "TMDB person ID (action=details or filmography)" },
+        limit: { type: "number", description: "Max results (default: 10 for search, 30 for filmography)" },
+        ...fieldsParam(FIELDS.PERSON),
+      },
+      required: ["action"],
+    },
+  },
+
+  // ── Watch Providers ────────────────────────────────────────────
+  {
+    name: "get_watch_providers",
+    dataSource: onDemand("TMDB API (JustWatch data)"),
+    description:
+      "Find where to stream, rent, or buy a movie or TV show. Returns streaming services (flatrate), rental, purchase, and free options with provider names and logos. Data powered by JustWatch via TMDB.",
+    endpoint: {
+      path: "/knowledge/media/:id/watch-providers",
+      pathParams: ["id"],
+      queryParams: ["type", "region"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        type: {
+          type: "string",
+          enum: ["movie", "tv"],
+          description: "Movie or TV show",
+        },
+        id: { type: "number", description: "TMDB ID" },
+        region: {
+          type: "string",
+          description: "ISO 3166-1 country code (default: US). Examples: US, CA, GB, DE, JP",
+        },
+      },
+      required: ["type", "id"],
+    },
+  },
 
   // ── Health (consolidated tools) ────────────────────────────────
   {
@@ -12123,6 +12296,10 @@ const TOOL_DOMAINS = {
   get_trending_media: "Movies & TV",
   browse_media: "Movies & TV",
   get_media_genres: "Movies & TV",
+  get_now_playing_media: "Movies & TV",
+  get_media_recommendations: "Movies & TV",
+  search_person: "Movies & TV",
+  get_watch_providers: "Movies & TV",
 
   // Health
   rank_foods_by_category: "Health",
@@ -12449,6 +12626,10 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   get_trending_media: ["🔥", "💻"],
   browse_media: ["🍿", "💻"],
   get_media_genres: ["🎭", "💻"],
+  get_now_playing_media: ["🎬", "💻"],
+  get_media_recommendations: ["💡", "💻"],
+  search_person: ["🧑‍🎤", "💻"],
+  get_watch_providers: ["📺", "💻"],
   rank_foods_by_category: ["🥗", "💻"],
   search_drugs: "💊",
   get_drug_adverse_events: "⚕️",
@@ -12645,6 +12826,10 @@ const TOOL_REQUIRED_KEYS = {
   get_trending_media: ["TMDB_API_KEY"],
   browse_media: ["TMDB_API_KEY"],
   get_media_genres: ["TMDB_API_KEY"],
+  get_now_playing_media: ["TMDB_API_KEY"],
+  get_media_recommendations: ["TMDB_API_KEY"],
+  search_person: ["TMDB_API_KEY"],
+  get_watch_providers: ["TMDB_API_KEY"],
 
   // Finance — Finnhub
   get_stock_quote: ["FINNHUB_API_KEY"],
@@ -12800,6 +12985,10 @@ const TOOL_LABELS = {
   get_trending_media: ["media"],
   browse_media: ["media"],
   get_media_genres: ["media"],
+  get_now_playing_media: ["media"],
+  get_media_recommendations: ["media"],
+  search_person: ["media"],
+  get_watch_providers: ["media"],
   git: ["coding", "git"],
   search_books: ["reference"],
   get_country: ["reference"],
@@ -13203,6 +13392,10 @@ const TOOL_INTELLIGENCE_TIERS: Record<string, ToolIntelligenceTier> = {
   get_media_details: "medium",
   get_media_credits: "medium",
   get_trending_media: "medium",
+  get_now_playing_media: "medium",
+  get_media_recommendations: "medium",
+  search_person: "medium",
+  get_watch_providers: "medium",
   execute_javascript: "high",
   search_airports: "medium",
   search_nearby_places: "medium",

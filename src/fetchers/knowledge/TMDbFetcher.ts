@@ -6,6 +6,10 @@ import {
   CastMember,
   CrewMember,
   TvSeason,
+  PersonResult,
+  PersonCreditEntry,
+  WatchProviderEntry,
+  WatchProviderResult,
 } from "../../types/knowledge.ts";
 
 /**
@@ -90,6 +94,42 @@ interface RawTmdbCrew {
   jobs?: Array<{ job: string }>;
   department?: string | null;
   profile_path?: string | null;
+}
+
+interface RawTmdbPerson {
+  id: number;
+  name?: string | null;
+  known_for_department?: string | null;
+  biography?: string | null;
+  birthday?: string | null;
+  deathday?: string | null;
+  place_of_birth?: string | null;
+  gender?: number | null;
+  popularity?: number | null;
+  profile_path?: string | null;
+  imdb_id?: string | null;
+  homepage?: string | null;
+  also_known_as?: string[];
+}
+
+interface RawTmdbCombinedCredit {
+  id: number;
+  media_type: string;
+  title?: string | null;
+  name?: string | null;
+  character?: string | null;
+  job?: string | null;
+  department?: string | null;
+  release_date?: string | null;
+  first_air_date?: string | null;
+  vote_average?: number | null;
+  poster_path?: string | null;
+}
+
+interface RawTmdbWatchProvider {
+  provider_name: string;
+  logo_path?: string | null;
+  display_priority: number;
 }
 
 export interface TmdbGenre {
@@ -623,3 +663,313 @@ export async function getTvGenres() {
   if (!data || !data.genres) return { found: false, genres: [] as TmdbGenre[] };
   return { found: true, genres: data.genres };
 }
+
+// ─── Now Playing / Upcoming / Airing ─────────────────────────────
+
+export async function getNowPlayingMovies(
+  region: string = "US",
+  page: number = 1,
+  limit: number = 20,
+) {
+  const data = await fetchTMDb<{
+    results?: RawTmdbMovie[];
+    total_results: number;
+    page: number;
+    total_pages: number;
+    dates?: { maximum: string; minimum: string };
+  }>(`/movie/now_playing?language=en-US&region=${region}&page=${page}`);
+
+  if (!data || !data.results) {
+    return { found: false, results: [] as MovieResult[], totalResults: 0, page: 1, totalPages: 0 };
+  }
+
+  return {
+    found: true,
+    count: Math.min(data.results.length, limit),
+    totalResults: data.total_results,
+    page: data.page,
+    totalPages: data.total_pages,
+    dateRange: data.dates || null,
+    results: data.results.slice(0, limit).map(normalizeMovie).filter(Boolean) as MovieResult[],
+  };
+}
+
+export async function getUpcomingMovies(
+  region: string = "US",
+  page: number = 1,
+  limit: number = 20,
+) {
+  const data = await fetchTMDb<{
+    results?: RawTmdbMovie[];
+    total_results: number;
+    page: number;
+    total_pages: number;
+    dates?: { maximum: string; minimum: string };
+  }>(`/movie/upcoming?language=en-US&region=${region}&page=${page}`);
+
+  if (!data || !data.results) {
+    return { found: false, results: [] as MovieResult[], totalResults: 0, page: 1, totalPages: 0 };
+  }
+
+  return {
+    found: true,
+    count: Math.min(data.results.length, limit),
+    totalResults: data.total_results,
+    page: data.page,
+    totalPages: data.total_pages,
+    dateRange: data.dates || null,
+    results: data.results.slice(0, limit).map(normalizeMovie).filter(Boolean) as MovieResult[],
+  };
+}
+
+export async function getAiringTodayTvShows(
+  page: number = 1,
+  limit: number = 20,
+) {
+  const data = await fetchTMDb<{
+    results?: RawTmdbTvShow[];
+    total_results: number;
+    page: number;
+    total_pages: number;
+  }>(`/tv/airing_today?language=en-US&page=${page}`);
+
+  if (!data || !data.results) {
+    return { found: false, results: [] as TvShowResult[], totalResults: 0, page: 1, totalPages: 0 };
+  }
+
+  return {
+    found: true,
+    count: Math.min(data.results.length, limit),
+    totalResults: data.total_results,
+    page: data.page,
+    totalPages: data.total_pages,
+    results: data.results.slice(0, limit).map(normalizeTvShow).filter(Boolean) as TvShowResult[],
+  };
+}
+
+export async function getOnTheAirTvShows(
+  page: number = 1,
+  limit: number = 20,
+) {
+  const data = await fetchTMDb<{
+    results?: RawTmdbTvShow[];
+    total_results: number;
+    page: number;
+    total_pages: number;
+  }>(`/tv/on_the_air?language=en-US&page=${page}`);
+
+  if (!data || !data.results) {
+    return { found: false, results: [] as TvShowResult[], totalResults: 0, page: 1, totalPages: 0 };
+  }
+
+  return {
+    found: true,
+    count: Math.min(data.results.length, limit),
+    totalResults: data.total_results,
+    page: data.page,
+    totalPages: data.total_pages,
+    results: data.results.slice(0, limit).map(normalizeTvShow).filter(Boolean) as TvShowResult[],
+  };
+}
+
+// ─── Recommendations & Similar ───────────────────────────────────
+
+export async function getMediaRecommendations(
+  type: "movie" | "tv",
+  id: string | number,
+  limit: number = 10,
+) {
+  const data = await fetchTMDb<{ results?: (RawTmdbMovie | RawTmdbTvShow)[] }>(
+    `/${type}/${id}/recommendations?language=en-US`,
+  );
+
+  if (!data || !data.results) {
+    return { found: false, results: [] as (MovieResult | TvShowResult)[] };
+  }
+
+  const normalizer = (item: RawTmdbMovie | RawTmdbTvShow): MovieResult | TvShowResult | null =>
+    type === "movie" ? normalizeMovie(item as RawTmdbMovie) : normalizeTvShow(item as RawTmdbTvShow);
+
+  return {
+    found: true,
+    type,
+    count: Math.min(data.results.length, limit),
+    results: data.results.slice(0, limit).map(normalizer).filter(Boolean) as (MovieResult | TvShowResult)[],
+  };
+}
+
+export async function getMediaSimilar(
+  type: "movie" | "tv",
+  id: string | number,
+  limit: number = 10,
+) {
+  const data = await fetchTMDb<{ results?: (RawTmdbMovie | RawTmdbTvShow)[] }>(
+    `/${type}/${id}/similar?language=en-US`,
+  );
+
+  if (!data || !data.results) {
+    return { found: false, results: [] as (MovieResult | TvShowResult)[] };
+  }
+
+  const normalizer = (item: RawTmdbMovie | RawTmdbTvShow): MovieResult | TvShowResult | null =>
+    type === "movie" ? normalizeMovie(item as RawTmdbMovie) : normalizeTvShow(item as RawTmdbTvShow);
+
+  return {
+    found: true,
+    type,
+    count: Math.min(data.results.length, limit),
+    results: data.results.slice(0, limit).map(normalizer).filter(Boolean) as (MovieResult | TvShowResult)[],
+  };
+}
+
+// ─── Person / Actor Search ───────────────────────────────────────
+
+const GENDER_MAP: Record<number, string> = {
+  0: "Not specified",
+  1: "Female",
+  2: "Male",
+  3: "Non-binary",
+};
+
+function normalizePerson(person: RawTmdbPerson | null | undefined): PersonResult | null {
+  if (!person) return null;
+  return {
+    tmdbId: person.id,
+    name: person.name || null,
+    knownForDepartment: person.known_for_department || null,
+    biography: person.biography ? person.biography.substring(0, 2000) : null,
+    birthday: person.birthday || null,
+    deathday: person.deathday || null,
+    placeOfBirth: person.place_of_birth || null,
+    gender: person.gender !== undefined && person.gender !== null ? (GENDER_MAP[person.gender] || null) : null,
+    popularity: person.popularity || null,
+    profileUrl: img(person.profile_path, "w500"),
+    imdbId: person.imdb_id || null,
+    homepage: person.homepage || null,
+    alsoKnownAs: person.also_known_as || [],
+    url: `https://www.themoviedatabase.org/person/${person.id}`,
+  };
+}
+
+function normalizePersonCredit(credit: RawTmdbCombinedCredit): PersonCreditEntry {
+  return {
+    tmdbId: credit.id,
+    mediaType: credit.media_type === "tv" ? "tv" : "movie",
+    title: credit.title || credit.name || null,
+    character: credit.character || null,
+    job: credit.job || null,
+    department: credit.department || null,
+    releaseDate: credit.release_date || credit.first_air_date || null,
+    voteAverage: credit.vote_average || null,
+    posterUrl: img(credit.poster_path),
+  };
+}
+
+export async function searchPeople(query: string, limit: number = 10) {
+  const data = await fetchTMDb<{
+    results?: RawTmdbPerson[];
+    total_results: number;
+    page: number;
+    total_pages: number;
+  }>(`/search/person?query=${encodeURIComponent(query)}&language=en-US`);
+
+  if (!data || !data.results) {
+    return { found: false, results: [] as PersonResult[], totalResults: 0 };
+  }
+
+  return {
+    found: true,
+    count: Math.min(data.results.length, limit),
+    totalResults: data.total_results,
+    results: data.results.slice(0, limit).map(normalizePerson).filter(Boolean) as PersonResult[],
+  };
+}
+
+export async function getPersonDetails(id: string | number) {
+  const data = await fetchTMDb<RawTmdbPerson>(`/person/${id}?language=en-US`);
+  if (!data) return { found: false, person: null };
+
+  return { found: true, person: normalizePerson(data) };
+}
+
+export async function getPersonCredits(id: string | number, limit: number = 30) {
+  const data = await fetchTMDb<{
+    cast?: RawTmdbCombinedCredit[];
+    crew?: RawTmdbCombinedCredit[];
+  }>(`/person/${id}/combined_credits?language=en-US`);
+
+  if (!data) {
+    return { found: false, cast: [] as PersonCreditEntry[], crew: [] as PersonCreditEntry[] };
+  }
+
+  const sortByDate = (a: PersonCreditEntry, b: PersonCreditEntry) => {
+    const dateA = a.releaseDate || "";
+    const dateB = b.releaseDate || "";
+    return dateB.localeCompare(dateA);
+  };
+
+  return {
+    found: true,
+    cast: (data.cast || []).map(normalizePersonCredit).sort(sortByDate).slice(0, limit),
+    crew: (data.crew || [])
+      .filter((credit) => ["Director", "Writer", "Producer", "Executive Producer", "Creator", "Screenplay"].includes(credit.job || ""))
+      .map(normalizePersonCredit)
+      .sort(sortByDate)
+      .slice(0, limit),
+  };
+}
+
+// ─── Watch Providers ─────────────────────────────────────────────
+
+function normalizeWatchProvider(provider: RawTmdbWatchProvider): WatchProviderEntry {
+  return {
+    providerName: provider.provider_name,
+    providerLogoUrl: img(provider.logo_path, "w92"),
+    displayPriority: provider.display_priority,
+  };
+}
+
+export async function getWatchProviders(
+  type: "movie" | "tv",
+  id: string | number,
+  region: string = "US",
+) {
+  const data = await fetchTMDb<{
+    results?: Record<string, {
+      link?: string;
+      flatrate?: RawTmdbWatchProvider[];
+      rent?: RawTmdbWatchProvider[];
+      buy?: RawTmdbWatchProvider[];
+      free?: RawTmdbWatchProvider[];
+    }>;
+  }>(`/${type}/${id}/watch/providers`);
+
+  if (!data || !data.results) {
+    return { found: false, providers: null };
+  }
+
+  const regionData = data.results[region] || data.results["US"];
+  if (!regionData) {
+    const availableRegions = Object.keys(data.results).sort();
+    return {
+      found: false,
+      providers: null,
+      availableRegions,
+      message: `No providers found for region '${region}'. Available: ${availableRegions.join(", ")}`,
+    };
+  }
+
+  const result: WatchProviderResult = {
+    tmdbId: typeof id === "string" ? parseInt(id, 10) : id,
+    title: null,
+    region,
+    link: regionData.link || null,
+    flatrate: (regionData.flatrate || []).map(normalizeWatchProvider),
+    rent: (regionData.rent || []).map(normalizeWatchProvider),
+    buy: (regionData.buy || []).map(normalizeWatchProvider),
+    free: (regionData.free || []).map(normalizeWatchProvider),
+  };
+
+  return { found: true, providers: result };
+}
+

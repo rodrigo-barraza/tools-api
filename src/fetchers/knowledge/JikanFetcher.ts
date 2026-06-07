@@ -133,3 +133,34 @@ export async function getAnimeDetails(id: string | number) {
     anime: normalizeAnime(response.data),
   };
 }
+
+export async function getSeasonAnime(
+  year: number | string,
+  season: string,
+  limit: number = 25,
+) {
+  const validSeasons = ["winter", "spring", "summer", "fall"];
+  const normalizedSeason = season.toLowerCase();
+  if (!validSeasons.includes(normalizedSeason)) {
+    return {
+      found: false,
+      results: [] as JikanAnime[],
+      error: `Invalid season '${season}'. Must be one of: ${validSeasons.join(", ")}`,
+    };
+  }
+
+  const endpoint = `/seasons/${year}/${normalizedSeason}?limit=${limit}`;
+  const response = await fetchJikan<{ data?: RawJikanAnime[] }>(endpoint);
+
+  if (!response || !response.data) {
+    return { found: false, results: [] as JikanAnime[] };
+  }
+
+  return {
+    found: true,
+    year: Number(year),
+    season: normalizedSeason,
+    count: response.data.length,
+    results: response.data.map(normalizeAnime).filter(Boolean) as JikanAnime[],
+  };
+}
