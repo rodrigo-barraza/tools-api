@@ -7735,9 +7735,9 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   },
   {
     name: "search_web",
-    dataSource: onDemand("Brave Search / Google CSE"),
+    dataSource: onDemand("Brave Search / DuckDuckGo / Google CSE"),
     description:
-      "Search the web using Brave Search (primary, whole-web) with Google Custom Search fallback. Returns results with titles, URLs, and snippets. Use this for researching topics, finding documentation, looking up current information, or verifying facts. Supports date filtering and site-specific search.",
+      "Search the web using Brave Search (primary, whole-web) with DuckDuckGo scraping and Google Custom Search fallbacks. Returns results with titles, URLs, and snippets. Use this for researching topics, finding documentation, looking up current information, or verifying facts. Supports date filtering and site-specific search.",
     endpoint: {
       method: "POST",
       path: "/agentic/web/search",

@@ -21,6 +21,13 @@ interface GoogleCseItem {
   displayLink?: string;
 }
 
+interface DuckDuckGoSearchResult {
+  title: string;
+  url: string;
+  snippet: string;
+  displayUrl: string;
+}
+
 // ────────────────────────────────────────────────────────────
 // Constants
 // ────────────────────────────────────────────────────────────
@@ -42,6 +49,11 @@ const BLOCKED_DOMAINS = new Set([
 
 // Google Custom Search JSON API
 const GOOGLE_CSE_BASE = "https://www.googleapis.com/customsearch/v1";
+
+const DUCKDUCKGO_HTML_BASE = "https://html.duckduckgo.com/html/";
+
+const DUCKDUCKGO_BROWSER_USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
 // ────────────────────────────────────────────────────────────
 // URL Fetching
@@ -78,9 +90,10 @@ export async function agenticFetchUrl(
     };
   }
 
+  let timeout: NodeJS.Timeout | undefined;
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
     const response = await fetch(url, {
       signal: controller.signal,
@@ -92,7 +105,6 @@ export async function agenticFetchUrl(
       },
       redirect: "follow",
     });
-    clearTimeout(timeout);
 
     if (!response.ok) {
       return {
@@ -154,20 +166,20 @@ export async function agenticFetchUrl(
       return { error: `Request timed out after ${FETCH_TIMEOUT_MS}ms`, url };
     }
     return { error: `Fetch failed: ${errorMessage(error)}`, url };
+  } finally {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
   }
 }
 
 // ────────────────────────────────────────────────────────────
-// Web Search — Multi-Provider (Brave → Google CSE fallback)
+// Web Search — Multi-Provider
+// Brave → DuckDuckGo (scrape) → Google CSE (deprecated)
 // ────────────────────────────────────────────────────────────
 
 const BRAVE_SEARCH_BASE = "https://api.search.brave.com/res/v1/web/search";
 
-/**
- * Search the web. Provider priority:
- *   1. Brave Search API (whole-web, 2000 queries/month free)
- *   2. Google Custom Search (site-restricted, 100 queries/day free)
- */
 export async function agenticWebSearch(
   query: string,
   {
@@ -180,7 +192,7 @@ export async function agenticWebSearch(
     return { error: "'query' is required and must be a non-empty string" };
   }
 
-  // If siteSearch is specified, prepend it to the query for Brave
+  // siteSearch is prepended as site: operator for providers that use query strings
   const effectiveQuery = siteSearch ? `site:${siteSearch} ${query}` : query;
   const clampedLimit = Math.min(Number(limit), 10);
 
@@ -192,9 +204,8 @@ export async function agenticWebSearch(
         dateRestrict,
       });
       if (!result.error) return result;
-      // If Brave fails, fall through to Google CSE
       logger.warn(
-        `[AgenticWebService] Brave Search failed, trying Google CSE: ${result.error}`,
+        `[AgenticWebService] Brave Search failed, trying DuckDuckGo: ${result.error}`,
       );
     } catch (error: unknown) {
       logger.warn(
@@ -203,8 +214,27 @@ export async function agenticWebSearch(
     }
   }
 
-  // ── Provider 2: Google Custom Search ───────────────────────
+  // ── Provider 2: DuckDuckGo HTML Scrape (zero-config) ──────
+  try {
+    const duckDuckGoResult = await _searchDuckDuckGo(effectiveQuery, {
+      limit: clampedLimit,
+      dateRestrict,
+    });
+    if (!duckDuckGoResult.error) return duckDuckGoResult;
+    logger.warn(
+      `[AgenticWebService] DuckDuckGo scrape failed, trying Google CSE: ${duckDuckGoResult.error}`,
+    );
+  } catch (error: unknown) {
+    logger.warn(
+      `[AgenticWebService] DuckDuckGo exception: ${errorMessage(error)}`,
+    );
+  }
+
+  // ── Provider 3: Google Custom Search (deprecated) ─────────
   if (CONFIG.GOOGLE_API_KEY && CONFIG.GOOGLE_CSE_CX) {
+    logger.warn(
+      "[AgenticWebService] Using deprecated Google CSE fallback — this provider is being discontinued.",
+    );
     return _searchGoogleCSE(query, {
       limit: clampedLimit,
       dateRestrict,
@@ -217,7 +247,7 @@ export async function agenticWebSearch(
     limit,
     results: [],
     message:
-      "No search provider configured. Set BRAVE_SEARCH_API_KEY or GOOGLE_API_KEY + GOOGLE_CSE_CX in secrets.js.",
+      "All search providers failed. Brave API key not set, DuckDuckGo scrape failed, and Google CSE not configured.",
     provider: null,
   };
 }
@@ -272,7 +302,7 @@ async function _searchBrave(
     const body = await response.text();
     if (response.status === 429) {
       return {
-        error: "Brave Search rate limit exceeded. Falling back to Google CSE.",
+        error: "Brave Search rate limit exceeded.",
         query,
         provider: "brave",
       };
@@ -304,7 +334,132 @@ async function _searchBrave(
   };
 }
 
-// ── Google CSE Implementation ────────────────────────────────
+// ── DuckDuckGo HTML Scrape Implementation ────────────────────
+
+async function _searchDuckDuckGo(
+  query: string,
+  { limit, dateRestrict }: { limit: number; dateRestrict?: string },
+) {
+  const formParameters = new URLSearchParams({ q: query });
+
+  // DDG date restrict: d = past day, w = past week, m = past month
+  if (dateRestrict) {
+    const duckDuckGoDateRestrictMap: Record<string, string> = {
+      d1: "d",
+      d7: "w",
+      w1: "w",
+      w2: "m",
+      m1: "m",
+      m3: "m",
+      y1: "y",
+    };
+    const mappedDateRestrict = duckDuckGoDateRestrictMap[dateRestrict];
+    if (mappedDateRestrict) {
+      formParameters.set("df", mappedDateRestrict);
+    }
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(DUCKDUCKGO_HTML_BASE, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "User-Agent": DUCKDUCKGO_BROWSER_USER_AGENT,
+        Accept: "text/html",
+        "Accept-Language": "en-US,en;q=0.9",
+      },
+      body: formParameters.toString(),
+      signal: controller.signal,
+      redirect: "follow",
+    });
+
+    if (!response.ok) {
+      return {
+        error: `DuckDuckGo HTML error: HTTP ${response.status}`,
+        query,
+        provider: "duckduckgo",
+      };
+    }
+
+    const html = await response.text();
+    const $ = cheerio.load(html);
+
+    const results: DuckDuckGoSearchResult[] = [];
+
+    $(".result").each((_index: number, element: AnyNode) => {
+      if (results.length >= limit) return false;
+
+      const $result = $(element);
+      const $titleAnchor = $result.find(".result__a").first();
+      const rawTitle = $titleAnchor.text().trim();
+      const rawHref = $titleAnchor.attr("href") || "";
+      const rawSnippet = $result.find(".result__snippet").first().text().trim();
+      const rawDisplayUrl = $result.find(".result__url").first().text().trim();
+
+      // DDG wraps URLs in a redirect — extract the actual destination
+      const resolvedUrl = _decodeDuckDuckGoRedirectUrl(rawHref);
+
+      if (rawTitle && resolvedUrl) {
+        results.push({
+          title: rawTitle,
+          url: resolvedUrl,
+          snippet: rawSnippet,
+          displayUrl: rawDisplayUrl || _extractHostname(resolvedUrl),
+        });
+      }
+    });
+
+    if (results.length === 0) {
+      return {
+        error: "DuckDuckGo returned no parseable results (possible rate-limit or CAPTCHA).",
+        query,
+        provider: "duckduckgo",
+      };
+    }
+
+    return {
+      query,
+      limit,
+      results,
+      totalResults: String(results.length),
+      provider: "duckduckgo",
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function _decodeDuckDuckGoRedirectUrl(rawHref: string): string {
+  try {
+    // DDG redirect format: //duckduckgo.com/l/?uddg=https%3A%2F%2Fexample.com&rut=...
+    const normalizedHref = rawHref.startsWith("//")
+      ? `https:${rawHref}`
+      : rawHref;
+    const parsed = new URL(normalizedHref);
+    const encodedDestination = parsed.searchParams.get("uddg");
+    if (encodedDestination) {
+      return decodeURIComponent(encodedDestination);
+    }
+  } catch {
+    // Not a redirect URL — fall through
+  }
+  // If it's already a direct URL or parsing failed, return as-is
+  if (rawHref.startsWith("http")) return rawHref;
+  return "";
+}
+
+function _extractHostname(url: string): string {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return "";
+  }
+}
+
+// ── Google CSE Implementation (deprecated) ───────────────────
 
 async function _searchGoogleCSE(
   query: string,
