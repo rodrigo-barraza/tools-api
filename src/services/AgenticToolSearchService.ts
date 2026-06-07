@@ -2,7 +2,7 @@
 
 import { getToolSchemas } from "./ToolSchemaService.ts";
 import type { ToolSearchMatch, ToolParameters } from "../types/tools.ts";
-import { CORE_AGENTIC_TOOLS } from "@rodrigo-barraza/utilities-library/taxonomy";
+import { CORE_AGENTIC_TOOLS, CORE_ORCHESTRATOR_TOOLS } from "@rodrigo-barraza/utilities-library/taxonomy";
 
 type InferredToolSchema = ReturnType<typeof getToolSchemas>[number];
 
@@ -82,6 +82,9 @@ export function agenticToolSearch(
     }
 
     for (const toolName of CORE_AGENTIC_TOOLS) {
+      enabledToolsSet.add(toolName);
+    }
+    for (const toolName of CORE_ORCHESTRATOR_TOOLS) {
       enabledToolsSet.add(toolName);
     }
   }

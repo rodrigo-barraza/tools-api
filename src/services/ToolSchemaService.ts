@@ -12691,9 +12691,6 @@ const TOOL_REQUIRED_KEYS = {
   get_petroleum_prices: ["EIA_API_KEY"],
   get_natural_gas_prices: ["EIA_API_KEY"],
 
-  // Web Search (Brave primary — whole-web; Google CSE fallback — site-restricted)
-  search_web: ["BRAVE_SEARCH_API_KEY"],
-
   // Communication (Twilio — all require account SID + auth token)
   twilio_send_sms: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
   twilio_list_messages: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
