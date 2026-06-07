@@ -927,7 +927,7 @@ export async function agenticGrepSearch(
     };
   } catch (error: unknown) {
     return {
-      error: `grep_search failed: ${errorMessage(error)}`,
+      error: `search_file_contents failed: ${errorMessage(error)}`,
     };
   }
 }
@@ -1021,7 +1021,7 @@ export async function agenticGlobFiles(pattern: string, searchPath: string) {
     };
   } catch (error: unknown) {
     return {
-      error: `glob_files failed: ${errorMessage(error)}`,
+      error: `find_files failed: ${errorMessage(error)}`,
     };
   }
 }
@@ -1260,7 +1260,7 @@ export async function agenticFileDiff(
       return { error: `File not found: ${String(nodeError.path || pathA)}` };
     }
     return {
-      error: `file_diff failed: ${errorMessage(error)}`,
+      error: `diff_files failed: ${errorMessage(error)}`,
     };
   }
 }

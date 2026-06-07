@@ -4720,7 +4720,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "calculate_precise",
+    name: "evaluate_expression",
     dataSource: compute("bignumber.js"),
     description:
       "Perform highly precise mathematical calculations using bignumber.js. Supports arbitrary-precision arithmetic. Passed numbers should be strings to prevent precision loss. For sqrt, 'b' is ignored.",
@@ -5215,7 +5215,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "encode_decode",
+    name: "convert_encoding",
     dataSource: compute("internal"),
     description:
       "Encode or decode data between formats: Base64, Base64URL, hex, URL encoding, HTML entities, ROT13, binary, and JWT decode (no verification). Bidirectional — specify encode or decode direction.",
@@ -7452,7 +7452,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     name: "write_file",
     dataSource: compute("sandboxed fs"),
     description:
-      "Create a new file or overwrite an existing file with the provided content. Parent directories are created automatically. Use this for creating new files — for targeted edits to existing files, prefer str_replace_file instead (it's safer and more token-efficient). Maximum file size: 5 MB.",
+      "Create a new file or overwrite an existing file with the provided content. Parent directories are created automatically. Use this for creating new files — for targeted edits to existing files, prefer replace_in_file instead (it's safer and more token-efficient). Maximum file size: 5 MB.",
     endpoint: {
       method: "POST",
       path: "/agentic/file/write",
@@ -7480,7 +7480,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "str_replace_file",
+    name: "replace_in_file",
     dataSource: compute("sandboxed fs"),
     description:
       "Perform a targeted string replacement in a file. Finds the exact 'oldString' and replaces it with 'newString'. The oldString must match EXACTLY (including whitespace and indentation). This is the preferred method for editing existing files — it's safer than write_file because it can't accidentally overwrite the entire file, and it's more token-efficient. If multiple occurrences are found and allowMultiple is false, it returns an error asking you to provide more context for a unique match.",
@@ -7516,7 +7516,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "block_replace_file",
+    name: "replace_file_block",
     dataSource: compute("sandboxed fs"),
     description:
       "Perform a highly precise, line-bounded block replacement in a file. It searches for 'targetContent' within the exact line range [startLine, endLine] (1-indexed, inclusive). The targetContent must match the file content in that range EXACTLY, including leading and trailing whitespace and line breaks. Returns an error if the content in that range doesn't match targetContent, and outputs a numbered line preview of the actual content inside the range to help you self-correct. This is the safest way to modify a contiguous block of text without affecting the rest of the file.",
@@ -7569,10 +7569,10 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "multi_replace_file",
+    name: "replace_file_regions",
     dataSource: compute("sandboxed fs"),
     description:
-      "Perform multiple, non-contiguous block replacements in a single file atomically. The operations are processed from bottom-to-top to ensure that modifications do not shift the line numbers for subsequent chunks. Each chunk defines a range and targetContent, similar to block_replace_file. Use this tool ONLY when making multiple separate, non-adjacent modifications in a single file.",
+      "Perform multiple, non-contiguous block replacements in a single file atomically. The operations are processed from bottom-to-top to ensure that modifications do not shift the line numbers for subsequent chunks. Each chunk defines a range and targetContent, similar to replace_file_block. Use this tool ONLY when making multiple separate, non-adjacent modifications in a single file.",
     endpoint: {
       method: "POST",
       path: "/agentic/file/multi-replace",
@@ -7627,7 +7627,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     name: "patch_file",
     dataSource: compute("sandboxed fs + diff"),
     description:
-      "Apply a unified diff patch to a file. Useful for complex, multi-hunk edits where str_replace_file would require multiple calls. The patch must be in standard unified diff format (as produced by 'diff -u' or git). The file content must match the diff context lines for the patch to apply.",
+      "Apply a unified diff patch to a file. Useful for complex, multi-hunk edits where replace_in_file would require multiple calls. The patch must be in standard unified diff format (as produced by 'diff -u' or git). The file content must match the diff context lines for the patch to apply.",
     endpoint: {
       method: "POST",
       path: "/agentic/file/patch",
@@ -7681,7 +7681,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "grep_search",
+    name: "search_file_contents",
     dataSource: compute("sandboxed fs"),
     description:
       "Search for a literal string or regex pattern across files in a directory. Returns matching lines with file paths and line numbers. Use this to find function definitions, usage patterns, imports, variable references, or any text across the codebase. Automatically skips node_modules, .git, and binary files. Results capped at 50 matches.",
@@ -7735,7 +7735,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "glob_files",
+    name: "find_files",
     dataSource: compute("sandboxed fs"),
     description:
       "Find files by name pattern using glob syntax. Supports *, **, and ? wildcards. Use this to find files by extension, naming convention, or path pattern. Automatically skips node_modules and .git. Results capped at 200 matches.",
@@ -7943,7 +7943,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "multi_file_read",
+    name: "read_files",
     dataSource: compute("sandboxed fs"),
     description:
       "Read multiple files in a single call. Returns numbered lines for each file. Much more efficient than calling read_file multiple times — use this when you need to read 2-20 files for context (e.g. a component, its CSS module, and the service it imports). Each file supports optional line range selection. Maximum 20 files per batch, 800 lines per file.",
@@ -7982,7 +7982,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "file_info",
+    name: "get_file_info",
     dataSource: compute("sandboxed fs"),
     description:
       "Get metadata about one or more files without reading their content. Returns: exists, isFile, isDirectory, sizeBytes, lines, lastModified, extension, isBinary. Use this to check if files exist, determine file sizes, or inspect metadata before deciding whether to read the full content. Supports batch queries (up to 20 paths).",
@@ -8009,7 +8009,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "file_diff",
+    name: "diff_files",
     dataSource: compute("sandboxed fs + diff"),
     description:
       "Generate a unified diff between two files, or between a file and provided content. Returns additions/deletions counts and the unified diff output. Use this to compare file versions, review changes before committing, or verify that edits had the intended effect.",
@@ -8102,7 +8102,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "run_command",
+    name: "execute_command",
     dataSource: compute("sandboxed subprocess"),
     description:
       "Execute a command in a workspace subprocess. Supports any shell or terminal command (e.g. running tests, compiling, starting dev servers, package management, workspace file/directory organization, administrative operations). The working directory must be within the allowed workspace. Timeout default: 60s, max: 120s. For dev servers and long-running watchers, set run_in_background: true — the command will start, collect ~2.5s of initial output, then return immediately with a process ID while the server continues running. Commands that exceed the timeout without run_in_background are also auto-backgrounded instead of killed.",
@@ -8137,7 +8137,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "project_summary",
+    name: "summarize_project",
     dataSource: compute("fs scan"),
     description:
       "Scan a project directory and return structured metadata: package.json info (scripts, dependencies, frameworks), directory structure, entry points, config files, and README excerpt. Use this as the FIRST tool when starting work on a new project to understand its structure and technology stack in a single call, instead of multiple list_directory + read_file calls.",
@@ -8158,7 +8158,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "git",
+    name: "run_git",
     dataSource: compute("git subprocess"),
     description:
       "Run git operations on a repository. Actions: 'status' (branch, staged/unstaged/untracked files), 'diff' (show changes — optionally staged, specific file, or against a ref), 'log' (commit history — filter by author, date, file).",
@@ -8208,13 +8208,13 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "browser_action",
+    name: "control_browser",
     dataSource: compute("headless Chromium (Playwright)"),
     description:
       "Control a headless Chromium browser for web automation, E2E testing, visual QA, and interacting with JavaScript-rendered pages that read_web_page cannot handle. Each call performs ONE action. The browser session persists between calls (same sessionId) so you can build multi-step flows.\n\n" +
       "RECOMMENDED WORKFLOW: navigate → snapshot → click_ref/type_ref. The 'snapshot' action returns an ARIA accessibility tree (roles, names, states) which is ~4x more token-efficient than screenshots. It outputs elements like: heading \"Title\" [level=1], button \"Submit\", textbox \"Search\". Use 'click_ref' or 'type_ref' with a 'role:name' ref string (e.g. ref=\"button:Submit\") to interact with elements from the snapshot — no CSS selectors needed.\n\n" +
       "ALTERNATIVE WORKFLOW: navigate → get_elements → click/type (uses CSS selectors instead of ARIA refs).\n\n" +
-      "For complex multi-step browser automation, use the 'browser_script' tool instead — it executes a full Playwright script in a single call. Sessions auto-close after 5 minutes of inactivity.",
+      "For complex multi-step browser automation, use the 'execute_browser_script' tool instead — it executes a full Playwright script in a single call. Sessions auto-close after 5 minutes of inactivity.",
     endpoint: {
       method: "POST",
       path: "/agentic/browser/action",
@@ -8347,10 +8347,10 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "browser_script",
+    name: "execute_browser_script",
     dataSource: compute("headless Chromium (Playwright subprocess)"),
     description:
-      "Write and execute a complete Playwright script for complex multi-step browser automation that would be too many round-trips with browser_action. The script runs in a Node.js subprocess connected to the existing headless browser session.\n\n" +
+      "Write and execute a complete Playwright script for complex multi-step browser automation that would be too many round-trips with control_browser. The script runs in a Node.js subprocess connected to the existing headless browser session.\n\n" +
       "The script body executes inside an async context with 'browser', 'context', and 'page' already initialized. Use console.log() to return data. " +
       "Use this for: scraping multi-page data, filling complex forms with validation, running E2E test sequences, browser-based data extraction pipelines, or any workflow requiring 3+ sequential browser actions.\n\n" +
       "Example script:\n" +
@@ -8387,11 +8387,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
 
   // ── LSP Code Intelligence ────────────────────────────────
   {
-    name: "lsp_action",
+    name: "query_language_server",
     dataSource: compute("LSP server (stdio JSON-RPC)"),
     description:
       "Interact with Language Server Protocol (LSP) servers for precise, compiler-grade code intelligence. " +
-      "Use this instead of grep_search when you need EXACT semantic information about symbols — it understands " +
+      "Use this instead of search_file_contents when you need EXACT semantic information about symbols — it understands " +
       "types, scopes, and cross-file relationships that text search cannot. Supports JavaScript, TypeScript, Python, Rust, Go, C/C++, and Lua. " +
       "Servers start lazily on first request (may take a few seconds). Provide 1-based line and character positions.\n\n" +
       "Operations:\n" +
@@ -8662,7 +8662,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
 
   // ── Communication (Twilio) ────────────────────────────────
   {
-    name: "twilio_send_sms",
+    name: "send_sms",
     dataSource: onDemand("Twilio"),
     description:
       "Send an SMS text message to a phone number. The recipient must be in E.164 international format (e.g. +14155551234). " +
@@ -8690,7 +8690,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "twilio_list_messages",
+    name: "list_sms_messages",
     dataSource: onDemand("Twilio"),
     description:
       "List recent SMS messages sent and received on the Twilio account. " +
@@ -8719,7 +8719,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "twilio_get_account",
+    name: "get_sms_account",
     dataSource: onDemand("Twilio"),
     description:
       "Get Twilio account information including account SID, friendly name, status, " +
@@ -8731,7 +8731,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "twilio_lookup_number",
+    name: "lookup_phone_number",
     dataSource: onDemand("Twilio Lookup v2"),
     description:
       "Look up detailed information about a phone number using Twilio Lookup API v2. " +
@@ -8751,7 +8751,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "twilio_list_numbers",
+    name: "list_phone_numbers",
     dataSource: onDemand("Twilio"),
     description:
       "List all phone numbers owned by the Twilio account. Returns phone number SIDs, " +
@@ -8895,7 +8895,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
 
   // ── Text-to-Speech ──────────────────────────────────────────
   {
-    name: "text_to_speech",
+    name: "synthesize_speech",
     dataSource: onDemand("ElevenLabs / OpenAI via Prism"),
     description:
       "Convert text into spoken audio using a text-to-speech provider. Returns base64-encoded audio data. " +
@@ -8933,7 +8933,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "local_text_to_speech",
+    name: "synthesize_speech_local",
     dataSource: compute("espeak-ng (local)"),
     description:
       "Convert text into spoken audio using the local espeak-ng speech synthesizer — " +
@@ -9658,7 +9658,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
 
   // ── Speech-to-Text ──────────────────────────────────────────
   {
-    name: "speech_to_text",
+    name: "transcribe_audio",
     dataSource: onDemand("OpenAI Whisper / Google via Prism"),
     description:
       "Transcribe audio into text using a speech-to-text provider. Accepts either a URL to an audio file " +
@@ -9703,7 +9703,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
 
   // ── Discord (Lupos DB) ──────────────────────────────────────
   {
-    name: "discord_message_search",
+    name: "search_discord_messages",
     dataSource: onDemand("Lupos MongoDB"),
     description:
       "Search Discord message history from the server's stored messages. " +
@@ -9788,7 +9788,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "Aggregate Discord message history with group-by queries. " +
       "Groups messages by a chosen dimension (user, channel, day, hour, weekday, month) " +
       "and returns counted results sorted by count descending. " +
-      "Supports all the same filters as discord_message_search (guild, channel, user, " +
+      "Supports all the same filters as search_discord_messages (guild, channel, user, " +
       "time range, keyword). Use this for questions like 'who talks the most?', " +
       "'who says X the most?', 'which channel is most active?', " +
       "'what day of the week has the most messages?', or 'show monthly message trends'.",
@@ -9856,7 +9856,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "discord_server_activity",
+    name: "get_discord_server_activity",
     dataSource: onDemand("Lupos MongoDB"),
     description:
       "Get Discord server activity statistics including top users (by message count), " +
@@ -10293,7 +10293,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   },
   // ── Smart Home (LIFX Lights) ────────────────────────────────
   {
-    name: "lifx_list_lights",
+    name: "list_lights",
     dataSource: onDemand("LIFX Cloud API"),
     description:
       "List LIFX smart lights and their current state including power, color (hue/saturation/kelvin), " +
@@ -10319,7 +10319,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "lifx_set_state",
+    name: "set_light_state",
     dataSource: onDemand("LIFX Cloud API"),
     description:
       "Set the state of LIFX lights — power, color, brightness, and color temperature. " +
@@ -10373,7 +10373,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "lifx_toggle_power",
+    name: "toggle_light_power",
     dataSource: onDemand("LIFX Cloud API"),
     description:
       "Toggle LIFX light power — turns off lights that are on, or turns on lights that are off. " +
@@ -10398,7 +10398,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "lifx_breathe_effect",
+    name: "start_light_breathe_effect",
     dataSource: onDemand("LIFX Cloud API"),
     description:
       "Run a breathe effect — slowly fades between two colors in a smooth sine wave pattern. " +
@@ -10456,7 +10456,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "lifx_pulse_effect",
+    name: "start_light_pulse_effect",
     dataSource: onDemand("LIFX Cloud API"),
     description:
       "Run a pulse effect — quickly flashes between two colors with a sharp square wave pattern. " +
@@ -10507,7 +10507,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "lifx_effects_off",
+    name: "stop_light_effects",
     dataSource: onDemand("LIFX Cloud API"),
     description:
       "Stop all running effects (breathe, pulse, move, morph, flame) on the selected lights. " +
@@ -10533,11 +10533,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "lifx_list_scenes",
+    name: "list_light_scenes",
     dataSource: onDemand("LIFX Cloud API"),
     description:
       "List all saved LIFX scenes in the user's account. Scenes are pre-configured light states " +
-      "(color, brightness, power) that can be activated with lifx_activate_scene. " +
+      "(color, brightness, power) that can be activated with activate_light_scene. " +
       "Returns scene UUID (needed for activation), name, and light count.",
     endpoint: {
       path: "/lights/scenes",
@@ -10549,11 +10549,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "lifx_activate_scene",
+    name: "activate_light_scene",
     dataSource: onDemand("LIFX Cloud API"),
     description:
       "Activate a saved LIFX scene by its UUID. Scenes apply pre-configured states " +
-      "(color, brightness, power) to specific lights. Use lifx_list_scenes first to discover " +
+      "(color, brightness, power) to specific lights. Use list_light_scenes first to discover " +
       "available scenes and their UUIDs.",
     endpoint: {
       path: "/lights/scenes/activate",
@@ -10564,7 +10564,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         sceneId: {
           type: "string",
-          description: "Scene UUID from lifx_list_scenes.",
+          description: "Scene UUID from list_light_scenes.",
         },
         duration: {
           type: "number",
@@ -10583,7 +10583,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "lifx_move_effect",
+    name: "start_light_move_effect",
     dataSource: onDemand("LIFX Cloud API"),
     description:
       "Run a move effect — flowing color animation along LIFX strip products (Z, Beam). " +
@@ -10614,7 +10614,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         cycles: {
           type: "number",
           description:
-            "Number of cycles to run. Omit for infinite (until stopped with lifx_effects_off).",
+            "Number of cycles to run. Omit for infinite (until stopped with stop_light_effects).",
         },
         powerOn: {
           type: "boolean",
@@ -10625,7 +10625,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "lifx_flame_effect",
+    name: "start_light_flame_effect",
     dataSource: onDemand("LIFX Cloud API"),
     description:
       "Run a flame effect — flickering fire animation that runs on LIFX matrix device firmware " +
@@ -10650,7 +10650,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         duration: {
           type: "number",
           description:
-            "How long to run in seconds. Omit for indefinite (until stopped with lifx_effects_off).",
+            "How long to run in seconds. Omit for indefinite (until stopped with stop_light_effects).",
         },
         powerOn: {
           type: "boolean",
@@ -10661,7 +10661,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "lifx_morph_effect",
+    name: "start_light_morph_effect",
     dataSource: onDemand("LIFX Cloud API"),
     description:
       "Run a morph effect — continuous color-blending animation on LIFX matrix devices " +
@@ -10693,7 +10693,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         duration: {
           type: "number",
           description:
-            "How long to run in seconds. Omit for indefinite (until stopped with lifx_effects_off).",
+            "How long to run in seconds. Omit for indefinite (until stopped with stop_light_effects).",
         },
         powerOn: {
           type: "boolean",
@@ -10704,13 +10704,13 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "lifx_set_states",
+    name: "set_light_states",
     dataSource: onDemand("LIFX Cloud API"),
     description:
       "Set different states on multiple LIFX light selectors in a single API call. " +
       "Allows setting up to 50 different light states simultaneously — each with its own " +
       "selector, power, color, brightness, and duration. Much more efficient than calling " +
-      "lifx_set_state multiple times. Use 'defaults' to set common values across all entries.",
+      "set_light_state multiple times. Use 'defaults' to set common values across all entries.",
     endpoint: {
       path: "/lights/states",
       method: "PUT",
@@ -10752,12 +10752,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "lifx_set_state_delta",
+    name: "adjust_light_state",
     dataSource: onDemand("LIFX Cloud API"),
     description:
       "Make relative adjustments to the current state of LIFX lights — increase/decrease brightness, " +
       "shift hue, adjust saturation, or change color temperature by a delta value. " +
-      "Unlike lifx_set_state (which sets absolute values), this adds or subtracts from the current state. " +
+      "Unlike set_light_state (which sets absolute values), this adds or subtracts from the current state. " +
       "Example: brightness +0.2 makes lights 20% brighter than they currently are.",
     endpoint: {
       path: "/lights/state/delta",
@@ -10797,7 +10797,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "lifx_night_lock",
+    name: "enable_light_night_lock",
     dataSource: onDemand("LIFX Cloud API"),
     description:
       "Check, toggle, or set the night lock status on the smart lighting system. " +
@@ -10827,7 +10827,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "lifx_health",
+    name: "get_light_health",
     dataSource: onDemand("Lights Service"),
     description:
       "Get health and diagnostics from the smart lighting service — uptime, current automation phase " +
@@ -11586,7 +11586,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
 
   // ── Notebook Editing ──────────────────────────────────────
   {
-    name: "notebook_edit",
+    name: "edit_notebook",
     dataSource: onDemand("AgenticNotebookService"),
     description:
       "Edit Jupyter Notebook (.ipynb) files. Supports structured cell operations: " +
@@ -11699,7 +11699,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "synthetic_output",
+    name: "emit_structured_output",
     dataSource: compute("json-schema"),
     description:
       "Produce a structured JSON output conforming to a defined schema. Use this when the user " +
@@ -12020,14 +12020,14 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
 
   // ── Torrent Search & Download (qBittorrent) ────────────────────
   {
-    name: "torrent_search",
+    name: "search_torrents",
     dataSource: onDemand("qBittorrent"),
     description:
       "Search for torrents across multiple public torrent indexers via qBittorrent's search plugin " +
       "system. Searches run against all enabled plugins (60+ public sites including ThePirateBay, " +
       "EZTV, Nyaa, YTS, 1337x, TorrentGalaxy, etc.). Returns a list of results with name, size, " +
       "seeds, leechers, magnet link, and source site. Results are sorted by seed count (most popular first). " +
-      "Use category filters to narrow results. After finding a torrent, use torrent_download to add it.",
+      "Use category filters to narrow results. After finding a torrent, use download_torrent to add it.",
     endpoint: {
       path: "/torrent",
       queryParams: ["action", "q", "category", "plugins", "limit", "timeout"],
@@ -12065,7 +12065,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           type: "string",
           description:
             "Specific search plugins to use (pipe-separated names) or 'enabled' for all active plugins. " +
-            "Use torrent_status action=plugins to see installed plugins. Default: 'enabled'.",
+            "Use get_torrent_status action=plugins to see installed plugins. Default: 'enabled'.",
         },
         limit: {
           type: "number",
@@ -12081,13 +12081,13 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "torrent_download",
+    name: "download_torrent",
     dataSource: onDemand("qBittorrent"),
     description:
       "Add a torrent for download via qBittorrent. Accepts magnet links or .torrent file URLs. " +
       "The torrent is added to the qBittorrent instance and begins downloading immediately " +
       "(unless paused=true). Optionally specify a save path, category, and tags for organization. " +
-      "Use torrent_search first to find magnet links, then pass the 'link' field here.",
+      "Use search_torrents first to find magnet links, then pass the 'link' field here.",
     endpoint: {
       method: "POST",
       path: "/torrent/download",
@@ -12127,7 +12127,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "torrent_status",
+    name: "get_torrent_status",
     dataSource: onDemand("qBittorrent"),
     description:
       "Check torrent download status, list active/completed torrents, view transfer speeds, " +
@@ -12336,7 +12336,7 @@ const TOOL_DOMAINS = {
 
   // Utilities
   search_airports: "Utilities",
-  calculate_precise: "Core Tools",
+  evaluate_expression: "Core Tools",
   convert_currency: "Utilities",
   get_time_in_timezone: "Utilities",
   get_ip_info: "Utilities",
@@ -12359,7 +12359,7 @@ const TOOL_DOMAINS = {
   diff_text: "Compute",
   generate_hash: "Compute",
   test_regex: "Compute",
-  encode_decode: "Compute",
+  convert_encoding: "Compute",
   convert_color: "Compute",
   manipulate_image: "Compute",
   convert_image_to_ascii: "Compute",
@@ -12372,7 +12372,7 @@ const TOOL_DOMAINS = {
   create_3d_voxel: "Compute",
   think: "Core Tools",
   sleep: "Core Tools",
-  synthetic_output: "Core Tools",
+  emit_structured_output: "Core Tools",
 
   // Gaming
   get_dota: "Gaming",
@@ -12385,9 +12385,9 @@ const TOOL_DOMAINS = {
   get_wayback_snapshot: "Knowledge",
 
   // Torrent
-  torrent_search: "Torrent",
-  torrent_download: "Torrent",
-  torrent_status: "Torrent",
+  search_torrents: "Torrent",
+  download_torrent: "Torrent",
+  get_torrent_status: "Torrent",
 
   // Maritime
   get_tracked_vessels: "Maritime",
@@ -12408,21 +12408,21 @@ const TOOL_DOMAINS = {
   // Agentic — Workspace
   read_file: "Workspace",
   write_file: "Workspace",
-  str_replace_file: "Workspace",
-  block_replace_file: "Workspace",
-  multi_replace_file: "Workspace",
+  replace_in_file: "Workspace",
+  replace_file_block: "Workspace",
+  replace_file_regions: "Workspace",
   patch_file: "Workspace",
-  multi_file_read: "Workspace",
-  file_info: "Workspace",
-  file_diff: "Workspace",
+  read_files: "Workspace",
+  get_file_info: "Workspace",
+  diff_files: "Workspace",
   move_file: "Workspace",
   delete_file: "Workspace",
 
   // Agentic — Workspace Search
   list_directory: "Workspace",
-  grep_search: "Workspace",
-  glob_files: "Workspace",
-  project_summary: "Workspace",
+  search_file_contents: "Workspace",
+  find_files: "Workspace",
+  summarize_project: "Workspace",
 
   // Agentic — Web
   read_web_page: "Web",
@@ -12432,17 +12432,17 @@ const TOOL_DOMAINS = {
   search_web: "Core Tools",
 
   // Agentic — Command Execution
-  run_command: "Workspace",
+  execute_command: "Workspace",
 
   // Agentic — Git
 
-  git: "Workspace",
+  run_git: "Workspace",
   // Agentic — Browser Automation
-  browser_action: "Browser",
-  browser_script: "Browser",
+  control_browser: "Browser",
+  execute_browser_script: "Browser",
 
   // Agentic — Code Intelligence (LSP)
-  lsp_action: "Workspace",
+  query_language_server: "Workspace",
 
   // Agentic — Task Management
   create_task: "Core Tools",
@@ -12477,14 +12477,14 @@ const TOOL_DOMAINS = {
   trigger_cron_job: "Cron Jobs",
 
   // Agentic — Notebook Editing
-  notebook_edit: "Workspace",
+  edit_notebook: "Workspace",
 
   // Communication (Twilio)
-  twilio_send_sms: "Communication",
-  twilio_list_messages: "Communication",
-  twilio_get_account: "Communication",
-  twilio_lookup_number: "Communication",
-  twilio_list_numbers: "Communication",
+  send_sms: "Communication",
+  list_sms_messages: "Communication",
+  get_sms_account: "Communication",
+  lookup_phone_number: "Communication",
+  list_phone_numbers: "Communication",
 
   // Creative (Image Generation, Vision, Audio)
   get_emoji_combination: "Creative",
@@ -12492,16 +12492,16 @@ const TOOL_DOMAINS = {
   generate_image: "Creative",
 
   describe_image: "Creative",
-  text_to_speech: "Creative",
-  local_text_to_speech: "Creative",
+  synthesize_speech: "Creative",
+  synthesize_speech_local: "Creative",
   generate_audio: "Creative",
   create_vector_animation: "Creative",
-  speech_to_text: "Creative",
+  transcribe_audio: "Creative",
 
   // Discord (Lupos DB)
-  discord_message_search: "Discord",
+  search_discord_messages: "Discord",
   get_discord_message_analytics: "Discord",
-  discord_server_activity: "Discord",
+  get_discord_server_activity: "Discord",
   get_discord_guild_channels: "Discord",
   get_discord_guild_members: "Discord",
   get_discord_guild_emojis: "Discord",
@@ -12518,21 +12518,21 @@ const TOOL_DOMAINS = {
   get_discord_channel_activity_stats: "Discord",
 
   // Smart Home (LIFX Lights)
-  lifx_list_lights: "Smart Home",
-  lifx_set_state: "Smart Home",
-  lifx_toggle_power: "Smart Home",
-  lifx_breathe_effect: "Smart Home",
-  lifx_pulse_effect: "Smart Home",
-  lifx_move_effect: "Smart Home",
-  lifx_flame_effect: "Smart Home",
-  lifx_morph_effect: "Smart Home",
-  lifx_set_states: "Smart Home",
-  lifx_set_state_delta: "Smart Home",
-  lifx_effects_off: "Smart Home",
-  lifx_list_scenes: "Smart Home",
-  lifx_activate_scene: "Smart Home",
-  lifx_night_lock: "Smart Home",
-  lifx_health: "Smart Home",
+  list_lights: "Smart Home",
+  set_light_state: "Smart Home",
+  toggle_light_power: "Smart Home",
+  start_light_breathe_effect: "Smart Home",
+  start_light_pulse_effect: "Smart Home",
+  start_light_move_effect: "Smart Home",
+  start_light_flame_effect: "Smart Home",
+  start_light_morph_effect: "Smart Home",
+  set_light_states: "Smart Home",
+  adjust_light_state: "Smart Home",
+  stop_light_effects: "Smart Home",
+  list_light_scenes: "Smart Home",
+  activate_light_scene: "Smart Home",
+  enable_light_night_lock: "Smart Home",
+  get_light_health: "Smart Home",
 };
 
 // ────────────────────────────────────────────────────────────
@@ -12659,7 +12659,7 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   search_transit_stops_nearby: "📍",
   get_transit_route_info: "🗺️",
   search_airports: ["✈️", "💻"],
-  calculate_precise: "🧮",
+  evaluate_expression: "🧮",
   convert_currency: "💱",
   get_time_in_timezone: "🕐",
   get_ip_info: ["🔎", "💻"],
@@ -12681,7 +12681,7 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   diff_text: "🔀",
   generate_hash: "🔐",
   test_regex: "🔣",
-  encode_decode: "🔁",
+  convert_encoding: "🔁",
   convert_color: ["🎨", "💻"],
   manipulate_image: ["🖼️", "💻"],
   convert_image_to_ascii: ["🎨", "💻"],
@@ -12694,12 +12694,12 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   create_3d_voxel: ["🧱", "💻"],
   think: ["🧠", "💻"],
   sleep: "💤",
-  synthetic_output: "📝",
+  emit_structured_output: "📝",
   get_dota: ["🎮", "💻"],
   create_bonfire: ["🔥", "💻"],
-  torrent_search: "🔍",
-  torrent_download: "⬇️",
-  torrent_status: ["📊", "💻"],
+  search_torrents: "🔍",
+  download_torrent: "⬇️",
+  get_torrent_status: ["📊", "💻"],
   get_tracked_vessels: "🚢",
   get_vessel_by_mmsi: "🚢",
   search_vessels: "⛵",
@@ -12714,30 +12714,30 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   get_natural_gas_prices: ["🔥", "💻"],
   read_file: "📄",
   write_file: ["✏️", "💻"],
-  str_replace_file: "🔧",
-  block_replace_file: ["🧱", "💻"],
-  multi_replace_file: ["🧱", "💻"],
+  replace_in_file: "🔧",
+  replace_file_block: ["🧱", "💻"],
+  replace_file_regions: ["🧱", "💻"],
   patch_file: "🩹",
-  multi_file_read: "📑",
-  file_info: "📄",
-  file_diff: "🔀",
+  read_files: "📑",
+  get_file_info: "📄",
+  diff_files: "🔀",
   move_file: "📂",
   delete_file: ["🗑️", "💻"],
-  notebook_edit: "📓",
+  edit_notebook: "📓",
   list_directory: "📁",
-  grep_search: "🔍",
-  glob_files: ["🔎", "💻"],
-  project_summary: "📋",
+  search_file_contents: "🔍",
+  find_files: ["🔎", "💻"],
+  summarize_project: "📋",
   read_web_page: "🌐",
   read_pdf: "📄",
   read_docx: "📝",
   read_spreadsheet: ["📊", "💻"],
   search_web: "🔍",
-  run_command: "▶️",
-  git: ["📦", "💻"],
-  browser_action: "🌐",
-  browser_script: "📜",
-  lsp_action: ["🧩", "💻"],
+  execute_command: "▶️",
+  run_git: ["📦", "💻"],
+  control_browser: "🌐",
+  execute_browser_script: "📜",
+  query_language_server: ["🧩", "💻"],
   create_task: "➕",
   get_task: "📋",
   list_tasks: "📝",
@@ -12758,23 +12758,23 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   list_cron_jobs: "📋",
   delete_cron_job: ["🗑️", "💻"],
   trigger_cron_job: ["🚀", "💻"],
-  twilio_send_sms: ["💬", "💻"],
-  twilio_list_messages: "📨",
-  twilio_get_account: ["📱", "💻"],
-  twilio_lookup_number: "📞",
-  twilio_list_numbers: "📲",
+  send_sms: ["💬", "💻"],
+  list_sms_messages: "📨",
+  get_sms_account: ["📱", "💻"],
+  lookup_phone_number: "📞",
+  list_phone_numbers: "📲",
   get_emoji_combination: ["🍳", "💻"],
   get_emoji_combinations: "🧑‍🍳",
   generate_image: ["🖼️", "💻"],
   describe_image: ["👁️", "💻"],
-  text_to_speech: "🔊",
-  local_text_to_speech: ["🗣️", "💻"],
+  synthesize_speech: "🔊",
+  synthesize_speech_local: ["🗣️", "💻"],
   generate_audio: "🔊",
   create_vector_animation: ["🎬", "💻"],
-  speech_to_text: ["🎤", "💻"],
-  discord_message_search: "🔍",
+  transcribe_audio: ["🎤", "💻"],
+  search_discord_messages: "🔍",
   get_discord_message_analytics: ["📊", "💻"],
-  discord_server_activity: ["📈", "💻"],
+  get_discord_server_activity: ["📈", "💻"],
   get_discord_guild_channels: "📁",
   get_discord_guild_members: "👥",
   get_discord_guild_emojis: ["😀", "💻"],
@@ -12789,21 +12789,21 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   get_discord_voice_channel_members: "🔊",
   get_discord_user_profile: "👤",
   get_discord_channel_activity_stats: ["📊", "💻"],
-  lifx_list_lights: ["💡", "💻"],
-  lifx_set_state: "🎚️",
-  lifx_toggle_power: ["🔌", "💻"],
-  lifx_breathe_effect: ["🌬️", "💻"],
-  lifx_pulse_effect: ["💥", "💻"],
-  lifx_move_effect: "🔄",
-  lifx_flame_effect: ["🔥", "💻"],
-  lifx_morph_effect: ["🌈", "💻"],
-  lifx_set_states: ["💡", "💻"],
-  lifx_set_state_delta: ["📊", "💻"],
-  lifx_effects_off: "⏹️",
-  lifx_list_scenes: ["🎬", "💻"],
-  lifx_activate_scene: "▶️",
-  lifx_night_lock: "🌙",
-  lifx_health: ["❤️", "💻"],
+  list_lights: ["💡", "💻"],
+  set_light_state: "🎚️",
+  toggle_light_power: ["🔌", "💻"],
+  start_light_breathe_effect: ["🌬️", "💻"],
+  start_light_pulse_effect: ["💥", "💻"],
+  start_light_move_effect: "🔄",
+  start_light_flame_effect: ["🔥", "💻"],
+  start_light_morph_effect: ["🌈", "💻"],
+  set_light_states: ["💡", "💻"],
+  adjust_light_state: ["📊", "💻"],
+  stop_light_effects: "⏹️",
+  list_light_scenes: ["🎬", "💻"],
+  activate_light_scene: "▶️",
+  enable_light_night_lock: "🌙",
+  get_light_health: ["❤️", "💻"],
 };
 
 // ────────────────────────────────────────────────────────────
@@ -12877,18 +12877,18 @@ const TOOL_REQUIRED_KEYS = {
   get_natural_gas_prices: ["EIA_API_KEY"],
 
   // Communication (Twilio — all require account SID + auth token)
-  twilio_send_sms: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
-  twilio_list_messages: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
-  twilio_get_account: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
-  twilio_lookup_number: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
-  twilio_list_numbers: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
+  send_sms: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
+  list_sms_messages: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
+  get_sms_account: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
+  lookup_phone_number: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
+  list_phone_numbers: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
 
   // Creative (require Prism as LLM backend)
   generate_image: ["PRISM_SERVICE_URL"],
   describe_image: ["PRISM_SERVICE_URL"],
-  text_to_speech: ["PRISM_SERVICE_URL"],
-  local_text_to_speech: [],
-  speech_to_text: ["PRISM_SERVICE_URL"],
+  synthesize_speech: ["PRISM_SERVICE_URL"],
+  synthesize_speech_local: [],
+  transcribe_audio: ["PRISM_SERVICE_URL"],
 
   // Agent Management (require Prism for CustomAgentService)
   create_custom_agent: ["PRISM_SERVICE_URL"],
@@ -12903,9 +12903,9 @@ const TOOL_REQUIRED_KEYS = {
   delete_custom_tool: ["PRISM_SERVICE_URL"],
 
   // Torrent (all require qBittorrent connection)
-  torrent_search: ["QBITTORRENT_URL"],
-  torrent_download: ["QBITTORRENT_URL"],
-  torrent_status: ["QBITTORRENT_URL"],
+  search_torrents: ["QBITTORRENT_URL"],
+  download_torrent: ["QBITTORRENT_URL"],
+  get_torrent_status: ["QBITTORRENT_URL"],
 
   // Reddit
   search_reddit: ["REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET"],
@@ -12989,7 +12989,7 @@ const TOOL_LABELS = {
   get_media_recommendations: ["media"],
   search_person: ["media"],
   get_watch_providers: ["media"],
-  git: ["coding", "git"],
+  run_git: ["coding", "git"],
   search_books: ["reference"],
   get_country: ["reference"],
   get_element: ["reference"],
@@ -13119,7 +13119,7 @@ const TOOL_LABELS = {
 
   // ── Utilities ────────────────────────────────────────────
   execute_python: ["coding", "data"],
-  calculate_precise: ["data"],
+  evaluate_expression: ["data"],
   convert_currency: ["finance", "data"],
   get_time_in_timezone: ["data"],
   get_ip_info: ["data"],
@@ -13142,7 +13142,7 @@ const TOOL_LABELS = {
   diff_text: ["coding", "data"],
   generate_hash: ["coding", "data"],
   test_regex: ["coding"],
-  encode_decode: ["coding", "data"],
+  convert_encoding: ["coding", "data"],
   convert_color: ["data"],
   manipulate_image: ["data", "creative"],
   convert_image_to_ascii: ["data", "creative"],
@@ -13155,7 +13155,7 @@ const TOOL_LABELS = {
   create_3d_voxel: ["creative", "data"],
   think: ["coding"],
   sleep: ["coding"],
-  synthetic_output: ["coding"],
+  emit_structured_output: ["coding"],
 
   // ── Gaming ───────────────────────────────────────────────
   get_dota: ["reference", "media"],
@@ -13168,9 +13168,9 @@ const TOOL_LABELS = {
   get_wayback_snapshot: ["web", "reference"],
 
   // ── Torrent ──────────────────────────────────────────────
-  torrent_search: ["media", "download"],
-  torrent_download: ["media", "download"],
-  torrent_status: ["media", "download"],
+  search_torrents: ["media", "download"],
+  download_torrent: ["media", "download"],
+  get_torrent_status: ["media", "download"],
 
   // ── Maritime ─────────────────────────────────────────────
   get_tracked_vessels: ["maritime"],
@@ -13191,21 +13191,21 @@ const TOOL_LABELS = {
   // ── Agentic: File Operations ─────────────────────────────
   read_file: ["coding"],
   write_file: ["coding"],
-  str_replace_file: ["coding"],
-  block_replace_file: ["coding"],
-  multi_replace_file: ["coding"],
+  replace_in_file: ["coding"],
+  replace_file_block: ["coding"],
+  replace_file_regions: ["coding"],
   patch_file: ["coding"],
-  multi_file_read: ["coding"],
-  file_info: ["coding"],
-  file_diff: ["coding"],
+  read_files: ["coding"],
+  get_file_info: ["coding"],
+  diff_files: ["coding"],
   move_file: ["coding"],
   delete_file: ["coding"],
 
   // ── Agentic: Search & Discovery ──────────────────────────
   list_directory: ["coding"],
-  grep_search: ["coding"],
-  glob_files: ["coding"],
-  project_summary: ["coding"],
+  search_file_contents: ["coding"],
+  find_files: ["coding"],
+  summarize_project: ["coding"],
 
   // ── Agentic: Web ─────────────────────────────────────────
   read_web_page: ["coding", "web"],
@@ -13215,16 +13215,16 @@ const TOOL_LABELS = {
   search_web: ["coding", "web"],
 
   // ── Agentic: Command Execution ───────────────────────────
-  run_command: ["coding"],
+  execute_command: ["coding"],
 
   // ── Agentic: Git ─────────────────────────────────────────
 
   // ── Agentic: Browser ─────────────────────────────────────
-  browser_action: ["coding", "web"],
-  browser_script: ["coding", "web"],
+  control_browser: ["coding", "web"],
+  execute_browser_script: ["coding", "web"],
 
   // ── Agentic: Code Intelligence (LSP) ─────────────────────
-  lsp_action: ["coding"],
+  query_language_server: ["coding"],
 
   // ── Agentic: Task Management ─────────────────────────────
   create_task: ["coding"],
@@ -13259,14 +13259,14 @@ const TOOL_LABELS = {
   trigger_cron_job: ["coding", "automation"],
 
   // ── Agentic: Notebook Editing ────────────────────────────
-  notebook_edit: ["coding", "data_science"],
+  edit_notebook: ["coding", "data_science"],
 
   // ── Communication ────────────────────────────────────────
-  twilio_send_sms: ["communication"],
-  twilio_list_messages: ["communication"],
-  twilio_get_account: ["communication"],
-  twilio_lookup_number: ["communication"],
-  twilio_list_numbers: ["communication"],
+  send_sms: ["communication"],
+  list_sms_messages: ["communication"],
+  get_sms_account: ["communication"],
+  lookup_phone_number: ["communication"],
+  list_phone_numbers: ["communication"],
 
   // ── Creative (Image Generation & Vision) ────────────────────
   get_emoji_combination: ["creative", "media"],
@@ -13274,16 +13274,16 @@ const TOOL_LABELS = {
   generate_image: ["creative", "media"],
 
   describe_image: ["creative", "media"],
-  text_to_speech: ["creative", "media"],
-  local_text_to_speech: ["creative", "media"],
+  synthesize_speech: ["creative", "media"],
+  synthesize_speech_local: ["creative", "media"],
   generate_audio: ["creative", "media"],
   create_vector_animation: ["creative", "media"],
-  speech_to_text: ["creative", "media"],
+  transcribe_audio: ["creative", "media"],
 
   // ── Discord ──────────────────────────────────────────────
-  discord_message_search: ["discord"],
+  search_discord_messages: ["discord"],
   get_discord_message_analytics: ["discord"],
-  discord_server_activity: ["discord"],
+  get_discord_server_activity: ["discord"],
   get_discord_guild_channels: ["discord"],
   get_discord_guild_members: ["discord"],
   get_discord_guild_emojis: ["discord"],
@@ -13300,21 +13300,21 @@ const TOOL_LABELS = {
   get_discord_channel_activity_stats: ["discord"],
 
   // ── Smart Home (LIFX) ────────────────────────────────────
-  lifx_list_lights: ["smart_home", "lifx"],
-  lifx_set_state: ["smart_home", "lifx"],
-  lifx_toggle_power: ["smart_home", "lifx"],
-  lifx_breathe_effect: ["smart_home", "lifx"],
-  lifx_pulse_effect: ["smart_home", "lifx"],
-  lifx_move_effect: ["smart_home", "lifx"],
-  lifx_flame_effect: ["smart_home", "lifx"],
-  lifx_morph_effect: ["smart_home", "lifx"],
-  lifx_set_states: ["smart_home", "lifx"],
-  lifx_set_state_delta: ["smart_home", "lifx"],
-  lifx_effects_off: ["smart_home", "lifx"],
-  lifx_list_scenes: ["smart_home", "lifx"],
-  lifx_activate_scene: ["smart_home", "lifx"],
-  lifx_night_lock: ["smart_home", "lifx"],
-  lifx_health: ["smart_home", "lifx"],
+  list_lights: ["smart_home", "lifx"],
+  set_light_state: ["smart_home", "lifx"],
+  toggle_light_power: ["smart_home", "lifx"],
+  start_light_breathe_effect: ["smart_home", "lifx"],
+  start_light_pulse_effect: ["smart_home", "lifx"],
+  start_light_move_effect: ["smart_home", "lifx"],
+  start_light_flame_effect: ["smart_home", "lifx"],
+  start_light_morph_effect: ["smart_home", "lifx"],
+  set_light_states: ["smart_home", "lifx"],
+  adjust_light_state: ["smart_home", "lifx"],
+  stop_light_effects: ["smart_home", "lifx"],
+  list_light_scenes: ["smart_home", "lifx"],
+  activate_light_scene: ["smart_home", "lifx"],
+  enable_light_night_lock: ["smart_home", "lifx"],
+  get_light_health: ["smart_home", "lifx"],
 };
 
 // ────────────────────────────────────────────────────────────
@@ -13325,8 +13325,8 @@ const TOOL_INTELLIGENCE_TIERS: Record<string, ToolIntelligenceTier> = {
   // 🔴 Frontier — Frontier Models Only (Structured graphs, code writing, mult-tool state)
   generate_audio: "frontier",
   create_vector_animation: "frontier",
-  browser_action: "frontier",
-  browser_script: "frontier",
+  control_browser: "frontier",
+  execute_browser_script: "frontier",
   manipulate_image: "frontier",
   build_meal_plan: "frontier",
   analyze_nutrient_gaps: "frontier",
@@ -13336,8 +13336,8 @@ const TOOL_INTELLIGENCE_TIERS: Record<string, ToolIntelligenceTier> = {
   create_3d_scene: "frontier",
   create_3d_model: "high",
   create_3d_voxel: "high",
-  lsp_action: "frontier",
-  notebook_edit: "frontier",
+  query_language_server: "frontier",
+  edit_notebook: "frontier",
   search_energy: "frontier",
 
   // 🟠 High — Strong Models Recommended (Complex domain enums, conditional required params)
@@ -13365,9 +13365,9 @@ const TOOL_INTELLIGENCE_TIERS: Record<string, ToolIntelligenceTier> = {
   create_cron: "high",
   generate_diagram: "high",
   test_regex: "high",
-  str_replace_file: "high",
-  block_replace_file: "high",
-  multi_replace_file: "high",
+  replace_in_file: "high",
+  replace_file_block: "high",
+  replace_file_regions: "high",
   get_local_environment: "high",
   get_vessels_in_area: "high",
 
@@ -13417,7 +13417,7 @@ const TOOL_INTELLIGENCE_TIERS: Record<string, ToolIntelligenceTier> = {
   get_earthquakes: "medium",
   search_gym_exercises: "medium",
   diff_text: "medium",
-  encode_decode: "medium",
+  convert_encoding: "medium",
   generate_hash: "medium",
   convert_color: "medium",
   read_rss_feed: "medium",
@@ -13433,12 +13433,12 @@ const TOOL_INTELLIGENCE_TIERS: Record<string, ToolIntelligenceTier> = {
   get_natural_gas_prices: "medium",
   get_electricity_retail_sales: "medium",
   get_energy_facets: "medium",
-  git: "medium",
-  run_command: "medium",
-  twilio_send_sms: "medium",
-  discord_message_search: "medium",
+  run_git: "medium",
+  execute_command: "medium",
+  send_sms: "medium",
+  search_discord_messages: "medium",
   get_discord_message_analytics: "medium",
-  discord_server_activity: "medium",
+  get_discord_server_activity: "medium",
   get_discord_guild_channels: "medium",
   get_discord_guild_members: "medium",
   get_discord_guild_emojis: "medium",
@@ -13454,9 +13454,9 @@ const TOOL_INTELLIGENCE_TIERS: Record<string, ToolIntelligenceTier> = {
   get_discord_user_profile: "medium",
   get_discord_channel_activity_stats: "medium",
   generate_image: "medium",
-  text_to_speech: "medium",
-  local_text_to_speech: "low",
-  speech_to_text: "medium",
+  synthesize_speech: "medium",
+  synthesize_speech_local: "low",
+  transcribe_audio: "medium",
   get_public_webcams: "medium",
 };
 

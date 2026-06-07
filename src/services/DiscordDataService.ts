@@ -54,7 +54,7 @@ type MongoGroupId = string | MongoDateToString | MongoDatePart;
 //  Discord Data Service
 //
 //  Query layer for the Lupos `Messages` collection. Powers the
-//  discord_message_search, discord_server_activity, and
+//  search_discord_messages, get_discord_server_activity, and
 //  discord_message_analytics tools.
 // ═══════════════════════════════════════════════════════════════
 

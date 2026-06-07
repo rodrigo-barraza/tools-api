@@ -182,8 +182,8 @@ const TESTS = {
       return result;
     }),
 
-  str_replace_file: () =>
-    runTest("str_replace_file", async () => {
+  replace_in_file: () =>
+    runTest("replace_in_file", async () => {
       // Create a dedicated copy for this test
       const testFile = join(getFixtureDir(), "str_replace_test.js");
       await writeFile(testFile, FIXTURE_CONTENT, "utf-8");
@@ -218,16 +218,16 @@ const TESTS = {
       return result;
     }),
 
-  multi_file_read: () =>
-    runTest("multi_file_read", () =>
+  read_files: () =>
+    runTest("read_files", () =>
       agenticMultiFileRead([{ path: getFixtureFile() }]),
     ),
 
-  file_info: () =>
-    runTest("file_info", () => agenticFileInfo([getFixtureFile()])),
+  get_file_info: () =>
+    runTest("get_file_info", () => agenticFileInfo([getFixtureFile()])),
 
-  file_diff: () =>
-    runTest("file_diff", async () => {
+  diff_files: () =>
+    runTest("diff_files", async () => {
       const fileB = join(getFixtureDir(), "diff_b.js");
       await writeFile(
         fileB,
@@ -275,14 +275,14 @@ const TESTS = {
   list_directory: () =>
     runTest("list_directory", () => agenticListDirectory(getFixtureDir())),
 
-  grep_search: () =>
-    runTest("grep_search", () => agenticGrepSearch("greet", getFixtureDir())),
+  search_file_contents: () =>
+    runTest("search_file_contents", () => agenticGrepSearch("greet", getFixtureDir())),
 
-  glob_files: () =>
-    runTest("glob_files", () => agenticGlobFiles("*.js", getFixtureDir())),
+  find_files: () =>
+    runTest("find_files", () => agenticGlobFiles("*.js", getFixtureDir())),
 
-  project_summary: () =>
-    runTest("project_summary", () =>
+  summarize_project: () =>
+    runTest("summarize_project", () =>
       agenticProjectSummary(resolve(WORKSPACE_ROOTS[0] || "")),
     ),
 
@@ -317,8 +317,8 @@ const TESTS = {
 
   // ── Command Execution ────────────────────────────────────
 
-  run_command: () =>
-    runTest("run_command", () =>
+  execute_command: () =>
+    runTest("execute_command", () =>
       executeCommand("ls -la", {
         cwd: resolve(WORKSPACE_ROOTS[0] || ""),
         timeout: 5000,

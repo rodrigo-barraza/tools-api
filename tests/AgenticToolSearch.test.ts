@@ -19,7 +19,7 @@ describe("Agentic Tool Search Service", () => {
   it("should fail when searching a domain with no enabled tools", () => {
     const searchResult = agenticToolSearch("", {
       domain: "Weather & Environment",
-      enabledTools: ["read_file", "grep_search"],
+      enabledTools: ["read_file", "search_file_contents"],
     });
 
     expect(searchResult.error).toBeDefined();
@@ -48,7 +48,7 @@ describe("Agentic Tool Search Service", () => {
   it("should fail when searching a label with no enabled tools", () => {
     const searchResult = agenticToolSearch("", {
       label: "smart_home",
-      enabledTools: ["read_file", "grep_search"],
+      enabledTools: ["read_file", "search_file_contents"],
     });
 
     expect(searchResult.error).toBeDefined();
