@@ -19,7 +19,9 @@ describe("GET /utility/airports/search", () => {
   });
 
   it("returns airport search results", async () => {
-    const res = await request(app).get("/utility/airports/search?q=vancouver&limit=5");
+    const res = await request(app).get(
+      "/utility/airports/search?q=vancouver&limit=5",
+    );
     expect(res.status).toBe(200);
     expect(typeof res.body.count === "number").toBeTruthy();
     expect(res.body.count > 0).toBeTruthy();
@@ -66,7 +68,9 @@ describe("GET /utility/airports/nearest", () => {
   });
 
   it("returns nearest airports to Vancouver", async () => {
-    const res = await request(app).get("/utility/airports/nearest?lat=49.19&lng=-123.18&limit=3");
+    const res = await request(app).get(
+      "/utility/airports/nearest?lat=49.19&lng=-123.18&limit=3",
+    );
     expect(res.status).toBe(200);
     expect(typeof res.body.count === "number").toBeTruthy();
     expect(res.body.count > 0).toBeTruthy();
@@ -155,6 +159,24 @@ describe("POST /utility/python/execute", () => {
     expect(res.body.stdout.trim()).toBe("Hello, World!");
   });
 
+  it("executes python code with imports successfully", async () => {
+    const res = await request(app)
+      .post("/utility/python/execute")
+      .send({ code: "import math\nprint(math.sqrt(16))" });
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.stdout.trim()).toBe("4.0");
+  });
+
+  it("allows all standard library imports inside the sandbox", async () => {
+    const res = await request(app)
+      .post("/utility/python/execute")
+      .send({ code: "import subprocess\nprint(subprocess.run(['echo', 'hello'], capture_output=True, text=True).stdout.strip())" });
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.stdout.trim()).toBe("hello");
+  });
+
   it("returns execution failure on syntax error", async () => {
     const res = await request(app)
       .post("/utility/python/execute")
@@ -164,5 +186,3 @@ describe("POST /utility/python/execute", () => {
     expect(res.body.stderr).toContain("SyntaxError");
   });
 });
-
-

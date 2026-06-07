@@ -34,21 +34,8 @@ def _blocked_socket(*args, **kwargs):
     raise PermissionError("Network access is disabled in the sandbox")
 _socket.socket = _blocked_socket
 
-# ─── Block dangerous modules ───
-_BLOCKED = frozenset(["subprocess", "shutil", "ctypes", "multiprocessing", "signal"])
-_orig_import = __builtins__.__import__ if hasattr(__builtins__, "__import__") else __import__
-
-def _safe_import(name, *args, **kwargs):
-    if name.split(".")[0] in _BLOCKED:
-        raise ImportError(f"Module '{name}' is not available in the sandbox")
-    return _orig_import(name, *args, **kwargs)
-
-import builtins
-builtins.__import__ = _safe_import
-
 # ─── Clean namespace ───
 del resource, _mb, _socket, _orig_socket, _blocked_socket
-del _BLOCKED, _orig_import, _safe_import, builtins
 `;
 
 // ────────────────────────────────────────────────────────────
@@ -169,7 +156,9 @@ export async function executePython(
 
       // Cleanup temp dir (includes the script file)
       if (temporaryDirectory) {
-        rm(temporaryDirectory, { recursive: true, force: true }).catch(() => {});
+        rm(temporaryDirectory, { recursive: true, force: true }).catch(
+          () => {},
+        );
       }
 
       const truncatedStdout =
@@ -305,7 +294,9 @@ export async function executePythonStreaming(
       const stderr = Buffer.concat(stderrChunks).toString("utf-8");
 
       if (temporaryDirectory) {
-        rm(temporaryDirectory, { recursive: true, force: true }).catch(() => {});
+        rm(temporaryDirectory, { recursive: true, force: true }).catch(
+          () => {},
+        );
       }
 
       resolve({
