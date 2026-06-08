@@ -57,7 +57,7 @@ function staticDataset(name: string) {
 
 import { DOMAINS } from "@rodrigo-barraza/utilities-library/taxonomy";
 
-// Reverse map: domain display name → programmatic key (e.g. "Core Tools" → "core")
+// Reverse map: domain display name → programmatic key (e.g. "Core Harness Tools" → "core_harness")
 const DOMAIN_DISPLAY_NAME_TO_KEY = new Map<string, string>();
 for (const entry of Object.values(DOMAINS)) {
   if (!DOMAIN_DISPLAY_NAME_TO_KEY.has(entry.displayName)) {
@@ -12272,7 +12272,7 @@ const TOOL_DOMAINS = {
   get_on_this_day: "Knowledge",
   list_development_indicators: "Knowledge",
   get_youtube_video: "Knowledge",
-  read_url: "Core Tools",
+  read_url: "Core Harness Tools",
   get_package_info: "Knowledge",
   read_pdf_url: "Knowledge",
   read_rss_feed: "Knowledge",
@@ -12336,7 +12336,7 @@ const TOOL_DOMAINS = {
 
   // Utilities
   search_airports: "Utilities",
-  evaluate_expression: "Core Tools",
+  evaluate_expression: "Core Harness Tools",
   convert_currency: "Utilities",
   get_time_in_timezone: "Utilities",
   get_ip_info: "Utilities",
@@ -12346,8 +12346,8 @@ const TOOL_DOMAINS = {
   generate_chart: "Utilities",
   get_public_webcams: "Utilities",
   // Compute
-  execute_python: "Core Tools",
-  execute_javascript: "Core Tools",
+  execute_python: "Core Harness Tools",
+  execute_javascript: "Core Harness Tools",
   execute_shell: "Compute",
   convert_units: "Compute",
   parse_datetime: "Compute",
@@ -12370,9 +12370,9 @@ const TOOL_DOMAINS = {
   create_3d_scene: "Compute",
   create_3d_model: "Compute",
   create_3d_voxel: "Compute",
-  think: "Core Tools",
-  sleep: "Core Tools",
-  emit_structured_output: "Core Tools",
+  think: "Core Harness Tools",
+  sleep: "Core Harness Tools",
+  emit_structured_output: "Core Harness Tools",
 
   // Gaming
   get_dota: "Gaming",
@@ -12429,7 +12429,7 @@ const TOOL_DOMAINS = {
   read_pdf: "Web",
   read_docx: "Web",
   read_spreadsheet: "Web",
-  search_web: "Core Tools",
+  search_web: "Core Harness Tools",
 
   // Agentic — Command Execution
   execute_command: "Workspace",
@@ -12445,13 +12445,13 @@ const TOOL_DOMAINS = {
   query_language_server: "Workspace",
 
   // Agentic — Task Management
-  create_task: "Core Tools",
-  get_task: "Core Tools",
-  list_tasks: "Core Tools",
-  update_task: "Core Tools",
+  create_task: "Core Harness Tools",
+  get_task: "Core Harness Tools",
+  list_tasks: "Core Harness Tools",
+  update_task: "Core Harness Tools",
 
   // Agentic — Memory Persistence
-  upsert_memory: "Core Tools",
+  upsert_memory: "Core Harness Tools",
 
   // Agentic — Agent Management
   create_custom_agent: "Agent Management",
@@ -12466,7 +12466,7 @@ const TOOL_DOMAINS = {
   delete_custom_tool: "Tool Management",
 
   // Agentic — Tool Discovery
-  search_tools: "Core Tools",
+  search_tools: "Core Harness Tools",
 
   // Cron Jobs
   create_cron: "Cron Jobs",

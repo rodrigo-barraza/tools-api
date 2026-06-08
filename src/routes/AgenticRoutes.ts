@@ -1358,7 +1358,7 @@ router.post(
     if (
       enabledToolsHeader &&
       typeof enabledToolsHeader === "string" &&
-      agentHeader !== "META"
+      agentHeader !== AGENT_IDS.META
     ) {
       enabledTools = enabledToolsHeader.split(",");
     }
