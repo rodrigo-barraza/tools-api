@@ -1,3 +1,4 @@
+import { DEFAULT_USERNAME } from "@rodrigo-barraza/utilities-library/taxonomy";
 /**
  * HeaderPropagationMiddleware — attaches identity headers to the request object.
  *
@@ -22,7 +23,7 @@ export function headerPropagationMiddleware(
     "default";
 
   // Username: from x-username header
-  req.username = (req.headers["x-username"] as string) || "anonymous";
+  req.username = (req.headers["x-username"] as string) || DEFAULT_USERNAME;
 
   // Workspace ID: optional — null means the default workspace
   req.workspaceId = (req.headers["x-workspace-id"] as string) || null;

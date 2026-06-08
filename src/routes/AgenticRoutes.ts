@@ -1,3 +1,4 @@
+import { AGENT_IDS, DEFAULT_PROJECT } from "@rodrigo-barraza/utilities-library/taxonomy";
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { parseIntParam } from "@rodrigo-barraza/utilities-library";
 // ─── File System & Web Interaction Endpoints ────────────────
@@ -1098,8 +1099,8 @@ router.post(
     // Trusted context: arrives via X-headers (telemetry) and body injection
     // (ToolOrchestratorService injects project/agent/username from session ctx).
     // The model never provides these — they're stripped from the tool schema.
-    const project = req.headers["x-project"] || req.body.project || "default";
-    const agent = req.headers["x-agent"] || req.body.agent || "CODING";
+    const project = req.headers["x-project"] || req.body.project || DEFAULT_PROJECT;
+    const agent = req.headers["x-agent"] || req.body.agent || AGENT_IDS.CODING;
     const username = req.headers["x-username"] || req.body.username || null;
     const agentSessionId = req.headers["x-agent-session-id"] || null;
     try {
@@ -1110,7 +1111,7 @@ router.post(
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             agent,
-            project: project || "default",
+            project: project || DEFAULT_PROJECT,
             username,
             agentSessionId,
             content,
@@ -1568,7 +1569,7 @@ router.post(
         });
     }
     // Inject trusted context from session headers
-    const project = req.headers["x-project"] || req.body.project || "default";
+    const project = req.headers["x-project"] || req.body.project || DEFAULT_PROJECT;
     const username = req.headers["x-username"] || req.body.username || null;
     try {
       const prismRes = await fetch(`${CONFIG.PRISM_SERVICE_URL}/custom-tools`, {
