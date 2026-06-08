@@ -12406,23 +12406,23 @@ const TOOL_DOMAINS = {
   get_natural_gas_prices: "Energy",
 
   // Agentic — Workspace
-  read_file: "Workspace",
-  write_file: "Workspace",
-  replace_in_file: "Workspace",
-  replace_file_block: "Workspace",
-  replace_file_regions: "Workspace",
-  patch_file: "Workspace",
-  read_files: "Workspace",
-  get_file_info: "Workspace",
-  diff_files: "Workspace",
-  move_file: "Workspace",
-  delete_file: "Workspace",
+  read_file: "Core Workspace Tools",
+  write_file: "Core Workspace Tools",
+  replace_in_file: "Core Workspace Tools",
+  replace_file_block: "Core Workspace Tools",
+  replace_file_regions: "Core Workspace Tools",
+  patch_file: "Core Workspace Tools",
+  read_files: "Core Workspace Tools",
+  get_file_info: "Core Workspace Tools",
+  diff_files: "Core Workspace Tools",
+  move_file: "Core Workspace Tools",
+  delete_file: "Core Workspace Tools",
 
   // Agentic — Workspace Search
-  list_directory: "Workspace",
-  search_file_contents: "Workspace",
-  find_files: "Workspace",
-  summarize_project: "Workspace",
+  list_directory: "Core Workspace Tools",
+  search_file_contents: "Core Workspace Tools",
+  find_files: "Core Workspace Tools",
+  summarize_project: "Core Workspace Tools",
 
   // Agentic — Web
   read_web_page: "Web",
@@ -12432,17 +12432,17 @@ const TOOL_DOMAINS = {
   search_web: "Core Harness Tools",
 
   // Agentic — Command Execution
-  execute_command: "Workspace",
+  execute_command: "Core Workspace Tools",
 
   // Agentic — Git
 
-  run_git: "Workspace",
+  run_git: "Core Workspace Tools",
   // Agentic — Browser Automation
   control_browser: "Browser",
   execute_browser_script: "Browser",
 
   // Agentic — Code Intelligence (LSP)
-  query_language_server: "Workspace",
+  query_language_server: "Core Workspace Tools",
 
   // Agentic — Task Management
   create_task: "Core Harness Tools",
@@ -12477,7 +12477,7 @@ const TOOL_DOMAINS = {
   trigger_cron_job: "Cron Jobs",
 
   // Agentic — Notebook Editing
-  edit_notebook: "Workspace",
+  edit_notebook: "Core Workspace Tools",
 
   // Communication (Twilio)
   send_sms: "Communication",
