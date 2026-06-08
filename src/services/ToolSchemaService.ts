@@ -23,6 +23,8 @@ import { queryEmojiCombination } from "../caches/EmojiKitchenCache.ts";
 import type {
   ToolDefinition,
   ToolIntelligenceTier,
+  ToolParameters,
+  ToolParameterProperty,
   ToolSchema,
   ToolSchemaForAI,
 } from "../types/tools.ts";
@@ -12648,147 +12650,183 @@ function isToolAvailable(toolName: string) {
 
 
 // ────────────────────────────────────────────────────────────
-// Intelligence Tier Taxonomy — maps tools to required LLM capability tier
+// Intelligence Tier — Dynamic Complexity Scoring Algorithm
+// ────────────────────────────────────────────────────────────
+// Computes each tool's intelligence tier from its JSON Schema
+// definition via recursive schema introspection. Scores both
+// structural complexity (nesting, enums, arrays) and semantic
+// parameter types (code generation, expression syntax, etc.)
+// detected from parameter descriptions.
 // ────────────────────────────────────────────────────────────
 
-const TOOL_INTELLIGENCE_TIERS: Record<string, ToolIntelligenceTier> = {
-  // 🔴 Frontier — Frontier Models Only (Structured graphs, code writing, mult-tool state)
-  generate_audio: "frontier",
-  create_vector_animation: "frontier",
-  control_browser: "frontier",
-  execute_browser_script: "frontier",
-  manipulate_image: "frontier",
-  build_meal_plan: "frontier",
-  analyze_nutrient_gaps: "frontier",
-  transform_json: "frontier",
-  draw_turtle: "frontier",
-  create_3d_mesh: "frontier",
-  create_3d_scene: "frontier",
-  create_3d_model: "high",
-  create_3d_voxel: "high",
-  query_language_server: "frontier",
-  edit_notebook: "frontier",
-  search_energy: "frontier",
+// ── Structural Scoring Weights ──────────────────────────────
 
-  // 🟠 High — Strong Models Recommended (Complex domain enums, conditional required params)
-  get_macro: "high",
-  get_stock: "high",
-  get_country: "high",
-  get_element: "high",
-  get_exoplanet: "high",
-  search_drugs: "high",
-  search_foods_by_taxonomy: "high",
-  get_food_taxonomy: "high",
-  get_nutritional_requirements: "high",
-  rank_foods_by_category: "high",
-  execute_python: "high",
-  execute_shell: "high",
-  parse_datetime: "high",
-  generate_map: "high",
-  generate_chart: "high",
-  get_commodities: "high",
-  browse_media: "high",
-  get_events: "high",
-  check_drug_nutrient_interactions: "high",
-  search_food_substitutes: "high",
-  create_custom_agent: "high",
-  create_cron: "high",
-  generate_diagram: "high",
-  test_regex: "high",
-  replace_in_file: "high",
-  replace_file_block: "high",
-  replace_file_regions: "high",
-  get_local_environment: "high",
-  get_vessels_in_area: "high",
+const COMPLEXITY_WEIGHTS = {
+  PARAMETER_COUNT: 1,
+  REQUIRED_PARAMETER: 1.5,
+  NESTED_OBJECT: 3,
+  ENUM_PARAMETER: 2,
+  ENUM_OPTION: 0.2,
+  ARRAY_PARAMETER: 3,
+  ANY_OF_UNION: 4,
+  NESTED_ARRAY_OBJECT: 4,
+} as const;
 
-  // 🟡 Medium — Mid-Tier Models Can Handle (Some dynamic params, enums, standard APIs)
-  get_weather: "medium",
-  get_trends: "medium",
-  search_products: "medium",
-  get_anime: "medium",
-  search_books: "medium",
+// ── Semantic Parameter Type Detection ───────────────────────
+// Detects what KIND of content a parameter expects the model
+// to generate, scored by generation difficulty.
 
-  // Reddit
-  search_reddit: "medium",
-  search_reddit_subreddits: "medium",
-  get_reddit_subreddit_info: "medium",
-  get_reddit_subreddit_feed: "medium",
-  get_reddit_subreddit_rules: "medium",
-  get_reddit_subreddit_wiki_pages: "medium",
-  get_reddit_subreddit_wiki_page: "medium",
-  get_reddit_user_history: "medium",
-  get_reddit_user_profile: "medium",
-  search_media: "medium",
-  get_media_details: "medium",
-  get_media_credits: "medium",
-  get_trending_media: "medium",
-  get_now_playing_media: "medium",
-  get_media_recommendations: "medium",
-  search_person: "medium",
-  get_watch_providers: "medium",
-  execute_javascript: "high",
-  search_airports: "medium",
-  search_nearby_places: "medium",
-  search_places: "medium",
-  convert_units: "medium",
-  convert_currency: "medium",
-  get_historical_prices: "medium",
-  get_technical_analysis: "high",
-  get_volatility: "medium",
-  get_fear_greed_index: "medium",
-  get_sec_filings: "medium",
-  get_sector_performance: "medium",
-  calculate_caloric_needs: "medium",
-  calculate_hydration_needs: "medium",
-  estimate_exercise_calories: "medium",
-  compare_food_nutrition: "medium",
-  search_usda_nutrition: "medium",
-  get_weather_forecast: "medium",
-  get_earthquakes: "medium",
-  search_gym_exercises: "medium",
-  diff_text: "medium",
-  convert_encoding: "medium",
-  generate_hash: "medium",
-  convert_color: "medium",
-  read_rss_feed: "medium",
-  read_pdf_url: "medium",
-  read_pdf: "medium",
-  read_docx: "low",
-  read_spreadsheet: "medium",
-  get_next_bus: "medium",
-  get_transit_stop_info: "medium",
-  get_transit_route_info: "medium",
-  search_transit_stops_nearby: "medium",
-  get_petroleum_prices: "medium",
-  get_natural_gas_prices: "medium",
-  get_electricity_retail_sales: "medium",
-  get_energy_facets: "medium",
-  run_git: "medium",
-  execute_command: "medium",
-  send_sms: "medium",
-  search_discord_messages: "medium",
-  get_discord_message_analytics: "medium",
-  get_discord_server_activity: "medium",
-  get_discord_guild_channels: "medium",
-  get_discord_guild_members: "medium",
-  get_discord_guild_emojis: "medium",
-  get_bot_stats: "medium",
-  get_bot_guilds: "medium",
-  get_bot_activity_timeline: "medium",
-  get_discord_user_heatmap_data: "medium",
-  get_discord_mention_leaderboard: "medium",
-  get_discord_message_leaderboard: "medium",
-  get_discord_word_frequencies: "medium",
-  react_to_discord_message: "medium",
-  get_discord_voice_channel_members: "medium",
-  get_discord_user_profile: "medium",
-  get_discord_channel_activity_stats: "medium",
-  generate_image: "medium",
-  synthesize_speech: "medium",
-  synthesize_speech_local: "low",
-  transcribe_audio: "medium",
-  get_public_webcams: "medium",
-};
+const SEMANTIC_PARAMETER_TYPES = [
+  {
+    label: "code-generation",
+    weight: 9,
+    pattern: /\bsource\s+code\b|\bcode\s+to\s+(?:execute|run)\b|\bscript\s+(?:to|body)\b/i,
+  },
+  {
+    label: "shell-command",
+    weight: 8,
+    pattern: /\bshell\s+command|\bcommand\s+to\s+(?:execute|run)\b/i,
+  },
+  {
+    label: "expression-syntax",
+    weight: 6,
+    pattern: /\bcron\s+expression\b|\bregex\b|\bregular\s+expression\b|\bjsonpath\s+expression\b|\bmermaid\b.*\bsyntax\b|\bturtle\s+command/i,
+  },
+  {
+    label: "structured-schema",
+    weight: 5,
+    pattern: /\bjson\s+schema\s+definition\b/i,
+  },
+  {
+    label: "precise-text-match",
+    weight: 4,
+    pattern: /\bexact\s+(?:text|string|content)\b|\btext\s+to\s+(?:find|replace|match)\b|\breplacement\s+chunk/i,
+  },
+] as const;
+
+function scoreSemanticComplexity(description?: string): number {
+  if (!description) return 0;
+
+  for (const semanticType of SEMANTIC_PARAMETER_TYPES) {
+    if (semanticType.pattern.test(description)) {
+      return semanticType.weight;
+    }
+  }
+
+  return 0;
+}
+
+const TIER_THRESHOLDS = {
+  FRONTIER: 25,
+  HIGH: 12,
+  MEDIUM: 5,
+} as const;
+
+// ── Schema Introspection ────────────────────────────────────
+
+function scorePropertyComplexity(
+  property: ToolParameterProperty,
+  currentDepth: number,
+): number {
+  let score = 0;
+
+  score += scoreSemanticComplexity(property.description);
+
+  if (property.enum) {
+    score += COMPLEXITY_WEIGHTS.ENUM_PARAMETER;
+    score += property.enum.length * COMPLEXITY_WEIGHTS.ENUM_OPTION;
+  }
+
+  if (property.anyOf) {
+    score += COMPLEXITY_WEIGHTS.ANY_OF_UNION;
+    for (const variant of property.anyOf) {
+      score += scorePropertyComplexity(variant, currentDepth + 1);
+    }
+  }
+
+  if (property.type === "array") {
+    score += COMPLEXITY_WEIGHTS.ARRAY_PARAMETER;
+
+    if (property.items) {
+      const itemSchema = property.items as ToolParameterProperty;
+      if (itemSchema.type === "object" && itemSchema.properties) {
+        score += COMPLEXITY_WEIGHTS.NESTED_ARRAY_OBJECT;
+        score += scoreObjectProperties(
+          itemSchema.properties,
+          itemSchema.required,
+          currentDepth + 1,
+        );
+      } else {
+        score += scorePropertyComplexity(itemSchema, currentDepth + 1);
+      }
+    }
+  }
+
+  if (property.type === "object" && property.properties) {
+    score += COMPLEXITY_WEIGHTS.NESTED_OBJECT;
+    score += scoreObjectProperties(
+      property.properties,
+      property.required,
+      currentDepth + 1,
+    );
+  }
+
+  return score;
+}
+
+function scoreObjectProperties(
+  properties: Record<string, ToolParameterProperty>,
+  requiredFields?: string[],
+  currentDepth: number = 0,
+): number {
+  let score = 0;
+  const propertyNames = Object.keys(properties);
+
+  score += propertyNames.length * COMPLEXITY_WEIGHTS.PARAMETER_COUNT;
+
+  if (requiredFields) {
+    score += requiredFields.length * COMPLEXITY_WEIGHTS.REQUIRED_PARAMETER;
+  }
+
+  for (const propertyName of propertyNames) {
+    score += scorePropertyComplexity(properties[propertyName], currentDepth);
+  }
+
+  return score;
+}
+
+export function calculateToolComplexityScore(
+  parameters?: ToolParameters,
+): number {
+  if (!parameters?.properties) return 0;
+
+  return scoreObjectProperties(
+    parameters.properties,
+    parameters.required,
+    0,
+  );
+}
+
+function tierFromScore(score: number): ToolIntelligenceTier {
+  if (score >= TIER_THRESHOLDS.FRONTIER) return "frontier";
+  if (score >= TIER_THRESHOLDS.HIGH) return "high";
+  if (score >= TIER_THRESHOLDS.MEDIUM) return "medium";
+  return "low";
+}
+
+// ── Tier Resolution ─────────────────────────────────────────
+
+function resolveToolIntelligenceTier(
+  _toolName: string,
+  parameters?: ToolParameters,
+): { intelligenceTier: ToolIntelligenceTier; complexityScore: number } {
+  const complexityScore = calculateToolComplexityScore(parameters);
+
+  return {
+    complexityScore,
+    intelligenceTier: tierFromScore(complexityScore),
+  };
+}
 
 // ────────────────────────────────────────────────────────────
 // Public API
@@ -12798,8 +12836,10 @@ const TOOL_INTELLIGENCE_TIERS: Record<string, ToolIntelligenceTier> = {
 export {
   TOOL_DOMAINS,
   TOOL_EMOJIS,
-  TOOL_INTELLIGENCE_TIERS,
   TOOL_DEFINITIONS,
+  COMPLEXITY_WEIGHTS,
+  SEMANTIC_PARAMETER_TYPES,
+  TIER_THRESHOLDS,
 };
 
 /**
@@ -12836,15 +12876,15 @@ export function getToolSchemas(): ToolSchema[] {
     (tool) => {
       const domain =
         TOOL_DOMAINS[tool.name as keyof typeof TOOL_DOMAINS] || "Other";
+      const { intelligenceTier, complexityScore } =
+        resolveToolIntelligenceTier(tool.name, tool.parameters);
       return {
         ...tool,
         domain,
         domainKey: resolveDomainKey(domain),
         emoji: resolveToolEmoji(tool.name),
-        intelligenceTier:
-          TOOL_INTELLIGENCE_TIERS[
-            tool.name as keyof typeof TOOL_INTELLIGENCE_TIERS
-          ] || "low",
+        intelligenceTier,
+        complexityScore,
       };
     },
   );
@@ -12857,13 +12897,15 @@ export function getToolSchemas(): ToolSchema[] {
  */
 export function getToolSchemasForAI(): ToolSchemaForAI[] {
   return TOOL_DEFINITIONS.filter((tool) => isToolAvailable(tool.name)).map(
-    ({ endpoint: _endpoint, dataSource: _dataSource, ...rest }) => ({
-      ...rest,
-      intelligenceTier:
-        TOOL_INTELLIGENCE_TIERS[
-          rest.name as keyof typeof TOOL_INTELLIGENCE_TIERS
-        ] || "low",
-    }),
+    ({ endpoint: _endpoint, dataSource: _dataSource, ...rest }) => {
+      const { intelligenceTier, complexityScore } =
+        resolveToolIntelligenceTier(rest.name, rest.parameters);
+      return {
+        ...rest,
+        intelligenceTier,
+        complexityScore,
+      };
+    },
   );
 }
 

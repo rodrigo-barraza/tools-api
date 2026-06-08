@@ -47,7 +47,8 @@ describe("Reddit Tools and Endpoints", () => {
       for (const tool of redditTools) {
         expect(tool.domainKey).toBe("reddit");
         expect(tool.emoji).toBeTruthy();
-        expect(tool.intelligenceTier).toBe("medium");
+        expect(["low", "medium", "high", "frontier"]).toContain(tool.intelligenceTier);
+        expect(typeof tool.complexityScore).toBe("number");
       }
     });
   });

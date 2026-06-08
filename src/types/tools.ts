@@ -93,6 +93,7 @@ export interface ToolSchema extends ToolDefinition {
   domainKey?: string;
   emoji: string | null;
   intelligenceTier: ToolIntelligenceTier;
+  complexityScore: number;
 }
 
 // ─── Stripped schema for AI consumption ─────────────────────────
@@ -102,6 +103,7 @@ export type ToolSchemaForAI = Omit<
   "endpoint" | "dataSource"
 > & {
   intelligenceTier: ToolIntelligenceTier;
+  complexityScore: number;
 };
 
 // ─── Scored match from AgenticToolSearchService ─────────────────
