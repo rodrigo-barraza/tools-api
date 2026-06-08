@@ -10989,7 +10989,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     description:
       "Update an existing custom agent persona. Accepts partial updates — only the fields " +
       "you provide will be changed. Use list_custom_agents first to find the agent's ID. " +
-      "Common updates include adding new tools to enabledTools (e.g. after creating a custom tool), " +
+      "Common updates include modifying the enabledTools list, " +
       "modifying the identity prompt, changing guidelines, or updating visual branding.",
     endpoint: {
       method: "POST",
@@ -11067,9 +11067,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           items: { type: "string" },
           description:
             "Updated array of tool names this agent can use. Replaces the entire list. " +
-            "Include both built-in tool names (e.g. 'read_file', 'search_web') and " +
-            "custom tool names (created via create_custom_tool). " +
-            "Use list_custom_tools to find custom tool names.",
+            "Pass specific tool names from the tool schema registry (e.g. 'read_file', 'search_web')."
         },
         usesDirectoryTree: {
           type: "boolean",
@@ -11080,302 +11078,6 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           type: "boolean",
           description:
             "Whether to inject coding conventions into the system prompt.",
-        },
-      },
-      required: ["id"],
-    },
-  },
-
-  {
-    name: "create_custom_tool",
-    dataSource: onDemand("Prism custom_tools collection"),
-    description:
-      "Create a new sandboxed custom tool with executable JavaScript code. The code runs in an " +
-      "isolated vm context — no network access, no filesystem, no require(). " +
-      "Tool arguments from the LLM are injected as a global `args` object. " +
-      "Use console.log() to produce output and return a value as the last expression. " +
-      "Once created, the tool is persisted and available in future agent sessions. " +
-      "Use this when the user wants a reusable computation, formatter, converter, validator, " +
-      "or any deterministic pure logic the agent can call by name. " +
-      "For tools that need network access, filesystem, or require() — use create_privileged_tool instead.",
-    endpoint: {
-      method: "POST",
-      path: "/agentic/custom-tool/create",
-      bodyParams: ["name", "description", "code", "parameters", "enabled"],
-    },
-    parameters: {
-      type: "object",
-      properties: {
-        name: {
-          type: "string",
-          description:
-            "Unique tool name (snake_case). This becomes the function name the LLM calls. " +
-            "Example: 'celsius_to_fahrenheit', 'format_currency', 'validate_email'.",
-        },
-        description: {
-          type: "string",
-          description:
-            "Human-readable description of what the tool does. This is shown to the LLM to " +
-            "decide when to call the tool. Be specific about inputs, outputs, and use cases.",
-        },
-        code: {
-          type: "string",
-          description:
-            "JavaScript source code to execute. Runs in a sandboxed vm with no network, " +
-            "filesystem, or require() access. Available globals: args (tool arguments), " +
-            "console.log/warn/error, JSON, Math, Date, RegExp, Array, Object, Map, Set, " +
-            "String, Number, Boolean, Promise, TextEncoder, TextDecoder. " +
-            "The last expression's value becomes the tool's return value. " +
-            "Example: 'const { celsius } = args; (celsius * 9/5) + 32'",
-        },
-        parameters: {
-          type: "array",
-          description:
-            "Array of parameter definitions. Each parameter has a name, type, description, " +
-            "and whether it's required. These become the args the LLM passes when calling the tool.",
-          items: {
-            type: "object",
-            properties: {
-              name: {
-                type: "string",
-                description:
-                  "Parameter name (becomes a key on the `args` object)",
-              },
-              type: {
-                type: "string",
-                description: "JSON Schema type",
-                enum: ["string", "number", "boolean", "integer"],
-              },
-              description: {
-                type: "string",
-                description: "Description shown to the LLM for this parameter",
-              },
-              required: {
-                type: "boolean",
-                description:
-                  "Whether this parameter is required. Default: false",
-              },
-              enum: {
-                type: "array",
-                items: { type: "string" },
-                description: "Optional array of allowed values",
-              },
-            },
-            required: ["name", "type", "description"],
-          },
-        },
-        enabled: {
-          type: "boolean",
-          description:
-            "Whether the tool is active and available for use. Default: true.",
-        },
-      },
-      required: ["name", "description", "code"],
-    },
-  },
-  {
-    name: "create_privileged_tool",
-    dataSource: onDemand("Prism custom_tools collection"),
-    description:
-      "Create a new privileged custom tool with full Node.js access. Unlike create_custom_tool " +
-      "(sandboxed), privileged tools can use require(), fetch(), process, setTimeout, Buffer, " +
-      "child_process, fs, and all other Node.js built-ins. " +
-      "Tool arguments from the LLM are injected as a global `args` object. " +
-      "Use console.log() to produce output and return a value as the last expression. " +
-      "Once created, the tool is persisted and available in future agent sessions. " +
-      "Use this when the tool needs network access (HTTP/fetch), filesystem operations, " +
-      "shell commands (child_process), or any Node.js module. " +
-      "For pure computation without system access, prefer create_custom_tool instead.",
-    endpoint: {
-      method: "POST",
-      path: "/agentic/privileged-tool/create",
-      bodyParams: ["name", "description", "code", "parameters", "enabled"],
-    },
-    parameters: {
-      type: "object",
-      properties: {
-        name: {
-          type: "string",
-          description:
-            "Unique tool name (snake_case). This becomes the function name the LLM calls. " +
-            "Example: 'ping_host', 'fetch_api_data', 'check_disk_space'.",
-        },
-        description: {
-          type: "string",
-          description:
-            "Human-readable description of what the tool does. This is shown to the LLM to " +
-            "decide when to call the tool. Be specific about inputs, outputs, and use cases.",
-        },
-        code: {
-          type: "string",
-          description:
-            "JavaScript source code to execute with full Node.js access. Available globals: " +
-            "args (tool arguments), require() (Node.js modules), fetch() (HTTP requests), " +
-            "process, Buffer, URL, setTimeout/setInterval, AbortController, and all standard " +
-            "JS built-ins. Use require('child_process') for shell commands, require('fs') for " +
-            "file operations, etc. The last expression's value becomes the tool's return value. " +
-            "Example: 'const res = await fetch(args.url); const data = await res.json(); data'",
-        },
-        parameters: {
-          type: "array",
-          description:
-            "Array of parameter definitions. Each parameter has a name, type, description, " +
-            "and whether it's required. These become the args the LLM passes when calling the tool.",
-          items: {
-            type: "object",
-            properties: {
-              name: {
-                type: "string",
-                description:
-                  "Parameter name (becomes a key on the `args` object)",
-              },
-              type: {
-                type: "string",
-                description: "JSON Schema type",
-                enum: ["string", "number", "boolean", "integer"],
-              },
-              description: {
-                type: "string",
-                description: "Description shown to the LLM for this parameter",
-              },
-              required: {
-                type: "boolean",
-                description:
-                  "Whether this parameter is required. Default: false",
-              },
-              enum: {
-                type: "array",
-                items: { type: "string" },
-                description: "Optional array of allowed values",
-              },
-            },
-            required: ["name", "type", "description"],
-          },
-        },
-        enabled: {
-          type: "boolean",
-          description:
-            "Whether the tool is active and available for use. Default: true.",
-        },
-      },
-      required: ["name", "description", "code"],
-    },
-  },
-  {
-    name: "list_custom_tools",
-    dataSource: onDemand("Prism custom_tools collection"),
-    description:
-      "List all custom tools defined for the current project and user. Returns each tool's " +
-      "name, description, code, parameters, enabled status, and MongoDB ID. " +
-      "Use this to discover existing custom tools before creating new ones (to avoid duplicates), " +
-      "or when the user asks to see, review, or manage their custom tool definitions.",
-    endpoint: {
-      path: "/agentic/custom-tool/list",
-    },
-    parameters: {
-      type: "object",
-      properties: {},
-      required: [],
-    },
-  },
-  {
-    name: "update_custom_tool",
-    dataSource: onDemand("Prism custom_tools collection"),
-    description:
-      "Update an existing custom tool definition (sandboxed or privileged). Accepts partial updates — only the fields " +
-      "you provide will be changed. Use list_custom_tools first to find the tool's ID. " +
-      "Common updates include fixing bugs in the code, modifying parameters, updating the " +
-      "description, changing the execution tier, or enabling/disabling the tool.",
-    endpoint: {
-      method: "POST",
-      path: "/agentic/custom-tool/update",
-      bodyParams: [
-        "id",
-        "name",
-        "description",
-        "code",
-        "parameters",
-        "execution",
-        "enabled",
-      ],
-    },
-    parameters: {
-      type: "object",
-      properties: {
-        id: {
-          type: "string",
-          description:
-            "MongoDB ObjectId of the tool to update (from list_custom_tools).",
-        },
-        name: {
-          type: "string",
-          description:
-            "New tool name (snake_case). Leave unset to keep the current name.",
-        },
-        description: {
-          type: "string",
-          description:
-            "Updated description. Leave unset to keep the current description.",
-        },
-        code: {
-          type: "string",
-          description:
-            "Updated JavaScript code. Leave unset to keep the current code.",
-        },
-        parameters: {
-          type: "array",
-          description:
-            "Updated parameter definitions (replaces existing parameters entirely).",
-          items: {
-            type: "object",
-            properties: {
-              name: { type: "string" },
-              type: {
-                type: "string",
-                enum: ["string", "number", "boolean", "integer"],
-              },
-              description: { type: "string" },
-              required: { type: "boolean" },
-              enum: { type: "array", items: { type: "string" } },
-            },
-            required: ["name", "type", "description"],
-          },
-        },
-        execution: {
-          type: "string",
-          enum: ["sandboxed", "privileged"],
-          description:
-            "Execution tier. 'sandboxed': isolated vm with no network/fs/require. " +
-            "'privileged': full Node.js access with require, fetch, process, etc. " +
-            "Leave unset to keep the current tier.",
-        },
-        enabled: {
-          type: "boolean",
-          description: "Set to false to disable the tool without deleting it.",
-        },
-      },
-      required: ["id"],
-    },
-  },
-  {
-    name: "delete_custom_tool",
-    dataSource: onDemand("Prism custom_tools collection"),
-    description:
-      "Permanently delete a custom tool definition. The tool will no longer appear in the " +
-      "agent's tool suite. Use list_custom_tools first to find the tool's ID. " +
-      "This action cannot be undone.",
-    endpoint: {
-      method: "POST",
-      path: "/agentic/custom-tool/delete",
-      bodyParams: ["id"],
-    },
-    parameters: {
-      type: "object",
-      properties: {
-        id: {
-          type: "string",
-          description:
-            "MongoDB ObjectId of the tool to delete (from list_custom_tools).",
         },
       },
       required: ["id"],
@@ -12453,12 +12155,6 @@ const TOOL_DOMAINS = {
   list_custom_agents: "Agent Management",
   update_custom_agent: "Agent Management",
 
-  // Agentic — Custom Tool Management
-  create_custom_tool: "Tool Management",
-  create_privileged_tool: "Tool Management",
-  list_custom_tools: "Tool Management",
-  update_custom_tool: "Tool Management",
-  delete_custom_tool: "Tool Management",
 
   // Agentic — Tool Discovery
   search_tools: "Core Harness Tools",
@@ -12741,11 +12437,6 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   create_custom_agent: ["🤖", "💻"],
   list_custom_agents: "📋",
   update_custom_agent: ["✏️", "💻"],
-  create_custom_tool: "🔧",
-  create_privileged_tool: "🔐",
-  list_custom_tools: "📋",
-  update_custom_tool: ["✏️", "💻"],
-  delete_custom_tool: ["🗑️", "💻"],
   search_tools: "🔍",
   create_cron: ["⏰", "💻"],
   remote_trigger: "📡",
@@ -12890,12 +12581,6 @@ const TOOL_REQUIRED_KEYS = {
   list_custom_agents: ["PRISM_SERVICE_URL"],
   update_custom_agent: ["PRISM_SERVICE_URL"],
 
-  // Custom Tool Management (require Prism for custom_tools collection)
-  create_custom_tool: ["PRISM_SERVICE_URL"],
-  create_privileged_tool: ["PRISM_SERVICE_URL"],
-  list_custom_tools: ["PRISM_SERVICE_URL"],
-  update_custom_tool: ["PRISM_SERVICE_URL"],
-  delete_custom_tool: ["PRISM_SERVICE_URL"],
 
   // Torrent (all require qBittorrent connection)
   search_torrents: ["QBITTORRENT_URL"],
