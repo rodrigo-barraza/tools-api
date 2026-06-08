@@ -12,15 +12,13 @@ import { describe, it, expect } from "vitest";
 import {
   TOOL_DEFINITIONS,
   TOOL_DOMAINS,
-  TOOL_LABELS,
 } from "../src/services/ToolSchemaService.ts";
-import { LABELS, DOMAINS } from "@rodrigo-barraza/utilities-library/taxonomy";
+import { DOMAINS } from "@rodrigo-barraza/utilities-library/taxonomy";
 
 // ── Helpers ──────────────────────────────────────────────────
 
 const schemaNames = new Set(TOOL_DEFINITIONS.map((schema) => schema.name));
 const domainKeys = new Set(Object.keys(TOOL_DOMAINS));
-const labelKeys = new Set(Object.keys(TOOL_LABELS));
 
 // ── Schema Structural Integrity ─────────────────────────────
 
@@ -91,80 +89,7 @@ describe("Tool Taxonomy — domain coverage", () => {
   });
 });
 
-// ── Label Coverage ──────────────────────────────────────────
 
-describe("Tool Taxonomy — label coverage", () => {
-  it("every schema has a label entry in TOOL_LABELS", () => {
-    const missing = [];
-    for (const name of schemaNames) {
-      if (!labelKeys.has(name)) missing.push(name);
-    }
-          expect(missing.length).toBe(0);
-  });
-
-  it("TOOL_LABELS has no orphan entries without a matching schema (diagnostic)", () => {
-    const orphans = [];
-    for (const key of labelKeys) {
-      if (!schemaNames.has(key)) orphans.push(key);
-    }
-    // Orphans are allowed (pre-registered for gated tools) but logged
-    if (orphans.length > 0) {
-      console.log(
-        `  ⚠  ${orphans.length} TOOL_LABELS entries without schemas (likely API-gated): ${orphans.join(", ")}`,
-      );
-    }
-    expect(true).toBeTruthy();
-  });
-
-  it("every label value is a non-empty array of strings", () => {
-    for (const [_tool, labels] of Object.entries(TOOL_LABELS)) {
-              expect(Array.isArray(labels) && labels.length > 0).toBeTruthy();
-      for (const label of labels) {
-                  expect(typeof label === "string" && label.length > 0).toBeTruthy();
-      }
-    }
-  });
-});
-
-// ── Bidirectional Consistency ───────────────────────────────
-
-describe("Tool Taxonomy — bidirectional consistency", () => {
-  it("TOOL_DOMAINS and TOOL_LABELS have the same set of keys", () => {
-    const onlyInDomains = [...domainKeys].filter((key) => !labelKeys.has(key));
-    const onlyInLabels = [...labelKeys].filter((key) => !domainKeys.has(key));
-
-    const messages = [];
-    if (onlyInDomains.length > 0) {
-      messages.push(
-        `In TOOL_DOMAINS but not TOOL_LABELS:\n  ${onlyInDomains.join("\n  ")}`,
-      );
-    }
-    if (onlyInLabels.length > 0) {
-      messages.push(
-        `In TOOL_LABELS but not TOOL_DOMAINS:\n  ${onlyInLabels.join("\n  ")}`,
-      );
-    }
-    expect(messages.length, messages.join("\n\n")).toBe(0);
-  });
-
-  it("every schema key exists in both TOOL_DOMAINS and TOOL_LABELS", () => {
-    const missingDomains = [...schemaNames].filter((key) => !domainKeys.has(key));
-    const missingLabels = [...schemaNames].filter((key) => !labelKeys.has(key));
-
-    const messages = [];
-    if (missingDomains.length > 0) {
-      messages.push(
-        `Schemas missing from TOOL_DOMAINS:\n  ${missingDomains.join("\n  ")}`,
-      );
-    }
-    if (missingLabels.length > 0) {
-      messages.push(
-        `Schemas missing from TOOL_LABELS:\n  ${missingLabels.join("\n  ")}`,
-      );
-    }
-    expect(messages.length, messages.join("\n\n")).toBe(0);
-  });
-});
 
 // ── Schema Parameter Validation ─────────────────────────────
 
@@ -194,27 +119,8 @@ describe("Tool Schema — parameter validation", () => {
 // ── ToolTaxonomyConstants Consistency ────────────────────────
 
 describe("ToolTaxonomyConstants — registry alignment", () => {
-  // Collect all label values used across TOOL_LABELS
-  const usedLabels = new Set();
-  for (const labels of Object.values(TOOL_LABELS)) {
-    for (const label of labels) usedLabels.add(label);
-  }
-
   // Collect all domain values used across TOOL_DOMAINS
   const usedDomains = new Set(Object.values(TOOL_DOMAINS));
-
-  it("every LABELS constant appears in at least one TOOL_LABELS entry", () => {
-    const missing = [];
-    for (const [key, value] of Object.entries(LABELS)) {
-      if (!usedLabels.has(value)) missing.push(`LABELS.${key} = "${value}"`);
-    }
-    if (missing.length > 0) {
-      console.log(
-        `  ⚠  ${missing.length} LABELS constants not used in any TOOL_LABELS entry: ${missing.join(", ")}`,
-      );
-    }
-    expect(true).toBeTruthy();
-  });
 
   it("every DOMAINS constant appears in at least one TOOL_DOMAINS entry", () => {
     const missing = [];
@@ -227,12 +133,6 @@ describe("ToolTaxonomyConstants — registry alignment", () => {
       );
     }
     expect(true).toBeTruthy();
-  });
-
-  it("every label value used in TOOL_LABELS has a LABELS constant", () => {
-    const constantValues = new Set<any>(Object.values(LABELS));
-    const missing = [...usedLabels].filter((label) => !constantValues.has(label));
-    expect(missing).toEqual([]);
   });
 
   it("every domain value used in TOOL_DOMAINS has a DOMAINS constant", () => {

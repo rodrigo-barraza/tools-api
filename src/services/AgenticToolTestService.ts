@@ -330,7 +330,7 @@ const TESTS = {
   tool_search: () =>
     runTest("tool_search", async () => {
       // Synchronous — returns directly
-      return agenticToolSearch("file", { label: "coding", limit: 5 });
+      return agenticToolSearch("file", { domain: "Workspace", limit: 5 });
     }),
 };
 

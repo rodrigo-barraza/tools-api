@@ -90,7 +90,7 @@ export interface ToolDefinition {
 
 export interface ToolSchema extends ToolDefinition {
   domain: string;
-  labels: string[];
+  domainKey?: string;
   emoji: string | null;
   intelligenceTier: ToolIntelligenceTier;
 }
@@ -117,6 +117,5 @@ export interface ToolSearchMatch {
   name: string;
   description: string;
   domain: string | null;
-  labels: string[] | null;
   parameters: ToolParameters | null;
 }

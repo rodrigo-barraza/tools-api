@@ -19,7 +19,6 @@ describe("ToolSchemaService", () => {
       expect(t.endpoint, `${t.name} missing endpoint`).toBeTruthy();
       expect(t.endpoint.path, `${t.name} missing endpoint.path`).toBeTruthy();
       expect(t.domain, `${t.name} missing domain`).toBeTruthy();
-      expect(Array.isArray(t.labels)).toBeTruthy();
     }
   });
 
@@ -31,12 +30,7 @@ describe("ToolSchemaService", () => {
     expect(dupes).toEqual([], `duplicate tool names: ${dupes.join(", ")}`);
   });
 
-  it("all tools have at least one label", async () => {
-    if (!getToolSchemas) return;
-    const tools = getToolSchemas();
-    const unlabeled = tools.filter((t) => t.labels.length === 0);
-    expect(unlabeled.length).toBe(0);
-  });
+
 
   it("unified tools exist with correct schemas", async () => {
     if (!getToolSchemas) return;

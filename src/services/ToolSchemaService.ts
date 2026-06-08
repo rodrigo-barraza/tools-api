@@ -11387,14 +11387,14 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     name: "search_tools",
     dataSource: onDemand("ToolSchemaService"),
     description:
-      "Search for available tools by keyword, domain, or label. Returns matching tool names, " +
+      "Search for available tools by keyword or domain. Returns matching tool names, " +
       "descriptions, and schemas. Use this to discover what capabilities are available when " +
       "you need a tool you haven't used before, or to find domain-specific tools (e.g. weather, " +
       "finance, health). This is a read-only discovery tool — it does not execute anything.",
     endpoint: {
       method: "POST",
       path: "/agentic/tool/search",
-      bodyParams: ["query", "domain", "label", "limit"],
+      bodyParams: ["query", "domain", "limit"],
     },
     parameters: {
       type: "object",
@@ -11411,11 +11411,6 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             "Filter by tool domain. Known domains include: 'Weather & Environment', " +
             "'Finance & Markets', 'Health & Nutrition', 'Knowledge & Reference', " +
             "'Workspace', 'Web', 'Browser', 'Task Management', 'Communication', 'Creative', etc.",
-        },
-        label: {
-          type: "string",
-          description:
-            "Filter by label category (e.g. 'coding', 'web', 'smart_home').",
         },
         limit: {
           type: "number",
@@ -12966,356 +12961,6 @@ function isToolAvailable(toolName: string) {
   );
 }
 
-// ────────────────────────────────────────────────────────────
-// Tool Labels — multi-value categorization for filtering
-// ────────────────────────────────────────────────────────────
-// Labels are orthogonal to domains. A tool can have multiple
-// labels (e.g. ["coding", "web"]). Consumers can filter tools
-// by label to surface relevant capabilities per context.
-// ────────────────────────────────────────────────────────────
-
-const TOOL_LABELS = {
-  get_weather: ["location"],
-  get_local_environment: ["location"],
-  rank_foods_by_category: ["health"],
-  search_drugs: ["health"],
-  search_media: ["media"],
-  get_media_details: ["media"],
-  get_media_credits: ["media"],
-  get_trending_media: ["media"],
-  browse_media: ["media"],
-  get_media_genres: ["media"],
-  get_now_playing_media: ["media"],
-  get_media_recommendations: ["media"],
-  search_person: ["media"],
-  get_watch_providers: ["media"],
-  run_git: ["coding", "git"],
-  search_books: ["reference"],
-  get_country: ["reference"],
-  get_element: ["reference"],
-  get_exoplanet: ["reference"],
-  search_airports: ["location"],
-  get_events: ["location"],
-  get_trends: ["web"],
-  get_anime: ["media"],
-  get_commodities: ["finance"],
-  get_stock: ["finance"],
-  get_macro: ["finance"],
-  // ── Weather & Environment ───────────────────────────────
-  get_weather_forecast: ["location"],
-  get_weather_history: ["location"],
-  get_weather_marine: ["location"],
-  get_weather_astronomy: ["location"],
-  get_weather_alerts: ["location"],
-  get_avalanche_forecast: ["location"],
-  get_earthquakes: ["location"],
-  get_solar_activity: ["reference"],
-  get_aurora_forecast: ["location"],
-  get_solar_wind: ["reference"],
-  get_twilight: ["location"],
-  get_moon_phase: ["reference"],
-  get_tides: ["location"],
-  get_wildfires: ["location"],
-  get_iss_location: ["reference"],
-  get_near_earth_objects: ["reference"],
-  get_space_launches: ["reference"],
-  get_nasa_apod: ["reference"],
-  get_weather_warnings: ["location"],
-  get_detailed_air_quality: ["location", "health"],
-
-  // ── Sports ───────────────────────────────────────────────
-  get_live_scores: ["sports"],
-  get_upcoming_matches: ["sports"],
-  get_recent_results: ["sports"],
-  get_league_standings: ["sports"],
-  get_match_details: ["sports"],
-  get_head_to_head: ["sports"],
-  search_teams: ["sports"],
-  search_players: ["sports"],
-  get_team_squad: ["sports"],
-  get_league_top_scorers: ["sports"],
-
-  // ── Events ───────────────────────────────────────────────
-
-  // ── Markets & Commodities ────────────────────────────────
-
-  // ── Trends ───────────────────────────────────────────────
-
-  // ── Products ─────────────────────────────────────────────
-  search_products: ["shopping"],
-  get_trending_products: ["shopping"],
-  get_watchlist_availability: ["shopping"],
-  check_sku_availability: ["shopping"],
-  get_costco_us_products: ["shopping"],
-  get_costco_ca_products: ["shopping"],
-  search_amazon_products: ["shopping"],
-
-  // ── Finance ──────────────────────────────────────────────
-  get_market_news: ["finance"],
-  get_earnings_calendar: ["finance"],
-  get_historical_prices: ["finance", "data"],
-  get_technical_analysis: ["finance", "data"],
-  get_volatility: ["finance", "data"],
-  get_fear_greed_index: ["finance"],
-  get_sec_filings: ["finance", "data"],
-  get_sector_performance: ["finance", "data"],
-
-  // ── Knowledge ────────────────────────────────────────────
-  get_word_definition: ["reference"],
-  search_papers: ["reference", "coding"],
-  get_youtube_video: ["web"],
-  read_url: ["web", "coding"],
-  get_package_info: ["coding"],
-  read_pdf_url: ["web"],
-  read_rss_feed: ["web"],
-  get_wikipedia_summary: ["reference"],
-  get_on_this_day: ["reference"],
-  list_development_indicators: ["reference"],
-  get_pypi_package: ["coding", "reference"],
-
-  // ── Reddit ──
-  search_reddit: ["web", "data"],
-  search_reddit_subreddits: ["web", "data"],
-  get_reddit_subreddit_info: ["web", "data"],
-  get_reddit_subreddit_feed: ["web", "data"],
-  get_reddit_subreddit_rules: ["web", "data"],
-  get_reddit_subreddit_wiki_pages: ["web", "data"],
-  get_reddit_subreddit_wiki_page: ["web", "data"],
-  get_reddit_user_history: ["web", "data"],
-  get_reddit_user_profile: ["web", "data"],
-
-  // ── Movies & TV ──────────────────────────────────────────
-
-  // ── Health ───────────────────────────────────────────────
-  get_drug_adverse_events: ["health"],
-  get_drug_recalls: ["health"],
-  search_gym_exercises: ["health"],
-  get_gym_exercise_categories: ["health"],
-  get_gym_exercise_by_id: ["health"],
-  search_usda_nutrition: ["health"],
-  rank_foods_by_nutrient: ["health"],
-  compare_food_nutrition: ["health"],
-  get_food_categories: ["health"],
-  get_nutrient_types: ["health"],
-  list_category_nutrients: ["health"],
-  search_foods_by_taxonomy: ["health"],
-  get_food_taxonomy: ["health"],
-  get_nutritional_requirements: ["health"],
-  list_drug_dosage_forms: ["health"],
-  calculate_caloric_needs: ["health"],
-  analyze_nutrient_gaps: ["health"],
-  search_food_substitutes: ["health"],
-  estimate_exercise_calories: ["health"],
-  calculate_hydration_needs: ["health"],
-  build_meal_plan: ["health"],
-  check_drug_nutrient_interactions: ["health"],
-  get_pollen_forecast: ["health", "location"],
-
-  // ── Transit ──────────────────────────────────────────────
-  get_next_bus: ["location"],
-  get_transit_stop_info: ["location"],
-  search_transit_stops_nearby: ["location"],
-  get_transit_route_info: ["location"],
-
-  // ── Utilities ────────────────────────────────────────────
-  execute_python: ["coding", "data"],
-  evaluate_expression: ["data"],
-  convert_currency: ["finance", "data"],
-  get_time_in_timezone: ["data"],
-  get_ip_info: ["data"],
-  search_nearby_places: ["location"],
-  search_places: ["location"],
-  generate_map: ["location"],
-  generate_chart: ["data"],
-  get_public_webcams: ["location"],
-
-  // ── Compute ──────────────────────────────────────────────
-  execute_javascript: ["coding", "data"],
-  execute_shell: ["coding"],
-  convert_units: ["data"],
-  parse_datetime: ["data"],
-  transform_json: ["coding", "data"],
-  generate_csv: ["data"],
-  generate_qr_code: ["data"],
-  render_latex: ["data"],
-  generate_diagram: ["data"],
-  diff_text: ["coding", "data"],
-  generate_hash: ["coding", "data"],
-  test_regex: ["coding"],
-  convert_encoding: ["coding", "data"],
-  convert_color: ["data"],
-  manipulate_image: ["data", "creative"],
-  convert_image_to_ascii: ["data", "creative"],
-  convert_video_to_gif: ["data", "creative"],
-  parse_cron_expression: ["coding", "automation", "data"],
-  draw_turtle: ["coding", "creative", "data"],
-  create_3d_mesh: ["creative", "data"],
-  create_3d_scene: ["creative", "data"],
-  create_3d_model: ["creative", "data"],
-  create_3d_voxel: ["creative", "data"],
-  think: ["coding"],
-  sleep: ["coding"],
-  emit_structured_output: ["coding"],
-
-  // ── Gaming ───────────────────────────────────────────────
-  get_dota: ["reference", "media"],
-  create_bonfire: ["creative"],
-
-  // ── Music ─────────────────────────────────────────────────
-  get_music: ["reference", "media"],
-
-  // ── Wayback Machine ──────────────────────────────────────
-  get_wayback_snapshot: ["web", "reference"],
-
-  // ── Torrent ──────────────────────────────────────────────
-  search_torrents: ["media", "download"],
-  download_torrent: ["media", "download"],
-  get_torrent_status: ["media", "download"],
-
-  // ── Maritime ─────────────────────────────────────────────
-  get_tracked_vessels: ["maritime"],
-  get_vessel_by_mmsi: ["maritime"],
-  search_vessels: ["maritime"],
-  get_vessels_in_area: ["maritime"],
-  get_ais_messages: ["maritime"],
-
-  // ── Energy ───────────────────────────────────────────────
-  get_energy_indicators: ["energy"],
-  get_energy_catalog: ["energy"],
-  get_energy_facets: ["energy"],
-  search_energy: ["energy"],
-  get_electricity_retail_sales: ["energy"],
-  get_petroleum_prices: ["energy"],
-  get_natural_gas_prices: ["energy"],
-
-  // ── Agentic: File Operations ─────────────────────────────
-  read_file: ["coding"],
-  write_file: ["coding"],
-  replace_in_file: ["coding"],
-  replace_file_block: ["coding"],
-  replace_file_regions: ["coding"],
-  patch_file: ["coding"],
-  read_files: ["coding"],
-  get_file_info: ["coding"],
-  diff_files: ["coding"],
-  move_file: ["coding"],
-  delete_file: ["coding"],
-
-  // ── Agentic: Search & Discovery ──────────────────────────
-  list_directory: ["coding"],
-  search_file_contents: ["coding"],
-  find_files: ["coding"],
-  summarize_project: ["coding"],
-
-  // ── Agentic: Web ─────────────────────────────────────────
-  read_web_page: ["coding", "web"],
-  read_pdf: ["coding", "web"],
-  read_docx: ["coding", "web"],
-  read_spreadsheet: ["coding", "web", "data"],
-  search_web: ["coding", "web"],
-
-  // ── Agentic: Command Execution ───────────────────────────
-  execute_command: ["coding"],
-
-  // ── Agentic: Git ─────────────────────────────────────────
-
-  // ── Agentic: Browser ─────────────────────────────────────
-  control_browser: ["coding", "web"],
-  execute_browser_script: ["coding", "web"],
-
-  // ── Agentic: Code Intelligence (LSP) ─────────────────────
-  query_language_server: ["coding"],
-
-  // ── Agentic: Task Management ─────────────────────────────
-  create_task: ["coding"],
-  get_task: ["coding"],
-  list_tasks: ["coding"],
-  update_task: ["coding"],
-
-  // ── Agentic: Memory ──────────────────────────────────────
-  upsert_memory: ["coding"],
-
-  // ── Agentic: Agent Management ────────────────────────────
-  create_custom_agent: ["coding"],
-  list_custom_agents: ["coding"],
-  update_custom_agent: ["coding"],
-
-  // ── Agentic: Tool Management ──────────────────────────────
-  create_custom_tool: ["coding", "meta"],
-  create_privileged_tool: ["coding", "meta"],
-  list_custom_tools: ["coding", "meta"],
-  update_custom_tool: ["coding", "meta"],
-  delete_custom_tool: ["coding", "meta"],
-
-  // ── Agentic: Tool Discovery ──────────────────────────────
-  search_tools: ["coding", "meta"],
-
-  // ── Cron Jobs ────────────────────────────────────────────
-  create_cron: ["coding", "automation"],
-  remote_trigger: ["coding", "automation"],
-  create_cron_job: ["coding", "automation"],
-  list_cron_jobs: ["coding", "automation"],
-  delete_cron_job: ["coding", "automation"],
-  trigger_cron_job: ["coding", "automation"],
-
-  // ── Agentic: Notebook Editing ────────────────────────────
-  edit_notebook: ["coding", "data_science"],
-
-  // ── Communication ────────────────────────────────────────
-  send_sms: ["communication"],
-  list_sms_messages: ["communication"],
-  get_sms_account: ["communication"],
-  lookup_phone_number: ["communication"],
-  list_phone_numbers: ["communication"],
-
-  // ── Creative (Image Generation & Vision) ────────────────────
-  get_emoji_combination: ["creative", "media"],
-  get_emoji_combinations: ["creative", "media"],
-  generate_image: ["creative", "media"],
-
-  describe_image: ["creative", "media"],
-  synthesize_speech: ["creative", "media"],
-  synthesize_speech_local: ["creative", "media"],
-  generate_audio: ["creative", "media"],
-  create_vector_animation: ["creative", "media"],
-  transcribe_audio: ["creative", "media"],
-
-  // ── Discord ──────────────────────────────────────────────
-  search_discord_messages: ["discord"],
-  get_discord_message_analytics: ["discord"],
-  get_discord_server_activity: ["discord"],
-  get_discord_guild_channels: ["discord"],
-  get_discord_guild_members: ["discord"],
-  get_discord_guild_emojis: ["discord"],
-  get_bot_stats: ["discord"],
-  get_bot_guilds: ["discord"],
-  get_bot_activity_timeline: ["discord"],
-  get_discord_user_heatmap_data: ["discord"],
-  get_discord_mention_leaderboard: ["discord"],
-  get_discord_message_leaderboard: ["discord"],
-  get_discord_word_frequencies: ["discord"],
-  react_to_discord_message: ["discord"],
-  get_discord_voice_channel_members: ["discord"],
-  get_discord_user_profile: ["discord"],
-  get_discord_channel_activity_stats: ["discord"],
-
-  // ── Smart Home (LIFX) ────────────────────────────────────
-  list_lights: ["smart_home", "lifx"],
-  set_light_state: ["smart_home", "lifx"],
-  toggle_light_power: ["smart_home", "lifx"],
-  start_light_breathe_effect: ["smart_home", "lifx"],
-  start_light_pulse_effect: ["smart_home", "lifx"],
-  start_light_move_effect: ["smart_home", "lifx"],
-  start_light_flame_effect: ["smart_home", "lifx"],
-  start_light_morph_effect: ["smart_home", "lifx"],
-  set_light_states: ["smart_home", "lifx"],
-  adjust_light_state: ["smart_home", "lifx"],
-  stop_light_effects: ["smart_home", "lifx"],
-  list_light_scenes: ["smart_home", "lifx"],
-  activate_light_scene: ["smart_home", "lifx"],
-  enable_light_night_lock: ["smart_home", "lifx"],
-  get_light_health: ["smart_home", "lifx"],
-};
 
 // ────────────────────────────────────────────────────────────
 // Intelligence Tier Taxonomy — maps tools to required LLM capability tier
@@ -13467,7 +13112,6 @@ const TOOL_INTELLIGENCE_TIERS: Record<string, ToolIntelligenceTier> = {
 // Re-export taxonomy registries for testing and downstream consumers
 export {
   TOOL_DOMAINS,
-  TOOL_LABELS,
   TOOL_EMOJIS,
   TOOL_INTELLIGENCE_TIERS,
   TOOL_DEFINITIONS,
@@ -13511,7 +13155,6 @@ export function getToolSchemas(): ToolSchema[] {
         ...tool,
         domain,
         domainKey: resolveDomainKey(domain),
-        labels: TOOL_LABELS[tool.name as keyof typeof TOOL_LABELS] || [],
         emoji: resolveToolEmoji(tool.name),
         intelligenceTier:
           TOOL_INTELLIGENCE_TIERS[

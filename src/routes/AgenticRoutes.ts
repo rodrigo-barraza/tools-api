@@ -1346,10 +1346,10 @@ router.post(
 router.post(
   "/tool/search",
   agenticHandler(async (req: Request) => {
-    const { query, domain, label, limit } = req.body;
-    if (!query && !domain && !label) {
+    const { query, domain, limit } = req.body;
+    if (!query && !domain) {
       return {
-        error: "At least one of 'query', 'domain', or 'label' is required",
+        error: "At least one of 'query' or 'domain' is required",
       };
     }
     const enabledToolsHeader = req.headers["x-enabled-tools"];
@@ -1364,7 +1364,6 @@ router.post(
     }
     return agenticToolSearch(query, {
       domain: domain || undefined,
-      label: label || undefined,
       limit: limit ? Math.min(parseInt(limit, 10), 50) : 20,
       enabledTools,
     });

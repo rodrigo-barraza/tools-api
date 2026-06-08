@@ -12,11 +12,10 @@ interface ScoredMatch {
 }
 
 /**
- * Search all registered tool schemas by keyword, domain, or label.
+ * Search all registered tool schemas by keyword or domain.
  */
 export interface AgenticToolSearchOptions {
   domain?: string;
-  label?: string;
   limit?: number;
   enabledTools?: string[];
 }
@@ -26,13 +25,12 @@ export interface TransformedToolSearchResult {
   total?: number;
   query?: string | null;
   domain?: string | null;
-  label?: string | null;
   error?: string;
 }
 
 export function agenticToolSearch(
   query: string,
-  { domain, label, limit = 20, enabledTools }: AgenticToolSearchOptions = {},
+  { domain, limit = 20, enabledTools }: AgenticToolSearchOptions = {},
 ): TransformedToolSearchResult {
   const allToolSchemas = getToolSchemas();
 
@@ -52,21 +50,7 @@ export function agenticToolSearch(
   const enabledToolsSet = new Set<string>();
   if (!isAllToolsEnabled && enabledTools) {
     for (const entry of enabledTools) {
-      if (entry.startsWith("label:")) {
-        const labelFilter = entry.slice(6).toLowerCase();
-        for (const toolSchema of allToolSchemas) {
-          if (
-            toolSchema.labels &&
-            Object.values(toolSchema.labels).some(
-              (labelValue: unknown) =>
-                typeof labelValue === "string" &&
-                labelValue.toLowerCase() === labelFilter,
-            )
-          ) {
-            enabledToolsSet.add(toolSchema.name);
-          }
-        }
-      } else if (entry.startsWith("domain:")) {
+      if (entry.startsWith("domain:")) {
         const domainFilter = entry.slice(7).toLowerCase();
         for (const toolSchema of allToolSchemas) {
           if (
@@ -110,37 +94,6 @@ export function agenticToolSearch(
         total: 0,
         query: query || null,
         domain: domain || null,
-        label: label || null,
-      };
-    }
-  }
-
-  if (label) {
-    const labelNameLowerCase = label.toLowerCase();
-    const hasEnabledToolWithLabel = allToolSchemas.some(
-      (toolSchema: InferredToolSchema) => {
-        const matchesLabel =
-          toolSchema.labels &&
-          Object.values(toolSchema.labels).some(
-            (labelValue: unknown) =>
-              typeof labelValue === "string" &&
-              labelValue.toLowerCase() === labelNameLowerCase,
-          );
-        if (!matchesLabel) {
-          return false;
-        }
-        return isAllToolsEnabled || enabledToolsSet.has(toolSchema.name);
-      },
-    );
-
-    if (!hasEnabledToolWithLabel) {
-      return {
-        error: `Cannot search tools with label '${label}' because no tools with this label are enabled for the current agent.`,
-        matches: [],
-        total: 0,
-        query: query || null,
-        domain: domain || null,
-        label: label || null,
       };
     }
   }
@@ -162,18 +115,7 @@ export function agenticToolSearch(
     );
   }
 
-  if (label) {
-    const labelNameLowerCase = label.toLowerCase();
-    filteredToolSchemas = filteredToolSchemas.filter(
-      (toolSchema: InferredToolSchema) =>
-        toolSchema.labels &&
-        Object.values(toolSchema.labels).some(
-          (labelValue: unknown) =>
-            typeof labelValue === "string" &&
-            labelValue.toLowerCase() === labelNameLowerCase,
-        ),
-    );
-  }
+
 
   let scoredToolMatches: ScoredMatch[];
   if (queryTextLowerCase) {
@@ -228,9 +170,6 @@ export function agenticToolSearch(
       name: scoredMatch.schema.name,
       description: scoredMatch.schema.description,
       domain: scoredMatch.schema.domain || null,
-      labels: scoredMatch.schema.labels
-        ? (scoredMatch.schema.labels as string[])
-        : null,
       parameters: scoredMatch.schema.parameters
         ? (scoredMatch.schema.parameters as unknown as ToolParameters)
         : null,
@@ -241,6 +180,5 @@ export function agenticToolSearch(
     total: scoredToolMatches.length,
     query: query || null,
     domain: domain || null,
-    label: label || null,
   };
 }

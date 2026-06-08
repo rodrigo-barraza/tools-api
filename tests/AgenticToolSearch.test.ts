@@ -45,18 +45,7 @@ describe("Agentic Tool Search Service", () => {
     expect(allMatchesAreWeather).toBe(true);
   });
 
-  it("should fail when searching a label with no enabled tools", () => {
-    const searchResult = agenticToolSearch("", {
-      label: "smart_home",
-      enabledTools: ["read_file", "search_file_contents"],
-    });
 
-    expect(searchResult.error).toBeDefined();
-    expect(searchResult.error).toContain(
-      "Cannot search tools with label 'smart_home' because no tools with this label are enabled",
-    );
-    expect(searchResult.matches).toEqual([]);
-  });
 
   it("should succeed when searching any domain if wildcard is specified", () => {
     const searchResult = agenticToolSearch("", {

@@ -48,7 +48,6 @@ describe("Reddit Tools and Endpoints", () => {
         expect(tool.domainKey).toBe("reddit");
         expect(tool.emoji).toBeTruthy();
         expect(tool.intelligenceTier).toBe("medium");
-        expect(tool.labels).toEqual(["web", "data"]);
       }
     });
   });
