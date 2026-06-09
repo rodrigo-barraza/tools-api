@@ -11084,9 +11084,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     dataSource: onDemand("ToolSchemaService"),
     description:
       "Search for available tools by keyword or domain. Returns matching tool names, " +
-      "descriptions, and schemas. Use this to discover what capabilities are available when " +
-      "you need a tool you haven't used before, or to find domain-specific tools (e.g. weather, " +
-      "finance, health). This is a read-only discovery tool — it does not execute anything.",
+      "descriptions, schemas, and an isEnabled flag. Use this to discover what capabilities are " +
+      "available when you need a tool you haven't used before, or to find domain-specific tools " +
+      "(e.g. weather, finance, health). If results show isEnabled: false, you MUST call " +
+      "enable_tools with those tool names before you can use them. " +
+      "This is a read-only discovery tool — it does not execute anything.",
     endpoint: {
       method: "POST",
       path: "/agentic/tool/search",

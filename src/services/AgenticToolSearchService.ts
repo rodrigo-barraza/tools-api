@@ -29,6 +29,7 @@ export interface TransformedToolSearchResult {
   total?: number;
   query?: string | null;
   domain?: string | null;
+  action_required?: string;
   error?: string;
 }
 
@@ -145,11 +146,22 @@ export function agenticToolSearch(
       }),
     }));
 
+  const hasDisabledMatches = hasEnabledContext && matches.some(
+    (matchEntry) => matchEntry.isEnabled === false,
+  );
+
   return {
     matches,
     total: scoredToolMatches.length,
     query: query || null,
     domain: domain || null,
+    ...(hasEnabledContext && {
+      action_required: hasDisabledMatches
+        ? "IMPORTANT: Some discovered tools are NOT currently enabled (isEnabled: false). " +
+          "You MUST call enable_tools with the tool names you need before you can use them. " +
+          "After enabling, the tools become available on your next iteration."
+        : "All matched tools are already enabled — you can call them directly.",
+    }),
   };
 }
 
