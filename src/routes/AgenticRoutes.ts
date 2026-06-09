@@ -373,11 +373,11 @@ router.post(
 router.post(
   "/web/pdf-read",
   agenticHandler(async (req: Request) => {
-    const { url, maxPages, maxChars } = req.body;
+    const { url, maxPages, maxChars, pages, startPage, endPage } = req.body;
     if (!url || typeof url !== "string") {
       return { error: "Request body must include 'url' (string)" };
     }
-    return readPdfUrl(url, { maxPages, maxChars });
+    return readPdfUrl(url, { maxPages, maxChars, pages, startPage, endPage });
   }),
 );
 

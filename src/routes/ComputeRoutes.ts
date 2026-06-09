@@ -3367,6 +3367,258 @@ export function getComputeHealth() {
     syntheticOutput: "on-demand (json-schema)",
     imageProcessor: "on-demand (sharp + imagemagick)",
     imageToAscii: "on-demand (sharp + canvas/html overlay)",
+    csvAnalyzer: "on-demand (internal statistics)",
+    jsonCompare: "on-demand (deep-diff)",
+    jsonSchemaValidator: "on-demand (ajv)",
   };
 }
+// ─── CSV Analysis ──────────────────────────────────────────────────
+router.post(
+  "/csv/analyze",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { data, columns: selectedColumns } = req.body;
+    if (!data) {
+      return res.status(400).json({
+        error: "'data' is required (CSV string or array of objects)",
+      });
+    }
+
+    let rows: Record<string, unknown>[];
+    if (typeof data === "string") {
+      // Parse CSV string
+      const lines = data.trim().split("\n");
+      if (lines.length < 2) {
+        return res.status(400).json({ error: "CSV must have at least a header and one data row" });
+      }
+      const headerColumns = lines[0].split(",").map((headerCell: string) => headerCell.trim());
+      rows = lines.slice(1).map((line: string) => {
+        const cellValues = line.split(",").map((cell: string) => cell.trim());
+        const rowObject: Record<string, unknown> = {};
+        headerColumns.forEach((columnName: string, columnIndex: number) => {
+          const rawValue = cellValues[columnIndex] ?? "";
+          const numericValue = Number(rawValue);
+          rowObject[columnName] = isNaN(numericValue) || rawValue === "" ? rawValue : numericValue;
+        });
+        return rowObject;
+      });
+    } else if (Array.isArray(data)) {
+      rows = data;
+    } else {
+      return res.status(400).json({ error: "'data' must be a CSV string or array of objects" });
+    }
+
+    if (rows.length === 0) {
+      return res.status(400).json({ error: "No data rows found" });
+    }
+
+    const allColumnNames = Object.keys(rows[0]);
+    const targetColumns = selectedColumns && Array.isArray(selectedColumns)
+      ? allColumnNames.filter((columnName: string) => selectedColumns.includes(columnName))
+      : allColumnNames;
+
+    const columnStatistics: Record<string, unknown> = {};
+    for (const columnName of targetColumns) {
+      const columnValues = rows.map((row: Record<string, unknown>) => row[columnName]);
+      const numericValues = columnValues
+        .filter((cellValue: unknown) => typeof cellValue === "number" && !isNaN(cellValue as number))
+        .map((cellValue: unknown) => cellValue as number);
+      const nullCount = columnValues.filter((cellValue: unknown) => cellValue === null || cellValue === undefined || cellValue === "").length;
+      const uniqueValues = new Set(columnValues.map(String));
+
+      if (numericValues.length > 0) {
+        const sortedValues = [...numericValues].sort((firstValue, secondValue) => firstValue - secondValue);
+        const sum = numericValues.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
+        const mean = sum / numericValues.length;
+        const medianIndex = Math.floor(sortedValues.length / 2);
+        const median = sortedValues.length % 2 === 0
+          ? (sortedValues[medianIndex - 1] + sortedValues[medianIndex]) / 2
+          : sortedValues[medianIndex];
+        const variance = numericValues.reduce(
+          (accumulator, currentValue) => accumulator + Math.pow(currentValue - mean, 2),
+          0,
+        ) / numericValues.length;
+        const standardDeviation = Math.sqrt(variance);
+
+        columnStatistics[columnName] = {
+          type: "numeric",
+          count: numericValues.length,
+          nullCount,
+          uniqueCount: uniqueValues.size,
+          min: sortedValues[0],
+          max: sortedValues[sortedValues.length - 1],
+          mean: Math.round(mean * 10000) / 10000,
+          median,
+          standardDeviation: Math.round(standardDeviation * 10000) / 10000,
+          sum: Math.round(sum * 10000) / 10000,
+          percentile25: sortedValues[Math.floor(sortedValues.length * 0.25)],
+          percentile75: sortedValues[Math.floor(sortedValues.length * 0.75)],
+        };
+      } else {
+        // Categorical column
+        const frequencyMap: Record<string, number> = {};
+        columnValues.forEach((cellValue: unknown) => {
+          const stringValue = String(cellValue);
+          frequencyMap[stringValue] = (frequencyMap[stringValue] || 0) + 1;
+        });
+        const sortedFrequencies = Object.entries(frequencyMap)
+          .sort(([, countA], [, countB]) => countB - countA)
+          .slice(0, 20);
+
+        columnStatistics[columnName] = {
+          type: "categorical",
+          count: columnValues.length,
+          nullCount,
+          uniqueCount: uniqueValues.size,
+          topValues: Object.fromEntries(sortedFrequencies),
+        };
+      }
+    }
+
+    res.json({
+      rowCount: rows.length,
+      columnCount: allColumnNames.length,
+      columns: allColumnNames,
+      statistics: columnStatistics,
+    });
+  }),
+);
+// ─── JSON Compare (Deep Diff) ──────────────────────────────────────
+function deepCompare(
+  firstObject: unknown,
+  secondObject: unknown,
+  currentPath: string = "",
+): Array<{
+  path: string;
+  type: "added" | "removed" | "changed" | "type_changed";
+  oldValue?: unknown;
+  newValue?: unknown;
+}> {
+  const differences: Array<{
+    path: string;
+    type: "added" | "removed" | "changed" | "type_changed";
+    oldValue?: unknown;
+    newValue?: unknown;
+  }> = [];
+
+  if (firstObject === secondObject) return differences;
+
+  if (typeof firstObject !== typeof secondObject) {
+    differences.push({
+      path: currentPath || "(root)",
+      type: "type_changed",
+      oldValue: firstObject,
+      newValue: secondObject,
+    });
+    return differences;
+  }
+
+  if (
+    firstObject === null ||
+    secondObject === null ||
+    typeof firstObject !== "object" ||
+    typeof secondObject !== "object"
+  ) {
+    if (firstObject !== secondObject) {
+      differences.push({
+        path: currentPath || "(root)",
+        type: "changed",
+        oldValue: firstObject,
+        newValue: secondObject,
+      });
+    }
+    return differences;
+  }
+
+  if (Array.isArray(firstObject) && Array.isArray(secondObject)) {
+    const maximumLength = Math.max(firstObject.length, secondObject.length);
+    for (let arrayIndex = 0; arrayIndex < maximumLength; arrayIndex++) {
+      const elementPath = `${currentPath}[${arrayIndex}]`;
+      if (arrayIndex >= firstObject.length) {
+        differences.push({ path: elementPath, type: "added", newValue: secondObject[arrayIndex] });
+      } else if (arrayIndex >= secondObject.length) {
+        differences.push({ path: elementPath, type: "removed", oldValue: firstObject[arrayIndex] });
+      } else {
+        differences.push(...deepCompare(firstObject[arrayIndex], secondObject[arrayIndex], elementPath));
+      }
+    }
+    return differences;
+  }
+
+  const firstObjectRecord = firstObject as Record<string, unknown>;
+  const secondObjectRecord = secondObject as Record<string, unknown>;
+  const allKeys = new Set([
+    ...Object.keys(firstObjectRecord),
+    ...Object.keys(secondObjectRecord),
+  ]);
+
+  for (const key of allKeys) {
+    const propertyPath = currentPath ? `${currentPath}.${key}` : key;
+    if (!(key in firstObjectRecord)) {
+      differences.push({ path: propertyPath, type: "added", newValue: secondObjectRecord[key] });
+    } else if (!(key in secondObjectRecord)) {
+      differences.push({ path: propertyPath, type: "removed", oldValue: firstObjectRecord[key] });
+    } else {
+      differences.push(
+        ...deepCompare(firstObjectRecord[key], secondObjectRecord[key], propertyPath),
+      );
+    }
+  }
+
+  return differences;
+}
+
+router.post(
+  "/json/compare",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { a: firstJson, b: secondJson } = req.body;
+    if (firstJson === undefined || secondJson === undefined) {
+      return res.status(400).json({
+        error: "'a' and 'b' are required (JSON objects to compare)",
+      });
+    }
+    const differences = deepCompare(firstJson, secondJson);
+    res.json({
+      isIdentical: differences.length === 0,
+      differenceCount: differences.length,
+      differences,
+    });
+  }),
+);
+// ─── JSON Schema Validation (ajv) ──────────────────────────────────
+router.post(
+  "/json/validate",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { data, schema } = req.body;
+    if (data === undefined || !schema) {
+      return res.status(400).json({
+        error: "'data' and 'schema' (JSON Schema object) are required",
+      });
+    }
+    const ajvModule = await import("ajv");
+    const Ajv = ajvModule.default?.default ?? ajvModule.default;
+    const ajvInstance = new Ajv({ allErrors: true, verbose: true });
+    try {
+      const validateFunction = ajvInstance.compile(schema);
+      const isValid = validateFunction(data);
+      res.json({
+        isValid,
+        errors: isValid
+          ? []
+          : (validateFunction.errors || []).map((validationError: { instancePath?: string; message?: string; keyword?: string; params?: unknown; schemaPath?: string }) => ({
+              path: validationError.instancePath || "/",
+              message: validationError.message || "Unknown error",
+              keyword: validationError.keyword,
+              params: validationError.params,
+              schemaPath: validationError.schemaPath,
+            })),
+        errorCount: isValid ? 0 : (validateFunction.errors || []).length,
+      });
+    } catch (error: unknown) {
+      res.status(400).json({
+        error: `Schema compilation failed: ${error instanceof Error ? error.message : String(error)}`,
+      });
+    }
+  }),
+);
 export default router;
+

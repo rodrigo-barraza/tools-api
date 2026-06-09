@@ -57,6 +57,36 @@ router.get(
 export function getTransitHealth() {
   return {
     translink: CONFIG.TRANSLINK_API_KEY ? "ready" : "no-api-key",
+    flights: CONFIG.AVIATIONSTACK_API_KEY ? "ready" : "no-api-key",
   };
 }
+// ─── Flight Status (AviationStack) ─────────────────────────────────
+import { getFlightStatus } from "../fetchers/transit/FlightFetcher.ts";
+
+router.get(
+  "/flights",
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!CONFIG.AVIATIONSTACK_API_KEY) {
+      return res.status(400).json({ error: "AVIATIONSTACK_API_KEY not configured" });
+    }
+    const {
+      flight,
+      departure,
+      arrival,
+      airline,
+      status,
+      limit,
+    } = req.query as Record<string, string | undefined>;
+    res.json(
+      await getFlightStatus(CONFIG.AVIATIONSTACK_API_KEY, {
+        flightIata: flight,
+        departureIata: departure,
+        arrivalIata: arrival,
+        airlineIata: airline,
+        flightStatus: status,
+        limit: limit ? parseInt(limit, 10) : undefined,
+      }),
+    );
+  }),
+);
 export default router;

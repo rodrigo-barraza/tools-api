@@ -364,4 +364,56 @@ export function getWeatherHealth(): WeatherDomainHealth {
     moonPhase: getMoonPhaseHealth(),
   };
 }
+// ─── Satellite Imagery (NASA Earth) ────────────────────────────────
+import {
+  getSatelliteImagery,
+  getSatelliteAssets,
+} from "../fetchers/weather/SatelliteImageryFetcher.ts";
+import CONFIG from "../config.ts";
+
+router.get(
+  "/satellite",
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!CONFIG.NASA_API_KEY) {
+      return res.status(400).json({ error: "NASA_API_KEY not configured" });
+    }
+    const {
+      action,
+      latitude,
+      longitude,
+      date,
+      dimension,
+      startDate,
+      endDate,
+    } = req.query as Record<string, string | undefined>;
+    if (!latitude || !longitude) {
+      return res.status(400).json({
+        error: "'latitude' and 'longitude' are required",
+      });
+    }
+    const parsedLatitude = parseFloat(latitude);
+    const parsedLongitude = parseFloat(longitude);
+    if (action === "assets") {
+      res.json(
+        await getSatelliteAssets(
+          parsedLatitude,
+          parsedLongitude,
+          CONFIG.NASA_API_KEY,
+          startDate,
+          endDate,
+        ),
+      );
+    } else {
+      res.json(
+        await getSatelliteImagery(
+          parsedLatitude,
+          parsedLongitude,
+          CONFIG.NASA_API_KEY,
+          date,
+          dimension ? parseFloat(dimension) : undefined,
+        ),
+      );
+    }
+  }),
+);
 export default router;

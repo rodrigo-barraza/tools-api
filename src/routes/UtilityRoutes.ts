@@ -746,4 +746,176 @@ router.get(
     }
   }),
 );
+// ─── DNS Lookup ────────────────────────────────────────────────────
+import {
+  dnsLookup,
+  whoisLookup,
+  sslCertificateCheck,
+  portScan,
+  httpHeaders,
+  pingHost,
+} from "../fetchers/utility/NetworkDiagnosticsFetcher.ts";
+
+router.get(
+  "/dns/:hostname",
+  asyncHandler(async (req: Request) => {
+    const hostname = req.params.hostname as string;
+    const recordType = (req.query.type as string) || "A";
+    return dnsLookup(hostname, recordType);
+  }, "DNS lookup"),
+);
+// ─── WHOIS Lookup ──────────────────────────────────────────────────
+router.get(
+  "/whois/:domain",
+  asyncHandler(
+    (req: Request) => whoisLookup(req.params.domain as string),
+    "WHOIS lookup",
+  ),
+);
+// ─── SSL Certificate Check ─────────────────────────────────────────
+router.get(
+  "/ssl/:hostname",
+  asyncHandler(async (req: Request) => {
+    const hostname = req.params.hostname as string;
+    const port = parseInt((req.query.port as string) || "443", 10);
+    return sslCertificateCheck(hostname, port);
+  }, "SSL certificate check"),
+);
+// ─── Port Scan ─────────────────────────────────────────────────────
+router.get(
+  "/ports/:host",
+  asyncHandler(async (req: Request) => {
+    const host = req.params.host as string;
+    const portsParam = req.query.ports as string | undefined;
+    const ports = portsParam
+      ? portsParam.split(",").map((portString) => parseInt(portString.trim(), 10)).filter((portNumber) => !isNaN(portNumber))
+      : undefined;
+    return portScan(host, ports);
+  }, "Port scan"),
+);
+// ─── HTTP Headers ──────────────────────────────────────────────────
+router.get(
+  "/headers",
+  asyncHandler(async (req: Request, res: Response) => {
+    const url = req.query.url as string;
+    if (!url) {
+      return res.status(400).json({ error: "Query parameter 'url' is required" });
+    }
+    res.json(await httpHeaders(url));
+  }),
+);
+// ─── Ping Host ─────────────────────────────────────────────────────
+router.get(
+  "/ping/:host",
+  asyncHandler(async (req: Request) => {
+    const host = req.params.host as string;
+    const count = parseInt((req.query.count as string) || "4", 10);
+    return pingHost(host, count);
+  }, "Ping host"),
+);
+// ─── Breach Check (HIBP) ──────────────────────────────────────────
+import {
+  checkPasswordBreach,
+  checkEmailBreach,
+} from "../fetchers/utility/BreachFetcher.ts";
+
+router.get(
+  "/breach/check",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { type, value } = req.query as Record<string, string | undefined>;
+    if (!type || !value) {
+      return res.status(400).json({
+        error: "Query parameters 'type' (email|password) and 'value' are required",
+      });
+    }
+    if (type === "password") {
+      res.json(await checkPasswordBreach(value));
+    } else if (type === "email") {
+      if (!CONFIG.HIBP_API_KEY) {
+        return res.status(400).json({
+          error: "Email breach checks require an HIBP API key (HIBP_API_KEY). Password checks are free.",
+        });
+      }
+      res.json(await checkEmailBreach(value, CONFIG.HIBP_API_KEY));
+    } else {
+      return res.status(400).json({ error: "Invalid type. Use 'email' or 'password'." });
+    }
+  }),
+);
+// ─── Google Calendar ───────────────────────────────────────────────
+import {
+  getCalendarEvents,
+  createCalendarEvent,
+  getFreeBusy,
+} from "../fetchers/utility/GoogleCalendarFetcher.ts";
+
+router.get(
+  "/calendar/events",
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!CONFIG.GOOGLE_CALENDAR_CREDENTIALS) {
+      return res.status(400).json({ error: "Google Calendar credentials not configured" });
+    }
+    const { calendarId, timeMin, timeMax, limit } = req.query as Record<
+      string,
+      string | undefined
+    >;
+    res.json(
+      await getCalendarEvents(
+        CONFIG.GOOGLE_CALENDAR_CREDENTIALS,
+        calendarId || "primary",
+        timeMin,
+        timeMax,
+        parseInt(limit || "25", 10),
+      ),
+    );
+  }),
+);
+router.post(
+  "/calendar/events",
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!CONFIG.GOOGLE_CALENDAR_CREDENTIALS) {
+      return res.status(400).json({ error: "Google Calendar credentials not configured" });
+    }
+    const { calendarId, summary, startDateTime, endDateTime, description, location, attendees, timeZone } = req.body;
+    if (!summary || !startDateTime || !endDateTime) {
+      return res.status(400).json({
+        error: "'summary', 'startDateTime', and 'endDateTime' are required",
+      });
+    }
+    res.json(
+      await createCalendarEvent(CONFIG.GOOGLE_CALENDAR_CREDENTIALS, {
+        calendarId,
+        summary,
+        startDateTime,
+        endDateTime,
+        description,
+        location,
+        attendees,
+        timeZone,
+      }),
+    );
+  }),
+);
+router.post(
+  "/calendar/freebusy",
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!CONFIG.GOOGLE_CALENDAR_CREDENTIALS) {
+      return res.status(400).json({ error: "Google Calendar credentials not configured" });
+    }
+    const { calendarIds, timeMin, timeMax } = req.body;
+    if (!calendarIds || !timeMin || !timeMax) {
+      return res.status(400).json({
+        error: "'calendarIds' (array), 'timeMin', and 'timeMax' are required",
+      });
+    }
+    res.json(
+      await getFreeBusy(
+        CONFIG.GOOGLE_CALENDAR_CREDENTIALS,
+        calendarIds,
+        timeMin,
+        timeMax,
+      ),
+    );
+  }),
+);
 export default router;

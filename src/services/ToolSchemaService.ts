@@ -2002,34 +2002,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
 
-  // ── PDF Reader ─────────────────────────────────────────────
-  {
-    name: "read_pdf_url",
-    dataSource: onDemand("pdf-parse"),
-    description:
-      "Fetch and extract text content from a PDF file at a given URL. Returns the full text, " +
-      "page count, and metadata. Useful for reading research papers, reports, documentation, " +
-      "and any PDF accessible via a public URL. Supports limiting the number of pages extracted.",
-    endpoint: {
-      path: "/knowledge/pdf/read",
-      queryParams: ["url", "maxPages"],
-    },
-    parameters: {
-      type: "object",
-      properties: {
-        url: {
-          type: "string",
-          description: "URL of the PDF file to read",
-        },
-        maxPages: {
-          type: "number",
-          description:
-            "Maximum number of pages to extract (default: all pages)",
-        },
-      },
-      required: ["url"],
-    },
-  },
+
 
   // ── RSS Feed Reader ────────────────────────────────────────
   {
@@ -7792,11 +7765,14 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     name: "read_pdf",
     dataSource: onDemand("pdf-parse"),
     description:
-      "Download a PDF from a URL and extract its text content to allow reading PDFs for models that do not support PDF input modality natively. Supports optional maxPages and maxChars parameters to control download and extraction limits. Maximum output text length is 100,000 characters by default.",
+      "Download a PDF from a URL and extract its text content with metadata, page count, and embedded hyperlinks. " +
+      "Supports extracting the first N pages (maxPages), a specific page range (startPage/endPage), " +
+      "or individual pages by number (pages array). Maximum output: 100,000 characters by default. " +
+      "Useful for reading research papers, reports, documentation, and any PDF accessible via a public URL.",
     endpoint: {
       method: "POST",
       path: "/agentic/web/pdf-read",
-      bodyParams: ["url", "maxPages", "maxChars"],
+      bodyParams: ["url", "maxPages", "maxChars", "pages", "startPage", "endPage"],
     },
     parameters: {
       type: "object",
@@ -7809,12 +7785,28 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         maxPages: {
           type: "integer",
           description:
-            "Optional maximum number of pages to extract from the PDF.",
+            "Extract only the first N pages of the PDF (e.g. 5 = pages 1–5).",
         },
         maxChars: {
           type: "integer",
           description:
-            "Optional maximum characters of text to return (default: 100,000).",
+            "Maximum characters of text to return (default: 100,000).",
+        },
+        pages: {
+          type: "array",
+          items: { type: "integer" },
+          description:
+            "Extract only these specific page numbers (e.g. [1, 3, 7]). Overrides maxPages and startPage/endPage.",
+        },
+        startPage: {
+          type: "integer",
+          description:
+            "Start of an inclusive page range to extract (e.g. startPage=3, endPage=8 extracts pages 3–8).",
+        },
+        endPage: {
+          type: "integer",
+          description:
+            "End of an inclusive page range to extract. Used with startPage.",
         },
       },
       required: ["url"],
@@ -11886,6 +11878,648 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       required: ["action"],
     },
   },
+  // ── Network Intelligence ──────────────────────────────────
+  {
+    name: "dns_lookup",
+    dataSource: compute("dns"),
+    description:
+      "Resolve DNS records for a hostname. Returns A, AAAA, MX, CNAME, TXT, NS, SOA, SRV, " +
+      "CAA, or PTR records. Useful for diagnosing DNS configuration, verifying mail routing " +
+      "(MX), checking domain ownership (TXT/SPF), and mapping hostnames to IPs.",
+    endpoint: {
+      path: "/utility/dns/:hostname",
+      queryParams: ["type"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        hostname: {
+          type: "string",
+          description: "The hostname to resolve (e.g. 'example.com', 'mail.google.com').",
+        },
+        type: {
+          type: "string",
+          enum: ["A", "AAAA", "MX", "CNAME", "TXT", "NS", "SOA", "SRV", "CAA", "PTR"],
+          description: "DNS record type to query. Default: 'A'.",
+        },
+      },
+      required: ["hostname"],
+    },
+  },
+  {
+    name: "whois_lookup",
+    dataSource: compute("whois"),
+    description:
+      "Query WHOIS registration data for a domain name. Returns registrar, creation/expiration " +
+      "dates, nameservers, DNSSEC status, and domain status codes. Useful for domain research, " +
+      "expiry monitoring, and ownership verification.",
+    endpoint: {
+      path: "/utility/whois/:domain",
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        domain: {
+          type: "string",
+          description: "The domain to look up (e.g. 'example.com', 'google.co.uk').",
+        },
+      },
+      required: ["domain"],
+    },
+  },
+  {
+    name: "ssl_certificate_check",
+    dataSource: compute("tls"),
+    description:
+      "Inspect the SSL/TLS certificate of a host. Returns certificate validity, issuer, subject, " +
+      "SAN entries, expiry date, days until expiry, cipher suite, and protocol version. " +
+      "Flags expired and soon-to-expire certificates.",
+    endpoint: {
+      path: "/utility/ssl/:hostname",
+      queryParams: ["port"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        hostname: {
+          type: "string",
+          description: "The hostname to check (e.g. 'example.com').",
+        },
+        port: {
+          type: "number",
+          description: "TLS port to connect to. Default: 443.",
+        },
+      },
+      required: ["hostname"],
+    },
+  },
+  {
+    name: "port_scan",
+    dataSource: compute("tcp"),
+    description:
+      "Scan a host for open TCP ports. Checks common service ports (SSH, HTTP, HTTPS, MySQL, " +
+      "PostgreSQL, Redis, MongoDB, etc.) or a custom list. Returns open ports with service names " +
+      "and scan duration. Max 50 ports per scan.",
+    endpoint: {
+      path: "/utility/ports/:host",
+      queryParams: ["ports"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        host: {
+          type: "string",
+          description: "Host to scan (hostname or IP address).",
+        },
+        ports: {
+          type: "string",
+          description:
+            "Comma-separated port numbers to scan (e.g. '80,443,8080'). " +
+            "Omit to scan common ports (21-27017).",
+        },
+      },
+      required: ["host"],
+    },
+  },
+  {
+    name: "http_headers",
+    dataSource: compute("http"),
+    description:
+      "Analyze HTTP response headers from any URL. Returns all headers, security header grades " +
+      "(HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, " +
+      "COOP, CORP, COEP), overall security score (0-100), server info, and response time.",
+    endpoint: {
+      path: "/utility/headers",
+      queryParams: ["url"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        url: {
+          type: "string",
+          description: "Full URL to analyze (e.g. 'https://example.com').",
+        },
+      },
+      required: ["url"],
+    },
+  },
+  {
+    name: "ping_host",
+    dataSource: compute("icmp"),
+    description:
+      "Ping a host and measure network latency. Returns round-trip times (min, avg, max, stddev), " +
+      "packet loss percentage, and reachability status. Useful for checking if a server is up " +
+      "and measuring response time.",
+    endpoint: {
+      path: "/utility/ping/:host",
+      queryParams: ["count"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        host: {
+          type: "string",
+          description: "Host to ping (hostname or IP address).",
+        },
+        count: {
+          type: "number",
+          description: "Number of ping packets to send (1-10). Default: 4.",
+        },
+      },
+      required: ["host"],
+    },
+  },
+  // ── Security ─────────────────────────────────────────────────
+  {
+    name: "check_breach",
+    dataSource: onDemand("Have I Been Pwned"),
+    description:
+      "Check if a password or email address has appeared in known data breaches using the " +
+      "Have I Been Pwned service. Password checks use k-anonymity (free, no API key). " +
+      "Email checks require an HIBP API key and return breach details.",
+    endpoint: {
+      path: "/utility/breach/check",
+      queryParams: ["type", "value"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        type: {
+          type: "string",
+          enum: ["password", "email"],
+          description: "Type of breach check. 'password' is free. 'email' requires API key.",
+        },
+        value: {
+          type: "string",
+          description: "The password or email address to check.",
+        },
+      },
+      required: ["type", "value"],
+    },
+  },
+  // ── Communication ────────────────────────────────────────────
+  {
+    name: "send_push_notification",
+    dataSource: onDemand("ntfy.sh"),
+    description:
+      "Send a push notification via ntfy.sh to any subscribed device. Supports priority levels " +
+      "(min/low/default/high/urgent), emoji tags, click URLs, and file attachments. " +
+      "Recipients subscribe to a topic on the ntfy app.",
+    endpoint: {
+      path: "/communication/push",
+      method: "POST",
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        topic: {
+          type: "string",
+          description: "The notification topic (subscribers will receive it).",
+        },
+        message: {
+          type: "string",
+          description: "The notification message body.",
+        },
+        title: {
+          type: "string",
+          description: "Optional notification title.",
+        },
+        priority: {
+          type: "string",
+          enum: ["min", "low", "default", "high", "urgent"],
+          description: "Priority level. Default: 'default'.",
+        },
+        tags: {
+          type: "array",
+          items: { type: "string" },
+          description: "Emoji tags for the notification (e.g. ['warning', 'robot']).",
+        },
+        clickUrl: {
+          type: "string",
+          description: "URL to open when the notification is tapped.",
+        },
+      },
+      required: ["topic", "message"],
+    },
+  },
+  {
+    name: "send_webhook",
+    dataSource: compute("http"),
+    description:
+      "Send an HTTP webhook request to any public URL with a JSON payload. " +
+      "Supports POST, PUT, and PATCH methods with custom headers. " +
+      "Returns response status, headers, body, and timing. " +
+      "SSRF-protected: blocks private/internal network addresses.",
+    endpoint: {
+      path: "/communication/webhook",
+      method: "POST",
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        url: {
+          type: "string",
+          description: "The public webhook URL to send the request to.",
+        },
+        payload: {
+          type: "object",
+          description: "The JSON payload to send.",
+        },
+        method: {
+          type: "string",
+          enum: ["POST", "PUT", "PATCH"],
+          description: "HTTP method. Default: POST.",
+        },
+        headers: {
+          type: "object",
+          description: "Optional custom HTTP headers.",
+        },
+      },
+      required: ["url", "payload"],
+    },
+  },
+  // ── Calendar ─────────────────────────────────────────────────
+  {
+    name: "get_calendar_events",
+    dataSource: onDemand("Google Calendar"),
+    description:
+      "Retrieve upcoming events from a Google Calendar. Returns event title, time, location, " +
+      "description, attendees, and links. Defaults to the next 30 days.",
+    endpoint: {
+      path: "/utility/calendar/events",
+      queryParams: ["calendarId", "timeMin", "timeMax", "limit"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        calendarId: {
+          type: "string",
+          description: "Calendar ID. Default: 'primary'.",
+        },
+        timeMin: {
+          type: "string",
+          description: "Start time (ISO 8601). Default: now.",
+        },
+        timeMax: {
+          type: "string",
+          description: "End time (ISO 8601). Default: 30 days from now.",
+        },
+        limit: {
+          type: "number",
+          description: "Maximum events to return (1-100). Default: 25.",
+        },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "create_calendar_event",
+    dataSource: onDemand("Google Calendar"),
+    description:
+      "Create a new event on a Google Calendar. Specify the summary, start/end times, " +
+      "optional description, location, attendees, and timezone.",
+    endpoint: {
+      path: "/utility/calendar/events",
+      method: "POST",
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        summary: {
+          type: "string",
+          description: "Event title.",
+        },
+        startDateTime: {
+          type: "string",
+          description: "Start time in ISO 8601 format (e.g. '2025-01-15T10:00:00').",
+        },
+        endDateTime: {
+          type: "string",
+          description: "End time in ISO 8601 format.",
+        },
+        description: {
+          type: "string",
+          description: "Optional event description.",
+        },
+        location: {
+          type: "string",
+          description: "Optional event location.",
+        },
+        attendees: {
+          type: "array",
+          items: { type: "string" },
+          description: "Email addresses of attendees.",
+        },
+        calendarId: {
+          type: "string",
+          description: "Calendar ID. Default: 'primary'.",
+        },
+        timeZone: {
+          type: "string",
+          description: "IANA timezone (e.g. 'America/Vancouver'). Default: UTC.",
+        },
+      },
+      required: ["summary", "startDateTime", "endDateTime"],
+    },
+  },
+  {
+    name: "get_free_busy",
+    dataSource: onDemand("Google Calendar"),
+    description:
+      "Query free/busy status for one or more Google Calendars within a time range. " +
+      "Returns busy time slots for each calendar. Useful for scheduling meetings.",
+    endpoint: {
+      path: "/utility/calendar/freebusy",
+      method: "POST",
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        calendarIds: {
+          type: "array",
+          items: { type: "string" },
+          description: "Array of calendar IDs to check.",
+        },
+        timeMin: {
+          type: "string",
+          description: "Start of the time range (ISO 8601).",
+        },
+        timeMax: {
+          type: "string",
+          description: "End of the time range (ISO 8601).",
+        },
+      },
+      required: ["calendarIds", "timeMin", "timeMax"],
+    },
+  },
+  // ── GitHub Trending ──────────────────────────────────────────
+  {
+    name: "get_github_trending",
+    dataSource: onDemand("GitHub"),
+    description:
+      "Get today's trending GitHub repositories. Returns repo name, description, language, " +
+      "total stars, today's stars, and fork count. Can filter by programming language.",
+    endpoint: {
+      path: "/trend/github/trending",
+      queryParams: ["language", "since", "limit"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        language: {
+          type: "string",
+          description: "Filter by programming language (e.g. 'python', 'typescript').",
+        },
+        since: {
+          type: "string",
+          enum: ["daily", "weekly", "monthly"],
+          description: "Time range. Default: 'daily'.",
+        },
+        limit: {
+          type: "number",
+          description: "Maximum repos to return. Default: 25.",
+        },
+      },
+      required: [],
+    },
+  },
+  // ── Data & Analysis ──────────────────────────────────────────
+  {
+    name: "analyze_csv",
+    dataSource: compute("statistics"),
+    description:
+      "Analyze CSV data with statistical computations. Accepts CSV text or array of objects. " +
+      "Returns per-column statistics: for numeric columns (min, max, mean, median, stddev, " +
+      "percentiles, sum); for categorical columns (unique count, top values, frequencies). " +
+      "Also reports row/column counts and column types.",
+    endpoint: {
+      path: "/compute/csv/analyze",
+      method: "POST",
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        data: {
+          type: "string",
+          description:
+            "CSV data as a string (with header row), or a JSON array of objects.",
+        },
+        columns: {
+          type: "array",
+          items: { type: "string" },
+          description: "Optional list of column names to analyze. Analyzes all if omitted.",
+        },
+      },
+      required: ["data"],
+    },
+  },
+  {
+    name: "compare_json",
+    dataSource: compute("diff"),
+    description:
+      "Deep-compare two JSON objects and return all differences. Reports added, removed, " +
+      "changed, and type-changed values with their full paths. " +
+      "Handles nested objects and arrays recursively.",
+    endpoint: {
+      path: "/compute/json/compare",
+      method: "POST",
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        a: {
+          type: "object",
+          description: "First JSON object (the 'before' or 'left' side).",
+        },
+        b: {
+          type: "object",
+          description: "Second JSON object (the 'after' or 'right' side).",
+        },
+      },
+      required: ["a", "b"],
+    },
+  },
+  {
+    name: "validate_json_schema",
+    dataSource: compute("ajv"),
+    description:
+      "Validate JSON data against a JSON Schema (Draft 2020-12, Draft 7, etc.). " +
+      "Returns validity status and detailed error messages with paths. Uses the " +
+      "ajv validator, the industry-standard JSON Schema engine.",
+    endpoint: {
+      path: "/compute/json/validate",
+      method: "POST",
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        data: {
+          type: "object",
+          description: "The JSON data to validate.",
+        },
+        schema: {
+          type: "object",
+          description: "The JSON Schema to validate against.",
+        },
+      },
+      required: ["data", "schema"],
+    },
+  },
+  // ── Knowledge ────────────────────────────────────────────────
+  {
+    name: "get_stackoverflow_questions",
+    dataSource: onDemand("Stack Exchange"),
+    description:
+      "Search Stack Overflow for questions by keyword and/or tags. Returns question titles, " +
+      "scores, view counts, answer counts, tags, authors, and links. " +
+      "Useful for finding solutions to programming problems.",
+    endpoint: {
+      path: "/knowledge/stackoverflow/questions",
+      queryParams: ["q", "tagged", "sort", "order", "limit"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        q: {
+          type: "string",
+          description: "Search query (searches question titles).",
+        },
+        tagged: {
+          type: "string",
+          description:
+            "Filter by tags, semicolon-separated (e.g. 'javascript;react').",
+        },
+        sort: {
+          type: "string",
+          enum: ["activity", "votes", "creation", "hot", "week", "month"],
+          description: "Sort order. Default: relevance.",
+        },
+        limit: {
+          type: "number",
+          description: "Maximum results (1-30). Default: 10.",
+        },
+      },
+      required: ["q"],
+    },
+  },
+  {
+    name: "search_patents",
+    dataSource: onDemand("USPTO"),
+    description:
+      "Search US patents via the USPTO PatentsView API. Returns patent numbers, titles, " +
+      "abstracts, inventors, assignees, filing dates, and CPC classifications. " +
+      "Free API, no key required.",
+    endpoint: {
+      path: "/knowledge/patents/search",
+      queryParams: ["q", "inventor", "assignee", "limit"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        q: {
+          type: "string",
+          description: "Patent search query (searches titles and abstracts).",
+        },
+        inventor: {
+          type: "string",
+          description: "Filter by inventor name.",
+        },
+        assignee: {
+          type: "string",
+          description: "Filter by assignee/organization.",
+        },
+        limit: {
+          type: "number",
+          description: "Maximum results (1-50). Default: 10.",
+        },
+      },
+      required: ["q"],
+    },
+  },
+  // ── Satellite Imagery ────────────────────────────────────────
+  {
+    name: "get_satellite_imagery",
+    dataSource: onDemand("NASA Earth"),
+    description:
+      "Retrieve Landsat satellite imagery for any location on Earth via the NASA Earth API. " +
+      "Returns image URL, date, cloud score, and coordinates. Can also list available " +
+      "imagery dates for a location with action='assets'.",
+    endpoint: {
+      path: "/weather/satellite",
+      queryParams: ["action", "latitude", "longitude", "date", "dimension", "startDate", "endDate"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        latitude: {
+          type: "number",
+          description: "Latitude of the location.",
+        },
+        longitude: {
+          type: "number",
+          description: "Longitude of the location.",
+        },
+        action: {
+          type: "string",
+          enum: ["imagery", "assets"],
+          description: "'imagery' returns a satellite photo, 'assets' lists available dates. Default: imagery.",
+        },
+        date: {
+          type: "string",
+          description: "Date of the imagery (YYYY-MM-DD). Default: most recent.",
+        },
+        dimension: {
+          type: "number",
+          description: "Image width and height in degrees (e.g. 0.025). Default: API default.",
+        },
+      },
+      required: ["latitude", "longitude"],
+    },
+  },
+  // ── Flight Status ────────────────────────────────────────────
+  {
+    name: "get_flight_status",
+    dataSource: onDemand("AviationStack"),
+    description:
+      "Get real-time flight status information. Look up flights by IATA flight number, " +
+      "departure/arrival airport, or airline. Returns flight status, gates, terminals, " +
+      "scheduled/estimated/actual times, delays, and live tracking coordinates.",
+    endpoint: {
+      path: "/transit/flights",
+      queryParams: ["flight", "departure", "arrival", "airline", "status", "limit"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        flight: {
+          type: "string",
+          description: "IATA flight number (e.g. 'AC301', 'UA1234').",
+        },
+        departure: {
+          type: "string",
+          description: "Departure airport IATA code (e.g. 'YVR', 'LAX').",
+        },
+        arrival: {
+          type: "string",
+          description: "Arrival airport IATA code.",
+        },
+        airline: {
+          type: "string",
+          description: "Airline IATA code (e.g. 'AC', 'UA').",
+        },
+        status: {
+          type: "string",
+          enum: ["scheduled", "active", "landed", "cancelled", "incident", "diverted"],
+          description: "Filter by flight status.",
+        },
+        limit: {
+          type: "number",
+          description: "Maximum results (1-100). Default: 25.",
+        },
+      },
+      required: [],
+    },
+  },
 ];
 
 // ────────────────────────────────────────────────────────────
@@ -11973,7 +12607,7 @@ const TOOL_DOMAINS = {
   get_youtube_video: "Knowledge",
   read_url: "Core Harness Tools",
   get_package_info: "Knowledge",
-  read_pdf_url: "Knowledge",
+
   read_rss_feed: "Knowledge",
   get_pypi_package: "Knowledge",
 
@@ -12226,6 +12860,44 @@ const TOOL_DOMAINS = {
   activate_light_scene: "Smart Home",
   enable_light_night_lock: "Smart Home",
   get_light_health: "Smart Home",
+
+  // Network Intelligence
+  dns_lookup: "Network Intelligence",
+  whois_lookup: "Network Intelligence",
+  ssl_certificate_check: "Network Intelligence",
+  port_scan: "Network Intelligence",
+  http_headers: "Network Intelligence",
+  ping_host: "Network Intelligence",
+
+  // Security
+  check_breach: "Security",
+
+  // Communication (new tools)
+  send_push_notification: "Communication",
+  send_webhook: "Communication",
+
+  // Calendar
+  get_calendar_events: "Calendar",
+  create_calendar_event: "Calendar",
+  get_free_busy: "Calendar",
+
+  // Trends (new tool)
+  get_github_trending: "Trends",
+
+  // Compute (new tools)
+  analyze_csv: "Compute",
+  compare_json: "Compute",
+  validate_json_schema: "Compute",
+
+  // Knowledge (new tools)
+  get_stackoverflow_questions: "Knowledge",
+  search_patents: "Knowledge",
+
+  // Weather & Environment (new tool)
+  get_satellite_imagery: "Weather & Environment",
+
+  // Transit (new tool)
+  get_flight_status: "Transit",
 };
 
 // ────────────────────────────────────────────────────────────
@@ -12235,7 +12907,7 @@ const TOOL_DOMAINS = {
 const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   get_weather: "🌤️",
   get_local_environment: ["🌍", "💻"],
-  get_weather_forecast: "📅",
+  get_weather_forecast: ["🌤️", "📅"],
   get_avalanche_forecast: ["🏔️", "💻"],
   get_earthquakes: ["🌋", "💻"],
   get_solar_activity: "☀️",
@@ -12243,255 +12915,292 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   get_solar_wind: "💨",
   get_twilight: "🌅",
   get_tides: ["🌊", "💻"],
-  get_wildfires: ["🔥", "💻"],
+  get_wildfires: ["🌲", "🔥"],
   get_iss_location: ["🛸", "💻"],
   get_near_earth_objects: ["☄️", "💻"],
-  get_space_launches: ["🚀", "💻"],
+  get_space_launches: ["🚀", "🌌"],
   get_nasa_apod: "🔭",
-  get_weather_warnings: ["⚠️", "💻"],
+  get_weather_warnings: ["🌤️", "⚠️"],
   get_detailed_air_quality: ["🫁", "💻"],
   get_pollen_forecast: ["🌸", "💻"],
-  get_weather_history: ["📊", "💻"],
+  get_weather_history: ["🌤️", "📊"],
   get_weather_marine: ["⚓", "💻"],
   get_weather_astronomy: "🌙",
   get_weather_alerts: ["🚨", "💻"],
-  get_moon_phase: "🌙",
+  get_moon_phase: ["🌙", "🌓"],
   get_events: ["🎟️", "💻"],
   get_live_scores: ["⚽", "💻"],
-  get_upcoming_matches: "📅",
+  get_upcoming_matches: ["⚽", "📅"],
   get_recent_results: ["🏆", "💻"],
-  get_league_standings: "📋",
-  get_match_details: ["📺", "💻"],
+  get_league_standings: ["🏆", "📋"],
+  get_match_details: ["⚽", "📺"],
   get_head_to_head: "⚔️",
   search_teams: ["🏟️", "💻"],
   search_players: "🧑‍🤝‍🧑",
   get_team_squad: "👥",
   get_league_top_scorers: ["⭐", "💻"],
-  get_commodities: ["📦", "💻"],
-  get_trends: ["📈", "💻"],
-  search_products: ["🛒", "💻"],
-  get_trending_products: ["🔥", "💻"],
-  get_watchlist_availability: "📋",
+  get_commodities: ["📦", "📈"],
+  get_trends: ["📈", "🔍"],
+  search_products: ["🔍", "🛒"],
+  get_trending_products: ["🔥", "🛒"],
+  get_watchlist_availability: ["👁️", "📋"],
   check_sku_availability: ["✅", "💻"],
-  get_costco_us_products: "🏪",
-  get_costco_ca_products: "🏪",
-  search_amazon_products: ["🛒", "💻"],
+  get_costco_us_products: ["🏪", "🇺🇸"],
+  get_costco_ca_products: ["🏪", "🇨🇦"],
+  search_amazon_products: ["📦", "🛒"],
   get_stock: "💹",
   get_macro: ["🏛️", "💻"],
-  get_market_news: ["📰", "💻"],
+  get_market_news: ["💹", "📰"],
   get_earnings_calendar: "💰",
   get_historical_prices: "🕯️",
   get_technical_analysis: "📊",
   get_volatility: "🌊",
   get_fear_greed_index: "😰",
   get_sec_filings: "🏛️",
-  get_sector_performance: "🗺️",
+  get_sector_performance: ["📊", "🗺️"],
   search_books: ["📚", "💻"],
-  get_country: "🗺️",
+  get_country: ["🌐", "🗺️"],
   get_element: "⚛️",
   get_exoplanet: ["🪐", "💻"],
   get_anime: "🎌",
-  get_word_definition: "📖",
+  get_word_definition: ["📖", "🔤"],
   search_papers: ["🎓", "💻"],
   get_wikipedia_summary: "📘",
-  get_on_this_day: "📜",
-  list_development_indicators: ["📊", "💻"],
+  get_on_this_day: ["🕰️", "📜"],
+  list_development_indicators: ["📈", "🌐"],
   get_youtube_video: "▶️",
   read_url: "🌐",
-  get_package_info: ["📦", "💻"],
-  read_pdf_url: "📄",
+  get_package_info: ["📦", "ℹ️"],
   read_rss_feed: "📡",
-  get_pypi_package: ["🐍", "💻"],
+  get_pypi_package: ["🐍", "📦"],
   get_music: "🎵",
   get_wayback_snapshot: ["🕰️", "💻"],
-  search_reddit: ["🤖", "💻"],
-  search_reddit_subreddits: "🔍",
+  search_reddit: ["🤖", "💬"],
+  search_reddit_subreddits: ["🤖", "🔍"],
   get_reddit_subreddit_info: "ℹ️",
-  get_reddit_subreddit_feed: ["📰", "💻"],
-  get_reddit_subreddit_rules: ["⚖️", "💻"],
-  get_reddit_subreddit_wiki_pages: "📄",
-  get_reddit_subreddit_wiki_page: "📖",
-  get_reddit_user_history: "📜",
+  get_reddit_subreddit_feed: ["🤖", "📰"],
+  get_reddit_subreddit_rules: ["🤖", "⚖️"],
+  get_reddit_subreddit_wiki_pages: ["🤖", "📄"],
+  get_reddit_subreddit_wiki_page: ["🤖", "📖"],
+  get_reddit_user_history: ["🤖", "📜"],
   get_reddit_user_profile: "👤",
-  search_media: ["🎬", "💻"],
+  search_media: ["🎬", "🔍"],
   get_media_details: "🎥",
   get_media_credits: ["🌟", "💻"],
-  get_trending_media: ["🔥", "💻"],
+  get_trending_media: ["🔥", "🎬"],
   browse_media: ["🍿", "💻"],
-  get_media_genres: ["🎭", "💻"],
-  get_now_playing_media: ["🎬", "💻"],
-  get_media_recommendations: ["💡", "💻"],
+  get_media_genres: ["🎭", "🍿"],
+  get_now_playing_media: ["🎬", "🍿"],
+  get_media_recommendations: ["🍿", "💡"],
   search_person: ["🧑‍🎤", "💻"],
-  get_watch_providers: ["📺", "💻"],
+  get_watch_providers: ["📺", "ℹ️"],
   rank_foods_by_category: ["🥗", "💻"],
   search_drugs: "💊",
   get_drug_adverse_events: "⚕️",
   get_drug_recalls: "🚫",
   search_usda_nutrition: ["🍎", "💻"],
-  rank_foods_by_nutrient: ["📊", "💻"],
-  compare_food_nutrition: ["⚖️", "💻"],
-  get_food_categories: "🗂️",
+  rank_foods_by_nutrient: ["🥦", "📊"],
+  compare_food_nutrition: ["⚖️", "🍎"],
+  get_food_categories: ["🥗", "🗂️"],
   get_nutrient_types: ["🧬", "💻"],
-  list_category_nutrients: "📋",
-  search_foods_by_taxonomy: "🔍",
+  list_category_nutrients: ["🥗", "📋"],
+  search_foods_by_taxonomy: ["🌿", "🔍"],
   get_food_taxonomy: ["🌿", "💻"],
   get_nutritional_requirements: ["📏", "💻"],
   list_drug_dosage_forms: "💉",
   search_gym_exercises: "🏋️",
-  get_gym_exercise_categories: "🗂️",
+  get_gym_exercise_categories: ["🏋️", "🗂️"],
   get_gym_exercise_by_id: ["🎯", "💻"],
   calculate_caloric_needs: "🔢",
   analyze_nutrient_gaps: ["📉", "💻"],
-  search_food_substitutes: "🔄",
+  search_food_substitutes: ["🔄", "🍎"],
   estimate_exercise_calories: "🏃",
   calculate_hydration_needs: ["💧", "💻"],
   build_meal_plan: ["🍽️", "💻"],
-  check_drug_nutrient_interactions: ["⚠️", "💻"],
+  check_drug_nutrient_interactions: ["💊", "⚠️"],
   get_next_bus: ["🚌", "💻"],
   get_transit_stop_info: "🚏",
-  search_transit_stops_nearby: "📍",
-  get_transit_route_info: "🗺️",
+  search_transit_stops_nearby: ["🚌", "📍"],
+  get_transit_route_info: ["🚌", "🗺️"],
   search_airports: ["✈️", "💻"],
   evaluate_expression: "🧮",
   convert_currency: "💱",
   get_time_in_timezone: "🕐",
-  get_ip_info: ["🔎", "💻"],
-  search_nearby_places: "📍",
-  search_places: "🗺️",
-  generate_map: "🗺️",
-  generate_chart: ["📊", "💻"],
+  get_ip_info: ["🔎", "🌐"],
+  search_nearby_places: ["🔍", "📍"],
+  search_places: ["🔍", "🗺️"],
+  generate_map: ["🎨", "🗺️"],
+  generate_chart: ["📊", "📉"],
   get_public_webcams: ["📷", "💻"],
   execute_python: ["🐍", "💻"],
   execute_javascript: ["⚡", "💻"],
   execute_shell: "🖥️",
   convert_units: "📐",
-  parse_datetime: "📅",
-  transform_json: "🔧",
-  generate_csv: "📋",
-  generate_qr_code: ["📱", "💻"],
-  render_latex: "📐",
-  generate_diagram: ["📊", "💻"],
+  parse_datetime: ["📅", "⏰"],
+  transform_json: ["🔧", "💻"],
+  generate_csv: ["📋", "🔢"],
+  generate_qr_code: ["💻", "📱"],
+  render_latex: ["📐", "✍️"],
+  generate_diagram: ["📊", "🧩"],
   diff_text: "🔀",
   generate_hash: "🔐",
   test_regex: "🔣",
   convert_encoding: "🔁",
-  convert_color: ["🎨", "💻"],
-  manipulate_image: ["🖼️", "💻"],
+  convert_color: ["🎨", "🌈"],
+  manipulate_image: ["🖼️", "🎨"],
   convert_image_to_ascii: ["🎨", "💻"],
-  convert_video_to_gif: ["🎬", "💻"],
-  parse_cron_expression: ["⏰", "💻"],
+  convert_video_to_gif: ["🎬", "🔁"],
+  parse_cron_expression: ["⏰", "🔣"],
   draw_turtle: ["🐢", "💻"],
   create_3d_mesh: "🔺",
-  create_3d_scene: "🌐",
+  create_3d_scene: ["🌐", "🧱"],
   create_3d_model: ["🧊", "💻"],
-  create_3d_voxel: ["🧱", "💻"],
-  think: ["🧠", "💻"],
+  create_3d_voxel: ["🧱", "🧊"],
+  think: ["🧠", "💭"],
   sleep: "💤",
   emit_structured_output: "📝",
   get_dota: ["🎮", "💻"],
-  create_bonfire: ["🔥", "💻"],
-  search_torrents: "🔍",
+  create_bonfire: ["🔥", "🏕️"],
+  search_torrents: ["🧲", "🔍"],
   download_torrent: "⬇️",
-  get_torrent_status: ["📊", "💻"],
+  get_torrent_status: ["⬇️", "📊"],
   get_tracked_vessels: "🚢",
-  get_vessel_by_mmsi: "🚢",
+  get_vessel_by_mmsi: ["🚢", "🆔"],
   search_vessels: "⛵",
-  get_vessels_in_area: "🗺️",
-  get_ais_messages: "📡",
-  get_energy_indicators: ["⚡", "💻"],
-  get_energy_catalog: ["📊", "💻"],
+  get_vessels_in_area: ["🚢", "🗺️"],
+  get_ais_messages: ["📡", "💬"],
+  get_energy_indicators: ["⚡", "🔋"],
+  get_energy_catalog: ["⚡", "📊"],
   get_energy_facets: ["🔋", "💻"],
-  search_energy: ["📈", "💻"],
-  get_electricity_retail_sales: ["🔌", "💻"],
+  search_energy: ["⚡", "🔍"],
+  get_electricity_retail_sales: ["🔌", "⚡"],
   get_petroleum_prices: "🛢️",
-  get_natural_gas_prices: ["🔥", "💻"],
+  get_natural_gas_prices: ["🔥", "💰"],
   read_file: "📄",
   write_file: ["✏️", "💻"],
-  replace_in_file: "🔧",
-  replace_file_block: ["🧱", "💻"],
-  replace_file_regions: ["🧱", "💻"],
+  replace_in_file: ["🔧", "📄"],
+  replace_file_block: ["🧱", "📄"],
+  replace_file_regions: ["🩹", "📄"],
   patch_file: "🩹",
   read_files: "📑",
-  get_file_info: "📄",
-  diff_files: "🔀",
+  get_file_info: ["📄", "ℹ️"],
+  diff_files: ["🔀", "📄"],
   move_file: "📂",
-  delete_file: ["🗑️", "💻"],
+  delete_file: ["💻", "🗑️"],
   edit_notebook: "📓",
   list_directory: "📁",
-  search_file_contents: "🔍",
-  find_files: ["🔎", "💻"],
+  search_file_contents: ["📄", "🔍"],
+  find_files: ["💻", "🔎"],
   summarize_project: "📋",
-  read_web_page: "🌐",
-  read_pdf: "📄",
-  read_docx: "📝",
-  read_spreadsheet: ["📊", "💻"],
-  search_web: "🔍",
-  execute_command: "▶️",
-  run_git: ["📦", "💻"],
-  control_browser: "🌐",
-  execute_browser_script: "📜",
+  read_web_page: ["🌐", "📄"],
+  read_pdf: ["📄", "📕"],
+  read_docx: ["📝", "📄"],
+  read_spreadsheet: ["📄", "📊"],
+  search_web: ["🌐", "🔍"],
+  execute_command: ["▶️", "🖥️"],
+  run_git: ["📦", "🔀"],
+  control_browser: ["🌐", "🖱️"],
+  execute_browser_script: ["🌐", "📜"],
   query_language_server: ["🧩", "💻"],
   create_task: "➕",
-  get_task: "📋",
-  list_tasks: "📝",
-  update_task: ["✏️", "💻"],
-  upsert_memory: ["🧠", "💻"],
-  create_custom_agent: ["🤖", "💻"],
-  list_custom_agents: "📋",
-  update_custom_agent: ["✏️", "💻"],
-  search_tools: "🔍",
+  get_task: ["📋", "📌"],
+  list_tasks: ["📝", "📋"],
+  update_task: ["✏️", "📋"],
+  upsert_memory: ["💻", "🧠"],
+  create_custom_agent: ["💻", "🤖"],
+  list_custom_agents: ["🤖", "📋"],
+  update_custom_agent: ["✏️", "🤖"],
+  search_tools: ["🛠️", "🔍"],
   create_cron: ["⏰", "💻"],
-  remote_trigger: "📡",
+  remote_trigger: ["📡", "🚀"],
   create_cron_job: "🗓️",
-  list_cron_jobs: "📋",
-  delete_cron_job: ["🗑️", "💻"],
-  trigger_cron_job: ["🚀", "💻"],
+  list_cron_jobs: ["⏰", "📋"],
+  delete_cron_job: ["⏰", "🗑️"],
+  trigger_cron_job: ["💻", "🚀"],
   send_sms: ["💬", "💻"],
   list_sms_messages: "📨",
-  get_sms_account: ["📱", "💻"],
+  get_sms_account: ["📱", "💬"],
   lookup_phone_number: "📞",
   list_phone_numbers: "📲",
   get_emoji_combination: ["🍳", "💻"],
   get_emoji_combinations: "🧑‍🍳",
-  generate_image: ["🖼️", "💻"],
+  generate_image: ["💻", "🖼️"],
   describe_image: ["👁️", "💻"],
   synthesize_speech: "🔊",
   synthesize_speech_local: ["🗣️", "💻"],
-  generate_audio: "🔊",
-  create_vector_animation: ["🎬", "💻"],
+  generate_audio: ["🔊", "🎵"],
+  create_vector_animation: ["🎬", "🎨"],
   transcribe_audio: ["🎤", "💻"],
-  search_discord_messages: "🔍",
-  get_discord_message_analytics: ["📊", "💻"],
-  get_discord_server_activity: ["📈", "💻"],
-  get_discord_guild_channels: "📁",
-  get_discord_guild_members: "👥",
-  get_discord_guild_emojis: ["😀", "💻"],
-  get_bot_stats: ["🤖", "💻"],
-  get_bot_guilds: "🌐",
-  get_bot_activity_timeline: ["📈", "💻"],
-  get_discord_user_heatmap_data: ["🔥", "💻"],
-  get_discord_mention_leaderboard: ["💬", "💻"],
-  get_discord_message_leaderboard: ["📊", "💻"],
-  get_discord_word_frequencies: ["🗣️", "💻"],
-  react_to_discord_message: ["🎭", "💻"],
-  get_discord_voice_channel_members: "🔊",
-  get_discord_user_profile: "👤",
-  get_discord_channel_activity_stats: ["📊", "💻"],
-  list_lights: ["💡", "💻"],
+  search_discord_messages: ["💬", "🔍"],
+  get_discord_message_analytics: ["💬", "📊"],
+  get_discord_server_activity: ["💬", "📈"],
+  get_discord_guild_channels: ["📁", "💬"],
+  get_discord_guild_members: ["👥", "💬"],
+  get_discord_guild_emojis: ["💻", "😀"],
+  get_bot_stats: ["🤖", "📊"],
+  get_bot_guilds: ["🌐", "🤖"],
+  get_bot_activity_timeline: ["🤖", "📈"],
+  get_discord_user_heatmap_data: ["🔥", "📊"],
+  get_discord_mention_leaderboard: ["💬", "🏆"],
+  get_discord_message_leaderboard: ["🏆", "📊"],
+  get_discord_word_frequencies: ["🗣️", "📊"],
+  react_to_discord_message: ["🎭", "💬"],
+  get_discord_voice_channel_members: ["🔊", "👥"],
+  get_discord_user_profile: ["👤", "💬"],
+  get_discord_channel_activity_stats: ["📁", "📊"],
+  list_lights: ["💡", "📋"],
   set_light_state: "🎚️",
-  toggle_light_power: ["🔌", "💻"],
+  toggle_light_power: ["🔌", "💡"],
   start_light_breathe_effect: ["🌬️", "💻"],
   start_light_pulse_effect: ["💥", "💻"],
-  start_light_move_effect: "🔄",
-  start_light_flame_effect: ["🔥", "💻"],
+  start_light_move_effect: ["🔄", "💡"],
+  start_light_flame_effect: ["🔥", "💡"],
   start_light_morph_effect: ["🌈", "💻"],
-  set_light_states: ["💡", "💻"],
-  adjust_light_state: ["📊", "💻"],
+  set_light_states: ["💡", "⚙️"],
+  adjust_light_state: ["💡", "📊"],
   stop_light_effects: "⏹️",
-  list_light_scenes: ["🎬", "💻"],
-  activate_light_scene: "▶️",
-  enable_light_night_lock: "🌙",
+  list_light_scenes: ["🎬", "💡"],
+  activate_light_scene: ["▶️", "💡"],
+  enable_light_night_lock: ["🔒", "💡"],
   get_light_health: ["❤️", "💻"],
+
+  // Network Intelligence
+  dns_lookup: ["🌐", "🔎"],
+  whois_lookup: ["🌐", "📋"],
+  ssl_certificate_check: ["🔒", "🌐"],
+  port_scan: ["🔌", "🔍"],
+  http_headers: ["📡", "🔎"],
+  ping_host: ["📶", "🌐"],
+
+  // Security
+  check_breach: ["🔓", "🔍"],
+
+  // Communication (new tools)
+  send_push_notification: ["🔔", "📱"],
+  send_webhook: ["🪝", "🌐"],
+
+  // Calendar
+  get_calendar_events: ["📅", "🔎"],
+  create_calendar_event: ["📅", "➕"],
+  get_free_busy: ["📅", "⏰"],
+
+  // Trends (new tool)
+  get_github_trending: ["🔥", "💻"],
+
+  // Compute (new tools)
+  analyze_csv: ["📊", "🔢"],
+  compare_json: ["🔀", "📋"],
+  validate_json_schema: ["✅", "📋"],
+
+  // Knowledge (new tools)
+  get_stackoverflow_questions: ["💬", "📚"],
+  search_patents: ["📜", "🔍"],
+
+  // Weather & Environment (new tool)
+  get_satellite_imagery: ["🛰️", "🌍"],
+
+  // Transit (new tool)
+  get_flight_status: ["✈️", "📍"],
 };
 
 // ────────────────────────────────────────────────────────────
@@ -12599,6 +13308,17 @@ const TOOL_REQUIRED_KEYS = {
   get_reddit_subreddit_wiki_page: ["REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET"],
   get_reddit_user_history: ["REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET"],
   get_reddit_user_profile: ["REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET"],
+
+  // Calendar (Google Calendar API)
+  get_calendar_events: ["GOOGLE_CALENDAR_CREDENTIALS"],
+  create_calendar_event: ["GOOGLE_CALENDAR_CREDENTIALS"],
+  get_free_busy: ["GOOGLE_CALENDAR_CREDENTIALS"],
+
+  // Satellite Imagery (NASA)
+  get_satellite_imagery: ["NASA_API_KEY"],
+
+  // Flight Status (AviationStack)
+  get_flight_status: ["AVIATIONSTACK_API_KEY"],
 };
 
 // ────────────────────────────────────────────────────────────

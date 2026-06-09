@@ -12,12 +12,13 @@ const FETCH_TIMEOUT_MS = 30_000;
 export interface PdfOptions {
   maxPages?: number | string;
   maxChars?: number | string;
+  pages?: number[];
+  startPage?: number | string;
+  endPage?: number | string;
 }
 
 /**
  * Download a PDF from a URL and extract its text content.
-
-
  */
 export async function readPdfUrl(url: string, options: PdfOptions = {}) {
   if (!url || typeof url !== "string") {
@@ -90,10 +91,23 @@ export async function readPdfUrl(url: string, options: PdfOptions = {}) {
 
     const info = await parser.getInfo();
 
-    // Build text extraction params
-    const textParams: Record<string, unknown> = {};
-    if (options.maxPages) {
-      textParams.last = parseInt(String(options.maxPages), 10);
+    // Build text extraction params — enable hyperlink detection by default
+    const textParams: Record<string, unknown> = {
+      parseHyperlinks: true,
+    };
+
+    // Specific pages take priority over first-N / range
+    if (Array.isArray(options.pages) && options.pages.length > 0) {
+      textParams.partial = options.pages;
+    } else if (options.startPage || options.endPage) {
+      // Explicit page range: first..last (inclusive)
+      const start = options.startPage ? parseInt(String(options.startPage), 10) : 1;
+      const end = options.endPage ? parseInt(String(options.endPage), 10) : (info.numPages || 999999);
+      textParams.first = start;
+      textParams.last = end;
+    } else if (options.maxPages) {
+      // Extract the first N pages (not the last N — the previous implementation was wrong)
+      textParams.first = parseInt(String(options.maxPages), 10);
     }
 
     const textResult = await parser.getText(textParams);
@@ -105,8 +119,8 @@ export async function readPdfUrl(url: string, options: PdfOptions = {}) {
     const charsLimit = options.maxChars
       ? parseInt(String(options.maxChars), 10)
       : MAX_TEXT_CHARS;
-    const truncated = charCount > charsLimit;
-    if (truncated) {
+    const isTruncated = charCount > charsLimit;
+    if (isTruncated) {
       text = text.slice(0, charsLimit) + "\n\n... [truncated]";
     }
 
@@ -123,7 +137,7 @@ export async function readPdfUrl(url: string, options: PdfOptions = {}) {
       },
       text,
       charCount,
-      truncated,
+      truncated: isTruncated,
     };
   } catch (error: unknown) {
     if (error instanceof Error && error.name === "AbortError") {

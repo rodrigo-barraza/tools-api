@@ -85,7 +85,7 @@ import {
 } from "../fetchers/web/RedditSubredditFetcher.ts";
 import { getNpmPackage } from "../fetchers/web/NpmFetcher.ts";
 import { getPyPiPackage } from "../fetchers/web/PyPiFetcher.ts";
-import { readPdfUrl } from "../fetchers/web/PdfFetcher.ts";
+
 import { readRssFeed } from "../fetchers/web/RssFetcher.ts";
 import { getTwitterPost } from "../fetchers/web/TwitterFetcher.ts";
 import { getHackerNewsThread } from "../fetchers/web/HackerNewsFetcher.ts";
@@ -847,23 +847,7 @@ router.get(
     "PyPI lookup",
   ),
 );
-// ─── PDF ───────────────────────────────────────────────────────────
-router.get(
-  "/pdf/read",
-  asyncHandler(async (req: Request, res: Response) => {
-    const { url, maxPages } = req.query as Record<string, string | undefined>;
-    if (!url) {
-      return res.status(400).json({
-        error: "Query parameter 'url' is required (URL to a PDF file)",
-      });
-    }
-    const result = await readPdfUrl(url, { maxPages });
-    if (result.error) {
-      return res.status(400).json(result);
-    }
-    res.json(result);
-  }),
-);
+
 // ─── RSS ───────────────────────────────────────────────────────────
 router.get(
   "/rss/feed",
@@ -1121,7 +1105,7 @@ export function getKnowledgeHealth() {
       "on-demand (.json API + OAuth2: user history, search, subreddit discovery/feed/wiki/rules)",
     npm: "on-demand (NPM Registry)",
     pypi: "on-demand (PyPI JSON API)",
-    pdf: "on-demand (pdf-parse)",
+
     rss: "on-demand (xml2js)",
     twitter: "on-demand (fxtwitter + oembed)",
     hackerNews: "on-demand (Firebase API)",
@@ -1677,6 +1661,56 @@ router.get(
           actions: ["snapshot", "history"],
         });
     }
+  }),
+);
+// ─── Stack Overflow Questions Search ───────────────────────────────
+import { searchStackOverflowQuestions } from "../fetchers/web/StackOverflowFetcher.ts";
+
+router.get(
+  "/stackoverflow/questions",
+  asyncHandler(async (req: Request, res: Response) => {
+    const {
+      q: query,
+      tagged,
+      sort,
+      order,
+      limit,
+    } = req.query as Record<string, string | undefined>;
+    if (!query) {
+      return res.status(400).json({ error: "Query parameter 'q' is required" });
+    }
+    res.json(
+      await searchStackOverflowQuestions(query, {
+        tagged,
+        sort: sort as "activity" | "votes" | "creation" | "hot" | "week" | "month" | undefined,
+        order: order as "asc" | "desc" | undefined,
+        limit: limit ? parseInt(limit, 10) : undefined,
+      }),
+    );
+  }),
+);
+// ─── Patent Search (USPTO) ─────────────────────────────────────────
+import { searchPatents } from "../fetchers/knowledge/PatentFetcher.ts";
+
+router.get(
+  "/patents/search",
+  asyncHandler(async (req: Request, res: Response) => {
+    const {
+      q: query,
+      inventor,
+      assignee,
+      limit,
+    } = req.query as Record<string, string | undefined>;
+    if (!query) {
+      return res.status(400).json({ error: "Query parameter 'q' is required" });
+    }
+    res.json(
+      await searchPatents(query, {
+        inventor,
+        assignee,
+        limit: limit ? parseInt(limit, 10) : undefined,
+      }),
+    );
   }),
 );
 export default router;

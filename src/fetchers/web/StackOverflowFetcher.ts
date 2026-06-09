@@ -210,3 +210,121 @@ export async function getStackOverflowQuestion(
     return { error: `Stack Overflow fetch failed: ${errorMessage(error)}` };
   }
 }
+
+// ─── Search Questions by Tags / Keywords ──────────────────────────
+
+interface StackOverflowSearchOptions {
+  tagged?: string;
+  sort?: "activity" | "votes" | "creation" | "hot" | "week" | "month";
+  order?: "asc" | "desc";
+  limit?: number;
+  site?: string;
+}
+
+interface StackOverflowQuestionSummary {
+  questionId: number;
+  title: string;
+  tags: string[];
+  score: number;
+  viewCount: number;
+  answerCount: number;
+  isAnswered: boolean;
+  accepted: boolean;
+  author: string | null;
+  authorReputation: number | null;
+  createdAt: string | null;
+  lastActivityAt: string | null;
+  url: string;
+}
+
+export async function searchStackOverflowQuestions(
+  query: string,
+  options: StackOverflowSearchOptions = {},
+): Promise<{
+  query: string;
+  count: number;
+  questions: StackOverflowQuestionSummary[];
+  quotaRemaining?: number;
+}> {
+  const site = options.site || "stackoverflow";
+  const sort = options.sort || "relevance";
+  const order = options.order || "desc";
+  const limit = Math.min(options.limit || 10, 30);
+
+  const queryParams = new URLSearchParams({
+    site,
+    order,
+    sort,
+    pagesize: String(limit),
+    filter: "default",
+    intitle: query,
+  });
+
+  if (options.tagged) {
+    queryParams.set("tagged", options.tagged);
+  }
+
+  try {
+    const response = await fetch(
+      `${SE_API}/search/advanced?${queryParams}`,
+      { signal: AbortSignal.timeout(10_000) },
+    );
+
+    if (!response.ok) {
+      return { query, count: 0, questions: [] };
+    }
+
+    const responseData = (await response.json()) as {
+      items: Array<{
+        question_id: number;
+        title: string;
+        tags: string[];
+        score: number;
+        view_count: number;
+        answer_count: number;
+        is_answered: boolean;
+        accepted_answer_id?: number;
+        owner?: { display_name?: string; reputation?: number };
+        creation_date?: number;
+        last_activity_date?: number;
+        link: string;
+      }>;
+      quota_remaining?: number;
+    };
+
+    const questions: StackOverflowQuestionSummary[] = (
+      responseData.items || []
+    ).map((item) => ({
+      questionId: item.question_id,
+      title: item.title,
+      tags: item.tags || [],
+      score: item.score || 0,
+      viewCount: item.view_count || 0,
+      answerCount: item.answer_count || 0,
+      isAnswered: item.is_answered || false,
+      accepted: !!item.accepted_answer_id,
+      author: item.owner?.display_name || null,
+      authorReputation: item.owner?.reputation || null,
+      createdAt: item.creation_date
+        ? new Date(item.creation_date * 1000).toISOString()
+        : null,
+      lastActivityAt: item.last_activity_date
+        ? new Date(item.last_activity_date * 1000).toISOString()
+        : null,
+      url: item.link,
+    }));
+
+    return {
+      query,
+      count: questions.length,
+      questions,
+      quotaRemaining: responseData.quota_remaining,
+    };
+  } catch (error: unknown) {
+    return {
+      query,
+      count: 0,
+      questions: [],
+    };
+  }
+}

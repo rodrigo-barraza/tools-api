@@ -23,6 +23,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@rodrigo-barraza/utilities-library": "github:rodrigo-barraza/utilities-library",
+    "ajv": "^8.20.0",
     "bignumber.js": "^10.0.2",
     "chart.js": "^4.5.1",
     "chartjs-node-canvas": "^5.0.0",
@@ -50,6 +51,7 @@
     "vscode-jsonrpc": "^8.2.1",
     "vscode-languageserver-protocol": "^3.17.5",
     "vscode-languageserver-types": "^3.17.5",
+    "whoiser": "^2.0.0-beta.10",
     "ws": "^8.20.0",
     "xml2js": "^0.6.2",
     "yahoo-finance2": "^3.14.0",

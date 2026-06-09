@@ -117,6 +117,19 @@ interface ToolsServiceConfig {
 
   // Lupos Bot API URL
   LUPOS_BOT_URL: string | undefined;
+
+  // Security (HIBP)
+  HIBP_API_KEY: string | undefined;
+
+  // Calendar (Google)
+  GOOGLE_CALENDAR_CREDENTIALS: string | undefined;
+
+  // Notifications (ntfy.sh)
+  NTFY_BASE_URL: string | undefined;
+  NTFY_TOKEN: string | undefined;
+
+  // Flights (AviationStack)
+  AVIATIONSTACK_API_KEY: string | undefined;
 }
 
 const CONFIG: ToolsServiceConfig = {
@@ -212,6 +225,19 @@ const CONFIG: ToolsServiceConfig = {
 
   // ─── Lupos Bot API ──────────────────────────────────────────────
   LUPOS_BOT_URL: process.env.LUPOS_BOT_URL || "http://localhost:1337",
+
+  // ─── Security (HIBP Breach Check) ───────────────────────────────
+  HIBP_API_KEY: process.env.HIBP_API_KEY,
+
+  // ─── Calendar (Google Calendar API) ─────────────────────────────
+  GOOGLE_CALENDAR_CREDENTIALS: process.env.GOOGLE_CALENDAR_CREDENTIALS,
+
+  // ─── Notifications (ntfy.sh) ────────────────────────────────────
+  NTFY_BASE_URL: process.env.NTFY_BASE_URL,
+  NTFY_TOKEN: process.env.NTFY_TOKEN,
+
+  // ─── Flights (AviationStack) ────────────────────────────────────
+  AVIATIONSTACK_API_KEY: process.env.AVIATIONSTACK_API_KEY,
 };
 
 /**

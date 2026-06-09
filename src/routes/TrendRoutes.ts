@@ -108,4 +108,51 @@ router.get(
     }
   }),
 );
+// ─── GitHub Trending ───────────────────────────────────────────────
+import { fetchGitHubTrending } from "../fetchers/trend/GitHubTrendingFetcher.ts";
+
+router.get(
+  "/github/trending",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { language, since, limit: rawLimit } = req.query as Record<
+      string,
+      string | undefined
+    >;
+    const limit = rawLimit ? parseIntParam(rawLimit, 25) : 25;
+    // Try cache first, fall back to live scrape
+    const cachedData = getBySource("github");
+    if (cachedData && Array.isArray(cachedData.trends) && cachedData.trends.length > 0) {
+      let filteredTrends = cachedData.trends;
+      if (language) {
+        filteredTrends = filteredTrends.filter(
+          (trend) =>
+            (trend as unknown as { context?: { language?: string } }).context?.language
+              ?.toLowerCase() === language.toLowerCase(),
+        );
+      }
+      return res.json({
+        source: "cache",
+        since: since || "daily",
+        count: Math.min(filteredTrends.length, limit),
+        repos: filteredTrends.slice(0, limit),
+      });
+    }
+    // Live scrape fallback
+    const repos = await fetchGitHubTrending();
+    let filteredRepos = repos;
+    if (language) {
+      filteredRepos = filteredRepos.filter(
+        (repo) =>
+          (repo as { context?: { language?: string } }).context?.language
+            ?.toLowerCase() === language.toLowerCase(),
+      );
+    }
+    res.json({
+      source: "live",
+      since: since || "daily",
+      count: Math.min(filteredRepos.length, limit),
+      repos: filteredRepos.slice(0, limit),
+    });
+  }),
+);
 export default router;

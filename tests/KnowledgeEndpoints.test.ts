@@ -342,13 +342,6 @@ describe("GET /knowledge/package/info (validation)", () => {
   });
 });
 
-describe("GET /knowledge/pdf/read (validation)", () => {
-  it("returns 400 when url is missing", async () => {
-    const res = await request(app).get("/knowledge/pdf/read");
-    expect(res.status).toBe(400);
-    expect(res.body.error).toBeTruthy();
-  });
-});
 
 describe("GET /knowledge/rss/feed (validation)", () => {
   it("returns 400 when url is missing", async () => {
