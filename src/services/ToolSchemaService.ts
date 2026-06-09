@@ -11888,6 +11888,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "(MX), checking domain ownership (TXT/SPF), and mapping hostnames to IPs.",
     endpoint: {
       path: "/utility/dns/:hostname",
+      pathParams: ["hostname"],
       queryParams: ["type"],
     },
     parameters: {
@@ -11915,6 +11916,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "expiry monitoring, and ownership verification.",
     endpoint: {
       path: "/utility/whois/:domain",
+      pathParams: ["domain"],
     },
     parameters: {
       type: "object",
@@ -11936,6 +11938,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "Flags expired and soon-to-expire certificates.",
     endpoint: {
       path: "/utility/ssl/:hostname",
+      pathParams: ["hostname"],
       queryParams: ["port"],
     },
     parameters: {
@@ -11962,6 +11965,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "and scan duration. Max 50 ports per scan.",
     endpoint: {
       path: "/utility/ports/:host",
+      pathParams: ["host"],
       queryParams: ["ports"],
     },
     parameters: {
@@ -11974,8 +11978,8 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         ports: {
           type: "string",
           description:
-            "Comma-separated port numbers to scan (e.g. '80,443,8080'). " +
-            "Omit to scan common ports (21-27017).",
+              "Comma-separated port numbers to scan (e.g. '80,443,8080'). " +
+              "Omit to scan common ports (21-27017).",
         },
       },
       required: ["host"],
@@ -12012,6 +12016,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "and measuring response time.",
     endpoint: {
       path: "/utility/ping/:host",
+      pathParams: ["host"],
       queryParams: ["count"],
     },
     parameters: {

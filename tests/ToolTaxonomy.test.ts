@@ -114,6 +114,32 @@ describe("Tool Schema — parameter validation", () => {
       }
     }
   });
+
+  it("endpoints with dynamic path parameters define and map all pathParams in schema properties", () => {
+    for (const schema of TOOL_DEFINITIONS) {
+      if (schema.endpoint && schema.endpoint.path) {
+        const path = schema.endpoint.path;
+        const matches = path.match(/:[a-zA-Z0-9_]+/g);
+        if (matches && matches.length > 0) {
+          const expectedParams = matches.map((m) => m.slice(1));
+          const pathParams = schema.endpoint.pathParams || [];
+          for (const param of expectedParams) {
+            expect(
+              pathParams.includes(param),
+              `Tool "${schema.name}" is missing pathParam "${param}" in endpoint config`,
+            ).toBe(true);
+          }
+          const props = Object.keys(schema.parameters?.properties || {});
+          for (const param of pathParams) {
+            expect(
+              props.includes(param),
+              `Tool "${schema.name}" endpoint pathParam "${param}" is not defined in parameters properties`,
+            ).toBe(true);
+          }
+        }
+      }
+    }
+  });
 });
 
 // ── ToolTaxonomyConstants Consistency ────────────────────────
