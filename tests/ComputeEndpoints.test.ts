@@ -18,6 +18,18 @@ vi.mock("../src/models/ThreeDimensionalScene.ts", () => ({
   setupThreeDimensionalSceneCollection: vi.fn(),
 }));
 
+const mockTurtleDrawings = new Map();
+
+vi.mock("../src/models/TurtleDrawing.ts", () => ({
+  saveTurtleDrawing: vi.fn(async (drawingId, commands, options, sessionId, createdBy) => {
+    mockTurtleDrawings.set(drawingId, { commands, options, sessionId, createdBy });
+  }),
+  getTurtleDrawing: vi.fn(async (drawingId) => {
+    return mockTurtleDrawings.get(drawingId) || null;
+  }),
+  setupTurtleDrawingCollection: vi.fn(),
+}));
+
 const app = createTestApp("/compute", computeRoutes);
 
 // A simple 1x1 black pixel PNG data URI for lightweight test execution
@@ -489,6 +501,83 @@ describe("POST /compute/3d/voxel", () => {
     expect(secondResponse.body.voxelCount).toBe(1);
     expect(secondResponse.body.totalVoxels).toBe(2); // 1 from first + 1 from box center voxel rasterized
     expect(secondResponse.body.isAppend).toBe(true);
+  });
+});
+
+describe("POST /compute/turtle", () => {
+  it("successfully starts a new turtle drawing session using commands array", async () => {
+    const postResponse = await request(app)
+      .post("/compute/turtle")
+      .send({
+        commands: [
+          { action: "fd", value: 100 },
+          { action: "rt", value: 90 },
+        ],
+      });
+
+    expect(postResponse.status).toBe(200);
+    expect(postResponse.body.turtleEmbedUrl).toBeTruthy();
+    expect(postResponse.body.sessionId).toBeTruthy();
+    expect(postResponse.body.commandCount).toBe(2);
+    expect(postResponse.body.totalCommands).toBe(2);
+  });
+
+  it("successfully parses a LOGO script and executes commands", async () => {
+    const postResponse = await request(app)
+      .post("/compute/turtle")
+      .send({
+        script: "fd 50\nrt 45\ncolor red\ngoto 10 -20\nwrite 'Hello' 12",
+      });
+
+    expect(postResponse.status).toBe(200);
+    expect(postResponse.body.turtleEmbedUrl).toBeTruthy();
+    const sessionId = postResponse.body.sessionId;
+    expect(sessionId).toBeTruthy();
+    expect(postResponse.body.commandCount).toBe(5);
+
+    // Retrieve saved drawing to verify script commands were correctly parsed and stored
+    const savedDrawing = mockTurtleDrawings.get(postResponse.body.turtleId);
+    expect(savedDrawing).toBeTruthy();
+    expect(savedDrawing.commands).toEqual([
+      { action: "fd", value: "50" },
+      { action: "rt", value: "45" },
+      { action: "color", color: "red", value: "red" },
+      { action: "goto", x: 10, y: -20 },
+      { action: "write", text: "Hello", value: "Hello", fontSize: 12 },
+    ]);
+  });
+
+  it("successfully appends script commands to an existing session", async () => {
+    const firstResponse = await request(app)
+      .post("/compute/turtle")
+      .send({
+        script: "fd 100",
+      });
+
+    expect(firstResponse.status).toBe(200);
+    const sessionId = firstResponse.body.sessionId;
+
+    const secondResponse = await request(app)
+      .post("/compute/turtle")
+      .send({
+        sessionId,
+        script: "rt 90\nbk 50",
+      });
+
+    expect(secondResponse.status).toBe(200);
+    expect(secondResponse.body.sessionId).toBe(sessionId);
+    expect(secondResponse.body.commandCount).toBe(2);
+    expect(secondResponse.body.totalCommands).toBe(3);
+    expect(secondResponse.body.isAppend).toBe(true);
+  });
+
+  it("returns 400 when both commands and script are empty or missing", async () => {
+    const postResponse = await request(app)
+      .post("/compute/turtle")
+      .send({});
+
+    expect(postResponse.status).toBe(400);
+    expect(postResponse.body.error).toContain("Either 'commands' (non-empty array) or 'script' (non-empty string)");
   });
 });
 

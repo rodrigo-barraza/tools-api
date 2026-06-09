@@ -1797,17 +1797,108 @@ function cleanupTurtleSessions() {
       turtleSessions.delete(id);
   }
 }
+function parseTurtleScript(script: string): any[] {
+  const commandsList: any[] = [];
+  const scriptLines = script.split(/[\n;]/);
+
+  for (const rawLine of scriptLines) {
+    const trimmedLine = rawLine.trim();
+    if (!trimmedLine || trimmedLine.startsWith("#") || trimmedLine.startsWith("//")) {
+      continue;
+    }
+
+    const commandTokens: string[] = [];
+    const tokenRegex = /[^\s"']+|"([^"]*)"|'([^']*)'/g;
+    let regexMatch;
+    while ((regexMatch = tokenRegex.exec(trimmedLine)) !== null) {
+      commandTokens.push(regexMatch[1] || regexMatch[2] || regexMatch[0]);
+    }
+
+    if (commandTokens.length === 0) {
+      continue;
+    }
+
+    const actionName = commandTokens[0].toLowerCase();
+    const argumentsList = commandTokens.slice(1);
+
+    const commandObject: any = { action: actionName };
+
+    switch (actionName) {
+      case "goto":
+      case "setposition":
+      case "setpos":
+        if (argumentsList.length >= 2) {
+          commandObject.x = Number(argumentsList[0]);
+          commandObject.y = Number(argumentsList[1]);
+        } else if (argumentsList.length === 1) {
+          commandObject.value = argumentsList[0];
+        }
+        break;
+
+      case "arc":
+        if (argumentsList.length >= 1) {
+          commandObject.value = argumentsList[0];
+        }
+        if (argumentsList.length >= 2) {
+          commandObject.value2 = argumentsList[1];
+        }
+        break;
+
+      case "color":
+      case "pencolor":
+      case "fillcolor":
+        if (argumentsList.length >= 1) {
+          commandObject.color = argumentsList[0];
+          commandObject.value = argumentsList[0];
+        }
+        break;
+
+      case "label":
+      case "write":
+        if (argumentsList.length >= 1) {
+          commandObject.text = argumentsList[0];
+          commandObject.value = argumentsList[0];
+        }
+        if (argumentsList.length >= 2) {
+          commandObject.fontSize = Number(argumentsList[1]);
+        }
+        break;
+
+      default:
+        if (argumentsList.length >= 1) {
+          commandObject.value = argumentsList[0];
+        }
+        break;
+    }
+
+    commandsList.push(commandObject);
+  }
+
+  return commandsList;
+}
 router.post("/turtle", asyncHandler(async (req: Request, res: Response) => {
-  const { commands, options, sessionId } = req.body;
-  if (!commands || !Array.isArray(commands) || commands.length === 0) {
+  const { commands, script, options, sessionId } = req.body;
+  
+  let commandsList = commands;
+  if (script && typeof script === "string") {
+    const parsedCommands = parseTurtleScript(script);
+    if (Array.isArray(commandsList)) {
+      commandsList = [...commandsList, ...parsedCommands];
+    } else {
+      commandsList = parsedCommands;
+    }
+  }
+
+  if (!commandsList || !Array.isArray(commandsList) || commandsList.length === 0) {
     return res.status(400).json({
       error:
-        "'commands' is required (non-empty array of turtle command objects)",
+        "Either 'commands' (non-empty array) or 'script' (non-empty string) must be provided.",
     });
   }
+
   // Validate commands
-  for (let i = 0; i < commands.length; i++) {
-    const cmd = commands[i];
+  for (let i = 0; i < commandsList.length; i++) {
+    const cmd = commandsList[i];
     const action = cmd.action || cmd.command || cmd.cmd;
     if (!action) {
       return res.status(400).json({
@@ -1824,10 +1915,10 @@ router.post("/turtle", asyncHandler(async (req: Request, res: Response) => {
   // ── Session mode: append to existing drawing ──
   if (sessionId && turtleSessions.has(sessionId)) {
     const session = turtleSessions.get(sessionId);
-    const totalCommands = session.commands.length + commands.length;
+    const totalCommands = session.commands.length + commandsList.length;
     if (totalCommands > 5000) {
       return res.status(400).json({
-        error: `Maximum 5,000 total commands per session (current: ${session.commands.length}, adding: ${commands.length})`,
+        error: `Maximum 5,000 total commands per session (current: ${session.commands.length}, adding: ${commandsList.length})`,
       });
     }
     // Merge options (new options override existing)
@@ -1846,7 +1937,7 @@ router.post("/turtle", asyncHandler(async (req: Request, res: Response) => {
         );
       if (options.title) session.options.title = options.title;
     }
-    session.commands.push(...commands);
+    session.commands.push(...commandsList);
     session.updatedAt = Date.now();
     // Persist full accumulated drawing to MongoDB
     const embedId = crypto.randomUUID().slice(0, 12);
@@ -1857,14 +1948,14 @@ router.post("/turtle", asyncHandler(async (req: Request, res: Response) => {
     return res.json({
       turtleEmbedUrl,
       sessionId,
-      commandCount: commands.length,
+      commandCount: commandsList.length,
       totalCommands: session.commands.length,
       canvasSize: `${session.options.canvasWidth}x${session.options.canvasHeight}`,
       isAppend: true,
     });
   }
   // ── New session ──
-  if (commands.length > 5000) {
+  if (commandsList.length > 5000) {
     return res.status(400).json({
       error: "Maximum 5,000 commands per drawing",
     });
@@ -1880,21 +1971,21 @@ router.post("/turtle", asyncHandler(async (req: Request, res: Response) => {
   // Create new session
   const newSessionId = sessionId || crypto.randomUUID().slice(0, 12);
   turtleSessions.set(newSessionId, {
-    commands: [...commands],
+    commands: [...commandsList],
     options: { ...turtleOptions },
     updatedAt: Date.now(),
   });
   cleanupTurtleSessions();
   // Persist to MongoDB
   const embedId = crypto.randomUUID().slice(0, 12);
-  await saveTurtleDrawing(embedId, commands, turtleOptions, newSessionId, callerUsername);
+  await saveTurtleDrawing(embedId, commandsList, turtleOptions, newSessionId, callerUsername);
   const turtleEmbedUrl = buildLocalUrl("compute/turtle/embed", { id: embedId });
   res.json({
     turtleEmbedUrl,
     sessionId: newSessionId,
     turtleId: embedId,
-    commandCount: commands.length,
-    totalCommands: commands.length,
+    commandCount: commandsList.length,
+    totalCommands: commandsList.length,
     canvasSize: `${turtleOptions.canvasWidth}x${turtleOptions.canvasHeight}`,
   });
 }));

@@ -5601,7 +5601,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     endpoint: {
       method: "POST",
       path: "/compute/turtle",
-      bodyParams: ["commands", "options", "sessionId"],
+      bodyParams: ["commands", "script", "options", "sessionId"],
     },
     parameters: {
       type: "object",
@@ -5612,6 +5612,14 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             "Optional session ID returned from a previous draw_turtle call. " +
             "Pass this to append new commands to an existing drawing. " +
             "Omit to start a new drawing session.",
+        },
+        script: {
+          type: "string",
+          description:
+            "A LOGO-like turtle script string (newline or semicolon separated commands). " +
+            "Example: 'fd 100\\nrt 90\\ncolor red\\ncircle 50'. " +
+            "Provides a highly token-efficient and simple way for agents to draw without formatting verbose JSON arrays. " +
+            "Either 'commands' or 'script' must be provided.",
         },
         commands: {
           type: "array",
@@ -5701,7 +5709,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           description: "Optional canvas configuration",
         },
       },
-      required: ["commands"],
+      required: [],
     },
   },
 
