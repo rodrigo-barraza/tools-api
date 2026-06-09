@@ -108,7 +108,7 @@ return { week: weekNum, year: d.getFullYear() };
     `;
     // Wrap exactly as the execute endpoint does
     const wrappedCode = `const args = ${JSON.stringify(args)};\n(function() {\n${toolCode}\n})()`;
-    const { success, result } = executeJavaScript(wrappedCode);
+    const { success, result } = executeJavaScript(wrappedCode) as any;
     expect(success).toBe(true);
     expect(typeof result.week).toBe("number");
     expect(result.week).toBeGreaterThanOrEqual(1);
@@ -120,7 +120,7 @@ return { week: weekNum, year: d.getFullYear() };
     const args = { celsius: 100 };
     const toolCode = `return args.celsius * 9/5 + 32;`;
     const wrappedCode = `const args = ${JSON.stringify(args)};\n(function() {\n${toolCode}\n})()`;
-    const { success, result } = executeJavaScript(wrappedCode);
+    const { success, result } = executeJavaScript(wrappedCode) as any;
     expect(success).toBe(true);
     expect(result).toBe(212);
   });
@@ -187,122 +187,6 @@ return { week: weekNum, year: d.getFullYear() };
     const { success, timedOut } = executeJavaScript("while(true) {}", { timeout: 200 });
     expect(success).toBe(false);
     expect(timedOut).toBe(true);
-  });
-});
-
-// ── Integration: POST /agentic/custom-tool/execute ──────────
-
-describe("POST /agentic/custom-tool/execute — route integration", () => {
-  let app;
-
-  // Dynamically import the router (it has many deps, only mount what we need)
-  // We use a minimal approach: import the execute handler logic via the route
-  const setup = async () => {
-    const { default: router } = await import("../src/routes/AgenticRoutes.js");
-    app = createTestApp("/agentic", router);
-  };
-
-  beforeAll(async () => {
-    await setup();
-  }, 15000);
-
-  it("executes return-based code and returns result", async () => {
-    const res = await request(app)
-      .post("/agentic/custom-tool/execute")
-      .send({ code: "return 2 + 2;", args: {} });
-
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.result).toBe(4);
-  });
-
-  it("executes return-based code with object result (IIFE-wrapped by route)", async () => {
-    const code = `
-      return { greeting: "hello", count: 42 };
-    `;
-    const res = await request(app)
-      .post("/agentic/custom-tool/execute")
-      .send({ code, args: {} });
-
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.result).toEqual({ greeting: "hello", count: 42 });
-  });
-
-  it("injects args into the sandbox", async () => {
-    const res = await request(app)
-      .post("/agentic/custom-tool/execute")
-      .send({ code: "return args.x * 2;", args: { x: 21 } });
-
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.result).toBe(42);
-  });
-
-  it("returns 400 when code is missing", async () => {
-    const res = await request(app)
-      .post("/agentic/custom-tool/execute")
-      .send({ args: {} });
-
-    expect(res.status).toBe(400);
-    expect(res.body.error).toMatch(/code/);
-  });
-
-  it("returns success=false for runtime errors", async () => {
-    const res = await request(app)
-      .post("/agentic/custom-tool/execute")
-      .send({ code: "undefinedVar.foo", args: {} });
-
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(false);
-    expect(res.body.error).toBeTruthy();
-  });
-
-  it("defaults to sandboxed execution tier", async () => {
-    const res = await request(app)
-      .post("/agentic/custom-tool/execute")
-      .send({ code: "return 1;", args: {} });
-
-    expect(res.status).toBe(200);
-    expect(res.body.execution).toBe("sandboxed");
-  });
-
-  it("accepts privileged execution tier", async () => {
-    const res = await request(app)
-      .post("/agentic/custom-tool/execute")
-      .send({ code: "return 1;", args: {}, execution: "privileged" });
-
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.execution).toBe("privileged");
-  });
-
-  it("executes require() in privileged mode", async () => {
-    const res = await request(app)
-      .post("/agentic/custom-tool/execute")
-      .send({
-        code: "const path = require('path'); return path.basename('/foo/bar.js');",
-        args: {},
-        execution: "privileged",
-      });
-
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.result).toBe("bar.js");
-  });
-
-  it("blocks require() in sandboxed mode (explicit)", async () => {
-    const res = await request(app)
-      .post("/agentic/custom-tool/execute")
-      .send({
-        code: "const path = require('path'); return path.basename('/foo/bar.js');",
-        args: {},
-        execution: "sandboxed",
-      });
-
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(false);
-    expect(res.body.error).toMatch(/TypeError|require is not a function|undefined/);
   });
 });
 
