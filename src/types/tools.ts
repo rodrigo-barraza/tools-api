@@ -120,4 +120,5 @@ export interface ToolSearchMatch {
   description: string;
   domain: string | null;
   parameters: ToolParameters | null;
+  isEnabled?: boolean;
 }

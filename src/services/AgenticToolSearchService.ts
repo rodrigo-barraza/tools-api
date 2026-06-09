@@ -2,7 +2,6 @@
 
 import { getToolSchemas } from "./ToolSchemaService.ts";
 import type { ToolSearchMatch, ToolParameters } from "../types/tools.ts";
-import { CORE_AGENTIC_TOOLS, CORE_ORCHESTRATOR_TOOLS } from "@rodrigo-barraza/utilities-library/taxonomy";
 
 type InferredToolSchema = ReturnType<typeof getToolSchemas>[number];
 
@@ -13,6 +12,11 @@ interface ScoredMatch {
 
 /**
  * Search all registered tool schemas by keyword or domain.
+ *
+ * Discovery-first design: search_tools always searches the FULL tool catalog
+ * regardless of what the agent currently has enabled. Each result is annotated
+ * with `isEnabled` so the agent knows which tools need activation via
+ * `enable_tools` before use.
  */
 export interface AgenticToolSearchOptions {
   domain?: string;
@@ -42,13 +46,15 @@ export function agenticToolSearch(
 
   const queryTextLowerCase = (query || "").toLowerCase().trim();
 
-  const isAllToolsEnabled =
-    !enabledTools ||
-    !Array.isArray(enabledTools) ||
-    enabledTools.includes("*");
-
+  // Build enabled set for annotation only (not filtering)
   const enabledToolsSet = new Set<string>();
-  if (!isAllToolsEnabled && enabledTools) {
+  const hasEnabledContext =
+    enabledTools &&
+    Array.isArray(enabledTools) &&
+    enabledTools.length > 0 &&
+    !enabledTools.includes("*");
+
+  if (hasEnabledContext) {
     for (const entry of enabledTools) {
       if (entry.startsWith("domain:")) {
         const domainFilter = entry.slice(7).toLowerCase();
@@ -64,47 +70,10 @@ export function agenticToolSearch(
         enabledToolsSet.add(entry);
       }
     }
-
-    for (const toolName of CORE_AGENTIC_TOOLS) {
-      enabledToolsSet.add(toolName);
-    }
-    for (const toolName of CORE_ORCHESTRATOR_TOOLS) {
-      enabledToolsSet.add(toolName);
-    }
   }
 
-  if (domain) {
-    const domainNameLowerCase = domain.toLowerCase();
-    const hasEnabledToolInDomain = allToolSchemas.some(
-      (toolSchema: InferredToolSchema) => {
-        const matchesDomain =
-          toolSchema.domain &&
-          toolSchema.domain.toLowerCase() === domainNameLowerCase;
-        if (!matchesDomain) {
-          return false;
-        }
-        return isAllToolsEnabled || enabledToolsSet.has(toolSchema.name);
-      },
-    );
-
-    if (!hasEnabledToolInDomain) {
-      return {
-        error: `Cannot search tools in domain '${domain}' because no tools under this domain are enabled for the current agent.`,
-        matches: [],
-        total: 0,
-        query: query || null,
-        domain: domain || null,
-      };
-    }
-  }
-
+  // Domain filter narrows the search scope (not enabledTools)
   let filteredToolSchemas: InferredToolSchema[] = allToolSchemas;
-
-  if (!isAllToolsEnabled) {
-    filteredToolSchemas = filteredToolSchemas.filter(
-      (toolSchema: InferredToolSchema) => enabledToolsSet.has(toolSchema.name),
-    );
-  }
 
   if (domain) {
     const domainNameLowerCase = domain.toLowerCase();
@@ -114,8 +83,6 @@ export function agenticToolSearch(
         toolSchema.domain.toLowerCase() === domainNameLowerCase,
     );
   }
-
-
 
   let scoredToolMatches: ScoredMatch[];
   if (queryTextLowerCase) {
@@ -173,6 +140,9 @@ export function agenticToolSearch(
       parameters: scoredMatch.schema.parameters
         ? (scoredMatch.schema.parameters as unknown as ToolParameters)
         : null,
+      ...(hasEnabledContext && {
+        isEnabled: enabledToolsSet.has(scoredMatch.schema.name),
+      }),
     }));
 
   return {
@@ -182,3 +152,4 @@ export function agenticToolSearch(
     domain: domain || null,
   };
 }
+
