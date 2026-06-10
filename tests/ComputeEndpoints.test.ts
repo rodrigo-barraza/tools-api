@@ -505,38 +505,62 @@ describe("POST /compute/3d/voxel", () => {
 });
 
 describe("POST /compute/turtle", () => {
-  it("returns 400 when script is missing or empty", async () => {
+  it("returns 400 when code is missing or empty", async () => {
     const postResponse = await request(app)
       .post("/compute/turtle")
       .send({});
 
     expect(postResponse.status).toBe(400);
-    expect(postResponse.body.error).toContain("'script' (non-empty Python code string) is required.");
+    expect(postResponse.body.error).toContain("'code' (non-empty LOGO source code string) is required.");
   });
 
-  it("successfully executes a Python turtle script and returns drawing details", async () => {
+  it("successfully executes a LOGO turtle program and returns drawing details", async () => {
     const postResponse = await request(app)
       .post("/compute/turtle")
       .send({
-        script: "color('cyan')\nforward(100)\nright(90)\n",
+        code: "setpencolor 3 fd 100 rt 90",
       });
 
     expect(postResponse.status).toBe(200);
     expect(postResponse.body.turtleEmbedUrl).toBeTruthy();
+    expect(postResponse.body.drawingId).toBeTruthy();
     expect(postResponse.body.commandCount).toBeGreaterThan(0);
     expect(postResponse.body.canvasSize).toBe("800x600");
     expect(postResponse.body.executionTimeMs).toBeGreaterThanOrEqual(0);
   });
 
-  it("returns 400 when script has syntax errors or runtime issues", async () => {
+  it("returns 400 when LOGO code has syntax errors", async () => {
     const postResponse = await request(app)
       .post("/compute/turtle")
       .send({
-        script: "color('cyan'\nforward(100)",
+        code: "repeat 4 fd 100",
       });
 
     expect(postResponse.status).toBe(400);
     expect(postResponse.body.error).toBeTruthy();
+  });
+
+  it("supports iterative drawing via drawingId", async () => {
+    const firstResponse = await request(app)
+      .post("/compute/turtle")
+      .send({
+        code: "fd 100 rt 90",
+      });
+
+    expect(firstResponse.status).toBe(200);
+    const drawingId = firstResponse.body.drawingId;
+
+    const secondResponse = await request(app)
+      .post("/compute/turtle")
+      .send({
+        code: "fd 100 rt 90",
+        drawingId,
+      });
+
+    expect(secondResponse.status).toBe(200);
+    expect(secondResponse.body.drawingId).toBe(drawingId);
+    expect(secondResponse.body.commandCount).toBeGreaterThan(firstResponse.body.commandCount);
+    expect(secondResponse.body.newCommandCount).toBeGreaterThan(0);
   });
 });
 
