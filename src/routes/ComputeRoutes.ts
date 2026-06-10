@@ -1453,10 +1453,11 @@ function buildTurtleEmbedHtml(
   const {
     canvasWidth = 800,
     canvasHeight = 600,
-    background = "#0f172a",
+    background = "#000000",
     animated = true,
     stepDelay = 40,
     title = "",
+    previousCommandCount = 0,
   } = options;
   const commandsJson = JSON.stringify(commands);
   return buildEmbedHtml({
@@ -1486,8 +1487,8 @@ function buildTurtleEmbedHtml(
     width: auto;
     height: auto;
     object-fit: contain;
-    border-radius: 12px;
-    box-shadow: 0 0 40px rgba(56, 189, 248, 0.08);
+    border-radius: 2px;
+    box-shadow: 0 0 40px rgba(255, 255, 255, 0.04);
   }
   #title {
     color: #94a3b8;
@@ -1520,6 +1521,7 @@ function buildTurtleEmbedHtml(
   const ANIMATED = ${animated};
   const STEP_DELAY = ${stepDelay};
   const BG = "${background}";
+  const PREV_COUNT = ${Number(previousCommandCount) || 0};
   // ── Turtle State ──
   let x = canvas.width / 2;
   let y = canvas.height / 2;
@@ -1541,6 +1543,20 @@ function buildTurtleEmbedHtml(
   drawCtx.lineJoin = "round";
   function clearCanvas() {
     drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+  }
+  function resetState() {
+    x = canvas.width / 2;
+    y = canvas.height / 2;
+    angle = -90;
+    penDown = true;
+    penColor = "#38bdf8";
+    penWidth = 2;
+    fillColor = "#38bdf8";
+    filling = false;
+    fillPath = [];
+    turtleSpeed = 5;
+    showTurtle = true;
+    clearCanvas();
   }
   function deg2rad(d) { return d * Math.PI / 180; }
   function drawTurtle() {
@@ -1745,7 +1761,8 @@ function buildTurtleEmbedHtml(
     }
   }
   // ── Animate or instant draw ──
-  function run() {
+  function run(animateFromIndex) {
+    var startIndex = animateFromIndex || 0;
     drawTurtle();
     if (!ANIMATED || COMMANDS.length === 0) {
       for (const cmd of COMMANDS) executeCommand(cmd);
@@ -1755,7 +1772,19 @@ function buildTurtleEmbedHtml(
       reportSize();
       return;
     }
-    let idx = 0;
+    // Instantly execute previously-drawn commands (no animation)
+    for (var i = 0; i < startIndex && i < COMMANDS.length; i++) {
+      executeCommand(COMMANDS[i]);
+    }
+    if (startIndex >= COMMANDS.length) {
+      drawTurtle();
+      status.textContent = COMMANDS.length + " commands · done";
+      status.className = "done";
+      reportSize();
+      return;
+    }
+    drawTurtle();
+    var idx = startIndex;
     status.className = "active";
     function step() {
       if (idx >= COMMANDS.length) {
@@ -1774,11 +1803,18 @@ function buildTurtleEmbedHtml(
     }
     step();
   }
+  // Replay handler — listen for postMessage from parent frame
+  window.addEventListener("message", function(event) {
+    if (event.data && event.data.type === "turtle-replay") {
+      resetState();
+      run(0);
+    }
+  });
   function reportSize() {
     var element = document.body;
     window.parent.postMessage({ type: "embed-resize", width: element.scrollWidth, height: element.scrollHeight }, "*");
   }
-  run();
+  run(PREV_COUNT);
 })();
 </${"script"}>`,
   });
@@ -1937,11 +1973,14 @@ router.post("/turtle", asyncHandler(async (req: Request, res: Response) => {
         );
       if (options.title) session.options.title = options.title;
     }
+    // Record how many commands existed before this append
+    const previousCommandCount = session.commands.length;
     session.commands.push(...commandsList);
     session.updatedAt = Date.now();
-    // Persist full accumulated drawing to MongoDB
+    // Persist full accumulated drawing to MongoDB (with animation start offset)
     const embedId = crypto.randomUUID().slice(0, 12);
-    await saveTurtleDrawing(embedId, session.commands, session.options, sessionId, callerUsername);
+    const persistedOptions = { ...session.options, previousCommandCount };
+    await saveTurtleDrawing(embedId, session.commands, persistedOptions, sessionId, callerUsername);
     const turtleEmbedUrl = buildLocalUrl("compute/turtle/embed", {
       id: embedId,
     });
@@ -1963,7 +2002,7 @@ router.post("/turtle", asyncHandler(async (req: Request, res: Response) => {
   const turtleOptions = {
     canvasWidth: Math.min(options?.canvasWidth || 800, 1920),
     canvasHeight: Math.min(options?.canvasHeight || 600, 1080),
-    background: options?.background || "#0f172a",
+    background: options?.background || "#000000",
     animated: options?.animated !== false,
     stepDelay: Math.max(5, Math.min(500, options?.stepDelay || 40)),
     title: options?.title || "",

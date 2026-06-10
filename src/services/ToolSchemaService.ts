@@ -5581,10 +5581,13 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
 
   // ── LOGO Turtle Graphics ───────────────────────────────────
   {
-    name: "draw_turtle",
+    name: "draw_turtle_graphics",
     dataSource: compute("internal"),
     description:
       "Draw graphics using LOGO Turtle commands on an HTML5 canvas. The turtle starts at center facing north. " +
+      "IMPORTANT: The canvas background is BLACK by default — do NOT use black or very dark colors " +
+      "(e.g. #000000, #111111, #1a1a1a) for pen color, fill color, or labels as they will be invisible. " +
+      "Use bright, vivid colors instead (e.g. #38bdf8, #f472b6, #4ade80, #facc15, #ffffff). " +
       "IMPORTANT: You MUST draw incrementally — break the drawing into logical parts (e.g. each shape, each side, " +
       "each layer) and call this tool multiple times using the sessionId returned from the first call. " +
       "Send at most 20-30 commands per call. Between calls, briefly describe what you just drew and what comes next. " +
@@ -5609,7 +5612,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         sessionId: {
           type: "string",
           description:
-            "Optional session ID returned from a previous draw_turtle call. " +
+            "Optional session ID returned from a previous draw_turtle_graphics call. " +
             "Pass this to append new commands to an existing drawing. " +
             "Omit to start a new drawing session.",
         },
@@ -5689,7 +5692,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             },
             background: {
               type: "string",
-              description: "Canvas background color (default: '#0f172a')",
+              description: "Canvas background color (default: '#000000')",
             },
             animated: {
               type: "boolean",
@@ -6058,7 +6061,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "The response contains a sceneEmbedUrl — render it with ![3D Model](sceneEmbedUrl) markdown so the user sees the interactive 3D model inline. " +
       "Max 200 objects per call. Supports shadow casting, ambient/directional lighting control, and auto-orbit camera. " +
       "When the user attaches an image, set textureUrl to 'reference' on the specific objects that should display it — the system will replace 'reference' with the actual image data automatically. Only mark objects that should show the user's image; leave textureUrl unset on objects that should use solid material colors. Do NOT search the web for image URLs. " +
-      "Supports progressive, step-by-step incremental building using a sessionId (analogous to the draw_turtle graphics tool) where subsequent calls with the same sessionId append new objects to the existing model rather than overwriting it.",
+      "Supports progressive, step-by-step incremental building using a sessionId (analogous to the draw_turtle_graphics tool) where subsequent calls with the same sessionId append new objects to the existing model rather than overwriting it.",
     endpoint: {
       method: "POST",
       path: "/compute/3d/model",
@@ -6260,7 +6263,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "The response contains a sceneEmbedUrl — render it with ![3D Scene](sceneEmbedUrl) markdown so the user sees the interactive 3D scene inline. " +
       "Max 300 total objects (including nested children), max 5 levels of nesting. " +
       "When the user attaches an image, set textureUrl to 'reference' on the specific objects that should display it — the system will replace 'reference' with the actual image data automatically. Only mark objects that should show the user's image; leave textureUrl unset on objects that should use solid material colors. Do NOT search the web for image URLs. " +
-      "Supports progressive, step-by-step incremental building using a sessionId (analogous to the draw_turtle graphics tool) where subsequent calls with the same sessionId append new objects to the existing scene rather than overwriting it.",
+      "Supports progressive, step-by-step incremental building using a sessionId (analogous to the draw_turtle_graphics tool) where subsequent calls with the same sessionId append new objects to the existing scene rather than overwriting it.",
     endpoint: {
       method: "POST",
       path: "/compute/3d/scene",
@@ -12713,7 +12716,7 @@ const TOOL_DOMAINS = {
   convert_image_to_ascii: "Compute",
   convert_video_to_gif: "Compute",
   parse_cron_expression: "Compute",
-  draw_turtle: "Compute",
+  draw_turtle_graphics: "Compute",
   create_3d_mesh: "Compute",
   create_3d_scene: "Compute",
   create_3d_model: "Compute",
@@ -13066,7 +13069,7 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   convert_image_to_ascii: ["🎨", "💻"],
   convert_video_to_gif: ["🎬", "🔁"],
   parse_cron_expression: ["⏰", "🔣"],
-  draw_turtle: ["🐢", "💻"],
+  draw_turtle_graphics: ["🐢", "💻"],
   create_3d_mesh: "🔺",
   create_3d_scene: ["🌐", "🧱"],
   create_3d_model: ["🧊", "💻"],

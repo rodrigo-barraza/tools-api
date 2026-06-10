@@ -11,7 +11,7 @@ describe("Dynamic Complexity Scoring", () => {
 
     const targetToolNames = [
       "create_3d_scene", "generate_audio", "create_vector_animation",
-      "manipulate_image", "build_meal_plan", "draw_turtle",
+      "manipulate_image", "build_meal_plan", "draw_turtle_graphics",
       "get_weather", "evaluate_expression", "get_moon_phase",
       "execute_python", "execute_javascript", "execute_shell",
       "execute_browser_script", "control_browser",
