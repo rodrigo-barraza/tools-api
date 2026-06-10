@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node dist/boot.js",
     "dev": "tsx watch src/boot.ts",
-    "build": "tsc && mkdir -p dist/services && cp src/services/TurtleRendererScript.py dist/services/TurtleRendererScript.py",
+    "build": "tsc",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
