@@ -1,31 +1,24 @@
 """
-PrismTurtle — A Pillow-backed turtle graphics renderer with command recording.
+PrismTurtle — Command-recording turtle graphics engine.
 
-Implements the standard Python turtle API using PIL/Pillow ImageDraw,
-enabling headless server-side rendering to PNG without tkinter or Xvfb.
+Implements the standard Python turtle API, tracking position and heading
+with pure math. Every drawing call is recorded to a command log that is
+output as JSON for animated Canvas replay in the browser.
 
 The user's turtle code is injected at the __USER_CODE__ marker below.
-The script outputs the recorded drawing commands as JSON to stdout,
-which the backend uses to create an animated Canvas embed.
 """
 
 import math
-import sys
-import io
 import json
-import base64
-from PIL import Image, ImageDraw, ImageFont
 
 
 class PrismTurtle:
-    """Turtle graphics engine rendering to a Pillow Image with command recording."""
+    """Turtle graphics engine that records drawing commands for Canvas replay."""
 
     def __init__(self, width=800, height=600, background="black"):
         self._width = width
         self._height = height
         self._background = background
-        self._image = Image.new("RGB", (width, height), background)
-        self._draw = ImageDraw.Draw(self._image)
 
         self._x = width / 2.0
         self._y = height / 2.0
@@ -161,12 +154,6 @@ class PrismTurtle:
         radians = math.radians(self._angle)
         destination_x = self._x + math.cos(radians) * distance
         destination_y = self._y + math.sin(radians) * distance
-        if self._is_pen_down:
-            self._draw.line(
-                [(self._x, self._y), (destination_x, destination_y)],
-                fill=self._pen_color,
-                width=self._pen_width,
-            )
         if self._is_filling:
             self._fill_vertices.append((destination_x, destination_y))
         self._x = destination_x
@@ -214,12 +201,6 @@ class PrismTurtle:
         self._log({"action": "goto", "x": target_x, "y": target_y})
         canvas_x = self._width / 2.0 + target_x
         canvas_y = self._height / 2.0 - target_y
-        if self._is_pen_down:
-            self._draw.line(
-                [(self._x, self._y), (canvas_x, canvas_y)],
-                fill=self._pen_color,
-                width=self._pen_width,
-            )
         if self._is_filling:
             self._fill_vertices.append((canvas_x, canvas_y))
         self._x = canvas_x
@@ -236,12 +217,6 @@ class PrismTurtle:
         current_turtle_y = self.ycor()
         self._log({"action": "goto", "x": target_x, "y": current_turtle_y})
         canvas_x = self._width / 2.0 + target_x
-        if self._is_pen_down:
-            self._draw.line(
-                [(self._x, self._y), (canvas_x, self._y)],
-                fill=self._pen_color,
-                width=self._pen_width,
-            )
         self._x = canvas_x
         return self
 
@@ -249,12 +224,6 @@ class PrismTurtle:
         current_turtle_x = self.xcor()
         self._log({"action": "goto", "x": current_turtle_x, "y": target_y})
         canvas_y = self._height / 2.0 - target_y
-        if self._is_pen_down:
-            self._draw.line(
-                [(self._x, self._y), (self._x, canvas_y)],
-                fill=self._pen_color,
-                width=self._pen_width,
-            )
         self._y = canvas_y
         return self
 
@@ -267,16 +236,8 @@ class PrismTurtle:
         return self.setheading(heading_degrees)
 
     def home(self):
-        destination_x = self._width / 2.0
-        destination_y = self._height / 2.0
-        if self._is_pen_down:
-            self._draw.line(
-                [(self._x, self._y), (destination_x, destination_y)],
-                fill=self._pen_color,
-                width=self._pen_width,
-            )
-        self._x = destination_x
-        self._y = destination_y
+        self._x = self._width / 2.0
+        self._y = self._height / 2.0
         self._angle = -90
         self._log({"action": "home"})
         return self
@@ -397,14 +358,6 @@ class PrismTurtle:
         return self
 
     def end_fill(self):
-        if self._is_filling and len(self._fill_vertices) >= 3:
-            self._draw.polygon(self._fill_vertices, fill=self._fill_color)
-            for i in range(len(self._fill_vertices) - 1):
-                self._draw.line(
-                    [self._fill_vertices[i], self._fill_vertices[i + 1]],
-                    fill=self._pen_color,
-                    width=self._pen_width,
-                )
         self._is_filling = False
         self._fill_vertices = []
         self._log({"action": "end_fill"})
@@ -434,13 +387,7 @@ class PrismTurtle:
         return self
 
     def dot(self, size=None, color=None):
-        dot_radius = (size or max(self._pen_width + 4, 2 * self._pen_width)) / 2
         dot_color = self._resolve_color(color) if color else self._pen_color
-        bounding_box = [
-            (self._x - dot_radius, self._y - dot_radius),
-            (self._x + dot_radius, self._y + dot_radius),
-        ]
-        self._draw.ellipse(bounding_box, fill=dot_color)
         effective_size = size or max(self._pen_width + 4, 2 * self._pen_width)
         log_entry = {"action": "dot", "value": str(effective_size)}
         if color:
@@ -457,34 +404,6 @@ class PrismTurtle:
 
     def write(self, text, move=False, align="left", font=None):
         text = str(text)
-        try:
-            if font:
-                font_family, font_size = font[0], font[1]
-                pil_font = ImageFont.truetype(font_family, font_size)
-            else:
-                pil_font = ImageFont.load_default(size=14)
-        except (IOError, OSError, IndexError):
-            pil_font = ImageFont.load_default(size=14)
-
-        text_x = self._x
-        text_y = self._y - 14
-
-        if align == "center":
-            try:
-                text_bbox = pil_font.getbbox(text)
-                text_width = text_bbox[2] - text_bbox[0]
-                text_x -= text_width / 2
-            except (AttributeError, TypeError):
-                pass
-        elif align == "right":
-            try:
-                text_bbox = pil_font.getbbox(text)
-                text_width = text_bbox[2] - text_bbox[0]
-                text_x -= text_width
-            except (AttributeError, TypeError):
-                pass
-
-        self._draw.text((text_x, text_y), text, fill=self._pen_color, font=pil_font)
         log_entry = {"action": "write", "text": text, "value": text}
         if font and len(font) >= 2:
             log_entry["fontSize"] = font[1]
@@ -494,10 +413,6 @@ class PrismTurtle:
     # ── Canvas Control ────────────────────────────────────────
 
     def clear(self):
-        self._draw.rectangle(
-            [(0, 0), (self._width, self._height)],
-            fill=self._background,
-        )
         self._log({"action": "clear"})
         return self
 
@@ -520,13 +435,9 @@ class PrismTurtle:
         if color_value is None:
             return self._background
         self._background = self._resolve_color(color_value)
-        current_image = self._image.copy()
-        self._image = Image.new("RGB", (self._width, self._height), self._background)
-        self._image.paste(current_image, (0, 0))
-        self._draw = ImageDraw.Draw(self._image)
         return self
 
-    # ── Visibility (no-ops for API compatibility) ─────────────
+    # ── Visibility ────────────────────────────────────────────
 
     def hideturtle(self):
         self._is_visible = False
@@ -562,10 +473,6 @@ class PrismTurtle:
 
     def save(self, output_path=None):
         """Output recorded commands as JSON for animated Canvas rendering."""
-        if output_path:
-            self._image.save(output_path, "PNG")
-            return self
-
         background_css = self._background
         if isinstance(self._background, tuple):
             background_css = self._color_to_css(self._background)
@@ -581,23 +488,14 @@ class PrismTurtle:
         print("__PRISM_TURTLE_DATA_END__")
         return self
 
-    def save_image(self, output_path):
-        """Save the Pillow image to a file (for debugging)."""
-        self._image.save(output_path, "PNG")
-        return self
-
     def get_image(self):
-        """Return the underlying PIL Image for advanced manipulation."""
-        return self._image
+        return None
 
     def get_draw(self):
-        """Return the underlying ImageDraw for advanced drawing."""
-        return self._draw
+        return None
 
 
 # ── Multiple turtle support ──────────────────────────────────
-# A global default instance so the agent can use functional style:
-#   forward(100)  instead of  t.forward(100)
 
 _default_turtle = None
 _canvas_width = 800
@@ -620,22 +518,22 @@ def setup(width=800, height=600):
 
 
 # Functional API — proxies to the default turtle
-def forward(d): return _get_default().forward(d)
-def fd(d): return _get_default().fd(d)
-def backward(d): return _get_default().backward(d)
-def bk(d): return _get_default().bk(d)
-def back(d): return _get_default().back(d)
-def right(a): return _get_default().right(a)
-def rt(a): return _get_default().rt(a)
-def left(a): return _get_default().left(a)
-def lt(a): return _get_default().lt(a)
-def goto(x, y=None): return _get_default().goto(x, y)
-def setpos(x, y=None): return _get_default().setpos(x, y)
-def setposition(x, y=None): return _get_default().setposition(x, y)
-def setx(x): return _get_default().setx(x)
-def sety(y): return _get_default().sety(y)
-def setheading(a): return _get_default().setheading(a)
-def seth(a): return _get_default().seth(a)
+def forward(distance): return _get_default().forward(distance)
+def fd(distance): return _get_default().fd(distance)
+def backward(distance): return _get_default().backward(distance)
+def bk(distance): return _get_default().bk(distance)
+def back(distance): return _get_default().back(distance)
+def right(angle): return _get_default().right(angle)
+def rt(angle): return _get_default().rt(angle)
+def left(angle): return _get_default().left(angle)
+def lt(angle): return _get_default().lt(angle)
+def goto(target_x, target_y=None): return _get_default().goto(target_x, target_y)
+def setpos(target_x, target_y=None): return _get_default().setpos(target_x, target_y)
+def setposition(target_x, target_y=None): return _get_default().setposition(target_x, target_y)
+def setx(target_x): return _get_default().setx(target_x)
+def sety(target_y): return _get_default().sety(target_y)
+def setheading(angle): return _get_default().setheading(angle)
+def seth(angle): return _get_default().seth(angle)
 def home(): return _get_default().home()
 def position(): return _get_default().position()
 def pos(): return _get_default().pos()
@@ -643,39 +541,38 @@ def xcor(): return _get_default().xcor()
 def ycor(): return _get_default().ycor()
 def heading(): return _get_default().heading()
 def isdown(): return _get_default().isdown()
-def towards(x, y=None): return _get_default().towards(x, y)
-def distance(x, y=None): return _get_default().distance(x, y)
+def towards(target_x, target_y=None): return _get_default().towards(target_x, target_y)
+def distance(target_x, target_y=None): return _get_default().distance(target_x, target_y)
 def penup(): return _get_default().penup()
 def pu(): return _get_default().pu()
 def up(): return _get_default().up()
 def pendown(): return _get_default().pendown()
 def pd(): return _get_default().pd()
 def down(): return _get_default().down()
-def pensize(w=None): return _get_default().pensize(w)
-def width(w=None): return _get_default().width(w)
-def pencolor(*a): return _get_default().pencolor(*a)
-def color(*a): return _get_default().color(*a)
-def fillcolor(*a): return _get_default().fillcolor(*a)
+def pensize(width=None): return _get_default().pensize(width)
+def width(width=None): return _get_default().width(width)
+def pencolor(*args): return _get_default().pencolor(*args)
+def color(*args): return _get_default().color(*args)
+def fillcolor(*args): return _get_default().fillcolor(*args)
 def begin_fill(): return _get_default().begin_fill()
 def end_fill(): return _get_default().end_fill()
 def filling(): return _get_default().filling()
-def circle(r, e=360, s=None): return _get_default().circle(r, e, s)
-def dot(s=None, c=None): return _get_default().dot(s, c)
+def circle(radius, extent=360, steps=None): return _get_default().circle(radius, extent, steps)
+def dot(size=None, color_value=None): return _get_default().dot(size, color_value)
 def stamp(): return _get_default().stamp()
-def write(t, move=False, align="left", font=None): return _get_default().write(t, move, align, font)
+def write(text, move=False, align="left", font=None): return _get_default().write(text, move, align, font)
 def clear(): return _get_default().clear()
 def reset(): return _get_default().reset()
-def bgcolor(c=None): return _get_default().bgcolor(c)
+def bgcolor(color_value=None): return _get_default().bgcolor(color_value)
 def hideturtle(): return _get_default().hideturtle()
 def ht(): return _get_default().ht()
 def showturtle(): return _get_default().showturtle()
 def st(): return _get_default().st()
 def isvisible(): return _get_default().isvisible()
-def speed(s=None): return _get_default().speed(s)
+def speed(speed_value=None): return _get_default().speed(speed_value)
 def tracer(n=None, delay=None): return _get_default().tracer(n, delay)
 def update(): return _get_default().update()
 def save(path=None): return _get_default().save(path)
-def save_image(path): return _get_default().save_image(path)
 def get_image(): return _get_default().get_image()
 def get_draw(): return _get_default().get_draw()
 
