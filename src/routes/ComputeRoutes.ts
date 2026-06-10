@@ -35,6 +35,8 @@ import {
 } from "../models/TurtleDrawing.ts";
 import {
   executeLogoProgram,
+  DEFAULT_CANVAS_WIDTH,
+  DEFAULT_CANVAS_HEIGHT,
 } from "../services/LogoInterpreterService.ts";
 import {
   saveThreeDimensionalScene,
@@ -1829,8 +1831,8 @@ router.post("/turtle", asyncHandler(async (req: Request, res: Response) => {
   if (lengthError) return res.status(400).json({ error: lengthError });
 
   // Resolve canvas dimensions
-  const canvasWidth = Math.min(Math.max(width || 800, 100), 1920);
-  const canvasHeight = Math.min(Math.max(height || 600, 100), 1080);
+  const canvasWidth = Math.min(Math.max(width || DEFAULT_CANVAS_WIDTH, 100), 1920);
+  const canvasHeight = Math.min(Math.max(height || DEFAULT_CANVAS_HEIGHT, 100), 1080);
 
   // If drawingId is provided, load previous commands for iterative drawing
   let previousCommands: unknown[] = [];

@@ -43,8 +43,8 @@ interface LogoProcedure {
 
 const MAX_EXECUTION_STEPS = 500_000;
 const MAX_COMMAND_LOG_SIZE = 50_000;
-const DEFAULT_CANVAS_WIDTH = 800;
-const DEFAULT_CANVAS_HEIGHT = 600;
+export const DEFAULT_CANVAS_WIDTH = 800;
+export const DEFAULT_CANVAS_HEIGHT = 600;
 
 const LOGO_COLOR_PALETTE: Record<number, string> = {
   0: "#000000",   // black
@@ -736,17 +736,22 @@ class LogoExecutor {
           throw new LogoRuntimeError("REPEAT requires a bracketed instruction list");
         }
         const [bodyTokens, indexAfterBody] = this.collectBracketedList(tokens, repeatBracketIndex, endIndex);
-        for (let iteration = 0; iteration < count; iteration++) {
-          this.checkExecutionLimits();
-          // Set REPCOUNT (1-based)
-          this.setVariable("repcount", iteration + 1);
-          try {
-            this.executeTokenSequence(bodyTokens, 0, bodyTokens.length);
-          } catch (signal) {
-            if (signal instanceof LogoStopSignal) break;
-            if (signal instanceof LogoOutputSignal) throw signal;
-            throw signal;
+        // Push a local scope so nested repeats each get their own repcount
+        this.variableScopes.push(new Map());
+        try {
+          for (let iteration = 0; iteration < count; iteration++) {
+            this.checkExecutionLimits();
+            this.setLocalVariable("repcount", iteration + 1);
+            try {
+              this.executeTokenSequence(bodyTokens, 0, bodyTokens.length);
+            } catch (signal) {
+              if (signal instanceof LogoStopSignal) break;
+              if (signal instanceof LogoOutputSignal) throw signal;
+              throw signal;
+            }
           }
+        } finally {
+          this.variableScopes.pop();
         }
         return indexAfterBody;
       }
