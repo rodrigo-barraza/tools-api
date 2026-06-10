@@ -292,7 +292,7 @@ export function buildLocalUrl(
   routePath: string,
   params?: Record<string, string>,
 ): string {
-  const selfBaseUrl = CONFIG.TOOLS_SERVICE_URL;
+  const selfBaseUrl = CONFIG.TOOLS_SERVICE_PUBLIC_URL || CONFIG.TOOLS_SERVICE_URL;
   const base = `${selfBaseUrl}/${routePath}`;
   if (!params || Object.keys(params).length === 0) return base;
   const queryString = new URLSearchParams(params).toString();

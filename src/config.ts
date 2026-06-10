@@ -33,6 +33,7 @@ interface ToolsServiceConfig {
   // Server
   TOOLS_SERVICE_PORT: string | undefined;
   TOOLS_SERVICE_URL: string | undefined;
+  TOOLS_SERVICE_PUBLIC_URL: string | undefined;
   MONGODB_URI: string | undefined;
   MONGODB_DB_NAME: string;
 
@@ -136,6 +137,7 @@ const CONFIG: ToolsServiceConfig = {
   // ─── Server ──────────────────────────────────────────────────────
   TOOLS_SERVICE_PORT: process.env.TOOLS_SERVICE_PORT,
   TOOLS_SERVICE_URL: process.env.TOOLS_SERVICE_URL,
+  TOOLS_SERVICE_PUBLIC_URL: process.env.TOOLS_SERVICE_PUBLIC_URL,
   MONGODB_URI: process.env.MONGO_URI,
   MONGODB_DB_NAME: process.env.TOOLS_SERVICE_MONGO_DB_NAME || "tools",
 
