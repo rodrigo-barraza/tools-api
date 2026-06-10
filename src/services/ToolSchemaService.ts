@@ -5579,140 +5579,47 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
 
-  // ── LOGO Turtle Graphics ───────────────────────────────────
+  // ── Turtle Graphics (Python Script Mode) ────────────────────
   {
     name: "draw_turtle_graphics",
-    dataSource: compute("internal"),
+    dataSource: compute("PrismTurtle / Pillow"),
     description:
-      "Draw graphics using LOGO Turtle commands on an HTML5 canvas. The turtle starts at center facing north. " +
-      "IMPORTANT: The canvas background is BLACK by default — do NOT use black or very dark colors " +
-      "(e.g. #000000, #111111, #1a1a1a) for pen color, fill color, or labels as they will be invisible. " +
-      "Use bright, vivid colors instead (e.g. #38bdf8, #f472b6, #4ade80, #facc15, #ffffff). " +
-      "IMPORTANT: You MUST draw incrementally — break the drawing into logical parts (e.g. each shape, each side, " +
-      "each layer) and call this tool multiple times using the sessionId returned from the first call. " +
-      "Send at most 20-30 commands per call. Between calls, briefly describe what you just drew and what comes next. " +
-      "This lets the user follow along as the drawing builds up piece by piece. " +
-      "Do NOT send the entire drawing in a single call. " +
-      "Workflow: 1) First call without sessionId → creates session. " +
-      "2) Each subsequent call passes the sessionId to append. " +
-      "3) Only render the FINAL turtleEmbedUrl with ![Turtle Drawing](url) in your last message. " +
-      "Available commands: forward/fd (distance), backward/bk (distance), right/rt (angle°), left/lt (angle°), " +
-      "penup/pu, pendown/pd, color (CSS color), width (pixels), goto (x,y from center), setheading/seth (angle°), " +
-      "circle (radius), arc (radius, extent°), dot/stamp (size), label/write (text), " +
-      "begin_fill, end_fill, fillcolor, speed (1-10), hideturtle/ht, showturtle/st, home, reset, clear. " +
-      "Each command is an object with 'action' and relevant value fields.",
+      "Draw animated 2D graphics using Python code with the PrismTurtle renderer. " +
+      "Write a Python script in the 'script' parameter using the functional turtle API. " +
+      "The script is executed server-side and the drawing is replayed with step-by-step animation in the browser. " +
+      "IMPORTANT: The canvas background is BLACK — do NOT use black or very dark colors for drawing. " +
+      "Use bright, vivid colors (e.g. cyan, #f472b6, #4ade80, #facc15, white, or RGB tuples like (255,100,50)). " +
+      "CAPABILITIES: Loops, recursion, math, colorsys for HSL color cycling, random for generative art. " +
+      "Fractals, spirals, L-systems, phyllotaxis, algorithmic patterns, recursive trees are all possible. " +
+      "USAGE (functional API — recommended): " +
+      "color('cyan'); width(2); " +
+      "for i in range(36): forward(100); right(170) " +
+      "USAGE (OOP API for multiple turtles): " +
+      "t = PrismTurtle(800, 800); t.color('cyan'); t.forward(100); t.save() " +
+      "Available stdlib: math, colorsys, random, itertools, functools, collections, statistics. " +
+      "API: forward/fd, backward/bk, right/rt, left/lt, goto, setpos, setx, sety, setheading/seth, home, " +
+      "penup/pu, pendown/pd, pensize/width, pencolor/color, fillcolor, begin_fill, end_fill, " +
+      "circle(r, extent, steps), dot(size, color), stamp, write(text, font, align), " +
+      "clear, reset, bgcolor, hideturtle/ht, showturtle/st, position/pos, heading, distance, towards, setup(w,h). " +
+      "The result is an animated canvas embed. Render it: ![Turtle Drawing](turtleEmbedUrl).",
     endpoint: {
       method: "POST",
       path: "/compute/turtle",
-      bodyParams: ["commands", "script", "options", "sessionId"],
+      bodyParams: ["script"],
     },
     parameters: {
       type: "object",
       properties: {
-        sessionId: {
-          type: "string",
-          description:
-            "Optional session ID returned from a previous draw_turtle_graphics call. " +
-            "Pass this to append new commands to an existing drawing. " +
-            "Omit to start a new drawing session.",
-        },
         script: {
           type: "string",
           description:
-            "A LOGO-like turtle script string (newline or semicolon separated commands). " +
-            "Example: 'fd 100\\nrt 90\\ncolor red\\ncircle 50'. " +
-            "Provides a highly token-efficient and simple way for agents to draw without formatting verbose JSON arrays. " +
-            "Either 'commands' or 'script' must be provided.",
-        },
-        commands: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              action: {
-                type: "string",
-                description:
-                  "Turtle command: forward, fd, backward, bk, right, rt, left, lt, " +
-                  "penup, pu, pendown, pd, color, width, goto, setheading, seth, " +
-                  "circle, arc, dot, stamp, label, write, begin_fill, end_fill, fillcolor, " +
-                  "speed, hideturtle, ht, showturtle, st, home, reset, clear",
-              },
-              value: {
-                type: "string",
-                description:
-                  "Primary value: distance (forward/backward), angle (right/left/setheading), " +
-                  "radius (circle/arc), size (dot), speed (1-10), or CSS color string (color/fillcolor)",
-              },
-              value2: {
-                type: "string",
-                description:
-                  "Secondary value: arc extent in degrees, or y-coordinate for goto",
-              },
-              x: {
-                type: "number",
-                description:
-                  "X coordinate for goto (relative to center, positive = right)",
-              },
-              y: {
-                type: "number",
-                description:
-                  "Y coordinate for goto (relative to center, positive = up)",
-              },
-              color: {
-                type: "string",
-                description:
-                  "CSS color for color/fillcolor commands (e.g. '#ff6347', 'red', 'hsl(120,100%,50%)')",
-              },
-              text: {
-                type: "string",
-                description: "Text string for label/write commands",
-              },
-              fontSize: {
-                type: "number",
-                description:
-                  "Font size in pixels for label/write (default: 14)",
-              },
-            },
-            required: ["action"],
-          },
-          description:
-            "Array of turtle commands to execute sequentially. " +
-            'Example: [{"action":"forward","value":100},{"action":"right","value":90}]',
-        },
-        options: {
-          type: "object",
-          properties: {
-            canvasWidth: {
-              type: "number",
-              description: "Canvas width in pixels (default: 800, max: 1920)",
-            },
-            canvasHeight: {
-              type: "number",
-              description: "Canvas height in pixels (default: 600, max: 1080)",
-            },
-            background: {
-              type: "string",
-              description: "Canvas background color (default: '#000000')",
-            },
-            animated: {
-              type: "boolean",
-              description:
-                "Animate step-by-step (default: true). Set false for instant render.",
-            },
-            stepDelay: {
-              type: "number",
-              description:
-                "Milliseconds between animated steps (default: 40, range: 5-500)",
-            },
-            title: {
-              type: "string",
-              description: "Optional title displayed above the canvas",
-            },
-          },
-          description: "Optional canvas configuration",
+            "Python code using the PrismTurtle API. Provides a functional API (forward, right, color, etc.) " +
+            "and an OOP API (PrismTurtle class). Available stdlib: math, colorsys, random, itertools, " +
+            "functools, collections, statistics. Use setup(w, h) to change canvas size. " +
+            "The drawing is auto-saved and animated in the browser.",
         },
       },
-      required: [],
+      required: ["script"],
     },
   },
 

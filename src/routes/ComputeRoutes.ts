@@ -34,6 +34,9 @@ import {
   getTurtleDrawing,
 } from "../models/TurtleDrawing.ts";
 import {
+  executePythonTurtle,
+} from "../services/PythonInterpreterService.ts";
+import {
   saveThreeDimensionalScene,
   getThreeDimensionalScene,
 } from "../models/ThreeDimensionalScene.ts";
@@ -1405,47 +1408,6 @@ router.get("/color/convert", (req: Request, res: Response) => {
   }
 });
 // ─── 15. LOGO Turtle Graphics ───────────────────────────────
-const VALID_TURTLE_COMMANDS = new Set([
-  "forward",
-  "fd",
-  "backward",
-  "bk",
-  "back",
-  "right",
-  "rt",
-  "left",
-  "lt",
-  "penup",
-  "pu",
-  "pendown",
-  "pd",
-  "color",
-  "pencolor",
-  "width",
-  "pensize",
-  "goto",
-  "setposition",
-  "setpos",
-  "setheading",
-  "seth",
-  "circle",
-  "arc",
-  "dot",
-  "stamp",
-  "label",
-  "write",
-  "begin_fill",
-  "end_fill",
-  "fillcolor",
-  "reset",
-  "clear",
-  "speed",
-  "hideturtle",
-  "ht",
-  "showturtle",
-  "st",
-  "home",
-]);
 function buildTurtleEmbedHtml(
   commands: string[],
   options: Record<string, unknown> = {},
@@ -1670,30 +1632,65 @@ function buildTurtleEmbedHtml(
         angle = -90;
         break;
       case "circle": {
-        const r = Number(val);
+        const radius = Number(val);
+        const extent = 360;
+        const headingAngleRadians = deg2rad(angle);
+        const centerX = x + radius * Math.sin(headingAngleRadians);
+        const centerY = y - radius * Math.cos(headingAngleRadians);
+        const startAngleRadians = Math.atan2(y - centerY, x - centerX);
+        const sweepAngleRadians = -deg2rad(extent) * Math.sign(radius);
+        const endAngleRadians = startAngleRadians + sweepAngleRadians;
         if (penDown) {
           drawCtx.beginPath();
-          drawCtx.arc(x, y - r, Math.abs(r), 0, Math.PI * 2);
+          drawCtx.arc(centerX, centerY, Math.abs(radius), startAngleRadians, endAngleRadians, sweepAngleRadians < 0);
           drawCtx.strokeStyle = penColor;
           drawCtx.lineWidth = penWidth;
           drawCtx.stroke();
         }
+        if (filling) {
+          const interpolationSteps = 36;
+          for (let stepIndex = 1; stepIndex <= interpolationSteps; stepIndex++) {
+            const currentAngleRadians = startAngleRadians + (sweepAngleRadians * stepIndex) / interpolationSteps;
+            fillPath.push({
+              x: centerX + Math.abs(radius) * Math.cos(currentAngleRadians),
+              y: centerY + Math.abs(radius) * Math.sin(currentAngleRadians),
+            });
+          }
+        }
+        x = centerX + Math.abs(radius) * Math.cos(endAngleRadians);
+        y = centerY + Math.abs(radius) * Math.sin(endAngleRadians);
+        angle = angle - extent * Math.sign(radius);
         break;
       }
       case "arc": {
-        const arcR = Number(val);
+        const radius = Number(val);
         const extent = Number(val2) || 360;
+        const headingAngleRadians = deg2rad(angle);
+        const centerX = x + radius * Math.sin(headingAngleRadians);
+        const centerY = y - radius * Math.cos(headingAngleRadians);
+        const startAngleRadians = Math.atan2(y - centerY, x - centerX);
+        const sweepAngleRadians = -deg2rad(extent) * Math.sign(radius);
+        const endAngleRadians = startAngleRadians + sweepAngleRadians;
         if (penDown) {
-          const startRad = deg2rad(angle - 90);
-          const endRad = startRad + deg2rad(extent);
-          const centerX = x - Math.sin(deg2rad(angle)) * arcR;
-          const centerY = y + Math.cos(deg2rad(angle)) * arcR;
           drawCtx.beginPath();
-          drawCtx.arc(centerX, centerY, Math.abs(arcR), startRad, endRad, arcR < 0);
+          drawCtx.arc(centerX, centerY, Math.abs(radius), startAngleRadians, endAngleRadians, sweepAngleRadians < 0);
           drawCtx.strokeStyle = penColor;
           drawCtx.lineWidth = penWidth;
           drawCtx.stroke();
         }
+        if (filling) {
+          const interpolationSteps = Math.max(12, Math.floor(Math.abs(extent) / 10));
+          for (let stepIndex = 1; stepIndex <= interpolationSteps; stepIndex++) {
+            const currentAngleRadians = startAngleRadians + (sweepAngleRadians * stepIndex) / interpolationSteps;
+            fillPath.push({
+              x: centerX + Math.abs(radius) * Math.cos(currentAngleRadians),
+              y: centerY + Math.abs(radius) * Math.sin(currentAngleRadians),
+            });
+          }
+        }
+        x = centerX + Math.abs(radius) * Math.cos(endAngleRadians);
+        y = centerY + Math.abs(radius) * Math.sin(endAngleRadians);
+        angle = angle - extent * Math.sign(radius);
         break;
       }
       case "dot": case "stamp": {
@@ -1819,213 +1816,60 @@ function buildTurtleEmbedHtml(
 </${"script"}>`,
   });
 }
-/**
- * Session-based turtle state — allows the agent to build drawings
- * incrementally across multiple tool calls. Keyed by sessionId.
- * Falls back to single-shot mode when no sessionId is provided.
- */
-const turtleSessions = new Map();
-const TURTLE_SESSION_TTL_MS = 30 * 60_000; // 30 min
-function cleanupTurtleSessions() {
-  const now = Date.now();
-  for (const [id, session] of turtleSessions) {
-    if (now - session.updatedAt > TURTLE_SESSION_TTL_MS)
-      turtleSessions.delete(id);
-  }
-}
-function parseTurtleScript(script: string): any[] {
-  const commandsList: any[] = [];
-  const scriptLines = script.split(/[\n;]/);
-
-  for (const rawLine of scriptLines) {
-    const trimmedLine = rawLine.trim();
-    if (!trimmedLine || trimmedLine.startsWith("#") || trimmedLine.startsWith("//")) {
-      continue;
-    }
-
-    const commandTokens: string[] = [];
-    const tokenRegex = /[^\s"']+|"([^"]*)"|'([^']*)'/g;
-    let regexMatch;
-    while ((regexMatch = tokenRegex.exec(trimmedLine)) !== null) {
-      commandTokens.push(regexMatch[1] || regexMatch[2] || regexMatch[0]);
-    }
-
-    if (commandTokens.length === 0) {
-      continue;
-    }
-
-    const actionName = commandTokens[0].toLowerCase();
-    const argumentsList = commandTokens.slice(1);
-
-    const commandObject: any = { action: actionName };
-
-    switch (actionName) {
-      case "goto":
-      case "setposition":
-      case "setpos":
-        if (argumentsList.length >= 2) {
-          commandObject.x = Number(argumentsList[0]);
-          commandObject.y = Number(argumentsList[1]);
-        } else if (argumentsList.length === 1) {
-          commandObject.value = argumentsList[0];
-        }
-        break;
-
-      case "arc":
-        if (argumentsList.length >= 1) {
-          commandObject.value = argumentsList[0];
-        }
-        if (argumentsList.length >= 2) {
-          commandObject.value2 = argumentsList[1];
-        }
-        break;
-
-      case "color":
-      case "pencolor":
-      case "fillcolor":
-        if (argumentsList.length >= 1) {
-          commandObject.color = argumentsList[0];
-          commandObject.value = argumentsList[0];
-        }
-        break;
-
-      case "label":
-      case "write":
-        if (argumentsList.length >= 1) {
-          commandObject.text = argumentsList[0];
-          commandObject.value = argumentsList[0];
-        }
-        if (argumentsList.length >= 2) {
-          commandObject.fontSize = Number(argumentsList[1]);
-        }
-        break;
-
-      default:
-        if (argumentsList.length >= 1) {
-          commandObject.value = argumentsList[0];
-        }
-        break;
-    }
-
-    commandsList.push(commandObject);
-  }
-
-  return commandsList;
-}
 router.post("/turtle", asyncHandler(async (req: Request, res: Response) => {
-  const { commands, script, options, sessionId } = req.body;
-  
-  let commandsList = commands;
-  if (script && typeof script === "string") {
-    const parsedCommands = parseTurtleScript(script);
-    if (Array.isArray(commandsList)) {
-      commandsList = [...commandsList, ...parsedCommands];
-    } else {
-      commandsList = parsedCommands;
-    }
-  }
+  const { script } = req.body;
 
-  if (!commandsList || !Array.isArray(commandsList) || commandsList.length === 0) {
+  if (!script || typeof script !== "string" || script.trim().length === 0) {
     return res.status(400).json({
-      error:
-        "Either 'commands' (non-empty array) or 'script' (non-empty string) must be provided.",
+      error: "'script' (non-empty Python code string) is required.",
     });
   }
 
-  // Validate commands
-  for (let i = 0; i < commandsList.length; i++) {
-    const cmd = commandsList[i];
-    const action = cmd.action || cmd.command || cmd.cmd;
-    if (!action) {
-      return res.status(400).json({
-        error: `Command at index ${i} missing 'action' field`,
-      });
-    }
-    if (!VALID_TURTLE_COMMANDS.has(action)) {
-      return res.status(400).json({
-        error: `Unknown turtle command: '${action}'. Valid: ${[...VALID_TURTLE_COMMANDS].join(", ")}`,
-      });
-    }
+  const turtleResult = await executePythonTurtle(script, { timeout: 30_000 });
+
+  if (!turtleResult.success || !turtleResult.commands) {
+    return res.status(400).json({
+      error: turtleResult.error || "Turtle script execution failed",
+      stderr: turtleResult.stderr || undefined,
+      executionTimeMs: turtleResult.executionTimeMs,
+    });
   }
+
+  const commandCount = turtleResult.commands.length;
+  if (commandCount > 50_000) {
+    return res.status(400).json({
+      error: `Script produced ${commandCount} commands (max 50,000). Simplify the pattern or reduce iterations.`,
+    });
+  }
+
   const callerUsername = (req.headers["x-username"] as string) || null;
-  // ── Session mode: append to existing drawing ──
-  if (sessionId && turtleSessions.has(sessionId)) {
-    const session = turtleSessions.get(sessionId);
-    const totalCommands = session.commands.length + commandsList.length;
-    if (totalCommands > 5000) {
-      return res.status(400).json({
-        error: `Maximum 5,000 total commands per session (current: ${session.commands.length}, adding: ${commandsList.length})`,
-      });
-    }
-    // Merge options (new options override existing)
-    if (options) {
-      if (options.canvasWidth)
-        session.options.canvasWidth = Math.min(options.canvasWidth, 1920);
-      if (options.canvasHeight)
-        session.options.canvasHeight = Math.min(options.canvasHeight, 1080);
-      if (options.background) session.options.background = options.background;
-      if (options.animated !== undefined)
-        session.options.animated = options.animated;
-      if (options.stepDelay)
-        session.options.stepDelay = Math.max(
-          5,
-          Math.min(500, options.stepDelay),
-        );
-      if (options.title) session.options.title = options.title;
-    }
-    // Record how many commands existed before this append
-    const previousCommandCount = session.commands.length;
-    session.commands.push(...commandsList);
-    session.updatedAt = Date.now();
-    // Persist full accumulated drawing to MongoDB (with animation start offset)
-    const embedId = crypto.randomUUID().slice(0, 12);
-    const persistedOptions = { ...session.options, previousCommandCount };
-    await saveTurtleDrawing(embedId, session.commands, persistedOptions, sessionId, callerUsername);
-    const turtleEmbedUrl = buildLocalUrl("compute/turtle/embed", {
-      id: embedId,
-    });
-    return res.json({
-      turtleEmbedUrl,
-      sessionId,
-      commandCount: commandsList.length,
-      totalCommands: session.commands.length,
-      canvasSize: `${session.options.canvasWidth}x${session.options.canvasHeight}`,
-      isAppend: true,
-    });
-  }
-  // ── New session ──
-  if (commandsList.length > 5000) {
-    return res.status(400).json({
-      error: "Maximum 5,000 commands per drawing",
-    });
-  }
+
+  // Auto-scale animation speed based on command complexity
+  let stepDelay = 40;
+  if (commandCount > 2000) stepDelay = 2;
+  else if (commandCount > 1000) stepDelay = 4;
+  else if (commandCount > 500) stepDelay = 8;
+  else if (commandCount > 200) stepDelay = 15;
+  else if (commandCount > 50) stepDelay = 25;
+
   const turtleOptions = {
-    canvasWidth: Math.min(options?.canvasWidth || 800, 1920),
-    canvasHeight: Math.min(options?.canvasHeight || 600, 1080),
-    background: options?.background || "#000000",
-    animated: options?.animated !== false,
-    stepDelay: Math.max(5, Math.min(500, options?.stepDelay || 40)),
-    title: options?.title || "",
+    canvasWidth: Math.min(turtleResult.canvasWidth, 1920),
+    canvasHeight: Math.min(turtleResult.canvasHeight, 1080),
+    background: turtleResult.background || "#000000",
+    animated: true,
+    stepDelay,
+    title: "",
   };
-  // Create new session
-  const newSessionId = sessionId || crypto.randomUUID().slice(0, 12);
-  turtleSessions.set(newSessionId, {
-    commands: [...commandsList],
-    options: { ...turtleOptions },
-    updatedAt: Date.now(),
-  });
-  cleanupTurtleSessions();
-  // Persist to MongoDB
+
   const embedId = crypto.randomUUID().slice(0, 12);
-  await saveTurtleDrawing(embedId, commandsList, turtleOptions, newSessionId, callerUsername);
+  await saveTurtleDrawing(embedId, turtleResult.commands, turtleOptions, null, callerUsername);
   const turtleEmbedUrl = buildLocalUrl("compute/turtle/embed", { id: embedId });
+
   res.json({
     turtleEmbedUrl,
-    sessionId: newSessionId,
-    turtleId: embedId,
-    commandCount: commandsList.length,
-    totalCommands: commandsList.length,
+    commandCount,
     canvasSize: `${turtleOptions.canvasWidth}x${turtleOptions.canvasHeight}`,
+    executionTimeMs: turtleResult.executionTimeMs,
   });
 }));
 router.get("/turtle/embed", asyncHandler(async (req: Request, res: Response) => {

@@ -1,9 +1,10 @@
 // ─── Sandboxed Code Execution ───────────────────────────────
 
 import { spawn } from "node:child_process";
-import { writeFile, unlink, mkdtemp, rm } from "node:fs/promises";
-import { join } from "node:path";
+import { writeFile, readFile, unlink, mkdtemp, rm } from "node:fs/promises";
+import { join, dirname } from "node:path";
 import { tmpdir } from "node:os";
+import { fileURLToPath } from "node:url";
 import {
   PYTHON_DEFAULT_TIMEOUT_MS as DEFAULT_TIMEOUT_MS,
   PYTHON_MAX_TIMEOUT_MS as MAX_TIMEOUT_MS,
@@ -338,6 +339,118 @@ export async function executePythonStreaming(
       }
     });
   });
+}
+
+/**
+ * Lazy-loaded turtle renderer script template.
+ * Read once from disk, then cached in memory.
+ */
+let cachedTurtleRendererScript: string | null = null;
+
+async function getTurtleRendererScript(): Promise<string> {
+  if (cachedTurtleRendererScript) return cachedTurtleRendererScript;
+  const currentDirectory = dirname(fileURLToPath(import.meta.url));
+  const scriptPath = join(currentDirectory, "TurtleRendererScript.py");
+  cachedTurtleRendererScript = await readFile(scriptPath, "utf-8");
+  return cachedTurtleRendererScript;
+}
+
+export interface TurtleExecutionResult {
+  success: boolean;
+  commands: Record<string, unknown>[] | null;
+  canvasWidth: number;
+  canvasHeight: number;
+  background: string;
+  error?: string;
+  executionTimeMs: number;
+  stderr: string;
+}
+
+/**
+ * Execute a Python turtle script using the PrismTurtle renderer.
+ * The user's code is injected into TurtleRendererScript.py and
+ * executed in the standard Python sandbox. The recorded drawing
+ * commands are extracted from stdout via JSON sentinel markers.
+ */
+export async function executePythonTurtle(
+  userCode: string,
+  { timeout = DEFAULT_TIMEOUT_MS }: PythonExecutionOptions = {},
+): Promise<TurtleExecutionResult> {
+  const startTime = performance.now();
+
+  const templateScript = await getTurtleRendererScript();
+
+  const fullScript = templateScript.replace(
+    "# __USER_CODE_MARKER__",
+    userCode + "\n\n# Auto-save if the user didn't call save()\n"
+      + "if _default_turtle is not None:\n"
+      + "    _default_turtle.save()\n"
+      + "elif 't' in dir() and hasattr(t, 'save'):\n"
+      + "    t.save()\n",
+  );
+
+  const executionResult = await executePython(fullScript, { timeout });
+
+  const executionTimeMs = Math.round(performance.now() - startTime);
+
+  if (!executionResult.success) {
+    return {
+      success: false,
+      commands: null,
+      canvasWidth: 800,
+      canvasHeight: 600,
+      background: "black",
+      error: executionResult.stderr || executionResult.error || "Python execution failed",
+      executionTimeMs,
+      stderr: executionResult.stderr,
+    };
+  }
+
+  const startMarker = "__PRISM_TURTLE_DATA_START__";
+  const endMarker = "__PRISM_TURTLE_DATA_END__";
+  const startIndex = executionResult.stdout.indexOf(startMarker);
+  const endIndex = executionResult.stdout.indexOf(endMarker);
+
+  if (startIndex === -1 || endIndex === -1) {
+    return {
+      success: false,
+      commands: null,
+      canvasWidth: 800,
+      canvasHeight: 600,
+      background: "black",
+      error: "Turtle script did not produce output. Make sure to call save() or use the functional API.",
+      executionTimeMs,
+      stderr: executionResult.stderr,
+    };
+  }
+
+  const jsonString = executionResult.stdout
+    .slice(startIndex + startMarker.length, endIndex)
+    .trim();
+
+  try {
+    const turtleData = JSON.parse(jsonString);
+    return {
+      success: true,
+      commands: turtleData.commands || [],
+      canvasWidth: turtleData.canvasWidth || 800,
+      canvasHeight: turtleData.canvasHeight || 600,
+      background: turtleData.background || "black",
+      executionTimeMs,
+      stderr: executionResult.stderr,
+    };
+  } catch {
+    return {
+      success: false,
+      commands: null,
+      canvasWidth: 800,
+      canvasHeight: 600,
+      background: "black",
+      error: "Failed to parse turtle command output",
+      executionTimeMs,
+      stderr: executionResult.stderr,
+    };
+  }
 }
 
 /**

@@ -505,80 +505,40 @@ describe("POST /compute/3d/voxel", () => {
 });
 
 describe("POST /compute/turtle", () => {
-  it("successfully starts a new turtle drawing session using commands array", async () => {
-    const postResponse = await request(app)
-      .post("/compute/turtle")
-      .send({
-        commands: [
-          { action: "fd", value: 100 },
-          { action: "rt", value: 90 },
-        ],
-      });
-
-    expect(postResponse.status).toBe(200);
-    expect(postResponse.body.turtleEmbedUrl).toBeTruthy();
-    expect(postResponse.body.sessionId).toBeTruthy();
-    expect(postResponse.body.commandCount).toBe(2);
-    expect(postResponse.body.totalCommands).toBe(2);
-  });
-
-  it("successfully parses a LOGO script and executes commands", async () => {
-    const postResponse = await request(app)
-      .post("/compute/turtle")
-      .send({
-        script: "fd 50\nrt 45\ncolor red\ngoto 10 -20\nwrite 'Hello' 12",
-      });
-
-    expect(postResponse.status).toBe(200);
-    expect(postResponse.body.turtleEmbedUrl).toBeTruthy();
-    const sessionId = postResponse.body.sessionId;
-    expect(sessionId).toBeTruthy();
-    expect(postResponse.body.commandCount).toBe(5);
-
-    // Retrieve saved drawing to verify script commands were correctly parsed and stored
-    const savedDrawing = mockTurtleDrawings.get(postResponse.body.turtleId);
-    expect(savedDrawing).toBeTruthy();
-    expect(savedDrawing.commands).toEqual([
-      { action: "fd", value: "50" },
-      { action: "rt", value: "45" },
-      { action: "color", color: "red", value: "red" },
-      { action: "goto", x: 10, y: -20 },
-      { action: "write", text: "Hello", value: "Hello", fontSize: 12 },
-    ]);
-  });
-
-  it("successfully appends script commands to an existing session", async () => {
-    const firstResponse = await request(app)
-      .post("/compute/turtle")
-      .send({
-        script: "fd 100",
-      });
-
-    expect(firstResponse.status).toBe(200);
-    const sessionId = firstResponse.body.sessionId;
-
-    const secondResponse = await request(app)
-      .post("/compute/turtle")
-      .send({
-        sessionId,
-        script: "rt 90\nbk 50",
-      });
-
-    expect(secondResponse.status).toBe(200);
-    expect(secondResponse.body.sessionId).toBe(sessionId);
-    expect(secondResponse.body.commandCount).toBe(2);
-    expect(secondResponse.body.totalCommands).toBe(3);
-    expect(secondResponse.body.isAppend).toBe(true);
-  });
-
-  it("returns 400 when both commands and script are empty or missing", async () => {
+  it("returns 400 when script is missing or empty", async () => {
     const postResponse = await request(app)
       .post("/compute/turtle")
       .send({});
 
     expect(postResponse.status).toBe(400);
-    expect(postResponse.body.error).toContain("Either 'commands' (non-empty array) or 'script' (non-empty string)");
+    expect(postResponse.body.error).toContain("'script' (non-empty Python code string) is required.");
+  });
+
+  it("successfully executes a Python turtle script and returns drawing details", async () => {
+    const postResponse = await request(app)
+      .post("/compute/turtle")
+      .send({
+        script: "color('cyan')\nforward(100)\nright(90)\n",
+      });
+
+    expect(postResponse.status).toBe(200);
+    expect(postResponse.body.turtleEmbedUrl).toBeTruthy();
+    expect(postResponse.body.commandCount).toBeGreaterThan(0);
+    expect(postResponse.body.canvasSize).toBe("800x600");
+    expect(postResponse.body.executionTimeMs).toBeGreaterThanOrEqual(0);
+  });
+
+  it("returns 400 when script has syntax errors or runtime issues", async () => {
+    const postResponse = await request(app)
+      .post("/compute/turtle")
+      .send({
+        script: "color('cyan'\nforward(100)",
+      });
+
+    expect(postResponse.status).toBe(400);
+    expect(postResponse.body.error).toBeTruthy();
   });
 });
+
 
 
