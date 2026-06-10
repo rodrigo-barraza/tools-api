@@ -162,20 +162,20 @@ function tokenizeLogoSource(source: string): LogoToken[] {
 
     // Single-character operators
     if ("+-*/=<>%".includes(character)) {
-      // Check for negative numbers: minus sign followed by digit, preceded by operator/bracket/start
+      // UCBLogo whitespace rule for negative numbers: a minus sign preceded
+      // by whitespace or a delimiter and immediately followed by a digit is
+      // a negative number literal, not the infix subtraction operator.
+      //   setxy -150 -20   →  two negative number literals
+      //   5 - 3            →  subtraction (space on both sides of -)
+      //   5-3              →  subtraction (no space before -)
+      //   [-2 3]           →  negative number after bracket delimiter
       if (character === "-" && position + 1 < normalizedSource.length) {
         const nextCharacter = normalizedSource[position + 1];
         if (nextCharacter >= "0" && nextCharacter <= "9" || nextCharacter === ".") {
-          const previousToken = tokens.length > 0 ? tokens[tokens.length - 1] : null;
-          const isPreviousValueProducer = previousToken &&
-            (previousToken.type === LogoTokenType.Number ||
-             previousToken.type === LogoTokenType.Variable ||
-             previousToken.type === LogoTokenType.CloseBracket ||
-             previousToken.type === LogoTokenType.CloseParen ||
-             (previousToken.type === LogoTokenType.Word && !isOperatorWord(previousToken.value)));
+          const characterBefore = position > 0 ? normalizedSource[position - 1] : " ";
+          const isDelimiterOrWhitespaceBefore = " \t\n[(".includes(characterBefore);
 
-          if (!isPreviousValueProducer) {
-            // This is a negative number, not subtraction
+          if (isDelimiterOrWhitespaceBefore) {
             let numberString = "-";
             position++;
             let hasDecimalPoint = false;
