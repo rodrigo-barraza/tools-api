@@ -5579,47 +5579,69 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
 
-  // ── Turtle Graphics (Python Script Mode) ────────────────────
+  // ── Turtle Graphics (LOGO Language) ──────────────────────────
   {
     name: "draw_turtle_graphics",
-    dataSource: compute("PrismTurtle / Pillow"),
+    dataSource: compute("LOGO interpreter"),
     description:
-      "Draw animated 2D graphics using Python code with the PrismTurtle renderer. " +
-      "Write a Python script in the 'script' parameter using the functional turtle API. " +
-      "The script is executed server-side and the drawing is replayed with step-by-step animation in the browser. " +
-      "IMPORTANT: The canvas background is BLACK — do NOT use black or very dark colors for drawing. " +
-      "Use bright, vivid colors (e.g. cyan, #f472b6, #4ade80, #facc15, white, or RGB tuples like (255,100,50)). " +
-      "CAPABILITIES: Loops, recursion, math, colorsys for HSL color cycling, random for generative art. " +
-      "Fractals, spirals, L-systems, phyllotaxis, algorithmic patterns, recursive trees are all possible. " +
-      "USAGE (functional API — recommended): " +
-      "color('cyan'); width(2); " +
-      "for i in range(36): forward(100); right(170) " +
-      "USAGE (OOP API for multiple turtles): " +
-      "t = PrismTurtle(800, 800); t.color('cyan'); t.forward(100); t.save() " +
-      "Available stdlib: math, colorsys, random, itertools, functools, collections, statistics. " +
-      "API: forward/fd, backward/bk, right/rt, left/lt, goto, setpos, setx, sety, setheading/seth, home, " +
-      "penup/pu, pendown/pd, pensize/width, pencolor/color, fillcolor, begin_fill, end_fill, " +
-      "circle(r, extent, steps), dot(size, color), stamp, write(text, font, align), " +
-      "clear, reset, bgcolor, hideturtle/ht, showturtle/st, position/pos, heading, distance, towards, setup(w,h). " +
-      "The result is an animated canvas embed. Render it: ![Turtle Drawing](turtleEmbedUrl).",
+      "Draw animated 2D turtle graphics using the LOGO programming language. " +
+      "Write LOGO source code in the 'code' parameter. " +
+      "The code is interpreted server-side and the drawing is replayed with step-by-step animation in the browser. " +
+      "IMPORTANT: The canvas background is BLACK — use bright, vivid colors. " +
+      "Use setpencolor with palette numbers 1-15 (1=blue, 2=green, 3=cyan, 4=red, 5=magenta, 6=yellow, 7=white, " +
+      "8=brown, 9=tan, 10=forest, 11=aqua, 12=salmon, 13=purple, 14=orange, 15=grey) or RGB lists like setpencolor [255 100 50]. " +
+      "ITERATIVE DRAWING: Pass a drawingId (returned from a previous call) to append new commands to an existing drawing. " +
+      "This lets you build drawings incrementally — first call creates a base, subsequent calls add detail. " +
+      "Between calls, describe what you just drew and what comes next. " +
+      "COMMANDS: " +
+      "Movement — fd/forward dist, bk/back dist, rt/right degrees, lt/left degrees, home, setxy x y, setx x, sety y, seth/setheading angle, arc angle radius, circle radius. " +
+      "Pen — pu/penup, pd/pendown, setpencolor/setpc color, setpensize size, setbackground/setbg color. " +
+      "Drawing — label text, dot radius, clean, cs/clearscreen, ht/hideturtle, st/showturtle. " +
+      "Control — repeat count [...], for [var start end step] [...], if condition [...], ifelse condition [...] [...], to name :params ... end, stop, output/op value. " +
+      "Variables — make \\\"name value, :name (getter). " +
+      "Math — random n, sqrt x, sin x, cos x, abs x, int x, round x, power base exp, remainder a b. " +
+      "Queries — xcor, ycor, heading, towards x y, pendownp. " +
+      "Logic — and a b, or a b, not a, = < > <= >= <>. " +
+      "EXAMPLES: " +
+      "repeat 180 [fd 200 bk 200 rt 2] — radial fan. " +
+      "repeat 400 [repeat 34 [fd 12 rt 10] rt 90] — nested pattern. " +
+      "for [i 0.01 4 0.05] [repeat 180 [fd :i rt 1]] — growing spiral. " +
+      "to tree :size if :size < 5 [fd :size bk :size stop] fd :size / 3 lt 30 tree :size * 2 / 3 rt 60 tree :size * 2 / 3 lt 30 bk :size / 3 end tree 100 — recursive tree. " +
+      "Render the result: ![Turtle Drawing](turtleEmbedUrl).",
     endpoint: {
       method: "POST",
       path: "/compute/turtle",
-      bodyParams: ["script"],
+      bodyParams: ["code", "drawingId", "width", "height"],
     },
     parameters: {
       type: "object",
       properties: {
-        script: {
+        code: {
           type: "string",
           description:
-            "Python code using the PrismTurtle API. Provides a functional API (forward, right, color, etc.) " +
-            "and an OOP API (PrismTurtle class). Available stdlib: math, colorsys, random, itertools, " +
-            "functools, collections, statistics. Use setup(w, h) to change canvas size. " +
+            "LOGO source code for the turtle drawing. Uses standard UCBLogo syntax. " +
+            "Supports procedure definitions (to/end), control flow (repeat, for, if/ifelse), " +
+            "variables (make/thing/:var), recursion, and all standard turtle graphics commands. " +
             "The drawing is auto-saved and animated in the browser.",
         },
+        drawingId: {
+          type: "string",
+          description:
+            "Optional drawing ID returned from a previous draw_turtle_graphics call. " +
+            "Pass this to append new LOGO commands to an existing drawing. " +
+            "Previous commands replay instantly; only new commands are animated. " +
+            "Omit to start a new drawing.",
+        },
+        width: {
+          type: "number",
+          description: "Optional canvas width in pixels (100-1920). Default: 800.",
+        },
+        height: {
+          type: "number",
+          description: "Optional canvas height in pixels (100-1080). Default: 600.",
+        },
       },
-      required: ["script"],
+      required: ["code"],
     },
   },
 

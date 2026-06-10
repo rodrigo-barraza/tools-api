@@ -34,8 +34,8 @@ import {
   getTurtleDrawing,
 } from "../models/TurtleDrawing.ts";
 import {
-  executePythonTurtle,
-} from "../services/PythonInterpreterService.ts";
+  executeLogoProgram,
+} from "../services/LogoInterpreterService.ts";
 import {
   saveThreeDimensionalScene,
   getThreeDimensionalScene,
@@ -1817,28 +1817,52 @@ function buildTurtleEmbedHtml(
   });
 }
 router.post("/turtle", asyncHandler(async (req: Request, res: Response) => {
-  const { script } = req.body;
+  const { code, drawingId, width, height } = req.body;
 
-  if (!script || typeof script !== "string" || script.trim().length === 0) {
+  if (!code || typeof code !== "string" || code.trim().length === 0) {
     return res.status(400).json({
-      error: "'script' (non-empty Python code string) is required.",
+      error: "'code' (non-empty LOGO source code string) is required.",
     });
   }
 
-  const turtleResult = await executePythonTurtle(script, { timeout: 30_000 });
+  const lengthError = validateMaxLength(code, MAX_CODE_LENGTH, "LOGO code");
+  if (lengthError) return res.status(400).json({ error: lengthError });
 
-  if (!turtleResult.success || !turtleResult.commands) {
+  // Resolve canvas dimensions
+  const canvasWidth = Math.min(Math.max(width || 800, 100), 1920);
+  const canvasHeight = Math.min(Math.max(height || 600, 100), 1080);
+
+  // If drawingId is provided, load previous commands for iterative drawing
+  let previousCommands: unknown[] = [];
+  let previousOptions: Record<string, unknown> = {};
+  if (drawingId && typeof drawingId === "string") {
+    const existingDrawing = await getTurtleDrawing(drawingId);
+    if (existingDrawing) {
+      previousCommands = existingDrawing.commands;
+      previousOptions = existingDrawing.options;
+    }
+  }
+
+  const logoResult = executeLogoProgram(code, {
+    timeout: 30_000,
+    canvasWidth: (previousOptions.canvasWidth as number) || canvasWidth,
+    canvasHeight: (previousOptions.canvasHeight as number) || canvasHeight,
+  });
+
+  if (!logoResult.success) {
     return res.status(400).json({
-      error: turtleResult.error || "Turtle script execution failed",
-      stderr: turtleResult.stderr || undefined,
-      executionTimeMs: turtleResult.executionTimeMs,
+      error: logoResult.error || "LOGO program execution failed",
+      executionTimeMs: logoResult.executionTimeMs,
     });
   }
 
-  const commandCount = turtleResult.commands.length;
-  if (commandCount > 50_000) {
+  // Combine with previous commands for iterative drawing
+  const allCommands = [...previousCommands, ...logoResult.commands];
+  const totalCommandCount = allCommands.length;
+
+  if (totalCommandCount > 50_000) {
     return res.status(400).json({
-      error: `Script produced ${commandCount} commands (max 50,000). Simplify the pattern or reduce iterations.`,
+      error: `Drawing contains ${totalCommandCount} total commands (max 50,000). Simplify the pattern or reduce iterations.`,
     });
   }
 
@@ -1846,30 +1870,33 @@ router.post("/turtle", asyncHandler(async (req: Request, res: Response) => {
 
   // Auto-scale animation speed based on command complexity
   let stepDelay = 40;
-  if (commandCount > 2000) stepDelay = 2;
-  else if (commandCount > 1000) stepDelay = 4;
-  else if (commandCount > 500) stepDelay = 8;
-  else if (commandCount > 200) stepDelay = 15;
-  else if (commandCount > 50) stepDelay = 25;
+  if (totalCommandCount > 2000) stepDelay = 2;
+  else if (totalCommandCount > 1000) stepDelay = 4;
+  else if (totalCommandCount > 500) stepDelay = 8;
+  else if (totalCommandCount > 200) stepDelay = 15;
+  else if (totalCommandCount > 50) stepDelay = 25;
 
   const turtleOptions = {
-    canvasWidth: Math.min(turtleResult.canvasWidth, 1920),
-    canvasHeight: Math.min(turtleResult.canvasHeight, 1080),
-    background: turtleResult.background || "#000000",
+    canvasWidth: logoResult.canvasWidth,
+    canvasHeight: logoResult.canvasHeight,
+    background: logoResult.background || "#000000",
     animated: true,
     stepDelay,
     title: "",
+    previousCommandCount: previousCommands.length,
   };
 
-  const embedId = crypto.randomUUID().slice(0, 12);
-  await saveTurtleDrawing(embedId, turtleResult.commands, turtleOptions, null, callerUsername);
+  const embedId = drawingId || crypto.randomUUID().slice(0, 12);
+  await saveTurtleDrawing(embedId, allCommands, turtleOptions, null, callerUsername);
   const turtleEmbedUrl = buildLocalUrl("compute/turtle/embed", { id: embedId });
 
   res.json({
     turtleEmbedUrl,
-    commandCount,
+    drawingId: embedId,
+    commandCount: totalCommandCount,
+    newCommandCount: logoResult.commands.length,
     canvasSize: `${turtleOptions.canvasWidth}x${turtleOptions.canvasHeight}`,
-    executionTimeMs: turtleResult.executionTimeMs,
+    executionTimeMs: logoResult.executionTimeMs,
   });
 }));
 router.get("/turtle/embed", asyncHandler(async (req: Request, res: Response) => {
