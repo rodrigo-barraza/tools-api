@@ -351,7 +351,16 @@ async function getTurtleRendererScript(): Promise<string> {
   if (cachedTurtleRendererScript) return cachedTurtleRendererScript;
   const currentDirectory = dirname(fileURLToPath(import.meta.url));
   const scriptPath = join(currentDirectory, "TurtleRendererScript.py");
-  cachedTurtleRendererScript = await readFile(scriptPath, "utf-8");
+  try {
+    cachedTurtleRendererScript = await readFile(scriptPath, "utf-8");
+  } catch (error: unknown) {
+    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
+      const fallbackPath = join(currentDirectory, "..", "..", "src", "services", "TurtleRendererScript.py");
+      cachedTurtleRendererScript = await readFile(fallbackPath, "utf-8");
+    } else {
+      throw error;
+    }
+  }
   return cachedTurtleRendererScript;
 }
 
