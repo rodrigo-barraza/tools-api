@@ -12873,9 +12873,7 @@ if (searchToolsDefinition) {
   const domainCapabilities = uniqueDomains
     .map((domain) => {
       const toolNames = domainToToolNames.get(domain) || [];
-      const humanizedToolNames = toolNames
-        .map((name) => name.replace(/_/g, " "))
-        .join(", ");
+      const humanizedToolNames = toolNames.join(", ");
       return `${domain.toLowerCase()} (${humanizedToolNames})`;
     })
     .join(", ");
@@ -12885,7 +12883,7 @@ if (searchToolsDefinition) {
       const toolNames = domainToToolNames.get(domain) || [];
       return toolNames
         .slice(0, 2)
-        .map((name) => `'${name.replace(/_/g, " ")}' `);
+        .map((name) => `'${name}' `);
     })
     .slice(0, 30)
     .map((example) => example.trim())
