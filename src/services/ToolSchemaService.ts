@@ -11023,12 +11023,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     name: "search_tools",
     dataSource: onDemand("ToolSchemaService"),
     description:
-      "Search for available tools by keyword or domain. Returns matching tool names, " +
-      "descriptions, schemas, and an isEnabled flag. Use this to discover what capabilities are " +
-      "available when you need a tool you haven't used before, or to find domain-specific tools " +
-      "(e.g. weather, finance, health). If results show isEnabled: false, you MUST call " +
-      "enable_tools with those tool names before you can use them. " +
-      "This is a read-only discovery tool — it does not execute anything.",
+      "Search the FULL tool catalog ({{TOOL_COUNT}} tools) by keyword or domain. Returns matching tool names, " +
+      "descriptions, schemas, and an isEnabled flag. Use this whenever the user requests a capability " +
+      "you don't currently have — tools span: {{DOMAIN_CAPABILITIES}}. " +
+      "If results show isEnabled: false, you MUST call enable_tools with those tool names " +
+      "before you can use them. This is a read-only discovery tool — it does not execute anything.",
     endpoint: {
       method: "POST",
       path: "/agentic/tool/search",
@@ -11041,14 +11040,13 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           type: "string",
           description:
             "Search keyword(s) to match against tool names and descriptions. " +
-            "Example: 'weather', 'file read', 'stock price', 'image generation'.",
+            "Use capability-specific terms for best results. " +
+            "Examples: {{QUERY_EXAMPLES}}.",
         },
         domain: {
           type: "string",
           description:
-            "Filter by tool domain. Known domains include: 'Weather & Environment', " +
-            "'Finance & Markets', 'Health & Nutrition', 'Knowledge & Reference', " +
-            "'Workspace', 'Web', 'Browser', 'Task Management', 'Communication', 'Creative', etc.",
+            "Filter by tool domain. Known domains: {{KNOWN_DOMAINS}}.",
         },
         limit: {
           type: "number",
@@ -12469,6 +12467,8 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   },
 ];
 
+
+
 // ────────────────────────────────────────────────────────────
 // Domain Taxonomy — groups tools by functional area
 // ────────────────────────────────────────────────────────────
@@ -12846,6 +12846,76 @@ const TOOL_DOMAINS = {
   // Transit (new tool)
   get_flight_status: "Transit",
 };
+
+// ────────────────────────────────────────────────────────────
+// Post-init patch — resolve all dynamic placeholders in the
+// search_tools schema from TOOL_DEFINITIONS and TOOL_DOMAINS.
+// Runs synchronously at module load, before any consumer reads.
+// ────────────────────────────────────────────────────────────
+
+const searchToolsDefinition = TOOL_DEFINITIONS.find(
+  (tool) => tool.name === "search_tools",
+);
+
+if (searchToolsDefinition) {
+  const toolCount = String(TOOL_DEFINITIONS.length);
+
+  const domainToToolNames = new Map<string, string[]>();
+  for (const [toolName, domain] of Object.entries(TOOL_DOMAINS)) {
+    if (!domainToToolNames.has(domain)) {
+      domainToToolNames.set(domain, []);
+    }
+    domainToToolNames.get(domain)!.push(toolName);
+  }
+
+  const uniqueDomains = [...new Set(Object.values(TOOL_DOMAINS))].sort();
+
+  const domainCapabilities = uniqueDomains
+    .map((domain) => {
+      const toolNames = domainToToolNames.get(domain) || [];
+      const sampleToolNames = toolNames
+        .slice(0, 3)
+        .map((name) => name.replace(/_/g, " "))
+        .join(", ");
+      return `${domain.toLowerCase()} (${sampleToolNames})`;
+    })
+    .join(", ");
+
+  const queryExamples = uniqueDomains
+    .flatMap((domain) => {
+      const toolNames = domainToToolNames.get(domain) || [];
+      return toolNames
+        .slice(0, 2)
+        .map((name) => `'${name.replace(/_/g, " ")}' `);
+    })
+    .slice(0, 30)
+    .map((example) => example.trim())
+    .join(", ");
+
+  const knownDomains = uniqueDomains
+    .map((domain) => `'${domain}'`)
+    .join(", ");
+
+  searchToolsDefinition.description = searchToolsDefinition.description
+    .replace("{{TOOL_COUNT}}", toolCount)
+    .replace("{{DOMAIN_CAPABILITIES}}", domainCapabilities);
+
+  const queryProperty = searchToolsDefinition.parameters?.properties?.query;
+  if (queryProperty?.description) {
+    queryProperty.description = queryProperty.description.replace(
+      "{{QUERY_EXAMPLES}}",
+      queryExamples,
+    );
+  }
+
+  const domainProperty = searchToolsDefinition.parameters?.properties?.domain;
+  if (domainProperty?.description) {
+    domainProperty.description = domainProperty.description.replace(
+      "{{KNOWN_DOMAINS}}",
+      knownDomains,
+    );
+  }
+}
 
 // ────────────────────────────────────────────────────────────
 // Tool Emojis — per-tool emoji displayed in the client UI
@@ -13508,6 +13578,10 @@ export {
   SEMANTIC_PARAMETER_TYPES,
   TIER_THRESHOLDS,
 };
+
+export function getToolDefinitionCount(): number {
+  return TOOL_DEFINITIONS.length;
+}
 
 /**
  * Get all tool schemas with endpoint metadata.
