@@ -46,58 +46,51 @@ async function lightsApiFetch(
   return response.json();
 }
 
-const LightsDataService = {
-  /**
-   * List lights and their current state.
+interface LifxLight {
+  id?: string;
+  label?: string;
+  power?: string;
+  brightness?: number;
+  color?: { hue: number; saturation: number; kelvin: number };
+  group?: { name?: string };
+  location?: { name?: string };
+  connected?: boolean;
+  product?: { name?: string };
+  effect?: string;
+}
 
-   */
+function formatLightStatusList(data: unknown) {
+  if (!Array.isArray(data)) return data;
+
+  return data.map((light: LifxLight) => ({
+    id: light.id,
+    label: light.label,
+    power: light.power,
+    brightness: light.brightness,
+    color: light.color
+      ? {
+          hue: Math.round(light.color.hue),
+          saturation: Math.round(light.color.saturation * 100) / 100,
+          kelvin: light.color.kelvin,
+        }
+      : null,
+    group: light.group?.name || null,
+    location: light.location?.name || null,
+    connected: light.connected,
+    product: light.product?.name || null,
+    effect: light.effect || null,
+  }));
+}
+
+const LightsDataService = {
   async listLights(selector: string = "all") {
     const data = await lightsApiFetch(
       "GET",
       `/lights/${encodeURIComponent(selector)}`,
     );
-
-    // Normalize the response into a clean shape for the agent
-    if (!Array.isArray(data)) return data;
-
-    interface LifxLight {
-      id?: string;
-      label?: string;
-      power?: string;
-      brightness?: number;
-      color?: { hue: number; saturation: number; kelvin: number };
-      group?: { name?: string };
-      location?: { name?: string };
-      connected?: boolean;
-      product?: { name?: string };
-      effect?: string;
-    }
-
-    return data.map((light: LifxLight) => ({
-      id: light.id,
-      label: light.label,
-      power: light.power,
-      brightness: light.brightness,
-      color: light.color
-        ? {
-            hue: Math.round(light.color.hue),
-            saturation: Math.round(light.color.saturation * 100) / 100,
-            kelvin: light.color.kelvin,
-          }
-        : null,
-      group: light.group?.name || null,
-      location: light.location?.name || null,
-      connected: light.connected,
-      product: light.product?.name || null,
-      effect: light.effect || null,
-    }));
+    return formatLightStatusList(data);
   },
 
-  /**
-   * Set the state of lights.
-
-
-   */
   async setState({
     selector = "all",
     power,
@@ -120,18 +113,15 @@ const LightsDataService = {
     if (duration !== undefined) body.duration = duration;
     if (kelvin !== undefined) body.color = `kelvin:${kelvin}`;
 
-    return lightsApiFetch(
+    await lightsApiFetch(
       "PUT",
       `/lights/${encodeURIComponent(selector)}/state`,
       body,
     );
+
+    return this.listLights(selector);
   },
 
-  /**
-   * Set state delta — relative adjustments to current light state.
-
-
-   */
   async setStateDelta({
     selector = "all",
     hue,
@@ -154,38 +144,34 @@ const LightsDataService = {
     if (kelvin !== undefined) body.kelvin = kelvin;
     if (duration !== undefined) body.duration = duration;
 
-    return lightsApiFetch(
+    await lightsApiFetch(
       "POST",
       `/lights/${encodeURIComponent(selector)}/state/delta`,
       body,
     );
+
+    return this.listLights(selector);
   },
 
-  /**
-   * Set different states on multiple selectors in a single request.
-
-
-   */
   async setStates(
     states: Record<string, unknown>[],
     defaults: Record<string, unknown> | null = null,
   ) {
     const body: Record<string, unknown> = { states };
     if (defaults) body.defaults = defaults;
-    return lightsApiFetch("PUT", "/lights/states", body);
+    await lightsApiFetch("PUT", "/lights/states", body);
+
+    return this.listLights("all");
   },
 
-  /**
-   * Toggle power on/off.
-
-
-   */
   async togglePower(selector: string = "all", duration: number = 1) {
-    return lightsApiFetch(
+    await lightsApiFetch(
       "POST",
       `/lights/${encodeURIComponent(selector)}/toggle`,
       { duration },
     );
+
+    return this.listLights(selector);
   },
 
   /**
