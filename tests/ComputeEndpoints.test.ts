@@ -305,7 +305,7 @@ describe("POST /compute/3d/mesh", () => {
       .send({
         sessionId,
         vertices: [[0, 2, 0], [2, -2, 0], [-2, -2, 0]],
-        faces: [[3, 4, 5]],
+        faces: [[0, 1, 2]],
       });
 
     expect(secondResponse.status).toBe(200);
@@ -315,6 +315,18 @@ describe("POST /compute/3d/mesh", () => {
     expect(secondResponse.body.totalVertices).toBe(6);
     expect(secondResponse.body.totalFaces).toBe(2);
     expect(secondResponse.body.isAppend).toBe(true);
+
+    const sceneId = secondResponse.body.sceneId;
+    const savedScene = mockScenes.get(sceneId);
+    expect(savedScene).toBeTruthy();
+    expect(savedScene.sceneData.vertices).toEqual([
+      [0, 1, 0], [1, -1, 0], [-1, -1, 0],
+      [0, 2, 0], [2, -2, 0], [-2, -2, 0]
+    ]);
+    expect(savedScene.sceneData.faces).toEqual([
+      [0, 1, 2],
+      [3, 4, 5]
+    ]);
   });
 });
 
