@@ -98,8 +98,9 @@ async function executeTool(
   }
 
   try {
-    if (endpoint.method === "POST") {
-      const url = `${SELF_BASE_URL}${endpoint.path}`;
+    const bodyMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+    if (endpoint.method && bodyMethods.has(endpoint.method)) {
+      const url = buildUrl(endpoint, resolvedArgs).split("?")[0];
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
@@ -116,7 +117,7 @@ async function executeTool(
         bodyArgs.username = context.username;
 
       const response = await fetch(url, {
-        method: "POST",
+        method: endpoint.method,
         headers,
         body: JSON.stringify(bodyArgs),
       });

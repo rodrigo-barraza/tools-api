@@ -191,8 +191,8 @@ export function toolCallLoggerMiddleware(
     const status = res.statusCode;
 
     // Skip non-tool routes (admin, health checks, etc.)
-    // Only GET and POST are tool invocation methods
-    if (method !== "GET" && method !== "POST") return;
+    const bodyMethods = new Set(["GET", "POST", "PUT", "PATCH", "DELETE"]);
+    if (!bodyMethods.has(method)) return;
 
     // Skip admin and internal endpoints
     if (path.startsWith("/admin")) return;
@@ -230,7 +230,8 @@ export function toolCallLoggerMiddleware(
     const errorMessage = (responseBody?.error as string) || null;
 
     // Sanitize args — strip large payloads to keep docs lean
-    const args = sanitizeArgs(method === "POST" ? req.body : req.query);
+    const hasBody = method !== "GET";
+    const args = sanitizeArgs(hasBody ? req.body : req.query);
 
     // Sanitize result — keep shape info but cap size
     const result = sanitizeResult(responseBody);
