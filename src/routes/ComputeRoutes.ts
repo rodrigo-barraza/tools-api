@@ -695,15 +695,15 @@ router.post("/csv", (req: Request, res: Response) => {
       .json({ error: "'data' must be a non-empty array of objects" });
   }
   try {
-    const delim = delimiter || ",";
+    const delimiterValue = delimiter || ",";
     // Determine columns from explicit list or first object keys
-    const cols = columns || Object.keys(data[0]);
+    const resolvedColumns = columns || Object.keys(data[0]);
     // Escape CSV values
     const escape = (value: unknown) => {
       if (value === null || value === undefined) return "";
       const stringValue = String(value);
       if (
-        stringValue.includes(delim) ||
+        stringValue.includes(delimiterValue) ||
         stringValue.includes('"') ||
         stringValue.includes("\n")
       ) {
@@ -711,12 +711,12 @@ router.post("/csv", (req: Request, res: Response) => {
       }
       return stringValue;
     };
-    const lines = [cols.map(escape).join(delim)];
+    const lines = [resolvedColumns.map(escape).join(delimiterValue)];
     for (const row of data) {
       lines.push(
-        cols
-          .map((col: string) => escape((row as Record<string, unknown>)[col]))
-          .join(delim),
+        resolvedColumns
+          .map((column: string) => escape((row as Record<string, unknown>)[column]))
+          .join(delimiterValue),
       );
     }
     const csv = lines.join("\n");
@@ -726,7 +726,7 @@ router.post("/csv", (req: Request, res: Response) => {
       downloadUrl,
       csvId: id,
       rows: data.length,
-      columns: cols.length,
+      columns: resolvedColumns.length,
     });
   } catch (error: unknown) {
     res
@@ -2793,7 +2793,7 @@ interface MeshSession {
   faces: MeshFace[];
   normals?: MeshVertex[];
   colors?: string[];
-  options: Record<string, any>;
+  options: Record<string, unknown>;
   updatedAt: number;
 }
 
@@ -3089,7 +3089,7 @@ router.post("/3d/scene", asyncHandler(async (req: Request, res: Response) => {
 // ── Create 3D Model (Primitive shape composition) ─────────────
 interface ModelSession {
   objects: ModelObject[];
-  options: Record<string, any>;
+  options: Record<string, unknown>;
   updatedAt: number;
 }
 

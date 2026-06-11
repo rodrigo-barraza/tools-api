@@ -66,7 +66,7 @@ export function update(source: WeatherSource, data: Record<string, unknown>) {
 
   if (!allSourcesReady) {
     cache.pendingSources.add(source);
-    if (ALL_SOURCES.every((s) => cache.pendingSources.has(s))) {
+    if (ALL_SOURCES.every((sourceItem) => cache.pendingSources.has(sourceItem))) {
       allSourcesReady = true;
       cache.pendingSources.clear();
       lastPersistedHash = hashSnapshot(cache.current);

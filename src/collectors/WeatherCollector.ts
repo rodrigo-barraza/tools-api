@@ -100,27 +100,27 @@ interface CollectorConfig<T> {
   label: string;
   collection: string;
   fetchFunction: () => Promise<T>;
-  updateFn: (data: T) => void;
-  setErrorFn: (error: unknown) => void;
-  logFn?: (data: T) => string;
+  updateFunction: (data: T) => void;
+  setErrorFunction: (error: unknown) => void;
+  logFunction?: (data: T) => string;
 }
 
 function makeCollector<T>(config: CollectorConfig<T>) {
   return async () => {
     try {
       const data = await config.fetchFunction();
-      config.updateFn(data);
+      config.updateFunction(data);
       await saveState(
         config.collection,
         data as unknown as Record<string, unknown> | unknown[],
       );
-      if (config.logFn) {
-        logger.info(`[${config.label}] ✅ ${config.logFn(data)}`);
+      if (config.logFunction) {
+        logger.info(`[${config.label}] ✅ ${config.logFunction(data)}`);
       } else {
         logger.info(`[${config.label}] ✅ Collected`);
       }
     } catch (error: unknown) {
-      config.setErrorFn(error);
+      config.setErrorFunction(error);
       logger.error(`[${config.label}] ❌ ${errorMessage(error)}`);
     }
   };
@@ -132,41 +132,41 @@ const collectOpenMeteo = makeCollector({
   label: "OpenMeteo",
   collection: "openmeteo",
   fetchFunction: fetchOpenMeteoWeather,
-  updateFn: (weatherData) => update("openmeteo", weatherData as unknown as Record<string, unknown>),
-  setErrorFn: (error) =>
+  updateFunction: (weatherData) => update("openmeteo", weatherData as unknown as Record<string, unknown>),
+  setErrorFunction: (error) =>
     setError(
       "openmeteo",
       error instanceof Error ? error : { message: errorMessage(error) },
     ),
-  logFn: (weatherData) => `${weatherData.weatherDescription} | ${weatherData.temperature}°C`,
+  logFunction: (weatherData) => `${weatherData.weatherDescription} | ${weatherData.temperature}°C`,
 });
 
 const collectAirQuality = makeCollector({
   label: "AirQuality",
   collection: "air_quality",
   fetchFunction: fetchAirQuality,
-  updateFn: (weatherData) =>
+  updateFunction: (weatherData) =>
     update("airquality", weatherData as unknown as Record<string, unknown>),
-  setErrorFn: (error) =>
+  setErrorFunction: (error) =>
     setError(
       "airquality",
       error instanceof Error ? error : { message: errorMessage(error) },
     ),
-  logFn: (weatherData) => `US AQI: ${weatherData.usAqi} | PM2.5: ${weatherData.pm25}`,
+  logFunction: (weatherData) => `US AQI: ${weatherData.usAqi} | PM2.5: ${weatherData.pm25}`,
 });
 
 const collectTomorrowIORealtime = makeCollector({
   label: "Tomorrow.io",
   collection: "tomorrowio",
   fetchFunction: fetchTomorrowIORealtime,
-  updateFn: (weatherData) =>
+  updateFunction: (weatherData) =>
     update("tomorrowio", weatherData as unknown as Record<string, unknown>),
-  setErrorFn: (error) =>
+  setErrorFunction: (error) =>
     setError(
       "tomorrowio",
       error instanceof Error ? error : { message: errorMessage(error) },
     ),
-  logFn: (weatherData) =>
+  logFunction: (weatherData) =>
     `${weatherData.weatherDescription} | Visibility: ${weatherData.visibility}km | UV: ${weatherData.uvIndex}`,
 });
 
@@ -174,14 +174,14 @@ const collectTomorrowIODaily = makeCollector({
   label: "Tomorrow.io Daily",
   collection: "tomorrowio_daily",
   fetchFunction: fetchTomorrowIODailyForecast,
-  updateFn: (weatherData) =>
+  updateFunction: (weatherData) =>
     update("tomorrowio_daily", weatherData as unknown as Record<string, unknown>),
-  setErrorFn: (error) =>
+  setErrorFunction: (error) =>
     setError(
       "tomorrowio_daily",
       error instanceof Error ? error : { message: errorMessage(error) },
     ),
-  logFn: (weatherData) =>
+  logFunction: (weatherData) =>
     `Moonrise: ${weatherData.moonrise || "N/A"} | Moonset: ${weatherData.moonset || "N/A"}`,
 });
 
@@ -189,32 +189,32 @@ const collectIssPosition = makeCollector({
   label: "ISS",
   collection: "iss_position",
   fetchFunction: fetchIssPosition,
-  updateFn: (issData) =>
+  updateFunction: (issData) =>
     updateIssPosition(issData as unknown as Parameters<typeof updateIssPosition>[0]),
-  setErrorFn: (error) =>
+  setErrorFunction: (error) =>
     setIssPositionError(error instanceof Error ? error : { message: errorMessage(error) }),
-  logFn: (issData) => `Lat: ${issData.latitude.toFixed(2)}, Lng: ${issData.longitude.toFixed(2)}`,
+  logFunction: (issData) => `Lat: ${issData.latitude.toFixed(2)}, Lng: ${issData.longitude.toFixed(2)}`,
 });
 
 const collectAstronauts = makeCollector({
   label: "Astronauts",
   collection: "astronauts",
   fetchFunction: fetchAstronauts,
-  updateFn: (astrosData) =>
+  updateFunction: (astrosData) =>
     updateAstronauts(astrosData as unknown as Parameters<typeof updateAstronauts>[0]),
-  setErrorFn: (error) =>
+  setErrorFunction: (error) =>
     setAstronautsError(error instanceof Error ? error : { message: errorMessage(error) }),
-  logFn: (astrosData) => `${astrosData.total} people in space`,
+  logFunction: (astrosData) => `${astrosData.total} people in space`,
 });
 
 const collectKpIndex = makeCollector({
   label: "Kp Index",
   collection: "kp_index",
   fetchFunction: fetchKpIndex,
-  updateFn: updateKpIndex,
-  setErrorFn: (error) =>
+  updateFunction: updateKpIndex,
+  setErrorFunction: (error) =>
     setKpIndexError(error instanceof Error ? error : new Error(errorMessage(error))),
-  logFn: (kpData) =>
+  logFunction: (kpData) =>
     `${kpData.length} readings | Current Kp: ${kpData[kpData.length - 1]?.kp ?? "?"}`,
 });
 
@@ -222,15 +222,15 @@ const collectWildfires = makeCollector({
   label: "Wildfire",
   collection: "wildfires",
   fetchFunction: fetchWildfires,
-  updateFn: updateWildfires,
-  setErrorFn: (error) =>
+  updateFunction: updateWildfires,
+  setErrorFunction: (error) =>
     setWildfireError(error instanceof Error ? error : new Error(errorMessage(error))),
-  logFn: (wildfireData) => {
+  logFunction: (wildfireData) => {
     const largest = wildfireData
-      .filter((e) => e.magnitudeValue != null)
+      .filter((wildfire) => wildfire.magnitudeValue != null)
       .sort(
-        (firstItem, b) =>
-          (b.magnitudeValue ?? 0) - (firstItem.magnitudeValue ?? 0),
+        (firstItem, secondItem) =>
+          (secondItem.magnitudeValue ?? 0) - (firstItem.magnitudeValue ?? 0),
       )[0];
     return (
       `${wildfireData.length} active fires` +
@@ -245,10 +245,10 @@ const collectTides = makeCollector({
   label: "Tides",
   collection: "tide_predictions",
   fetchFunction: fetchTides,
-  updateFn: updateTides,
-  setErrorFn: (error) =>
+  updateFunction: updateTides,
+  setErrorFunction: (error) =>
     setTideError(error instanceof Error ? error : new Error(errorMessage(error))),
-  logFn: (tideData) => {
+  logFunction: (tideData) => {
     const next = tideData.find((time) => new Date(time.time) > new Date());
     return (
       `${tideData.length} predictions` +
@@ -263,10 +263,10 @@ const collectSolarWind = makeCollector({
   label: "Solar Wind",
   collection: "solar_wind",
   fetchFunction: fetchSolarWind,
-  updateFn: updateSolarWind,
-  setErrorFn: (error) =>
+  updateFunction: updateSolarWind,
+  setErrorFunction: (error) =>
     setSolarWindError(error instanceof Error ? error : new Error(errorMessage(error))),
-  logFn: (solarWindData) =>
+  logFunction: (solarWindData) =>
     `${solarWindData.counts.plasma}p/${solarWindData.counts.magnetic}m pts | Speed: ${solarWindData.latest.speed ?? "?"}km/s | Bz: ${solarWindData.latest.bz ?? "?"}nT`,
 });
 
@@ -274,8 +274,8 @@ const collectGoogleAirQuality = makeCollector({
   label: "Google AQ",
   collection: "google_air_quality",
   fetchFunction: fetchGoogleAirQuality,
-  updateFn: updateGoogleAirQuality,
-  setErrorFn: (error) => {
+  updateFunction: updateGoogleAirQuality,
+  setErrorFunction: (error) => {
     setGoogleAirQualityError(
       error instanceof Error ? error : new Error(errorMessage(error)),
     );
@@ -290,7 +290,7 @@ const collectGoogleAirQuality = makeCollector({
       );
     }
   },
-  logFn: (googleAqiData) =>
+  logFunction: (googleAqiData) =>
     `AQI: ${googleAqiData.usEpaAqi ?? "?"} (${googleAqiData.usEpaCategory ?? "?"}) | Dominant: ${googleAqiData.usEpaDominantPollutant ?? "?"}`,
 });
 
@@ -298,8 +298,8 @@ const collectPollen = makeCollector({
   label: "Pollen",
   collection: "pollen",
   fetchFunction: fetchPollen,
-  updateFn: updatePollen,
-  setErrorFn: (error) => {
+  updateFunction: updatePollen,
+  setErrorFunction: (error) => {
     setPollenError(error instanceof Error ? error : new Error(errorMessage(error)));
     const message = errorMessage(error);
     if (
@@ -312,7 +312,7 @@ const collectPollen = makeCollector({
       );
     }
   },
-  logFn: (pollenData) => {
+  logFunction: (pollenData) => {
     const today = pollenData.daily?.[0];
     return `${pollenData.daily?.length || 0}-day forecast | Grass: ${today?.grass?.indexInfo?.category ?? "?"} | Tree: ${today?.tree?.indexInfo?.category ?? "?"} | Weed: ${today?.weed?.indexInfo?.category ?? "?"}`;
   },
@@ -322,20 +322,20 @@ const collectApod = makeCollector({
   label: "APOD",
   collection: "apod",
   fetchFunction: fetchApod,
-  updateFn: updateApod,
-  setErrorFn: (error) =>
+  updateFunction: updateApod,
+  setErrorFunction: (error) =>
     setApodError(error instanceof Error ? error : new Error(errorMessage(error))),
-  logFn: (apodData) => apodData.title,
+  logFunction: (apodData) => apodData.title,
 });
 
 const collectLaunches = makeCollector({
   label: "Launches",
   collection: "launches",
   fetchFunction: fetchUpcomingLaunches,
-  updateFn: updateLaunches,
-  setErrorFn: (error) =>
+  updateFunction: updateLaunches,
+  setErrorFunction: (error) =>
     setLaunchError(error instanceof Error ? error : new Error(errorMessage(error))),
-  logFn: (launchData) =>
+  logFunction: (launchData) =>
     `${launchData.length} upcoming` +
     (launchData[0] ? ` | Next: ${launchData[0].name} (${launchData[0].status})` : ""),
 });
@@ -344,40 +344,40 @@ const collectTwilight = makeCollector({
   label: "Twilight",
   collection: "twilight",
   fetchFunction: fetchTwilight,
-  updateFn: updateTwilight,
-  setErrorFn: (error) =>
+  updateFunction: updateTwilight,
+  setErrorFunction: (error) =>
     setTwilightError(error instanceof Error ? error : new Error(errorMessage(error))),
-  logFn: (twilightData) => `Civil: ${twilightData.civilTwilightBegin} → ${twilightData.civilTwilightEnd}`,
+  logFunction: (twilightData) => `Civil: ${twilightData.civilTwilightBegin} → ${twilightData.civilTwilightEnd}`,
 });
 
 const collectEnvironmentCanada = makeCollector({
   label: "Env Canada",
   collection: "env_canada_warnings",
   fetchFunction: fetchEnvironmentCanadaWarnings,
-  updateFn: updateWarnings,
-  setErrorFn: (error) =>
+  updateFunction: updateWarnings,
+  setErrorFunction: (error) =>
     setWarningError(error instanceof Error ? error : new Error(errorMessage(error))),
-  logFn: (warningData) => `${warningData.length} active warnings/watches`,
+  logFunction: (warningData) => `${warningData.length} active warnings/watches`,
 });
 
 const collectAvalanche = makeCollector({
   label: "Avalanche",
   collection: "avalanche_forecasts",
   fetchFunction: fetchAvalancheForecast,
-  updateFn: updateAvalanche,
-  setErrorFn: (error) =>
+  updateFunction: updateAvalanche,
+  setErrorFunction: (error) =>
     setAvalancheError(error instanceof Error ? error : new Error(errorMessage(error))),
-  logFn: (avalancheData) => `${avalancheData.length} forecast regions`,
+  logFunction: (avalancheData) => `${avalancheData.length} forecast regions`,
 });
 
 const collectMoonPhase = makeCollector({
   label: "Moon Phase",
   collection: "moon_phase",
   fetchFunction: async () => calculateMoonPhase(),
-  updateFn: updateMoonPhase,
-  setErrorFn: (error) =>
+  updateFunction: updateMoonPhase,
+  setErrorFunction: (error) =>
     setMoonPhaseError(error instanceof Error ? error : new Error(errorMessage(error))),
-  logFn: (moonPhaseData) =>
+  logFunction: (moonPhaseData) =>
     `${moonPhaseData.phaseEmoji} ${moonPhaseData.phaseName} | ${moonPhaseData.illuminationPercent}% illuminated`,
 });
 
@@ -389,8 +389,8 @@ async function collectEarthquakes() {
     const result = await updateEarthquakes(events);
     await saveState("earthquakes_cache", events);
     const strongest = events.reduce(
-      (max: (typeof events)[0], e: (typeof events)[0]) =>
-        (e.magnitude ?? -1) > (max.magnitude ?? -1) ? e : max,
+      (maximumEvent: (typeof events)[0], currentEvent: (typeof events)[0]) =>
+        (currentEvent.magnitude ?? -1) > (maximumEvent.magnitude ?? -1) ? currentEvent : maximumEvent,
       events[0] || ({} as (typeof events)[0]),
     );
     logger.info(

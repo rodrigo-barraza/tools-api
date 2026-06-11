@@ -105,9 +105,9 @@ describe("Tool Schema — parameter validation", () => {
   });
 
   it("every property has a type or enum", () => {
-    for (const s of TOOL_DEFINITIONS) {
+    for (const schema of TOOL_DEFINITIONS) {
       for (const [_propName, propDef] of Object.entries(
-        s.parameters.properties || {},
+        schema.parameters.properties || {},
       )) {
         const hasType = propDef.type || propDef.enum;
                   expect(hasType).toBeTruthy();
@@ -121,7 +121,7 @@ describe("Tool Schema — parameter validation", () => {
         const path = schema.endpoint.path;
         const matches = path.match(/:[a-zA-Z0-9_]+/g);
         if (matches && matches.length > 0) {
-          const expectedParams = matches.map((m) => m.slice(1));
+          const expectedParams = matches.map((match) => match.slice(1));
           const pathParams = schema.endpoint.pathParams || [];
           for (const param of expectedParams) {
             expect(
