@@ -44,7 +44,7 @@ function parseEntry(entryXml: string): ArxivPaper {
 
   // Extract categories from <category term="..." />
   const categoryMatches = [...entryXml.matchAll(/category\s+term="([^"]+)"/g)];
-  const categories = categoryMatches.map((m) => m[1]);
+  const categories = categoryMatches.map((regExpExecArray) => regExpExecArray[1]);
   const primaryCategory = categories[0] || null;
 
   // Extract PDF link

@@ -80,8 +80,8 @@ function ensureLoaded() {
     headers.forEach((header: string, index: number) => {
       const value = values[index] || "";
       if (NUMERIC_FIELDS.has(header)) {
-        const num = parseFloat(value);
-        row[header] = isNaN(num) ? null : num;
+        const number = parseFloat(value);
+        row[header] = isNaN(number) ? null : number;
       } else {
         row[header] = value || null;
       }
@@ -183,7 +183,7 @@ export function searchElements(
   }
 
   // Try atomic number match first
-  const numQuery = parseInt(normalizedQuery, 10);
+  const numberQuery = parseInt(normalizedQuery, 10);
 
   const scored = candidates
     .map((element: PeriodicElement) => {
@@ -197,7 +197,7 @@ export function searchElements(
       // Exact name match
       else if (name === normalizedQuery) score += 90;
       // Atomic number match
-      else if (!isNaN(numQuery) && element.atomic_number === numQuery)
+      else if (!isNaN(numberQuery) && element.atomic_number === numberQuery)
         score += 95;
       // Name starts with query
       else if (name.startsWith(normalizedQuery)) score += 60;
@@ -217,7 +217,7 @@ export function searchElements(
       return { element, score };
     })
     .filter((scoredEntry) => scoredEntry.score > 0)
-    .sort((a, b) => b.score - a.score)
+    .sort((agent, b) => b.score - agent.score)
     .slice(0, limit);
 
   return {
@@ -293,18 +293,18 @@ export function rankElementsByProperty(
 
   const ranked = candidates
     .filter((element: PeriodicElement) => element[propKey] !== null)
-    .sort((a: PeriodicElement, b: PeriodicElement) => {
-      const valA = a[propKey];
-      const valB = b[propKey];
+    .sort((periodicElement: PeriodicElement, b: PeriodicElement) => {
+      const valueA = periodicElement[propKey];
+      const valueB = b[propKey];
       if (
-        valA === null ||
-        valA === undefined ||
-        valB === null ||
-        valB === undefined
+        valueA === null ||
+        valueA === undefined ||
+        valueB === null ||
+        valueB === undefined
       )
         return 0;
-      if (typeof valA === "number" && typeof valB === "number") {
-        return order === "asc" ? valA - valB : valB - valA;
+      if (typeof valueA === "number" && typeof valueB === "number") {
+        return order === "asc" ? valueA - valueB : valueB - valueA;
       }
       return 0;
     })

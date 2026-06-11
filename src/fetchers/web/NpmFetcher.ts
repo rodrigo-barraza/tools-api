@@ -57,21 +57,21 @@ export async function getNpmPackage(
   const encoded = encodeURIComponent(packageName);
 
   // Fetch package metadata + download counts concurrently
-  const [pkgRes, dlRes] = await Promise.all([
+  const [pkgResponse, dlResponse] = await Promise.all([
     fetch(`${NPM_REGISTRY}/${encoded}`, {
       headers: { Accept: "application/json" },
     }),
     fetch(`${NPM_DOWNLOADS}/${encoded}`).catch(() => null),
   ]);
 
-  if (!pkgRes.ok) {
-    if (pkgRes.status === 404) {
+  if (!pkgResponse.ok) {
+    if (pkgResponse.status === 404) {
       return { error: `NPM package not found: "${packageName}"` };
     }
-    return { error: `NPM Registry error: ${pkgRes.status}` };
+    return { error: `NPM Registry error: ${pkgResponse.status}` };
   }
 
-  const data = (await pkgRes.json()) as NpmPackageData;
+  const data = (await pkgResponse.json()) as NpmPackageData;
   const latest = data["dist-tags"]?.latest || "";
   const version =
     (data.versions && latest ? data.versions[latest] : null) || {};
@@ -110,8 +110,8 @@ export async function getNpmPackage(
   };
 
   // Download stats
-  if (dlRes?.ok) {
-    const dlData = (await dlRes.json()) as { downloads?: number };
+  if (dlResponse?.ok) {
+    const dlData = (await dlResponse.json()) as { downloads?: number };
     result.weeklyDownloads = dlData.downloads || null;
   }
 

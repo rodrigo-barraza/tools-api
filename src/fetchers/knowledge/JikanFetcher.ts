@@ -66,8 +66,8 @@ async function fetchJikan<T>(endpoint: string): Promise<T | null> {
 /**
  * Search anime by title
  */
-export async function searchAnime(q: string, limit: number = 10) {
-  const endpoint = `/anime?q=${encodeURIComponent(q)}&limit=${limit}`;
+export async function searchAnime(value: string, limit: number = 10) {
+  const endpoint = `/anime?q=${encodeURIComponent(value)}&limit=${limit}`;
   const response = await fetchJikan<{ data?: RawJikanAnime[] }>(endpoint);
 
   if (!response || !response.data) {

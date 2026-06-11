@@ -136,9 +136,9 @@ export async function fetchAvalancheForecast(): Promise<AvalancheForecast[]> {
           }),
         ),
         problems: (report.problems || []).map(
-          (p): AvalancheProblem => ({
-            type: p.type?.display || null,
-            comment: p.comment ? stripHtml(p.comment) : null,
+          (rawProblem): AvalancheProblem => ({
+            type: rawProblem.type?.display || null,
+            comment: rawProblem.comment ? stripHtml(rawProblem.comment) : null,
           }),
         ),
         url:
@@ -168,9 +168,9 @@ export async function fetchAvalancheForecast(): Promise<AvalancheForecast[]> {
           }),
         ),
         problems: (report.problems || []).map(
-          (p): AvalancheProblem => ({
-            type: p.type?.display || null,
-            comment: p.comment ? stripHtml(p.comment) : null,
+          (rawProblem): AvalancheProblem => ({
+            type: rawProblem.type?.display || null,
+            comment: rawProblem.comment ? stripHtml(rawProblem.comment) : null,
           }),
         ),
         url:

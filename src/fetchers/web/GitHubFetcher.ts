@@ -74,27 +74,27 @@ export async function getGitHubRepo(
       }).catch(() => null)
     : Promise.resolve(null);
 
-  const [repoRes, readmeRes, langsRes] = await Promise.all([
+  const [repoResponse, readmeResponse, langsResponse] = await Promise.all([
     repoPromise,
     readmePromise,
     langsPromise,
   ]);
 
-  if (!repoRes.ok) {
-    if (repoRes.status === 404) {
+  if (!repoResponse.ok) {
+    if (repoResponse.status === 404) {
       return { error: `Repository not found: ${owner}/${repo}` };
     }
-    if (repoRes.status === 403) {
+    if (repoResponse.status === 403) {
       return {
         error: "GitHub API rate limit exceeded (60 req/hr unauthenticated)",
       };
     }
     return {
-      error: `GitHub API error: ${repoRes.status} ${repoRes.statusText}`,
+      error: `GitHub API error: ${repoResponse.status} ${repoResponse.statusText}`,
     };
   }
 
-  const data = await repoRes.json();
+  const data = await repoResponse.json();
 
   const result: Record<string, unknown> = {
     fullName: data.full_name,
@@ -117,8 +117,8 @@ export async function getGitHubRepo(
     sizeKb: data.size,
   };
 
-  if (readmeRes?.ok) {
-    let readme = await readmeRes.text();
+  if (readmeResponse?.ok) {
+    let readme = await readmeResponse.text();
     if (readme.length > MAX_README_CHARS) {
       readme = readme.slice(0, MAX_README_CHARS) + "\n\n... [truncated]";
       result.readmeTruncated = true;
@@ -126,8 +126,8 @@ export async function getGitHubRepo(
     result.readme = readme;
   }
 
-  if (langsRes?.ok) {
-    result.languages = await langsRes.json();
+  if (langsResponse?.ok) {
+    result.languages = await langsResponse.json();
   }
 
   return result;

@@ -445,7 +445,7 @@ const STARTUP_TASKS = [
     collection: "openmeteo",
     ttl: OPEN_METEO_INTERVAL_MS,
     collectFunction: collectOpenMeteo,
-    restoreFunction: (d: Record<string, unknown>) => restore("openmeteo", d),
+    restoreFunction: (record: Record<string, unknown>) => restore("openmeteo", record),
     delay: 0,
   },
   {
@@ -453,7 +453,7 @@ const STARTUP_TASKS = [
     collection: "air_quality",
     ttl: AIR_QUALITY_INTERVAL_MS,
     collectFunction: collectAirQuality,
-    restoreFunction: (d: Record<string, unknown>) => restore("airquality", d),
+    restoreFunction: (record: Record<string, unknown>) => restore("airquality", record),
     delay: 2_000,
   },
   {
@@ -461,7 +461,7 @@ const STARTUP_TASKS = [
     collection: "tomorrowio",
     ttl: TOMORROWIO_REALTIME_INTERVAL_MS,
     collectFunction: collectTomorrowIORealtime,
-    restoreFunction: (d: Record<string, unknown>) => restore("tomorrowio", d),
+    restoreFunction: (record: Record<string, unknown>) => restore("tomorrowio", record),
     delay: 4_000,
   },
   {
@@ -469,7 +469,7 @@ const STARTUP_TASKS = [
     collection: "tomorrowio_daily",
     ttl: TOMORROWIO_FORECAST_INTERVAL_MS,
     collectFunction: collectTomorrowIODaily,
-    restoreFunction: (d: Record<string, unknown>) => restore("tomorrowio_daily", d),
+    restoreFunction: (record: Record<string, unknown>) => restore("tomorrowio_daily", record),
     delay: 6_000,
   },
   {

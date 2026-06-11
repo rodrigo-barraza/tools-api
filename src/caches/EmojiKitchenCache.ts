@@ -17,16 +17,16 @@ export const getEmojiKitchenRawData = cache.getData;
  * Handles ZWJ sequences, skin tones, variation selectors, etc.
  * If input is already in codepoint format (e.g. "1f43c"), returns it lowercased.
  */
-export function emojiToCodepoints(emojiStr: string): string {
-  if (!emojiStr) return "";
+export function emojiToCodepoints(emojiString: string): string {
+  if (!emojiString) return "";
 
   // If it's already a hex codepoint string (e.g. "1f600" or "1f43c-1f3fb"), return it lowercased
-  if (/^[0-9a-fA-F-]+$/.test(emojiStr)) {
-    return emojiStr.toLowerCase().trim();
+  if (/^[0-9a-fA-F-]+$/.test(emojiString)) {
+    return emojiString.toLowerCase().trim();
   }
 
   const points: string[] = [];
-  for (const char of emojiStr) {
+  for (const char of emojiString) {
     const codePoint = char.codePointAt(0);
     if (codePoint === undefined) continue;
     points.push(codePoint.toString(16));
@@ -86,7 +86,7 @@ export function queryEmojiCombination(
     if (!combos || combos.length === 0) return null;
 
     // Pick latest design version
-    const latest = combos.find((c) => c.isLatest);
+    const latest = combos.find((emojiCombination) => emojiCombination.isLatest);
     return latest || combos[0];
   }
 
@@ -148,7 +148,7 @@ export function queryEmojiCombinations(
 
   for (const [otherCp, combos] of Object.entries(emojiEntry.combinations)) {
     if (!combos || combos.length === 0) continue;
-    const latest = combos.find((c) => c.isLatest) || combos[0];
+    const latest = combos.find((emojiCombination) => emojiCombination.isLatest) || combos[0];
 
     // Determine which side of the combination represents the other emoji
     const otherEmoji =

@@ -105,8 +105,8 @@ function ensureLoaded(): void {
       if (SKIP_NUMERIC.has(h)) {
         row[h] = value;
       } else {
-        const num = parseFloat(value);
-        row[h] = isNaN(num) ? null : num;
+        const number = parseFloat(value);
+        row[h] = isNaN(number) ? null : number;
       }
     });
 
@@ -199,10 +199,10 @@ export function rankCountriesByIndicator(
   const meta = INDICATOR_META[indicator];
 
   const ranked = COUNTRY_DB.filter((country) => country[indicator] !== null)
-    .sort((a, b) => {
-      const valA = Number(a[indicator] || 0);
-      const valB = Number(b[indicator] || 0);
-      return order === "asc" ? valA - valB : valB - valA;
+    .sort((worldBankCountry, b) => {
+      const valueA = Number(worldBankCountry[indicator] || 0);
+      const valueB = Number(b[indicator] || 0);
+      return order === "asc" ? valueA - valueB : valueB - valueA;
     })
     .slice(0, limit);
 

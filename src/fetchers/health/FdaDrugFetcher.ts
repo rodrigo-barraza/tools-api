@@ -180,7 +180,7 @@ export function searchDrugs(
       return { drugRow, score };
     })
     .filter((scored) => scored.score > 0)
-    .sort((a, b) => b.score - a.score)
+    .sort((agent, b) => b.score - agent.score)
     .slice(0, limit);
 
   return {
@@ -233,7 +233,7 @@ export function getDosageForms(): DosageFormsResult {
   return {
     totalProducts: DRUG_DB.length,
     dosageForms: Object.entries(forms)
-      .sort((a, b) => b[1] - a[1])
+      .sort((agent, b) => b[1] - agent[1])
       .map(([form, count]) => ({ form, count })),
     note: "Data from FDA openFDA NDC API (Public Domain).",
   };

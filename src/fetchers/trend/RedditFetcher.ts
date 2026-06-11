@@ -106,8 +106,8 @@ export async function fetchRedditTrends() {
         REDDIT_POSTS_PER_SUBREDDIT,
       );
       const trends = posts
-        .filter((p: RawRedditPost) => !p.data.stickied) // exclude stickied/pinned posts
-        .map((p: RawRedditPost) => normalizeTrend(p, sub.category));
+        .filter((rawRedditPost: RawRedditPost) => !rawRedditPost.data.stickied) // exclude stickied/pinned posts
+        .map((rawRedditPost: RawRedditPost) => normalizeTrend(rawRedditPost, sub.category));
       allTrends.push(...trends);
     } catch (error: unknown) {
       logger.error(`[Reddit] ❌ /r/${sub.name}: ${errorMessage(error)}`);

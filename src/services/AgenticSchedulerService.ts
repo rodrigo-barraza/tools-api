@@ -19,8 +19,8 @@ export async function setupAgenticScheduleCollection() {
 // Proxy Actions to Prism Service
 // ────────────────────────────────────────────────────────────
 
-function delayToCron(delayStr: string): string | null {
-  const match = delayStr.trim().match(/^(\d+)(s|m|h|d)$/i);
+function delayToCron(delayString: string): string | null {
+  const match = delayString.trim().match(/^(\d+)(s|m|h|d)$/i);
   if (!match) return null;
   const value = parseInt(match[1], 10);
   const unit = match[2].toLowerCase();

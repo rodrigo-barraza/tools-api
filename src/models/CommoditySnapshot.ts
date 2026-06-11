@@ -30,9 +30,9 @@ export async function insertSnapshots(quotes: CommodityQuoteInput[]) {
 
   const database = getDB();
   const collection = database.collection("commodity_snapshots");
-  const docs = quotes.map((q: CommodityQuoteInput) => ({
-    ...q,
-    fetchedAt: new Date(q.fetchedAt),
+  const docs = quotes.map((commodityQuoteInput: CommodityQuoteInput) => ({
+    ...commodityQuoteInput,
+    fetchedAt: new Date(commodityQuoteInput.fetchedAt),
   }));
 
   const result = await collection.insertMany(docs);

@@ -492,9 +492,9 @@ router.post(
         .status(400)
         .json({ error: "Request body must include 'code' (string)" });
     }
-    const lengthErr = validateMaxLength(code, MAX_CODE_LENGTH, "Code");
-    if (lengthErr) {
-      return res.status(400).json({ error: lengthErr });
+    const lengthError = validateMaxLength(code, MAX_CODE_LENGTH, "Code");
+    if (lengthError) {
+      return res.status(400).json({ error: lengthError });
     }
     const result = await executePython(code, {
       timeout: timeout
@@ -518,8 +518,8 @@ router.post(
         .status(400)
         .json({ error: "Request body must include 'code' (string)" });
     }
-    const lengthErr = validateMaxLength(code, MAX_CODE_LENGTH, "Code");
-    if (lengthErr) return res.status(400).json({ error: lengthErr });
+    const lengthError = validateMaxLength(code, MAX_CODE_LENGTH, "Code");
+    if (lengthError) return res.status(400).json({ error: lengthError });
     const send = setupStreamingSSE(res);
     send({ event: "start", language: "python" });
     const result = await executePythonStreaming(code, {
@@ -618,36 +618,36 @@ router.get(
       });
     }
     const result = await crawlSingleStatic(url, {
-      extractFn: (ctx) => {
-        const $ = ctx.$;
+      extractFunction: (context) => {
+        const CHEERIOAPI = context.$;
         const meta: Record<string, unknown> = {};
         // Title
         meta.title =
-          $('meta[property="og:title"]').attr("content") ||
-          $('meta[name="twitter:title"]').attr("content") ||
-          $("title").first().text().trim() ||
+          CHEERIOAPI('meta[property="og:title"]').attr("content") ||
+          CHEERIOAPI('meta[name="twitter:title"]').attr("content") ||
+          CHEERIOAPI("title").first().text().trim() ||
           null;
         // Description
         meta.description =
-          $('meta[property="og:description"]').attr("content") ||
-          $('meta[name="description"]').attr("content") ||
-          $('meta[name="twitter:description"]').attr("content") ||
+          CHEERIOAPI('meta[property="og:description"]').attr("content") ||
+          CHEERIOAPI('meta[name="description"]').attr("content") ||
+          CHEERIOAPI('meta[name="twitter:description"]').attr("content") ||
           null;
         // Image
         meta.image =
-          $('meta[property="og:image"]').attr("content") ||
-          $('meta[name="twitter:image"]').attr("content") ||
-          $('meta[itemprop="contentUrl"]').attr("content") ||
+          CHEERIOAPI('meta[property="og:image"]').attr("content") ||
+          CHEERIOAPI('meta[name="twitter:image"]').attr("content") ||
+          CHEERIOAPI('meta[itemprop="contentUrl"]').attr("content") ||
           null;
         // Video
         meta.video =
-          $('meta[property="og:video"]').attr("content") ||
-          $('meta[property="og:video:url"]').attr("content") ||
+          CHEERIOAPI('meta[property="og:video"]').attr("content") ||
+          CHEERIOAPI('meta[property="og:video:url"]').attr("content") ||
           null;
         // Keywords
         const keywords =
-          $('meta[name="keywords"]').attr("content") ||
-          $('meta[itemprop="keywords"]').attr("content") ||
+          CHEERIOAPI('meta[name="keywords"]').attr("content") ||
+          CHEERIOAPI('meta[itemprop="keywords"]').attr("content") ||
           null;
         meta.keywords = keywords
           ? keywords
@@ -657,11 +657,11 @@ router.get(
           : null;
         // Site name
         meta.siteName =
-          $('meta[property="og:site_name"]').attr("content") || null;
+          CHEERIOAPI('meta[property="og:site_name"]').attr("content") || null;
         // Canonical URL
         meta.canonicalUrl =
-          $('link[rel="canonical"]').attr("href") ||
-          $('meta[property="og:url"]').attr("content") ||
+          CHEERIOAPI('link[rel="canonical"]').attr("href") ||
+          CHEERIOAPI('meta[property="og:url"]').attr("content") ||
           null;
         // Strip null values
         for (const key of Object.keys(meta)) {

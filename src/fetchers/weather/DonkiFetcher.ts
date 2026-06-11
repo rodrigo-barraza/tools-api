@@ -130,9 +130,9 @@ interface RawGst {
 /**
  * Get a date string N days ago in YYYY-MM-DD format.
  */
-function daysAgo(n: number): string {
+function daysAgo(node: number): string {
   const currentDate = new Date();
-  currentDate.setDate(currentDate.getDate() - n);
+  currentDate.setDate(currentDate.getDate() - node);
   return currentDate.toISOString().split("T")[0];
 }
 

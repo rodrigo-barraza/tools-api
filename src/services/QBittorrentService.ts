@@ -408,11 +408,11 @@ export async function search(
   let status = "Running";
   while (status === "Running" && Date.now() < deadline) {
     await new Promise((r) => setTimeout(r, 1000));
-    const statusRes = await getSearchStatus(id);
+    const statusResponse = await getSearchStatus(id);
     // statusRes is an array of search statuses
-    const job = Array.isArray(statusRes)
-      ? statusRes.find((s) => s.id === id)
-      : statusRes;
+    const job = Array.isArray(statusResponse)
+      ? statusResponse.find((s) => s.id === id)
+      : statusResponse;
     status = job?.status || "Stopped";
   }
 

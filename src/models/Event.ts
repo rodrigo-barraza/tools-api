@@ -34,7 +34,7 @@ export interface EventDocument {
 }
 
 interface SearchOptions {
-  q?: string;
+  value?: string;
   category?: string;
   city?: string;
   source?: string;
@@ -111,9 +111,9 @@ export async function getEventsToday(
     month: "2-digit",
     day: "2-digit",
   });
-  const todayStr = formatter.format(now);
-  const startOfDay = new Date(`${todayStr}T00:00:00`);
-  const endOfDay = new Date(`${todayStr}T23:59:59.999`);
+  const todayString = formatter.format(now);
+  const startOfDay = new Date(`${todayString}T00:00:00`);
+  const endOfDay = new Date(`${todayString}T23:59:59.999`);
 
   return collection
     .find({ startDate: { $gte: startOfDay, $lte: endOfDay } })
@@ -163,7 +163,7 @@ export async function getEventsPast(
  * Search events by text query with optional filters.
  */
 export async function searchEvents({
-  q,
+  value,
   category,
   city,
   source,
@@ -173,7 +173,7 @@ export async function searchEvents({
 
   const query: Record<string, unknown> = {};
 
-  if (q) query.$text = { $search: q };
+  if (value) query.$text = { $search: value };
   if (category) query.category = category;
   if (city) query["venue.city"] = new RegExp(city, "i");
   if (source) query.source = source;
@@ -182,7 +182,7 @@ export async function searchEvents({
     query.startDate = { $gte: new Date() };
   }
 
-  const cursor = q
+  const cursor = value
     ? collection
         .find(query, { score: { $meta: "textScore" } } as Record<
           string,

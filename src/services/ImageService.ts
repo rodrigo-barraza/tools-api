@@ -585,8 +585,8 @@ export async function convertToAscii({
     "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
   const charSetLength = charSet.length;
 
-  let asciiStr = "";
-  let ansiStr = "";
+  let asciiString = "";
+  let ansiString = "";
   const pixels: AsciiPixel[][] = [];
 
   for (let y = 0; y < info.height; y++) {
@@ -612,20 +612,20 @@ export async function convertToAscii({
       }
       const char = charSet[characterIndex];
 
-      asciiStr += char;
-      ansiStr += `\x1b[38;2;${r};${g};${b}m${char}`;
+      asciiString += char;
+      ansiString += `\x1b[38;2;${r};${g};${b}m${char}`;
 
       const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
       row.push({ char, hex, brightness });
     }
-    asciiStr += "\n";
-    ansiStr += "\x1b[0m\n";
+    asciiString += "\n";
+    ansiString += "\x1b[0m\n";
     pixels.push(row);
   }
 
   return {
-    ascii: asciiStr,
-    ansi: ansiStr,
+    ascii: asciiString,
+    ansi: ansiString,
     width: info.width,
     height: info.height,
     pixels,

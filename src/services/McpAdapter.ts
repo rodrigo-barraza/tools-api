@@ -62,10 +62,10 @@ function buildUrl(endpoint: ToolEndpoint, args: Record<string, unknown> = {}) {
 
   // Handle 'fields' specially
   if (args.fields) {
-    const fieldsStr = Array.isArray(args.fields)
+    const fieldsString = Array.isArray(args.fields)
       ? args.fields.join(",")
       : String(args.fields);
-    params.set("fields", fieldsStr);
+    params.set("fields", fieldsString);
   }
 
   const queryString = params.toString();

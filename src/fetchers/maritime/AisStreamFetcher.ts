@@ -2,7 +2,7 @@ import WebSocket from "ws";
 import CONFIG from "../../config.ts";
 import logger from "../../logger.ts";
 import {
-  AIS_STREAM_WS_URL,
+  AIS_STREAM_WEBSOCKET_URL,
   AIS_STREAM_MAX_BUFFER_SIZE,
   AIS_STREAM_RECONNECT_DELAY_MS,
   AIS_STREAM_BBOX_RADIUS_DEG,
@@ -86,7 +86,7 @@ function connect(options: AisStreamOptions = {}) {
     }
   }
 
-  socket = new WebSocket(AIS_STREAM_WS_URL);
+  socket = new WebSocket(AIS_STREAM_WEBSOCKET_URL);
 
   socket.onopen = () => {
     stats.connected = true;
@@ -379,11 +379,11 @@ export function getVesselsInArea(
 ) {
   return Array.from(vesselMap.values())
     .filter(
-      (v) =>
-        v.latitude >= minLat &&
-        v.latitude <= maxLat &&
-        v.longitude >= minLng &&
-        v.longitude <= maxLng,
+      (aisVessel) =>
+        aisVessel.latitude >= minLat &&
+        aisVessel.latitude <= maxLat &&
+        aisVessel.longitude >= minLng &&
+        aisVessel.longitude <= maxLng,
     )
     .sort(
       (firstItem, b) =>

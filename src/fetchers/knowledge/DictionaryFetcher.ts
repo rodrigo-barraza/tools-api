@@ -93,23 +93,23 @@ export async function fetchDefinition(
 
   // Extract phonetics with audio
   const phonetics = (entry.phonetics || [])
-    .filter((p: RawPhonetic) => p.text || p.audio)
-    .map((p: RawPhonetic) => ({
-      text: p.text || null,
-      audio: p.audio || null,
+    .filter((rawPhonetic: RawPhonetic) => rawPhonetic.text || rawPhonetic.audio)
+    .map((rawPhonetic: RawPhonetic) => ({
+      text: rawPhonetic.text || null,
+      audio: rawPhonetic.audio || null,
     }));
 
   // Extract meanings grouped by part of speech
-  const meanings = (entry.meanings || []).map((m: RawMeaning) => ({
-    partOfSpeech: m.partOfSpeech,
-    definitions: (m.definitions || []).slice(0, 5).map((d: RawDefinition) => ({
-      definition: stripHtml(d.definition),
-      example: d.example ? stripHtml(d.example) : null,
-      synonyms: (d.synonyms || []).slice(0, 5),
-      antonyms: (d.antonyms || []).slice(0, 5),
+  const meanings = (entry.meanings || []).map((rawMeaning: RawMeaning) => ({
+    partOfSpeech: rawMeaning.partOfSpeech,
+    definitions: (rawMeaning.definitions || []).slice(0, 5).map((rawDefinition: RawDefinition) => ({
+      definition: stripHtml(rawDefinition.definition),
+      example: rawDefinition.example ? stripHtml(rawDefinition.example) : null,
+      synonyms: (rawDefinition.synonyms || []).slice(0, 5),
+      antonyms: (rawDefinition.antonyms || []).slice(0, 5),
     })),
-    synonyms: (m.synonyms || []).slice(0, 10),
-    antonyms: (m.antonyms || []).slice(0, 10),
+    synonyms: (rawMeaning.synonyms || []).slice(0, 10),
+    antonyms: (rawMeaning.antonyms || []).slice(0, 10),
   }));
 
   return {

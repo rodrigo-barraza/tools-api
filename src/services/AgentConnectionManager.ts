@@ -56,7 +56,7 @@ interface AgentRegistryEntry {
   roots: string[];
   capabilities: string[];
   version: string;
-  ws: WebSocket & { isAlive?: boolean };
+  websocket: WebSocket & { isAlive?: boolean };
   clientIp?: string;
   connectedAt: Date;
   lastPong: Date;
@@ -130,16 +130,16 @@ export function initAgentWebSocket(httpServer: Server) {
 
       // Agent connections (workspace-service sidecar → tools-service)
       if (url.pathname === "/ws/agent") {
-        wss.handleUpgrade(req, socket, head, (ws) => {
-          wss.emit("connection", ws, req);
+        wss.handleUpgrade(req, socket, head, (websocket) => {
+          wss.emit("connection", websocket, req);
         });
         return;
       }
 
       // Client connections (VS Code extension → tools-service → agent)
       if (url.pathname === "/ws/workspace") {
-        clientWss.handleUpgrade(req, socket, head, (ws) => {
-          clientWss.emit("connection", ws, req);
+        clientWss.handleUpgrade(req, socket, head, (websocket) => {
+          clientWss.emit("connection", websocket, req);
         });
         return;
       }
@@ -150,23 +150,23 @@ export function initAgentWebSocket(httpServer: Server) {
 
   wss.on(
     "connection",
-    (ws: WebSocket & { isAlive?: boolean }, req: IncomingMessage) => {
+    (websocket: WebSocket & { isAlive?: boolean }, req: IncomingMessage) => {
       const clientIp =
         (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
         req.socket.remoteAddress?.replace(/^::ffff:/, "");
 
       logger.info(`[AgentWS] New connection from ${clientIp}`);
 
-      ws.isAlive = true;
-      ws.on("pong", () => {
-        ws.isAlive = true;
+      websocket.isAlive = true;
+      websocket.on("pong", () => {
+        websocket.isAlive = true;
       });
 
-      ws.on("message", (raw: unknown) => {
+      websocket.on("message", (raw: unknown) => {
         try {
           const data = raw as Buffer | ArrayBuffer | Buffer[];
           const message = JSON.parse(data.toString()) as AgentRpcMessage;
-          handleAgentMessage(ws, message, clientIp);
+          handleAgentMessage(websocket, message, clientIp);
         } catch (error: unknown) {
           const errorMessage =
             error instanceof Error ? error.message : String(error);
@@ -174,16 +174,16 @@ export function initAgentWebSocket(httpServer: Server) {
         }
       });
 
-      ws.on("close", () => {
+      websocket.on("close", () => {
         for (const [agentId, agent] of agents) {
-          if (agent.ws === ws) {
+          if (agent.websocket === websocket) {
             deregisterAgent(agentId, "disconnected");
             break;
           }
         }
       });
 
-      ws.on("error", (error: Error) => {
+      websocket.on("error", (error: Error) => {
         logger.error(`[AgentWS] Connection error: ${error.message}`);
       });
     },
@@ -193,19 +193,19 @@ export function initAgentWebSocket(httpServer: Server) {
 
   clientWss.on(
     "connection",
-    (ws: WebSocket & { isAlive?: boolean }, req: IncomingMessage) => {
+    (websocket: WebSocket & { isAlive?: boolean }, req: IncomingMessage) => {
       const clientIp =
         (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
         req.socket.remoteAddress?.replace(/^::ffff:/, "");
 
       logger.info(`[ClientWS] New client connection from ${clientIp}`);
 
-      ws.isAlive = true;
-      ws.on("pong", () => {
-        ws.isAlive = true;
+      websocket.isAlive = true;
+      websocket.on("pong", () => {
+        websocket.isAlive = true;
       });
 
-      ws.on("message", async (raw: unknown) => {
+      websocket.on("message", async (raw: unknown) => {
         try {
           const data = raw as Buffer | ArrayBuffer | Buffer[];
           const message = JSON.parse(data.toString()) as AgentRpcMessage;
@@ -215,7 +215,7 @@ export function initAgentWebSocket(httpServer: Server) {
 
           // Meta-methods (no path routing needed)
           if (message.method === "agents.list") {
-            sendJson(ws, {
+            sendJson(websocket, {
               jsonrpc: "2.0",
               id: message.id,
               result: getConnectedAgents(),
@@ -238,7 +238,7 @@ export function initAgentWebSocket(httpServer: Server) {
             : targetPath;
 
           if (!routePath) {
-            sendJson(ws, {
+            sendJson(websocket, {
               jsonrpc: "2.0",
               id: message.id,
               error: {
@@ -252,7 +252,7 @@ export function initAgentWebSocket(httpServer: Server) {
           // Find the agent that serves this path
           const route = routeForPath(routePath);
           if (!route) {
-            sendJson(ws, {
+            sendJson(websocket, {
               jsonrpc: "2.0",
               id: message.id,
               error: {
@@ -270,11 +270,11 @@ export function initAgentWebSocket(httpServer: Server) {
               message.method,
               message.params,
             );
-            sendJson(ws, { jsonrpc: "2.0", id: message.id, result });
+            sendJson(websocket, { jsonrpc: "2.0", id: message.id, result });
           } catch (error: unknown) {
             const errorMessage =
               error instanceof Error ? error.message : String(error);
-            sendJson(ws, {
+            sendJson(websocket, {
               jsonrpc: "2.0",
               id: message.id,
               error: { code: -32000, message: errorMessage },
@@ -287,11 +287,11 @@ export function initAgentWebSocket(httpServer: Server) {
         }
       });
 
-      ws.on("close", () => {
+      websocket.on("close", () => {
         logger.info(`[ClientWS] Client disconnected (${clientIp})`);
       });
 
-      ws.on("error", (error: Error) => {
+      websocket.on("error", (error: Error) => {
         logger.error(`[ClientWS] Connection error: ${error.message}`);
       });
     },
@@ -309,7 +309,7 @@ export function initAgentWebSocket(httpServer: Server) {
 // ────────────────────────────────────────────────────────────
 
 function handleAgentMessage(
-  ws: WebSocket & { isAlive?: boolean },
+  websocket: WebSocket & { isAlive?: boolean },
   message: AgentRpcMessage,
   clientIp?: string,
 ) {
@@ -319,7 +319,7 @@ function handleAgentMessage(
       message.params || {};
 
     if (!agentId || !Array.isArray(roots) || roots.length === 0) {
-      sendJson(ws, {
+      sendJson(websocket, {
         jsonrpc: "2.0",
         method: "agent.error",
         params: { error: "Invalid registration: agentId and roots required" },
@@ -330,12 +330,12 @@ function handleAgentMessage(
     // Check max connections
     const maxConnections = parseInt(CONFIG.AGENT_MAX_CONNECTIONS || "5", 10);
     if (agents.size >= maxConnections) {
-      sendJson(ws, {
+      sendJson(websocket, {
         jsonrpc: "2.0",
         method: "agent.error",
         params: { error: `Max agent connections reached (${maxConnections})` },
       });
-      ws.close(1008, "Max connections reached");
+      websocket.close(1008, "Max connections reached");
       return;
     }
 
@@ -346,7 +346,7 @@ function handleAgentMessage(
       roots: [...roots],
       capabilities: capabilities || [],
       version: version || "unknown",
-      ws,
+      websocket,
       clientIp,
       connectedAt: new Date(),
       lastPong: new Date(),
@@ -368,7 +368,7 @@ function handleAgentMessage(
     );
 
     // Confirm registration
-    sendJson(ws, {
+    sendJson(websocket, {
       jsonrpc: "2.0",
       method: "agent.registered",
       params: { agentId },
@@ -400,7 +400,7 @@ function handleAgentMessage(
   // RPC response — resolve pending request
   if (message.id && (message.result !== undefined || message.error)) {
     for (const [, agent] of agents) {
-      if (agent.ws === ws && agent.pendingRpc.has(message.id)) {
+      if (agent.websocket === websocket && agent.pendingRpc.has(message.id)) {
         const pending = agent.pendingRpc.get(message.id);
         if (pending) {
           agent.pendingRpc.delete(message.id);
@@ -423,7 +423,7 @@ function handleAgentMessage(
     // These are forwarded to the appropriate SSE response
     // by the caller who set up the streaming RPC
     for (const [, agent] of agents) {
-      if (agent.ws === ws && agent._streamCallback) {
+      if (agent.websocket === websocket && agent._streamCallback) {
         agent._streamCallback(message.method, message.params || {});
       }
     }
@@ -479,7 +479,7 @@ export function sendRpc(
       return;
     }
 
-    if (agent.ws.readyState !== 1 /* OPEN */) {
+    if (agent.websocket.readyState !== 1 /* OPEN */) {
       reject(new Error("Agent WebSocket not open"));
       return;
     }
@@ -495,7 +495,7 @@ export function sendRpc(
 
     agent.pendingRpc.set(id, { resolve, reject, timer });
 
-    sendJson(agent.ws, {
+    sendJson(agent.websocket, {
       jsonrpc: "2.0",
       id,
       method,
@@ -540,7 +540,7 @@ export function routeForPath(absolutePath: string | undefined | null) {
   for (const [root, agentId] of rootToAgent) {
     if (absolutePath.startsWith(root + "/") || absolutePath === root) {
       const agent = agents.get(agentId);
-      if (agent && agent.ws.readyState === 1) {
+      if (agent && agent.websocket.readyState === 1) {
         return { id: agent.id, name: agent.name, roots: agent.roots };
       }
     }
@@ -557,16 +557,16 @@ export function routeForPath(absolutePath: string | undefined | null) {
  * Get the list of connected agents with metadata.
  */
 export function getConnectedAgents() {
-  return [...agents.values()].map((a) => ({
-    id: a.id,
-    name: a.name,
-    roots: a.roots,
-    capabilities: a.capabilities,
-    version: a.version,
-    clientIp: a.clientIp,
-    connectedAt: a.connectedAt.toISOString(),
-    lastPong: a.lastPong.toISOString(),
-    pendingRpcs: a.pendingRpc.size,
+  return [...agents.values()].map((agentRegistryEntry) => ({
+    id: agentRegistryEntry.id,
+    name: agentRegistryEntry.name,
+    roots: agentRegistryEntry.roots,
+    capabilities: agentRegistryEntry.capabilities,
+    version: agentRegistryEntry.version,
+    clientIp: agentRegistryEntry.clientIp,
+    connectedAt: agentRegistryEntry.connectedAt.toISOString(),
+    lastPong: agentRegistryEntry.lastPong.toISOString(),
+    pendingRpcs: agentRegistryEntry.pendingRpc.size,
   }));
 }
 
@@ -585,7 +585,7 @@ export function getAgentInfoForRoot(rootPath: string) {
   if (!agentId) return null;
 
   const agent = agents.get(agentId);
-  if (!agent || agent.ws.readyState !== 1) return null;
+  if (!agent || agent.websocket.readyState !== 1) return null;
 
   return { agentName: agent.name, agentId: agent.id };
 }
@@ -605,14 +605,14 @@ function startHealthCheck(wss: WebSocketServer) {
         logger.warn(
           `[AgentWS] Agent "${agent.name}" stale (${(timeSincePong / 1000).toFixed(0)}s since last pong) — disconnecting`,
         );
-        agent.ws.terminate();
+        agent.websocket.terminate();
         deregisterAgent(agentId, "stale");
         continue;
       }
 
       // Send application-level ping
-      if (agent.ws.readyState === 1) {
-        sendJson(agent.ws, {
+      if (agent.websocket.readyState === 1) {
+        sendJson(agent.websocket, {
           jsonrpc: "2.0",
           method: "agent.ping",
           params: {},
@@ -621,14 +621,14 @@ function startHealthCheck(wss: WebSocketServer) {
     }
 
     // WebSocket-level ping for all connections
-    wss.clients.forEach((ws) => {
-      const clientWs = ws as WebSocket & { isAlive?: boolean };
-      if (!clientWs.isAlive) {
-        clientWs.terminate();
+    wss.clients.forEach((websocket) => {
+      const clientWebsocket = websocket as WebSocket & { isAlive?: boolean };
+      if (!clientWebsocket.isAlive) {
+        clientWebsocket.terminate();
         return;
       }
-      clientWs.isAlive = false;
-      clientWs.ping();
+      clientWebsocket.isAlive = false;
+      clientWebsocket.ping();
     });
   }, HEALTH_CHECK_INTERVAL_MS);
 }
@@ -637,9 +637,9 @@ function startHealthCheck(wss: WebSocketServer) {
 // Helpers
 // ────────────────────────────────────────────────────────────
 
-function sendJson(ws: WebSocket, object: Record<string, unknown>) {
-  if (ws.readyState === 1) {
-    ws.send(JSON.stringify(object));
+function sendJson(websocket: WebSocket, object: Record<string, unknown>) {
+  if (websocket.readyState === 1) {
+    websocket.send(JSON.stringify(object));
   }
 }
 

@@ -477,7 +477,7 @@ router.get("/indicators/compare", (req: Request, res: Response) => {
   }
   const codes = countries
     .split(",")
-    .map((c: string) => c.trim())
+    .map((client: string) => client.trim())
     .filter(Boolean);
   if (codes.length < 2) {
     return res

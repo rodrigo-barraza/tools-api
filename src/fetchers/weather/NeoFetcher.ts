@@ -112,7 +112,7 @@ export async function fetchNeos(): Promise<NearEarthObject[]> {
 
   // Sort by miss distance (closest first)
   neos.sort(
-    (a, b) => (a.missDistanceKm ?? Infinity) - (b.missDistanceKm ?? Infinity),
+    (nearEarthObject, b) => (nearEarthObject.missDistanceKm ?? Infinity) - (b.missDistanceKm ?? Infinity),
   );
 
   return neos;

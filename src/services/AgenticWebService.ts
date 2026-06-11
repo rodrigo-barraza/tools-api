@@ -385,14 +385,14 @@ async function _searchDuckDuckGo(
     }
 
     const html = await response.text();
-    const $ = cheerio.load(html);
+    const CHEERIOAPI = cheerio.load(html);
 
     const results: DuckDuckGoSearchResult[] = [];
 
-    $(".result").each((_index: number, element: AnyNode) => {
+    CHEERIOAPI(".result").each((_index: number, element: AnyNode) => {
       if (results.length >= limit) return false;
 
-      const $result = $(element);
+      const $result = CHEERIOAPI(element);
       const $titleAnchor = $result.find(".result__a").first();
       const rawTitle = $titleAnchor.text().trim();
       const rawHref = $titleAnchor.attr("href") || "";
@@ -530,29 +530,29 @@ function htmlToMarkdown(
   html: string,
   { selector }: { selector?: string } = {},
 ) {
-  const $ = cheerio.load(html);
+  const CHEERIOAPI = cheerio.load(html);
 
   // Remove non-content elements
-  $(
+  CHEERIOAPI(
     "script, style, nav, footer, header, noscript, iframe, svg, form, button, input, select, textarea",
   ).remove();
-  $(
+  CHEERIOAPI(
     "[role='navigation'], [role='banner'], [role='complementary'], [aria-hidden='true']",
   ).remove();
-  $(
+  CHEERIOAPI(
     ".cookie-banner, .popup, .modal, .overlay, .sidebar, .ad, .advertisement",
   ).remove();
 
   // If a CSS selector was provided, focus on that
-  let root: Cheerio<AnyNode> = $("body");
+  let root: Cheerio<AnyNode> = CHEERIOAPI("body");
   if (selector) {
-    const selected = $(selector);
+    const selected = CHEERIOAPI(selector);
     if (selected.length > 0) {
       root = selected;
     }
   } else {
     // Try to find main content area
-    const mainContent = $(
+    const mainContent = CHEERIOAPI(
       "main, article, [role='main'], .content, .post-content, .entry-content, #content",
     );
     if (mainContent.length > 0) {
@@ -567,7 +567,7 @@ function htmlToMarkdown(
 
     element.contents().each((_: number, node: AnyNode) => {
       if (node.type === "text") {
-        const text = $(node).text().trim();
+        const text = CHEERIOAPI(node).text().trim();
         if (text) {
           lines.push(text);
         }
@@ -576,7 +576,7 @@ function htmlToMarkdown(
 
       if (node.type !== "tag") return;
 
-      const $node = $(node);
+      const $node = CHEERIOAPI(node);
       const tag = (
         node as unknown as { tagName?: string }
       ).tagName?.toLowerCase();
@@ -649,12 +649,12 @@ function htmlToMarkdown(
         case "ol":
           $node.children("li").each((i: number, li: AnyNode) => {
             const bullet = tag === "ol" ? `${i + 1}.` : "-";
-            lines.push(`${bullet} ${$(li).text().trim()}`);
+            lines.push(`${bullet} ${CHEERIOAPI(li).text().trim()}`);
           });
           lines.push("");
           break;
         case "table":
-          processTable($, $node, lines);
+          processTable(CHEERIOAPI, $node, lines);
           break;
         case "strong":
         case "b":
@@ -686,7 +686,7 @@ function htmlToMarkdown(
     .trim();
 
   // Get page title if available
-  const title = $("title").text().trim();
+  const title = CHEERIOAPI("title").text().trim();
   if (title) {
     output = `# ${title}\n\n${output}`;
   }
@@ -698,7 +698,7 @@ function htmlToMarkdown(
  * Convert an HTML table to markdown table syntax.
  */
 function processTable(
-  $: CheerioAPI,
+  CHEERIOAPI: CheerioAPI,
   $table: Cheerio<AnyNode>,
   lines: string[],
 ) {
@@ -706,10 +706,10 @@ function processTable(
 
   $table.find("tr").each((_: number, tr: AnyNode) => {
     const cells: string[] = [];
-    $(tr)
+    CHEERIOAPI(tr)
       .find("th, td")
       .each((_: number, cell: AnyNode) => {
-        cells.push($(cell).text().trim().replace(/\|/g, "\\|"));
+        cells.push(CHEERIOAPI(cell).text().trim().replace(/\|/g, "\\|"));
       });
     rows.push(cells);
   });

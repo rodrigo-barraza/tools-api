@@ -104,7 +104,7 @@ router.get("/nutrition/compare", (req: Request, res: Response) => {
   }
   const foodList = foods
     .split(",")
-    .map((f: string) => f.trim())
+    .map((value: string) => value.trim())
     .filter(Boolean);
   if (foodList.length < 2) {
     return res
@@ -342,7 +342,7 @@ router.get("/calories/calculate", (req: Request, res: Response) => {
     activityLevel,
     goal,
     macroSplit,
-    bodyFatPct,
+    bodyFatPercentage,
   } = req.query as Record<string, string | undefined>;
   if (!sex || !weightKg || !heightCm || !ageYears) {
     return res.status(400).json({
@@ -357,7 +357,7 @@ router.get("/calories/calculate", (req: Request, res: Response) => {
     activityLevel,
     goal,
     macroSplit,
-    bodyFatPct: bodyFatPct ? parseFloat(bodyFatPct) : undefined,
+    bodyFatPercentage: bodyFatPercentage ? parseFloat(bodyFatPercentage) : undefined,
   });
   if (result.error) return res.status(400).json(result);
   res.json(result);

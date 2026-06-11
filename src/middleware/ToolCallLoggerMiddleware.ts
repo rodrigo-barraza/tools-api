@@ -148,10 +148,10 @@ function resolveToolFromRequest(
     if (entry.method && entry.method !== method) continue;
 
     // Build regex from pattern
-    const regexStr =
+    const regexString =
       "^" + pattern.replace(/\*/g, "[^/]+").replace(/\//g, "\\/") + "$";
 
-    if (new RegExp(regexStr).test(cleanPath)) {
+    if (new RegExp(regexString).test(cleanPath)) {
       return entry;
     }
   }

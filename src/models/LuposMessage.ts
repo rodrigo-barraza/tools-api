@@ -12,7 +12,7 @@ import { errorMessage } from "../utilities.ts";
 
 let client: MongoClient | null = null;
 let luposDb: Db | null = null;
-let messagesCol: Collection<Document> | null = null;
+let messagesCollection: Collection<Document> | null = null;
 
 /**
  * Connect to the Lupos database.
@@ -46,26 +46,26 @@ export function getLuposDB(): Db {
  */
 export async function setupLuposCollections() {
   const database = getLuposDB();
-  messagesCol = database.collection("Messages");
+  messagesCollection = database.collection("Messages");
 
   // Fire-and-forget index creation — these are additive.
   // If Lupos already created them, MongoDB noops.
   // On 8M+ docs, new indexes may take several minutes to build in background.
   const ensureIndexes = async () => {
     try {
-      await messagesCol!.createIndex(
+      await messagesCollection!.createIndex(
         { id: 1 },
         { unique: true, background: true },
       );
-      await messagesCol!.createIndex(
+      await messagesCollection!.createIndex(
         { "author.id": 1, createdTimestamp: -1 },
         { background: true },
       );
-      await messagesCol!.createIndex(
+      await messagesCollection!.createIndex(
         { guildId: 1, channelId: 1, createdTimestamp: -1 },
         { background: true },
       );
-      await messagesCol!.createIndex(
+      await messagesCollection!.createIndex(
         { guildId: 1, createdTimestamp: -1 },
         { background: true },
       );
@@ -74,7 +74,7 @@ export async function setupLuposCollections() {
     }
 
     try {
-      await messagesCol!.createIndex(
+      await messagesCollection!.createIndex(
         { content: "text" },
         { name: "lupos_message_text_search", background: true },
       );
@@ -94,9 +94,9 @@ export async function setupLuposCollections() {
  * Get the Messages collection reference.
  */
 export function getMessagesCollection(): Collection<Document> {
-  if (!messagesCol) {
+  if (!messagesCollection) {
     const database = getLuposDB();
-    messagesCol = database.collection("Messages");
+    messagesCollection = database.collection("Messages");
   }
-  return messagesCol;
+  return messagesCollection;
 }

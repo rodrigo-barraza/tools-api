@@ -187,11 +187,11 @@ export async function getRouteInfo(routeNo: string | number) {
     routeNo: data.RouteNo,
     name: data.Name,
     operatingCompany: data.OperatingCompany,
-    patterns: (data.Patterns || []).map((p: TransLinkPattern) => ({
-      patternNo: p.PatternNo,
-      destination: p.Destination,
-      direction: p.Direction,
-      routeMap: p.RouteMap?.Href || null,
+    patterns: (data.Patterns || []).map((transLinkPattern: TransLinkPattern) => ({
+      patternNo: transLinkPattern.PatternNo,
+      destination: transLinkPattern.Destination,
+      direction: transLinkPattern.Direction,
+      routeMap: transLinkPattern.RouteMap?.Href || null,
     })),
   };
 }

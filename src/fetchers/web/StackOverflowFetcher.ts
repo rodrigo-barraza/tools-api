@@ -126,21 +126,21 @@ export async function getStackOverflowQuestion(
     });
 
     // Fetch question and answers concurrently
-    const [qRes, aRes] = await Promise.all([
+    const [qResponse, aResponse] = await Promise.all([
       fetch(`${SE_API}/questions/${questionId}?${params}`),
       fetch(
         `${SE_API}/questions/${questionId}/answers?${params}&pagesize=${clampedLimit}`,
       ),
     ]);
 
-    if (!qRes.ok || !aRes.ok) {
-      const status = !qRes.ok ? qRes.status : aRes.status;
+    if (!qResponse.ok || !aResponse.ok) {
+      const status = !qResponse.ok ? qResponse.status : aResponse.status;
       if (status === 400) return { error: "Question not found" };
       return { error: `Stack Exchange API error: ${status}` };
     }
 
-    const qData = await qRes.json();
-    const aData = await aRes.json();
+    const qData = await qResponse.json();
+    const aData = await aResponse.json();
 
     const question = qData.items?.[0];
     if (!question) {
@@ -181,23 +181,23 @@ export async function getStackOverflowQuestion(
     }
 
     result.answers = (aData.items || []).map(
-      (a: SeApiAnswer): SOAnswer => ({
-        answerId: a.answer_id,
-        author: a.owner?.display_name || null,
-        authorReputation: a.owner?.reputation || null,
-        body: htmlToText(a.body),
-        score: a.score || 0,
-        isAccepted: a.is_accepted || false,
-        createdAt: a.creation_date
-          ? new Date(a.creation_date * 1000).toISOString()
+      (seApiAnswer: SeApiAnswer): SOAnswer => ({
+        answerId: seApiAnswer.answer_id,
+        author: seApiAnswer.owner?.display_name || null,
+        authorReputation: seApiAnswer.owner?.reputation || null,
+        body: htmlToText(seApiAnswer.body),
+        score: seApiAnswer.score || 0,
+        isAccepted: seApiAnswer.is_accepted || false,
+        createdAt: seApiAnswer.creation_date
+          ? new Date(seApiAnswer.creation_date * 1000).toISOString()
           : null,
       }),
     );
 
     // Sort: accepted answer first, then by score
-    result.answers.sort((a: SOAnswer, b: SOAnswer) => {
-      if (a.isAccepted !== b.isAccepted) return a.isAccepted ? -1 : 1;
-      return b.score - a.score;
+    result.answers.sort((sOAnswer: SOAnswer, b: SOAnswer) => {
+      if (sOAnswer.isAccepted !== b.isAccepted) return sOAnswer.isAccepted ? -1 : 1;
+      return b.score - sOAnswer.score;
     });
 
     // API quota info

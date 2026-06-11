@@ -491,12 +491,12 @@ export class BiquadFilter {
     this.sampleRate = sampleRate;
   }
 
-  updateCoefficients(cutoff: number, Q: number): void {
+  updateCoefficients(cutoff: number, VALUE: number): void {
     const cappedCutoff = Math.min(
       Math.max(cutoff, 10.0),
       this.sampleRate / 2.0 - 50.0,
     );
-    const cappedQ = Math.max(Q, 0.1);
+    const cappedQ = Math.max(VALUE, 0.1);
 
     const omega = (2.0 * Math.PI * cappedCutoff) / this.sampleRate;
     const sn = Math.sin(omega);
@@ -598,9 +598,9 @@ export class AllpassFilter {
 
   process(x: number): number {
     const delayed = this.delayLine.read(this.delaySamples);
-    const w = x + this.g * delayed;
-    const y = -this.g * w + delayed;
-    this.delayLine.write(w);
+    const workflow = x + this.g * delayed;
+    const y = -this.g * workflow + delayed;
+    this.delayLine.write(workflow);
     return y;
   }
 }
@@ -617,16 +617,16 @@ export class SchroederReverb {
     const delayTimesLeft = [0.0297, 0.0371, 0.0411, 0.0437];
     const delayTimesRight = [0.0317, 0.0351, 0.0429, 0.0449];
 
-    const feedbackVal = Math.min(Math.max(decay * 0.85, 0.1), 0.95);
+    const feedbackValue = Math.min(Math.max(decay * 0.85, 0.1), 0.95);
 
     for (const time of delayTimesLeft) {
       this.combsLeft.push(
-        new CombFilter(Math.floor(time * sampleRate), feedbackVal),
+        new CombFilter(Math.floor(time * sampleRate), feedbackValue),
       );
     }
     for (const time of delayTimesRight) {
       this.combsRight.push(
-        new CombFilter(Math.floor(time * sampleRate), feedbackVal),
+        new CombFilter(Math.floor(time * sampleRate), feedbackValue),
       );
     }
 
@@ -982,9 +982,9 @@ export class ModularVoice {
           nodeConfig.release,
         );
       } else if (nodeConfig.type === "drum_synth") {
-        const noteStr = String(noteConfig.note).toLowerCase();
+        const noteString = String(noteConfig.note).toLowerCase();
         const drumType =
-          noteStr === "kick" ? "kick" : noteStr === "snare" ? "snare" : "hat";
+          noteString === "kick" ? "kick" : noteString === "snare" ? "snare" : "hat";
         this.drumSynths[nodeName] = new DrumSynthNode(drumType, sampleRate);
       } else if (nodeConfig.type === "distortion") {
         this.distortions[nodeName] = new DistortionNode(
@@ -1065,36 +1065,36 @@ export class ModularVoice {
           currentSignal = drum.process(this.elapsedTime);
         }
       } else if (nodeConfig.type === "envelope") {
-        const envelopeVal = envelopeValues[nodeName] ?? 0.0;
-        currentSignal *= envelopeVal;
+        const envelopeValue = envelopeValues[nodeName] ?? 0.0;
+        currentSignal *= envelopeValue;
       } else if (nodeConfig.type === "biquad_filter") {
         const filter = this.filters[nodeName];
         if (filter) {
           let cutoff = nodeConfig.cutoff || 1000.0;
           if (nodeConfig.modulate?.cutoff) {
-            const modSource = nodeConfig.modulate.cutoff;
-            const envelopeVal = envelopeValues[modSource] ?? 0.0;
-            cutoff = cutoff * (1.0 + envelopeVal * 8.0);
+            const modalSource = nodeConfig.modulate.cutoff;
+            const envelopeValue = envelopeValues[modalSource] ?? 0.0;
+            cutoff = cutoff * (1.0 + envelopeValue * 8.0);
           }
           filter.updateCoefficients(cutoff, nodeConfig.Q || 1.0);
           currentSignal = filter.process(currentSignal);
         }
       } else if (nodeConfig.type === "gain") {
-        let gainVal = nodeConfig.gain ?? 1.0;
+        let gainValue = nodeConfig.gain ?? 1.0;
         if (nodeConfig.modulate?.gain) {
-          const modSource = nodeConfig.modulate.gain;
-          const envelopeVal = envelopeValues[modSource] ?? 0.0;
-          gainVal *= envelopeVal;
+          const modalSource = nodeConfig.modulate.gain;
+          const envelopeValue = envelopeValues[modalSource] ?? 0.0;
+          gainValue *= envelopeValue;
         }
-        currentSignal *= gainVal;
+        currentSignal *= gainValue;
       } else if (nodeConfig.type === "distortion") {
         const distortionNode = this.distortions[nodeName];
         if (distortionNode) {
           currentSignal = distortionNode.process(currentSignal);
         }
       } else if (nodeConfig.type === "stereo_panner") {
-        const panVal = Math.min(Math.max(nodeConfig.pan ?? 0.0, -1.0), 1.0);
-        const theta = ((panVal + 1.0) * Math.PI) / 4.0;
+        const panValue = Math.min(Math.max(nodeConfig.pan ?? 0.0, -1.0), 1.0);
+        const theta = ((panValue + 1.0) * Math.PI) / 4.0;
         stereoLeft = currentSignal * Math.cos(theta);
         stereoRight = currentSignal * Math.sin(theta);
         isStereo = true;
@@ -1224,8 +1224,8 @@ export function renderModularGraph(config: SynthesizerConfig): Float32Array {
     computeTimelineDuration(tracks, nodes, tempo, beatsPerBar);
   duration = Math.min(Math.max(duration, 0.1), 60.0);
 
-  const numSamples = Math.floor(duration * sampleRate);
-  const masterBuffer = new Float32Array(numSamples * 2);
+  const numberSamples = Math.floor(duration * sampleRate);
+  const masterBuffer = new Float32Array(numberSamples * 2);
 
   const trackDelayNodes: Record<number, DelayNode> = {};
   const trackReverbNodes: Record<number, SchroederReverb> = {};
@@ -1273,9 +1273,9 @@ export function renderModularGraph(config: SynthesizerConfig): Float32Array {
     // Expand chord notation into individual simultaneous notes
     const chordExpandedNotes: NoteConfig[] = [];
     for (const note of repeatedNotes) {
-      const noteStr = String(note.note).trim();
-      if (isChordNotation(noteStr)) {
-        const chordNotes = expandChordToNotes(noteStr);
+      const noteString = String(note.note).trim();
+      if (isChordNotation(noteString)) {
+        const chordNotes = expandChordToNotes(noteString);
         for (const constituentNote of chordNotes) {
           chordExpandedNotes.push({ ...note, note: constituentNote });
         }
@@ -1293,7 +1293,7 @@ export function renderModularGraph(config: SynthesizerConfig): Float32Array {
 
   const deltaTime = 1.0 / sampleRate;
 
-  for (let currentSample = 0; currentSample < numSamples; currentSample++) {
+  for (let currentSample = 0; currentSample < numberSamples; currentSample++) {
     const currentTime = currentSample * deltaTime;
 
     tracks.forEach((track, trackIndex) => {
@@ -1380,8 +1380,8 @@ export function renderModularGraph(config: SynthesizerConfig): Float32Array {
 
   let maxPeak = 0.0;
   for (let i = 0; i < masterBuffer.length; i++) {
-    const absVal = Math.abs(masterBuffer[i]);
-    if (absVal > maxPeak) maxPeak = absVal;
+    const absValue = Math.abs(masterBuffer[i]);
+    if (absValue > maxPeak) maxPeak = absValue;
   }
 
   if (maxPeak > 0.98) {
@@ -1487,8 +1487,8 @@ export function synthesizeSound(config: SynthesizerConfig): Float32Array {
 
   const sampleRate = config.sampleRate || 44100;
   const duration = Math.min(Math.max(config.duration || 1.0, 0.1), 60.0);
-  const numSamples = Math.floor(duration * sampleRate);
-  const samples = new Float32Array(numSamples);
+  const numberSamples = Math.floor(duration * sampleRate);
+  const samples = new Float32Array(numberSamples);
 
   const startFreq = noteToFreq(config.frequency ?? 440);
   const endFreq = config.endFrequency
@@ -1497,9 +1497,9 @@ export function synthesizeSound(config: SynthesizerConfig): Float32Array {
   const waveform = config.waveform || instrumentPreset?.waveform || "sine";
   const harmonics = config.harmonics || instrumentPreset?.harmonics || [1.0];
 
-  const modFreq =
+  const modalFreq =
     config.modulatorFrequency || instrumentPreset?.modulatorFrequency || 0;
-  const modIndex =
+  const modalIndex =
     config.modulationIndex || instrumentPreset?.modulationIndex || 0;
 
   const envelope: ADSREnvelope = config.envelope ||
@@ -1517,7 +1517,7 @@ export function synthesizeSound(config: SynthesizerConfig): Float32Array {
   let modulatorPhase = 0;
   let lfoPhase = 0;
 
-  for (let i = 0; i < numSamples; i++) {
+  for (let i = 0; i < numberSamples; i++) {
     const currentTime = i * deltaTime;
 
     // 1. LFO Pitch and Amplitude Modulation
@@ -1525,14 +1525,14 @@ export function synthesizeSound(config: SynthesizerConfig): Float32Array {
     let lfoAmpMultiplier = 1.0;
     if (lfo) {
       lfoPhase += 2 * Math.PI * lfo.frequency * deltaTime;
-      const lfoVal = Math.sin(lfoPhase);
+      const lfoValue = Math.sin(lfoPhase);
       if (lfo.pitchDepth) {
-        lfoPitchOffset = lfoVal * lfo.pitchDepth;
+        lfoPitchOffset = lfoValue * lfo.pitchDepth;
       }
       if (lfo.amplitudeDepth) {
         lfoAmpMultiplier =
           1.0 -
-          Math.max(0, Math.min(1, lfo.amplitudeDepth)) * 0.5 * (1.0 - lfoVal);
+          Math.max(0, Math.min(1, lfo.amplitudeDepth)) * 0.5 * (1.0 - lfoValue);
       }
     }
 
@@ -1545,19 +1545,19 @@ export function synthesizeSound(config: SynthesizerConfig): Float32Array {
     baseFreq += lfoPitchOffset;
 
     // 3. FM Modulator phase step
-    let modVal = 0;
-    if (modFreq > 0 && modIndex > 0) {
-      modulatorPhase += 2 * Math.PI * modFreq * deltaTime;
-      modVal = Math.sin(modulatorPhase);
+    let modalValue = 0;
+    if (modalFreq > 0 && modalIndex > 0) {
+      modulatorPhase += 2 * Math.PI * modalFreq * deltaTime;
+      modalValue = Math.sin(modulatorPhase);
     }
 
     // 4. FM Carrier phase step
-    const freqOffset = modVal * modIndex;
+    const freqOffset = modalValue * modalIndex;
     const finalFreq = Math.max(1, baseFreq + freqOffset);
     carrierPhase += 2 * Math.PI * finalFreq * deltaTime;
 
     // 5. Additive synthesis / waveform evaluation
-    let sampleVal = 0;
+    let sampleValue = 0;
     for (let h = 0; h < harmonics.length; h++) {
       const harmonicFreqMultiplier = h + 1;
       const phase = carrierPhase * harmonicFreqMultiplier;
@@ -1586,7 +1586,7 @@ export function synthesizeSound(config: SynthesizerConfig): Float32Array {
           value = Math.random() * 2 - 1;
           break;
       }
-      sampleVal += value * amp;
+      sampleValue += value * amp;
     }
 
     // Normalize additive samples to avoid clipping
@@ -1595,12 +1595,12 @@ export function synthesizeSound(config: SynthesizerConfig): Float32Array {
       0,
     );
     if (totalHarmonicAmp > 1.0) {
-      sampleVal /= totalHarmonicAmp;
+      sampleValue /= totalHarmonicAmp;
     }
 
     // 6. Amplitude envelope
     const envelopeValue = getEnvelopeValue(currentTime, duration, envelope);
-    samples[i] = sampleVal * envelopeValue * lfoAmpMultiplier;
+    samples[i] = sampleValue * envelopeValue * lfoAmpMultiplier;
   }
 
   // 7. Apply delay line if configured
@@ -1632,11 +1632,11 @@ export function synthesizeSequence(
     velocity: number;
   }[] = [];
   for (const step of steps) {
-    const noteStr = String(step.note).trim();
+    const noteString = String(step.note).trim();
     const stepVelocity = step.velocity ?? 1.0;
 
-    if (isChordNotation(noteStr)) {
-      const chordNotes = expandChordToNotes(noteStr);
+    if (isChordNotation(noteString)) {
+      const chordNotes = expandChordToNotes(noteString);
       expandedSteps.push({
         frequencies: chordNotes.map((chordNote) => noteToFreq(chordNote)),
         duration: Math.max(step.duration, 0.02),
@@ -1656,19 +1656,19 @@ export function synthesizeSequence(
     0,
   );
   const cappedDuration = Math.min(totalDuration, 60.0);
-  const numSamples = Math.floor(cappedDuration * sampleRate);
-  const samples = new Float32Array(numSamples);
+  const numberSamples = Math.floor(cappedDuration * sampleRate);
+  const samples = new Float32Array(numberSamples);
 
   let currentSampleOffset = 0;
   const deltaTime = 1 / sampleRate;
 
   for (const step of expandedSteps) {
     const stepSamplesCount = Math.floor(step.duration * sampleRate);
-    if (currentSampleOffset >= numSamples) break;
+    if (currentSampleOffset >= numberSamples) break;
 
     const actualCount = Math.min(
       stepSamplesCount,
-      numSamples - currentSampleOffset,
+      numberSamples - currentSampleOffset,
     );
     const stepDuration = actualCount * deltaTime;
 
@@ -1778,8 +1778,8 @@ export function synthesizePreset(
     case "explosion": {
       // White noise mixed with a deep rumbling sawtooth sweep down
       const dur = 0.8;
-      const numSamples = Math.floor(dur * sampleRate);
-      const samples = new Float32Array(numSamples);
+      const numberSamples = Math.floor(dur * sampleRate);
+      const samples = new Float32Array(numberSamples);
       const deltaTime = 1 / sampleRate;
 
       // 1. Synthesize the rumble component
@@ -1799,16 +1799,16 @@ export function synthesizePreset(
         sustain: 0.0,
         release: 0.34,
       };
-      for (let i = 0; i < numSamples; i++) {
+      for (let i = 0; i < numberSamples; i++) {
         const currentTime = i * deltaTime;
-        const noiseVal = Math.random() * 2 - 1;
+        const noiseValue = Math.random() * 2 - 1;
         const noiseEnvelopeValue = getEnvelopeValue(
           currentTime,
           dur,
           noiseEnvelope,
         );
         samples[i] =
-          rumbleSamples[i] * 0.4 + noiseVal * noiseEnvelopeValue * 0.6;
+          rumbleSamples[i] * 0.4 + noiseValue * noiseEnvelopeValue * 0.6;
       }
       return samples;
     }
@@ -1869,11 +1869,11 @@ export function synthesizePreset(
 export function createWavBuffer(
   samples: Float32Array,
   sampleRate: number,
-  numChannels = 1,
+  numberChannels = 1,
 ): Buffer {
   const bitsPerSample = 16;
-  const byteRate = (sampleRate * numChannels * bitsPerSample) / 8;
-  const blockAlign = (numChannels * bitsPerSample) / 8;
+  const byteRate = (sampleRate * numberChannels * bitsPerSample) / 8;
+  const blockAlign = (numberChannels * bitsPerSample) / 8;
   const subChunk2Size = samples.length * 2;
   const chunkSize = 36 + subChunk2Size;
 
@@ -1884,7 +1884,7 @@ export function createWavBuffer(
   header.write("fmt ", 12);
   header.writeUInt32LE(16, 16); // Chunk Size
   header.writeUInt16LE(1, 20); // PCM Format
-  header.writeUInt16LE(numChannels, 22);
+  header.writeUInt16LE(numberChannels, 22);
   header.writeUInt32LE(sampleRate, 24);
   header.writeUInt32LE(byteRate, 28);
   header.writeUInt16LE(blockAlign, 32);
@@ -1911,14 +1911,14 @@ export function generateAudioWav(config: SynthesizerConfig): {
 } {
   const sampleRate = config.sampleRate || 44100;
   let samples: Float32Array;
-  let numChannels = 1;
+  let numberChannels = 1;
 
   const start = Date.now();
 
   if (config.soundType === "modular" || config.tracks || config.nodes) {
     logger.info(`[SoundSynthesizerService] Synthesizing modular audio graph`);
     samples = renderModularGraph(config);
-    numChannels = 2; // modular rendering is dual-channel stereo
+    numberChannels = 2; // modular rendering is dual-channel stereo
   } else if (config.presetEffect) {
     logger.info(
       `[SoundSynthesizerService] Synthesizing preset effect: ${config.presetEffect}`,
@@ -1952,7 +1952,7 @@ export function generateAudioWav(config: SynthesizerConfig): {
     samples = synthesizeSound(config);
   }
 
-  const wavBuffer = createWavBuffer(samples, sampleRate, numChannels);
+  const wavBuffer = createWavBuffer(samples, sampleRate, numberChannels);
   const audioBase64 = wavBuffer.toString("base64");
 
   logger.info(

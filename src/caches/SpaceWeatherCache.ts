@@ -110,13 +110,13 @@ export function getSpaceWeatherSummary() {
       if (!strongest) return flr;
       const currentClass = flr.classType?.[0] || "";
       const bestClass = strongest.classType?.[0] || "";
-      const currentIdx = SOLAR_FLARE_CLASSES.indexOf(currentClass);
-      const bestIdx = SOLAR_FLARE_CLASSES.indexOf(bestClass);
-      if (currentIdx > bestIdx) return flr;
-      if (currentIdx === bestIdx) {
-        const currentNum = parseFloat(flr.classType?.slice(1) || "0");
-        const bestNum = parseFloat(strongest.classType?.slice(1) || "0");
-        return currentNum > bestNum ? flr : strongest;
+      const currentIndex = SOLAR_FLARE_CLASSES.indexOf(currentClass);
+      const bestIndex = SOLAR_FLARE_CLASSES.indexOf(bestClass);
+      if (currentIndex > bestIndex) return flr;
+      if (currentIndex === bestIndex) {
+        const currentNumber = parseFloat(flr.classType?.slice(1) || "0");
+        const bestNumber = parseFloat(strongest.classType?.slice(1) || "0");
+        return currentNumber > bestNumber ? flr : strongest;
       }
       return strongest;
     },
@@ -129,7 +129,7 @@ export function getSpaceWeatherSummary() {
     null,
   );
 
-  const earthDirectedCmes = cache.cmes.filter((c: Cme) => c.isEarthDirected);
+  const earthDirectedCmes = cache.cmes.filter((cme: Cme) => cme.isEarthDirected);
 
   return {
     flareCount: cache.flares.length,

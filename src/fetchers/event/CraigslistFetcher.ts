@@ -16,9 +16,9 @@ const HEADERS = {
  * Parse a Craigslist date string into a Date object.
  * Craigslist uses formats like "Mar 20" or "2026-03-20 10:00"
  */
-function parseDate(dateStr: string | null): Date | undefined {
-  if (!dateStr) return undefined;
-  const parsedDate = new Date(dateStr);
+function parseDate(dateString: string | null): Date | undefined {
+  if (!dateString) return undefined;
+  const parsedDate = new Date(dateString);
   return isNaN(parsedDate.getTime()) ? undefined : parsedDate;
 }
 
@@ -34,16 +34,16 @@ export async function fetchCraigslistEvents(): Promise<CachedEvent[]> {
   }
 
   const html = await response.text();
-  const $ = cheerio.load(html);
+  const CHEERIOAPI = cheerio.load(html);
   const events: CachedEvent[] = [];
 
-  $(".cl-static-search-result").each((_i, element) => {
-    const $el = $(element);
-    const title = $el.find(".title").text().trim();
-    const link = $el.attr("href");
-    const dateStr = $el.find(".date").text().trim();
-    const price = $el.find(".price").text().trim();
-    const location = $el.find(".location").text().trim();
+  CHEERIOAPI(".cl-static-search-result").each((_index, rawElement) => {
+    const element = CHEERIOAPI(rawElement);
+    const title = element.find(".title").text().trim();
+    const link = element.attr("href");
+    const dateString = element.find(".date").text().trim();
+    const price = element.find(".price").text().trim();
+    const location = element.find(".location").text().trim();
 
     if (!title) return;
 
@@ -52,13 +52,13 @@ export async function fetchCraigslistEvents(): Promise<CachedEvent[]> {
       : `https://vancouver.craigslist.org${link}`;
 
     events.push({
-      sourceId: fullUrl || `craigslist-${Date.now()}-${_i}`,
+      sourceId: fullUrl || `craigslist-${Date.now()}-${_index}`,
       source: EVENT_SOURCES.CRAIGSLIST,
       name: title,
       description: undefined,
       url: fullUrl,
       imageUrl: undefined,
-      startDate: parseDate(dateStr),
+      startDate: parseDate(dateString),
       endDate: undefined,
       venue: {
         name: location || undefined,
@@ -85,13 +85,13 @@ export async function fetchCraigslistEvents(): Promise<CachedEvent[]> {
 
   // Fallback: try the gallery/list results format
   if (events.length === 0) {
-    $("li.cl-search-result, .result-row").each((_i, element) => {
-      const $el = $(element);
-      const $link = $el.find("a.posting-title, a.result-title, a");
-      const title = $link.text().trim();
-      const href = $link.attr("href");
-      const dateStr =
-        $el.find("time").attr("datetime") || $el.find(".date").text().trim();
+    CHEERIOAPI("li.cl-search-result, .result-row").each((_index, rawElement) => {
+      const element = CHEERIOAPI(rawElement);
+      const linkElement = element.find("a.posting-title, a.result-title, a");
+      const title = linkElement.text().trim();
+      const href = linkElement.attr("href");
+      const dateString =
+        element.find("time").attr("datetime") || element.find(".date").text().trim();
 
       if (!title) return;
 
@@ -100,13 +100,13 @@ export async function fetchCraigslistEvents(): Promise<CachedEvent[]> {
         : `https://vancouver.craigslist.org${href}`;
 
       events.push({
-        sourceId: fullUrl || `craigslist-${Date.now()}-${_i}`,
+        sourceId: fullUrl || `craigslist-${Date.now()}-${_index}`,
         source: EVENT_SOURCES.CRAIGSLIST,
         name: title,
         description: undefined,
         url: fullUrl,
         imageUrl: undefined,
-        startDate: parseDate(dateStr),
+        startDate: parseDate(dateString),
         endDate: undefined,
         venue: {
           name: undefined,

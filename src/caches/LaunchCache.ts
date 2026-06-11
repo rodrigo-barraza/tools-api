@@ -29,7 +29,7 @@ export function getLaunchSummary() {
   const upcoming = launches.filter((l) => new Date(l.net) > now);
   const providers = [
     ...new Set(
-      launches.map((l) => l.provider).filter((p): p is string => p !== null),
+      launches.map((l) => l.provider).filter((provider): provider is string => provider !== null),
     ),
   ];
 

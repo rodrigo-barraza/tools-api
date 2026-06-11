@@ -52,7 +52,7 @@ router.get(
     } = req.query as Record<string, string | undefined>;
     const limit = parseIntParam(req.query.limit as string, 100);
     const events = await searchEvents({
-      q: searchQuery,
+      value: searchQuery,
       category,
       city,
       source,
@@ -106,7 +106,7 @@ router.get(
     switch (action) {
       case "search": {
         const events = await searchEvents({
-          q: searchQuery,
+          value: searchQuery,
           category,
           source,
           limit: limit || 100,

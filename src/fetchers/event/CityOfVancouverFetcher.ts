@@ -25,7 +25,7 @@ export async function fetchCityOfVancouverEvents(): Promise<CachedEvent[]> {
   }
 
   const html = await response.text();
-  const $ = cheerio.load(html);
+  const CHEERIOAPI = cheerio.load(html);
   const events: CachedEvent[] = [];
 
   // Try multiple selectors — city websites change layouts
@@ -39,32 +39,32 @@ export async function fetchCityOfVancouverEvents(): Promise<CachedEvent[]> {
   for (const selector of selectors) {
     if (events.length > 0) break;
 
-    $(selector).each((_i, element) => {
-      const $el = $(element);
-      const $link = $el.find("a").first();
+    CHEERIOAPI(selector).each((_index, rawElement) => {
+      const element = CHEERIOAPI(rawElement);
+      const linkElement = element.find("a").first();
       const title =
-        $el
+        element
           .find("h2, h3, h4, .event-title, .field-content a")
           .first()
           .text()
-          .trim() || $link.text().trim();
-      const href = $link.attr("href");
-      const dateText = $el
+          .trim() || linkElement.text().trim();
+      const href = linkElement.attr("href");
+      const dateText = element
         .find("time, .date, .event-date, [class*='date']")
         .first()
         .text()
         .trim();
-      const location = $el
+      const location = element
         .find(".location, .venue, [class*='location']")
         .first()
         .text()
         .trim();
-      const description = $el
+      const description = element
         .find("p, .description, .summary, .teaser")
         .first()
         .text()
         .trim();
-      const imageUrl = $el.find("img").first().attr("src") || undefined;
+      const imageUrl = element.find("img").first().attr("src") || undefined;
 
       if (!title || title.length < 3) return;
 
@@ -77,7 +77,7 @@ export async function fetchCityOfVancouverEvents(): Promise<CachedEvent[]> {
       const startDate = dateText ? new Date(dateText) : undefined;
 
       events.push({
-        sourceId: fullUrl || `cov-${Date.now()}-${_i}`,
+        sourceId: fullUrl || `cov-${Date.now()}-${_index}`,
         source: EVENT_SOURCES.CITY_OF_VANCOUVER,
         name: title,
         description: description || undefined,

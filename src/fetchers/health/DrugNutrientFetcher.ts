@@ -586,7 +586,7 @@ export function checkDrugNutrientInteractions({
     if (nutrientFilter) {
       const entryNutrient = normalizeSearch(entry.nutrient);
       return nutrientFilter.some(
-        (n) => entryNutrient.includes(n) || n.includes(entryNutrient),
+        (node) => entryNutrient.includes(node) || node.includes(entryNutrient),
       );
     }
     return true;
@@ -599,8 +599,8 @@ export function checkDrugNutrientInteractions({
     minor: 2,
   };
   matches.sort(
-    (a, b) =>
-      (severityOrder[a.severity] ?? 99) - (severityOrder[b.severity] ?? 99),
+    (drugNutrientInteraction, b) =>
+      (severityOrder[drugNutrientInteraction.severity] ?? 99) - (severityOrder[b.severity] ?? 99),
   );
 
   const severityIcon: Record<"major" | "moderate" | "minor", string> = {
@@ -613,13 +613,13 @@ export function checkDrugNutrientInteractions({
     drug,
     interactionCount: matches.length,
     interactions: matches.map(
-      (m): DrugInteractionResult => ({
-        nutrient: m.nutrient,
-        effect: m.effect,
-        severity: m.severity,
-        icon: severityIcon[m.severity] || "⚪",
-        description: m.description,
-        recommendation: m.recommendation,
+      (drugNutrientInteraction): DrugInteractionResult => ({
+        nutrient: drugNutrientInteraction.nutrient,
+        effect: drugNutrientInteraction.effect,
+        severity: drugNutrientInteraction.severity,
+        icon: severityIcon[drugNutrientInteraction.severity] || "⚪",
+        description: drugNutrientInteraction.description,
+        recommendation: drugNutrientInteraction.recommendation,
       }),
     ),
     _disclaimer:
@@ -638,8 +638,8 @@ export function getDrugInteractionCategories() {
 
   for (const entry of INTERACTION_DB) {
     // Extract a readable drug class from the pattern
-    const patternStr = entry.drugPattern.source;
-    const firstDrug = patternStr.split("|")[0].replace(/\\/g, "");
+    const patternString = entry.drugPattern.source;
+    const firstDrug = patternString.split("|")[0].replace(/\\/g, "");
     drugClasses.add(firstDrug);
     nutrients.add(entry.nutrient);
   }

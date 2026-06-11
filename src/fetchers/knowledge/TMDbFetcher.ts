@@ -185,41 +185,41 @@ async function fetchTMDb<T>(endpoint: string): Promise<T | null> {
 // ─── Normalizers ───────────────────────────────────────────────────
 
 function normalizeMovie(
-  m: RawTmdbMovie | null | undefined,
+  message: RawTmdbMovie | null | undefined,
 ): MovieResult | null {
-  if (!m) return null;
+  if (!message) return null;
   return {
-    tmdbId: m.id,
-    title: m.title || null,
-    originalTitle: m.original_title || null,
-    tagline: m.tagline || null,
-    overview: m.overview ? m.overview.substring(0, 1500) : null,
-    releaseDate: m.release_date || null,
-    status: m.status || null,
-    runtime: m.runtime || null,
-    budget: m.budget || null,
-    revenue: m.revenue || null,
-    voteAverage: m.vote_average || null,
-    voteCount: m.vote_count || null,
-    popularity: m.popularity || null,
-    posterUrl: img(m.poster_path),
-    backdropUrl: img(m.backdrop_path, "w1280"),
-    genres: (m.genres || [])
+    tmdbId: message.id,
+    title: message.title || null,
+    originalTitle: message.original_title || null,
+    tagline: message.tagline || null,
+    overview: message.overview ? message.overview.substring(0, 1500) : null,
+    releaseDate: message.release_date || null,
+    status: message.status || null,
+    runtime: message.runtime || null,
+    budget: message.budget || null,
+    revenue: message.revenue || null,
+    voteAverage: message.vote_average || null,
+    voteCount: message.vote_count || null,
+    popularity: message.popularity || null,
+    posterUrl: img(message.poster_path),
+    backdropUrl: img(message.backdrop_path, "w1280"),
+    genres: (message.genres || [])
       .map((g) => g.name)
-      .concat((m.genre_ids || []).map((id) => String(id))),
-    originalLanguage: m.original_language || null,
-    spokenLanguages: (m.spoken_languages || [])
+      .concat((message.genre_ids || []).map((id) => String(id))),
+    originalLanguage: message.original_language || null,
+    spokenLanguages: (message.spoken_languages || [])
       .map((l) => l.english_name || l.name || "")
       .filter(Boolean),
-    productionCompanies: (m.production_companies || []).map(
+    productionCompanies: (message.production_companies || []).map(
       (company) => company.name,
     ),
-    productionCountries: (m.production_countries || [])
+    productionCountries: (message.production_countries || [])
       .map((country) => country.name || country.iso_3166_1 || "")
       .filter(Boolean),
-    homepage: m.homepage || null,
-    imdbId: m.imdb_id || null,
-    url: `https://www.themoviedatabase.org/movie/${m.id}`,
+    homepage: message.homepage || null,
+    imdbId: message.imdb_id || null,
+    url: `https://www.themoviedatabase.org/movie/${message.id}`,
   };
 }
 
@@ -902,8 +902,8 @@ export async function getPersonCredits(id: string | number, limit: number = 30) 
     return { found: false, cast: [] as PersonCreditEntry[], crew: [] as PersonCreditEntry[] };
   }
 
-  const sortByDate = (a: PersonCreditEntry, b: PersonCreditEntry) => {
-    const dateA = a.releaseDate || "";
+  const sortByDate = (personCreditEntry: PersonCreditEntry, b: PersonCreditEntry) => {
+    const dateA = personCreditEntry.releaseDate || "";
     const dateB = b.releaseDate || "";
     return dateB.localeCompare(dateA);
   };

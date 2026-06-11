@@ -72,25 +72,25 @@ export async function upsertProducts(products: ProductInput[]) {
   if (!productCollection || !products.length)
     return { upserted: 0, modified: 0 };
 
-  const ops = products.map((p: ProductInput) => ({
+  const ops = products.map((productInput: ProductInput) => ({
     updateOne: {
-      filter: { sourceId: p.sourceId, source: p.source },
+      filter: { sourceId: productInput.sourceId, source: productInput.source },
       update: {
         $set: {
-          name: p.name,
-          category: p.category,
-          sourceCategory: p.sourceCategory,
-          rank: p.rank,
-          price: p.price,
-          currency: p.currency,
-          rating: p.rating,
-          reviewCount: p.reviewCount,
-          imageUrl: p.imageUrl,
-          productUrl: p.productUrl,
-          description: p.description,
-          trendingScore: p.trendingScore,
+          name: productInput.name,
+          category: productInput.category,
+          sourceCategory: productInput.sourceCategory,
+          rank: productInput.rank,
+          price: productInput.price,
+          currency: productInput.currency,
+          rating: productInput.rating,
+          reviewCount: productInput.reviewCount,
+          imageUrl: productInput.imageUrl,
+          productUrl: productInput.productUrl,
+          description: productInput.description,
+          trendingScore: productInput.trendingScore,
           lastSeenAt: new Date(),
-          fetchedAt: p.fetchedAt,
+          fetchedAt: productInput.fetchedAt,
         },
         $setOnInsert: { firstSeenAt: new Date() },
       },

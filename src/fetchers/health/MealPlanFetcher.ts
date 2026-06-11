@@ -73,8 +73,8 @@ function ensureFoodCache(): FoodItem[] {
         nutrientIndex < headers.length;
         nutrientIndex++
       ) {
-        const rawVal = row[headers[nutrientIndex]];
-        const value = typeof rawVal === "string" ? parseFloat(rawVal) : NaN;
+        const rawValue = row[headers[nutrientIndex]];
+        const value = typeof rawValue === "string" ? parseFloat(rawValue) : NaN;
         row[headers[nutrientIndex]] = isNaN(value) ? null : value;
       }
       foods.push(row as FoodItem);
@@ -150,9 +150,9 @@ function computeGapScore(
     const remaining = remainingGaps[nutrient] || 0;
     if (remaining <= 0) continue;
 
-    const rawVal = food[nutrient];
-    const valueNum = typeof rawVal === "number" ? rawVal : 0;
-    const provided = valueNum * portionScale;
+    const rawValue = food[nutrient];
+    const valueNumber = typeof rawValue === "number" ? rawValue : 0;
+    const provided = valueNumber * portionScale;
     const covered = Math.min(provided, remaining);
     score += covered / remaining; // % of gap filled
   }
@@ -348,10 +348,10 @@ export function buildMealPlan({
         // Bonus for emphasized nutrients
         if (emphasis) {
           for (const nutrient of emphasis) {
-            const rawVal = food[nutrient];
-            const value = typeof rawVal === "number" ? rawVal : 0;
-            const portionVal = value * portionScale;
-            if (portionVal > 0) score += portionVal * 2;
+            const rawValue = food[nutrient];
+            const value = typeof rawValue === "number" ? rawValue : 0;
+            const portionValue = value * portionScale;
+            if (portionValue > 0) score += portionValue * 2;
           }
         }
 
@@ -373,10 +373,10 @@ export function buildMealPlan({
       const portionScale = bestPortion / 100;
       const portionCalories = (bestFood.kilocalories || 0) * portionScale;
 
-      const protVal = bestFood.protein;
-      const carbVal = bestFood.carbohydrate;
-      const lipVal = bestFood.lipid;
-      const fibVal = bestFood.fiber;
+      const protValue = bestFood.protein;
+      const carbValue = bestFood.carbohydrate;
+      const lipValue = bestFood.lipid;
+      const fibValue = bestFood.fiber;
 
       mealItems.push({
         name: bestFood.food_name,
@@ -387,21 +387,21 @@ export function buildMealPlan({
         macros: {
           protein_g: Number(
             (
-              (typeof protVal === "number" ? protVal : 0) * portionScale
+              (typeof protValue === "number" ? protValue : 0) * portionScale
             ).toFixed(1),
           ),
           carbs_g: Number(
             (
-              (typeof carbVal === "number" ? carbVal : 0) * portionScale
+              (typeof carbValue === "number" ? carbValue : 0) * portionScale
             ).toFixed(1),
           ),
           fat_g: Number(
-            ((typeof lipVal === "number" ? lipVal : 0) * portionScale).toFixed(
+            ((typeof lipValue === "number" ? lipValue : 0) * portionScale).toFixed(
               1,
             ),
           ),
           fiber_g: Number(
-            ((typeof fibVal === "number" ? fibVal : 0) * portionScale).toFixed(
+            ((typeof fibValue === "number" ? fibValue : 0) * portionScale).toFixed(
               1,
             ),
           ),
@@ -411,9 +411,9 @@ export function buildMealPlan({
       // Update remaining gaps
       for (const nutrient of SCORING_NUTRIENTS) {
         if (remainingGaps[nutrient] && remainingGaps[nutrient] > 0) {
-          const rawVal = bestFood[nutrient];
+          const rawValue = bestFood[nutrient];
           const provided =
-            (typeof rawVal === "number" ? rawVal : 0) * portionScale;
+            (typeof rawValue === "number" ? rawValue : 0) * portionScale;
           remainingGaps[nutrient] = Math.max(
             0,
             remainingGaps[nutrient] - provided,

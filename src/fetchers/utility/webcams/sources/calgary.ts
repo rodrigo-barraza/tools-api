@@ -59,7 +59,7 @@ export async function refreshCalgaryWebcams() {
           source: "data.calgary.ca",
         };
       })
-      .filter((c: WebcamDocument) => !!c.url);
+      .filter((webcamDocument: WebcamDocument) => !!webcamDocument.url);
 
     allParsedWebcams = allParsedWebcams.concat(parsedWebcams);
 

@@ -24,12 +24,12 @@ async function fetchUbcEvents(): Promise<CachedEvent[]> {
   }
 
   const html = await response.text();
-  const $ = cheerio.load(html);
+  const CHEERIOAPI = cheerio.load(html);
   const events: CachedEvent[] = [];
 
-  $("article, .event-card, .views-row, [class*='event'], .card").each(
+  CHEERIOAPI("article, .event-card, .views-row, [class*='event'], .card").each(
     (_i, element) => {
-      const $element = $(element);
+      const $element = CHEERIOAPI(element);
       const $link = $element.find("a").first();
       const title =
         $element
@@ -106,12 +106,12 @@ async function fetchSfuEvents(): Promise<CachedEvent[]> {
   }
 
   const html = await response.text();
-  const $ = cheerio.load(html);
+  const CHEERIOAPI = cheerio.load(html);
   const events: CachedEvent[] = [];
 
-  $("article, .event-card, .views-row, [class*='event'], .card, li").each(
+  CHEERIOAPI("article, .event-card, .views-row, [class*='event'], .card, li").each(
     (_i, element) => {
-      const $element = $(element);
+      const $element = CHEERIOAPI(element);
       const $link = $element.find("a").first();
       const title =
         $element.find("h2, h3, h4, .event-title").first().text().trim() ||

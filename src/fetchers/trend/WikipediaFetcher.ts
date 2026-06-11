@@ -47,7 +47,7 @@ export async function fetchWikipediaTrends(date: Date | string | null = null) {
   const articles = data?.items?.[0]?.articles || [];
 
   return (articles as WikiArticle[])
-    .filter((a) => !WIKIPEDIA_EXCLUDED_PAGES.includes(a.article))
+    .filter((wikiArticle) => !WIKIPEDIA_EXCLUDED_PAGES.includes(wikiArticle.article))
     .slice(0, WIKIPEDIA_TOP_ARTICLES_LIMIT)
     .map((article) => {
       const name = article.article.replace(/_/g, " ");

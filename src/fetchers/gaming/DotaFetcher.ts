@@ -273,7 +273,7 @@ export async function getHeroMatchups(heroId: number | string) {
     }));
 
   const sorted = [...withRates].sort(
-    (a, b) => parseFloat(b.winRate) - parseFloat(a.winRate),
+    (transformedMatchup, b) => parseFloat(b.winRate) - parseFloat(transformedMatchup.winRate),
   );
 
   return {

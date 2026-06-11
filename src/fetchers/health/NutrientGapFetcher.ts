@@ -160,15 +160,15 @@ function convertToTarget(
 // ─── Status Classification ─────────────────────────────────────
 
 function classifyStatus(
-  pctDRI: number | null,
+  percentageDRI: number | null,
   hasUL: boolean,
-  pctUL: number | null,
+  percentageUL: number | null,
 ): string {
-  if (pctDRI === null) return "no_data";
-  if (hasUL && pctUL !== null && pctUL > 100) return "over_UL";
-  if (pctDRI >= 90 && pctDRI <= 110) return "adequate";
-  if (pctDRI >= 110) return "surplus";
-  if (pctDRI >= 50) return "low";
+  if (percentageDRI === null) return "no_data";
+  if (hasUL && percentageUL !== null && percentageUL > 100) return "over_UL";
+  if (percentageDRI >= 90 && percentageDRI <= 110) return "adequate";
+  if (percentageDRI >= 110) return "surplus";
+  if (percentageDRI >= 50) return "low";
   return "deficient";
 }
 
@@ -244,8 +244,8 @@ export interface NutrientGapItem {
   consumed: number;
   target: number;
   unit: string;
-  pctDRI: number | null;
-  pctUL: number | null;
+  percentageDRI: number | null;
+  percentageUL: number | null;
   metric: string;
 }
 
@@ -381,9 +381,9 @@ export function analyzeNutrientGaps({
 
   // ── Gap analysis per nutrient ────────────────────────────────
   const gaps: NutrientGapItem[] = [];
-  const { requirements: reqMap } = typedRequirements;
+  const { requirements: requestMap } = typedRequirements;
 
-  for (const [nutrientId, metrics] of Object.entries(reqMap)) {
+  for (const [nutrientId, metrics] of Object.entries(requestMap)) {
     // Find the food column for this requirement nutrient
     const foodColumn =
       REQUIREMENT_TO_FOOD_COLUMN[
@@ -440,15 +440,15 @@ export function analyzeNutrientGaps({
       );
     }
 
-    const pctDRI =
+    const percentageDRI =
       targetValue > 0
         ? Number(((consumedConverted / targetValue) * 100).toFixed(1))
         : null;
-    const pctUL = ulValue
+    const percentageUL = ulValue
       ? Number(((consumedConverted / ulValue) * 100).toFixed(1))
       : null;
 
-    const status = classifyStatus(pctDRI, !!ulValue, pctUL);
+    const status = classifyStatus(percentageDRI, !!ulValue, percentageUL);
 
     gaps.push({
       nutrient: nutrientId,
@@ -457,8 +457,8 @@ export function analyzeNutrientGaps({
       consumed: Number(consumedConverted.toFixed(4)),
       target: targetValue,
       unit: targetUnit || "",
-      pctDRI,
-      pctUL: pctUL || null,
+      percentageDRI,
+      percentageUL: percentageUL || null,
       metric: targetMetric || "",
     });
   }
@@ -472,11 +472,11 @@ export function analyzeNutrientGaps({
     adequate: 4,
     no_data: 5,
   };
-  gaps.sort((firstItem, b) => {
+  gaps.sort((firstItem, secondItem) => {
     const orderDiff =
-      (statusOrder[firstItem.status] ?? 99) - (statusOrder[b.status] ?? 99);
+      (statusOrder[firstItem.status] ?? 99) - (statusOrder[secondItem.status] ?? 99);
     if (orderDiff !== 0) return orderDiff;
-    return (firstItem.pctDRI || 0) - (b.pctDRI || 0);
+    return (firstItem.percentageDRI || 0) - (secondItem.percentageDRI || 0);
   });
 
   // ── Summary ──────────────────────────────────────────────────

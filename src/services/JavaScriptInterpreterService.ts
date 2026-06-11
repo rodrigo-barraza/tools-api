@@ -24,17 +24,17 @@ const MAX_OUTPUT_BYTES = 512 * 1024; // 512 KB max stdout
  * Build the globals object injected into the vm context.
  */
 function buildGlobals(outputBuffer: string[], execution: string = "sandboxed") {
-  let outputLen = 0;
+  let outputLength = 0;
 
   const safePrint = (...args: unknown[]) => {
-    if (outputLen >= MAX_OUTPUT_BYTES) return;
+    if (outputLength >= MAX_OUTPUT_BYTES) return;
     const line = args
-      .map((a: unknown) =>
-        typeof a === "string" ? a : (JSON.stringify(a, null, 2) ?? String(a)),
+      .map((arg: unknown) =>
+        typeof arg === "string" ? arg : (JSON.stringify(arg, null, 2) ?? String(arg)),
       )
       .join(" ");
     outputBuffer.push(line);
-    outputLen += line.length;
+    outputLength += line.length;
   };
 
   // ── Shared globals (both tiers) ────────────────────────────
@@ -46,7 +46,7 @@ function buildGlobals(outputBuffer: string[], execution: string = "sandboxed") {
       info: safePrint,
       dir: (...args: unknown[]) =>
         safePrint(
-          ...args.map((a: unknown) => JSON.stringify(a, null, 2) ?? String(a)),
+          ...args.map((arg: unknown) => JSON.stringify(arg, null, 2) ?? String(arg)),
         ),
       table: (data: unknown) => safePrint(JSON.stringify(data, null, 2)),
     },

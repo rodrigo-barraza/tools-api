@@ -57,7 +57,7 @@ export async function refreshAustinWebcams() {
         source: "data.austintexas.gov",
       };
     })
-    .filter((c): c is WebcamDocument => !!(c && c.url));
+    .filter((client): client is WebcamDocument => !!(client && client.url));
 
   await upsertWebcams(parsedWebcams);
 }

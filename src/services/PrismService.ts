@@ -84,9 +84,9 @@ export async function chat(
     clearTimeout(timeout);
 
     if (!response.ok) {
-      const errText = await response.text().catch(() => "");
+      const errorText = await response.text().catch(() => "");
       throw new Error(
-        `Prism returned ${response.status}: ${errText.slice(0, 200)}`,
+        `Prism returned ${response.status}: ${errorText.slice(0, 200)}`,
       );
     }
 
@@ -145,9 +145,9 @@ export async function textToSpeech(
     clearTimeout(timeout);
 
     if (!response.ok) {
-      const errText = await response.text().catch(() => "");
+      const errorText = await response.text().catch(() => "");
       throw new Error(
-        `Prism TTS returned ${response.status}: ${errText.slice(0, 200)}`,
+        `Prism TTS returned ${response.status}: ${errorText.slice(0, 200)}`,
       );
     }
 
@@ -189,9 +189,9 @@ export async function speechToText(
     clearTimeout(timeout);
 
     if (!response.ok) {
-      const errText = await response.text().catch(() => "");
+      const errorText = await response.text().catch(() => "");
       throw new Error(
-        `Prism STT returned ${response.status}: ${errText.slice(0, 200)}`,
+        `Prism STT returned ${response.status}: ${errorText.slice(0, 200)}`,
       );
     }
 

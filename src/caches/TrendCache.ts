@@ -125,8 +125,8 @@ export function getByCategory(category: string) {
   for (const data of Object.values(cache)) {
     allTrends.push(
       ...data.trends.filter(
-        (t) =>
-          t.category && t.category.toLowerCase() === category.toLowerCase(),
+        (cachedTrend) =>
+          cachedTrend.category && cachedTrend.category.toLowerCase() === category.toLowerCase(),
       ),
     );
   }
@@ -179,7 +179,7 @@ export function getCorrelatedTrends() {
       entries: tool.entries,
     }))
     .sort(
-      (a, b) => b.sourceCount - a.sourceCount || b.totalVolume - a.totalVolume,
+      (agent, b) => b.sourceCount - agent.sourceCount || b.totalVolume - agent.totalVolume,
     );
 
   return {
@@ -199,9 +199,9 @@ export function searchTrends(query: string) {
   for (const data of Object.values(cache)) {
     allTrends.push(
       ...data.trends.filter(
-        (t) =>
-          t.name.toLowerCase().includes(normalizedQuery) ||
-          t.normalizedName.includes(normalizedQuery),
+        (cachedTrend) =>
+          cachedTrend.name.toLowerCase().includes(normalizedQuery) ||
+          cachedTrend.normalizedName.includes(normalizedQuery),
       ),
     );
   }

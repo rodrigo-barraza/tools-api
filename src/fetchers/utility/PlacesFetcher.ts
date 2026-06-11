@@ -33,8 +33,8 @@ function evictStaleEntries() {
   }
   if (placesCache.size > MAX_CACHE_SIZE) {
     const entries = [...placesCache.entries()].sort(
-      (a: [string, PlacesCacheEntry], b: [string, PlacesCacheEntry]) =>
-        a[1].fetchedAt - b[1].fetchedAt,
+      (agent: [string, PlacesCacheEntry], b: [string, PlacesCacheEntry]) =>
+        agent[1].fetchedAt - b[1].fetchedAt,
     );
     const toRemove = Math.floor(entries.length / 2);
     for (let i = 0; i < toRemove; i++) {
@@ -147,11 +147,11 @@ export function buildStaticMapUrl(
 
   // Add numbered markers
   const markerParams = places
-    .filter((p) => p.latitude != null && p.longitude != null)
-    .map((p, i) => {
+    .filter((normalizedPlace) => normalizedPlace.latitude != null && normalizedPlace.longitude != null)
+    .map((normalizedPlace, i) => {
       const color = MARKER_COLORS[i % MARKER_COLORS.length];
       const label = String(i + 1);
-      return `markers=color:${color}|label:${label}|${p.latitude},${p.longitude}`;
+      return `markers=color:${color}|label:${label}|${normalizedPlace.latitude},${normalizedPlace.longitude}`;
     })
     .join("&");
 
@@ -221,9 +221,9 @@ export async function searchNearbyPlaces({
   });
 
   if (!response.ok) {
-    const errText = await response.text();
+    const errorText = await response.text();
     throw new Error(
-      `Google Places Nearby API → ${response.status}: ${errText}`,
+      `Google Places Nearby API → ${response.status}: ${errorText}`,
     );
   }
 
@@ -307,9 +307,9 @@ export async function searchPlacesByText({
   });
 
   if (!response.ok) {
-    const errText = await response.text();
+    const errorText = await response.text();
     throw new Error(
-      `Google Places Text Search API → ${response.status}: ${errText}`,
+      `Google Places Text Search API → ${response.status}: ${errorText}`,
     );
   }
 

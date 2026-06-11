@@ -99,8 +99,8 @@ function ensureLoaded() {
     headers.forEach((h: string, index: number) => {
       const value = values[index] || "";
       if (NUMERIC_FIELDS.has(h)) {
-        const num = parseFloat(value);
-        row[h] = isNaN(num) ? null : num;
+        const number = parseFloat(value);
+        row[h] = isNaN(number) ? null : number;
       } else {
         row[h] = value || null;
       }
@@ -118,23 +118,23 @@ function normalizeSearch(searchText: string): string {
   return searchText.toLowerCase().replace(/[^a-z0-9\s-]/g, "");
 }
 
-function formatPlanet(p: ExoplanetRecord): FormattedPlanet {
+function formatPlanet(exoplanetRecord: ExoplanetRecord): FormattedPlanet {
   return {
-    name: p.pl_name,
-    hostStar: p.hostname,
-    discoveryMethod: p.discoverymethod,
-    discoveryYear: p.disc_year,
-    discoveryFacility: p.disc_facility,
-    orbitalPeriodDays: p.pl_orbper,
-    radiusEarth: p.pl_rade,
-    massEarth: p.pl_bmasse,
-    semiMajorAxisAU: p.pl_orbsmax,
-    eccentricity: p.pl_orbeccen,
-    equilibriumTempK: p.pl_eqt,
-    stellarMassSolar: p.st_mass,
-    stellarRadiusSolar: p.st_rad,
-    stellarTempK: p.st_teff,
-    distanceParsecs: p.sy_dist,
+    name: exoplanetRecord.pl_name,
+    hostStar: exoplanetRecord.hostname,
+    discoveryMethod: exoplanetRecord.discoverymethod,
+    discoveryYear: exoplanetRecord.disc_year,
+    discoveryFacility: exoplanetRecord.disc_facility,
+    orbitalPeriodDays: exoplanetRecord.pl_orbper,
+    radiusEarth: exoplanetRecord.pl_rade,
+    massEarth: exoplanetRecord.pl_bmasse,
+    semiMajorAxisAU: exoplanetRecord.pl_orbsmax,
+    eccentricity: exoplanetRecord.pl_orbeccen,
+    equilibriumTempK: exoplanetRecord.pl_eqt,
+    stellarMassSolar: exoplanetRecord.st_mass,
+    stellarRadiusSolar: exoplanetRecord.st_rad,
+    stellarTempK: exoplanetRecord.st_teff,
+    distanceParsecs: exoplanetRecord.sy_dist,
   };
 }
 
@@ -164,17 +164,17 @@ export function searchExoplanets(
   if (method) {
     const normalizedMethod = method.toLowerCase();
     candidates = candidates.filter(
-      (p: ExoplanetRecord) =>
-        p.discoverymethod &&
-        p.discoverymethod.toLowerCase().includes(normalizedMethod),
+      (exoplanetRecord: ExoplanetRecord) =>
+        exoplanetRecord.discoverymethod &&
+        exoplanetRecord.discoverymethod.toLowerCase().includes(normalizedMethod),
     );
   }
 
   const scored = candidates
-    .map((p: ExoplanetRecord) => {
+    .map((exoplanetRecord: ExoplanetRecord) => {
       let score = 0;
-      const name = normalizeSearch(p.pl_name || "");
-      const host = normalizeSearch(p.hostname || "");
+      const name = normalizeSearch(exoplanetRecord.pl_name || "");
+      const host = normalizeSearch(exoplanetRecord.hostname || "");
 
       if (name === normalizedQuery) score += 100;
       else if (host === normalizedQuery) score += 80;
@@ -183,17 +183,17 @@ export function searchExoplanets(
       else if (name.includes(normalizedQuery)) score += 30;
       else if (host.includes(normalizedQuery)) score += 25;
 
-      return { p, score };
+      return { exoplanetRecord, score };
     })
-    .filter((s) => s.score > 0)
-    .sort((a, b) => b.score - a.score)
+    .filter((scoreItem) => scoreItem.score > 0)
+    .sort((firstScore, secondScore) => secondScore.score - firstScore.score)
     .slice(0, limit);
 
   return {
     count: scored.length,
     query,
     note: "Data from NASA Exoplanet Archive (Public Domain).",
-    planets: scored.map((s) => formatPlanet(s.p)),
+    planets: scored.map((scoreItem) => formatPlanet(scoreItem.exoplanetRecord)),
   };
 }
 
@@ -205,8 +205,8 @@ export function getExoplanetByName(name: string) {
 
   const normalizedQuery = normalizeSearch(name);
   const planet = PLANET_DB.find(
-    (p: ExoplanetRecord) =>
-      normalizeSearch(p.pl_name || "") === normalizedQuery,
+    (exoplanetRecord: ExoplanetRecord) =>
+      normalizeSearch(exoplanetRecord.pl_name || "") === normalizedQuery,
   );
 
   if (!planet) return null;
@@ -243,18 +243,18 @@ export function rankExoplanets(
   const fieldKey = field as ExoplanetField;
   const meta = FIELD_META[fieldKey];
 
-  const ranked = PLANET_DB.filter((p: ExoplanetRecord) => p[fieldKey] !== null)
-    .sort((a: ExoplanetRecord, b: ExoplanetRecord) => {
-      const valA = a[fieldKey];
-      const valB = b[fieldKey];
+  const ranked = PLANET_DB.filter((exoplanetRecord: ExoplanetRecord) => exoplanetRecord[fieldKey] !== null)
+    .sort((exoplanetRecord: ExoplanetRecord, b: ExoplanetRecord) => {
+      const valueA = exoplanetRecord[fieldKey];
+      const valueB = b[fieldKey];
       if (
-        valA === null ||
-        valA === undefined ||
-        valB === null ||
-        valB === undefined
+        valueA === null ||
+        valueA === undefined ||
+        valueB === null ||
+        valueB === undefined
       )
         return 0;
-      return order === "asc" ? valA - valB : valB - valA;
+      return order === "asc" ? valueA - valueB : valueB - valueA;
     })
     .slice(0, limit);
 
@@ -265,12 +265,12 @@ export function rankExoplanets(
     order,
     count: ranked.length,
     note: "Data from NASA Exoplanet Archive (Public Domain).",
-    planets: ranked.map((p: ExoplanetRecord) => ({
-      name: p.pl_name,
-      hostStar: p.hostname,
-      value: p[fieldKey],
-      discoveryYear: p.disc_year,
-      method: p.discoverymethod,
+    planets: ranked.map((exoplanetRecord: ExoplanetRecord) => ({
+      name: exoplanetRecord.pl_name,
+      hostStar: exoplanetRecord.hostname,
+      value: exoplanetRecord[fieldKey],
+      discoveryYear: exoplanetRecord.disc_year,
+      method: exoplanetRecord.discoverymethod,
     })),
   };
 }
@@ -285,25 +285,25 @@ export function getDiscoveryStats() {
   const yearRange = { min: Infinity, max: -Infinity };
   const facilities: Record<string, number> = {};
 
-  for (const p of PLANET_DB) {
-    const methodName = p.discoverymethod || "Unknown";
+  for (const exoplanetRecord of PLANET_DB) {
+    const methodName = exoplanetRecord.discoverymethod || "Unknown";
     methods[methodName] = (methods[methodName] || 0) + 1;
 
-    if (p.disc_year) {
-      yearRange.min = Math.min(yearRange.min, p.disc_year);
-      yearRange.max = Math.max(yearRange.max, p.disc_year);
+    if (exoplanetRecord.disc_year) {
+      yearRange.min = Math.min(yearRange.min, exoplanetRecord.disc_year);
+      yearRange.max = Math.max(yearRange.max, exoplanetRecord.disc_year);
     }
 
-    const facilityName = p.disc_facility || "Unknown";
+    const facilityName = exoplanetRecord.disc_facility || "Unknown";
     facilities[facilityName] = (facilities[facilityName] || 0) + 1;
   }
 
   const sortedMethods = Object.entries(methods)
-    .sort((a, b) => b[1] - a[1])
+    .sort((firstMethod, secondMethod) => secondMethod[1] - firstMethod[1])
     .map(([method, count]) => ({ method, count }));
 
   const topFacilities = Object.entries(facilities)
-    .sort((a, b) => b[1] - a[1])
+    .sort((firstFacility, secondFacility) => secondFacility[1] - firstFacility[1])
     .slice(0, 15)
     .map(([facility, count]) => ({ facility, count }));
 
@@ -335,24 +335,24 @@ export function getHabitableZonePlanets(
 
   // Conservative habitable zone: equilibrium temp roughly 200-320K
   // OR semi-major axis in ~0.8-1.5 AU for sun-like stars
-  const habitable = PLANET_DB.filter((p: ExoplanetRecord) => {
-    if (p.pl_eqt !== null && p.pl_eqt >= 200 && p.pl_eqt <= 320) return true;
+  const habitable = PLANET_DB.filter((exoplanetRecord: ExoplanetRecord) => {
+    if (exoplanetRecord.pl_eqt !== null && exoplanetRecord.pl_eqt >= 200 && exoplanetRecord.pl_eqt <= 320) return true;
     if (
-      p.pl_orbsmax !== null &&
-      p.st_teff !== null &&
-      p.pl_orbsmax >= 0.7 &&
-      p.pl_orbsmax <= 1.8 &&
-      p.st_teff >= 4000 &&
-      p.st_teff <= 7000
+      exoplanetRecord.pl_orbsmax !== null &&
+      exoplanetRecord.st_teff !== null &&
+      exoplanetRecord.pl_orbsmax >= 0.7 &&
+      exoplanetRecord.pl_orbsmax <= 1.8 &&
+      exoplanetRecord.st_teff >= 4000 &&
+      exoplanetRecord.st_teff <= 7000
     )
       return true;
     return false;
   })
-    .sort((a: ExoplanetRecord, b: ExoplanetRecord) => {
+    .sort((firstPlanet: ExoplanetRecord, secondPlanet: ExoplanetRecord) => {
       // Prefer planets with measured radii close to Earth
-      const aR = a.pl_rade !== null ? Math.abs(a.pl_rade - 1) : 100;
-      const bR = b.pl_rade !== null ? Math.abs(b.pl_rade - 1) : 100;
-      return aR - bR;
+      const radiusDeltaA = firstPlanet.pl_rade !== null ? Math.abs(firstPlanet.pl_rade - 1) : 100;
+      const radiusDeltaB = secondPlanet.pl_rade !== null ? Math.abs(secondPlanet.pl_rade - 1) : 100;
+      return radiusDeltaA - radiusDeltaB;
     })
     .slice(0, limit);
 

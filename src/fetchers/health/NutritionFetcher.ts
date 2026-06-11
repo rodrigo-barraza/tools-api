@@ -443,7 +443,7 @@ export function searchFoods(
   const scored = candidates
     .map((food) => ({ food, score: scoreMatch(food, terms) }))
     .filter((entry) => entry.score > 0)
-    .sort((a, b) => b.score - a.score)
+    .sort((agent, b) => b.score - agent.score)
     .slice(0, limit);
 
   return {
@@ -518,7 +518,7 @@ export function rankByNutrient(
 
   const ranked = candidates
     .filter((food) => food[nutrient] !== null && (food[nutrient] as number) > 0)
-    .sort((a, b) => (b[nutrient] as number) - (a[nutrient] as number))
+    .sort((foodRow, b) => (b[nutrient] as number) - (foodRow[nutrient] as number))
     .slice(0, limit);
 
   // Find unit from nutrient metadata
@@ -622,7 +622,7 @@ export function compareFoods(
         score: scoreMatch(foodEntry, terms),
       }))
         .filter((entry) => entry.score > 0)
-        .sort((a, b) => b.score - a.score);
+        .sort((agent, b) => b.score - agent.score);
       food = scored[0]?.food || null;
     }
 
@@ -744,7 +744,7 @@ export function getTopFoodsByCategory(
         food[resolved.column] !== null && (food[resolved.column] as number) > 0,
     )
     .sort(
-      (a, b) => (b[resolved.column] as number) - (a[resolved.column] as number),
+      (foodRow, b) => (b[resolved.column] as number) - (foodRow[resolved.column] as number),
     )
     .slice(0, limit);
 
@@ -895,7 +895,7 @@ export function getTaxonomyTree(
     // Filter by parent rank if provided
     if (parentRank && parentValue) {
       const normalizedParent = parentRank.toLowerCase().trim();
-      const normalizedParentVal = parentValue.toLowerCase().trim();
+      const normalizedParentValue = parentValue.toLowerCase().trim();
       if (!TAXONOMY_RANKS.includes(normalizedParent)) {
         return {
           error: `Unknown parent rank: "${parentRank}"`,
@@ -905,7 +905,7 @@ export function getTaxonomyTree(
       candidates = candidates.filter(
         (food) =>
           ((food[normalizedParent] as string) || "").toLowerCase().trim() ===
-          normalizedParentVal,
+          normalizedParentValue,
       );
     }
 

@@ -34,11 +34,11 @@ async function lightsApiFetch(
   const response = await fetch(url, options);
 
   if (!response.ok) {
-    const errBody = (await response.json().catch(() => ({}))) as {
+    const errorBody = (await response.json().catch(() => ({}))) as {
       error?: string;
     };
     throw new Error(
-      errBody.error ||
+      errorBody.error ||
         `Lights API returned ${response.status}: ${response.statusText}`,
     );
   }

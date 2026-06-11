@@ -13591,22 +13591,22 @@ export function getToolDefinitionCount(): number {
  * emoji character in the pair if the cache is empty or the mashup isn't found.
  */
 export function resolveToolEmoji(toolName: string): string | null {
-  const emojiVal = TOOL_EMOJIS[toolName as keyof typeof TOOL_EMOJIS];
-  if (!emojiVal) return null;
+  const emojiValue = TOOL_EMOJIS[toolName as keyof typeof TOOL_EMOJIS];
+  if (!emojiValue) return null;
 
-  if (Array.isArray(emojiVal)) {
+  if (Array.isArray(emojiValue)) {
     try {
-      const combination = queryEmojiCombination(emojiVal[0], emojiVal[1]);
+      const combination = queryEmojiCombination(emojiValue[0], emojiValue[1]);
       if (combination && combination.gStaticUrl) {
         return combination.gStaticUrl;
       }
     } catch {
       // Graceful fallback on error
     }
-    return emojiVal[0];
+    return emojiValue[0];
   }
 
-  return emojiVal;
+  return emojiValue;
 }
 
 export function getToolSchemas(): ToolSchema[] {

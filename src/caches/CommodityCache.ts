@@ -95,7 +95,7 @@ export function getCommoditiesByCategory(category: string) {
  */
 export function getCommodityByTicker(ticker: string) {
   return cache.commodities.find(
-    (c) => c.ticker.toUpperCase() === ticker.toUpperCase(),
+    (commodityQuote) => commodityQuote.ticker.toUpperCase() === ticker.toUpperCase(),
   );
 }
 
@@ -112,7 +112,7 @@ export function getCommoditySummary() {
   // Sort by changePercent for gainers/losers
   const withChange = commodities.filter((item) => item.changePercent != null);
   const sorted = [...withChange].sort(
-    (a, b) => b.changePercent - a.changePercent,
+    (commodityQuote, b) => b.changePercent - commodityQuote.changePercent,
   );
 
   const gainers = sorted.slice(0, 5).map(summarize);
@@ -149,13 +149,13 @@ export function getCommodityHealth() {
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
-function summarize(c: CommodityQuote): CommoditySummaryEntry {
+function summarize(commodityQuote: CommodityQuote): CommoditySummaryEntry {
   return {
-    ticker: c.ticker,
-    name: c.name,
-    price: c.price,
-    change: c.change,
-    changePercent: c.changePercent,
-    unit: c.unit,
+    ticker: commodityQuote.ticker,
+    name: commodityQuote.name,
+    price: commodityQuote.price,
+    change: commodityQuote.change,
+    changePercent: commodityQuote.changePercent,
+    unit: commodityQuote.unit,
   };
 }

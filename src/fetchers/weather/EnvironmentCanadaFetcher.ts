@@ -103,7 +103,7 @@ function parseWarningsHtml(html: string): CanadaWarning[] {
   while ((match = alertRegex.exec(html)) !== null) {
     const content = stripHtml(match[1]);
     if (content.length > 10 && isWarningContent(content)) {
-      const existing = warnings.find((w) => content.includes(w.title));
+      const existing = warnings.find((canadaWarning) => content.includes(canadaWarning.title));
       if (!existing) {
         warnings.push({
           title: content.substring(0, 100),

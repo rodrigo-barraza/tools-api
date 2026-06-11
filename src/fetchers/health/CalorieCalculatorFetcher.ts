@@ -118,7 +118,7 @@ export interface CalculateCaloricNeedsOptions {
   activityLevel?: string;
   goal?: string;
   macroSplit?: string;
-  bodyFatPct?: number;
+  bodyFatPercentage?: number;
 }
 
 export interface BmiInfo {
@@ -127,7 +127,7 @@ export interface BmiInfo {
 }
 
 export interface BodyCompositionInfo {
-  bodyFatPct: number;
+  bodyFatPercentage: number;
   fatMassKg: number;
   leanMassKg: number;
   proteinPerKgLean: number;
@@ -144,7 +144,7 @@ export function calculateCaloricNeeds({
   activityLevel = "moderate",
   goal = "maintain",
   macroSplit = "balanced",
-  bodyFatPct,
+  bodyFatPercentage,
 }: CalculateCaloricNeedsOptions) {
   // ── Validate required inputs ─────────────────────────────────
   const errors: string[] = [];
@@ -234,11 +234,11 @@ export function calculateCaloricNeeds({
 
   // ── Optional body composition ────────────────────────────────
   let bodyComposition: BodyCompositionInfo | null = null;
-  if (bodyFatPct && bodyFatPct > 0 && bodyFatPct < 100) {
-    const fatMass = weightKg * (bodyFatPct / 100);
+  if (bodyFatPercentage && bodyFatPercentage > 0 && bodyFatPercentage < 100) {
+    const fatMass = weightKg * (bodyFatPercentage / 100);
     const leanMass = weightKg - fatMass;
     bodyComposition = {
-      bodyFatPct,
+      bodyFatPercentage,
       fatMassKg: Number(fatMass.toFixed(1)),
       leanMassKg: Number(leanMass.toFixed(1)),
       proteinPerKgLean: Number((macros.protein.grams / leanMass).toFixed(1)),

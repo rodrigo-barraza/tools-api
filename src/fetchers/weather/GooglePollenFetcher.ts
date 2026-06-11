@@ -150,21 +150,21 @@ export async function fetchPollen(): Promise<PollenResponse> {
 
       // Extract individual plant contributions
       const plants = plantInfo.map(
-        (p): PlantContribution => ({
-          code: p.code || "",
-          displayName: p.displayName || "",
-          inSeason: p.inSeason ?? false,
-          indexInfo: p.indexInfo
+        (rawGooglePlantInfo): PlantContribution => ({
+          code: rawGooglePlantInfo.code || "",
+          displayName: rawGooglePlantInfo.displayName || "",
+          inSeason: rawGooglePlantInfo.inSeason ?? false,
+          indexInfo: rawGooglePlantInfo.indexInfo
             ? {
-                value: p.indexInfo.value ?? null,
-                category: p.indexInfo.category ?? null,
-                indexDescription: p.indexInfo.indexDescription ?? null,
-                color: p.indexInfo.color ?? null,
+                value: rawGooglePlantInfo.indexInfo.value ?? null,
+                category: rawGooglePlantInfo.indexInfo.category ?? null,
+                indexDescription: rawGooglePlantInfo.indexInfo.indexDescription ?? null,
+                color: rawGooglePlantInfo.indexInfo.color ?? null,
               }
             : null,
-          description: p.plantDescription?.type ?? null,
-          crossReaction: p.plantDescription?.crossReaction ?? null,
-          season: p.plantDescription?.season ?? null,
+          description: rawGooglePlantInfo.plantDescription?.type ?? null,
+          crossReaction: rawGooglePlantInfo.plantDescription?.crossReaction ?? null,
+          season: rawGooglePlantInfo.plantDescription?.season ?? null,
         }),
       );
 

@@ -53,13 +53,13 @@ export async function fetchGoogleAirQuality(): Promise<GoogleAirQuality> {
 
   // Build pollutant map
   const pollutantMap: Record<string, GoogleAirQualityPollutant> = {};
-  for (const p of pollutants) {
-    pollutantMap[p.code] = {
-      displayName: p.displayName ?? null,
-      concentration: p.concentration?.value ?? null,
-      unit: p.concentration?.units ?? null,
-      sources: p.additionalInfo?.sources ?? null,
-      effects: p.additionalInfo?.effects ?? null,
+  for (const rawGooglePollutant of pollutants) {
+    pollutantMap[rawGooglePollutant.code] = {
+      displayName: rawGooglePollutant.displayName ?? null,
+      concentration: rawGooglePollutant.concentration?.value ?? null,
+      unit: rawGooglePollutant.concentration?.units ?? null,
+      sources: rawGooglePollutant.additionalInfo?.sources ?? null,
+      effects: rawGooglePollutant.additionalInfo?.effects ?? null,
     };
   }
 

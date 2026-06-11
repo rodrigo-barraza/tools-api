@@ -15,7 +15,7 @@ export async function fetchBlueskyTrends() {
 
   try {
     // Use getSuggestions for popular feeds (public endpoint)
-    const feedRes = await fetch(
+    const feedResponse = await fetch(
       `${BLUESKY_API}/app.bsky.unspecced.getPopularFeedGenerators?limit=25`,
       {
         headers: {
@@ -26,8 +26,8 @@ export async function fetchBlueskyTrends() {
       },
     );
 
-    if (feedRes.ok) {
-      const feedData = await feedRes.json();
+    if (feedResponse.ok) {
+      const feedData = await feedResponse.json();
       const feeds = feedData.feeds || [];
 
       for (const feed of feeds) {
@@ -56,7 +56,7 @@ export async function fetchBlueskyTrends() {
 
   // Also try to get trending search terms
   try {
-    const searchRes = await fetch(
+    const searchResponse = await fetch(
       `${BLUESKY_API}/app.bsky.unspecced.getTaggedSuggestions`,
       {
         headers: {
@@ -67,8 +67,8 @@ export async function fetchBlueskyTrends() {
       },
     );
 
-    if (searchRes.ok) {
-      const searchData = await searchRes.json();
+    if (searchResponse.ok) {
+      const searchData = await searchResponse.json();
       const suggestions = searchData.suggestions || [];
 
       for (const suggestion of suggestions) {

@@ -126,9 +126,9 @@ export async function fetchEtsyTrending() {
 
   // Deduplicate by listing ID
   const seen = new Set<string>();
-  const unique = allProducts.filter((p: ProductInput) => {
-    if (seen.has(p.sourceId)) return false;
-    seen.add(p.sourceId);
+  const unique = allProducts.filter((productInput: ProductInput) => {
+    if (seen.has(productInput.sourceId)) return false;
+    seen.add(productInput.sourceId);
     return true;
   });
 

@@ -74,9 +74,9 @@ export async function fetchAstronauts(): Promise<AstronautsResponse> {
   return {
     total: data.number,
     people: data.people.map(
-      (p): Astronaut => ({
-        name: p.name,
-        craft: p.craft,
+      (provider): Astronaut => ({
+        name: provider.name,
+        craft: provider.craft,
       }),
     ),
   };

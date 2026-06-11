@@ -56,18 +56,18 @@ function downsample<tool extends { time: string }>(
  * Returns the last 24h downsampled to 5-minute intervals.
  */
 export async function fetchSolarWind(): Promise<SolarWindResponse> {
-  const [plasmaRes, magRes] = await Promise.all([
+  const [plasmaResponse, magResponse] = await Promise.all([
     fetch(PLASMA_URL),
     fetch(MAG_URL),
   ]);
 
-  if (!plasmaRes.ok)
-    throw new Error(`SWPC Plasma ${plasmaRes.status}: ${plasmaRes.statusText}`);
-  if (!magRes.ok)
-    throw new Error(`SWPC Mag ${magRes.status}: ${magRes.statusText}`);
+  if (!plasmaResponse.ok)
+    throw new Error(`SWPC Plasma ${plasmaResponse.status}: ${plasmaResponse.statusText}`);
+  if (!magResponse.ok)
+    throw new Error(`SWPC Mag ${magResponse.status}: ${magResponse.statusText}`);
 
-  const plasmaJson = (await plasmaRes.json()) as string[][];
-  const magJson = (await magRes.json()) as string[][];
+  const plasmaJson = (await plasmaResponse.json()) as string[][];
+  const magJson = (await magResponse.json()) as string[][];
 
   const plasmaFields = ["density", "speed", "temperature"];
   const magFields = ["bx", "by", "bz", "lonGsm", "latGsm", "bt"];

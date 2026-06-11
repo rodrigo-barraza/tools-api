@@ -48,8 +48,8 @@ function evictStaleEntries() {
   // If still over limit after TTL eviction, drop oldest half
   if (ipCache.size > MAX_CACHE_SIZE) {
     const entries = [...ipCache.entries()].sort(
-      (a: [string, IpCacheEntry], b: [string, IpCacheEntry]) =>
-        a[1].fetchedAt - b[1].fetchedAt,
+      (agent: [string, IpCacheEntry], b: [string, IpCacheEntry]) =>
+        agent[1].fetchedAt - b[1].fetchedAt,
     );
     const toRemove = Math.floor(entries.length / 2);
     for (let i = 0; i < toRemove; i++) {

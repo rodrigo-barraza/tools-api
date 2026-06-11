@@ -104,13 +104,13 @@ async function fetchFxTwitter(username: string, tweetId: string) {
         height?: number;
         altText?: string;
       }
-      result.media = tweet.media.all.map((m: FxTwitterMedia) => ({
-        type: m.type || "photo",
-        url: m.url || null,
-        thumbnailUrl: m.thumbnail_url || null,
-        width: m.width || null,
-        height: m.height || null,
-        altText: m.altText || null,
+      result.media = tweet.media.all.map((fxTwitterMedia: FxTwitterMedia) => ({
+        type: fxTwitterMedia.type || "photo",
+        url: fxTwitterMedia.url || null,
+        thumbnailUrl: fxTwitterMedia.thumbnail_url || null,
+        width: fxTwitterMedia.width || null,
+        height: fxTwitterMedia.height || null,
+        altText: fxTwitterMedia.altText || null,
       }));
     }
 

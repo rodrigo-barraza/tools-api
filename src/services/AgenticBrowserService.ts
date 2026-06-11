@@ -813,7 +813,7 @@ async function actionRunScript(
 
   // Ensure the browser is running and get its WebSocket endpoint
   const browserInstance = await getBrowser();
-  const wsEndpoint =
+  const websocketEndpoint =
     (
       browserInstance as Browser & { wsEndpoint?: () => string }
     ).wsEndpoint?.() || null;
@@ -860,7 +860,7 @@ const { chromium } = require('playwright');
       Math.max(timeout || BROWSER_SCRIPT_TIMEOUT_MS, 5_000),
       120_000,
     );
-    const result = await executeScript(scriptPath, wsEndpoint, clampedTimeout);
+    const result = await executeScript(scriptPath, websocketEndpoint, clampedTimeout);
 
     return {
       action: "run_script",
@@ -886,7 +886,7 @@ const { chromium } = require('playwright');
  */
 function executeScript(
   scriptPath: string,
-  wsEndpoint: string | null,
+  websocketEndpoint: string | null,
   timeoutMs: number,
 ) {
   return new Promise<unknown>((resolve) => {
@@ -901,7 +901,7 @@ function executeScript(
       stdio: ["pipe", "pipe", "pipe"],
       env: {
         ...process.env,
-        BROWSER_WS_ENDPOINT: wsEndpoint || "",
+        BROWSER_WS_ENDPOINT: websocketEndpoint || "",
         CI: "true",
         FORCE_COLOR: "0",
         NO_COLOR: "1",

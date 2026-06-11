@@ -28,35 +28,35 @@ function parseProductsFromPage(
   existingAsinSet: Set<string>,
   currentProductCount: number,
 ): ProductInput[] {
-  const $ = cheerio.load(html);
+  const CHEERIOAPI = cheerio.load(html);
   const products: ProductInput[] = [];
 
-  $("[data-asin]").each((_i, element) => {
+  CHEERIOAPI("[data-asin]").each((_index, rawElement) => {
     if (currentProductCount + products.length >= AMAZON_MAX_PRODUCTS_PER_CATEGORY) return false;
 
-    const $el = $(element);
-    const asin = $el.attr("data-asin");
+    const element = CHEERIOAPI(rawElement);
+    const asin = element.attr("data-asin");
     if (!asin || existingAsinSet.has(asin)) return;
 
     // Extract product name — multiple possible selectors
     const name =
-      $el.find(".p13n-sc-truncate-desktop-type2").text().trim() ||
-      $el.find("._cDEzb_p13n-sc-css-line-clamp-3_g3dy1").text().trim() ||
-      $el.find(".a-link-normal span div").first().text().trim() ||
-      $el.find("[class*='truncate']").first().text().trim();
+      element.find(".p13n-sc-truncate-desktop-type2").text().trim() ||
+      element.find("._cDEzb_p13n-sc-css-line-clamp-3_g3dy1").text().trim() ||
+      element.find(".a-link-normal span div").first().text().trim() ||
+      element.find("[class*='truncate']").first().text().trim();
 
     if (!name) return;
 
     // Extract rank from the rank number badge
     const rankText =
-      $el.find(".zg-bdg-text").text().trim() ||
-      $el.find("[class*='zg-badge-text']").text().trim();
+      element.find(".zg-bdg-text").text().trim() ||
+      element.find("[class*='zg-badge-text']").text().trim();
     const rank = rankText
       ? parseInt(rankText.replace("#", ""), 10)
       : currentProductCount + products.length + 1;
 
     // Extract price
-    const priceText = $el
+    const priceText = element
       .find(
         ".p13n-sc-price, ._cDEzb_p13n-sc-price_3mJ9Z, .a-price .a-offscreen",
       )
@@ -67,24 +67,24 @@ function parseProductsFromPage(
 
     // Extract rating
     const ratingText =
-      $el.find(".a-icon-alt").first().text().trim() ||
-      $el.find("[class*='a-star']").attr("class") ||
+      element.find(".a-icon-alt").first().text().trim() ||
+      element.find("[class*='a-star']").attr("class") ||
       "";
     const ratingMatch = ratingText.match(/([\d.]+)\s*out of/);
     const rating = ratingMatch ? parseFloat(ratingMatch[1]) : undefined;
 
     // Extract review count
     const reviewText =
-      $el.find(".a-size-small .a-link-normal").text().trim() ||
-      $el.find("[class*='review'] .a-size-small").text().trim();
+      element.find(".a-size-small .a-link-normal").text().trim() ||
+      element.find("[class*='review'] .a-size-small").text().trim();
     const reviewCount = reviewText
       ? parseInt(reviewText.replace(/[^0-9]/g, ""), 10) || undefined
       : undefined;
 
     // Extract image
     const imageUrl =
-      $el.find("img.a-dynamic-image, img[data-a-dynamic-image]").attr("src") ||
-      $el.find("img").first().attr("src") ||
+      element.find("img.a-dynamic-image, img[data-a-dynamic-image]").attr("src") ||
+      element.find("img").first().attr("src") ||
       undefined;
 
     // Build product URL

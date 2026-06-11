@@ -9,47 +9,47 @@ import { RawRestCountry, RestCountry } from "../../types/knowledge.ts";
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
-function normalizeCountry(c: RawRestCountry): RestCountry {
+function normalizeCountry(rawRestCountry: RawRestCountry): RestCountry {
   return {
-    name: c.name?.common || null,
-    officialName: c.name?.official || null,
-    nativeNames: c.name?.nativeName
-      ? Object.values(c.name.nativeName)
+    name: rawRestCountry.name?.common || null,
+    officialName: rawRestCountry.name?.official || null,
+    nativeNames: rawRestCountry.name?.nativeName
+      ? Object.values(rawRestCountry.name.nativeName)
           .map((item) => item.common || "")
           .filter(Boolean)
           .slice(0, 3)
       : [],
-    cca2: c.cca2 || null,
-    cca3: c.cca3 || null,
-    capital: c.capital || [],
-    region: c.region || null,
-    subregion: c.subregion || null,
-    population: c.population || 0,
-    area: c.area || null,
-    languages: c.languages ? Object.values(c.languages) : [],
-    currencies: c.currencies
-      ? Object.entries(c.currencies).map(([code, info]) => ({
+    cca2: rawRestCountry.cca2 || null,
+    cca3: rawRestCountry.cca3 || null,
+    capital: rawRestCountry.capital || [],
+    region: rawRestCountry.region || null,
+    subregion: rawRestCountry.subregion || null,
+    population: rawRestCountry.population || 0,
+    area: rawRestCountry.area || null,
+    languages: rawRestCountry.languages ? Object.values(rawRestCountry.languages) : [],
+    currencies: rawRestCountry.currencies
+      ? Object.entries(rawRestCountry.currencies).map(([code, info]) => ({
           code,
           name: info.name || "",
           symbol: info.symbol || undefined,
         }))
       : [],
-    timezones: c.timezones || [],
-    borders: c.borders || [],
-    flag: c.flag || null,
-    flagPng: c.flags?.png || null,
-    flagSvg: c.flags?.svg || null,
-    coatOfArms: c.coatOfArms?.png || null,
-    googleMaps: c.maps?.googleMaps || null,
-    callingCodes: c.idd?.root
-      ? (c.idd.suffixes || [""]).map((s) => `${c.idd!.root}${s}`).slice(0, 3)
+    timezones: rawRestCountry.timezones || [],
+    borders: rawRestCountry.borders || [],
+    flag: rawRestCountry.flag || null,
+    flagPng: rawRestCountry.flags?.png || null,
+    flagSvg: rawRestCountry.flags?.svg || null,
+    coatOfArms: rawRestCountry.coatOfArms?.png || null,
+    googleMaps: rawRestCountry.maps?.googleMaps || null,
+    callingCodes: rawRestCountry.idd?.root
+      ? (rawRestCountry.idd.suffixes || [""]).map((s) => `${rawRestCountry.idd!.root}${s}`).slice(0, 3)
       : [],
-    continent: c.continents?.[0] || null,
-    independent: c.independent ?? null,
-    unMember: c.unMember ?? null,
-    landlocked: c.landlocked ?? null,
-    carSide: c.car?.side || null,
-    startOfWeek: c.startOfWeek || null,
+    continent: rawRestCountry.continents?.[0] || null,
+    independent: rawRestCountry.independent ?? null,
+    unMember: rawRestCountry.unMember ?? null,
+    landlocked: rawRestCountry.landlocked ?? null,
+    carSide: rawRestCountry.car?.side || null,
+    startOfWeek: rawRestCountry.startOfWeek || null,
   };
 }
 

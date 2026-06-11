@@ -31,8 +31,8 @@ export async function getPyPiPackage(packageName: string) {
 
   // Extract classifier categories
   const classifiers = (info.classifiers || []).reduce(
-    (acc: Record<string, string[]>, c: string) => {
-      const parts = c.split(" :: ");
+    (acc: Record<string, string[]>, client: string) => {
+      const parts = client.split(" :: ");
       const category = parts[0];
       if (!acc[category]) acc[category] = [];
       acc[category].push(parts.slice(1).join(" :: "));

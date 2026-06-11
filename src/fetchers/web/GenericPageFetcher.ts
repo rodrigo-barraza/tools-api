@@ -55,11 +55,11 @@ const NOISE_SELECTORS = [
  * Score a container element for "article-ness" based on text density.
  * Higher score = more likely to be the main content.
  */
-function scoreElement($: CheerioAPI, element: AnyNode) {
-  const text = $(element).text().trim();
+function scoreElement(CHEERIOAPI: CheerioAPI, element: AnyNode) {
+  const text = CHEERIOAPI(element).text().trim();
   const wordCount = text.split(/\s+/).length;
   const linkDensity =
-    ($(element).find("a").text().length || 0) / (text.length || 1);
+    (CHEERIOAPI(element).find("a").text().length || 0) / (text.length || 1);
 
   let score = wordCount;
 
@@ -73,7 +73,7 @@ function scoreElement($: CheerioAPI, element: AnyNode) {
   if (tagName === "main") score *= 1.8;
 
   const classId =
-    `${$(element).attr("class") || ""} ${$(element).attr("id") || ""}`.toLowerCase();
+    `${CHEERIOAPI(element).attr("class") || ""} ${CHEERIOAPI(element).attr("id") || ""}`.toLowerCase();
   if (/article|post|content|entry|story|body/i.test(classId)) score *= 1.5;
   if (/sidebar|nav|menu|footer|header|comment/i.test(classId)) score *= 0.1;
 
@@ -89,20 +89,20 @@ function scoreElement($: CheerioAPI, element: AnyNode) {
 /**
  * Extract the main readable text from HTML.
  */
-function extractMainContent($: CheerioAPI) {
+function extractMainContent(CHEERIOAPI: CheerioAPI) {
   // Remove noise elements first
-  $(NOISE_SELECTORS.join(", ")).remove();
+  CHEERIOAPI(NOISE_SELECTORS.join(", ")).remove();
 
   // Try explicit article/main tags first
-  const articleEl = $("article, [role='main'], main").first();
-  if (articleEl.length && articleEl.text().trim().split(/\s+/).length > 50) {
-    return extractText($, articleEl);
+  const articleElement = CHEERIOAPI("article, [role='main'], main").first();
+  if (articleElement.length && articleElement.text().trim().split(/\s+/).length > 50) {
+    return extractText(CHEERIOAPI, articleElement);
   }
 
   // Score all block-level containers
   const candidates: { element: AnyNode; score: number }[] = [];
-  $("div, section, article, main").each((_: number, element: AnyNode) => {
-    const score = scoreElement($, element);
+  CHEERIOAPI("div, section, article, main").each((_: number, element: AnyNode) => {
+    const score = scoreElement(CHEERIOAPI, element);
     if (score > 25) {
       candidates.push({ element, score });
     }
@@ -112,23 +112,23 @@ function extractMainContent($: CheerioAPI) {
   candidates.sort((firstItem, b) => b.score - firstItem.score);
 
   if (candidates.length > 0) {
-    return extractText($, $(candidates[0].element));
+    return extractText(CHEERIOAPI, CHEERIOAPI(candidates[0].element));
   }
 
   // Last resort: body text
-  return extractText($, $("body"));
+  return extractText(CHEERIOAPI, CHEERIOAPI("body"));
 }
 
 /**
  * Extract clean text from a Cheerio element, preserving paragraph breaks.
  */
-function extractText($: CheerioAPI, container: cheerio.Cheerio<AnyNode>) {
+function extractText(CHEERIOAPI: CheerioAPI, container: cheerio.Cheerio<AnyNode>) {
   const paragraphs: string[] = [];
 
   container
     .find("p, h1, h2, h3, h4, h5, h6, li, blockquote, pre, td, th")
     .each((_: number, element: AnyNode) => {
-      const text = $(element).text().trim();
+      const text = CHEERIOAPI(element).text().trim();
       if (text.length > 10) {
         const tagName = (
           (element as Element).tagName ||
@@ -158,48 +158,48 @@ function extractText($: CheerioAPI, container: cheerio.Cheerio<AnyNode>) {
 
 // ─── Metadata Extraction ────────────────────────────────────────────
 
-function extractMetadata($: CheerioAPI, url: string) {
+function extractMetadata(CHEERIOAPI: CheerioAPI, url: string) {
   const meta: Record<string, string | string[] | null | undefined> = {};
 
   // Title: og:title > twitter:title > <title>
   meta.title =
-    $('meta[property="og:title"]').attr("content") ||
-    $('meta[name="twitter:title"]').attr("content") ||
-    $("title").first().text().trim() ||
+    CHEERIOAPI('meta[property="og:title"]').attr("content") ||
+    CHEERIOAPI('meta[name="twitter:title"]').attr("content") ||
+    CHEERIOAPI("title").first().text().trim() ||
     null;
 
   // Description: og:description > meta description > twitter:description
   meta.description =
-    $('meta[property="og:description"]').attr("content") ||
-    $('meta[name="description"]').attr("content") ||
-    $('meta[name="twitter:description"]').attr("content") ||
+    CHEERIOAPI('meta[property="og:description"]').attr("content") ||
+    CHEERIOAPI('meta[name="description"]').attr("content") ||
+    CHEERIOAPI('meta[name="twitter:description"]').attr("content") ||
     null;
 
   // Image
   meta.image =
-    $('meta[property="og:image"]').attr("content") ||
-    $('meta[name="twitter:image"]').attr("content") ||
+    CHEERIOAPI('meta[property="og:image"]').attr("content") ||
+    CHEERIOAPI('meta[name="twitter:image"]').attr("content") ||
     null;
 
   // Author
   meta.author =
-    $('meta[name="author"]').attr("content") ||
-    $('meta[property="article:author"]').attr("content") ||
-    $('[rel="author"]').first().text().trim() ||
+    CHEERIOAPI('meta[name="author"]').attr("content") ||
+    CHEERIOAPI('meta[property="article:author"]').attr("content") ||
+    CHEERIOAPI('[rel="author"]').first().text().trim() ||
     null;
 
   // Published date
   meta.publishedDate =
-    $('meta[property="article:published_time"]').attr("content") ||
-    $('meta[name="date"]').attr("content") ||
-    $("time[datetime]").first().attr("datetime") ||
+    CHEERIOAPI('meta[property="article:published_time"]').attr("content") ||
+    CHEERIOAPI('meta[name="date"]').attr("content") ||
+    CHEERIOAPI("time[datetime]").first().attr("datetime") ||
     null;
 
   // Site name
-  meta.siteName = $('meta[property="og:site_name"]').attr("content") || null;
+  meta.siteName = CHEERIOAPI('meta[property="og:site_name"]').attr("content") || null;
 
   // Keywords
-  const keywords = $('meta[name="keywords"]').attr("content");
+  const keywords = CHEERIOAPI('meta[name="keywords"]').attr("content");
   meta.keywords = keywords
     ? keywords
         .split(",")
@@ -209,12 +209,12 @@ function extractMetadata($: CheerioAPI, url: string) {
 
   // Canonical URL
   meta.canonicalUrl =
-    $('link[rel="canonical"]').attr("href") ||
-    $('meta[property="og:url"]').attr("content") ||
+    CHEERIOAPI('link[rel="canonical"]').attr("href") ||
+    CHEERIOAPI('meta[property="og:url"]').attr("content") ||
     url;
 
   // Type
-  meta.type = $('meta[property="og:type"]').attr("content") || null;
+  meta.type = CHEERIOAPI('meta[property="og:type"]').attr("content") || null;
 
   // Strip null values
   for (const key of Object.keys(meta)) {
@@ -285,13 +285,13 @@ export async function fetchGenericPage(
   }
 
   const html = await response.text();
-  const $ = cheerio.load(html);
+  const CHEERIOAPI = cheerio.load(html);
 
   // Extract metadata
-  const metadata = extractMetadata($, url);
+  const metadata = extractMetadata(CHEERIOAPI, url);
 
   // Extract main content
-  let text = extractMainContent($);
+  let text = extractMainContent(CHEERIOAPI);
 
   // Truncate if needed
   let truncated = false;

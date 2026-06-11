@@ -1100,7 +1100,7 @@ router.post(
     const username = req.headers["x-username"] || req.body.username || null;
     const agentSessionId = req.headers["x-agent-session-id"] || null;
     try {
-      const prismRes = await fetch(
+      const prismResponse = await fetch(
         `${CONFIG.PRISM_SERVICE_URL}/agent-memories`,
         {
           method: "POST",
@@ -1116,15 +1116,15 @@ router.post(
           }),
         },
       );
-      if (!prismRes.ok) {
-        const errorBody = await prismRes.json().catch(() => ({}));
+      if (!prismResponse.ok) {
+        const errorBody = await prismResponse.json().catch(() => ({}));
         return res
-          .status(prismRes.status)
+          .status(prismResponse.status)
           .json({
-            error: errorBody.error || `Prism returned ${prismRes.status}`,
+            error: errorBody.error || `Prism returned ${prismResponse.status}`,
           });
       }
-      const result = await prismRes.json();
+      const result = await prismResponse.json();
       res.json(result);
     } catch (error: unknown) {
       res
@@ -1181,7 +1181,7 @@ router.post(
       }
     }
     try {
-      const prismRes = await fetch(
+      const prismResponse = await fetch(
         `${CONFIG.PRISM_SERVICE_URL}/custom-agents`,
         {
           method: "POST",
@@ -1202,15 +1202,15 @@ router.post(
           }),
         },
       );
-      if (!prismRes.ok) {
-        const errorBody = await prismRes.json().catch(() => ({}));
+      if (!prismResponse.ok) {
+        const errorBody = await prismResponse.json().catch(() => ({}));
         return res
-          .status(prismRes.status)
+          .status(prismResponse.status)
           .json({
-            error: errorBody.error || `Prism returned ${prismRes.status}`,
+            error: errorBody.error || `Prism returned ${prismResponse.status}`,
           });
       }
-      const created = await prismRes.json();
+      const created = await prismResponse.json();
       res.status(201).json(created);
     } catch (error: unknown) {
       res
@@ -1232,16 +1232,16 @@ router.get(
   "/custom-agent/list",
   asyncHandler(async (_req: Request, res: Response) => {
     try {
-      const prismRes = await fetch(`${CONFIG.PRISM_SERVICE_URL}/custom-agents`);
-      if (!prismRes.ok) {
-        const errorBody = await prismRes.json().catch(() => ({}));
+      const prismResponse = await fetch(`${CONFIG.PRISM_SERVICE_URL}/custom-agents`);
+      if (!prismResponse.ok) {
+        const errorBody = await prismResponse.json().catch(() => ({}));
         return res
-          .status(prismRes.status)
+          .status(prismResponse.status)
           .json({
-            error: errorBody.error || `Prism returned ${prismRes.status}`,
+            error: errorBody.error || `Prism returned ${prismResponse.status}`,
           });
       }
-      const agents = await prismRes.json();
+      const agents = await prismResponse.json();
       res.json({ agents, count: agents.length });
     } catch (error: unknown) {
       res
@@ -1300,7 +1300,7 @@ router.post(
       }
     }
     try {
-      const prismRes = await fetch(
+      const prismResponse = await fetch(
         `${CONFIG.PRISM_SERVICE_URL}/custom-agents/${id}`,
         {
           method: "PUT",
@@ -1321,15 +1321,15 @@ router.post(
           }),
         },
       );
-      if (!prismRes.ok) {
-        const errorBody = await prismRes.json().catch(() => ({}));
+      if (!prismResponse.ok) {
+        const errorBody = await prismResponse.json().catch(() => ({}));
         return res
-          .status(prismRes.status)
+          .status(prismResponse.status)
           .json({
-            error: errorBody.error || `Prism returned ${prismRes.status}`,
+            error: errorBody.error || `Prism returned ${prismResponse.status}`,
           });
       }
-      const updated = await prismRes.json();
+      const updated = await prismResponse.json();
       res.json(updated);
     } catch (error: unknown) {
       res

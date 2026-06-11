@@ -91,11 +91,11 @@ crawleeConfig.set("persistStorage", false);
 // ────────────────────────────────────────────────────────────
 
 export type ExtractFn = (
-  ctx: CheerioCrawlingContext,
+  context: CheerioCrawlingContext,
 ) => unknown | Promise<unknown>;
 
 export interface CrawlStaticOptions {
-  extractFn?: ExtractFn;
+  extractFunction?: ExtractFn;
   proxyZone?: string;
 }
 
@@ -117,9 +117,9 @@ export async function crawlSingleStatic(
   url: string,
   options: CrawlStaticOptions = {},
 ): Promise<CrawlResult> {
-  const { extractFn, proxyZone } = options;
+  const { extractFunction, proxyZone } = options;
 
-  if (!extractFn) {
+  if (!extractFunction) {
     return { url, error: "extractFn is required" };
   }
 
@@ -149,15 +149,15 @@ export async function crawlSingleStatic(
       },
     ],
 
-    async requestHandler(ctx: CheerioCrawlingContext) {
-      logger.info(`[Crawler] Processing (static): ${ctx.request.url}`);
+    async requestHandler(context: CheerioCrawlingContext) {
+      logger.info(`[Crawler] Processing (static): ${context.request.url}`);
 
       try {
-        result = await extractFn(ctx);
+        result = await extractFunction(context);
       } catch (error: unknown) {
         crawlError = error instanceof Error ? error : new Error(String(error));
         logger.error(
-          `[Crawler] Extract failed for ${ctx.request.url}: ${errorMessage(error)}`,
+          `[Crawler] Extract failed for ${context.request.url}: ${errorMessage(error)}`,
         );
       }
     },

@@ -2136,7 +2136,7 @@ export const IPINFO_BASE_URL = "https://ipinfo.io";
 
 // ─── MARITIME DOMAIN (AIS Stream) ───────────────────────────
 
-export const AIS_STREAM_WS_URL = "wss://stream.aisstream.io/v0/stream";
+export const AIS_STREAM_WEBSOCKET_URL = "wss://stream.aisstream.io/v0/stream";
 export const AIS_STREAM_MAX_BUFFER_SIZE = 5_000; // ring buffer of recent messages
 export const AIS_STREAM_RECONNECT_DELAY_MS = 10_000; // 10s between reconnect attempts
 export const AIS_STREAM_BBOX_RADIUS_DEG = 2; // ~220km radius around configured lat/lng

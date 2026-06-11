@@ -52,13 +52,13 @@ export function getLatestNeos() {
  */
 export function getNeoSummary() {
   const hazardous = cache.neos.filter(
-    (n: NearEarthObject) => n.isPotentiallyHazardous,
+    (nearEarthObject: NearEarthObject) => nearEarthObject.isPotentiallyHazardous,
   );
   const closest = cache.neos[0] || null; // already sorted by miss distance
   const largest = cache.neos.reduce(
-    (max: NearEarthObject | null, n: NearEarthObject) =>
-      (n.estimatedDiameterMaxKm ?? 0) > (max?.estimatedDiameterMaxKm ?? 0)
-        ? n
+    (max: NearEarthObject | null, nearEarthObject: NearEarthObject) =>
+      (nearEarthObject.estimatedDiameterMaxKm ?? 0) > (max?.estimatedDiameterMaxKm ?? 0)
+        ? nearEarthObject
         : max,
     null,
   );

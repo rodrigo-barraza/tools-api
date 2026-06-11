@@ -41,10 +41,10 @@ export async function fetchTides(): Promise<TidePrediction[]> {
   }
 
   return (json.predictions || []).map(
-    (p: RawTidePrediction): TidePrediction => ({
-      time: p.t,
-      height: parseFloat(p.v),
-      type: p.type === "H" ? "high" : "low",
+    (rawTidePrediction: RawTidePrediction): TidePrediction => ({
+      time: rawTidePrediction.t,
+      height: parseFloat(rawTidePrediction.v),
+      type: rawTidePrediction.type === "H" ? "high" : "low",
       stationId,
     }),
   );

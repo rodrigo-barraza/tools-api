@@ -53,14 +53,14 @@ function haversineKm(
   lat2: number,
   lon2: number,
 ): number {
-  const R = 6371;
-  const toRad = (d: number) => (d * Math.PI) / 180;
+  const VALUE = 6371;
+  const toRad = (data: number) => (data * Math.PI) / 180;
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
   const haversineA =
     Math.sin(dLat / 2) ** 2 +
     Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(haversineA), Math.sqrt(1 - haversineA));
+  return VALUE * 2 * Math.atan2(Math.sqrt(haversineA), Math.sqrt(1 - haversineA));
 }
 
 // ─── Load & Index ──────────────────────────────────────────────
@@ -202,7 +202,7 @@ export function searchAirports(
       return { airport, score };
     })
     .filter((entry) => entry.score > 0)
-    .sort((a, b) => b.score - a.score)
+    .sort((agent, b) => b.score - agent.score)
     .slice(0, limit);
 
   return {
@@ -264,11 +264,11 @@ export function getAirportsByCountry(
       airport.country_code &&
       airport.country_code.toUpperCase() === normalizedCountryCode,
   )
-    .sort((a: AirportInfo, b: AirportInfo) => {
+    .sort((airportInfo: AirportInfo, b: AirportInfo) => {
       // Large airports first
-      if (a.type === "large_airport" && b.type !== "large_airport") return -1;
-      if (b.type === "large_airport" && a.type !== "large_airport") return 1;
-      return (a.name || "").localeCompare(b.name || "");
+      if (airportInfo.type === "large_airport" && b.type !== "large_airport") return -1;
+      if (b.type === "large_airport" && airportInfo.type !== "large_airport") return 1;
+      return (airportInfo.name || "").localeCompare(b.name || "");
     })
     .slice(0, limit);
 
@@ -317,7 +317,7 @@ export function getNearestAirports(
     ),
   }));
 
-  withDist.sort((a, b) => a.distanceKm - b.distanceKm);
+  withDist.sort((agent, b) => agent.distanceKm - b.distanceKm);
   const nearest = withDist.slice(0, limit);
 
   return {

@@ -90,14 +90,14 @@ async function scrapeCategory(
     );
   }
 
-  const $ = cheerio.load(html);
+  const CHEERIOAPI = cheerio.load(html);
   const products: unknown[] = [];
 
   // ── Strategy 1: MUI-based product tiles (data-testid) ─────────
-  $('[data-testid^="ProductTile_"]').each((_i, element) => {
+  CHEERIOAPI('[data-testid^="ProductTile_"]').each((_i, element) => {
     if (products.length >= COSTCO_MAX_PRODUCTS_PER_CATEGORY) return false;
 
-    const $element = $(element);
+    const $element = CHEERIOAPI(element);
     const tileText = $element.text();
 
     // Title & URL — find the main product link
@@ -150,11 +150,11 @@ async function scrapeCategory(
 
   // ── Strategy 2: Legacy Costco layout (fallback) ───────────────
   if (products.length === 0) {
-    $(".product-tile, .product, .col-xs-6.col-lg-4.col-xl-3").each(
+    CHEERIOAPI(".product-tile, .product, .col-xs-6.col-lg-4.col-xl-3").each(
       (_i, element) => {
         if (products.length >= COSTCO_MAX_PRODUCTS_PER_CATEGORY) return false;
 
-        const $element = $(element);
+        const $element = CHEERIOAPI(element);
 
         // Title & URL
         const $link = $element

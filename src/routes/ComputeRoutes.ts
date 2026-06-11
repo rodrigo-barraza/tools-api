@@ -715,7 +715,7 @@ router.post("/csv", (req: Request, res: Response) => {
     for (const row of data) {
       lines.push(
         cols
-          .map((c: string) => escape((row as Record<string, unknown>)[c]))
+          .map((col: string) => escape((row as Record<string, unknown>)[col]))
           .join(delim),
       );
     }
@@ -947,9 +947,9 @@ router.post(
           break;
         case "json":
           try {
-            const objA = typeof textA === "string" ? JSON.parse(textA) : textA;
-            const objB = typeof textB === "string" ? JSON.parse(textB) : textB;
-            changes = diff.diffJson(objA, objB);
+            const objectA = typeof textA === "string" ? JSON.parse(textA) : textA;
+            const objectB = typeof textB === "string" ? JSON.parse(textB) : textB;
+            changes = diff.diffJson(objectA, objectB);
           } catch {
             return res
               .status(400)
@@ -982,11 +982,11 @@ router.post(
         mode: diffMode,
         identical: additions === 0 && deletions === 0,
         stats: { additions, deletions, unchanged },
-        changes: changes.map((c: import("diff").Change) => ({
-          value: c.value,
-          added: c.added || false,
-          removed: c.removed || false,
-          count: c.count,
+        changes: changes.map((change: import("diff").Change) => ({
+          value: change.value,
+          added: change.added || false,
+          removed: change.removed || false,
+          count: change.count,
         })),
         patch,
       });
@@ -1152,10 +1152,10 @@ router.get("/encode", (req: Request, res: Response) => {
         }
         break;
       case "rot13":
-        result = data.replace(/[a-zA-Z]/g, (c: string) => {
-          const base = c <= "Z" ? 65 : 97;
+        result = data.replace(/[a-zA-Z]/g, (client: string) => {
+          const base = client <= "Z" ? 65 : 97;
           return String.fromCharCode(
-            ((c.charCodeAt(0) - base + 13) % 26) + base,
+            ((client.charCodeAt(0) - base + 13) % 26) + base,
           );
         });
         break;
@@ -1167,7 +1167,7 @@ router.get("/encode", (req: Request, res: Response) => {
             .join("");
         } else {
           result = [...data]
-            .map((c: string) => c.charCodeAt(0).toString(2).padStart(8, "0"))
+            .map((client: string) => client.charCodeAt(0).toString(2).padStart(8, "0"))
             .join(" ");
         }
         break;
@@ -1961,15 +1961,15 @@ function parseCronField(
   const values = new Set<number>();
   for (const part of field.split(",")) {
     // Handle step syntax: */5, 1-10/2
-    const [rangePart, stepStr] = part.split("/");
-    const step = stepStr ? parseInt(stepStr) : 1;
+    const [rangePart, stepString] = part.split("/");
+    const step = stepString ? parseInt(stepString) : 1;
     if (isNaN(step) || step < 1) throw new Error(`Invalid step: ${part}`);
     if (rangePart === "*") {
       for (let i = min; i <= max; i += step) values.add(i);
     } else if (rangePart.includes("-")) {
-      const [startStr, endStr] = rangePart.split("-");
-      const start = parseInt(startStr);
-      const end = parseInt(endStr);
+      const [startString, endString] = rangePart.split("-");
+      const start = parseInt(startString);
+      const end = parseInt(endString);
       if (
         isNaN(start) ||
         isNaN(end) ||
@@ -1990,38 +1990,38 @@ function parseCronField(
   }
   return [...values].sort(
     (
-      a: Record<string, unknown> | number | string,
+      agent: Record<string, unknown> | number | string,
       b: Record<string, unknown> | number | string,
-    ) => (a as number) - (b as number),
+    ) => (agent as number) - (b as number),
   );
 }
-function explainCronField(values: number[], fieldIdx: number) {
-  const { min, max } = CRON_FIELD_RANGES[fieldIdx];
-  const name = CRON_FIELD_NAMES[fieldIdx];
+function explainCronField(values: number[], fieldIndex: number) {
+  const { min, max } = CRON_FIELD_RANGES[fieldIndex];
+  const name = CRON_FIELD_NAMES[fieldIndex];
   // Wildcard — all values
   if (values.length === max - min + 1) return `every ${name}`;
   // Single value
   if (values.length === 1) {
     const firstValue = values[0];
-    if (fieldIdx === 3) return `in ${MONTH_NAMES[firstValue]}`;
-    if (fieldIdx === 4) return `on ${DAY_NAMES[firstValue]}`;
-    if (fieldIdx === 0) return `at minute ${firstValue}`;
-    if (fieldIdx === 1) return `at hour ${firstValue}`;
-    if (fieldIdx === 2) return `on day ${firstValue}`;
+    if (fieldIndex === 3) return `in ${MONTH_NAMES[firstValue]}`;
+    if (fieldIndex === 4) return `on ${DAY_NAMES[firstValue]}`;
+    if (fieldIndex === 0) return `at minute ${firstValue}`;
+    if (fieldIndex === 1) return `at hour ${firstValue}`;
+    if (fieldIndex === 2) return `on day ${firstValue}`;
     return `${name} ${firstValue}`;
   }
   // Step pattern detection
   if (values.length > 2) {
-    const diffs = values.slice(1).map((v: number, i: number) => v - values[i]);
-    if (diffs.every((d: number) => d === diffs[0])) {
+    const diffs = values.slice(1).map((value: number, i: number) => value - values[i]);
+    if (diffs.every((diff: number) => diff === diffs[0])) {
       return `every ${diffs[0]} ${name}s${values[0] !== min ? ` from ${values[0]}` : ""}`;
     }
   }
   // List
-  if (fieldIdx === 3)
-    return `in ${values.map((v: number) => MONTH_NAMES[v]).join(", ")}`;
-  if (fieldIdx === 4)
-    return `on ${values.map((v: number) => DAY_NAMES[v]).join(", ")}`;
+  if (fieldIndex === 3)
+    return `in ${values.map((value: number) => MONTH_NAMES[value]).join(", ")}`;
+  if (fieldIndex === 4)
+    return `on ${values.map((value: number) => DAY_NAMES[value]).join(", ")}`;
   return `${name} ${values.join(", ")}`;
 }
 function getNextCronExecutions(
@@ -2072,8 +2072,8 @@ router.get("/cron/parse", (req: Request, res: Response) => {
         hint: "Standard cron: minute(0-59) hour(0-23) day(1-31) month(1-12) weekday(0-6, 0=Sun)",
       });
     }
-    const parsed = fields.map((f: string, i: number) =>
-      parseCronField(f, CRON_FIELD_RANGES[i]),
+    const parsed = fields.map((field: string, i: number) =>
+      parseCronField(field, CRON_FIELD_RANGES[i]),
     );
     const explanations = parsed.map((vals: number[], i: number) =>
       explainCronField(vals, i),
@@ -2103,7 +2103,7 @@ router.get("/cron/parse", (req: Request, res: Response) => {
           explanations[i],
         ]),
       ),
-      nextExecutions: nextExecutions.map((d: Date) => d.toISOString()),
+      nextExecutions: nextExecutions.map((date: Date) => date.toISOString()),
       nextExecutionCount: nextExecutions.length,
       fromDate: fromDate.toISOString(),
     });
@@ -2846,16 +2846,16 @@ router.post("/3d/mesh", asyncHandler(async (req: Request, res: Response) => {
 
     if (session.normals || normals) {
       const padNorm = () => [0, 1, 0] as MeshVertex;
-      const prevNorms = session.normals || Array.from({ length: previousVertexCount }, padNorm);
+      const previousNorms = session.normals || Array.from({ length: previousVertexCount }, padNorm);
       const newNorms = normals || Array.from({ length: vertices.length }, padNorm);
-      combinedNormals = [...prevNorms, ...newNorms];
+      combinedNormals = [...previousNorms, ...newNorms];
     }
 
     if (session.colors || colors) {
       const defaultColor = combinedOptions.meshColor || "#38bdf8";
-      const prevColors = session.colors || Array.from({ length: previousVertexCount }, () => defaultColor);
+      const previousColors = session.colors || Array.from({ length: previousVertexCount }, () => defaultColor);
       const newColors = colors || Array.from({ length: vertices.length }, () => defaultColor);
-      combinedColors = [...prevColors, ...newColors];
+      combinedColors = [...previousColors, ...newColors];
     }
   }
 
