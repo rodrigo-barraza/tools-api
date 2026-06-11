@@ -2838,7 +2838,11 @@ router.post("/3d/mesh", asyncHandler(async (req: Request, res: Response) => {
 
     combinedOptions = { ...session.options, ...options };
     combinedVertices = [...session.vertices, ...vertices];
-    combinedFaces = [...session.faces, ...faces];
+
+    const rebasedFaces = faces.map((face: MeshFace) =>
+      [face[0] + previousVertexCount, face[1] + previousVertexCount, face[2] + previousVertexCount] as MeshFace,
+    );
+    combinedFaces = [...session.faces, ...rebasedFaces];
 
     if (session.normals || normals) {
       const padNorm = () => [0, 1, 0] as MeshVertex;
