@@ -73,7 +73,7 @@ router.post(
         tags,
         paused,
       });
-      res.json({ ...result, url: torrentUrl });
+      res.json({ count: result.length, torrents: result, url: torrentUrl });
     } catch (error: unknown) {
       res
         .status(500)
@@ -118,7 +118,7 @@ router.post(
     const { hashes } = req.body;
     try {
       const result = await qbt.pauseTorrents(hashes || "all");
-      res.json(result);
+      res.json({ count: result.length, torrents: result });
     } catch (error: unknown) {
       res.status(500).json({ error: `Pause failed: ${errorMessage(error)}` });
     }
@@ -131,7 +131,7 @@ router.post(
     const { hashes } = req.body;
     try {
       const result = await qbt.resumeTorrents(hashes || "all");
-      res.json(result);
+      res.json({ count: result.length, torrents: result });
     } catch (error: unknown) {
       res.status(500).json({ error: `Resume failed: ${errorMessage(error)}` });
     }
@@ -149,7 +149,7 @@ router.post(
     }
     try {
       const result = await qbt.deleteTorrents(hashes, deleteFiles === true);
-      res.json(result);
+      res.json({ count: result.length, torrents: result });
     } catch (error: unknown) {
       res.status(500).json({ error: `Delete failed: ${errorMessage(error)}` });
     }
@@ -184,7 +184,7 @@ router.post(
     }
     try {
       const result = await qbt.installPlugin(sources);
-      res.json(result);
+      res.json({ count: result.length, plugins: result });
     } catch (error: unknown) {
       res
         .status(500)
@@ -204,7 +204,7 @@ router.post(
     }
     try {
       const result = await qbt.enablePlugin(names, enable !== false);
-      res.json(result);
+      res.json({ count: result.length, plugins: result });
     } catch (error: unknown) {
       res
         .status(500)
@@ -218,7 +218,7 @@ router.post(
   asyncHandler(async (_req: Request, res: Response) => {
     try {
       const result = await qbt.updatePlugins();
-      res.json(result);
+      res.json({ count: result.length, plugins: result });
     } catch (error: unknown) {
       res
         .status(500)
@@ -305,11 +305,11 @@ router.get(
         }
         case "pause": {
           const result = await qbt.pauseTorrents(hashes || "all");
-          return res.json(result);
+          return res.json({ count: result.length, torrents: result });
         }
         case "resume": {
           const resumeResult = await qbt.resumeTorrents(hashes || "all");
-          return res.json(resumeResult);
+          return res.json({ count: resumeResult.length, torrents: resumeResult });
         }
         default:
           return res.status(400).json({
