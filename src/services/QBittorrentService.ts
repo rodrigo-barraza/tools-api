@@ -285,6 +285,45 @@ interface SearchOptions {
   timeoutMs?: number;
 }
 
+// ─── Response Normalizers ───────────────────────────────────
+
+function formatTorrentStatusList(torrents: unknown) {
+  const torrentList = Array.isArray(torrents) ? torrents : [];
+  return torrentList.map((torrent: QbtTorrentInfo) => ({
+    hash: torrent.hash,
+    name: torrent.name,
+    size: torrent.size,
+    progress: Math.round(torrent.progress * 100),
+    state: torrent.state,
+    seeds: torrent.num_seeds,
+    leech: torrent.num_leechs,
+    downloadSpeed: torrent.dlspeed,
+    uploadSpeed: torrent.upspeed,
+    eta: torrent.eta,
+    category: torrent.category,
+    tags: torrent.tags,
+    addedOn: new Date(torrent.added_on * 1000).toISOString(),
+    savePath: torrent.save_path,
+    ratio: torrent.ratio,
+    amountLeft: torrent.amount_left,
+    downloaded: torrent.downloaded,
+    uploaded: torrent.uploaded,
+  }));
+}
+
+function formatPluginList(plugins: unknown) {
+  const pluginList = Array.isArray(plugins) ? plugins : [];
+  return pluginList.map((plugin: QbtPlugin) => ({
+    name: plugin.name,
+    fullName: plugin.fullName,
+    url: plugin.url,
+    enabled: plugin.enabled,
+    version: plugin.version,
+    supportedCategories:
+      plugin.supportedCategories?.map((item) => item.name) || [],
+  }));
+}
+
 // ─── Search API ─────────────────────────────────────────────
 
 /**
@@ -407,58 +446,33 @@ export async function search(
 
 // ─── Plugin Management ──────────────────────────────────────
 
-/**
- * List installed search plugins.
- */
 export async function getPlugins() {
   const plugins = (await qbtFetch("/api/v2/search/plugins")) as QbtPlugin[];
-  return (Array.isArray(plugins) ? plugins : []).map((provider) => ({
-    name: provider.name,
-    fullName: provider.fullName,
-    url: provider.url,
-    enabled: provider.enabled,
-    version: provider.version,
-    supportedCategories:
-      provider.supportedCategories?.map((item) => item.name) || [],
-  }));
+  return formatPluginList(plugins);
 }
 
-/**
- * Install search plugins from URLs.
- */
 export async function installPlugin(sources: string) {
   await qbtFetch("/api/v2/search/installPlugin", {
     method: "POST",
     body: { sources },
   });
   logger.info(`${LOG_PREFIX} — Plugin installed from: ${sources}`);
-  return { success: true, sources };
+  return getPlugins();
 }
 
-/**
- * Enable or disable a search plugin.
- */
 export async function enablePlugin(names: string, enable = true) {
   await qbtFetch("/api/v2/search/enablePlugin", {
     method: "POST",
     body: { names, enable: String(enable) },
   });
-  return { success: true, names, enabled: enable };
+  return getPlugins();
 }
 
-/**
- * Update all installed search plugins.
- */
 export async function updatePlugins() {
   await qbtFetch("/api/v2/search/updatePlugins", { method: "POST" });
-  return { success: true };
+  return getPlugins();
 }
 
-// ─── Torrent Management ─────────────────────────────────────
-
-/**
- * Add a torrent via magnet link or URL.
- */
 export async function addTorrent(
   urls: string,
   options: AddTorrentOptions = {},
@@ -476,15 +490,15 @@ export async function addTorrent(
     body,
   });
   logger.info(`${LOG_PREFIX} — Torrent added: ${urls.slice(0, 80)}...`);
-  return { success: true };
+
+  // Brief delay for magnet metadata resolution before re-fetching
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  return listTorrents();
 }
 
-/**
- * List torrents with optional filter.
- */
 export async function listTorrents(options: ListTorrentsOptions = {}) {
   const params: Record<string, string> = {};
-  if (options.filter) params.filter = options.filter; // all|downloading|seeding|completed|paused|active|inactive|resumed|stalled|errored
+  if (options.filter) params.filter = options.filter;
   if (options.category) params.category = options.category;
   if (options.tag) params.tag = options.tag;
   if (options.sort) params.sort = options.sort;
@@ -494,59 +508,31 @@ export async function listTorrents(options: ListTorrentsOptions = {}) {
   const torrents = (await qbtFetch("/api/v2/torrents/info", {
     params,
   })) as QbtTorrentInfo[];
-  return (Array.isArray(torrents) ? torrents : []).map((tool) => ({
-    hash: tool.hash,
-    name: tool.name,
-    size: tool.size,
-    progress: Math.round(tool.progress * 100),
-    state: tool.state,
-    seeds: tool.num_seeds,
-    leech: tool.num_leechs,
-    downloadSpeed: tool.dlspeed,
-    uploadSpeed: tool.upspeed,
-    eta: tool.eta,
-    category: tool.category,
-    tags: tool.tags,
-    addedOn: new Date(tool.added_on * 1000).toISOString(),
-    savePath: tool.save_path,
-    ratio: tool.ratio,
-    amountLeft: tool.amount_left,
-    downloaded: tool.downloaded,
-    uploaded: tool.uploaded,
-  }));
+  return formatTorrentStatusList(torrents);
 }
 
-/**
- * Pause one or more torrents.
- */
 export async function pauseTorrents(hashes = "all") {
   await qbtFetch("/api/v2/torrents/pause", {
     method: "POST",
     body: { hashes },
   });
-  return { success: true };
+  return listTorrents();
 }
 
-/**
- * Resume one or more torrents.
- */
 export async function resumeTorrents(hashes = "all") {
   await qbtFetch("/api/v2/torrents/resume", {
     method: "POST",
     body: { hashes },
   });
-  return { success: true };
+  return listTorrents();
 }
 
-/**
- * Delete one or more torrents.
- */
 export async function deleteTorrents(hashes: string, deleteFiles = false) {
   await qbtFetch("/api/v2/torrents/delete", {
     method: "POST",
     body: { hashes, deleteFiles: String(deleteFiles) },
   });
-  return { success: true };
+  return listTorrents();
 }
 
 /**

@@ -174,11 +174,6 @@ const LightsDataService = {
     return this.listLights(selector);
   },
 
-  /**
-   * Breathe effect — slowly fades between two colors.
-
-
-   */
   async breatheEffect({
     selector = "all",
     color,
@@ -207,18 +202,15 @@ const LightsDataService = {
     if (powerOn !== undefined) body.powerOn = powerOn;
     if (peak !== undefined) body.peak = peak;
 
-    return lightsApiFetch(
+    await lightsApiFetch(
       "POST",
       `/lights/${encodeURIComponent(selector)}/effects/breathe`,
       body,
     );
+
+    return this.listLights(selector);
   },
 
-  /**
-   * Pulse effect — quickly flashes between two colors.
-
-
-   */
   async pulseEffect({
     selector = "all",
     color,
@@ -244,18 +236,15 @@ const LightsDataService = {
     if (persist !== undefined) body.persist = persist;
     if (powerOn !== undefined) body.powerOn = powerOn;
 
-    return lightsApiFetch(
+    await lightsApiFetch(
       "POST",
       `/lights/${encodeURIComponent(selector)}/effects/pulse`,
       body,
     );
+
+    return this.listLights(selector);
   },
 
-  /**
-   * Move effect — flowing color animation for strip products (LIFX Z, Beam).
-
-
-   */
   async moveEffect({
     selector = "all",
     direction,
@@ -275,18 +264,15 @@ const LightsDataService = {
     if (cycles !== undefined) body.cycles = cycles;
     if (powerOn !== undefined) body.powerOn = powerOn;
 
-    return lightsApiFetch(
+    await lightsApiFetch(
       "POST",
       `/lights/${encodeURIComponent(selector)}/effects/move`,
       body,
     );
+
+    return this.listLights(selector);
   },
 
-  /**
-   * Flame effect — flickering fire animation for matrix devices.
-
-
-   */
   async flameEffect({
     selector = "all",
     period,
@@ -303,18 +289,15 @@ const LightsDataService = {
     if (duration !== undefined) body.duration = duration;
     if (powerOn !== undefined) body.powerOn = powerOn;
 
-    return lightsApiFetch(
+    await lightsApiFetch(
       "POST",
       `/lights/${encodeURIComponent(selector)}/effects/flame`,
       body,
     );
+
+    return this.listLights(selector);
   },
 
-  /**
-   * Morph effect — continuous color-blending for matrix devices.
-
-
-   */
   async morphEffect({
     selector = "all",
     palette,
@@ -334,27 +317,26 @@ const LightsDataService = {
     if (duration !== undefined) body.duration = duration;
     if (powerOn !== undefined) body.powerOn = powerOn;
 
-    return lightsApiFetch(
+    await lightsApiFetch(
       "POST",
       `/lights/${encodeURIComponent(selector)}/effects/morph`,
       body,
     );
+
+    return this.listLights(selector);
   },
 
-  /**
-   * Stop all running effects.
-
-
-   */
   async effectsOff(selector: string = "all", powerOff: boolean = false) {
     const body: Record<string, unknown> = {};
     if (powerOff) body.powerOff = true;
 
-    return lightsApiFetch(
+    await lightsApiFetch(
       "POST",
       `/lights/${encodeURIComponent(selector)}/effects/off`,
       body,
     );
+
+    return this.listLights(selector);
   },
 
   /**
@@ -381,11 +363,6 @@ const LightsDataService = {
     }));
   },
 
-  /**
-   * Activate a saved scene.
-
-
-   */
   async activateScene(
     sceneId: string,
     duration: number = 1,
@@ -395,7 +372,9 @@ const LightsDataService = {
     if (duration !== undefined) body.duration = duration;
     if (ignore) body.ignore = ignore;
 
-    return lightsApiFetch("PUT", `/scenes/${sceneId}/activate`, body);
+    await lightsApiFetch("PUT", `/scenes/${sceneId}/activate`, body);
+
+    return this.listLights("all");
   },
 
   /**
@@ -405,21 +384,15 @@ const LightsDataService = {
     return lightsApiFetch("GET", "/nightlock");
   },
 
-  /**
-   * Toggle night lock on/off.
-   */
   async toggleNightLock() {
-    return lightsApiFetch("POST", "/nightlock/toggle");
+    await lightsApiFetch("POST", "/nightlock/toggle");
+    return this.getNightLockStatus();
   },
 
-  /**
-   * Explicitly set night lock state.
-
-
-   */
   async setNightLock(locked: boolean) {
     const path = locked ? "/nightlock/lock" : "/nightlock/unlock";
-    return lightsApiFetch("POST", path);
+    await lightsApiFetch("POST", path);
+    return this.getNightLockStatus();
   },
 
   /**
