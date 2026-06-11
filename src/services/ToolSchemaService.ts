@@ -12873,11 +12873,10 @@ if (searchToolsDefinition) {
   const domainCapabilities = uniqueDomains
     .map((domain) => {
       const toolNames = domainToToolNames.get(domain) || [];
-      const sampleToolNames = toolNames
-        .slice(0, 3)
+      const humanizedToolNames = toolNames
         .map((name) => name.replace(/_/g, " "))
         .join(", ");
-      return `${domain.toLowerCase()} (${sampleToolNames})`;
+      return `${domain.toLowerCase()} (${humanizedToolNames})`;
     })
     .join(", ");
 
