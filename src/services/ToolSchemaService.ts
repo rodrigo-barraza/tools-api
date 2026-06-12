@@ -12725,10 +12725,10 @@ const TOOL_DOMAINS = {
   query_language_server: "Core Workspace Tools",
 
   // Agentic — Task Management
-  create_task: "Core Harness Tools",
-  get_task: "Core Harness Tools",
-  list_tasks: "Core Harness Tools",
-  update_task: "Core Harness Tools",
+  create_task: "Core Task Tools",
+  get_task: "Core Task Tools",
+  list_tasks: "Core Task Tools",
+  update_task: "Core Task Tools",
 
   // Agentic — Memory Persistence
   upsert_memory: "Core Harness Tools",
@@ -12740,7 +12740,7 @@ const TOOL_DOMAINS = {
 
 
   // Agentic — Tool Discovery
-  search_tools: "Core Harness Tools",
+  search_tools: "Core Discover Tools",
 
   // Cron Jobs
   create_cron: "Cron Jobs",
