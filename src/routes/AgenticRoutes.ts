@@ -1076,15 +1076,15 @@ router.get("/testable-tools", (_req: Request, res: Response) => {
 });
 // ─── 14. Memory Persistence ─────────────────────────────────
 /**
- * POST /agentic/memory/upsert
+ * POST /agentic/memory/save
  *
- * Forwards upsert_memory calls to Prism's MemoryService via
+ * Forwards save_memory calls to Prism's MemoryService via
  * POST /agent-memories. Prism handles embedding generation,
  * cosine-similarity deduplication, and MongoDB persistence.
  * Same cross-service pattern as generate_image → Prism.
  */
 router.post(
-  "/memory/upsert",
+  "/memory/save",
   asyncHandler(async (req: Request, res: Response) => {
     const { content, type, title } = req.body;
     if (!content || typeof content !== "string") {

@@ -8550,7 +8550,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
 
   // ── Memory Persistence ────────────────────────────────────
   {
-    name: "upsert_memory",
+    name: "save_memory",
     dataSource: compute("Prism MemoryService"),
     description:
       "Persist a piece of information to long-term agent memory. Call this tool in TWO cases:\n" +
@@ -8564,7 +8564,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "not create duplicates. Returns the stored memory document or null if a near-duplicate was detected.",
     endpoint: {
       method: "POST",
-      path: "/agentic/memory/upsert",
+      path: "/agentic/memory/save",
       bodyParams: ["content", "type", "title"],
     },
     parameters: {
@@ -12722,7 +12722,7 @@ const TOOL_DOMAINS = {
   update_task: "Core Task Tools",
 
   // Agentic — Memory Persistence
-  upsert_memory: "Core Harness Tools",
+  save_memory: "Core Harness Tools",
 
   // Agentic — Agent Management
   create_custom_agent: "Agent Management",
@@ -13119,7 +13119,7 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   get_task: ["📋", "📌"],
   list_tasks: ["📝", "📋"],
   update_task: ["✏️", "📋"],
-  upsert_memory: ["💻", "🧠"],
+  save_memory: ["💻", "🧠"],
   create_custom_agent: ["💻", "🤖"],
   list_custom_agents: ["🤖", "📋"],
   update_custom_agent: ["✏️", "🤖"],
