@@ -12742,13 +12742,13 @@ const TOOL_DOMAINS = {
   // Agentic — Tool Discovery
   search_tools: "Core Discover Tools",
 
-  // Cron Jobs
-  create_cron: "Cron Jobs",
-  remote_trigger: "Cron Jobs",
-  create_cron_job: "Cron Jobs",
-  list_cron_jobs: "Cron Jobs",
-  delete_cron_job: "Cron Jobs",
-  trigger_cron_job: "Cron Jobs",
+  // Core Schedule Tools
+  create_cron: "Core Schedule Tools",
+  remote_trigger: "Core Schedule Tools",
+  create_cron_job: "Core Schedule Tools",
+  list_cron_jobs: "Core Schedule Tools",
+  delete_cron_job: "Core Schedule Tools",
+  trigger_cron_job: "Core Schedule Tools",
 
   // Agentic — Notebook Editing
   edit_notebook: "Core Workspace Tools",
