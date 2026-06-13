@@ -1,9 +1,19 @@
 // ─── Meta-Tool for Tool Discovery ───────────────────────────
 
 import { getToolSchemas } from "./ToolSchemaService.ts";
+import { DOMAINS } from "@rodrigo-barraza/utilities-library/taxonomy";
 import type { ToolSearchMatch, ToolParameters } from "../types/tools.ts";
 
 type InferredToolSchema = ReturnType<typeof getToolSchemas>[number];
+
+/**
+ * Meta-tool domains whose tools are always injected as core agentic tools.
+ * Exclude from search results to prevent self-referential discovery loops
+ * (e.g. search_tools returning search_tools → agent calls enable_tools → no-op).
+ */
+const EXCLUDED_META_DOMAINS: Set<string> = new Set([
+  DOMAINS.CORE_DISCOVER.displayName,
+]);
 
 interface ScoredMatch {
   schema: InferredToolSchema;
@@ -74,7 +84,12 @@ export function agenticToolSearch(
   }
 
   // Domain filter narrows the search scope (not enabledTools)
-  let filteredToolSchemas: InferredToolSchema[] = allToolSchemas;
+  // Always exclude meta-tool domains (e.g. Core Discover) — these are
+  // always-on tools that should never appear in their own search results.
+  let filteredToolSchemas: InferredToolSchema[] = allToolSchemas.filter(
+    (toolSchema: InferredToolSchema) =>
+      !EXCLUDED_META_DOMAINS.has(toolSchema.domain || ""),
+  );
 
   if (domain) {
     const domainNameLowerCase = domain.toLowerCase();
