@@ -8830,15 +8830,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   // ── Text-to-Speech ──────────────────────────────────────────
   {
     name: "synthesize_speech",
-    dataSource: onDemand("ElevenLabs / OpenAI via Prism"),
+    dataSource: onDemand("Inworld / ElevenLabs / OpenAI / Google via Prism"),
     description:
-      "Convert text into spoken audio using a text-to-speech provider. Returns base64-encoded audio data. " +
+      "Convert text into spoken audio using text-to-speech. Returns base64-encoded audio data. " +
       "Use this when the user asks you to read something aloud, narrate text, or generate audio from text. " +
-      "Supports multiple voices and providers.",
+      "The TTS provider and model are configured by the user in settings — only specify text and voice.",
     endpoint: {
       path: "/creative/text-to-speech",
       method: "POST",
-      bodyParams: ["text", "voice", "provider", "model"],
+      bodyParams: ["text", "voice"],
     },
     parameters: {
       type: "object",
@@ -8851,16 +8851,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         voice: {
           type: "string",
           description:
-            "Voice identifier (e.g. 'alloy', 'echo', 'shimmer' for OpenAI; ElevenLabs voice ID for ElevenLabs). Omit for default voice.",
-        },
-        provider: {
-          type: "string",
-          description: "TTS provider to use",
-          enum: ["elevenlabs", "openai", "google"],
-        },
-        model: {
-          type: "string",
-          description: "Model name (optional — uses provider default)",
+            "Voice identifier — pick the voice that best matches the user's request. {{TTS_VOICE_CATALOG}}",
         },
       },
       required: ["text"],
