@@ -25,10 +25,13 @@ const DOWNLOAD_URLS: Record<CompilationTarget, string> = {
 
 function transpileMjsToCjs(mjsCode: string): string {
   let cjsCode = mjsCode;
-  // Convert default imports: import crypto from "node:crypto"; -> const crypto = require("node:crypto");
-  cjsCode = cjsCode.replace(/import\s+(\w+)\s+from\s+['"]([^'"]+)['"]/g, 'const $1 = require("$2")');
-  // Convert named imports: import { a, b } from "c"; -> const { a, b } = require("c");
-  cjsCode = cjsCode.replace(/import\s+\{\s*([^}]+)\s*\}\s+from\s+['"]([^'"]+)['"]/g, 'const { $1 } = require("$2")');
+  // Strip exports
+  cjsCode = cjsCode.replace(/export\s+(class|function|const|let|var)\s+/g, '$1 ');
+  cjsCode = cjsCode.replace(/export\s+\{\s*[^}]+\s*\};?/g, '');
+  // Convert default imports to var to allow duplicate declarations when files are concatenated
+  cjsCode = cjsCode.replace(/import\s+(\w+)\s+from\s+['"]([^'"]+)['"]/g, 'var $1 = require("$2")');
+  // Convert named imports to var to allow duplicate declarations when files are concatenated
+  cjsCode = cjsCode.replace(/import\s+\{\s*([^}]+)\s*\}\s+from\s+['"]([^'"]+)['"]/g, 'var { $1 } = require("$2")');
   return cjsCode;
 }
 
@@ -122,9 +125,22 @@ export default class AgentCompilerService {
       publicBackendUrl = publicBackendUrl.replace(/\/+$/, "") + "/ws/agent";
     }
 
-    // 2. Load standalone workspace-agent.mjs source code
+    // 2. Load standalone workspace-agent.mjs & core source code and concatenate them
     const originalAgentPath = resolve(process.cwd(), "../workspace-service/standalone/workspace-agent.mjs");
+    const originalCorePath = resolve(process.cwd(), "../workspace-service/standalone/workspace-agent-core.mjs");
+    
+    const coreSourceCode = await readFile(originalCorePath, "utf-8");
     let agentSourceCode = await readFile(originalAgentPath, "utf-8");
+
+    // Remove the core import line from the CLI wrapper
+    agentSourceCode = agentSourceCode.replace(
+      /import\s+\{\s*WorkspaceAgent,\s*hostname\s*\}\s+from\s+['"]\.\/workspace-agent-core\.mjs['"];?/,
+      ""
+    );
+
+    // Strip shebang from core and concatenate them
+    const cleanCoreSource = coreSourceCode.replace(/^#!.*\n/, "");
+    agentSourceCode = cleanCoreSource + "\n" + agentSourceCode;
 
     // 3. Pre-bake credentials and backend connection parameters
     logger.info(`[AgentCompiler] Injecting backend: ${publicBackendUrl}`);
