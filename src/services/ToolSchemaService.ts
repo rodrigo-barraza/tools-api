@@ -8834,7 +8834,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     description:
       "Convert text into spoken audio using text-to-speech. Returns base64-encoded audio data. " +
       "Use this when the user asks you to read something aloud, narrate text, or generate audio from text. " +
-      "The TTS provider and model are configured by the user in settings — only specify text and voice.",
+      "The TTS provider and model are configured by the user in settings — only specify text and voice. " +
+      "When the Inworld provider is active, the text field supports instruction tags (natural language " +
+      "directions in square brackets) for expressive delivery — e.g. [say excitedly], [whisper], [laugh]. " +
+      "Combine qualities for nuance: [say sadly with deliberate pauses in a low voice]. " +
+      "Write all numbers in spoken form and avoid markdown or structured text.",
     endpoint: {
       path: "/creative/text-to-speech",
       method: "POST",
@@ -8846,7 +8850,9 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         text: {
           type: "string",
           description:
-            "The text to convert to speech. Keep under 5000 characters for best results.",
+            "The text to convert to speech. Keep under 5000 characters for best results. " +
+            "When using Inworld TTS-2, embed instruction tags in square brackets before text for " +
+            "expressive delivery (e.g. '[say warmly with a gentle tone] Welcome back, friend.').",
         },
         voice: {
           type: "string",
