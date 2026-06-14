@@ -291,10 +291,7 @@ function isDelimiterCharacter(character: string): boolean {
   return " \t\n[]()+-*/=<>%;:\"".includes(character);
 }
 
-function isOperatorWord(word: string): boolean {
-  const lowerWord = word.toLowerCase();
-  return ["and", "or", "not"].includes(lowerWord);
-}
+
 
 // ─── Errors ─────────────────────────────────────────────────────────
 
@@ -844,7 +841,7 @@ class LogoExecutor {
 
       case "output":
       case "op": {
-        const [returnValue, nextIndex] = this.evaluateExpression(tokens, argumentStartIndex, endIndex);
+        const [returnValue] = this.evaluateExpression(tokens, argumentStartIndex, endIndex);
         throw new LogoOutputSignal(returnValue);
       }
 

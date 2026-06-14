@@ -45,6 +45,31 @@ describe("POST /creative/generate-audio", () => {
     expect(res.body.sampleCount).toBe(Math.floor(0.5 * 44100));
   });
 
+  it("successfully generates a custom sweep sound with sawtooth waveform", async () => {
+    const res = await request(app)
+      .post("/creative/generate-audio")
+      .send({
+        soundType: "synthesizer",
+        duration: 0.5,
+        waveform: "sawtooth",
+        frequency: 440,
+        endFrequency: 220,
+        envelope: {
+          attack: 0.05,
+          decay: 0.05,
+          sustain: 0.6,
+          release: 0.1,
+        },
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.audio.mimeType).toBe("audio/wav");
+    expect(typeof res.body.audio.data).toBe("string");
+    expect(res.body.duration).toBe(0.5);
+    expect(res.body.sampleCount).toBe(Math.floor(0.5 * 44100));
+  });
+
   it("successfully generates a custom melody sequence", async () => {
     const res = await request(app)
       .post("/creative/generate-audio")
@@ -167,23 +192,23 @@ describe("POST /creative/vector-animation", () => {
                 y2: 50,
                 stops: [
                   { offset: 0, color: "#ef4444" },
-                  { offset: 1, color: "#b91c1c" }
-                ]
+                  { offset: 1, color: "#b91c1c" },
+                ],
               },
               strokeColor: "#ffffff",
               strokeWidth: 2,
               keyframes: [
                 { time: 0, properties: { x: 100, y: 100 } },
-                { time: 2, properties: { x: 300, y: 100 }, easing: "ease-out" }
-              ]
-            }
-          ]
+                { time: 2, properties: { x: 300, y: 100 }, easing: "ease-out" },
+              ],
+            },
+          ],
         },
         options: {
           loop: true,
           autoplay: false,
-          title: "Test Animation"
-        }
+          title: "Test Animation",
+        },
       });
 
     expect(res.status).toBe(200);
@@ -213,11 +238,11 @@ describe("POST /creative/vector-animation", () => {
               shapeData: { radius: 10 },
               keyframes: [
                 { time: 0, properties: { x: 50 } },
-                { time: 1, properties: { x: 100 } }
-              ]
-            }
-          ]
-        }
+                { time: 1, properties: { x: 100 } },
+              ],
+            },
+          ],
+        },
       });
 
     expect(step1.status).toBe(200);
@@ -236,18 +261,16 @@ describe("POST /creative/vector-animation", () => {
             {
               id: "ball",
               shapeType: "circle", // Optional if existing
-              keyframes: [
-                { time: 2, properties: { x: 200 } }
-              ]
+              keyframes: [{ time: 2, properties: { x: 200 } }],
             },
             {
               id: "box",
               shapeType: "rectangle",
               shapeData: { width: 20, height: 20 },
-              fillColor: "#3b82f6"
-            }
-          ]
-        }
+              fillColor: "#3b82f6",
+            },
+          ],
+        },
       });
 
     expect(step2.status).toBe(200);
@@ -267,12 +290,10 @@ describe("POST /creative/vector-animation", () => {
               id: "ball",
               shapeType: "circle",
               replaceKeyframes: true,
-              keyframes: [
-                { time: 0, properties: { x: 99 } }
-              ]
-            }
-          ]
-        }
+              keyframes: [{ time: 0, properties: { x: 99 } }],
+            },
+          ],
+        },
       });
 
     expect(step3.status).toBe(200);
@@ -290,10 +311,10 @@ describe("POST /creative/vector-animation", () => {
             {
               id: "ball",
               shapeType: "circle",
-              action: "delete"
-            }
-          ]
-        }
+              action: "delete",
+            },
+          ],
+        },
       });
 
     expect(step4.status).toBe(200);
@@ -311,10 +332,10 @@ describe("POST /creative/vector-animation", () => {
             {
               id: "fresh-layer",
               shapeType: "circle",
-              keyframes: [{ time: 0, properties: { x: 1 } }]
-            }
-          ]
-        }
+              keyframes: [{ time: 0, properties: { x: 1 } }],
+            },
+          ],
+        },
       });
 
     expect(step5.status).toBe(200);
@@ -338,27 +359,29 @@ describe("POST /creative/vector-animation", () => {
               keyframes: [
                 {
                   time: 0,
-                  properties: { x: 50, y: 50, imageUrl: "reference" }
+                  properties: { x: 50, y: 50, imageUrl: "reference" },
                 },
                 {
                   time: 1.5,
-                  properties: { x: 150, y: 150 }
-                }
-              ]
+                  properties: { x: 150, y: 150 },
+                },
+              ],
             },
             {
               id: "unrelated-shape",
               shapeType: "text",
-              shapeData: { text: "hello" }
-            }
-          ]
-        }
+              shapeData: { text: "hello" },
+            },
+          ],
+        },
       });
 
     expect(response.status).toBe(200);
     const animationId = response.body.animationId;
 
-    const embedResponse = await request(app).get(`/creative/vector-animation/embed?id=${animationId}`);
+    const embedResponse = await request(app).get(
+      `/creative/vector-animation/embed?id=${animationId}`,
+    );
     expect(embedResponse.status).toBe(200);
     expect(embedResponse.text).toContain(referenceImageUrl);
   });
@@ -366,7 +389,9 @@ describe("POST /creative/vector-animation", () => {
 
 describe("GET /creative/vector-animation/embed", () => {
   it("returns 404 for non-existent animations", async () => {
-    const res = await request(app).get("/creative/vector-animation/embed?id=missing-id");
+    const res = await request(app).get(
+      "/creative/vector-animation/embed?id=missing-id",
+    );
     expect(res.status).toBe(404);
   });
 
@@ -375,13 +400,15 @@ describe("GET /creative/vector-animation/embed", () => {
       .post("/creative/vector-animation")
       .send({
         animation: {
-          layers: [{ id: "test", shapeType: "circle" }]
-        }
+          layers: [{ id: "test", shapeType: "circle" }],
+        },
       });
 
     const animationId = createRes.body.animationId;
-    const res = await request(app).get(`/creative/vector-animation/embed?id=${animationId}`);
-    
+    const res = await request(app).get(
+      `/creative/vector-animation/embed?id=${animationId}`,
+    );
+
     expect(res.status).toBe(200);
     expect(res.headers["content-type"]).toContain("text/html");
     expect(res.text).toContain("<!DOCTYPE html>");
@@ -405,28 +432,223 @@ describe("GET /creative/vector-animation/embed", () => {
               keyframes: [
                 {
                   time: 0,
-                  properties: { x: 50, y: 50 }
+                  properties: { x: 50, y: 50 },
                 },
                 {
                   time: 1.5,
-                  properties: { x: 150, y: 150, imageUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" }
-                }
-              ]
-            }
-          ]
-        }
+                  properties: {
+                    x: 150,
+                    y: 150,
+                    imageUrl:
+                      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+                  },
+                },
+              ],
+            },
+          ],
+        },
       });
 
     expect(createRes.status).toBe(200);
     const animationId = createRes.body.animationId;
-    const res = await request(app).get(`/creative/vector-animation/embed?id=${animationId}`);
+    const res = await request(app).get(
+      `/creative/vector-animation/embed?id=${animationId}`,
+    );
 
     expect(res.status).toBe(200);
     expect(res.text).toContain(testImageUrl);
-    expect(res.text).toContain("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==");
+    expect(res.text).toContain(
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    );
     expect(res.text).toContain("getLoadedImage");
     expect(res.text).toContain("ctx.clip()");
     expect(res.text).toContain("ctx.drawImage(");
   });
 });
 
+describe("POST /creative/vector-animation input validation", () => {
+  it("rejects request missing animation parameter", async () => {
+    const apiResponse = await request(app)
+      .post("/creative/vector-animation")
+      .send({});
+    expect(apiResponse.status).toBe(400);
+    expect(apiResponse.body.error).toBe("'animation' is required");
+  });
+
+  it("rejects non-integer animation width", async () => {
+    const invalidAnimationConfig = {
+      width: 640.5,
+      layers: [{ id: "layer-one", shapeType: "circle" }],
+    };
+    const apiResponse = await request(app)
+      .post("/creative/vector-animation")
+      .send({ animation: invalidAnimationConfig });
+    expect(apiResponse.status).toBe(400);
+    expect(apiResponse.body.error).toBe("Animation width must be a positive integer");
+  });
+
+  it("rejects negative animation height", async () => {
+    const invalidAnimationConfig = {
+      height: -480,
+      layers: [{ id: "layer-one", shapeType: "circle" }],
+    };
+    const apiResponse = await request(app)
+      .post("/creative/vector-animation")
+      .send({ animation: invalidAnimationConfig });
+    expect(apiResponse.status).toBe(400);
+    expect(apiResponse.body.error).toBe("Animation height must be a positive integer");
+  });
+
+  it("rejects negative duration", async () => {
+    const invalidAnimationConfig = {
+      duration: -5,
+      layers: [{ id: "layer-one", shapeType: "circle" }],
+    };
+    const apiResponse = await request(app)
+      .post("/creative/vector-animation")
+      .send({ animation: invalidAnimationConfig });
+    expect(apiResponse.status).toBe(400);
+    expect(apiResponse.body.error).toBe("Animation duration must be a positive number");
+  });
+
+  it("rejects invalid layers field type", async () => {
+    const invalidAnimationConfig = {
+      layers: "not-an-array",
+    };
+    const apiResponse = await request(app)
+      .post("/creative/vector-animation")
+      .send({ animation: invalidAnimationConfig });
+    expect(apiResponse.status).toBe(400);
+    expect(apiResponse.body.error).toBe("'layers' must be an array");
+  });
+
+  it("rejects layers containing non-object entries", async () => {
+    const invalidAnimationConfig = {
+      layers: ["not-an-object"],
+    };
+    const apiResponse = await request(app)
+      .post("/creative/vector-animation")
+      .send({ animation: invalidAnimationConfig });
+    expect(apiResponse.status).toBe(400);
+    expect(apiResponse.body.error).toContain("Layer at index 0 must be an object");
+  });
+
+  it("rejects layer missing id", async () => {
+    const invalidAnimationConfig = {
+      layers: [{ shapeType: "circle" }],
+    };
+    const apiResponse = await request(app)
+      .post("/creative/vector-animation")
+      .send({ animation: invalidAnimationConfig });
+    expect(apiResponse.status).toBe(400);
+    expect(apiResponse.body.error).toContain("Layer at index 0 must have a valid 'id' string");
+  });
+
+  it("rejects invalid layer shapeType", async () => {
+    const invalidAnimationConfig = {
+      layers: [{ id: "layer-one", shapeType: "triangle" }],
+    };
+    const apiResponse = await request(app)
+      .post("/creative/vector-animation")
+      .send({ animation: invalidAnimationConfig });
+    expect(apiResponse.status).toBe(400);
+    expect(apiResponse.body.error).toContain("has invalid shapeType 'triangle'");
+  });
+
+  it("rejects out-of-range layer opacity", async () => {
+    const invalidAnimationConfig = {
+      layers: [{ id: "layer-one", shapeType: "circle", opacity: 1.5 }],
+    };
+    const apiResponse = await request(app)
+      .post("/creative/vector-animation")
+      .send({ animation: invalidAnimationConfig });
+    expect(apiResponse.status).toBe(400);
+    expect(apiResponse.body.error).toContain("opacity must be a number between 0 and 1");
+  });
+
+  it("rejects negative strokeWidth", async () => {
+    const invalidAnimationConfig = {
+      layers: [{ id: "layer-one", shapeType: "circle", strokeWidth: -1 }],
+    };
+    const apiResponse = await request(app)
+      .post("/creative/vector-animation")
+      .send({ animation: invalidAnimationConfig });
+    expect(apiResponse.status).toBe(400);
+    expect(apiResponse.body.error).toContain("strokeWidth must be a positive number");
+  });
+
+  it("rejects keyframes that are not arrays", async () => {
+    const invalidAnimationConfig = {
+      layers: [{ id: "layer-one", shapeType: "circle", keyframes: "not-an-array" }],
+    };
+    const apiResponse = await request(app)
+      .post("/creative/vector-animation")
+      .send({ animation: invalidAnimationConfig });
+    expect(apiResponse.status).toBe(400);
+    expect(apiResponse.body.error).toContain("keyframes must be an array");
+  });
+
+  it("rejects keyframes missing time property", async () => {
+    const invalidAnimationConfig = {
+      layers: [
+        {
+          id: "layer-one",
+          shapeType: "circle",
+          keyframes: [{ properties: { x: 10 } }],
+        },
+      ],
+    };
+    const apiResponse = await request(app)
+      .post("/creative/vector-animation")
+      .send({ animation: invalidAnimationConfig });
+    expect(apiResponse.status).toBe(400);
+    expect(apiResponse.body.error).toContain("missing required 'time' property");
+  });
+
+  it("rejects keyframes with negative time value", async () => {
+    const invalidAnimationConfig = {
+      layers: [
+        {
+          id: "layer-one",
+          shapeType: "circle",
+          keyframes: [{ time: -1, properties: { x: 10 } }],
+        },
+      ],
+    };
+    const apiResponse = await request(app)
+      .post("/creative/vector-animation")
+      .send({ animation: invalidAnimationConfig });
+    expect(apiResponse.status).toBe(400);
+    expect(apiResponse.body.error).toContain("must have a positive 'time' number");
+  });
+
+  it("rejects keyframes missing properties object", async () => {
+    const invalidAnimationConfig = {
+      layers: [
+        {
+          id: "layer-one",
+          shapeType: "circle",
+          keyframes: [{ time: 1.5 } as any],
+        },
+      ],
+    };
+    const apiResponse = await request(app)
+      .post("/creative/vector-animation")
+      .send({ animation: invalidAnimationConfig });
+    expect(apiResponse.status).toBe(400);
+    expect(apiResponse.body.error).toContain("must have a valid 'properties' object");
+  });
+});
+
+describe("POST /creative/local-text-to-speech voice validation", () => {
+  it("rejects request with unsupported voice", async () => {
+    const apiResponse = await request(app)
+      .post("/creative/local-text-to-speech")
+      .send({
+        text: "Hello world",
+        voice: "invalid-voice-id",
+      });
+    expect(apiResponse.status).toBe(400);
+    expect(apiResponse.body.error).toContain("Invalid voice 'invalid-voice-id'");
+  });
+});

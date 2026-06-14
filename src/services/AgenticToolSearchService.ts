@@ -39,6 +39,7 @@ export interface TransformedToolSearchResult {
   total?: number;
   query?: string | null;
   domain?: string | null;
+  actionRequired?: string;
   action_required?: string;
   error?: string;
 }
@@ -134,7 +135,7 @@ export function agenticToolSearch(
 
         return { schema: toolSchema, score: matchScore };
       })
-      .filter((scoredMatch: ScoredMatch) => scoredMatch.score > 0);
+      .filter((scoredToolMatch: ScoredMatch) => scoredToolMatch.score > 0);
   } else {
     scoredToolMatches = filteredToolSchemas.map(
       (toolSchema: InferredToolSchema) => ({ schema: toolSchema, score: 1 }),
@@ -142,28 +143,34 @@ export function agenticToolSearch(
   }
 
   scoredToolMatches.sort(
-    (firstMatch: ScoredMatch, secondMatch: ScoredMatch) =>
-      secondMatch.score - firstMatch.score,
+    (firstScoredMatch: ScoredMatch, secondScoredMatch: ScoredMatch) =>
+      secondScoredMatch.score - firstScoredMatch.score,
   );
 
   const cappedLimit = Math.min(Math.max(1, limit), 50);
   const matches: ToolSearchMatch[] = scoredToolMatches
     .slice(0, cappedLimit)
-    .map((scoredMatch: ScoredMatch) => ({
-      name: scoredMatch.schema.name,
-      description: scoredMatch.schema.description,
-      domain: scoredMatch.schema.domain || null,
-      parameters: scoredMatch.schema.parameters
-        ? (scoredMatch.schema.parameters as unknown as ToolParameters)
+    .map((scoredToolMatch: ScoredMatch) => ({
+      name: scoredToolMatch.schema.name,
+      description: scoredToolMatch.schema.description,
+      domain: scoredToolMatch.schema.domain || null,
+      parameters: scoredToolMatch.schema.parameters
+        ? (scoredToolMatch.schema.parameters as unknown as ToolParameters)
         : null,
       ...(hasEnabledContext && {
-        isEnabled: enabledToolsSet.has(scoredMatch.schema.name),
+        isEnabled: enabledToolsSet.has(scoredToolMatch.schema.name),
       }),
     }));
 
   const hasDisabledMatches = hasEnabledContext && matches.some(
-    (matchEntry) => matchEntry.isEnabled === false,
+    (matchResultEntry) => matchResultEntry.isEnabled === false,
   );
+
+  const actionNudge = hasDisabledMatches
+    ? "IMPORTANT: Some discovered tools are NOT currently enabled (isEnabled: false). " +
+      "You MUST call enable_tools with the tool names you need before you can use them. " +
+      "After enabling, the tools become available on your next iteration."
+    : "All matched tools are already enabled — you can call them directly.";
 
   return {
     matches,
@@ -171,11 +178,8 @@ export function agenticToolSearch(
     query: query || null,
     domain: domain || null,
     ...(hasEnabledContext && {
-      action_required: hasDisabledMatches
-        ? "IMPORTANT: Some discovered tools are NOT currently enabled (isEnabled: false). " +
-          "You MUST call enable_tools with the tool names you need before you can use them. " +
-          "After enabling, the tools become available on your next iteration."
-        : "All matched tools are already enabled — you can call them directly.",
+      actionRequired: actionNudge,
+      action_required: actionNudge,
     }),
   };
 }

@@ -553,17 +553,32 @@ router.post("/chart", (req: Request, res: Response) => {
       error: "'labels' is required (non-empty array of category/axis labels)",
     });
   }
+  if (labels.length > 1000) {
+    return res.status(400).json({
+      error: `Maximum 1000 labels allowed (got ${labels.length}). Reduce your data points for chart rendering.`,
+    });
+  }
   if (!datasets || !Array.isArray(datasets) || datasets.length === 0) {
     return res.status(400).json({
       error:
         "'datasets' is required (non-empty array of { label, data } objects)",
     });
   }
-  // Validate each dataset has a data array matching labels length
-  for (const ds of datasets) {
-    if (!ds.data || !Array.isArray(ds.data)) {
+  for (let datasetIndex = 0; datasetIndex < datasets.length; datasetIndex++) {
+    const dataset = datasets[datasetIndex];
+    if (!dataset.data || !Array.isArray(dataset.data)) {
       return res.status(400).json({
-        error: "Each dataset must have a 'data' array of numeric values",
+        error: `Dataset at index ${datasetIndex} must have a 'data' array of numeric values`,
+      });
+    }
+    if (!dataset.label || typeof dataset.label !== "string") {
+      return res.status(400).json({
+        error: `Dataset at index ${datasetIndex} must have a 'label' string (used for the chart legend)`,
+      });
+    }
+    if (type !== "pie" && dataset.data.length !== labels.length) {
+      return res.status(400).json({
+        error: `Dataset '${dataset.label}' at index ${datasetIndex} has ${dataset.data.length} data points but there are ${labels.length} labels. These must match for '${type}' charts.`,
       });
     }
   }

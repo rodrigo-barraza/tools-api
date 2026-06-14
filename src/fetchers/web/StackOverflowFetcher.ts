@@ -320,7 +320,7 @@ export async function searchStackOverflowQuestions(
       questions,
       quotaRemaining: responseData.quota_remaining,
     };
-  } catch (error: unknown) {
+  } catch {
     return {
       query,
       count: 0,

@@ -21,6 +21,14 @@ export interface ImageStore {
   get(id: string): ImageStoreEntry | null | undefined;
 }
 
+export type TransformedImageMetadata = Omit<sharp.Metadata, "icc" | "iptc" | "xmp" | "exif" | "tifftagPhotoshop">;
+
+export interface TransformedImageResult {
+  buffer: Buffer | null;
+  mimeType: string | null;
+  metadata?: TransformedImageMetadata;
+}
+
 interface ProcessImageInput {
   input: string;
   operations: ImageOperation[];
@@ -85,8 +93,8 @@ async function resolveInput(input: string, store?: ImageStore) {
         `Remote image exceeds ${MAX_INPUT_BYTES / 1024 / 1024} MB limit`,
       );
     }
-    const arrayBuf = await response.arrayBuffer();
-    return Buffer.from(arrayBuf);
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer);
   }
 
   // ── Ephemeral Store ID ────────────────────────────────────
@@ -133,20 +141,22 @@ async function processWithSharp(
   operations: ImageOperation[],
   outputFormat: string,
   outputQuality: number,
-) {
+): Promise<TransformedImageResult> {
   let pipeline = sharp(inputBuffer, {
     failOn: "none",
     limitInputPixels: MAX_DIMENSION * MAX_DIMENSION,
   });
-  let metadataResult: Record<string, unknown> | null = null;
+  let metadataResult: TransformedImageMetadata | null = null;
 
   for (const operation of operations) {
     switch (operation.type) {
       case "resize": {
-        const options: Record<string, unknown> = {};
+        const options: sharp.ResizeOptions = {};
         if (operation.width) options.width = Math.min(operation.width, MAX_DIMENSION);
         if (operation.height) options.height = Math.min(operation.height, MAX_DIMENSION);
-        if (operation.fit) options.fit = operation.fit;
+        if (operation.fit) {
+          options.fit = operation.fit as keyof sharp.FitEnum;
+        }
         if (operation.background) options.background = operation.background;
         if (operation.withoutEnlargement !== undefined)
           options.withoutEnlargement = operation.withoutEnlargement;
@@ -222,7 +232,7 @@ async function processWithSharp(
         break;
 
       case "extend": {
-        const extendOptions: Record<string, unknown> = {
+        const extendOptions: sharp.ExtendOptions = {
           top: operation.top || 0,
           right: operation.right || 0,
           bottom: operation.bottom || 0,
@@ -236,9 +246,13 @@ async function processWithSharp(
       case "composite": {
         if (!operation.overlayUrl) throw new Error("composite requires 'overlayUrl'");
         const overlayBuf = await resolveInput(operation.overlayUrl, undefined);
-        const compositeOpts: Record<string, unknown> = { input: overlayBuf };
-        if (operation.gravity) compositeOpts.gravity = operation.gravity;
-        if (operation.blend) compositeOpts.blend = operation.blend;
+        const compositeOpts: sharp.OverlayOptions = { input: overlayBuf };
+        if (operation.gravity) {
+          compositeOpts.gravity = operation.gravity;
+        }
+        if (operation.blend) {
+          compositeOpts.blend = operation.blend as sharp.Blend;
+        }
         if (operation.left !== undefined && operation.top !== undefined) {
           compositeOpts.left = operation.left;
           compositeOpts.top = operation.top;
@@ -275,7 +289,7 @@ async function processWithSharp(
 
   // Apply output format
   const format = outputFormat || "png";
-  const formatOpts: Record<string, unknown> = {};
+  const formatOpts: sharp.OutputOptions & { quality?: number } = {};
   if (outputQuality && ["jpeg", "webp", "avif", "tiff"].includes(format)) {
     formatOpts.quality = Math.min(Math.max(outputQuality, 1), 100);
   }
@@ -311,7 +325,7 @@ async function processWithMagick(
   operations: ImageOperation[],
   outputFormat: string,
   outputQuality: number,
-) {
+): Promise<TransformedImageResult> {
   const magickProcessId = crypto.randomUUID().slice(0, 12);
   const inputPath = join(tmpdir(), `img-in-${magickProcessId}`);
   const outputPath = join(tmpdir(), `img-out-${magickProcessId}.${outputFormat || "png"}`);
@@ -319,31 +333,31 @@ async function processWithMagick(
   try {
     await writeFile(inputPath, inputBuffer);
 
-    const args = [inputPath];
+    const commandArguments = [inputPath];
 
     for (const operation of operations) {
       switch (operation.type) {
         case "text": {
           if (!operation.content) throw new Error("text requires 'content'");
-          const textArgs: string[] = [];
-          textArgs.push("-gravity", operation.gravity || "south");
-          textArgs.push("-font", operation.font || "Liberation-Sans");
-          textArgs.push("-pointsize", String(operation.fontSize || 32));
-          textArgs.push("-fill", operation.color || "white");
+          const textArguments: string[] = [];
+          textArguments.push("-gravity", operation.gravity || "south");
+          textArguments.push("-font", operation.font || "Liberation-Sans");
+          textArguments.push("-pointsize", String(operation.fontSize || 32));
+          textArguments.push("-fill", operation.color || "white");
           if (operation.strokeColor) {
-            textArgs.push("-stroke", operation.strokeColor);
-            textArgs.push("-strokewidth", String(operation.strokeWidth || 2));
+            textArguments.push("-stroke", operation.strokeColor);
+            textArguments.push("-strokewidth", String(operation.strokeWidth || 2));
           }
           if (operation.x !== undefined || operation.y !== undefined) {
-            textArgs.push(
+            textArguments.push(
               "-annotate",
               `+${operation.x || 0}+${operation.y || 0}`,
               operation.content as string,
             );
           } else {
-            textArgs.push("-annotate", "+0+20", operation.content as string);
+            textArguments.push("-annotate", "+0+20", operation.content as string);
           }
-          args.push(...textArgs);
+          commandArguments.push(...textArguments);
           break;
         }
 
@@ -351,19 +365,19 @@ async function processWithMagick(
           if (!operation.effect) throw new Error("distort requires 'effect'");
           switch (operation.effect) {
             case "swirl":
-              args.push("-swirl", String(operation.degrees || 90));
+              commandArguments.push("-swirl", String(operation.degrees || 90));
               break;
             case "wave":
-              args.push(
+              commandArguments.push(
                 "-wave",
                 `${operation.amplitude || 10}x${operation.wavelength || 100}`,
               );
               break;
             case "implode":
-              args.push("-implode", String(operation.factor || 0.5));
+              commandArguments.push("-implode", String(operation.factor || 0.5));
               break;
             case "barrel":
-              args.push("-distort", "Barrel", operation.params || "0.0 0.0 -0.3 1.3");
+              commandArguments.push("-distort", "Barrel", operation.params || "0.0 0.0 -0.3 1.3");
               break;
             default:
               throw new Error(
@@ -374,12 +388,12 @@ async function processWithMagick(
         }
 
         case "border":
-          args.push("-bordercolor", operation.color || "#000000");
-          args.push("-border", `${operation.width || 5}`);
+          commandArguments.push("-bordercolor", operation.color || "#000000");
+          commandArguments.push("-border", `${operation.width || 5}`);
           break;
 
         case "resize":
-          args.push("-resize", `${operation.width || ""}x${operation.height || ""}`);
+          commandArguments.push("-resize", `${operation.width || ""}x${operation.height || ""}`);
           break;
 
         default:
@@ -388,12 +402,12 @@ async function processWithMagick(
     }
 
     if (outputQuality && ["jpeg", "jpg", "webp"].includes(outputFormat)) {
-      args.push("-quality", String(outputQuality));
+      commandArguments.push("-quality", String(outputQuality));
     }
 
-    args.push(outputPath);
+    commandArguments.push(outputPath);
 
-    await execFileAsync("convert", args, {
+    await execFileAsync("convert", commandArguments, {
       timeout: MAGICK_TIMEOUT_MS,
       maxBuffer: 50 * 1024 * 1024,
     });
@@ -464,11 +478,28 @@ export async function processImage({
     "border",
     "ico",
   ]);
-  for (const op of operations) {
-    if (!op.type) throw new Error("Each operation must have a 'type' field");
-    if (!VALID_OPS.has(op.type)) {
+  for (const operationItem of operations) {
+    if (!operationItem.type) throw new Error("Each operation must have a 'type' field");
+    if (!VALID_OPS.has(operationItem.type)) {
       throw new Error(
-        `Unknown operation type: '${op.type}'. Valid: ${[...VALID_OPS].join(", ")}`,
+        `Unknown operation type: '${operationItem.type}'. Valid: ${[...VALID_OPS].join(", ")}`,
+      );
+    }
+  }
+
+  const VALID_OUTPUT_FORMATS = new Set([
+    "png", "jpeg", "jpg", "webp", "avif", "tiff", "gif", "ico",
+  ]);
+  if (outputFormat && !VALID_OUTPUT_FORMATS.has(outputFormat)) {
+    throw new Error(
+      `Invalid outputFormat '${outputFormat}'. Valid: ${[...VALID_OUTPUT_FORMATS].join(", ")}`,
+    );
+  }
+  if (outputQuality !== undefined && outputQuality !== null) {
+    const qualityValue = Number(outputQuality);
+    if (isNaN(qualityValue) || qualityValue < 1 || qualityValue > 100) {
+      throw new Error(
+        `Invalid outputQuality ${outputQuality}. Must be a number between 1 and 100`,
       );
     }
   }
@@ -477,25 +508,25 @@ export async function processImage({
   const inputBuffer = await resolveInput(input, store);
 
   // Determine which engine to use
-  const needsMagick = operations.some((op) => MAGICK_OPERATIONS.has(op.type));
+  const needsMagick = operations.some((operation) => MAGICK_OPERATIONS.has(operation.type));
 
   // If we have a mix of Sharp and Magick operations, run Sharp first then Magick
   if (needsMagick) {
-    const sharpOps = operations.filter((op) => !MAGICK_OPERATIONS.has(op.type));
-    const magickOps = operations.filter((op) => MAGICK_OPERATIONS.has(op.type));
+    const sharpOperations = operations.filter((operation) => !MAGICK_OPERATIONS.has(operation.type));
+    const magickOperations = operations.filter((operation) => MAGICK_OPERATIONS.has(operation.type));
 
     let buffer = inputBuffer;
 
     // Run Sharp operations first if any
-    if (sharpOps.length > 0) {
-      const sharpResult = await processWithSharp(buffer, sharpOps, "png", 100);
+    if (sharpOperations.length > 0) {
+      const sharpResult = await processWithSharp(buffer, sharpOperations, "png", 100);
       if (sharpResult.buffer) buffer = sharpResult.buffer;
     }
 
     // Then run Magick operations
     const result = await processWithMagick(
       buffer,
-      magickOps,
+      magickOperations,
       outputFormat,
       outputQuality,
     );
@@ -532,7 +563,7 @@ export interface ConvertToAsciiInput {
 }
 
 export interface AsciiPixel {
-  char: string;
+  character: string;
   hex: string;
   brightness: number;
 }
@@ -552,7 +583,7 @@ export interface ConvertToAsciiResult {
 export async function convertToAscii({
   input,
   width = 100,
-  chars,
+  chars: customCharacterSet,
   contrast = 1.0,
   reverse = false,
   store,
@@ -565,25 +596,33 @@ export async function convertToAscii({
     throw new Error("Invalid or unsupported image dimensions");
   }
 
+  if (width !== undefined && (typeof width !== "number" || width < 10 || width > 250)) {
+    throw new Error(`Invalid width ${width}. Must be a number between 10 and 250`);
+  }
+
+  if (contrast !== undefined && (typeof contrast !== "number" || contrast < 0.1 || contrast > 10.0)) {
+    throw new Error(`Invalid contrast ${contrast}. Must be a number between 0.1 and 10.0`);
+  }
+
   // Width safety checks (min: 10, max: 250 to keep it printable and clean)
-  const charWidth = Math.min(Math.max(width, 10), 250);
+  const characterWidth = width;
 
   // Monospace font character aspect ratio is ~0.55 (height > width)
   const fontAspectRatio = 0.55;
   const aspectRatio = metadata.width / metadata.height;
-  const charHeight = Math.round(charWidth / (aspectRatio * fontAspectRatio));
+  const characterHeight = Math.round(characterWidth / (aspectRatio * fontAspectRatio));
 
   // Resize and extract raw RGB pixels
   const { data, info } = await image
-    .resize(charWidth, charHeight, { fit: "fill" })
+    .resize(characterWidth, characterHeight, { fit: "fill" })
     .raw()
     .toBuffer({ resolveWithObject: true });
 
   const channels = info.channels;
-  const charSet =
-    chars ||
+  const characterSet =
+    customCharacterSet ||
     "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
-  const charSetLength = charSet.length;
+  const characterSetLength = characterSet.length;
 
   let asciiString = "";
   let ansiString = "";
@@ -606,17 +645,17 @@ export async function convertToAscii({
       }
 
       // Map to character index (inverted standard mapping: 0 -> dark, 255 -> light)
-      let characterIndex = Math.floor((brightness / 255) * (charSetLength - 1));
+      let characterIndex = Math.floor((brightness / 255) * (characterSetLength - 1));
       if (reverse) {
-        characterIndex = charSetLength - 1 - characterIndex;
+        characterIndex = characterSetLength - 1 - characterIndex;
       }
-      const char = charSet[characterIndex];
+      const character = characterSet[characterIndex];
 
-      asciiString += char;
-      ansiString += `\x1b[38;2;${r};${g};${b}m${char}`;
+      asciiString += character;
+      ansiString += `\x1b[38;2;${r};${g};${b}m${character}`;
 
       const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
-      row.push({ char, hex, brightness });
+      row.push({ character, hex, brightness });
     }
     asciiString += "\n";
     ansiString += "\x1b[0m\n";

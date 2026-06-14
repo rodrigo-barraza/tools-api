@@ -1830,6 +1830,25 @@ router.post("/turtle", asyncHandler(async (req: Request, res: Response) => {
   const lengthError = validateMaxLength(code, MAX_CODE_LENGTH, "LOGO code");
   if (lengthError) return res.status(400).json({ error: lengthError });
 
+  if (width !== undefined && (typeof width !== "number" || !isFinite(width) || width < 1)) {
+    return res.status(400).json({
+      error: "'width' must be a positive number (100–1920). Got: " + JSON.stringify(width),
+    });
+  }
+  if (height !== undefined && (typeof height !== "number" || !isFinite(height) || height < 1)) {
+    return res.status(400).json({
+      error: "'height' must be a positive number (100–1080). Got: " + JSON.stringify(height),
+    });
+  }
+
+  if (drawingId !== undefined && drawingId !== null) {
+    if (typeof drawingId !== "string" || drawingId.length > 36 || !/^[a-zA-Z0-9_-]+$/.test(drawingId)) {
+      return res.status(400).json({
+        error: "'drawingId' must be an alphanumeric string (max 36 chars, hyphens and underscores allowed)",
+      });
+    }
+  }
+
   // Resolve canvas dimensions
   const canvasWidth = Math.min(Math.max(width || DEFAULT_CANVAS_WIDTH, 100), 1920);
   const canvasHeight = Math.min(Math.max(height || DEFAULT_CANVAS_HEIGHT, 100), 1080);

@@ -91,7 +91,7 @@ describe("POST /compute/image/ascii", () => {
       .post("/compute/image/ascii")
       .send({
         input: testFilePath,
-        width: 8,
+        width: 10,
       });
 
     expect(res.status).toBe(200);
@@ -105,7 +105,7 @@ describe("POST /compute/image/ascii", () => {
       .post("/compute/image/ascii")
       .send({
         input: `file://${testFilePath}`,
-        width: 8,
+        width: 10,
       });
 
     expect(res.status).toBe(200);

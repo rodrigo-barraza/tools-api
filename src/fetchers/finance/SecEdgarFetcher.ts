@@ -105,7 +105,7 @@ export async function fetchSecFilings(
     const primaryDocDescriptions: string[] =
       recent.primaryDocDescription || [];
 
-    let filings: SecFiling[] = [];
+    const filings: SecFiling[] = [];
 
     for (let index = 0; index < accessionNumbers.length; index++) {
       const form = forms[index];

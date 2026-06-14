@@ -4,6 +4,8 @@ import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { Request, Response, Router } from "express";
 import PrismService from "../services/PrismService.ts";
 import { generateAudioWav } from "../services/SoundSynthesizerService.ts";
+import { validateSynthesizerInput } from "../services/SoundSynthesizerValidation.ts";
+import { validateVectorAnimationInput } from "../services/VectorAnimationValidation.ts";
 import { synthesizeSpeech, getSupportedVoices, isEspeakAvailable } from "../services/TextToSpeechService.ts";
 import logger from "../logger.ts";
 import { extractCallerContext, errorMessage, buildLocalUrl, buildEmbedHtml } from "../utilities.ts";
@@ -536,6 +538,15 @@ router.post(
         .json({ error: "Missing required parameter: text" });
     }
 
+    if (voice) {
+      const supportedVoicesList = getSupportedVoices();
+      if (!supportedVoicesList[voice]) {
+        return res.status(400).json({
+          error: `Invalid voice '${voice}'. Supported voices: ${Object.keys(supportedVoicesList).join(", ")}`,
+        });
+      }
+    }
+
     try {
       const result = await synthesizeSpeech({
         text,
@@ -692,30 +703,37 @@ router.post(
       48000,
     );
 
+    const synthesizerConfig = {
+      soundType,
+      presetEffect,
+      duration: boundedDuration,
+      waveform,
+      frequency,
+      endFrequency,
+      modulatorFrequency,
+      modulationIndex,
+      envelope,
+      harmonics,
+      lfo,
+      melody,
+      delay,
+      sampleRate: boundedSampleRate,
+      tempo: tempo ? Number(tempo) : undefined,
+      nodes,
+      tracks,
+      swing: swing != null ? Number(swing) : undefined,
+      humanize: humanize != null ? Number(humanize) : undefined,
+      instrument,
+      timeSignature,
+    };
+
+    const validationError = validateSynthesizerInput(synthesizerConfig);
+    if (validationError) {
+      return res.status(400).json({ error: validationError });
+    }
+
     try {
-      const result = generateAudioWav({
-        soundType,
-        presetEffect,
-        duration: boundedDuration,
-        waveform,
-        frequency,
-        endFrequency,
-        modulatorFrequency,
-        modulationIndex,
-        envelope,
-        harmonics,
-        lfo,
-        melody,
-        delay,
-        sampleRate: boundedSampleRate,
-        tempo: tempo ? Number(tempo) : undefined,
-        nodes,
-        tracks,
-        swing: swing != null ? Number(swing) : undefined,
-        humanize: humanize != null ? Number(humanize) : undefined,
-        instrument,
-        timeSignature,
-      });
+      const result = generateAudioWav(synthesizerConfig);
 
       const actualDuration = result.sampleCount / boundedSampleRate;
 
@@ -839,7 +857,6 @@ function buildVectorAnimationEmbedHtml(
   const {
     loop = true,
     autoplay = true,
-    title = "Creative Vector Animation",
   } = options;
   const width = animation.width || 800;
   const height = animation.height || 600;
@@ -1298,6 +1315,11 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
   const { animation, options, sessionId, referenceImageUrl } = req.body;
   if (!animation) {
     return res.status(400).json({ error: "'animation' is required" });
+  }
+
+  const validationError = validateVectorAnimationInput(animation);
+  if (validationError) {
+    return res.status(400).json({ error: validationError });
   }
 
   const callerUsername = (req.headers["x-username"] as string) || null;

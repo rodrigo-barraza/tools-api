@@ -33,9 +33,28 @@ export async function convertVideoToGif({
     throw new Error("'input' is required (URL or local workspace path)");
   }
 
+  const VALID_QUALITY_VALUES = new Set(["high", "low"]);
+  if (quality && !VALID_QUALITY_VALUES.has(quality)) {
+    throw new Error(
+      `Invalid quality '${quality}'. Valid: ${[...VALID_QUALITY_VALUES].join(", ")}`,
+    );
+  }
+
+  if (fps !== undefined && (typeof fps !== "number" || fps < 1 || fps > 30)) {
+    throw new Error(
+      `Invalid fps ${fps}. Must be a number between 1 and 30`,
+    );
+  }
+
+  if (width !== undefined && (typeof width !== "number" || width < 64 || width > 1280)) {
+    throw new Error(
+      `Invalid width ${width}. Must be a number between 64 and 1280`,
+    );
+  }
+
   // Enforce parameter boundaries
-  const boundedFps = Math.min(Math.max(fps, 1), 30);
-  const boundedWidth = Math.min(Math.max(width, 64), 1280);
+  const boundedFps = fps;
+  const boundedWidth = width;
 
   const ffmpegBinaryPath = process.env.FFMPEG_PATH || "ffmpeg";
 

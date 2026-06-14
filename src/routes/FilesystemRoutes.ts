@@ -1,4 +1,4 @@
-import { Request, Response, Router } from "express";
+import { Request, Router } from "express";
 import { agenticGetDirectoryTree } from "../services/AgenticFileService.ts";
 import { agenticHandler } from "../utilities.ts";
 

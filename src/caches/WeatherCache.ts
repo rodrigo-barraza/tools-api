@@ -59,7 +59,7 @@ function hashSnapshot(data: Record<string, unknown>) {
  * Waits for all sources on first cycle, then persists on every change.
  */
 export function update(source: WeatherSource, data: Record<string, unknown>) {
-  const { source: unusedSource, ...fields } = data;
+  const { source: _unusedSource, ...fields } = data;
   Object.assign(cache.current, fields);
   cache.lastFetch[source] = new Date();
   cache.errors[source] = null;
@@ -88,7 +88,7 @@ export function update(source: WeatherSource, data: Record<string, unknown>) {
  * Memory-only — no change-detection or MongoDB persistence.
  */
 export function restore(source: WeatherSource, data: Record<string, unknown>) {
-  const { source: unusedSource, ...fields } = data;
+  const { source: _unusedSource, ...fields } = data;
   Object.assign(cache.current, fields);
   cache.lastFetch[source] = new Date();
   cache.errors[source] = null;
