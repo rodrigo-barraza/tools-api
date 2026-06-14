@@ -4998,7 +4998,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     name: "generate_qr_code",
     dataSource: compute("qrcode"),
     description:
-      "Generate a QR code PNG image from text, URLs, WiFi credentials, vCards, or any string data. Returns a qrImageUrl — render it with ![QR](qrImageUrl) markdown syntax so the user sees the QR code inline.",
+      "Generate a QR code PNG image from text, URLs, WiFi credentials, vCards, or any string data. The QR code is displayed automatically in the tool result panel — do NOT output the URL as an image in your response.",
     endpoint: {
       method: "POST",
       path: "/compute/qr",
@@ -5044,7 +5044,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     name: "render_latex",
     dataSource: compute("KaTeX CDN"),
     description:
-      "Render LaTeX mathematical expressions as a beautiful embedded page using KaTeX. Use this to display equations, formulas, and mathematical notation. Returns a latexEmbedUrl — render it with ![LaTeX](latexEmbedUrl) markdown syntax so the user sees the rendered math inline.",
+      "Render LaTeX mathematical expressions as a beautiful embedded page using KaTeX. Use this to display equations, formulas, and mathematical notation. The rendered equation is displayed automatically in the tool result panel — do NOT output the URL as an image in your response.",
     endpoint: {
       method: "POST",
       path: "/compute/latex",
@@ -5071,7 +5071,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     name: "generate_diagram",
     dataSource: compute("Mermaid CDN"),
     description:
-      "Render Mermaid diagrams (flowcharts, sequence diagrams, class diagrams, ER diagrams, Gantt charts, state diagrams, pie charts, git graphs) as interactive embedded pages. Returns a diagramEmbedUrl — render it with ![Diagram](diagramEmbedUrl) markdown syntax so the user sees the diagram inline.",
+      "Render Mermaid diagrams (flowcharts, sequence diagrams, class diagrams, ER diagrams, Gantt charts, state diagrams, pie charts, git graphs) as interactive embedded pages. The diagram is displayed automatically in the tool result panel — do NOT output the URL as an image in your response.",
     endpoint: {
       method: "POST",
       path: "/compute/diagram",
@@ -5275,7 +5275,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "gamma correction, trim whitespace, extend canvas, composite/overlay images, format conversion " +
       "(PNG, JPEG, WebP, AVIF, TIFF), text overlay with font control, distortion effects (swirl, wave, implode, barrel), " +
       "and border addition. Multiple operations can be chained in a single call. " +
-      "Returns an imageUrl — render it with ![Image](imageUrl) markdown syntax so the user sees the result inline. " +
+      "The processed image is displayed automatically in the tool result panel — do NOT output the URL as an image in your response. " +
       "Use the 'metadata' operation to inspect image dimensions, format, color space, and channel info without transforming it.",
     endpoint: {
       method: "POST",
@@ -5544,7 +5544,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "Convert a video (MP4, WebM, MOV, etc.) into an animated GIF using an optimized two-pass palette mapping pipeline. " +
       "Supports high-quality conversion (custom 256-color palette generated dynamically from video) and low-file-size conversion " +
       "(128 colors, reduced frame rate, no dithering). Accepts public URLs or local workspace video paths. " +
-      "Returns an imageUrl — render it with ![GIF](imageUrl) markdown syntax so the user sees the GIF inline.",
+      "The converted GIF is displayed automatically in the tool result panel — do NOT output the URL as an image in your response.",
     endpoint: {
       method: "POST",
       path: "/compute/video/gif",
@@ -5607,7 +5607,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "repeat 400 [repeat 34 [fd 12 rt 10] rt 90] — nested pattern. " +
       "for [i 0.01 4 0.05] [repeat 180 [fd :i rt 1]] — growing spiral. " +
       "to tree :size if :size < 5 [fd :size bk :size stop] fd :size / 3 lt 30 tree :size * 2 / 3 rt 60 tree :size * 2 / 3 lt 30 bk :size / 3 end tree 100 — recursive tree. " +
-      "Render the result: ![Turtle Drawing](turtleEmbedUrl).",
+      "The drawing is displayed automatically in the tool result panel — do NOT output the URL as an image in your response.",
     endpoint: {
       method: "POST",
       path: "/compute/turtle",
@@ -5657,7 +5657,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "Note: Face indices in subsequent calls are absolute (0-based indexing relative to the total accumulated vertices). " +
       "Between calls, briefly describe what you just added and what comes next so the user can follow along. " +
       "Omit sessionId to start a new 3D mesh session. " +
-      "The response contains a sceneEmbedUrl — render it with ![3D Mesh](sceneEmbedUrl) markdown so the user sees the interactive 3D scene inline. " +
+      "The interactive 3D scene is displayed automatically in the tool result panel — do NOT output the URL as an image in your response. " +
       "Max 50,000 total vertices and 100,000 total faces per session.",
     endpoint: {
       method: "POST",
@@ -5790,7 +5790,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "Omit sessionId to start a new 3D voxel session. " +
       "Features highly optimized rendering using GPU-based Three.js InstancedMesh for thousands of voxels. " +
       "Supports customizable voxel sizing, spacing, outline borders, wireframes, flat shading, colors, opacity, and ambient/directional light casting. " +
-      "The response contains a sceneEmbedUrl — render it with ![3D Voxel Grid](sceneEmbedUrl) markdown so the user sees the interactive 3D voxel grid inline. " +
+      "The interactive 3D voxel grid is displayed automatically in the tool result panel — do NOT output the URL as an image in your response. " +
       "Max 100,000 total voxels per session.",
     endpoint: {
       method: "POST",
@@ -5987,7 +5987,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "Each object supports position, rotation (degrees), scale, and material properties (color, metalness, roughness, " +
       "opacity, emissive, wireframe, flatShading). " +
       "Use cases: architectural mockups, abstract sculptures, game prototyping, educational geometry, product showcases. " +
-      "The response contains a sceneEmbedUrl — render it with ![3D Model](sceneEmbedUrl) markdown so the user sees the interactive 3D model inline. " +
+      "The interactive 3D model is displayed automatically in the tool result panel — do NOT output the URL as an image in your response. " +
       "Max 200 objects per call. Supports shadow casting, ambient/directional lighting control, and auto-orbit camera. " +
       "When the user attaches an image, set textureUrl to 'reference' on the specific objects that should display it — the system will replace 'reference' with the actual image data automatically. Only mark objects that should show the user's image; leave textureUrl unset on objects that should use solid material colors. Do NOT search the web for image URLs. " +
       "Supports progressive, step-by-step incremental building using a sessionId (analogous to the draw_turtle_graphics tool) where subsequent calls with the same sessionId append new objects to the existing model rather than overwriting it.",
@@ -6189,7 +6189,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "directional, fill, and hemisphere lighting automatically. " +
       "Supports ground plane with shadows, fog, camera FOV control, and auto-orbit. " +
       "Use cases: product showcases, animated explainers, data visualization, artistic compositions, holiday scenes. " +
-      "The response contains a sceneEmbedUrl — render it with ![3D Scene](sceneEmbedUrl) markdown so the user sees the interactive 3D scene inline. " +
+      "The interactive 3D scene is displayed automatically in the tool result panel — do NOT output the URL as an image in your response. " +
       "Max 300 total objects (including nested children), max 5 levels of nesting. " +
       "When the user attaches an image, set textureUrl to 'reference' on the specific objects that should display it — the system will replace 'reference' with the actual image data automatically. Only mark objects that should show the user's image; leave textureUrl unset on objects that should use solid material colors. Do NOT search the web for image URLs. " +
       "Supports progressive, step-by-step incremental building using a sessionId (analogous to the draw_turtle_graphics tool) where subsequent calls with the same sessionId append new objects to the existing scene rather than overwriting it.",
@@ -6740,7 +6740,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     name: "generate_map",
     dataSource: onDemand("Google Static Maps API"),
     description:
-      "Generate an interactive Google Map with labeled markers for a set of locations. Use this AFTER a places search, IP lookup, or any query that yields coordinates. Pass the locations as a JSON markers array. The response contains a mapEmbedUrl — you MUST render it in your response using ![Map](mapEmbedUrl) markdown syntax so the user sees the interactive map inline.",
+      "Generate an interactive Google Map with labeled markers for a set of locations. Use this AFTER a places search, IP lookup, or any query that yields coordinates. Pass the locations as a JSON markers array. The interactive map is displayed automatically in the tool result panel — do NOT output the URL as an image in your response.",
     endpoint: {
       path: "/utility/map",
       queryParams: ["markers", "zoom", "maptype"],
@@ -6774,7 +6774,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     name: "generate_chart",
     dataSource: onDemand("internal"),
     description:
-      "Generate an interactive chart (bar, line, or pie) from structured data. Use this to visualize comparisons, trends, distributions, or any numeric data the user asks to see as a chart. Pass labels (category names or x-axis values) and one or more datasets (each with a label and numeric data array). The response contains a chartImageUrl — you MUST render it in your response using ![Chart](chartImageUrl) markdown syntax so the user sees the chart image inline.",
+      "Generate an interactive chart (bar, line, or pie) from structured data. Use this to visualize comparisons, trends, distributions, or any numeric data the user asks to see as a chart. Pass labels (category names or x-axis values) and one or more datasets (each with a label and numeric data array). The chart is displayed automatically in the tool result panel — do NOT output the URL as an image in your response.",
     endpoint: {
       method: "POST",
       path: "/utility/chart",
