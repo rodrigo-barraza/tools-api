@@ -128,7 +128,7 @@ export default class AgentCompilerService {
     // 2. Load standalone workspace-agent.mjs & core source code and concatenate them
     const originalAgentPath = resolve(process.cwd(), "../workspace-service/standalone/workspace-agent.mjs");
     const originalCorePath = resolve(process.cwd(), "../workspace-service/standalone/workspace-agent-core.mjs");
-    
+
     const coreSourceCode = await readFile(originalCorePath, "utf-8");
     let agentSourceCode = await readFile(originalAgentPath, "utf-8");
 
