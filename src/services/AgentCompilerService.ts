@@ -133,8 +133,8 @@ export default class AgentCompilerService {
       `let backendUrl = cliOptions.backend || process.env.WORKSPACE_BACKEND || "${publicBackendUrl}";`
     );
     agentSourceCode = agentSourceCode.replace(
-      'const secret = cliOptions.secret || process.env.WORKSPACE_SERVICE_SECRET || "";',
-      `const secret = cliOptions.secret || process.env.WORKSPACE_SERVICE_SECRET || "${apiSecret}";`
+      'let secret = cliOptions.secret || process.env.WORKSPACE_SERVICE_SECRET;',
+      `let secret = cliOptions.secret || process.env.WORKSPACE_SERVICE_SECRET || "${apiSecret}";`
     );
 
     // 4. Transpile source code to CommonJS
