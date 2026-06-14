@@ -9449,18 +9449,21 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         nodes: {
           type: "object",
           description:
-            "Modular Audio Graph Nodes definition. Keys are unique custom node names. Values describe the node type and properties. " +
+            "REQUIRED for modular mode. Defines the DSP node graph. Keys are unique custom node names that tracks reference in their nodeChain. " +
+            "Every name used in a track's nodeChain (except 'destination') MUST have a corresponding entry here, otherwise the audio will fail. " +
             "Supported node types: 'oscillator' (waveform, detune, frequency), 'noise' (noiseType: white|pink), " +
             "'biquad_filter' (filterType: lowpass|highpass|bandpass, cutoff, Q, modulate: {cutoff: 'envelope_name'}), " +
             "'envelope' (attack, decay, sustain, release), 'gain' (gain, modulate: {gain: 'envelope_name'}), " +
             "'distortion' (algorithm: soft_clip|hard_clip|bitcrush, drive: 1-100, bitDepth: 2-16, downsample: 1-32), " +
             "'stereo_panner' (pan: -1.0 to 1.0), 'delay' (delayTime: seconds or beat fraction '1/8'|'1/4d', feedback, pingPong), " +
-            "'reverb' (wet: 0-1, decay: 0-1), 'drum_synth' (triggered by note name: KICK, SNARE, HAT).",
+            "'reverb' (wet: 0-1, decay: 0-1), 'drum_synth' (triggered by note name: KICK, SNARE, HAT). " +
+            'Example: { "osc": { "type": "oscillator", "waveform": "sawtooth" }, "env": { "type": "envelope", "attack": 0.01, "decay": 0.2, "sustain": 0.6, "release": 0.15 } }',
         },
         tracks: {
           type: "array",
           description:
-            "Timeline sequences for polyphonic multi-tracking. Each track has a nodeChain, notes list, optional volume (0.0–2.0), and optional repeat count.",
+            "Timeline sequences for polyphonic multi-tracking. Each track has a nodeChain (referencing node names defined in 'nodes'), a notes list, optional volume (0.0–2.0), and optional repeat count. " +
+            "IMPORTANT: The 'nodes' parameter MUST be provided alongside 'tracks' — nodeChain names are NOT built-in keywords, they are user-defined keys that must exist in the 'nodes' object.",
           items: {
             type: "object",
             properties: {
@@ -9468,7 +9471,8 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
                 type: "array",
                 items: { type: "string" },
                 description:
-                  "Array of node names in series connecting generator to effects, ending with 'destination' (e.g., ['osc', 'env', 'filter', 'destination']).",
+                  "Ordered array of node names from the 'nodes' object, forming the signal chain from generator → effects → 'destination'. " +
+                  "Every name except 'destination' must exist as a key in the 'nodes' parameter. Example: ['osc', 'env', 'filter', 'destination'].",
               },
               notes: {
                 type: "array",

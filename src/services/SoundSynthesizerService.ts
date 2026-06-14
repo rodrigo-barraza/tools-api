@@ -1219,6 +1219,42 @@ export function renderModularGraph(config: SynthesizerConfig): Float32Array {
   const humanizeAmount = Math.max(0.0, Math.min(config.humanize ?? 0.0, 1.0));
   const beatsPerBar = config.timeSignature?.[0] ?? 4;
 
+  const nodeNames = Object.keys(nodes);
+
+  if (tracks.length > 0 && nodeNames.length === 0) {
+    throw new Error(
+      "Modular mode requires a 'nodes' object defining DSP node configurations. " +
+      "Each name in a track's nodeChain (e.g. 'osc', 'env', 'filter') must have " +
+      "a corresponding entry in 'nodes' with its type and parameters. " +
+      "Example: { \"osc\": { \"type\": \"oscillator\", \"waveform\": \"sine\" }, " +
+      "\"env\": { \"type\": \"envelope\", \"attack\": 0.01, \"decay\": 0.2, \"sustain\": 0.6, \"release\": 0.15 } }"
+    );
+  }
+
+  if (tracks.length === 0) {
+    throw new Error(
+      "Modular mode requires at least one track with a nodeChain and notes array."
+    );
+  }
+
+  const unresolvedNodeNames: string[] = [];
+  for (const track of tracks) {
+    for (const chainNodeName of track.nodeChain) {
+      if (chainNodeName === "destination") continue;
+      if (!nodes[chainNodeName]) {
+        unresolvedNodeNames.push(chainNodeName);
+      }
+    }
+  }
+  if (unresolvedNodeNames.length > 0) {
+    const uniqueUnresolved = [...new Set(unresolvedNodeNames)];
+    throw new Error(
+      `Track nodeChain references undefined nodes: [${uniqueUnresolved.join(", ")}]. ` +
+      `Each name must have a matching entry in the 'nodes' object. ` +
+      `Defined nodes: [${nodeNames.length > 0 ? nodeNames.join(", ") : "(none)"}].`
+    );
+  }
+
   let duration =
     config.duration ||
     computeTimelineDuration(tracks, nodes, tempo, beatsPerBar);
@@ -1576,6 +1612,19 @@ export function synthesizeSound(config: SynthesizerConfig): Float32Array {
         }
         case "sawtooth": {
           const normalized = (phase % (2 * Math.PI)) / (2 * Math.PI);
+          if (!config.nodes) {
+             throw new Error("Modular mode requires 'nodes' definition.");
+          }
+          if (!config.tracks || config.tracks.length === 0 || !config.tracks.some(t => t.notes && t.notes.length > 0)) {
+             throw new Error("Modular mode requires at least one track with notes.");
+          }
+          for (const track of config.tracks) {
+             for (const nodeName of track.nodeChain) {
+                if (nodeName !== "destination" && !config.nodes[nodeName]) {
+                   throw new Error(`Node '${nodeName}' used in track is not defined in nodes config.`);
+                }
+             }
+          }
           value = 2 * normalized - 1;
           break;
         }
