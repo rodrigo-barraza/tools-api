@@ -1653,22 +1653,43 @@ export { validatePath, ALLOWED_ROOTS };
 
 /**
  * Return only the immutable roots from config.js (for UI "pinned" distinction).
-
  */
 export function getStaticRoots() {
   return [...STATIC_ROOTS];
 }
 
 /**
+ * Normalize a workspace path for the host OS.
+ * Windows-style paths (e.g. C:\Users\foo) are translated to WSL mount
+ * paths (/mnt/c/Users/foo) when the server runs on Linux/macOS.
+ * All other paths are resolved as POSIX absolute paths.
+ */
+export function normalizeWorkspacePath(rawPath: string): string | null {
+  if (!rawPath || typeof rawPath !== "string") return null;
+  const trimmed = rawPath.trim();
+  if (!trimmed) return null;
+
+  const windowsPathMatch = trimmed.match(/^([A-Za-z]):[/\\](.*)/);
+  if (windowsPathMatch) {
+    const driveLetter = windowsPathMatch[1].toLowerCase();
+    const remainingPath = windowsPathMatch[2].replace(/\\/g, "/");
+    return `/mnt/${driveLetter}/${remainingPath}`;
+  }
+
+  return resolve(trimmed);
+}
+
+/**
  * Merge extra roots (from MongoDB user config) into ALLOWED_ROOTS.
  * Static roots are always preserved. Duplicates are de-duped.
  * Mutates the array in-place so all importers see the update.
-
+ * Windows paths are auto-translated to WSL mount paths on Linux hosts.
  */
 export function refreshAllowedRoots(extraRoots: string[] = []) {
   const resolved = extraRoots
     .filter((r: string) => r && typeof r === "string")
-    .map((r: string) => resolve(r.trim()));
+    .map((r: string) => normalizeWorkspacePath(r))
+    .filter((r): r is string => r !== null);
 
   const merged = [...STATIC_ROOTS];
   for (const root of resolved) {

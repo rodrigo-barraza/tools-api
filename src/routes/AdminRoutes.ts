@@ -1,6 +1,5 @@
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { Request, Response, Router } from "express";
-import { resolve } from "node:path";
 import { stat } from "node:fs/promises";
 import { ObjectId } from "mongodb";
 import {
@@ -20,6 +19,7 @@ import {
   ALLOWED_ROOTS,
   getStaticRoots,
   refreshAllowedRoots,
+  normalizeWorkspacePath,
 } from "../services/AgenticFileService.ts";
 import { getConnectedAgents } from "../services/AgentConnectionManager.ts";
 import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
@@ -30,34 +30,18 @@ const router = Router();
 // ─── Path Translation ─────────────────────────────────────────────
 const WORKSPACE_COLLECTION = "workspace_config";
 /**
- * Convert a Windows-style path to a WSL mount path.
- * e.g. C:\Users\foo\bar → /mnt/c/Users/foo/bar
- * Returns null if the path is not a Windows path.
- */
-function windowsToWslPath(winPath: string) {
-  const match = winPath.match(/^([A-Za-z]):[/\\](.*)/);
-  if (!match) return null;
-  const drive = match[1].toLowerCase();
-  const rest = match[2].replace(/\\/g, "/");
-  return `/mnt/${drive}/${rest}`;
-}
-/**
  * Detect whether a path is Windows-style.
  */
 function isWindowsPath(path: string) {
   return /^[A-Za-z]:[/\\]/.test(path);
 }
 /**
- * Resolve a user-supplied path to a WSL-native absolute path.
- * Windows paths are translated, WSL paths are resolved as-is.
+ * Resolve a user-supplied path to a host-native absolute path.
+ * Windows paths are translated to WSL mount paths on Linux hosts.
+ * POSIX paths are resolved as-is.
  */
 function resolveWorkspacePath(rawPath: string) {
-  if (!rawPath || typeof rawPath !== "string") return null;
-  const trimmed = rawPath.trim();
-  if (isWindowsPath(trimmed)) {
-    return windowsToWslPath(trimmed);
-  }
-  return resolve(trimmed);
+  return normalizeWorkspacePath(rawPath);
 }
 // ─── Tool Schema Endpoints ────────────────────────────────────────
 /**
@@ -322,6 +306,10 @@ router.post(
 );
 /**
  * Load user-configured workspace roots from MongoDB and merge into ALLOWED_ROOTS.
+ * Re-normalizes stored paths through the cross-platform resolver so any stale
+ * Windows paths (e.g. `C:\workspace` stored before WSL translation was added)
+ * get corrected to their WSL mount equivalents. If corrections are made,
+ * the cleaned paths are persisted back to MongoDB.
  * Called at boot time from server.js.
  */
 export async function loadUserWorkspaceRoots() {
@@ -334,8 +322,24 @@ export async function loadUserWorkspaceRoots() {
       Array.isArray(document.roots) &&
       document.roots.length > 0
     ) {
-      refreshAllowedRoots(document.roots);
-      logger.info(`   📂 User workspace roots: ${document.roots.join(", ")}`);
+      const normalizedRoots = document.roots
+        .map((storedPath: string) => normalizeWorkspacePath(storedPath))
+        .filter((resolvedPath: string | null): resolvedPath is string => resolvedPath !== null);
+
+      refreshAllowedRoots(normalizedRoots);
+      logger.info(`   📂 User workspace roots: ${normalizedRoots.join(", ")}`);
+
+      const hasStaleEntries = document.roots.some(
+        (originalPath: string, index: number) => originalPath !== normalizedRoots[index],
+      ) || document.roots.length !== normalizedRoots.length;
+
+      if (hasStaleEntries) {
+        await collection.updateOne(
+          { _key: "user_roots" },
+          { $set: { roots: normalizedRoots, updatedAt: new Date().toISOString() } },
+        );
+        logger.info(`   🔧 Migrated ${document.roots.length} stale workspace path(s) to normalized form`);
+      }
     }
   } catch (error: unknown) {
     logger.warn(

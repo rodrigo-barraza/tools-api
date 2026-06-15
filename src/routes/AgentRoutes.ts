@@ -12,6 +12,29 @@ const router = Router();
 const AGENT_BUCKET = "artifacts";
 const AGENT_OBJECT_KEY = "workspace-service/workspace-agent.mjs";
 
+const TRAY_APP_INSTALLER_KEYS: Record<string, { objectKey: string; fileName: string; contentType: string }> = {
+  "win-x64": {
+    objectKey: "workspace-service/tray-app/Prism Workspace Agent Setup.exe",
+    fileName: "Prism Workspace Agent Setup.exe",
+    contentType: "application/octet-stream",
+  },
+  "mac-x64": {
+    objectKey: "workspace-service/tray-app/Prism Workspace Agent-x64.dmg",
+    fileName: "Prism Workspace Agent-x64.dmg",
+    contentType: "application/octet-stream",
+  },
+  "mac-arm64": {
+    objectKey: "workspace-service/tray-app/Prism Workspace Agent-arm64.dmg",
+    fileName: "Prism Workspace Agent-arm64.dmg",
+    contentType: "application/octet-stream",
+  },
+  "linux-x64": {
+    objectKey: "workspace-service/tray-app/Prism Workspace Agent.AppImage",
+    fileName: "Prism Workspace Agent.AppImage",
+    contentType: "application/octet-stream",
+  },
+};
+
 function mapPlatformToTarget(platform: string): CompilationTarget | null {
   const normalizedPlatform = platform.toLowerCase();
   if (
@@ -121,6 +144,113 @@ router.get("/download/agent", async (req: Request, res: Response) => {
       error instanceof Error ? error.message : String(error);
     logger.warn(`[Agents] Failed to serve agent download: ${errorMessage}`);
     res.status(404).json({ error: "Workspace agent file not available" });
+  }
+});
+
+/**
+ * GET /agents/download/tray-app — Serve the system tray Electron app installer.
+ * Requires 'platform' query parameter: win-x64, linux-x64, mac-x64, mac-arm64.
+ * Installers are pre-built and stored in MinIO.
+ */
+router.get("/download/tray-app", async (req: Request, res: Response) => {
+  const platform = req.query.platform as string;
+
+  if (!platform) {
+    return res.status(400).json({
+      error: "Missing 'platform' query parameter. Supported: win-x64, linux-x64, mac-x64, mac-arm64",
+    });
+  }
+
+  const installerInfo = TRAY_APP_INSTALLER_KEYS[platform.toLowerCase()];
+  if (!installerInfo) {
+    return res.status(400).json({
+      error: `Unsupported platform: ${platform}. Supported: win-x64, linux-x64, mac-x64, mac-arm64`,
+    });
+  }
+
+  try {
+    const objectStat = await MinioService.statObject(AGENT_BUCKET, installerInfo.objectKey);
+    const objectStream = await MinioService.getObject(AGENT_BUCKET, installerInfo.objectKey);
+
+    res.setHeader("Content-Type", installerInfo.contentType);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${installerInfo.fileName}"`,
+    );
+    res.setHeader("Content-Length", String(objectStat.size));
+    res.setHeader("Cache-Control", "public, max-age=300");
+
+    objectStream.pipe(res);
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : String(error);
+    logger.warn(`[Agents] Failed to serve tray app installer (${platform}): ${errorMessage}`);
+    res.status(404).json({
+      error: "Tray app installer not available for this platform",
+      detail: errorMessage,
+    });
+  }
+});
+
+/**
+ * PUT /agents/upload/tray-app — Upload a tray app installer to MinIO.
+ * Used by the build script to publish platform-specific installers.
+ * Requires 'platform' query parameter and streams the binary body to MinIO.
+ */
+router.put("/upload/tray-app", async (req: Request, res: Response) => {
+  const platform = req.query.platform as string;
+
+  if (!platform) {
+    return res.status(400).json({
+      error: "Missing 'platform' query parameter. Supported: win-x64, linux-x64, mac-x64, mac-arm64",
+    });
+  }
+
+  const installerInfo = TRAY_APP_INSTALLER_KEYS[platform.toLowerCase()];
+  if (!installerInfo) {
+    return res.status(400).json({
+      error: `Unsupported platform: ${platform}. Supported: win-x64, linux-x64, mac-x64, mac-arm64`,
+    });
+  }
+
+  try {
+    const chunks: Buffer[] = [];
+    for await (const chunk of req) {
+      chunks.push(Buffer.from(chunk));
+    }
+    const fileBuffer = Buffer.concat(chunks);
+
+    if (fileBuffer.length === 0) {
+      return res.status(400).json({ error: "Empty request body" });
+    }
+
+    const minioClient = MinioService._getClient();
+    await minioClient.putObject(
+      AGENT_BUCKET,
+      installerInfo.objectKey,
+      fileBuffer,
+      fileBuffer.length,
+      { "Content-Type": installerInfo.contentType },
+    );
+
+    logger.info(
+      `[Agents] Uploaded tray app installer for ${platform}: ${installerInfo.objectKey} (${(fileBuffer.length / 1024 / 1024).toFixed(1)} MB)`,
+    );
+
+    res.json({
+      platform,
+      objectKey: installerInfo.objectKey,
+      fileName: installerInfo.fileName,
+      sizeBytes: fileBuffer.length,
+    });
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : String(error);
+    logger.error(`[Agents] Failed to upload tray app installer (${platform}): ${errorMessage}`);
+    res.status(500).json({
+      error: "Failed to upload tray app installer",
+      detail: errorMessage,
+    });
   }
 });
 

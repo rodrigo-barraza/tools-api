@@ -39,6 +39,11 @@ export default class MinioService {
     return minioClient.getObject(bucketName, objectName);
   }
 
+  static async fPutObject(bucketName: string, objectName: string, filePath: string, metadata: Record<string, string> = {}) {
+    const minioClient = MinioService._getClient();
+    return minioClient.fPutObject(bucketName, objectName, filePath, metadata);
+  }
+
   static async seedWorkspaceAgent(): Promise<void> {
     if (!CONFIG.MINIO_ENDPOINT) {
       logger.warn(
