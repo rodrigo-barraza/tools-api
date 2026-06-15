@@ -225,13 +225,19 @@ function buildBaseFilter({
     ];
   }
 
-  // Exclude bot messages by default — callers can opt-in with includeBots
+  // Exclude bot messages — use `$in: [false, null]` instead of `$ne: true`
+  // because $ne forces full index/collection scan (matches "everything except"),
+  // while $in can be served by a standard index on `author.bot`.
   if (!includeBots) {
-    filter["author.bot"] = { $ne: true };
+    filter["author.bot"] = { $in: [false, null] };
   }
 
-  // Exclude messages from restricted categories (hard filter)
-  filter["channel.parentId"] = { $nin: EXCLUDED_CATEGORY_IDS };
+  // Exclude messages from restricted categories (hard filter).
+  // `$not/$in` has better query planner behavior than bare `$nin` for
+  // index intersection on compound queries.
+  filter["channel.parentId"] = {
+    $not: { $in: EXCLUDED_CATEGORY_IDS },
+  };
 
   // Time range
   if (before || after) {
@@ -735,15 +741,15 @@ const DiscordDataService = {
     const match: Document = {
       guildId,
       createdTimestamp: { $gte: sinceTimestamp },
-      "author.bot": { $ne: true },
-      "channel.parentId": { $nin: EXCLUDED_CATEGORY_IDS },
+      "author.bot": { $in: [false, null] },
+      "channel.parentId": { $not: { $in: EXCLUDED_CATEGORY_IDS } },
     };
     if (channelId) match.channelId = channelId;
 
     const cappedTopN = Math.min(Number(topN), 50);
 
     // Run all aggregations in parallel
-    const [totalMessages, topUsers, channelBreakdown, hourlyActivity] =
+    const [totalMessages, topUsers, channelBreakdown, hourlyActivity, uniqueUsersResult] =
       await Promise.all([
         // Total message count
         collection.countDocuments(match),
@@ -798,16 +804,17 @@ const DiscordDataService = {
             { $sort: { _id: 1 } },
           ])
           .toArray(),
+
+        // Unique users count
+        collection
+          .aggregate([
+            { $match: match },
+            { $group: { _id: "$author.id" } },
+            { $count: "total" },
+          ])
+          .toArray(),
       ]);
 
-    // Unique users count
-    const uniqueUsersResult = await collection
-      .aggregate([
-        { $match: match },
-        { $group: { _id: "$author.id" } },
-        { $count: "total" },
-      ])
-      .toArray();
     const uniqueUsers = uniqueUsersResult[0]?.total || 0;
 
     return {

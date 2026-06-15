@@ -12,6 +12,7 @@ const COLLECTION = "requests";
 interface RequestLogEntry {
   method: string;
   path: string;
+  domain: string;
   status: number;
   clientIp: string;
   elapsedMs: number;
@@ -80,10 +81,14 @@ export function requestLoggerMiddleware(
     // Console log
     logger.request(method, path, status, time, sizeTag);
 
+    // Compute domain from first path segment at insert time for indexed aggregation
+    const domain = path.replace(/^\//, "").split("/")[0] || "root";
+
     // Persist to MongoDB (fire-and-forget)
     persistRequest({
       method,
       path,
+      domain,
       status,
       clientIp: clientIp || "unknown",
       elapsedMs: Math.round(elapsed * 100) / 100,
@@ -188,16 +193,6 @@ export async function getRequestStats(since?: string) {
       .aggregate([
         { $match: match },
         {
-          $addFields: {
-            domain: {
-              $arrayElemAt: [
-                { $split: [{ $ltrim: { input: "$path", chars: "/" } }, "/"] },
-                0,
-              ],
-            },
-          },
-        },
-        {
           $group: {
             _id: "$domain",
             count: { $sum: 1 },
@@ -249,6 +244,7 @@ export async function setupRequestsCollection() {
       collection.createIndex({ method: 1, timestamp: -1 }),
       collection.createIndex({ status: 1, timestamp: -1 }),
       collection.createIndex({ path: 1, timestamp: -1 }),
+      collection.createIndex({ domain: 1, timestamp: -1 }),
     ]);
 
     logger.info(`📊 requests collection indexes ensured`);

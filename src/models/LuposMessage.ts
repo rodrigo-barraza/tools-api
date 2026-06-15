@@ -69,6 +69,51 @@ export async function setupLuposCollections() {
         { guildId: 1, createdTimestamp: -1 },
         { background: true },
       );
+
+      // ── Hot-path indexes for DiscordDataService ────────────────
+      // Every query appends `"author.bot": { $ne: true }` and
+      // `"channel.parentId": { $nin: [...] }`. Without these indexes,
+      // MongoDB must FETCH every candidate doc from disk to filter,
+      // causing massive I/O on the 8M+ collection.
+
+      // Compound index with bot-exclusion baked in via partial filter.
+      // Covers the dominant pattern: guildId + time range + non-bot.
+      // partialFilterExpression must match the exact query predicate in
+      // buildBaseFilter (`author.bot: { $in: [false, null] }`).
+      await messagesCollection!.createIndex(
+        { guildId: 1, createdTimestamp: -1, "channel.parentId": 1 },
+        {
+          background: true,
+          partialFilterExpression: { "author.bot": { $in: [false, null] } },
+          name: "guild_time_nonbot_partial",
+        },
+      );
+
+      // Compound index for guild + channel + time with bot exclusion.
+      // Covers channel-scoped searches (the most common LUPOS pattern).
+      await messagesCollection!.createIndex(
+        { guildId: 1, channelId: 1, createdTimestamp: -1, "channel.parentId": 1 },
+        {
+          background: true,
+          partialFilterExpression: { "author.bot": { $in: [false, null] } },
+          name: "guild_channel_time_nonbot_partial",
+        },
+      );
+
+      // Username search — LUPOS frequently searches by username with
+      // case-insensitive regex. This index covers the first $or branch
+      // and allows MongoDB to use an IXSCAN instead of COLLSCAN.
+      await messagesCollection!.createIndex(
+        { "author.username": 1 },
+        { background: true },
+      );
+
+      // channel.parentId standalone — used by the $nin exclusion filter
+      // and channel-based groupBy aggregations.
+      await messagesCollection!.createIndex(
+        { "channel.parentId": 1 },
+        { background: true },
+      );
     } catch (error: unknown) {
       logger.warn(`🐺 Lupos index creation warning: ${errorMessage(error)}`);
     }

@@ -147,20 +147,30 @@ export async function agenticTaskList(
   const filter: Record<string, unknown> = { project };
   if (status) filter.status = status;
 
-  const tasks = await collection
-    .find(filter)
-    .sort({ taskId: 1 })
-    .limit(Math.min(Number(limit), MAX_TASKS_PER_PROJECT))
-    .toArray();
+  const [tasks, statusCounts] = await Promise.all([
+    collection
+      .find(filter)
+      .sort({ taskId: 1 })
+      .limit(Math.min(Number(limit), MAX_TASKS_PER_PROJECT))
+      .toArray(),
+    collection
+      .aggregate<{ _id: string; count: number }>([
+        { $match: { project } },
+        { $group: { _id: "$status", count: { $sum: 1 } } },
+      ])
+      .toArray(),
+  ]);
 
-  // Summary counts
-  const allTasks = await collection.find({ project }).toArray();
+  const countsByStatus = Object.fromEntries(
+    statusCounts.map((entry) => [entry._id, entry.count]),
+  ) as Record<string, number>;
+  const total = statusCounts.reduce((sum, entry) => sum + entry.count, 0);
+
   const summary = {
-    total: allTasks.length,
-    pending: allTasks.filter((task) => task.status === "pending").length,
-    in_progress: allTasks.filter((task) => task.status === "in_progress")
-      .length,
-    completed: allTasks.filter((task) => task.status === "completed").length,
+    total,
+    pending: countsByStatus.pending || 0,
+    in_progress: countsByStatus.in_progress || 0,
+    completed: countsByStatus.completed || 0,
   };
 
   return {

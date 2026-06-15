@@ -571,6 +571,7 @@ export async function setupToolCallsCollection() {
       collection.createIndex({ domain: 1, timestamp: -1 }),
       collection.createIndex({ success: 1, timestamp: -1 }),
       collection.createIndex({ callerAgent: 1, timestamp: -1 }),
+      collection.createIndex({ callerProject: 1, timestamp: -1 }),
       collection.createIndex({ elapsedMs: -1 }),
       collection.createIndex({ callerRequestId: 1, timestamp: -1 }),
       collection.createIndex({ callerConversationId: 1, timestamp: -1 }),
