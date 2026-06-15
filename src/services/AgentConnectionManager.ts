@@ -65,6 +65,8 @@ interface AgentRegistryEntry {
   id: string;
   name: string;
   roots: string[];
+  originalRoots: string[];
+  normalizedToOriginalRoot: Map<string, string>;
   capabilities: string[];
   version: string;
   hostInfo?: HostInfo;
@@ -109,6 +111,39 @@ const agents = new Map<string, AgentRegistryEntry>();
 const rootToAgent = new Map<string, string>();
 
 let healthCheckTimer: NodeJS.Timeout | null = null;
+
+/**
+ * Normalize a Windows drive-letter path (e.g. C:\workspace) to a POSIX
+ * WSL-compatible path (e.g. /mnt/c/workspace). On the server side all paths
+ * are stored as POSIX — this ensures remote Windows agents integrate cleanly.
+ */
+function normalizeWindowsRootPath(rootPath: string): string {
+  const windowsDrivePattern = /^([A-Za-z]):[/\\](.*)/;
+  const driveMatch = rootPath.match(windowsDrivePattern);
+  if (driveMatch) {
+    const driveLetter = driveMatch[1].toLowerCase();
+    const remainingPath = driveMatch[2].replace(/\\/g, "/").replace(/\/+$/, "");
+    return remainingPath ? `/mnt/${driveLetter}/${remainingPath}` : `/mnt/${driveLetter}`;
+  }
+  return rootPath;
+}
+
+/**
+ * Translate a server-side normalized path back to the agent's native path
+ * format by matching against the agent's root mapping.
+ */
+function translatePathForAgent(
+  agent: AgentRegistryEntry,
+  normalizedPath: string,
+): string {
+  for (const [normalizedRoot, originalRoot] of agent.normalizedToOriginalRoot) {
+    if (normalizedRoot === originalRoot) continue;
+    if (normalizedPath === normalizedRoot || normalizedPath.startsWith(normalizedRoot + "/")) {
+      return originalRoot + normalizedPath.slice(normalizedRoot.length);
+    }
+  }
+  return normalizedPath;
+}
 
 // ────────────────────────────────────────────────────────────
 // WebSocket Server Setup
@@ -352,11 +387,22 @@ function handleAgentMessage(
       return;
     }
 
+    // Normalize Windows drive-letter paths to POSIX for server-side consistency
+    const normalizedRoots = roots.map((root: string) => normalizeWindowsRootPath(root));
+
+    // Build normalized-to-original root mapping for reverse translation when sending RPCs
+    const normalizedToOriginalRoot = new Map<string, string>();
+    for (let rootIndex = 0; rootIndex < roots.length; rootIndex++) {
+      normalizedToOriginalRoot.set(normalizedRoots[rootIndex], roots[rootIndex]);
+    }
+
     // Register
     const entry: AgentRegistryEntry = {
       id: agentId,
       name: name || `agent-${agentId.slice(0, 8)}`,
-      roots: [...roots],
+      roots: normalizedRoots,
+      originalRoots: [...roots],
+      normalizedToOriginalRoot,
       capabilities: capabilities || [],
       version: version || "unknown",
       hostInfo: message.params?.hostInfo || undefined,
@@ -370,7 +416,7 @@ function handleAgentMessage(
     agents.set(agentId, entry);
 
     // Map roots to this agent
-    for (const root of roots) {
+    for (const root of normalizedRoots) {
       rootToAgent.set(root, agentId);
     }
 
@@ -378,7 +424,7 @@ function handleAgentMessage(
     rebuildAllowedRootsFromAgents();
 
     logger.success(
-      `[AgentWS] Agent registered: "${entry.name}" (${agentId.slice(0, 8)}) — roots: ${roots.join(", ")}`,
+      `[AgentWS] Agent registered: "${entry.name}" (${agentId.slice(0, 8)}) — roots: ${normalizedRoots.join(", ")}${normalizedRoots.join("") !== roots.join("") ? ` (original: ${roots.join(", ")})` : ""}`,
     );
 
     // Confirm registration
@@ -498,6 +544,23 @@ export function sendRpc(
       return;
     }
 
+    // Translate normalized POSIX paths back to the agent's native format
+    const translatedParams = { ...params };
+    const pathKeys = ["path", "searchPath", "source", "pathA", "cwd", "filePath"] as const;
+    for (const key of pathKeys) {
+      if (typeof translatedParams[key] === "string") {
+        translatedParams[key] = translatePathForAgent(
+          agent,
+          translatedParams[key] as string,
+        );
+      }
+    }
+    if (Array.isArray(translatedParams.paths)) {
+      translatedParams.paths = (translatedParams.paths as string[]).map(
+        (pathString) => translatePathForAgent(agent, pathString),
+      );
+    }
+
     const id = crypto.randomUUID();
     const timeout =
       (TIMEOUT_MAP as Record<string, number>)[method] || RPC_TIMEOUT_DEFAULT_MS;
@@ -513,7 +576,7 @@ export function sendRpc(
       jsonrpc: "2.0",
       id,
       method,
-      params,
+      params: translatedParams,
     });
   });
 }
@@ -550,9 +613,12 @@ export function sendRpcStreaming(
 export function routeForPath(absolutePath: string | undefined | null) {
   if (!absolutePath) return null;
 
+  // Normalize incoming path in case it uses Windows drive-letter format
+  const normalizedPath = normalizeWindowsRootPath(absolutePath);
+
   // Check each registered root
   for (const [root, agentId] of rootToAgent) {
-    if (absolutePath.startsWith(root + "/") || absolutePath === root) {
+    if (normalizedPath.startsWith(root + "/") || normalizedPath === root) {
       const agent = agents.get(agentId);
       if (agent && agent.websocket.readyState === 1) {
         return { id: agent.id, name: agent.name, roots: agent.roots };
