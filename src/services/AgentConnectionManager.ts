@@ -50,12 +50,24 @@ interface PendingRpc {
   timer: NodeJS.Timeout;
 }
 
+interface HostInfo {
+  hostname?: string;
+  platform?: string;
+  arch?: string;
+  release?: string;
+  username?: string;
+  cpuModel?: string;
+  cpuCores?: number;
+  totalMemoryBytes?: number;
+}
+
 interface AgentRegistryEntry {
   id: string;
   name: string;
   roots: string[];
   capabilities: string[];
   version: string;
+  hostInfo?: HostInfo;
   websocket: WebSocket & { isAlive?: boolean };
   clientIp?: string;
   connectedAt: Date;
@@ -75,6 +87,7 @@ interface AgentRpcMessage {
     roots?: string[];
     capabilities?: string[];
     version?: string;
+    hostInfo?: HostInfo;
     path?: string;
     paths?: string[];
     searchPath?: string;
@@ -346,6 +359,7 @@ function handleAgentMessage(
       roots: [...roots],
       capabilities: capabilities || [],
       version: version || "unknown",
+      hostInfo: message.params?.hostInfo || undefined,
       websocket,
       clientIp,
       connectedAt: new Date(),
@@ -563,6 +577,7 @@ export function getConnectedAgents() {
     roots: agentRegistryEntry.roots,
     capabilities: agentRegistryEntry.capabilities,
     version: agentRegistryEntry.version,
+    hostInfo: agentRegistryEntry.hostInfo || null,
     clientIp: agentRegistryEntry.clientIp,
     connectedAt: agentRegistryEntry.connectedAt.toISOString(),
     lastPong: agentRegistryEntry.lastPong.toISOString(),
