@@ -83,6 +83,7 @@ import {
   getSubredditWikiPages,
   getSubredditWikiPage,
 } from "../fetchers/web/RedditSubredditFetcher.ts";
+import { downloadRedditVideo } from "../fetchers/web/RedditVideoFetcher.ts";
 import { getNpmPackage } from "../fetchers/web/NpmFetcher.ts";
 import { getPyPiPackage } from "../fetchers/web/PyPiFetcher.ts";
 
@@ -820,6 +821,39 @@ router.get(
     res.json(result);
   }),
 );
+// ─── Reddit Video Download ─────────────────────────────────────────
+router.get(
+  "/reddit/video",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { url } = req.query as Record<string, string | undefined>;
+    if (!url) {
+      return res
+        .status(400)
+        .json({ error: "Query parameter 'url' is required (Reddit post or v.redd.it URL)" });
+    }
+    const result = await downloadRedditVideo(url);
+    if ("error" in result) {
+      return res.status(400).json(result);
+    }
+    res.json({
+      success: true,
+      message: `Video downloaded and delivered to the user: "${result.title}" (${result.durationSeconds ?? "?"}s, ${(result.fileSize / 1024 / 1024).toFixed(1)} MB).`,
+      title: result.title,
+      author: result.author,
+      subreddit: result.subreddit,
+      permalink: result.permalink,
+      isNsfw: result.isNsfw,
+      durationSeconds: result.durationSeconds,
+      widthPixels: result.widthPixels,
+      heightPixels: result.heightPixels,
+      fileSize: result.fileSize,
+      video: {
+        data: result.videoBase64,
+        mimeType: result.mimeType,
+      },
+    });
+  }),
+);
 // ─── NPM ───────────────────────────────────────────────────────────
 router.get(
   "/npm/package",
@@ -1102,7 +1136,7 @@ export function getKnowledgeHealth() {
     youtube: "on-demand (oEmbed + youtube-transcript)",
     github: "on-demand (GitHub REST API v3)",
     reddit:
-      "on-demand (.json API + OAuth2: user history, search, subreddit discovery/feed/wiki/rules)",
+      "on-demand (.json API + OAuth2: user history, search, subreddit discovery/feed/wiki/rules, video download via yt-dlp)",
     npm: "on-demand (NPM Registry)",
     pypi: "on-demand (PyPI JSON API)",
 

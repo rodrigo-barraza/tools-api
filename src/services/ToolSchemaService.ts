@@ -3329,6 +3329,28 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
 
+  {
+    name: "download_reddit_video",
+    dataSource: onDemand("Reddit .json API + yt-dlp"),
+    description:
+      "Download a Reddit-hosted video (v.redd.it) as a single MP4 file. Reddit stores video and audio as separate DASH streams — this tool handles muxing them together automatically. Accepts any Reddit post URL, redd.it short link, or v.redd.it direct video link. Returns the video file as base64 data along with post metadata (title, author, subreddit, duration, resolution). Only works with Reddit's native video player — external links (YouTube, Streamable, etc.) are not supported.",
+    endpoint: {
+      path: "/knowledge/reddit/video",
+      queryParams: ["url"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        url: {
+          type: "string",
+          description:
+            "Reddit post URL, redd.it short URL, or v.redd.it direct video URL (e.g. 'https://www.reddit.com/r/videos/comments/abc123/my_video', 'https://redd.it/abc123', 'https://v.redd.it/abc123')",
+        },
+      },
+      required: ["url"],
+    },
+  },
+
   // ── Movies & TV (12 → 6 unified + get_tv_season_details) ──────
   {
     name: "search_media",
