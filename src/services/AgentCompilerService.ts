@@ -117,15 +117,34 @@ async function loadAgentSourceCode(): Promise<{ wrapperSource: string; coreSourc
     logger.warn(`[AgentCompiler] MinIO fetch failed (${minioErrorMessage}), falling back to local filesystem.`);
   }
 
-  // Strategy 2: Fallback to local filesystem (works in local dev)
+  // Strategy 2: Fallback to local filesystem (vendor/ in Docker, or dev sibling)
   if (!wrapperSource || !coreSource) {
-    const localAgentPath = resolve(process.cwd(), "../workspace-service/standalone/workspace-agent.mjs");
-    const localCorePath = resolve(process.cwd(), "../workspace-service/standalone/workspace-agent-core.mjs");
+    const candidateDirectories = [
+      resolve(process.cwd(), "vendor/workspace-agent"),
+      resolve(process.cwd(), "../workspace-service/standalone"),
+    ];
 
-    wrapperSource = await readFile(localAgentPath, "utf-8");
-    coreSource = await readFile(localCorePath, "utf-8");
+    for (const candidateDirectory of candidateDirectories) {
+      try {
+        const wrapperPath = join(candidateDirectory, "workspace-agent.mjs");
+        const corePath = join(candidateDirectory, "workspace-agent-core.mjs");
 
-    logger.info("[AgentCompiler] Loaded agent source from local filesystem.");
+        wrapperSource = await readFile(wrapperPath, "utf-8");
+        coreSource = await readFile(corePath, "utf-8");
+
+        logger.info(`[AgentCompiler] Loaded agent source from local filesystem: ${candidateDirectory}`);
+        break;
+      } catch {
+        // Try next candidate
+      }
+    }
+
+    if (!wrapperSource || !coreSource) {
+      throw new Error(
+        "Could not load workspace-agent source files from MinIO or any local filesystem path. " +
+        "Ensure workspace-agent files are seeded to MinIO or available in vendor/workspace-agent/."
+      );
+    }
   }
 
   return { wrapperSource, coreSource };

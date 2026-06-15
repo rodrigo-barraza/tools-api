@@ -10,3 +10,7 @@ dist/
 
 # TypeScript build artifacts
 *.tsbuildinfo
+
+# Build-time vendored files (copied by deploy.sh PRE_BUILD hook)
+vendor/*
+!vendor/.gitkeep
