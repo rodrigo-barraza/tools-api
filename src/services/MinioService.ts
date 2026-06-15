@@ -49,7 +49,6 @@ export default class MinioService {
     try {
       const minioClient = MinioService._getClient();
       const bucketName = "artifacts";
-      const objectName = "workspace-service/workspace-agent.mjs";
 
       const bucketExists = await minioClient
         .bucketExists(bucketName)
@@ -78,47 +77,60 @@ export default class MinioService {
           );
         });
 
-      const potentialPaths = [
-        path.resolve(
-          process.cwd(),
-          "../workspace-service/standalone/workspace-agent.mjs",
-        ),
-        path.resolve(
-          process.cwd(),
-          "workspace-service/standalone/workspace-agent.mjs",
-        ),
-        "/home/rodrigo/development/workspace-service/standalone/workspace-agent.mjs",
+      const filesToSeed = [
+        {
+          objectName: "workspace-service/workspace-agent.mjs",
+          fileName: "workspace-agent.mjs",
+        },
+        {
+          objectName: "workspace-service/workspace-agent-core.mjs",
+          fileName: "workspace-agent-core.mjs",
+        },
       ];
 
-      let localFilePath = "";
-      for (const resolvedPath of potentialPaths) {
-        try {
-          await fs.access(resolvedPath);
-          localFilePath = resolvedPath;
-          break;
-        } catch {
-          // Continue trying next path
+      for (const fileEntry of filesToSeed) {
+        const potentialPaths = [
+          path.resolve(
+            process.cwd(),
+            `../workspace-service/standalone/${fileEntry.fileName}`,
+          ),
+          path.resolve(
+            process.cwd(),
+            `workspace-service/standalone/${fileEntry.fileName}`,
+          ),
+          `/home/rodrigo/development/workspace-service/standalone/${fileEntry.fileName}`,
+        ];
+
+        let localFilePath = "";
+        for (const resolvedPath of potentialPaths) {
+          try {
+            await fs.access(resolvedPath);
+            localFilePath = resolvedPath;
+            break;
+          } catch {
+            // Continue trying next path
+          }
         }
-      }
 
-      if (!localFilePath) {
-        logger.error(
-          `[MinioService] Could not locate local workspace-agent.mjs in potential paths: ${potentialPaths.join(", ")}`,
+        if (!localFilePath) {
+          logger.warn(
+            `[MinioService] Could not locate local ${fileEntry.fileName} in potential paths: ${potentialPaths.join(", ")}`,
+          );
+          continue;
+        }
+
+        logger.info(
+          `[MinioService] Seeding ${fileEntry.fileName} from local file: ${localFilePath}`,
         );
-        return;
+
+        await minioClient.fPutObject(bucketName, fileEntry.objectName, localFilePath, {
+          "Content-Type": "application/javascript",
+        });
+
+        logger.success(
+          `[MinioService] Successfully seeded ${fileEntry.fileName} into MinIO bucket '${bucketName}'`,
+        );
       }
-
-      logger.info(
-        `[MinioService] Seeding workspace agent from local file: ${localFilePath}`,
-      );
-
-      await minioClient.fPutObject(bucketName, objectName, localFilePath, {
-        "Content-Type": "application/javascript",
-      });
-
-      logger.success(
-        `[MinioService] Successfully seeded workspace-agent.mjs into MinIO bucket '${bucketName}'`,
-      );
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);

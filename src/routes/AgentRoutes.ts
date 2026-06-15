@@ -96,7 +96,7 @@ router.get("/download/agent", async (req: Request, res: Response) => {
         `[Agents] Failed to compile or download workspace agent: ${errorMessage}`,
       );
       if (!res.headersSent) {
-        res.status(500).json({ error: "Compilation or download failed" });
+        res.status(500).json({ error: "Compilation or download failed", detail: errorMessage });
       }
     } finally {
       if (compiledBinaryInfo) {

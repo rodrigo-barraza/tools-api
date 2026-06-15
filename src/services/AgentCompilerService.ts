@@ -1,12 +1,13 @@
 // ─── Standalone Workspace Agent Compiler Service ────────────────
 
 import { execSync } from "node:child_process";
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { readFile, writeFile, copyFile, rm, mkdir } from "node:fs/promises";
 import { join, resolve, dirname } from "node:path";
 import crypto from "node:crypto";
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
+import MinioService from "./MinioService.ts";
 
 export type CompilationTarget = "win-x64" | "mac-x64" | "mac-arm64" | "linux-x64";
 
@@ -15,6 +16,10 @@ const BASE_BINARIES_DIRECTORY = join(CACHE_DIRECTORY, "base");
 const TEMPORARY_BUILD_DIRECTORY = join(CACHE_DIRECTORY, "build");
 const NODE_VERSION = "26.1.0";
 const SENTINEL_FUSE = "NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2";
+
+const AGENT_BUCKET = "artifacts";
+const AGENT_WRAPPER_OBJECT_KEY = "workspace-service/workspace-agent.mjs";
+const AGENT_CORE_OBJECT_KEY = "workspace-service/workspace-agent-core.mjs";
 
 const DOWNLOAD_URLS: Record<CompilationTarget, string> = {
   "win-x64": `https://nodejs.org/dist/v${NODE_VERSION}/win-x64/node.exe`,
@@ -25,12 +30,9 @@ const DOWNLOAD_URLS: Record<CompilationTarget, string> = {
 
 function transpileMjsToCjs(mjsCode: string): string {
   let cjsCode = mjsCode;
-  // Strip exports
   cjsCode = cjsCode.replace(/export\s+(class|function|const|let|var)\s+/g, '$1 ');
   cjsCode = cjsCode.replace(/export\s+\{\s*[^}]+\s*\};?/g, '');
-  // Convert default imports to var to allow duplicate declarations when files are concatenated
   cjsCode = cjsCode.replace(/import\s+(\w+)\s+from\s+['"]([^'"]+)['"]/g, 'var $1 = require("$2")');
-  // Convert named imports to var to allow duplicate declarations when files are concatenated
   cjsCode = cjsCode.replace(/import\s+\{\s*([^}]+)\s*\}\s+from\s+['"]([^'"]+)['"]/g, 'var { $1 } = require("$2")');
   return cjsCode;
 }
@@ -54,10 +56,8 @@ async function downloadBaseBinary(target: CompilationTarget, destinationPath: st
   const buffer = Buffer.from(arrayBuffer);
 
   if (target === "win-x64") {
-    // Windows is a direct executable download
     await writeFile(destinationPath, buffer);
   } else {
-    // Unix targets are tar.gz archives, we need to save and extract bin/node
     const tarPath = `${destinationPath}.tar.gz`;
     await writeFile(tarPath, buffer);
     logger.info(`[AgentCompiler] Extracting bin/node from ${tarPath}…`);
@@ -75,7 +75,6 @@ async function downloadBaseBinary(target: CompilationTarget, destinationPath: st
       );
       await copyFile(extractedNodePath, destinationPath);
     } finally {
-      // Clean up tar.gz and temporary extraction folder
       await rm(tarPath, { force: true });
       await rm(extractDirectory, { recursive: true, force: true });
     }
@@ -94,6 +93,51 @@ async function getBaseBinary(target: CompilationTarget): Promise<string> {
   }
 
   return binaryPath;
+}
+
+/**
+ * Reads agent source code, attempting MinIO first (works in Docker),
+ * then falling back to the local filesystem (works in local dev).
+ */
+async function loadAgentSourceCode(): Promise<{ wrapperSource: string; coreSource: string }> {
+  let wrapperSource: string | null = null;
+  let coreSource: string | null = null;
+
+  // Strategy 1: Fetch from MinIO (works in Docker / production)
+  try {
+    const wrapperStream = await MinioService.getObject(AGENT_BUCKET, AGENT_WRAPPER_OBJECT_KEY);
+    wrapperSource = await streamToString(wrapperStream);
+
+    const coreStream = await MinioService.getObject(AGENT_BUCKET, AGENT_CORE_OBJECT_KEY);
+    coreSource = await streamToString(coreStream);
+
+    logger.info("[AgentCompiler] Loaded agent source from MinIO.");
+  } catch (minioError: unknown) {
+    const minioErrorMessage = minioError instanceof Error ? minioError.message : String(minioError);
+    logger.warn(`[AgentCompiler] MinIO fetch failed (${minioErrorMessage}), falling back to local filesystem.`);
+  }
+
+  // Strategy 2: Fallback to local filesystem (works in local dev)
+  if (!wrapperSource || !coreSource) {
+    const localAgentPath = resolve(process.cwd(), "../workspace-service/standalone/workspace-agent.mjs");
+    const localCorePath = resolve(process.cwd(), "../workspace-service/standalone/workspace-agent-core.mjs");
+
+    wrapperSource = await readFile(localAgentPath, "utf-8");
+    coreSource = await readFile(localCorePath, "utf-8");
+
+    logger.info("[AgentCompiler] Loaded agent source from local filesystem.");
+  }
+
+  return { wrapperSource, coreSource };
+}
+
+function streamToString(stream: NodeJS.ReadableStream): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    stream.on("data", (chunk: Buffer) => chunks.push(chunk));
+    stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
+    stream.on("error", reject);
+  });
 }
 
 export default class AgentCompilerService {
@@ -125,21 +169,17 @@ export default class AgentCompilerService {
       publicBackendUrl = publicBackendUrl.replace(/\/+$/, "") + "/ws/agent";
     }
 
-    // 2. Load standalone workspace-agent.mjs & core source code and concatenate them
-    const originalAgentPath = resolve(process.cwd(), "../workspace-service/standalone/workspace-agent.mjs");
-    const originalCorePath = resolve(process.cwd(), "../workspace-service/standalone/workspace-agent-core.mjs");
-
-    const coreSourceCode = await readFile(originalCorePath, "utf-8");
-    let agentSourceCode = await readFile(originalAgentPath, "utf-8");
+    // 2. Load standalone workspace-agent.mjs & core source code
+    const { wrapperSource, coreSource } = await loadAgentSourceCode();
 
     // Remove the core import line from the CLI wrapper
-    agentSourceCode = agentSourceCode.replace(
+    let agentSourceCode = wrapperSource.replace(
       /import\s+\{\s*WorkspaceAgent,\s*hostname\s*\}\s+from\s+['"]\.\/workspace-agent-core\.mjs['"];?/,
       ""
     );
 
     // Strip shebang from core and concatenate them
-    const cleanCoreSource = coreSourceCode.replace(/^#!.*\n/, "");
+    const cleanCoreSource = coreSource.replace(/^#!.*\n/, "");
     agentSourceCode = cleanCoreSource + "\n" + agentSourceCode;
 
     // 3. Pre-bake credentials and backend connection parameters
@@ -163,7 +203,7 @@ export default class AgentCompilerService {
     const seaConfig = {
       main: tempCjsPath,
       output: prepBlobPath,
-      disableSentinel: true,
+      disableExperimentalSEAWarning: true,
     };
     const seaConfigPath = join(buildPath, "sea-config.json");
     await writeFile(seaConfigPath, JSON.stringify(seaConfig, null, 2), "utf-8");
@@ -175,14 +215,23 @@ export default class AgentCompilerService {
     // 7. Inject blob into Node.js binary
     logger.info(`[AgentCompiler] Copying base binary and injecting SEA blob into ${outputFileName}…`);
     await copyFile(baseBinaryPath, finalExecutablePath);
-    execSync(`npx postject "${finalExecutablePath}" NODE_SEA_BLOB "${prepBlobPath}" --sentinel-fuse ${SENTINEL_FUSE}`, { cwd: buildPath });
+
+    const prepBlobData = await readFile(prepBlobPath);
+    // postject does not ship TypeScript declarations; use createRequire for CJS interop
+    const { createRequire } = await import("node:module");
+    const requireFromHere = createRequire(import.meta.url);
+    const postject = requireFromHere("postject") as { inject: (filename: string, resourceName: string, resource: Buffer, options?: { sentinelFuse?: string }) => Promise<void> };
+    await postject.inject(finalExecutablePath, "NODE_SEA_BLOB", prepBlobData, {
+      sentinelFuse: SENTINEL_FUSE,
+    });
 
     // 8. Re-sign macOS binary if applicable
     if (target.startsWith("mac")) {
       try {
         execSync(`codesign --sign - "${finalExecutablePath}"`);
-      } catch (error: any) {
-        logger.warn(`[AgentCompiler] Codesign skipped/failed: ${error.message}`);
+      } catch (error: unknown) {
+        const codesignError = error instanceof Error ? error.message : String(error);
+        logger.warn(`[AgentCompiler] Codesign skipped/failed: ${codesignError}`);
       }
     }
 
@@ -201,8 +250,9 @@ export default class AgentCompilerService {
       if (buildDirectory.startsWith(TEMPORARY_BUILD_DIRECTORY)) {
         await rm(buildDirectory, { recursive: true, force: true });
       }
-    } catch (error: any) {
-      logger.error(`[AgentCompiler] Clean build failed: ${error.message}`);
+    } catch (error: unknown) {
+      const cleanupError = error instanceof Error ? error.message : String(error);
+      logger.error(`[AgentCompiler] Clean build failed: ${cleanupError}`);
     }
   }
 }
