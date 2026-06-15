@@ -25,14 +25,15 @@ describe("Reddit Tools and Endpoints", () => {
   });
 
   describe("Tool Registration & Mappings", () => {
-    it("registers the 9 Reddit tools under the Reddit domain", () => {
+    it("registers the 10 Reddit tools under the Reddit domain", () => {
       const tools = getToolSchemas();
       const redditTools = tools.filter((t) => t.domain === "Reddit");
 
-      expect(redditTools.length).toBe(9);
+      expect(redditTools.length).toBe(10);
 
       const names = redditTools.map((t) => t.name).sort();
       expect(names).toEqual([
+        "download_reddit_video",
         "get_reddit_subreddit_feed",
         "get_reddit_subreddit_info",
         "get_reddit_subreddit_rules",
