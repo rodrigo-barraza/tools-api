@@ -12591,6 +12591,7 @@ const TOOL_DOMAINS = {
   get_reddit_subreddit_wiki_page: "Reddit",
   get_reddit_user_history: "Reddit",
   get_reddit_user_profile: "Reddit",
+  download_reddit_video: "Reddit",
 
   // Movies & TV
   search_media: "Movies & TV",
