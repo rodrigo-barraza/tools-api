@@ -13021,6 +13021,7 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   get_reddit_subreddit_wiki_page: ["🤖", "📖"],
   get_reddit_user_history: ["🤖", "📜"],
   get_reddit_user_profile: "👤",
+  download_reddit_video: ["🤖", "📥"],
   search_media: ["🎬", "🔍"],
   get_media_details: "🎥",
   get_media_credits: ["🌟", "💻"],
