@@ -191,11 +191,13 @@ export default class AgentCompilerService {
     // 2. Load standalone workspace-agent.mjs & core source code
     const { wrapperSource, coreSource } = await loadAgentSourceCode();
 
-    // Remove the core import line from the CLI wrapper
-    let agentSourceCode = wrapperSource.replace(
-      /import\s+\{\s*WorkspaceAgent,\s*hostname\s*\}\s+from\s+['"]\.\/workspace-agent-core\.mjs['"];?/,
-      ""
-    );
+    // Remove the core import line from the CLI wrapper and strip its shebang
+    let agentSourceCode = wrapperSource
+      .replace(/^#!.*\n/, "")
+      .replace(
+        /import\s+\{\s*WorkspaceAgent,\s*hostname\s*\}\s+from\s+['"]\.\/workspace-agent-core\.mjs['"];?/,
+        ""
+      );
 
     // Strip shebang from core and concatenate them
     const cleanCoreSource = coreSource.replace(/^#!.*\n/, "");
