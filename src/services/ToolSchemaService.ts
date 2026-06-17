@@ -9613,6 +9613,164 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
 
+  // ── Audio Remix / Effects Pipeline ──────────────────────────
+  {
+    name: "remix_audio",
+    dataSource: compute("ffmpeg"),
+    description:
+      "Remix, transform, and apply audio effects to an existing audio clip using an FFmpeg-based DSP pipeline. " +
+      "Accepts audio input from a URL (including Discord attachment URLs), base64 data URI, or local file path. " +
+      "Apply a composable chain of operations: pitch_shift (semitones), tempo (speed without pitch change), speed (tape-style), " +
+      "reverb, echo, lowpass/highpass/bandpass filters, equalizer, bass_boost, treble_boost, distortion, " +
+      "chorus, flanger, phaser, tremolo, vibrato, compressor, normalize, reverse, fade_in, fade_out, trim, volume, " +
+      "stereo_pan, bitcrush, and crystalizer. " +
+      "Also supports 12 fun presets: chipmunk, demon_voice, nightcore, vaporwave, slowed_reverb, underwater, " +
+      "radio, telephone, robot, cave, vinyl, megaphone. " +
+      "Presets can be combined with additional custom operations. Output formats: wav, mp3, ogg, opus. " +
+      "Use this when the user wants to modify, remix, or apply effects to existing audio — " +
+      "for generating audio from scratch (synthesis, melodies), use generate_audio instead.",
+    endpoint: {
+      path: "/creative/remix-audio",
+      method: "POST",
+      bodyParams: ["input", "operations", "preset", "outputFormat", "sampleRate"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        input: {
+          type: "string",
+          description:
+            "Audio source: a public URL (http/https, including Discord CDN attachment URLs), " +
+            "a base64 data URI (data:audio/ogg;base64,...), or a local file path.",
+        },
+        operations: {
+          type: "array",
+          description:
+            "Ordered array of audio effects to apply sequentially. Each operation has a 'type' and type-specific parameters. " +
+            "Operations are applied in order, forming a DSP pipeline (e.g., pitch_shift → reverb → lowpass).",
+          items: {
+            type: "object",
+            properties: {
+              type: {
+                type: "string",
+                enum: [
+                  "pitch_shift", "tempo", "speed", "reverb", "echo",
+                  "lowpass", "highpass", "bandpass", "equalizer",
+                  "bass_boost", "treble_boost", "distortion",
+                  "chorus", "flanger", "phaser", "tremolo", "vibrato",
+                  "compressor", "normalize", "reverse",
+                  "fade_in", "fade_out", "trim", "volume",
+                  "stereo_pan", "bitcrush", "crystalizer",
+                ],
+                description: "The effect type to apply.",
+              },
+              semitones: {
+                type: "number",
+                description:
+                  "pitch_shift: Number of semitones to shift (−24 to +24). +12 = one octave up (chipmunk), −12 = one octave down (demon).",
+              },
+              factor: {
+                type: "number",
+                description:
+                  "tempo/speed: Multiplier (0.25 to 4.0). 0.5 = half speed, 2.0 = double speed. 'tempo' preserves pitch; 'speed' changes pitch.",
+              },
+              delay: {
+                type: "number",
+                description: "reverb/echo/flanger: Delay time in ms.",
+              },
+              decay: {
+                type: "number",
+                description: "reverb/echo/phaser: Decay factor (0.0 to 0.9).",
+              },
+              delays: {
+                type: "array",
+                items: { type: "number" },
+                description: "echo: Array of delay times in ms for multi-tap echo.",
+              },
+              decays: {
+                type: "array",
+                items: { type: "number" },
+                description: "echo: Array of decay values (0.0 to 0.9) matching delays.",
+              },
+              frequency: {
+                type: "number",
+                description:
+                  "Filter frequency in Hz (lowpass/highpass/bandpass/equalizer/tremolo/vibrato).",
+              },
+              width: {
+                type: "number",
+                description: "bandpass/equalizer: Bandwidth in Hz.",
+              },
+              gain: {
+                type: "number",
+                description:
+                  "equalizer/bass_boost/treble_boost: Gain in dB (−20 to +20). distortion: Overdrive gain (0 to 100).",
+              },
+              color: {
+                type: "number",
+                description: "distortion: Color/tone shaping (0 to 100).",
+              },
+              depth: {
+                type: "number",
+                description: "chorus/flanger/tremolo/vibrato: Effect depth.",
+              },
+              speed: {
+                type: "number",
+                description: "chorus/flanger/phaser: Modulation speed.",
+              },
+              threshold: { type: "number", description: "compressor: Threshold level." },
+              ratio: { type: "number", description: "compressor: Compression ratio." },
+              attack: { type: "number", description: "compressor: Attack time in ms." },
+              release: { type: "number", description: "compressor: Release time in ms." },
+              duration: {
+                type: "number",
+                description: "fade_in/fade_out: Duration in seconds.",
+              },
+              start: { type: "number", description: "trim: Start time in seconds." },
+              end: { type: "number", description: "trim: End time in seconds." },
+              level: { type: "number", description: "volume: Volume level (0.0 to 3.0)." },
+              pan: {
+                type: "number",
+                description: "stereo_pan: Pan position (−1.0 left to +1.0 right).",
+              },
+              bits: { type: "number", description: "bitcrush: Bit depth (1 to 16)." },
+              sampleRate: {
+                type: "number",
+                description: "bitcrush: Target sample rate for downsampling.",
+              },
+              intensity: {
+                type: "number",
+                description: "crystalizer: Dynamic range expansion intensity (−10 to 10).",
+              },
+            },
+            required: ["type"],
+          },
+        },
+        preset: {
+          type: "string",
+          enum: [
+            "chipmunk", "demon_voice", "nightcore", "vaporwave",
+            "slowed_reverb", "underwater", "radio", "telephone",
+            "robot", "cave", "vinyl", "megaphone",
+          ],
+          description:
+            "Apply a curated preset effect chain. Presets are expanded into operation sequences " +
+            "and applied before any custom operations. Can be combined with additional operations.",
+        },
+        outputFormat: {
+          type: "string",
+          enum: ["wav", "mp3", "ogg", "opus"],
+          description: "Output audio format (default: 'wav'). Use 'ogg' or 'opus' for Discord-optimized output.",
+        },
+        sampleRate: {
+          type: "number",
+          description: "Output sample rate in Hz (default: preserve source rate). Range: 8000 to 48000.",
+        },
+      },
+      required: ["input"],
+    },
+  },
+
   // ── Speech-to-Text ──────────────────────────────────────────
   {
     name: "transcribe_audio",
@@ -12783,6 +12941,7 @@ const TOOL_DOMAINS = {
   synthesize_speech: "Creative",
   synthesize_speech_local: "Creative",
   generate_audio: "Creative",
+  remix_audio: "Creative",
   create_vector_animation: "Creative",
   transcribe_audio: "Creative",
   generate_qr_code: "Creative",
@@ -13167,6 +13326,7 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   synthesize_speech: "🔊",
   synthesize_speech_local: ["🗣️", "💻"],
   generate_audio: ["🔊", "🎵"],
+  remix_audio: ["🎛️", "🔊"],
   create_vector_animation: ["🎬", "🎨"],
   transcribe_audio: ["🎤", "💻"],
   search_discord_messages: ["💬", "🔍"],

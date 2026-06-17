@@ -5,6 +5,8 @@ import { Request, Response, Router } from "express";
 import PrismService from "../services/PrismService.ts";
 import { generateAudioWav } from "../services/SoundSynthesizerService.ts";
 import { validateSynthesizerInput } from "../services/SoundSynthesizerValidation.ts";
+import { processAudio, getAvailablePresets } from "../services/AudioRemixService.ts";
+import { validateAudioRemixInput } from "../services/AudioRemixValidation.ts";
 import { validateVectorAnimationInput } from "../services/VectorAnimationValidation.ts";
 import { synthesizeSpeech, getSupportedVoices, isEspeakAvailable } from "../services/TextToSpeechService.ts";
 import logger from "../logger.ts";
@@ -756,6 +758,73 @@ router.post(
       res
         .status(500)
         .json({ error: `Audio generation failed: ${errorMessage(error)}` });
+    }
+  }),
+);
+
+// ────────────────────────────────────────────────────────────
+// POST /creative/remix-audio
+// ────────────────────────────────────────────────────────────
+
+router.post(
+  "/remix-audio",
+  asyncHandler(async (req: Request, res: Response) => {
+    const {
+      input,
+      operations = [],
+      preset,
+      outputFormat = "wav",
+      sampleRate,
+    } = req.body;
+
+    const validationError = validateAudioRemixInput({
+      input,
+      operations,
+      preset,
+      outputFormat,
+      sampleRate,
+    });
+
+    if (validationError) {
+      return res.status(400).json({ error: validationError });
+    }
+
+    try {
+      const result = await processAudio({
+        input,
+        operations,
+        preset,
+        outputFormat,
+        sampleRate: sampleRate ? Number(sampleRate) : undefined,
+      });
+
+      const audioBase64 = result.buffer.toString("base64");
+
+      const presetLabel = preset ? ` (preset: '${preset}')` : "";
+      const operationSummary = result.appliedOperations.join(" → ");
+
+      res.json({
+        success: true,
+        message:
+          `Successfully remixed audio${presetLabel}. ` +
+          `Pipeline: ${operationSummary}. ` +
+          `Output: ${result.durationSeconds.toFixed(2)}s ${outputFormat.toUpperCase()}.`,
+        audio: {
+          data: audioBase64,
+          mimeType: result.mimeType,
+        },
+        duration: result.durationSeconds,
+        appliedOperations: result.appliedOperations,
+        ...(preset && { preset }),
+        availablePresets: getAvailablePresets(),
+      });
+    } catch (error: unknown) {
+      logger.error(
+        `[CreativeRoutes] remix-audio failed: ${errorMessage(error)}`,
+      );
+      res
+        .status(500)
+        .json({ error: `Audio remix failed: ${errorMessage(error)}` });
     }
   }),
 );
