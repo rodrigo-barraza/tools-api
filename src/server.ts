@@ -6,7 +6,7 @@ import express, {
 } from "express";
 import logger from "./logger.ts";
 import CONFIG, { applyLocation } from "./config.ts";
-import { connectDB } from "@rodrigo-barraza/utilities-library/mongo";
+import { connectDatabase } from "@rodrigo-barraza/utilities-library/mongo";
 import { initLocation } from "./services/LocationService.ts";
 import {
   requestLoggerMiddleware,
@@ -195,7 +195,7 @@ app.get("/health", async (_req: Request, res: Response) => {
 
 async function start() {
   try {
-    await connectDB(CONFIG.MONGODB_URI!, CONFIG.MONGODB_DB_NAME);
+    await connectDatabase(CONFIG.MONGODB_URI!, CONFIG.MONGODB_DB_NAME);
 
     // Resolve location from IP geolocation + NOAA (cached in DB, 24h TTL)
     const location = await initLocation();

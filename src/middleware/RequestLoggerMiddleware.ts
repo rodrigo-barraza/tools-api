@@ -2,7 +2,7 @@ import { performance } from "node:perf_hooks";
 import type { Request, Response, NextFunction } from "express";
 import { formatBytes } from "@rodrigo-barraza/utilities-library";
 import logger from "../logger.ts";
-import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
 import { errorMessage } from "../utilities.ts";
 
 const COLLECTION = "requests";
@@ -105,7 +105,7 @@ export function requestLoggerMiddleware(
  */
 async function persistRequest(entry: RequestLogEntry) {
   try {
-    const database = getDB();
+    const database = getDatabase();
     await database.collection(COLLECTION).insertOne({
       ...entry,
       timestamp: new Date(),
@@ -119,7 +119,7 @@ async function persistRequest(entry: RequestLogEntry) {
  * Query persisted request logs with optional filters.
  */
 export async function queryRequestLogs(filters: RequestLogFilters = {}) {
-  const database = getDB();
+  const database = getDatabase();
   const query: Record<string, unknown> = {};
 
   if (filters.method) query.method = filters.method.toUpperCase();
@@ -167,7 +167,7 @@ export async function queryRequestLogs(filters: RequestLogFilters = {}) {
  * Get aggregated request stats.
  */
 export async function getRequestStats(since?: string) {
-  const database = getDB();
+  const database = getDatabase();
   const match = since ? { timestamp: { $gte: new Date(since) } } : {};
 
   const [totalRequests, byStatus, byMethod, byDomain] = await Promise.all([
@@ -236,7 +236,7 @@ export async function getRequestStats(since?: string) {
  */
 export async function setupRequestsCollection() {
   try {
-    const database = getDB();
+    const database = getDatabase();
     const collection = database.collection(COLLECTION);
 
     await Promise.all([

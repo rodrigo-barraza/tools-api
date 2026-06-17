@@ -22,7 +22,7 @@ const phTokenManager = new TokenManager(async () => {
   return {
     token: data.access_token,
     // Token typically lasts ~2 weeks, refresh at 24h to be safe
-    expiresInMs: 86_400_000,
+    expiresInMilliseconds: 86_400_000,
   };
 });
 // ─── GraphQL Query ────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 import { hours as hoursToMs } from "@rodrigo-barraza/utilities-library";
-import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
 import logger from "../logger.ts";
 
 // ─── Types ──────────────────────────────────────────────────────
@@ -13,7 +13,7 @@ export interface CommodityQuoteInput {
  * Set up the commodity_snapshots collection with a TTL index.
  */
 export async function setupCommodityCollection() {
-  const database = getDB();
+  const database = getDatabase();
   const collection = database.collection("commodity_snapshots");
 
   await collection.createIndex({ fetchedAt: -1 });
@@ -28,7 +28,7 @@ export async function setupCommodityCollection() {
 export async function insertSnapshots(quotes: CommodityQuoteInput[]) {
   if (!quotes.length) return;
 
-  const database = getDB();
+  const database = getDatabase();
   const collection = database.collection("commodity_snapshots");
   const docs = quotes.map((commodityQuoteInput: CommodityQuoteInput) => ({
     ...commodityQuoteInput,
@@ -43,7 +43,7 @@ export async function insertSnapshots(quotes: CommodityQuoteInput[]) {
  * Get historical price data for a specific ticker.
  */
 export async function getHistory(ticker: string, hours: number = 24) {
-  const database = getDB();
+  const database = getDatabase();
   const collection = database.collection("commodity_snapshots");
   const since = new Date(Date.now() - hoursToMs(hours));
 

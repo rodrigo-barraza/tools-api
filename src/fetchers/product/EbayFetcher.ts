@@ -28,7 +28,7 @@ const ebayTokenManager = new TokenManager(async () => {
   const data = await response.json();
   return {
     token: data.access_token,
-    expiresInMs: 7_000_000, // ~2 hours (eBay tokens last ~2hrs)
+    expiresInMilliseconds: 7_000_000, // ~2 hours (eBay tokens last ~2hrs)
   };
 });
 interface EbayCategory {

@@ -1,4 +1,4 @@
-import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
 import { lookupIp } from "../fetchers/utility/IpInfoFetcher.ts";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
@@ -152,7 +152,7 @@ async function resolveLocationFromIp(): Promise<ResolvedLocation> {
 
 async function loadCachedLocation(): Promise<LocationDocument | null> {
   try {
-    const database = getDB();
+    const database = getDatabase();
     return await database
       .collection<LocationDocument>(COLLECTION)
       .findOne({ _id: "current" });
@@ -163,7 +163,7 @@ async function loadCachedLocation(): Promise<LocationDocument | null> {
 
 async function saveCachedLocation(location: ResolvedLocation) {
   try {
-    const database = getDB();
+    const database = getDatabase();
     const document: LocationDocument = {
       _id: "current",
       ...location,
@@ -186,7 +186,7 @@ let resolvedLocation: ResolvedLocation | null = null;
  * - If a cached document exists and is < 24h old, use it.
  * - Otherwise, resolve from IP + NOAA and persist.
  *
- * Must be called after connectDB() and before the server starts listening.
+ * Must be called after connectDatabase() and before the server starts listening.
  */
 export async function initLocation() {
   const cached = await loadCachedLocation();

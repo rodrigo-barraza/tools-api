@@ -1,4 +1,4 @@
-import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
 
@@ -7,7 +7,7 @@ import { errorMessage } from "../utilities.ts";
  */
 export async function insertSnapshot(data: Record<string, unknown>) {
   try {
-    const database = getDB();
+    const database = getDatabase();
     const collection = database.collection("snapshots");
     await collection.insertOne({
       ...data,

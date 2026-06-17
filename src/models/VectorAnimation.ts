@@ -1,5 +1,5 @@
 import type { Collection } from "mongodb";
-import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
 import logger from "../logger.ts";
 import type { VectorLayer } from "../utilities/VectorAnimationEngine.ts";
 
@@ -32,7 +32,7 @@ export interface VectorAnimationDocument {
 let collection: Collection<VectorAnimationDocument> | null = null;
 
 export async function setupVectorAnimationCollection() {
-  const database = getDB();
+  const database = getDatabase();
   if (!database) return;
 
   collection = database.collection<VectorAnimationDocument>("vector_animations");

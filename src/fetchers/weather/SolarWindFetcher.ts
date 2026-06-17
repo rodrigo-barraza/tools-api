@@ -1,4 +1,4 @@
-import { MS_PER_DAY } from "@rodrigo-barraza/utilities-library";
+import { MILLISECONDS_PER_DAY } from "@rodrigo-barraza/utilities-library";
 import {
   SolarWindResponse,
   SolarWindPlasmaReading,
@@ -16,7 +16,7 @@ function parseRows<T extends { time: string }>(
 ): T[] {
   // First row is header, skip it
   const data = rows.slice(1);
-  const cutoff = Date.now() - MS_PER_DAY;
+  const cutoff = Date.now() - MILLISECONDS_PER_DAY;
 
   return data
     .map((row: string[]) => {

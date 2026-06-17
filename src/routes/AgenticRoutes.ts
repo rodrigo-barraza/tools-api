@@ -532,9 +532,9 @@ router.post(
         .status(400)
         .json({ error: "Request body must include 'command' (string)" });
     }
-    const { setupStreamingSSE } =
+    const { setupStreamingServerSentEvents } =
       await import("@rodrigo-barraza/utilities-library/express");
-    const send = setupStreamingSSE(res);
+    const send = setupStreamingServerSentEvents(res);
     send({ event: "start", command });
     // Create an AbortController so we can kill the child process if the
     // upstream client disconnects (e.g. user pressed Stop in the UI).
@@ -940,7 +940,7 @@ router.get(
       >;
       const database = (
         await import("@rodrigo-barraza/utilities-library/mongo")
-      ).getDB();
+      ).getDatabase();
       const collection = database.collection("agent_tasks");
       const filter: Record<string, unknown> = {};
       if (status) filter.status = status;

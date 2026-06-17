@@ -1,7 +1,7 @@
 import {
   asyncHandler,
   HealthTracker,
-  setupStreamingSSE,
+  setupStreamingServerSentEvents,
 } from "@rodrigo-barraza/utilities-library/express";
 import { parseIntParam } from "@rodrigo-barraza/utilities-library";
 import { Request, Response, Router } from "express";
@@ -59,7 +59,7 @@ router.get("/messages/stream", (req: Request, res: Response) => {
     return res.status(400).json({ error: "guildId is required" });
   }
   // Set SSE headers (Content-Type: text/event-stream, etc.)
-  setupStreamingSSE(res);
+  setupStreamingServerSentEvents(res);
   let closed = false;
   // Track known message IDs so we can detect deletions
   let knownIds = new Set<string>();

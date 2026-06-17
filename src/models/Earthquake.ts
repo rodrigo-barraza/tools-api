@@ -1,6 +1,6 @@
 import type { Collection } from "mongodb";
 import { hours as hoursToMs } from "@rodrigo-barraza/utilities-library";
-import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
 
@@ -21,7 +21,7 @@ let collection: Collection<EarthquakeDocument> | null = null;
  * Called once during startup after MongoDB connection is established.
  */
 export async function setupEarthquakeCollection() {
-  const database = getDB();
+  const database = getDatabase();
   if (!database) throw new Error("Database not connected");
 
   collection = database.collection<EarthquakeDocument>("earthquakes");

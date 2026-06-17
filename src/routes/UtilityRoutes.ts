@@ -1,6 +1,6 @@
 import {
   asyncHandler,
-  setupStreamingSSE,
+  setupStreamingServerSentEvents,
 } from "@rodrigo-barraza/utilities-library/express";
 import { validateMaxLength } from "@rodrigo-barraza/utilities-library";
 import { Request, Response, Router } from "express";
@@ -514,7 +514,7 @@ router.post(
     }
     const lengthError = validateMaxLength(code, MAX_CODE_LENGTH, "Code");
     if (lengthError) return res.status(400).json({ error: lengthError });
-    const send = setupStreamingSSE(res);
+    const send = setupStreamingServerSentEvents(res);
     send({ event: "start", language: "python" });
     const result = await executePythonStreaming(code, {
       timeout: timeout

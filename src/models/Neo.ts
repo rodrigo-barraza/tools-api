@@ -1,5 +1,5 @@
 import type { Collection } from "mongodb";
-import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
 
@@ -20,7 +20,7 @@ let collection: Collection<NeoDocument> | null = null;
  * Initialize the neos collection with required indexes.
  */
 export async function setupNeoCollection() {
-  const database = getDB();
+  const database = getDatabase();
   if (!database) throw new Error("Database not connected");
 
   collection = database.collection<NeoDocument>("neos");

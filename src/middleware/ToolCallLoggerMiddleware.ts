@@ -3,7 +3,7 @@
 import { performance } from "node:perf_hooks";
 import type { Request, Response, NextFunction } from "express";
 import logger from "../logger.ts";
-import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
 import { getToolSchemas } from "../services/ToolSchemaService.ts";
 import { errorMessage } from "../utilities.ts";
 
@@ -349,7 +349,7 @@ function sanitizeResult(
  */
 export async function persistToolCall(entry: ToolCallLogEntry) {
   try {
-    const database = getDB();
+    const database = getDatabase();
     await database.collection(COLLECTION).insertOne(entry);
   } catch {
     // Silently fail — logging should never break the app
@@ -364,7 +364,7 @@ export async function persistToolCall(entry: ToolCallLogEntry) {
  * Query tool-call logs with optional filters.
  */
 export async function queryToolCallLogs(filters: ToolCallFilters = {}) {
-  const database = getDB();
+  const database = getDatabase();
   const query: Record<string, unknown> = {};
 
   if (filters.toolName) query.toolName = filters.toolName;
@@ -417,7 +417,7 @@ export async function queryToolCallLogs(filters: ToolCallFilters = {}) {
  * Get aggregated tool-call statistics.
  */
 export async function getToolCallStats(since?: string) {
-  const database = getDB();
+  const database = getDatabase();
   const match = since ? { timestamp: { $gte: new Date(since) } } : {};
 
   const [totalCalls, byTool, byDomain, bySuccess, slowest, errorRate] =
@@ -562,7 +562,7 @@ export async function getToolCallStats(since?: string) {
  */
 export async function setupToolCallsCollection() {
   try {
-    const database = getDB();
+    const database = getDatabase();
     const collection = database.collection(COLLECTION);
 
     await Promise.all([

@@ -1,5 +1,5 @@
 import type { Collection } from "mongodb";
-import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
 
@@ -15,7 +15,7 @@ export interface WebcamDocument {
 let collection: Collection<WebcamDocument> | null = null;
 
 export async function setupWebcamCollection() {
-  const database = getDB();
+  const database = getDatabase();
   if (!database) return;
 
   collection = database.collection<WebcamDocument>("webcams");

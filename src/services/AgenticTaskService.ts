@@ -1,6 +1,6 @@
 // ─── Persistent Task State Management ───────────────────────
 
-import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
 import logger from "../logger.ts";
 import type { WithId, Document } from "mongodb";
 import type {
@@ -28,7 +28,7 @@ const MAX_TASKS_PER_PROJECT = 200;
 // ────────────────────────────────────────────────────────────
 
 export async function setupAgenticTaskCollection() {
-  const database = getDB();
+  const database = getDatabase();
   const collection = database.collection(COLLECTION);
 
   await collection.createIndex({ project: 1, taskId: 1 }, { unique: true });
@@ -43,7 +43,7 @@ export async function setupAgenticTaskCollection() {
 // ────────────────────────────────────────────────────────────
 
 async function nextTaskId(project: string): Promise<number> {
-  const database = getDB();
+  const database = getDatabase();
   const result = await database
     .collection<TaskCounterDocument>(COUNTER_COLLECTION)
     .findOneAndUpdate(
@@ -82,7 +82,7 @@ export async function agenticTaskCreate(
     };
   }
 
-  const database = getDB();
+  const database = getDatabase();
   const collection = database.collection(COLLECTION);
 
   // Guard: cap tasks per project
@@ -141,7 +141,7 @@ export async function agenticTaskList(
     };
   }
 
-  const database = getDB();
+  const database = getDatabase();
   const collection = database.collection(COLLECTION);
 
   const filter: Record<string, unknown> = { project };
@@ -193,7 +193,7 @@ export async function agenticTaskGet(project: string, taskId: string | number) {
     return { error: "'taskId' must be a number" };
   }
 
-  const database = getDB();
+  const database = getDatabase();
   const task = await database
     .collection(COLLECTION)
     .findOne({ project, taskId: id });
@@ -236,7 +236,7 @@ export async function agenticTaskUpdate(
     };
   }
 
-  const database = getDB();
+  const database = getDatabase();
   const collection = database.collection(COLLECTION);
 
   const existing = await collection.findOne({ project, taskId: id });
@@ -299,7 +299,7 @@ export async function agenticTaskDelete(
     return { error: "'taskId' must be a number" };
   }
 
-  const database = getDB();
+  const database = getDatabase();
   const collection = database.collection(COLLECTION);
 
   const existing = await collection.findOne({ project, taskId: id });

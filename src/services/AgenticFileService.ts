@@ -149,7 +149,7 @@ const PREVIEW_IMAGE_EXTENSIONS = new Set([
 // ────────────────────────────────────────────────────────────
 
 import { MongoClient } from "mongodb";
-import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
 
 let settingsClient: MongoClient | null = null;
 let cachedAllowEnvFiles = false;
@@ -158,7 +158,7 @@ let settingsFetchPromise: Promise<void> | null = null;
 
 async function getSecuritySettings(): Promise<{ allowEnvFiles: boolean }> {
   try {
-    const database = getDB();
+    const database = getDatabase();
     const databaseInternal = database as unknown as { client?: { db: (name: string) => import("mongodb").Db }; s?: { client?: { db: (name: string) => import("mongodb").Db } } };
     const client = databaseInternal.client || databaseInternal.s?.client;
     const prismDb = client ? client.db("prism") : null;

@@ -1,5 +1,5 @@
 import type { Document } from "mongodb";
-import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
 
@@ -28,7 +28,7 @@ export async function saveState(
   data: unknown[] | Record<string, unknown>,
 ) {
   try {
-    const database = getDB();
+    const database = getDatabase();
     const document: StateDocument = Array.isArray(data)
       ? { _id: "current", items: data, updatedAt: new Date() }
       : { _id: "current", ...data, updatedAt: new Date() };
@@ -49,7 +49,7 @@ export async function saveState(
  */
 export async function loadState(collectionName: string) {
   try {
-    const database = getDB();
+    const database = getDatabase();
     const document = await database
       .collection<StateDocument>(collectionName)
       .findOne({ _id: "current" });

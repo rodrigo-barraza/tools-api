@@ -22,7 +22,7 @@ import {
   normalizeWorkspacePath,
 } from "../services/AgenticFileService.ts";
 import { getConnectedAgents } from "../services/AgentConnectionManager.ts";
-import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
 
@@ -111,7 +111,7 @@ router.get(
 router.get(
   "/tool-calls/:id",
   asyncHandler(async (req: Request, res: Response) => {
-    const databaseInstance = getDB();
+    const databaseInstance = getDatabase();
     let queryObjectId: ObjectId;
     try {
       queryObjectId = new ObjectId(req.params.id as string);
@@ -216,7 +216,7 @@ router.put(
       }
     }
     // Persist to MongoDB
-    const database = getDB();
+    const database = getDatabase();
     const collection = database.collection(WORKSPACE_COLLECTION);
     await collection.updateOne(
       { _key: "user_roots" },
@@ -314,7 +314,7 @@ router.post(
  */
 export async function loadUserWorkspaceRoots() {
   try {
-    const database = getDB();
+    const database = getDatabase();
     const collection = database.collection(WORKSPACE_COLLECTION);
     const document = await collection.findOne({ _key: "user_roots" });
     if (

@@ -1,6 +1,6 @@
 import type { Collection, Db } from "mongodb";
 import { days as daysToMs } from "@rodrigo-barraza/utilities-library";
-import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
 
@@ -48,7 +48,7 @@ let collection: Collection<EventDocument> | null = null;
  * Initialize the events collection with required indexes.
  */
 export async function setupEventCollection(): Promise<void> {
-  const database: Db = getDB();
+  const database: Db = getDatabase();
   collection = database.collection<EventDocument>("events");
 
   await collection.createIndex({ sourceId: 1, source: 1 }, { unique: true });

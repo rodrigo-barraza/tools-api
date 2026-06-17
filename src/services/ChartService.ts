@@ -1,4 +1,4 @@
-import { MS_PER_HOUR } from "@rodrigo-barraza/utilities-library";
+import { MILLISECONDS_PER_HOUR } from "@rodrigo-barraza/utilities-library";
 import { ChartJSNodeCanvas } from "chartjs-node-canvas";
 import type { ChartConfiguration } from "chart.js";
 import type {
@@ -20,7 +20,7 @@ const renderer = new ChartJSNodeCanvas({
 
 // ─── Persistent Chart Store ────────────────────────────────────
 
-const chartStore = new PersistentStore<ChartConfig>("chart", MS_PER_HOUR);
+const chartStore = new PersistentStore<ChartConfig>("chart", MILLISECONDS_PER_HOUR);
 
 export function storeChart(chartConfig: ChartConfig): string {
   return chartStore.set(chartConfig);

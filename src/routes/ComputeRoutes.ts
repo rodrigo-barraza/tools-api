@@ -1,6 +1,6 @@
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import {
-  setupStreamingSSE,
+  setupStreamingServerSentEvents,
   lazyImport,
 } from "@rodrigo-barraza/utilities-library/express";
 import { validateMaxLength } from "@rodrigo-barraza/utilities-library";
@@ -135,7 +135,7 @@ router.post("/js/stream", (req: Request, res: Response) => {
   }
   const lengthError = validateMaxLength(code, MAX_CODE_LENGTH, "Code");
   if (lengthError) return res.status(400).json({ error: lengthError });
-  const send = setupStreamingSSE(res);
+  const send = setupStreamingServerSentEvents(res);
   send({ event: "start", language: "javascript" });
   const result = executeJavaScript(code, {
     timeout: timeout
@@ -194,7 +194,7 @@ router.post(
     }
     const lengthError = validateMaxLength(command, MAX_COMMAND_LENGTH, "Command");
     if (lengthError) return res.status(400).json({ error: lengthError });
-    const send = setupStreamingSSE(res);
+    const send = setupStreamingServerSentEvents(res);
     send({ event: "start", command });
     const result = await executeShellStreaming(command, {
       stdin: stdin || "",

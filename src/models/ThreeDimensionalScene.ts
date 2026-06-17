@@ -1,5 +1,5 @@
 import type { Collection } from "mongodb";
-import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
 import logger from "../logger.ts";
 
 // ─── Types ──────────────────────────────────────────────────────
@@ -20,7 +20,7 @@ export interface ThreeDimensionalSceneDocument {
 let collection: Collection<ThreeDimensionalSceneDocument> | null = null;
 
 export async function setupThreeDimensionalSceneCollection() {
-  const database = getDB();
+  const database = getDatabase();
   if (!database) return;
 
   collection =

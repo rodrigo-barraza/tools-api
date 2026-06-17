@@ -1,6 +1,6 @@
 // ─── OpenDota API Client ────────────────────────────────────
 
-import { MS_PER_DAY } from "@rodrigo-barraza/utilities-library";
+import { MILLISECONDS_PER_DAY } from "@rodrigo-barraza/utilities-library";
 
 const BASE_URL = "https://api.opendota.com/api";
 
@@ -118,7 +118,7 @@ interface OpenDotaProMatch {
 // Cache hero list in memory (static data, changes only on patches)
 let heroCache: TransformedHero[] | null = null;
 let heroCacheTime = 0;
-const HERO_CACHE_TTL = MS_PER_DAY;
+const HERO_CACHE_TTL = MILLISECONDS_PER_DAY;
 
 async function fetchJson<T = Record<string, unknown>>(
   path: string,

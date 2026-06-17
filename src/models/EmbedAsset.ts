@@ -1,5 +1,5 @@
 import type { Collection } from "mongodb";
-import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
 import { EphemeralStore, errorMessage } from "../utilities.ts";
 import { EPHEMERAL_TTL_MS, EPHEMERAL_MAX_SIZE } from "../constants.ts";
 import logger from "../logger.ts";
@@ -18,7 +18,7 @@ export interface EmbedAssetDocument {
 let collection: Collection<EmbedAssetDocument> | null = null;
 
 export async function setupEmbedAssetCollection() {
-  const database = getDB();
+  const database = getDatabase();
   if (!database) return;
 
   collection = database.collection<EmbedAssetDocument>("embed_assets");

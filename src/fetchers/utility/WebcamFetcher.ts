@@ -1,4 +1,4 @@
-import { MS_PER_DAY } from "@rodrigo-barraza/utilities-library";
+import { MILLISECONDS_PER_DAY } from "@rodrigo-barraza/utilities-library";
 import {
   getWebcamsByCity,
   getWebcamsLastUpdated,
@@ -33,7 +33,7 @@ export async function getPublicWebcams({
 
   const lastUpdated = await getWebcamsLastUpdated(capitalizedCity);
   const isStale =
-    !lastUpdated || Date.now() - lastUpdated.getTime() > MS_PER_DAY;
+    !lastUpdated || Date.now() - lastUpdated.getTime() > MILLISECONDS_PER_DAY;
 
   if (isStale) {
     logger.info(`📷 Refreshing webcam data for ${capitalizedCity}`);

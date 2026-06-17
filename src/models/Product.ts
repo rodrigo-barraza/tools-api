@@ -1,5 +1,5 @@
 import type { Collection } from "mongodb";
-import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
 import logger from "../logger.ts";
 
 // ─── Types ──────────────────────────────────────────────────────
@@ -47,7 +47,7 @@ let productCollection: Collection<ProductDocument> | null = null;
  * Set up the products collection with indexes.
  */
 export async function setupProductCollection() {
-  const database = getDB();
+  const database = getDatabase();
   productCollection = database.collection<ProductDocument>("products");
 
   await productCollection.createIndex(

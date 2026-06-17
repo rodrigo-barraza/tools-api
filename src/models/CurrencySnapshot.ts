@@ -1,4 +1,4 @@
-import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
 import logger from "../logger.ts";
 
 export interface CurrencySnapshotInput {
@@ -9,7 +9,7 @@ export interface CurrencySnapshotInput {
 }
 
 export async function setupCurrencyCollection(): Promise<void> {
-  const database = getDB();
+  const database = getDatabase();
   const currencySnapshotCollection = database.collection("currency_snapshots");
 
   await currencySnapshotCollection.createIndex({ fetchedAt: -1 });
@@ -19,7 +19,7 @@ export async function setupCurrencyCollection(): Promise<void> {
 }
 
 export async function insertCurrencySnapshot(currencySnapshot: CurrencySnapshotInput) {
-  const database = getDB();
+  const database = getDatabase();
   const currencySnapshotCollection = database.collection("currency_snapshots");
 
   const result = await currencySnapshotCollection.insertOne({

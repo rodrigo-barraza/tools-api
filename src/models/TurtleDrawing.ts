@@ -1,5 +1,5 @@
 import type { Collection } from "mongodb";
-import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
 import logger from "../logger.ts";
 
 // ─── Types ──────────────────────────────────────────────────────
@@ -17,7 +17,7 @@ export interface TurtleDrawingDocument {
 let collection: Collection<TurtleDrawingDocument> | null = null;
 
 export async function setupTurtleDrawingCollection() {
-  const database = getDB();
+  const database = getDatabase();
   if (!database) return;
 
   collection = database.collection<TurtleDrawingDocument>("turtle_drawings");

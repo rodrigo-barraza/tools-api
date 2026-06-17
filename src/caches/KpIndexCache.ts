@@ -1,5 +1,5 @@
 import { createSimpleCache } from "./createSimpleCache.ts";
-import { MS_PER_DAY } from "@rodrigo-barraza/utilities-library";
+import { MILLISECONDS_PER_DAY } from "@rodrigo-barraza/utilities-library";
 import { KP_STORM_SCALE } from "../constants.ts";
 import { KpReading } from "../types/weather.ts";
 
@@ -57,7 +57,7 @@ export function getCurrentKp() {
   const classification = classifyKp(latest.kp);
 
   // Find peak in last 24 hours
-  const dayAgo = new Date(Date.now() - MS_PER_DAY);
+  const dayAgo = new Date(Date.now() - MILLISECONDS_PER_DAY);
   const last24h = readings.filter((r) => new Date(r.time) >= dayAgo);
   const peak = last24h.reduce<KpReading | null>(
     (max, r) => (r.kp > (max?.kp ?? -1) ? r : max),

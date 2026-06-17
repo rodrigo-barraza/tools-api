@@ -1,5 +1,5 @@
 import type { Collection } from "mongodb";
-import { getDB } from "@rodrigo-barraza/utilities-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
 
@@ -15,7 +15,7 @@ export interface GeomagneticStormDocument {
 let collection: Collection<GeomagneticStormDocument> | null = null;
 
 export async function setupGeomagneticStormCollection() {
-  const database = getDB();
+  const database = getDatabase();
   if (!database) throw new Error("Database not connected");
 
   collection =

@@ -33,7 +33,7 @@ const redditTokenManager = new TokenManager(async () => {
   const data = await response.json();
   return {
     token: data.access_token,
-    expiresInMs: (data.expires_in - 60) * 1000,
+    expiresInMilliseconds: (data.expires_in - 60) * 1000,
   };
 });
 /**
