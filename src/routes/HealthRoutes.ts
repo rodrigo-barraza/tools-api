@@ -53,13 +53,11 @@ import {
 const router = Router();
 // ─── USDA Nutrition (raw whole foods — in-memory database) ────
 router.get("/nutrition/search", (req: Request, res: Response) => {
-  const {
-    q: query,
-    limit,
-    kingdom,
-    foodType,
-    nutrientTypes,
-  } = req.query as Record<string, string | undefined>;
+  const query = req.query['q'] as string | undefined;
+  const limit = req.query.limit as string | undefined;
+  const kingdom = req.query.kingdom as string | undefined;
+  const foodType = req.query.foodType as string | undefined;
+  const nutrientTypes = req.query.nutrientTypes as string | undefined;
   if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
@@ -207,7 +205,8 @@ router.get("/nutrition/requirements", (req: Request, res: Response) => {
 router.get(
   "/drugs/search",
   asyncHandler(async (req: Request, res: Response) => {
-    const { q: query, limit } = req.query as Record<string, string | undefined>;
+    const query = req.query['q'] as string | undefined;
+    const limit = req.query.limit as string | undefined;
     if (!query) {
       return res.status(400).json({ error: "Query parameter 'q' is required" });
     }
@@ -231,7 +230,7 @@ router.get(
   asyncHandler(
     (req: Request) =>
       getDrugRecalls(
-        req.query.q as string,
+        req.query['q'] as string,
         parseIntParam(req.query.limit as string, 10),
       ),
     "Drug recalls lookup",
@@ -239,12 +238,10 @@ router.get(
 );
 // ─── FDA Drug NDC Database (In-Memory) ──────────────────────────────
 router.get("/drugs/ndc/search", (req: Request, res: Response) => {
-  const {
-    q: query,
-    limit,
-    dosageForm,
-    productType,
-  } = req.query as Record<string, string | undefined>;
+  const query = req.query['q'] as string | undefined;
+  const limit = req.query.limit as string | undefined;
+  const dosageForm = req.query.dosageForm as string | undefined;
+  const productType = req.query.productType as string | undefined;
   if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
@@ -270,7 +267,8 @@ router.get(
   asyncHandler(async () => getDosageForms(), "Dosage forms lookup", 500),
 );
 router.get("/drugs/ndc/ingredient", (req: Request, res: Response) => {
-  const { q: query, limit } = req.query as Record<string, string | undefined>;
+  const query = req.query['q'] as string | undefined;
+  const limit = req.query.limit as string | undefined;
   if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
@@ -281,7 +279,8 @@ router.get("/drugs/ndc/ingredient", (req: Request, res: Response) => {
   );
 });
 router.get("/drugs/ndc/pharm-class", (req: Request, res: Response) => {
-  const { q: query, limit } = req.query as Record<string, string | undefined>;
+  const query = req.query['q'] as string | undefined;
+  const limit = req.query.limit as string | undefined;
   if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
@@ -293,16 +292,14 @@ router.get("/drugs/ndc/pharm-class", (req: Request, res: Response) => {
 });
 // ─── Gym Exercises (Free Exercise DB) ──────────────────────────────
 router.get("/exercises/search", (req: Request, res: Response) => {
-  const {
-    q: searchQuery,
-    limit,
-    category,
-    equipment,
-    force,
-    level,
-    mechanic,
-    muscle,
-  } = req.query as Record<string, string | undefined>;
+  const searchQuery = req.query['q'] as string | undefined;
+  const limit = req.query.limit as string | undefined;
+  const category = req.query.category as string | undefined;
+  const equipment = req.query.equipment as string | undefined;
+  const force = req.query.force as string | undefined;
+  const level = req.query.level as string | undefined;
+  const mechanic = req.query.mechanic as string | undefined;
+  const muscle = req.query.muscle as string | undefined;
   res.json(
     searchExercises(searchQuery, {
       limit: parseIntParam(limit, 10),
@@ -568,13 +565,11 @@ export function getHealthDomainHealth() {
 router.get(
   "/drugs/unified",
   asyncHandler(async (req: Request, res: Response) => {
-    const {
-      q: searchQuery,
-      searchBy,
-      limit,
-      dosageForm,
-      productType,
-    } = req.query as Record<string, string | undefined>;
+    const searchQuery = req.query['q'] as string | undefined;
+    const searchBy = req.query.searchBy as string | undefined;
+    const limit = req.query.limit as string | undefined;
+    const dosageForm = req.query.dosageForm as string | undefined;
+    const productType = req.query.productType as string | undefined;
     if (!searchQuery) return res.status(400).json({ error: "'q' is required" });
     const mode = searchBy || "name";
     switch (mode) {

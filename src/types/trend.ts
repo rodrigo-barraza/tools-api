@@ -21,7 +21,7 @@ export interface RawRedditPost {
     title: string;
     score: number;
     ups: number;
-    num_comments: number;
+    "num_comments": number;
     permalink: string;
     url: string;
     subreddit: string;

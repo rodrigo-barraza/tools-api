@@ -70,8 +70,8 @@ export async function searchPatents(
   }
 
   const queryPayload = {
-    q: conditions.length === 1 ? conditions[0] : { _and: conditions },
-    f: [
+    "q": conditions.length === 1 ? conditions[0] : { _and: conditions },
+    "f": [
       "patent_number",
       "patent_title",
       "patent_abstract",
@@ -88,7 +88,7 @@ export async function searchPatents(
       "assignee_country",
       "cpc_category",
     ],
-    o: {
+    "o": {
       page: 1,
       per_page: limit,
     },

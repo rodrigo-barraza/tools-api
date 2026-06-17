@@ -119,7 +119,8 @@ router.get(
 router.get(
   "/books/search",
   asyncHandler(async (req: Request, res: Response) => {
-    const { q: query, limit } = req.query as Record<string, string | undefined>;
+    const query = req.query['q'] as string | undefined;
+    const limit = req.query.limit as string | undefined;
     if (!query) {
       return res.status(400).json({ error: "Query parameter 'q' is required" });
     }
@@ -159,12 +160,10 @@ router.get(
 router.get(
   "/papers/search",
   asyncHandler(async (req: Request, res: Response) => {
-    const {
-      q: query,
-      category,
-      limit,
-      sortBy,
-    } = req.query as Record<string, string | undefined>;
+    const query = req.query['q'] as string | undefined;
+    const category = req.query.category as string | undefined;
+    const limit = req.query.limit as string | undefined;
+    const sortBy = req.query.sortBy as string | undefined;
     if (!query) {
       return res.status(400).json({ error: "Query parameter 'q' is required" });
     }
@@ -205,7 +204,8 @@ router.get(
 router.get(
   "/anime/search",
   asyncHandler(async (req: Request, res: Response) => {
-    const { q: query, limit } = req.query as Record<string, string | undefined>;
+    const query = req.query['q'] as string | undefined;
+    const limit = req.query.limit as string | undefined;
     if (!query) {
       return res.status(400).json({ error: "Query parameter 'q' is required" });
     }
@@ -238,11 +238,9 @@ router.get(
 router.get(
   "/movies/search",
   asyncHandler(async (req: Request, res: Response) => {
-    const {
-      q: query,
-      page,
-      year,
-    } = req.query as Record<string, string | undefined>;
+    const query = req.query['q'] as string | undefined;
+    const page = req.query.page as string | undefined;
+    const year = req.query.year as string | undefined;
     if (!query) {
       return res.status(400).json({ error: "Query parameter 'q' is required" });
     }
@@ -302,11 +300,9 @@ router.get(
 router.get(
   "/tv/search",
   asyncHandler(async (req: Request, res: Response) => {
-    const {
-      q: query,
-      page,
-      firstAirDateYear,
-    } = req.query as Record<string, string | undefined>;
+    const query = req.query['q'] as string | undefined;
+    const page = req.query.page as string | undefined;
+    const firstAirDateYear = req.query.firstAirDateYear as string | undefined;
     if (!query) {
       return res.status(400).json({ error: "Query parameter 'q' is required" });
     }
@@ -385,12 +381,10 @@ router.get(
 );
 // ─── Periodic Table (in-memory) ────────────────────────────────────
 router.get("/elements/search", (req: Request, res: Response) => {
-  const {
-    q: query,
-    limit,
-    category,
-    block,
-  } = req.query as Record<string, string | undefined>;
+  const query = req.query['q'] as string | undefined;
+  const limit = req.query.limit as string | undefined;
+  const category = req.query.category as string | undefined;
+  const block = req.query.block as string | undefined;
   if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
@@ -497,11 +491,9 @@ router.get(
 );
 // ─── Exoplanets ────────────────────────────────────────────────────
 router.get("/exoplanets/search", (req: Request, res: Response) => {
-  const {
-    q: query,
-    limit,
-    method,
-  } = req.query as Record<string, string | undefined>;
+  const query = req.query['q'] as string | undefined;
+  const limit = req.query.limit as string | undefined;
+  const method = req.query.method as string | undefined;
   if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
@@ -631,13 +623,11 @@ router.get(
         .status(400)
         .json({ error: "URL parameter 'username' is required" });
     }
-    const {
-      category,
-      limit,
-      maxPages,
-      sort,
-      t: timeRange,
-    } = req.query as Record<string, string | undefined>;
+    const category = req.query.category as string | undefined;
+    const limit = req.query.limit as string | undefined;
+    const maxPages = req.query.maxPages as string | undefined;
+    const sort = req.query.sort as string | undefined;
+    const timeRange = req.query['t'] as string | undefined;
     const result = await getRedditUserHistory(username, {
       category: category as
         | "overview"
@@ -682,16 +672,14 @@ router.get(
 router.get(
   "/reddit/search",
   asyncHandler(async (req: Request, res: Response) => {
-    const {
-      q: query,
-      subreddit,
-      type,
-      sort,
-      t: timeRange,
-      limit,
-      maxPages,
-      nsfw,
-    } = req.query as Record<string, string | undefined>;
+    const query = req.query['q'] as string | undefined;
+    const subreddit = req.query.subreddit as string | undefined;
+    const type = req.query.type as string | undefined;
+    const sort = req.query.sort as string | undefined;
+    const timeRange = req.query['t'] as string | undefined;
+    const limit = req.query.limit as string | undefined;
+    const maxPages = req.query.maxPages as string | undefined;
+    const nsfw = req.query.nsfw as string | undefined;
     if (!query) {
       return res.status(400).json({ error: "Query parameter 'q' is required" });
     }
@@ -726,11 +714,9 @@ router.get(
 router.get(
   "/reddit/subreddits/search",
   asyncHandler(async (req: Request, res: Response) => {
-    const {
-      q: query,
-      limit,
-      nsfw,
-    } = req.query as Record<string, string | undefined>;
+    const query = req.query['q'] as string | undefined;
+    const limit = req.query.limit as string | undefined;
+    const nsfw = req.query.nsfw as string | undefined;
     if (!query) {
       return res.status(400).json({ error: "Query parameter 'q' is required" });
     }
@@ -757,12 +743,10 @@ router.get(
 router.get(
   "/reddit/r/:subreddit/feed",
   asyncHandler(async (req: Request, res: Response) => {
-    const {
-      sort,
-      t: timeRange,
-      limit,
-      pinned,
-    } = req.query as Record<string, string | undefined>;
+    const sort = req.query.sort as string | undefined;
+    const timeRange = req.query['t'] as string | undefined;
+    const limit = req.query.limit as string | undefined;
+    const pinned = req.query.pinned as string | undefined;
     const result = await getSubredditFeed(req.params.subreddit as string, {
       sort: sort as
         | "hot"
@@ -1026,10 +1010,8 @@ router.get(
 router.get(
   "/music/artists/search",
   asyncHandler(async (req: Request, res: Response) => {
-    const { q: searchQuery, limit } = req.query as Record<
-      string,
-      string | undefined
-    >;
+    const searchQuery = req.query['q'] as string | undefined;
+    const limit = req.query.limit as string | undefined;
     if (!searchQuery)
       return res.status(400).json({ error: "Query parameter 'q' is required" });
     res.json(await searchArtists(searchQuery, parseIntParam(limit, 10)));
@@ -1045,11 +1027,9 @@ router.get(
 router.get(
   "/music/albums/search",
   asyncHandler(async (req: Request, res: Response) => {
-    const {
-      q: searchQuery,
-      artist,
-      limit,
-    } = req.query as Record<string, string | undefined>;
+    const searchQuery = req.query['q'] as string | undefined;
+    const artist = req.query.artist as string | undefined;
+    const limit = req.query.limit as string | undefined;
     if (!searchQuery)
       return res.status(400).json({ error: "Query parameter 'q' is required" });
     res.json(await searchAlbums(searchQuery, artist, parseIntParam(limit, 10)));
@@ -1065,11 +1045,9 @@ router.get(
 router.get(
   "/music/tracks/search",
   asyncHandler(async (req: Request, res: Response) => {
-    const {
-      q: searchQuery,
-      artist,
-      limit,
-    } = req.query as Record<string, string | undefined>;
+    const searchQuery = req.query['q'] as string | undefined;
+    const artist = req.query.artist as string | undefined;
+    const limit = req.query.limit as string | undefined;
     if (!searchQuery)
       return res.status(400).json({ error: "Query parameter 'q' is required" });
     res.json(await searchTracks(searchQuery, artist, parseIntParam(limit, 10)));
@@ -1158,13 +1136,11 @@ export function getKnowledgeHealth() {
 router.get(
   "/books/lookup",
   asyncHandler(async (req: Request, res: Response) => {
-    const {
-      action,
-      q: searchQuery,
-      workKey,
-      authorKey,
-      limit,
-    } = req.query as Record<string, string | undefined>;
+    const action = req.query.action as string | undefined;
+    const searchQuery = req.query['q'] as string | undefined;
+    const workKey = req.query.workKey as string | undefined;
+    const authorKey = req.query.authorKey as string | undefined;
+    const limit = req.query.limit as string | undefined;
     if (!action)
       return res.status(400).json({
         error: "'action' is required",
@@ -1248,16 +1224,14 @@ router.get(
 router.get(
   "/elements/data",
   asyncHandler(async (req: Request, res: Response) => {
-    const {
-      action,
-      q: searchQuery,
-      symbol,
-      property,
-      limit,
-      order,
-      category,
-      block,
-    } = req.query as Record<string, string | undefined>;
+    const action = req.query.action as string | undefined;
+    const searchQuery = req.query['q'] as string | undefined;
+    const symbol = req.query.symbol as string | undefined;
+    const property = req.query.property as string | undefined;
+    const limit = req.query.limit as string | undefined;
+    const order = req.query.order as string | undefined;
+    const category = req.query.category as string | undefined;
+    const block = req.query.block as string | undefined;
     if (!action)
       return res.status(400).json({
         error: "'action' is required",
@@ -1297,15 +1271,13 @@ router.get(
 router.get(
   "/exoplanets/data",
   asyncHandler(async (req: Request, res: Response) => {
-    const {
-      action,
-      q: searchQuery,
-      name,
-      field,
-      limit,
-      order,
-      method,
-    } = req.query as Record<string, string | undefined>;
+    const action = req.query.action as string | undefined;
+    const searchQuery = req.query['q'] as string | undefined;
+    const name = req.query.name as string | undefined;
+    const field = req.query.field as string | undefined;
+    const limit = req.query.limit as string | undefined;
+    const order = req.query.order as string | undefined;
+    const method = req.query.method as string | undefined;
     if (!action)
       return res.status(400).json({
         error: "'action' is required",
@@ -1349,14 +1321,12 @@ router.get(
 router.get(
   "/anime/data",
   asyncHandler(async (req: Request, res: Response) => {
-    const {
-      action,
-      q: searchQuery,
-      id,
-      limit,
-      year,
-      season,
-    } = req.query as Record<string, string | undefined>;
+    const action = req.query.action as string | undefined;
+    const searchQuery = req.query['q'] as string | undefined;
+    const id = req.query.id as string | undefined;
+    const limit = req.query.limit as string | undefined;
+    const year = req.query.year as string | undefined;
+    const season = req.query.season as string | undefined;
     if (!action)
       return res.status(400).json({
         error: "'action' is required",
@@ -1400,12 +1370,10 @@ router.get(
 router.get(
   "/media/search",
   asyncHandler(async (req: Request, res: Response) => {
-    const {
-      type,
-      q: searchQuery,
-      year,
-      page,
-    } = req.query as Record<string, string | undefined>;
+    const type = req.query.type as string | undefined;
+    const searchQuery = req.query['q'] as string | undefined;
+    const year = req.query.year as string | undefined;
+    const page = req.query.page as string | undefined;
     if (!type || !searchQuery)
       return res.status(400).json({ error: "'type' and 'q' are required" });
     req.url = `/${type === "tv" ? "tv" : "movies"}/search?q=${searchQuery}&year=${year || ""}&page=${page || 1}${type === "tv" ? "&firstAirDateYear=" + (year || "") : ""}`;
@@ -1533,7 +1501,10 @@ router.get(
 router.get(
   "/person/search",
   asyncHandler(async (req: Request, res: Response) => {
-    const { action, q: searchQuery, id, limit } = req.query as Record<string, string | undefined>;
+    const action = req.query.action as string | undefined;
+    const searchQuery = req.query['q'] as string | undefined;
+    const id = req.query.id as string | undefined;
+    const limit = req.query.limit as string | undefined;
     if (!action)
       return res.status(400).json({
         error: "'action' is required",
@@ -1584,13 +1555,11 @@ router.get(
 router.get(
   "/music",
   asyncHandler(async (req: Request, res: Response) => {
-    const {
-      action,
-      q: searchQuery,
-      mbid,
-      artist,
-      limit,
-    } = req.query as Record<string, string | undefined>;
+    const action = req.query.action as string | undefined;
+    const searchQuery = req.query['q'] as string | undefined;
+    const mbid = req.query.mbid as string | undefined;
+    const artist = req.query.artist as string | undefined;
+    const limit = req.query.limit as string | undefined;
     if (!action)
       return res.status(400).json({
         error: "'action' is required",
@@ -1703,13 +1672,11 @@ import { searchStackOverflowQuestions } from "../fetchers/web/StackOverflowFetch
 router.get(
   "/stackoverflow/questions",
   asyncHandler(async (req: Request, res: Response) => {
-    const {
-      q: query,
-      tagged,
-      sort,
-      order,
-      limit,
-    } = req.query as Record<string, string | undefined>;
+    const query = req.query['q'] as string | undefined;
+    const tagged = req.query.tagged as string | undefined;
+    const sort = req.query.sort as string | undefined;
+    const order = req.query.order as string | undefined;
+    const limit = req.query.limit as string | undefined;
     if (!query) {
       return res.status(400).json({ error: "Query parameter 'q' is required" });
     }
@@ -1729,12 +1696,10 @@ import { searchPatents } from "../fetchers/knowledge/PatentFetcher.ts";
 router.get(
   "/patents/search",
   asyncHandler(async (req: Request, res: Response) => {
-    const {
-      q: query,
-      inventor,
-      assignee,
-      limit,
-    } = req.query as Record<string, string | undefined>;
+    const query = req.query['q'] as string | undefined;
+    const inventor = req.query.inventor as string | undefined;
+    const assignee = req.query.assignee as string | undefined;
+    const limit = req.query.limit as string | undefined;
     if (!query) {
       return res.status(400).json({ error: "Query parameter 'q' is required" });
     }

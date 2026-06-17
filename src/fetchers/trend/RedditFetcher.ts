@@ -73,7 +73,7 @@ function normalizeTrend(post: RawRedditPost, defaultCategory: string | null) {
     context: {
       subreddit: postData.subreddit,
       author: postData.author,
-      commentCount: postData.num_comments || 0,
+      commentCount: postData['num_comments'] || 0,
       upvoteRatio: postData.upvote_ratio || 0,
       flair: postData.link_flair_text || null,
       thumbnail:

@@ -628,7 +628,7 @@ describe("POST /creative/vector-animation input validation", () => {
         {
           id: "layer-one",
           shapeType: "circle",
-          keyframes: [{ time: 1.5 } as any],
+          keyframes: [{ time: 1.5 } as unknown as { time: number; properties: Record<string, unknown> }],
         },
       ],
     };

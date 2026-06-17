@@ -28,7 +28,7 @@ router.get("/trends/category/:category", (req: Request, res: Response) => {
   res.json(getByCategory(req.params.category as string));
 });
 router.get("/trends/search", (req: Request, res: Response) => {
-  const query = req.query.q as string;
+  const query = req.query['q'] as string;
   if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
@@ -55,7 +55,7 @@ router.get(
 router.get(
   "/trends/db/search",
   asyncHandler(async (req: Request, res: Response) => {
-    const query = req.query.q as string;
+    const query = req.query['q'] as string;
     if (!query) {
       return res.status(400).json({ error: "Query parameter 'q' is required" });
     }

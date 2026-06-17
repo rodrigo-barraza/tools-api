@@ -38,13 +38,19 @@ describe("Tool Schema — structural integrity", () => {
   it("every schema has a parameters object with type 'object'", () => {
     for (const schema of TOOL_DEFINITIONS) {
       expect(schema.parameters, `Tool "${schema.name}" missing parameters`).toBeTruthy();
-              expect(schema.parameters.type).toBe("object");
+      if (schema.parameters) {
+        expect(schema.parameters.type).toBe("object");
+      }
     }
   });
 
   it("every schema has a properties object in parameters", () => {
     for (const schema of TOOL_DEFINITIONS) {
-              expect(schema.parameters.properties && typeof schema.parameters.properties === "object").toBeTruthy();
+      if (schema.parameters) {
+        expect(schema.parameters.properties && typeof schema.parameters.properties === "object").toBeTruthy();
+      } else {
+        throw new Error(`Tool "${schema.name}" missing parameters`);
+      }
     }
   });
 
@@ -96,10 +102,10 @@ describe("Tool Taxonomy — domain coverage", () => {
 describe("Tool Schema — parameter validation", () => {
   it("required array only references defined properties", () => {
     for (const schema of TOOL_DEFINITIONS) {
-      const required = schema.parameters.required || [];
-      const props = Object.keys(schema.parameters.properties || {});
+      const required = schema.parameters?.required || [];
+      const props = Object.keys(schema.parameters?.properties || {});
       for (const requiredField of required) {
-                  expect(props.includes(requiredField)).toBeTruthy();
+        expect(props.includes(requiredField)).toBeTruthy();
       }
     }
   });
@@ -107,10 +113,10 @@ describe("Tool Schema — parameter validation", () => {
   it("every property has a type or enum", () => {
     for (const schema of TOOL_DEFINITIONS) {
       for (const [_propName, propDef] of Object.entries(
-        schema.parameters.properties || {},
+        schema.parameters?.properties || {},
       )) {
         const hasType = propDef.type || propDef.enum;
-                  expect(hasType).toBeTruthy();
+        expect(hasType).toBeTruthy();
       }
     }
   });
@@ -162,8 +168,8 @@ describe("ToolTaxonomyConstants — registry alignment", () => {
   });
 
   it("every domain value used in TOOL_DOMAINS has a DOMAINS constant", () => {
-    const constantValues = new Set<any>(Object.values(DOMAINS).map((entry) => entry.displayName));
+    const constantValues = new Set<string>(Object.values(DOMAINS).map((entry) => entry.displayName));
     const missing = [...usedDomains].filter((domain) => !constantValues.has(domain));
-          expect(missing.length).toBe(0);
+    expect(missing.length).toBe(0);
   });
 });

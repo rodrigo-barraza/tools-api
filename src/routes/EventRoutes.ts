@@ -44,12 +44,10 @@ router.get(
 router.get(
   "/search",
   asyncHandler(async (req: Request, res: Response) => {
-    const {
-      q: searchQuery,
-      category,
-      city,
-      source,
-    } = req.query as Record<string, string | undefined>;
+    const searchQuery = req.query['q'] as string | undefined;
+    const category = req.query.category as string | undefined;
+    const city = req.query.city as string | undefined;
+    const source = req.query.source as string | undefined;
     const limit = parseIntParam(req.query.limit as string, 100);
     const events = await searchEvents({
       value: searchQuery,
@@ -60,7 +58,7 @@ router.get(
     });
     res.json({
       count: events.length,
-      query: { q: searchQuery, category, city, source },
+      query: { "q": searchQuery, category, city, source },
       events,
     });
   }),
@@ -87,14 +85,12 @@ router.get(
 router.get(
   "/events",
   asyncHandler(async (req: Request, res: Response) => {
-    const {
-      action,
-      q: searchQuery,
-      source,
-      category,
-      days,
-      limit: rawLimit,
-    } = req.query as Record<string, string | undefined>;
+    const action = req.query.action as string | undefined;
+    const searchQuery = req.query['q'] as string | undefined;
+    const source = req.query.source as string | undefined;
+    const category = req.query.category as string | undefined;
+    const days = req.query.days as string | undefined;
+    const rawLimit = req.query.limit as string | undefined;
     if (!action)
       return res
         .status(400)
@@ -114,7 +110,7 @@ router.get(
         return res.json({
           action,
           count: events.length,
-          query: { q: searchQuery, category, source },
+          query: { "q": searchQuery, category, source },
           events,
         });
       }

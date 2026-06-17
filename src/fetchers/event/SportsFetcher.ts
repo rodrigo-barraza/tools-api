@@ -104,32 +104,32 @@ async function fetchSportsDbEvents(
   interface SportsDbEvent {
     idEvent?: string;
     idHomeTeam?: string;
-    strEvent?: string;
-    strLeague?: string;
-    strSeason?: string;
-    strVenue?: string;
-    strThumb?: string;
-    strBanner?: string;
-    strTimestamp?: string;
+    "strEvent"?: string;
+    "strLeague"?: string;
+    "strSeason"?: string;
+    "strVenue"?: string;
+    "strThumb"?: string;
+    "strBanner"?: string;
+    "strTimestamp"?: string;
     dateEvent?: string;
-    strCity?: string;
-    strCountry?: string;
+    "strCity"?: string;
+    "strCountry"?: string;
   }
 
   return events.map((event: SportsDbEvent) => {
     const isHome = event.idHomeTeam === teamId;
-    const venueName = event.strVenue || null;
+    const venueName = event['strVenue'] || null;
 
     return {
       sourceId: `sportsdb-${event.idEvent}`,
       source,
-      name: event.strEvent || `${teamName} Game`,
+      name: event['strEvent'] || `${teamName} Game`,
       description:
-        `${event.strLeague || sport} — ${event.strSeason || ""}`.trim(),
+        `${event['strLeague'] || sport} — ${event['strSeason'] || ""}`.trim(),
       url: null,
-      imageUrl: event.strThumb || event.strBanner || null,
-      startDate: event.strTimestamp
-        ? new Date(event.strTimestamp)
+      imageUrl: event['strThumb'] || event['strBanner'] || null,
+      startDate: event['strTimestamp']
+        ? new Date(event['strTimestamp'])
         : event.dateEvent
           ? new Date(event.dateEvent)
           : null,
@@ -137,9 +137,9 @@ async function fetchSportsDbEvents(
       venue: {
         name: venueName,
         address: null,
-        city: isHome ? "Vancouver" : event.strCity || null,
+        city: isHome ? "Vancouver" : event['strCity'] || null,
         state: isHome ? "BC" : null,
-        country: event.strCountry || "CA",
+        country: event['strCountry'] || "CA",
         latitude: null,
         longitude: null,
       },

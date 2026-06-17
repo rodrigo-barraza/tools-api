@@ -12,6 +12,7 @@ import {
   resolveAnimatedProperties,
   getPathPointAt,
   VectorLayer,
+  LinearGradient,
 } from "../src/utilities/VectorAnimationEngine.ts";
 
 describe("VectorAnimationEngine Calculations", () => {
@@ -99,7 +100,7 @@ describe("VectorAnimationEngine Calculations", () => {
     });
 
     it("interpolates linear gradients coordinates and stops", () => {
-      const gradientStart = {
+      const gradientStart: LinearGradient = {
         type: "linear",
         x1: 0,
         y1: 0,
@@ -111,7 +112,7 @@ describe("VectorAnimationEngine Calculations", () => {
         ]
       };
 
-      const gradientEnd = {
+      const gradientEnd: LinearGradient = {
         type: "linear",
         x1: 50,
         y1: 50,
@@ -125,15 +126,24 @@ describe("VectorAnimationEngine Calculations", () => {
 
       const interpolatedGradientResult = interpolateGradient(gradientStart, gradientEnd, 0.5);
       expect(interpolatedGradientResult.type).toBe("linear");
-      expect(interpolatedGradientResult.x1).toBe(25);
-      expect(interpolatedGradientResult.y1).toBe(25);
-      expect(interpolatedGradientResult.x2).toBe(125);
-      expect(interpolatedGradientResult.y2).toBe(25);
-      expect(interpolatedGradientResult.stops.length).toBe(2);
-      expect(interpolatedGradientResult.stops[0].offset).toBe(0);
-      expect(interpolatedGradientResult.stops[0].color).toBe("rgba(128, 0, 128, 1)"); // red to blue
-      expect(interpolatedGradientResult.stops[1].offset).toBe(1);
-      expect(interpolatedGradientResult.stops[1].color).toBe("rgba(128, 128, 128, 1)"); // black to white
+      if (interpolatedGradientResult.type === "linear") {
+        expect(interpolatedGradientResult.x1).toBe(25);
+        expect(interpolatedGradientResult.y1).toBe(25);
+        expect(interpolatedGradientResult.x2).toBe(125);
+        expect(interpolatedGradientResult.y2).toBe(25);
+      } else {
+        throw new Error("Expected linear gradient type");
+      }
+
+      const stops = interpolatedGradientResult.stops;
+      expect(stops).toBeDefined();
+      if (stops) {
+        expect(stops.length).toBe(2);
+        expect(stops[0].offset).toBe(0);
+        expect(stops[0].color).toBe("rgba(128, 0, 128, 1)"); // red to blue
+        expect(stops[1].offset).toBe(1);
+        expect(stops[1].color).toBe("rgba(128, 128, 128, 1)"); // black to white
+      }
     });
   });
 
@@ -235,10 +245,11 @@ describe("VectorAnimationEngine Calculations", () => {
     });
 
     it("correctly computes position and rotation when document is mocked", () => {
-      const originalDocument = globalThis.document;
+      const globalObject = globalThis as unknown as { document: unknown };
+      const originalDocument = globalObject.document;
 
       // Mock SVG path methods
-      globalThis.document = {
+      globalObject.document = {
         createElementNS: () => {
           return {
             setAttribute: () => {},
@@ -249,7 +260,7 @@ describe("VectorAnimationEngine Calculations", () => {
             }
           };
         }
-      } as any;
+      };
 
       try {
         const point = getPathPointAt("M 0 0 L 100 200", 0.5, true);
@@ -258,7 +269,7 @@ describe("VectorAnimationEngine Calculations", () => {
         // Tangent rotation: Math.atan2(2 * delta, delta) = Math.atan2(1.0, 0.5) * 180 / Math.PI
         expect(point.rotation).toBeCloseTo((Math.atan2(1.0, 0.5) * 180) / Math.PI, 1);
       } finally {
-        globalThis.document = originalDocument;
+        globalObject.document = originalDocument;
       }
     });
   });

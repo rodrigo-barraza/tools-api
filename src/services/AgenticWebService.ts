@@ -259,7 +259,7 @@ async function _searchBrave(
   { limit, dateRestrict }: { limit: number; dateRestrict?: string },
 ) {
   const params = new URLSearchParams({
-    q: query,
+    "q": query,
     count: String(limit),
   });
 
@@ -340,7 +340,7 @@ async function _searchDuckDuckGo(
   query: string,
   { limit, dateRestrict }: { limit: number; dateRestrict?: string },
 ) {
-  const formParameters = new URLSearchParams({ q: query });
+  const formParameters = new URLSearchParams({ "q": query });
 
   // DDG date restrict: d = past day, w = past week, m = past month
   if (dateRestrict) {
@@ -472,8 +472,8 @@ async function _searchGoogleCSE(
   const params = new URLSearchParams({
     key: CONFIG.GOOGLE_API_KEY as string,
     cx: CONFIG.GOOGLE_CSE_CX as string,
-    q: query,
-    num: String(limit),
+    "q": query,
+    "num": String(limit),
   });
 
   if (dateRestrict) params.set("dateRestrict", dateRestrict);

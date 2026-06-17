@@ -9,7 +9,7 @@ import { fieldProjectionMiddleware } from "../src/middleware/FieldProjectionMidd
 
 
  */
-export function createTestApp(path, router) {
+export function createTestApp(path: string, router: express.Router): express.Express {
   const app = express();
   app.use(express.json({ limit: "1mb" }));
   app.use(fieldProjectionMiddleware);

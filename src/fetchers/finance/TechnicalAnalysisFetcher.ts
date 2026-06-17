@@ -288,13 +288,13 @@ function computeIndicator(
       return {
         name: "Stochastic",
         values: stochasticValues.slice(-tailCount).map((stochasticItem) => ({
-          k: round(stochasticItem.k, 2),
-          d: round(stochasticItem.d, 2),
+          "k": round(stochasticItem.k, 2),
+          "d": round(stochasticItem["d"], 2),
         })),
         latest: latestStochastic
           ? {
-              k: round(latestStochastic.k, 2),
-              d: round(latestStochastic.d, 2),
+              "k": round(latestStochastic.k, 2),
+              "d": round(latestStochastic["d"], 2),
             }
           : null,
         signal,

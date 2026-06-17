@@ -37,7 +37,7 @@ interface RedditUserAboutResponse {
     comment_karma: number;
     total_karma: number;
     is_gold: boolean;
-    is_mod: boolean;
+    "is_mod": boolean;
     has_verified_email: boolean;
     icon_img: string;
     subreddit?: {
@@ -122,7 +122,7 @@ function normalizeListingChild(
       selfText: truncateBody(childData.selftext as string),
       score: (childData.score as number) || 0,
       upvoteRatio: (childData.upvote_ratio as number) || 0,
-      commentCount: (childData.num_comments as number) || 0,
+      commentCount: (childData['num_comments'] as number) || 0,
       createdUtc: (childData.created_utc as number) || 0,
       permalink: fullPermalink,
       externalUrl: externalUrl !== fullPermalink ? externalUrl : null,
@@ -186,7 +186,7 @@ export async function getRedditUserProfile(
       commentKarma: userData.comment_karma,
       totalKarma: userData.total_karma,
       isGold: userData.is_gold,
-      isModerator: userData.is_mod,
+      isModerator: userData['is_mod'],
       hasVerifiedEmail: userData.has_verified_email,
       avatarUrl: userData.snoovatar_img || userData.icon_img || null,
       profileDescription: userData.subreddit?.public_description || null,
@@ -229,7 +229,7 @@ export async function getRedditUserHistory(
     const parameters: Record<string, string> = {
       limit: effectiveItemsPerPage.toString(),
       sort,
-      t: timeRange,
+      "t": timeRange,
     };
 
     const [profileResult, firstPageResult] = await Promise.all([
@@ -278,7 +278,7 @@ export async function getRedditUserHistory(
         const nextParameters: Record<string, string> = {
           limit: effectiveItemsPerPage.toString(),
           sort,
-          t: timeRange,
+          "t": timeRange,
           after: afterCursor,
           count: allItems.length.toString(),
         };

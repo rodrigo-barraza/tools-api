@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
 import request from "supertest";
 import { createTestApp } from "./testApp.ts";
-import { readSpreadsheetUrl } from "../src/fetchers/web/SpreadsheetFetcher.ts";
+import { readSpreadsheetUrl, type SpreadsheetJsonResponse } from "../src/fetchers/web/SpreadsheetFetcher.ts";
+import type { Express } from "express";
 
 describe("SpreadsheetFetcher & Web Spreadsheet Read Endpoint", () => {
-  let expressApp: any;
+  let expressApp: Express;
 
   beforeAll(async () => {
     const { default: router } = await import("../src/routes/AgenticRoutes.ts");
@@ -31,10 +32,10 @@ describe("SpreadsheetFetcher & Web Spreadsheet Read Endpoint", () => {
         },
       } as Response);
 
-      const result = await readSpreadsheetUrl("https://example.com/data.csv", {
+      const result = (await readSpreadsheetUrl("https://example.com/data.csv", {
         includeHeaders: true,
         outputFormat: "json",
-      });
+      })) as SpreadsheetJsonResponse;
 
       expect(fetchSpy).toHaveBeenCalled();
       expect(result.format).toBe("csv");
@@ -68,10 +69,10 @@ describe("SpreadsheetFetcher & Web Spreadsheet Read Endpoint", () => {
         },
       } as Response);
 
-      const result = await readSpreadsheetUrl("https://example.com/data.csv", {
+      const result = (await readSpreadsheetUrl("https://example.com/data.csv", {
         includeHeaders: false,
         outputFormat: "json",
-      });
+      })) as SpreadsheetJsonResponse;
 
       expect(fetchSpy).toHaveBeenCalled();
       expect(result.format).toBe("csv");
@@ -104,10 +105,10 @@ describe("SpreadsheetFetcher & Web Spreadsheet Read Endpoint", () => {
         },
       } as Response);
 
-      const result = await readSpreadsheetUrl("https://example.com/data.tsv", {
+      const result = (await readSpreadsheetUrl("https://example.com/data.tsv", {
         includeHeaders: true,
         outputFormat: "json",
-      });
+      })) as SpreadsheetJsonResponse;
 
       expect(fetchSpy).toHaveBeenCalled();
       expect(result.format).toBe("tsv");
@@ -138,10 +139,10 @@ describe("SpreadsheetFetcher & Web Spreadsheet Read Endpoint", () => {
         },
       } as Response);
 
-      const result = await readSpreadsheetUrl("https://example.com/data.csv", {
+      const result = (await readSpreadsheetUrl("https://example.com/data.csv", {
         includeHeaders: true,
         outputFormat: "markdown",
-      });
+      })) as { content: string };
 
       expect(result.content).toContain("## Sheet:");
       expect(result.content).toContain("| Name | Age |");
@@ -169,10 +170,10 @@ describe("SpreadsheetFetcher & Web Spreadsheet Read Endpoint", () => {
         },
       } as Response);
 
-      const result = await readSpreadsheetUrl("https://example.com/data.csv", {
+      const result = (await readSpreadsheetUrl("https://example.com/data.csv", {
         includeHeaders: true,
         maxRows: 1,
-      });
+      })) as SpreadsheetJsonResponse;
 
       expect(result.sheets[0].rows.length).toBe(1);
       expect(result.sheets[0].truncated).toBe(true);
@@ -199,10 +200,10 @@ describe("SpreadsheetFetcher & Web Spreadsheet Read Endpoint", () => {
       } as Response);
 
       // Request limit low enough that Bob and Charlie will be programmatically popped from the rows array
-      const result = await readSpreadsheetUrl("https://example.com/data.csv", {
+      const result = (await readSpreadsheetUrl("https://example.com/data.csv", {
         includeHeaders: true,
         maxChars: 250,
-      });
+      })) as SpreadsheetJsonResponse;
 
       expect(result.truncated).toBe(true);
       expect(result.sheets[0].rows.length).toBeLessThan(3);

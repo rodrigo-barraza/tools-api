@@ -275,12 +275,12 @@ export function findFoodSubstitutes({
   if (excludeFoods) {
     const excluded = excludeFoods
       .split(",")
-      .map((e: string) => normalizeSearch(e.trim()))
+      .map((excludedFood: string) => normalizeSearch(excludedFood.trim()))
       .filter(Boolean);
     candidates = candidates.filter(
       (foodItem: FoodItem) =>
-        !excluded.some((e: string) =>
-          normalizeSearch(foodItem.food_name || "").includes(e),
+        !excluded.some((excludedFood: string) =>
+          normalizeSearch(foodItem.food_name || "").includes(excludedFood),
         ),
     );
   }

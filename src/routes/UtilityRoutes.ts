@@ -53,11 +53,9 @@ interface MapMarker {
 const router = Router();
 // ─── Calculator (BigNumber) ────────────────────────────────────────
 router.get("/calculate", (req: Request, res: Response) => {
-  const {
-    operation,
-    a: firstOperand,
-    b,
-  } = req.query as Record<string, string | undefined>;
+  const operation = req.query.operation as string | undefined;
+  const firstOperand = req.query['a'] as string | undefined;
+  const b = req.query['b'] as string | undefined;
   if (!operation || !firstOperand) {
     return res
       .status(400)
@@ -223,13 +221,11 @@ router.get(
 router.get(
   "/places/search",
   asyncHandler(async (req: Request, res: Response) => {
-    const {
-      q: query,
-      latitude,
-      longitude,
-      radius,
-      limit,
-    } = req.query as Record<string, string | undefined>;
+    const query = req.query['q'] as string | undefined;
+    const latitude = req.query.latitude as string | undefined;
+    const longitude = req.query.longitude as string | undefined;
+    const radius = req.query.radius as string | undefined;
+    const limit = req.query.limit as string | undefined;
     if (!query) {
       return res.status(400).json({ error: "Query parameter 'q' is required" });
     }
@@ -434,11 +430,9 @@ router.get(
 );
 // ─── Airports ──────────────────────────────────────────────────────
 router.get("/airports/search", (req: Request, res: Response) => {
-  const {
-    q: query,
-    limit,
-    country,
-  } = req.query as Record<string, string | undefined>;
+  const query = req.query['q'] as string | undefined;
+  const limit = req.query.limit as string | undefined;
+  const country = req.query.country as string | undefined;
   if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }
@@ -714,15 +708,13 @@ export function getUtilityHealth() {
 router.get(
   "/airports/lookup",
   asyncHandler(async (req: Request, res: Response) => {
-    const {
-      action,
-      q: searchQuery,
-      code,
-      country,
-      lat,
-      lng,
-      limit,
-    } = req.query as Record<string, string | undefined>;
+    const action = req.query.action as string | undefined;
+    const searchQuery = req.query['q'] as string | undefined;
+    const code = req.query.code as string | undefined;
+    const country = req.query.country as string | undefined;
+    const lat = req.query.lat as string | undefined;
+    const lng = req.query.lng as string | undefined;
+    const limit = req.query.limit as string | undefined;
     if (!action)
       return res
         .status(400)

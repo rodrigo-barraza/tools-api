@@ -41,8 +41,8 @@ export function normalizeCodepoint(codepointString: string): string {
   return codepointString
     .toLowerCase()
     .trim()
-    .replace(/^(u|0x)/, "")
-    .replace(/-fe0f/g, "");
+    .replace(new RegExp("^(u|0x)"), "")
+    .replace(new RegExp("-fe0f", "g"), "");
 }
 
 /**

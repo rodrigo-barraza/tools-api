@@ -29,7 +29,7 @@ export async function readPdfUrl(url: string, options: PdfOptions = {}) {
   // but they are the documented public API — define a local interface to bypass.
   interface PdfParser {
     load(): Promise<void>;
-    getInfo(): Promise<{ numPages?: number; info?: Record<string, string> }>;
+    getInfo(): Promise<{ "numPages"?: number; info?: Record<string, string> }>;
     getText(
       params?: Record<string, unknown>,
     ): Promise<{ text: string; total?: number }>;
@@ -102,7 +102,7 @@ export async function readPdfUrl(url: string, options: PdfOptions = {}) {
     } else if (options.startPage || options.endPage) {
       // Explicit page range: first..last (inclusive)
       const start = options.startPage ? parseInt(String(options.startPage), 10) : 1;
-      const end = options.endPage ? parseInt(String(options.endPage), 10) : (info.numPages || 999999);
+      const end = options.endPage ? parseInt(String(options.endPage), 10) : (info['numPages'] || 999999);
       textParams.first = start;
       textParams.last = end;
     } else if (options.maxPages) {
@@ -112,7 +112,7 @@ export async function readPdfUrl(url: string, options: PdfOptions = {}) {
 
     const textResult = await parser.getText(textParams);
     let text = textResult.text || "";
-    const pageCount = textResult.total || info.numPages || null;
+    const pageCount = textResult.total || info['numPages'] || null;
     const charCount = text.length;
 
     // Apply max characters limit if requested

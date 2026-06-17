@@ -105,21 +105,21 @@ export interface ColorRgba {
   r: number;
   g: number;
   b: number;
-  a: number;
+  "a": number;
 }
 
 const NAMED_COLORS: Record<string, ColorRgba> = {
-  transparent: { r: 0, g: 0, b: 0, a: 0 },
-  black: { r: 0, g: 0, b: 0, a: 1 },
-  white: { r: 255, g: 255, b: 255, a: 1 },
-  red: { r: 255, g: 0, b: 0, a: 1 },
-  green: { r: 0, g: 255, b: 0, a: 1 },
-  blue: { r: 0, g: 0, b: 255, a: 1 },
-  yellow: { r: 255, g: 255, b: 0, a: 1 },
-  magenta: { r: 255, g: 0, b: 255, a: 1 },
-  cyan: { r: 0, g: 255, b: 255, a: 1 },
-  gray: { r: 128, g: 128, b: 128, a: 1 },
-  grey: { r: 128, g: 128, b: 128, a: 1 },
+  transparent: { r: 0, g: 0, b: 0, "a": 0 },
+  black: { r: 0, g: 0, b: 0, "a": 1 },
+  white: { r: 255, g: 255, b: 255, "a": 1 },
+  red: { r: 255, g: 0, b: 0, "a": 1 },
+  green: { r: 0, g: 255, b: 0, "a": 1 },
+  blue: { r: 0, g: 0, b: 255, "a": 1 },
+  yellow: { r: 255, g: 255, b: 0, "a": 1 },
+  magenta: { r: 255, g: 0, b: 255, "a": 1 },
+  cyan: { r: 0, g: 255, b: 255, "a": 1 },
+  gray: { r: 128, g: 128, b: 128, "a": 1 },
+  grey: { r: 128, g: 128, b: 128, "a": 1 },
 };
 
 export function hueToRgbComponent(pValue: number, qValue: number, colorPercent: number): number {
@@ -167,14 +167,14 @@ export function parseColorToRgba(colorString: string): ColorRgba {
       const green = parseInt(hexDigits[1] + hexDigits[1], 16);
       const blue = parseInt(hexDigits[2] + hexDigits[2], 16);
       const alpha = hexDigits.length === 4 ? parseInt(hexDigits[3] + hexDigits[3], 16) / 255 : 1;
-      return { r: red, g: green, b: blue, a: alpha };
+      return { r: red, g: green, b: blue, "a": alpha };
     }
     if (hexDigits.length === 6 || hexDigits.length === 8) {
       const red = parseInt(hexDigits.slice(0, 2), 16);
       const green = parseInt(hexDigits.slice(2, 4), 16);
       const blue = parseInt(hexDigits.slice(4, 6), 16);
       const alpha = hexDigits.length === 8 ? parseInt(hexDigits.slice(6, 8), 16) / 255 : 1;
-      return { r: red, g: green, b: blue, a: alpha };
+      return { r: red, g: green, b: blue, "a": alpha };
     }
   }
 
@@ -184,7 +184,7 @@ export function parseColorToRgba(colorString: string): ColorRgba {
       r: parseInt(rgbMatch[1], 10),
       g: parseInt(rgbMatch[2], 10),
       b: parseInt(rgbMatch[3], 10),
-      a: rgbMatch[4] !== undefined ? parseFloat(rgbMatch[4]) : 1,
+      "a": rgbMatch[4] !== undefined ? parseFloat(rgbMatch[4]) : 1,
     };
   }
 
@@ -196,10 +196,10 @@ export function parseColorToRgba(colorString: string): ColorRgba {
     const alpha = hslMatch[4] !== undefined ? parseFloat(hslMatch[4]) : 1;
 
     const { r, g, b } = hslToRgb(hue, saturation, lightness);
-    return { r, g, b, a: alpha };
+    return { r, g, b, "a": alpha };
   }
 
-  return { r: 0, g: 0, b: 0, a: 0 };
+  return { r: 0, g: 0, b: 0, "a": 0 };
 }
 
 export function parseColor(colorString: string): ColorRgba {
@@ -215,7 +215,7 @@ export function parseColor(colorString: string): ColorRgba {
         r: parseInt(match[1], 10),
         g: parseInt(match[2], 10),
         b: parseInt(match[3], 10),
-        a: match[4] !== undefined ? parseFloat(match[4]) : 1,
+        "a": match[4] !== undefined ? parseFloat(match[4]) : 1,
       };
     }
   }
@@ -228,7 +228,7 @@ export function interpolateColor(color1: string, color2: string, progress: numbe
   const red = Math.round(parsedColor1.r + (parsedColor2.r - parsedColor1.r) * progress);
   const green = Math.round(parsedColor1.g + (parsedColor2.g - parsedColor1.g) * progress);
   const blue = Math.round(parsedColor1.b + (parsedColor2.b - parsedColor1.b) * progress);
-  const alpha = parsedColor1.a + (parsedColor2.a - parsedColor1.a) * progress;
+  const alpha = parsedColor1['a'] + (parsedColor2['a'] - parsedColor1['a']) * progress;
   return "rgba(" + red + ", " + green + ", " + blue + ", " + alpha + ")";
 }
 

@@ -90,12 +90,12 @@ crawleeConfig.set("persistStorage", false);
 // Types
 // ────────────────────────────────────────────────────────────
 
-export type ExtractFn = (
+export type ExtractionFunction = (
   context: CheerioCrawlingContext,
 ) => unknown | Promise<unknown>;
 
 export interface CrawlStaticOptions {
-  extractFunction?: ExtractFn;
+  extractFunction?: ExtractionFunction;
   proxyZone?: string;
 }
 

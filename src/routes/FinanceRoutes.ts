@@ -152,11 +152,9 @@ router.get(
 router.get(
   "/macro/search",
   asyncHandler(async (req: Request, res: Response) => {
-    const {
-      q: query,
-      limit,
-      orderBy,
-    } = req.query as Record<string, string | undefined>;
+    const query = req.query['q'] as string | undefined;
+    const limit = req.query.limit as string | undefined;
+    const orderBy = req.query.orderBy as string | undefined;
     if (!query) {
       return res.status(400).json({ error: "Query parameter 'q' is required" });
     }
@@ -269,7 +267,7 @@ router.get(
 router.get(
   "/sec/search",
   asyncHandler(async (req: Request, res: Response) => {
-    const query = req.query.q as string;
+    const query = req.query['q'] as string;
     if (!query) {
       return res.status(400).json({ error: "Query parameter 'q' is required" });
     }
@@ -339,16 +337,14 @@ router.get(
 router.get(
   "/macro/data",
   asyncHandler(async (req: Request, res: Response) => {
-    const {
-      action,
-      q: searchQuery,
-      seriesId,
-      limit,
-      orderBy,
-      sortOrder,
-      observationStart,
-      observationEnd,
-    } = req.query as Record<string, string | undefined>;
+    const action = req.query.action as string | undefined;
+    const searchQuery = req.query['q'] as string | undefined;
+    const seriesId = req.query.seriesId as string | undefined;
+    const limit = req.query.limit as string | undefined;
+    const orderBy = req.query.orderBy as string | undefined;
+    const sortOrder = req.query.sortOrder as string | undefined;
+    const observationStart = req.query.observationStart as string | undefined;
+    const observationEnd = req.query.observationEnd as string | undefined;
     if (!action)
       return res
         .status(400)

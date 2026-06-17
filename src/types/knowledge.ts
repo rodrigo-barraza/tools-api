@@ -535,7 +535,7 @@ export interface RawOpenLibraryDoc {
 }
 
 export interface RawOpenLibrarySearchResponse {
-  numFound: number;
+  "numFound": number;
   docs: RawOpenLibraryDoc[];
 }
 

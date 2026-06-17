@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeAll } from "vitest";
 import request from "supertest";
 import { createTestApp } from "./testApp.ts";
+import { Express } from "express";
 import {
   agenticScheduleCreate,
   agenticScheduleList,
@@ -128,7 +129,7 @@ describe("AgenticSchedulerService — Unit Tests", () => {
 });
 
 describe("AgenticScheduler — Route Integration Tests", () => {
-  let expressApp: any;
+  let expressApp: Express;
 
   beforeAll(async () => {
     const { default: router } = await import("../src/routes/AgenticRoutes.ts");
@@ -447,7 +448,7 @@ describe("AgenticSchedulerService — Username Forwarding", () => {
 // HTTP call to prism-service.
 
 describe("AgenticScheduler Routes — Username Forwarding", () => {
-  let expressApp: any;
+  let expressApp: Express;
 
   beforeAll(async () => {
     const { default: router } = await import("../src/routes/AgenticRoutes.ts");

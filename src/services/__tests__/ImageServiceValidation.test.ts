@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { processImage, convertToAscii } from "../ImageService.ts";
+import type { ImageOperation } from "../../types/image.ts";
 
 describe("processImage validation", () => {
   const DUMMY_INPUT = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAGklEQVQYlWNgYGD4DwUMIEwMZGBkGFVAMwAAl30BC0H+t3IAAAAASUVORK5CYII=";
@@ -23,7 +24,7 @@ describe("processImage validation", () => {
     await expect(
       processImage({
         input: DUMMY_INPUT,
-        operations: [{ type: "emboss" as any }],
+        operations: [{ type: "emboss" } as unknown as ImageOperation],
       }),
     ).rejects.toThrow("Unknown operation type: 'emboss'");
   });

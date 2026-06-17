@@ -4,9 +4,10 @@ import { createTestApp } from "./testApp.ts";
 import { ALLOWED_ROOTS } from "../src/services/AgenticFileService.ts";
 import fs from "fs";
 import path from "path";
+import { Express } from "express";
 
 describe("Agentic File Operations Router — block-replace and multi-replace", () => {
-  let app: any;
+  let app: Express;
   const testRoot = "/tmp/agentic-file-test";
   const testFilePath = path.join(testRoot, "mock-file.txt");
 

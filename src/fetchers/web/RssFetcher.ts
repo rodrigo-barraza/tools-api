@@ -138,13 +138,13 @@ interface AtomFeed {
   entry?: AtomEntry | AtomEntry[];
   title?: string | { _?: string };
   subtitle?: string | { _?: string };
-  link?: string | Array<{ rel?: string; href?: string }> | { href?: string };
+  link?: string | Array<{ "rel"?: string; href?: string }> | { href?: string };
   updated?: string;
 }
 
 interface AtomEntry {
   title?: string | { _?: string };
-  link?: string | Array<{ rel?: string; href?: string }> | { href?: string };
+  link?: string | Array<{ "rel"?: string; href?: string }> | { href?: string };
   published?: string;
   updated?: string;
   author?: { name?: string } | string | { _?: string };
@@ -204,7 +204,7 @@ function extractText(
 function extractLink(
   link:
     | string
-    | Array<{ rel?: string; href?: string }>
+    | Array<{ "rel"?: string; href?: string }>
     | { href?: string }
     | null
     | undefined,
@@ -212,7 +212,7 @@ function extractLink(
   if (!link) return null;
   if (typeof link === "string") return link;
   if (Array.isArray(link)) {
-    const alternate = link.find((l) => l.rel === "alternate") || link[0];
+    const alternate = link.find((l) => l['rel'] === "alternate") || link[0];
     return alternate?.href || null;
   }
   return link.href || null;

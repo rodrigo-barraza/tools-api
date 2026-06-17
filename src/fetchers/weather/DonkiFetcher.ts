@@ -10,7 +10,7 @@ export interface SolarFlare {
   endTime: Date | null;
   classType: string;
   sourceLocation: string;
-  activeRegionNum: number | null;
+  activeRegionNumber: number | null;
   instruments: string[];
   linkedEvents: string[];
   note: string | null;
@@ -22,7 +22,7 @@ export interface Cme {
   activityId: string;
   startTime: Date | null;
   sourceLocation: string | null;
-  activeRegionNum: number | null;
+  activeRegionNumber: number | null;
   instruments: string[];
   note: string | null;
   link: string;
@@ -74,7 +74,7 @@ interface RawSolarFlare {
   endTime: string | null;
   classType: string;
   sourceLocation: string;
-  activeRegionNum: number | null;
+  "activeRegionNum": number | null;
   instruments?: RawInstrument[];
   linkedEvents?: RawLinkedEvent[];
   note: string | null;
@@ -105,7 +105,7 @@ interface RawCme {
   activityID: string;
   startTime: string | null;
   sourceLocation: string | null;
-  activeRegionNum: number | null;
+  "activeRegionNum": number | null;
   instruments?: RawInstrument[];
   note: string | null;
   link: string;
@@ -159,7 +159,7 @@ export async function fetchSolarFlares(): Promise<SolarFlare[]> {
       endTime: flr.endTime ? new Date(flr.endTime) : null,
       classType: flr.classType,
       sourceLocation: flr.sourceLocation,
-      activeRegionNum: flr.activeRegionNum,
+      activeRegionNumber: flr['activeRegionNum'],
       instruments: flr.instruments?.map((instrument) => instrument.displayName) || [],
       linkedEvents: flr.linkedEvents?.map((event) => event.activityID) || [],
       note: flr.note || null,
@@ -194,7 +194,7 @@ export async function fetchCmes(): Promise<Cme[]> {
       activityId: cme.activityID,
       startTime: cme.startTime ? new Date(cme.startTime) : null,
       sourceLocation: cme.sourceLocation || null,
-      activeRegionNum: cme.activeRegionNum,
+      activeRegionNumber: cme['activeRegionNum'],
       instruments: cme.instruments?.map((instrument) => instrument.displayName) || [],
       note: cme.note || null,
       link: cme.link,

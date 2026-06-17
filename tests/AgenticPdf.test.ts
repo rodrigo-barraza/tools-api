@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeAll } from "vitest";
 import request from "supertest";
 import { createTestApp } from "./testApp.ts";
 import { readPdfUrl } from "../src/fetchers/web/PdfFetcher.ts";
+import { Express } from "express";
 
 vi.mock("pdf-parse", () => {
   const mockGetText = vi.fn().mockImplementation(async (params) => {
@@ -31,7 +32,7 @@ vi.mock("pdf-parse", () => {
 
   return {
     PDFParse: class MockPDFParse {
-      constructor(paramsName: any) {}
+      constructor(paramsName: unknown) {}
       load = vi.fn().mockResolvedValue(undefined);
       getInfo = mockGetInfo;
       getText = mockGetText;
@@ -41,7 +42,7 @@ vi.mock("pdf-parse", () => {
 });
 
 describe("PdfFetcher & Web PDF Read Endpoint", () => {
-  let expressApp: any;
+  let expressApp: Express;
 
   beforeAll(async () => {
     const { default: router } = await import("../src/routes/AgenticRoutes.ts");

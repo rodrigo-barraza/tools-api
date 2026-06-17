@@ -1239,9 +1239,9 @@ function rgbToHsv({ r, g, b }: { r: number; g: number; b: number }) {
     }
   }
   return {
-    h: Math.round(hue * 360),
-    s: Math.round(saturation * 100),
-    v: Math.round(value * 100),
+    "h": Math.round(hue * 360),
+    "s": Math.round(saturation * 100),
+    "v": Math.round(value * 100),
   };
 }
 function rgbToCmyk({ r, g, b }: { r: number; g: number; b: number }) {
@@ -1249,12 +1249,12 @@ function rgbToCmyk({ r, g, b }: { r: number; g: number; b: number }) {
   const gNorm = g / 255;
   const bNorm = b / 255;
   const blackLevel = 1 - Math.max(rNorm, gNorm, bNorm);
-  if (blackLevel === 1) return { c: 0, m: 0, y: 0, k: 100 };
+  if (blackLevel === 1) return { "c": 0, "m": 0, "y": 0, "k": 100 };
   return {
-    c: Math.round(((1 - rNorm - blackLevel) / (1 - blackLevel)) * 100),
-    m: Math.round(((1 - gNorm - blackLevel) / (1 - blackLevel)) * 100),
-    y: Math.round(((1 - bNorm - blackLevel) / (1 - blackLevel)) * 100),
-    k: Math.round(blackLevel * 100),
+    "c": Math.round(((1 - rNorm - blackLevel) / (1 - blackLevel)) * 100),
+    "m": Math.round(((1 - gNorm - blackLevel) / (1 - blackLevel)) * 100),
+    "y": Math.round(((1 - bNorm - blackLevel) / (1 - blackLevel)) * 100),
+    "k": Math.round(blackLevel * 100),
   };
 }
 /**
@@ -1472,7 +1472,7 @@ function buildTurtleEmbedHtml(
   #status.active { color: #38bdf8; }
   #status.done { color: #4ade80; }`,
     bodyContent: `<div id="container">
-  ${title ? `<div id="title">${title}</div>` : ""}
+  ${title ? '<div id="title">' + title + '</div>' : ""}
   <canvas id="turtle" width="${canvasWidth}" height="${canvasHeight}"></canvas>
   <div id="status">initializing…</div>
 </div>`,
@@ -1522,7 +1522,7 @@ function buildTurtleEmbedHtml(
     showTurtle = true;
     clearCanvas();
   }
-  function deg2rad(d) { return d * Math.PI / 180; }
+  function degreesToRadians(degrees: number): number { return degrees * Math.PI / 180; }
   function drawTurtle() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = BG;
@@ -1532,7 +1532,7 @@ function buildTurtleEmbedHtml(
     if (!showTurtle) return;
     // Turtle cursor — a triangle pointing in the heading direction
     const size = 12;
-    const rad = deg2rad(angle);
+    const rad = degreesToRadians(angle);
     const tipX = x + Math.cos(rad) * size * 1.5;
     const tipY = y + Math.sin(rad) * size * 1.5;
     const leftX = x + Math.cos(rad + 2.4) * size;
@@ -1555,12 +1555,12 @@ function buildTurtleEmbedHtml(
   // ── Execute a single command ──
   function executeCommand(cmd) {
     const action = cmd.action || cmd.command || cmd.cmd;
-    const val = cmd.value !== undefined ? cmd.value : cmd.distance || cmd.angle || cmd.amount || 0;
-    const val2 = cmd.value2 !== undefined ? cmd.value2 : cmd.extent || 0;
+    const commandValue = cmd.value !== undefined ? cmd.value : cmd.distance || cmd.angle || cmd.amount || 0;
+    const commandValue2 = cmd.value2 !== undefined ? cmd.value2 : cmd.extent || 0;
     switch (action) {
       case "forward": case "fd": {
-        const distanceValue = Number(val);
-        const rad = deg2rad(angle);
+        const distanceValue = Number(commandValue);
+        const rad = degreesToRadians(angle);
         const nextX = x + Math.cos(rad) * distanceValue;
         const nextY = y + Math.sin(rad) * distanceValue;
         if (penDown) {
@@ -1576,8 +1576,8 @@ function buildTurtleEmbedHtml(
         break;
       }
       case "backward": case "bk": case "back": {
-        const distanceValue = -Number(val);
-        const rad = deg2rad(angle);
+        const distanceValue = -Number(commandValue);
+        const rad = degreesToRadians(angle);
         const nextX = x + Math.cos(rad) * distanceValue;
         const nextY = y + Math.sin(rad) * distanceValue;
         if (penDown) {
@@ -1593,10 +1593,10 @@ function buildTurtleEmbedHtml(
         break;
       }
       case "right": case "rt":
-        angle += Number(val);
+        angle += Number(commandValue);
         break;
       case "left": case "lt":
-        angle -= Number(val);
+        angle -= Number(commandValue);
         break;
       case "penup": case "pu":
         penDown = false;
@@ -1608,11 +1608,11 @@ function buildTurtleEmbedHtml(
         penColor = cmd.color || cmd.value || "#38bdf8";
         break;
       case "width": case "pensize":
-        penWidth = Number(val) || 2;
+        penWidth = Number(commandValue) || 2;
         break;
       case "goto": case "setposition": case "setpos": {
-        const goalX = canvas.width / 2 + Number(cmd.x !== undefined ? cmd.x : val);
-        const goalY = canvas.height / 2 - Number(cmd.y !== undefined ? cmd.y : val2);
+        const goalX = canvas.width / 2 + Number(cmd.x !== undefined ? cmd.x : commandValue);
+        const goalY = canvas.height / 2 - Number(cmd.y !== undefined ? cmd.y : commandValue2);
         if (penDown) {
           drawCtx.beginPath();
           drawCtx.moveTo(x, y);
@@ -1626,7 +1626,7 @@ function buildTurtleEmbedHtml(
         break;
       }
       case "setheading": case "seth":
-        angle = Number(val) - 90;
+        angle = Number(commandValue) - 90;
         break;
       case "home":
         x = canvas.width / 2;
@@ -1634,13 +1634,13 @@ function buildTurtleEmbedHtml(
         angle = -90;
         break;
       case "circle": {
-        const radius = Number(val);
+        const radius = Number(commandValue);
         const extent = 360;
-        const headingAngleRadians = deg2rad(angle);
+        const headingAngleRadians = degreesToRadians(angle);
         const centerX = x + radius * Math.sin(headingAngleRadians);
         const centerY = y - radius * Math.cos(headingAngleRadians);
         const startAngleRadians = Math.atan2(y - centerY, x - centerX);
-        const sweepAngleRadians = -deg2rad(extent) * Math.sign(radius);
+        const sweepAngleRadians = -degreesToRadians(extent) * Math.sign(radius);
         const endAngleRadians = startAngleRadians + sweepAngleRadians;
         if (penDown) {
           drawCtx.beginPath();
@@ -1665,13 +1665,13 @@ function buildTurtleEmbedHtml(
         break;
       }
       case "arc": {
-        const radius = Number(val);
-        const extent = Number(val2) || 360;
-        const headingAngleRadians = deg2rad(angle);
+        const radius = Number(commandValue);
+        const extent = Number(commandValue2) || 360;
+        const headingAngleRadians = degreesToRadians(angle);
         const centerX = x + radius * Math.sin(headingAngleRadians);
         const centerY = y - radius * Math.cos(headingAngleRadians);
         const startAngleRadians = Math.atan2(y - centerY, x - centerX);
-        const sweepAngleRadians = -deg2rad(extent) * Math.sign(radius);
+        const sweepAngleRadians = -degreesToRadians(extent) * Math.sign(radius);
         const endAngleRadians = startAngleRadians + sweepAngleRadians;
         if (penDown) {
           drawCtx.beginPath();
@@ -1696,7 +1696,7 @@ function buildTurtleEmbedHtml(
         break;
       }
       case "dot": case "stamp": {
-        const dotSize = Number(val) || 5;
+        const dotSize = Number(commandValue) || 5;
         drawCtx.beginPath();
         drawCtx.arc(x, y, dotSize, 0, Math.PI * 2);
         drawCtx.fillStyle = penColor;
@@ -1734,7 +1734,7 @@ function buildTurtleEmbedHtml(
         fillPath = [];
         break;
       case "speed":
-        turtleSpeed = Math.max(1, Math.min(10, Number(val) || 5));
+        turtleSpeed = Math.max(1, Math.min(10, Number(commandValue) || 5));
         break;
       case "hideturtle": case "ht":
         showTurtle = false;
@@ -2099,9 +2099,9 @@ router.get("/cron/parse", (req: Request, res: Response) => {
     );
     const humanReadable = explanations
       .filter(
-        (e: string) =>
-          !e.startsWith("every ") ||
-          e !== `every ${CRON_FIELD_NAMES[explanations.indexOf(e)]}`,
+        (explanation: string) =>
+          !explanation.startsWith("every ") ||
+          explanation !== `every ${CRON_FIELD_NAMES[explanations.indexOf(explanation)]}`,
       )
       .join(", ");
     const nextCount = Math.min(Math.max(parseInt(count) || 5, 1), 25);
@@ -2471,7 +2471,7 @@ function buildAsciiEmbedHtml(entry: AsciiStoreEntry) {
     border-radius: 3px;
     cursor: pointer;
   }
-  #font-size-val {
+  #font-size-value {
     font-size: 12px;
     font-family: 'SF Mono', 'Fira Code', monospace;
     color: #38bdf8;
@@ -2536,7 +2536,7 @@ function buildAsciiEmbedHtml(entry: AsciiStoreEntry) {
     transform: translateX(18px);
     background-color: #0f172a;
   }
-  #copy-btn {
+  #copy-button {
     background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
     color: #0f172a;
     border: none;
@@ -2548,11 +2548,11 @@ function buildAsciiEmbedHtml(entry: AsciiStoreEntry) {
     box-shadow: 0 4px 14px rgba(56, 189, 248, 0.3);
     transition: all 0.2s;
   }
-  #copy-btn:hover {
+  #copy-button:hover {
     transform: translateY(-1px);
     box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
   }
-  #copy-btn:active {
+  #copy-button:active {
     transform: translateY(0);
   }
   #ascii-container {
@@ -2586,7 +2586,7 @@ function buildAsciiEmbedHtml(entry: AsciiStoreEntry) {
     <div class="control-group">
       <label for="font-size">Zoom</label>
       <input type="range" id="font-size" min="4" max="24" value="8" step="1" oninput="updateFont(this.value)">
-      <span id="font-size-val">8px</span>
+      <span id="font-size-value">8px</span>
     </div>
     
     <div class="control-group">
@@ -2613,7 +2613,7 @@ function buildAsciiEmbedHtml(entry: AsciiStoreEntry) {
       </label>
     </div>
 
-    <button id="copy-btn" onclick="copyRawAscii()">Copy Raw ASCII</button>
+    <button id="copy-button" onclick="copyRawAscii()">Copy Raw ASCII</button>
   </div>
   
   <div id="ascii-container">
@@ -2639,13 +2639,13 @@ function buildAsciiEmbedHtml(entry: AsciiStoreEntry) {
 
   window.updateFont = function(size) {
     currentSize = parseInt(size);
-    document.getElementById('font-size-val').textContent = size + 'px';
+    document.getElementById('font-size-value').textContent = size + 'px';
     document.getElementById('ascii-pre').style.fontSize = size + 'px';
     reportSize();
   };
 
-  window.changeCharset = function(val) {
-    currentCharset = val;
+  window.changeCharset = function(newCharset) {
+    currentCharset = newCharset;
     renderAscii();
   };
 
@@ -2662,7 +2662,7 @@ function buildAsciiEmbedHtml(entry: AsciiStoreEntry) {
   function renderAscii() {
     const pre = document.getElementById('ascii-pre');
     const charset = CHARSETS[currentCharset];
-    const charLen = charset.length;
+    const charsetLength = charset.length;
     
     let html = '';
     
@@ -2672,11 +2672,11 @@ function buildAsciiEmbedHtml(entry: AsciiStoreEntry) {
         const pixel = row[x];
         const brightness = pixel.brightness;
         
-        let charIdx = Math.floor((brightness / 255) * (charLen - 1));
+        let characterIndex = Math.floor((brightness / 255) * (charsetLength - 1));
         if (isReversed) {
-          charIdx = (charLen - 1) - charIdx;
+          characterIndex = (charsetLength - 1) - characterIndex;
         }
-        const char = charset[charIdx];
+        const char = charset[characterIndex];
         
         // Escape HTML special characters
         let escChar = char;
@@ -2700,30 +2700,30 @@ function buildAsciiEmbedHtml(entry: AsciiStoreEntry) {
 
   window.copyRawAscii = function() {
     const charset = CHARSETS[currentCharset];
-    const charLen = charset.length;
+    const charsetLength = charset.length;
     let text = '';
     
     for (let y = 0; y < PIXELS.length; y++) {
       const row = PIXELS[y];
       for (let x = 0; x < row.length; x++) {
         const pixel = row[x];
-        let charIdx = Math.floor((pixel.brightness / 255) * (charLen - 1));
+        let characterIndex = Math.floor((pixel.brightness / 255) * (charsetLength - 1));
         if (isReversed) {
-          charIdx = (charLen - 1) - charIdx;
+          characterIndex = (charsetLength - 1) - characterIndex;
         }
-        text += charset[charIdx];
+        text += charset[characterIndex];
       }
       text += '\\n';
     }
     
     navigator.clipboard.writeText(text).then(() => {
-      const btn = document.getElementById('copy-btn');
-      const oldText = btn.textContent;
-      btn.textContent = 'Copied!';
-      btn.style.background = 'linear-gradient(135deg, #4ade80 0%, #16a34a 100%)';
+      const copyButton = document.getElementById('copy-button');
+      const oldText = copyButton.textContent;
+      copyButton.textContent = 'Copied!';
+      copyButton.style.background = 'linear-gradient(135deg, #4ade80 0%, #16a34a 100%)';
       setTimeout(() => {
-        btn.textContent = oldText;
-        btn.style.background = '';
+        copyButton.textContent = oldText;
+        copyButton.style.background = '';
       }, 2000);
     });
   };
@@ -3596,7 +3596,8 @@ function deepCompare(
 router.post(
   "/json/compare",
   asyncHandler(async (req: Request, res: Response) => {
-    const { a: firstJson, b: secondJson } = req.body;
+    const firstJson = req.body['a'];
+    const secondJson = req.body['b'];
     if (firstJson === undefined || secondJson === undefined) {
       return res.status(400).json({
         error: "'a' and 'b' are required (JSON objects to compare)",

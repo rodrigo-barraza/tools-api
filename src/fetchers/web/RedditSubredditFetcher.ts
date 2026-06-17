@@ -170,7 +170,7 @@ function normalizeFeedPost(
     selfText: truncateText(childData.selftext as string),
     score: (childData.score as number) || 0,
     upvoteRatio: (childData.upvote_ratio as number) || 0,
-    commentCount: (childData.num_comments as number) || 0,
+    commentCount: (childData['num_comments'] as number) || 0,
     createdUtc: (childData.created_utc as number) || 0,
     permalink: fullPermalink,
     externalUrl: externalUrl !== fullPermalink ? externalUrl : null,
@@ -252,7 +252,7 @@ export async function searchSubreddits(
 
   try {
     const parameters: Record<string, string> = {
-      q: query.trim(),
+      "q": query.trim(),
       limit: Math.min(limit, 25).toString(),
       show: "all",
     };
@@ -335,7 +335,7 @@ export async function getSubredditFeed(
     };
 
     if (sort === "top" || sort === "controversial") {
-      parameters.t = timeRange;
+      parameters['t'] = timeRange;
     }
 
     const listing =

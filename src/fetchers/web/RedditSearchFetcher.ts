@@ -89,7 +89,7 @@ function normalizeSearchChild(
       author: (childData.author as string) || "[deleted]",
       score: (childData.score as number) || 0,
       upvoteRatio: (childData.upvote_ratio as number) || 0,
-      commentCount: (childData.num_comments as number) || 0,
+      commentCount: (childData['num_comments'] as number) || 0,
       createdUtc: (childData.created_utc as number) || 0,
       permalink: fullPermalink,
       externalUrl: externalUrl !== fullPermalink ? externalUrl : null,
@@ -175,10 +175,10 @@ export async function searchReddit(
 
     for (let pageIndex = 0; pageIndex < effectiveMaxPages; pageIndex++) {
       const parameters: Record<string, string> = {
-        q: query.trim(),
+        "q": query.trim(),
         type,
         sort,
-        t: timeRange,
+        "t": timeRange,
         limit: effectiveResultsPerPage.toString(),
       };
 

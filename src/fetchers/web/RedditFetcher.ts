@@ -158,7 +158,7 @@ export async function getRedditThread(
         selfText.length > MAX_BODY_CHARS
           ? selfText.slice(0, MAX_BODY_CHARS) + "... [truncated]"
           : selfText,
-      commentCount: post.num_comments,
+      commentCount: post['num_comments'],
       createdUtc: post.created_utc,
       flair: post.link_flair_text || null,
       isNsfw: post.over_18 || false,

@@ -804,7 +804,7 @@ export function getAgenticHealth() {
   return {
     readFile: "on-demand (sandboxed fs)",
     writeFile: "on-demand (sandboxed fs)",
-    strReplace: "on-demand (sandboxed fs)",
+    stringReplace: "on-demand (sandboxed fs)",
     blockReplace: "on-demand (sandboxed fs)",
     multiReplace: "on-demand (sandboxed fs)",
     patchFile: "on-demand (sandboxed fs + diff)",

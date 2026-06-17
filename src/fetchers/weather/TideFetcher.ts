@@ -10,8 +10,8 @@ export interface TidePrediction {
 }
 
 interface RawTidePrediction {
-  t: string;
-  v: string;
+  "t": string;
+  "v": string;
   type: "H" | "L" | string;
 }
 
@@ -42,8 +42,8 @@ export async function fetchTides(): Promise<TidePrediction[]> {
 
   return (json.predictions || []).map(
     (rawTidePrediction: RawTidePrediction): TidePrediction => ({
-      time: rawTidePrediction.t,
-      height: parseFloat(rawTidePrediction.v),
+      time: rawTidePrediction['t'],
+      height: parseFloat(rawTidePrediction['v']),
       type: rawTidePrediction.type === "H" ? "high" : "low",
       stationId,
     }),

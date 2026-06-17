@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach, MockInstance } from "vitest";
 import request from "supertest";
 import { createTestApp } from "./testApp.ts";
 import knowledgeRoutes from "../src/routes/KnowledgeRoutes.ts";
@@ -69,14 +69,15 @@ describe("Reddit Tools and Endpoints", () => {
   });
 
   describe("Rate Limiting and Caching Logic", () => {
-    let fetchSpy;
+    let fetchSpy: MockInstance<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>;
 
     beforeEach(() => {
       // Spy on global fetch
       fetchSpy = vi
-        .spyOn(global, "fetch")
-        .mockImplementation(async (url: any) => {
-          if (url.includes("access_token")) {
+        .spyOn(globalThis as unknown as { fetch: typeof fetch }, "fetch")
+        .mockImplementation(async (input) => {
+          const urlString = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+          if (urlString.includes("access_token")) {
             return {
               ok: true,
               status: 200,
@@ -84,13 +85,13 @@ describe("Reddit Tools and Endpoints", () => {
                 access_token: "mock-access-token",
                 expires_in: 3600,
               }),
-            } as any;
+            } as Response;
           }
           return {
             ok: true,
             status: 200,
             json: async () => ({ mockData: "reddit-response" }),
-          } as any;
+          } as Response;
         });
     });
 
@@ -126,12 +127,13 @@ describe("Reddit Tools and Endpoints", () => {
       const startTimes: number[] = [];
       const finishTimes: number[] = [];
 
-      fetchSpy.mockImplementation(async (url: any) => {
+      fetchSpy.mockImplementation(async (input) => {
+        const urlString = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
         startTimes.push(Date.now());
         await new Promise((resolve) => setTimeout(resolve, 50));
         finishTimes.push(Date.now());
 
-        if (url.includes("access_token")) {
+        if (urlString.includes("access_token")) {
           return {
             ok: true,
             status: 200,
@@ -139,13 +141,13 @@ describe("Reddit Tools and Endpoints", () => {
               access_token: "mock-access-token",
               expires_in: 3600,
             }),
-          } as any;
+          } as Response;
         }
         return {
           ok: true,
           status: 200,
           json: async () => ({ data: "success" }),
-        } as any;
+        } as Response;
       });
 
       fetchSpy.mockClear();

@@ -189,7 +189,7 @@ export interface Meal {
 export interface NutrientCoverageDetail {
   consumed: number;
   target: number;
-  pctCovered: number;
+  percentageCovered: number;
   status: "✅" | "⚠️" | "❌";
 }
 
@@ -283,7 +283,7 @@ export function buildMealPlan({
   if (excludeFoods) {
     const excluded = excludeFoods
       .split(",")
-      .map((e: string) => normalizeSearch(e.trim()))
+      .map((excludedFood: string) => normalizeSearch(excludedFood.trim()))
       .filter(Boolean);
     candidates = candidates.filter(
       (food: FoodItem) =>
@@ -443,7 +443,7 @@ export function buildMealPlan({
     coverage[nutrient] = {
       consumed: Number(consumed.toFixed(2)),
       target: Number(target.toFixed(2)),
-      pctCovered: Number(percentage.toFixed(1)),
+      percentageCovered: Number(percentage.toFixed(1)),
       status: percentage >= 90 ? "✅" : percentage >= 50 ? "⚠️" : "❌",
     };
   }

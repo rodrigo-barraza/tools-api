@@ -23,7 +23,7 @@ interface EtsyListing {
   tags?: string[];
   taxonomy_path?: string[];
   price?: EtsyPrice;
-  num_favorers?: number;
+  "num_favorers"?: number;
   images?: EtsyImage[];
   url?: string;
   description?: string;
@@ -105,7 +105,7 @@ export async function fetchEtsyTrending() {
             : undefined,
           currency: item.price?.currency_code || "USD",
           rating: undefined,
-          reviewCount: item.num_favorers || 0,
+          reviewCount: item['num_favorers'] || 0,
           imageUrl: item.images?.[0]?.url_570xN || undefined,
           productUrl:
             item.url || `https://www.etsy.com/listing/${item.listing_id}`,

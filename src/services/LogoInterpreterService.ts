@@ -284,7 +284,8 @@ function tokenizeLogoSource(source: string): LogoToken[] {
 }
 
 function isWordCharacter(character: string): boolean {
-  return /[a-zA-Z0-9_.?]/.test(character);
+  const wordCharacterPattern = /[a-zA-Z0-9_.?]/;
+  return wordCharacterPattern.test(character);
 }
 
 function isDelimiterCharacter(character: string): boolean {

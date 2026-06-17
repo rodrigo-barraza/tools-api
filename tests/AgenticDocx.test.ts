@@ -3,6 +3,18 @@ import request from "supertest";
 import { createTestApp } from "./testApp.ts";
 import { readDocxUrl } from "../src/fetchers/web/DocxFetcher.ts";
 import mammoth from "mammoth";
+import { Express } from "express";
+
+interface MammothExtended {
+  convertToMarkdown(
+    input: { buffer: Buffer },
+  ): Promise<{ value: string; messages: { type: string; message: string }[] }>;
+  extractRawText(
+    input: { buffer: Buffer },
+  ): Promise<{ value: string; messages: { type: string; message: string }[] }>;
+}
+
+const mammothParser = mammoth as unknown as MammothExtended;
 
 // Mock the mammoth dependency hermetically
 vi.mock("mammoth", () => {
@@ -21,7 +33,7 @@ vi.mock("mammoth", () => {
 });
 
 describe("DocxFetcher & Web DOCX Read Endpoint", () => {
-  let expressApp: any;
+  let expressApp: Express;
 
   beforeAll(async () => {
     const { default: router } = await import("../src/routes/AgenticRoutes.ts");
@@ -57,7 +69,7 @@ describe("DocxFetcher & Web DOCX Read Endpoint", () => {
       const result = await readDocxUrl("https://example.com/document.docx");
 
       expect(fetchSpy).toHaveBeenCalled();
-      expect((mammoth as any).convertToMarkdown).toHaveBeenCalled();
+      expect(vi.mocked(mammothParser.convertToMarkdown)).toHaveBeenCalled();
       expect(result.url).toBe("https://example.com/document.docx");
       expect(result.content).toBe("# Mocked Document Heading\n\nThis is mocked docx content.");
       expect(result.outputFormat).toBe("markdown");
@@ -94,7 +106,7 @@ describe("DocxFetcher & Web DOCX Read Endpoint", () => {
       });
 
       expect(fetchSpy).toHaveBeenCalled();
-      expect(mammoth.extractRawText).toHaveBeenCalled();
+      expect(vi.mocked(mammothParser.extractRawText)).toHaveBeenCalled();
       expect(result.content).toBe("Mocked Document Heading\n\nThis is mocked docx content.");
       expect(result.outputFormat).toBe("text");
 

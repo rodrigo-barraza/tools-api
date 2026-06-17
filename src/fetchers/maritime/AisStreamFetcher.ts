@@ -285,10 +285,10 @@ function processMessage(raw: AisRawMessage): AisVessel | null {
           : null,
         dimensions: payload.Dimension
           ? {
-              a: payload.Dimension.A,
-              b: payload.Dimension.B,
-              c: payload.Dimension.C,
-              d: payload.Dimension.D,
+              "a": payload.Dimension.A,
+              "b": payload.Dimension.B,
+              "c": payload.Dimension.C,
+              "d": payload.Dimension.D,
               lengthM: payload.Dimension.A + payload.Dimension.B,
               widthM: payload.Dimension.C + payload.Dimension.D,
             }

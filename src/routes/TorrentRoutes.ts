@@ -19,16 +19,13 @@ const router = Router();
 router.get(
   "/search",
   asyncHandler(async (req: Request, res: Response) => {
-    const {
-      q: qQuery,
-      query,
-      category,
-      plugins,
-      limit,
-      timeout,
-    } = req.query as Record<string, string | undefined>;
-    const searchQuery = qQuery || query;
-    if (!searchQuery) {
+    const queryParameter = (req.query['q'] as string) || (req.query.query as string);
+    const category = req.query.category as string | undefined;
+    const plugins = req.query.plugins as string | undefined;
+    const limit = req.query.limit as string | undefined;
+    const timeout = req.query.timeout as string | undefined;
+
+    if (!queryParameter) {
       return res.status(400).json({
         error: "'q' or 'query' parameter is required",
         example: "/torrent/search?q=ubuntu&category=software",
@@ -36,7 +33,7 @@ router.get(
     }
 
     try {
-      const results = await qbt.search(searchQuery, {
+      const results = await qbt.search(queryParameter, {
         category: category || "all",
         plugins: plugins || "enabled",
         limit: Math.min(parseInt(limit || "") || 50, 100),
@@ -248,18 +245,16 @@ router.get(
 router.get(
   "/",
   asyncHandler(async (req: Request, res: Response) => {
-    const {
-      action,
-      q: qQuery,
-      query,
-      category,
-      plugins,
-      limit,
-      filter,
-      sort,
-      timeout,
-      hashes,
-    } = req.query as Record<string, string | undefined>;
+    const action = req.query.action as string | undefined;
+    const queryParameter = (req.query['q'] as string) || (req.query.query as string);
+    const category = req.query.category as string | undefined;
+    const plugins = req.query.plugins as string | undefined;
+    const limit = req.query.limit as string | undefined;
+    const filter = req.query.filter as string | undefined;
+    const sort = req.query.sort as string | undefined;
+    const timeout = req.query.timeout as string | undefined;
+    const hashes = req.query.hashes as string | undefined;
+
     if (!action) {
       return res.status(400).json({
         error: "'action' is required",
@@ -270,12 +265,11 @@ router.get(
     try {
       switch (action) {
         case "search": {
-          const searchQuery = qQuery || query;
-          if (!searchQuery)
+          if (!queryParameter)
             return res
               .status(400)
               .json({ error: "'q' is required for action=search" });
-          const results = await qbt.search(searchQuery, {
+          const results = await qbt.search(queryParameter, {
             category: category || "all",
             plugins: plugins || "enabled",
             limit: Math.min(parseInt(limit || "") || 50, 100),

@@ -117,7 +117,7 @@ export async function batchGeocodeEvents(
   maxPerBatch: number = 5,
 ) {
   const needsGeocode = events.filter(
-    (e) => e.venue && !e.venue.latitude && !e.venue.longitude,
+    (eventItem) => eventItem.venue && !eventItem.venue.latitude && !eventItem.venue.longitude,
   );
 
   let geocoded = 0;

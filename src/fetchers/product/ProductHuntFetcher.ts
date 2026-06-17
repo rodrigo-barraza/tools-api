@@ -120,7 +120,7 @@ export async function fetchProductHuntTrending() {
   const data = await response.json();
   if (data.errors) {
     throw new Error(
-      `Product Hunt GraphQL errors: ${data.errors.map((e: { message: string }) => e.message).join(", ")}`,
+      `Product Hunt GraphQL errors: ${data.errors.map((errorItem: { message: string }) => errorItem.message).join(", ")}`,
     );
   }
   const edges = data?.data?.posts?.edges || [];
@@ -138,11 +138,11 @@ export async function fetchProductHuntTrending() {
   }
 
   const products = edges.map(
-    (edge: { node: ProductHuntNode }, index: number) => {
-      const node = edge.node;
+    (edgeItem: { node: ProductHuntNode }, index: number) => {
+      const node = edgeItem.node;
       const topics: string[] =
         node.topics?.edges?.map(
-          (e: { node: { name: string } }) => e.node.name,
+          (topicEdge: { node: { name: string } }) => topicEdge.node.name,
         ) || [];
       const product = {
         sourceId: node.id,

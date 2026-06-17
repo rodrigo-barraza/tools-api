@@ -1343,9 +1343,9 @@ function buildVectorAnimationEmbedHtml(
           loopBtn.classList.toggle("active", isLooping);
         });
 
-        timelineSlider.addEventListener("input", (e) => {
+        timelineSlider.addEventListener("input", (event) => {
           isPlaying = false;
-          currentTime = (parseInt(e.target.value) / 1000) * duration;
+          currentTime = (parseInt(event.target.value) / 1000) * duration;
           updateUI();
           renderFrame(currentTime);
         });

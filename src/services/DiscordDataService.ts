@@ -424,51 +424,51 @@ const DiscordDataService = {
       const embeds =
         Array.isArray(messageDoc.embeds) && messageDoc.embeds.length > 0
           ? messageDoc.embeds
-              .map((e: Document) => {
+              .map((embed: Document) => {
                 // Skip empty embeds
                 if (
-                  !e.title &&
-                  !e.description &&
-                  !e.url &&
-                  !e.image &&
-                  !e.thumbnail &&
-                  !e.video
+                  !embed.title &&
+                  !embed.description &&
+                  !embed.url &&
+                  !embed.image &&
+                  !embed.thumbnail &&
+                  !embed.video
                 )
                   return null;
                 return {
-                  ...(e.title && { title: e.title }),
-                  ...(e.description && { description: e.description }),
-                  ...(e.url && { url: e.url }),
-                  ...(e.image && {
+                  ...(embed.title && { title: embed.title }),
+                  ...(embed.description && { description: embed.description }),
+                  ...(embed.url && { url: embed.url }),
+                  ...(embed.image && {
                     image: {
-                      ...e.image,
-                      url: resolveArchivedUrl(e.image.url, archive),
-                      proxyURL: resolveArchivedUrl(e.image.proxyURL, archive),
+                      ...embed.image,
+                      url: resolveArchivedUrl(embed.image.url, archive),
+                      proxyURL: resolveArchivedUrl(embed.image.proxyURL, archive),
                     },
                   }),
-                  ...(e.thumbnail && {
+                  ...(embed.thumbnail && {
                     thumbnail: {
-                      ...e.thumbnail,
-                      url: resolveArchivedUrl(e.thumbnail.url, archive),
+                      ...embed.thumbnail,
+                      url: resolveArchivedUrl(embed.thumbnail.url, archive),
                       proxyURL: resolveArchivedUrl(
-                        e.thumbnail.proxyURL,
+                        embed.thumbnail.proxyURL,
                         archive,
                       ),
                     },
                   }),
-                  ...(e.video && {
+                  ...(embed.video && {
                     video: {
-                      ...e.video,
-                      ...(e.video.url && {
-                        url: resolveArchivedUrl(e.video.url, archive),
+                      ...embed.video,
+                      ...(embed.video.url && {
+                        url: resolveArchivedUrl(embed.video.url, archive),
                       }),
-                      ...(e.video.proxyURL && {
-                        proxyURL: resolveArchivedUrl(e.video.proxyURL, archive),
+                      ...(embed.video.proxyURL && {
+                        proxyURL: resolveArchivedUrl(embed.video.proxyURL, archive),
                       }),
                     },
                   }),
-                  ...(e.provider && { provider: e.provider }),
-                  ...(e.color != null && { color: e.color }),
+                  ...(embed.provider && { provider: embed.provider }),
+                  ...(embed.color != null && { color: embed.color }),
                 };
               })
               .filter(Boolean)

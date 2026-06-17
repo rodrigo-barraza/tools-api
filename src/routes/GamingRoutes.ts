@@ -23,11 +23,9 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     try {
       const heroes = await getHeroes();
-      const {
-        role,
-        attr,
-        q: query,
-      } = req.query as Record<string, string | undefined>;
+      const role = req.query.role as string | undefined;
+      const attr = req.query.attr as string | undefined;
+      const query = req.query['q'] as string | undefined;
 
       let filtered = heroes;
 
@@ -47,11 +45,11 @@ router.get(
 
       if (attr) {
         const attrMap: Record<string, string> = {
-          str: "str",
-          agi: "agi",
-          int: "int",
-          all: "all",
-          universal: "all",
+          "str": "str",
+          "agi": "agi",
+          "int": "int",
+          "all": "all",
+          "universal": "all",
         };
         const attrKey = attrMap[attr.toLowerCase()] || attr.toLowerCase();
         filtered = filtered.filter((h) => h.primaryAttr === attrKey);
@@ -248,9 +246,9 @@ router.get(
     // Build query string for sub-routes
     const buildQueryString = (params: Record<string, string | undefined>) => {
       const searchParams = new URLSearchParams();
-      for (const [k, value] of Object.entries(params)) {
+      for (const [key, value] of Object.entries(params)) {
         if (value !== undefined && value !== null)
-          searchParams.set(k, String(value));
+          searchParams.set(key, String(value));
       }
       const queryString = searchParams.toString();
       return queryString ? `?${queryString}` : "";
@@ -258,7 +256,7 @@ router.get(
 
     switch (action) {
       case "heroes":
-        req.url = `/dota/heroes${buildQueryString({ q: query, role, attr })}`;
+        req.url = `/dota/heroes${buildQueryString({ "q": query, role, attr })}`;
         return router.handle(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );

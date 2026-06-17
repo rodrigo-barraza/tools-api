@@ -38,10 +38,10 @@ export async function getTimeInTimezone(timezone: string) {
     dayOfWeek: data.day_of_week,
     dayOfYear: data.day_of_year,
     weekNumber: data.week_number,
-    isDst: data.dst,
-    dstFrom: data.dst_from || null,
-    dstUntil: data.dst_until || null,
-    dstOffset: data.dst_offset || 0,
+    isDaylightSavingTime: data['dst'],
+    daylightSavingTimeFrom: data['dst_from'] || null,
+    daylightSavingTimeUntil: data['dst_until'] || null,
+    daylightSavingTimeOffset: data['dst_offset'] || 0,
   };
 }
 

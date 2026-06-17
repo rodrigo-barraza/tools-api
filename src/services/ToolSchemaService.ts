@@ -72,7 +72,7 @@ function resolveDomainKey(domain: string): string {
     DOMAIN_DISPLAY_NAME_TO_KEY.get(domain) ||
     domain
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "_")
+      .replace(new RegExp("[^a-z0-9]+", "g"), "_")
       .replace(/^_|_$/g, "")
   );
 }
@@ -1247,9 +1247,9 @@ const FIELDS = {
     "abbreviation",
     "utcOffset",
     "dayOfWeek",
-    "isDst",
-    "dstFrom",
-    "dstUntil",
+    "isDaylightSavingTime",
+    "daylightSavingTimeFrom",
+    "daylightSavingTimeUntil",
   ],
 
   // IP Geolocation: from IpInfoFetcher
@@ -2075,7 +2075,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           description: "Event query mode",
           enum: ["search", "upcoming", "today", "summary"],
         },
-        q: { type: "string", description: "Search query (action=search)" },
+        "q": { type: "string", description: "Search query (action=search)" },
         source: {
           type: "string",
           description: "Event source filter (action=search)",
@@ -2183,7 +2183,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     parameters: {
       type: "object",
       properties: {
-        q: {
+        "q": {
           type: "string",
           description: "Product search query",
         },
@@ -2394,7 +2394,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           description: "Query mode",
           enum: ["indicators", "search", "series", "observations"],
         },
-        q: { type: "string", description: "Search query (action=search)" },
+        "q": { type: "string", description: "Search query (action=search)" },
         seriesId: {
           type: "string",
           description:
@@ -2568,7 +2568,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           description:
             "SEC CIK number (action=filings or facts). e.g. '1067983' for Berkshire Hathaway",
         },
-        q: {
+        "q": {
           type: "string",
           description:
             "Search query for finding filers (action=search). e.g. 'Berkshire', 'Renaissance'",
@@ -2625,7 +2625,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           description: "Lookup mode",
           enum: ["search", "work", "author"],
         },
-        q: { type: "string", description: "Search query (action=search)" },
+        "q": { type: "string", description: "Search query (action=search)" },
         workKey: {
           type: "string",
           description: "Open Library work key like 'OL45804W' (action=work)",
@@ -2728,7 +2728,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           description: "Query mode",
           enum: ["search", "lookup", "rank", "categories"],
         },
-        q: { type: "string", description: "Search query (action=search)" },
+        "q": { type: "string", description: "Search query (action=search)" },
         symbol: {
           type: "string",
           description: "Element symbol like 'Fe', 'Au' (action=lookup)",
@@ -2767,7 +2767,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           description: "Query mode",
           enum: ["search", "lookup", "rank", "stats", "habitable"],
         },
-        q: { type: "string", description: "Search query (action=search)" },
+        "q": { type: "string", description: "Search query (action=search)" },
         name: { type: "string", description: "Planet name (action=lookup)" },
         field: {
           type: "string",
@@ -2808,7 +2808,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           description: "Query mode",
           enum: ["search", "top", "season", "schedule", "details"],
         },
-        q: { type: "string", description: "Search query (action=search)" },
+        "q": { type: "string", description: "Search query (action=search)" },
         id: { type: "number", description: "MyAnimeList ID (action=details)" },
         year: { type: "number", description: "Year for schedule lookup (action=schedule)" },
         season: {
@@ -2856,7 +2856,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     parameters: {
       type: "object",
       properties: {
-        q: {
+        "q": {
           type: "string",
           description: "Search query for paper titles/abstracts",
         },
@@ -3089,7 +3089,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     parameters: {
       type: "object",
       properties: {
-        q: { type: "string", description: "Search query" },
+        "q": { type: "string", description: "Search query" },
         subreddit: {
           type: "string",
           description: "Optional subreddit to restrict the search to",
@@ -3104,7 +3104,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           enum: ["relevance", "new", "hot", "top", "comments"],
           description: "Sort order",
         },
-        t: {
+        "t": {
           type: "string",
           enum: ["hour", "day", "week", "month", "year", "all"],
           description: "Time range filter",
@@ -3138,7 +3138,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     parameters: {
       type: "object",
       properties: {
-        q: {
+        "q": {
           type: "string",
           description: "Keyword query to search subreddits",
         },
@@ -3194,7 +3194,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           enum: ["hot", "new", "top", "rising", "controversial"],
           description: "Sort order (default: hot)",
         },
-        t: {
+        "t": {
           type: "string",
           enum: ["hour", "day", "week", "month", "year", "all"],
           description: "Time range (for top/controversial sort, default: day)",
@@ -3302,7 +3302,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           enum: ["new", "hot", "top", "controversial"],
           description: "Sort order (default: new)",
         },
-        t: {
+        "t": {
           type: "string",
           enum: ["hour", "day", "week", "month", "year", "all"],
           description: "Time range (default: all)",
@@ -3369,7 +3369,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           enum: ["movie", "tv"],
           description: "Search movies or TV shows",
         },
-        q: { type: "string", description: "Search query (title)" },
+        "q": { type: "string", description: "Search query (title)" },
         year: {
           type: "number",
           description: "Filter by release/first air date year",
@@ -3616,7 +3616,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           enum: ["search", "details", "filmography"],
           description: "search (find by name), details (biography by ID), filmography (all credits by ID)",
         },
-        q: { type: "string", description: "Search query — person name (action=search)" },
+        "q": { type: "string", description: "Search query — person name (action=search)" },
         id: { type: "number", description: "TMDB person ID (action=details or filmography)" },
         limit: { type: "number", description: "Max results (default: 10 for search, 30 for filmography)" },
         ...fieldsParam(FIELDS.PERSON),
@@ -3705,7 +3705,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     parameters: {
       type: "object",
       properties: {
-        q: {
+        "q": {
           type: "string",
           description:
             "Search query — drug name, NDC code, ingredient, or class",
@@ -3776,7 +3776,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     parameters: {
       type: "object",
       properties: {
-        q: {
+        "q": {
           type: "string",
           description:
             "Optional search term for recalls (drug name or keyword)",
@@ -3812,7 +3812,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     parameters: {
       type: "object",
       properties: {
-        q: {
+        "q": {
           type: "string",
           description: "Optional search query (e.g. 'curl', 'bench')",
         },
@@ -3899,7 +3899,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     parameters: {
       type: "object",
       properties: {
-        q: {
+        "q": {
           type: "string",
           description:
             "Food name to search (e.g. 'chicken', 'spinach', 'salmon', 'almond')",
@@ -4265,7 +4265,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           description: "Macronutrient ratio preset",
           enum: ["balanced", "high_protein", "keto", "low_fat", "zone"],
         },
-        bodyFatPct: {
+        "bodyFatPct": {
           type: "number",
           description: "Optional body fat percentage for lean mass calculation",
         },
@@ -4741,7 +4741,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           ],
           description: "The mathematical operation to perform",
         },
-        a: {
+        "a": {
           type: "string",
           description: "The first operand (must be a valid numeric string)",
         },
@@ -6730,7 +6730,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     parameters: {
       type: "object",
       properties: {
-        q: {
+        "q": {
           type: "string",
           description:
             "Natural language search query (e.g. 'italian restaurants', 'best coffee shops', '24 hour pharmacy near me')",
@@ -6880,7 +6880,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           description: "Lookup mode",
           enum: ["search", "code", "country", "nearest"],
         },
-        q: { type: "string", description: "Search query (action=search)" },
+        "q": { type: "string", description: "Search query (action=search)" },
         code: {
           type: "string",
           description:
@@ -7032,7 +7032,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     parameters: {
       type: "object",
       properties: {
-        q: {
+        "q": {
           type: "string",
           description: "Vessel name search query (partial match)",
         },
@@ -11757,7 +11757,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           ],
           description: "What music data to retrieve",
         },
-        q: {
+        "q": {
           type: "string",
           description:
             "Search query — artist name, album title, or track title (for search actions)",
@@ -11852,7 +11852,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           enum: ["search"],
           description: "Must be 'search'",
         },
-        q: {
+        "q": {
           type: "string",
           description:
             "Search query. Use descriptive terms for best results. " +
@@ -12453,7 +12453,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     parameters: {
       type: "object",
       properties: {
-        a: {
+        "a": {
           type: "object",
           description: "First JSON object (the 'before' or 'left' side).",
         },
@@ -12506,7 +12506,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     parameters: {
       type: "object",
       properties: {
-        q: {
+        "q": {
           type: "string",
           description: "Search query (searches question titles).",
         },
@@ -12542,7 +12542,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     parameters: {
       type: "object",
       properties: {
-        q: {
+        "q": {
           type: "string",
           description: "Patent search query (searches titles and abstracts).",
         },

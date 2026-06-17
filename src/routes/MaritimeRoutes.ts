@@ -36,7 +36,8 @@ router.get("/vessels/:mmsi", (req: Request, res: Response) => {
 // ─── Vessel Search ─────────────────────────────────────────────────
 
 router.get("/search", (req: Request, res: Response) => {
-  const { q: query, limit } = req.query as Record<string, string | undefined>;
+  const query = req.query['q'] as string | undefined;
+  const limit = req.query.limit as string | undefined;
   if (!query) {
     return res.status(400).json({ error: "Query parameter 'q' is required" });
   }

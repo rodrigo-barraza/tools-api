@@ -815,8 +815,8 @@ async function actionRunScript(
   const browserInstance = await getBrowser();
   const websocketEndpoint =
     (
-      browserInstance as Browser & { wsEndpoint?: () => string }
-    ).wsEndpoint?.() || null;
+      browserInstance as Browser & { "wsEndpoint"?: () => string }
+    )["wsEndpoint"]?.() || null;
 
   // Wrap the user script with boilerplate for connecting to our browser
   const wrappedScript = `
@@ -901,7 +901,7 @@ function executeScript(
       stdio: ["pipe", "pipe", "pipe"],
       env: {
         ...process.env,
-        BROWSER_WS_ENDPOINT: websocketEndpoint || "",
+        "BROWSER_WS_ENDPOINT": websocketEndpoint || "",
         CI: "true",
         FORCE_COLOR: "0",
         NO_COLOR: "1",

@@ -15,6 +15,11 @@ import { executeJavaScript } from "../src/services/JavaScriptInterpreterService.
 import { createTestApp } from "./testApp.ts";
 import request from "supertest";
 
+interface CustomWeekYearResult {
+  week: number;
+  year: number;
+}
+
 // ── Unit: JavaScriptInterpreterService ──────────────────────
 
 describe("JavaScriptInterpreterService — custom tool patterns", () => {
@@ -108,19 +113,20 @@ return { week: weekNum, year: d.getFullYear() };
     `;
     // Wrap exactly as the execute endpoint does
     const wrappedCode = `const args = ${JSON.stringify(args)};\n(function() {\n${toolCode}\n})()`;
-    const { success, result } = executeJavaScript(wrappedCode) as any;
+    const { success, result } = executeJavaScript(wrappedCode);
     expect(success).toBe(true);
-    expect(typeof result.week).toBe("number");
-    expect(result.week).toBeGreaterThanOrEqual(1);
-    expect(result.week).toBeLessThanOrEqual(53);
-    expect(result.year).toBe(2026);
+    const weekYearResult = result as CustomWeekYearResult;
+    expect(typeof weekYearResult.week).toBe("number");
+    expect(weekYearResult.week).toBeGreaterThanOrEqual(1);
+    expect(weekYearResult.week).toBeLessThanOrEqual(53);
+    expect(weekYearResult.year).toBe(2026);
   });
 
   it("executes a real custom tool (celsius_to_fahrenheit) with return", () => {
     const args = { celsius: 100 };
     const toolCode = `return args.celsius * 9/5 + 32;`;
     const wrappedCode = `const args = ${JSON.stringify(args)};\n(function() {\n${toolCode}\n})()`;
-    const { success, result } = executeJavaScript(wrappedCode) as any;
+    const { success, result } = executeJavaScript(wrappedCode);
     expect(success).toBe(true);
     expect(result).toBe(212);
   });

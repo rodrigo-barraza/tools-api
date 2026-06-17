@@ -261,7 +261,7 @@ export async function fetchCompanyFactsXbrl(cik: string) {
 
       if (latestValue) {
         keyMetrics[factName] = {
-          value: latestValue.val,
+          value: latestValue['val'],
           period: latestValue.end,
           form: latestValue.form,
           filed: latestValue.filed,

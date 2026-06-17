@@ -25,7 +25,7 @@ export async function searchBooks(
   limit = 10,
 ): Promise<OpenLibrarySearchResponse> {
   const params = new URLSearchParams({
-    q: query,
+    "q": query,
     limit: String(limit),
     fields:
       "key,title,author_name,first_publish_year,cover_i,subject,language,edition_count,ratings_average,ratings_count,isbn",
@@ -39,7 +39,7 @@ export async function searchBooks(
   }
   const data = (await response.json()) as RawOpenLibrarySearchResponse;
   return {
-    totalResults: data.numFound || 0,
+    totalResults: data['numFound'] || 0,
     books: (data.docs || [])
       .slice(0, limit)
       .map((document: RawOpenLibraryDoc) => ({

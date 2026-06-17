@@ -245,8 +245,8 @@ interface QbtTorrentInfo {
   size: number;
   progress: number;
   state: string;
-  num_seeds: number;
-  num_leechs: number;
+  "num_seeds": number;
+  "num_leechs": number;
   dlspeed: number;
   upspeed: number;
   eta: number;
@@ -295,8 +295,8 @@ function formatTorrentStatusList(torrents: unknown) {
     size: torrent.size,
     progress: Math.round(torrent.progress * 100),
     state: torrent.state,
-    seeds: torrent.num_seeds,
-    leech: torrent.num_leechs,
+    seeds: torrent["num_seeds"],
+    leech: torrent["num_leechs"],
     downloadSpeed: torrent.dlspeed,
     uploadSpeed: torrent.upspeed,
     eta: torrent.eta,

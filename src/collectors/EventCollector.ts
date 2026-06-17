@@ -123,10 +123,10 @@ async function collectUniversities() {
   try {
     const events = (await fetchUniversityEvents()) as SourcedEvent[];
     const ubcEvents = events.filter(
-      (e) => e.source === EVENT_SOURCES.UBC,
+      (eventItem) => eventItem.source === EVENT_SOURCES.UBC,
     ) as CachedEventParam;
     const sfuEvents = events.filter(
-      (e) => e.source === EVENT_SOURCES.SFU,
+      (eventItem) => eventItem.source === EVENT_SOURCES.SFU,
     ) as CachedEventParam;
 
     if (ubcEvents.length > 0) {
@@ -157,13 +157,13 @@ async function collectSports() {
   try {
     const events = (await fetchSportsEvents()) as SourcedEvent[];
     const nhl = events.filter(
-      (e) => e.source === EVENT_SOURCES.NHL,
+      (eventItem) => eventItem.source === EVENT_SOURCES.NHL,
     ) as CachedEventParam;
     const caps = events.filter(
-      (e) => e.source === EVENT_SOURCES.WHITECAPS,
+      (eventItem) => eventItem.source === EVENT_SOURCES.WHITECAPS,
     ) as CachedEventParam;
     const lions = events.filter(
-      (e) => e.source === EVENT_SOURCES.BC_LIONS,
+      (eventItem) => eventItem.source === EVENT_SOURCES.BC_LIONS,
     ) as CachedEventParam;
 
     if (nhl.length > 0) {

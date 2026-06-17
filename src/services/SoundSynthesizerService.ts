@@ -131,7 +131,7 @@ export const INSTRUMENT_PRESETS: Record<string, InstrumentPresetConfig> = {
 const CHORD_INTERVALS: Record<string, number[]> = {
   maj: [0, 4, 7],
   min: [0, 3, 7],
-  m: [0, 3, 7],
+  "m": [0, 3, 7],
   "7": [0, 4, 7, 10],
   maj7: [0, 4, 7, 11],
   min7: [0, 3, 7, 10],
@@ -184,13 +184,13 @@ const NOTE_NAMES = [
 ];
 
 const FLAT_TO_SHARP: Record<string, string> = {
-  Db: "C#",
-  Eb: "D#",
-  Fb: "E",
-  Gb: "F#",
-  Ab: "G#",
-  Bb: "A#",
-  Cb: "B",
+  "Db": "C#",
+  "Eb": "D#",
+  "Fb": "E",
+  "Gb": "F#",
+  "Ab": "G#",
+  "Bb": "A#",
+  "Cb": "B",
 };
 
 function normalizeNoteName(rawNote: string): string {
@@ -213,9 +213,8 @@ function semitoneToNoteName(semitone: number, octave: number): string {
 }
 
 export function isChordNotation(noteString: string): boolean {
-  return /^[A-G][#b]?(maj7|min7|dim7|aug7|maj9|min9|min6|add9|maj|min|dim|aug|sus2|sus4|m7|m9|m|7|9|11|13|6|5)(\d)?$/i.test(
-    noteString.trim(),
-  );
+  const chordNotationPattern = /^[A-G][#b]?(maj7|min7|dim7|aug7|maj9|min9|min6|add9|maj|min|dim|aug|sus2|sus4|m7|m9|m|7|9|11|13|6|5)(\d)?$/i;
+  return chordNotationPattern.test(noteString.trim());
 }
 
 export function expandChordToNotes(chordString: string): string[] {

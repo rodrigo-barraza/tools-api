@@ -29,7 +29,7 @@ interface ExtractedSheet {
   truncated: boolean;
 }
 
-interface SpreadsheetJsonSheet {
+export interface SpreadsheetJsonSheet {
   name: string;
   index: number;
   rowCount: number;
@@ -39,7 +39,7 @@ interface SpreadsheetJsonSheet {
   truncated: boolean;
 }
 
-interface SpreadsheetJsonResponse {
+export interface SpreadsheetJsonResponse {
   url: string;
   format: string;
   sheetCount: number;
