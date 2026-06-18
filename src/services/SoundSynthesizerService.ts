@@ -1541,13 +1541,19 @@ export function synthesizeSound(config: SynthesizerConfig): Float32Array {
   const modalIndex =
     config.modulationIndex || instrumentPreset?.modulationIndex || 0;
 
-  const envelope: ADSREnvelope = config.envelope ||
-    instrumentPreset?.envelope || {
-      attack: 0.05,
-      decay: 0.1,
-      sustain: 0.8,
-      release: 0.15,
-    };
+  const defaultEnvelope = instrumentPreset?.envelope || {
+    attack: 0.05,
+    decay: 0.1,
+    sustain: 0.8,
+    release: 0.15,
+  };
+  const userEnvelope = config.envelope;
+  const envelope: ADSREnvelope = {
+    attack: userEnvelope?.attack ?? defaultEnvelope.attack,
+    decay: userEnvelope?.decay ?? defaultEnvelope.decay,
+    sustain: userEnvelope?.sustain ?? defaultEnvelope.sustain,
+    release: userEnvelope?.release ?? defaultEnvelope.release,
+  };
 
   const lfo = config.lfo || instrumentPreset?.lfo;
   const deltaTime = 1 / sampleRate;
@@ -1743,14 +1749,19 @@ export function synthesizeSequence(
     // 1. User-provided envelope or instrument preset takes priority
     // 2. Otherwise use the tracker-style default
     // 3. NNA: Cut — force release to 0 on all notes except the last
-    const resolvedEnvelope: ADSREnvelope = hasExplicitEnvelope
-      ? {
-          ...(baseConfig.envelope ||
-            INSTRUMENT_PRESETS[
-              (baseConfig.instrument || "").toLowerCase().replace(/[\s-]+/g, "_")
-            ]?.envelope || trackerDefaultEnvelope),
-        }
-      : { ...trackerDefaultEnvelope };
+    const userEnvelope = baseConfig.envelope;
+    const instrumentPresetEnvelope = baseConfig.instrument
+      ? INSTRUMENT_PRESETS[
+          baseConfig.instrument.toLowerCase().replace(/[\s-]+/g, "_")
+        ]?.envelope
+      : undefined;
+
+    const resolvedEnvelope: ADSREnvelope = {
+      attack: userEnvelope?.attack ?? instrumentPresetEnvelope?.attack ?? trackerDefaultEnvelope.attack,
+      decay: userEnvelope?.decay ?? instrumentPresetEnvelope?.decay ?? trackerDefaultEnvelope.decay,
+      sustain: userEnvelope?.sustain ?? instrumentPresetEnvelope?.sustain ?? trackerDefaultEnvelope.sustain,
+      release: userEnvelope?.release ?? instrumentPresetEnvelope?.release ?? trackerDefaultEnvelope.release,
+    };
 
     if (!isLastNote) {
       // NNA: Cut — hard-cut the note at the boundary (no release phase)
