@@ -9280,9 +9280,16 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "chord notation (e.g. 'Cmaj7', 'Am', 'G7'), REST/SILENCE notes, time signatures, and " +
       "18 instrument presets (acoustic_guitar, electric_guitar, nylon_guitar, piano, electric_piano, organ, " +
       "trumpet, violin, cello, flute, clarinet, synth_lead, synth_pad, synth_bass, bass_guitar, marimba, vibraphone, harmonica). " +
-      "For multi-track compositions, use the TRACKER workflow — set action to 'init', then 'add_channel' for each instrument, " +
-      "'write_pattern' to input notes step by step, and 'render' for the final output. " +
-      "Each tracker step auto-renders a live audio preview. Omit action for direct single-call synthesis.",
+      "ITERATIVE COMPOSITION: For multi-track compositions (2+ instruments), you MUST use the TRACKER workflow — " +
+      "call this tool multiple times, one step at a time: " +
+      "1) action: 'init' to create a session (returns a sessionId), " +
+      "2) action: 'add_channel' once per instrument (pass sessionId), " +
+      "3) action: 'write_pattern' once per channel's note sequence (pass sessionId + channelId), " +
+      "4) action: 'render' for the final output. " +
+      "Each tracker step auto-renders a live audio preview so the user hears progress. " +
+      "Between calls, describe what you just added and what comes next. " +
+      "NEVER cram an entire multi-track composition into a single call. " +
+      "For simple single-instrument sounds (sound effects, single melodies, presets), omit action for direct single-call synthesis.",
     endpoint: {
       path: "/creative/generate-audio",
       method: "POST",
