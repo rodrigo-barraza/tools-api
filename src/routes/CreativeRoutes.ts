@@ -7,6 +7,15 @@ import { generateAudioWav } from "../services/SoundSynthesizerService.ts";
 import { validateSynthesizerInput } from "../services/SoundSynthesizerValidation.ts";
 import { processAudio, getAvailablePresets } from "../services/AudioRemixService.ts";
 import { validateAudioRemixInput } from "../services/AudioRemixValidation.ts";
+import {
+  createTrackerSession,
+  getTrackerSession,
+  addTrackerChannel,
+  writeTrackerPattern,
+  toSynthesizerConfig,
+  deleteTrackerSession,
+  getActiveSessionCount,
+} from "../services/AudioTrackerSessionManager.ts";
 import { validateVectorAnimationInput } from "../services/VectorAnimationValidation.ts";
 import { synthesizeSpeech, getSupportedVoices, isEspeakAvailable } from "../services/TextToSpeechService.ts";
 import logger from "../logger.ts";
@@ -671,6 +680,197 @@ router.post(
 router.post(
   "/generate-audio",
   asyncHandler(async (req: Request, res: Response) => {
+    const { action } = req.body;
+
+    // ── Tracker Sequencer Actions ──────────────────────────────
+    // When `action` is present, dispatch to the stateful tracker
+    // workflow. Each action is a small incremental step, and every
+    // step auto-renders a live audio preview of the current state.
+
+    // Shared helper: attempt to render the current session state.
+    // Returns audio payload if there's renderable content, null otherwise.
+    const tryRenderPreview = (sessionId: string): {
+      audio: { data: string; mimeType: string };
+      duration: number;
+      sampleCount: number;
+    } | null => {
+      const conversionResult = toSynthesizerConfig(sessionId);
+      if (!conversionResult.config) return null;
+      const validationError = validateSynthesizerInput(conversionResult.config);
+      if (validationError) return null;
+      try {
+        const renderResult = generateAudioWav(conversionResult.config);
+        const sampleRate = conversionResult.config.sampleRate ?? 44100;
+        return {
+          audio: { data: renderResult.audioBase64, mimeType: "audio/wav" },
+          duration: renderResult.sampleCount / sampleRate,
+          sampleCount: renderResult.sampleCount,
+        };
+      } catch {
+        return null;
+      }
+    };
+
+    if (action === "init") {
+      const { tempo, timeSignature, sampleRate, swing, humanize } = req.body;
+      const session = createTrackerSession({
+        tempo: tempo != null ? Number(tempo) : undefined,
+        timeSignature,
+        sampleRate: sampleRate != null ? Number(sampleRate) : undefined,
+        swing: swing != null ? Number(swing) : undefined,
+        humanize: humanize != null ? Number(humanize) : undefined,
+      });
+      return res.json({
+        success: true,
+        message:
+          `Tracker session created. Tempo: ${session.tempo} BPM, ` +
+          `Time Signature: ${session.timeSignature.join("/")}. ` +
+          `Now add channels with action: "add_channel".`,
+        sessionId: session.sessionId,
+        tempo: session.tempo,
+        timeSignature: session.timeSignature,
+        sampleRate: session.sampleRate,
+        activeSessions: getActiveSessionCount(),
+      });
+    }
+
+    if (action === "add_channel") {
+      const { sessionId, channelId, instrument, waveform, volume, effects, nodes, nodeChain } = req.body;
+      if (!sessionId) {
+        return res.status(400).json({
+          error: "Missing required parameter: sessionId. Call action: \"init\" first.",
+        });
+      }
+      if (!channelId) {
+        return res.status(400).json({
+          error: "Missing required parameter: channelId (a descriptive name like 'lead', 'bass', 'drums').",
+        });
+      }
+      const result = addTrackerChannel(sessionId, {
+        channelId,
+        instrument,
+        waveform,
+        volume: volume != null ? Number(volume) : undefined,
+        effects,
+        nodes,
+        nodeChain,
+      });
+      if (!result.success) {
+        return res.status(400).json({ error: result.error });
+      }
+      const session = getTrackerSession(sessionId);
+      const preview = tryRenderPreview(sessionId);
+      return res.json({
+        success: true,
+        message:
+          `Channel '${channelId}' added` +
+          (instrument ? ` with instrument preset '${instrument}'` : "") +
+          `. ${result.channelCount} channel(s) in session. ` +
+          `Now write patterns with action: "write_pattern".`,
+        channelId,
+        channelCount: result.channelCount,
+        allChannels: session?.channels.map((channel) => channel.channelId) ?? [],
+        ...(preview && {
+          audio: preview.audio,
+          duration: preview.duration,
+          sampleCount: preview.sampleCount,
+        }),
+      });
+    }
+
+    if (action === "write_pattern") {
+      const { sessionId, channelId, rows, startRow, append } = req.body;
+      if (!sessionId) {
+        return res.status(400).json({ error: "Missing required parameter: sessionId." });
+      }
+      if (!channelId) {
+        return res.status(400).json({ error: "Missing required parameter: channelId." });
+      }
+      if (!rows || !Array.isArray(rows) || rows.length === 0) {
+        return res.status(400).json({
+          error: "Missing required parameter: rows (non-empty array of {note, duration, velocity?}).",
+        });
+      }
+      const writeResult = writeTrackerPattern({
+        sessionId,
+        channelId,
+        rows,
+        startRow: startRow != null ? Number(startRow) : undefined,
+        append,
+      });
+      if (!writeResult.success) {
+        return res.status(400).json({ error: writeResult.error });
+      }
+      const preview = tryRenderPreview(sessionId);
+      return res.json({
+        success: true,
+        message:
+          `Wrote ${rows.length} row(s) to channel '${channelId}'. ` +
+          `Total rows: ${writeResult.totalRows}. ` +
+          `Add more patterns or call action: "render" for the final output.`,
+        channelId,
+        totalRows: writeResult.totalRows,
+        previewNotation: writeResult.previewNotation,
+        ...(preview && {
+          audio: preview.audio,
+          duration: preview.duration,
+          sampleCount: preview.sampleCount,
+        }),
+      });
+    }
+
+    if (action === "render") {
+      const { sessionId, clearSession } = req.body;
+      if (!sessionId) {
+        return res.status(400).json({ error: "Missing required parameter: sessionId." });
+      }
+      const conversionResult = toSynthesizerConfig(sessionId);
+      if (!conversionResult.config) {
+        return res.status(400).json({ error: conversionResult.error });
+      }
+      const synthesizerConfig = conversionResult.config;
+      const validationError = validateSynthesizerInput(synthesizerConfig);
+      if (validationError) {
+        return res.status(400).json({ error: validationError });
+      }
+      try {
+        const session = getTrackerSession(sessionId);
+        const boundedSampleRate = synthesizerConfig.sampleRate ?? 44100;
+        const result = generateAudioWav(synthesizerConfig);
+        const actualDuration = result.sampleCount / boundedSampleRate;
+        const channelSummary = session
+          ? session.channels
+            .map((channel) => `${channel.channelId} (${channel.pattern.length} rows)`)
+            .join(", ")
+          : "unknown";
+        if (clearSession) {
+          deleteTrackerSession(sessionId);
+        }
+        return res.json({
+          success: true,
+          message:
+            `Successfully rendered tracker composition (${actualDuration.toFixed(2)}s, ` +
+            `${boundedSampleRate}Hz). Channels: ${channelSummary}.` +
+            (clearSession ? " Session cleared." : " Session preserved for further editing."),
+          audio: {
+            data: result.audioBase64,
+            mimeType: "audio/wav",
+          },
+          duration: actualDuration,
+          sampleCount: result.sampleCount,
+          sessionCleared: !!clearSession,
+        });
+      } catch (error: unknown) {
+        logger.error(
+          `[CreativeRoutes] generate-audio render failed: ${errorMessage(error)}`,
+        );
+        return res
+          .status(500)
+          .json({ error: `Audio tracker render failed: ${errorMessage(error)}` });
+      }
+    }
+
+    // ── Default: Direct Synthesis (existing behavior) ─────────
     const {
       soundType,
       presetEffect,
@@ -695,7 +895,6 @@ router.post(
       timeSignature,
     } = req.body;
 
-    // Enforce parameter range bounds to prevent DoS via massive sample memory allocation
     const requestedDuration = Number(duration);
     const boundedDuration = isNaN(requestedDuration)
       ? undefined
@@ -736,7 +935,6 @@ router.post(
 
     try {
       const result = generateAudioWav(synthesizerConfig);
-
       const actualDuration = result.sampleCount / boundedSampleRate;
 
       res.json({

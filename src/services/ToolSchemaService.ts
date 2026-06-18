@@ -9279,11 +9279,21 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "per-note velocity and pitch bend, swing/humanize, track repeat/looping, " +
       "chord notation (e.g. 'Cmaj7', 'Am', 'G7'), REST/SILENCE notes, time signatures, and " +
       "18 instrument presets (acoustic_guitar, electric_guitar, nylon_guitar, piano, electric_piano, organ, " +
-      "trumpet, violin, cello, flute, clarinet, synth_lead, synth_pad, synth_bass, bass_guitar, marimba, vibraphone, harmonica).",
+      "trumpet, violin, cello, flute, clarinet, synth_lead, synth_pad, synth_bass, bass_guitar, marimba, vibraphone, harmonica). " +
+      "For multi-track compositions, use the TRACKER workflow — set action to 'init', then 'add_channel' for each instrument, " +
+      "'write_pattern' to input notes step by step, and 'render' for the final output. " +
+      "Each tracker step auto-renders a live audio preview. Omit action for direct single-call synthesis.",
     endpoint: {
       path: "/creative/generate-audio",
       method: "POST",
       bodyParams: [
+        "action",
+        "sessionId",
+        "channelId",
+        "rows",
+        "append",
+        "startRow",
+        "clearSession",
         "soundType",
         "presetEffect",
         "duration",
@@ -9305,11 +9315,110 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         "swing",
         "humanize",
         "timeSignature",
+        "volume",
+        "effects",
+        "nodeChain",
       ],
     },
     parameters: {
       type: "object",
       properties: {
+        // ── Tracker workflow params (set action to use) ────────
+        action: {
+          type: "string",
+          enum: ["init", "add_channel", "write_pattern", "render"],
+          description:
+            "Tracker workflow action. Use 'init' to create a session, 'add_channel' to add instruments, " +
+            "'write_pattern' to input notes step by step, 'render' for the final output. " +
+            "Omit for direct single-call synthesis (existing behavior).",
+        },
+        sessionId: {
+          type: "string",
+          description:
+            "Tracker session ID (returned by action: 'init'). Required for add_channel, write_pattern, and render actions.",
+        },
+        channelId: {
+          type: "string",
+          description:
+            "Channel name for add_channel/write_pattern actions (e.g. 'melody', 'bass', 'drums'). Must be unique per session.",
+        },
+        volume: {
+          type: "number",
+          description: "Channel volume (0.0–2.0) for add_channel. Default: 1.0.",
+        },
+        effects: {
+          type: "object",
+          description: "Channel effects chain for add_channel action.",
+          properties: {
+            reverb: {
+              type: "object",
+              properties: {
+                wet: { type: "number", description: "Reverb mix (0.0–1.0). Default: 0.3." },
+                decayTime: { type: "number", description: "Decay time in seconds. Default: 0.5." },
+              },
+            },
+            delay: {
+              type: "object",
+              properties: {
+                delayTime: { type: "number", description: "Delay time in seconds. Default: 0.25." },
+                feedback: { type: "number", description: "Feedback (0.0–0.95). Default: 0.3." },
+                pingPong: { type: "boolean", description: "Stereo ping-pong delay." },
+              },
+            },
+            filter: {
+              type: "object",
+              properties: {
+                type: { type: "string", enum: ["lowpass", "highpass", "bandpass"] },
+                cutoff: { type: "number", description: "Cutoff frequency in Hz." },
+                Q: { type: "number", description: "Filter resonance." },
+              },
+            },
+            distortion: {
+              type: "object",
+              properties: {
+                algorithm: { type: "string", enum: ["soft_clip", "hard_clip", "bitcrush"] },
+                drive: { type: "number", description: "Distortion drive amount." },
+              },
+            },
+          },
+        },
+        rows: {
+          type: "array",
+          description: "Note rows for write_pattern action. Each row is a sequential note event.",
+          items: {
+            type: "object",
+            properties: {
+              note: {
+                type: "string",
+                description:
+                  "Note name ('C4', 'D#5'), chord ('Am7', 'Cmaj', 'G7'), drum ('KICK', 'SNARE', 'HIHAT'), or 'REST' for silence.",
+              },
+              duration: {
+                type: "string",
+                description:
+                  "Beat fraction ('1/4', '1/8', '1/16', '1/4d', '1/8t') or numeric seconds ('0.25').",
+              },
+              velocity: {
+                type: "number",
+                description: "Note velocity (0.0–1.0). Default: 1.0.",
+              },
+            },
+            required: ["note", "duration"],
+          },
+        },
+        append: {
+          type: "boolean",
+          description: "For write_pattern: if true (default), append rows. If false, overwrite from startRow.",
+        },
+        startRow: {
+          type: "integer",
+          description: "For write_pattern: row index to start overwriting from (0-based). Only used when append=false.",
+        },
+        clearSession: {
+          type: "boolean",
+          description: "For render: delete session after rendering. Default: false.",
+        },
+        // ── Direct synthesis params (no action needed) ─────────
         soundType: {
           type: "string",
           enum: [
