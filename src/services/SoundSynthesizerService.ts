@@ -1698,10 +1698,38 @@ export function synthesizeSequence(
   const numberSamples = Math.floor(cappedDuration * sampleRate);
   const samples = new Float32Array(numberSamples);
 
+  // ── Tracker-style New Note Action: Cut (NNA: Cut) ──────────
+  // In real music trackers (ProTracker, Impulse Tracker, Renoise),
+  // each channel is monophonic. When a new note triggers, the
+  // previous note is **hard-cut** (amplitude → 0 instantly) and the
+  // new note re-triggers from its envelope's attack phase. There is
+  // no release/fade on the old note — it simply stops dead.
+  //
+  // We replicate this by forcing `release: 0` on every note except
+  // the last one in the sequence. The final note gets a natural
+  // release tail so the melody doesn't end with an abrupt click.
+  // Each call to `synthesizeSound` already resets the oscillator
+  // phase to 0, equivalent to a tracker resetting sample playback
+  // position on note trigger.
+
+  // When no explicit envelope or instrument preset is provided, use
+  // a more percussive "tracker-style" default envelope with a sharp
+  // attack and pronounced decay, so individual notes are distinct
+  // even on a bare sine wave.
+  const hasExplicitEnvelope = !!(baseConfig.envelope || baseConfig.instrument);
+  const trackerDefaultEnvelope: ADSREnvelope = {
+    attack: 0.005,
+    decay: 0.25,
+    sustain: 0.3,
+    release: 0.08,
+  };
+
   let currentSampleOffset = 0;
   const deltaTime = 1 / sampleRate;
 
-  for (const step of expandedSteps) {
+  for (let stepIndex = 0; stepIndex < expandedSteps.length; stepIndex++) {
+    const step = expandedSteps[stepIndex];
+    const isLastNote = stepIndex === expandedSteps.length - 1;
     const stepSamplesCount = Math.floor(step.duration * sampleRate);
     if (currentSampleOffset >= numberSamples) break;
 
@@ -1711,12 +1739,31 @@ export function synthesizeSequence(
     );
     const stepDuration = actualCount * deltaTime;
 
+    // Resolve the envelope for this note:
+    // 1. User-provided envelope or instrument preset takes priority
+    // 2. Otherwise use the tracker-style default
+    // 3. NNA: Cut — force release to 0 on all notes except the last
+    const resolvedEnvelope: ADSREnvelope = hasExplicitEnvelope
+      ? {
+          ...(baseConfig.envelope ||
+            INSTRUMENT_PRESETS[
+              (baseConfig.instrument || "").toLowerCase().replace(/[\s-]+/g, "_")
+            ]?.envelope || trackerDefaultEnvelope),
+        }
+      : { ...trackerDefaultEnvelope };
+
+    if (!isLastNote) {
+      // NNA: Cut — hard-cut the note at the boundary (no release phase)
+      resolvedEnvelope.release = 0;
+    }
+
     // Synthesize each constituent frequency (chords produce multiple)
     for (const frequency of step.frequencies) {
       if (frequency <= 0) continue; // REST note
 
       const stepConfig: SynthesizerConfig = {
         ...baseConfig,
+        envelope: resolvedEnvelope,
         duration: stepDuration,
         frequency,
         endFrequency: undefined,
