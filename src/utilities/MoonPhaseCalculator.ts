@@ -95,4 +95,4 @@ export function calculateMoonPhase(
   };
 }
 
-export { SYNODIC_PERIOD_DAYS, REFERENCE_NEW_MOON_MS };
+export { SYNODIC_PERIOD_DAYS, REFERENCE_NEW_MOON_MS, PHASE_BOUNDARIES };

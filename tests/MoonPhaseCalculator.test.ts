@@ -3,7 +3,10 @@ import {
   calculateMoonPhase,
   SYNODIC_PERIOD_DAYS,
   REFERENCE_NEW_MOON_MS,
+  PHASE_BOUNDARIES,
 } from "../src/utilities/MoonPhaseCalculator.ts";
+
+const MILLISECONDS_PER_DAY = 86400000;
 
 describe("MoonPhaseCalculator", () => {
   describe("calculateMoonPhase", () => {
@@ -40,7 +43,7 @@ describe("MoonPhaseCalculator", () => {
 
     it("synodic period is the standard value", () => {
       const result = calculateMoonPhase();
-      expect(result.synodicPeriodDays).toBe(29.53059);
+      expect(result.synodicPeriodDays).toBe(SYNODIC_PERIOD_DAYS);
     });
 
     it("next new moon and full moon are valid ISO strings", () => {
@@ -70,22 +73,13 @@ describe("MoonPhaseCalculator", () => {
     });
 
     it("phase name is one of the eight standard phases", () => {
-      const validPhaseNames = [
-        "New Moon",
-        "Waxing Crescent",
-        "First Quarter",
-        "Waxing Gibbous",
-        "Full Moon",
-        "Waning Gibbous",
-        "Last Quarter",
-        "Waning Crescent",
-      ];
+      const validPhaseNames = PHASE_BOUNDARIES.map((boundary) => boundary.name);
       const result = calculateMoonPhase();
       expect(validPhaseNames).toContain(result.phaseName);
     });
 
     it("phase emoji is one of the eight standard moon emojis", () => {
-      const validEmojis = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"];
+      const validEmojis = PHASE_BOUNDARIES.map((boundary) => boundary.emoji);
       const result = calculateMoonPhase();
       expect(validEmojis).toContain(result.phaseEmoji);
     });
@@ -102,7 +96,7 @@ describe("MoonPhaseCalculator", () => {
 
     it("half a synodic period after reference is approximately a Full Moon", () => {
       const halfCycleMs =
-        REFERENCE_NEW_MOON_MS + (SYNODIC_PERIOD_DAYS / 2) * 86400000;
+        REFERENCE_NEW_MOON_MS + (SYNODIC_PERIOD_DAYS / 2) * MILLISECONDS_PER_DAY;
       const result = calculateMoonPhase(new Date(halfCycleMs));
       expect(result.phaseName).toBe("Full Moon");
       expect(result.illuminationPercent).toBeCloseTo(100, 0);
@@ -110,7 +104,7 @@ describe("MoonPhaseCalculator", () => {
 
     it("one quarter synodic period after reference is approximately First Quarter", () => {
       const quarterCycleMs =
-        REFERENCE_NEW_MOON_MS + (SYNODIC_PERIOD_DAYS / 4) * 86400000;
+        REFERENCE_NEW_MOON_MS + (SYNODIC_PERIOD_DAYS / 4) * MILLISECONDS_PER_DAY;
       const result = calculateMoonPhase(new Date(quarterCycleMs));
       expect(result.phaseName).toBe("First Quarter");
       expect(result.illuminationPercent).toBeCloseTo(50, 5);
@@ -119,7 +113,7 @@ describe("MoonPhaseCalculator", () => {
 
     it("three quarter synodic period after reference is approximately Last Quarter", () => {
       const threeQuarterCycleMs =
-        REFERENCE_NEW_MOON_MS + ((3 * SYNODIC_PERIOD_DAYS) / 4) * 86400000;
+        REFERENCE_NEW_MOON_MS + ((3 * SYNODIC_PERIOD_DAYS) / 4) * MILLISECONDS_PER_DAY;
       const result = calculateMoonPhase(new Date(threeQuarterCycleMs));
       expect(result.phaseName).toBe("Last Quarter");
       expect(result.illuminationPercent).toBeCloseTo(50, 5);
@@ -128,7 +122,7 @@ describe("MoonPhaseCalculator", () => {
 
     it("one full cycle after reference returns to New Moon", () => {
       const fullCycleMs =
-        REFERENCE_NEW_MOON_MS + SYNODIC_PERIOD_DAYS * 86400000;
+        REFERENCE_NEW_MOON_MS + SYNODIC_PERIOD_DAYS * MILLISECONDS_PER_DAY;
       const result = calculateMoonPhase(new Date(fullCycleMs));
       expect(result.phaseName).toBe("New Moon");
       expect(result.ageInDays).toBeCloseTo(0, 0);
@@ -165,7 +159,7 @@ describe("MoonPhaseCalculator", () => {
   describe("waxing vs waning state consistency", () => {
     it("waxing crescent is waxing", () => {
       const crescent = new Date(
-        REFERENCE_NEW_MOON_MS + 3 * 86400000,
+        REFERENCE_NEW_MOON_MS + 3 * MILLISECONDS_PER_DAY,
       );
       const result = calculateMoonPhase(crescent);
       expect(result.isWaxing).toBe(true);
@@ -174,7 +168,7 @@ describe("MoonPhaseCalculator", () => {
 
     it("waning gibbous is waning", () => {
       const waningGibbous = new Date(
-        REFERENCE_NEW_MOON_MS + 18 * 86400000,
+        REFERENCE_NEW_MOON_MS + 18 * MILLISECONDS_PER_DAY,
       );
       const result = calculateMoonPhase(waningGibbous);
       expect(result.isWaxing).toBe(false);
@@ -185,13 +179,13 @@ describe("MoonPhaseCalculator", () => {
   describe("illumination curve shape", () => {
     it("illumination increases during the waxing phase", () => {
       const day3 = calculateMoonPhase(
-        new Date(REFERENCE_NEW_MOON_MS + 3 * 86400000),
+        new Date(REFERENCE_NEW_MOON_MS + 3 * MILLISECONDS_PER_DAY),
       );
       const day7 = calculateMoonPhase(
-        new Date(REFERENCE_NEW_MOON_MS + 7 * 86400000),
+        new Date(REFERENCE_NEW_MOON_MS + 7 * MILLISECONDS_PER_DAY),
       );
       const day11 = calculateMoonPhase(
-        new Date(REFERENCE_NEW_MOON_MS + 11 * 86400000),
+        new Date(REFERENCE_NEW_MOON_MS + 11 * MILLISECONDS_PER_DAY),
       );
       expect(day7.illuminationPercent).toBeGreaterThan(
         day3.illuminationPercent,
@@ -203,13 +197,13 @@ describe("MoonPhaseCalculator", () => {
 
     it("illumination decreases during the waning phase", () => {
       const day17 = calculateMoonPhase(
-        new Date(REFERENCE_NEW_MOON_MS + 17 * 86400000),
+        new Date(REFERENCE_NEW_MOON_MS + 17 * MILLISECONDS_PER_DAY),
       );
       const day22 = calculateMoonPhase(
-        new Date(REFERENCE_NEW_MOON_MS + 22 * 86400000),
+        new Date(REFERENCE_NEW_MOON_MS + 22 * MILLISECONDS_PER_DAY),
       );
       const day27 = calculateMoonPhase(
-        new Date(REFERENCE_NEW_MOON_MS + 27 * 86400000),
+        new Date(REFERENCE_NEW_MOON_MS + 27 * MILLISECONDS_PER_DAY),
       );
       expect(day22.illuminationPercent).toBeLessThan(
         day17.illuminationPercent,
@@ -235,7 +229,7 @@ describe("MoonPhaseCalculator", () => {
       const stepDays = SYNODIC_PERIOD_DAYS / 16;
       for (let index = 0; index < 16; index++) {
         const dateMs =
-          REFERENCE_NEW_MOON_MS + index * stepDays * 86400000;
+          REFERENCE_NEW_MOON_MS + index * stepDays * MILLISECONDS_PER_DAY;
         const result = calculateMoonPhase(new Date(dateMs));
         observedPhases.add(result.phaseName);
       }
