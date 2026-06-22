@@ -12762,6 +12762,109 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       required: [],
     },
   },
+
+  // ── Infrastructure Observability ────────────────────────────
+  {
+    name: "get_infrastructure_status",
+    dataSource: onDemand("Portal Service"),
+    description:
+      "Get the health and status of all deployed services and devices in the infrastructure. " +
+      "Actions: 'services' (service registry with health, response times, errors, dependencies), " +
+      "'devices' (physical hosts with hosted services and infrastructure health breakdown), " +
+      "'summary' (aggregate counts of healthy/unhealthy services, device count, unhealthy service names).",
+    endpoint: {
+      path: "/infrastructure/status",
+      queryParams: ["action"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        action: {
+          type: "string",
+          description: "Data view to retrieve",
+          enum: ["services", "devices", "summary"],
+        },
+      },
+      required: ["action"],
+    },
+  },
+  {
+    name: "get_container_diagnostics",
+    dataSource: onDemand("Portal Service / Docker Engine API"),
+    description:
+      "Get Docker container resource usage and performance metrics across all hosts. " +
+      "Actions: 'stats' (live CPU%, memory, network bytes, block-IO, throttling, PIDs for all containers), " +
+      "'metrics' (time-series history of container performance — configurable range and resolution), " +
+      "'history' (recent ring-buffer snapshots from the last 5 minutes), " +
+      "'system' (Docker host OS, kernel version, CPU count, total memory, disk usage).",
+    endpoint: {
+      path: "/infrastructure/containers",
+      queryParams: ["action", "container", "device", "range", "limit"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        action: {
+          type: "string",
+          description: "Diagnostic data type",
+          enum: ["stats", "metrics", "history", "system"],
+        },
+        container: {
+          type: "string",
+          description:
+            "Filter by container name (partial match). Applies to action=stats and action=metrics.",
+        },
+        device: {
+          type: "string",
+          description: "Filter by device ID (e.g. 'synology', 'desktop').",
+        },
+        range: {
+          type: "string",
+          description:
+            "Time range for metrics history (action=metrics). Default: '1h'.",
+          enum: ["1h", "6h", "24h", "7d"],
+        },
+        limit: {
+          type: "number",
+          description:
+            "Max data points for metrics history (action=metrics). Default: 120, max: 120.",
+        },
+      },
+      required: ["action"],
+    },
+  },
+  {
+    name: "get_container_logs",
+    dataSource: onDemand("Portal Service / Docker Engine API"),
+    description:
+      "Retrieve recent log output from a Docker container. Returns the last N lines of " +
+      "stdout/stderr with timestamps. Useful for debugging crashes, errors, startup failures, " +
+      "and runtime behavior. Container names match the Docker container name (e.g. 'prism-service', 'tools-service').",
+    endpoint: {
+      path: "/infrastructure/logs",
+      queryParams: ["container", "device", "tail"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        container: {
+          type: "string",
+          description:
+            "Docker container name to retrieve logs from (e.g. 'prism-service', 'portal-service').",
+        },
+        device: {
+          type: "string",
+          description: "Target device ID if the container runs on a specific host.",
+        },
+        tail: {
+          type: "number",
+          description:
+            "Number of log lines to retrieve (default: 200, max: 2000). More lines = slower response.",
+        },
+      },
+      required: ["container"],
+    },
+  },
 ];
 
 
@@ -13143,6 +13246,11 @@ const TOOL_DOMAINS = {
 
   // Transit (new tool)
   get_flight_status: "Transit",
+
+  // Infrastructure Observability
+  get_infrastructure_status: "Infrastructure",
+  get_container_diagnostics: "Infrastructure",
+  get_container_logs: "Infrastructure",
 };
 
 // ────────────────────────────────────────────────────────────
@@ -13515,6 +13623,11 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
 
   // Transit (new tool)
   get_flight_status: ["✈️", "📍"],
+
+  // Infrastructure Observability
+  get_infrastructure_status: ["🌀", "📊"],
+  get_container_diagnostics: ["🐳", "📈"],
+  get_container_logs: ["📋", "🔍"],
 };
 
 // ────────────────────────────────────────────────────────────
@@ -13633,6 +13746,11 @@ const TOOL_REQUIRED_KEYS = {
 
   // Flight Status (AviationStack)
   get_flight_status: ["AVIATIONSTACK_API_KEY"],
+
+  // Infrastructure Observability (requires Portal Service)
+  get_infrastructure_status: ["PORTAL_SERVICE_URL"],
+  get_container_diagnostics: ["PORTAL_SERVICE_URL"],
+  get_container_logs: ["PORTAL_SERVICE_URL"],
 };
 
 // ────────────────────────────────────────────────────────────

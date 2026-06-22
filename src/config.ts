@@ -131,6 +131,9 @@ interface ToolsServiceConfig {
 
   // Flights (AviationStack)
   AVIATIONSTACK_API_KEY: string | undefined;
+
+  // Portal (Infrastructure Observability)
+  PORTAL_SERVICE_URL: string | undefined;
 }
 
 const CONFIG: ToolsServiceConfig = {
@@ -240,6 +243,9 @@ const CONFIG: ToolsServiceConfig = {
 
   // ─── Flights (AviationStack) ────────────────────────────────────
   AVIATIONSTACK_API_KEY: process.env.AVIATIONSTACK_API_KEY,
+
+  // ─── Portal (Infrastructure Observability) ──────────────────────
+  PORTAL_SERVICE_URL: process.env.PORTAL_SERVICE_URL,
 };
 
 /**

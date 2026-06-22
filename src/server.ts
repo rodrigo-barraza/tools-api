@@ -70,6 +70,7 @@ import communicationRoutes, {
 import creativeRoutes, { getCreativeHealth } from "./routes/CreativeRoutes.ts";
 import gamingRoutes, { getGamingHealth } from "./routes/GamingRoutes.ts";
 import torrentRoutes, { getTorrentHealth } from "./routes/TorrentRoutes.ts";
+import infrastructureRoutes, { getInfrastructureHealth } from "./routes/InfrastructureRoutes.ts";
 
 import discordRoutes, { getDiscordHealth } from "./routes/DiscordRoutes.ts";
 import lightsRoutes, { getLightsHealth } from "./routes/LightsRoutes.ts";
@@ -140,6 +141,7 @@ app.use("/communication", communicationRoutes);
 app.use("/creative", express.json({ limit: "50mb" }), creativeRoutes);
 app.use("/gaming", gamingRoutes);
 app.use("/torrent", torrentRoutes);
+app.use("/infrastructure", infrastructureRoutes);
 
 app.use("/discord", discordRoutes);
 app.use("/lights", lightsRoutes);
@@ -187,6 +189,7 @@ app.get("/health", async (_req: Request, res: Response) => {
 
       discord: getDiscordHealth(),
       lights: getLightsHealth(),
+      infrastructure: getInfrastructureHealth(),
     },
   });
 });
@@ -274,7 +277,7 @@ async function start() {
       "Domains: event, finance, market, product, trend, weather, knowledge, health, transit, utility, compute, maritime, energy, agentic, communication, creative, gaming, torrent, discord, lights",
     );
     logger.info(
-      "Routes: /event/*, /finance/*, /market/*, /product/*, /trend/*, /weather/*, /knowledge/*, /health/*, /transit/*, /utility/*, /compute/*, /maritime/*, /energy/*, /agentic/*, /communication/*, /creative/*, /gaming/*, /torrent/*, /discord/*, /lights/*",
+      "Routes: /event/*, /finance/*, /market/*, /product/*, /trend/*, /weather/*, /knowledge/*, /health/*, /transit/*, /utility/*, /compute/*, /maritime/*, /energy/*, /agentic/*, /communication/*, /creative/*, /gaming/*, /torrent/*, /discord/*, /lights/*, /infrastructure/*",
     );
     logger.info("Agent WebSocket: /ws/agent");
   });
