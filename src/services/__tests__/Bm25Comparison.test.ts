@@ -1,4 +1,4 @@
-import { Bm25ToolIndex } from "../Bm25ToolScorer.ts";
+import { Bm25ToolIndex } from "@rodrigo-barraza/utilities-library/search";
 import {
   TOOL_DEFINITIONS,
   TOOL_DOMAINS,

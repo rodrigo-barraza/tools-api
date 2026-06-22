@@ -6,7 +6,7 @@
 
 import { getToolSchemas } from "./ToolSchemaService.ts";
 import { DOMAINS } from "@rodrigo-barraza/utilities-library/taxonomy";
-import { Bm25ToolIndex } from "./Bm25ToolScorer.ts";
+import { Bm25ToolIndex } from "@rodrigo-barraza/utilities-library/search";
 import type { ToolSearchMatch, ToolParameters } from "../types/tools.ts";
 
 type InferredToolSchema = ReturnType<typeof getToolSchemas>[number];

@@ -3,7 +3,7 @@ import {
   Bm25ToolIndex,
   tokenize,
   extractSearchableText,
-} from "../Bm25ToolScorer.ts";
+} from "@rodrigo-barraza/utilities-library/search";
 import {
   TOOL_DEFINITIONS,
   TOOL_DOMAINS,
