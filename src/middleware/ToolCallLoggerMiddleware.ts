@@ -363,7 +363,11 @@ export async function persistToolCall(entry: ToolCallLogEntry) {
 /**
  * Query tool-call logs with optional filters.
  */
-export async function queryToolCallLogs(filters: ToolCallFilters = {}) {
+export async function queryToolCallLogs(filters: ToolCallFilters = {}): Promise<{
+  total: number;
+  count: number;
+  toolCalls: any[];
+}> {
   const database = getDatabase();
   const query: Record<string, unknown> = {};
 

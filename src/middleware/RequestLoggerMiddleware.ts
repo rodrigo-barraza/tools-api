@@ -118,7 +118,11 @@ async function persistRequest(entry: RequestLogEntry) {
 /**
  * Query persisted request logs with optional filters.
  */
-export async function queryRequestLogs(filters: RequestLogFilters = {}) {
+export async function queryRequestLogs(filters: RequestLogFilters = {}): Promise<{
+  total: number;
+  count: number;
+  requests: any[];
+}> {
   const database = getDatabase();
   const query: Record<string, unknown> = {};
 

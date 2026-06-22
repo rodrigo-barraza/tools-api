@@ -35,12 +35,13 @@ export async function setupVectorAnimationCollection() {
   const database = getDatabase();
   if (!database) return;
 
-  collection = database.collection<VectorAnimationDocument>("vector_animations");
+  const col = database.collection<VectorAnimationDocument>("vector_animations") as unknown as Collection<VectorAnimationDocument>;
 
-  await collection.createIndex({ animationId: 1 }, { unique: true });
-  await collection.createIndex({ sessionId: 1 });
-  await collection.createIndex({ createdAt: -1 });
+  await col.createIndex({ animationId: 1 }, { unique: true });
+  await col.createIndex({ sessionId: 1 });
+  await col.createIndex({ createdAt: -1 });
 
+  collection = col;
   logger.info("🎬 Vector animation collection indexes ready");
 }
 

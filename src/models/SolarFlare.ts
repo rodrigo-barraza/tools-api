@@ -19,12 +19,13 @@ export async function setupSolarFlareCollection() {
   const database = getDatabase();
   if (!database) throw new Error("Database not connected");
 
-  collection = database.collection<SolarFlareDocument>("solar_flares");
+  const col = database.collection<SolarFlareDocument>("solar_flares") as unknown as Collection<SolarFlareDocument>;
 
-  await collection.createIndex({ flrId: 1 }, { unique: true });
-  await collection.createIndex({ peakTime: -1 });
-  await collection.createIndex({ classType: 1 });
+  await col.createIndex({ flrId: 1 }, { unique: true });
+  await col.createIndex({ peakTime: -1 });
+  await col.createIndex({ classType: 1 });
 
+  collection = col;
   logger.info("☀️  Solar flare collection indexes ready");
 }
 

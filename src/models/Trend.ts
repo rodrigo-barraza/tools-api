@@ -97,7 +97,7 @@ export async function getRecentTrends(
   category: string | null = null,
   source: string | null = null,
   limit: number = 50,
-) {
+): Promise<any[]> {
   const database = getDatabase();
   const collection = database.collection("trends");
   const since = new Date(Date.now() - hoursToMs(hours));
@@ -112,7 +112,7 @@ export async function getRecentTrends(
 /**
  * Searches trends in the database by keyword.
  */
-export async function searchTrendsDB(query: string, limit: number = 50) {
+export async function searchTrendsDB(query: string, limit: number = 50): Promise<any[]> {
   const database = getDatabase();
   const collection = database.collection("trends");
   return collection
@@ -125,7 +125,7 @@ export async function searchTrendsDB(query: string, limit: number = 50) {
 /**
  * Gets top trends aggregated across all sources.
  */
-export async function getTopTrends(hours: number = 24, limit: number = 20) {
+export async function getTopTrends(hours: number = 24, limit: number = 20): Promise<any[]> {
   const database = getDatabase();
   const collection = database.collection("trends");
   const since = new Date(Date.now() - hoursToMs(hours));

@@ -48,20 +48,21 @@ let collection: Collection<EventDocument> | null = null;
  * Initialize the events collection with required indexes.
  */
 export async function setupEventCollection(): Promise<void> {
-  const database: Db = getDatabase();
-  collection = database.collection<EventDocument>("events");
+  const database = getDatabase();
+  const col = database.collection<EventDocument>("events") as unknown as Collection<EventDocument>;
 
-  await collection.createIndex({ sourceId: 1, source: 1 }, { unique: true });
-  await collection.createIndex({ startDate: -1 });
-  await collection.createIndex({ startDate: 1 });
-  await collection.createIndex({ category: 1 });
-  await collection.createIndex({ "venue.city": 1 });
-  await collection.createIndex({ source: 1 });
-  await collection.createIndex(
+  await col.createIndex({ sourceId: 1, source: 1 }, { unique: true });
+  await col.createIndex({ startDate: -1 });
+  await col.createIndex({ startDate: 1 });
+  await col.createIndex({ category: 1 });
+  await col.createIndex({ "venue.city": 1 });
+  await col.createIndex({ source: 1 });
+  await col.createIndex(
     { name: "text", "venue.name": "text", "venue.city": "text" },
     { name: "event_text_search" },
   );
 
+  collection = col;
   logger.info("📅 Event collection indexes ready");
 }
 

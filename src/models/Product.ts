@@ -48,20 +48,22 @@ let productCollection: Collection<ProductDocument> | null = null;
  */
 export async function setupProductCollection() {
   const database = getDatabase();
-  productCollection = database.collection<ProductDocument>("products");
+  const col = database.collection<ProductDocument>("products") as unknown as Collection<ProductDocument>;
 
-  await productCollection.createIndex(
+  await col.createIndex(
     { sourceId: 1, source: 1 },
     { unique: true },
   );
-  await productCollection.createIndex({ category: 1 });
-  await productCollection.createIndex({ source: 1 });
-  await productCollection.createIndex({ lastSeenAt: -1 });
-  await productCollection.createIndex({ trendingScore: -1 });
-  await productCollection.createIndex(
+  await col.createIndex({ category: 1 });
+  await col.createIndex({ source: 1 });
+  await col.createIndex({ lastSeenAt: -1 });
+  await col.createIndex({ trendingScore: -1 });
+  await col.createIndex(
     { name: "text", description: "text" },
     { weights: { name: 10, description: 1 } },
   );
+
+  productCollection = col;
   logger.info("📦 Product collection indexes ready");
 }
 

@@ -18,7 +18,7 @@ export async function setupCurrencyCollection(): Promise<void> {
   logger.info("💱 currency_snapshots collection ready");
 }
 
-export async function insertCurrencySnapshot(currencySnapshot: CurrencySnapshotInput) {
+export async function insertCurrencySnapshot(currencySnapshot: CurrencySnapshotInput): Promise<any> {
   const database = getDatabase();
   const currencySnapshotCollection = database.collection("currency_snapshots");
 

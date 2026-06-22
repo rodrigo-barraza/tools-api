@@ -42,7 +42,7 @@ export async function insertSnapshots(quotes: CommodityQuoteInput[]) {
 /**
  * Get historical price data for a specific ticker.
  */
-export async function getHistory(ticker: string, hours: number = 24) {
+export async function getHistory(ticker: string, hours: number = 24): Promise<any[]> {
   const database = getDatabase();
   const collection = database.collection("commodity_snapshots");
   const since = new Date(Date.now() - hoursToMs(hours));

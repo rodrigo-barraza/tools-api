@@ -21,12 +21,13 @@ export async function setupEmbedAssetCollection() {
   const database = getDatabase();
   if (!database) return;
 
-  collection = database.collection<EmbedAssetDocument>("embed_assets");
+  const col = database.collection<EmbedAssetDocument>("embed_assets") as unknown as Collection<EmbedAssetDocument>;
 
-  await collection.createIndex({ assetId: 1 }, { unique: true });
-  await collection.createIndex({ assetType: 1 });
-  await collection.createIndex({ createdAt: -1 });
+  await col.createIndex({ assetId: 1 }, { unique: true });
+  await col.createIndex({ assetType: 1 });
+  await col.createIndex({ createdAt: -1 });
 
+  collection = col;
   logger.info("📦 Embed asset collection indexes ready");
 }
 

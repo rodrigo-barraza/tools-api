@@ -18,12 +18,13 @@ export async function setupWebcamCollection() {
   const database = getDatabase();
   if (!database) return;
 
-  collection = database.collection<WebcamDocument>("webcams");
+  const col = database.collection<WebcamDocument>("webcams") as unknown as Collection<WebcamDocument>;
 
-  await collection.createIndex({ id: 1 }, { unique: true });
-  await collection.createIndex({ city: 1 });
-  await collection.createIndex({ lastUpdated: -1 });
+  await col.createIndex({ id: 1 }, { unique: true });
+  await col.createIndex({ city: 1 });
+  await col.createIndex({ lastUpdated: -1 });
 
+  collection = col;
   logger.info("📷 Webcam collection indexes ready");
 }
 

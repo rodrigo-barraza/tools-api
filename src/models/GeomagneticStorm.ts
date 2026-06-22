@@ -18,12 +18,12 @@ export async function setupGeomagneticStormCollection() {
   const database = getDatabase();
   if (!database) throw new Error("Database not connected");
 
-  collection =
-    database.collection<GeomagneticStormDocument>("geomagnetic_storms");
+  const col = database.collection<GeomagneticStormDocument>("geomagnetic_storms") as unknown as Collection<GeomagneticStormDocument>;
 
-  await collection.createIndex({ gstId: 1 }, { unique: true });
-  await collection.createIndex({ startTime: -1 });
+  await col.createIndex({ gstId: 1 }, { unique: true });
+  await col.createIndex({ startTime: -1 });
 
+  collection = col;
   logger.info("🧲 Geomagnetic storm collection indexes ready");
 }
 
