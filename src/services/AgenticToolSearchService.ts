@@ -1,7 +1,12 @@
 // ─── Meta-Tool for Tool Discovery ───────────────────────────
+//
+// Uses BM25 ranking (Okapi BM25) for relevance scoring instead
+// of naive substring matching. Indexes tool name, description,
+// and parameter names for comprehensive search coverage.
 
 import { getToolSchemas } from "./ToolSchemaService.ts";
 import { DOMAINS } from "@rodrigo-barraza/utilities-library/taxonomy";
+import { Bm25ToolIndex } from "./Bm25ToolScorer.ts";
 import type { ToolSearchMatch, ToolParameters } from "../types/tools.ts";
 
 type InferredToolSchema = ReturnType<typeof getToolSchemas>[number];
@@ -56,8 +61,6 @@ export function agenticToolSearch(
     };
   }
 
-  const queryTextLowerCase = (query || "").toLowerCase().trim();
-
   // Build enabled set for annotation only (not filtering)
   const enabledToolsSet = new Set<string>();
   const hasEnabledContext =
@@ -101,56 +104,20 @@ export function agenticToolSearch(
     );
   }
 
-  let scoredToolMatches: ScoredMatch[];
-  if (queryTextLowerCase) {
-    scoredToolMatches = filteredToolSchemas
-      .map((toolSchema: InferredToolSchema) => {
-        const toolNameLowerCase = (toolSchema.name || "").toLowerCase();
-        const descriptionTextLowerCase = (
-          toolSchema.description || ""
-        ).toLowerCase();
-
-        let matchScore = 0;
-        if (toolNameLowerCase === queryTextLowerCase) {
-          matchScore += 100;
-        } else if (toolNameLowerCase.includes(queryTextLowerCase)) {
-          matchScore += 50;
-        }
-        if (descriptionTextLowerCase.includes(queryTextLowerCase)) {
-          matchScore += 20;
-        }
-
-        const queryWords = queryTextLowerCase.split(/\s+/);
-        for (const queryWord of queryWords) {
-          if (queryWord.length < 2) {
-            continue;
-          }
-          if (toolNameLowerCase.includes(queryWord)) {
-            matchScore += 10;
-          }
-          if (descriptionTextLowerCase.includes(queryWord)) {
-            matchScore += 5;
-          }
-        }
-
-        return { schema: toolSchema, score: matchScore };
-      })
-      .filter((scoredToolMatch: ScoredMatch) => scoredToolMatch.score > 0);
-  } else {
-    scoredToolMatches = filteredToolSchemas.map(
-      (toolSchema: InferredToolSchema) => ({ schema: toolSchema, score: 1 }),
-    );
-  }
-
-  scoredToolMatches.sort(
-    (firstScoredMatch: ScoredMatch, secondScoredMatch: ScoredMatch) =>
-      secondScoredMatch.score - firstScoredMatch.score,
-  );
-
+  // Build BM25 index over the filtered catalog and search
+  const searchIndex = new Bm25ToolIndex(filteredToolSchemas);
   const cappedLimit = Math.min(Math.max(1, limit), 50);
-  const matches: ToolSearchMatch[] = scoredToolMatches
-    .slice(0, cappedLimit)
-    .map((scoredToolMatch: ScoredMatch) => ({
+  const queryText = (query || "").trim();
+
+  const indexResults = searchIndex.search(queryText, cappedLimit);
+
+  const scoredToolMatches: ScoredMatch[] = indexResults.map((result) => ({
+    schema: result.document,
+    score: result.score,
+  }));
+
+  const matches: ToolSearchMatch[] = scoredToolMatches.map(
+    (scoredToolMatch: ScoredMatch) => ({
       name: scoredToolMatch.schema.name,
       description: scoredToolMatch.schema.description,
       domain: scoredToolMatch.schema.domain || null,
@@ -160,7 +127,8 @@ export function agenticToolSearch(
       ...(hasEnabledContext && {
         isEnabled: enabledToolsSet.has(scoredToolMatch.schema.name),
       }),
-    }));
+    }),
+  );
 
   const hasDisabledMatches = hasEnabledContext && matches.some(
     (matchResultEntry) => matchResultEntry.isEnabled === false,
@@ -183,4 +151,3 @@ export function agenticToolSearch(
     }),
   };
 }
-
