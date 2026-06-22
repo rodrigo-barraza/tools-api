@@ -16,7 +16,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY vendor/utilities-library /utilities-library
 COPY package.json package-lock.json ./
 
 # Skip Playwright's bundled browser download — we install system Chromium

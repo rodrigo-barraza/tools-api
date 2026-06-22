@@ -29,24 +29,6 @@ PRE_BUILD() {
   else
     warn "workspace-service/standalone/ not found — SEA compilation will rely on existing MinIO files"
   fi
-
-  local utils_source="${SCRIPT_DIR}/../utilities-library"
-  local utils_dest="${SCRIPT_DIR}/vendor/utilities-library"
-  if [ -d "$utils_source" ]; then
-    info "Building utilities-library on host..."
-    (cd "$utils_source" && npm run build)
-    
-    rm -rf "$utils_dest"
-    mkdir -p "$utils_dest"
-    cp -rp "${utils_source}/package.json" "${utils_source}/package-lock.json" "${utils_source}/tsconfig.json" "$utils_dest/"
-    cp -rp "${utils_source}/src" "$utils_dest/"
-    if [ -d "${utils_source}/dist" ]; then
-      cp -rp "${utils_source}/dist" "$utils_dest/"
-    fi
-    info "Copied utilities-library into build context"
-  else
-    warn "utilities-library not found at $utils_source"
-  fi
 }
 
 source "${SCRIPT_DIR}/../deploy-kit/lib.sh"
