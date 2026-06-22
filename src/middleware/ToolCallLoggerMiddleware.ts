@@ -515,7 +515,7 @@ export async function getToolCallStats(since?: string) {
     ]);
 
   const successMap = Object.fromEntries(
-    bySuccess.map((s) => [
+    bySuccess.map((s: unknown) => [
       (s as AggregateDoc)._id ? "success" : "failure",
       (s as AggregateDoc).count,
     ]),
@@ -527,7 +527,7 @@ export async function getToolCallStats(since?: string) {
       totalCalls > 0
         ? Math.round(((successMap.success || 0) / totalCalls) * 10000) / 100
         : 0,
-    byTool: byTool.map((tool) => ({
+    byTool: byTool.map((tool: unknown) => ({
       toolName: (tool as AggregateDoc)._id,
       count: (tool as AggregateDoc).count,
       avgMs: Math.round(((tool as AggregateDoc).avgMs || 0) * 100) / 100,
@@ -544,7 +544,7 @@ export async function getToolCallStats(since?: string) {
           : 0,
       totalTransferBytes: (tool as AggregateDoc).totalBytes || 0,
     })),
-    byDomain: byDomain.map((domain) => ({
+    byDomain: byDomain.map((domain: unknown) => ({
       domain: (domain as AggregateDoc)._id,
       count: (domain as AggregateDoc).count,
       avgMs: Math.round(((domain as AggregateDoc).avgMs || 0) * 100) / 100,

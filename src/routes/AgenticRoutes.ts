@@ -964,14 +964,17 @@ router.get(
       const allTasks = await collection.find(summaryFilter).toArray();
       const summary = {
         total: allTasks.length,
-        pending: allTasks.filter((task) => task.status === "pending").length,
-        in_progress: allTasks.filter((task) => task.status === "in_progress")
+        pending: allTasks.filter((task: any) => task.status === "pending").length,
+        in_progress: allTasks.filter((task: any) => task.status === "in_progress")
           .length,
-        completed: allTasks.filter((task) => task.status === "completed")
+        completed: allTasks.filter((task: any) => task.status === "completed")
           .length,
       };
       // Sanitize _id
-      const sanitized = tasks.map(({ _id, ...rest }) => rest);
+      const sanitized = tasks.map((task: any) => {
+        const { _id, ...rest } = task;
+        return rest;
+      });
       return { tasks: sanitized, summary };
     },
     "Task list-all",

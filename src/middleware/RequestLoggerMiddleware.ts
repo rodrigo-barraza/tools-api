@@ -211,18 +211,18 @@ export async function getRequestStats(since?: string) {
   return {
     totalRequests,
     byStatus: Object.fromEntries(
-      byStatus.map((statusEntry) => [
+      byStatus.map((statusEntry: unknown) => [
         (statusEntry as AggregateDoc)._id,
         (statusEntry as AggregateDoc).count,
       ]),
     ),
     byMethod: Object.fromEntries(
-      byMethod.map((methodEntry) => [
+      byMethod.map((methodEntry: unknown) => [
         (methodEntry as AggregateDoc)._id,
         (methodEntry as AggregateDoc).count,
       ]),
     ),
-    byDomain: byDomain.map((domainEntry) => ({
+    byDomain: byDomain.map((domainEntry: unknown) => ({
       domain: (domainEntry as AggregateDoc)._id,
       count: (domainEntry as AggregateDoc).count,
       avgMs: Math.round(((domainEntry as AggregateDoc).avgMs || 0) * 100) / 100,
