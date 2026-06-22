@@ -117,10 +117,10 @@ async function loadAgentSourceCode(): Promise<{ wrapperSource: string; coreSourc
     logger.warn(`[AgentCompiler] MinIO fetch failed (${minioErrorMessage}), falling back to local filesystem.`);
   }
 
-  // Strategy 2: Fallback to local filesystem (node_modules/ in Docker, or dev sibling)
+  // Strategy 2: Fallback to local filesystem (vendor/ in Docker, or dev sibling)
   if (!wrapperSource || !coreSource) {
     const candidateDirectories = [
-      resolve(process.cwd(), "node_modules/workspace-service/standalone"),
+      resolve(process.cwd(), "vendor/workspace-agent"),
       resolve(process.cwd(), "../workspace-service/standalone"),
     ];
 
@@ -142,7 +142,7 @@ async function loadAgentSourceCode(): Promise<{ wrapperSource: string; coreSourc
     if (!wrapperSource || !coreSource) {
       throw new Error(
         "Could not load workspace-agent source files from MinIO or any local filesystem path. " +
-        "Ensure workspace-agent files are seeded to MinIO or available in workspace-service dependency."
+        "Ensure workspace-agent files are seeded to MinIO or available in vendor/workspace-agent/."
       );
     }
   }

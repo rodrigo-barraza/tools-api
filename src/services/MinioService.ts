@@ -97,11 +97,15 @@ export default class MinioService {
         const potentialPaths = [
           path.resolve(
             process.cwd(),
-            `node_modules/workspace-service/standalone/${fileEntry.fileName}`,
+            `vendor/workspace-agent/${fileEntry.fileName}`,
           ),
           path.resolve(
             process.cwd(),
             `../workspace-service/standalone/${fileEntry.fileName}`,
+          ),
+          path.resolve(
+            process.cwd(),
+            `workspace-service/standalone/${fileEntry.fileName}`,
           ),
           `/home/rodrigo/development/workspace-service/standalone/${fileEntry.fileName}`,
         ];
