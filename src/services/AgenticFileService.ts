@@ -1,4 +1,5 @@
 import { escapeRegex, errorMessage } from "@rodrigo-barraza/utilities-library";
+import { requestLocalStorage } from "../middleware/HeaderPropagationMiddleware.ts";
 // ─── Sandboxed File Operations ──────────────────────────────
 
 import {
@@ -225,16 +226,30 @@ function validatePath(inputPath: string | unknown) {
   // Trigger non-blocking lazy refresh of security settings
   triggerSecuritySettingsRefresh();
 
-  // Resolve relative paths against the primary workspace root, NOT process.cwd().
+  const requestStore = requestLocalStorage.getStore();
+  const workspaceOverride = requestStore?.workspaceOverride;
+
+  // Resolve relative paths against the primary workspace root (or workspaceOverride), NOT process.cwd().
   const isRelative = !inputPath.startsWith("/");
+  const baseRoot = (workspaceOverride && workspaceOverride.startsWith("/tmp/prism-worktrees/"))
+    ? workspaceOverride
+    : ALLOWED_ROOTS[0];
+
   const resolved = isRelative
-    ? resolve(ALLOWED_ROOTS[0], inputPath)
+    ? resolve(baseRoot, inputPath)
     : resolve(inputPath);
 
   // Check against allowed roots
-  const inAllowedRoot = ALLOWED_ROOTS.some(
+  let inAllowedRoot = ALLOWED_ROOTS.some(
     (root: string) => resolved.startsWith(root + "/") || resolved === root,
   );
+
+  // Also check workspaceOverride
+  if (!inAllowedRoot && workspaceOverride && workspaceOverride.startsWith("/tmp/prism-worktrees/")) {
+    if (resolved.startsWith(workspaceOverride + "/") || resolved === workspaceOverride) {
+      inAllowedRoot = true;
+    }
+  }
 
   if (!inAllowedRoot) {
     return {

@@ -12,6 +12,8 @@ declare module "express-serve-static-core" {
     username: string;
     /** Workspace ID (from x-workspace-id header). Null = default. */
     workspaceId: string | null;
+    /** Workspace override path for active worktree. */
+    workspaceOverride: string | null;
   }
 
   interface Router {

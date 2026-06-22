@@ -138,14 +138,27 @@ export async function fetchContainerLogs(
         if (done) break;
 
         accumulatedBuffer += decoder.decode(value, { stream: true });
-        const sseLines = accumulatedBuffer.split("\n");
-        accumulatedBuffer = sseLines.pop() || "";
+        const blocks = accumulatedBuffer.split("\n\n");
+        accumulatedBuffer = blocks.pop() || "";
 
-        for (const sseLine of sseLines) {
-          if (sseLine.startsWith("data: ")) {
-            collectedLines.push(sseLine.slice(6));
+        for (const block of blocks) {
+          const lines = block.split("\n");
+          let eventType = "";
+          const dataLines: string[] = [];
+
+          for (const line of lines) {
+            if (line.startsWith("event: ")) {
+              eventType = line.slice(7).trim();
+            } else if (line.startsWith("data: ")) {
+              dataLines.push(line.slice(6));
+            }
           }
-          if (sseLine.startsWith("event: end") || sseLine.startsWith("event: error")) {
+
+          if (eventType === "") {
+            for (const dataLine of dataLines) {
+              collectedLines.push(dataLine);
+            }
+          } else if (eventType === "end" || eventType === "error") {
             reader.cancel().catch(() => {});
             clearTimeout(readTimeout);
             return {

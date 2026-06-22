@@ -1,4 +1,13 @@
 import { DEFAULT_USERNAME } from "@rodrigo-barraza/utilities-library/taxonomy";
+import { AsyncLocalStorage } from "node:async_hooks";
+import type { Request, Response, NextFunction } from "express";
+
+export interface RequestStore {
+  workspaceOverride?: string | null;
+}
+
+export const requestLocalStorage = new AsyncLocalStorage<RequestStore>();
+
 /**
  * HeaderPropagationMiddleware — attaches identity headers to the request object.
  *
@@ -8,8 +17,6 @@ import { DEFAULT_USERNAME } from "@rodrigo-barraza/utilities-library/taxonomy";
  *
  * Mirrors Prism's AuthMiddleware pattern.
  */
-import type { Request, Response, NextFunction } from "express";
-
 export function headerPropagationMiddleware(
   req: Request,
   res: Response,
@@ -28,5 +35,14 @@ export function headerPropagationMiddleware(
   // Workspace ID: optional — null means the default workspace
   req.workspaceId = (req.headers["x-workspace-id"] as string) || null;
 
-  next();
+  // Workspace Override: optional — path to active worktree
+  req.workspaceOverride = (req.headers["x-workspace-override"] as string) || null;
+
+  const requestStore: RequestStore = {
+    workspaceOverride: req.workspaceOverride,
+  };
+
+  requestLocalStorage.run(requestStore, () => {
+    next();
+  });
 }
