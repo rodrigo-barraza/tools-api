@@ -17,3 +17,5 @@ vendor/*
 
 # Migrated to pnpm
 package-lock.json
+.npmrc
+
