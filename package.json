@@ -53,6 +53,7 @@
     "vscode-languageserver-protocol": "^3.17.5",
     "vscode-languageserver-types": "^3.17.5",
     "whoiser": "^2.0.0-beta.10",
+    "workspace-service": "github:rodrigo-barraza/workspace-service",
     "ws": "^8.20.0",
     "xml2js": "^0.6.2",
     "yahoo-finance2": "^3.14.0",

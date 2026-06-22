@@ -66,10 +66,6 @@ COPY --chown=toolsapi:toolsapi --from=build /app/node_modules ./node_modules
 COPY --chown=toolsapi:toolsapi --from=build /app/dist ./dist
 COPY --chown=toolsapi:toolsapi package.json ./package.json
 
-# Workspace-agent standalone files (copied by PRE_BUILD hook in deploy.sh)
-# Used by MinioService to seed MinIO for SEA compilation in production
-COPY --chown=toolsapi:toolsapi vendor/ ./vendor/
-
 USER toolsapi
 
 EXPOSE 5590
