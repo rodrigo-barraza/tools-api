@@ -508,7 +508,11 @@ router.post(
     // Create an AbortController so we can kill the child process if the
     // upstream client disconnects (e.g. user pressed Stop in the UI).
     const abortController = new AbortController();
-    req.on("close", () => abortController.abort());
+    res.on("close", () => {
+      if (!res.writableEnded) {
+        abortController.abort();
+      }
+    });
     const result = await executeCommand(command, {
       cwd: cwd || undefined,
       timeout: timeout ? Math.min(parseInt(timeout, 10), 120_000) : undefined,
@@ -539,7 +543,11 @@ router.post(
     // Create an AbortController so we can kill the child process if the
     // upstream client disconnects (e.g. user pressed Stop in the UI).
     const abortController = new AbortController();
-    req.on("close", () => abortController.abort());
+    res.on("close", () => {
+      if (!res.writableEnded) {
+        abortController.abort();
+      }
+    });
     const result = await executeCommandStreaming(command, {
       cwd: cwd || undefined,
       timeout: timeout ? Math.min(parseInt(timeout, 10), 120_000) : undefined,

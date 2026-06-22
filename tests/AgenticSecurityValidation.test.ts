@@ -53,7 +53,7 @@ describe("Agentic Security and Worktree Validation", () => {
         });
 
       expect(res.status).toBe(200);
-      expect(res.body.success).toBe(true);
+      expect(res.body.created).toBe(true);
 
       // Clean up the written file
       const readRes = await request(app)
@@ -63,7 +63,7 @@ describe("Agentic Security and Worktree Validation", () => {
           path: filePath
         });
       expect(readRes.status).toBe(200);
-      expect(readRes.body.content).toBe("isolated worktree write");
+      expect(readRes.body.content).toBe("1: isolated worktree write");
 
       // Verify that access without override header is rejected
       const noHeaderRes = await request(app)
