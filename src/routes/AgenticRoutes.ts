@@ -83,7 +83,8 @@ import {
 } from "../services/AgenticSchedulerService.ts";
 import { agenticNotebookEdit } from "../services/AgenticNotebookService.ts";
 import { TOOL_DEFINITIONS } from "../services/ToolSchemaService.ts";
-const router = Router();
+const router: ReturnType<typeof Router> = Router();
+const dispatchToRoute = router as unknown as (request: Request, response: Response, fallback: () => void) => void;
 // ─── 1. File Operations ─────────────────────────────────────
 // ── Read File ─────────────────────────────────────────────────
 router.post(
@@ -879,7 +880,7 @@ router.post(
         });
     req.url = pathMap[action];
     req.body = params;
-    return router.handle(req, res, () =>
+    return dispatchToRoute(req, res, () =>
       res.status(404).json({ error: "Route not found" }),
     );
   }),

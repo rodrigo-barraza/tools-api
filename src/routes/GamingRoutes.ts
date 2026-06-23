@@ -14,7 +14,8 @@ import {
 } from "../fetchers/gaming/DotaFetcher.ts";
 import { errorMessage } from "../utilities.ts";
 
-const router = Router();
+const router: ReturnType<typeof Router> = Router();
+const dispatchToRoute = router as unknown as (request: Request, response: Response, fallback: () => void) => void;
 
 // ─── 1. Dota 2 — Hero Data ──────────────────────────────────
 
@@ -257,7 +258,7 @@ router.get(
     switch (action) {
       case "heroes":
         req.url = `/dota/heroes${buildQueryString({ "q": query, role, attr })}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "hero":
@@ -269,7 +270,7 @@ router.get(
             });
         req.url = `/dota/heroes/${encodeURIComponent(query)}`;
         req.params.query = query;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "matchups":
@@ -279,7 +280,7 @@ router.get(
             .json({ error: "'heroId' is required for action=matchups" });
         req.url = `/dota/heroes/${heroId}/matchups`;
         req.params.heroId = String(heroId);
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "player":
@@ -289,7 +290,7 @@ router.get(
             .json({ error: "'accountId' is required for action=player" });
         req.url = `/dota/players/${accountId}`;
         req.params.accountId = String(accountId);
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "player_matches":
@@ -301,7 +302,7 @@ router.get(
             });
         req.url = `/dota/players/${accountId}/matches${buildQueryString({ limit })}`;
         req.params.accountId = String(accountId);
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "match":
@@ -311,12 +312,12 @@ router.get(
             .json({ error: "'matchId' is required for action=match" });
         req.url = `/dota/matches/${matchId}`;
         req.params.matchId = String(matchId);
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "pro_matches":
         req.url = `/dota/pro-matches${buildQueryString({ limit })}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       default:

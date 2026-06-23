@@ -1589,7 +1589,7 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
     return res.status(400).json({ error: validationError });
   }
 
-  const callerUsername = (req.headers["x-username"] as string) || null;
+  const { username: callerUsername } = extractCallerContext(req);
   const isExistingSession = !!(sessionId && vectorAnimationSessions.has(sessionId));
 
   let sessionAnimation = {

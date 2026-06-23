@@ -50,7 +50,8 @@ interface MapMarker {
   shortAddress?: string;
 }
 
-const router = Router();
+const router: ReturnType<typeof Router> = Router();
+const dispatchToRoute = router as unknown as (request: Request, response: Response, fallback: () => void) => void;
 // ─── Calculator (BigNumber) ────────────────────────────────────────
 router.get("/calculate", (req: Request, res: Response) => {
   const operation = req.query.operation as string | undefined;
@@ -725,22 +726,22 @@ router.get(
     switch (action) {
       case "search":
         req.url = `/airports/search?q=${searchQuery || ""}&limit=${limit || 10}&country=${country || ""}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "code":
         req.url = `/airports/code/${code || ""}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "country":
         req.url = `/airports/country/${code || country || ""}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "nearest":
         req.url = `/airports/nearest?lat=${lat || 0}&lng=${lng || 0}&limit=${limit || 10}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       default:

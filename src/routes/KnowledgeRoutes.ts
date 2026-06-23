@@ -106,7 +106,8 @@ import {
 } from "../fetchers/web/WaybackFetcher.ts";
 import { errorMessage } from "../utilities.ts";
 
-const router = Router();
+const router: ReturnType<typeof Router> = Router();
+const dispatchToRoute = router as unknown as (request: Request, response: Response, fallback: () => void) => void;
 // ─── Dictionary ────────────────────────────────────────────────────
 router.get(
   "/dictionary/:word",
@@ -1149,19 +1150,19 @@ router.get(
     switch (action) {
       case "search":
         req.url = `/books/search?q=${searchQuery || ""}&limit=${limit || 10}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "work":
         req.url = `/books/work/${workKey || ""}`;
         req.params.workKey = workKey || "";
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "author":
         req.url = `/books/author/${authorKey || ""}`;
         req.params.authorKey = authorKey || "";
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       default:
@@ -1187,29 +1188,29 @@ router.get(
       case "info":
         req.url = `/countries/search/${encodeURIComponent(name || "")}`;
         req.params.name = name || "";
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "code":
         req.url = `/countries/code/${code || ""}`;
         req.params.code = code || "";
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "indicators":
         req.url = `/indicators/country/${code || ""}`;
         req.params.code = code || "";
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "rank":
         req.url = `/indicators/rank?indicator=${indicator || ""}&limit=${limit || 10}&order=${order || "desc"}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "compare":
         req.url = `/indicators/compare?countries=${countries || ""}&indicator=${indicator || ""}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       default:
@@ -1240,23 +1241,23 @@ router.get(
     switch (action) {
       case "search":
         req.url = `/elements/search?q=${searchQuery || ""}&limit=${limit || 10}&category=${category || ""}&block=${block || ""}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "lookup":
         req.url = `/elements/${symbol || ""}`;
         req.params.symbol = symbol || "";
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "rank":
         req.url = `/elements/rank?property=${property || ""}&limit=${limit || 10}&order=${order || "desc"}&category=${category || ""}&block=${block || ""}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "categories":
         req.url = "/elements/categories";
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       default:
@@ -1286,27 +1287,27 @@ router.get(
     switch (action) {
       case "search":
         req.url = `/exoplanets/search?q=${searchQuery || ""}&limit=${limit || 10}&method=${method || ""}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "lookup":
         req.url = `/exoplanets/lookup/${encodeURIComponent(name || "")}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "rank":
         req.url = `/exoplanets/rank?field=${field || ""}&limit=${limit || 10}&order=${order || "desc"}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "stats":
         req.url = "/exoplanets/stats";
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "habitable":
         req.url = `/exoplanets/habitable?limit=${limit || 10}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       default:
@@ -1335,17 +1336,17 @@ router.get(
     switch (action) {
       case "search":
         req.url = `/anime/search?q=${searchQuery || ""}&limit=${limit || 10}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "top":
         req.url = `/anime/top?limit=${limit || 10}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "season":
         req.url = `/anime/season/now?limit=${limit || 10}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "schedule":
@@ -1355,7 +1356,7 @@ router.get(
       case "details":
         req.url = `/anime/${id || ""}`;
         req.params.id = id || "";
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       default:
@@ -1377,7 +1378,7 @@ router.get(
     if (!type || !searchQuery)
       return res.status(400).json({ error: "'type' and 'q' are required" });
     req.url = `/${type === "tv" ? "tv" : "movies"}/search?q=${searchQuery}&year=${year || ""}&page=${page || 1}${type === "tv" ? "&firstAirDateYear=" + (year || "") : ""}`;
-    return router.handle(req, res, () =>
+    return dispatchToRoute(req, res, () =>
       res.status(404).json({ error: "Route not found" }),
     );
   }),
@@ -1391,7 +1392,7 @@ router.get(
     >;
     if (!type) return res.status(400).json({ error: "'type' is required" });
     req.url = `/${type === "tv" ? "tv" : "movies"}/trending?timeWindow=${timeWindow || "week"}&limit=${limit || 10}`;
-    return router.handle(req, res, () =>
+    return dispatchToRoute(req, res, () =>
       res.status(404).json({ error: "Route not found" }),
     );
   }),
@@ -1405,7 +1406,7 @@ router.get(
     const yearParam =
       type === "tv" ? `firstAirDateYear=${year || ""}` : `year=${year || ""}`;
     req.url = `/${type === "tv" ? "tv" : "movies"}/discover?${yearParam}&genreId=${genreId || ""}&sortBy=${sortBy || ""}&page=${page || 1}&minVoteAverage=${minVoteAverage || ""}&minVoteCount=${minVoteCount || ""}`;
-    return router.handle(req, res, () =>
+    return dispatchToRoute(req, res, () =>
       res.status(404).json({ error: "Route not found" }),
     );
   }),
@@ -1416,7 +1417,7 @@ router.get(
     const { type } = req.query as Record<string, string | undefined>;
     if (!type) return res.status(400).json({ error: "'type' is required" });
     req.url = `/${type === "tv" ? "tv" : "movies"}/genres`;
-    return router.handle(req, res, () =>
+    return dispatchToRoute(req, res, () =>
       res.status(404).json({ error: "Route not found" }),
     );
   }),
@@ -1427,7 +1428,7 @@ router.get(
     const { type } = req.query as Record<string, string | undefined>;
     if (!type) return res.status(400).json({ error: "'type' is required" });
     req.url = `/${type === "tv" ? "tv" : "movies"}/${req.params.id as string}/credits`;
-    return router.handle(req, res, () =>
+    return dispatchToRoute(req, res, () =>
       res.status(404).json({ error: "Route not found" }),
     );
   }),
@@ -1438,7 +1439,7 @@ router.get(
     const { type } = req.query as Record<string, string | undefined>;
     if (!type) return res.status(400).json({ error: "'type' is required" });
     req.url = `/${type === "tv" ? "tv" : "movies"}/${req.params.id as string}`;
-    return router.handle(req, res, () =>
+    return dispatchToRoute(req, res, () =>
       res.status(404).json({ error: "Route not found" }),
     );
   }),
@@ -1578,7 +1579,7 @@ router.get(
             .status(400)
             .json({ error: "'q' is required for action=search_artists" });
         req.url = `/music/artists/search?q=${encodeURIComponent(searchQuery)}&limit=${limit || 10}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "artist":
@@ -1588,7 +1589,7 @@ router.get(
             .json({ error: "'mbid' is required for action=artist" });
         req.url = `/music/artists/${mbid}`;
         req.params.mbid = mbid;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "search_albums":
@@ -1597,7 +1598,7 @@ router.get(
             .status(400)
             .json({ error: "'q' is required for action=search_albums" });
         req.url = `/music/albums/search?q=${encodeURIComponent(searchQuery)}&artist=${artist || ""}&limit=${limit || 10}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "album":
@@ -1607,7 +1608,7 @@ router.get(
             .json({ error: "'mbid' is required for action=album" });
         req.url = `/music/albums/${mbid}`;
         req.params.mbid = mbid;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "search_tracks":
@@ -1616,7 +1617,7 @@ router.get(
             .status(400)
             .json({ error: "'q' is required for action=search_tracks" });
         req.url = `/music/tracks/search?q=${encodeURIComponent(searchQuery)}&artist=${artist || ""}&limit=${limit || 10}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       default:
@@ -1650,12 +1651,12 @@ router.get(
     switch (action) {
       case "snapshot":
         req.url = `/wayback/snapshot?url=${encodeURIComponent(url)}${timestamp ? "&timestamp=" + timestamp : ""}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "history":
         req.url = `/wayback/history?url=${encodeURIComponent(url)}&limit=${limit || 20}${from ? "&from=" + from : ""}${to ? "&to=" + to : ""}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       default:

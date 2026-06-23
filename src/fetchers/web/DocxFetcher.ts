@@ -1,7 +1,7 @@
 // ─── Download and Extract Text from DOCX URLs ────────────────
 
 import mammoth from "mammoth";
-import { errorMessage } from "../../utilities.ts";
+import { errorMessage, randomUserAgent } from "../../utilities.ts";
 
 const MAX_DOCX_BYTES = 10_485_760; // 10 MB
 const MAX_TEXT_CHARS = 100_000;
@@ -42,8 +42,7 @@ export async function readDocxUrl(url: string, options: DocxOptions = {}) {
     const response = await fetch(url, {
       signal: controller.signal,
       headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "User-Agent": randomUserAgent(),
         Accept:
           "application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword,application/octet-stream,*/*",
       },

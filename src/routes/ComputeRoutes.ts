@@ -27,6 +27,7 @@ import {
   buildLocalUrl,
   buildEmbedHtml,
   errorMessage,
+  extractCallerContext,
 } from "../utilities.ts";
 import { PersistentStore } from "../models/EmbedAsset.ts";
 import {
@@ -1887,7 +1888,7 @@ router.post("/turtle", asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
-  const callerUsername = (req.headers["x-username"] as string) || null;
+  const { username: callerUsername } = extractCallerContext(req);
 
   // Auto-scale animation speed based on command complexity
   let stepDelay = 40;
@@ -2842,7 +2843,7 @@ router.post("/3d/mesh", asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
-  const callerUsername = (req.headers["x-username"] as string) || null;
+  const { username: callerUsername } = extractCallerContext(req);
 
   let combinedVertices = vertices;
   let combinedFaces = faces;
@@ -2984,7 +2985,7 @@ router.post("/3d/scene", asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
-  const callerUsername = (req.headers["x-username"] as string) || null;
+  const { username: callerUsername } = extractCallerContext(req);
 
   let combinedSceneConfiguration = sceneConfiguration || {};
   let combinedSceneObjects = sceneObjects;
@@ -3133,7 +3134,7 @@ router.post("/3d/model", asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
-  const callerUsername = (req.headers["x-username"] as string) || null;
+  const { username: callerUsername } = extractCallerContext(req);
 
   let combinedModelObjects = modelObjects;
   let combinedModelOptions = modelOptions || {};
@@ -3246,7 +3247,7 @@ router.post("/3d/voxel", asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
-  const callerUsername = (req.headers["x-username"] as string) || null;
+  const { username: callerUsername } = extractCallerContext(req);
 
   let combinedVoxels = voxels || [];
   let combinedShapes = shapes || [];

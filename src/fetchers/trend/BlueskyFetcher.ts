@@ -1,5 +1,5 @@
 import { normalizeName } from "@rodrigo-barraza/utilities-library";
-import { TREND_SOURCES as SOURCES, TREND_CATEGORIES } from "../../constants.ts";
+import { TREND_SOURCES as SOURCES, TREND_CATEGORIES, USER_AGENT } from "../../constants.ts";
 import logger from "../../logger.ts";
 import { errorMessage } from "../../utilities.ts";
 
@@ -20,8 +20,7 @@ export async function fetchBlueskyTrends() {
       {
         headers: {
           Accept: "application/json",
-          "User-Agent":
-            "Mozilla/5.0 (compatible; Sun/Trends; github.com/rodrigo-barraza)",
+          "User-Agent": USER_AGENT,
         },
       },
     );
@@ -61,8 +60,7 @@ export async function fetchBlueskyTrends() {
       {
         headers: {
           Accept: "application/json",
-          "User-Agent":
-            "Mozilla/5.0 (compatible; Sun/Trends; github.com/rodrigo-barraza)",
+          "User-Agent": USER_AGENT,
         },
       },
     );

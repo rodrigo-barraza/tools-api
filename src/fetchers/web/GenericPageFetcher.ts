@@ -2,13 +2,13 @@
 
 import * as cheerio from "cheerio";
 import type { CheerioAPI } from "cheerio";
-import type { AnyNode, Element } from "domhandler";
-import { errorMessage } from "../../utilities.ts";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- domhandler's types are not directly importable under pnpm strict hoisting
+type AnyNode = any;
+type Element = any;
+import { errorMessage, randomUserAgent } from "../../utilities.ts";
 
 const MAX_BODY_CHARS = 15_000;
 const FETCH_TIMEOUT_MS = 10_000;
-const USER_AGENT =
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
 // ─── Noise Removal ──────────────────────────────────────────────────
 // Selectors for elements that clutter extracted text.
@@ -249,7 +249,7 @@ export async function fetchGenericPage(
 
     response = await fetch(url, {
       headers: {
-        "User-Agent": USER_AGENT,
+        "User-Agent": randomUserAgent(),
         Accept:
           "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9",

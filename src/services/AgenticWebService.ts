@@ -2,7 +2,9 @@
 
 import * as cheerio from "cheerio";
 import type { CheerioAPI, Cheerio } from "cheerio";
-import type { AnyNode } from "domhandler";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- domhandler's AnyNode is not directly importable under pnpm strict hoisting
+type AnyNode = any;
+
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";

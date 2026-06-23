@@ -50,7 +50,8 @@ import {
   checkDrugNutrientInteractions,
   getDrugInteractionCategories,
 } from "../fetchers/health/DrugNutrientFetcher.ts";
-const router = Router();
+const router: ReturnType<typeof Router> = Router();
+const dispatchToRoute = router as unknown as (request: Request, response: Response, fallback: () => void) => void;
 // ─── USDA Nutrition (raw whole foods — in-memory database) ────
 router.get("/nutrition/search", (req: Request, res: Response) => {
   const query = req.query['q'] as string | undefined;
@@ -575,27 +576,27 @@ router.get(
     switch (mode) {
       case "name":
         req.url = `/drugs/search?q=${encodeURIComponent(searchQuery)}&limit=${limit || 10}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "ndc_search":
         req.url = `/drugs/ndc/search?q=${encodeURIComponent(searchQuery)}&limit=${limit || 10}&dosageForm=${dosageForm || ""}&productType=${productType || ""}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "ndc_lookup":
         req.url = `/drugs/ndc/lookup/${encodeURIComponent(searchQuery)}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "ingredient":
         req.url = `/drugs/ndc/ingredient?q=${encodeURIComponent(searchQuery)}&limit=${limit || 10}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       case "pharm_class":
         req.url = `/drugs/ndc/pharm-class?q=${encodeURIComponent(searchQuery)}&limit=${limit || 10}`;
-        return router.handle(req, res, () =>
+        return dispatchToRoute(req, res, () =>
           res.status(404).json({ error: "Route not found" }),
         );
       default:

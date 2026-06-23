@@ -2,9 +2,9 @@
 
 import { formatMediaTimestamp } from "@rodrigo-barraza/utilities-library";
 import { MusicArtist, MusicAlbum, MusicTrack } from "../../types/knowledge.ts";
+import { USER_AGENT } from "../../constants.ts";
 
 const BASE_URL = "https://musicbrainz.org/ws/2";
-const USER_AGENT = "SunToolsService/1.0 (rodrigo@rod.dev)";
 
 // Cover art from Cover Art Archive (free, no auth)
 const COVER_ART_BASE = "https://coverartarchive.org";

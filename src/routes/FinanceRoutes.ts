@@ -46,7 +46,8 @@ import {
 import { fetchSectorPerformance } from "../fetchers/finance/SectorPerformanceFetcher.ts";
 import { errorMessage } from "../utilities.ts";
 
-const router = Router();
+const router: ReturnType<typeof Router> = Router();
+const dispatchToRoute = router as unknown as (request: Request, response: Response, fallback: () => void) => void;
 // ─── Stock Quote (on-demand with 1-min TTL cache) ──────────────────
 router.get(
   "/quote/:symbol",
@@ -328,7 +329,7 @@ router.get(
     // Internal redirect: re-use existing routes by forwarding the request
     req.url = pathMap[action];
     req.params.symbol = symbol;
-    return router.handle(req, res, () =>
+    return dispatchToRoute(req, res, () =>
       res.status(404).json({ error: "Route not found" }),
     );
   }),
@@ -367,7 +368,7 @@ router.get(
         });
     req.url = pathMap[action];
     if (seriesId) req.params.seriesId = seriesId;
-    return router.handle(req, res, () =>
+    return dispatchToRoute(req, res, () =>
       res.status(404).json({ error: "Route not found" }),
     );
   }),

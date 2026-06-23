@@ -1,11 +1,11 @@
 import logger from "../../logger.ts";
 import { errorMessage } from "../../utilities.ts";
+import { USER_AGENT } from "../../constants.ts";
 
 const SEC_EDGAR_BASE_URL = "https://data.sec.gov";
 const SEC_EFTS_BASE_URL = "https://efts.sec.gov/LATEST";
-const SEC_USER_AGENT = "Prism/1.0 (tools-service)";
 const SEC_HEADERS = {
-  "User-Agent": SEC_USER_AGENT,
+  "User-Agent": USER_AGENT,
   Accept: "application/json",
 };
 
