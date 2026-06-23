@@ -1,7 +1,9 @@
-// ─── Generic Video Downloader ───────────────────────────────
-// Unified video download tool powered by yt-dlp. Works with
-// any URL from 1000+ supported sites (Twitter/X, TikTok,
-// Twitch, Vimeo, Dailymotion, etc.). Returns temp file path
+// ─── Unified Video Downloader ───────────────────────────────
+// Single video download tool powered by yt-dlp. Works with
+// any URL from 1000+ supported sites (YouTube, Twitter/X,
+// TikTok, Twitch, Vimeo, Dailymotion, etc.). For YouTube
+// URLs, also accepts raw 11-character video IDs and all
+// youtu.be/youtube.com URL formats. Returns temp file path
 // + metadata for the route handler to deliver via MinIO or
 // GIF conversion.
 
@@ -12,6 +14,7 @@ import path from "node:path";
 import logger from "../../logger.ts";
 import { errorMessage } from "../../utilities.ts";
 import { convertVideoToGif } from "../../services/VideoService.ts";
+import { extractVideoId } from "../knowledge/YouTubeFetcher.ts";
 
 // ─── Constants ─────────────────────────────────────────────────────
 
@@ -19,22 +22,42 @@ const DOWNLOAD_TIMEOUT_MILLISECONDS = 180_000;
 const MAX_FILE_SIZE_BYTES = 200 * 1024 * 1024;
 const YTDLP_BINARY = "yt-dlp";
 
-// ─── URL Validation ────────────────────────────────────────────────
+// ─── URL Validation & Normalization ────────────────────────────────
 
-function isValidMediaUrl(input: string): boolean {
-  if (!input || typeof input !== "string") return false;
+const YOUTUBE_URL_REGEX =
+  /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/|live\/|embed\/|v\/)|youtu\.be\/)[a-zA-Z0-9_-]{11}/;
+
+function normalizeInputUrl(input: string): string | null {
+  if (!input || typeof input !== "string") return null;
   const trimmed = input.trim();
+
+  // YouTube raw video ID (11-char alphanumeric string)
+  const videoId = extractVideoId(trimmed);
+  if (videoId) {
+    return `https://www.youtube.com/watch?v=${videoId}`;
+  }
+
+  // YouTube URL normalization (already a valid YouTube URL)
+  if (YOUTUBE_URL_REGEX.test(trimmed)) {
+    return trimmed;
+  }
+
+  // Generic URL — just validate it's a valid HTTP(S) URL
   try {
     const parsedUrl = new URL(trimmed);
-    return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:";
+    if (parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:") {
+      return trimmed;
+    }
   } catch {
-    return false;
+    // Not a valid URL
   }
+
+  return null;
 }
 
 // ─── yt-dlp Download ───────────────────────────────────────────────
 
-export type GenericDownloadFormat = "mp4" | "mp3" | "gif";
+export type VideoDownloadFormat = "mp4" | "mp3" | "gif";
 
 interface YtDlpDownloadResult {
   filePath: string;
@@ -74,6 +97,8 @@ function runYtDlpDownload(
             "--merge-output-format", "mp4",
             "--embed-thumbnail",
             "--embed-metadata",
+            "--embed-subs",
+            "--sub-langs", "en",
             "--output", outputTemplate,
             "--no-playlist",
             "--no-check-certificates",
@@ -135,9 +160,10 @@ function runYtDlpDownload(
 
 // ─── Metadata Extraction via yt-dlp ────────────────────────────────
 
-interface GenericVideoMetadata {
+export interface VideoMetadata {
   title: string;
   uploader: string;
+  channel: string | null;
   platform: string;
   durationSeconds: number | null;
   viewCount: number | null;
@@ -147,7 +173,7 @@ interface GenericVideoMetadata {
   originalUrl: string;
 }
 
-function extractMetadataViaYtDlp(videoUrl: string): Promise<GenericVideoMetadata> {
+function extractMetadataViaYtDlp(videoUrl: string): Promise<VideoMetadata> {
   return new Promise((resolve, reject) => {
     const processArguments = [
       videoUrl,
@@ -156,7 +182,7 @@ function extractMetadataViaYtDlp(videoUrl: string): Promise<GenericVideoMetadata
       "--no-check-certificates",
       "--quiet",
       "--no-warnings",
-      "--print", "%(title)s\n%(uploader)s\n%(extractor)s\n%(duration)s\n%(view_count)s\n%(upload_date)s\n%(description).200s\n%(thumbnail)s",
+      "--print", "%(title)s\n%(uploader)s\n%(channel)s\n%(extractor)s\n%(duration)s\n%(view_count)s\n%(upload_date)s\n%(description).200s\n%(thumbnail)s",
     ];
 
     const childProcess = spawn(YTDLP_BINARY, processArguments, {
@@ -197,12 +223,13 @@ function extractMetadataViaYtDlp(videoUrl: string): Promise<GenericVideoMetadata
       resolve({
         title: lines[0] && lines[0] !== "NA" ? lines[0] : "Video",
         uploader: lines[1] && lines[1] !== "NA" ? lines[1] : "Unknown",
-        platform: lines[2] && lines[2] !== "NA" ? lines[2] : "Unknown",
-        durationSeconds: parseNumber(lines[3] || ""),
-        viewCount: parseNumber(lines[4] || ""),
-        uploadDate: cleanField(lines[5]),
-        description: cleanField(lines[6]),
-        thumbnailUrl: cleanField(lines[7]),
+        channel: cleanField(lines[2]),
+        platform: lines[3] && lines[3] !== "NA" ? lines[3] : "Unknown",
+        durationSeconds: parseNumber(lines[4] || ""),
+        viewCount: parseNumber(lines[5] || ""),
+        uploadDate: cleanField(lines[6]),
+        description: cleanField(lines[7]),
+        thumbnailUrl: cleanField(lines[8]),
         originalUrl: videoUrl,
       });
     });
@@ -213,10 +240,11 @@ function extractMetadataViaYtDlp(videoUrl: string): Promise<GenericVideoMetadata
   });
 }
 
-function buildFallbackMetadata(videoUrl: string): GenericVideoMetadata {
+function buildFallbackMetadata(videoUrl: string): VideoMetadata {
   return {
     title: "Video",
     uploader: "Unknown",
+    channel: null,
     platform: "Unknown",
     durationSeconds: null,
     viewCount: null,
@@ -229,8 +257,8 @@ function buildFallbackMetadata(videoUrl: string): GenericVideoMetadata {
 
 // ─── Public API ────────────────────────────────────────────────────
 
-export interface GenericVideoFileResult {
-  metadata: GenericVideoMetadata;
+export interface VideoFileResult {
+  metadata: VideoMetadata;
   filePath: string;
   fileSize: number;
   format: string;
@@ -238,46 +266,47 @@ export interface GenericVideoFileResult {
   temporaryDirectory: string;
 }
 
-export interface GenericVideoGifResult {
-  metadata: GenericVideoMetadata;
+export interface VideoGifResult {
+  metadata: VideoMetadata;
   gifBuffer: Buffer;
   mimeType: "image/gif";
 }
 
-export interface GenericVideoErrorResult {
+export interface VideoErrorResult {
   error: string;
 }
 
-export type GenericVideoDownloadResult =
-  | GenericVideoFileResult
-  | GenericVideoGifResult
-  | GenericVideoErrorResult;
+export type VideoDownloadResult =
+  | VideoFileResult
+  | VideoGifResult
+  | VideoErrorResult;
 
-export function isGenericFileResult(result: GenericVideoDownloadResult): result is GenericVideoFileResult {
+export function isVideoFileResult(result: VideoDownloadResult): result is VideoFileResult {
   return "filePath" in result;
 }
 
-export function isGenericGifResult(result: GenericVideoDownloadResult): result is GenericVideoGifResult {
+export function isVideoGifResult(result: VideoDownloadResult): result is VideoGifResult {
   return "gifBuffer" in result;
 }
 
-export function isGenericErrorResult(result: GenericVideoDownloadResult): result is GenericVideoErrorResult {
+export function isVideoErrorResult(result: VideoDownloadResult): result is VideoErrorResult {
   return "error" in result;
 }
 
-export async function downloadGenericVideo(
+export async function downloadVideo(
   input: string,
-  format: GenericDownloadFormat = "mp4",
-): Promise<GenericVideoDownloadResult> {
+  format: VideoDownloadFormat = "mp4",
+): Promise<VideoDownloadResult> {
   let temporaryDirectory: string | null = null;
 
   try {
-    if (!isValidMediaUrl(input)) {
-      return { error: `Invalid URL: "${input}". Provide a valid HTTP/HTTPS URL.` };
+    const normalizedUrl = normalizeInputUrl(input);
+    if (!normalizedUrl) {
+      return { error: `Invalid URL or video ID: "${input}". Provide a valid HTTP/HTTPS URL or YouTube video ID.` };
     }
 
     logger.info(
-      `[GenericVideoFetcher] Downloading ${format.toUpperCase()}: ${input}`,
+      `[VideoFetcher] Downloading ${format.toUpperCase()}: ${normalizedUrl}`,
     );
 
     // For GIF, we download as MP4 first, then convert
@@ -285,30 +314,30 @@ export async function downloadGenericVideo(
 
     // Metadata extraction and download directory creation in parallel
     const [metadata, downloadDirectory] = await Promise.all([
-      extractMetadataViaYtDlp(input),
-      mkdtemp(path.join(tmpdir(), "generic-video-")),
+      extractMetadataViaYtDlp(normalizedUrl),
+      mkdtemp(path.join(tmpdir(), "video-download-")),
     ]);
 
     temporaryDirectory = downloadDirectory;
 
     logger.info(
-      `[GenericVideoFetcher] [${metadata.platform}] "${metadata.title}" by ${metadata.uploader} ` +
+      `[VideoFetcher] [${metadata.platform}] "${metadata.title}" by ${metadata.channel || metadata.uploader} ` +
         `(${metadata.durationSeconds ?? "?"}s)`,
     );
 
     const downloadResult = await runYtDlpDownload(
-      input,
+      normalizedUrl,
       temporaryDirectory,
       downloadFormat,
     );
 
     logger.info(
-      `[GenericVideoFetcher] Download complete: ${(downloadResult.fileSize / 1024 / 1024).toFixed(1)} MB`,
+      `[VideoFetcher] Download complete: ${(downloadResult.fileSize / 1024 / 1024).toFixed(1)} MB`,
     );
 
     // ── GIF Conversion Path ──────────────────────────────────
     if (format === "gif") {
-      logger.info("[GenericVideoFetcher] Converting MP4 → GIF via ffmpeg...");
+      logger.info("[VideoFetcher] Converting MP4 → GIF via ffmpeg...");
 
       const gifResult = await convertVideoToGif({
         input: downloadResult.filePath,
@@ -321,7 +350,7 @@ export async function downloadGenericVideo(
       temporaryDirectory = null;
 
       logger.info(
-        `[GenericVideoFetcher] GIF conversion complete: ${(gifResult.buffer.length / 1024 / 1024).toFixed(1)} MB`,
+        `[VideoFetcher] GIF conversion complete: ${(gifResult.buffer.length / 1024 / 1024).toFixed(1)} MB`,
       );
 
       return {
@@ -356,7 +385,7 @@ export async function downloadGenericVideo(
     }
 
     logger.error(
-      `[GenericVideoFetcher] Download failed: ${errorMessage(error)}`,
+      `[VideoFetcher] Download failed: ${errorMessage(error)}`,
     );
     return { error: `Video download failed: ${errorMessage(error)}` };
   }

@@ -3002,48 +3002,17 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: "download_youtube_video",
-    dataSource: onDemand("yt-dlp + ffmpeg"),
-    description:
-      "Download a YouTube video as MP4, extract audio as MP3, or convert to animated GIF. " +
-      "Accepts any YouTube URL format (youtube.com/watch, youtu.be, shorts, live, embed) or a raw 11-character video ID. " +
-      "For 'mp4' and 'mp3': downloads the media and returns a persistent download URL (stored in cloud storage). " +
-      "For 'gif': downloads the video, converts it to an animated GIF using an optimized ffmpeg palette pipeline, and displays it automatically — " +
-      "do NOT include the GIF URL in your text response, the user already sees it rendered. " +
-      "Maximum input file size is 200 MB.",
-    endpoint: {
-      path: "/knowledge/youtube/download",
-      queryParams: ["url", "format"],
-    },
-    parameters: {
-      type: "object",
-      properties: {
-        url: {
-          type: "string",
-          description:
-            "YouTube video URL or 11-character video ID (e.g. 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'https://youtu.be/dQw4w9WgXcQ', or 'dQw4w9WgXcQ')",
-        },
-        format: {
-          type: "string",
-          enum: ["mp4", "mp3", "gif"],
-          description:
-            "Output format: 'mp4' for video download (default), 'mp3' for audio-only extraction, or 'gif' for animated GIF conversion.",
-        },
-      },
-      required: ["url"],
-    },
-  },
-  {
     name: "download_video",
     dataSource: onDemand("yt-dlp + ffmpeg"),
     description:
       "Download a video from any supported platform as MP4, extract audio as MP3, or convert to animated GIF. " +
-      "Supports 1000+ sites including Twitter/X, TikTok, Twitch clips, Vimeo, Dailymotion, Streamable, " +
-      "Facebook, and many more — yt-dlp auto-detects the platform from the URL. " +
+      "Supports YouTube (all URL formats including youtube.com/watch, youtu.be, shorts, live, embed, or raw 11-character video IDs), " +
+      "Twitter/X, TikTok, Twitch clips, Vimeo, Dailymotion, Streamable, Facebook, and 1000+ more sites — " +
+      "yt-dlp auto-detects the platform from the URL. " +
       "For 'mp4' and 'mp3': downloads the media and returns a persistent download URL (stored in cloud storage). " +
       "For 'gif': downloads the video, converts it to an animated GIF using an optimized ffmpeg palette pipeline, and displays it automatically — " +
       "do NOT include the GIF URL in your text response, the user already sees it rendered. " +
-      "Use download_youtube_video for YouTube-specific downloads (richer metadata) or download_reddit_video for Reddit videos (subreddit/author metadata). " +
+      "Use download_reddit_video for Reddit videos (subreddit/author metadata). " +
       "Maximum input file size is 200 MB.",
     endpoint: {
       path: "/knowledge/video/download",
@@ -3055,7 +3024,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         url: {
           type: "string",
           description:
-            "Any public video URL (e.g. 'https://x.com/user/status/123', 'https://www.tiktok.com/@user/video/123', 'https://clips.twitch.tv/ClipSlug', 'https://vimeo.com/123')",
+            "Any public video URL or YouTube video ID (e.g. 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'https://youtu.be/dQw4w9WgXcQ', 'dQw4w9WgXcQ', 'https://x.com/user/status/123', 'https://www.tiktok.com/@user/video/123')",
         },
         format: {
           type: "string",
@@ -3072,7 +3041,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     dataSource: onDemand("ffmpeg"),
     description:
       "Trim a video to a specific time range using ffmpeg's stream copy (instant, no re-encoding). " +
-      "Accepts any public video URL or a download URL from a previous download_video / download_youtube_video / download_reddit_video call. " +
+      "Accepts any public video URL or a download URL from a previous download_video / download_reddit_video call. " +
       "Specify start and/or end timestamps in HH:MM:SS or seconds format. " +
       "Returns a persistent download URL for the trimmed clip (stored in cloud storage). " +
       "Maximum input file size is 200 MB. Maximum output duration is 5 minutes.",
@@ -11412,6 +11381,22 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
+    name: "list_agents",
+    dataSource: onDemand("Prism AgentPersonaRegistry"),
+    description:
+      "List all available AI agent personas (both built-in and custom). Returns each agent's ID, name, " +
+      "type, and whether it is a custom agent. Use this to discover valid persona names for the " +
+      "'agent' parameter in create_team, or when the user asks which agents are available.",
+    endpoint: {
+      path: "/agentic/agent/list",
+    },
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+  {
     name: "update_custom_agent",
     dataSource: onDemand("Prism CustomAgentService"),
     description:
@@ -13195,7 +13180,6 @@ const TOOL_DOMAINS = {
   list_development_indicators: "Knowledge",
   search_youtube: "Knowledge",
   get_youtube_video: "Knowledge",
-  download_youtube_video: "Knowledge",
   download_video: "Knowledge",
   trim_video: "Knowledge",
   read_url: "Core Harness Tools",
@@ -13375,6 +13359,7 @@ const TOOL_DOMAINS = {
   // Agentic — Agent Management
   create_custom_agent: "Agent Management",
   list_custom_agents: "Agent Management",
+  list_agents: "Agent Management",
   update_custom_agent: "Agent Management",
 
 
@@ -13637,7 +13622,6 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   list_development_indicators: ["📈", "🌐"],
   search_youtube: ["▶️", "🔍"],
   get_youtube_video: "▶️",
-  download_youtube_video: ["▶️", "📥"],
   download_video: ["🎬", "📥"],
   trim_video: ["✂️", "🎬"],
   read_url: "🌐",
@@ -13782,6 +13766,7 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   save_memory: ["💻", "🧠"],
   create_custom_agent: ["💻", "🤖"],
   list_custom_agents: ["🤖", "📋"],
+  list_agents: ["🤖", "📋"],
   update_custom_agent: ["✏️", "🤖"],
   search_tools: ["🛠️", "🔍"],
   create_cron: ["⏰", "💻"],
@@ -13972,6 +13957,7 @@ const TOOL_REQUIRED_KEYS = {
   // Agent Management (require Prism for CustomAgentService)
   create_custom_agent: ["PRISM_SERVICE_URL"],
   list_custom_agents: ["PRISM_SERVICE_URL"],
+  list_agents: ["PRISM_SERVICE_URL"],
   update_custom_agent: ["PRISM_SERVICE_URL"],
 
 

@@ -92,19 +92,12 @@ import {
 } from "../fetchers/web/RedditVideoFetcher.ts";
 import type { RedditDownloadFormat } from "../fetchers/web/RedditVideoFetcher.ts";
 import {
-  downloadYouTubeVideo,
-  isFileResult,
-  isGifResult,
-  isErrorResult,
-} from "../fetchers/web/YouTubeVideoFetcher.ts";
-import type { YouTubeDownloadFormat } from "../fetchers/web/YouTubeVideoFetcher.ts";
-import {
-  downloadGenericVideo,
-  isGenericFileResult,
-  isGenericGifResult,
-  isGenericErrorResult,
+  downloadVideo,
+  isVideoFileResult,
+  isVideoGifResult,
+  isVideoErrorResult,
 } from "../fetchers/web/GenericVideoFetcher.ts";
-import type { GenericDownloadFormat } from "../fetchers/web/GenericVideoFetcher.ts";
+import type { VideoDownloadFormat } from "../fetchers/web/GenericVideoFetcher.ts";
 import { getNpmPackage } from "../fetchers/web/NpmFetcher.ts";
 import { getPyPiPackage } from "../fetchers/web/PyPiFetcher.ts";
 
@@ -630,98 +623,7 @@ router.get(
     res.json(result);
   }),
 );
-// ─── YouTube Video Download ───────────────────────────────────────
 
-
-const youtubeGifStore = new PersistentStore<{ buffer: Buffer; mimeType: string }>("youtube-gif");
-
-const YOUTUBE_DOWNLOAD_BUCKET = "artifacts";
-const YOUTUBE_DOWNLOAD_PREFIX = "youtube-downloads";
-
-const VALID_YOUTUBE_FORMATS = new Set<YouTubeDownloadFormat>(["mp4", "mp3", "gif"]);
-
-router.get(
-  "/youtube/download",
-  asyncHandler(async (req: Request, res: Response) => {
-    const { url, format } = req.query as Record<string, string | undefined>;
-    if (!url) {
-      return res.status(400).json({
-        error: "Query parameter 'url' is required (YouTube URL or video ID)",
-      });
-    }
-
-    const downloadFormat: YouTubeDownloadFormat =
-      format && VALID_YOUTUBE_FORMATS.has(format as YouTubeDownloadFormat)
-        ? (format as YouTubeDownloadFormat)
-        : "mp4";
-
-    const result = await downloadYouTubeVideo(url, downloadFormat);
-
-    if (isErrorResult(result)) {
-      return res.status(400).json(result);
-    }
-
-    // ── GIF Delivery ─────────────────────────────────────────
-    if (isGifResult(result)) {
-      const gifId = youtubeGifStore.set({
-        buffer: result.gifBuffer,
-        mimeType: result.mimeType,
-      });
-      const gifImageUrl = buildLocalUrl("compute/image/render", { id: gifId });
-
-      return res.json({
-        success: true,
-        message: `YouTube video converted to GIF: "${result.metadata.title}" by ${result.metadata.channel}.`,
-        title: result.metadata.title,
-        channel: result.metadata.channel,
-        durationSeconds: result.metadata.durationSeconds,
-        format: "gif",
-        imageUrl: gifImageUrl,
-        imageId: gifId,
-        mimeType: result.mimeType,
-      });
-    }
-
-    // ── MP4/MP3 Delivery via MinIO ────────────────────────────
-    if (isFileResult(result)) {
-      try {
-        const fileBuffer = await readFile(result.filePath);
-        const uniqueId = crypto.randomUUID();
-        const objectKey = `${YOUTUBE_DOWNLOAD_PREFIX}/${uniqueId}.${result.format}`;
-
-        await MinioService.putBuffer(
-          YOUTUBE_DOWNLOAD_BUCKET,
-          objectKey,
-          fileBuffer,
-          result.mimeType,
-        );
-
-        const downloadUrl = MinioService.getPublicUrl(
-          YOUTUBE_DOWNLOAD_BUCKET,
-          objectKey,
-        );
-
-        return res.json({
-          success: true,
-          message: `YouTube video downloaded: "${result.metadata.title}" by ${result.metadata.channel} (${result.metadata.durationSeconds ?? "?"}s, ${(result.fileSize / 1024 / 1024).toFixed(1)} MB). Download: ${downloadUrl}`,
-          title: result.metadata.title,
-          channel: result.metadata.channel,
-          durationSeconds: result.metadata.durationSeconds,
-          viewCount: result.metadata.viewCount,
-          uploadDate: result.metadata.uploadDate,
-          thumbnailUrl: result.metadata.thumbnailUrl,
-          fileSize: result.fileSize,
-          format: result.format,
-          downloadUrl,
-          mimeType: result.mimeType,
-        });
-      } finally {
-        // Always clean up temp directory
-        await rm(result.temporaryDirectory, { recursive: true, force: true }).catch(() => {});
-      }
-    }
-  }),
-);
 // ─── GitHub ────────────────────────────────────────────────────────
 router.get(
   "/github/repo",
@@ -1051,14 +953,14 @@ router.get(
     }
   }),
 );
-// ─── Generic Video Download (unified) ─────────────────────────────
+// ─── Video Download (unified) ─────────────────────────────────────
 
-const genericGifStore = new PersistentStore<{ buffer: Buffer; mimeType: string }>("generic-gif");
+const videoGifStore = new PersistentStore<{ buffer: Buffer; mimeType: string }>("video-gif");
 
-const GENERIC_DOWNLOAD_BUCKET = "artifacts";
-const GENERIC_DOWNLOAD_PREFIX = "video-downloads";
+const VIDEO_DOWNLOAD_BUCKET = "artifacts";
+const VIDEO_DOWNLOAD_PREFIX = "video-downloads";
 
-const VALID_GENERIC_FORMATS = new Set<GenericDownloadFormat>(["mp4", "mp3", "gif"]);
+const VALID_VIDEO_FORMATS = new Set<VideoDownloadFormat>(["mp4", "mp3", "gif"]);
 
 router.get(
   "/video/download",
@@ -1066,24 +968,26 @@ router.get(
     const { url, format } = req.query as Record<string, string | undefined>;
     if (!url) {
       return res.status(400).json({
-        error: "Query parameter 'url' is required (any video URL)",
+        error: "Query parameter 'url' is required (any video URL or YouTube video ID)",
       });
     }
 
-    const downloadFormat: GenericDownloadFormat =
-      format && VALID_GENERIC_FORMATS.has(format as GenericDownloadFormat)
-        ? (format as GenericDownloadFormat)
+    const downloadFormat: VideoDownloadFormat =
+      format && VALID_VIDEO_FORMATS.has(format as VideoDownloadFormat)
+        ? (format as VideoDownloadFormat)
         : "mp4";
 
-    const result = await downloadGenericVideo(url, downloadFormat);
+    const result = await downloadVideo(url, downloadFormat);
 
-    if (isGenericErrorResult(result)) {
+    if (isVideoErrorResult(result)) {
       return res.status(400).json(result);
     }
 
+    const uploaderDisplay = result.metadata.channel || result.metadata.uploader;
+
     // ── GIF Delivery ─────────────────────────────────────────
-    if (isGenericGifResult(result)) {
-      const gifId = genericGifStore.set({
+    if (isVideoGifResult(result)) {
+      const gifId = videoGifStore.set({
         buffer: result.gifBuffer,
         mimeType: result.mimeType,
       });
@@ -1091,9 +995,10 @@ router.get(
 
       return res.json({
         success: true,
-        message: `Video converted to GIF: "${result.metadata.title}" by ${result.metadata.uploader} [${result.metadata.platform}].`,
+        message: `Video converted to GIF: "${result.metadata.title}" by ${uploaderDisplay} [${result.metadata.platform}].`,
         title: result.metadata.title,
         uploader: result.metadata.uploader,
+        channel: result.metadata.channel,
         platform: result.metadata.platform,
         durationSeconds: result.metadata.durationSeconds,
         format: "gif",
@@ -1104,29 +1009,30 @@ router.get(
     }
 
     // ── MP4/MP3 Delivery via MinIO ────────────────────────────
-    if (isGenericFileResult(result)) {
+    if (isVideoFileResult(result)) {
       try {
         const fileBuffer = await readFile(result.filePath);
         const uniqueId = crypto.randomUUID();
-        const objectKey = `${GENERIC_DOWNLOAD_PREFIX}/${uniqueId}.${result.format}`;
+        const objectKey = `${VIDEO_DOWNLOAD_PREFIX}/${uniqueId}.${result.format}`;
 
         await MinioService.putBuffer(
-          GENERIC_DOWNLOAD_BUCKET,
+          VIDEO_DOWNLOAD_BUCKET,
           objectKey,
           fileBuffer,
           result.mimeType,
         );
 
         const downloadUrl = MinioService.getPublicUrl(
-          GENERIC_DOWNLOAD_BUCKET,
+          VIDEO_DOWNLOAD_BUCKET,
           objectKey,
         );
 
         return res.json({
           success: true,
-          message: `Video downloaded: "${result.metadata.title}" by ${result.metadata.uploader} [${result.metadata.platform}] (${result.metadata.durationSeconds ?? "?"}s, ${(result.fileSize / 1024 / 1024).toFixed(1)} MB). Download: ${downloadUrl}`,
+          message: `Video downloaded: "${result.metadata.title}" by ${uploaderDisplay} [${result.metadata.platform}] (${result.metadata.durationSeconds ?? "?"}s, ${(result.fileSize / 1024 / 1024).toFixed(1)} MB). Download: ${downloadUrl}`,
           title: result.metadata.title,
           uploader: result.metadata.uploader,
+          channel: result.metadata.channel,
           platform: result.metadata.platform,
           durationSeconds: result.metadata.durationSeconds,
           viewCount: result.metadata.viewCount,

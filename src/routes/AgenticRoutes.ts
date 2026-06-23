@@ -1262,6 +1262,45 @@ router.get(
     }
   }),
 );
+// ── List All Agents (Built-in + Custom) ───────────────────────
+/**
+ * GET /agentic/agent/list
+ *
+ * Returns all registered agent personas (built-in and custom)
+ * by proxying to Prism's GET /config/agents. Returns a lightweight
+ * summary with id, name, type, and custom flag for each persona.
+ */
+router.get(
+  "/agent/list",
+  asyncHandler(async (_req: Request, res: Response) => {
+    try {
+      const prismResponse = await fetch(`${CONFIG.PRISM_SERVICE_URL}/config/agents`);
+      if (!prismResponse.ok) {
+        const errorBody = await prismResponse.json().catch(() => ({}));
+        return res
+          .status(prismResponse.status)
+          .json({
+            error: errorBody.error || `Prism returned ${prismResponse.status}`,
+          });
+      }
+      const agentsFullPayload = await prismResponse.json();
+      const agents = (agentsFullPayload as Array<Record<string, unknown>>).map(
+        (entry) => ({
+          id: entry.id,
+          name: entry.name,
+          type: entry.type || "",
+          description: entry.description || "",
+          custom: entry.custom || false,
+        }),
+      );
+      res.json({ agents, count: agents.length });
+    } catch (error: unknown) {
+      res
+        .status(500)
+        .json({ error: `Agent list failed: ${errorMessage(error)}` });
+    }
+  }),
+);
 // ── Update Custom Agent ───────────────────────────────────────
 /**
  * POST /agentic/custom-agent/update
