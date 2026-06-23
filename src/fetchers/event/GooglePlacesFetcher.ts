@@ -35,8 +35,8 @@ interface GooglePlace {
  * that are likely hosting events. We mark these as "venues" category.
  */
 export async function fetchGooglePlacesEvents(): Promise<CachedEvent[]> {
-  if (!CONFIG.GOOGLE_PLACES_API_KEY) {
-    throw new Error("GOOGLE_PLACES_API_KEY is not configured");
+  if (!CONFIG.GOOGLE_CLOUD_API_KEY) {
+    throw new Error("GOOGLE_CLOUD_API_KEY is not configured");
   }
 
   const body = {
@@ -57,7 +57,7 @@ export async function fetchGooglePlacesEvents(): Promise<CachedEvent[]> {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-Goog-Api-Key": CONFIG.GOOGLE_PLACES_API_KEY,
+      "X-Goog-Api-Key": CONFIG.GOOGLE_CLOUD_API_KEY,
       "X-Goog-FieldMask":
         "places.id,places.displayName,places.formattedAddress," +
         "places.location,places.types,places.websiteUri," +

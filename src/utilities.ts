@@ -113,7 +113,7 @@ export function buildStaticMapUrl(
     markerColor = "red",
   }: StaticMapOptions = {},
 ): string | null {
-  if (!CONFIG.GOOGLE_PLACES_API_KEY || !latitude || !longitude) return null;
+  if (!CONFIG.GOOGLE_CLOUD_API_KEY || !latitude || !longitude) return null;
 
   const params = new URLSearchParams({
     center: `${latitude},${longitude}`,
@@ -121,7 +121,7 @@ export function buildStaticMapUrl(
     size,
     maptype,
     markers: `color:${markerColor}|${latitude},${longitude}`,
-    key: CONFIG.GOOGLE_PLACES_API_KEY,
+    key: CONFIG.GOOGLE_CLOUD_API_KEY,
   });
 
   return `https://maps.googleapis.com/maps/api/staticmap?${params}`;

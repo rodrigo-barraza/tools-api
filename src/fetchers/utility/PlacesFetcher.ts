@@ -8,7 +8,7 @@ const TEXT_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText";
  * https://developers.google.com/maps/documentation/places/web-service/nearby-search
  * https://developers.google.com/maps/documentation/places/web-service/text-search
  *
- * Uses the same GOOGLE_PLACES_API_KEY already in config for the event-venue collector.
+ * Uses the same GOOGLE_CLOUD_API_KEY already in config for the event-venue collector.
  * Results are cached in memory for 30 minutes keyed by normalized params.
  */
 
@@ -132,13 +132,13 @@ export function buildStaticMapUrl(
   center: { latitude: number; longitude: number } | undefined,
   { size = "800x400", zoom, maptype = "roadmap" }: PlacesStaticMapOptions = {},
 ) {
-  if (!places.length || !CONFIG.GOOGLE_API_KEY) return null;
+  if (!places.length || !CONFIG.GOOGLE_CLOUD_GEMINI_API_KEY) return null;
 
   const params = new URLSearchParams({
     size,
     maptype,
     scale: "2", // Retina/HiDPI
-    key: CONFIG.GOOGLE_API_KEY,
+    key: CONFIG.GOOGLE_CLOUD_GEMINI_API_KEY,
   });
 
   if (zoom != null) {
@@ -180,8 +180,8 @@ export async function searchNearbyPlaces({
   radius = 5000,
   limit = 20,
 }: PlacesNearbyOptions = {}) {
-  if (!CONFIG.GOOGLE_PLACES_API_KEY) {
-    throw new Error("GOOGLE_PLACES_API_KEY is not configured");
+  if (!CONFIG.GOOGLE_CLOUD_API_KEY) {
+    throw new Error("GOOGLE_CLOUD_API_KEY is not configured");
   }
   if (!type) {
     throw new Error("'type' is required for nearby search");
@@ -214,7 +214,7 @@ export async function searchNearbyPlaces({
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-Goog-Api-Key": CONFIG.GOOGLE_PLACES_API_KEY,
+      "X-Goog-Api-Key": CONFIG.GOOGLE_CLOUD_API_KEY,
       "X-Goog-FieldMask": FIELD_MASK,
     },
     body: JSON.stringify(body),
@@ -266,8 +266,8 @@ export async function searchPlacesByText({
   radius = 10000,
   limit = 10,
 }: PlacesSearchOptions = {}) {
-  if (!CONFIG.GOOGLE_PLACES_API_KEY) {
-    throw new Error("GOOGLE_PLACES_API_KEY is not configured");
+  if (!CONFIG.GOOGLE_CLOUD_API_KEY) {
+    throw new Error("GOOGLE_CLOUD_API_KEY is not configured");
   }
   if (!query) {
     throw new Error("'query' is required for text search");
@@ -300,7 +300,7 @@ export async function searchPlacesByText({
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-Goog-Api-Key": CONFIG.GOOGLE_PLACES_API_KEY,
+      "X-Goog-Api-Key": CONFIG.GOOGLE_CLOUD_API_KEY,
       "X-Goog-FieldMask": FIELD_MASK,
     },
     body: JSON.stringify(body),

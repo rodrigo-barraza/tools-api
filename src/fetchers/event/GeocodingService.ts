@@ -13,7 +13,7 @@ const geocodeCache = new Map();
 
  */
 export async function geocodeAddress(address: string) {
-  if (!address || !CONFIG.GOOGLE_PLACES_API_KEY) return null;
+  if (!address || !CONFIG.GOOGLE_CLOUD_API_KEY) return null;
 
   // Normalize cache key
   const cacheKey = address.toLowerCase().trim();
@@ -23,7 +23,7 @@ export async function geocodeAddress(address: string) {
 
   const params = new URLSearchParams({
     address,
-    key: CONFIG.GOOGLE_PLACES_API_KEY,
+    key: CONFIG.GOOGLE_CLOUD_API_KEY,
     region: "ca",
   });
 

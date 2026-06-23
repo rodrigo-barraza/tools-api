@@ -14,11 +14,11 @@ const API_URL = "https://airquality.googleapis.com/v1/currentConditions:lookup";
  * Complements the existing Open-Meteo AQ data with richer insights.
  */
 export async function fetchGoogleAirQuality(): Promise<GoogleAirQuality> {
-  if (!CONFIG.GOOGLE_API_KEY) {
-    throw new Error("GOOGLE_API_KEY is not configured");
+  if (!CONFIG.GOOGLE_CLOUD_GEMINI_API_KEY) {
+    throw new Error("GOOGLE_CLOUD_GEMINI_API_KEY is not configured");
   }
 
-  const response = await fetch(`${API_URL}?key=${CONFIG.GOOGLE_API_KEY}`, {
+  const response = await fetch(`${API_URL}?key=${CONFIG.GOOGLE_CLOUD_GEMINI_API_KEY}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

@@ -48,7 +48,7 @@ interface ToolsServiceConfig {
   TICKETMASTER_API_KEY: string | undefined;
   SEATGEEK_CLIENT_ID: string | undefined;
   TMDB_API_KEY: string | undefined;
-  GOOGLE_PLACES_API_KEY: string | undefined;
+  GOOGLE_CLOUD_API_KEY: string | undefined;
 
   // Finance
   FINNHUB_API_KEY: string | undefined;
@@ -71,7 +71,7 @@ interface ToolsServiceConfig {
   // Weather / Search
   TOMORROWIO_API_KEY: string | undefined;
   NASA_API_KEY: string | undefined;
-  GOOGLE_API_KEY: string | undefined;
+  GOOGLE_CLOUD_GEMINI_API_KEY: string | undefined;
   GOOGLE_CSE_CX: string | undefined;
   BRAVE_SEARCH_API_KEY: string | undefined;
 
@@ -159,7 +159,7 @@ const CONFIG: ToolsServiceConfig = {
   TICKETMASTER_API_KEY: process.env.TICKETMASTER_API_KEY,
   SEATGEEK_CLIENT_ID: process.env.SEATGEEK_CLIENT_ID,
   TMDB_API_KEY: process.env.TMDB_API_KEY,
-  GOOGLE_PLACES_API_KEY: process.env.GOOGLE_PLACES_API_KEY,
+  GOOGLE_CLOUD_API_KEY: process.env.GOOGLE_CLOUD_API_KEY,
 
   // ─── Finance (Finnhub) ────────────────────────────────────────────
   FINNHUB_API_KEY: process.env.FINNHUB_API_KEY,
@@ -184,7 +184,7 @@ const CONFIG: ToolsServiceConfig = {
   // ─── Weather ─────────────────────────────────────────────────────
   TOMORROWIO_API_KEY: process.env.TOMORROWIO_API_KEY,
   NASA_API_KEY: process.env.NASA_API_KEY,
-  GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
+  GOOGLE_CLOUD_GEMINI_API_KEY: process.env.GOOGLE_CLOUD_GEMINI_API_KEY,
   GOOGLE_CSE_CX: process.env.GOOGLE_CSE_CX,
 
   // ─── Web Search ───────────────────────────────────────────────────

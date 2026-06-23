@@ -341,7 +341,7 @@ router.get("/map/embed", asyncHandler(async (req: Request, res: Response) => {
     string,
     string | undefined
   >;
-  if (!CONFIG.GOOGLE_API_KEY) {
+  if (!CONFIG.GOOGLE_CLOUD_GEMINI_API_KEY) {
     return res.status(400).send("Missing API key");
   }
   let markerList: MapMarker[];
@@ -361,7 +361,7 @@ router.get("/map/embed", asyncHandler(async (req: Request, res: Response) => {
   if (!Array.isArray(markerList) || markerList.length === 0) {
     return res.status(400).send("markers must be a non-empty array");
   }
-  const html = buildMapEmbedHtml(markerList, CONFIG.GOOGLE_API_KEY, {
+  const html = buildMapEmbedHtml(markerList, CONFIG.GOOGLE_CLOUD_GEMINI_API_KEY, {
     zoom: zoom ? parseInt(zoom) : undefined,
     maptype: maptype || "roadmap",
   });
