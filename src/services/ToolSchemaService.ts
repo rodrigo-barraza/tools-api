@@ -13933,7 +13933,7 @@ const TOOL_REQUIRED_KEYS = {
   generate_map: ["GOOGLE_API_KEY"],
 
   // YouTube (requires Google API key with YouTube Data API v3 enabled)
-  search_youtube: ["GOOGLE_API_KEY"],
+  search_youtube: ["GOOGLE_PLACES_API_KEY"],
 
   // Weather (only specific Google-powered tools)
   get_detailed_air_quality: ["GOOGLE_API_KEY"],

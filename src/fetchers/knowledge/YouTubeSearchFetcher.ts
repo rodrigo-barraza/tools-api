@@ -186,9 +186,9 @@ export async function searchYouTubeVideos(
   query: string,
   options: YouTubeSearchOptions = {},
 ): Promise<YouTubeSearchResponse | { error: string }> {
-  const apiKey = CONFIG.GOOGLE_API_KEY;
+  const apiKey = CONFIG.GOOGLE_PLACES_API_KEY;
   if (!apiKey) {
-    return { error: "GOOGLE_API_KEY is not configured — required for YouTube Data API v3" };
+    return { error: "GOOGLE_PLACES_API_KEY is not configured — required for YouTube Data API v3" };
   }
 
   try {
