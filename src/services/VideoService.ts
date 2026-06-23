@@ -196,3 +196,194 @@ export async function checkFfmpegAvailability(): Promise<{
     return { available: false };
   }
 }
+
+// ─── Video Trimming ────────────────────────────────────────────────
+
+const MAXIMUM_TRIM_INPUT_BYTES = 200 * 1024 * 1024;
+const MAXIMUM_TRIM_OUTPUT_SECONDS = 300;
+const TRIM_TIMEOUT_MILLISECONDS = 60_000;
+
+export interface TrimVideoInput {
+  input: string;
+  startTimestamp?: string;
+  endTimestamp?: string;
+}
+
+export interface TrimVideoResult {
+  buffer: Buffer;
+  mimeType: string;
+  format: string;
+  durationSeconds: number | null;
+}
+
+function parseTimestampToSeconds(timestamp: string): number {
+  const trimmed = timestamp.trim();
+
+  // Pure numeric seconds (e.g. "90", "120.5")
+  const numericValue = parseFloat(trimmed);
+  if (!isNaN(numericValue) && /^[\d.]+$/.test(trimmed)) {
+    return numericValue;
+  }
+
+  // HH:MM:SS or MM:SS (e.g. "1:30", "00:01:30", "2:00")
+  const timeSegments = trimmed.split(":").map(Number);
+  if (timeSegments.some(isNaN)) {
+    throw new Error(`Invalid timestamp format: "${timestamp}". Use HH:MM:SS, MM:SS, or seconds.`);
+  }
+
+  if (timeSegments.length === 3) {
+    return timeSegments[0] * 3600 + timeSegments[1] * 60 + timeSegments[2];
+  }
+  if (timeSegments.length === 2) {
+    return timeSegments[0] * 60 + timeSegments[1];
+  }
+
+  throw new Error(`Invalid timestamp format: "${timestamp}". Use HH:MM:SS, MM:SS, or seconds.`);
+}
+
+function formatSecondsToTimestamp(totalSeconds: number): string {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const secondsFixed = seconds.toFixed(3);
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${secondsFixed.padStart(6, "0")}`;
+}
+
+export async function trimVideo({
+  input,
+  startTimestamp,
+  endTimestamp,
+}: TrimVideoInput): Promise<TrimVideoResult> {
+  if (!input || typeof input !== "string") {
+    throw new Error("'input' is required (URL or local file path)");
+  }
+
+  if (!startTimestamp && !endTimestamp) {
+    throw new Error("At least one of 'start' or 'end' must be provided for trimming.");
+  }
+
+  const startSeconds = startTimestamp ? parseTimestampToSeconds(startTimestamp) : 0;
+  const endSeconds = endTimestamp ? parseTimestampToSeconds(endTimestamp) : null;
+
+  if (endSeconds !== null && endSeconds <= startSeconds) {
+    throw new Error(`End timestamp (${endTimestamp}) must be after start timestamp (${startTimestamp}).`);
+  }
+
+  if (endSeconds !== null && (endSeconds - startSeconds) > MAXIMUM_TRIM_OUTPUT_SECONDS) {
+    throw new Error(
+      `Trim duration (${(endSeconds - startSeconds).toFixed(0)}s) exceeds maximum of ${MAXIMUM_TRIM_OUTPUT_SECONDS}s (5 minutes).`,
+    );
+  }
+
+  const ffmpegBinaryPath = process.env.FFMPEG_PATH || "ffmpeg";
+
+  let resolvedInputPath = "";
+  let isInputTemporaryFile = false;
+
+  const outputTemporaryPath = join(
+    tmpdir(),
+    `trim-out-${crypto.randomUUID()}.mp4`,
+  );
+
+  try {
+    // ── Resolve Input Source ─────────────────────────────────
+    if (input.startsWith("http://") || input.startsWith("https://")) {
+      const uniqueInputId = crypto.randomUUID();
+      resolvedInputPath = join(tmpdir(), `trim-in-${uniqueInputId}.mp4`);
+      isInputTemporaryFile = true;
+
+      const networkResponse = await fetch(input, {
+        signal: AbortSignal.timeout(60_000),
+      });
+
+      if (!networkResponse.ok) {
+        throw new Error(
+          `Failed to fetch video from URL: HTTP ${networkResponse.status}`,
+        );
+      }
+
+      const contentLengthHeader = networkResponse.headers.get("content-length");
+      const contentLengthBytes = parseInt(contentLengthHeader || "0", 10);
+      if (contentLengthBytes > MAXIMUM_TRIM_INPUT_BYTES) {
+        throw new Error(
+          `Remote video exceeds ${MAXIMUM_TRIM_INPUT_BYTES / 1024 / 1024} MB limit`,
+        );
+      }
+
+      const networkArrayBuffer = await networkResponse.arrayBuffer();
+      const networkBuffer = Buffer.from(networkArrayBuffer);
+
+      if (networkBuffer.length > MAXIMUM_TRIM_INPUT_BYTES) {
+        throw new Error(
+          `Downloaded video exceeds ${MAXIMUM_TRIM_INPUT_BYTES / 1024 / 1024} MB limit`,
+        );
+      }
+
+      await writeFile(resolvedInputPath, networkBuffer);
+    } else {
+      let diskPath = input;
+      if (input.startsWith("file://")) {
+        diskPath = decodeURIComponent(input.replace(/^file:\/\/\/?/, "/"));
+      }
+
+      const pathValidation = validatePath(diskPath);
+      if (pathValidation.safe && pathValidation.resolved) {
+        resolvedInputPath = pathValidation.resolved;
+      } else {
+        throw new Error(
+          `Local path validation failed: ${pathValidation.error}`,
+        );
+      }
+    }
+
+    // ── Build ffmpeg arguments ───────────────────────────────
+    // Using -ss before -i for fast seeking (input seeking),
+    // and -c copy for stream copy (no re-encoding = instant)
+    const trimArguments: string[] = ["-y"];
+
+    // Input seeking — fast, keyframe-accurate
+    trimArguments.push("-ss", formatSecondsToTimestamp(startSeconds));
+
+    trimArguments.push("-i", resolvedInputPath);
+
+    // Duration or end time
+    if (endSeconds !== null) {
+      const durationSeconds = endSeconds - startSeconds;
+      trimArguments.push("-t", String(durationSeconds));
+    } else if (!endTimestamp) {
+      // No end = trim to end of file, but cap at max
+      trimArguments.push("-t", String(MAXIMUM_TRIM_OUTPUT_SECONDS));
+    }
+
+    // Stream copy — no re-encoding
+    trimArguments.push("-c", "copy");
+
+    // Avoid negative timestamps from keyframe seeking
+    trimArguments.push("-avoid_negative_ts", "make_zero");
+
+    trimArguments.push(outputTemporaryPath);
+
+    await executeFileAsynchronously(ffmpegBinaryPath, trimArguments, {
+      timeout: TRIM_TIMEOUT_MILLISECONDS,
+    });
+
+    const outputBuffer = await readFile(outputTemporaryPath);
+
+    const computedDuration =
+      endSeconds !== null
+        ? endSeconds - startSeconds
+        : null;
+
+    return {
+      buffer: outputBuffer,
+      mimeType: "video/mp4",
+      format: "mp4",
+      durationSeconds: computedDuration,
+    };
+  } finally {
+    if (isInputTemporaryFile && resolvedInputPath) {
+      await unlink(resolvedInputPath).catch(() => {});
+    }
+    await unlink(outputTemporaryPath).catch(() => {});
+  }
+}

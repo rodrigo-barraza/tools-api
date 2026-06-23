@@ -2950,6 +2950,76 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       required: ["url"],
     },
   },
+  {
+    name: "download_video",
+    dataSource: onDemand("yt-dlp + ffmpeg"),
+    description:
+      "Download a video from any supported platform as MP4, extract audio as MP3, or convert to animated GIF. " +
+      "Supports 1000+ sites including Twitter/X, TikTok, Twitch clips, Vimeo, Dailymotion, Streamable, " +
+      "Facebook, and many more — yt-dlp auto-detects the platform from the URL. " +
+      "For 'mp4' and 'mp3': downloads the media and returns a persistent download URL (stored in cloud storage). " +
+      "For 'gif': downloads the video, converts it to an animated GIF using an optimized ffmpeg palette pipeline, and displays it automatically — " +
+      "do NOT include the GIF URL in your text response, the user already sees it rendered. " +
+      "Use download_youtube_video for YouTube-specific downloads (richer metadata) or download_reddit_video for Reddit videos (subreddit/author metadata). " +
+      "Maximum input file size is 200 MB.",
+    endpoint: {
+      path: "/knowledge/video/download",
+      queryParams: ["url", "format"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        url: {
+          type: "string",
+          description:
+            "Any public video URL (e.g. 'https://x.com/user/status/123', 'https://www.tiktok.com/@user/video/123', 'https://clips.twitch.tv/ClipSlug', 'https://vimeo.com/123')",
+        },
+        format: {
+          type: "string",
+          enum: ["mp4", "mp3", "gif"],
+          description:
+            "Output format: 'mp4' for video download (default), 'mp3' for audio-only extraction, or 'gif' for animated GIF conversion.",
+        },
+      },
+      required: ["url"],
+    },
+  },
+  {
+    name: "trim_video",
+    dataSource: onDemand("ffmpeg"),
+    description:
+      "Trim a video to a specific time range using ffmpeg's stream copy (instant, no re-encoding). " +
+      "Accepts any public video URL or a download URL from a previous download_video / download_youtube_video / download_reddit_video call. " +
+      "Specify start and/or end timestamps in HH:MM:SS or seconds format. " +
+      "Returns a persistent download URL for the trimmed clip (stored in cloud storage). " +
+      "Maximum input file size is 200 MB. Maximum output duration is 5 minutes.",
+    endpoint: {
+      method: "POST",
+      path: "/knowledge/video/trim",
+      bodyParams: ["url", "start", "end"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        url: {
+          type: "string",
+          description:
+            "Source video URL — any public video URL or a MinIO download URL from a previous video download tool call.",
+        },
+        start: {
+          type: "string",
+          description:
+            "Start timestamp for the trim (e.g. '00:01:30', '90', '1:30'). Defaults to the beginning of the video.",
+        },
+        end: {
+          type: "string",
+          description:
+            "End timestamp for the trim (e.g. '00:02:00', '120', '2:00'). Defaults to the end of the video.",
+        },
+      },
+      required: ["url"],
+    },
+  },
 
   // ── Unified Web Extraction Tools ─────────────────────────────
   {
@@ -11824,6 +11894,51 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
 
+  // ── Steam Profile Lookup ─────────────────────────────────────
+  {
+    name: "get_steam_profile",
+    dataSource: onDemand("Steam Web API"),
+    description:
+      "Look up any Steam user's profile and gaming data via the Steam Web API. Supports multiple actions: " +
+      "profile (get profile summary including name, avatar, status, country, account creation date, currently playing game), " +
+      "owned_games (get list of owned games sorted by most played, with playtime in hours), " +
+      "recent_games (get games played in the last 2 weeks with recent and total playtime), " +
+      "bans (check VAC bans, game bans, community bans, trade bans), " +
+      "resolve_vanity (convert a custom vanity URL name to a Steam64 ID). " +
+      "Accepts either a Steam64 ID (17-digit number like 76561198...) or a vanity URL name (e.g. 'gabelogannewell') — auto-resolves as needed.",
+    endpoint: {
+      path: "/gaming/steam",
+      queryParams: ["action", "steamId", "limit"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        action: {
+          type: "string",
+          enum: [
+            "profile",
+            "owned_games",
+            "recent_games",
+            "bans",
+            "resolve_vanity",
+          ],
+          description: "What data to retrieve",
+        },
+        steamId: {
+          type: "string",
+          description:
+            "Steam64 ID (17-digit number) or vanity URL name (the custom part of steamcommunity.com/id/NAME)",
+        },
+        limit: {
+          type: "number",
+          description:
+            "Number of games to return (for owned_games default: 25 max: 100, for recent_games default: 10 max: 50)",
+        },
+      },
+      required: ["action", "steamId"],
+    },
+  },
+
   // ── Bonfire (Cozy Fire Pit) ───────────────────────────────────
   {
     name: "create_bonfire",
@@ -12997,6 +13112,8 @@ const TOOL_DOMAINS = {
   list_development_indicators: "Knowledge",
   get_youtube_video: "Knowledge",
   download_youtube_video: "Knowledge",
+  download_video: "Knowledge",
+  trim_video: "Knowledge",
   read_url: "Core Harness Tools",
   get_package_info: "Knowledge",
 
@@ -13093,6 +13210,7 @@ const TOOL_DOMAINS = {
 
   // Gaming
   get_dota: "Gaming",
+  get_steam_profile: "Gaming",
   create_bonfire: "Gaming",
 
   // Music
@@ -13435,6 +13553,8 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   list_development_indicators: ["📈", "🌐"],
   get_youtube_video: "▶️",
   download_youtube_video: ["▶️", "📥"],
+  download_video: ["🎬", "📥"],
+  trim_video: ["✂️", "🎬"],
   read_url: "🌐",
   get_package_info: ["📦", "ℹ️"],
   read_rss_feed: "📡",
@@ -13527,6 +13647,7 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   sleep: "💤",
   emit_structured_output: "📝",
   get_dota: ["🎮", "💻"],
+  get_steam_profile: ["🎮", "🔍"],
   create_bonfire: ["🔥", "🏕️"],
   search_torrents: ["🧲", "🔍"],
   download_torrent: "⬇️",

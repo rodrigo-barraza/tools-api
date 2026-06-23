@@ -134,6 +134,9 @@ interface ToolsServiceConfig {
 
   // Portal (Infrastructure Observability)
   PORTAL_SERVICE_URL: string | undefined;
+
+  // Gaming (Steam Web API)
+  STEAM_API_KEY: string | undefined;
 }
 
 const CONFIG: ToolsServiceConfig = {
@@ -246,6 +249,9 @@ const CONFIG: ToolsServiceConfig = {
 
   // ─── Portal (Infrastructure Observability) ──────────────────────
   PORTAL_SERVICE_URL: process.env.PORTAL_SERVICE_URL,
+
+  // ─── Gaming (Steam Web API) ─────────────────────────────────
+  STEAM_API_KEY: process.env.STEAM_API_KEY,
 };
 
 /**

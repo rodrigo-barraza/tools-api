@@ -97,6 +97,13 @@ import {
   isErrorResult,
 } from "../fetchers/web/YouTubeVideoFetcher.ts";
 import type { YouTubeDownloadFormat } from "../fetchers/web/YouTubeVideoFetcher.ts";
+import {
+  downloadGenericVideo,
+  isGenericFileResult,
+  isGenericGifResult,
+  isGenericErrorResult,
+} from "../fetchers/web/GenericVideoFetcher.ts";
+import type { GenericDownloadFormat } from "../fetchers/web/GenericVideoFetcher.ts";
 import { getNpmPackage } from "../fetchers/web/NpmFetcher.ts";
 import { getPyPiPackage } from "../fetchers/web/PyPiFetcher.ts";
 
@@ -1008,7 +1015,167 @@ router.get(
     }
   }),
 );
-// ─── NPM ───────────────────────────────────────────────────────────
+// ─── Generic Video Download (unified) ─────────────────────────────
+
+const genericGifStore = new PersistentStore<{ buffer: Buffer; mimeType: string }>("generic-gif");
+
+const GENERIC_DOWNLOAD_BUCKET = "artifacts";
+const GENERIC_DOWNLOAD_PREFIX = "video-downloads";
+
+const VALID_GENERIC_FORMATS = new Set<GenericDownloadFormat>(["mp4", "mp3", "gif"]);
+
+router.get(
+  "/video/download",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { url, format } = req.query as Record<string, string | undefined>;
+    if (!url) {
+      return res.status(400).json({
+        error: "Query parameter 'url' is required (any video URL)",
+      });
+    }
+
+    const downloadFormat: GenericDownloadFormat =
+      format && VALID_GENERIC_FORMATS.has(format as GenericDownloadFormat)
+        ? (format as GenericDownloadFormat)
+        : "mp4";
+
+    const result = await downloadGenericVideo(url, downloadFormat);
+
+    if (isGenericErrorResult(result)) {
+      return res.status(400).json(result);
+    }
+
+    // ── GIF Delivery ─────────────────────────────────────────
+    if (isGenericGifResult(result)) {
+      const gifId = genericGifStore.set({
+        buffer: result.gifBuffer,
+        mimeType: result.mimeType,
+      });
+      const gifImageUrl = buildLocalUrl("compute/image/render", { id: gifId });
+
+      return res.json({
+        success: true,
+        message: `Video converted to GIF: "${result.metadata.title}" by ${result.metadata.uploader} [${result.metadata.platform}].`,
+        title: result.metadata.title,
+        uploader: result.metadata.uploader,
+        platform: result.metadata.platform,
+        durationSeconds: result.metadata.durationSeconds,
+        format: "gif",
+        imageUrl: gifImageUrl,
+        imageId: gifId,
+        mimeType: result.mimeType,
+      });
+    }
+
+    // ── MP4/MP3 Delivery via MinIO ────────────────────────────
+    if (isGenericFileResult(result)) {
+      try {
+        const fileBuffer = await readFile(result.filePath);
+        const uniqueId = crypto.randomUUID();
+        const objectKey = `${GENERIC_DOWNLOAD_PREFIX}/${uniqueId}.${result.format}`;
+
+        await MinioService.putBuffer(
+          GENERIC_DOWNLOAD_BUCKET,
+          objectKey,
+          fileBuffer,
+          result.mimeType,
+        );
+
+        const downloadUrl = MinioService.getPublicUrl(
+          GENERIC_DOWNLOAD_BUCKET,
+          objectKey,
+        );
+
+        return res.json({
+          success: true,
+          message: `Video downloaded: "${result.metadata.title}" by ${result.metadata.uploader} [${result.metadata.platform}] (${result.metadata.durationSeconds ?? "?"}s, ${(result.fileSize / 1024 / 1024).toFixed(1)} MB). Download: ${downloadUrl}`,
+          title: result.metadata.title,
+          uploader: result.metadata.uploader,
+          platform: result.metadata.platform,
+          durationSeconds: result.metadata.durationSeconds,
+          viewCount: result.metadata.viewCount,
+          uploadDate: result.metadata.uploadDate,
+          thumbnailUrl: result.metadata.thumbnailUrl,
+          fileSize: result.fileSize,
+          format: result.format,
+          downloadUrl,
+          mimeType: result.mimeType,
+        });
+      } finally {
+        await rm(result.temporaryDirectory, { recursive: true, force: true }).catch(() => {});
+      }
+    }
+  }),
+);
+// ─── Video Trim ──────────────────────────────────────────────────────
+
+import { trimVideo } from "../services/VideoService.ts";
+
+const TRIM_DOWNLOAD_BUCKET = "artifacts";
+const TRIM_DOWNLOAD_PREFIX = "video-trims";
+
+router.post(
+  "/video/trim",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { url, start, end } = req.body as Record<string, string | undefined>;
+    if (!url) {
+      return res.status(400).json({
+        error: "Body parameter 'url' is required (video URL to trim)",
+      });
+    }
+
+    if (!start && !end) {
+      return res.status(400).json({
+        error: "At least one of 'start' or 'end' must be provided for trimming.",
+      });
+    }
+
+    try {
+      const result = await trimVideo({
+        input: url,
+        startTimestamp: start,
+        endTimestamp: end,
+      });
+
+      const uniqueId = crypto.randomUUID();
+      const objectKey = `${TRIM_DOWNLOAD_PREFIX}/${uniqueId}.${result.format}`;
+
+      await MinioService.putBuffer(
+        TRIM_DOWNLOAD_BUCKET,
+        objectKey,
+        result.buffer,
+        result.mimeType,
+      );
+
+      const downloadUrl = MinioService.getPublicUrl(
+        TRIM_DOWNLOAD_BUCKET,
+        objectKey,
+      );
+
+      const trimRange = [
+        start ? `from ${start}` : "from start",
+        end ? `to ${end}` : "to end",
+      ].join(" ");
+
+      return res.json({
+        success: true,
+        message: `Video trimmed ${trimRange} (${(result.buffer.length / 1024 / 1024).toFixed(1)} MB). Download: ${downloadUrl}`,
+        trimStart: start || "0",
+        trimEnd: end || "end",
+        durationSeconds: result.durationSeconds,
+        fileSize: result.buffer.length,
+        format: result.format,
+        downloadUrl,
+        mimeType: result.mimeType,
+      });
+    } catch (error: unknown) {
+      return res.status(400).json({
+        error: `Video trim failed: ${errorMessage(error)}`,
+      });
+    }
+  }),
+);
+// ─── NPM ─────────────────────────────────────────────────────────────────
 router.get(
   "/npm/package",
   asyncHandler(async (req: Request, res: Response) => {

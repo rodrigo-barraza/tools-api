@@ -12,6 +12,13 @@ import {
   getMatch,
   getProMatches,
 } from "../fetchers/gaming/DotaFetcher.ts";
+import {
+  getPlayerProfile,
+  getOwnedGames,
+  getRecentlyPlayedGames,
+  getPlayerBans,
+  resolveVanityUrl,
+} from "../fetchers/gaming/SteamFetcher.ts";
 import { errorMessage } from "../utilities.ts";
 
 const router: ReturnType<typeof Router> = Router();
@@ -364,11 +371,198 @@ router.get("/bonfire/embed", asyncHandler(async (req: Request, res: Response) =>
   res.send(bonfire.htmlEmbed);
 }));
 
+// ─── 6. Steam — Profile Lookup ─────────────────────────────
+
+router.get(
+  "/steam/profile/:steamId",
+  asyncHandler(async (req: Request, res: Response) => {
+    try {
+      const profile = await getPlayerProfile(req.params.steamId as string);
+      res.json(profile);
+    } catch (error: unknown) {
+      res
+        .status(500)
+        .json({ error: `Failed to fetch Steam profile: ${errorMessage(error)}` });
+    }
+  }),
+);
+
+router.get(
+  "/steam/games/:steamId",
+  asyncHandler(async (req: Request, res: Response) => {
+    try {
+      const limit = Math.min(parseInt(req.query.limit as string) || 25, 100);
+      const games = await getOwnedGames(req.params.steamId as string, limit);
+      res.json(games);
+    } catch (error: unknown) {
+      res
+        .status(500)
+        .json({ error: `Failed to fetch owned games: ${errorMessage(error)}` });
+    }
+  }),
+);
+
+router.get(
+  "/steam/recent/:steamId",
+  asyncHandler(async (req: Request, res: Response) => {
+    try {
+      const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
+      const games = await getRecentlyPlayedGames(
+        req.params.steamId as string,
+        limit,
+      );
+      res.json(games);
+    } catch (error: unknown) {
+      res
+        .status(500)
+        .json({
+          error: `Failed to fetch recently played games: ${errorMessage(error)}`,
+        });
+    }
+  }),
+);
+
+router.get(
+  "/steam/bans/:steamId",
+  asyncHandler(async (req: Request, res: Response) => {
+    try {
+      const bans = await getPlayerBans(req.params.steamId as string);
+      res.json(bans);
+    } catch (error: unknown) {
+      res
+        .status(500)
+        .json({ error: `Failed to fetch ban status: ${errorMessage(error)}` });
+    }
+  }),
+);
+
+router.get(
+  "/steam/resolve/:vanityName",
+  asyncHandler(async (req: Request, res: Response) => {
+    try {
+      const steamId = await resolveVanityUrl(req.params.vanityName as string);
+      res.json({ vanityName: req.params.vanityName, steamId });
+    } catch (error: unknown) {
+      res
+        .status(500)
+        .json({
+          error: `Failed to resolve vanity URL: ${errorMessage(error)}`,
+        });
+    }
+  }),
+);
+
+// ─── Unified Steam Dispatcher (for AI tool schema) ─────────
+
+router.get(
+  "/steam",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { action, steamId, limit } = req.query as Record<
+      string,
+      string | undefined
+    >;
+    if (!action) {
+      return res.status(400).json({
+        error: "'action' is required",
+        actions: [
+          "profile",
+          "owned_games",
+          "recent_games",
+          "bans",
+          "resolve_vanity",
+        ],
+      });
+    }
+
+    const buildQueryString = (params: Record<string, string | undefined>) => {
+      const searchParams = new URLSearchParams();
+      for (const [key, value] of Object.entries(params)) {
+        if (value !== undefined && value !== null)
+          searchParams.set(key, String(value));
+      }
+      const queryString = searchParams.toString();
+      return queryString ? `?${queryString}` : "";
+    };
+
+    switch (action) {
+      case "profile":
+        if (!steamId)
+          return res
+            .status(400)
+            .json({
+              error:
+                "'steamId' is required for action=profile (Steam64 ID or vanity URL name)",
+            });
+        req.url = `/steam/profile/${encodeURIComponent(steamId)}`;
+        req.params.steamId = steamId;
+        return dispatchToRoute(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "owned_games":
+        if (!steamId)
+          return res
+            .status(400)
+            .json({ error: "'steamId' is required for action=owned_games" });
+        req.url = `/steam/games/${encodeURIComponent(steamId)}${buildQueryString({ limit })}`;
+        req.params.steamId = steamId;
+        return dispatchToRoute(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "recent_games":
+        if (!steamId)
+          return res
+            .status(400)
+            .json({ error: "'steamId' is required for action=recent_games" });
+        req.url = `/steam/recent/${encodeURIComponent(steamId)}${buildQueryString({ limit })}`;
+        req.params.steamId = steamId;
+        return dispatchToRoute(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "bans":
+        if (!steamId)
+          return res
+            .status(400)
+            .json({ error: "'steamId' is required for action=bans" });
+        req.url = `/steam/bans/${encodeURIComponent(steamId)}`;
+        req.params.steamId = steamId;
+        return dispatchToRoute(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      case "resolve_vanity":
+        if (!steamId)
+          return res
+            .status(400)
+            .json({
+              error:
+                "'steamId' is required for action=resolve_vanity (pass the vanity URL name)",
+            });
+        req.url = `/steam/resolve/${encodeURIComponent(steamId)}`;
+        req.params.vanityName = steamId;
+        return dispatchToRoute(req, res, () =>
+          res.status(404).json({ error: "Route not found" }),
+        );
+      default:
+        return res.status(400).json({
+          error: `Unknown action: ${action}`,
+          actions: [
+            "profile",
+            "owned_games",
+            "recent_games",
+            "bans",
+            "resolve_vanity",
+          ],
+        });
+    }
+  }),
+);
+
 // ─── Health ─────────────────────────────────────────────────
+
 
 export function getGamingHealth() {
   return {
     dota: "on-demand (OpenDota API)",
+    steam: "on-demand (Steam Web API)",
     bonfire: "on-demand (Custom Bonfire Service)",
   };
 }
