@@ -727,6 +727,23 @@ const FIELDS = {
   // On This Day: from WikipediaSummaryFetcher.getOnThisDay()
   ON_THIS_DAY: ["date", "type", "count", "events"],
 
+  // YouTube Search: from YouTubeSearchFetcher.searchYouTubeVideos()
+  YOUTUBE_SEARCH: [
+    "videoId",
+    "url",
+    "title",
+    "description",
+    "channelTitle",
+    "channelId",
+    "publishedAt",
+    "thumbnailUrl",
+    "viewCount",
+    "likeCount",
+    "commentCount",
+    "duration",
+    "durationSeconds",
+  ],
+
   // YouTube Video: from YouTubeFetcher.getYouTubeVideoInfo()
   YOUTUBE_VIDEO: [
     "videoId",
@@ -2875,6 +2892,72 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           enum: ["relevance", "lastUpdatedDate", "submittedDate"],
         },
         ...fieldsParam(FIELDS.PAPERS),
+      },
+      required: ["q"],
+    },
+  },
+  {
+    name: "search_youtube",
+    dataSource: onDemand("YouTube Data API v3"),
+    description:
+      "Search YouTube for videos matching a query. Returns ranked results with titles, descriptions, channel info, thumbnails, view counts, like counts, comment counts, and durations. " +
+      "Supports filtering by upload date, duration length, sort order, specific channel, region, and safety level. " +
+      "Use this to find videos on any topic — tutorials, reviews, music, news, etc. " +
+      "Each search costs ~101 API quota units (daily limit: 10,000 units ≈ 99 searches/day).",
+    endpoint: {
+      path: "/knowledge/youtube/search",
+      queryParams: ["q", "limit", "order", "channelId", "publishedAfter", "publishedBefore", "videoDuration", "safeSearch", "regionCode", "relevanceLanguage"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        q: {
+          type: "string",
+          description:
+            "Search query (e.g. 'TypeScript tutorial for beginners', 'best noise cancelling headphones review 2025', 'lofi hip hop beats')",
+        },
+        limit: {
+          type: "number",
+          description: "Maximum number of results to return (default: 10, max: 25)",
+        },
+        order: {
+          type: "string",
+          enum: ["relevance", "date", "rating", "viewCount", "title"],
+          description:
+            "Sort order for results. 'relevance' (default) uses YouTube's ranking algorithm. 'viewCount' sorts by most viewed. 'date' sorts by newest.",
+        },
+        channelId: {
+          type: "string",
+          description: "Restrict results to a specific YouTube channel ID (e.g. 'UC_x5XG1OV2P6uZZ5FSM9Ttw' for Google Developers)",
+        },
+        publishedAfter: {
+          type: "string",
+          description: "Only return videos published after this date (ISO 8601 format, e.g. '2025-01-01T00:00:00Z')",
+        },
+        publishedBefore: {
+          type: "string",
+          description: "Only return videos published before this date (ISO 8601 format, e.g. '2025-12-31T23:59:59Z')",
+        },
+        videoDuration: {
+          type: "string",
+          enum: ["any", "short", "medium", "long"],
+          description:
+            "Filter by duration: 'short' (< 4 min), 'medium' (4–20 min), 'long' (> 20 min). Default: 'any'",
+        },
+        safeSearch: {
+          type: "string",
+          enum: ["moderate", "strict", "none"],
+          description: "Safe search filtering level. Default: 'moderate'",
+        },
+        regionCode: {
+          type: "string",
+          description: "ISO 3166-1 alpha-2 country code to bias results (e.g. 'US', 'CA', 'GB', 'JP')",
+        },
+        relevanceLanguage: {
+          type: "string",
+          description: "ISO 639-1 language code to bias results toward a specific language (e.g. 'en', 'es', 'fr', 'ja')",
+        },
+        ...fieldsParam(FIELDS.YOUTUBE_SEARCH),
       },
       required: ["q"],
     },
@@ -13110,6 +13193,7 @@ const TOOL_DOMAINS = {
   get_wikipedia_summary: "Knowledge",
   get_on_this_day: "Knowledge",
   list_development_indicators: "Knowledge",
+  search_youtube: "Knowledge",
   get_youtube_video: "Knowledge",
   download_youtube_video: "Knowledge",
   download_video: "Knowledge",
@@ -13551,6 +13635,7 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   get_wikipedia_summary: "📘",
   get_on_this_day: ["🕰️", "📜"],
   list_development_indicators: ["📈", "🌐"],
+  search_youtube: ["▶️", "🔍"],
   get_youtube_video: "▶️",
   download_youtube_video: ["▶️", "📥"],
   download_video: ["🎬", "📥"],
@@ -13846,6 +13931,9 @@ const TOOL_REQUIRED_KEYS = {
   search_nearby_places: ["GOOGLE_PLACES_API_KEY"],
   search_places: ["GOOGLE_PLACES_API_KEY"],
   generate_map: ["GOOGLE_API_KEY"],
+
+  // YouTube (requires Google API key with YouTube Data API v3 enabled)
+  search_youtube: ["GOOGLE_API_KEY"],
 
   // Weather (only specific Google-powered tools)
   get_detailed_air_quality: ["GOOGLE_API_KEY"],

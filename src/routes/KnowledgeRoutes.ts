@@ -68,6 +68,7 @@ import {
   getHabitableZonePlanets,
 } from "../fetchers/knowledge/ExoplanetFetcher.ts";
 import { getYouTubeVideoInfo } from "../fetchers/knowledge/YouTubeFetcher.ts";
+import { searchYouTubeVideos } from "../fetchers/knowledge/YouTubeSearchFetcher.ts";
 import { getGitHubRepo } from "../fetchers/web/GitHubFetcher.ts";
 import { getRedditThread } from "../fetchers/web/RedditFetcher.ts";
 import {
@@ -571,6 +572,41 @@ router.get(
   ),
 );
 // ─── YouTube ───────────────────────────────────────────────────────
+router.get(
+  "/youtube/search",
+  asyncHandler(async (request: Request, response: Response) => {
+    const {
+      q: query,
+      limit,
+      order,
+      channelId,
+      publishedAfter,
+      publishedBefore,
+      videoDuration,
+      safeSearch,
+      regionCode,
+      relevanceLanguage,
+    } = request.query as Record<string, string | undefined>;
+    if (!query) {
+      return response.status(400).json({ error: "Query parameter 'q' is required" });
+    }
+    const result = await searchYouTubeVideos(query, {
+      limit: limit ? parseInt(limit, 10) : undefined,
+      order: order as "relevance" | "date" | "rating" | "viewCount" | "title" | undefined,
+      channelId,
+      publishedAfter,
+      publishedBefore,
+      videoDuration: videoDuration as "any" | "short" | "medium" | "long" | undefined,
+      safeSearch: safeSearch as "moderate" | "strict" | "none" | undefined,
+      regionCode,
+      relevanceLanguage,
+    });
+    if ("error" in result) {
+      return response.status(400).json(result);
+    }
+    response.json(result);
+  }),
+);
 router.get(
   "/youtube/video",
   asyncHandler(async (req: Request, res: Response) => {
