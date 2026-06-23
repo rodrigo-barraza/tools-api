@@ -39,10 +39,12 @@ RUN pnpm prune --prod
 FROM node:26-slim
 
 # Chromium (Playwright), Python 3 (interpreter), FFmpeg (media),
-# wget (healthcheck), git (agentic git tools), espeak-ng (local TTS)
+# wget (healthcheck), git (agentic git tools), espeak-ng (local TTS),
+# yt-dlp (YouTube/Reddit video downloads)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium \
     python3 \
+    python3-pip \
     ffmpeg \
     fonts-liberation \
     ca-certificates \
@@ -50,6 +52,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     imagemagick \
     espeak-ng \
+    && pip3 install --no-cache-dir --break-system-packages yt-dlp \
     && rm -rf /var/lib/apt/lists/*
 
 # Point Playwright to system Chromium
