@@ -2918,6 +2918,33 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       required: ["url"],
     },
   },
+  {
+    name: "download_youtube_video",
+    dataSource: onDemand("yt-dlp"),
+    description:
+      "Download a YouTube video as MP4 or extract its audio as MP3. Uses yt-dlp to fetch the best available quality. Accepts any YouTube URL format (youtube.com/watch, youtu.be, shorts, live, embed) or a raw 11-character video ID. Returns the media file as base64 data along with video metadata (title, channel, duration, view count). Use format 'mp3' for audio-only extraction or 'mp4' (default) for full video. Maximum file size is 200 MB.",
+    endpoint: {
+      path: "/knowledge/youtube/download",
+      queryParams: ["url", "format"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        url: {
+          type: "string",
+          description:
+            "YouTube video URL or 11-character video ID (e.g. 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'https://youtu.be/dQw4w9WgXcQ', or 'dQw4w9WgXcQ')",
+        },
+        format: {
+          type: "string",
+          enum: ["mp4", "mp3"],
+          description:
+            "Output format: 'mp4' for video (default) or 'mp3' for audio-only extraction.",
+        },
+      },
+      required: ["url"],
+    },
+  },
 
   // ── Unified Web Extraction Tools ─────────────────────────────
   {
@@ -12952,6 +12979,7 @@ const TOOL_DOMAINS = {
   get_on_this_day: "Knowledge",
   list_development_indicators: "Knowledge",
   get_youtube_video: "Knowledge",
+  download_youtube_video: "Knowledge",
   read_url: "Core Harness Tools",
   get_package_info: "Knowledge",
 
@@ -13389,6 +13417,7 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   get_on_this_day: ["🕰️", "📜"],
   list_development_indicators: ["📈", "🌐"],
   get_youtube_video: "▶️",
+  download_youtube_video: ["▶️", "📥"],
   read_url: "🌐",
   get_package_info: ["📦", "ℹ️"],
   read_rss_feed: "📡",

@@ -84,6 +84,7 @@ import {
   getSubredditWikiPage,
 } from "../fetchers/web/RedditSubredditFetcher.ts";
 import { downloadRedditVideo } from "../fetchers/web/RedditVideoFetcher.ts";
+import { downloadYouTubeVideo } from "../fetchers/web/YouTubeVideoFetcher.ts";
 import { getNpmPackage } from "../fetchers/web/NpmFetcher.ts";
 import { getPyPiPackage } from "../fetchers/web/PyPiFetcher.ts";
 
@@ -568,6 +569,40 @@ router.get(
       return res.status(400).json(result);
     }
     res.json(result);
+  }),
+);
+// ─── YouTube Video Download ───────────────────────────────────────
+router.get(
+  "/youtube/download",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { url, format } = req.query as Record<string, string | undefined>;
+    if (!url) {
+      return res.status(400).json({
+        error: "Query parameter 'url' is required (YouTube URL or video ID)",
+      });
+    }
+    const downloadFormat =
+      format === "mp3" ? "mp3" as const : "mp4" as const;
+    const result = await downloadYouTubeVideo(url, downloadFormat);
+    if ("error" in result) {
+      return res.status(400).json(result);
+    }
+    res.json({
+      success: true,
+      message: `Video downloaded and delivered to the user: "${result.title}" by ${result.channel} (${result.durationSeconds ?? "?"}s, ${(result.fileSize / 1024 / 1024).toFixed(1)} MB).`,
+      title: result.title,
+      channel: result.channel,
+      durationSeconds: result.durationSeconds,
+      viewCount: result.viewCount,
+      uploadDate: result.uploadDate,
+      thumbnailUrl: result.thumbnailUrl,
+      fileSize: result.fileSize,
+      format: result.format,
+      video: {
+        data: result.videoBase64,
+        mimeType: result.mimeType,
+      },
+    });
   }),
 );
 // ─── GitHub ────────────────────────────────────────────────────────
