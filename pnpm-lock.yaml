@@ -13,7 +13,7 @@ importers:
         version: 1.29.0(zod@4.4.3)
       '@rodrigo-barraza/utilities-library':
         specifier: github:rodrigo-barraza/utilities-library
-        version: https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/16951ef6d0c01979265c18c3e94070d304851a3a(socks@2.8.9)
+        version: https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/8ebb9ca5dbf6ae7eccd329c9fcfdded30b8b31d6(socks@2.8.9)
       ajv:
         specifier: ^8.20.0
         version: 8.20.0
@@ -852,8 +852,8 @@ packages:
   '@paralleldrive/cuid2@2.3.1':
     resolution: {integrity: sha512-XO7cAxhnTZl0Yggq6jOgjiOHhbgcO4NqFqwSmQpjK3b6TEE6Uj/jfSk6wzYyemh3+I0sHirKSetjQwn5cZktFw==}
 
-  '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/16951ef6d0c01979265c18c3e94070d304851a3a':
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/16951ef6d0c01979265c18c3e94070d304851a3a}
+  '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/8ebb9ca5dbf6ae7eccd329c9fcfdded30b8b31d6':
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/8ebb9ca5dbf6ae7eccd329c9fcfdded30b8b31d6}
     version: 0.2.0
 
   '@rolldown/binding-android-arm64@1.0.3':
@@ -2725,6 +2725,11 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
+  nanoid@3.3.15:
+    resolution: {integrity: sha512-y7Wygv/7mEOvxTuEQDB8StXdMRBWf1kR/tlhAzBRUFkB2jfcLOAxO/SHmOO2zgz1pVgK29/kyupn059/bCHdjA==}
+    engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
+    hasBin: true
+
   napi-build-utils@2.0.0:
     resolution: {integrity: sha512-GEbrYkbfF7MoNaoh2iGG84Mnf/WZfB0GdGEsM8wz7Expx/LlWf5U8t9nvJKXSp3qr5IsEbK04cBGhol/KwOsWA==}
 
@@ -4448,7 +4453,7 @@ snapshots:
     dependencies:
       '@noble/hashes': 1.8.0
 
-  '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/16951ef6d0c01979265c18c3e94070d304851a3a(socks@2.8.9)':
+  '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/8ebb9ca5dbf6ae7eccd329c9fcfdded30b8b31d6(socks@2.8.9)':
     dependencies:
       mongodb: 7.3.0(socks@2.8.9)
       zod: 4.4.3
@@ -6452,6 +6457,8 @@ snapshots:
 
   nanoid@3.3.14: {}
 
+  nanoid@3.3.15: {}
+
   napi-build-utils@2.0.0: {}
 
   natural-compare@1.4.0: {}
@@ -6621,7 +6628,7 @@ snapshots:
 
   postcss@8.5.15:
     dependencies:
-      nanoid: 3.3.14
+      nanoid: 3.3.15
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
