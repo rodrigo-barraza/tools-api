@@ -206,7 +206,11 @@ function runYtDlp(
 
 // ─── Public API ────────────────────────────────────────────────────
 
-export interface RedditVideoDownloadResult {
+import { convertVideoToGif } from "../../services/VideoService.ts";
+
+export type RedditDownloadFormat = "mp4" | "gif";
+
+interface RedditVideoMetadataResult {
   title: string;
   author: string;
   subreddit: string;
@@ -215,19 +219,48 @@ export interface RedditVideoDownloadResult {
   durationSeconds: number | null;
   widthPixels: number | null;
   heightPixels: number | null;
+}
+
+export interface RedditVideoFileResult {
+  metadata: RedditVideoMetadataResult;
+  filePath: string;
   fileSize: number;
   format: string;
-  videoBase64: string;
   mimeType: string;
+  temporaryDirectory: string;
+}
+
+export interface RedditVideoGifResult {
+  metadata: RedditVideoMetadataResult;
+  gifBuffer: Buffer;
+  mimeType: "image/gif";
 }
 
 export interface RedditVideoErrorResult {
   error: string;
 }
 
+export type RedditVideoDownloadResult =
+  | RedditVideoFileResult
+  | RedditVideoGifResult
+  | RedditVideoErrorResult;
+
+export function isRedditFileResult(result: RedditVideoDownloadResult): result is RedditVideoFileResult {
+  return "filePath" in result;
+}
+
+export function isRedditGifResult(result: RedditVideoDownloadResult): result is RedditVideoGifResult {
+  return "gifBuffer" in result;
+}
+
+export function isRedditErrorResult(result: RedditVideoDownloadResult): result is RedditVideoErrorResult {
+  return "error" in result;
+}
+
 export async function downloadRedditVideo(
   input: string,
-): Promise<RedditVideoDownloadResult | RedditVideoErrorResult> {
+  format: RedditDownloadFormat = "mp4",
+): Promise<RedditVideoDownloadResult> {
   let temporaryDirectory: string | null = null;
 
   try {
@@ -245,13 +278,13 @@ export async function downloadRedditVideo(
     // since they redirect to the post page automatically
     const isDirectVideoUrl = REDDIT_VIDEO_REGEX.test(input.trim());
 
-    let metadata: RedditVideoMetadata | null = null;
+    let rawMetadata: RedditVideoMetadata | null = null;
 
     if (!isDirectVideoUrl) {
-      metadata = await extractVideoMetadata(normalizedUrl);
+      rawMetadata = await extractVideoMetadata(normalizedUrl);
       logger.info(
-        `[RedditVideoFetcher] Found video: "${metadata.title}" ` +
-          `(${metadata.durationSeconds ?? "?"}s, ${metadata.widthPixels ?? "?"}x${metadata.heightPixels ?? "?"})`,
+        `[RedditVideoFetcher] Found video: "${rawMetadata.title}" ` +
+          `(${rawMetadata.durationSeconds ?? "?"}s, ${rawMetadata.widthPixels ?? "?"}x${rawMetadata.heightPixels ?? "?"})`,
       );
     }
 
@@ -261,47 +294,76 @@ export async function downloadRedditVideo(
     // Use yt-dlp to download and mux the video
     // For direct v.redd.it links, pass them directly
     // For post URLs, pass the permalink which yt-dlp handles natively
-    const downloadUrl = isDirectVideoUrl
+    const downloadTargetUrl = isDirectVideoUrl
       ? normalizedUrl
-      : (metadata?.permalink ?? normalizedUrl);
+      : (rawMetadata?.permalink ?? normalizedUrl);
 
     logger.info(
-      `[RedditVideoFetcher] Downloading via yt-dlp: ${downloadUrl}`,
+      `[RedditVideoFetcher] Downloading via yt-dlp: ${downloadTargetUrl}`,
     );
 
-    const downloadResult = await runYtDlp(downloadUrl, temporaryDirectory);
+    const downloadResult = await runYtDlp(downloadTargetUrl, temporaryDirectory);
 
     logger.info(
       `[RedditVideoFetcher] Download complete: ${(downloadResult.fileSize / 1024 / 1024).toFixed(1)} MB`,
     );
 
-    // Read file into base64
-    const fileBuffer = await readFile(downloadResult.filePath);
-    const videoBase64 = fileBuffer.toString("base64");
+    const metadata: RedditVideoMetadataResult = {
+      title: rawMetadata?.title ?? "Reddit Video",
+      author: rawMetadata?.author ?? "unknown",
+      subreddit: rawMetadata?.subreddit ?? "unknown",
+      permalink: rawMetadata?.permalink ?? normalizedUrl,
+      isNsfw: rawMetadata?.isNsfw ?? false,
+      durationSeconds: rawMetadata?.durationSeconds ?? null,
+      widthPixels: rawMetadata?.widthPixels ?? null,
+      heightPixels: rawMetadata?.heightPixels ?? null,
+    };
 
+    // ── GIF Conversion Path ──────────────────────────────────
+    if (format === "gif") {
+      logger.info("[RedditVideoFetcher] Converting MP4 → GIF via ffmpeg...");
+
+      const gifResult = await convertVideoToGif({
+        input: downloadResult.filePath,
+        quality: "high",
+        width: 480,
+        fps: 15,
+      });
+
+      // Clean up temp directory immediately since we have the GIF buffer
+      await rm(temporaryDirectory, { recursive: true, force: true }).catch(() => {});
+      temporaryDirectory = null;
+
+      logger.info(
+        `[RedditVideoFetcher] GIF conversion complete: ${(gifResult.buffer.length / 1024 / 1024).toFixed(1)} MB`,
+      );
+
+      return {
+        metadata,
+        gifBuffer: gifResult.buffer,
+        mimeType: "image/gif",
+      };
+    }
+
+    // ── File Path Return (MP4) ───────────────────────────────
+    // Caller is responsible for cleanup via temporaryDirectory
     return {
-      title: metadata?.title ?? "Reddit Video",
-      author: metadata?.author ?? "unknown",
-      subreddit: metadata?.subreddit ?? "unknown",
-      permalink: metadata?.permalink ?? normalizedUrl,
-      isNsfw: metadata?.isNsfw ?? false,
-      durationSeconds: metadata?.durationSeconds ?? null,
-      widthPixels: metadata?.widthPixels ?? null,
-      heightPixels: metadata?.heightPixels ?? null,
+      metadata,
+      filePath: downloadResult.filePath,
       fileSize: downloadResult.fileSize,
       format: downloadResult.format,
-      videoBase64,
       mimeType: `video/${downloadResult.format === "mp4" ? "mp4" : "webm"}`,
+      temporaryDirectory,
     };
   } catch (error: unknown) {
+    // Clean up on error
+    if (temporaryDirectory) {
+      rm(temporaryDirectory, { recursive: true, force: true }).catch(() => {});
+    }
+
     logger.error(
       `[RedditVideoFetcher] Download failed: ${errorMessage(error)}`,
     );
     return { error: `Reddit video download failed: ${errorMessage(error)}` };
-  } finally {
-    // Always clean up temp directory
-    if (temporaryDirectory) {
-      rm(temporaryDirectory, { recursive: true, force: true }).catch(() => {});
-    }
   }
 }

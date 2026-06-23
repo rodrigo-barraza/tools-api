@@ -1,15 +1,16 @@
 // ─── YouTube Video Downloader ───────────────────────────────
-// Downloads a YouTube video as MP4 or extracts audio as MP3
-// using yt-dlp. Mirrors the RedditVideoFetcher pattern —
-// temp directory, subprocess, base64 delivery, cleanup.
+// Downloads a YouTube video as MP4/MP3/GIF using yt-dlp.
+// Returns the temp file path + metadata for the route handler
+// to decide delivery method (MinIO upload or GIF render).
 
 import { spawn } from "node:child_process";
-import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import logger from "../../logger.ts";
 import { errorMessage } from "../../utilities.ts";
 import { extractVideoId } from "../knowledge/YouTubeFetcher.ts";
+import { convertVideoToGif } from "../../services/VideoService.ts";
 
 // ─── Constants ─────────────────────────────────────────────────────
 
@@ -19,28 +20,25 @@ const YTDLP_BINARY = "yt-dlp";
 
 // ─── URL Validation ────────────────────────────────────────────────
 
-const YOUTUBE_URL_REGEX =
-  /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/|live\/|embed\/|v\/)|youtu\.be\/)[a-zA-Z0-9_-]{11}/;
-
 const YOUTUBE_PLAYLIST_REGEX =
   /(?:https?:\/\/)?(?:www\.)?youtube\.com\/.*[?&]list=[a-zA-Z0-9_-]+/;
+
+const YOUTUBE_URL_REGEX =
+  /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/|live\/|embed\/|v\/)|youtu\.be\/)[a-zA-Z0-9_-]{11}/;
 
 function normalizeYouTubeUrl(input: string): string | null {
   if (!input || typeof input !== "string") return null;
   const trimmed = input.trim();
 
-  // Accept raw 11-char video IDs
   const videoId = extractVideoId(trimmed);
   if (videoId) {
     return `https://www.youtube.com/watch?v=${videoId}`;
   }
 
-  // Accept playlist URLs
   if (YOUTUBE_PLAYLIST_REGEX.test(trimmed)) {
     return trimmed;
   }
 
-  // Accept standard YouTube video URLs
   if (YOUTUBE_URL_REGEX.test(trimmed)) {
     return trimmed;
   }
@@ -50,7 +48,7 @@ function normalizeYouTubeUrl(input: string): string | null {
 
 // ─── yt-dlp Download ───────────────────────────────────────────────
 
-type YouTubeDownloadFormat = "mp4" | "mp3";
+export type YouTubeDownloadFormat = "mp4" | "mp3" | "gif";
 
 interface YtDlpDownloadResult {
   filePath: string;
@@ -61,7 +59,7 @@ interface YtDlpDownloadResult {
 function runYtDlpDownload(
   videoUrl: string,
   outputDirectory: string,
-  format: YouTubeDownloadFormat,
+  format: "mp4" | "mp3",
 ): Promise<YtDlpDownloadResult> {
   return new Promise((resolve, reject) => {
     const outputTemplate = path.join(outputDirectory, "%(id)s.%(ext)s");
@@ -126,6 +124,7 @@ function runYtDlpDownload(
       }
 
       try {
+        const { stat } = await import("node:fs/promises");
         const fileStats = await stat(downloadedFilePath);
         resolve({
           filePath: downloadedFilePath,
@@ -237,28 +236,46 @@ function extractMetadataViaYtDlp(videoUrl: string): Promise<YouTubeVideoMetadata
 
 // ─── Public API ────────────────────────────────────────────────────
 
-export interface YouTubeVideoDownloadResult {
-  title: string;
-  channel: string;
-  durationSeconds: number | null;
-  viewCount: number | null;
-  uploadDate: string | null;
-  description: string | null;
-  thumbnailUrl: string | null;
+export interface YouTubeDownloadFileResult {
+  metadata: YouTubeVideoMetadata;
+  filePath: string;
   fileSize: number;
   format: string;
-  videoBase64: string;
   mimeType: string;
+  temporaryDirectory: string;
 }
 
-export interface YouTubeVideoErrorResult {
+export interface YouTubeDownloadGifResult {
+  metadata: YouTubeVideoMetadata;
+  gifBuffer: Buffer;
+  mimeType: "image/gif";
+}
+
+export interface YouTubeDownloadErrorResult {
   error: string;
+}
+
+export type YouTubeDownloadResult =
+  | YouTubeDownloadFileResult
+  | YouTubeDownloadGifResult
+  | YouTubeDownloadErrorResult;
+
+export function isFileResult(result: YouTubeDownloadResult): result is YouTubeDownloadFileResult {
+  return "filePath" in result;
+}
+
+export function isGifResult(result: YouTubeDownloadResult): result is YouTubeDownloadGifResult {
+  return "gifBuffer" in result;
+}
+
+export function isErrorResult(result: YouTubeDownloadResult): result is YouTubeDownloadErrorResult {
+  return "error" in result;
 }
 
 export async function downloadYouTubeVideo(
   input: string,
   format: YouTubeDownloadFormat = "mp4",
-): Promise<YouTubeVideoDownloadResult | YouTubeVideoErrorResult> {
+): Promise<YouTubeDownloadResult> {
   let temporaryDirectory: string | null = null;
 
   try {
@@ -271,7 +288,9 @@ export async function downloadYouTubeVideo(
       `[YouTubeVideoFetcher] Downloading ${format.toUpperCase()}: ${normalizedUrl}`,
     );
 
-    // Fetch metadata concurrently with download
+    // For GIF, we download as MP4 first, then convert
+    const downloadFormat: "mp4" | "mp3" = format === "gif" ? "mp4" : format;
+
     const [metadata, downloadDirectory] = await Promise.all([
       extractMetadataViaYtDlp(normalizedUrl),
       mkdtemp(path.join(tmpdir(), "youtube-video-")),
@@ -287,16 +306,41 @@ export async function downloadYouTubeVideo(
     const downloadResult = await runYtDlpDownload(
       normalizedUrl,
       temporaryDirectory,
-      format,
+      downloadFormat,
     );
 
     logger.info(
       `[YouTubeVideoFetcher] Download complete: ${(downloadResult.fileSize / 1024 / 1024).toFixed(1)} MB`,
     );
 
-    const fileBuffer = await readFile(downloadResult.filePath);
-    const videoBase64 = fileBuffer.toString("base64");
+    // ── GIF Conversion Path ──────────────────────────────────
+    if (format === "gif") {
+      logger.info("[YouTubeVideoFetcher] Converting MP4 → GIF via ffmpeg...");
 
+      const gifResult = await convertVideoToGif({
+        input: downloadResult.filePath,
+        quality: "high",
+        width: 480,
+        fps: 15,
+      });
+
+      // Clean up temp directory immediately since we have the GIF buffer
+      await rm(temporaryDirectory, { recursive: true, force: true }).catch(() => {});
+      temporaryDirectory = null;
+
+      logger.info(
+        `[YouTubeVideoFetcher] GIF conversion complete: ${(gifResult.buffer.length / 1024 / 1024).toFixed(1)} MB`,
+      );
+
+      return {
+        metadata,
+        gifBuffer: gifResult.buffer,
+        mimeType: "image/gif",
+      };
+    }
+
+    // ── File Path Return (MP4/MP3) ───────────────────────────
+    // Caller is responsible for cleanup via temporaryDirectory
     const actualFormat = downloadResult.format;
     const mimeType =
       actualFormat === "mp3"
@@ -308,26 +352,22 @@ export async function downloadYouTubeVideo(
             : `video/${actualFormat}`;
 
     return {
-      title: metadata.title,
-      channel: metadata.channel,
-      durationSeconds: metadata.durationSeconds,
-      viewCount: metadata.viewCount,
-      uploadDate: metadata.uploadDate,
-      description: metadata.description,
-      thumbnailUrl: metadata.thumbnailUrl,
+      metadata,
+      filePath: downloadResult.filePath,
       fileSize: downloadResult.fileSize,
       format: actualFormat,
-      videoBase64,
       mimeType,
+      temporaryDirectory,
     };
   } catch (error: unknown) {
+    // Clean up on error
+    if (temporaryDirectory) {
+      await rm(temporaryDirectory, { recursive: true, force: true }).catch(() => {});
+    }
+
     logger.error(
       `[YouTubeVideoFetcher] Download failed: ${errorMessage(error)}`,
     );
     return { error: `YouTube video download failed: ${errorMessage(error)}` };
-  } finally {
-    if (temporaryDirectory) {
-      rm(temporaryDirectory, { recursive: true, force: true }).catch(() => {});
-    }
   }
 }

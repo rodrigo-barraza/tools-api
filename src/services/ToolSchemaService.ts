@@ -2920,9 +2920,14 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   },
   {
     name: "download_youtube_video",
-    dataSource: onDemand("yt-dlp"),
+    dataSource: onDemand("yt-dlp + ffmpeg"),
     description:
-      "Download a YouTube video as MP4 or extract its audio as MP3. Uses yt-dlp to fetch the best available quality. Accepts any YouTube URL format (youtube.com/watch, youtu.be, shorts, live, embed) or a raw 11-character video ID. Returns the media file as base64 data along with video metadata (title, channel, duration, view count). Use format 'mp3' for audio-only extraction or 'mp4' (default) for full video. Maximum file size is 200 MB.",
+      "Download a YouTube video as MP4, extract audio as MP3, or convert to animated GIF. " +
+      "Accepts any YouTube URL format (youtube.com/watch, youtu.be, shorts, live, embed) or a raw 11-character video ID. " +
+      "For 'mp4' and 'mp3': downloads the media and returns a persistent download URL (stored in cloud storage). " +
+      "For 'gif': downloads the video, converts it to an animated GIF using an optimized ffmpeg palette pipeline, and displays it automatically — " +
+      "do NOT include the GIF URL in your text response, the user already sees it rendered. " +
+      "Maximum input file size is 200 MB.",
     endpoint: {
       path: "/knowledge/youtube/download",
       queryParams: ["url", "format"],
@@ -2937,9 +2942,9 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         },
         format: {
           type: "string",
-          enum: ["mp4", "mp3"],
+          enum: ["mp4", "mp3", "gif"],
           description:
-            "Output format: 'mp4' for video (default) or 'mp3' for audio-only extraction.",
+            "Output format: 'mp4' for video download (default), 'mp3' for audio-only extraction, or 'gif' for animated GIF conversion.",
         },
       },
       required: ["url"],
@@ -3358,12 +3363,18 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
 
   {
     name: "download_reddit_video",
-    dataSource: onDemand("Reddit .json API + yt-dlp"),
+    dataSource: onDemand("Reddit .json API + yt-dlp + ffmpeg"),
     description:
-      "Download a Reddit-hosted video (v.redd.it) as a single MP4 file. Reddit stores video and audio as separate DASH streams — this tool handles muxing them together automatically. Accepts any Reddit post URL, redd.it short link, or v.redd.it direct video link. Returns the video file as base64 data along with post metadata (title, author, subreddit, duration, resolution). Only works with Reddit's native video player — external links (YouTube, Streamable, etc.) are not supported.",
+      "Download a Reddit-hosted video (v.redd.it) as MP4 or convert to animated GIF. " +
+      "Reddit stores video and audio as separate DASH streams — this tool handles muxing them together automatically. " +
+      "Accepts any Reddit post URL, redd.it short link, or v.redd.it direct video link. " +
+      "For 'mp4': downloads the video and returns a persistent download URL (stored in cloud storage). " +
+      "For 'gif': downloads the video, converts it to an animated GIF using an optimized ffmpeg palette pipeline, and displays it automatically — " +
+      "do NOT include the GIF URL in your text response, the user already sees it rendered. " +
+      "Only works with Reddit's native video player — external links (YouTube, Streamable, etc.) are not supported.",
     endpoint: {
       path: "/knowledge/reddit/video",
-      queryParams: ["url"],
+      queryParams: ["url", "format"],
     },
     parameters: {
       type: "object",
@@ -3372,6 +3383,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           type: "string",
           description:
             "Reddit post URL, redd.it short URL, or v.redd.it direct video URL (e.g. 'https://www.reddit.com/r/videos/comments/abc123/my_video', 'https://redd.it/abc123', 'https://v.redd.it/abc123')",
+        },
+        format: {
+          type: "string",
+          enum: ["mp4", "gif"],
+          description:
+            "Output format: 'mp4' for video download (default) or 'gif' for animated GIF conversion.",
         },
       },
       required: ["url"],

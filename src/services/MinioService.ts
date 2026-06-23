@@ -44,6 +44,25 @@ export default class MinioService {
     return minioClient.fPutObject(bucketName, objectName, filePath, metadata);
   }
 
+  static async putBuffer(
+    bucketName: string,
+    objectName: string,
+    buffer: Buffer,
+    contentType: string,
+  ) {
+    const minioClient = MinioService._getClient();
+    return minioClient.putObject(bucketName, objectName, buffer, buffer.length, {
+      "Content-Type": contentType,
+    });
+  }
+
+  static getPublicUrl(bucketName: string, objectName: string): string {
+    if (!CONFIG.MINIO_ENDPOINT) {
+      throw new Error("No MINIO_ENDPOINT configured");
+    }
+    return `${CONFIG.MINIO_ENDPOINT}/${bucketName}/${objectName}`;
+  }
+
   static async seedWorkspaceAgent(): Promise<void> {
     if (!CONFIG.MINIO_ENDPOINT) {
       logger.warn(

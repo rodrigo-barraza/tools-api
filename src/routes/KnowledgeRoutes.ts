@@ -83,8 +83,20 @@ import {
   getSubredditWikiPages,
   getSubredditWikiPage,
 } from "../fetchers/web/RedditSubredditFetcher.ts";
-import { downloadRedditVideo } from "../fetchers/web/RedditVideoFetcher.ts";
-import { downloadYouTubeVideo } from "../fetchers/web/YouTubeVideoFetcher.ts";
+import {
+  downloadRedditVideo,
+  isRedditFileResult,
+  isRedditGifResult,
+  isRedditErrorResult,
+} from "../fetchers/web/RedditVideoFetcher.ts";
+import type { RedditDownloadFormat } from "../fetchers/web/RedditVideoFetcher.ts";
+import {
+  downloadYouTubeVideo,
+  isFileResult,
+  isGifResult,
+  isErrorResult,
+} from "../fetchers/web/YouTubeVideoFetcher.ts";
+import type { YouTubeDownloadFormat } from "../fetchers/web/YouTubeVideoFetcher.ts";
 import { getNpmPackage } from "../fetchers/web/NpmFetcher.ts";
 import { getPyPiPackage } from "../fetchers/web/PyPiFetcher.ts";
 
@@ -105,7 +117,11 @@ import {
   getSnapshot as getWaybackSnapshot,
   getSnapshotHistory,
 } from "../fetchers/web/WaybackFetcher.ts";
-import { errorMessage } from "../utilities.ts";
+import { errorMessage, buildLocalUrl } from "../utilities.ts";
+import MinioService from "../services/MinioService.ts";
+import crypto from "node:crypto";
+import { readFile, rm } from "node:fs/promises";
+import { PersistentStore } from "../models/EmbedAsset.ts";
 
 const router: ReturnType<typeof Router> = Router();
 const dispatchToRoute = router as unknown as (request: Request, response: Response, fallback: () => void) => void;
@@ -572,6 +588,15 @@ router.get(
   }),
 );
 // ─── YouTube Video Download ───────────────────────────────────────
+
+
+const youtubeGifStore = new PersistentStore<{ buffer: Buffer; mimeType: string }>("youtube-gif");
+
+const YOUTUBE_DOWNLOAD_BUCKET = "artifacts";
+const YOUTUBE_DOWNLOAD_PREFIX = "youtube-downloads";
+
+const VALID_YOUTUBE_FORMATS = new Set<YouTubeDownloadFormat>(["mp4", "mp3", "gif"]);
+
 router.get(
   "/youtube/download",
   asyncHandler(async (req: Request, res: Response) => {
@@ -581,28 +606,77 @@ router.get(
         error: "Query parameter 'url' is required (YouTube URL or video ID)",
       });
     }
-    const downloadFormat =
-      format === "mp3" ? "mp3" as const : "mp4" as const;
+
+    const downloadFormat: YouTubeDownloadFormat =
+      format && VALID_YOUTUBE_FORMATS.has(format as YouTubeDownloadFormat)
+        ? (format as YouTubeDownloadFormat)
+        : "mp4";
+
     const result = await downloadYouTubeVideo(url, downloadFormat);
-    if ("error" in result) {
+
+    if (isErrorResult(result)) {
       return res.status(400).json(result);
     }
-    res.json({
-      success: true,
-      message: `Video downloaded and delivered to the user: "${result.title}" by ${result.channel} (${result.durationSeconds ?? "?"}s, ${(result.fileSize / 1024 / 1024).toFixed(1)} MB).`,
-      title: result.title,
-      channel: result.channel,
-      durationSeconds: result.durationSeconds,
-      viewCount: result.viewCount,
-      uploadDate: result.uploadDate,
-      thumbnailUrl: result.thumbnailUrl,
-      fileSize: result.fileSize,
-      format: result.format,
-      video: {
-        data: result.videoBase64,
+
+    // ── GIF Delivery ─────────────────────────────────────────
+    if (isGifResult(result)) {
+      const gifId = youtubeGifStore.set({
+        buffer: result.gifBuffer,
         mimeType: result.mimeType,
-      },
-    });
+      });
+      const gifImageUrl = buildLocalUrl("compute/image/render", { id: gifId });
+
+      return res.json({
+        success: true,
+        message: `YouTube video converted to GIF: "${result.metadata.title}" by ${result.metadata.channel}.`,
+        title: result.metadata.title,
+        channel: result.metadata.channel,
+        durationSeconds: result.metadata.durationSeconds,
+        format: "gif",
+        imageUrl: gifImageUrl,
+        imageId: gifId,
+        mimeType: result.mimeType,
+      });
+    }
+
+    // ── MP4/MP3 Delivery via MinIO ────────────────────────────
+    if (isFileResult(result)) {
+      try {
+        const fileBuffer = await readFile(result.filePath);
+        const uniqueId = crypto.randomUUID();
+        const objectKey = `${YOUTUBE_DOWNLOAD_PREFIX}/${uniqueId}.${result.format}`;
+
+        await MinioService.putBuffer(
+          YOUTUBE_DOWNLOAD_BUCKET,
+          objectKey,
+          fileBuffer,
+          result.mimeType,
+        );
+
+        const downloadUrl = MinioService.getPublicUrl(
+          YOUTUBE_DOWNLOAD_BUCKET,
+          objectKey,
+        );
+
+        return res.json({
+          success: true,
+          message: `YouTube video downloaded: "${result.metadata.title}" by ${result.metadata.channel} (${result.metadata.durationSeconds ?? "?"}s, ${(result.fileSize / 1024 / 1024).toFixed(1)} MB). Download: ${downloadUrl}`,
+          title: result.metadata.title,
+          channel: result.metadata.channel,
+          durationSeconds: result.metadata.durationSeconds,
+          viewCount: result.metadata.viewCount,
+          uploadDate: result.metadata.uploadDate,
+          thumbnailUrl: result.metadata.thumbnailUrl,
+          fileSize: result.fileSize,
+          format: result.format,
+          downloadUrl,
+          mimeType: result.mimeType,
+        });
+      } finally {
+        // Always clean up temp directory
+        await rm(result.temporaryDirectory, { recursive: true, force: true }).catch(() => {});
+      }
+    }
   }),
 );
 // ─── GitHub ────────────────────────────────────────────────────────
@@ -842,36 +916,96 @@ router.get(
   }),
 );
 // ─── Reddit Video Download ─────────────────────────────────────────
+
+const redditGifStore = new PersistentStore<{ buffer: Buffer; mimeType: string }>("reddit-gif");
+
+const REDDIT_DOWNLOAD_BUCKET = "artifacts";
+const REDDIT_DOWNLOAD_PREFIX = "reddit-downloads";
+
+const VALID_REDDIT_FORMATS = new Set<RedditDownloadFormat>(["mp4", "gif"]);
+
 router.get(
   "/reddit/video",
   asyncHandler(async (req: Request, res: Response) => {
-    const { url } = req.query as Record<string, string | undefined>;
+    const { url, format } = req.query as Record<string, string | undefined>;
     if (!url) {
       return res
         .status(400)
         .json({ error: "Query parameter 'url' is required (Reddit post or v.redd.it URL)" });
     }
-    const result = await downloadRedditVideo(url);
-    if ("error" in result) {
+
+    const downloadFormat: RedditDownloadFormat =
+      format && VALID_REDDIT_FORMATS.has(format as RedditDownloadFormat)
+        ? (format as RedditDownloadFormat)
+        : "mp4";
+
+    const result = await downloadRedditVideo(url, downloadFormat);
+
+    if (isRedditErrorResult(result)) {
       return res.status(400).json(result);
     }
-    res.json({
-      success: true,
-      message: `Video downloaded and delivered to the user: "${result.title}" (${result.durationSeconds ?? "?"}s, ${(result.fileSize / 1024 / 1024).toFixed(1)} MB).`,
-      title: result.title,
-      author: result.author,
-      subreddit: result.subreddit,
-      permalink: result.permalink,
-      isNsfw: result.isNsfw,
-      durationSeconds: result.durationSeconds,
-      widthPixels: result.widthPixels,
-      heightPixels: result.heightPixels,
-      fileSize: result.fileSize,
-      video: {
-        data: result.videoBase64,
+
+    // ── GIF Delivery ─────────────────────────────────────────
+    if (isRedditGifResult(result)) {
+      const gifId = redditGifStore.set({
+        buffer: result.gifBuffer,
         mimeType: result.mimeType,
-      },
-    });
+      });
+      const gifImageUrl = buildLocalUrl("compute/image/render", { id: gifId });
+
+      return res.json({
+        success: true,
+        message: `Reddit video converted to GIF: "${result.metadata.title}" from ${result.metadata.subreddit}.`,
+        title: result.metadata.title,
+        author: result.metadata.author,
+        subreddit: result.metadata.subreddit,
+        permalink: result.metadata.permalink,
+        format: "gif",
+        imageUrl: gifImageUrl,
+        imageId: gifId,
+        mimeType: result.mimeType,
+      });
+    }
+
+    // ── MP4 Delivery via MinIO ───────────────────────────────
+    if (isRedditFileResult(result)) {
+      try {
+        const fileBuffer = await readFile(result.filePath);
+        const uniqueId = crypto.randomUUID();
+        const objectKey = `${REDDIT_DOWNLOAD_PREFIX}/${uniqueId}.${result.format}`;
+
+        await MinioService.putBuffer(
+          REDDIT_DOWNLOAD_BUCKET,
+          objectKey,
+          fileBuffer,
+          result.mimeType,
+        );
+
+        const downloadUrl = MinioService.getPublicUrl(
+          REDDIT_DOWNLOAD_BUCKET,
+          objectKey,
+        );
+
+        return res.json({
+          success: true,
+          message: `Reddit video downloaded: "${result.metadata.title}" (${result.metadata.durationSeconds ?? "?"}s, ${(result.fileSize / 1024 / 1024).toFixed(1)} MB). Download: ${downloadUrl}`,
+          title: result.metadata.title,
+          author: result.metadata.author,
+          subreddit: result.metadata.subreddit,
+          permalink: result.metadata.permalink,
+          isNsfw: result.metadata.isNsfw,
+          durationSeconds: result.metadata.durationSeconds,
+          widthPixels: result.metadata.widthPixels,
+          heightPixels: result.metadata.heightPixels,
+          fileSize: result.fileSize,
+          format: result.format,
+          downloadUrl,
+          mimeType: result.mimeType,
+        });
+      } finally {
+        await rm(result.temporaryDirectory, { recursive: true, force: true }).catch(() => {});
+      }
+    }
   }),
 );
 // ─── NPM ───────────────────────────────────────────────────────────
