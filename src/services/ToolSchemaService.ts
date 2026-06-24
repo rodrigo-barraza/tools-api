@@ -13064,12 +13064,14 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     name: "get_container_logs",
     dataSource: onDemand("Portal Service / Docker Engine API"),
     description:
-      "Retrieve recent log output from a Docker container. Returns the last N lines of " +
-      "stdout/stderr with timestamps. Useful for debugging crashes, errors, startup failures, " +
-      "and runtime behavior. Container names match the Docker container name (e.g. 'prism-service', 'tools-service').",
+      "Retrieve recent log output from a Docker container with optional filtering. Returns log lines " +
+      "with timestamps and stream source (stdout/stderr). Supports filtering by severity level " +
+      "(cascading: 'warn' returns WARN + ERROR), substring search, and relative time window. " +
+      "Useful for debugging crashes, errors, startup failures, and runtime behavior. " +
+      "Container names match the Docker container name (e.g. 'prism-service', 'tools-service').",
     endpoint: {
       path: "/infrastructure/logs",
-      queryParams: ["container", "device", "tail"],
+      queryParams: ["container", "device", "tail", "level", "search", "since"],
     },
     parameters: {
       type: "object",
@@ -13086,7 +13088,28 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         tail: {
           type: "number",
           description:
-            "Number of log lines to retrieve (default: 200, max: 2000). More lines = slower response.",
+            "Number of log lines to retrieve from the end (default: 200, max: 2000). Applied before filtering.",
+        },
+        level: {
+          type: "string",
+          enum: ["error", "warn", "info", "debug"],
+          description:
+            "Filter by minimum log severity. Cascading: 'error' shows only ERROR lines, " +
+            "'warn' shows WARN + ERROR, 'info' shows INFO + OK + WARN + ERROR, " +
+            "'debug' shows everything (same as no filter).",
+        },
+        search: {
+          type: "string",
+          description:
+            "Case-insensitive substring to search for within each log line. " +
+            "Only lines containing this text are returned (e.g. 'timeout', 'connection refused', 'OOM').",
+        },
+        since: {
+          type: "string",
+          description:
+            "Relative time window for log retrieval. Format: number + unit " +
+            "(s=seconds, m=minutes, h=hours, d=days). Examples: '5m', '1h', '30s', '2d'. " +
+            "Only returns logs generated within this window.",
         },
       },
       required: ["container"],

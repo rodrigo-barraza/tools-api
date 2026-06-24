@@ -90,8 +90,14 @@ export async function fetchDevices(): Promise<unknown> {
 
 export async function fetchContainerLogs(
   containerName: string,
-  options: { device?: string; tail?: number } = {},
-): Promise<{ container: string; lines: string[]; lineCount: number; truncated: boolean }> {
+  options: { device?: string; tail?: number; level?: string; search?: string; since?: string } = {},
+): Promise<{
+  container: string;
+  lines: Array<{ line: string; stream: string }>;
+  lineCount: number;
+  truncated: boolean;
+  meta?: { totalLines: number; emittedLines: number; filteredOutLines: number; level: string | null; search: string | null; since: string | null };
+}> {
   const baseUrl = resolvePortalBaseUrl();
   const tailCount = Math.min(Math.max(options.tail || LOG_DEFAULT_TAIL, 1), LOG_MAX_TAIL);
 
@@ -100,6 +106,9 @@ export async function fetchContainerLogs(
     follow: "0",
   });
   if (options.device) queryParameters.set("device", options.device);
+  if (options.level) queryParameters.set("level", options.level);
+  if (options.search) queryParameters.set("search", options.search);
+  if (options.since) queryParameters.set("since", options.since);
 
   const fullUrl = `${baseUrl}/logs/${encodeURIComponent(containerName)}?${queryParameters.toString()}`;
 
@@ -118,7 +127,8 @@ export async function fetchContainerLogs(
       throw new Error(`Portal logs API ${response.status}: ${errorBody || response.statusText}`);
     }
 
-    const collectedLines: string[] = [];
+    const collectedLines: Array<{ line: string; stream: string }> = [];
+    let filterMeta: { totalLines: number; emittedLines: number; filteredOutLines: number; level: string | null; search: string | null; since: string | null } | undefined;
     const reader = response.body?.getReader();
 
     if (!reader) {
@@ -154,9 +164,24 @@ export async function fetchContainerLogs(
             }
           }
 
-          if (eventType === "") {
+          if (eventType === "meta") {
+            try {
+              filterMeta = JSON.parse(dataLines.join(""));
+            } catch {
+              // Ignore malformed meta events
+            }
+          } else if (eventType === "" && dataLines.length > 0) {
             for (const dataLine of dataLines) {
-              collectedLines.push(dataLine);
+              try {
+                const parsed = JSON.parse(dataLine);
+                collectedLines.push({
+                  line: parsed.line ?? dataLine,
+                  stream: parsed.stream ?? "stdout",
+                });
+              } catch {
+                // Backwards compatibility: treat raw string data as stdout
+                collectedLines.push({ line: dataLine, stream: "stdout" });
+              }
             }
           } else if (eventType === "end" || eventType === "error") {
             reader.cancel().catch(() => {});
@@ -166,6 +191,7 @@ export async function fetchContainerLogs(
               lines: collectedLines,
               lineCount: collectedLines.length,
               truncated: false,
+              meta: filterMeta,
             };
           }
         }
@@ -179,6 +205,7 @@ export async function fetchContainerLogs(
       lines: collectedLines,
       lineCount: collectedLines.length,
       truncated: collectedLines.length >= tailCount,
+      meta: filterMeta,
     };
   } catch (error: unknown) {
     clearTimeout(timeout);

@@ -203,6 +203,9 @@ router.get(
     const containerName = request.query.container as string | undefined;
     const deviceFilter = request.query.device as string | undefined;
     const tailString = request.query.tail as string | undefined;
+    const levelFilter = request.query.level as string | undefined;
+    const searchFilter = request.query.search as string | undefined;
+    const sinceFilter = request.query.since as string | undefined;
 
     if (!containerName) {
       return response.status(400).json({
@@ -215,6 +218,9 @@ router.get(
     const logSnapshot = await fetchContainerLogs(containerName, {
       device: deviceFilter,
       tail: tailCount,
+      level: levelFilter,
+      search: searchFilter,
+      since: sinceFilter,
     });
 
     response.json(logSnapshot);
