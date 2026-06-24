@@ -82,6 +82,49 @@ describe("Agentic Security and Worktree Validation", () => {
         fs.rmdirSync(mockWorktree);
       }
     });
+
+    it("blocks writing to .env.local but allows .env.sample", async () => {
+      const mockWorktree = "/tmp/prism-worktrees/subagent-test-worktree";
+      const envLocalPath = `${mockWorktree}/.env.local`;
+      const envSamplePath = `${mockWorktree}/.env.sample`;
+
+      if (!fs.existsSync(mockWorktree)) {
+        fs.mkdirSync(mockWorktree, { recursive: true });
+      }
+
+      // 1. Verify writing .env.local is rejected due to blocked pattern
+      const blockRes = await request(app)
+        .post("/agentic/file/write")
+        .set("X-Workspace-Override", mockWorktree)
+        .send({
+          path: envLocalPath,
+          content: "MY_SECRET=123"
+        });
+      expect(blockRes.status).toBe(403);
+      expect(blockRes.body.error).toContain("matches blocked pattern");
+
+      // 2. Verify writing .env.sample is allowed
+      const allowRes = await request(app)
+        .post("/agentic/file/write")
+        .set("X-Workspace-Override", mockWorktree)
+        .send({
+          path: envSamplePath,
+          content: "MY_SECRET=placeholder"
+        });
+      expect(allowRes.status).toBe(200);
+      expect(allowRes.body.created).toBe(true);
+
+      // Cleanup
+      if (fs.existsSync(envSamplePath)) {
+        fs.unlinkSync(envSamplePath);
+      }
+      if (fs.existsSync(envLocalPath)) {
+        fs.unlinkSync(envLocalPath);
+      }
+      if (fs.existsSync(mockWorktree)) {
+        fs.rmdirSync(mockWorktree);
+      }
+    });
   });
 
   describe("Command Blocklist Validation", () => {

@@ -83,7 +83,7 @@ const BLOCKED_PATTERNS = [
   /\.git\/objects\//,
   /\.git\/hooks\//,
   /\.env$/,
-  /\.env\..+$/,
+  /\.env\.(?!example|sample|template|defaults|dist).+$/,
   /\.pem$/,
   /\.key$/,
   /id_rsa/,
@@ -266,7 +266,7 @@ function validatePath(inputPath: string | unknown) {
       // Skip environment configurations, keys, and private credentials
       if (
         source === "\\.env$" ||
-        source === "\\.env\\..+$" ||
+        source === "\\.env\\.(?!example|sample|template|defaults|dist).+$" ||
         source === "\\.pem$" ||
         source === "\\.key$" ||
         source === "id_rsa" ||
