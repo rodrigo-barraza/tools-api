@@ -13,6 +13,7 @@ import {
   fetchSystemInfo,
   fetchDevices,
   fetchContainerLogs,
+  fetchAllContainerLogs,
   isPortalConfigured,
 } from "../fetchers/PortalFetcher.ts";
 
@@ -207,13 +208,19 @@ router.get(
     const searchFilter = request.query.search as string | undefined;
     const sinceFilter = request.query.since as string | undefined;
 
-    if (!containerName) {
-      return response.status(400).json({
-        error: "Missing required parameter: container",
-      });
-    }
-
     const tailCount = tailString ? parseInt(tailString, 10) : undefined;
+
+    if (!containerName) {
+      const aggregatedSnapshot = await fetchAllContainerLogs({
+        device: deviceFilter,
+        tail: tailCount,
+        level: levelFilter,
+        search: searchFilter,
+        since: sinceFilter,
+      });
+
+      return response.json(aggregatedSnapshot);
+    }
 
     const logSnapshot = await fetchContainerLogs(containerName, {
       device: deviceFilter,

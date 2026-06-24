@@ -13064,10 +13064,13 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     name: "get_container_logs",
     dataSource: onDemand("Portal Service / Docker Engine API"),
     description:
-      "Retrieve recent log output from a Docker container with optional filtering. Returns log lines " +
+      "Retrieve recent log output from Docker containers with optional filtering. Returns log lines " +
       "with timestamps and stream source (stdout/stderr). Supports filtering by severity level " +
       "(cascading: 'warn' returns WARN + ERROR), substring search, and relative time window. " +
-      "Useful for debugging crashes, errors, startup failures, and runtime behavior. " +
+      "When 'container' is provided, returns logs from that specific container. " +
+      "When 'container' is omitted, searches across ALL running containers simultaneously — " +
+      "results are merged chronologically and each line is tagged with its source container name. " +
+      "This is useful for cross-service debugging (e.g. finding all errors across the entire stack). " +
       "Container names match the Docker container name (e.g. 'prism-service', 'tools-service').",
     endpoint: {
       path: "/infrastructure/logs",
@@ -13079,7 +13082,9 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         container: {
           type: "string",
           description:
-            "Docker container name to retrieve logs from (e.g. 'prism-service', 'portal-service').",
+            "Docker container name to retrieve logs from (e.g. 'prism-service', 'portal-service'). " +
+            "If omitted, logs are fetched from ALL running containers and merged chronologically, " +
+            "with each line tagged by its source container.",
         },
         device: {
           type: "string",
@@ -13088,7 +13093,8 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         tail: {
           type: "number",
           description:
-            "Number of log lines to retrieve from the end (default: 200, max: 2000). Applied before filtering.",
+            "Number of log lines to retrieve from the end (default: 200, max: 2000). Applied before filtering. " +
+            "When searching all containers, this limit applies per container.",
         },
         level: {
           type: "string",
@@ -13112,7 +13118,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             "Only returns logs generated within this window.",
         },
       },
-      required: ["container"],
+      required: [],
     },
   },
 ];

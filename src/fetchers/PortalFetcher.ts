@@ -217,6 +217,94 @@ export async function fetchContainerLogs(
   }
 }
 
+const ALL_CONTAINERS_TIMEOUT_MS = 20_000;
+const ALL_CONTAINERS_MAX_CONCURRENCY = 10;
+
+export async function fetchAllContainerLogs(
+  options: { device?: string; tail?: number; level?: string; search?: string; since?: string } = {},
+): Promise<{
+  containers: string[];
+  lines: Array<{ container: string; line: string; stream: string }>;
+  lineCount: number;
+  perContainer: Record<string, number>;
+}> {
+  const statsData = await fetchContainerStats(options.device) as Record<string, unknown>;
+  const containerList = (statsData.containers || []) as Array<Record<string, unknown>>;
+
+  const runningContainerNames = containerList
+    .filter((container) => (container.state as string)?.toLowerCase() === "running")
+    .map((container) => container.name as string)
+    .filter(Boolean)
+    .slice(0, ALL_CONTAINERS_MAX_CONCURRENCY);
+
+  if (runningContainerNames.length === 0) {
+    return { containers: [], lines: [], lineCount: 0, perContainer: {} };
+  }
+
+  const perContainerTail = Math.min(options.tail || LOG_DEFAULT_TAIL, LOG_MAX_TAIL);
+  const overallController = new AbortController();
+  const overallTimeout = setTimeout(() => overallController.abort(), ALL_CONTAINERS_TIMEOUT_MS);
+
+  try {
+    const logFetchResults = await Promise.allSettled(
+      runningContainerNames.map((containerName) =>
+        fetchContainerLogs(containerName, {
+          ...options,
+          tail: perContainerTail,
+        }),
+      ),
+    );
+
+    const aggregatedLines: Array<{ container: string; line: string; stream: string; timestamp: string }> = [];
+    const perContainerCounts: Record<string, number> = {};
+    const successfulContainerNames: string[] = [];
+
+    for (let index = 0; index < logFetchResults.length; index++) {
+      const result = logFetchResults[index];
+      const containerName = runningContainerNames[index];
+
+      if (result.status === "fulfilled") {
+        successfulContainerNames.push(containerName);
+        perContainerCounts[containerName] = result.value.lines.length;
+
+        for (const logEntry of result.value.lines) {
+          const extractedTimestamp = extractTimestamp(logEntry.line);
+          aggregatedLines.push({
+            container: containerName,
+            line: logEntry.line,
+            stream: logEntry.stream,
+            timestamp: extractedTimestamp,
+          });
+        }
+      } else {
+        logger.warn(`[PortalFetcher] Skipped logs for ${containerName}: ${result.reason}`);
+        perContainerCounts[containerName] = 0;
+      }
+    }
+
+    aggregatedLines.sort((first, second) => first.timestamp.localeCompare(second.timestamp));
+
+    return {
+      containers: successfulContainerNames,
+      lines: aggregatedLines.map(({ container, line, stream }) => ({ container, line, stream })),
+      lineCount: aggregatedLines.length,
+      perContainer: perContainerCounts,
+    };
+  } finally {
+    clearTimeout(overallTimeout);
+  }
+}
+
+function extractTimestamp(logLine: string): string {
+  const isoTimestampMatch = logLine.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+  if (isoTimestampMatch) return isoTimestampMatch[0];
+
+  const bracketTimestampMatch = logLine.match(/^\[(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2})/);
+  if (bracketTimestampMatch) return bracketTimestampMatch[1];
+
+  return "";
+}
+
 export function isPortalConfigured(): boolean {
   return Boolean(CONFIG.PORTAL_SERVICE_URL);
 }
