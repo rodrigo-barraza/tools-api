@@ -128,8 +128,8 @@ describe("PortalFetcher & SSE Log Parser", () => {
       expect(fetchSpy).toHaveBeenCalled();
       expect(result.container).toBe("prism-service");
       expect(result.lines).toEqual([
-        "2026-06-22T20:10:00.123Z Actual log line 1",
-        "2026-06-22T20:10:01.456Z Actual log line 2",
+        { line: "2026-06-22T20:10:00.123Z Actual log line 1", stream: "stdout" },
+        { line: "2026-06-22T20:10:01.456Z Actual log line 2", stream: "stdout" },
       ]);
       expect(result.lineCount).toBe(2);
       expect(result.truncated).toBe(false);
@@ -151,7 +151,9 @@ describe("PortalFetcher & SSE Log Parser", () => {
 
       const result = await fetchContainerLogs("prism-service", { tail: 10 });
 
-      expect(result.lines).toEqual(["2026-06-22T20:10:00.123Z Log 1"]);
+      expect(result.lines).toEqual([
+        { line: "2026-06-22T20:10:00.123Z Log 1", stream: "stdout" },
+      ]);
       expect(result.lineCount).toBe(1);
       expect(result.truncated).toBe(false);
 
@@ -171,7 +173,9 @@ describe("PortalFetcher & SSE Log Parser", () => {
 
       const result = await fetchContainerLogs("prism-service", { tail: 10 });
 
-      expect(result.lines).toEqual(["2026-06-22T20:10:00.123Z Log 1"]);
+      expect(result.lines).toEqual([
+        { line: "2026-06-22T20:10:00.123Z Log 1", stream: "stdout" },
+      ]);
       expect(result.lineCount).toBe(1);
       expect(result.truncated).toBe(false);
 
