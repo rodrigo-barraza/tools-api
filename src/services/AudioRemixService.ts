@@ -187,10 +187,50 @@ function buildTempoFilterChain(factor: number): string[] {
   return filters;
 }
 
-function compileFilterGraph(operations: AudioRemixOperation[], sourceSampleRate: number): string[] {
-  const filters: string[] = [];
+function consolidateTrimOperations(operations: AudioRemixOperation[]): AudioRemixOperation[] {
+  const consolidated: AudioRemixOperation[] = [];
+  let pendingTrimStart: number | undefined;
+  let pendingTrimEnd: number | undefined;
+  let hasPendingTrim = false;
 
   for (const operation of operations) {
+    if (operation.type === "trim") {
+      hasPendingTrim = true;
+      if (operation.start !== undefined) {
+        pendingTrimStart = operation.start;
+      }
+      if (operation.end !== undefined) {
+        pendingTrimEnd = operation.end;
+      }
+    } else {
+      if (hasPendingTrim) {
+        const mergedTrim: AudioRemixOperation = { type: "trim" };
+        if (pendingTrimStart !== undefined) mergedTrim.start = pendingTrimStart;
+        if (pendingTrimEnd !== undefined) mergedTrim.end = pendingTrimEnd;
+        consolidated.push(mergedTrim);
+        pendingTrimStart = undefined;
+        pendingTrimEnd = undefined;
+        hasPendingTrim = false;
+      }
+      consolidated.push(operation);
+    }
+  }
+
+  if (hasPendingTrim) {
+    const mergedTrim: AudioRemixOperation = { type: "trim" };
+    if (pendingTrimStart !== undefined) mergedTrim.start = pendingTrimStart;
+    if (pendingTrimEnd !== undefined) mergedTrim.end = pendingTrimEnd;
+    consolidated.push(mergedTrim);
+  }
+
+  return consolidated;
+}
+
+function compileFilterGraph(operations: AudioRemixOperation[], sourceSampleRate: number): string[] {
+  const filters: string[] = [];
+  const consolidatedOperations = consolidateTrimOperations(operations);
+
+  for (const operation of consolidatedOperations) {
     switch (operation.type) {
       case "pitch_shift": {
         const semitones = operation.semitones ?? 0;

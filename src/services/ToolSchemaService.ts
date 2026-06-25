@@ -10008,8 +10008,8 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
                 type: "number",
                 description: "fade_in/fade_out: Duration in seconds.",
               },
-              start: { type: "number", description: "trim: Start time in seconds." },
-              end: { type: "number", description: "trim: End time in seconds." },
+              start: { type: "number", description: "trim: Start time in seconds (absolute position in source audio). Combine with 'end' in a single trim operation." },
+              end: { type: "number", description: "trim: End time in seconds (absolute position in source audio, NOT duration). Must be in the same trim operation as 'start'. E.g. start=30, end=40 extracts a 10-second clip." },
               level: { type: "number", description: "volume: Volume level (0.0 to 3.0)." },
               pan: {
                 type: "number",
