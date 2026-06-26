@@ -239,3 +239,56 @@ describe("PromptLocaleService — dist/ Production Build", () => {
     expect(distKeys.size).toBe(sourceKeys.size);
   });
 });
+
+describe("PromptLocaleService — Common Params Shared Keys", () => {
+  let englishLocaleKeys: Map<string, string>;
+
+  beforeAll(() => {
+    const englishLocaleDirectory = path.join(LOCALES_DIRECTORY, "en");
+    englishLocaleKeys = loadAllLocaleKeys(englishLocaleDirectory);
+  });
+
+  const COMMON_PARAMS_KEYS = [
+    { key: "tools.common.params.maxResultsDefault10", expectedValue: "Max results (default: 10)" },
+    { key: "tools.common.params.fieldsCsv", expectedValue: "Comma-separated fields to return" },
+    { key: "tools.common.params.zeroToOne", expectedValue: "0-1" },
+    { key: "tools.common.params.lifxSelector", expectedValue: "LIFX selector. Default: 'all'." },
+    { key: "tools.common.params.mediaType", expectedValue: "Movie or TV show" },
+    { key: "tools.common.params.queryMode", expectedValue: "Query mode" },
+    { key: "tools.common.params.searchQuery", expectedValue: "Search query (action=search)" },
+    { key: "tools.common.params.backgroundColorDefault", expectedValue: "Background color (default: '#0f172a')" },
+    { key: "tools.common.params.overlayTitle", expectedValue: "Title displayed in the overlay" },
+    { key: "tools.common.params.cssColor", expectedValue: "CSS color" },
+    { key: "tools.common.params.optionalName", expectedValue: "Optional name" },
+    { key: "tools.common.params.daysOfHistory", expectedValue: "Days of history to look back" },
+    { key: "tools.common.params.discordGuildId", expectedValue: "Discord guild/server ID to query" },
+    { key: "tools.common.params.monthsOfHistory", expectedValue: "Months of history to look back" },
+    { key: "tools.common.params.yearsOfHistory", expectedValue: "Years of history to look back" },
+    { key: "tools.common.params.subredditName", expectedValue: "Subreddit name" },
+    { key: "tools.common.params.lifxAutoOn", expectedValue: "If true (default), turn the light on if it's off." },
+  ];
+
+  for (const { key, expectedValue } of COMMON_PARAMS_KEYS) {
+    it(`should resolve shared key: "${key}" with correct value`, () => {
+      expect(englishLocaleKeys.has(key)).toBe(true);
+      expect(englishLocaleKeys.get(key)).toBe(expectedValue);
+    });
+  }
+
+  it("should NOT have tool-specific duplicates of common param values", () => {
+    const commonValues = new Set(COMMON_PARAMS_KEYS.map((entry) => entry.expectedValue));
+    const duplicateKeys: string[] = [];
+
+    for (const [key, value] of englishLocaleKeys) {
+      if (
+        key.startsWith("tools.") &&
+        !key.startsWith("tools.common.") &&
+        key.includes(".params.") &&
+        commonValues.has(value)
+      ) {
+        duplicateKeys.push(key);
+      }
+    }
+    expect(duplicateKeys).toEqual([]);
+  });
+});
