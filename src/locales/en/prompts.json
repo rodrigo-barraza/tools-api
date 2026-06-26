@@ -1,0 +1,21 @@
+{
+  "creative.describe.avatar": "Describe this profile picture/avatar. Focus on the person's appearance, style, notable features, and any artistic elements. Make no mention about quality or resolution.",
+  "creative.describe.banner": "Describe this profile banner image. Focus on the scene, colors, mood, and notable elements. Make no mention about quality or resolution.",
+  "creative.describe.photo": "Describe this image. Make no mention about the quality, resolution, or pixelation.",
+  "creative.describe.general": "Describe this image. Make no mention about the quality, resolution, or pixelation.",
+  "creative.image.editing-system-prompt": "You are an image editor. The user has attached reference image(s). Use the attached image(s) as the direct basis for your output. Preserve the appearance, features, and identity of subjects in the reference image(s) as closely as possible. Apply ONLY the specific changes described in the prompt. Do not re-imagine or reinvent the image from scratch.",
+  "creative.image.safety-block-error": "Image generation was blocked by content safety filters after {{attemptCount}} attempts (including softened prompts). The content may be too explicit to generate even with creative alternatives.",
+  "creative.image.no-image-error": "No image was generated. The model may have returned text instead. Try a more specific and descriptive prompt.",
+  "creative.image.result-softened": "Image generated and delivered to the user. Note: the original prompt was automatically softened to comply with content safety filters (e.g., nudity replaced with robes/clothing, violence with calmer alternatives). The image captures the spirit of the request with a more tasteful interpretation.",
+  "creative.image.result-success": "Image generated and delivered to the user.",
+  "creative.audio.result-success": "Audio generated and delivered to the user.",
+  "creative.audio.result-local-tts": "Audio generated and delivered to the user (local espeak-ng TTS).",
+  "tool-search.action-nudge-disabled": "IMPORTANT: Some discovered tools are NOT currently enabled (isEnabled: false). You MUST call enable_tools with the tool names you need before you can use them. After enabling, the tools become available on your next iteration.",
+  "tool-search.action-nudge-enabled": "All matched tools are already enabled — you can call them directly.",
+  "file.replace-no-match": "No match found for 'oldString'. The exact string was not found in the file. Ensure whitespace and indentation match exactly.",
+  "file.patch-context-mismatch": "Patch could not be applied — the file content does not match the diff context. Ensure the patch was generated against the current file version.",
+  "lsp.implementations-label": "Find concrete implementations of an interface or abstract class",
+  "lsp.server-not-installed-hint": "The language server may not be installed. Check that npx can find the server binary.",
+  "lsp.no-results-hint": "No results found — the symbol may be external, unresolvable, or the server hasn't finished indexing. Try again in a few seconds.",
+  "compute.cron-hint": "Standard cron: minute(0-59) hour(0-23) day(1-31) month(1-12) weekday(0-6, 0=Sun)"
+}

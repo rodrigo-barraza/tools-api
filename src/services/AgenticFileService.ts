@@ -1,5 +1,6 @@
 import { escapeRegex, errorMessage } from "@rodrigo-barraza/utilities-library";
 import { requestLocalStorage } from "../middleware/HeaderPropagationMiddleware.ts";
+import PromptLocaleService from "./PromptLocaleService.ts";
 // ─── Sandboxed File Operations ──────────────────────────────
 
 import {
@@ -488,8 +489,7 @@ export async function agenticStringReplace(
 
     if (count === 0) {
       return {
-        error:
-          "No match found for 'oldString'. The exact string was not found in the file. Ensure whitespace and indentation match exactly.",
+        error: PromptLocaleService.get("en", "prompts.file.replace-no-match"),
         filePath: resolved,
         matchCount: 0,
       };
@@ -568,8 +568,7 @@ export async function agenticPatchFile(filePath: string, patch: string) {
 
     if (patched === false) {
       return {
-        error:
-          "Patch could not be applied — the file content does not match the diff context. Ensure the patch was generated against the current file version.",
+        error: PromptLocaleService.get("en", "prompts.file.patch-context-mismatch"),
         filePath: resolved,
       };
     }

@@ -8,6 +8,7 @@ import { getToolSchemas } from "./ToolSchemaService.ts";
 import { DOMAINS } from "@rodrigo-barraza/utilities-library/taxonomy";
 import { Bm25ToolIndex } from "@rodrigo-barraza/utilities-library/search";
 import type { ToolSearchMatch, ToolParameters } from "../types/tools.ts";
+import PromptLocaleService from "./PromptLocaleService.ts";
 
 type InferredToolSchema = ReturnType<typeof getToolSchemas>[number];
 
@@ -135,10 +136,8 @@ export function agenticToolSearch(
   );
 
   const actionNudge = hasDisabledMatches
-    ? "IMPORTANT: Some discovered tools are NOT currently enabled (isEnabled: false). " +
-      "You MUST call enable_tools with the tool names you need before you can use them. " +
-      "After enabling, the tools become available on your next iteration."
-    : "All matched tools are already enabled — you can call them directly.";
+    ? PromptLocaleService.get("en", "prompts.tool-search.action-nudge-disabled")
+    : PromptLocaleService.get("en", "prompts.tool-search.action-nudge-enabled");
 
   return {
     matches,

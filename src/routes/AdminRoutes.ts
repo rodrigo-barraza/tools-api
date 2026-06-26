@@ -48,15 +48,17 @@ function resolveWorkspacePath(rawPath: string) {
  * GET /admin/tool-schemas
  * Full tool schemas with endpoint metadata for dynamic clients.
  */
-router.get("/tool-schemas", (_req: Request, res: Response) => {
-  res.json(getToolSchemas());
+router.get("/tool-schemas", (req: Request, res: Response) => {
+  const locale = (req.query.locale as string) || undefined;
+  res.json(getToolSchemas(locale));
 });
 /**
  * GET /admin/tool-schemas/ai
  * Clean schemas for LLM consumption (no endpoint metadata).
  */
-router.get("/tool-schemas/ai", (_req: Request, res: Response) => {
-  res.json(getToolSchemasForAI());
+router.get("/tool-schemas/ai", (req: Request, res: Response) => {
+  const locale = (req.query.locale as string) || undefined;
+  res.json(getToolSchemasForAI(locale));
 });
 /**
  * GET /admin/tool-schemas/disabled

@@ -58,6 +58,7 @@ function staticDataset(name: string) {
 }
 
 import { DOMAINS } from "@rodrigo-barraza/utilities-library/taxonomy";
+import PromptLocaleService from "./PromptLocaleService.ts";
 
 // Reverse map: domain display name → programmatic key (e.g. "Core Harness Tools" → "core_harness")
 const DOMAIN_DISPLAY_NAME_TO_KEY = new Map<string, string>();
@@ -1583,20 +1584,20 @@ function fieldsParam(fieldEnum: string[]) {
 // Tool Definitions — JSON Schema + endpoint metadata
 // ────────────────────────────────────────────────────────────
 
-const TOOL_DEFINITIONS: ToolDefinition[] = [
+function createLocalizedToolDefinitions(translate: (key: string, variables?: Record<string, string>) => string): ToolDefinition[] {
+  return [
   // ── Weather / Environment ──────────────────────────────────
   {
     name: "get_weather_forecast",
     dataSource: cached("Open-Meteo", OPEN_METEO_INTERVAL_MS),
-    description:
-      "Get multi-day weather forecast. Each forecast entry includes temperature highs/lows, precipitation probability, wind, and conditions.",
+    description: translate("get_weather_forecast.description"),
     endpoint: { path: "/weather/weather/forecast", queryParams: ["days"] },
     parameters: {
       type: "object",
       properties: {
         days: {
           type: "number",
-          description: "Number of forecast days (default: 7, max: 14)",
+          description: translate("get_weather_forecast.params.days"),
         },
         ...fieldsParam(FIELDS.WEATHER_FORECAST),
       },
@@ -1606,8 +1607,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_avalanche_forecast",
     dataSource: cached("Avalanche Canada", AVALANCHE_INTERVAL_MS),
-    description:
-      "Get Avalanche Canada forecast for BC regions including danger ratings (alpine/treeline/below treeline), problems, and highlights.",
+    description: translate("get_avalanche_forecast.description"),
     endpoint: { path: "/weather/avalanche" },
     parameters: {
       type: "object",
@@ -1618,8 +1618,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_weather",
     dataSource: onDemand("Open-Meteo Geocoding + Forecast"),
-    description:
-      "Get live current weather and 3-day forecast for any location worldwide. Accepts a city name (geocoded automatically) or direct latitude/longitude coordinates. Returns temperature, humidity, wind, precipitation, UV index, pressure, cloud cover, sunrise/sunset, and daily forecasts. Supports metric and imperial units.",
+    description: translate("get_weather.description"),
     endpoint: {
       path: "/weather/live",
       queryParams: ["location", "latitude", "longitude", "units"],
@@ -1629,23 +1628,19 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         location: {
           type: "string",
-          description:
-            "City name, optionally with country code (e.g. 'Tokyo', 'Paris, FR', 'New York')",
+          description: translate("get_weather.params.location"),
         },
         latitude: {
           type: "number",
-          description:
-            "Latitude (use instead of location for precise coordinates)",
+          description: translate("get_weather.params.latitude"),
         },
         longitude: {
           type: "number",
-          description:
-            "Longitude (use instead of location for precise coordinates)",
+          description: translate("get_weather.params.longitude"),
         },
         units: {
           type: "string",
-          description:
-            "Unit system: metric (°C, km/h, mm) or imperial (°F, mph, inch). Default: metric",
+          description: translate("get_weather.params.units"),
           enum: ["metric", "imperial"],
         },
       },
@@ -1654,8 +1649,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_local_environment",
     dataSource: onDemand("Multiple APIs"),
-    description:
-      "Get cached environmental, weather, or space data for the server's local area. This returns pre-fetched data for the server's IP-based location — for weather at a specific place, use get_weather instead. Select a source: current_weather (temp/wind/humidity), air_quality (AQI/pollutants), earthquakes (seismic), solar_activity (flares/storms), aurora (Kp index), twilight (sunrise/sunset), tides, wildfires, iss (ISS position), neo (near-Earth objects), solar_wind, pollen, apod (NASA pic of the day), launches (rockets), warnings (NWS alerts), air_quality_google, moon_phase (current lunar phase/illumination).",
+    description: translate("get_local_environment.description"),
     endpoint: {
       path: "/weather/environment",
       queryParams: ["source"],
@@ -1665,7 +1659,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         source: {
           type: "string",
-          description: "Which environmental data source to query",
+          description: translate("get_local_environment.params.source"),
           enum: [
             "current_weather",
             "air_quality",
@@ -1688,7 +1682,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         },
         fields: {
           type: "string",
-          description: "Comma-separated fields to return (varies by source)",
+          description: translate("get_local_environment.params.fields"),
         },
       },
       required: ["source"],
@@ -1699,9 +1693,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_earthquakes",
     dataSource: onDemand("USGS Earthquake API (cached)"),
-    description:
-      "Get recent earthquake data from the USGS. Returns seismic events with magnitude, location, depth, " +
-      "tsunami alerts, and significance. Supports filtering by lookback hours, minimum magnitude, and result limit.",
+    description: translate("get_earthquakes.description"),
     endpoint: {
       path: "/weather/earthquakes/recent",
       queryParams: ["hours", "minMag", "limit", "fields"],
@@ -1711,16 +1703,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         hours: {
           type: "number",
-          description: "Lookback period in hours (default: 24, max: 168)",
+          description: translate("get_earthquakes.params.hours"),
         },
         minMag: {
           type: "number",
-          description:
-            "Minimum magnitude filter (e.g. 4.0 for significant quakes only)",
+          description: translate("get_earthquakes.params.minMag"),
         },
         limit: {
           type: "number",
-          description: "Maximum number of results (default: 100)",
+          description: translate("get_near_earth_objects.params.limit"),
         },
         ...fieldsParam(FIELDS.EARTHQUAKES),
       },
@@ -1731,10 +1722,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_solar_activity",
     dataSource: onDemand("NASA DONKI (cached)"),
-    description:
-      "Get current space weather activity including solar flares, coronal mass ejections (CMEs), " +
-      "geomagnetic storms, and earth-directed events. Returns a summary with counts, strongest flare, " +
-      "fastest CME, and estimated arrival times.",
+    description: translate("get_solar_activity.description"),
     endpoint: {
       path: "/weather/space-weather/summary",
       queryParams: ["fields"],
@@ -1751,10 +1739,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_aurora_forecast",
     dataSource: onDemand("NOAA SWPC Kp Index (cached)"),
-    description:
-      "Get the current planetary Kp index and aurora forecast. The Kp index (0-9) indicates geomagnetic " +
-      "activity — Kp ≥ 5 means a geomagnetic storm with possible aurora visibility at lower latitudes. " +
-      "Returns current Kp, classification (quiet/unsettled/storm), and 24h peak.",
+    description: translate("get_aurora_forecast.description"),
     endpoint: {
       path: "/weather/kp/current",
       queryParams: ["fields"],
@@ -1771,10 +1756,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_solar_wind",
     dataSource: onDemand("NOAA DSCOVR (cached)"),
-    description:
-      "Get real-time solar wind data from the DSCOVR satellite at the L1 Lagrange point. " +
-      "Returns speed (km/s), density (protons/cm³), temperature, and interplanetary magnetic field components (Bz, Bt). " +
-      "A southward Bz (negative) and high speed (>500 km/s) indicate conditions favorable for aurora.",
+    description: translate("get_solar_wind.description"),
     endpoint: {
       path: "/weather/solar-wind/latest",
       queryParams: ["fields"],
@@ -1791,10 +1773,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_twilight",
     dataSource: onDemand("Sunrise-Sunset API (cached)"),
-    description:
-      "Get sunrise, sunset, twilight times, solar noon, and day length for the server's location. " +
-      "Includes civil, nautical, and astronomical twilight begin/end times. " +
-      "Useful for circadian light automation, photography golden hour, and astronomical observation planning.",
+    description: translate("get_twilight.description"),
     endpoint: {
       path: "/weather/twilight",
       queryParams: ["fields"],
@@ -1811,10 +1790,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_tides",
     dataSource: onDemand("NOAA Tides & Currents (cached)"),
-    description:
-      "Get current and upcoming tide predictions for the configured tide station. " +
-      "Returns tide times, heights, and type (high/low). Use get_tides for the full schedule, " +
-      "or request via get_local_environment with source='tides' for the cached version.",
+    description: translate("get_tides.description"),
     endpoint: {
       path: "/weather/tides",
       queryParams: ["fields"],
@@ -1831,10 +1807,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_wildfires",
     dataSource: onDemand("NASA EONET (cached)"),
-    description:
-      "Get active wildfire events worldwide from NASA's Earth Observatory. " +
-      "Returns fire name, coordinates, status (open/closed), magnitude, and source URLs. " +
-      "Data is refreshed from the EONET API automatically.",
+    description: translate("get_wildfires.description"),
     endpoint: {
       path: "/weather/wildfires",
       queryParams: ["fields"],
@@ -1851,9 +1824,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_iss_location",
     dataSource: onDemand("ISS API (cached)"),
-    description:
-      "Get the current position of the International Space Station (latitude, longitude, timestamp) " +
-      "and the list of astronauts currently aboard. Position is updated frequently via the ISS-Now API.",
+    description: translate("get_iss_location.description"),
     endpoint: {
       path: "/weather/iss",
       queryParams: ["fields"],
@@ -1870,10 +1841,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_near_earth_objects",
     dataSource: onDemand("NASA NeoWs (cached)"),
-    description:
-      "Get near-Earth objects (asteroids) tracked by NASA. Returns total count, hazardous count, " +
-      "closest approach details (miss distance in km and lunar distances), largest object, " +
-      "and relative velocities. Supports filtering by lookback days and hazardous-only.",
+    description: translate("get_near_earth_objects.description"),
     endpoint: {
       path: "/weather/neo/recent",
       queryParams: ["days", "hazardousOnly", "limit", "fields"],
@@ -1883,15 +1851,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         days: {
           type: "number",
-          description: "Lookback period in days (default: 7)",
+          description: translate("get_near_earth_objects.params.days"),
         },
         hazardousOnly: {
           type: "boolean",
-          description: "If true, only return potentially hazardous asteroids",
+          description: translate("get_near_earth_objects.params.hazardousOnly"),
         },
         limit: {
           type: "number",
-          description: "Maximum number of results (default: 100)",
+          description: translate("get_near_earth_objects.params.limit"),
         },
         ...fieldsParam(FIELDS.NEO),
       },
@@ -1902,10 +1870,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_space_launches",
     dataSource: onDemand("Launch Library 2 (cached)"),
-    description:
-      "Get upcoming and recent space launches worldwide. Returns launch name, status, provider, " +
-      "rocket, mission description, pad location, and images. Use the summary endpoint for a quick " +
-      "overview including the next upcoming launch.",
+    description: translate("get_space_launches.description"),
     endpoint: {
       path: "/weather/launches/summary",
       queryParams: ["fields"],
@@ -1922,10 +1887,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_nasa_apod",
     dataSource: onDemand("NASA APOD API (cached)"),
-    description:
-      "Get NASA's Astronomy Picture of the Day. Returns the title, explanation, image URL " +
-      "(standard and HD), media type (image/video), date, and copyright info. " +
-      "A new picture is posted each day by NASA.",
+    description: translate("get_nasa_apod.description"),
     endpoint: {
       path: "/weather/apod",
       queryParams: ["fields"],
@@ -1942,11 +1904,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_moon_phase",
     dataSource: onDemand("Algorithmic (cached)"),
-    description:
-      "Get the current moon phase using a pure algorithmic calculation based on the synodic lunar cycle (~29.53 days). " +
-      "Returns phase name (New Moon, Waxing Crescent, First Quarter, Waxing Gibbous, Full Moon, Waning Gibbous, Last Quarter, Waning Crescent), " +
-      "illumination percentage, age in days, waxing/waning state, and dates for the next new moon and full moon. " +
-      "No external API dependency — computed from the synodic period relative to a known reference New Moon.",
+    description: translate("get_moon_phase.description"),
     endpoint: {
       path: "/weather/moon-phase",
       queryParams: ["fields"],
@@ -1963,10 +1921,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_pollen_forecast",
     dataSource: onDemand("Google Pollen API (cached)"),
-    description:
-      "Get current pollen levels for grass, tree, and weed allergens. Returns index values (0-5), " +
-      "categories (None/Very Low/Low/Moderate/High/Very High), and whether each type is in season. " +
-      "Useful for allergy sufferers and outdoor activity planning.",
+    description: translate("get_pollen_forecast.description"),
     endpoint: {
       path: "/weather/pollen/today",
       queryParams: ["fields"],
@@ -1983,10 +1938,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_weather_warnings",
     dataSource: onDemand("Environment Canada (cached)"),
-    description:
-      "Get active weather warnings and advisories from Environment Canada. " +
-      "Returns warning count and details including type, severity, and affected areas. " +
-      "Useful for severe weather awareness.",
+    description: translate("get_weather_warnings.description"),
     endpoint: {
       path: "/weather/warnings",
       queryParams: ["fields"],
@@ -2003,10 +1955,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_detailed_air_quality",
     dataSource: onDemand("Google Air Quality API (cached)"),
-    description:
-      "Get detailed air quality data from Google's Air Quality API. Returns the Universal AQI, " +
-      "US EPA AQI, dominant pollutant, and individual pollutant concentrations (PM2.5, PM10, O3, NO2, SO2, CO). " +
-      "More granular than the standard air quality from get_local_environment.",
+    description: translate("get_detailed_air_quality.description"),
     endpoint: {
       path: "/weather/airquality/google",
       queryParams: ["fields"],
@@ -2025,10 +1974,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "read_rss_feed",
     dataSource: onDemand("xml2js"),
-    description:
-      "Fetch and parse an RSS or Atom feed from a URL. Returns the feed title, description, " +
-      "and a list of entries with title, link, published date, and content/summary. " +
-      "Useful for reading blog posts, news feeds, podcast feeds, and any syndicated content.",
+    description: translate("read_rss_feed.description"),
     endpoint: {
       path: "/knowledge/rss/feed",
       queryParams: ["url", "limit"],
@@ -2038,11 +1984,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         url: {
           type: "string",
-          description: "URL of the RSS or Atom feed",
+          description: translate("read_rss_feed.params.url"),
         },
         limit: {
           type: "number",
-          description: "Maximum number of feed entries to return (default: 20)",
+          description: translate("read_rss_feed.params.limit"),
         },
       },
       required: ["url"],
@@ -2053,10 +1999,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_pypi_package",
     dataSource: onDemand("PyPI JSON API"),
-    description:
-      "Look up a Python package on PyPI. Returns the package name, version, summary, author, " +
-      "license, homepage, repository URL, Python version requirements, and dependencies. " +
-      "Similar to get_package_info but specifically for the PyPI registry.",
+    description: translate("get_pypi_package.description"),
     endpoint: {
       path: "/knowledge/pypi/package",
       queryParams: ["name"],
@@ -2066,8 +2009,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         name: {
           type: "string",
-          description:
-            "PyPI package name (e.g. 'numpy', 'requests', 'fastapi')",
+          description: translate("get_pypi_package.params.name"),
         },
       },
       required: ["name"],
@@ -2078,8 +2020,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_events",
     dataSource: onDemand("Beacon event aggregation"),
-    description:
-      "Get community events. Actions: 'search' (full-text with optional source/category), 'upcoming' (next N days), 'today' (today's events), 'summary' (aggregate stats).",
+    description: translate("get_events.description"),
     endpoint: {
       path: "/event/events",
       queryParams: ["action", "q", "source", "category", "days", "limit"],
@@ -2089,26 +2030,26 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         action: {
           type: "string",
-          description: "Event query mode",
+          description: translate("get_events.params.action"),
           enum: ["search", "upcoming", "today", "summary"],
         },
         "q": { type: "string", description: "Search query (action=search)" },
         source: {
           type: "string",
-          description: "Event source filter (action=search)",
+          description: translate("get_events.params.source"),
         },
         category: {
           type: "string",
-          description: "Category filter (action=search)",
+          description: translate("get_events.params.category"),
         },
         days: {
           type: "number",
-          description: "Days ahead (action=upcoming, default: 7)",
+          description: translate("get_events.params.days"),
         },
         limit: { type: "number", description: "Max results (default: 20)" },
         fields: {
           type: "string",
-          description: "Comma-separated fields to return",
+          description: translate("search_media.params.fields"),
         },
       },
       required: ["action"],
@@ -2119,8 +2060,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_commodities",
     dataSource: onDemand("YAML-sourced commodities"),
-    description:
-      "Get commodity market data. Actions: 'summary' (all overview), 'category' (by category), 'ticker' (specific ticker), 'categories' (list categories), 'history' (price history).",
+    description: translate("get_commodities.description"),
     endpoint: {
       path: "/market/commodities/data",
       queryParams: ["action", "category", "ticker", "hours"],
@@ -2130,20 +2070,20 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         action: {
           type: "string",
-          description: "Query mode",
+          description: translate("get_sec_filings.params.action"),
           enum: ["summary", "category", "ticker", "categories", "history"],
         },
         category: {
           type: "string",
-          description: "Category name (action=category)",
+          description: translate("get_commodities.params.category"),
         },
         ticker: {
           type: "string",
-          description: "Commodity ticker (action=ticker or history)",
+          description: translate("get_commodities.params.ticker"),
         },
         hours: {
           type: "number",
-          description: "Lookback hours (action=history, default: 24)",
+          description: translate("get_commodities.params.hours"),
         },
         ...fieldsParam(FIELDS.COMMODITY),
       },
@@ -2155,8 +2095,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_trends",
     dataSource: onDemand("Trend aggregation"),
-    description:
-      "Get trending topics. Actions: 'current' (by source), 'hot' (hottest), 'top' (top over N hours).",
+    description: translate("get_trends.description"),
     endpoint: {
       path: "/trend/data",
       queryParams: ["action", "source", "hours", "limit"],
@@ -2166,16 +2105,16 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         action: {
           type: "string",
-          description: "Trend query mode",
+          description: translate("get_trends.params.action"),
           enum: ["current", "hot", "top"],
         },
         source: {
           type: "string",
-          description: "Source filter (action=current)",
+          description: translate("get_trends.params.source"),
         },
         hours: {
           type: "number",
-          description: "Lookback hours (action=top, default: 24)",
+          description: translate("get_trends.params.hours"),
         },
         limit: { type: "number", description: "Max results (default: 20)" },
         ...fieldsParam(FIELDS.TRENDS),
@@ -2191,8 +2130,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "Amazon / eBay / Etsy / ProductHunt / Costco",
       AMAZON_INTERVAL_MS,
     ),
-    description:
-      "Search for products with pricing, ratings, and deal information from Amazon, eBay, Etsy, Product Hunt, Costco US, and Costco Canada.",
+    description: translate("search_products.description"),
     endpoint: {
       path: "/product/products/search",
       queryParams: ["q", "category", "limit"],
@@ -2202,15 +2140,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         "q": {
           type: "string",
-          description: "Product search query",
+          description: translate("search_products.params.q"),
         },
         category: {
           type: "string",
-          description: "Product category filter",
+          description: translate("search_products.params.category"),
         },
         limit: {
           type: "number",
-          description: "Maximum number of products to return (default: 20)",
+          description: translate("search_products.params.limit"),
         },
         ...fieldsParam(FIELDS.PRODUCTS),
       },
@@ -2223,8 +2161,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       "Amazon / eBay / Etsy / ProductHunt / Costco",
       AMAZON_INTERVAL_MS,
     ),
-    description:
-      "Get currently trending products ranked by trending score. Shows top deals and popular items.",
+    description: translate("get_trending_products.description"),
     endpoint: {
       path: "/product/products/trending",
       queryParams: ["limit"],
@@ -2234,7 +2171,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         limit: {
           type: "number",
-          description: "Maximum number of products to return (default: 50)",
+          description: translate("get_trending_products.params.limit"),
         },
         ...fieldsParam(FIELDS.PRODUCTS),
       },
@@ -2244,8 +2181,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_watchlist_availability",
     dataSource: cached("Best Buy Canada", BESTBUY_CA_AVAILABILITY_INTERVAL_MS),
-    description:
-      "Get Best Buy Canada product availability for all monitored watchlist items. Shows in-stock/out-of-stock status.",
+    description: translate("get_watchlist_availability.description"),
     endpoint: { path: "/product/products/availability" },
     parameters: {
       type: "object",
@@ -2256,8 +2192,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "check_sku_availability",
     dataSource: onDemand("Best Buy Canada"),
-    description:
-      "Check Best Buy Canada availability for specific SKUs on demand. Useful for checking arbitrary products not on the watchlist.",
+    description: translate("check_sku_availability.description"),
     endpoint: {
       path: "/product/products/availability/check",
       queryParams: ["skus"],
@@ -2267,7 +2202,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         skus: {
           type: "string",
-          description: "Comma-separated list of Best Buy SKU numbers to check",
+          description: translate("check_sku_availability.params.skus"),
         },
         ...fieldsParam(FIELDS.PRODUCT_AVAILABILITY),
       },
@@ -2277,8 +2212,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_costco_us_products",
     dataSource: cached("Costco US", COSTCO_INTERVAL_MS),
-    description:
-      "Get products from Costco US (costco.com) including laptops, desktops, TVs, phones, tablets, headphones, speakers, cameras, video games, and appliances. Shows name, price (USD), rating, and product URL.",
+    description: translate("get_costco_us_products.description"),
     endpoint: {
       path: "/product/products/source/costco_us",
     },
@@ -2291,8 +2225,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_costco_ca_products",
     dataSource: cached("Costco Canada", COSTCO_INTERVAL_MS),
-    description:
-      "Get products from Costco Canada (costco.ca) including laptops, desktops, TVs, phones, tablets, headphones, speakers, cameras, video games, and appliances. Shows name, price (CAD), rating, and product URL.",
+    description: translate("get_costco_ca_products.description"),
     endpoint: {
       path: "/product/products/source/costco_ca",
     },
@@ -2305,8 +2238,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "search_amazon_products",
     dataSource: cached("Amazon", AMAZON_INTERVAL_MS),
-    description:
-      "Get best-selling products from Amazon.com across electronics, computers, phones, gaming, home & kitchen, beauty, fashion, sports, toys, books, and automotive. Shows name, price (USD), rank, rating, review count, and product URL.",
+    description: translate("search_amazon_products.description"),
     endpoint: {
       path: "/product/products/source/amazon",
     },
@@ -2321,8 +2253,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_market_news",
     dataSource: cached("Finnhub", FINNHUB_NEWS_INTERVAL_MS),
-    description:
-      "Get latest market news articles. Can optionally filter by company symbol for company-specific news.",
+    description: translate("get_market_news.description"),
     endpoint: {
       path: "/finance/news",
       queryParams: ["symbol"],
@@ -2332,8 +2263,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         symbol: {
           type: "string",
-          description:
-            "Optional stock symbol to get company-specific news instead of general market news",
+          description: translate("get_market_news.params.symbol"),
         },
         ...fieldsParam(FIELDS.MARKET_NEWS),
       },
@@ -2343,8 +2273,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_earnings_calendar",
     dataSource: cached("Finnhub", FINNHUB_EARNINGS_INTERVAL_MS),
-    description:
-      "Get upcoming earnings calendar showing which companies are reporting earnings, with estimated and actual EPS and revenue.",
+    description: translate("get_earnings_calendar.description"),
     endpoint: { path: "/finance/earnings" },
     parameters: {
       type: "object",
@@ -2357,8 +2286,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_stock",
     dataSource: onDemand("Finnhub API"),
-    description:
-      "Get stock market data by symbol. Actions: 'quote' (real-time price/change), 'profile' (company info, sector, market cap), 'recommendation' (analyst consensus), 'financials' (key financial metrics).",
+    description: translate("get_stock.description"),
     endpoint: {
       path: "/finance/stock/data",
       queryParams: ["action", "symbol"],
@@ -2368,16 +2296,16 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         action: {
           type: "string",
-          description: "Data type to retrieve",
+          description: translate("get_stock.params.action"),
           enum: ["quote", "profile", "recommendation", "financials"],
         },
         symbol: {
           type: "string",
-          description: "Stock ticker symbol (e.g. 'AAPL', 'MSFT', 'TSLA')",
+          description: translate("get_stock.params.symbol"),
         },
         fields: {
           type: "string",
-          description: "Comma-separated fields to return",
+          description: translate("search_media.params.fields"),
         },
       },
       required: ["action", "symbol"],
@@ -2388,8 +2316,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_macro",
     dataSource: onDemand("FRED (Federal Reserve)"),
-    description:
-      "Access macroeconomic data from FRED. Actions: 'indicators' (key indicator summary), 'search' (search data series), 'series' (series metadata by ID), 'observations' (time series data points).",
+    description: translate("get_macro.description"),
     endpoint: {
       path: "/finance/macro/data",
       queryParams: [
@@ -2408,33 +2335,32 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         action: {
           type: "string",
-          description: "Query mode",
+          description: translate("get_sec_filings.params.action"),
           enum: ["indicators", "search", "series", "observations"],
         },
         "q": { type: "string", description: "Search query (action=search)" },
         seriesId: {
           type: "string",
-          description:
-            "FRED series ID like 'GDP', 'UNRATE' (action=series or observations)",
+          description: translate("get_macro.params.seriesId"),
         },
         limit: { type: "number", description: "Max results (default: 10)" },
         orderBy: { type: "string", description: "Sort field (action=search)" },
         sortOrder: {
           type: "string",
           enum: ["asc", "desc"],
-          description: "Sort direction (action=observations)",
+          description: translate("get_macro.params.sortOrder"),
         },
         observationStart: {
           type: "string",
-          description: "Start date YYYY-MM-DD (action=observations)",
+          description: translate("get_macro.params.observationStart"),
         },
         observationEnd: {
           type: "string",
-          description: "End date YYYY-MM-DD (action=observations)",
+          description: translate("get_macro.params.observationEnd"),
         },
         fields: {
           type: "string",
-          description: "Comma-separated fields to return",
+          description: translate("search_media.params.fields"),
         },
       },
       required: ["action"],
@@ -2445,9 +2371,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_historical_prices",
     dataSource: onDemand("Yahoo Finance"),
-    description:
-      "Get OHLCV (Open/High/Low/Close/Volume) candlestick data for any stock, ETF, index, crypto, or commodity. " +
-      "Supports intraday (1m, 5m, 15m, 1h) through monthly intervals. Essential for price history, charting, and microtrend analysis.",
+    description: translate("get_historical_prices.description"),
     endpoint: {
       path: "/finance/prices/:symbol",
       pathParams: ["symbol"],
@@ -2458,17 +2382,16 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         symbol: {
           type: "string",
-          description:
-            "Ticker symbol (e.g. 'AAPL', 'BTC-USD', '^VIX', 'GC=F' for gold)",
+          description: translate("get_historical_prices.params.symbol"),
         },
         interval: {
           type: "string",
-          description: "Candle timeframe",
+          description: translate("get_historical_prices.params.interval"),
           enum: ["1m", "5m", "15m", "1h", "1d", "1wk", "1mo"],
         },
         period: {
           type: "string",
-          description: "Lookback period",
+          description: translate("get_historical_prices.params.period"),
           enum: ["1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "ytd", "max"],
         },
         ...fieldsParam(FIELDS.HISTORICAL_PRICES),
@@ -2481,9 +2404,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_technical_analysis",
     dataSource: onDemand("Yahoo Finance + technicalindicators"),
-    description:
-      "Compute technical analysis indicators for any ticker. Includes RSI, MACD, SMA, EMA, Bollinger Bands, " +
-      "Stochastic, ADX, ATR, OBV, and VWAP. Returns computed values, per-indicator signals, and an overall buy/sell consensus.",
+    description: translate("get_technical_analysis.description"),
     endpoint: {
       path: "/finance/technical/:symbol",
       pathParams: ["symbol"],
@@ -2494,22 +2415,19 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         symbol: {
           type: "string",
-          description:
-            "Ticker symbol (e.g. 'AAPL', 'TSLA', 'BTC-USD')",
+          description: translate("get_technical_analysis.params.symbol"),
         },
         indicators: {
           type: "string",
-          description:
-            "Comma-separated indicators to compute (default: rsi,macd,sma,ema,bb). Available: rsi, macd, sma, ema, bb, stoch, adx, atr, obv, vwap",
+          description: translate("get_technical_analysis.params.indicators"),
         },
         period: {
           type: "number",
-          description:
-            "Indicator period / lookback window (default: 14). e.g. RSI(14), SMA(20), EMA(50)",
+          description: translate("get_technical_analysis.params.period"),
         },
         interval: {
           type: "string",
-          description: "Candle timeframe for analysis",
+          description: translate("get_technical_analysis.params.interval"),
           enum: ["1d", "1wk", "1mo"],
         },
         ...fieldsParam(FIELDS.TECHNICAL_ANALYSIS),
@@ -2522,9 +2440,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_volatility",
     dataSource: onDemand("Yahoo Finance"),
-    description:
-      "Get a volatility dashboard with VIX, VVIX, VIX-linked ETFs/ETNs (VXX, UVXY, SVXY), and a regime classification " +
-      "(complacent/normal/elevated/high/extreme). Essential for risk assessment and market sentiment.",
+    description: translate("get_volatility.description"),
     endpoint: {
       path: "/finance/volatility",
     },
@@ -2540,9 +2456,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_fear_greed_index",
     dataSource: onDemand("Alternative.me (cached)"),
-    description:
-      "Get the Crypto Fear & Greed Index — a sentiment gauge from 0 (Extreme Fear) to 100 (Extreme Greed). " +
-      "Shows current value, classification, and historical trend. Useful for contrarian analysis.",
+    description: translate("get_fear_greed_index.description"),
     endpoint: {
       path: "/finance/fear-greed",
       queryParams: ["limit"],
@@ -2552,8 +2466,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         limit: {
           type: "number",
-          description:
-            "Number of historical days to include (default: 30)",
+          description: translate("get_fear_greed_index.params.limit"),
         },
         ...fieldsParam(FIELDS.FEAR_GREED),
       },
@@ -2564,9 +2477,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_sec_filings",
     dataSource: onDemand("SEC EDGAR (public)"),
-    description:
-      "Access SEC EDGAR for institutional 13F filings (hedge fund holdings), 10-K/10-Q reports, 8-K events, " +
-      "insider transactions, and XBRL financial facts. Actions: 'filings' (by CIK), 'search' (find filers), 'facts' (XBRL financials).",
+    description: translate("get_sec_filings.description"),
     endpoint: {
       path: "/finance/sec/filings/:cik",
       pathParams: ["cik"],
@@ -2577,27 +2488,24 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         action: {
           type: "string",
-          description: "Query mode",
+          description: translate("get_sec_filings.params.action"),
           enum: ["filings", "search", "facts"],
         },
         cik: {
           type: "string",
-          description:
-            "SEC CIK number (action=filings or facts). e.g. '1067983' for Berkshire Hathaway",
+          description: translate("get_sec_filings.params.cik"),
         },
         "q": {
           type: "string",
-          description:
-            "Search query for finding filers (action=search). e.g. 'Berkshire', 'Renaissance'",
+          description: translate("get_sec_filings.params.q"),
         },
         filingType: {
           type: "string",
-          description:
-            "Filter by filing type (action=filings). e.g. '13-F', '10-K', '10-Q', '8-K'",
+          description: translate("get_sec_filings.params.filingType"),
         },
         limit: {
           type: "number",
-          description: "Max filings to return (default: 20)",
+          description: translate("get_sec_filings.params.limit"),
         },
         ...fieldsParam(FIELDS.SEC_FILINGS),
       },
@@ -2609,10 +2517,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_sector_performance",
     dataSource: onDemand("Yahoo Finance (Sector SPDRs)"),
-    description:
-      "Get S&P 500 sector performance heatmap using Select Sector SPDR ETFs. " +
-      "Shows all 11 GICS sectors (Technology, Health Care, Financials, Energy, etc.) with prices, " +
-      "daily change, and top/bottom performers.",
+    description: translate("get_sector_performance.description"),
     endpoint: {
       path: "/finance/sectors",
     },
@@ -2628,8 +2533,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "search_books",
     dataSource: onDemand("Open Library API"),
-    description:
-      "Search or look up books/authors from Open Library. Actions: 'search' (full-text search), 'work' (book details by work key), 'author' (author info by key).",
+    description: translate("search_books.description"),
     endpoint: {
       path: "/knowledge/books/lookup",
       queryParams: ["action", "q", "workKey", "authorKey", "limit"],
@@ -2639,26 +2543,25 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         action: {
           type: "string",
-          description: "Lookup mode",
+          description: translate("search_books.params.action"),
           enum: ["search", "work", "author"],
         },
         "q": { type: "string", description: "Search query (action=search)" },
         workKey: {
           type: "string",
-          description: "Open Library work key like 'OL45804W' (action=work)",
+          description: translate("search_books.params.workKey"),
         },
         authorKey: {
           type: "string",
-          description:
-            "Open Library author key like 'OL34184A' (action=author)",
+          description: translate("search_books.params.authorKey"),
         },
         limit: {
           type: "number",
-          description: "Max results (action=search, default: 10)",
+          description: translate("search_books.params.limit"),
         },
         fields: {
           type: "string",
-          description: "Comma-separated fields to return",
+          description: translate("search_media.params.fields"),
         },
       },
       required: ["action"],
@@ -2667,8 +2570,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_country",
     dataSource: onDemand("REST Countries + World Bank"),
-    description:
-      "Look up country info or development indicators. Actions: 'info' (by name), 'code' (by ISO code), 'indicators' (development data for a country), 'rank' (rank countries by indicator), 'compare' (compare multiple countries).",
+    description: translate("get_country.description"),
     endpoint: {
       path: "/knowledge/countries/data",
       queryParams: [
@@ -2686,34 +2588,34 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         action: {
           type: "string",
-          description: "Query mode",
+          description: translate("get_sec_filings.params.action"),
           enum: ["info", "code", "indicators", "rank", "compare"],
         },
         name: { type: "string", description: "Country name (action=info)" },
         code: {
           type: "string",
-          description: "ISO 2/3-letter code (action=code or indicators)",
+          description: translate("get_country.params.code"),
         },
         indicator: {
           type: "string",
-          description: "World Bank indicator ID (action=rank or compare)",
+          description: translate("get_country.params.indicator"),
         },
         countries: {
           type: "string",
-          description: "Comma-separated country codes (action=compare)",
+          description: translate("get_country.params.countries"),
         },
         limit: {
           type: "number",
-          description: "Max results (action=rank, default: 10)",
+          description: translate("get_country.params.limit"),
         },
         order: {
           type: "string",
           enum: ["asc", "desc"],
-          description: "Sort order (action=rank)",
+          description: translate("get_element.params.order"),
         },
         fields: {
           type: "string",
-          description: "Comma-separated fields to return",
+          description: translate("search_media.params.fields"),
         },
       },
       required: ["action"],
@@ -2722,8 +2624,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_element",
     dataSource: staticDataset("Periodic Table (119 elements)"),
-    description:
-      "Query the periodic table. Actions: 'search' (text search), 'lookup' (by symbol), 'rank' (rank by property), 'categories' (list categories).",
+    description: translate("get_element.description"),
     endpoint: {
       path: "/knowledge/elements/data",
       queryParams: [
@@ -2742,23 +2643,23 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         action: {
           type: "string",
-          description: "Query mode",
+          description: translate("get_sec_filings.params.action"),
           enum: ["search", "lookup", "rank", "categories"],
         },
         "q": { type: "string", description: "Search query (action=search)" },
         symbol: {
           type: "string",
-          description: "Element symbol like 'Fe', 'Au' (action=lookup)",
+          description: translate("get_element.params.symbol"),
         },
         property: {
           type: "string",
-          description: "Property to rank by (action=rank)",
+          description: translate("get_exoplanet.params.field"),
         },
         limit: { type: "number", description: "Max results (default: 10)" },
         order: {
           type: "string",
           enum: ["asc", "desc"],
-          description: "Sort order (action=rank)",
+          description: translate("get_element.params.order"),
         },
         category: { type: "string", description: "Filter by element category" },
         block: { type: "string", description: "Filter by block (s, p, d, f)" },
@@ -2770,8 +2671,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_exoplanet",
     dataSource: staticDataset("NASA Exoplanet Archive (~6,153 planets)"),
-    description:
-      "Query the NASA exoplanet database. Actions: 'search' (text search), 'lookup' (by name), 'rank' (rank by property), 'stats' (discovery statistics), 'habitable' (habitable zone planets).",
+    description: translate("get_exoplanet.description"),
     endpoint: {
       path: "/knowledge/exoplanets/data",
       queryParams: ["action", "q", "name", "field", "limit", "order", "method"],
@@ -2781,28 +2681,28 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         action: {
           type: "string",
-          description: "Query mode",
+          description: translate("get_sec_filings.params.action"),
           enum: ["search", "lookup", "rank", "stats", "habitable"],
         },
         "q": { type: "string", description: "Search query (action=search)" },
         name: { type: "string", description: "Planet name (action=lookup)" },
         field: {
           type: "string",
-          description: "Property to rank by (action=rank)",
+          description: translate("get_exoplanet.params.field"),
         },
         limit: { type: "number", description: "Max results (default: 10)" },
         order: {
           type: "string",
           enum: ["asc", "desc"],
-          description: "Sort order",
+          description: translate("search_reddit.params.sort"),
         },
         method: {
           type: "string",
-          description: "Discovery method filter (action=search)",
+          description: translate("get_exoplanet.params.method"),
         },
         fields: {
           type: "string",
-          description: "Comma-separated fields to return",
+          description: translate("search_media.params.fields"),
         },
       },
       required: ["action"],
@@ -2811,8 +2711,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_anime",
     dataSource: onDemand("Jikan (MyAnimeList)"),
-    description:
-      "Search and browse anime. Actions: 'search' (text search), 'top' (top rated), 'season' (current season), 'schedule' (specific year+season, e.g. Fall 2026), 'details' (full details by MAL ID).",
+    description: translate("get_anime.description"),
     endpoint: {
       path: "/knowledge/anime/data",
       queryParams: ["action", "q", "id", "limit", "year", "season"],
@@ -2822,7 +2721,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         action: {
           type: "string",
-          description: "Query mode",
+          description: translate("get_sec_filings.params.action"),
           enum: ["search", "top", "season", "schedule", "details"],
         },
         "q": { type: "string", description: "Search query (action=search)" },
@@ -2830,7 +2729,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         year: { type: "number", description: "Year for schedule lookup (action=schedule)" },
         season: {
           type: "string",
-          description: "Season name (action=schedule)",
+          description: translate("get_anime.params.season"),
           enum: ["winter", "spring", "summer", "fall"],
         },
         limit: { type: "number", description: "Max results (default: 10, schedule: 25)" },
@@ -2843,8 +2742,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_word_definition",
     dataSource: onDemand("Free Dictionary API"),
-    description:
-      "Look up a word's definition, pronunciation, phonetics (with audio URLs), synonyms, antonyms, etymology, and usage examples using the Free Dictionary API.",
+    description: translate("get_word_definition.description"),
     endpoint: {
       path: "/knowledge/dictionary/:word",
       pathParams: ["word"],
@@ -2854,7 +2752,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         word: {
           type: "string",
-          description: "The word to look up",
+          description: translate("get_word_definition.params.word"),
         },
         ...fieldsParam(FIELDS.DICTIONARY),
       },
@@ -2864,8 +2762,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "search_papers",
     dataSource: onDemand("arXiv"),
-    description:
-      "Search academic papers on arXiv. Returns titles, abstracts, authors, publication dates, PDF links, and category classifications. Covers CS, physics, math, biology, economics, and more.",
+    description: translate("search_papers.description"),
     endpoint: {
       path: "/knowledge/papers/search",
       queryParams: ["q", "category", "limit", "sortBy"],
@@ -2875,20 +2772,19 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         "q": {
           type: "string",
-          description: "Search query for paper titles/abstracts",
+          description: translate("search_papers.params.q"),
         },
         category: {
           type: "string",
-          description:
-            "arXiv category filter (e.g. cs.AI, cs.LG, cs.CL, cs.CV, cs.SE, physics, math, econ, stat)",
+          description: translate("search_papers.params.category"),
         },
         limit: {
           type: "number",
-          description: "Max results (default: 10, max: 30)",
+          description: translate("search_papers.params.limit"),
         },
         sortBy: {
           type: "string",
-          description: "Sort order: relevance, lastUpdatedDate, submittedDate",
+          description: translate("search_papers.params.sortBy"),
           enum: ["relevance", "lastUpdatedDate", "submittedDate"],
         },
         ...fieldsParam(FIELDS.PAPERS),
@@ -2899,11 +2795,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "search_youtube",
     dataSource: onDemand("YouTube Data API v3"),
-    description:
-      "Search YouTube for videos matching a query. Returns ranked results with titles, descriptions, channel info, thumbnails, view counts, like counts, comment counts, and durations. " +
-      "Supports filtering by upload date, duration length, sort order, specific channel, region, and safety level. " +
-      "Use this to find videos on any topic — tutorials, reviews, music, news, etc. " +
-      "Each search costs ~101 API quota units (daily limit: 10,000 units ≈ 99 searches/day).",
+    description: translate("search_youtube.description"),
     endpoint: {
       path: "/knowledge/youtube/search",
       queryParams: ["q", "limit", "order", "channelId", "publishedAfter", "publishedBefore", "videoDuration", "safeSearch", "regionCode", "relevanceLanguage"],
@@ -2913,49 +2805,46 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         q: {
           type: "string",
-          description:
-            "Search query (e.g. 'TypeScript tutorial for beginners', 'best noise cancelling headphones review 2025', 'lofi hip hop beats')",
+          description: translate("search_youtube.params.q"),
         },
         limit: {
           type: "number",
-          description: "Maximum number of results to return (default: 10, max: 25)",
+          description: translate("search_youtube.params.limit"),
         },
         order: {
           type: "string",
           enum: ["relevance", "date", "rating", "viewCount", "title"],
-          description:
-            "Sort order for results. 'relevance' (default) uses YouTube's ranking algorithm. 'viewCount' sorts by most viewed. 'date' sorts by newest.",
+          description: translate("search_youtube.params.order"),
         },
         channelId: {
           type: "string",
-          description: "Restrict results to a specific YouTube channel ID (e.g. 'UC_x5XG1OV2P6uZZ5FSM9Ttw' for Google Developers)",
+          description: translate("search_youtube.params.channelId"),
         },
         publishedAfter: {
           type: "string",
-          description: "Only return videos published after this date (ISO 8601 format, e.g. '2025-01-01T00:00:00Z')",
+          description: translate("search_youtube.params.publishedAfter"),
         },
         publishedBefore: {
           type: "string",
-          description: "Only return videos published before this date (ISO 8601 format, e.g. '2025-12-31T23:59:59Z')",
+          description: translate("search_youtube.params.publishedBefore"),
         },
         videoDuration: {
           type: "string",
           enum: ["any", "short", "medium", "long"],
-          description:
-            "Filter by duration: 'short' (< 4 min), 'medium' (4–20 min), 'long' (> 20 min). Default: 'any'",
+          description: translate("search_youtube.params.videoDuration"),
         },
         safeSearch: {
           type: "string",
           enum: ["moderate", "strict", "none"],
-          description: "Safe search filtering level. Default: 'moderate'",
+          description: translate("search_youtube.params.safeSearch"),
         },
         regionCode: {
           type: "string",
-          description: "ISO 3166-1 alpha-2 country code to bias results (e.g. 'US', 'CA', 'GB', 'JP')",
+          description: translate("search_youtube.params.regionCode"),
         },
         relevanceLanguage: {
           type: "string",
-          description: "ISO 639-1 language code to bias results toward a specific language (e.g. 'en', 'es', 'fr', 'ja')",
+          description: translate("search_youtube.params.relevanceLanguage"),
         },
         ...fieldsParam(FIELDS.YOUTUBE_SEARCH),
       },
@@ -2965,8 +2854,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_youtube_video",
     dataSource: onDemand("YouTube oEmbed + youtube-transcript"),
-    description:
-      "Get full metadata and transcript for a YouTube video. Returns title, author, description, publish date, duration, view count, keywords, and the full timestamped transcript/captions. Accepts any YouTube URL format (youtube.com/watch, youtu.be, shorts, live) or a raw 11-character video ID. Useful for summarizing video content, extracting quotes, or analyzing spoken content without watching.",
+    description: translate("get_youtube_video.description"),
     endpoint: {
       path: "/knowledge/youtube/video",
       queryParams: ["url", "lang", "transcript", "timestamps"],
@@ -2976,24 +2864,20 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         url: {
           type: "string",
-          description:
-            "YouTube video URL or 11-character video ID (e.g. 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'https://youtu.be/dQw4w9WgXcQ', or 'dQw4w9WgXcQ')",
+          description: translate("get_youtube_video.params.url"),
         },
         lang: {
           type: "string",
-          description:
-            "Preferred transcript language code (e.g. 'en', 'es', 'fr'). Defaults to 'en'.",
+          description: translate("get_youtube_video.params.lang"),
         },
         transcript: {
           type: "string",
-          description:
-            "Set to 'false' to skip transcript fetching and only return metadata. Defaults to true.",
+          description: translate("get_youtube_video.params.transcript"),
           enum: ["true", "false"],
         },
         timestamps: {
           type: "string",
-          description:
-            "Set to 'false' to get plain text without timestamps. Defaults to true (timestamped format).",
+          description: translate("get_youtube_video.params.timestamps"),
           enum: ["true", "false"],
         },
         ...fieldsParam(FIELDS.YOUTUBE_VIDEO),
@@ -3004,16 +2888,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "download_video",
     dataSource: onDemand("yt-dlp + ffmpeg"),
-    description:
-      "Download a video from any supported platform as MP4, extract audio as MP3, or convert to animated GIF. " +
-      "Supports YouTube (all URL formats including youtube.com/watch, youtu.be, shorts, live, embed, or raw 11-character video IDs), " +
-      "Twitter/X, TikTok, Twitch clips, Vimeo, Dailymotion, Streamable, Facebook, and 1000+ more sites — " +
-      "yt-dlp auto-detects the platform from the URL. " +
-      "For 'mp4' and 'mp3': downloads the media and returns a persistent download URL (stored in cloud storage). " +
-      "For 'gif': downloads the video, converts it to an animated GIF using an optimized ffmpeg palette pipeline, and displays it automatically — " +
-      "do NOT include the GIF URL in your text response, the user already sees it rendered. " +
-      "Use download_reddit_video for Reddit videos (subreddit/author metadata). " +
-      "Maximum input file size is 200 MB.",
+    description: translate("download_video.description"),
     endpoint: {
       path: "/knowledge/video/download",
       queryParams: ["url", "format"],
@@ -3023,14 +2898,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         url: {
           type: "string",
-          description:
-            "Any public video URL or YouTube video ID (e.g. 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'https://youtu.be/dQw4w9WgXcQ', 'dQw4w9WgXcQ', 'https://x.com/user/status/123', 'https://www.tiktok.com/@user/video/123')",
+          description: translate("download_video.params.url"),
         },
         format: {
           type: "string",
           enum: ["mp4", "mp3", "gif"],
-          description:
-            "Output format: 'mp4' for video download (default), 'mp3' for audio-only extraction, or 'gif' for animated GIF conversion.",
+          description: translate("download_video.params.format"),
         },
       },
       required: ["url"],
@@ -3039,12 +2912,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "trim_video",
     dataSource: onDemand("ffmpeg"),
-    description:
-      "Trim a video to a specific time range using ffmpeg's stream copy (instant, no re-encoding). " +
-      "Accepts any public video URL or a download URL from a previous download_video / download_reddit_video call. " +
-      "Specify start and/or end timestamps in HH:MM:SS or seconds format. " +
-      "Returns a persistent download URL for the trimmed clip (stored in cloud storage). " +
-      "Maximum input file size is 200 MB. Maximum output duration is 5 minutes.",
+    description: translate("trim_video.description"),
     endpoint: {
       method: "POST",
       path: "/knowledge/video/trim",
@@ -3055,18 +2923,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         url: {
           type: "string",
-          description:
-            "Source video URL — any public video URL or a MinIO download URL from a previous video download tool call.",
+          description: translate("trim_video.params.url"),
         },
         start: {
           type: "string",
-          description:
-            "Start timestamp for the trim (e.g. '00:01:30', '90', '1:30'). Defaults to the beginning of the video.",
+          description: translate("trim_video.params.start"),
         },
         end: {
           type: "string",
-          description:
-            "End timestamp for the trim (e.g. '00:02:00', '120', '2:00'). Defaults to the end of the video.",
+          description: translate("trim_video.params.end"),
         },
       },
       required: ["url"],
@@ -3077,8 +2942,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "read_url",
     dataSource: onDemand("Auto-detected platform API"),
-    description:
-      "Extract structured content from any URL. Auto-detects platform and uses the best extraction method: GitHub (repo metadata + README + languages), Reddit (post + comments), Twitter/X (tweet + metrics + media), Hacker News (post + comments), Stack Overflow (question + answers with code blocks), YouTube (metadata + transcript). For any other URL (news articles, blogs, documentation, etc.), extracts the page title, metadata, and main readable text using lightweight HTML parsing — no headless browser needed.",
+    description: translate("read_url.description"),
     endpoint: {
       path: "/knowledge/web/content",
       queryParams: [
@@ -3097,43 +2961,38 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         url: {
           type: "string",
-          description:
-            "Any URL. Supported platforms are auto-detected: GitHub (URL or owner/repo), Reddit, Twitter/X, Hacker News, Stack Overflow, YouTube. All other URLs use generic article extraction.",
+          description: translate("read_url.params.url"),
         },
         commentLimit: {
           type: "number",
-          description:
-            "Max comments to fetch (Reddit default: 20, HN default: 25)",
+          description: translate("read_url.params.commentLimit"),
         },
         answerLimit: {
           type: "number",
-          description:
-            "Max answers to fetch for Stack Overflow (default: 5, max: 10)",
+          description: translate("read_url.params.answerLimit"),
         },
         readme: {
           type: "string",
-          description: "Include repository README for GitHub (default: true)",
+          description: translate("read_url.params.readme"),
           enum: ["true", "false"],
         },
         languages: {
           type: "string",
-          description: "Include language breakdown for GitHub (default: true)",
+          description: translate("read_url.params.languages"),
           enum: ["true", "false"],
         },
         transcript: {
           type: "string",
-          description: "Include video transcript for YouTube (default: true)",
+          description: translate("read_url.params.transcript"),
           enum: ["true", "false"],
         },
         lang: {
           type: "string",
-          description:
-            "Preferred transcript language for YouTube (default: 'en')",
+          description: translate("read_url.params.lang"),
         },
         maxChars: {
           type: "number",
-          description:
-            "Max characters of extracted text for generic pages (default: 15000)",
+          description: translate("read_url.params.maxChars"),
         },
       },
       required: ["url"],
@@ -3142,8 +3001,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_package_info",
     dataSource: onDemand("NPM Registry / PyPI JSON API"),
-    description:
-      "Look up a package on NPM or PyPI. Returns version, description, dependencies, license, README, weekly downloads (NPM), Python version requirements (PyPI), and more. Specify the registry to search.",
+    description: translate("get_package_info.description"),
     endpoint: {
       path: "/knowledge/package/info",
       queryParams: ["name", "registry", "readme"],
@@ -3153,17 +3011,16 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         name: {
           type: "string",
-          description:
-            "Package name (e.g. 'express', '@types/node', 'requests', 'numpy')",
+          description: translate("get_package_info.params.name"),
         },
         registry: {
           type: "string",
-          description: "Which package registry to search",
+          description: translate("get_package_info.params.registry"),
           enum: ["npm", "pypi"],
         },
         readme: {
           type: "string",
-          description: "Include README content (NPM only, default: true)",
+          description: translate("get_package_info.params.readme"),
           enum: ["true", "false"],
         },
       },
@@ -3173,8 +3030,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_wikipedia_summary",
     dataSource: onDemand("Wikipedia REST API"),
-    description:
-      "Get a summary of any Wikipedia article including extract text, thumbnail image, description, and page URL. Good for quick factual lookups.",
+    description: translate("get_wikipedia_summary.description"),
     endpoint: {
       path: "/knowledge/wikipedia/summary/:title",
       pathParams: ["title"],
@@ -3184,8 +3040,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         title: {
           type: "string",
-          description:
-            "Wikipedia article title (e.g. 'Albert Einstein', 'Machine learning')",
+          description: translate("get_wikipedia_summary.params.title"),
         },
         ...fieldsParam(FIELDS.WIKIPEDIA_SUMMARY),
       },
@@ -3195,8 +3050,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_on_this_day",
     dataSource: onDemand("Wikipedia REST API"),
-    description:
-      "Get historical events, births, deaths, or holidays that happened on a specific date from Wikipedia. Defaults to today if no date specified.",
+    description: translate("get_on_this_day.description"),
     endpoint: {
       path: "/knowledge/wikipedia/onthisday",
       queryParams: ["type", "month", "day"],
@@ -3206,17 +3060,16 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         type: {
           type: "string",
-          description:
-            "Type of events: selected, births, deaths, events, holidays",
+          description: translate("get_on_this_day.params.type"),
           enum: ["selected", "births", "deaths", "events", "holidays"],
         },
         month: {
           type: "number",
-          description: "Month (1-12), defaults to today",
+          description: translate("get_on_this_day.params.month"),
         },
         day: {
           type: "number",
-          description: "Day (1-31), defaults to today",
+          description: translate("get_on_this_day.params.day"),
         },
         ...fieldsParam(FIELDS.ON_THIS_DAY),
       },
@@ -3225,8 +3078,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "search_reddit",
     dataSource: onDemand("Reddit API"),
-    description:
-      "Search for posts or comments across all of Reddit or within a specific subreddit.",
+    description: translate("search_reddit.description"),
     endpoint: {
       path: "/knowledge/reddit/search",
       queryParams: [
@@ -3246,35 +3098,35 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         "q": { type: "string", description: "Search query" },
         subreddit: {
           type: "string",
-          description: "Optional subreddit to restrict the search to",
+          description: translate("search_reddit.params.subreddit"),
         },
         type: {
           type: "string",
           enum: ["link", "comment"],
-          description: "Type of results: link (posts) or comment",
+          description: translate("search_reddit.params.type"),
         },
         sort: {
           type: "string",
           enum: ["relevance", "new", "hot", "top", "comments"],
-          description: "Sort order",
+          description: translate("search_reddit.params.sort"),
         },
         "t": {
           type: "string",
           enum: ["hour", "day", "week", "month", "year", "all"],
-          description: "Time range filter",
+          description: translate("search_reddit.params.t"),
         },
         limit: {
           type: "number",
-          description: "Results limit per page (default: 25, max: 100)",
+          description: translate("search_reddit.params.limit"),
         },
         maxPages: {
           type: "number",
-          description: "Maximum pages to retrieve (default: 5)",
+          description: translate("search_reddit.params.maxPages"),
         },
         nsfw: {
           type: "string",
           enum: ["true", "false"],
-          description: "Whether to include NSFW results (default: false)",
+          description: translate("search_reddit.params.nsfw"),
         },
       },
       required: ["q"],
@@ -3283,8 +3135,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "search_reddit_subreddits",
     dataSource: onDemand("Reddit API"),
-    description:
-      "Search for subreddits by keyword, returning matching community names, descriptions, and subscriber counts.",
+    description: translate("search_reddit_subreddits.description"),
     endpoint: {
       path: "/knowledge/reddit/subreddits/search",
       queryParams: ["q", "limit", "nsfw"],
@@ -3294,16 +3145,16 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         "q": {
           type: "string",
-          description: "Keyword query to search subreddits",
+          description: translate("search_reddit_subreddits.params.q"),
         },
         limit: {
           type: "number",
-          description: "Limit the number of results (default: 10, max: 25)",
+          description: translate("search_reddit_subreddits.params.limit"),
         },
         nsfw: {
           type: "string",
           enum: ["true", "false"],
-          description: "Whether to include NSFW subreddits (default: false)",
+          description: translate("search_reddit_subreddits.params.nsfw"),
         },
       },
       required: ["q"],
@@ -3312,8 +3163,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_reddit_subreddit_info",
     dataSource: onDemand("Reddit API"),
-    description:
-      "Get metadata for a specific subreddit including title, description, subscriber count, active user count, rules enabled, and NSFW status.",
+    description: translate("get_reddit_subreddit_info.description"),
     endpoint: {
       path: "/knowledge/reddit/r/:subreddit/info",
       pathParams: ["subreddit"],
@@ -3323,7 +3173,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         subreddit: {
           type: "string",
-          description: "Subreddit name (e.g. 'science', 'explainlikeimfive')",
+          description: translate("get_reddit_subreddit_info.params.subreddit"),
         },
       },
       required: ["subreddit"],
@@ -3332,8 +3182,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_reddit_subreddit_feed",
     dataSource: onDemand("Reddit API"),
-    description:
-      "Get hot, top, new, rising, or controversial posts from a specific subreddit.",
+    description: translate("get_reddit_subreddit_feed.description"),
     endpoint: {
       path: "/knowledge/reddit/r/:subreddit/feed",
       pathParams: ["subreddit"],
@@ -3346,21 +3195,21 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         sort: {
           type: "string",
           enum: ["hot", "new", "top", "rising", "controversial"],
-          description: "Sort order (default: hot)",
+          description: translate("get_reddit_subreddit_feed.params.sort"),
         },
         "t": {
           type: "string",
           enum: ["hour", "day", "week", "month", "year", "all"],
-          description: "Time range (for top/controversial sort, default: day)",
+          description: translate("get_reddit_subreddit_feed.params.t"),
         },
         limit: {
           type: "number",
-          description: "Number of posts to fetch (default: 25, max: 100)",
+          description: translate("get_reddit_subreddit_feed.params.limit"),
         },
         pinned: {
           type: "string",
           enum: ["true", "false"],
-          description: "Include pinned/stickied posts (default: false)",
+          description: translate("get_reddit_subreddit_feed.params.pinned"),
         },
       },
       required: ["subreddit"],
@@ -3369,7 +3218,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_reddit_subreddit_rules",
     dataSource: onDemand("Reddit API"),
-    description: "Get community rules for a specific subreddit.",
+    description: translate("get_reddit_subreddit_rules.description"),
     endpoint: {
       path: "/knowledge/reddit/r/:subreddit/rules",
       pathParams: ["subreddit"],
@@ -3385,8 +3234,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_reddit_subreddit_wiki_pages",
     dataSource: onDemand("Reddit API"),
-    description:
-      "List all wiki page names for a specific subreddit (rules, guides, index, etc.).",
+    description: translate("get_reddit_subreddit_wiki_pages.description"),
     endpoint: {
       path: "/knowledge/reddit/r/:subreddit/wiki",
       pathParams: ["subreddit"],
@@ -3402,8 +3250,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_reddit_subreddit_wiki_page",
     dataSource: onDemand("Reddit API"),
-    description:
-      "Get the markdown contents of a specific subreddit wiki page (e.g. 'faq' or 'index').",
+    description: translate("get_reddit_subreddit_wiki_page.description"),
     endpoint: {
       path: "/knowledge/reddit/r/:subreddit/wiki/:page",
       pathParams: ["subreddit", "page"],
@@ -3414,7 +3261,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         subreddit: { type: "string", description: "Subreddit name" },
         page: {
           type: "string",
-          description: "Wiki page name (default: 'index')",
+          description: translate("get_reddit_subreddit_wiki_page.params.page"),
         },
       },
       required: ["subreddit", "page"],
@@ -3423,8 +3270,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_reddit_user_history",
     dataSource: onDemand("Reddit API"),
-    description:
-      "Get recent activity (posts and comments) of a Reddit user, including karma levels, timestamps, subreddits, and post titles.",
+    description: translate("get_reddit_user_history.description"),
     endpoint: {
       path: "/knowledge/reddit/user/:username",
       pathParams: ["username"],
@@ -3435,31 +3281,30 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         username: {
           type: "string",
-          description: "Reddit username (without u/ prefix)",
+          description: translate("get_reddit_user_history.params.username"),
         },
         category: {
           type: "string",
           enum: ["overview", "comments", "submitted", "gilded"],
-          description: "Category of history to fetch (default: overview)",
+          description: translate("get_reddit_user_history.params.category"),
         },
         limit: {
           type: "number",
-          description:
-            "Maximum number of items to fetch (default: 25, max: 100)",
+          description: translate("get_reddit_user_history.params.limit"),
         },
         maxPages: {
           type: "number",
-          description: "Maximum number of pages to fetch (default: 10)",
+          description: translate("get_reddit_user_history.params.maxPages"),
         },
         sort: {
           type: "string",
           enum: ["new", "hot", "top", "controversial"],
-          description: "Sort order (default: new)",
+          description: translate("get_reddit_user_history.params.sort"),
         },
         "t": {
           type: "string",
           enum: ["hour", "day", "week", "month", "year", "all"],
-          description: "Time range (default: all)",
+          description: translate("get_reddit_user_history.params.t"),
         },
       },
       required: ["username"],
@@ -3468,8 +3313,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_reddit_user_profile",
     dataSource: onDemand("Reddit API"),
-    description:
-      "Get basic profile info for a Reddit user: username, creation date, link/comment karma, moderator status, Snoovatar, and profile description.",
+    description: translate("get_reddit_user_profile.description"),
     endpoint: {
       path: "/knowledge/reddit/user/:username/profile",
       pathParams: ["username"],
@@ -3486,14 +3330,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "download_reddit_video",
     dataSource: onDemand("Reddit .json API + yt-dlp + ffmpeg"),
-    description:
-      "Download a Reddit-hosted video (v.redd.it) as MP4 or convert to animated GIF. " +
-      "Reddit stores video and audio as separate DASH streams — this tool handles muxing them together automatically. " +
-      "Accepts any Reddit post URL, redd.it short link, or v.redd.it direct video link. " +
-      "For 'mp4': downloads the video and returns a persistent download URL (stored in cloud storage). " +
-      "For 'gif': downloads the video, converts it to an animated GIF using an optimized ffmpeg palette pipeline, and displays it automatically — " +
-      "do NOT include the GIF URL in your text response, the user already sees it rendered. " +
-      "Only works with Reddit's native video player — external links (YouTube, Streamable, etc.) are not supported.",
+    description: translate("download_reddit_video.description"),
     endpoint: {
       path: "/knowledge/reddit/video",
       queryParams: ["url", "format"],
@@ -3503,14 +3340,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         url: {
           type: "string",
-          description:
-            "Reddit post URL, redd.it short URL, or v.redd.it direct video URL (e.g. 'https://www.reddit.com/r/videos/comments/abc123/my_video', 'https://redd.it/abc123', 'https://v.redd.it/abc123')",
+          description: translate("download_reddit_video.params.url"),
         },
         format: {
           type: "string",
           enum: ["mp4", "gif"],
-          description:
-            "Output format: 'mp4' for video download (default) or 'gif' for animated GIF conversion.",
+          description: translate("download_reddit_video.params.format"),
         },
       },
       required: ["url"],
@@ -3521,8 +3356,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "search_media",
     dataSource: onDemand("TMDB API"),
-    description:
-      "Search for movies or TV shows by title. Returns matching results with overview, release date, ratings, and poster images.",
+    description: translate("search_media.description"),
     endpoint: {
       path: "/knowledge/media/search",
       queryParams: ["type", "q", "year", "page"],
@@ -3533,17 +3367,17 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         type: {
           type: "string",
           enum: ["movie", "tv"],
-          description: "Search movies or TV shows",
+          description: translate("search_media.params.type"),
         },
         "q": { type: "string", description: "Search query (title)" },
         year: {
           type: "number",
-          description: "Filter by release/first air date year",
+          description: translate("search_media.params.year"),
         },
         page: { type: "number", description: "Page number (default: 1)" },
         fields: {
           type: "string",
-          description: "Comma-separated fields to return",
+          description: translate("search_media.params.fields"),
         },
       },
       required: ["type", "q"],
@@ -3552,8 +3386,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_media_details",
     dataSource: onDemand("TMDB API"),
-    description:
-      "Get full details for a movie or TV show by TMDB ID — overview, genres, runtime, ratings, revenue, production companies, seasons (TV).",
+    description: translate("get_media_details.description"),
     endpoint: {
       path: "/knowledge/media/:id",
       pathParams: ["id"],
@@ -3565,12 +3398,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         type: {
           type: "string",
           enum: ["movie", "tv"],
-          description: "Movie or TV show",
+          description: translate("get_watch_providers.params.type"),
         },
         id: { type: "number", description: "TMDB ID" },
         fields: {
           type: "string",
-          description: "Comma-separated fields to return",
+          description: translate("search_media.params.fields"),
         },
       },
       required: ["type", "id"],
@@ -3579,7 +3412,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_media_credits",
     dataSource: onDemand("TMDB API"),
-    description: "Get cast and crew credits for a movie or TV show by TMDB ID.",
+    description: translate("get_media_credits.description"),
     endpoint: {
       path: "/knowledge/media/:id/credits",
       pathParams: ["id"],
@@ -3591,12 +3424,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         type: {
           type: "string",
           enum: ["movie", "tv"],
-          description: "Movie or TV show",
+          description: translate("get_watch_providers.params.type"),
         },
         id: { type: "number", description: "TMDB ID" },
         fields: {
           type: "string",
-          description: "Comma-separated fields to return",
+          description: translate("search_media.params.fields"),
         },
       },
       required: ["type", "id"],
@@ -3605,7 +3438,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_trending_media",
     dataSource: onDemand("TMDB API"),
-    description: "Get trending movies or TV shows for the day or week.",
+    description: translate("get_trending_media.description"),
     endpoint: {
       path: "/knowledge/media/trending",
       queryParams: ["type", "timeWindow", "limit"],
@@ -3616,17 +3449,17 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         type: {
           type: "string",
           enum: ["movie", "tv"],
-          description: "Movie or TV show",
+          description: translate("get_watch_providers.params.type"),
         },
         timeWindow: {
           type: "string",
           enum: ["day", "week"],
-          description: "Trending window (default: week)",
+          description: translate("get_trending_media.params.timeWindow"),
         },
         limit: { type: "number", description: "Max results (default: 10)" },
         fields: {
           type: "string",
-          description: "Comma-separated fields to return",
+          description: translate("search_media.params.fields"),
         },
       },
       required: ["type"],
@@ -3635,8 +3468,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "browse_media",
     dataSource: onDemand("TMDB API"),
-    description:
-      "Discover movies or TV shows by genre, year, rating, and vote count. Useful for browsing, not by name.",
+    description: translate("browse_media.description"),
     endpoint: {
       path: "/knowledge/media/discover",
       queryParams: [
@@ -3655,26 +3487,26 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         type: {
           type: "string",
           enum: ["movie", "tv"],
-          description: "Movie or TV show",
+          description: translate("get_watch_providers.params.type"),
         },
         genreId: {
           type: "number",
-          description: "Genre ID (use get_media_genres)",
+          description: translate("browse_media.params.genreId"),
         },
         year: { type: "number", description: "Release/first air date year" },
         sortBy: {
           type: "string",
-          description: "Sort: popularity.desc, vote_average.desc, etc.",
+          description: translate("browse_media.params.sortBy"),
         },
         minVoteAverage: {
           type: "number",
-          description: "Min vote average (0-10)",
+          description: translate("browse_media.params.minVoteAverage"),
         },
         minVoteCount: { type: "number", description: "Min vote count" },
         page: { type: "number", description: "Page number (default: 1)" },
         fields: {
           type: "string",
-          description: "Comma-separated fields to return",
+          description: translate("search_media.params.fields"),
         },
       },
       required: ["type"],
@@ -3683,8 +3515,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_media_genres",
     dataSource: onDemand("TMDB API"),
-    description:
-      "Get the list of genre IDs and names for movies or TV shows. Use these IDs with browse_media.",
+    description: translate("get_media_genres.description"),
     endpoint: {
       path: "/knowledge/media/genres",
       queryParams: ["type"],
@@ -3695,7 +3526,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         type: {
           type: "string",
           enum: ["movie", "tv"],
-          description: "Movie or TV show",
+          description: translate("get_watch_providers.params.type"),
         },
       },
       required: ["type"],
@@ -3708,8 +3539,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_now_playing_media",
     dataSource: onDemand("TMDB API"),
-    description:
-      "Get movies currently in theaters, upcoming movie releases, TV shows airing today, or TV shows currently on the air. Actions: 'now_playing' (movies in theaters), 'upcoming' (coming soon to theaters), 'airing_today' (TV episodes airing today), 'on_the_air' (TV shows with episodes in the last 7 days).",
+    description: translate("get_now_playing_media.description"),
     endpoint: {
       path: "/knowledge/media/now-playing",
       queryParams: ["action", "region", "page", "limit"],
@@ -3720,11 +3550,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         action: {
           type: "string",
           enum: ["now_playing", "upcoming", "airing_today", "on_the_air"],
-          description: "What to retrieve: now_playing (movies in theaters), upcoming (coming soon), airing_today (TV today), on_the_air (TV this week)",
+          description: translate("get_now_playing_media.params.action"),
         },
         region: {
           type: "string",
-          description: "ISO 3166-1 country code for theatrical region (default: US). Only applies to movie actions.",
+          description: translate("get_now_playing_media.params.region"),
         },
         page: { type: "number", description: "Page number (default: 1)" },
         limit: { type: "number", description: "Max results per page (default: 20)" },
@@ -3737,8 +3567,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_media_recommendations",
     dataSource: onDemand("TMDB API"),
-    description:
-      "Get recommended or similar movies/TV shows based on a given TMDB ID. Actions: 'recommendations' (algorithm-based picks), 'similar' (same genre/keyword matches). Great for 'if you liked X' suggestions.",
+    description: translate("get_media_recommendations.description"),
     endpoint: {
       path: "/knowledge/media/:id/recommendations",
       pathParams: ["id"],
@@ -3750,13 +3579,13 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         type: {
           type: "string",
           enum: ["movie", "tv"],
-          description: "Movie or TV show",
+          description: translate("get_watch_providers.params.type"),
         },
         id: { type: "number", description: "TMDB ID of the source movie/show" },
         action: {
           type: "string",
           enum: ["recommendations", "similar"],
-          description: "recommendations (TMDb algorithm picks) or similar (genre/keyword matches)",
+          description: translate("get_media_recommendations.params.action"),
         },
         limit: { type: "number", description: "Max results (default: 10)" },
       },
@@ -3768,8 +3597,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "search_person",
     dataSource: onDemand("TMDB API"),
-    description:
-      "Search for actors, directors, and other people in film/TV by name, get their biography and details by TMDB ID, or get their full filmography (combined movie + TV credits). Actions: 'search' (find by name), 'details' (biography by ID), 'filmography' (all credits by ID).",
+    description: translate("search_person.description"),
     endpoint: {
       path: "/knowledge/person/search",
       queryParams: ["action", "q", "id", "limit"],
@@ -3780,7 +3608,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         action: {
           type: "string",
           enum: ["search", "details", "filmography"],
-          description: "search (find by name), details (biography by ID), filmography (all credits by ID)",
+          description: translate("search_person.params.action"),
         },
         "q": { type: "string", description: "Search query — person name (action=search)" },
         id: { type: "number", description: "TMDB person ID (action=details or filmography)" },
@@ -3795,8 +3623,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_watch_providers",
     dataSource: onDemand("TMDB API (JustWatch data)"),
-    description:
-      "Find where to stream, rent, or buy a movie or TV show. Returns streaming services (flatrate), rental, purchase, and free options with provider names and logos. Data powered by JustWatch via TMDB.",
+    description: translate("get_watch_providers.description"),
     endpoint: {
       path: "/knowledge/media/:id/watch-providers",
       pathParams: ["id"],
@@ -3808,12 +3635,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         type: {
           type: "string",
           enum: ["movie", "tv"],
-          description: "Movie or TV show",
+          description: translate("get_watch_providers.params.type"),
         },
         id: { type: "number", description: "TMDB ID" },
         region: {
           type: "string",
-          description: "ISO 3166-1 country code (default: US). Examples: US, CA, GB, DE, JP",
+          description: translate("get_watch_providers.params.region"),
         },
       },
       required: ["type", "id"],
@@ -3824,8 +3651,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "rank_foods_by_category",
     dataSource: staticDataset("USDA SR Legacy"),
-    description:
-      "Find foods highest in a specific nutrient. Choose a category (macros, minerals, vitamins, amino_acids, lipids, carbs, sterols) and nutrient to rank by. Examples: 'foods high in protein' → category='macros', nutrient='protein'. 'Best omega-3 sources' → category='lipids', nutrient='c22_d6_n3_dha'. Use list_category_nutrients to discover valid nutrient names per category.",
+    description: translate("rank_foods_by_category.description"),
     endpoint: {
       path: "/health/nutrition/top",
       queryParams: ["category", "nutrient", "limit", "kingdom", "foodType"],
@@ -3835,7 +3661,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         category: {
           type: "string",
-          description: "Nutrient category",
+          description: translate("rank_foods_by_category.params.category"),
           enum: [
             "macros",
             "minerals",
@@ -3848,8 +3674,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         },
         nutrient: {
           type: "string",
-          description:
-            "Specific nutrient to rank by (use list_category_nutrients for valid values)",
+          description: translate("rank_foods_by_category.params.nutrient"),
         },
         limit: { type: "number", description: "Max results (default: 10)" },
         kingdom: { type: "string", enum: ["animalia", "plantae", "fungi"] },
@@ -3862,8 +3687,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "search_drugs",
     dataSource: onDemand("OpenFDA + FDA NDC API"),
-    description:
-      "Search for drug information. Use searchBy to control mode: 'name' (general search), 'ndc_search' (FDA NDC directory), 'ndc_lookup' (exact NDC code), 'ingredient' (by active ingredient), 'pharm_class' (by pharmacological class).",
+    description: translate("search_drugs.description"),
     endpoint: {
       path: "/health/drugs/unified",
       queryParams: ["q", "searchBy", "limit", "dosageForm", "productType"],
@@ -3873,12 +3697,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         "q": {
           type: "string",
-          description:
-            "Search query — drug name, NDC code, ingredient, or class",
+          description: translate("search_drugs.params.q"),
         },
         searchBy: {
           type: "string",
-          description: "Search mode",
+          description: translate("search_drugs.params.searchBy"),
           enum: [
             "name",
             "ndc_search",
@@ -3890,15 +3713,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         limit: { type: "number", description: "Max results (default: 10)" },
         dosageForm: {
           type: "string",
-          description: "Dosage form filter (ndc_search only)",
+          description: translate("search_drugs.params.dosageForm"),
         },
         productType: {
           type: "string",
-          description: "Product type filter (ndc_search only)",
+          description: translate("search_drugs.params.productType"),
         },
         fields: {
           type: "string",
-          description: "Comma-separated fields to return",
+          description: translate("search_media.params.fields"),
         },
       },
       required: ["q"],
@@ -3908,8 +3731,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_drug_adverse_events",
     dataSource: onDemand("openFDA"),
-    description:
-      "Get FDA adverse event reports for a drug, including reported reactions, seriousness (death, hospitalization, life-threatening), and patient demographics.",
+    description: translate("get_drug_adverse_events.description"),
     endpoint: {
       path: "/health/drugs/adverse-events",
       queryParams: ["drug", "limit"],
@@ -3919,11 +3741,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         drug: {
           type: "string",
-          description: "Drug name (brand or generic)",
+          description: translate("get_drug_adverse_events.params.drug"),
         },
         limit: {
           type: "number",
-          description: "Max results (default: 10)",
+          description: translate("search_usda_nutrition.params.limit"),
         },
         ...fieldsParam(FIELDS.DRUG_ADVERSE_EVENTS),
       },
@@ -3933,8 +3755,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_drug_recalls",
     dataSource: onDemand("openFDA"),
-    description:
-      "Get FDA drug recall and enforcement actions. Returns recall classification, reason, affected products, and recalling firm.",
+    description: translate("get_drug_recalls.description"),
     endpoint: {
       path: "/health/drugs/recalls",
       queryParams: ["q", "limit"],
@@ -3944,12 +3765,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         "q": {
           type: "string",
-          description:
-            "Optional search term for recalls (drug name or keyword)",
+          description: translate("get_drug_recalls.params.q"),
         },
         limit: {
           type: "number",
-          description: "Max results (default: 10)",
+          description: translate("search_usda_nutrition.params.limit"),
         },
         ...fieldsParam(FIELDS.DRUG_RECALLS),
       },
@@ -3960,8 +3780,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "search_gym_exercises",
     dataSource: staticDataset("Free Exercise DB & Wger"),
-    description:
-      "Search for gym exercises by keyword, category, equipment, target muscle, or difficulty level. Returns detailed instructions and muscle group targets.",
+    description: translate("search_gym_exercises.description"),
     endpoint: {
       path: "/health/exercises/search",
       queryParams: [
@@ -3980,38 +3799,35 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         "q": {
           type: "string",
-          description: "Optional search query (e.g. 'curl', 'bench')",
+          description: translate("search_gym_exercises.params.q"),
         },
         limit: {
           type: "number",
-          description: "Max results (default: 10)",
+          description: translate("search_usda_nutrition.params.limit"),
         },
         category: {
           type: "string",
-          description: "Filter by category (e.g. 'strength', 'stretching')",
+          description: translate("search_gym_exercises.params.category"),
         },
         equipment: {
           type: "string",
-          description:
-            "Filter by equipment (e.g. 'dumbbell', 'barbell', 'body only')",
+          description: translate("search_gym_exercises.params.equipment"),
         },
         force: {
           type: "string",
-          description: "Filter by force (e.g. 'push', 'pull', 'static')",
+          description: translate("search_gym_exercises.params.force"),
         },
         level: {
           type: "string",
-          description:
-            "Filter by level (e.g. 'beginner', 'intermediate', 'expert')",
+          description: translate("search_gym_exercises.params.level"),
         },
         mechanic: {
           type: "string",
-          description: "Filter by mechanic (e.g. 'compound', 'isolation')",
+          description: translate("search_gym_exercises.params.mechanic"),
         },
         muscle: {
           type: "string",
-          description:
-            "Filter by target muscle (e.g. 'chest', 'biceps', 'abdominals')",
+          description: translate("search_gym_exercises.params.muscle"),
         },
         ...fieldsParam(FIELDS.EXERCISES),
       },
@@ -4020,8 +3836,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_gym_exercise_categories",
     dataSource: staticDataset("Free Exercise DB & Wger"),
-    description:
-      "Get all available gym exercise categories, equipment types, and muscle groups.",
+    description: translate("get_gym_exercise_categories.description"),
     endpoint: {
       path: "/health/exercises/categories",
       queryParams: [],
@@ -4034,7 +3849,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_gym_exercise_by_id",
     dataSource: staticDataset("Free Exercise DB & Wger"),
-    description: "Get details for a specific gym exercise by its exact ID.",
+    description: translate("get_gym_exercise_by_id.description"),
     endpoint: {
       path: "/health/exercises/{id}",
       pathParams: ["id"],
@@ -4044,7 +3859,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         id: {
           type: "string",
-          description: "Exact exercise ID (e.g. 'Biceps_Curl')",
+          description: translate("get_gym_exercise_by_id.params.id"),
         },
         ...fieldsParam(FIELDS.EXERCISES),
       },
@@ -4056,8 +3871,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "search_usda_nutrition",
     dataSource: staticDataset("USDA SR Legacy"),
-    description:
-      "Search USDA's curated database of ~1,346 raw whole foods (fruits, vegetables, meats, fish, nuts, grains, fungi) for detailed nutritional information. Returns per-100g nutrient values including macros, minerals, vitamins, amino acids, lipid profiles, and more. Use nutrientTypes parameter to request specific nutrient categories. For ranking foods by a specific nutrient (e.g. 'highest iron'), use the top_foods_by_* tools instead.",
+    description: translate("search_usda_nutrition.description"),
     endpoint: {
       path: "/health/nutrition/search",
       queryParams: ["q", "limit", "kingdom", "foodType", "nutrientTypes"],
@@ -4067,27 +3881,24 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         "q": {
           type: "string",
-          description:
-            "Food name to search (e.g. 'chicken', 'spinach', 'salmon', 'almond')",
+          description: translate("search_usda_nutrition.params.q"),
         },
         limit: {
           type: "number",
-          description: "Max results (default: 10)",
+          description: translate("search_usda_nutrition.params.limit"),
         },
         kingdom: {
           type: "string",
-          description:
-            "Filter by biological kingdom: animalia, plantae, or fungi",
+          description: translate("search_usda_nutrition.params.kingdom"),
           enum: ["animalia", "plantae", "fungi"],
         },
         foodType: {
           type: "string",
-          description: "Filter by food type: animal, plant, or fungus",
+          description: translate("search_usda_nutrition.params.foodType"),
         },
         nutrientTypes: {
           type: "string",
-          description:
-            "Comma-separated nutrient categories to include: macros, minerals, vitamins, amino_acids, lipids, carbs, sterols. Omit for all.",
+          description: translate("search_usda_nutrition.params.nutrientTypes"),
         },
         ...fieldsParam(FIELDS.USDA_NUTRITION),
       },
@@ -4097,8 +3908,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "rank_foods_by_nutrient",
     dataSource: staticDataset("USDA SR Legacy"),
-    description:
-      "Rank raw whole foods by a specific nutrient content (highest first). Great for answering questions like 'what foods are highest in iron?' or 'best sources of vitamin C'. Supports ~1,346 USDA foods with ~150 nutrient columns.",
+    description: translate("rank_foods_by_nutrient.description"),
     endpoint: {
       path: "/health/nutrition/rank",
       queryParams: ["nutrient", "limit", "kingdom", "foodType"],
@@ -4108,21 +3918,20 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         nutrient: {
           type: "string",
-          description:
-            "Nutrient column name (e.g. 'protein', 'calcium', 'iron', 'vitamin_b6', 'ascorbic_acid', 'potassium', 'fiber', 'kilocalories', 'c22_d6_n3_dha')",
+          description: translate("rank_foods_by_nutrient.params.nutrient"),
         },
         limit: {
           type: "number",
-          description: "Max results (default: 10)",
+          description: translate("search_usda_nutrition.params.limit"),
         },
         kingdom: {
           type: "string",
-          description: "Filter by kingdom: animalia, plantae, fungi",
+          description: translate("rank_foods_by_nutrient.params.kingdom"),
           enum: ["animalia", "plantae", "fungi"],
         },
         foodType: {
           type: "string",
-          description: "Filter by food type: animal, plant, fungus",
+          description: translate("rank_foods_by_nutrient.params.foodType"),
         },
         ...fieldsParam(FIELDS.USDA_NUTRIENT_RANKING),
       },
@@ -4132,8 +3941,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "compare_food_nutrition",
     dataSource: staticDataset("USDA SR Legacy"),
-    description:
-      "Compare nutritional profiles side-by-side between 2+ raw whole foods. Example: compare chicken vs salmon vs tofu. Returns matched foods with their per-100g nutrient values.",
+    description: translate("compare_food_nutrition.description"),
     endpoint: {
       path: "/health/nutrition/compare",
       queryParams: ["foods", "nutrientTypes"],
@@ -4143,13 +3951,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         foods: {
           type: "string",
-          description:
-            "Comma-separated food names to compare (e.g. 'chicken,salmon,tofu')",
+          description: translate("compare_food_nutrition.params.foods"),
         },
         nutrientTypes: {
           type: "string",
-          description:
-            "Comma-separated nutrient categories: macros, minerals, vitamins, amino_acids, lipids, carbs, sterols. Omit for all.",
+          description: translate("compare_food_nutrition.params.nutrientTypes"),
         },
         ...fieldsParam(FIELDS.USDA_NUTRITION),
       },
@@ -4159,8 +3965,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_food_categories",
     dataSource: staticDataset("USDA SR Legacy"),
-    description:
-      "List all available food categories, kingdoms, types, and parts in the USDA nutrition database. Useful for discovering what filters are available before searching.",
+    description: translate("get_food_categories.description"),
     endpoint: {
       path: "/health/nutrition/categories",
     },
@@ -4172,8 +3977,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_nutrient_types",
     dataSource: staticDataset("USDA SR Legacy"),
-    description:
-      "List all available nutrient type categories (macros, minerals, vitamins, amino_acids, lipids, carbs, sterols) and database stats. Use this to understand what nutrient data is available.",
+    description: translate("get_nutrient_types.description"),
     endpoint: {
       path: "/health/nutrition/nutrient-types",
     },
@@ -4185,8 +3989,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "list_category_nutrients",
     dataSource: staticDataset("USDA SR Legacy"),
-    description:
-      "List all available nutrients within a specific category (e.g. all minerals, all vitamins). Returns column names and human-readable labels. Use this to discover which nutrients you can query with the top_foods_by_* tools.",
+    description: translate("list_category_nutrients.description"),
     endpoint: {
       path: "/health/nutrition/nutrients/:category",
       pathParams: ["category"],
@@ -4196,7 +3999,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         category: {
           type: "string",
-          description: "Nutrient category to list",
+          description: translate("list_category_nutrients.params.category"),
           enum: [
             "macros",
             "minerals",
@@ -4214,8 +4017,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "search_foods_by_taxonomy",
     dataSource: staticDataset("USDA SR Legacy"),
-    description:
-      "Find all foods matching a specific biological taxonomic classification. Filter by any Linnaean rank — kingdom, phylum, class, order, family, subfamily, tribe, genus, species, subspecies, variety, cultivar, etc. Example: rank='family', value='Rosaceae' returns all rose-family foods (apples, pears, cherries, etc). Use get_food_taxonomy first to discover available values.",
+    description: translate("search_foods_by_taxonomy.description"),
     endpoint: {
       path: "/health/nutrition/taxonomy/search",
       queryParams: ["rank", "value", "limit", "nutrientTypes"],
@@ -4225,7 +4027,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         rank: {
           type: "string",
-          description: "Taxonomic rank to filter on",
+          description: translate("search_foods_by_taxonomy.params.rank"),
           enum: [
             "kingdom",
             "phylum",
@@ -4247,17 +4049,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         },
         value: {
           type: "string",
-          description:
-            "Value to match at the specified rank (case-insensitive). E.g. 'Rosaceae', 'Brassica', 'animalia', 'Chordata'",
+          description: translate("search_foods_by_taxonomy.params.value"),
         },
         limit: {
           type: "number",
-          description: "Max results (default: 25)",
+          description: translate("search_foods_by_taxonomy.params.limit"),
         },
         nutrientTypes: {
           type: "string",
-          description:
-            "Comma-separated nutrient categories to include: macros, minerals, vitamins, amino_acids, lipids, carbs, sterols. Omit for all.",
+          description: translate("search_usda_nutrition.params.nutrientTypes"),
         },
         ...fieldsParam(FIELDS.USDA_TAXONOMY),
       },
@@ -4267,8 +4067,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_food_taxonomy",
     dataSource: staticDataset("USDA SR Legacy"),
-    description:
-      "Discover available biological taxonomy values in the USDA food database. Without parameters, returns the full taxonomy tree with all ranks and their unique values. Optionally filter to a single rank, or scope by a parent rank (e.g. rank='genus', parentRank='family', parentValue='Rosaceae' to see all genera within the Rosaceae family). Use this to explore before using search_foods_by_taxonomy.",
+    description: translate("get_food_taxonomy.description"),
     endpoint: {
       path: "/health/nutrition/taxonomy/tree",
       queryParams: ["rank", "parentRank", "parentValue"],
@@ -4278,7 +4077,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         rank: {
           type: "string",
-          description: "Optional: return only values for this specific rank",
+          description: translate("get_food_taxonomy.params.rank"),
           enum: [
             "kingdom",
             "phylum",
@@ -4300,8 +4099,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         },
         parentRank: {
           type: "string",
-          description:
-            "Optional: filter by parent taxonomic rank (requires parentValue)",
+          description: translate("get_food_taxonomy.params.parentRank"),
           enum: [
             "kingdom",
             "phylum",
@@ -4317,8 +4115,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         },
         parentValue: {
           type: "string",
-          description:
-            "Value to match at the parent rank (e.g. parentRank='family', parentValue='Rosaceae')",
+          description: translate("get_food_taxonomy.params.parentValue"),
         },
       },
     },
@@ -4326,8 +4123,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_nutritional_requirements",
     dataSource: staticDataset("Multispecies Standards Database"),
-    description:
-      "Calculate dynamic nutritional requirement boundaries (minimums, maximums, RDAs) across 140+ nutrients (macronutrients, vitamins, minerals, amino acids, sterols). Essential for evaluating complete diets. Required scaling parameters like body weight are handled automatically based on authoritative standards (e.g., US DRI for humans, AAFCO for dogs/cats).",
+    description: translate("get_nutritional_requirements.description"),
     endpoint: {
       path: "/health/nutrition/requirements",
       queryParams: [
@@ -4343,12 +4139,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         species: {
           type: "string",
-          description: "Target species. Default: human.",
+          description: translate("get_nutritional_requirements.params.species"),
           enum: ["human", "canine", "feline"],
         },
         lifeStage: {
           type: "string",
-          description: "Target life stage or demographic. Default: adult_male.",
+          description: translate("get_nutritional_requirements.params.lifeStage"),
           enum: [
             "adult_male",
             "adult_female",
@@ -4359,19 +4155,16 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         },
         authority: {
           type: "string",
-          description:
-            "Authoritative standard body. Defaults to US_DRI for humans, AAFCO for pets.",
+          description: translate("get_nutritional_requirements.params.authority"),
           enum: ["US_DRI", "AAFCO", "EFSA", "NRC", "WHO", "FEDIAF"],
         },
         weightKg: {
           type: "number",
-          description:
-            "Target body weight in kg. Essential for scaling human amino acid limits.",
+          description: translate("get_nutritional_requirements.params.weightKg"),
         },
         caloricIntake: {
           type: "number",
-          description:
-            "Estimated daily caloric intake (kcal). Essential for scaling AAFCO standards.",
+          description: translate("get_nutritional_requirements.params.caloricIntake"),
         },
       },
     },
@@ -4381,8 +4174,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "calculate_caloric_needs",
     dataSource: compute("Mifflin-St Jeor / TDEE"),
-    description:
-      "Calculate Basal Metabolic Rate (BMR) and Total Daily Energy Expenditure (TDEE) using the Mifflin-St Jeor equation. Returns caloric targets, macronutrient split (protein/carbs/fat in grams), BMI, and optional body composition. Essential first step for nutrition planning — feed the TDEE into get_nutritional_requirements as caloricIntake.",
+    description: translate("calculate_caloric_needs.description"),
     endpoint: {
       path: "/health/calories/calculate",
       queryParams: [
@@ -4401,39 +4193,39 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         sex: {
           type: "string",
-          description: "Biological sex for BMR calculation",
+          description: translate("calculate_caloric_needs.params.sex"),
           enum: ["male", "female"],
         },
         weightKg: {
           type: "number",
-          description: "Body weight in kilograms",
+          description: translate("estimate_exercise_calories.params.weightKg"),
         },
         heightCm: {
           type: "number",
-          description: "Height in centimeters",
+          description: translate("calculate_caloric_needs.params.heightCm"),
         },
         ageYears: {
           type: "number",
-          description: "Age in years",
+          description: translate("calculate_caloric_needs.params.ageYears"),
         },
         activityLevel: {
           type: "string",
-          description: "Physical activity level",
+          description: translate("calculate_hydration_needs.params.activityLevel"),
           enum: ["sedentary", "light", "moderate", "active", "very_active"],
         },
         goal: {
           type: "string",
-          description: "Caloric goal (affects daily target)",
+          description: translate("calculate_caloric_needs.params.goal"),
           enum: ["maintain", "cut", "aggressive_cut", "lean_bulk", "bulk"],
         },
         macroSplit: {
           type: "string",
-          description: "Macronutrient ratio preset",
+          description: translate("calculate_caloric_needs.params.macroSplit"),
           enum: ["balanced", "high_protein", "keto", "low_fat", "zone"],
         },
         "bodyFatPct": {
           type: "number",
-          description: "Optional body fat percentage for lean mass calculation",
+          description: translate("calculate_caloric_needs.params.bodyFatPct"),
         },
       },
       required: ["sex", "weightKg", "heightCm", "ageYears"],
@@ -4444,8 +4236,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "analyze_nutrient_gaps",
     dataSource: compute("Nutrient Gap Engine"),
-    description:
-      "Analyze dietary adequacy by comparing consumed foods against nutritional requirements. Accepts a food log (array of foods with grams eaten), calculates total nutrient intake, then diffs against DRI/AAFCO targets. Returns per-nutrient status: deficient (<50% DRI), low (50-89%), adequate (90-110%), surplus (>110%), or over_UL. Essential for identifying nutritional deficiencies.",
+    description: translate("analyze_nutrient_gaps.description"),
     endpoint: {
       path: "/health/nutrition/gap-analysis",
       queryParams: [
@@ -4467,23 +4258,21 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         },
         species: {
           type: "string",
-          description: "Target species",
+          description: translate("build_meal_plan.params.species"),
           enum: ["human", "canine", "feline"],
         },
         lifeStage: {
           type: "string",
-          description: "Life stage",
+          description: translate("build_meal_plan.params.lifeStage"),
           enum: ["adult_male", "adult_female", "adult_maintenance"],
         },
         weightKg: {
           type: "number",
-          description:
-            "Body weight in kg (for scaling amino acid requirements)",
+          description: translate("analyze_nutrient_gaps.params.weightKg"),
         },
         caloricIntake: {
           type: "number",
-          description:
-            "Daily caloric intake target (for scaling AAFCO standards)",
+          description: translate("analyze_nutrient_gaps.params.caloricIntake"),
         },
       },
       required: ["foods"],
@@ -4494,8 +4283,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "search_food_substitutes",
     dataSource: compute("Nutrient Similarity Engine"),
-    description:
-      "Find nutritionally similar food substitutes using cosine similarity on nutrient profile vectors. Useful for dietary restrictions, allergies, or preferences: 'What plant foods have a similar nutrient profile to salmon?' Supports dietary preference filtering (vegetarian, vegan, pescatarian) and nutrient emphasis.",
+    description: translate("search_food_substitutes.description"),
     endpoint: {
       path: "/health/nutrition/substitutes",
       queryParams: [
@@ -4512,32 +4300,29 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         food: {
           type: "string",
-          description:
-            "Source food to find substitutes for (e.g. 'salmon', 'beef', 'milk')",
+          description: translate("search_food_substitutes.params.food"),
         },
         targetNutrients: {
           type: "string",
-          description:
-            "Comma-separated nutrients to emphasize in matching (e.g. 'protein,iron,omega3')",
+          description: translate("search_food_substitutes.params.targetNutrients"),
         },
         dietaryPreference: {
           type: "string",
-          description: "Dietary preference filter",
+          description: translate("search_food_substitutes.params.dietaryPreference"),
           enum: ["vegetarian", "vegan", "pescatarian", "plant_only"],
         },
         excludeKingdom: {
           type: "string",
-          description: "Exclude a biological kingdom from results",
+          description: translate("search_food_substitutes.params.excludeKingdom"),
           enum: ["animalia", "plantae", "fungi"],
         },
         excludeFoods: {
           type: "string",
-          description:
-            "Comma-separated food names to exclude (allergies, etc.)",
+          description: translate("search_food_substitutes.params.excludeFoods"),
         },
         limit: {
           type: "number",
-          description: "Max results (default: 10)",
+          description: translate("search_usda_nutrition.params.limit"),
         },
       },
       required: ["food"],
@@ -4548,8 +4333,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "estimate_exercise_calories",
     dataSource: compute("Compendium of Physical Activities MET Table"),
-    description:
-      "Estimate calories burned during exercise using Metabolic Equivalent of Task (MET) values from the Compendium of Physical Activities. Includes EPOC (afterburn) estimation and post-exercise recovery recommendations (protein, carbs, water). Chain with calculate_caloric_needs to adjust daily targets.",
+    description: translate("estimate_exercise_calories.description"),
     endpoint: {
       path: "/health/exercises/calories",
       queryParams: [
@@ -4565,26 +4349,24 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         exercise: {
           type: "string",
-          description:
-            "Exercise name (e.g. 'barbell squat', 'running', 'swimming', 'yoga')",
+          description: translate("estimate_exercise_calories.params.exercise"),
         },
         durationMinutes: {
           type: "number",
-          description: "Exercise duration in minutes",
+          description: translate("estimate_exercise_calories.params.durationMinutes"),
         },
         weightKg: {
           type: "number",
-          description: "Body weight in kilograms",
+          description: translate("estimate_exercise_calories.params.weightKg"),
         },
         intensity: {
           type: "string",
-          description: "Exercise intensity level",
+          description: translate("estimate_exercise_calories.params.intensity"),
           enum: ["low", "moderate", "high"],
         },
         category: {
           type: "string",
-          description:
-            "Optional exercise category hint (e.g. 'strength', 'cardio', 'stretching')",
+          description: translate("estimate_exercise_calories.params.category"),
         },
       },
       required: ["exercise", "durationMinutes", "weightKg"],
@@ -4595,8 +4377,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "calculate_hydration_needs",
     dataSource: compute("ACSM Hydration Model"),
-    description:
-      "Calculate daily water intake recommendation based on body weight, activity level, climate, exercise, altitude, and special conditions (pregnancy, breastfeeding). Uses ACSM/IOM guidelines. Returns total recommendation with timing distribution.",
+    description: translate("calculate_hydration_needs.description"),
     endpoint: {
       path: "/health/hydration/calculate",
       queryParams: [
@@ -4616,44 +4397,43 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         weightKg: {
           type: "number",
-          description: "Body weight in kilograms",
+          description: translate("estimate_exercise_calories.params.weightKg"),
         },
         activityLevel: {
           type: "string",
-          description: "Physical activity level",
+          description: translate("calculate_hydration_needs.params.activityLevel"),
           enum: ["sedentary", "light", "moderate", "active", "very_active"],
         },
         climateTemp: {
           type: "number",
-          description: "Ambient temperature in °C (adjusts for heat/cold)",
+          description: translate("calculate_hydration_needs.params.climateTemp"),
         },
         exerciseMinutes: {
           type: "number",
-          description: "Daily exercise duration in minutes",
+          description: translate("calculate_hydration_needs.params.exerciseMinutes"),
         },
         exerciseIntensity: {
           type: "string",
-          description: "Exercise intensity",
+          description: translate("calculate_hydration_needs.params.exerciseIntensity"),
           enum: ["low", "moderate", "high"],
         },
         altitudeM: {
           type: "number",
-          description: "Altitude in meters (>2500m increases water needs)",
+          description: translate("calculate_hydration_needs.params.altitudeM"),
         },
         pregnant: {
           type: "string",
-          description: "Is the person pregnant? (+300mL/day)",
+          description: translate("calculate_hydration_needs.params.pregnant"),
           enum: ["true", "false"],
         },
         breastfeeding: {
           type: "string",
-          description: "Is the person breastfeeding? (+700mL/day)",
+          description: translate("calculate_hydration_needs.params.breastfeeding"),
           enum: ["true", "false"],
         },
         caffeineIntakeMg: {
           type: "number",
-          description:
-            "Daily caffeine intake in mg (offset for diuretic effect)",
+          description: translate("calculate_hydration_needs.params.caffeineIntakeMg"),
         },
       },
       required: ["weightKg"],
@@ -4664,8 +4444,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "build_meal_plan",
     dataSource: compute("Meal Optimization Engine"),
-    description:
-      "Automatically generate a daily meal plan that covers nutritional targets within a caloric budget. Uses a greedy nutrient-coverage optimizer to select foods that maximally fill remaining nutrient gaps. Supports dietary preferences (omnivore, vegetarian, vegan, pescatarian, keto) and nutrient emphasis. Use calculate_caloric_needs first to determine the caloric target.",
+    description: translate("build_meal_plan.description"),
     endpoint: {
       path: "/health/nutrition/meal-plan",
       queryParams: [
@@ -4685,43 +4464,42 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         caloricTarget: {
           type: "number",
-          description: "Daily caloric target in kcal (e.g. 2000)",
+          description: translate("build_meal_plan.params.caloricTarget"),
         },
         mealsPerDay: {
           type: "number",
-          description: "Number of meals per day (default: 3, max: 8)",
+          description: translate("build_meal_plan.params.mealsPerDay"),
         },
         dietaryPreference: {
           type: "string",
-          description: "Dietary preference filter",
+          description: translate("search_food_substitutes.params.dietaryPreference"),
           enum: ["omnivore", "vegetarian", "vegan", "pescatarian", "keto"],
         },
         excludeFoods: {
           type: "string",
-          description: "Comma-separated foods to exclude (allergies, etc.)",
+          description: translate("build_meal_plan.params.excludeFoods"),
         },
         emphasizeNutrients: {
           type: "string",
-          description:
-            "Comma-separated nutrients to prioritize (e.g. 'iron,protein,calcium')",
+          description: translate("build_meal_plan.params.emphasizeNutrients"),
         },
         species: {
           type: "string",
-          description: "Target species",
+          description: translate("build_meal_plan.params.species"),
           enum: ["human", "canine", "feline"],
         },
         lifeStage: {
           type: "string",
-          description: "Life stage",
+          description: translate("build_meal_plan.params.lifeStage"),
           enum: ["adult_male", "adult_female", "adult_maintenance"],
         },
         weightKg: {
           type: "number",
-          description: "Body weight in kg",
+          description: translate("build_meal_plan.params.weightKg"),
         },
         itemsPerMeal: {
           type: "number",
-          description: "Number of food items per meal (default: 4)",
+          description: translate("build_meal_plan.params.itemsPerMeal"),
         },
       },
       required: ["caloricTarget"],
@@ -4732,8 +4510,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "check_drug_nutrient_interactions",
     dataSource: staticDataset("Drug-Nutrient Interaction DB"),
-    description:
-      "Screen for drug-nutrient interactions (DNI). Checks if a medication depletes nutrients, blocks absorption, or interacts with specific vitamins/minerals. Covers ~60 clinically significant interactions across statins, metformin, PPIs, diuretics, antibiotics, anticonvulsants, corticosteroids, blood thinners, and more. Returns severity (major/moderate/minor), effect type, and recommendations.",
+    description: translate("check_drug_nutrient_interactions.description"),
     endpoint: {
       path: "/health/drugs/nutrient-interactions",
       queryParams: ["drug", "nutrients"],
@@ -4743,13 +4520,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         drug: {
           type: "string",
-          description:
-            "Drug name — brand or generic (e.g. 'metformin', 'omeprazole', 'lisinopril', 'prednisone')",
+          description: translate("check_drug_nutrient_interactions.params.drug"),
         },
         nutrients: {
           type: "string",
-          description:
-            "Optional: comma-separated nutrients to check specifically (e.g. 'calcium,iron'). Omit for all.",
+          description: translate("check_drug_nutrient_interactions.params.nutrients"),
         },
       },
       required: ["drug"],
@@ -4760,8 +4535,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_next_bus",
     dataSource: onDemand("TransLink RTTI"),
-    description:
-      "Get real-time bus arrival estimates for a TransLink (Vancouver) bus stop. Shows route, direction, expected arrival time, countdown, schedule status, and whether the trip is cancelled.",
+    description: translate("get_next_bus.description"),
     endpoint: {
       path: "/transit/nextbus/:stopNo",
       pathParams: ["stopNo"],
@@ -4772,11 +4546,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         stopNo: {
           type: "number",
-          description: "5-digit TransLink bus stop number (e.g. 51479)",
+          description: translate("get_next_bus.params.stopNo"),
         },
         route: {
           type: "string",
-          description: "Optional route number filter (e.g. '99', '014')",
+          description: translate("get_next_bus.params.route"),
         },
         ...fieldsParam(FIELDS.NEXT_BUS),
       },
@@ -4786,8 +4560,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_transit_stop_info",
     dataSource: onDemand("TransLink RTTI"),
-    description:
-      "Get details about a TransLink bus stop including name, street intersection, city, coordinates, wheelchair access, and which routes serve it.",
+    description: translate("get_transit_stop_info.description"),
     endpoint: {
       path: "/transit/stops/:stopNo",
       pathParams: ["stopNo"],
@@ -4797,7 +4570,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         stopNo: {
           type: "number",
-          description: "5-digit TransLink bus stop number",
+          description: translate("get_transit_stop_info.params.stopNo"),
         },
         ...fieldsParam(FIELDS.STOP_INFO),
       },
@@ -4807,8 +4580,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "search_transit_stops_nearby",
     dataSource: onDemand("TransLink RTTI"),
-    description:
-      "Find TransLink bus stops near a location. Returns nearby stops with names, distances, and route numbers. Defaults to Vancouver downtown if no coordinates provided.",
+    description: translate("search_transit_stops_nearby.description"),
     endpoint: {
       path: "/transit/stops/nearby",
       queryParams: ["lat", "lng", "radius"],
@@ -4818,15 +4590,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         lat: {
           type: "number",
-          description: "Latitude (default: Vancouver downtown)",
+          description: translate("search_transit_stops_nearby.params.lat"),
         },
         lng: {
           type: "number",
-          description: "Longitude (default: Vancouver downtown)",
+          description: translate("search_transit_stops_nearby.params.lng"),
         },
         radius: {
           type: "number",
-          description: "Search radius in meters (default: 500, max: 2000)",
+          description: translate("search_transit_stops_nearby.params.radius"),
         },
         ...fieldsParam(FIELDS.NEARBY_STOPS),
       },
@@ -4835,8 +4607,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_transit_route_info",
     dataSource: onDemand("TransLink RTTI"),
-    description:
-      "Get details about a TransLink bus/SkyTrain route including name, operating company, and pattern destinations.",
+    description: translate("get_transit_route_info.description"),
     endpoint: {
       path: "/transit/routes/:routeNo",
       pathParams: ["routeNo"],
@@ -4846,7 +4617,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         routeNo: {
           type: "string",
-          description: "Route number (e.g. '99', '014', 'R4')",
+          description: translate("get_transit_route_info.params.routeNo"),
         },
         ...fieldsParam(FIELDS.ROUTE_INFO),
       },
@@ -4858,8 +4629,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "execute_python",
     dataSource: compute("Python 3 subprocess"),
-    description:
-      "Execute Python 3 code in a sandboxed subprocess. Ideal for complex calculations, statistical analysis, text parsing, collection manipulation, and date/time arithmetic. The environment has access to the full Python standard library (math, json, datetime, collections, itertools, statistics, re, csv, io, etc.) but blocks network access, filesystem mutation, and dangerous modules (subprocess, shutil, ctypes, multiprocessing, signal). Code runs with a 30-second default timeout (max 60s) and 256 MB memory limit. Print results to stdout — both stdout and stderr are captured and returned.",
+    description: translate("execute_python.description"),
     endpoint: {
       method: "POST",
       path: "/utility/python/execute",
@@ -4870,13 +4640,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         code: {
           type: "string",
-          description:
-            "Python 3 source code to execute. Use print() to produce output. The standard library is available (math, json, datetime, statistics, collections, itertools, re, csv, etc.). Subprocess execution, filesystem modification, and network requests are blocked.",
+          description: translate("execute_python.params.code"),
         },
         timeout: {
           type: "integer",
-          description:
-            "Execution timeout in milliseconds (min 1000, max 60000, default 30000). Increase for computationally intensive tasks.",
+          description: translate("execute_python.params.timeout"),
         },
       },
       required: ["code"],
@@ -4885,8 +4653,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "evaluate_expression",
     dataSource: compute("bignumber.js"),
-    description:
-      "Perform highly precise mathematical calculations using bignumber.js. Supports arbitrary-precision arithmetic. Passed numbers should be strings to prevent precision loss. For sqrt, 'b' is ignored.",
+    description: translate("evaluate_expression.description"),
     endpoint: {
       path: "/utility/calculate",
       queryParams: ["operation", "a", "b"],
@@ -4905,16 +4672,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             "power",
             "sqrt",
           ],
-          description: "The mathematical operation to perform",
+          description: translate("evaluate_expression.params.operation"),
         },
         "a": {
           type: "string",
-          description: "The first operand (must be a valid numeric string)",
+          description: translate("evaluate_expression.params.a"),
         },
         b: {
           type: "string",
-          description:
-            "The second operand (must be a valid numeric string). Optional for sqrt.",
+          description: translate("evaluate_expression.params.b"),
         },
       },
       required: ["operation", "a"],
@@ -4923,8 +4689,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "execute_javascript",
     dataSource: compute("Node.js vm"),
-    description:
-      "Execute JavaScript (ES6+) code inside a sandboxed Node.js VM context. Extremely fast (sub-millisecond context startup) and ideal for quick data formatting, JSON transforms, RegExp pattern matching, and basic mathematical operations. Has access to standard JavaScript built-ins (JSON, Math, Date, RegExp, Map, Set, Array/Object helpers, TextEncoder/Decoder, etc.). Access to Node.js core modules, filesystem, network, fetch, require, process, and asynchronous timers (setTimeout) is blocked. Use console.log() to print to standard output; both the printed output and the final evaluated expression result are returned.",
+    description: translate("execute_javascript.description"),
     endpoint: {
       method: "POST",
       path: "/compute/js/execute",
@@ -4935,13 +4700,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         code: {
           type: "string",
-          description:
-            "JavaScript source code to execute. Use console.log() to produce output. The last evaluated expression value is returned in the 'result' field. Access to Node.js/browser APIs (require, fetch, process, fs, setTimeout) is disabled.",
+          description: translate("execute_javascript.params.code"),
         },
         timeout: {
           type: "integer",
-          description:
-            "Execution timeout in milliseconds (min 100, max 30000, default 5000).",
+          description: translate("execute_javascript.params.timeout"),
         },
       },
       required: ["code"],
@@ -4950,8 +4713,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "execute_shell",
     dataSource: compute("bash subprocess"),
-    description:
-      "Execute allowlisted shell commands for text processing. Supports pipes (|) between commands. Allowed binaries: awk, sed, grep, cut, tr, sort, uniq, wc, head, tail, jq, bc, expr, base64, md5sum, sha256sum, date, cal, echo, printf, cat, paste, column, fold, nl, rev, tac, seq, shuf, factor, and more. No filesystem mutation, no network access. Input data can be piped via stdin.",
+    description: translate("execute_shell.description"),
     endpoint: {
       method: "POST",
       path: "/compute/shell/execute",
@@ -4962,18 +4724,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         command: {
           type: "string",
-          description:
-            "Shell command to execute. Pipes (|) are allowed between allowlisted binaries. Example: 'echo \"hello world\" | tr a-z A-Z' or 'sort | uniq -c | sort -rn | head -10'. Shell metacharacters (;, &, `, $, etc.) are blocked for security.",
+          description: translate("execute_shell.params.command"),
         },
         stdin: {
           type: "string",
-          description:
-            "Optional input data to pipe to the command's stdin. Useful for processing text data with awk/sed/grep/sort/jq pipelines. Max 1 MB.",
+          description: translate("execute_shell.params.stdin"),
         },
         timeout: {
           type: "integer",
-          description:
-            "Execution timeout in milliseconds (min 500, max 30000, default 10000).",
+          description: translate("execute_shell.params.timeout"),
         },
       },
       required: ["command"],
@@ -4982,8 +4741,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "convert_units",
     dataSource: compute("convert-units"),
-    description:
-      "Convert between physical measurement units. Supports length, mass, volume, temperature, time, speed, area, pressure, energy, power, frequency, data, acceleration, current, voltage, and more. LLMs frequently hallucinate unit conversions — use this tool for accuracy.",
+    description: translate("convert_units.description"),
     endpoint: {
       path: "/compute/units/convert",
       queryParams: ["value", "from", "to"],
@@ -4993,17 +4751,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         value: {
           type: "number",
-          description: "The numeric value to convert",
+          description: translate("convert_units.params.value"),
         },
         from: {
           type: "string",
-          description:
-            "Source unit abbreviation (e.g. 'mi', 'km', 'lb', 'kg', 'F', 'C', 'gal', 'l', 'psi', 'Pa', 'GB', 'MB')",
+          description: translate("convert_units.params.from"),
         },
         to: {
           type: "string",
-          description:
-            "Target unit abbreviation (e.g. 'km', 'mi', 'kg', 'lb', 'C', 'F', 'l', 'gal')",
+          description: translate("convert_units.params.to"),
         },
       },
       required: ["value", "from", "to"],
@@ -5012,8 +4768,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "parse_datetime",
     dataSource: compute("date-fns"),
-    description:
-      "Parse, format, compare, and perform arithmetic on dates and times. Operations: 'now' (current time), 'parse' (analyze a date), 'format' (custom formatting), 'diff' (difference between two dates in all units), 'add'/'subtract' (date arithmetic), 'startOf'/'endOf' (period boundaries), 'isValid' (validation). Supports timezone conversion. LLMs frequently get date math wrong — use this tool for accuracy.",
+    description: translate("parse_datetime.description"),
     endpoint: {
       method: "POST",
       path: "/compute/datetime/parse",
@@ -5043,22 +4798,19 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             "endOf",
             "isValid",
           ],
-          description: "The date/time operation to perform",
+          description: translate("parse_datetime.params.operation"),
         },
         date: {
           type: "string",
-          description:
-            "Date input — ISO 8601 string (e.g. '2024-03-15T10:30:00Z'), Unix timestamp (number), or 'now'. Required for most operations.",
+          description: translate("parse_datetime.params.date"),
         },
         date2: {
           type: "string",
-          description:
-            "Second date for 'diff' operation. Same format as 'date'.",
+          description: translate("parse_datetime.params.date2"),
         },
         amount: {
           type: "integer",
-          description:
-            "Amount to add/subtract (for 'add' and 'subtract' operations)",
+          description: translate("parse_datetime.params.amount"),
         },
         unit: {
           type: "string",
@@ -5077,17 +4829,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             "hour",
             "minute",
           ],
-          description: "Time unit for add/subtract/startOf/endOf operations",
+          description: translate("parse_datetime.params.unit"),
         },
         format: {
           type: "string",
-          description:
-            "Output format string using date-fns tokens (e.g. 'yyyy-MM-dd', 'EEEE, MMMM do yyyy', 'HH:mm:ss'). See date-fns format docs.",
+          description: translate("parse_datetime.params.format"),
         },
         timezone: {
           type: "string",
-          description:
-            "IANA timezone for output (e.g. 'America/Vancouver', 'Europe/London', 'Asia/Tokyo'). If omitted, uses UTC.",
+          description: translate("parse_datetime.params.timezone"),
         },
       },
       required: ["operation"],
@@ -5096,8 +4846,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "transform_json",
     dataSource: compute("jsonpath-plus"),
-    description:
-      "Transform, filter, reshape, and aggregate JSON data using JSONPath expressions and/or chained operations. Useful for extracting specific fields from complex API responses, reshaping data structures, filtering arrays, grouping, sorting, and aggregating. Operations: flatten, unique, sort, filter, pick, omit, groupBy, count, sum, limit, reverse.",
+    description: translate("transform_json.description"),
     endpoint: {
       method: "POST",
       path: "/compute/json/transform",
@@ -5108,17 +4857,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         data: {
           type: "object",
-          description: "The JSON data to transform (object or array)",
+          description: translate("transform_json.params.data"),
         },
         expression: {
           type: "string",
-          description:
-            "JSONPath expression to extract data (e.g. '$.store.book[*].author', '$..price', '$.items[?(@.active==true)]'). Optional — can use operations alone.",
+          description: translate("transform_json.params.expression"),
         },
         operations: {
           type: "array",
-          description:
-            "Array of chained operations to apply. Each operation: { type: 'flatten'|'unique'|'sort'|'filter'|'pick'|'omit'|'groupBy'|'count'|'sum'|'limit'|'reverse', ...params }. Sort: { key, order:'asc'|'desc' }. Filter: { key, value, operator:'eq'|'gt'|'lt'|'contains' }. Pick/Omit: { keys:[] }. GroupBy: { key }. Sum: { key }. Limit: { count }.",
+          description: translate("transform_json.params.operations"),
           items: {
             type: "object",
             properties: {
@@ -5148,8 +4895,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "generate_csv",
     dataSource: compute("internal"),
-    description:
-      "Convert an array of objects into a downloadable CSV file. Returns a download URL. Use this when the user needs data exported for spreadsheets, reports, or external tools. Supports custom column ordering and delimiter.",
+    description: translate("generate_csv.description"),
     endpoint: {
       method: "POST",
       path: "/compute/csv",
@@ -5160,23 +4906,21 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         data: {
           type: "array",
-          description:
-            "Array of objects to convert to CSV. Each object becomes one row.",
+          description: translate("generate_csv.params.data"),
           items: { type: "object" },
         },
         columns: {
           type: "array",
-          description:
-            "Optional explicit column order. If omitted, uses keys from the first object.",
+          description: translate("generate_csv.params.columns"),
           items: { type: "string" },
         },
         filename: {
           type: "string",
-          description: "Download filename (default: 'export.csv')",
+          description: translate("generate_csv.params.filename"),
         },
         delimiter: {
           type: "string",
-          description: "Column delimiter (default: ','). Use '\\t' for TSV.",
+          description: translate("generate_csv.params.delimiter"),
         },
       },
       required: ["data"],
@@ -5185,8 +4929,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "generate_qr_code",
     dataSource: compute("qrcode"),
-    description:
-      "Generate a QR code PNG image from text, URLs, WiFi credentials, vCards, or any string data. The QR code is displayed automatically in the tool result panel — do NOT include the URL or any link to it in your text response — the user already sees it rendered above.",
+    description: translate("generate_qr_code.description"),
     endpoint: {
       method: "POST",
       path: "/compute/qr",
@@ -5203,26 +4946,24 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         data: {
           type: "string",
-          description:
-            "The data to encode. URL, text, WiFi config (WIFI:T:WPA;S:MyNetwork;P:MyPassword;;), vCard, etc. Max ~4296 chars.",
+          description: translate("generate_qr_code.params.data"),
         },
         size: {
           type: "integer",
-          description: "Image width/height in pixels (default: 400, max: 1024)",
+          description: translate("generate_qr_code.params.size"),
         },
         errorCorrection: {
           type: "string",
           enum: ["L", "M", "Q", "H"],
-          description:
-            "Error correction level: L (7%), M (15%, default), Q (25%), H (30%)",
+          description: translate("generate_qr_code.params.errorCorrection"),
         },
         darkColor: {
           type: "string",
-          description: "Foreground color as hex (default: '#000000')",
+          description: translate("generate_qr_code.params.darkColor"),
         },
         lightColor: {
           type: "string",
-          description: "Background color as hex (default: '#ffffff')",
+          description: translate("generate_qr_code.params.lightColor"),
         },
       },
       required: ["data"],
@@ -5231,8 +4972,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "render_latex",
     dataSource: compute("KaTeX CDN"),
-    description:
-      "Render LaTeX mathematical expressions as a beautiful embedded page using KaTeX. Use this to display equations, formulas, and mathematical notation. The rendered equation is displayed automatically in the tool result panel — do NOT include the URL or any link to it in your text response — the user already sees it rendered above.",
+    description: translate("render_latex.description"),
     endpoint: {
       method: "POST",
       path: "/compute/latex",
@@ -5243,13 +4983,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         latex: {
           type: "string",
-          description:
-            "LaTeX math expression to render. Examples: '\\\\int_0^1 x^2 dx = \\\\frac{1}{3}', 'E = mc^2', '\\\\sum_{i=1}^{n} i = \\\\frac{n(n+1)}{2}'",
+          description: translate("render_latex.params.latex"),
         },
         displayMode: {
           type: "boolean",
-          description:
-            "If true (default), renders as a display-style equation (centered, larger). If false, renders inline-style.",
+          description: translate("render_latex.params.displayMode"),
         },
       },
       required: ["latex"],
@@ -5258,8 +4996,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "generate_diagram",
     dataSource: compute("Mermaid CDN"),
-    description:
-      "Render Mermaid diagrams (flowcharts, sequence diagrams, class diagrams, ER diagrams, Gantt charts, state diagrams, pie charts, git graphs) as interactive embedded pages. The diagram is displayed automatically in the tool result panel — do NOT include the URL or any link to it in your text response — the user already sees it rendered above.",
+    description: translate("generate_diagram.description"),
     endpoint: {
       method: "POST",
       path: "/compute/diagram",
@@ -5276,7 +5013,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         theme: {
           type: "string",
           enum: ["dark", "default", "forest", "neutral"],
-          description: "Mermaid color theme (default: 'dark')",
+          description: translate("generate_diagram.params.theme"),
         },
       },
       required: ["definition"],
@@ -5285,8 +5022,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "diff_text",
     dataSource: compute("diff"),
-    description:
-      "Compare two text inputs and produce a structured diff showing additions, deletions, and unchanged content. Also generates a unified patch. Supports character-level, word-level, line-level, sentence-level, and JSON diffs.",
+    description: translate("diff_text.description"),
     endpoint: {
       method: "POST",
       path: "/compute/diff",
@@ -5297,16 +5033,16 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         textA: {
           type: "string",
-          description: "The original text (or JSON string for json mode)",
+          description: translate("diff_text.params.textA"),
         },
         textB: {
           type: "string",
-          description: "The modified text (or JSON string for json mode)",
+          description: translate("diff_text.params.textB"),
         },
         mode: {
           type: "string",
           enum: ["lines", "words", "chars", "sentences", "json"],
-          description: "Diff granularity (default: 'lines')",
+          description: translate("diff_text.params.mode"),
         },
       },
       required: ["textA", "textB"],
@@ -5315,8 +5051,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "generate_hash",
     dataSource: compute("node:crypto"),
-    description:
-      "Generate cryptographic hashes and HMACs. Supports MD5, SHA-1, SHA-256, SHA-512, and all Node.js crypto algorithms. Outputs in hex, base64, or other encodings. Use for checksums, data verification, and fingerprinting.",
+    description: translate("generate_hash.description"),
     endpoint: {
       path: "/compute/hash",
       queryParams: ["data", "algorithm", "encoding", "key"],
@@ -5326,21 +5061,19 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         data: {
           type: "string",
-          description: "The data to hash",
+          description: translate("generate_hash.params.data"),
         },
         algorithm: {
           type: "string",
-          description:
-            "Hash algorithm: md5, sha1, sha256, sha512, sha3-256, etc. (default: sha256)",
+          description: translate("generate_hash.params.algorithm"),
         },
         encoding: {
           type: "string",
-          description: "Output encoding: hex (default), base64, base64url",
+          description: translate("generate_hash.params.encoding"),
         },
         key: {
           type: "string",
-          description:
-            "Optional HMAC key. If provided, computes HMAC instead of plain hash.",
+          description: translate("generate_hash.params.key"),
         },
       },
       required: ["data"],
@@ -5349,8 +5082,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "test_regex",
     dataSource: compute("native RegExp"),
-    description:
-      "Test a regular expression pattern against input text. Returns all matches with indices, captured groups, and named groups. Validates regex syntax. Useful for pattern matching, data extraction, and regex debugging.",
+    description: translate("test_regex.description"),
     endpoint: {
       method: "POST",
       path: "/compute/regex",
@@ -5361,17 +5093,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         pattern: {
           type: "string",
-          description:
-            "Regular expression pattern (without delimiters). Example: '\\\\d{3}-\\\\d{4}' or '(?<name>[A-Z]\\\\w+)'",
+          description: translate("test_regex.params.pattern"),
         },
         flags: {
           type: "string",
-          description:
-            "Regex flags: g (global), i (case-insensitive), m (multiline), s (dotAll), u (unicode). Default: 'g'",
+          description: translate("test_regex.params.flags"),
         },
         text: {
           type: "string",
-          description: "The input text to test the pattern against",
+          description: translate("test_regex.params.text"),
         },
       },
       required: ["pattern", "text"],
@@ -5380,8 +5110,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "convert_encoding",
     dataSource: compute("internal"),
-    description:
-      "Encode or decode data between formats: Base64, Base64URL, hex, URL encoding, HTML entities, ROT13, binary, and JWT decode (no verification). Bidirectional — specify encode or decode direction.",
+    description: translate("convert_encoding.description"),
     endpoint: {
       path: "/compute/encode",
       queryParams: ["data", "format", "direction"],
@@ -5391,7 +5120,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         data: {
           type: "string",
-          description: "The data to encode or decode",
+          description: translate("convert_encoding.params.data"),
         },
         format: {
           type: "string",
@@ -5405,13 +5134,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             "binary",
             "jwt",
           ],
-          description: "The encoding format",
+          description: translate("convert_encoding.params.format"),
         },
         direction: {
           type: "string",
           enum: ["encode", "decode"],
-          description:
-            "Direction of transformation (default: 'encode'). JWT only supports 'decode'.",
+          description: translate("convert_encoding.params.direction"),
         },
       },
       required: ["data", "format"],
@@ -5420,8 +5148,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "convert_color",
     dataSource: compute("internal"),
-    description:
-      "Convert colors between HEX, RGB, HSL, HSV, and CMYK formats. Also generates color palettes: complementary, analogous, triadic, split-complementary, tetradic, and monochromatic. Accepts any common color input format including CSS named colors.",
+    description: translate("convert_color.description"),
     endpoint: {
       path: "/compute/color/convert",
       queryParams: ["color", "palette"],
@@ -5431,8 +5158,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         color: {
           type: "string",
-          description:
-            "Color value in any format: HEX ('#ff6347'), RGB ('rgb(255,99,71)'), HSL ('hsl(9,100%,64%)'), or CSS name ('tomato')",
+          description: translate("convert_color.params.color"),
         },
         palette: {
           type: "string",
@@ -5444,8 +5170,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             "tetradic",
             "monochromatic",
           ],
-          description:
-            "Optional — generate a color harmony palette based on the input color",
+          description: translate("convert_color.params.palette"),
         },
       },
       required: ["color"],
@@ -5456,15 +5181,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "manipulate_image",
     dataSource: compute("sharp + imagemagick"),
-    description:
-      "Manipulate, transform, and process images using a hybrid Sharp + ImageMagick engine. " +
-      "Accepts an image from a URL, base64 data URI, or a previous imageId (for chaining operations). " +
-      "Supports resize, crop, rotate, flip, blur, sharpen, grayscale, negate, tint, brightness/saturation/hue adjustments, " +
-      "gamma correction, trim whitespace, extend canvas, composite/overlay images, format conversion " +
-      "(PNG, JPEG, WebP, AVIF, TIFF), text overlay with font control, distortion effects (swirl, wave, implode, barrel), " +
-      "and border addition. Multiple operations can be chained in a single call. " +
-      "The processed image is displayed automatically in the tool result panel — do NOT include the URL or any link to it in your text response — the user already sees it rendered above. " +
-      "Use the 'metadata' operation to inspect image dimensions, format, color space, and channel info without transforming it.",
+    description: translate("manipulate_image.description"),
     endpoint: {
       method: "POST",
       path: "/compute/image/process",
@@ -5475,15 +5192,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         input: {
           type: "string",
-          description:
-            "Image source: a public URL (http/https), a base64 data URI (data:image/png;base64,...), " +
-            "or an imageId returned from a previous manipulate_image call (for chaining operations on the same image).",
+          description: translate("manipulate_image.params.input"),
         },
         operations: {
           type: "array",
-          description:
-            "Array of operations to apply sequentially. Each operation is an object with a 'type' field and type-specific parameters. " +
-            "Operations are applied in order, enabling pipelines like resize → blur → format conversion in one call.",
+          description: translate("manipulate_image.params.operations"),
           items: {
             type: "object",
             properties: {
@@ -5509,151 +5222,142 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
                   "distort",
                   "border",
                 ],
-                description:
-                  "The operation type. " +
-                  "Sharp operations (fast): resize, crop, rotate, flip, blur, sharpen, grayscale, negate, tint, adjust, gamma, trim, extend, composite, metadata. " +
-                  "ImageMagick operations (advanced): text (rich text overlay), distort (swirl/wave/implode/barrel), border.",
+                description: translate("manipulate_image.params.operations.items.params.type"),
               },
               width: {
                 type: "integer",
-                description: "Width in pixels (resize, crop, extend)",
+                description: translate("manipulate_image.params.operations.items.params.width"),
               },
               height: {
                 type: "integer",
-                description: "Height in pixels (resize, crop, extend)",
+                description: translate("manipulate_image.params.operations.items.params.height"),
               },
               fit: {
                 type: "string",
                 enum: ["cover", "contain", "fill", "inside", "outside"],
-                description:
-                  "Resize fit strategy (resize only, default: 'cover')",
+                description: translate("manipulate_image.params.operations.items.params.fit"),
               },
               left: {
                 type: "integer",
-                description: "Left offset in pixels (crop, extend, composite)",
+                description: translate("manipulate_image.params.operations.items.params.left"),
               },
               top: {
                 type: "integer",
-                description: "Top offset in pixels (crop, extend, composite)",
+                description: translate("manipulate_image.params.operations.items.params.top"),
               },
               right: {
                 type: "integer",
-                description: "Right padding in pixels (extend)",
+                description: translate("manipulate_image.params.operations.items.params.right"),
               },
               bottom: {
                 type: "integer",
-                description: "Bottom padding in pixels (extend)",
+                description: translate("manipulate_image.params.operations.items.params.bottom"),
               },
               angle: {
                 type: "number",
-                description: "Rotation angle in degrees (rotate)",
+                description: translate("manipulate_image.params.operations.items.params.angle"),
               },
               direction: {
                 type: "string",
                 enum: ["horizontal", "vertical"],
-                description: "Flip direction (flip only, default: 'vertical')",
+                description: translate("manipulate_image.params.operations.items.params.direction"),
               },
               sigma: {
                 type: "number",
-                description:
-                  "Blur/sharpen sigma (blur: 0.3-100, sharpen: default 1)",
+                description: translate("manipulate_image.params.operations.items.params.sigma"),
               },
               color: {
                 type: "string",
-                description:
-                  "Color as hex string, e.g. '#ff6347' (tint, border, text)",
+                description: translate("manipulate_image.params.operations.items.params.color"),
               },
               background: {
                 type: "string",
-                description: "Background color as hex (rotate, resize, extend)",
+                description: translate("manipulate_image.params.operations.items.params.background"),
               },
               brightness: {
                 type: "number",
-                description: "Brightness multiplier (adjust, default: 1.0)",
+                description: translate("manipulate_image.params.operations.items.params.brightness"),
               },
               saturation: {
                 type: "number",
-                description: "Saturation multiplier (adjust, default: 1.0)",
+                description: translate("manipulate_image.params.operations.items.params.saturation"),
               },
               hue: {
                 type: "number",
-                description: "Hue rotation in degrees (adjust)",
+                description: translate("manipulate_image.params.operations.items.params.hue"),
               },
               value: {
                 type: "number",
-                description: "Gamma value (gamma, default: 2.2)",
+                description: translate("manipulate_image.params.operations.items.params.value"),
               },
               threshold: {
                 type: "integer",
-                description: "Trim threshold (trim, default: 10)",
+                description: translate("manipulate_image.params.operations.items.params.threshold"),
               },
               overlayUrl: {
                 type: "string",
-                description: "URL of overlay image (composite)",
+                description: translate("manipulate_image.params.operations.items.params.overlayUrl"),
               },
               gravity: {
                 type: "string",
-                description:
-                  "Placement gravity (composite, text): north, south, east, west, center, northeast, northwest, southeast, southwest",
+                description: translate("manipulate_image.params.operations.items.params.gravity"),
               },
               blend: {
                 type: "string",
-                description:
-                  "Blend mode (composite): over, multiply, screen, etc.",
+                description: translate("manipulate_image.params.operations.items.params.blend"),
               },
               content: {
                 type: "string",
-                description: "Text content to render (text)",
+                description: translate("manipulate_image.params.operations.items.params.content"),
               },
               font: {
                 type: "string",
-                description:
-                  "Font family name (text, default: 'Liberation-Sans')",
+                description: translate("manipulate_image.params.operations.items.params.font"),
               },
               fontSize: {
                 type: "integer",
-                description: "Font size in points (text, default: 32)",
+                description: translate("manipulate_image.params.operations.items.params.fontSize"),
               },
               strokeColor: {
                 type: "string",
-                description: "Text stroke/outline color (text)",
+                description: translate("manipulate_image.params.operations.items.params.strokeColor"),
               },
               strokeWidth: {
                 type: "integer",
-                description: "Text stroke width in pixels (text, default: 2)",
+                description: translate("manipulate_image.params.operations.items.params.strokeWidth"),
               },
               x: {
                 type: "integer",
-                description: "X offset for text positioning (text)",
+                description: translate("manipulate_image.params.operations.items.params.x"),
               },
               y: {
                 type: "integer",
-                description: "Y offset for text positioning (text)",
+                description: translate("manipulate_image.params.operations.items.params.y"),
               },
               effect: {
                 type: "string",
                 enum: ["swirl", "wave", "implode", "barrel"],
-                description: "Distortion effect type (distort)",
+                description: translate("manipulate_image.params.operations.items.params.effect"),
               },
               degrees: {
                 type: "number",
-                description: "Swirl degrees (distort swirl, default: 90)",
+                description: translate("manipulate_image.params.operations.items.params.degrees"),
               },
               amplitude: {
                 type: "number",
-                description: "Wave amplitude (distort wave, default: 10)",
+                description: translate("manipulate_image.params.operations.items.params.amplitude"),
               },
               wavelength: {
                 type: "number",
-                description: "Wave wavelength (distort wave, default: 100)",
+                description: translate("manipulate_image.params.operations.items.params.wavelength"),
               },
               factor: {
                 type: "number",
-                description: "Implode factor (distort implode, default: 0.5)",
+                description: translate("manipulate_image.params.operations.items.params.factor"),
               },
               params: {
                 type: "string",
-                description: "Raw distort params string (distort barrel)",
+                description: translate("manipulate_image.params.operations.items.params.params"),
               },
             },
             required: ["type"],
@@ -5662,13 +5366,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         outputFormat: {
           type: "string",
           enum: ["png", "jpeg", "webp", "avif", "tiff"],
-          description:
-            "Output image format (default: 'png'). JPEG/WebP/AVIF use lossy compression controlled by outputQuality.",
+          description: translate("manipulate_image.params.outputFormat"),
         },
         outputQuality: {
           type: "integer",
-          description:
-            "Output quality 1-100 for lossy formats (JPEG/WebP/AVIF). Default: 80. Ignored for PNG.",
+          description: translate("manipulate_image.params.outputQuality"),
         },
       },
       required: ["input", "operations"],
@@ -5679,11 +5381,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "convert_image_to_ascii",
     dataSource: compute("sharp"),
-    description:
-      "Convert an image into high-fidelity ASCII art. Supports loading images from URLs, base64 data URIs, or " +
-      "previous imageId tokens. Features customizable output character width, custom character sets, contrast " +
-      "enhancements, density inversion, and truecolor support. Returns raw ASCII text, ANSI terminal string, and a " +
-      "dynamic, interactive HTML embed that renders automatically in the tool result panel.",
+    description: translate("convert_image_to_ascii.description"),
     endpoint: {
       method: "POST",
       path: "/compute/image/ascii",
@@ -5694,30 +5392,23 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         input: {
           type: "string",
-          description:
-            "The input image source: public HTTP/HTTPS URL, base64 data URI (data:image/png;base64,...), " +
-            "or an imageId from a prior manipulate_image/image_process call.",
+          description: translate("convert_image_to_ascii.params.input"),
         },
         width: {
           type: "integer",
-          description:
-            "Number of output characters wide (aspect ratio is automatically adjusted). Default: 100, Range: 10-250.",
+          description: translate("convert_image_to_ascii.params.width"),
         },
         chars: {
           type: "string",
-          description:
-            "Custom character gradient string ordered from densest to sparsest. " +
-            "Default: high-fidelity gradient containing 70 distinct structural weights.",
+          description: translate("convert_image_to_ascii.params.chars"),
         },
         contrast: {
           type: "number",
-          description:
-            "Contrast adjustment factor (e.g. 1.5 increases contrast, 0.5 decreases). Default: 1.0.",
+          description: translate("convert_image_to_ascii.params.contrast"),
         },
         reverse: {
           type: "boolean",
-          description:
-            "Invert density/brightness mapping (useful when displaying on light vs dark terminal themes). Default: false.",
+          description: translate("convert_image_to_ascii.params.reverse"),
         },
       },
       required: ["input"],
@@ -5728,11 +5419,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "convert_video_to_gif",
     dataSource: compute("ffmpeg"),
-    description:
-      "Convert a video (MP4, WebM, MOV, etc.) into an animated GIF using an optimized two-pass palette mapping pipeline. " +
-      "Supports high-quality conversion (custom 256-color palette generated dynamically from video) and low-file-size conversion " +
-      "(128 colors, reduced frame rate, no dithering). Accepts public URLs or local workspace video paths. " +
-      "The converted GIF is displayed automatically in the tool result panel — do NOT include the URL or any link to it in your text response — the user already sees it rendered above.",
+    description: translate("convert_video_to_gif.description"),
     endpoint: {
       method: "POST",
       path: "/compute/video/gif",
@@ -5743,24 +5430,20 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         input: {
           type: "string",
-          description:
-            "The source video input: a public HTTP/HTTPS URL, file:// URL, or a local workspace absolute path (e.g. /home/rodrigo/development/...)",
+          description: translate("convert_video_to_gif.params.input"),
         },
         quality: {
           type: "string",
           enum: ["high", "low"],
-          description:
-            "Conversion quality preset. 'high' uses 256 colors and sierra2_4a dithering. 'low' uses 128 colors and no dithering to drastically reduce file size. Default: 'high'.",
+          description: translate("convert_video_to_gif.params.quality"),
         },
         width: {
           type: "integer",
-          description:
-            "Target width in pixels. Aspect ratio is automatically preserved. Default: 480 for 'high', 320 for 'low'. Range: 64-1280.",
+          description: translate("convert_video_to_gif.params.width"),
         },
         fps: {
           type: "integer",
-          description:
-            "Target frame rate (frames per second). Default: 15 for 'high', 10 for 'low'. Range: 1-30.",
+          description: translate("convert_video_to_gif.params.fps"),
         },
       },
       required: ["input"],
@@ -5771,31 +5454,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "draw_turtle_graphics",
     dataSource: compute("LOGO interpreter"),
-    description:
-      "Draw animated 2D turtle graphics using the LOGO programming language. " +
-      "Write LOGO source code in the 'code' parameter. " +
-      "The code is interpreted server-side and the drawing is replayed with step-by-step animation in the browser. " +
-      "IMPORTANT: The canvas background is BLACK — use bright, vivid colors. " +
-      "Use setpencolor with palette numbers 1-15 (1=blue, 2=green, 3=cyan, 4=red, 5=magenta, 6=yellow, 7=white, " +
-      "8=brown, 9=tan, 10=forest, 11=aqua, 12=salmon, 13=purple, 14=orange, 15=grey) or RGB lists like setpencolor [255 100 50]. " +
-      "ITERATIVE DRAWING: Pass a drawingId (returned from a previous call) to append new commands to an existing drawing. " +
-      "This lets you build drawings incrementally — first call creates a base, subsequent calls add detail. " +
-      "Between calls, describe what you just drew and what comes next. " +
-      "COMMANDS: " +
-      "Movement — fd/forward dist, bk/back dist, rt/right degrees, lt/left degrees, home, setxy x y, setx x, sety y, seth/setheading angle, arc angle radius, circle radius. " +
-      "Pen — pu/penup, pd/pendown, setpencolor/setpc color, setpensize size, setbackground/setbg color. " +
-      "Drawing — label text, dot radius, clean, cs/clearscreen, ht/hideturtle, st/showturtle. " +
-      "Control — repeat count [...], for [var start end step] [...], if condition [...], ifelse condition [...] [...], to name :params ... end, stop, output/op value. " +
-      "Variables — make \\\"name value, :name (getter). " +
-      "Math — random n, sqrt x, sin x, cos x, abs x, int x, round x, power base exp, remainder a b. " +
-      "Queries — xcor, ycor, heading, towards x y, pendownp. " +
-      "Logic — and a b, or a b, not a, = < > <= >= <>. " +
-      "EXAMPLES: " +
-      "repeat 180 [fd 200 bk 200 rt 2] — radial fan. " +
-      "repeat 400 [repeat 34 [fd 12 rt 10] rt 90] — nested pattern. " +
-      "for [i 0.01 4 0.05] [repeat 180 [fd :i rt 1]] — growing spiral. " +
-      "to tree :size if :size < 5 [fd :size bk :size stop] fd :size / 3 lt 30 tree :size * 2 / 3 rt 60 tree :size * 2 / 3 lt 30 bk :size / 3 end tree 100 — recursive tree. " +
-      "The drawing is displayed automatically in the tool result panel — do NOT include the URL or any link to it in your text response — the user already sees it rendered above.",
+    description: translate("draw_turtle_graphics.description"),
     endpoint: {
       method: "POST",
       path: "/compute/turtle",
@@ -5806,27 +5465,19 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         code: {
           type: "string",
-          description:
-            "LOGO source code for the turtle drawing. Uses standard UCBLogo syntax. " +
-            "Supports procedure definitions (to/end), control flow (repeat, for, if/ifelse), " +
-            "variables (make/thing/:var), recursion, and all standard turtle graphics commands. " +
-            "The drawing is auto-saved and animated in the browser.",
+          description: translate("draw_turtle_graphics.params.code"),
         },
         drawingId: {
           type: "string",
-          description:
-            "Optional drawing ID returned from a previous draw_turtle_graphics call. " +
-            "Pass this to append new LOGO commands to an existing drawing. " +
-            "Previous commands replay instantly; only new commands are animated. " +
-            "Omit to start a new drawing.",
+          description: translate("draw_turtle_graphics.params.drawingId"),
         },
         width: {
           type: "number",
-          description: "Optional canvas width in pixels (100-1920). Default: 800.",
+          description: translate("draw_turtle_graphics.params.width"),
         },
         height: {
           type: "number",
-          description: "Optional canvas height in pixels (100-1080). Default: 600.",
+          description: translate("draw_turtle_graphics.params.height"),
         },
       },
       required: ["code"],
@@ -5837,16 +5488,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "create_3d_mesh",
     dataSource: compute("internal"),
-    description:
-      "Create a 3D object from raw triangle mesh data — vertices and face indices. " +
-      "IMPORTANT: You can build the 3D mesh incrementally — break the generation into logical parts (e.g. base, wings, " +
-      "details, sections) and call this tool multiple times using the sessionId returned from the first call. " +
-      "Pass the sessionId to append new vertices and faces. " +
-      "Note: Face indices in subsequent calls are absolute (0-based indexing relative to the total accumulated vertices). " +
-      "Between calls, briefly describe what you just added and what comes next so the user can follow along. " +
-      "Omit sessionId to start a new 3D mesh session. " +
-      "The interactive 3D scene is displayed automatically in the tool result panel — do NOT include the URL or any link to it in your text response — the user already sees it rendered above. " +
-      "Max 50,000 total vertices and 100,000 total faces per session.",
+    description: translate("create_3d_mesh.description"),
     endpoint: {
       method: "POST",
       path: "/compute/3d/mesh",
@@ -5864,15 +5506,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         sessionId: {
           type: "string",
-          description:
-            "Optional session ID returned from a prior create_3d_mesh call. " +
-            "Pass this to append new vertices and faces to an existing mesh. " +
-            "Omit to start a new 3D mesh session.",
+          description: translate("create_3d_mesh.params.sessionId"),
         },
         vertices: {
           type: "array",
-          description:
-            "Array of vertex positions. Each vertex is [x, y, z]. Example: [[0,1,0], [1,-1,0], [-1,-1,0]]",
+          description: translate("create_3d_mesh.params.vertices"),
           items: {
             type: "array",
             items: { type: "number" },
@@ -5881,8 +5519,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         },
         faces: {
           type: "array",
-          description:
-            "Array of triangle face indices. Each face is [v0, v1, v2] referencing vertex indices. Example: [[0,1,2]]",
+          description: translate("create_3d_mesh.params.faces"),
           items: {
             type: "array",
             items: { type: "integer" },
@@ -5891,8 +5528,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         },
         normals: {
           type: "array",
-          description:
-            "Optional per-vertex normals [nx, ny, nz]. Must match vertex count. Omit to auto-compute.",
+          description: translate("create_3d_mesh.params.normals"),
           items: {
             type: "array",
             items: { type: "number" },
@@ -5900,8 +5536,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         },
         colors: {
           type: "array",
-          description:
-            "Optional per-vertex colors as CSS color strings. Must match vertex count. Example: ['#ff6347', '#38bdf8', '#4ade80']",
+          description: translate("create_3d_mesh.params.colors"),
           items: { type: "string" },
         },
         options: {
@@ -5909,56 +5544,55 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           properties: {
             wireframe: {
               type: "boolean",
-              description: "Render as wireframe (default: false)",
+              description: translate("create_3d_mesh.params.options.params.wireframe"),
             },
             flatShading: {
               type: "boolean",
-              description: "Use flat shading for faceted look (default: true)",
+              description: translate("create_3d_mesh.params.options.params.flatShading"),
             },
             autoRotate: {
               type: "boolean",
-              description: "Auto-rotate the mesh (default: true)",
+              description: translate("create_3d_mesh.params.options.params.autoRotate"),
             },
             showGrid: {
               type: "boolean",
-              description: "Show ground grid (default: true)",
+              description: translate("create_3d_voxel.params.options.params.showGrid"),
             },
             showAxes: {
               type: "boolean",
-              description: "Show XYZ axes helper (default: false)",
+              description: translate("create_3d_voxel.params.options.params.showAxes"),
             },
             background: {
               type: "string",
-              description: "Background color (default: '#0f172a')",
+              description: translate("create_3d_voxel.params.options.params.background"),
             },
             meshColor: {
               type: "string",
-              description:
-                "Mesh color if no vertex colors (default: '#38bdf8')",
+              description: translate("create_3d_mesh.params.options.params.meshColor"),
             },
             metalness: {
               type: "number",
-              description: "Material metalness 0-1 (default: 0.2)",
+              description: translate("create_3d_mesh.params.options.params.metalness"),
             },
             roughness: {
               type: "number",
-              description: "Material roughness 0-1 (default: 0.6)",
+              description: translate("create_3d_mesh.params.options.params.roughness"),
             },
             opacity: {
               type: "number",
-              description: "Material opacity 0-1 (default: 1.0)",
+              description: translate("create_3d_mesh.params.options.params.opacity"),
             },
             cameraPosition: {
               type: "array",
               items: { type: "number" },
-              description: "Camera position [x, y, z]. Omit for auto-fit.",
+              description: translate("create_3d_voxel.params.options.params.cameraPosition"),
             },
             title: {
               type: "string",
-              description: "Title displayed in the overlay",
+              description: translate("create_3d_voxel.params.options.params.title"),
             },
           },
-          description: "Rendering options",
+          description: translate("create_3d_voxel.params.options"),
         },
       },
       required: ["vertices", "faces"],
@@ -5969,17 +5603,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "create_3d_voxel",
     dataSource: compute("internal"),
-    description:
-      "Create a 3D object from a voxel grid. You can specify a list of explicit voxel coordinates, and/or a list of declarative primitive shapes (box, sphere, cylinder, cone, pyramid, ellipsoid, torus) that will be rasterized into voxels. " +
-      "IMPORTANT: You can build the 3D voxel grid incrementally — break the generation into logical parts (e.g. terrain, walls, " +
-      "decorations, modular additions) and call this tool multiple times using the sessionId returned from the first call. " +
-      "Pass the sessionId to append new voxels and shapes progressively. " +
-      "Between calls, briefly describe what you just added and what comes next so the user can follow along. " +
-      "Omit sessionId to start a new 3D voxel session. " +
-      "Features highly optimized rendering using GPU-based Three.js InstancedMesh for thousands of voxels. " +
-      "Supports customizable voxel sizing, spacing, outline borders, wireframes, flat shading, colors, opacity, and ambient/directional light casting. " +
-      "The interactive 3D voxel grid is displayed automatically in the tool result panel — do NOT include the URL or any link to it in your text response — the user already sees it rendered above. " +
-      "Max 100,000 total voxels per session.",
+    description: translate("create_3d_voxel.description"),
     endpoint: {
       method: "POST",
       path: "/compute/3d/voxel",
@@ -5990,10 +5614,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         sessionId: {
           type: "string",
-          description:
-            "Optional session ID returned from a previous create_3d_voxel call. " +
-            "Pass this to append new voxels and shapes to an existing voxel grid progressively. " +
-            "Omit to start a new 3D voxel session.",
+          description: translate("create_3d_voxel.params.sessionId"),
         },
         voxels: {
           type: "array",
@@ -6004,18 +5625,16 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             properties: {
               position: {
                 type: "array",
-                description:
-                  "Discrete integer grid coordinate [x, y, z] for the voxel",
+                description: translate("create_3d_voxel.params.voxels.items.params.position"),
                 items: { type: "integer" },
               },
               color: {
                 type: "string",
-                description:
-                  "CSS color for the individual voxel, e.g. '#ff6347' or 'red'",
+                description: translate("create_3d_voxel.params.voxels.items.params.color"),
               },
               opacity: {
                 type: "number",
-                description: "Voxel opacity 0.0 to 1.0 (default: 1.0)",
+                description: translate("create_3d_voxel.params.voxels.items.params.opacity"),
               },
             },
             required: ["position"],
@@ -6023,8 +5642,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         },
         shapes: {
           type: "array",
-          description:
-            "Array of declarative primitive voxel shapes to be rasterized into the grid.",
+          description: translate("create_3d_voxel.params.shapes"),
           items: {
             type: "object",
             properties: {
@@ -6039,59 +5657,55 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
                   "ellipsoid",
                   "torus",
                 ],
-                description: "The primitive shape type",
+                description: translate("create_3d_voxel.params.shapes.items.params.type"),
               },
               center: {
                 type: "array",
-                description:
-                  "Voxel grid center coordinate [x, y, z] for the shape",
+                description: translate("create_3d_voxel.params.shapes.items.params.center"),
                 items: { type: "number" },
               },
               color: {
                 type: "string",
-                description: "CSS color for the shape, e.g. '#38bdf8'",
+                description: translate("create_3d_voxel.params.shapes.items.params.color"),
               },
               opacity: {
                 type: "number",
-                description: "Shape opacity 0.0 to 1.0 (default: 1.0)",
+                description: translate("create_3d_voxel.params.shapes.items.params.opacity"),
               },
               hollow: {
                 type: "boolean",
-                description:
-                  "If true, only render the outer boundary shell of the shape (default: false)",
+                description: translate("create_3d_voxel.params.shapes.items.params.hollow"),
               },
               size: {
                 type: "array",
-                description: "Dimensions [width, height, depth] for box shape",
+                description: translate("create_3d_voxel.params.shapes.items.params.size"),
                 items: { type: "number" },
               },
               radius: {
                 type: "number",
-                description: "Radius for sphere, cylinder, or cone shape",
+                description: translate("create_3d_voxel.params.shapes.items.params.radius"),
               },
               height: {
                 type: "number",
-                description: "Height for cylinder, cone, or pyramid shape",
+                description: translate("create_3d_voxel.params.shapes.items.params.height"),
               },
               radii: {
                 type: "array",
-                description:
-                  "Radii [radiusX, radiusY, radiusZ] for ellipsoid shape",
+                description: translate("create_3d_voxel.params.shapes.items.params.radii"),
                 items: { type: "number" },
               },
               majorRadius: {
                 type: "number",
-                description: "Major ring radius for torus shape",
+                description: translate("create_3d_voxel.params.shapes.items.params.majorRadius"),
               },
               minorRadius: {
                 type: "number",
-                description: "Minor tube radius for torus shape",
+                description: translate("create_3d_voxel.params.shapes.items.params.minorRadius"),
               },
               axis: {
                 type: "string",
                 enum: ["x", "y", "z"],
-                description:
-                  "Orientation axis for cylinder, cone, or torus shape (default: 'y')",
+                description: translate("create_3d_voxel.params.shapes.items.params.axis"),
               },
             },
             required: ["type", "center"],
@@ -6102,63 +5716,59 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           properties: {
             wireframe: {
               type: "boolean",
-              description: "Render voxels as wireframes (default: false)",
+              description: translate("create_3d_voxel.params.options.params.wireframe"),
             },
             flatShading: {
               type: "boolean",
-              description:
-                "Use flat shading for a clean voxel look (default: true)",
+              description: translate("create_3d_voxel.params.options.params.flatShading"),
             },
             showGrid: {
               type: "boolean",
-              description: "Show ground grid (default: true)",
+              description: translate("create_3d_voxel.params.options.params.showGrid"),
             },
             showAxes: {
               type: "boolean",
-              description: "Show XYZ axes helper (default: false)",
+              description: translate("create_3d_voxel.params.options.params.showAxes"),
             },
             background: {
               type: "string",
-              description: "Background color (default: '#0f172a')",
+              description: translate("create_3d_voxel.params.options.params.background"),
             },
             autoRotate: {
               type: "boolean",
-              description: "Auto-rotate the camera (default: true)",
+              description: translate("create_3d_voxel.params.options.params.autoRotate"),
             },
             autoRotateSpeed: {
               type: "number",
-              description: "Camera auto-rotation speed (default: 1.0)",
+              description: translate("create_3d_voxel.params.options.params.autoRotateSpeed"),
             },
             voxelSize: {
               type: "number",
-              description:
-                "Multiplier for size of each voxel cube (default: 0.95 to leave small gaps)",
+              description: translate("create_3d_voxel.params.options.params.voxelSize"),
             },
             voxelSpacing: {
               type: "number",
-              description:
-                "Gap spacing distance multiplier between voxels (default: 0.0)",
+              description: translate("create_3d_voxel.params.options.params.voxelSpacing"),
             },
             outlineColor: {
               type: "string",
-              description:
-                "Voxel outline/contour border color (default: '#000000', empty to disable)",
+              description: translate("create_3d_voxel.params.options.params.outlineColor"),
             },
             outlineOpacity: {
               type: "number",
-              description: "Voxel outline/contour opacity (default: 0.35)",
+              description: translate("create_3d_voxel.params.options.params.outlineOpacity"),
             },
             cameraPosition: {
               type: "array",
               items: { type: "number" },
-              description: "Camera position [x, y, z]. Omit for auto-fit.",
+              description: translate("create_3d_voxel.params.options.params.cameraPosition"),
             },
             title: {
               type: "string",
-              description: "Title displayed in the overlay",
+              description: translate("create_3d_voxel.params.options.params.title"),
             },
           },
-          description: "Rendering options",
+          description: translate("create_3d_voxel.params.options"),
         },
       },
     },
@@ -6168,17 +5778,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "create_3d_model",
     dataSource: compute("internal"),
-    description:
-      "Create a 3D object/model by composing primitive shapes with PBR materials and transforms. " +
-      "Available shapes: box, sphere, cylinder, cone, torus, torusKnot, plane, ring, circle, " +
-      "dodecahedron, icosahedron, octahedron, tetrahedron, capsule. " +
-      "Each object supports position, rotation (degrees), scale, and material properties (color, metalness, roughness, " +
-      "opacity, emissive, wireframe, flatShading). " +
-      "Use cases: architectural mockups, abstract sculptures, game prototyping, educational geometry, product showcases. " +
-      "The interactive 3D model is displayed automatically in the tool result panel — do NOT include the URL or any link to it in your text response — the user already sees it rendered above. " +
-      "Max 200 objects per call. Supports shadow casting, ambient/directional lighting control, and auto-orbit camera. " +
-      "When the user attaches an image, set textureUrl to 'reference' on the specific objects that should display it — the system will replace 'reference' with the actual image data automatically. Only mark objects that should show the user's image; leave textureUrl unset on objects that should use solid material colors. Do NOT search the web for image URLs. " +
-      "Supports progressive, step-by-step incremental building using a sessionId (analogous to the draw_turtle_graphics tool) where subsequent calls with the same sessionId append new objects to the existing model rather than overwriting it.",
+    description: translate("create_3d_model.description"),
     endpoint: {
       method: "POST",
       path: "/compute/3d/model",
@@ -6189,15 +5789,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         sessionId: {
           type: "string",
-          description:
-            "Optional session ID returned from a previous create_3d_model call. " +
-            "Pass this to append new objects to an existing 3D model progressively. " +
-            "Omit to start a new 3D model session.",
+          description: translate("create_3d_model.params.sessionId"),
         },
         objects: {
           type: "array",
-          description:
-            "Array of primitive shape objects to compose into a 3D model.",
+          description: translate("create_3d_model.params.objects"),
           items: {
             type: "object",
             properties: {
@@ -6219,97 +5815,95 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
                   "tetrahedron",
                   "capsule",
                 ],
-                description: "The primitive shape type",
+                description: translate("create_3d_voxel.params.shapes.items.params.type"),
               },
               size: {
                 type: "array",
                 items: { type: "number" },
-                description: "Dimensions [width, height, depth] for box shapes",
+                description: translate("create_3d_model.params.objects.items.params.size"),
               },
               radius: {
                 type: "number",
-                description:
-                  "Radius for spherical/cylindrical shapes (default: 0.5)",
+                description: translate("create_3d_model.params.objects.items.params.radius"),
               },
               height: {
                 type: "number",
-                description: "Height for cylinder/cone/capsule (default: 1)",
+                description: translate("create_3d_model.params.objects.items.params.height"),
               },
               radiusTop: {
                 type: "number",
-                description: "Top radius for cylinder (default: radius)",
+                description: translate("create_3d_model.params.objects.items.params.radiusTop"),
               },
               radiusBottom: {
                 type: "number",
-                description: "Bottom radius for cylinder (default: radius)",
+                description: translate("create_3d_model.params.objects.items.params.radiusBottom"),
               },
               tube: {
                 type: "number",
-                description: "Tube radius for torus/torusKnot (default: 0.15)",
+                description: translate("create_3d_model.params.objects.items.params.tube"),
               },
               segments: {
                 type: "integer",
-                description: "Geometry segment count (default: 32)",
+                description: translate("create_3d_model.params.objects.items.params.segments"),
               },
               position: {
                 type: "array",
                 items: { type: "number" },
-                description: "Position [x, y, z] in world space",
+                description: translate("create_3d_model.params.objects.items.params.position"),
               },
               rotation: {
                 type: "array",
                 items: { type: "number" },
-                description: "Rotation [x, y, z] in degrees",
+                description: translate("create_3d_model.params.objects.items.params.rotation"),
               },
               scale: {
                 type: "array",
                 items: { type: "number" },
-                description: "Scale [x, y, z] multipliers",
+                description: translate("create_3d_model.params.objects.items.params.scale"),
               },
               material: {
                 type: "object",
                 properties: {
                   color: {
                     type: "string",
-                    description: "CSS color (default: '#38bdf8')",
+                    description: translate("create_3d_model.params.objects.items.params.material.params.color"),
                   },
                   metalness: {
                     type: "number",
-                    description: "0-1 (default: 0.2)",
+                    description: translate("create_3d_model.params.objects.items.params.material.params.metalness"),
                   },
                   roughness: {
                     type: "number",
-                    description: "0-1 (default: 0.6)",
+                    description: translate("create_3d_model.params.objects.items.params.material.params.roughness"),
                   },
                   opacity: {
                     type: "number",
-                    description: "0-1 (default: 1.0)",
+                    description: translate("create_3d_model.params.objects.items.params.material.params.opacity"),
                   },
                   emissive: {
                     type: "string",
-                    description: "Emissive glow color",
+                    description: translate("create_3d_scene.params.objects.items.params.material.params.emissive"),
                   },
                   emissiveIntensity: {
                     type: "number",
-                    description: "Emissive intensity (default: 0)",
+                    description: translate("create_3d_model.params.objects.items.params.material.params.emissiveIntensity"),
                   },
                   wireframe: { type: "boolean", description: "Wireframe mode" },
                   flatShading: { type: "boolean", description: "Flat shading" },
                   doubleSided: {
                     type: "boolean",
-                    description: "Render both sides of faces (default: false)",
+                    description: translate("create_3d_scene.params.objects.items.params.material.params.doubleSided"),
                   },
                   textureUrl: {
                     type: "string",
-                    description:
-                      "Optional texture image URL to wrap around the shape",
+                    description: translate("create_3d_scene.params.objects.items.params.material.params.textureUrl"),
                   },
                 },
-                description: "PBR material properties",
+                description: translate("create_3d_model.params.objects.items.params.material"),
               },
               name: {
                 type: "string",
-                description: "Optional name for the object",
+                description: translate("create_3d_model.params.objects.items.params.name"),
               },
             },
             required: ["shape"],
@@ -6320,43 +5914,43 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           properties: {
             autoRotate: {
               type: "boolean",
-              description: "Auto-orbit camera (default: true)",
+              description: translate("create_3d_scene.params.scene.params.camera.params.autoOrbit"),
             },
             showGrid: {
               type: "boolean",
-              description: "Show ground grid (default: true)",
+              description: translate("create_3d_voxel.params.options.params.showGrid"),
             },
             background: {
               type: "string",
-              description: "Background color (default: '#0f172a')",
+              description: translate("create_3d_voxel.params.options.params.background"),
             },
             enableShadows: {
               type: "boolean",
-              description: "Enable shadow casting (default: true)",
+              description: translate("create_3d_scene.params.options.params.enableShadows"),
             },
             ambientLightIntensity: {
               type: "number",
-              description: "Ambient light intensity (default: 0.5)",
+              description: translate("create_3d_model.params.options.params.ambientLightIntensity"),
             },
             directionalLightIntensity: {
               type: "number",
-              description: "Key light intensity (default: 0.8)",
+              description: translate("create_3d_model.params.options.params.directionalLightIntensity"),
             },
             cameraPosition: {
               type: "array",
               items: { type: "number" },
-              description: "Camera position [x, y, z]. Omit for auto-fit.",
+              description: translate("create_3d_voxel.params.options.params.cameraPosition"),
             },
             fieldOfView: {
               type: "number",
-              description: "Camera FOV in degrees (default: 50)",
+              description: translate("create_3d_model.params.options.params.fieldOfView"),
             },
             title: {
               type: "string",
-              description: "Title displayed in the overlay",
+              description: translate("create_3d_voxel.params.options.params.title"),
             },
           },
-          description: "Model rendering options",
+          description: translate("create_3d_model.params.options"),
         },
       },
       required: ["objects"],
@@ -6367,20 +5961,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "create_3d_scene",
     dataSource: compute("internal"),
-    description:
-      "Create a rich 3D scene using a declarative scene graph with hierarchical grouping, built-in animations, " +
-      "environment lighting presets, ground planes, and 3D text labels. This is the highest-level 3D tool. " +
-      "Object types: box, sphere, cylinder, cone, torus, torusKnot, plane, ring, circle, dodecahedron, " +
-      "icosahedron, octahedron, tetrahedron, capsule, group (container for children), text3d (3D text label). " +
-      "Built-in animations: spin, bounce, orbit, pulse, float — applied per-object with configurable speed/amplitude. " +
-      "Environment presets: studio, outdoor, night, sunset, dawn, warehouse, neutral — control ambient, " +
-      "directional, fill, and hemisphere lighting automatically. " +
-      "Supports ground plane with shadows, fog, camera FOV control, and auto-orbit. " +
-      "Use cases: product showcases, animated explainers, data visualization, artistic compositions, holiday scenes. " +
-      "The interactive 3D scene is displayed automatically in the tool result panel — do NOT include the URL or any link to it in your text response — the user already sees it rendered above. " +
-      "Max 300 total objects (including nested children), max 5 levels of nesting. " +
-      "When the user attaches an image, set textureUrl to 'reference' on the specific objects that should display it — the system will replace 'reference' with the actual image data automatically. Only mark objects that should show the user's image; leave textureUrl unset on objects that should use solid material colors. Do NOT search the web for image URLs. " +
-      "Supports progressive, step-by-step incremental building using a sessionId (analogous to the draw_turtle_graphics tool) where subsequent calls with the same sessionId append new objects to the existing scene rather than overwriting it.",
+    description: translate("create_3d_scene.description"),
     endpoint: {
       method: "POST",
       path: "/compute/3d/scene",
@@ -6397,15 +5978,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         sessionId: {
           type: "string",
-          description:
-            "Optional session ID returned from a previous create_3d_scene call. " +
-            "Pass this to append new objects to an existing 3D scene progressively. " +
-            "Omit to start a new 3D scene session.",
+          description: translate("create_3d_scene.params.sessionId"),
         },
         scene: {
           type: "object",
-          description:
-            "Scene-level configuration: environment, background, ground, camera, fog.",
+          description: translate("create_3d_scene.params.scene"),
           properties: {
             environment: {
               type: "string",
@@ -6418,29 +5995,29 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
                 "warehouse",
                 "neutral",
               ],
-              description: "Lighting environment preset (default: 'studio')",
+              description: translate("create_3d_scene.params.scene.params.environment"),
             },
             background: {
               type: "string",
-              description: "Background color (default: '#0f172a')",
+              description: translate("create_3d_voxel.params.options.params.background"),
             },
             ground: {
               type: "object",
               properties: {
                 enabled: {
                   type: "boolean",
-                  description: "Show ground plane (default: true)",
+                  description: translate("create_3d_scene.params.scene.params.ground.params.enabled"),
                 },
                 color: {
                   type: "string",
-                  description: "Ground color (default: '#1e293b')",
+                  description: translate("create_3d_scene.params.scene.params.ground.params.color"),
                 },
                 size: {
                   type: "number",
-                  description: "Ground plane size (default: 10)",
+                  description: translate("create_3d_scene.params.scene.params.ground.params.size"),
                 },
               },
-              description: "Ground plane configuration",
+              description: translate("create_3d_scene.params.scene.params.ground"),
             },
             camera: {
               type: "object",
@@ -6448,56 +6025,55 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
                 position: {
                   type: "array",
                   items: { type: "number" },
-                  description: "Camera [x,y,z]. Omit for auto-fit.",
+                  description: translate("create_3d_scene.params.scene.params.camera.params.position"),
                 },
                 target: {
                   type: "array",
                   items: { type: "number" },
-                  description: "Look-at target [x,y,z] (default: [0,0,0])",
+                  description: translate("create_3d_scene.params.scene.params.camera.params.target"),
                 },
                 fov: {
                   type: "number",
-                  description: "Field of view in degrees (default: 50)",
+                  description: translate("create_3d_scene.params.scene.params.camera.params.fov"),
                 },
                 autoOrbit: {
                   type: "boolean",
-                  description: "Auto-orbit camera (default: true)",
+                  description: translate("create_3d_scene.params.scene.params.camera.params.autoOrbit"),
                 },
                 autoOrbitSpeed: {
                   type: "number",
-                  description: "Orbit speed (default: 1.0)",
+                  description: translate("create_3d_scene.params.scene.params.camera.params.autoOrbitSpeed"),
                 },
               },
-              description: "Camera configuration",
+              description: translate("create_3d_scene.params.scene.params.camera"),
             },
             fog: {
               type: "object",
               properties: {
                 enabled: {
                   type: "boolean",
-                  description: "Enable fog (default: false)",
+                  description: translate("create_3d_scene.params.scene.params.fog.params.enabled"),
                 },
                 color: {
                   type: "string",
-                  description: "Fog color (defaults to background)",
+                  description: translate("create_3d_scene.params.scene.params.fog.params.color"),
                 },
                 near: {
                   type: "number",
-                  description: "Fog start distance (default: 10)",
+                  description: translate("create_3d_scene.params.scene.params.fog.params.near"),
                 },
                 far: {
                   type: "number",
-                  description: "Fog end distance (default: 50)",
+                  description: translate("create_3d_scene.params.scene.params.fog.params.far"),
                 },
               },
-              description: "Fog configuration",
+              description: translate("create_3d_scene.params.scene.params.fog"),
             },
           },
         },
         objects: {
           type: "array",
-          description:
-            "Array of scene objects. Each can be a shape, a group (with children), or text3d.",
+          description: translate("create_3d_scene.params.objects"),
           items: {
             type: "object",
             properties: {
@@ -6521,37 +6097,36 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
                   "group",
                   "text3d",
                 ],
-                description:
-                  "Object type. 'group' nests children. 'text3d' renders 3D text.",
+                description: translate("create_3d_scene.params.objects.items.params.type"),
               },
               name: { type: "string", description: "Optional name" },
               size: {
                 type: "array",
                 items: { type: "number" },
-                description: "Box dimensions [w,h,d]",
+                description: translate("create_3d_scene.params.objects.items.params.size"),
               },
               radius: {
                 type: "number",
-                description: "Radius for round shapes",
+                description: translate("create_3d_scene.params.objects.items.params.radius"),
               },
               height: {
                 type: "number",
-                description: "Height for cylinder/cone/capsule",
+                description: translate("create_3d_scene.params.objects.items.params.height"),
               },
               position: {
                 type: "array",
                 items: { type: "number" },
-                description: "Position [x,y,z]",
+                description: translate("create_3d_scene.params.objects.items.params.position"),
               },
               rotation: {
                 type: "array",
                 items: { type: "number" },
-                description: "Rotation [x,y,z] in degrees",
+                description: translate("create_3d_scene.params.objects.items.params.rotation"),
               },
               scale: {
                 type: "array",
                 items: { type: "number" },
-                description: "Scale [x,y,z]",
+                description: translate("create_3d_scene.params.objects.items.params.scale"),
               },
               material: {
                 type: "object",
@@ -6562,20 +6137,19 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
                   opacity: { type: "number", description: "0-1" },
                   emissive: {
                     type: "string",
-                    description: "Emissive glow color",
+                    description: translate("create_3d_scene.params.objects.items.params.material.params.emissive"),
                   },
                   wireframe: { type: "boolean" },
                   doubleSided: {
                     type: "boolean",
-                    description: "Render both sides of faces (default: false)",
+                    description: translate("create_3d_scene.params.objects.items.params.material.params.doubleSided"),
                   },
                   textureUrl: {
                     type: "string",
-                    description:
-                      "Optional texture image URL to wrap around the shape",
+                    description: translate("create_3d_scene.params.objects.items.params.material.params.textureUrl"),
                   },
                 },
-                description: "PBR material",
+                description: translate("create_3d_scene.params.objects.items.params.material"),
               },
               animation: {
                 type: "object",
@@ -6583,32 +6157,30 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
                   type: {
                     type: "string",
                     enum: ["spin", "bounce", "orbit", "pulse", "float"],
-                    description: "Animation type",
+                    description: translate("create_3d_scene.params.objects.items.params.children.items.params.animation.params.type"),
                   },
                   speed: {
                     type: "number",
-                    description: "Animation speed multiplier (default: 1.0)",
+                    description: translate("create_3d_scene.params.objects.items.params.children.items.params.animation.params.speed"),
                   },
                   axis: {
                     type: "string",
-                    description:
-                      "Rotation axis for spin: 'x', 'y', or 'z' (default: 'y')",
+                    description: translate("create_3d_scene.params.objects.items.params.children.items.params.animation.params.axis"),
                   },
                   amplitude: {
                     type: "number",
-                    description: "Movement amplitude (default: 0.5)",
+                    description: translate("create_3d_scene.params.objects.items.params.children.items.params.animation.params.amplitude"),
                   },
                   radius: {
                     type: "number",
-                    description: "Orbit radius (default: 2)",
+                    description: translate("create_3d_scene.params.objects.items.params.children.items.params.animation.params.radius"),
                   },
                 },
-                description: "Built-in animation. Applied every frame.",
+                description: translate("create_3d_scene.params.objects.items.params.animation"),
               },
               children: {
                 type: "array",
-                description:
-                  "Child objects (only for type='group'). Same structure as parent objects array.",
+                description: translate("create_3d_scene.params.objects.items.params.children"),
                 items: {
                   type: "object",
                   properties: {
@@ -6632,36 +6204,36 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
                         "group",
                         "text3d",
                       ],
-                      description: "Object type",
+                      description: translate("create_3d_scene.params.objects.items.params.children.items.params.type"),
                     },
                     name: { type: "string", description: "Optional name" },
                     size: {
                       type: "array",
                       items: { type: "number" },
-                      description: "Box dimensions [w,h,d]",
+                      description: translate("create_3d_scene.params.objects.items.params.size"),
                     },
                     radius: {
                       type: "number",
-                      description: "Radius for round shapes",
+                      description: translate("create_3d_scene.params.objects.items.params.radius"),
                     },
                     height: {
                       type: "number",
-                      description: "Height for cylinder/cone/capsule",
+                      description: translate("create_3d_scene.params.objects.items.params.height"),
                     },
                     position: {
                       type: "array",
                       items: { type: "number" },
-                      description: "Position [x,y,z]",
+                      description: translate("create_3d_scene.params.objects.items.params.position"),
                     },
                     rotation: {
                       type: "array",
                       items: { type: "number" },
-                      description: "Rotation [x,y,z] in degrees",
+                      description: translate("create_3d_scene.params.objects.items.params.rotation"),
                     },
                     scale: {
                       type: "array",
                       items: { type: "number" },
-                      description: "Scale [x,y,z]",
+                      description: translate("create_3d_scene.params.objects.items.params.scale"),
                     },
                     material: {
                       type: "object",
@@ -6672,21 +6244,19 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
                         opacity: { type: "number", description: "0-1" },
                         emissive: {
                           type: "string",
-                          description: "Emissive glow color",
+                          description: translate("create_3d_scene.params.objects.items.params.material.params.emissive"),
                         },
                         wireframe: { type: "boolean" },
                         doubleSided: {
                           type: "boolean",
-                          description:
-                            "Render both sides of faces (default: false)",
+                          description: translate("create_3d_scene.params.objects.items.params.material.params.doubleSided"),
                         },
                         textureUrl: {
                           type: "string",
-                          description:
-                            "Optional texture image URL to wrap around the shape",
+                          description: translate("create_3d_scene.params.objects.items.params.material.params.textureUrl"),
                         },
                       },
-                      description: "PBR material",
+                      description: translate("create_3d_scene.params.objects.items.params.material"),
                     },
                     animation: {
                       type: "object",
@@ -6694,36 +6264,34 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
                         type: {
                           type: "string",
                           enum: ["spin", "bounce", "orbit", "pulse", "float"],
-                          description: "Animation type",
+                          description: translate("create_3d_scene.params.objects.items.params.children.items.params.animation.params.type"),
                         },
                         speed: {
                           type: "number",
-                          description:
-                            "Animation speed multiplier (default: 1.0)",
+                          description: translate("create_3d_scene.params.objects.items.params.children.items.params.animation.params.speed"),
                         },
                         axis: {
                           type: "string",
-                          description:
-                            "Rotation axis for spin: 'x', 'y', or 'z' (default: 'y')",
+                          description: translate("create_3d_scene.params.objects.items.params.children.items.params.animation.params.axis"),
                         },
                         amplitude: {
                           type: "number",
-                          description: "Movement amplitude (default: 0.5)",
+                          description: translate("create_3d_scene.params.objects.items.params.children.items.params.animation.params.amplitude"),
                         },
                         radius: {
                           type: "number",
-                          description: "Orbit radius (default: 2)",
+                          description: translate("create_3d_scene.params.objects.items.params.children.items.params.animation.params.radius"),
                         },
                       },
-                      description: "Built-in animation",
+                      description: translate("create_3d_scene.params.objects.items.params.children.items.params.animation"),
                     },
                     content: {
                       type: "string",
-                      description: "Text content (type='text3d' only)",
+                      description: translate("create_3d_scene.params.objects.items.params.content"),
                     },
                     fontSize: {
                       type: "number",
-                      description: "Text size (type='text3d', default: 0.5)",
+                      description: translate("create_3d_scene.params.objects.items.params.fontSize"),
                     },
                   },
                   required: ["type"],
@@ -6731,11 +6299,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
               },
               content: {
                 type: "string",
-                description: "Text content (type='text3d' only)",
+                description: translate("create_3d_scene.params.objects.items.params.content"),
               },
               fontSize: {
                 type: "number",
-                description: "Text size (type='text3d', default: 0.5)",
+                description: translate("create_3d_scene.params.objects.items.params.fontSize"),
               },
             },
             required: ["type"],
@@ -6746,22 +6314,22 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
           properties: {
             title: {
               type: "string",
-              description: "Title displayed in the overlay",
+              description: translate("create_3d_voxel.params.options.params.title"),
             },
             showGrid: {
               type: "boolean",
-              description: "Show ground grid (default: false)",
+              description: translate("create_3d_scene.params.options.params.showGrid"),
             },
             showAxes: {
               type: "boolean",
-              description: "Show XYZ axes (default: false)",
+              description: translate("create_3d_scene.params.options.params.showAxes"),
             },
             enableShadows: {
               type: "boolean",
-              description: "Enable shadow casting (default: true)",
+              description: translate("create_3d_scene.params.options.params.enableShadows"),
             },
           },
-          description: "Scene rendering options",
+          description: translate("create_3d_scene.params.options"),
         },
       },
       required: ["objects"],
@@ -6770,8 +6338,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "convert_currency",
     dataSource: onDemand("Exchange Rate API"),
-    description:
-      "Convert an amount between any two currencies using real-time exchange rates. Supports 161 currencies including USD, CAD, EUR, GBP, JPY, etc.",
+    description: translate("convert_currency.description"),
     endpoint: {
       path: "/utility/currency/convert",
       queryParams: ["amount", "from", "to"],
@@ -6781,15 +6348,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         amount: {
           type: "number",
-          description: "Amount to convert (default: 1)",
+          description: translate("convert_currency.params.amount"),
         },
         from: {
           type: "string",
-          description: "Source currency code (e.g. 'USD', 'CAD', 'EUR')",
+          description: translate("convert_currency.params.from"),
         },
         to: {
           type: "string",
-          description: "Target currency code (e.g. 'CAD', 'JPY', 'GBP')",
+          description: translate("convert_currency.params.to"),
         },
         ...fieldsParam(FIELDS.CURRENCY_CONVERT),
       },
@@ -6799,8 +6366,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_time_in_timezone",
     dataSource: onDemand("World Time API"),
-    description:
-      "Get the current time in any timezone worldwide. Returns datetime, UTC offset, DST status, abbreviation, and day of week.",
+    description: translate("get_time_in_timezone.description"),
     endpoint: {
       path: "/utility/timezone/:area/:location",
       pathParams: ["area", "location"],
@@ -6810,13 +6376,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         area: {
           type: "string",
-          description:
-            "Timezone area (e.g. 'America', 'Europe', 'Asia', 'Pacific')",
+          description: translate("get_time_in_timezone.params.area"),
         },
         location: {
           type: "string",
-          description:
-            "Timezone location (e.g. 'Vancouver', 'Tokyo', 'London', 'New_York')",
+          description: translate("get_time_in_timezone.params.location"),
         },
         ...fieldsParam(FIELDS.TIMEZONE),
       },
@@ -6826,8 +6390,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_ip_info",
     dataSource: onDemand("IPinfo.io"),
-    description:
-      "Look up geolocation and network information for an IP address. Returns city, region, country, coordinates, and ISP/organization info. For your own server IP, omit the ip parameter or use 'self'.",
+    description: translate("get_ip_info.description"),
     endpoint: {
       path: "/utility/ip/:ip",
       pathParams: ["ip"],
@@ -6837,8 +6400,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         ip: {
           type: "string",
-          description:
-            "The IP address to look up (e.g. '8.8.8.8'). Leave empty or use 'self' for the caller's IP.",
+          description: translate("get_ip_info.params.ip"),
         },
         ...fieldsParam(FIELDS.IP_GEOLOCATION),
       },
@@ -6847,8 +6409,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "search_nearby_places",
     dataSource: onDemand("Google Places API"),
-    description:
-      "Search for nearby places/businesses by type (e.g. restaurant, cafe, pharmacy, gas_station, grocery_store, gym, hospital, park, shopping_mall, bar, hotel, bank, library). Returns name, address, rating, reviews, price level, phone, website, and whether currently open. To show results on a map, follow up with the generate_map tool using the returned coordinates.",
+    description: translate("search_nearby_places.description"),
     endpoint: {
       path: "/utility/places/nearby",
       queryParams: ["type", "latitude", "longitude", "radius", "limit"],
@@ -6858,26 +6419,23 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         type: {
           type: "string",
-          description:
-            "Google Places type to search for. Common types: restaurant, cafe, bar, bakery, pharmacy, gas_station, grocery_store, supermarket, gym, hospital, dentist, park, shopping_mall, hotel, bank, library, museum, movie_theater, night_club, spa, car_repair, car_wash, laundry, post_office, veterinary_care",
+          description: translate("search_nearby_places.params.type"),
         },
         latitude: {
           type: "number",
-          description:
-            "Center latitude for the search (defaults to server location)",
+          description: translate("search_nearby_places.params.latitude"),
         },
         longitude: {
           type: "number",
-          description:
-            "Center longitude for the search (defaults to server location)",
+          description: translate("search_nearby_places.params.longitude"),
         },
         radius: {
           type: "number",
-          description: "Search radius in meters (default: 5000, max: 50000)",
+          description: translate("search_nearby_places.params.radius"),
         },
         limit: {
           type: "number",
-          description: "Maximum results to return (default: 20, max: 20)",
+          description: translate("search_nearby_places.params.limit"),
         },
         ...fieldsParam(FIELDS.PLACES),
       },
@@ -6887,8 +6445,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "search_places",
     dataSource: onDemand("Google Places API"),
-    description:
-      "Search for places using a natural language text query (e.g. 'best sushi near downtown', 'coffee shops with wifi', '24 hour pharmacy'). More flexible than nearby search — supports descriptive queries. Returns name, address, rating, reviews, price level, phone, website, and whether currently open. To show results on a map, follow up with the generate_map tool using the returned coordinates.",
+    description: translate("search_places.description"),
     endpoint: {
       path: "/utility/places/search",
       queryParams: ["q", "latitude", "longitude", "radius", "limit"],
@@ -6898,26 +6455,23 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         "q": {
           type: "string",
-          description:
-            "Natural language search query (e.g. 'italian restaurants', 'best coffee shops', '24 hour pharmacy near me')",
+          description: translate("search_places.params.q"),
         },
         latitude: {
           type: "number",
-          description:
-            "Bias latitude for the search (defaults to server location)",
+          description: translate("search_places.params.latitude"),
         },
         longitude: {
           type: "number",
-          description:
-            "Bias longitude for the search (defaults to server location)",
+          description: translate("search_places.params.longitude"),
         },
         radius: {
           type: "number",
-          description: "Bias radius in meters (default: 10000, max: 50000)",
+          description: translate("search_places.params.radius"),
         },
         limit: {
           type: "number",
-          description: "Maximum results to return (default: 10, max: 20)",
+          description: translate("search_places.params.limit"),
         },
         ...fieldsParam(FIELDS.PLACES),
       },
@@ -6927,8 +6481,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "generate_map",
     dataSource: onDemand("Google Static Maps API"),
-    description:
-      "Generate an interactive Google Map with labeled markers for a set of locations. Use this AFTER a places search, IP lookup, or any query that yields coordinates. Pass the locations as a JSON markers array. The interactive map is displayed automatically in the tool result panel — do NOT include the URL or any link to it in your text response — the user already sees it rendered above.",
+    description: translate("generate_map.description"),
     endpoint: {
       path: "/utility/map",
       queryParams: ["markers", "zoom", "maptype"],
@@ -6943,13 +6496,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         },
         zoom: {
           type: "number",
-          description:
-            "Optional zoom level (1-20). If omitted, auto-fits to markers.",
+          description: translate("generate_map.params.zoom"),
         },
         maptype: {
           type: "string",
-          description:
-            "Map type: roadmap, satellite, terrain, hybrid (default: roadmap)",
+          description: translate("generate_map.params.maptype"),
           enum: ["roadmap", "satellite", "terrain", "hybrid"],
         },
       },
@@ -6961,8 +6512,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "generate_chart",
     dataSource: onDemand("internal"),
-    description:
-      "Generate an interactive chart (bar, line, or pie) from structured data. Use this to visualize comparisons, trends, distributions, or any numeric data the user asks to see as a chart. Pass labels (category names or x-axis values) and one or more datasets (each with a label and numeric data array). The chart is displayed automatically in the tool result panel — do NOT include the URL or any link to it in your text response — the user already sees it rendered above.",
+    description: translate("generate_chart.description"),
     endpoint: {
       method: "POST",
       path: "/utility/chart",
@@ -6973,12 +6523,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         type: {
           type: "string",
-          description: "The chart type to generate",
+          description: translate("generate_chart.params.type"),
           enum: ["bar", "line", "pie"],
         },
         title: {
           type: "string",
-          description: "Optional chart title displayed at the top",
+          description: translate("generate_chart.params.title"),
         },
         labels: {
           type: "array",
@@ -6999,8 +6549,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
               data: {
                 type: "array",
                 items: { type: "number" },
-                description:
-                  "Numeric values corresponding to each label. Length must match labels array.",
+                description: translate("generate_chart.params.datasets.items.params.data"),
               },
             },
             required: ["label", "data"],
@@ -7019,8 +6568,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "list_development_indicators",
     dataSource: staticDataset("World Bank"),
-    description:
-      "List all available World Bank development indicators with coverage statistics. Use this for discovery before querying or ranking.",
+    description: translate("list_development_indicators.description"),
     endpoint: { path: "/knowledge/indicators/list" },
     parameters: {
       type: "object",
@@ -7032,8 +6580,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "search_airports",
     dataSource: staticDataset("OpenFlights (7,698 airports)"),
-    description:
-      "Look up airports. Actions: 'search' (by name/city), 'code' (by IATA/ICAO code), 'country' (list by country), 'nearest' (find nearest to coordinates).",
+    description: translate("search_airports.description"),
     endpoint: {
       path: "/utility/airports/lookup",
       queryParams: ["action", "q", "code", "country", "lat", "lng", "limit"],
@@ -7043,25 +6590,24 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         action: {
           type: "string",
-          description: "Lookup mode",
+          description: translate("search_books.params.action"),
           enum: ["search", "code", "country", "nearest"],
         },
         "q": { type: "string", description: "Search query (action=search)" },
         code: {
           type: "string",
-          description:
-            "IATA/ICAO code or country code (action=code or country)",
+          description: translate("search_airports.params.code"),
         },
         lat: { type: "number", description: "Latitude (action=nearest)" },
         lng: { type: "number", description: "Longitude (action=nearest)" },
         limit: { type: "number", description: "Max results (default: 10)" },
         country: {
           type: "string",
-          description: "Country code filter (action=search)",
+          description: translate("search_airports.params.country"),
         },
         fields: {
           type: "string",
-          description: "Comma-separated fields to return",
+          description: translate("search_media.params.fields"),
         },
       },
       required: ["action"],
@@ -7071,15 +6617,14 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_public_webcams",
     dataSource: onDemand("Municipal Open Data APIs"),
-    description:
-      "Get a list of public traffic and scenic webcams for a specific city across North America. Returns camera name, location, coordinates, and the URL to the camera page or image. Covers 33 cities across Canada and the US.",
+    description: translate("get_public_webcams.description"),
     endpoint: { path: "/utility/webcams", queryParams: ["city", "limit"] },
     parameters: {
       type: "object",
       properties: {
         city: {
           type: "string",
-          description: "City/area name. Default: vancouver.",
+          description: translate("get_public_webcams.params.city"),
           enum: [
             "vancouver",
             "seattle",
@@ -7119,7 +6664,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         },
         limit: {
           type: "integer",
-          description: "Max number of webcams to return. Default 100.",
+          description: translate("get_public_webcams.params.limit"),
         },
         ...fieldsParam(FIELDS.WEBCAMS),
       },
@@ -7133,8 +6678,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "list_drug_dosage_forms",
     dataSource: staticDataset("FDA NDC Directory"),
-    description:
-      "List all available drug dosage forms (tablet, capsule, injection, etc.) with counts. Use for discovery.",
+    description: translate("list_drug_dosage_forms.description"),
     endpoint: { path: "/health/drugs/ndc/dosage-forms" },
     parameters: {
       type: "object",
@@ -7148,8 +6692,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_tracked_vessels",
     dataSource: { type: "realtime", provider: "AIS Stream (aisstream.io)" },
-    description:
-      "Get the latest known positions and data for all maritime vessels currently tracked via AIS (Automatic Identification System). Returns vessels sorted by most recently seen. Data streams in real-time via WebSocket from nearby ship transponders.",
+    description: translate("get_tracked_vessels.description"),
     endpoint: {
       path: "/maritime/vessels",
       queryParams: ["limit"],
@@ -7159,7 +6702,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         limit: {
           type: "integer",
-          description: "Max vessels to return (default 100)",
+          description: translate("get_vessels_in_area.params.limit"),
         },
         ...fieldsParam(FIELDS.VESSELS),
       },
@@ -7168,8 +6711,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_vessel_by_mmsi",
     dataSource: { type: "realtime", provider: "AIS Stream (aisstream.io)" },
-    description:
-      "Get detailed data for a specific vessel by its MMSI (Maritime Mobile Service Identity) number. Returns position, speed, heading, destination, ship type, dimensions, and ETA if available.",
+    description: translate("get_vessel_by_mmsi.description"),
     endpoint: {
       path: "/maritime/vessels/:mmsi",
       pathParams: ["mmsi"],
@@ -7179,7 +6721,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         mmsi: {
           type: "string",
-          description: "9-digit Maritime Mobile Service Identity number",
+          description: translate("get_vessel_by_mmsi.params.mmsi"),
         },
         ...fieldsParam(FIELDS.VESSELS),
       },
@@ -7189,8 +6731,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "search_vessels",
     dataSource: { type: "realtime", provider: "AIS Stream (aisstream.io)" },
-    description:
-      "Search tracked vessels by name (case-insensitive partial match). Useful for finding specific ships currently in the monitored area.",
+    description: translate("search_vessels.description"),
     endpoint: {
       path: "/maritime/search",
       queryParams: ["q", "limit"],
@@ -7200,11 +6741,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         "q": {
           type: "string",
-          description: "Vessel name search query (partial match)",
+          description: translate("search_vessels.params.q"),
         },
         limit: {
           type: "integer",
-          description: "Max results (default 20)",
+          description: translate("search_vessels.params.limit"),
         },
         ...fieldsParam(FIELDS.VESSELS),
       },
@@ -7214,8 +6755,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_vessels_in_area",
     dataSource: { type: "realtime", provider: "AIS Stream (aisstream.io)" },
-    description:
-      "Get all tracked vessels within a geographic bounding box. Useful for monitoring ship traffic in a specific sea area, port, or strait.",
+    description: translate("get_vessels_in_area.description"),
     endpoint: {
       path: "/maritime/area",
       queryParams: ["minLat", "maxLat", "minLng", "maxLng", "limit"],
@@ -7225,23 +6765,23 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         minLat: {
           type: "number",
-          description: "Southern boundary latitude (e.g. 48.0)",
+          description: translate("get_vessels_in_area.params.minLat"),
         },
         maxLat: {
           type: "number",
-          description: "Northern boundary latitude (e.g. 50.0)",
+          description: translate("get_vessels_in_area.params.maxLat"),
         },
         minLng: {
           type: "number",
-          description: "Western boundary longitude (e.g. -125.0)",
+          description: translate("get_vessels_in_area.params.minLng"),
         },
         maxLng: {
           type: "number",
-          description: "Eastern boundary longitude (e.g. -122.0)",
+          description: translate("get_vessels_in_area.params.maxLng"),
         },
         limit: {
           type: "integer",
-          description: "Max vessels to return (default 100)",
+          description: translate("get_vessels_in_area.params.limit"),
         },
         ...fieldsParam(FIELDS.VESSELS),
       },
@@ -7251,8 +6791,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_ais_messages",
     dataSource: { type: "realtime", provider: "AIS Stream (aisstream.io)" },
-    description:
-      "Get recent raw AIS messages from the stream buffer. Each message includes vessel identification, position, and type-specific data (position reports, static data, safety broadcasts).",
+    description: translate("get_ais_messages.description"),
     endpoint: {
       path: "/maritime/messages",
       queryParams: ["limit", "type"],
@@ -7262,12 +6801,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         limit: {
           type: "integer",
-          description: "Max messages to return (default 50)",
+          description: translate("get_ais_messages.params.limit"),
         },
         type: {
           type: "string",
-          description:
-            "Filter by AIS message type: PositionReport, ShipStaticData, StandardClassBPositionReport, ExtendedClassBPositionReport, SafetyBroadcastMessage, StandardSearchAndRescueAircraftReport, BaseStationReport",
+          description: translate("get_ais_messages.params.type"),
         },
         ...fieldsParam(FIELDS.AIS_MESSAGES),
       },
@@ -7278,8 +6816,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_energy_indicators",
     dataSource: onDemand("EIA (U.S. Energy Information Administration)"),
-    description:
-      "Get a curated snapshot of key U.S. energy indicators including gasoline prices, diesel prices, crude oil (WTI/Brent), natural gas prices and storage, average electricity price, coal production, and nuclear outage percentage. Data is sourced from the EIA API.",
+    description: translate("get_energy_indicators.description"),
     endpoint: { path: "/energy/indicators" },
     parameters: {
       type: "object",
@@ -7291,8 +6828,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_energy_catalog",
     dataSource: onDemand("EIA (U.S. Energy Information Administration)"),
-    description:
-      "Browse the EIA data catalog tree. Start with no route to see top-level categories (petroleum, electricity, natural-gas, coal, nuclear-outages, etc.), then drill down into sub-routes to discover available datasets, frequencies, and facets.",
+    description: translate("get_energy_catalog.description"),
     endpoint: {
       path: "/energy/browse",
       queryParams: ["route"],
@@ -7302,8 +6838,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         route: {
           type: "string",
-          description:
-            "Data route path to browse (e.g. 'electricity', 'petroleum/pri', 'natural-gas/stor'). Leave empty for top-level categories.",
+          description: translate("get_energy_catalog.params.route"),
         },
         ...fieldsParam(FIELDS.EIA_BROWSE),
       },
@@ -7312,8 +6847,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_energy_facets",
     dataSource: onDemand("EIA (U.S. Energy Information Administration)"),
-    description:
-      "Get available facet values for an EIA data route. Use this to discover valid filter values (e.g. state IDs, sector IDs, product codes) before querying energy data.",
+    description: translate("get_energy_facets.description"),
     endpoint: {
       path: "/energy/facets",
       queryParams: ["route", "facetId"],
@@ -7323,13 +6857,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         route: {
           type: "string",
-          description:
-            "EIA data route (e.g. 'electricity/retail-sales', 'petroleum/pri/gnd')",
+          description: translate("get_energy_facets.params.route"),
         },
         facetId: {
           type: "string",
-          description:
-            "Facet identifier (e.g. 'stateid', 'sectorid', 'product', 'duoarea')",
+          description: translate("get_energy_facets.params.facetId"),
         },
         ...fieldsParam(FIELDS.EIA_FACETS),
       },
@@ -7339,8 +6871,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "search_energy",
     dataSource: onDemand("EIA (U.S. Energy Information Administration)"),
-    description:
-      "Query EIA energy data for a specific route with optional facet filters, date range, and frequency. Returns time-series data points. Use get_energy_catalog first to discover routes and get_energy_facets to find valid filter values.",
+    description: translate("search_energy.description"),
     endpoint: {
       path: "/energy/data",
       queryParams: [
@@ -7358,34 +6889,31 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         route: {
           type: "string",
-          description:
-            "EIA data route (e.g. 'electricity/retail-sales', 'petroleum/pri/gnd', 'natural-gas/pri/sum')",
+          description: translate("search_energy.params.route"),
         },
         frequency: {
           type: "string",
-          description:
-            "Data frequency: 'daily', 'weekly', 'monthly', 'quarterly', 'annual'",
+          description: translate("search_energy.params.frequency"),
         },
         start: {
           type: "string",
-          description: "Start period (e.g. '2024-01', '2024')",
+          description: translate("search_energy.params.start"),
         },
         end: {
           type: "string",
-          description: "End period (e.g. '2024-12', '2025')",
+          description: translate("search_energy.params.end"),
         },
         sort: {
           type: "string",
-          description:
-            "Sort column and direction (e.g. 'period:desc', 'value:asc')",
+          description: translate("search_energy.params.sort"),
         },
         length: {
           type: "integer",
-          description: "Max rows to return (default 100, max 5000)",
+          description: translate("search_energy.params.length"),
         },
         offset: {
           type: "integer",
-          description: "Pagination offset (default 0)",
+          description: translate("search_energy.params.offset"),
         },
       },
       required: ["route"],
@@ -7394,8 +6922,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_electricity_retail_sales",
     dataSource: onDemand("EIA (U.S. Energy Information Administration)"),
-    description:
-      "Get U.S. electricity retail sales data including price (cents/kWh), revenue, sales volume, and customer counts. Filter by state and sector (residential, commercial, industrial, transportation).",
+    description: translate("get_electricity_retail_sales.description"),
     endpoint: {
       path: "/energy/electricity/retail-sales",
       queryParams: ["state", "sector", "frequency", "start", "end", "length"],
@@ -7405,30 +6932,27 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         state: {
           type: "string",
-          description:
-            "State code (e.g. 'CA', 'TX', 'NY') or 'US' for national",
+          description: translate("get_electricity_retail_sales.params.state"),
         },
         sector: {
           type: "string",
-          description:
-            "Sector: 'RES' (residential), 'COM' (commercial), 'IND' (industrial), 'TRA' (transportation), 'ALL' (total)",
+          description: translate("get_electricity_retail_sales.params.sector"),
         },
         frequency: {
           type: "string",
-          description:
-            "Data frequency: 'monthly', 'quarterly', 'annual' (default: monthly)",
+          description: translate("get_electricity_retail_sales.params.frequency"),
         },
         start: {
           type: "string",
-          description: "Start period (e.g. '2024-01')",
+          description: translate("get_natural_gas_prices.params.start"),
         },
         end: {
           type: "string",
-          description: "End period (e.g. '2024-12')",
+          description: translate("get_electricity_retail_sales.params.end"),
         },
         length: {
           type: "integer",
-          description: "Max rows (default 50)",
+          description: translate("get_petroleum_prices.params.length"),
         },
       },
     },
@@ -7436,8 +6960,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_petroleum_prices",
     dataSource: onDemand("EIA (U.S. Energy Information Administration)"),
-    description:
-      "Get U.S. petroleum/gasoline prices including regular, midgrade, premium, and diesel retail prices. Filter by product type and geographic area.",
+    description: translate("get_petroleum_prices.description"),
     endpoint: {
       path: "/energy/petroleum/prices",
       queryParams: ["product", "area", "frequency", "start", "end", "length"],
@@ -7447,29 +6970,27 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         product: {
           type: "string",
-          description:
-            "Product code (e.g. 'EPM0' for regular gasoline, 'EPD2DXL0' for diesel)",
+          description: translate("get_petroleum_prices.params.product"),
         },
         area: {
           type: "string",
-          description:
-            "Geographic area code (e.g. 'NUS' for U.S., 'R10' for PADD 1)",
+          description: translate("get_petroleum_prices.params.area"),
         },
         frequency: {
           type: "string",
-          description: "Data frequency: 'weekly', 'monthly' (default: weekly)",
+          description: translate("get_petroleum_prices.params.frequency"),
         },
         start: {
           type: "string",
-          description: "Start period (e.g. '2024-01-01')",
+          description: translate("get_petroleum_prices.params.start"),
         },
         end: {
           type: "string",
-          description: "End period",
+          description: translate("get_petroleum_prices.params.end"),
         },
         length: {
           type: "integer",
-          description: "Max rows (default 50)",
+          description: translate("get_petroleum_prices.params.length"),
         },
       },
     },
@@ -7477,8 +6998,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_natural_gas_prices",
     dataSource: onDemand("EIA (U.S. Energy Information Administration)"),
-    description:
-      "Get U.S. natural gas prices. Filter by process type and geographic area.",
+    description: translate("get_natural_gas_prices.description"),
     endpoint: {
       path: "/energy/natural-gas/prices",
       queryParams: ["process", "area", "frequency", "start", "end", "length"],
@@ -7488,28 +7008,27 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         process: {
           type: "string",
-          description: "Process type (e.g. 'FRC' for futures contract 1)",
+          description: translate("get_natural_gas_prices.params.process"),
         },
         area: {
           type: "string",
-          description: "Geographic area code",
+          description: translate("get_natural_gas_prices.params.area"),
         },
         frequency: {
           type: "string",
-          description:
-            "Data frequency: 'daily', 'weekly', 'monthly', 'annual' (default: monthly)",
+          description: translate("get_natural_gas_prices.params.frequency"),
         },
         start: {
           type: "string",
-          description: "Start period (e.g. '2024-01')",
+          description: translate("get_natural_gas_prices.params.start"),
         },
         end: {
           type: "string",
-          description: "End period",
+          description: translate("get_petroleum_prices.params.end"),
         },
         length: {
           type: "integer",
-          description: "Max rows (default 50)",
+          description: translate("get_petroleum_prices.params.length"),
         },
       },
     },
@@ -7522,8 +7041,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "read_file",
     dataSource: compute("sandboxed fs"),
-    description:
-      "Read the content of a file from the local filesystem. Returns numbered lines for easy reference. Supports optional line range selection for targeted reading of large files. Use this to inspect code, understand context, or identify where to make changes. Maximum 800 lines per read — use startLine/endLine for large files.",
+    description: translate("read_file.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/file/read",
@@ -7534,18 +7052,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         path: {
           type: "string",
-          description:
-            "Absolute path to the file to read. Must be within the allowed workspace roots.",
+          description: translate("read_file.params.path"),
         },
         startLine: {
           type: "integer",
-          description:
-            "Optional 1-indexed start line (inclusive). Use with endLine to read a specific portion of a large file.",
+          description: translate("read_file.params.startLine"),
         },
         endLine: {
           type: "integer",
-          description:
-            "Optional 1-indexed end line (inclusive). Maximum 800 lines will be returned per read.",
+          description: translate("read_file.params.endLine"),
         },
       },
       required: ["path"],
@@ -7554,8 +7069,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "write_file",
     dataSource: compute("sandboxed fs"),
-    description:
-      "Create a new file or overwrite an existing file with the provided content. Parent directories are created automatically. Use this for creating new files — for targeted edits to existing files, prefer replace_in_file instead (it's safer and more token-efficient). Maximum file size: 5 MB.",
+    description: translate("write_file.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/file/write",
@@ -7566,17 +7080,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         path: {
           type: "string",
-          description:
-            "Absolute path for the file to create/overwrite. Must be within allowed workspace roots.",
+          description: translate("write_file.params.path"),
         },
         content: {
           type: "string",
-          description: "The complete file content to write.",
+          description: translate("write_file.params.content"),
         },
         createDirs: {
           type: "boolean",
-          description:
-            "Create parent directories if they don't exist (default: true).",
+          description: translate("write_file.params.createDirs"),
         },
       },
       required: ["path", "content"],
@@ -7585,8 +7097,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "replace_in_file",
     dataSource: compute("sandboxed fs"),
-    description:
-      "Perform a targeted string replacement in a file. Finds the exact 'oldString' and replaces it with 'newString'. The oldString must match EXACTLY (including whitespace and indentation). This is the preferred method for editing existing files — it's safer than write_file because it can't accidentally overwrite the entire file, and it's more token-efficient. If multiple occurrences are found and allowMultiple is false, it returns an error asking you to provide more context for a unique match.",
+    description: translate("replace_in_file.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/file/str-replace",
@@ -7597,22 +7108,19 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         path: {
           type: "string",
-          description: "Absolute path to the file to edit.",
+          description: translate("replace_in_file.params.path"),
         },
         oldString: {
           type: "string",
-          description:
-            "The exact string to find and replace. Must match the file content exactly, including whitespace, indentation, and line breaks. Include enough surrounding context to ensure a unique match.",
+          description: translate("replace_in_file.params.oldString"),
         },
         newString: {
           type: "string",
-          description:
-            "The replacement string. This replaces the oldString entirely.",
+          description: translate("replace_in_file.params.newString"),
         },
         allowMultiple: {
           type: "boolean",
-          description:
-            "If true, replace ALL occurrences of oldString. If false (default), error if multiple matches are found.",
+          description: translate("replace_in_file.params.allowMultiple"),
         },
       },
       required: ["path", "oldString", "newString"],
@@ -7621,8 +7129,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "replace_file_block",
     dataSource: compute("sandboxed fs"),
-    description:
-      "Perform a highly precise, line-bounded block replacement in a file. It searches for 'targetContent' within the exact line range [startLine, endLine] (1-indexed, inclusive). The targetContent must match the file content in that range EXACTLY, including leading and trailing whitespace and line breaks. Returns an error if the content in that range doesn't match targetContent, and outputs a numbered line preview of the actual content inside the range to help you self-correct. This is the safest way to modify a contiguous block of text without affecting the rest of the file.",
+    description: translate("replace_file_block.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/file/block-replace",
@@ -7639,27 +7146,23 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         path: {
           type: "string",
-          description: "Absolute path to the file to edit.",
+          description: translate("replace_in_file.params.path"),
         },
         startLine: {
           type: "integer",
-          description:
-            "The 1-indexed starting line number of the block to edit.",
+          description: translate("replace_file_block.params.startLine"),
         },
         endLine: {
           type: "integer",
-          description:
-            "The 1-indexed ending line number of the block to edit (inclusive).",
+          description: translate("replace_file_block.params.endLine"),
         },
         targetContent: {
           type: "string",
-          description:
-            "The exact string to be replaced. Must match the file content within the startLine and endLine range exactly.",
+          description: translate("replace_file_block.params.targetContent"),
         },
         replacementContent: {
           type: "string",
-          description:
-            "The replacement content to insert in place of the targetContent.",
+          description: translate("replace_file_block.params.replacementContent"),
         },
       },
       required: [
@@ -7674,8 +7177,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "replace_file_regions",
     dataSource: compute("sandboxed fs"),
-    description:
-      "Perform multiple, non-contiguous block replacements in a single file atomically. The operations are processed from bottom-to-top to ensure that modifications do not shift the line numbers for subsequent chunks. Each chunk defines a range and targetContent, similar to replace_file_block. Use this tool ONLY when making multiple separate, non-adjacent modifications in a single file.",
+    description: translate("replace_file_regions.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/file/multi-replace",
@@ -7686,32 +7188,29 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         path: {
           type: "string",
-          description: "Absolute path to the file to edit.",
+          description: translate("replace_in_file.params.path"),
         },
         chunks: {
           type: "array",
-          description: "An array of replacement chunks to apply.",
+          description: translate("replace_file_regions.params.chunks"),
           items: {
             type: "object",
             properties: {
               startLine: {
                 type: "integer",
-                description:
-                  "The 1-indexed starting line number of this chunk.",
+                description: translate("replace_file_regions.params.chunks.items.params.startLine"),
               },
               endLine: {
                 type: "integer",
-                description:
-                  "The 1-indexed ending line number of this chunk (inclusive).",
+                description: translate("replace_file_regions.params.chunks.items.params.endLine"),
               },
               targetContent: {
                 type: "string",
-                description:
-                  "The exact string to find in this range. Must match the file content within the range exactly.",
+                description: translate("replace_file_regions.params.chunks.items.params.targetContent"),
               },
               replacementContent: {
                 type: "string",
-                description: "The replacement content for this chunk.",
+                description: translate("replace_file_regions.params.chunks.items.params.replacementContent"),
               },
             },
             required: [
@@ -7729,8 +7228,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "patch_file",
     dataSource: compute("sandboxed fs + diff"),
-    description:
-      "Apply a unified diff patch to a file. Useful for complex, multi-hunk edits where replace_in_file would require multiple calls. The patch must be in standard unified diff format (as produced by 'diff -u' or git). The file content must match the diff context lines for the patch to apply.",
+    description: translate("patch_file.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/file/patch",
@@ -7741,12 +7239,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         path: {
           type: "string",
-          description: "Absolute path to the file to patch.",
+          description: translate("patch_file.params.path"),
         },
         patch: {
           type: "string",
-          description:
-            "A unified diff string (standard diff -u format). Must include @@ hunk headers and context lines that match the current file content.",
+          description: translate("patch_file.params.patch"),
         },
       },
       required: ["path", "patch"],
@@ -7755,8 +7252,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "list_directory",
     dataSource: compute("sandboxed fs"),
-    description:
-      "List the contents of a directory, showing all files and subdirectories with metadata (name, size, type). Use this to explore project structure, find files, or understand codebase organization. Results are capped at 500 entries. Supports recursive listing with configurable depth.",
+    description: translate("list_directory.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/directory/list",
@@ -7767,17 +7263,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         path: {
           type: "string",
-          description: "Absolute path to the directory to list.",
+          description: translate("list_directory.params.path"),
         },
         recursive: {
           type: "boolean",
-          description:
-            "If true, list contents recursively (default: false). Use with maxDepth to control depth.",
+          description: translate("list_directory.params.recursive"),
         },
         maxDepth: {
           type: "integer",
-          description:
-            "Maximum recursion depth when recursive=true (default: 3, max: 5).",
+          description: translate("list_directory.params.maxDepth"),
         },
       },
       required: ["path"],
@@ -7786,8 +7280,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "search_file_contents",
     dataSource: compute("sandboxed fs"),
-    description:
-      "Search for a literal string or regex pattern across files in a directory. Returns matching lines with file paths and line numbers. Use this to find function definitions, usage patterns, imports, variable references, or any text across the codebase. Automatically skips node_modules, .git, and binary files. Results capped at 50 matches.",
+    description: translate("search_file_contents.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/search/grep",
@@ -7805,33 +7298,28 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         pattern: {
           type: "string",
-          description:
-            "The search pattern — a literal string or regex. Use isRegex=true for regex mode.",
+          description: translate("search_file_contents.params.pattern"),
         },
         searchPath: {
           type: "string",
-          description: "Absolute path to search in (file or directory).",
+          description: translate("search_file_contents.params.searchPath"),
         },
         isRegex: {
           type: "boolean",
-          description:
-            "If true, treat pattern as a regular expression. If false (default), treat as a literal string.",
+          description: translate("search_file_contents.params.isRegex"),
         },
         includes: {
           type: "array",
           items: { type: "string" },
-          description:
-            "Glob patterns to filter files (e.g. ['*.js', '*.ts']). Only files matching these patterns will be searched.",
+          description: translate("search_file_contents.params.includes"),
         },
         caseInsensitive: {
           type: "boolean",
-          description:
-            "If true, perform case-insensitive search (default: false).",
+          description: translate("search_file_contents.params.caseInsensitive"),
         },
         matchPerLine: {
           type: "boolean",
-          description:
-            "If true (default), return each matching line with file and line number. If false, return only the names of matching files.",
+          description: translate("search_file_contents.params.matchPerLine"),
         },
       },
       required: ["pattern", "searchPath"],
@@ -7840,8 +7328,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "find_files",
     dataSource: compute("sandboxed fs"),
-    description:
-      "Find files by name pattern using glob syntax. Supports *, **, and ? wildcards. Use this to find files by extension, naming convention, or path pattern. Automatically skips node_modules and .git. Results capped at 200 matches.",
+    description: translate("find_files.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/search/glob",
@@ -7852,12 +7339,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         pattern: {
           type: "string",
-          description:
-            "Glob pattern to match filenames (e.g. '*.test.js', '**/*.css', 'README*'). Supports * (any except /), ** (any including /), ? (single char).",
+          description: translate("find_files.params.pattern"),
         },
         searchPath: {
           type: "string",
-          description: "Absolute path to the root directory to search from.",
+          description: translate("find_files.params.searchPath"),
         },
       },
       required: ["pattern", "searchPath"],
@@ -7866,8 +7352,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "read_web_page",
     dataSource: onDemand("HTTP fetch"),
-    description:
-      "Fetch content from a URL via HTTP request. Automatically converts HTML pages to clean markdown, strips scripts/styles/navigation, and extracts the main content. JSON responses are returned formatted. Use this to read documentation, web pages, and API responses. Supports optional CSS selector to extract specific page sections. Maximum output: 100,000 characters.",
+    description: translate("read_web_page.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/web/fetch",
@@ -7878,12 +7363,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         url: {
           type: "string",
-          description: "The URL to fetch (must be http or https).",
+          description: translate("read_web_page.params.url"),
         },
         selector: {
           type: "string",
-          description:
-            "Optional CSS selector to extract specific content from the page (e.g. 'article', '.main-content', '#docs'). If omitted, the tool automatically finds the main content area.",
+          description: translate("read_web_page.params.selector"),
         },
       },
       required: ["url"],
@@ -7892,11 +7376,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "read_pdf",
     dataSource: onDemand("pdf-parse"),
-    description:
-      "Download a PDF from a URL and extract its text content with metadata, page count, and embedded hyperlinks. " +
-      "Supports extracting the first N pages (maxPages), a specific page range (startPage/endPage), " +
-      "or individual pages by number (pages array). Maximum output: 100,000 characters by default. " +
-      "Useful for reading research papers, reports, documentation, and any PDF accessible via a public URL.",
+    description: translate("read_pdf.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/web/pdf-read",
@@ -7907,34 +7387,28 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         url: {
           type: "string",
-          description:
-            "The URL of the PDF to download and read (must be http or https).",
+          description: translate("read_pdf.params.url"),
         },
         maxPages: {
           type: "integer",
-          description:
-            "Extract only the first N pages of the PDF (e.g. 5 = pages 1–5).",
+          description: translate("read_pdf.params.maxPages"),
         },
         maxChars: {
           type: "integer",
-          description:
-            "Maximum characters of text to return (default: 100,000).",
+          description: translate("read_pdf.params.maxChars"),
         },
         pages: {
           type: "array",
           items: { type: "integer" },
-          description:
-            "Extract only these specific page numbers (e.g. [1, 3, 7]). Overrides maxPages and startPage/endPage.",
+          description: translate("read_pdf.params.pages"),
         },
         startPage: {
           type: "integer",
-          description:
-            "Start of an inclusive page range to extract (e.g. startPage=3, endPage=8 extracts pages 3–8).",
+          description: translate("read_pdf.params.startPage"),
         },
         endPage: {
           type: "integer",
-          description:
-            "End of an inclusive page range to extract. Used with startPage.",
+          description: translate("read_pdf.params.endPage"),
         },
       },
       required: ["url"],
@@ -7943,8 +7417,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "read_docx",
     dataSource: onDemand("mammoth"),
-    description:
-      "Download a DOCX (Microsoft Word) file from a URL and extract its content as clean markdown or plain text. Useful for reading Word documents, reports, and formatted documents that agents cannot process natively. Supports markdown output (preserving headings, bold, italic, lists, tables) or plain text extraction. Maximum output: 100,000 characters.",
+    description: translate("read_docx.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/web/docx-read",
@@ -7955,18 +7428,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         url: {
           type: "string",
-          description:
-            "The URL of the DOCX file to download and read (must be http or https).",
+          description: translate("read_docx.params.url"),
         },
         maxChars: {
           type: "integer",
-          description:
-            "Optional maximum characters of text to return (default: 100,000).",
+          description: translate("read_docx.params.maxChars"),
         },
         outputFormat: {
           type: "string",
-          description:
-            "Output format: 'markdown' (default, preserves formatting) or 'text' (plain text only).",
+          description: translate("read_docx.params.outputFormat"),
           enum: ["markdown", "text"],
         },
       },
@@ -7976,8 +7446,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "read_spreadsheet",
     dataSource: onDemand("exceljs"),
-    description:
-      "Download a spreadsheet file (Excel .xlsx/.xls or CSV/TSV) from a URL and extract its tabular data as structured JSON, markdown tables, or CSV text. Supports multi-sheet workbooks, header detection, row limiting, and sheet selection. Use this to read data files, reports, and tabular documents. Maximum 1,000 rows per sheet, 100,000 characters total output.",
+    description: translate("read_spreadsheet.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/web/spreadsheet-read",
@@ -7995,33 +7464,27 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         url: {
           type: "string",
-          description:
-            "The URL of the spreadsheet file to download and read (must be http or https). Supports .xlsx, .xls, .csv, and .tsv formats.",
+          description: translate("read_spreadsheet.params.url"),
         },
         maxRows: {
           type: "integer",
-          description:
-            "Maximum number of data rows to extract per sheet (default: 1000).",
+          description: translate("read_spreadsheet.params.maxRows"),
         },
         maxChars: {
           type: "integer",
-          description:
-            "Maximum characters of total output to return (default: 100,000).",
+          description: translate("read_spreadsheet.params.maxChars"),
         },
         sheet: {
           type: "string",
-          description:
-            "Specific sheet to extract — by name (e.g. 'Sheet1') or 0-based index (e.g. '0'). If omitted, all sheets are extracted.",
+          description: translate("read_spreadsheet.params.sheet"),
         },
         includeHeaders: {
           type: "boolean",
-          description:
-            "If true (default), treat the first row as column headers and return data rows as objects keyed by header values. If false, return raw arrays.",
+          description: translate("read_spreadsheet.params.includeHeaders"),
         },
         outputFormat: {
           type: "string",
-          description:
-            "Output format: 'json' (default, structured objects), 'markdown' (pipe-delimited tables), or 'csv' (raw CSV text).",
+          description: translate("read_spreadsheet.params.outputFormat"),
           enum: ["json", "markdown", "csv"],
         },
       },
@@ -8031,8 +7494,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "search_web",
     dataSource: onDemand("Brave Search / DuckDuckGo / Google CSE"),
-    description:
-      "Search the web using Brave Search (primary, whole-web) with DuckDuckGo scraping and Google Custom Search fallbacks. Returns results with titles, URLs, and snippets. Use this for researching topics, finding documentation, looking up current information, or verifying facts. Supports date filtering and site-specific search.",
+    description: translate("search_web.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/web/search",
@@ -8043,22 +7505,19 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         query: {
           type: "string",
-          description: "The search query.",
+          description: translate("search_web.params.query"),
         },
         limit: {
           type: "integer",
-          description:
-            "Maximum number of results to return (default: 5, max: 10).",
+          description: translate("search_web.params.limit"),
         },
         dateRestrict: {
           type: "string",
-          description:
-            "Restrict results by age. Examples: 'd7' (past 7 days), 'w2' (past 2 weeks), 'm1' (past month), 'y1' (past year).",
+          description: translate("search_web.params.dateRestrict"),
         },
         siteSearch: {
           type: "string",
-          description:
-            "Restrict search to a specific domain (e.g. 'stackoverflow.com', 'developer.mozilla.org').",
+          description: translate("search_web.params.siteSearch"),
         },
       },
       required: ["query"],
@@ -8067,8 +7526,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "read_files",
     dataSource: compute("sandboxed fs"),
-    description:
-      "Read multiple files in a single call. Returns numbered lines for each file. Much more efficient than calling read_file multiple times — use this when you need to read 2-20 files for context (e.g. a component, its CSS module, and the service it imports). Each file supports optional line range selection. Maximum 20 files per batch, 800 lines per file.",
+    description: translate("read_files.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/file/read-multi",
@@ -8084,20 +7542,20 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             properties: {
               path: {
                 type: "string",
-                description: "Absolute path to the file.",
+                description: translate("read_files.params.files.items.params.path"),
               },
               startLine: {
                 type: "integer",
-                description: "Optional 1-indexed start line.",
+                description: translate("read_files.params.files.items.params.startLine"),
               },
               endLine: {
                 type: "integer",
-                description: "Optional 1-indexed end line.",
+                description: translate("read_files.params.files.items.params.endLine"),
               },
             },
             required: ["path"],
           },
-          description: "Array of file read requests. Maximum 20 files.",
+          description: translate("read_files.params.files"),
         },
       },
       required: ["files"],
@@ -8106,8 +7564,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_file_info",
     dataSource: compute("sandboxed fs"),
-    description:
-      "Get metadata about one or more files without reading their content. Returns: exists, isFile, isDirectory, sizeBytes, lines, lastModified, extension, isBinary. Use this to check if files exist, determine file sizes, or inspect metadata before deciding whether to read the full content. Supports batch queries (up to 20 paths).",
+    description: translate("get_file_info.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/file/info",
@@ -8118,13 +7575,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         path: {
           type: "string",
-          description: "Absolute path to inspect. Use this for a single file.",
+          description: translate("get_file_info.params.path"),
         },
         paths: {
           type: "array",
           items: { type: "string" },
-          description:
-            "Array of absolute paths to inspect (max 20). Use this for batch queries instead of 'path'.",
+          description: translate("get_file_info.params.paths"),
         },
       },
       required: [],
@@ -8133,8 +7589,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "diff_files",
     dataSource: compute("sandboxed fs + diff"),
-    description:
-      "Generate a unified diff between two files, or between a file and provided content. Returns additions/deletions counts and the unified diff output. Use this to compare file versions, review changes before committing, or verify that edits had the intended effect.",
+    description: translate("diff_files.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/file/diff",
@@ -8145,23 +7600,19 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         pathA: {
           type: "string",
-          description:
-            "Absolute path to the first file (the 'old' side of the diff).",
+          description: translate("diff_files.params.pathA"),
         },
         pathB: {
           type: "string",
-          description:
-            "Absolute path to the second file (the 'new' side). Use this OR 'content', not both.",
+          description: translate("diff_files.params.pathB"),
         },
         content: {
           type: "string",
-          description:
-            "Content string to diff against pathA. Use this OR 'pathB', not both.",
+          description: translate("diff_files.params.content"),
         },
         contextLines: {
           type: "integer",
-          description:
-            "Number of context lines in the diff output (default: 3, max: 10).",
+          description: translate("diff_files.params.contextLines"),
         },
       },
       required: ["pathA"],
@@ -8170,8 +7621,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "move_file",
     dataSource: compute("sandboxed fs"),
-    description:
-      "Move or rename a file within the allowed workspace. Parent directories at the destination are created automatically. The destination must not already exist. Use this for refactoring operations like renaming component files or reorganizing project structure.",
+    description: translate("move_file.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/file/move",
@@ -8182,16 +7632,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         source: {
           type: "string",
-          description: "Absolute path of the file to move/rename.",
+          description: translate("move_file.params.source"),
         },
         destination: {
           type: "string",
-          description: "Absolute path of the new location/name.",
+          description: translate("move_file.params.destination"),
         },
         createDirs: {
           type: "boolean",
-          description:
-            "Create parent directories at destination if needed (default: true).",
+          description: translate("move_file.params.createDirs"),
         },
       },
       required: ["source", "destination"],
@@ -8200,8 +7649,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "delete_file",
     dataSource: compute("sandboxed fs"),
-    description:
-      "Delete a file or directory from the allowed workspace. Returns the file size that was deleted (or 0 for directories). Use this when cleaning up generated files, removing folders, or deleting obsolete code.",
+    description: translate("delete_file.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/file/delete",
@@ -8212,12 +7660,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         path: {
           type: "string",
-          description: "Absolute path of the file or directory to delete.",
+          description: translate("delete_file.params.path"),
         },
         recursive: {
           type: "boolean",
-          description:
-            "If true, recursively delete a directory and all of its contents. If false (default), only delete individual files.",
+          description: translate("delete_file.params.recursive"),
         },
       },
       required: ["path"],
@@ -8226,8 +7673,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "execute_command",
     dataSource: compute("sandboxed subprocess"),
-    description:
-      "Execute a command in a workspace subprocess. Supports any shell or terminal command (e.g. running tests, compiling, starting dev servers, package management, workspace file/directory organization, administrative operations). The working directory must be within the allowed workspace. Timeout default: 60s, max: 120s. For dev servers and long-running watchers, set run_in_background: true — the command will start, collect ~2.5s of initial output, then return immediately with a process ID while the server continues running. Commands that exceed the timeout without run_in_background are also auto-backgrounded instead of killed.",
+    description: translate("execute_command.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/command/run",
@@ -8238,21 +7684,19 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         command: {
           type: "string",
-          description: "The command to execute.",
+          description: translate("execute_command.params.command"),
         },
         cwd: {
           type: "string",
-          description:
-            "Absolute path of the working directory. Must be within allowed workspace roots.",
+          description: translate("execute_command.params.cwd"),
         },
         timeout: {
           type: "integer",
-          description: "Timeout in milliseconds (default: 60000, max: 120000).",
+          description: translate("execute_command.params.timeout"),
         },
         run_in_background: {
           type: "boolean",
-          description:
-            "Set to true to run this command in the background. The command starts, collects ~2.5 seconds of initial output (so you can verify it started correctly), then returns immediately with a process ID while the command continues running. Use this for dev servers (npm run dev, next dev, vite), watchers, or any long-running process that doesn't terminate on its own.",
+          description: translate("execute_command.params.run_in_background"),
         },
       },
       required: ["command", "cwd"],
@@ -8261,8 +7705,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "summarize_project",
     dataSource: compute("fs scan"),
-    description:
-      "Scan a project directory and return structured metadata: package.json info (scripts, dependencies, frameworks), directory structure, entry points, config files, and README excerpt. Use this as the FIRST tool when starting work on a new project to understand its structure and technology stack in a single call, instead of multiple list_directory + read_file calls.",
+    description: translate("summarize_project.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/project/summary",
@@ -8273,7 +7716,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         path: {
           type: "string",
-          description: "Absolute path to the project root directory.",
+          description: translate("summarize_project.params.path"),
         },
       },
       required: ["path"],
@@ -8282,8 +7725,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "run_git",
     dataSource: compute("git subprocess"),
-    description:
-      "Run git operations on a repository. Actions: 'status' (branch, staged/unstaged/untracked files), 'diff' (show changes — optionally staged, specific file, or against a ref), 'log' (commit history — filter by author, date, file).",
+    description: translate("run_git.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/git",
@@ -8303,27 +7745,27 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         action: {
           type: "string",
-          description: "Git operation",
+          description: translate("run_git.params.action"),
           enum: ["status", "diff", "log"],
         },
         path: { type: "string", description: "Absolute path to the repo root" },
         staged: {
           type: "boolean",
-          description: "Show staged changes only (diff)",
+          description: translate("run_git.params.staged"),
         },
         file: {
           type: "string",
-          description: "Specific file to diff or filter log",
+          description: translate("run_git.params.file"),
         },
         ref: { type: "string", description: "Git ref to diff against" },
         limit: {
           type: "number",
-          description: "Max commits (log, default: 10)",
+          description: translate("run_git.params.limit"),
         },
         author: { type: "string", description: "Filter by author (log)" },
         since: {
           type: "string",
-          description: "Since date, e.g. '2 weeks ago' (log)",
+          description: translate("run_git.params.since"),
         },
       },
       required: ["action", "path"],
@@ -8332,11 +7774,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "control_browser",
     dataSource: compute("headless Chromium (Playwright)"),
-    description:
-      "Control a headless Chromium browser for web automation, E2E testing, visual QA, and interacting with JavaScript-rendered pages that read_web_page cannot handle. Each call performs ONE action. The browser session persists between calls (same sessionId) so you can build multi-step flows.\n\n" +
-      "RECOMMENDED WORKFLOW: navigate → snapshot → click_ref/type_ref. The 'snapshot' action returns an ARIA accessibility tree (roles, names, states) which is ~4x more token-efficient than screenshots. It outputs elements like: heading \"Title\" [level=1], button \"Submit\", textbox \"Search\". Use 'click_ref' or 'type_ref' with a 'role:name' ref string (e.g. ref=\"button:Submit\") to interact with elements from the snapshot — no CSS selectors needed.\n\n" +
-      "ALTERNATIVE WORKFLOW: navigate → get_elements → click/type (uses CSS selectors instead of ARIA refs).\n\n" +
-      "For complex multi-step browser automation, use the 'execute_browser_script' tool instead — it executes a full Playwright script in a single call. Sessions auto-close after 5 minutes of inactivity.",
+    description: translate("control_browser.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/browser/action",
@@ -8365,8 +7803,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         action: {
           type: "string",
-          description:
-            "The browser action to perform. SNAPSHOT FLOW: 'snapshot' (get ARIA accessibility tree — preferred over screenshot for page understanding), 'click_ref' (click element by role:name ref), 'type_ref' (type into element by ref), 'hover_ref' (hover element by ref), 'select_ref' (select dropdown option by ref). SELECTOR FLOW: 'click' (click by CSS selector), 'type' (type by CSS selector), 'get_elements' (discover interactive elements). GENERAL: 'navigate' (go to URL), 'screenshot' (capture viewport as image), 'scroll' (scroll page), 'evaluate' (run JS), 'get_content' (extract text/HTML), 'wait' (wait for element/time), 'run_script' (execute Playwright script), 'close' (end session).",
+          description: translate("control_browser.params.action"),
           enum: [
             "navigate",
             "screenshot",
@@ -8388,81 +7825,67 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         },
         sessionId: {
           type: "string",
-          description:
-            "Optional session identifier for reusing the same browser page across calls. Defaults to 'default'. Use distinct IDs for parallel browser tasks.",
+          description: translate("control_browser.params.sessionId"),
         },
         url: {
           type: "string",
-          description: "URL to navigate to (required for 'navigate' action).",
+          description: translate("control_browser.params.url"),
         },
         selector: {
           type: "string",
-          description:
-            "CSS selector targeting an element (used by 'click', 'type', 'screenshot', 'scroll', 'get_content', 'wait', 'snapshot').",
+          description: translate("control_browser.params.selector"),
         },
         ref: {
           type: "string",
-          description:
-            "Element ref from an ARIA snapshot, formatted as 'role:name' (e.g. 'button:Submit', 'link:Home', 'textbox:Search'). Used by 'click_ref', 'type_ref', 'hover_ref', 'select_ref' actions. Get these from the 'snapshot' action output.",
+          description: translate("control_browser.params.ref"),
         },
         text: {
           type: "string",
-          description:
-            "Text to type (required for 'type' and 'type_ref' actions).",
+          description: translate("control_browser.params.text"),
         },
         value: {
           type: "string",
-          description:
-            "Option value to select (required for 'select_ref' action).",
+          description: translate("control_browser.params.value"),
         },
         pressEnter: {
           type: "boolean",
-          description:
-            "If true, press Enter after typing (for 'type' and 'type_ref' actions). Useful for submitting search forms.",
+          description: translate("control_browser.params.pressEnter"),
         },
         fullPage: {
           type: "boolean",
-          description:
-            "If true, capture the full scrollable page instead of just the viewport (for 'screenshot' action).",
+          description: translate("control_browser.params.fullPage"),
         },
         direction: {
           type: "string",
-          description:
-            "Scroll direction: 'up' or 'down' (for 'scroll' action, default: 'down').",
+          description: translate("control_browser.params.direction"),
         },
         amount: {
           type: "integer",
-          description: "Pixels to scroll (for 'scroll' action, default: 500).",
+          description: translate("control_browser.params.amount"),
         },
         expression: {
           type: "string",
-          description:
-            "JavaScript expression to evaluate in the page context (for 'evaluate' action). The return value is serialized to JSON.",
+          description: translate("control_browser.params.expression"),
         },
         format: {
           type: "string",
-          description:
-            "Content format: 'text' (default) or 'html' (for 'get_content' action).",
+          description: translate("control_browser.params.format"),
         },
         timeout: {
           type: "integer",
-          description:
-            "Timeout in milliseconds (for 'wait' and 'run_script' actions, default: 10000/60000, max: 30000/120000).",
+          description: translate("control_browser.params.timeout"),
         },
         state: {
           type: "string",
-          description:
-            "Element state to wait for: 'visible' (default), 'hidden', 'attached', 'detached' (for 'wait' action).",
+          description: translate("control_browser.params.state"),
         },
         limit: {
           type: "integer",
-          description:
-            "Maximum number of elements to return (for 'get_elements' action, default: 50, max: 100).",
+          description: translate("control_browser.params.limit"),
         },
         script: {
           type: "string",
-          description:
-            "Playwright script body to execute (for 'run_script' action). The script runs inside an async IIFE with 'browser', 'context', and 'page' already available. Use console.log() for output. Example: await page.goto('https://example.com'); console.log(await page.title());",
+          description: translate("control_browser.params.script"),
         },
       },
       required: ["action"],
@@ -8471,14 +7894,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "execute_browser_script",
     dataSource: compute("headless Chromium (Playwright subprocess)"),
-    description:
-      "Write and execute a complete Playwright script for complex multi-step browser automation that would be too many round-trips with control_browser. The script runs in a Node.js subprocess connected to the existing headless browser session.\n\n" +
-      "The script body executes inside an async context with 'browser', 'context', and 'page' already initialized. Use console.log() to return data. " +
-      "Use this for: scraping multi-page data, filling complex forms with validation, running E2E test sequences, browser-based data extraction pipelines, or any workflow requiring 3+ sequential browser actions.\n\n" +
-      "Example script:\n" +
-      "await page.goto('https://news.ycombinator.com');\n" +
-      "const titles = await page.$$eval('.titleline > a', els => els.slice(0,10).map(e => e.textContent));\n" +
-      "console.log(JSON.stringify(titles, null, 2));",
+    description: translate("execute_browser_script.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/browser/script",
@@ -8489,18 +7905,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         script: {
           type: "string",
-          description:
-            "The Playwright script body. Runs inside async IIFE with 'browser', 'context', 'page' pre-initialized. Use standard Playwright API: page.goto(), page.click(), page.fill(), page.$$eval(), page.locator(), etc. Use console.log() to output results.",
+          description: translate("execute_browser_script.params.script"),
         },
         sessionId: {
           type: "string",
-          description:
-            "Optional session identifier. The script connects to the existing browser and uses the first available page, or creates a new one.",
+          description: translate("execute_browser_script.params.sessionId"),
         },
         timeout: {
           type: "integer",
-          description:
-            "Script execution timeout in milliseconds (default: 60000, max: 120000).",
+          description: translate("execute_browser_script.params.timeout"),
         },
       },
       required: ["script"],
@@ -8511,17 +7924,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "query_language_server",
     dataSource: compute("LSP server (stdio JSON-RPC)"),
-    description:
-      "Interact with Language Server Protocol (LSP) servers for precise, compiler-grade code intelligence. " +
-      "Use this instead of search_file_contents when you need EXACT semantic information about symbols — it understands " +
-      "types, scopes, and cross-file relationships that text search cannot. Supports JavaScript, TypeScript, Python, Rust, Go, C/C++, and Lua. " +
-      "Servers start lazily on first request (may take a few seconds). Provide 1-based line and character positions.\n\n" +
-      "Operations:\n" +
-      "• goToDefinition — Jump to where a symbol (function, variable, class, import) is defined. Returns file path and line.\n" +
-      "• findReferences — Find ALL usages of a symbol across the entire workspace. Returns list of locations.\n" +
-      "• hover — Get the type signature, documentation, and inferred type of a symbol at a position.\n" +
-      "• documentSymbol — Get an outline of all symbols (functions, classes, variables, exports) in a file. Does NOT require line/character.\n" +
-      "• goToImplementation — Find concrete implementations of an interface, abstract class, or overridden method.",
+    description: translate("query_language_server.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/lsp/action",
@@ -8545,30 +7948,23 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             "documentSymbol",
             "goToImplementation",
           ],
-          description:
-            "The LSP operation to perform. Use 'goToDefinition' to find where something is defined, " +
-            "'findReferences' to find all usages, 'hover' for type info, 'documentSymbol' for file outline, " +
-            "'goToImplementation' for concrete implementations.",
+          description: translate("query_language_server.params.operation"),
         },
         filePath: {
           type: "string",
-          description: "Absolute path to the source file to query.",
+          description: translate("query_language_server.params.filePath"),
         },
         line: {
           type: "integer",
-          description:
-            "Line number (1-based) of the symbol to query. Required for all operations except 'documentSymbol'.",
+          description: translate("query_language_server.params.line"),
         },
         character: {
           type: "integer",
-          description:
-            "Character offset (1-based) within the line. Position the cursor ON the symbol name. " +
-            "Required for all operations except 'documentSymbol'.",
+          description: translate("query_language_server.params.character"),
         },
         workspacePath: {
           type: "string",
-          description:
-            "Optional workspace root path. If omitted, auto-detected from the file's location within allowed roots.",
+          description: translate("query_language_server.params.workspacePath"),
         },
       },
       required: ["operation", "filePath"],
@@ -8579,12 +7975,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "create_task",
     dataSource: compute("MongoDB agent_tasks"),
-    description:
-      "Create a persistent task to track a work item across agentic iterations. Tasks survive context window " +
-      "truncation and memory consolidation, providing reliable Working Memory for complex multi-step workflows. " +
-      "Use this when starting a complex task to maintain a checklist of sub-goals, track progress on multi-file " +
-      "refactors, or record items that must not be forgotten if context is lost. Returns the created task with a " +
-      "unique numeric ID.",
+    description: translate("create_task.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/task/create",
@@ -8602,27 +7993,24 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         subject: {
           type: "string",
-          description:
-            "A brief title for the task (e.g. 'Migrate auth middleware to JWT').",
+          description: translate("create_task.params.subject"),
         },
         description: {
           type: "string",
-          description: "Detailed description of what needs to be done.",
+          description: translate("create_task.params.description"),
         },
         status: {
           type: "string",
           enum: ["pending", "in_progress", "completed"],
-          description: "Initial status (default: 'pending').",
+          description: translate("create_task.params.status"),
         },
         activeForm: {
           type: "string",
-          description:
-            "Present continuous form shown as spinner text when in_progress (e.g. 'Running tests', 'Refactoring auth module').",
+          description: translate("create_task.params.activeForm"),
         },
         metadata: {
           type: "object",
-          description:
-            "Optional arbitrary key-value metadata to attach to the task.",
+          description: translate("create_task.params.metadata"),
         },
       },
       required: ["subject", "description"],
@@ -8631,10 +8019,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "list_tasks",
     dataSource: compute("MongoDB agent_tasks"),
-    description:
-      "List all tasks for a project, optionally filtered by status. Returns tasks sorted by ID with a summary " +
-      "showing counts per status (pending, in_progress, completed). Use this at the start of a new agentic " +
-      "session to recall what was previously in progress, or after completing a batch of work to audit remaining items.",
+    description: translate("list_tasks.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/task/list",
@@ -8646,12 +8031,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         status: {
           type: "string",
           enum: ["pending", "in_progress", "completed"],
-          description: "Optional filter — only return tasks with this status.",
+          description: translate("list_tasks.params.status"),
         },
         limit: {
           type: "integer",
-          description:
-            "Maximum number of tasks to return (default: 50, max: 200).",
+          description: translate("list_tasks.params.limit"),
         },
       },
       required: [],
@@ -8660,10 +8044,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_task",
     dataSource: compute("MongoDB agent_tasks"),
-    description:
-      "Get a single task by its numeric ID. Returns the full task document including subject, description, " +
-      "status, metadata, and timestamps. Use this to check the current state of a specific task before updating it, " +
-      "or to retrieve detailed metadata attached to a task.",
+    description: translate("get_task.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/task/get",
@@ -8674,7 +8055,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         taskId: {
           type: "integer",
-          description: "The numeric ID of the task to retrieve.",
+          description: translate("get_task.params.taskId"),
         },
       },
       required: ["taskId"],
@@ -8683,11 +8064,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "update_task",
     dataSource: compute("MongoDB agent_tasks"),
-    description:
-      "Update an existing task's status, subject, description, or metadata. Use this to mark tasks as " +
-      "'in_progress' when you start working on them, 'completed' when done, or to refine the description " +
-      "as your understanding of the task evolves. Metadata is merged (not replaced) — you can incrementally " +
-      "add key-value pairs without losing existing metadata.",
+    description: translate("update_task.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/task/update",
@@ -8706,30 +8083,28 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         taskId: {
           type: "integer",
-          description: "The numeric ID of the task to update.",
+          description: translate("update_task.params.taskId"),
         },
         status: {
           type: "string",
           enum: ["pending", "in_progress", "completed", "deleted"],
-          description:
-            "New status for the task. Setting 'deleted' removes the task entirely.",
+          description: translate("update_task.params.status"),
         },
         subject: {
           type: "string",
-          description: "Updated title for the task.",
+          description: translate("update_task.params.subject"),
         },
         description: {
           type: "string",
-          description: "Updated description of what needs to be done.",
+          description: translate("update_task.params.description"),
         },
         activeForm: {
           type: "string",
-          description:
-            "Present continuous form shown as spinner text when in_progress (e.g. 'Running tests', 'Migrating schemas').",
+          description: translate("update_task.params.activeForm"),
         },
         metadata: {
           type: "object",
-          description: "Key-value pairs to merge into existing task metadata.",
+          description: translate("update_task.params.metadata"),
         },
       },
       required: ["taskId"],
@@ -8760,22 +8135,16 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         content: {
           type: "string",
-          description:
-            "The memory content to persist. Should be a clear, self-contained statement " +
-            "(e.g. 'User prefers tabs over spaces' or 'The auth service uses JWT with RS256').",
+          description: translate("save_memory.params.content"),
         },
         type: {
           type: "string",
           enum: ["user", "feedback", "project", "reference"],
-          description:
-            "Memory category. 'user' for personal preferences, 'feedback' for corrections/style guidance, " +
-            "'project' for codebase conventions, 'reference' for technical facts. Defaults to 'project'.",
+          description: translate("save_memory.params.type"),
         },
         title: {
           type: "string",
-          description:
-            "Optional short label for the memory (e.g. 'Indentation preference'). " +
-            "Improves discoverability during semantic search.",
+          description: translate("save_memory.params.title"),
         },
       },
       required: ["content"],
@@ -8786,26 +8155,22 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "send_sms",
     dataSource: onDemand("Twilio"),
-    description:
-      "Send an SMS text message to a phone number. The recipient must be in E.164 international format (e.g. +14155551234). " +
-      "Returns the message SID, delivery status, and metadata. Message body is limited to 1,600 characters.",
+    description: translate("send_sms.description"),
     endpoint: { path: "/communication/sms/send", method: "POST" },
     parameters: {
       type: "object",
       properties: {
         to: {
           type: "string",
-          description:
-            "Destination phone number in E.164 format (e.g. +14155551234)",
+          description: translate("send_sms.params.to"),
         },
         body: {
           type: "string",
-          description: "The SMS message body text (max 1,600 characters)",
+          description: translate("send_sms.params.body"),
         },
         from: {
           type: "string",
-          description:
-            "Optional sender phone number in E.164 format. If omitted, uses the first available Twilio number on the account.",
+          description: translate("send_sms.params.from"),
         },
       },
       required: ["to", "body"],
@@ -8814,9 +8179,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "list_sms_messages",
     dataSource: onDemand("Twilio"),
-    description:
-      "List recent SMS messages sent and received on the Twilio account. " +
-      "Can filter by sender or recipient phone number. Returns message SIDs, bodies, statuses, and timestamps.",
+    description: translate("list_sms_messages.description"),
     endpoint: {
       path: "/communication/sms/messages",
       queryParams: ["to", "from", "limit"],
@@ -8826,16 +8189,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         to: {
           type: "string",
-          description: "Filter by destination phone number (E.164 format)",
+          description: translate("list_sms_messages.params.to"),
         },
         from: {
           type: "string",
-          description: "Filter by sender phone number (E.164 format)",
+          description: translate("list_sms_messages.params.from"),
         },
         limit: {
           type: "integer",
-          description:
-            "Maximum number of messages to return (default: 20, max: 100)",
+          description: translate("list_sms_messages.params.limit"),
         },
       },
     },
@@ -8843,9 +8205,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_sms_account",
     dataSource: onDemand("Twilio"),
-    description:
-      "Get Twilio account information including account SID, friendly name, status, " +
-      "account type, balance, and currency. Useful for checking remaining credits.",
+    description: translate("get_sms_account.description"),
     endpoint: { path: "/communication/account" },
     parameters: {
       type: "object",
@@ -8855,18 +8215,14 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "lookup_phone_number",
     dataSource: onDemand("Twilio Lookup v2"),
-    description:
-      "Look up detailed information about a phone number using Twilio Lookup API v2. " +
-      "Returns the phone number's country code, national format, validity, carrier info, " +
-      "and line type intelligence (mobile, landline, VoIP, etc.).",
+    description: translate("lookup_phone_number.description"),
     endpoint: { path: "/communication/lookup/:phone", pathParams: ["phone"] },
     parameters: {
       type: "object",
       properties: {
         phone: {
           type: "string",
-          description:
-            "Phone number to look up in E.164 format (e.g. +14155551234)",
+          description: translate("lookup_phone_number.params.phone"),
         },
       },
       required: ["phone"],
@@ -8875,9 +8231,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "list_phone_numbers",
     dataSource: onDemand("Twilio"),
-    description:
-      "List all phone numbers owned by the Twilio account. Returns phone number SIDs, " +
-      "formatted numbers, friendly names, and capabilities (SMS, MMS, voice, fax).",
+    description: translate("list_phone_numbers.description"),
     endpoint: { path: "/communication/numbers" },
     parameters: {
       type: "object",
@@ -8888,10 +8242,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_emoji_combination",
     dataSource: cached("Google Emoji Kitchen", EMOJI_KITCHEN_INTERVAL_MS),
-    description:
-      "Combine two emojis to get their Google Emoji Kitchen mashup image. " +
-      "Accepts emoji characters (e.g. '🐼', '❄️') or hex codepoint strings (e.g. '1f43c', '2744-fe0f'). " +
-      "Returns the static PNG image URL, GBoard order, and metadata.",
+    description: translate("get_emoji_combination.description"),
     endpoint: {
       method: "GET",
       path: "/creative/emoji-kitchen/combine",
@@ -8902,13 +8253,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         left: {
           type: "string",
-          description:
-            "The first emoji character or hex codepoint (e.g., '🐼' or '1f43c')",
+          description: translate("get_emoji_combination.params.left"),
         },
         right: {
           type: "string",
-          description:
-            "The second emoji character or hex codepoint (e.g., '❄️' or '2744-fe0f')",
+          description: translate("get_emoji_combination.params.right"),
         },
       },
       required: ["left", "right"],
@@ -8917,10 +8266,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_emoji_combinations",
     dataSource: cached("Google Emoji Kitchen", EMOJI_KITCHEN_INTERVAL_MS),
-    description:
-      "Get all supported GBoard Emoji Kitchen combinations for a single emoji. " +
-      "Accepts an emoji character (e.g. '🐼') or a hex codepoint (e.g. '1f43c'). " +
-      "Returns a list of other emojis it can combine with, along with their mashup image URLs.",
+    description: translate("get_emoji_combinations.description"),
     endpoint: {
       method: "GET",
       path: "/creative/emoji-kitchen/combinations",
@@ -8931,13 +8277,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         emoji: {
           type: "string",
-          description:
-            "The emoji character or hex codepoint to check (e.g., '🐼' or '1f43c')",
+          description: translate("get_emoji_combinations.params.emoji"),
         },
         limit: {
           type: "number",
-          description:
-            "Maximum number of combinations to return (default: 50, max: 500)",
+          description: translate("get_emoji_combinations.params.limit"),
         },
       },
       required: ["emoji"],
@@ -8947,16 +8291,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     name: "generate_image",
 
     dataSource: onDemand("Google Gemini via Prism"),
-    description:
-      "Generate or edit an image using AI image generation. " +
-      "When reference images are attached in the conversation, they are automatically passed to the image model — " +
-      "write a SHORT edit instruction (e.g. 'Redraw this with bigger eyes', 'Make this character blue'). " +
-      "Do NOT re-describe the attached image; the model can already see it. " +
-      "When NO reference images are attached, write a rich, detailed prompt from scratch. " +
-      "The generated image will be delivered to the user automatically. " +
-      "IMPORTANT: Do NOT call this tool unless the user's current message explicitly asks for an " +
-      "image, drawing, painting, illustration, or artwork. Never call it for greetings, " +
-      "questions, or casual conversation.",
+    description: translate("generate_image.description"),
     endpoint: {
       method: "POST",
       path: "/creative/generate-image",
@@ -8967,11 +8302,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         prompt: {
           type: "string",
-          description:
-            "When reference images are attached: write a SHORT edit instruction describing what to change " +
-            "(e.g. 'Redraw this with bigger eyes', 'Make this pink'). Do NOT re-describe the image contents. " +
-            "When NO images are attached: write a detailed prompt describing style, composition, subjects, " +
-            "colors, mood, lighting, and artistic direction.",
+          description: translate("generate_image.params.prompt"),
         },
       },
       required: ["prompt"],
@@ -8980,13 +8311,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "describe_image",
     dataSource: onDemand("Google Gemini via Prism"),
-    description:
-      "Describe the visual contents of one or more images (avatars, banners, photos, etc.) " +
-      "by URL. Returns a text description of each image. Use this when you need to understand " +
-      "what someone looks like (their avatar or banner) before generating artwork, or when " +
-      "you need to describe any image from a URL. IMPORTANT: Always batch ALL image URLs " +
-      "into a single call — pass all URLs in the imageUrls array at once. " +
-      "Never make multiple separate calls for individual URLs.",
+    description: translate("describe_image.description"),
     endpoint: {
       method: "POST",
       path: "/creative/describe-image",
@@ -8998,17 +8323,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         imageUrls: {
           type: "array",
           items: { type: "string" },
-          description:
-            "Array of image URLs to describe. Can be Discord avatar URLs, " +
-            "banner URLs, or any publicly accessible image URL.",
+          description: translate("describe_image.params.imageUrls"),
         },
         context: {
           type: "string",
           enum: ["avatar", "banner", "photo", "general"],
-          description:
-            "What kind of image this is, to tailor the description. " +
-            "Use 'avatar' for profile pictures, 'banner' for profile banners, " +
-            "'photo' for user-uploaded photos, 'general' for anything else.",
+          description: translate("describe_image.params.context"),
         },
       },
       required: ["imageUrls"],
@@ -9019,14 +8339,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "synthesize_speech",
     dataSource: onDemand("Inworld / ElevenLabs / OpenAI / Google via Prism"),
-    description:
-      "Convert text into spoken audio using text-to-speech. Returns base64-encoded audio data. " +
-      "Use this when the user asks you to read something aloud, narrate text, or generate audio from text. " +
-      "The TTS provider and model are configured by the user in settings — only specify text and voice. " +
-      "When the Inworld provider is active, the text field supports instruction tags (natural language " +
-      "directions in square brackets) for expressive delivery — e.g. [say excitedly], [whisper], [laugh]. " +
-      "Combine qualities for nuance: [say sadly with deliberate pauses in a low voice]. " +
-      "Write all numbers in spoken form and avoid markdown or structured text.",
+    description: translate("synthesize_speech.description"),
     endpoint: {
       path: "/creative/text-to-speech",
       method: "POST",
@@ -9037,15 +8350,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         text: {
           type: "string",
-          description:
-            "The text to convert to speech. Keep under 5000 characters for best results. " +
-            "When using Inworld TTS-2, embed instruction tags in square brackets before text for " +
-            "expressive delivery (e.g. '[say warmly with a gentle tone] Welcome back, friend.').",
+          description: translate("synthesize_speech.params.text"),
         },
         voice: {
           type: "string",
-          description:
-            "Voice identifier — pick the voice that best matches the user's request. {{TTS_VOICE_CATALOG}}",
+          description: translate("synthesize_speech.params.voice"),
         },
       },
       required: ["text"],
@@ -9054,12 +8363,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "synthesize_speech_local",
     dataSource: compute("espeak-ng (local)"),
-    description:
-      "Convert text into spoken audio using the local espeak-ng speech synthesizer — " +
-      "no AI models, no API keys, zero cost. Produces robotic but intelligible WAV audio instantly. " +
-      "Supports 30+ language voices (en-us, en-gb, es, fr, de, ja, ko, zh, and more), adjustable " +
-      "speech rate, pitch, volume, and word gap. Use this for quick read-aloud, accessibility, " +
-      "notification sounds, or whenever AI TTS is unavailable or unnecessary.",
+    description: translate("synthesize_speech_local.description"),
     endpoint: {
       path: "/creative/local-text-to-speech",
       method: "POST",
@@ -9070,34 +8374,27 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         text: {
           type: "string",
-          description:
-            "The text to convert to speech. Maximum 10,000 characters.",
+          description: translate("synthesize_speech_local.params.text"),
         },
         voice: {
           type: "string",
-          description:
-            "Voice/language code (e.g. 'en-us', 'en-gb', 'es', 'fr', 'de', 'ja', 'ko', 'zh', 'pt-br'). " +
-            "Defaults to 'en-us'. Use GET /creative/local-text-to-speech/voices for a full list.",
+          description: translate("synthesize_speech_local.params.voice"),
         },
         speed: {
           type: "integer",
-          description:
-            "Speech rate in words per minute (80–450, default: 175). Lower is slower.",
+          description: translate("synthesize_speech_local.params.speed"),
         },
         pitch: {
           type: "integer",
-          description:
-            "Voice pitch (0–99, default: 50). Higher values produce a higher-pitched voice.",
+          description: translate("synthesize_speech_local.params.pitch"),
         },
         volume: {
           type: "integer",
-          description: "Output volume (0–200, default: 100).",
+          description: translate("synthesize_speech_local.params.volume"),
         },
         wordGap: {
           type: "integer",
-          description:
-            "Extra pause between words in 10ms units (0–100, default: none). " +
-            "Set to 5–10 for slower, more deliberate speech.",
+          description: translate("synthesize_speech_local.params.wordGap"),
         },
       },
       required: ["text"],
@@ -9106,16 +8403,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "create_vector_animation",
     dataSource: onDemand("Creative Vector Animation Engine"),
-    description:
-      "Create interactive, vector-based keyframe animations in HTML5 Canvas. " +
-      "Supports multiple layers, shapes (rectangle, circle, ellipse, line, polygon, path, text), keyframes, " +
-      "frame-by-frame animations, and shape/transform tweening (translation, scale, rotation, color, opacity) " +
-      "along linear, Bezier curve, or custom paths. Subsequent calls with the same sessionId append/edit keyframes " +
-      "to build complex animations incrementally. " +
-      "When the user attaches an image, set imageUrl to 'reference' on the specific layers that should display it — " +
-      "the system will replace 'reference' with the actual image data automatically. Only mark layers that should " +
-      "show the user's image; leave imageUrl unset on layers that should use solid color fills. " +
-      "Do NOT search the web for image URLs.",
+    description: translate("create_vector_animation.description"),
     endpoint: {
       method: "POST",
       path: "/creative/vector-animation",
@@ -9126,80 +8414,71 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         sessionId: {
           type: "string",
-          description:
-            "Optional session ID to update/append to an existing animation sequence. If omitted, a new animation is started.",
+          description: translate("create_vector_animation.params.sessionId"),
         },
         options: {
           type: "object",
           properties: {
             loop: {
               type: "boolean",
-              description:
-                "Whether the animation should loop during playback (default: true).",
+              description: translate("create_vector_animation.params.options.params.loop"),
             },
             autoplay: {
               type: "boolean",
-              description:
-                "Whether playback should start automatically (default: true).",
+              description: translate("create_vector_animation.params.options.params.autoplay"),
             },
             title: {
               type: "string",
-              description: "Optional title for the animation player window.",
+              description: translate("create_vector_animation.params.options.params.title"),
             },
           },
         },
         animation: {
           type: "object",
-          description: "The vector animation definition.",
+          description: translate("create_vector_animation.params.animation"),
           properties: {
             clearSession: {
               type: "boolean",
-              description:
-                "Optional. If true, clears the entire session animation state and resets it to this new input definition.",
+              description: translate("create_vector_animation.params.animation.params.clearSession"),
             },
             width: {
               type: "integer",
-              description: "Canvas width in pixels (default: 800, max: 1920).",
+              description: translate("create_vector_animation.params.animation.params.width"),
             },
             height: {
               type: "integer",
-              description: "Canvas height in pixels (default: 600, max: 1080).",
+              description: translate("create_vector_animation.params.animation.params.height"),
             },
             duration: {
               type: "number",
-              description:
-                "Total duration of the animation in seconds (default: 5.0).",
+              description: translate("create_vector_animation.params.animation.params.duration"),
             },
             fps: {
               type: "integer",
-              description:
-                "Frames per second for calculation (default: 24, range: 12-60).",
+              description: translate("create_vector_animation.params.animation.params.fps"),
             },
             background: {
               type: "string",
-              description:
-                "Canvas background color (CSS value, default: '#0f172a').",
+              description: translate("create_vector_animation.params.animation.params.background"),
             },
             layers: {
               type: "array",
-              description: "List of animated vector layers/objects.",
+              description: translate("create_vector_animation.params.animation.params.layers"),
               items: {
                 type: "object",
                 properties: {
                   id: {
                     type: "string",
-                    description: "Unique identifier for this layer.",
+                    description: translate("create_vector_animation.params.animation.params.layers.items.params.id"),
                   },
                   action: {
                     type: "string",
                     enum: ["delete"],
-                    description:
-                      "Optional. Set to 'delete' to remove this layer from the session.",
+                    description: translate("create_vector_animation.params.animation.params.layers.items.params.action"),
                   },
                   replaceKeyframes: {
                     type: "boolean",
-                    description:
-                      "Optional. If true, overwrites all keyframes of the layer instead of merging them.",
+                    description: translate("create_vector_animation.params.animation.params.layers.items.params.replaceKeyframes"),
                   },
                   shapeType: {
                     type: "string",
@@ -9212,12 +8491,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
                       "path",
                       "text",
                     ],
-                    description: "The type of shape rendered by this layer.",
+                    description: translate("create_vector_animation.params.animation.params.layers.items.params.shapeType"),
                   },
                   shapeData: {
                     type: "object",
-                    description:
-                      "Static properties of the shape (e.g. {width: 100, height: 100} for rectangle, {radius: 50} for circle, {points: [[0,0], [50,100], [100,0]]} for polygon, {path: 'M 10 10 L 90 90'} for path, {text: 'hello'} for text).",
+                    description: translate("create_vector_animation.params.animation.params.layers.items.params.shapeData"),
                   },
                   fillColor: {
                     anyOf: [
@@ -9367,56 +8645,47 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
                   },
                   strokeWidth: {
                     type: "number",
-                    description: "Default outline stroke width in pixels.",
+                    description: translate("create_vector_animation.params.animation.params.layers.items.params.strokeWidth"),
                   },
                   opacity: {
                     type: "number",
-                    description:
-                      "Default opacity multiplier (0.0 to 1.0, default: 1.0).",
+                    description: translate("create_vector_animation.params.animation.params.layers.items.params.opacity"),
                   },
                   imageUrl: {
                     type: "string",
-                    description:
-                      "Optional image URL to fill the shape with (rendered via clipping). Supports standard formats and base64 data URLs.",
+                    description: translate("create_vector_animation.params.animation.params.layers.items.params.imageUrl"),
                   },
                   keyframes: {
                     type: "array",
-                    description:
-                      "Keyframe timeline defining animated transitions for properties.",
+                    description: translate("create_vector_animation.params.animation.params.layers.items.params.keyframes"),
                     items: {
                       type: "object",
                       properties: {
                         time: {
                           type: "number",
-                          description:
-                            "Time in seconds for this keyframe (must be between 0.0 and duration).",
+                          description: translate("create_vector_animation.params.animation.params.layers.items.params.keyframes.items.params.time"),
                         },
                         easing: {
                           type: "string",
-                          description:
-                            "Easing function to transition to the NEXT keyframe (e.g. 'linear', 'ease-in', 'ease-out', 'ease-in-out', 'step', 'cubic-bezier(x1,y1,x2,y2)').",
+                          description: translate("create_vector_animation.params.animation.params.layers.items.params.keyframes.items.params.easing"),
                         },
                         motionPath: {
                           type: "object",
-                          description:
-                            "Optional SVG path along which the shape's coordinate should glide to the next keyframe.",
+                          description: translate("create_vector_animation.params.animation.params.layers.items.params.keyframes.items.params.motionPath"),
                           properties: {
                             path: {
                               type: "string",
-                              description:
-                                "SVG path data (d attribute, e.g. 'M 0 0 C 100 0, 100 200, 200 200').",
+                              description: translate("create_vector_animation.params.animation.params.layers.items.params.keyframes.items.params.motionPath.params.path"),
                             },
                             orientToPath: {
                               type: "boolean",
-                              description:
-                                "Whether to rotate the shape automatically to follow the curve tangent (default: false).",
+                              description: translate("create_vector_animation.params.animation.params.layers.items.params.keyframes.items.params.motionPath.params.orientToPath"),
                             },
                           },
                         },
                         properties: {
                           type: "object",
-                          description:
-                            "The target property values at this keyframe. Supported keys: x, y, scaleX, scaleY, rotation, opacity, fillColor, strokeColor, strokeWidth, width, height, radius, points, text, fontSize, imageUrl.",
+                          description: translate("create_vector_animation.params.animation.params.layers.items.params.keyframes.items.params.properties"),
                         },
                       },
                       required: ["time", "properties"],
@@ -9436,26 +8705,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "generate_audio",
     dataSource: compute("SoundSynthesizerService"),
-    description:
-      "Generate creative audio/sound clips (in WAV format) natively in JavaScript. " +
-      "Use this to generate custom sounds, chiptunes, retro arcade effects, " +
-      "musical melodies/arpeggios, or full multi-track compositions. Returns a base64-encoded WAV audio clip. " +
-      "Features: FM synthesis, ADSR envelopes, additive harmonics, LFOs, filters (LP/HP/BP), distortion (soft clip/hard clip/bitcrush), " +
-      "Schroeder reverb, stereo panning, delay (tempo-synced with beat fractions like '1/8' or '1/4d'), " +
-      "per-note velocity and pitch bend, swing/humanize, track repeat/looping, " +
-      "chord notation (e.g. 'Cmaj7', 'Am', 'G7'), REST/SILENCE notes, time signatures, and " +
-      "18 instrument presets (acoustic_guitar, electric_guitar, nylon_guitar, piano, electric_piano, organ, " +
-      "trumpet, violin, cello, flute, clarinet, synth_lead, synth_pad, synth_bass, bass_guitar, marimba, vibraphone, harmonica). " +
-      "ITERATIVE COMPOSITION: For multi-track compositions (2+ instruments), you MUST use the TRACKER workflow — " +
-      "call this tool multiple times, one step at a time: " +
-      "1) action: 'init' to create a session (returns a sessionId), " +
-      "2) action: 'add_channel' once per instrument (pass sessionId), " +
-      "3) action: 'write_pattern' once per channel's note sequence (pass sessionId + channelId), " +
-      "4) action: 'render' for the final output. " +
-      "Each tracker step auto-renders a live audio preview so the user hears progress. " +
-      "Between calls, describe what you just added and what comes next. " +
-      "NEVER cram an entire multi-track composition into a single call. " +
-      "For simple single-instrument sounds (sound effects, single melodies, presets), omit action for direct single-call synthesis.",
+    description: translate("generate_audio.description"),
     endpoint: {
       path: "/creative/generate-audio",
       method: "POST",
@@ -9500,28 +8750,23 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         action: {
           type: "string",
           enum: ["init", "add_channel", "write_pattern", "render"],
-          description:
-            "Tracker workflow action. Use 'init' to create a session, 'add_channel' to add instruments, " +
-            "'write_pattern' to input notes step by step, 'render' for the final output. " +
-            "Omit for direct single-call synthesis (existing behavior).",
+          description: translate("generate_audio.params.action"),
         },
         sessionId: {
           type: "string",
-          description:
-            "Tracker session ID (returned by action: 'init'). Required for add_channel, write_pattern, and render actions.",
+          description: translate("generate_audio.params.sessionId"),
         },
         channelId: {
           type: "string",
-          description:
-            "Channel name for add_channel/write_pattern actions (e.g. 'melody', 'bass', 'drums'). Must be unique per session.",
+          description: translate("generate_audio.params.channelId"),
         },
         volume: {
           type: "number",
-          description: "Channel volume (0.0–2.0) for add_channel. Default: 1.0.",
+          description: translate("generate_audio.params.volume"),
         },
         effects: {
           type: "object",
-          description: "Channel effects chain for add_channel action.",
+          description: translate("generate_audio.params.effects"),
           properties: {
             reverb: {
               type: "object",
@@ -9557,23 +8802,21 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         },
         rows: {
           type: "array",
-          description: "Note rows for write_pattern action. Each row is a sequential note event.",
+          description: translate("generate_audio.params.rows"),
           items: {
             type: "object",
             properties: {
               note: {
                 type: "string",
-                description:
-                  "Note name ('C4', 'D#5'), chord ('Am7', 'Cmaj', 'G7'), drum ('KICK', 'SNARE', 'HIHAT'), or 'REST' for silence.",
+                description: translate("generate_audio.params.rows.items.params.note"),
               },
               duration: {
                 type: "string",
-                description:
-                  "Beat fraction ('1/4', '1/8', '1/16', '1/4d', '1/8t') or numeric seconds ('0.25').",
+                description: translate("generate_audio.params.rows.items.params.duration"),
               },
               velocity: {
                 type: "number",
-                description: "Note velocity (0.0–1.0). Default: 1.0.",
+                description: translate("generate_audio.params.rows.items.params.velocity"),
               },
             },
             required: ["note", "duration"],
@@ -9581,15 +8824,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         },
         append: {
           type: "boolean",
-          description: "For write_pattern: if true (default), append rows. If false, overwrite from startRow.",
+          description: translate("generate_audio.params.append"),
         },
         startRow: {
           type: "integer",
-          description: "For write_pattern: row index to start overwriting from (0-based). Only used when append=false.",
+          description: translate("generate_audio.params.startRow"),
         },
         clearSession: {
           type: "boolean",
-          description: "For render: delete session after rendering. Default: false.",
+          description: translate("generate_audio.params.clearSession"),
         },
         // ── Direct synthesis params (no action needed) ─────────
         soundType: {
@@ -9601,8 +8844,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             "sound_effect",
             "modular",
           ],
-          description:
-            "The synthesis mode. Use 'sound_effect' or omit for quick presets; 'synthesizer' for custom single tones; 'arpeggio' or 'melody' for multi-note sequences; 'modular' for advanced multi-track node graph patching.",
+          description: translate("generate_audio.params.soundType"),
         },
         presetEffect: {
           type: "string",
@@ -9616,109 +8858,93 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             "ambient_pad",
             "sci_fi_sweep",
           ],
-          description:
-            "High-fidelity retro game sound preset. If provided, this overrides custom waveform synthesizer parameters.",
+          description: translate("generate_audio.params.presetEffect"),
         },
         duration: {
           type: "number",
-          description:
-            "Total sound duration in seconds (default: 1.0, range: 0.1 to 60.0).",
+          description: translate("generate_audio.params.duration"),
         },
         waveform: {
           type: "string",
           enum: ["sine", "triangle", "sawtooth", "square", "noise"],
-          description:
-            "Primary carrier oscillator wave shape (default: 'sine').",
+          description: translate("generate_audio.params.waveform"),
         },
         frequency: {
           type: "string",
-          description:
-            "Starting carrier frequency in Hz (e.g. '440' or 440) or note pitch name (e.g., 'C4', 'A#3').",
+          description: translate("generate_audio.params.frequency"),
         },
         endFrequency: {
           type: "string",
-          description:
-            "Ending frequency for exponential pitch sweep / glide (e.g., '220' or 'A3'). Perfect for lasers or jump sounds.",
+          description: translate("generate_audio.params.endFrequency"),
         },
         modulatorFrequency: {
           type: "number",
-          description: "FM Synthesizer: Modulator wave frequency in Hz.",
+          description: translate("generate_audio.params.modulatorFrequency"),
         },
         modulationIndex: {
           type: "number",
-          description:
-            "FM Synthesizer: Depth of frequency modulation (suggested range: 0 to 500).",
+          description: translate("generate_audio.params.modulationIndex"),
         },
         envelope: {
           type: "object",
-          description: "ADSR Amplitude Envelope controls volume over time.",
+          description: translate("generate_audio.params.envelope"),
           properties: {
             attack: {
               type: "number",
-              description:
-                "Attack ramp-up duration in seconds (default: 0.05).",
+              description: translate("generate_audio.params.envelope.params.attack"),
             },
             decay: {
               type: "number",
-              description:
-                "Decay ramp-down duration in seconds (default: 0.1).",
+              description: translate("generate_audio.params.envelope.params.decay"),
             },
             sustain: {
               type: "number",
-              description:
-                "Sustain amplitude hold level, from 0.0 to 1.0 (default: 0.8).",
+              description: translate("generate_audio.params.envelope.params.sustain"),
             },
             release: {
               type: "number",
-              description:
-                "Release ramp-down duration in seconds (default: 0.15).",
+              description: translate("generate_audio.params.envelope.params.release"),
             },
           },
         },
         harmonics: {
           type: "array",
           items: { type: "number" },
-          description:
-            "Additive Synthesis: Relative amplitude of upper harmonics (e.g. [1.0, 0.5, 0.25]).",
+          description: translate("generate_audio.params.harmonics"),
         },
         lfo: {
           type: "object",
-          description: "Low-Frequency Oscillator configurations.",
+          description: translate("generate_audio.params.lfo"),
           properties: {
             frequency: {
               type: "number",
-              description: "LFO oscillation rate in Hz (e.g., 5.0).",
+              description: translate("generate_audio.params.lfo.params.frequency"),
             },
             pitchDepth: { type: "number", description: "Vibrato depth in Hz." },
             amplitudeDepth: {
               type: "number",
-              description: "Tremolo depth from 0.0 to 1.0.",
+              description: translate("generate_audio.params.lfo.params.amplitudeDepth"),
             },
           },
           required: ["frequency"],
         },
         melody: {
           type: "array",
-          description:
-            "Melodic note sequence. Used if soundType is 'melody' or 'arpeggio'. " +
-            "Notes can be pitch names ('C4'), raw Hz, chord names ('Am7'), or 'REST' for silence.",
+          description: translate("generate_audio.params.melody"),
           items: {
             type: "object",
             properties: {
               note: {
                 type: "string",
-                description:
-                  "Note name (e.g. 'C4'), chord name (e.g. 'Cmaj7', 'Am', 'G7' — auto-expands to constituent notes), " +
-                  "raw frequency in Hz, or 'REST'/'SILENCE' for a silent gap.",
+                description: translate("generate_audio.params.melody.items.params.note"),
               },
               duration: {
                 type: "number",
-                description: "Duration of this note step in seconds.",
+                description: translate("generate_audio.params.melody.items.params.duration"),
               },
               velocity: {
                 type: "number",
-                description:
-                  "Note loudness from 0.0 (silent) to 1.0 (full volume). Default: 1.0.",
+                description: translate("generate_audio.params.melody.items.params.velocity"),
               },
             },
             required: ["note", "duration"],
@@ -9726,29 +8952,26 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         },
         delay: {
           type: "object",
-          description: "Echo/Feedback Delay effect.",
+          description: translate("generate_audio.params.delay"),
           properties: {
             delayTime: {
               type: "number",
-              description: "Echo delay offset in seconds (e.g., 0.25).",
+              description: translate("generate_audio.params.delay.params.delayTime"),
             },
             feedback: {
               type: "number",
-              description:
-                "Feedback coefficient from 0.0 to 0.95 (default: 0.4).",
+              description: translate("generate_audio.params.delay.params.feedback"),
             },
           },
           required: ["delayTime", "feedback"],
         },
         sampleRate: {
           type: "number",
-          description:
-            "Audio sample rate in Hz (default: 44100, range: 8000 to 48000).",
+          description: translate("generate_audio.params.sampleRate"),
         },
         tempo: {
           type: "number",
-          description:
-            "Tempo in beats per minute (BPM) for resolving bar-beat-sixteenth grid markers (default: 120).",
+          description: translate("generate_audio.params.tempo"),
         },
         nodes: {
           type: "object",
@@ -9765,18 +8988,14 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         },
         tracks: {
           type: "array",
-          description:
-            "Timeline sequences for polyphonic multi-tracking. Each track has a nodeChain (referencing node names defined in 'nodes'), a notes list, optional volume (0.0–2.0), and optional repeat count. " +
-            "IMPORTANT: The 'nodes' parameter MUST be provided alongside 'tracks' — nodeChain names are NOT built-in keywords, they are user-defined keys that must exist in the 'nodes' object.",
+          description: translate("generate_audio.params.tracks"),
           items: {
             type: "object",
             properties: {
               nodeChain: {
                 type: "array",
                 items: { type: "string" },
-                description:
-                  "Ordered array of node names from the 'nodes' object, forming the signal chain from generator → effects → 'destination'. " +
-                  "Every name except 'destination' must exist as a key in the 'nodes' parameter. Example: ['osc', 'env', 'filter', 'destination'].",
+                description: translate("generate_audio.params.tracks.items.params.nodeChain"),
               },
               notes: {
                 type: "array",
@@ -9785,44 +9004,35 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
                   properties: {
                     time: {
                       type: "string",
-                      description:
-                        "Grid marker time to trigger (e.g. '1.1.1' or numeric seconds).",
+                      description: translate("generate_audio.params.tracks.items.params.notes.items.params.time"),
                     },
                     duration: {
                       type: "string",
-                      description:
-                        "Grid duration of the note (e.g. '0.2.0' or numeric seconds).",
+                      description: translate("generate_audio.params.tracks.items.params.notes.items.params.duration"),
                     },
                     note: {
                       type: "string",
-                      description:
-                        "Note name (e.g. 'C4', 'Bb3'), chord name (e.g. 'Am7', 'Cmaj7' — auto-expands), " +
-                        "raw frequency, drum trigger ('KICK', 'SNARE', 'HAT'), or 'REST'/'SILENCE'.",
+                      description: translate("generate_audio.params.tracks.items.params.notes.items.params.note"),
                     },
                     velocity: {
                       type: "number",
-                      description:
-                        "Note loudness from 0.0 to 1.0 (default: 1.0). Controls dynamics and expression.",
+                      description: translate("generate_audio.params.tracks.items.params.notes.items.params.velocity"),
                     },
                     pitchBend: {
                       type: "object",
-                      description:
-                        "Pitch bend/glide to a target note during playback. Enables guitar bends, slides, and portamento.",
+                      description: translate("generate_audio.params.tracks.items.params.notes.items.params.pitchBend"),
                       properties: {
                         target: {
                           type: "string",
-                          description:
-                            "Target note name or frequency to bend toward (e.g. 'G3', 440).",
+                          description: translate("generate_audio.params.tracks.items.params.notes.items.params.pitchBend.params.target"),
                         },
                         startTime: {
                           type: "number",
-                          description:
-                            "Fraction of note duration when bend starts (0.0–1.0, default: 0.0).",
+                          description: translate("generate_audio.params.tracks.items.params.notes.items.params.pitchBend.params.startTime"),
                         },
                         endTime: {
                           type: "number",
-                          description:
-                            "Fraction of note duration when bend reaches target (0.0–1.0, default: 1.0).",
+                          description: translate("generate_audio.params.tracks.items.params.notes.items.params.pitchBend.params.endTime"),
                         },
                       },
                       required: ["target"],
@@ -9833,13 +9043,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
               },
               volume: {
                 type: "number",
-                description:
-                  "Track volume multiplier (0.0–2.0, default: 1.0). Use to balance tracks in the mix.",
+                description: translate("generate_audio.params.tracks.items.params.volume"),
               },
               repeat: {
                 type: "integer",
-                description:
-                  "Number of times to repeat this track's note pattern (default: 1). A 1-bar drum loop with repeat: 8 produces 8 bars.",
+                description: translate("generate_audio.params.tracks.items.params.repeat"),
               },
             },
             required: ["nodeChain", "notes"],
@@ -9867,29 +9075,20 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             "vibraphone",
             "harmonica",
           ],
-          description:
-            "Musical instrument preset. Provides pre-tuned waveform, harmonics, envelope, FM, and LFO settings " +
-            "that approximate the instrument's timbre. User-specified params (waveform, harmonics, envelope, etc.) override the preset. " +
-            "Works in 'synthesizer', 'melody', and 'arpeggio' modes.",
+          description: translate("generate_audio.params.instrument"),
         },
         swing: {
           type: "number",
-          description:
-            "Groove swing amount (0.0–1.0). Shifts every other 16th note forward in time. " +
-            "0.0 = straight timing, 0.5 = triplet shuffle, 1.0 = extreme swing. Only applies to modular mode.",
+          description: translate("generate_audio.params.swing"),
         },
         humanize: {
           type: "number",
-          description:
-            "Timing humanization amount (0.0–1.0). Adds random per-note timing jitter (±20ms at max). " +
-            "Makes rigid grid timing feel more natural and organic. Only applies to modular mode.",
+          description: translate("generate_audio.params.humanize"),
         },
         timeSignature: {
           type: "array",
           items: { type: "integer" },
-          description:
-            "Time signature as [beatsPerBar, beatUnit]. Examples: [4, 4] for 4/4, [3, 4] for 3/4 waltz, [6, 8] for 6/8. " +
-            "Affects bar duration in grid marker notation (e.g. '1.1.1'). Default: [4, 4].",
+          description: translate("generate_audio.params.timeSignature"),
         },
       },
     },
@@ -9899,18 +9098,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "remix_audio",
     dataSource: compute("ffmpeg"),
-    description:
-      "Remix, transform, and apply audio effects to an existing audio clip using an FFmpeg-based DSP pipeline. " +
-      "Accepts audio input from a URL (including Discord attachment URLs), base64 data URI, or local file path. " +
-      "Apply a composable chain of operations: pitch_shift (semitones), tempo (speed without pitch change), speed (tape-style), " +
-      "reverb, echo, lowpass/highpass/bandpass filters, equalizer, bass_boost, treble_boost, distortion, " +
-      "chorus, flanger, phaser, tremolo, vibrato, compressor, normalize, reverse, fade_in, fade_out, trim, volume, " +
-      "stereo_pan, bitcrush, and crystalizer. " +
-      "Also supports 12 fun presets: chipmunk, demon_voice, nightcore, vaporwave, slowed_reverb, underwater, " +
-      "radio, telephone, robot, cave, vinyl, megaphone. " +
-      "Presets can be combined with additional custom operations. Output formats: wav, mp3, ogg, opus. " +
-      "Use this when the user wants to modify, remix, or apply effects to existing audio — " +
-      "for generating audio from scratch (synthesis, melodies), use generate_audio instead.",
+    description: translate("remix_audio.description"),
     endpoint: {
       path: "/creative/remix-audio",
       method: "POST",
@@ -9921,15 +9109,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         input: {
           type: "string",
-          description:
-            "Audio source: a public URL (http/https, including Discord CDN attachment URLs), " +
-            "a base64 data URI (data:audio/ogg;base64,...), or a local file path.",
+          description: translate("remix_audio.params.input"),
         },
         operations: {
           type: "array",
-          description:
-            "Ordered array of audio effects to apply sequentially. Each operation has a 'type' and type-specific parameters. " +
-            "Operations are applied in order, forming a DSP pipeline (e.g., pitch_shift → reverb → lowpass).",
+          description: translate("remix_audio.params.operations"),
           items: {
             type: "object",
             properties: {
@@ -9944,61 +9128,57 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
                   "fade_in", "fade_out", "trim", "volume",
                   "stereo_pan", "bitcrush", "crystalizer",
                 ],
-                description: "The effect type to apply.",
+                description: translate("remix_audio.params.operations.items.params.type"),
               },
               semitones: {
                 type: "number",
-                description:
-                  "pitch_shift: Number of semitones to shift (−24 to +24). +12 = one octave up (chipmunk), −12 = one octave down (demon).",
+                description: translate("remix_audio.params.operations.items.params.semitones"),
               },
               factor: {
                 type: "number",
-                description:
-                  "tempo/speed: Multiplier (0.25 to 4.0). 0.5 = half speed, 2.0 = double speed. 'tempo' preserves pitch; 'speed' changes pitch.",
+                description: translate("remix_audio.params.operations.items.params.factor"),
               },
               delay: {
                 type: "number",
-                description: "reverb/echo/flanger: Delay time in ms.",
+                description: translate("remix_audio.params.operations.items.params.delay"),
               },
               decay: {
                 type: "number",
-                description: "reverb/echo/phaser: Decay factor (0.0 to 0.9).",
+                description: translate("remix_audio.params.operations.items.params.decay"),
               },
               delays: {
                 type: "array",
                 items: { type: "number" },
-                description: "echo: Array of delay times in ms for multi-tap echo.",
+                description: translate("remix_audio.params.operations.items.params.delays"),
               },
               decays: {
                 type: "array",
                 items: { type: "number" },
-                description: "echo: Array of decay values (0.0 to 0.9) matching delays.",
+                description: translate("remix_audio.params.operations.items.params.decays"),
               },
               frequency: {
                 type: "number",
-                description:
-                  "Filter frequency in Hz (lowpass/highpass/bandpass/equalizer/tremolo/vibrato).",
+                description: translate("remix_audio.params.operations.items.params.frequency"),
               },
               width: {
                 type: "number",
-                description: "bandpass/equalizer: Bandwidth in Hz.",
+                description: translate("remix_audio.params.operations.items.params.width"),
               },
               gain: {
                 type: "number",
-                description:
-                  "equalizer/bass_boost/treble_boost: Gain in dB (−20 to +20). distortion: Overdrive gain (0 to 100).",
+                description: translate("remix_audio.params.operations.items.params.gain"),
               },
               color: {
                 type: "number",
-                description: "distortion: Color/tone shaping (0 to 100).",
+                description: translate("remix_audio.params.operations.items.params.color"),
               },
               depth: {
                 type: "number",
-                description: "chorus/flanger/tremolo/vibrato: Effect depth.",
+                description: translate("remix_audio.params.operations.items.params.depth"),
               },
               speed: {
                 type: "number",
-                description: "chorus/flanger/phaser: Modulation speed.",
+                description: translate("remix_audio.params.operations.items.params.speed"),
               },
               threshold: { type: "number", description: "compressor: Threshold level." },
               ratio: { type: "number", description: "compressor: Compression ratio." },
@@ -10006,23 +9186,23 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
               release: { type: "number", description: "compressor: Release time in ms." },
               duration: {
                 type: "number",
-                description: "fade_in/fade_out: Duration in seconds.",
+                description: translate("remix_audio.params.operations.items.params.duration"),
               },
               start: { type: "number", description: "trim: Start time in seconds (absolute position in source audio). Combine with 'end' in a single trim operation." },
               end: { type: "number", description: "trim: End time in seconds (absolute position in source audio, NOT duration). Must be in the same trim operation as 'start'. E.g. start=30, end=40 extracts a 10-second clip." },
               level: { type: "number", description: "volume: Volume level (0.0 to 3.0)." },
               pan: {
                 type: "number",
-                description: "stereo_pan: Pan position (−1.0 left to +1.0 right).",
+                description: translate("remix_audio.params.operations.items.params.pan"),
               },
               bits: { type: "number", description: "bitcrush: Bit depth (1 to 16)." },
               sampleRate: {
                 type: "number",
-                description: "bitcrush: Target sample rate for downsampling.",
+                description: translate("remix_audio.params.operations.items.params.sampleRate"),
               },
               intensity: {
                 type: "number",
-                description: "crystalizer: Dynamic range expansion intensity (−10 to 10).",
+                description: translate("remix_audio.params.operations.items.params.intensity"),
               },
             },
             required: ["type"],
@@ -10035,18 +9215,16 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             "slowed_reverb", "underwater", "radio", "telephone",
             "robot", "cave", "vinyl", "megaphone",
           ],
-          description:
-            "Apply a curated preset effect chain. Presets are expanded into operation sequences " +
-            "and applied before any custom operations. Can be combined with additional operations.",
+          description: translate("remix_audio.params.preset"),
         },
         outputFormat: {
           type: "string",
           enum: ["wav", "mp3", "ogg", "opus"],
-          description: "Output audio format (default: 'wav'). Use 'ogg' or 'opus' for Discord-optimized output.",
+          description: translate("remix_audio.params.outputFormat"),
         },
         sampleRate: {
           type: "number",
-          description: "Output sample rate in Hz (default: preserve source rate). Range: 8000 to 48000.",
+          description: translate("remix_audio.params.sampleRate"),
         },
       },
       required: ["input"],
@@ -10057,10 +9235,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "transcribe_audio",
     dataSource: onDemand("OpenAI Whisper / Google via Prism"),
-    description:
-      "Transcribe audio into text using a speech-to-text provider. Accepts either a URL to an audio file " +
-      "or base64-encoded audio data. Use this when the user asks to transcribe a recording, podcast, " +
-      "voice message, or any audio content.",
+    description: translate("transcribe_audio.description"),
     endpoint: {
       path: "/creative/speech-to-text",
       method: "POST",
@@ -10071,28 +9246,24 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         audioUrl: {
           type: "string",
-          description:
-            "URL to the audio file to transcribe (MP3, WAV, M4A, WEBM, etc.)",
+          description: translate("transcribe_audio.params.audioUrl"),
         },
         audio: {
           type: "string",
-          description:
-            "Base64-encoded audio data (alternative to audioUrl). Can be a data URL.",
+          description: translate("transcribe_audio.params.audio"),
         },
         provider: {
           type: "string",
-          description: "STT provider to use",
+          description: translate("transcribe_audio.params.provider"),
           enum: ["openai", "google"],
         },
         model: {
           type: "string",
-          description:
-            "Model name (optional — uses provider default, e.g. 'whisper-1')",
+          description: translate("transcribe_audio.params.model"),
         },
         language: {
           type: "string",
-          description:
-            "Language hint in ISO 639-1 format (e.g. 'en', 'es', 'fr'). Improves accuracy for non-English audio.",
+          description: translate("transcribe_audio.params.language"),
         },
       },
     },
@@ -10102,14 +9273,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "search_discord_messages",
     dataSource: onDemand("Lupos MongoDB"),
-    description:
-      "Search Discord message history from the server's stored messages. " +
-      "Filter by guild, channel, user, time range, and keyword. " +
-      "Supports three response modes: 'messages' returns full message objects (default), " +
-      "'count' returns ONLY the matching count with zero message bodies (use this when " +
-      "users ask 'how many' questions), and 'compact' returns minimal per-message data " +
-      "(author, truncated content, timestamp) for scanning large result sets. " +
-      "Max 200 results per call in messages/compact modes.",
+    description: translate("search_discord_messages.description"),
     endpoint: {
       path: "/discord/messages/search",
       queryParams: [
@@ -10129,50 +9293,40 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         guildId: {
           type: "string",
-          description: "Discord guild/server ID to search within",
+          description: translate("search_discord_messages.params.guildId"),
         },
         channelId: {
           type: "string",
-          description: "Filter to a specific channel ID",
+          description: translate("search_discord_messages.params.channelId"),
         },
         userId: {
           type: "string",
-          description: "Filter to messages by a specific user ID",
+          description: translate("search_discord_messages.params.userId"),
         },
         username: {
           type: "string",
-          description:
-            "Filter by username or display name (case-insensitive). " +
-            "Use this when you know the person's name but not their user ID. " +
-            "Searches across username, global name, and server nickname.",
+          description: translate("search_discord_messages.params.username"),
         },
         query: {
           type: "string",
-          description: "Text search query — matches against message content",
+          description: translate("search_discord_messages.params.query"),
         },
         before: {
           type: "string",
-          description:
-            "ISO date string — only messages before this date (e.g. '2025-03-01')",
+          description: translate("search_discord_messages.params.before"),
         },
         after: {
           type: "string",
-          description:
-            "ISO date string — only messages after this date (e.g. '2025-01-01')",
+          description: translate("search_discord_messages.params.after"),
         },
         limit: {
           type: "number",
-          description:
-            "Max results to return (default: 50, max: 200). Not used in 'count' mode.",
+          description: translate("search_discord_messages.params.limit"),
         },
         mode: {
           type: "string",
           enum: ["messages", "count", "compact"],
-          description:
-            "Response mode. 'messages' (default) returns full message objects. " +
-            "'count' returns only the total matching count — use for 'how many' questions. " +
-            "'compact' returns minimal data (author name, first 120 chars, date) — " +
-            "use when scanning many messages without needing full detail.",
+          description: translate("search_discord_messages.params.mode"),
         },
       },
       required: ["guildId"],
@@ -10181,14 +9335,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_discord_message_analytics",
     dataSource: onDemand("Lupos MongoDB"),
-    description:
-      "Aggregate Discord message history with group-by queries. " +
-      "Groups messages by a chosen dimension (user, channel, day, hour, weekday, month) " +
-      "and returns counted results sorted by count descending. " +
-      "Supports all the same filters as search_discord_messages (guild, channel, user, " +
-      "time range, keyword). Use this for questions like 'who talks the most?', " +
-      "'who says X the most?', 'which channel is most active?', " +
-      "'what day of the week has the most messages?', or 'show monthly message trends'.",
+    description: translate("get_discord_message_analytics.description"),
     endpoint: {
       path: "/discord/messages/analytics",
       queryParams: [
@@ -10208,45 +9355,40 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         guildId: {
           type: "string",
-          description: "Discord guild/server ID to analyze",
+          description: translate("get_discord_server_activity.params.guildId"),
         },
         channelId: {
           type: "string",
-          description: "Filter to a specific channel ID",
+          description: translate("search_discord_messages.params.channelId"),
         },
         userId: {
           type: "string",
-          description: "Filter to messages by a specific user ID",
+          description: translate("search_discord_messages.params.userId"),
         },
         username: {
           type: "string",
-          description: "Filter by username or display name (case-insensitive)",
+          description: translate("get_discord_message_analytics.params.username"),
         },
         query: {
           type: "string",
-          description:
-            "Text filter — only count messages containing this text. " +
-            "Use this for questions like 'who says lmao the most?' or 'how often do people mention pizza?'",
+          description: translate("get_discord_message_analytics.params.query"),
         },
         before: {
           type: "string",
-          description: "ISO date string — only messages before this date",
+          description: translate("get_discord_message_analytics.params.before"),
         },
         after: {
           type: "string",
-          description: "ISO date string — only messages after this date",
+          description: translate("get_discord_message_analytics.params.after"),
         },
         groupBy: {
           type: "string",
           enum: ["user", "channel", "day", "hour", "weekday", "month"],
-          description:
-            "Dimension to group by. 'user' = per-author counts, 'channel' = per-channel counts, " +
-            "'day' = per-day (YYYY-MM-DD), 'hour' = by hour of day (0-23 UTC), " +
-            "'weekday' = by day of week (Mon-Sun), 'month' = by month (YYYY-MM). Default: 'user'.",
+          description: translate("get_discord_message_analytics.params.groupBy"),
         },
         topN: {
           type: "number",
-          description: "Max number of groups to return (default: 25, max: 100)",
+          description: translate("get_discord_message_analytics.params.topN"),
         },
       },
       required: ["guildId"],
@@ -10255,12 +9397,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_discord_server_activity",
     dataSource: onDemand("Lupos MongoDB"),
-    description:
-      "Get Discord server activity statistics including top users (by message count), " +
-      "channel breakdown, hourly activity distribution, and engagement metrics. " +
-      "Useful for leaderboards, identifying active users, analyzing server health, " +
-      "and finding which channels or time periods are most active. " +
-      "Supports configurable lookback period (default: 7 days).",
+    description: translate("get_discord_server_activity.description"),
     endpoint: {
       path: "/discord/activity",
       queryParams: ["guildId", "channelId", "days", "topN"],
@@ -10270,19 +9407,19 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         guildId: {
           type: "string",
-          description: "Discord guild/server ID to analyze",
+          description: translate("get_discord_server_activity.params.guildId"),
         },
         channelId: {
           type: "string",
-          description: "Narrow analysis to a specific channel ID",
+          description: translate("get_discord_server_activity.params.channelId"),
         },
         days: {
           type: "number",
-          description: "Lookback period in days (default: 7, max: 365)",
+          description: translate("get_discord_server_activity.params.days"),
         },
         topN: {
           type: "number",
-          description: "Number of top users to return (default: 15, max: 50)",
+          description: translate("get_discord_server_activity.params.topN"),
         },
       },
       required: ["guildId"],
@@ -10291,10 +9428,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_discord_guild_channels",
     dataSource: onDemand("Discord Live API"),
-    description:
-      "List all text channels in a Discord guild/server including their name, topic, " +
-      "category (parent ID/name), and position index. Use this to discover where to post " +
-      "or search before reading or writing to the server.",
+    description: translate("get_discord_guild_channels.description"),
     endpoint: {
       path: "/discord/guild/channels",
       queryParams: ["guildId"],
@@ -10304,7 +9438,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         guildId: {
           type: "string",
-          description: "Discord guild/server ID to list channels from",
+          description: translate("get_discord_guild_channels.params.guildId"),
         },
       },
       required: ["guildId"],
@@ -10313,10 +9447,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_discord_guild_members",
     dataSource: onDemand("Discord Live API"),
-    description:
-      "Get the list of online/idle/dnd members in a Discord server, grouped by their hoisted roles, " +
-      "including their custom display name, status, current game/activity name, and any profile badges. " +
-      "Use this to see who is currently active or what people are playing/doing.",
+    description: translate("get_discord_guild_members.description"),
     endpoint: {
       path: "/discord/guild/members",
       queryParams: ["guildId"],
@@ -10326,7 +9457,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         guildId: {
           type: "string",
-          description: "Discord guild/server ID to list members from",
+          description: translate("get_discord_guild_members.params.guildId"),
         },
       },
       required: ["guildId"],
@@ -10335,9 +9466,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_discord_guild_emojis",
     dataSource: onDemand("Discord Live API"),
-    description:
-      "List all custom emojis in a Discord server including their name, ID, and animated status. " +
-      "Use this to find custom emojis to react to messages with or include in text.",
+    description: translate("get_discord_guild_emojis.description"),
     endpoint: {
       path: "/discord/guild/emojis",
       queryParams: ["guildId"],
@@ -10347,7 +9476,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         guildId: {
           type: "string",
-          description: "Discord guild/server ID to list custom emojis from",
+          description: translate("get_discord_guild_emojis.params.guildId"),
         },
       },
       required: ["guildId"],
@@ -10356,10 +9485,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_bot_stats",
     dataSource: onDemand("Discord Live API"),
-    description:
-      "Retrieve the bot's own simulated biology metrics (mood, hunger, thirst, energy, bathroom, alcohol) " +
-      "and general database telemetry (total archived messages, unique users, transcriptions, media). " +
-      "Use this to check your own internal emotional/physical state and operational statistics.",
+    description: translate("get_bot_stats.description"),
     endpoint: {
       path: "/discord/bot/stats",
       queryParams: [],
@@ -10372,9 +9498,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_bot_guilds",
     dataSource: onDemand("Discord Live API"),
-    description:
-      "List all Discord servers/guilds that the bot is currently a member of, including their " +
-      "name, ID, member count, and owner ID.",
+    description: translate("get_bot_guilds.description"),
     endpoint: {
       path: "/discord/bot/guilds",
       queryParams: [],
@@ -10387,9 +9511,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_bot_activity_timeline",
     dataSource: onDemand("Discord Live API"),
-    description:
-      "Retrieve 24-hour activity timeline metrics for the bot, detailing hourly counts of messages, " +
-      "voice transcriptions, image generations, and active unique users.",
+    description: translate("get_bot_activity_timeline.description"),
     endpoint: {
       path: "/discord/bot/activity",
       queryParams: [],
@@ -10402,10 +9524,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_discord_user_heatmap_data",
     dataSource: onDemand("Lupos MongoDB"),
-    description:
-      "Get hourly and monthly activity heatmap data for a user on a Discord server. " +
-      "Returns a 7x48 hourly grid (days x 30-min intervals) and month-by-month activity metrics. " +
-      "Use this to analyze when a user is most active on the server.",
+    description: translate("get_discord_user_heatmap_data.description"),
     endpoint: {
       path: "/discord/guild/heatmap",
       queryParams: [
@@ -10422,27 +9541,27 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         guildId: {
           type: "string",
-          description: "Discord guild/server ID to query",
+          description: translate("get_discord_word_frequencies.params.guildId"),
         },
         userId: {
           type: "string",
-          description: "Discord user ID to analyze",
+          description: translate("get_discord_word_frequencies.params.userId"),
         },
         channelId: {
           type: "string",
-          description: "Optional channel ID to filter by",
+          description: translate("get_discord_user_heatmap_data.params.channelId"),
         },
         years: {
           type: "number",
-          description: "Years of history to look back",
+          description: translate("get_discord_word_frequencies.params.years"),
         },
         months: {
           type: "number",
-          description: "Months of history to look back",
+          description: translate("get_discord_word_frequencies.params.months"),
         },
         days: {
           type: "number",
-          description: "Days of history to look back",
+          description: translate("get_discord_word_frequencies.params.days"),
         },
       },
       required: ["guildId", "userId"],
@@ -10451,9 +9570,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_discord_mention_leaderboard",
     dataSource: onDemand("Lupos MongoDB"),
-    description:
-      "Get the top users who mention a specific user in a server, along with unique mentioner counts, " +
-      "average mentions per user, and percentage distribution.",
+    description: translate("get_discord_mention_leaderboard.description"),
     endpoint: {
       path: "/discord/guild/mentions",
       queryParams: [
@@ -10470,27 +9587,27 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         guildId: {
           type: "string",
-          description: "Discord guild/server ID to query",
+          description: translate("get_discord_word_frequencies.params.guildId"),
         },
         userId: {
           type: "string",
-          description: "Discord user ID to check mentions for",
+          description: translate("get_discord_mention_leaderboard.params.userId"),
         },
         years: {
           type: "number",
-          description: "Years of history to look back",
+          description: translate("get_discord_word_frequencies.params.years"),
         },
         months: {
           type: "number",
-          description: "Months of history to look back",
+          description: translate("get_discord_word_frequencies.params.months"),
         },
         days: {
           type: "number",
-          description: "Days of history to look back",
+          description: translate("get_discord_word_frequencies.params.days"),
         },
         channelId: {
           type: "string",
-          description: "Optional channel ID to filter by",
+          description: translate("get_discord_user_heatmap_data.params.channelId"),
         },
       },
       required: ["guildId", "userId"],
@@ -10499,9 +9616,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_discord_message_leaderboard",
     dataSource: onDemand("Lupos MongoDB"),
-    description:
-      "Get the top contributors by message count on a server for a specified lookback window, " +
-      "including total messages, active users, and average messages per user.",
+    description: translate("get_discord_message_leaderboard.description"),
     endpoint: {
       path: "/discord/guild/leaderboard",
       queryParams: ["guildId", "years", "months", "days", "channelId"],
@@ -10511,23 +9626,23 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         guildId: {
           type: "string",
-          description: "Discord guild/server ID to query",
+          description: translate("get_discord_word_frequencies.params.guildId"),
         },
         years: {
           type: "number",
-          description: "Years of history to look back",
+          description: translate("get_discord_word_frequencies.params.years"),
         },
         months: {
           type: "number",
-          description: "Months of history to look back",
+          description: translate("get_discord_word_frequencies.params.months"),
         },
         days: {
           type: "number",
-          description: "Days of history to look back",
+          description: translate("get_discord_word_frequencies.params.days"),
         },
         channelId: {
           type: "string",
-          description: "Optional channel ID to filter by (defaults to all)",
+          description: translate("get_discord_message_leaderboard.params.channelId"),
         },
       },
       required: ["guildId"],
@@ -10536,10 +9651,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_discord_word_frequencies",
     dataSource: onDemand("Lupos MongoDB"),
-    description:
-      "Get word frequency analysis (most common words) for a user in a Discord server, " +
-      "excluding common English stop words. Useful for seeing what topics or phrases a user " +
-      "uses the most.",
+    description: translate("get_discord_word_frequencies.description"),
     endpoint: {
       path: "/discord/guild/word-frequencies",
       queryParams: ["guildId", "userId", "years", "months", "days", "limit"],
@@ -10549,27 +9661,27 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         guildId: {
           type: "string",
-          description: "Discord guild/server ID to query",
+          description: translate("get_discord_word_frequencies.params.guildId"),
         },
         userId: {
           type: "string",
-          description: "Discord user ID to analyze",
+          description: translate("get_discord_word_frequencies.params.userId"),
         },
         years: {
           type: "number",
-          description: "Years of history to look back",
+          description: translate("get_discord_word_frequencies.params.years"),
         },
         months: {
           type: "number",
-          description: "Months of history to look back",
+          description: translate("get_discord_word_frequencies.params.months"),
         },
         days: {
           type: "number",
-          description: "Days of history to look back",
+          description: translate("get_discord_word_frequencies.params.days"),
         },
         limit: {
           type: "number",
-          description: "Max number of words to return (default: 150)",
+          description: translate("get_discord_word_frequencies.params.limit"),
         },
       },
       required: ["guildId", "userId"],
@@ -10578,10 +9690,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "react_to_discord_message",
     dataSource: onDemand("Discord Live API"),
-    description:
-      "Add an emoji reaction to a specific message in a server via the Lupos bot account. " +
-      "Rate-limited to 1 reaction per 2 seconds. The reaction will automatically sync to " +
-      "the database archive.",
+    description: translate("react_to_discord_message.description"),
     endpoint: {
       path: "/discord/guild/react",
       method: "POST",
@@ -10592,21 +9701,19 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         guildId: {
           type: "string",
-          description: "Discord guild/server ID where the message resides",
+          description: translate("react_to_discord_message.params.guildId"),
         },
         channelId: {
           type: "string",
-          description: "Discord channel ID where the message was sent",
+          description: translate("react_to_discord_message.params.channelId"),
         },
         messageId: {
           type: "string",
-          description: "The unique ID of the message to react to",
+          description: translate("react_to_discord_message.params.messageId"),
         },
         emoji: {
           type: "string",
-          description:
-            "The emoji to react with. Can be a standard Unicode emoji character (e.g. '👍') " +
-            "or a custom Discord emoji identifier in the format 'name:id' (e.g. 'luposLurk:1234567890')",
+          description: translate("react_to_discord_message.params.emoji"),
         },
       },
       required: ["guildId", "channelId", "messageId", "emoji"],
@@ -10615,10 +9722,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_discord_voice_channel_members",
     dataSource: onDemand("Discord Live API"),
-    description:
-      "Get a real-time list of all voice and stage channels in the Discord server that currently " +
-      "have active members, including the name/username and voice states (muted, deafened, streaming, camera) of each participant. " +
-      "Use this to see who is currently talking, streaming, or hanging out in voice.",
+    description: translate("get_discord_voice_channel_members.description"),
     endpoint: {
       path: "/discord/guild/voice-members",
       queryParams: ["guildId"],
@@ -10628,7 +9732,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         guildId: {
           type: "string",
-          description: "Discord guild/server ID to list voice members from",
+          description: translate("get_discord_voice_channel_members.params.guildId"),
         },
       },
       required: ["guildId"],
@@ -10637,11 +9741,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_discord_user_profile",
     dataSource: onDemand("Discord Live API"),
-    description:
-      "Retrieve a comprehensive and detailed profile of a Discord user in a specific server. " +
-      "Includes display names, custom statuses, current active platform, roles list, highest role, " +
-      "voice state, joins/boost timestamps, profile/accent colors, and moderation/kickable permissions. " +
-      "Use this when you need detailed context about a user's role or server presence, replacing heavy system prompt injections.",
+    description: translate("get_discord_user_profile.description"),
     endpoint: {
       path: "/discord/guild/user-profile",
       queryParams: ["guildId", "userId"],
@@ -10651,11 +9751,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         guildId: {
           type: "string",
-          description: "Discord guild/server ID where the user is a member",
+          description: translate("get_discord_user_profile.params.guildId"),
         },
         userId: {
           type: "string",
-          description: "The unique Discord user ID to fetch the profile for",
+          description: translate("get_discord_user_profile.params.userId"),
         },
       },
       required: ["guildId", "userId"],
@@ -10664,11 +9764,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_discord_channel_activity_stats",
     dataSource: onDemand("Lupos MongoDB"),
-    description:
-      "Analyze historical message activity per-channel over a specified lookback window (default 7 days). " +
-      "Returns metrics for each active channel, including total message counts, unique active users, " +
-      "average messages per day, and the top yapper/contributor user. " +
-      "Use this to answer questions about channel popularity, server activity patterns, or identifying the most active rooms.",
+    description: translate("get_discord_channel_activity_stats.description"),
     endpoint: {
       path: "/discord/guild/channel-stats",
       queryParams: ["guildId", "days"],
@@ -10678,11 +9774,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         guildId: {
           type: "string",
-          description: "Discord guild/server ID to query channel stats for",
+          description: translate("get_discord_channel_activity_stats.params.guildId"),
         },
         days: {
           type: "number",
-          description: "Lookback window in days (default: 7, max: 90)",
+          description: translate("get_discord_channel_activity_stats.params.days"),
         },
       },
       required: ["guildId"],
@@ -10692,11 +9788,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "list_lights",
     dataSource: onDemand("LIFX Cloud API"),
-    description:
-      "List LIFX smart lights and their current state including power, color (hue/saturation/kelvin), " +
-      "brightness, label, group, location, and connection status. Use this to discover available lights " +
-      "before controlling them, or to check the current state before making changes. " +
-      "Supports LIFX selectors: 'all', 'label:Kitchen', 'group:Bedroom', 'location:Home', 'id:d073d5xxxxxx'.",
+    description: translate("list_lights.description"),
     endpoint: {
       path: "/lights/list",
       queryParams: ["selector"],
@@ -10706,10 +9798,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         selector: {
           type: "string",
-          description:
-            "LIFX selector to filter lights. Examples: 'all' (default), 'label:Desk Lamp', " +
-            "'group:Living Room', 'location:Home', 'id:d073d5xxxxxx'. " +
-            "Use 'all' to see every light.",
+          description: translate("list_lights.params.selector"),
         },
       },
       required: [],
@@ -10718,12 +9807,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "set_light_state",
     dataSource: onDemand("LIFX Cloud API"),
-    description:
-      "Set the state of LIFX lights — power, color, brightness, and color temperature. " +
-      "This is the primary control tool. Colors can be specified as: named colors ('red', 'blue', 'warm_white'), " +
-      "hex codes ('#FF5500'), HSBK ('hue:120 saturation:1.0 brightness:0.5'), " +
-      "kelvin ('kelvin:2700' for warm, 'kelvin:6500' for daylight), or RGB ('rgb:255,128,0'). " +
-      "Brightness ranges from 0.0 to 1.0. Duration controls transition time in seconds.",
+    description: translate("set_light_state.description"),
     endpoint: {
       path: "/lights/state",
       method: "POST",
@@ -10733,37 +9817,28 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         selector: {
           type: "string",
-          description:
-            "LIFX selector targeting which lights to control. " +
-            "Default: 'all'. Examples: 'label:Desk Lamp', 'group:Bedroom'.",
+          description: translate("set_light_state.params.selector"),
         },
         power: {
           type: "string",
           enum: ["on", "off"],
-          description: "Set power state to 'on' or 'off'.",
+          description: translate("set_light_state.params.power"),
         },
         color: {
           type: "string",
-          description:
-            "Color to set. Supports: named colors ('red', 'purple', 'warm_white'), " +
-            "hex ('#FF5500'), HSBK ('hue:240 saturation:1.0 brightness:0.8'), " +
-            "kelvin ('kelvin:2700'), RGB ('rgb:255,128,0').",
+          description: translate("set_light_state.params.color"),
         },
         brightness: {
           type: "number",
-          description:
-            "Brightness level from 0.0 (off) to 1.0 (max). Overrides brightness in color if set.",
+          description: translate("set_light_state.params.brightness"),
         },
         duration: {
           type: "number",
-          description:
-            "Transition time in seconds (default: 1). Use 0 for instant, larger values for smooth fades.",
+          description: translate("set_light_state.params.duration"),
         },
         kelvin: {
           type: "number",
-          description:
-            "Color temperature from 2500 (warm/candle) to 9000 (cool/daylight). " +
-            "Common values: 2700 (warm white), 4000 (neutral), 5500 (daylight), 6500 (cool).",
+          description: translate("set_light_state.params.kelvin"),
         },
       },
       required: [],
@@ -10772,9 +9847,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "toggle_light_power",
     dataSource: onDemand("LIFX Cloud API"),
-    description:
-      "Toggle LIFX light power — turns off lights that are on, or turns on lights that are off. " +
-      "All matched lights share the same power state after toggling.",
+    description: translate("toggle_light_power.description"),
     endpoint: {
       path: "/lights/toggle",
       method: "POST",
@@ -10784,11 +9857,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         selector: {
           type: "string",
-          description: "LIFX selector. Default: 'all'.",
+          description: translate("toggle_light_power.params.selector"),
         },
         duration: {
           type: "number",
-          description: "Transition time in seconds (default: 1).",
+          description: translate("toggle_light_power.params.duration"),
         },
       },
       required: [],
@@ -10797,10 +9870,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "start_light_breathe_effect",
     dataSource: onDemand("LIFX Cloud API"),
-    description:
-      "Run a breathe effect — slowly fades between two colors in a smooth sine wave pattern. " +
-      "Perfect for ambient mood lighting, meditation, relaxation, sunrise simulation, or gentle notifications. " +
-      "The effect oscillates between the current color (or fromColor) and the target color.",
+    description: translate("start_light_breathe_effect.description"),
     endpoint: {
       path: "/lights/effects/breathe",
       method: "POST",
@@ -10810,43 +9880,35 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         selector: {
           type: "string",
-          description: "LIFX selector. Default: 'all'.",
+          description: translate("toggle_light_power.params.selector"),
         },
         color: {
           type: "string",
-          description:
-            "Target color for the breathe peak. Required. Examples: 'blue', '#FF0000', 'kelvin:2700'.",
+          description: translate("start_light_breathe_effect.params.color"),
         },
         fromColor: {
           type: "string",
-          description:
-            "Starting color. If omitted, uses the light's current color.",
+          description: translate("start_light_breathe_effect.params.fromColor"),
         },
         period: {
           type: "number",
-          description:
-            "Time in seconds for one full breathe cycle (default: 1). Use 3-5 for relaxing, 0.5-1 for energetic.",
+          description: translate("start_light_breathe_effect.params.period"),
         },
         cycles: {
           type: "number",
-          description:
-            "Number of breathe cycles to perform (default: 1). Use 10+ for extended ambient effects.",
+          description: translate("start_light_breathe_effect.params.cycles"),
         },
         persist: {
           type: "boolean",
-          description:
-            "If true, keep the final color after the effect ends. If false (default), revert to the original color.",
+          description: translate("start_light_breathe_effect.params.persist"),
         },
         powerOn: {
           type: "boolean",
-          description:
-            "If true (default), turn the light on if it's off before starting the effect.",
+          description: translate("start_light_breathe_effect.params.powerOn"),
         },
         peak: {
           type: "number",
-          description:
-            "Where in the cycle the target color peaks (0.0 to 1.0, default: 0.5). " +
-            "0.5 = symmetric, lower = faster ramp up, higher = faster ramp down.",
+          description: translate("start_light_breathe_effect.params.peak"),
         },
       },
       required: ["color"],
@@ -10855,10 +9917,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "start_light_pulse_effect",
     dataSource: onDemand("LIFX Cloud API"),
-    description:
-      "Run a pulse effect — quickly flashes between two colors with a sharp square wave pattern. " +
-      "Great for alerts, notifications, party lighting, or attention-grabbing effects. " +
-      "More dramatic and abrupt than the breathe effect.",
+    description: translate("start_light_pulse_effect.description"),
     endpoint: {
       path: "/lights/effects/pulse",
       method: "POST",
@@ -10868,36 +9927,31 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         selector: {
           type: "string",
-          description: "LIFX selector. Default: 'all'.",
+          description: translate("toggle_light_power.params.selector"),
         },
         color: {
           type: "string",
-          description:
-            "Target flash color. Required. Examples: 'red', '#00FF00', 'hue:0 saturation:1'.",
+          description: translate("start_light_pulse_effect.params.color"),
         },
         fromColor: {
           type: "string",
-          description:
-            "Starting color between flashes. If omitted, uses the light's current color.",
+          description: translate("start_light_pulse_effect.params.fromColor"),
         },
         period: {
           type: "number",
-          description:
-            "Time in seconds for one flash cycle (default: 1). Use 0.3-0.5 for rapid strobe, 1-2 for slow pulse.",
+          description: translate("start_light_pulse_effect.params.period"),
         },
         cycles: {
           type: "number",
-          description:
-            "Number of flash cycles (default: 1). Use 5-10 for a noticeable alert.",
+          description: translate("start_light_pulse_effect.params.cycles"),
         },
         persist: {
           type: "boolean",
-          description:
-            "If true, keep the flash color after the effect ends. Default: false.",
+          description: translate("start_light_pulse_effect.params.persist"),
         },
         powerOn: {
           type: "boolean",
-          description: "If true (default), turn the light on if it's off.",
+          description: translate("start_light_pulse_effect.params.powerOn"),
         },
       },
       required: ["color"],
@@ -10906,9 +9960,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "stop_light_effects",
     dataSource: onDemand("LIFX Cloud API"),
-    description:
-      "Stop all running effects (breathe, pulse, move, morph, flame) on the selected lights. " +
-      "Optionally also power off the lights. Use this to cancel any active animation.",
+    description: translate("stop_light_effects.description"),
     endpoint: {
       path: "/lights/effects/off",
       method: "POST",
@@ -10918,12 +9970,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         selector: {
           type: "string",
-          description: "LIFX selector. Default: 'all'.",
+          description: translate("toggle_light_power.params.selector"),
         },
         powerOff: {
           type: "boolean",
-          description:
-            "If true, also turn off the lights after stopping effects. Default: false.",
+          description: translate("stop_light_effects.params.powerOff"),
         },
       },
       required: [],
@@ -10932,10 +9983,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "list_light_scenes",
     dataSource: onDemand("LIFX Cloud API"),
-    description:
-      "List all saved LIFX scenes in the user's account. Scenes are pre-configured light states " +
-      "(color, brightness, power) that can be activated with activate_light_scene. " +
-      "Returns scene UUID (needed for activation), name, and light count.",
+    description: translate("list_light_scenes.description"),
     endpoint: {
       path: "/lights/scenes",
     },
@@ -10948,10 +9996,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "activate_light_scene",
     dataSource: onDemand("LIFX Cloud API"),
-    description:
-      "Activate a saved LIFX scene by its UUID. Scenes apply pre-configured states " +
-      "(color, brightness, power) to specific lights. Use list_light_scenes first to discover " +
-      "available scenes and their UUIDs.",
+    description: translate("activate_light_scene.description"),
     endpoint: {
       path: "/lights/scenes/activate",
       method: "POST",
@@ -10961,19 +10006,16 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         sceneId: {
           type: "string",
-          description: "Scene UUID from list_light_scenes.",
+          description: translate("activate_light_scene.params.sceneId"),
         },
         duration: {
           type: "number",
-          description:
-            "Transition time in seconds to fade into the scene (default: 1).",
+          description: translate("activate_light_scene.params.duration"),
         },
         ignore: {
           type: "array",
           items: { type: "string" },
-          description:
-            "Properties to NOT change when applying the scene. " +
-            "Options: 'power', 'infrared', 'duration', 'intensity', 'hue', 'saturation', 'brightness', 'kelvin'.",
+          description: translate("activate_light_scene.params.ignore"),
         },
       },
       required: ["sceneId"],
@@ -10982,10 +10024,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "start_light_move_effect",
     dataSource: onDemand("LIFX Cloud API"),
-    description:
-      "Run a move effect — flowing color animation along LIFX strip products (Z, Beam). " +
-      "The existing color pattern moves forward or backward along the strip. " +
-      "Perfect for ambient flowing light effects. Only works on multizone strip products.",
+    description: translate("start_light_move_effect.description"),
     endpoint: {
       path: "/lights/effects/move",
       method: "POST",
@@ -10995,27 +10034,24 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         selector: {
           type: "string",
-          description: "LIFX selector. Default: 'all'.",
+          description: translate("toggle_light_power.params.selector"),
         },
         direction: {
           type: "string",
           enum: ["forward", "backward"],
-          description:
-            "Direction of movement along the strip. Default: 'forward'.",
+          description: translate("start_light_move_effect.params.direction"),
         },
         period: {
           type: "number",
-          description:
-            "Seconds per movement cycle (default: 1). Lower = faster flow.",
+          description: translate("start_light_move_effect.params.period"),
         },
         cycles: {
           type: "number",
-          description:
-            "Number of cycles to run. Omit for infinite (until stopped with stop_light_effects).",
+          description: translate("start_light_move_effect.params.cycles"),
         },
         powerOn: {
           type: "boolean",
-          description: "If true (default), turn the light on if it's off.",
+          description: translate("start_light_pulse_effect.params.powerOn"),
         },
       },
       required: [],
@@ -11024,10 +10060,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "start_light_flame_effect",
     dataSource: onDemand("LIFX Cloud API"),
-    description:
-      "Run a flame effect — flickering fire animation that runs on LIFX matrix device firmware " +
-      "(Tile, Candle). Creates a realistic candle/fireplace simulation. " +
-      "Only works on matrix-capable products.",
+    description: translate("start_light_flame_effect.description"),
     endpoint: {
       path: "/lights/effects/flame",
       method: "POST",
@@ -11037,21 +10070,19 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         selector: {
           type: "string",
-          description: "LIFX selector. Default: 'all'.",
+          description: translate("toggle_light_power.params.selector"),
         },
         period: {
           type: "number",
-          description:
-            "Speed of the flame in seconds (default: 5). Lower = more active flame.",
+          description: translate("start_light_flame_effect.params.period"),
         },
         duration: {
           type: "number",
-          description:
-            "How long to run in seconds. Omit for indefinite (until stopped with stop_light_effects).",
+          description: translate("start_light_morph_effect.params.duration"),
         },
         powerOn: {
           type: "boolean",
-          description: "If true (default), turn the light on if it's off.",
+          description: translate("start_light_pulse_effect.params.powerOn"),
         },
       },
       required: [],
@@ -11060,10 +10091,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "start_light_morph_effect",
     dataSource: onDemand("LIFX Cloud API"),
-    description:
-      "Run a morph effect — continuous color-blending animation on LIFX matrix devices " +
-      "(Tile, Candle). Smoothly transitions between provided palette colors. " +
-      "Great for ambient mood lighting with multiple colors. Only works on matrix-capable products.",
+    description: translate("start_light_morph_effect.description"),
     endpoint: {
       path: "/lights/effects/morph",
       method: "POST",
@@ -11073,28 +10101,24 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         selector: {
           type: "string",
-          description: "LIFX selector. Default: 'all'.",
+          description: translate("toggle_light_power.params.selector"),
         },
         palette: {
           type: "array",
           items: { type: "string" },
-          description:
-            "Array of color strings to blend between. Examples: ['red', 'blue', 'green'], " +
-            "['#FF0000', '#00FF00', '#0000FF'], ['kelvin:2700', 'kelvin:6500'].",
+          description: translate("start_light_morph_effect.params.palette"),
         },
         period: {
           type: "number",
-          description:
-            "Seconds per blend cycle (default: 5). Lower = faster transitions.",
+          description: translate("start_light_morph_effect.params.period"),
         },
         duration: {
           type: "number",
-          description:
-            "How long to run in seconds. Omit for indefinite (until stopped with stop_light_effects).",
+          description: translate("start_light_morph_effect.params.duration"),
         },
         powerOn: {
           type: "boolean",
-          description: "If true (default), turn the light on if it's off.",
+          description: translate("start_light_pulse_effect.params.powerOn"),
         },
       },
       required: [],
@@ -11103,11 +10127,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "set_light_states",
     dataSource: onDemand("LIFX Cloud API"),
-    description:
-      "Set different states on multiple LIFX light selectors in a single API call. " +
-      "Allows setting up to 50 different light states simultaneously — each with its own " +
-      "selector, power, color, brightness, and duration. Much more efficient than calling " +
-      "set_light_state multiple times. Use 'defaults' to set common values across all entries.",
+    description: translate("set_light_states.description"),
     endpoint: {
       path: "/lights/states",
       method: "PUT",
@@ -11122,7 +10142,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             properties: {
               selector: {
                 type: "string",
-                description: "LIFX selector for this state entry.",
+                description: translate("set_light_states.params.states.items.params.selector"),
               },
               power: { type: "string", enum: ["on", "off"] },
               color: { type: "string", description: "Color string." },
@@ -11130,19 +10150,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
               duration: { type: "number", description: "Transition seconds." },
               kelvin: {
                 type: "number",
-                description: "Color temperature 2500-9000.",
+                description: translate("set_light_states.params.states.items.params.kelvin"),
               },
             },
           },
-          description:
-            "Array of state objects (max 50). Each must have a selector and any " +
-            "combination of power/color/brightness/duration/kelvin.",
+          description: translate("set_light_states.params.states"),
         },
         defaults: {
           type: "object",
-          description:
-            "Default values applied to all state entries. Same properties as individual states " +
-            "(power, color, brightness, duration, kelvin). Individual entries override defaults.",
+          description: translate("set_light_states.params.defaults"),
         },
       },
       required: ["states"],
@@ -11151,11 +10167,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "adjust_light_state",
     dataSource: onDemand("LIFX Cloud API"),
-    description:
-      "Make relative adjustments to the current state of LIFX lights — increase/decrease brightness, " +
-      "shift hue, adjust saturation, or change color temperature by a delta value. " +
-      "Unlike set_light_state (which sets absolute values), this adds or subtracts from the current state. " +
-      "Example: brightness +0.2 makes lights 20% brighter than they currently are.",
+    description: translate("adjust_light_state.description"),
     endpoint: {
       path: "/lights/state/delta",
       method: "POST",
@@ -11165,29 +10177,27 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         selector: {
           type: "string",
-          description: "LIFX selector. Default: 'all'.",
+          description: translate("toggle_light_power.params.selector"),
         },
         hue: {
           type: "number",
-          description: "Hue adjustment from -360 to 360 degrees.",
+          description: translate("adjust_light_state.params.hue"),
         },
         saturation: {
           type: "number",
-          description: "Saturation adjustment from -1.0 to 1.0.",
+          description: translate("adjust_light_state.params.saturation"),
         },
         brightness: {
           type: "number",
-          description:
-            "Brightness adjustment from -1.0 to 1.0. Positive = brighter, negative = dimmer.",
+          description: translate("adjust_light_state.params.brightness"),
         },
         kelvin: {
           type: "number",
-          description:
-            "Color temperature adjustment from -9000 to 9000. Positive = cooler, negative = warmer.",
+          description: translate("adjust_light_state.params.kelvin"),
         },
         duration: {
           type: "number",
-          description: "Transition time in seconds (default: 1).",
+          description: translate("toggle_light_power.params.duration"),
         },
       },
       required: [],
@@ -11196,11 +10206,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "enable_light_night_lock",
     dataSource: onDemand("LIFX Cloud API"),
-    description:
-      "Check, toggle, or set the night lock status on the smart lighting system. " +
-      "When locked, external requests to turn lights on are blocked (the automation engine " +
-      "handles sleep-time lockout automatically). Use action 'status' to check, 'toggle' to flip, " +
-      "or 'set' to explicitly lock/unlock.",
+    description: translate("enable_light_night_lock.description"),
     endpoint: {
       path: "/lights/nightlock",
       method: "POST",
@@ -11211,13 +10217,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         action: {
           type: "string",
           enum: ["status", "toggle", "set"],
-          description:
-            "Action to perform. 'status': check current state. 'toggle': flip lock. 'set': explicitly set.",
+          description: translate("enable_light_night_lock.params.action"),
         },
         locked: {
           type: "boolean",
-          description:
-            "Required when action is 'set'. True to lock, false to unlock.",
+          description: translate("enable_light_night_lock.params.locked"),
         },
       },
       required: ["action"],
@@ -11226,10 +10230,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_light_health",
     dataSource: onDemand("Lights Service"),
-    description:
-      "Get health and diagnostics from the smart lighting service — uptime, current automation phase " +
-      "(sleep/sunrise/daytime/sunset/nighttime), night lock status, LIFX API rate limit usage, " +
-      "sunrise/sunset times, and current weather conditions affecting lighting.",
+    description: translate("get_light_health.description"),
     endpoint: {
       path: "/lights/health",
     },
@@ -11244,12 +10245,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "create_custom_agent",
     dataSource: onDemand("Prism CustomAgentService"),
-    description:
-      "Create a new custom AI agent persona. Custom agents allow tailoring the system prompt identity, " +
-      "response guidelines, tool policy, enabled tools, and visual branding (icon, accent color, background image). " +
-      "The agent is persisted to the database and immediately registered for use. " +
-      "Use this when the user asks to create, set up, or define a new specialized agent, assistant, or persona. " +
-      "The created agent will appear in the agent picker and can be selected for future conversations.",
+    description: translate("create_custom_agent.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/custom-agent/create",
@@ -11274,90 +10270,56 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         name: {
           type: "string",
-          description:
-            "Display name for the agent (e.g. 'DevOps Engineer', 'Creative Writer'). " +
-            "Must be unique. A stable ID is auto-derived as CUSTOM_<UPPERCASED_NAME>.",
+          description: translate("create_custom_agent.params.name"),
         },
         description: {
           type: "string",
-          description:
-            "Short description shown in the agent picker (1-2 sentences). " +
-            "Helps the user understand what this agent specializes in.",
+          description: translate("create_custom_agent.params.description"),
         },
         project: {
           type: "string",
-          description:
-            "Project scope for sessions created with this agent. Default: 'coding'. " +
-            "Examples: 'coding', 'writing', 'research'.",
+          description: translate("create_custom_agent.params.project"),
         },
         icon: {
           type: "string",
-          description:
-            "Lucide icon name for visual branding (used when no avatar image is set). Default: 'Bot'. " +
-            "Examples: 'Brain', 'Rocket', 'Shield', 'Palette', 'Microscope', 'Code2', " +
-            "'Flame', 'Zap', 'GraduationCap', 'Hammer', 'Sparkles', 'Crown', 'Atom', " +
-            "'Briefcase', 'Heart', 'Star', 'Telescope', 'FlaskConical', 'Lightbulb', " +
-            "'Music', 'Gamepad2', 'Camera', 'Leaf', 'Dog', 'Cat', 'Coffee', 'Swords'.",
+          description: translate("create_custom_agent.params.icon"),
         },
         avatar: {
           type: "string",
-          description:
-            "Image URL or data URL for a custom avatar. Takes precedence over icon when rendering. " +
-            "Accepts absolute URLs, data URLs (base64), or static asset paths (e.g. '/my-avatar.png'). " +
-            "Leave empty to use the Lucide icon instead.",
+          description: translate("create_custom_agent.params.avatar"),
         },
         color: {
           type: "string",
-          description:
-            "Hex color code for accent theming (icon background, UI accents). " +
-            "Examples: '#6366f1' (Indigo), '#8b5cf6' (Violet), '#ef4444' (Red), " +
-            "'#f97316' (Orange), '#22c55e' (Green), '#06b6d4' (Cyan), '#3b82f6' (Blue), " +
-            "'#ec4899' (Pink), '#eab308' (Yellow), '#14b8a6' (Teal). " +
-            "Leave empty for default gradient.",
+          description: translate("create_custom_agent.params.color"),
         },
         backgroundImage: {
           type: "string",
-          description:
-            "URL to a background image displayed behind chat messages. " +
-            "Use a subtle, dark image for best readability. Leave empty for default.",
+          description: translate("create_custom_agent.params.backgroundImage"),
         },
         identity: {
           type: "string",
-          description:
-            "Core personality and role prompt — injected at the top of the system prompt. " +
-            "Example: 'You are a senior backend engineer specializing in distributed systems...'",
+          description: translate("create_custom_agent.params.identity"),
         },
         guidelines: {
           type: "string",
-          description:
-            "Behavioral instructions for how the agent should respond. Always injected into the system prompt. " +
-            "Example: '## Guidelines\n- Always explain your reasoning\n- Use bullet points for clarity'",
+          description: translate("create_custom_agent.params.guidelines"),
         },
         toolPolicy: {
           type: "string",
-          description:
-            "Instructions for how the agent should use its tools. " +
-            "Example: '# Tool Usage\n- Use read_file before editing\n- Always run tests after changes'",
+          description: translate("create_custom_agent.params.toolPolicy"),
         },
         enabledTools: {
           type: "array",
           items: { type: "string" },
-          description:
-            "Array of tool names this agent can use. If empty, the agent has no tool access. " +
-            "Pass specific tool names from the tool schema registry (e.g. ['read_file', 'write_file', 'search_web']). " +
-            "The user can also configure tools later via the settings UI.",
+          description: translate("create_custom_agent.params.enabledTools"),
         },
         usesDirectoryTree: {
           type: "boolean",
-          description:
-            "If true, inject the workspace file/directory structure into the agent's context. " +
-            "Useful for coding agents that need to navigate project structure. Default: false.",
+          description: translate("create_custom_agent.params.usesDirectoryTree"),
         },
         usesCodingGuidelines: {
           type: "boolean",
-          description:
-            "If true, inject generic coding conventions and coordinator orchestration mode " +
-            "into the system prompt. Default: false.",
+          description: translate("create_custom_agent.params.usesCodingGuidelines"),
         },
       },
       required: ["name", "identity"],
@@ -11366,11 +10328,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "list_custom_agents",
     dataSource: onDemand("Prism CustomAgentService"),
-    description:
-      "List all custom AI agent personas. Returns every custom agent registered in the system " +
-      "with their name, agentId, description, icon, color, identity prompt, guidelines, tool policy, " +
-      "enabled tools, and timestamps. Use this to discover which custom agents exist before creating " +
-      "a new one (to avoid duplicates), or when the user asks to see, review, or pick from available agents.",
+    description: translate("list_custom_agents.description"),
     endpoint: {
       path: "/agentic/custom-agent/list",
     },
@@ -11383,10 +10341,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "list_agents",
     dataSource: onDemand("Prism AgentPersonaRegistry"),
-    description:
-      "List all available AI agent personas (both built-in and custom). Returns each agent's ID, name, " +
-      "type, and whether it is a custom agent. Use this to discover valid persona names for the " +
-      "'agent' parameter in create_team, or when the user asks which agents are available.",
+    description: translate("list_agents.description"),
     endpoint: {
       path: "/agentic/agent/list",
     },
@@ -11399,11 +10354,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "update_custom_agent",
     dataSource: onDemand("Prism CustomAgentService"),
-    description:
-      "Update an existing custom agent persona. Accepts partial updates — only the fields " +
-      "you provide will be changed. Use list_custom_agents first to find the agent's ID. " +
-      "Common updates include modifying the enabledTools list, " +
-      "modifying the identity prompt, changing guidelines, or updating visual branding.",
+    description: translate("update_custom_agent.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/custom-agent/update",
@@ -11429,68 +10380,60 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         id: {
           type: "string",
-          description:
-            "MongoDB ObjectId of the agent to update (from list_custom_agents).",
+          description: translate("update_custom_agent.params.id"),
         },
         name: {
           type: "string",
-          description:
-            "Updated display name. Leave unset to keep the current name.",
+          description: translate("update_custom_agent.params.name"),
         },
         description: {
           type: "string",
-          description: "Updated description shown in the agent picker.",
+          description: translate("update_custom_agent.params.description"),
         },
         project: {
           type: "string",
-          description: "Updated project scope (e.g. 'coding', 'writing').",
+          description: translate("update_custom_agent.params.project"),
         },
         icon: {
           type: "string",
-          description:
-            "Updated Lucide icon name (e.g. 'Brain', 'Rocket', 'Code2'). Used when no avatar is set.",
+          description: translate("update_custom_agent.params.icon"),
         },
         avatar: {
           type: "string",
-          description:
-            "Updated avatar image URL or data URL. Takes precedence over icon. Set to empty string to remove.",
+          description: translate("update_custom_agent.params.avatar"),
         },
         color: {
           type: "string",
-          description: "Updated hex color code for accent theming.",
+          description: translate("update_custom_agent.params.color"),
         },
         backgroundImage: {
           type: "string",
-          description: "Updated background image URL.",
+          description: translate("update_custom_agent.params.backgroundImage"),
         },
         identity: {
           type: "string",
-          description: "Updated core personality and role prompt.",
+          description: translate("update_custom_agent.params.identity"),
         },
         guidelines: {
           type: "string",
-          description: "Updated behavioral instructions.",
+          description: translate("update_custom_agent.params.guidelines"),
         },
         toolPolicy: {
           type: "string",
-          description: "Updated tool usage instructions.",
+          description: translate("update_custom_agent.params.toolPolicy"),
         },
         enabledTools: {
           type: "array",
           items: { type: "string" },
-          description:
-            "Updated array of tool names this agent can use. Replaces the entire list. " +
-            "Pass specific tool names from the tool schema registry (e.g. 'read_file', 'search_web')."
+          description: translate("update_custom_agent.params.enabledTools")
         },
         usesDirectoryTree: {
           type: "boolean",
-          description:
-            "Whether to inject workspace structure into the agent's context.",
+          description: translate("update_custom_agent.params.usesDirectoryTree"),
         },
         usesCodingGuidelines: {
           type: "boolean",
-          description:
-            "Whether to inject coding conventions into the system prompt.",
+          description: translate("update_custom_agent.params.usesCodingGuidelines"),
         },
       },
       required: ["id"],
@@ -11529,7 +10472,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         },
         limit: {
           type: "number",
-          description: "Maximum results to return (1–50). Default: 20.",
+          description: translate("search_tools.params.limit"),
         },
       },
       required: [],
@@ -11540,11 +10483,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "create_cron_job",
     dataSource: onDemand("AgenticSchedulerService"),
-    description:
-      "Create a persistent cron job or a manual/event-driven remote trigger. " +
-      "Cron jobs persist across sessions and execute unattended in the background. " +
-      "Supports hourly, daily (at scheduleTime), weekly (on scheduleDay at scheduleTime), " +
-      "cron expression (via cronExpression), or trigger (fire manually/remotely using trigger_cron_job).",
+    description: translate("create_cron_job.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/scheduled-task/create",
@@ -11567,60 +10506,44 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         name: {
           type: "string",
-          description:
-            "Human-readable name for this cron job (e.g. 'Daily Git Status check').",
+          description: translate("create_cron_job.params.name"),
         },
         prompt: {
           type: "string",
-          description:
-            "The instruction prompt sent to the background agent that will execute this job. " +
-            "Write this as a directive telling the agent what to do — NOT as a message from the user's perspective. " +
-            "Example: 'Remind the user to eat bananas and suggest healthy snack options' instead of " +
-            "'Time to eat some bananas!'. The prompt must be self-contained since there is no prior " +
-            "conversation context for the background run.",
+          description: translate("create_cron_job.params.prompt"),
         },
         scheduleType: {
           type: "string",
           enum: ["hourly", "daily", "weekly", "cron", "trigger", "once"],
-          description:
-            "The schedule type: 'hourly' runs at minute 0; 'daily' runs every day at scheduleTime; " +
-            "'weekly' runs on scheduleDay at scheduleTime; 'cron' uses standard 5-field cronExpression; " +
-            "'trigger' only fires when triggered manually or remotely; 'once' runs a single time at a specific scheduleDate and scheduleTime.",
+          description: translate("create_cron_job.params.scheduleType"),
         },
         cronExpression: {
           type: "string",
-          description:
-            "Standard 5-field cron expression (e.g. '0 9 * * *' for daily at 9 AM). Required for 'cron' type.",
+          description: translate("create_cron_job.params.cronExpression"),
         },
         scheduleTime: {
           type: "string",
-          description:
-            "Time of day in HH:MM format (e.g. '09:00' or '17:30'). Used for 'daily', 'weekly', and 'once' types.",
+          description: translate("create_cron_job.params.scheduleTime"),
         },
         scheduleDay: {
           type: "number",
-          description:
-            "Day of the week as 0-6 (0 is Sunday, 6 is Saturday). Used for 'weekly' type.",
+          description: translate("create_cron_job.params.scheduleDay"),
         },
         scheduleDate: {
           type: "string",
-          description:
-            "Date of the single execution in YYYY-MM-DD format (e.g. '2026-05-25'). Required for 'once' type.",
+          description: translate("create_cron_job.params.scheduleDate"),
         },
         agent: {
           type: "string",
-          description:
-            "Optional agent persona to run (e.g. 'CODING'). Default: 'CODING'.",
+          description: translate("create_cron_job.params.agent"),
         },
         provider: {
           type: "string",
-          description:
-            "Optional LLM provider (e.g. 'anthropic', 'openai', 'google'). Default: 'anthropic'.",
+          description: translate("create_cron_job.params.provider"),
         },
         model: {
           type: "string",
-          description:
-            "Optional LLM model (e.g. 'claude-sonnet-4-5-20250929', 'gpt-5.4').",
+          description: translate("create_cron_job.params.model"),
         },
       },
       required: ["name", "prompt", "scheduleType"],
@@ -11629,8 +10552,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "list_cron_jobs",
     dataSource: onDemand("AgenticSchedulerService"),
-    description:
-      "List all cron jobs and background triggers currently configured in the workspace project.",
+    description: translate("list_cron_jobs.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/scheduled-task/list",
@@ -11645,8 +10567,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "delete_cron_job",
     dataSource: onDemand("AgenticSchedulerService"),
-    description:
-      "Delete an existing cron job or trigger by its UUID or unique name.",
+    description: translate("delete_cron_job.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/scheduled-task/delete",
@@ -11657,8 +10578,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         scheduleId: {
           type: "string",
-          description:
-            "The unique UUID or exact name of the cron job to delete.",
+          description: translate("delete_cron_job.params.scheduleId"),
         },
       },
       required: ["scheduleId"],
@@ -11667,9 +10587,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "trigger_cron_job",
     dataSource: onDemand("AgenticSchedulerService"),
-    description:
-      "Trigger a cron job or remote trigger to run in the background immediately. " +
-      "Optionally pass context payload variables to be appended to the agent run prompt.",
+    description: translate("trigger_cron_job.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/scheduled-task/trigger",
@@ -11680,14 +10598,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         triggerName: {
           type: "string",
-          description:
-            "The unique UUID or exact name of the cron job or trigger to fire.",
+          description: translate("trigger_cron_job.params.triggerName"),
         },
         payload: {
           type: "object",
-          description:
-            "Optional key-value object containing context details appended to the run prompt. " +
-            "Example: { trigger: 'webhook', ref: 'main', status: 'success' }.",
+          description: translate("trigger_cron_job.params.payload"),
         },
       },
       required: ["triggerName"],
@@ -11698,11 +10613,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "edit_notebook",
     dataSource: onDemand("AgenticNotebookService"),
-    description:
-      "Edit Jupyter Notebook (.ipynb) files. Supports structured cell operations: " +
-      "list_cells (enumerate all cells with previews), get_cell (read full cell content), " +
-      "insert_cell (add a new cell), replace_cell (update content/type), delete_cell (remove a cell). " +
-      "All operations work on the notebook's JSON structure — no raw text editing needed.",
+    description: translate("edit_notebook.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/notebook/edit",
@@ -11713,7 +10624,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         path: {
           type: "string",
-          description: "Absolute path to the .ipynb notebook file.",
+          description: translate("edit_notebook.params.path"),
         },
         action: {
           type: "string",
@@ -11724,26 +10635,20 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             "replace_cell",
             "delete_cell",
           ],
-          description:
-            "Operation to perform. 'list_cells': overview of all cells. 'get_cell': read one cell. " +
-            "'insert_cell': add a cell at position. 'replace_cell': update a cell. 'delete_cell': remove a cell.",
+          description: translate("edit_notebook.params.action"),
         },
         cellIndex: {
           type: "number",
-          description:
-            "0-based cell index. Required for get_cell, replace_cell, delete_cell. " +
-            "Optional for insert_cell (defaults to appending at end).",
+          description: translate("edit_notebook.params.cellIndex"),
         },
         content: {
           type: "string",
-          description:
-            "Cell source content. Required for insert_cell, optional for replace_cell.",
+          description: translate("edit_notebook.params.content"),
         },
         cellType: {
           type: "string",
           enum: ["code", "markdown", "raw"],
-          description:
-            "Cell type. Default: 'code' for insert, unchanged for replace.",
+          description: translate("edit_notebook.params.cellType"),
         },
       },
       required: ["path", "action"],
@@ -11757,12 +10662,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "think",
     dataSource: compute("echo"),
-    description:
-      "Use this tool to reason through complex problems step-by-step before acting. " +
-      "Write your private reasoning, analysis, or plan here — this content is NOT shown to the user. " +
-      "Use this when you need to: break down a multi-step task, weigh trade-offs between approaches, " +
-      "analyze information from previous tool calls, plan your next actions, or reason about ambiguous requirements. " +
-      "This tool does not execute anything — it simply records your thinking for context continuity.",
+    description: translate("think.description"),
     endpoint: {
       method: "POST",
       path: "/compute/think",
@@ -11773,8 +10673,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         thought: {
           type: "string",
-          description:
-            "Your private reasoning, analysis, or plan. Be thorough — this is your scratchpad.",
+          description: translate("think.params.thought"),
         },
       },
       required: ["thought"],
@@ -11783,10 +10682,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "sleep",
     dataSource: compute("timer"),
-    description:
-      "Pause execution for a specified duration. Use for polling workflows — e.g. wait for a build " +
-      "to finish, a server to restart, or a deployment to propagate before checking results. " +
-      "Maximum duration is 120 seconds. The pause can be cancelled if the user aborts the session.",
+    description: translate("sleep.description"),
     endpoint: {
       method: "POST",
       path: "/compute/sleep",
@@ -11797,12 +10693,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         duration_seconds: {
           type: "number",
-          description: "How long to wait in seconds (1–120). Default: 5.",
+          description: translate("sleep.params.duration_seconds"),
         },
         reason: {
           type: "string",
-          description:
-            "Brief explanation of why you are waiting (shown to the user).",
+          description: translate("sleep.params.reason"),
         },
       },
       required: ["duration_seconds"],
@@ -11811,12 +10706,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "emit_structured_output",
     dataSource: compute("json-schema"),
-    description:
-      "Produce a structured JSON output conforming to a defined schema. Use this when the user " +
-      "or a downstream system needs machine-readable data rather than natural language. " +
-      "Provide the output format as a JSON Schema object and the data that conforms to it. " +
-      "The tool validates the data against the schema and returns the validated result. " +
-      "Use cases: API-like responses, data extraction, typed reports, pipeline outputs.",
+    description: translate("emit_structured_output.description"),
     endpoint: {
       method: "POST",
       path: "/compute/synthetic-output",
@@ -11827,20 +10717,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         schema: {
           type: "object",
-          description:
-            "JSON Schema definition for the expected output structure. " +
-            "Example: { type: 'object', properties: { title: { type: 'string' }, score: { type: 'number' } }, required: ['title'] }.",
+          description: translate("emit_structured_output.params.schema"),
         },
         data: {
           type: "object",
-          description:
-            "The structured data to output. Must conform to the provided schema. " +
-            "Example: { title: 'My Report', score: 95 }.",
+          description: translate("emit_structured_output.params.data"),
         },
         label: {
           type: "string",
-          description:
-            "Optional label for this output (e.g. 'analysis_result', 'extracted_entities').",
+          description: translate("emit_structured_output.params.label"),
         },
       },
       required: ["data"],
@@ -11851,10 +10736,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "parse_cron_expression",
     dataSource: compute("internal"),
-    description:
-      "Parse, validate, and explain a standard 5-field cron expression (minute hour day month weekday). " +
-      "Returns a human-readable explanation of the schedule, the expanded values for each field, " +
-      "and the next N execution times. Useful for debugging scheduled tasks, cron jobs, and periodic automations.",
+    description: translate("parse_cron_expression.description"),
     endpoint: {
       path: "/compute/cron/parse",
       queryParams: ["expression", "count", "from"],
@@ -11864,19 +10746,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         expression: {
           type: "string",
-          description:
-            "Standard 5-field cron expression. Format: 'minute hour dayOfMonth month dayOfWeek'. " +
-            "Examples: '*/5 * * * *' (every 5 min), '0 9 * * 1-5' (9am weekdays), '30 2 1 * *' (2:30am on 1st of month)",
+          description: translate("parse_cron_expression.params.expression"),
         },
         count: {
           type: "number",
-          description:
-            "Number of next execution times to compute (default: 5, max: 25)",
+          description: translate("parse_cron_expression.params.count"),
         },
         from: {
           type: "string",
-          description:
-            "ISO date to compute next executions from (default: now). E.g. '2026-01-01T00:00:00Z'",
+          description: translate("parse_cron_expression.params.from"),
         },
       },
       required: ["expression"],
@@ -11887,15 +10765,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_dota",
     dataSource: onDemand("OpenDota"),
-    description:
-      "Get Dota 2 game data from the OpenDota API. Supports multiple actions: " +
-      "heroes (list all heroes with stats, filterable by role/attribute), " +
-      "hero (get details for a specific hero by name or ID), " +
-      "matchups (get best/worst hero matchups), " +
-      "player (get player profile by Steam32 account ID), " +
-      "player_matches (get a player's recent match history), " +
-      "match (get detailed match data including all player stats), " +
-      "pro_matches (get recent professional matches).",
+    description: translate("get_dota.description"),
     endpoint: {
       path: "/gaming/dota",
       queryParams: [
@@ -11923,39 +10793,36 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             "match",
             "pro_matches",
           ],
-          description: "What data to retrieve",
+          description: translate("get_steam_profile.params.action"),
         },
         query: {
           type: "string",
-          description:
-            "Hero name or partial name (for action=hero or action=heroes with q filter)",
+          description: translate("get_dota.params.query"),
         },
         heroId: {
           type: "number",
-          description: "Hero ID (for action=matchups)",
+          description: translate("get_dota.params.heroId"),
         },
         accountId: {
           type: "number",
-          description:
-            "Steam32 Account ID (for action=player or action=player_matches)",
+          description: translate("get_dota.params.accountId"),
         },
         matchId: {
           type: "number",
-          description: "Match ID (for action=match)",
+          description: translate("get_dota.params.matchId"),
         },
         limit: {
           type: "number",
-          description: "Number of results to return (default: 10, max: 50)",
+          description: translate("get_dota.params.limit"),
         },
         role: {
           type: "string",
-          description:
-            "Filter heroes by role (for action=heroes). E.g. 'Carry', 'Support', 'Nuker'",
+          description: translate("get_dota.params.role"),
         },
         attr: {
           type: "string",
           enum: ["str", "agi", "int", "all"],
-          description: "Filter heroes by primary attribute (for action=heroes)",
+          description: translate("get_dota.params.attr"),
         },
       },
       required: ["action"],
@@ -11966,14 +10833,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_steam_profile",
     dataSource: onDemand("Steam Web API"),
-    description:
-      "Look up any Steam user's profile and gaming data via the Steam Web API. Supports multiple actions: " +
-      "profile (get profile summary including name, avatar, status, country, account creation date, currently playing game), " +
-      "owned_games (get list of owned games sorted by most played, with playtime in hours), " +
-      "recent_games (get games played in the last 2 weeks with recent and total playtime), " +
-      "bans (check VAC bans, game bans, community bans, trade bans), " +
-      "resolve_vanity (convert a custom vanity URL name to a Steam64 ID). " +
-      "Accepts either a Steam64 ID (17-digit number like 76561198...) or a vanity URL name (e.g. 'gabelogannewell') — auto-resolves as needed.",
+    description: translate("get_steam_profile.description"),
     endpoint: {
       path: "/gaming/steam",
       queryParams: ["action", "steamId", "limit"],
@@ -11990,17 +10850,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             "bans",
             "resolve_vanity",
           ],
-          description: "What data to retrieve",
+          description: translate("get_steam_profile.params.action"),
         },
         steamId: {
           type: "string",
-          description:
-            "Steam64 ID (17-digit number) or vanity URL name (the custom part of steamcommunity.com/id/NAME)",
+          description: translate("get_steam_profile.params.steamId"),
         },
         limit: {
           type: "number",
-          description:
-            "Number of games to return (for owned_games default: 25 max: 100, for recent_games default: 10 max: 50)",
+          description: translate("get_steam_profile.params.limit"),
         },
       },
       required: ["action", "steamId"],
@@ -12011,8 +10869,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "create_bonfire",
     dataSource: compute("Bonfire Generator"),
-    description:
-      "Start a cozy, custom-designed visual bonfire. You can configure the wood type, wind breeze, flame intensity, custom color chemistry, toss custom items into the fire to incinerate them, or roast marshmallows! Returns a gorgeous colorful ANSI art display for the terminal and a responsive, GPU-accelerated animated HTML/CSS embed to show the user.",
+    description: translate("create_bonfire.description"),
     endpoint: {
       method: "POST",
       path: "/gaming/bonfire",
@@ -12032,40 +10889,33 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         woodType: {
           type: "string",
           enum: ["oak", "pine", "birch", "driftwood", "magical"],
-          description:
-            "The type of wood to burn (affects logs rendering, flame characteristics, and embers). Default: 'oak'.",
+          description: translate("create_bonfire.params.woodType"),
         },
         logsCount: {
           type: "number",
-          description:
-            "Number of logs stacked at the base of the fire (1 to 10). Default: 4.",
+          description: translate("create_bonfire.params.logsCount"),
         },
         breezeSpeed: {
           type: "number",
-          description:
-            "Wind breeze speed in MPH (0 to 50). High breeze tilts the flames and blows sparks horizontally to the right. Default: 5.",
+          description: translate("create_bonfire.params.breezeSpeed"),
         },
         fireColor: {
           type: "string",
           enum: ["classic", "emerald", "sapphire", "amethyst", "ghostly"],
-          description:
-            "The chemical color chemistry of the flame (classic orange-red, green emerald, blue sapphire, purple amethyst, cyan-white ghostly). Default: 'classic'.",
+          description: translate("create_bonfire.params.fireColor"),
         },
         intensity: {
           type: "string",
           enum: ["ember", "spark", "cozy", "blazing", "inferno"],
-          description:
-            "The fire's heat and size (ember, spark, cozy, blazing, or inferno). Default: 'cozy'.",
+          description: translate("create_bonfire.params.intensity"),
         },
         marshmallows: {
           type: "number",
-          description:
-            "Number of marshmallows to toast on sticks over the fire (0, 1, or 2). Default: 0.",
+          description: translate("create_bonfire.params.marshmallows"),
         },
         itemToBurn: {
           type: "string",
-          description:
-            "An optional custom item name to toss into the fire and incinerate (e.g. 'bugs', 'homework').",
+          description: translate("create_bonfire.params.itemToBurn"),
         },
       },
     },
@@ -12075,13 +10925,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_music",
     dataSource: onDemand("MusicBrainz"),
-    description:
-      "Search and retrieve music metadata from MusicBrainz — the open music encyclopedia. Supports: " +
-      "search_artists (find artists by name), " +
-      "artist (get detailed artist info including discography, social links, tags), " +
-      "search_albums (find albums/release groups by title, optionally filtered by artist), " +
-      "album (get album details including track listing, cover art URL, tags), " +
-      "search_tracks (find recordings/tracks by title, optionally filtered by artist).",
+    description: translate("get_music.description"),
     endpoint: {
       path: "/knowledge/music",
       queryParams: ["action", "q", "mbid", "artist", "limit"],
@@ -12098,25 +10942,23 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             "album",
             "search_tracks",
           ],
-          description: "What music data to retrieve",
+          description: translate("get_music.params.action"),
         },
         "q": {
           type: "string",
-          description:
-            "Search query — artist name, album title, or track title (for search actions)",
+          description: translate("get_music.params.q"),
         },
         mbid: {
           type: "string",
-          description: "MusicBrainz ID (for action=artist or action=album)",
+          description: translate("get_music.params.mbid"),
         },
         artist: {
           type: "string",
-          description:
-            "Artist name to narrow album/track search results (for action=search_albums or action=search_tracks)",
+          description: translate("get_music.params.artist"),
         },
         limit: {
           type: "number",
-          description: "Number of search results to return (default: 10)",
+          description: translate("get_music.params.limit"),
         },
       },
       required: ["action"],
@@ -12127,11 +10969,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_wayback_snapshot",
     dataSource: onDemand("Internet Archive"),
-    description:
-      "Check if a URL has been archived by the Wayback Machine and retrieve snapshots. " +
-      "Two actions: 'snapshot' checks availability and gets the closest archived snapshot " +
-      "(optionally near a specific date). 'history' returns the capture timeline with " +
-      "deduplicated snapshots, each with archive URL, status code, and size.",
+    description: translate("get_wayback_snapshot.description"),
     endpoint: {
       path: "/knowledge/wayback",
       queryParams: ["action", "url", "timestamp", "limit", "from", "to"],
@@ -12142,31 +10980,27 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         action: {
           type: "string",
           enum: ["snapshot", "history"],
-          description:
-            "'snapshot' for closest available capture, 'history' for capture timeline",
+          description: translate("get_wayback_snapshot.params.action"),
         },
         url: {
           type: "string",
-          description:
-            "The URL to look up in the Wayback Machine (e.g. 'https://example.com')",
+          description: translate("get_wayback_snapshot.params.url"),
         },
         timestamp: {
           type: "string",
-          description:
-            "For action=snapshot: find the closest snapshot to this date (YYYYMMDD format)",
+          description: translate("get_wayback_snapshot.params.timestamp"),
         },
         limit: {
           type: "number",
-          description:
-            "For action=history: max number of snapshots to return (default: 20, max: 100)",
+          description: translate("get_wayback_snapshot.params.limit"),
         },
         from: {
           type: "string",
-          description: "For action=history: start date filter (YYYYMMDD)",
+          description: translate("get_wayback_snapshot.params.from"),
         },
         to: {
           type: "string",
-          description: "For action=history: end date filter (YYYYMMDD)",
+          description: translate("get_wayback_snapshot.params.to"),
         },
       },
       required: ["action", "url"],
@@ -12177,12 +11011,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "search_torrents",
     dataSource: onDemand("qBittorrent"),
-    description:
-      "Search for torrents across multiple public torrent indexers via qBittorrent's search plugin " +
-      "system. Searches run against all enabled plugins (60+ public sites including ThePirateBay, " +
-      "EZTV, Nyaa, YTS, 1337x, TorrentGalaxy, etc.). Returns a list of results with name, size, " +
-      "seeds, leechers, magnet link, and source site. Results are sorted by seed count (most popular first). " +
-      "Use category filters to narrow results. After finding a torrent, use download_torrent to add it.",
+    description: translate("search_torrents.description"),
     endpoint: {
       path: "/torrent",
       queryParams: ["action", "q", "category", "plugins", "limit", "timeout"],
@@ -12193,13 +11022,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         action: {
           type: "string",
           enum: ["search"],
-          description: "Must be 'search'",
+          description: translate("search_torrents.params.action"),
         },
         "q": {
           type: "string",
-          description:
-            "Search query. Use descriptive terms for best results. " +
-            "Examples: 'Ubuntu 24.04 LTS', 'Blender 4.0', 'linux iso', 'public domain film'.",
+          description: translate("search_torrents.params.q"),
         },
         category: {
           type: "string",
@@ -12214,22 +11041,19 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             "pictures",
             "books",
           ],
-          description: "Category filter to narrow results. Default: 'all'.",
+          description: translate("search_torrents.params.category"),
         },
         plugins: {
           type: "string",
-          description:
-            "Specific search plugins to use (pipe-separated names) or 'enabled' for all active plugins. " +
-            "Use get_torrent_status action=plugins to see installed plugins. Default: 'enabled'.",
+          description: translate("search_torrents.params.plugins"),
         },
         limit: {
           type: "number",
-          description: "Max results to return (1–100). Default: 50.",
+          description: translate("search_torrents.params.limit"),
         },
         timeout: {
           type: "number",
-          description:
-            "Search timeout in milliseconds (max 60000). Default: 30000.",
+          description: translate("search_torrents.params.timeout"),
         },
       },
       required: ["action", "q"],
@@ -12238,11 +11062,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "download_torrent",
     dataSource: onDemand("qBittorrent"),
-    description:
-      "Add a torrent for download via qBittorrent. Accepts magnet links or .torrent file URLs. " +
-      "The torrent is added to the qBittorrent instance and begins downloading immediately " +
-      "(unless paused=true). Optionally specify a save path, category, and tags for organization. " +
-      "Use search_torrents first to find magnet links, then pass the 'link' field here.",
+    description: translate("download_torrent.description"),
     endpoint: {
       method: "POST",
       path: "/torrent/download",
@@ -12253,29 +11073,23 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         url: {
           type: "string",
-          description:
-            "Magnet link or .torrent file URL. " +
-            "Example: 'magnet:?xt=urn:btih:...' or 'https://example.com/file.torrent'.",
+          description: translate("download_torrent.params.url"),
         },
         savePath: {
           type: "string",
-          description:
-            "Directory path where the torrent should be saved. " +
-            "Example: '/downloads/movies'. Uses qBittorrent default if not specified.",
+          description: translate("download_torrent.params.savePath"),
         },
         category: {
           type: "string",
-          description:
-            "Category label for the torrent (e.g. 'movies', 'software', 'linux-isos').",
+          description: translate("download_torrent.params.category"),
         },
         tags: {
           type: "string",
-          description: "Comma-separated tags (e.g. 'hd,remux,2024').",
+          description: translate("download_torrent.params.tags"),
         },
         paused: {
           type: "boolean",
-          description:
-            "If true, add the torrent in paused state. Default: false (starts immediately).",
+          description: translate("download_torrent.params.paused"),
         },
       },
       required: ["url"],
@@ -12284,14 +11098,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_torrent_status",
     dataSource: onDemand("qBittorrent"),
-    description:
-      "Check torrent download status, list active/completed torrents, view transfer speeds, " +
-      "manage installed search plugins, or pause/resume torrents. Actions: " +
-      "'status' lists torrents (filterable by state), " +
-      "'plugins' lists installed search plugins, " +
-      "'transfer' shows global upload/download speeds, " +
-      "'pause' pauses torrents by hash, " +
-      "'resume' resumes paused torrents.",
+    description: translate("get_torrent_status.description"),
     endpoint: {
       path: "/torrent",
       queryParams: ["action", "filter", "category", "sort", "limit", "hashes"],
@@ -12302,7 +11109,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         action: {
           type: "string",
           enum: ["status", "plugins", "transfer", "pause", "resume"],
-          description: "What to do.",
+          description: translate("get_torrent_status.params.action"),
         },
         filter: {
           type: "string",
@@ -12316,27 +11123,23 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
             "inactive",
             "errored",
           ],
-          description:
-            "For action=status: filter torrents by state. Default: 'all'.",
+          description: translate("get_torrent_status.params.filter"),
         },
         category: {
           type: "string",
-          description: "For action=status: filter by category label.",
+          description: translate("get_torrent_status.params.category"),
         },
         sort: {
           type: "string",
-          description:
-            "For action=status: sort field (e.g. 'name', 'size', 'progress', 'added_on'). Default: 'added_on'.",
+          description: translate("get_torrent_status.params.sort"),
         },
         limit: {
           type: "number",
-          description:
-            "For action=status: max torrents to return (1–200). Default: 50.",
+          description: translate("get_torrent_status.params.limit"),
         },
         hashes: {
           type: "string",
-          description:
-            "For action=pause/resume: pipe-separated torrent hashes, or 'all'.",
+          description: translate("get_torrent_status.params.hashes"),
         },
       },
       required: ["action"],
@@ -12346,10 +11149,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "dns_lookup",
     dataSource: compute("dns"),
-    description:
-      "Resolve DNS records for a hostname. Returns A, AAAA, MX, CNAME, TXT, NS, SOA, SRV, " +
-      "CAA, or PTR records. Useful for diagnosing DNS configuration, verifying mail routing " +
-      "(MX), checking domain ownership (TXT/SPF), and mapping hostnames to IPs.",
+    description: translate("dns_lookup.description"),
     endpoint: {
       path: "/utility/dns/:hostname",
       pathParams: ["hostname"],
@@ -12360,12 +11160,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         hostname: {
           type: "string",
-          description: "The hostname to resolve (e.g. 'example.com', 'mail.google.com').",
+          description: translate("dns_lookup.params.hostname"),
         },
         type: {
           type: "string",
           enum: ["A", "AAAA", "MX", "CNAME", "TXT", "NS", "SOA", "SRV", "CAA", "PTR"],
-          description: "DNS record type to query. Default: 'A'.",
+          description: translate("dns_lookup.params.type"),
         },
       },
       required: ["hostname"],
@@ -12374,10 +11174,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "whois_lookup",
     dataSource: compute("whois"),
-    description:
-      "Query WHOIS registration data for a domain name. Returns registrar, creation/expiration " +
-      "dates, nameservers, DNSSEC status, and domain status codes. Useful for domain research, " +
-      "expiry monitoring, and ownership verification.",
+    description: translate("whois_lookup.description"),
     endpoint: {
       path: "/utility/whois/:domain",
       pathParams: ["domain"],
@@ -12387,7 +11184,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         domain: {
           type: "string",
-          description: "The domain to look up (e.g. 'example.com', 'google.co.uk').",
+          description: translate("whois_lookup.params.domain"),
         },
       },
       required: ["domain"],
@@ -12396,10 +11193,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "ssl_certificate_check",
     dataSource: compute("tls"),
-    description:
-      "Inspect the SSL/TLS certificate of a host. Returns certificate validity, issuer, subject, " +
-      "SAN entries, expiry date, days until expiry, cipher suite, and protocol version. " +
-      "Flags expired and soon-to-expire certificates.",
+    description: translate("ssl_certificate_check.description"),
     endpoint: {
       path: "/utility/ssl/:hostname",
       pathParams: ["hostname"],
@@ -12410,11 +11204,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         hostname: {
           type: "string",
-          description: "The hostname to check (e.g. 'example.com').",
+          description: translate("ssl_certificate_check.params.hostname"),
         },
         port: {
           type: "number",
-          description: "TLS port to connect to. Default: 443.",
+          description: translate("ssl_certificate_check.params.port"),
         },
       },
       required: ["hostname"],
@@ -12423,10 +11217,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "port_scan",
     dataSource: compute("tcp"),
-    description:
-      "Scan a host for open TCP ports. Checks common service ports (SSH, HTTP, HTTPS, MySQL, " +
-      "PostgreSQL, Redis, MongoDB, etc.) or a custom list. Returns open ports with service names " +
-      "and scan duration. Max 50 ports per scan.",
+    description: translate("port_scan.description"),
     endpoint: {
       path: "/utility/ports/:host",
       pathParams: ["host"],
@@ -12437,13 +11228,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         host: {
           type: "string",
-          description: "Host to scan (hostname or IP address).",
+          description: translate("port_scan.params.host"),
         },
         ports: {
           type: "string",
-          description:
-              "Comma-separated port numbers to scan (e.g. '80,443,8080'). " +
-              "Omit to scan common ports (21-27017).",
+          description: translate("port_scan.params.ports"),
         },
       },
       required: ["host"],
@@ -12452,10 +11241,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "http_headers",
     dataSource: compute("http"),
-    description:
-      "Analyze HTTP response headers from any URL. Returns all headers, security header grades " +
-      "(HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, " +
-      "COOP, CORP, COEP), overall security score (0-100), server info, and response time.",
+    description: translate("http_headers.description"),
     endpoint: {
       path: "/utility/headers",
       queryParams: ["url"],
@@ -12465,7 +11251,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         url: {
           type: "string",
-          description: "Full URL to analyze (e.g. 'https://example.com').",
+          description: translate("http_headers.params.url"),
         },
       },
       required: ["url"],
@@ -12474,10 +11260,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "ping_host",
     dataSource: compute("icmp"),
-    description:
-      "Ping a host and measure network latency. Returns round-trip times (min, avg, max, stddev), " +
-      "packet loss percentage, and reachability status. Useful for checking if a server is up " +
-      "and measuring response time.",
+    description: translate("ping_host.description"),
     endpoint: {
       path: "/utility/ping/:host",
       pathParams: ["host"],
@@ -12488,11 +11271,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         host: {
           type: "string",
-          description: "Host to ping (hostname or IP address).",
+          description: translate("ping_host.params.host"),
         },
         count: {
           type: "number",
-          description: "Number of ping packets to send (1-10). Default: 4.",
+          description: translate("ping_host.params.count"),
         },
       },
       required: ["host"],
@@ -12502,10 +11285,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "check_breach",
     dataSource: onDemand("Have I Been Pwned"),
-    description:
-      "Check if a password or email address has appeared in known data breaches using the " +
-      "Have I Been Pwned service. Password checks use k-anonymity (free, no API key). " +
-      "Email checks require an HIBP API key and return breach details.",
+    description: translate("check_breach.description"),
     endpoint: {
       path: "/utility/breach/check",
       queryParams: ["type", "value"],
@@ -12516,11 +11296,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         type: {
           type: "string",
           enum: ["password", "email"],
-          description: "Type of breach check. 'password' is free. 'email' requires API key.",
+          description: translate("check_breach.params.type"),
         },
         value: {
           type: "string",
-          description: "The password or email address to check.",
+          description: translate("check_breach.params.value"),
         },
       },
       required: ["type", "value"],
@@ -12530,10 +11310,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "send_push_notification",
     dataSource: onDemand("ntfy.sh"),
-    description:
-      "Send a push notification via ntfy.sh to any subscribed device. Supports priority levels " +
-      "(min/low/default/high/urgent), emoji tags, click URLs, and file attachments. " +
-      "Recipients subscribe to a topic on the ntfy app.",
+    description: translate("send_push_notification.description"),
     endpoint: {
       path: "/communication/push",
       method: "POST",
@@ -12543,29 +11320,29 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         topic: {
           type: "string",
-          description: "The notification topic (subscribers will receive it).",
+          description: translate("send_push_notification.params.topic"),
         },
         message: {
           type: "string",
-          description: "The notification message body.",
+          description: translate("send_push_notification.params.message"),
         },
         title: {
           type: "string",
-          description: "Optional notification title.",
+          description: translate("send_push_notification.params.title"),
         },
         priority: {
           type: "string",
           enum: ["min", "low", "default", "high", "urgent"],
-          description: "Priority level. Default: 'default'.",
+          description: translate("send_push_notification.params.priority"),
         },
         tags: {
           type: "array",
           items: { type: "string" },
-          description: "Emoji tags for the notification (e.g. ['warning', 'robot']).",
+          description: translate("send_push_notification.params.tags"),
         },
         clickUrl: {
           type: "string",
-          description: "URL to open when the notification is tapped.",
+          description: translate("send_push_notification.params.clickUrl"),
         },
       },
       required: ["topic", "message"],
@@ -12574,11 +11351,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "send_webhook",
     dataSource: compute("http"),
-    description:
-      "Send an HTTP webhook request to any public URL with a JSON payload. " +
-      "Supports POST, PUT, and PATCH methods with custom headers. " +
-      "Returns response status, headers, body, and timing. " +
-      "SSRF-protected: blocks private/internal network addresses.",
+    description: translate("send_webhook.description"),
     endpoint: {
       path: "/communication/webhook",
       method: "POST",
@@ -12588,20 +11361,20 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         url: {
           type: "string",
-          description: "The public webhook URL to send the request to.",
+          description: translate("send_webhook.params.url"),
         },
         payload: {
           type: "object",
-          description: "The JSON payload to send.",
+          description: translate("send_webhook.params.payload"),
         },
         method: {
           type: "string",
           enum: ["POST", "PUT", "PATCH"],
-          description: "HTTP method. Default: POST.",
+          description: translate("send_webhook.params.method"),
         },
         headers: {
           type: "object",
-          description: "Optional custom HTTP headers.",
+          description: translate("send_webhook.params.headers"),
         },
       },
       required: ["url", "payload"],
@@ -12611,9 +11384,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_calendar_events",
     dataSource: onDemand("Google Calendar"),
-    description:
-      "Retrieve upcoming events from a Google Calendar. Returns event title, time, location, " +
-      "description, attendees, and links. Defaults to the next 30 days.",
+    description: translate("get_calendar_events.description"),
     endpoint: {
       path: "/utility/calendar/events",
       queryParams: ["calendarId", "timeMin", "timeMax", "limit"],
@@ -12623,19 +11394,19 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         calendarId: {
           type: "string",
-          description: "Calendar ID. Default: 'primary'.",
+          description: translate("get_calendar_events.params.calendarId"),
         },
         timeMin: {
           type: "string",
-          description: "Start time (ISO 8601). Default: now.",
+          description: translate("get_calendar_events.params.timeMin"),
         },
         timeMax: {
           type: "string",
-          description: "End time (ISO 8601). Default: 30 days from now.",
+          description: translate("get_calendar_events.params.timeMax"),
         },
         limit: {
           type: "number",
-          description: "Maximum events to return (1-100). Default: 25.",
+          description: translate("get_calendar_events.params.limit"),
         },
       },
       required: [],
@@ -12644,9 +11415,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "create_calendar_event",
     dataSource: onDemand("Google Calendar"),
-    description:
-      "Create a new event on a Google Calendar. Specify the summary, start/end times, " +
-      "optional description, location, attendees, and timezone.",
+    description: translate("create_calendar_event.description"),
     endpoint: {
       path: "/utility/calendar/events",
       method: "POST",
@@ -12656,36 +11425,36 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         summary: {
           type: "string",
-          description: "Event title.",
+          description: translate("create_calendar_event.params.summary"),
         },
         startDateTime: {
           type: "string",
-          description: "Start time in ISO 8601 format (e.g. '2025-01-15T10:00:00').",
+          description: translate("create_calendar_event.params.startDateTime"),
         },
         endDateTime: {
           type: "string",
-          description: "End time in ISO 8601 format.",
+          description: translate("create_calendar_event.params.endDateTime"),
         },
         description: {
           type: "string",
-          description: "Optional event description.",
+          description: translate("create_calendar_event.params.description"),
         },
         location: {
           type: "string",
-          description: "Optional event location.",
+          description: translate("create_calendar_event.params.location"),
         },
         attendees: {
           type: "array",
           items: { type: "string" },
-          description: "Email addresses of attendees.",
+          description: translate("create_calendar_event.params.attendees"),
         },
         calendarId: {
           type: "string",
-          description: "Calendar ID. Default: 'primary'.",
+          description: translate("get_calendar_events.params.calendarId"),
         },
         timeZone: {
           type: "string",
-          description: "IANA timezone (e.g. 'America/Vancouver'). Default: UTC.",
+          description: translate("create_calendar_event.params.timeZone"),
         },
       },
       required: ["summary", "startDateTime", "endDateTime"],
@@ -12694,9 +11463,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_free_busy",
     dataSource: onDemand("Google Calendar"),
-    description:
-      "Query free/busy status for one or more Google Calendars within a time range. " +
-      "Returns busy time slots for each calendar. Useful for scheduling meetings.",
+    description: translate("get_free_busy.description"),
     endpoint: {
       path: "/utility/calendar/freebusy",
       method: "POST",
@@ -12707,15 +11474,15 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
         calendarIds: {
           type: "array",
           items: { type: "string" },
-          description: "Array of calendar IDs to check.",
+          description: translate("get_free_busy.params.calendarIds"),
         },
         timeMin: {
           type: "string",
-          description: "Start of the time range (ISO 8601).",
+          description: translate("get_free_busy.params.timeMin"),
         },
         timeMax: {
           type: "string",
-          description: "End of the time range (ISO 8601).",
+          description: translate("get_free_busy.params.timeMax"),
         },
       },
       required: ["calendarIds", "timeMin", "timeMax"],
@@ -12725,9 +11492,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_github_trending",
     dataSource: onDemand("GitHub"),
-    description:
-      "Get today's trending GitHub repositories. Returns repo name, description, language, " +
-      "total stars, today's stars, and fork count. Can filter by programming language.",
+    description: translate("get_github_trending.description"),
     endpoint: {
       path: "/trend/github/trending",
       queryParams: ["language", "since", "limit"],
@@ -12737,16 +11502,16 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         language: {
           type: "string",
-          description: "Filter by programming language (e.g. 'python', 'typescript').",
+          description: translate("get_github_trending.params.language"),
         },
         since: {
           type: "string",
           enum: ["daily", "weekly", "monthly"],
-          description: "Time range. Default: 'daily'.",
+          description: translate("get_github_trending.params.since"),
         },
         limit: {
           type: "number",
-          description: "Maximum repos to return. Default: 25.",
+          description: translate("get_github_trending.params.limit"),
         },
       },
       required: [],
@@ -12756,11 +11521,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "analyze_csv",
     dataSource: compute("statistics"),
-    description:
-      "Analyze CSV data with statistical computations. Accepts CSV text or array of objects. " +
-      "Returns per-column statistics: for numeric columns (min, max, mean, median, stddev, " +
-      "percentiles, sum); for categorical columns (unique count, top values, frequencies). " +
-      "Also reports row/column counts and column types.",
+    description: translate("analyze_csv.description"),
     endpoint: {
       path: "/compute/csv/analyze",
       method: "POST",
@@ -12770,13 +11531,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         data: {
           type: "string",
-          description:
-            "CSV data as a string (with header row), or a JSON array of objects.",
+          description: translate("analyze_csv.params.data"),
         },
         columns: {
           type: "array",
           items: { type: "string" },
-          description: "Optional list of column names to analyze. Analyzes all if omitted.",
+          description: translate("analyze_csv.params.columns"),
         },
       },
       required: ["data"],
@@ -12785,10 +11545,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "compare_json",
     dataSource: compute("diff"),
-    description:
-      "Deep-compare two JSON objects and return all differences. Reports added, removed, " +
-      "changed, and type-changed values with their full paths. " +
-      "Handles nested objects and arrays recursively.",
+    description: translate("compare_json.description"),
     endpoint: {
       path: "/compute/json/compare",
       method: "POST",
@@ -12798,11 +11555,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         "a": {
           type: "object",
-          description: "First JSON object (the 'before' or 'left' side).",
+          description: translate("compare_json.params.a"),
         },
         b: {
           type: "object",
-          description: "Second JSON object (the 'after' or 'right' side).",
+          description: translate("compare_json.params.b"),
         },
       },
       required: ["a", "b"],
@@ -12811,10 +11568,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "validate_json_schema",
     dataSource: compute("ajv"),
-    description:
-      "Validate JSON data against a JSON Schema (Draft 2020-12, Draft 7, etc.). " +
-      "Returns validity status and detailed error messages with paths. Uses the " +
-      "ajv validator, the industry-standard JSON Schema engine.",
+    description: translate("validate_json_schema.description"),
     endpoint: {
       path: "/compute/json/validate",
       method: "POST",
@@ -12824,11 +11578,11 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         data: {
           type: "object",
-          description: "The JSON data to validate.",
+          description: translate("validate_json_schema.params.data"),
         },
         schema: {
           type: "object",
-          description: "The JSON Schema to validate against.",
+          description: translate("validate_json_schema.params.schema"),
         },
       },
       required: ["data", "schema"],
@@ -12838,10 +11592,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_stackoverflow_questions",
     dataSource: onDemand("Stack Exchange"),
-    description:
-      "Search Stack Overflow for questions by keyword and/or tags. Returns question titles, " +
-      "scores, view counts, answer counts, tags, authors, and links. " +
-      "Useful for finding solutions to programming problems.",
+    description: translate("get_stackoverflow_questions.description"),
     endpoint: {
       path: "/knowledge/stackoverflow/questions",
       queryParams: ["q", "tagged", "sort", "order", "limit"],
@@ -12851,21 +11602,20 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         "q": {
           type: "string",
-          description: "Search query (searches question titles).",
+          description: translate("get_stackoverflow_questions.params.q"),
         },
         tagged: {
           type: "string",
-          description:
-            "Filter by tags, semicolon-separated (e.g. 'javascript;react').",
+          description: translate("get_stackoverflow_questions.params.tagged"),
         },
         sort: {
           type: "string",
           enum: ["activity", "votes", "creation", "hot", "week", "month"],
-          description: "Sort order. Default: relevance.",
+          description: translate("get_stackoverflow_questions.params.sort"),
         },
         limit: {
           type: "number",
-          description: "Maximum results (1-30). Default: 10.",
+          description: translate("get_stackoverflow_questions.params.limit"),
         },
       },
       required: ["q"],
@@ -12874,10 +11624,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "search_patents",
     dataSource: onDemand("USPTO"),
-    description:
-      "Search US patents via the USPTO PatentsView API. Returns patent numbers, titles, " +
-      "abstracts, inventors, assignees, filing dates, and CPC classifications. " +
-      "Free API, no key required.",
+    description: translate("search_patents.description"),
     endpoint: {
       path: "/knowledge/patents/search",
       queryParams: ["q", "inventor", "assignee", "limit"],
@@ -12887,19 +11634,19 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         "q": {
           type: "string",
-          description: "Patent search query (searches titles and abstracts).",
+          description: translate("search_patents.params.q"),
         },
         inventor: {
           type: "string",
-          description: "Filter by inventor name.",
+          description: translate("search_patents.params.inventor"),
         },
         assignee: {
           type: "string",
-          description: "Filter by assignee/organization.",
+          description: translate("search_patents.params.assignee"),
         },
         limit: {
           type: "number",
-          description: "Maximum results (1-50). Default: 10.",
+          description: translate("search_patents.params.limit"),
         },
       },
       required: ["q"],
@@ -12909,10 +11656,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_satellite_imagery",
     dataSource: onDemand("NASA Earth"),
-    description:
-      "Retrieve Landsat satellite imagery for any location on Earth via the NASA Earth API. " +
-      "Returns image URL, date, cloud score, and coordinates. Can also list available " +
-      "imagery dates for a location with action='assets'.",
+    description: translate("get_satellite_imagery.description"),
     endpoint: {
       path: "/weather/satellite",
       queryParams: ["action", "latitude", "longitude", "date", "dimension", "startDate", "endDate"],
@@ -12922,24 +11666,24 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         latitude: {
           type: "number",
-          description: "Latitude of the location.",
+          description: translate("get_satellite_imagery.params.latitude"),
         },
         longitude: {
           type: "number",
-          description: "Longitude of the location.",
+          description: translate("get_satellite_imagery.params.longitude"),
         },
         action: {
           type: "string",
           enum: ["imagery", "assets"],
-          description: "'imagery' returns a satellite photo, 'assets' lists available dates. Default: imagery.",
+          description: translate("get_satellite_imagery.params.action"),
         },
         date: {
           type: "string",
-          description: "Date of the imagery (YYYY-MM-DD). Default: most recent.",
+          description: translate("get_satellite_imagery.params.date"),
         },
         dimension: {
           type: "number",
-          description: "Image width and height in degrees (e.g. 0.025). Default: API default.",
+          description: translate("get_satellite_imagery.params.dimension"),
         },
       },
       required: ["latitude", "longitude"],
@@ -12949,10 +11693,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_flight_status",
     dataSource: onDemand("AviationStack"),
-    description:
-      "Get real-time flight status information. Look up flights by IATA flight number, " +
-      "departure/arrival airport, or airline. Returns flight status, gates, terminals, " +
-      "scheduled/estimated/actual times, delays, and live tracking coordinates.",
+    description: translate("get_flight_status.description"),
     endpoint: {
       path: "/transit/flights",
       queryParams: ["flight", "departure", "arrival", "airline", "status", "limit"],
@@ -12962,28 +11703,28 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         flight: {
           type: "string",
-          description: "IATA flight number (e.g. 'AC301', 'UA1234').",
+          description: translate("get_flight_status.params.flight"),
         },
         departure: {
           type: "string",
-          description: "Departure airport IATA code (e.g. 'YVR', 'LAX').",
+          description: translate("get_flight_status.params.departure"),
         },
         arrival: {
           type: "string",
-          description: "Arrival airport IATA code.",
+          description: translate("get_flight_status.params.arrival"),
         },
         airline: {
           type: "string",
-          description: "Airline IATA code (e.g. 'AC', 'UA').",
+          description: translate("get_flight_status.params.airline"),
         },
         status: {
           type: "string",
           enum: ["scheduled", "active", "landed", "cancelled", "incident", "diverted"],
-          description: "Filter by flight status.",
+          description: translate("get_flight_status.params.status"),
         },
         limit: {
           type: "number",
-          description: "Maximum results (1-100). Default: 25.",
+          description: translate("get_flight_status.params.limit"),
         },
       },
       required: [],
@@ -12994,11 +11735,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_infrastructure_status",
     dataSource: onDemand("Portal Service"),
-    description:
-      "Get the health and status of all deployed services and devices in the infrastructure. " +
-      "Actions: 'services' (service registry with health, response times, errors, dependencies), " +
-      "'devices' (physical hosts with hosted services and infrastructure health breakdown), " +
-      "'summary' (aggregate counts of healthy/unhealthy services, device count, unhealthy service names).",
+    description: translate("get_infrastructure_status.description"),
     endpoint: {
       path: "/infrastructure/status",
       queryParams: ["action"],
@@ -13008,7 +11745,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         action: {
           type: "string",
-          description: "Data view to retrieve",
+          description: translate("get_infrastructure_status.params.action"),
           enum: ["services", "devices", "summary"],
         },
       },
@@ -13018,12 +11755,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_container_diagnostics",
     dataSource: onDemand("Portal Service / Docker Engine API"),
-    description:
-      "Get Docker container resource usage and performance metrics across all hosts. " +
-      "Actions: 'stats' (live CPU%, memory, network bytes, block-IO, throttling, PIDs for all containers), " +
-      "'metrics' (time-series history of container performance — configurable range and resolution), " +
-      "'history' (recent ring-buffer snapshots from the last 5 minutes), " +
-      "'system' (Docker host OS, kernel version, CPU count, total memory, disk usage).",
+    description: translate("get_container_diagnostics.description"),
     endpoint: {
       path: "/infrastructure/containers",
       queryParams: ["action", "container", "device", "range", "limit"],
@@ -13033,28 +11765,25 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         action: {
           type: "string",
-          description: "Diagnostic data type",
+          description: translate("get_container_diagnostics.params.action"),
           enum: ["stats", "metrics", "history", "system"],
         },
         container: {
           type: "string",
-          description:
-            "Filter by container name (partial match). Applies to action=stats and action=metrics.",
+          description: translate("get_container_diagnostics.params.container"),
         },
         device: {
           type: "string",
-          description: "Filter by device ID (e.g. 'synology', 'desktop').",
+          description: translate("get_container_diagnostics.params.device"),
         },
         range: {
           type: "string",
-          description:
-            "Time range for metrics history (action=metrics). Default: '1h'.",
+          description: translate("get_container_diagnostics.params.range"),
           enum: ["1h", "6h", "24h", "7d"],
         },
         limit: {
           type: "number",
-          description:
-            "Max data points for metrics history (action=metrics). Default: 120, max: 120.",
+          description: translate("get_container_diagnostics.params.limit"),
         },
       },
       required: ["action"],
@@ -13063,15 +11792,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: "get_container_logs",
     dataSource: onDemand("Portal Service / Docker Engine API"),
-    description:
-      "Retrieve recent log output from Docker containers with optional filtering. Returns log lines " +
-      "with timestamps and stream source (stdout/stderr). Supports filtering by severity level " +
-      "(cascading: 'warn' returns WARN + ERROR), substring search, and relative time window. " +
-      "When 'container' is provided, returns logs from that specific container. " +
-      "When 'container' is omitted, searches across ALL running containers simultaneously — " +
-      "results are merged chronologically and each line is tagged with its source container name. " +
-      "This is useful for cross-service debugging (e.g. finding all errors across the entire stack). " +
-      "Container names match the Docker container name (e.g. 'prism-service', 'tools-service').",
+    description: translate("get_container_logs.description"),
     endpoint: {
       path: "/infrastructure/logs",
       queryParams: ["container", "device", "tail", "level", "search", "since"],
@@ -13081,47 +11802,52 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
       properties: {
         container: {
           type: "string",
-          description:
-            "Docker container name to retrieve logs from (e.g. 'prism-service', 'portal-service'). " +
-            "If omitted, logs are fetched from ALL running containers and merged chronologically, " +
-            "with each line tagged by its source container.",
+          description: translate("get_container_logs.params.container"),
         },
         device: {
           type: "string",
-          description: "Target device ID if the container runs on a specific host.",
+          description: translate("get_container_logs.params.device"),
         },
         tail: {
           type: "number",
-          description:
-            "Number of log lines to retrieve from the end (default: 200, max: 2000). Applied before filtering. " +
-            "When searching all containers, this limit applies per container.",
+          description: translate("get_container_logs.params.tail"),
         },
         level: {
           type: "string",
           enum: ["error", "warn", "info", "debug"],
-          description:
-            "Filter by minimum log severity. Cascading: 'error' shows only ERROR lines, " +
-            "'warn' shows WARN + ERROR, 'info' shows INFO + OK + WARN + ERROR, " +
-            "'debug' shows everything (same as no filter).",
+          description: translate("get_container_logs.params.level"),
         },
         search: {
           type: "string",
-          description:
-            "Case-insensitive substring to search for within each log line. " +
-            "Only lines containing this text are returned (e.g. 'timeout', 'connection refused', 'OOM').",
+          description: translate("get_container_logs.params.search"),
         },
         since: {
           type: "string",
-          description:
-            "Relative time window for log retrieval. Format: number + unit " +
-            "(s=seconds, m=minutes, h=hours, d=days). Examples: '5m', '1h', '30s', '2d'. " +
-            "Only returns logs generated within this window.",
+          description: translate("get_container_logs.params.since"),
         },
       },
       required: [],
     },
   },
-];
+  ];
+}
+
+// Per-locale definition cache — rebuilt once per locale, never on hot path
+const localizedDefinitionsCache = new Map<string, ToolDefinition[]>();
+
+function getLocalizedToolDefinitions(locale: string): ToolDefinition[] {
+  let definitions = localizedDefinitionsCache.get(locale);
+  if (!definitions) {
+    const translate = (key: string, variables?: Record<string, string>) =>
+      PromptLocaleService.get(locale, `tools.${key}`, variables);
+    definitions = createLocalizedToolDefinitions(translate);
+    localizedDefinitionsCache.set(locale, definitions);
+  }
+  return definitions;
+}
+
+// Default English definitions — backwards-compatible direct access
+const TOOL_DEFINITIONS: ToolDefinition[] = getLocalizedToolDefinitions(PromptLocaleService.getDefaultLocale());
 
 
 
@@ -14297,8 +13023,13 @@ export function resolveToolEmoji(toolName: string): string | null {
   return emojiValue;
 }
 
-export function getToolSchemas(): ToolSchema[] {
-  return TOOL_DEFINITIONS.filter((tool) => isToolAvailable(tool.name)).map(
+
+export function getToolSchemas(locale?: string): ToolSchema[] {
+  const definitions = locale
+    ? getLocalizedToolDefinitions(locale)
+    : TOOL_DEFINITIONS;
+
+  return definitions.filter((tool) => isToolAvailable(tool.name)).map(
     (tool) => {
       const domain =
         TOOL_DOMAINS[tool.name as keyof typeof TOOL_DOMAINS] || "Other";
@@ -14321,8 +13052,12 @@ export function getToolSchemas(): ToolSchema[] {
  * Strips the `endpoint` property since the AI doesn't need routing info.
  * Filters out tools whose required API keys are not configured.
  */
-export function getToolSchemasForAI(): ToolSchemaForAI[] {
-  return TOOL_DEFINITIONS.filter((tool) => isToolAvailable(tool.name)).map(
+export function getToolSchemasForAI(locale?: string): ToolSchemaForAI[] {
+  const definitions = locale
+    ? getLocalizedToolDefinitions(locale)
+    : TOOL_DEFINITIONS;
+
+  return definitions.filter((tool) => isToolAvailable(tool.name)).map(
     ({ endpoint: _endpoint, dataSource: _dataSource, ...rest }) => {
       const { intelligenceTier, complexityScore } =
         resolveToolIntelligenceTier(rest.name, rest.parameters);

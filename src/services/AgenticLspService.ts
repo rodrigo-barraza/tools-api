@@ -12,6 +12,7 @@ import {
 import type { LspParams } from "./lsp/LspClient.ts";
 import { ALLOWED_ROOTS } from "./AgenticFileService.ts";
 import { errorMessage } from "../utilities.ts";
+import PromptLocaleService from "./PromptLocaleService.ts";
 
 // ────────────────────────────────────────────────────────────
 // Types
@@ -121,8 +122,7 @@ const OPERATIONS: Record<string, LspOperation> = {
   goToImplementation: {
     method: "textDocument/implementation",
     needsPosition: true,
-    description:
-      "Find concrete implementations of an interface or abstract class",
+    description: PromptLocaleService.get("en", "prompts.lsp.implementations-label"),
   },
 };
 
@@ -234,7 +234,7 @@ export async function agenticLspAction({
   } catch (error: unknown) {
     return {
       error: `LSP server failed to start for '${fileExtension}' files: ${errorMessage(error)}`,
-      hint: "The language server may not be installed. Check that npx can find the server binary.",
+      hint: PromptLocaleService.get("en", "prompts.lsp.server-not-installed-hint"),
     };
   }
 
@@ -300,8 +300,7 @@ function formatResult(
       operation,
       filePath,
       result: null,
-      message:
-        "No results found — the symbol may be external, unresolvable, or the server hasn't finished indexing. Try again in a few seconds.",
+      message: PromptLocaleService.get("en", "prompts.lsp.no-results-hint"),
     };
   }
 

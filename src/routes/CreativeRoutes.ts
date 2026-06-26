@@ -1,4 +1,5 @@
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
+import PromptLocaleService from "../services/PromptLocaleService.ts";
 // ─── Image Generation & Vision ──────────────────────────────
 
 import { Request, Response, Router } from "express";
@@ -251,10 +252,7 @@ router.post(
         // preserve and edit them rather than re-imagining from scratch.
         const systemPrompt =
           referenceImages?.length > 0
-            ? "You are an image editor. The user has attached reference image(s). " +
-              "Use the attached image(s) as the direct basis for your output. " +
-              "Preserve the appearance, features, and identity of subjects in the reference image(s) as closely as possible. " +
-              "Apply ONLY the specific changes described in the prompt. Do not re-imagine or reinvent the image from scratch."
+            ? PromptLocaleService.get("en", "prompts.creative.image.editing-system-prompt")
             : undefined;
 
         try {
@@ -310,10 +308,9 @@ router.post(
       if (!result || result.safetyBlock) {
         return res.status(422).json({
           success: false,
-          error:
-            "Image generation was blocked by content safety filters after " +
-            `${safetyRetries + 1} attempts (including softened prompts). ` +
-            "The content may be too explicit to generate even with creative alternatives.",
+          error: PromptLocaleService.get("en", "prompts.creative.image.safety-block-error", {
+            attemptCount: String(safetyRetries + 1),
+          }),
         });
       }
 
@@ -321,9 +318,7 @@ router.post(
       if (!result.images || result.images.length === 0) {
         return res.status(422).json({
           success: false,
-          error:
-            "No image was generated. The model may have returned text instead. " +
-            "Try a more specific and descriptive prompt.",
+          error: PromptLocaleService.get("en", "prompts.creative.image.no-image-error"),
         });
       }
 
@@ -332,11 +327,8 @@ router.post(
       // Build the result message — note if prompt was softened
       const resultMessage =
         safetyRetries > 0
-          ? "Image generated and delivered to the user. Note: the original prompt was " +
-            "automatically softened to comply with content safety filters (e.g., nudity " +
-            "replaced with robes/clothing, violence with calmer alternatives). The image " +
-            "captures the spirit of the request with a more tasteful interpretation."
-          : "Image generated and delivered to the user.";
+          ? PromptLocaleService.get("en", "prompts.creative.image.result-softened")
+          : PromptLocaleService.get("en", "prompts.creative.image.result-success");
 
       res.json({
         success: true,
@@ -388,16 +380,10 @@ router.post(
 
     // Tailor the prompt based on image context
     const prompts: Record<string, string> = {
-      avatar:
-        "Describe this profile picture/avatar. Focus on the person's appearance, " +
-        "style, notable features, and any artistic elements. Make no mention about quality or resolution.",
-      banner:
-        "Describe this profile banner image. Focus on the scene, colors, mood, " +
-        "and notable elements. Make no mention about quality or resolution.",
-      photo:
-        "Describe this image. Make no mention about the quality, resolution, or pixelation.",
-      general:
-        "Describe this image. Make no mention about the quality, resolution, or pixelation.",
+      avatar: PromptLocaleService.get("en", "prompts.creative.describe.avatar"),
+      banner: PromptLocaleService.get("en", "prompts.creative.describe.banner"),
+      photo: PromptLocaleService.get("en", "prompts.creative.describe.photo"),
+      general: PromptLocaleService.get("en", "prompts.creative.describe.general"),
     };
     const visionPrompt = prompts[context] || prompts.general;
 
@@ -515,7 +501,7 @@ router.post(
 
       res.json({
         success: true,
-        message: "Audio generated and delivered to the user.",
+        message: PromptLocaleService.get("en", "prompts.creative.audio.result-success"),
         audio: {
           data: result.audioBase64,
           mimeType: result.contentType,
@@ -570,7 +556,7 @@ router.post(
 
       res.json({
         success: true,
-        message: "Audio generated and delivered to the user (local espeak-ng TTS).",
+        message: PromptLocaleService.get("en", "prompts.creative.audio.result-local-tts"),
         audio: {
           data: result.audioBase64,
           mimeType: result.mimeType,
