@@ -1568,23 +1568,19 @@ const FIELDS = {
 };
 
 // ────────────────────────────────────────────────────────────
-// Helper — builds field description for tool parameters
-// ────────────────────────────────────────────────────────────
-
-function fieldsParam(fieldEnum: string[]) {
-  return {
-    fields: {
-      type: "string",
-      description: `Comma-separated list of fields to return. Available: ${fieldEnum.join(", ")}`,
-    },
-  };
-}
-
-// ────────────────────────────────────────────────────────────
 // Tool Definitions — JSON Schema + endpoint metadata
 // ────────────────────────────────────────────────────────────
 
 function createLocalizedToolDefinitions(translate: (key: string, variables?: Record<string, string>) => string): ToolDefinition[] {
+  function fieldsParam(fieldEnum: string[]) {
+    return {
+      fields: {
+        type: "string",
+        description: translate("common.params.fields", { fields: fieldEnum.join(", ") }),
+      },
+    };
+  }
+
   return [
   // ── Weather / Environment ──────────────────────────────────
   {
@@ -2033,7 +2029,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           description: translate("get_events.params.action"),
           enum: ["search", "upcoming", "today", "summary"],
         },
-        "q": { type: "string", description: "Search query (action=search)" },
+        "q": { type: "string", description: translate("get_events.params.q") },
         source: {
           type: "string",
           description: translate("get_events.params.source"),
@@ -2046,7 +2042,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           type: "number",
           description: translate("get_events.params.days"),
         },
-        limit: { type: "number", description: "Max results (default: 20)" },
+        limit: { type: "number", description: translate("get_events.params.limit") },
         fields: {
           type: "string",
           description: translate("search_media.params.fields"),
@@ -2116,7 +2112,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           type: "number",
           description: translate("get_trends.params.hours"),
         },
-        limit: { type: "number", description: "Max results (default: 20)" },
+        limit: { type: "number", description: translate("get_trends.params.limit") },
         ...fieldsParam(FIELDS.TRENDS),
       },
       required: ["action"],
@@ -2338,13 +2334,13 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           description: translate("get_sec_filings.params.action"),
           enum: ["indicators", "search", "series", "observations"],
         },
-        "q": { type: "string", description: "Search query (action=search)" },
+        "q": { type: "string", description: translate("get_macro.params.q") },
         seriesId: {
           type: "string",
           description: translate("get_macro.params.seriesId"),
         },
-        limit: { type: "number", description: "Max results (default: 10)" },
-        orderBy: { type: "string", description: "Sort field (action=search)" },
+        limit: { type: "number", description: translate("get_macro.params.limit") },
+        orderBy: { type: "string", description: translate("get_macro.params.orderBy") },
         sortOrder: {
           type: "string",
           enum: ["asc", "desc"],
@@ -2546,7 +2542,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           description: translate("search_books.params.action"),
           enum: ["search", "work", "author"],
         },
-        "q": { type: "string", description: "Search query (action=search)" },
+        "q": { type: "string", description: translate("search_books.params.q") },
         workKey: {
           type: "string",
           description: translate("search_books.params.workKey"),
@@ -2591,7 +2587,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           description: translate("get_sec_filings.params.action"),
           enum: ["info", "code", "indicators", "rank", "compare"],
         },
-        name: { type: "string", description: "Country name (action=info)" },
+        name: { type: "string", description: translate("get_country.params.name") },
         code: {
           type: "string",
           description: translate("get_country.params.code"),
@@ -2646,7 +2642,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           description: translate("get_sec_filings.params.action"),
           enum: ["search", "lookup", "rank", "categories"],
         },
-        "q": { type: "string", description: "Search query (action=search)" },
+        "q": { type: "string", description: translate("get_element.params.q") },
         symbol: {
           type: "string",
           description: translate("get_element.params.symbol"),
@@ -2655,14 +2651,14 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           type: "string",
           description: translate("get_exoplanet.params.field"),
         },
-        limit: { type: "number", description: "Max results (default: 10)" },
+        limit: { type: "number", description: translate("get_element.params.limit") },
         order: {
           type: "string",
           enum: ["asc", "desc"],
           description: translate("get_element.params.order"),
         },
-        category: { type: "string", description: "Filter by element category" },
-        block: { type: "string", description: "Filter by block (s, p, d, f)" },
+        category: { type: "string", description: translate("get_element.params.category") },
+        block: { type: "string", description: translate("get_element.params.block") },
         ...fieldsParam(FIELDS.ELEMENTS),
       },
       required: ["action"],
@@ -2684,13 +2680,13 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           description: translate("get_sec_filings.params.action"),
           enum: ["search", "lookup", "rank", "stats", "habitable"],
         },
-        "q": { type: "string", description: "Search query (action=search)" },
-        name: { type: "string", description: "Planet name (action=lookup)" },
+        "q": { type: "string", description: translate("get_exoplanet.params.q") },
+        name: { type: "string", description: translate("get_exoplanet.params.name") },
         field: {
           type: "string",
           description: translate("get_exoplanet.params.field"),
         },
-        limit: { type: "number", description: "Max results (default: 10)" },
+        limit: { type: "number", description: translate("get_exoplanet.params.limit") },
         order: {
           type: "string",
           enum: ["asc", "desc"],
@@ -2724,15 +2720,15 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           description: translate("get_sec_filings.params.action"),
           enum: ["search", "top", "season", "schedule", "details"],
         },
-        "q": { type: "string", description: "Search query (action=search)" },
-        id: { type: "number", description: "MyAnimeList ID (action=details)" },
-        year: { type: "number", description: "Year for schedule lookup (action=schedule)" },
+        "q": { type: "string", description: translate("get_anime.params.q") },
+        id: { type: "number", description: translate("get_anime.params.id") },
+        year: { type: "number", description: translate("get_anime.params.year") },
         season: {
           type: "string",
           description: translate("get_anime.params.season"),
           enum: ["winter", "spring", "summer", "fall"],
         },
-        limit: { type: "number", description: "Max results (default: 10, schedule: 25)" },
+        limit: { type: "number", description: translate("get_anime.params.limit") },
         ...fieldsParam(FIELDS.ANIME),
       },
       required: ["action"],
@@ -3095,7 +3091,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
     parameters: {
       type: "object",
       properties: {
-        "q": { type: "string", description: "Search query" },
+        "q": { type: "string", description: translate("search_reddit.params.q") },
         subreddit: {
           type: "string",
           description: translate("search_reddit.params.subreddit"),
@@ -3191,7 +3187,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
     parameters: {
       type: "object",
       properties: {
-        subreddit: { type: "string", description: "Subreddit name" },
+        subreddit: { type: "string", description: translate("get_reddit_subreddit_feed.params.subreddit") },
         sort: {
           type: "string",
           enum: ["hot", "new", "top", "rising", "controversial"],
@@ -3226,7 +3222,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
     parameters: {
       type: "object",
       properties: {
-        subreddit: { type: "string", description: "Subreddit name" },
+        subreddit: { type: "string", description: translate("get_reddit_subreddit_rules.params.subreddit") },
       },
       required: ["subreddit"],
     },
@@ -3242,7 +3238,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
     parameters: {
       type: "object",
       properties: {
-        subreddit: { type: "string", description: "Subreddit name" },
+        subreddit: { type: "string", description: translate("get_reddit_subreddit_wiki_pages.params.subreddit") },
       },
       required: ["subreddit"],
     },
@@ -3258,7 +3254,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
     parameters: {
       type: "object",
       properties: {
-        subreddit: { type: "string", description: "Subreddit name" },
+        subreddit: { type: "string", description: translate("get_reddit_subreddit_wiki_page.params.subreddit") },
         page: {
           type: "string",
           description: translate("get_reddit_subreddit_wiki_page.params.page"),
@@ -3321,7 +3317,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
     parameters: {
       type: "object",
       properties: {
-        username: { type: "string", description: "Reddit username" },
+        username: { type: "string", description: translate("get_reddit_user_profile.params.username") },
       },
       required: ["username"],
     },
@@ -3369,12 +3365,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           enum: ["movie", "tv"],
           description: translate("search_media.params.type"),
         },
-        "q": { type: "string", description: "Search query (title)" },
+        "q": { type: "string", description: translate("search_media.params.q") },
         year: {
           type: "number",
           description: translate("search_media.params.year"),
         },
-        page: { type: "number", description: "Page number (default: 1)" },
+        page: { type: "number", description: translate("search_media.params.page") },
         fields: {
           type: "string",
           description: translate("search_media.params.fields"),
@@ -3400,7 +3396,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           enum: ["movie", "tv"],
           description: translate("get_watch_providers.params.type"),
         },
-        id: { type: "number", description: "TMDB ID" },
+        id: { type: "number", description: translate("get_media_details.params.id") },
         fields: {
           type: "string",
           description: translate("search_media.params.fields"),
@@ -3426,7 +3422,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           enum: ["movie", "tv"],
           description: translate("get_watch_providers.params.type"),
         },
-        id: { type: "number", description: "TMDB ID" },
+        id: { type: "number", description: translate("get_media_credits.params.id") },
         fields: {
           type: "string",
           description: translate("search_media.params.fields"),
@@ -3456,7 +3452,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           enum: ["day", "week"],
           description: translate("get_trending_media.params.timeWindow"),
         },
-        limit: { type: "number", description: "Max results (default: 10)" },
+        limit: { type: "number", description: translate("get_trending_media.params.limit") },
         fields: {
           type: "string",
           description: translate("search_media.params.fields"),
@@ -3493,7 +3489,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           type: "number",
           description: translate("browse_media.params.genreId"),
         },
-        year: { type: "number", description: "Release/first air date year" },
+        year: { type: "number", description: translate("browse_media.params.year") },
         sortBy: {
           type: "string",
           description: translate("browse_media.params.sortBy"),
@@ -3502,8 +3498,8 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           type: "number",
           description: translate("browse_media.params.minVoteAverage"),
         },
-        minVoteCount: { type: "number", description: "Min vote count" },
-        page: { type: "number", description: "Page number (default: 1)" },
+        minVoteCount: { type: "number", description: translate("browse_media.params.minVoteCount") },
+        page: { type: "number", description: translate("browse_media.params.page") },
         fields: {
           type: "string",
           description: translate("search_media.params.fields"),
@@ -3556,8 +3552,8 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           type: "string",
           description: translate("get_now_playing_media.params.region"),
         },
-        page: { type: "number", description: "Page number (default: 1)" },
-        limit: { type: "number", description: "Max results per page (default: 20)" },
+        page: { type: "number", description: translate("get_now_playing_media.params.page") },
+        limit: { type: "number", description: translate("get_now_playing_media.params.limit") },
       },
       required: ["action"],
     },
@@ -3581,13 +3577,13 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           enum: ["movie", "tv"],
           description: translate("get_watch_providers.params.type"),
         },
-        id: { type: "number", description: "TMDB ID of the source movie/show" },
+        id: { type: "number", description: translate("get_media_recommendations.params.id") },
         action: {
           type: "string",
           enum: ["recommendations", "similar"],
           description: translate("get_media_recommendations.params.action"),
         },
-        limit: { type: "number", description: "Max results (default: 10)" },
+        limit: { type: "number", description: translate("get_media_recommendations.params.limit") },
       },
       required: ["type", "id", "action"],
     },
@@ -3610,9 +3606,9 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           enum: ["search", "details", "filmography"],
           description: translate("search_person.params.action"),
         },
-        "q": { type: "string", description: "Search query — person name (action=search)" },
-        id: { type: "number", description: "TMDB person ID (action=details or filmography)" },
-        limit: { type: "number", description: "Max results (default: 10 for search, 30 for filmography)" },
+        "q": { type: "string", description: translate("search_person.params.q") },
+        id: { type: "number", description: translate("search_person.params.id") },
+        limit: { type: "number", description: translate("search_person.params.limit") },
         ...fieldsParam(FIELDS.PERSON),
       },
       required: ["action"],
@@ -3637,7 +3633,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           enum: ["movie", "tv"],
           description: translate("get_watch_providers.params.type"),
         },
-        id: { type: "number", description: "TMDB ID" },
+        id: { type: "number", description: translate("get_watch_providers.params.id") },
         region: {
           type: "string",
           description: translate("get_watch_providers.params.region"),
@@ -3676,7 +3672,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           type: "string",
           description: translate("rank_foods_by_category.params.nutrient"),
         },
-        limit: { type: "number", description: "Max results (default: 10)" },
+        limit: { type: "number", description: translate("rank_foods_by_category.params.limit") },
         kingdom: { type: "string", enum: ["animalia", "plantae", "fungi"] },
         foodType: { type: "string" },
         ...fieldsParam(FIELDS.USDA_NUTRIENT_RANKING),
@@ -3710,7 +3706,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
             "pharm_class",
           ],
         },
-        limit: { type: "number", description: "Max results (default: 10)" },
+        limit: { type: "number", description: translate("search_drugs.params.limit") },
         dosageForm: {
           type: "string",
           description: translate("search_drugs.params.dosageForm"),
@@ -4253,8 +4249,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         foods: {
           type: "string",
-          description:
-            'JSON array of foods eaten: [{"name":"chicken breast","grams":200},{"name":"brown rice","grams":150}]',
+          description: translate("analyze_nutrient_gaps.params.foods"),
         },
         species: {
           type: "string",
@@ -5007,8 +5002,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         definition: {
           type: "string",
-          description:
-            "Mermaid diagram syntax. Examples: 'graph TD\\n  A[Start] --> B{Decision}\\n  B -->|Yes| C[OK]\\n  B -->|No| D[End]' or 'sequenceDiagram\\n  Alice->>Bob: Hello\\n  Bob-->>Alice: Hi back' or 'pie\\n  \"Dogs\" : 386\\n  \"Cats\" : 85'",
+          description: translate("generate_diagram.params.definition"),
         },
         theme: {
           type: "string",
@@ -5514,7 +5508,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           items: {
             type: "array",
             items: { type: "number" },
-            description: "[x, y, z] position",
+            description: translate("create_3d_mesh.params.items"),
           },
         },
         faces: {
@@ -5523,7 +5517,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           items: {
             type: "array",
             items: { type: "integer" },
-            description: "[vertexIndex0, vertexIndex1, vertexIndex2]",
+            description: translate("create_3d_mesh.params.items2"),
           },
         },
         normals: {
@@ -5618,8 +5612,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
         voxels: {
           type: "array",
-          description:
-            'Array of individual voxel coordinates and styling. Example: [{"position": [0,0,0], "color": "#ff6347"}]',
+          description: translate("create_3d_voxel.params.voxels"),
           items: {
             type: "object",
             properties: {
@@ -5888,8 +5881,8 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
                     type: "number",
                     description: translate("create_3d_model.params.objects.items.params.material.params.emissiveIntensity"),
                   },
-                  wireframe: { type: "boolean", description: "Wireframe mode" },
-                  flatShading: { type: "boolean", description: "Flat shading" },
+                  wireframe: { type: "boolean", description: translate("create_3d_model.params.wireframe") },
+                  flatShading: { type: "boolean", description: translate("create_3d_model.params.flatShading") },
                   doubleSided: {
                     type: "boolean",
                     description: translate("create_3d_scene.params.objects.items.params.material.params.doubleSided"),
@@ -6099,7 +6092,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
                 ],
                 description: translate("create_3d_scene.params.objects.items.params.type"),
               },
-              name: { type: "string", description: "Optional name" },
+              name: { type: "string", description: translate("create_3d_scene.params.name") },
               size: {
                 type: "array",
                 items: { type: "number" },
@@ -6131,10 +6124,10 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
               material: {
                 type: "object",
                 properties: {
-                  color: { type: "string", description: "CSS color" },
-                  metalness: { type: "number", description: "0-1" },
-                  roughness: { type: "number", description: "0-1" },
-                  opacity: { type: "number", description: "0-1" },
+                  color: { type: "string", description: translate("create_3d_scene.params.color") },
+                  metalness: { type: "number", description: translate("create_3d_scene.params.metalness") },
+                  roughness: { type: "number", description: translate("create_3d_scene.params.roughness") },
+                  opacity: { type: "number", description: translate("create_3d_scene.params.opacity") },
                   emissive: {
                     type: "string",
                     description: translate("create_3d_scene.params.objects.items.params.material.params.emissive"),
@@ -6206,7 +6199,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
                       ],
                       description: translate("create_3d_scene.params.objects.items.params.children.items.params.type"),
                     },
-                    name: { type: "string", description: "Optional name" },
+                    name: { type: "string", description: translate("create_3d_scene.params.name2") },
                     size: {
                       type: "array",
                       items: { type: "number" },
@@ -6238,10 +6231,10 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
                     material: {
                       type: "object",
                       properties: {
-                        color: { type: "string", description: "CSS color" },
-                        metalness: { type: "number", description: "0-1" },
-                        roughness: { type: "number", description: "0-1" },
-                        opacity: { type: "number", description: "0-1" },
+                        color: { type: "string", description: translate("create_3d_scene.params.color2") },
+                        metalness: { type: "number", description: translate("create_3d_scene.params.metalness2") },
+                        roughness: { type: "number", description: translate("create_3d_scene.params.roughness2") },
+                        opacity: { type: "number", description: translate("create_3d_scene.params.opacity2") },
                         emissive: {
                           type: "string",
                           description: translate("create_3d_scene.params.objects.items.params.material.params.emissive"),
@@ -6491,8 +6484,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         markers: {
           type: "string",
-          description:
-            'JSON array of marker objects. Each marker: { "latitude": number, "longitude": number, "label": "optional string" }. Example: [{"latitude":49.28,"longitude":-123.12,"label":"Miku"},{"latitude":49.27,"longitude":-123.11,"label":"Ramen Danbo"}]',
+          description: translate("generate_map.params.markers"),
         },
         zoom: {
           type: "number",
@@ -6533,8 +6525,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         labels: {
           type: "array",
           items: { type: "string" },
-          description:
-            'Category labels (bar/pie) or x-axis values (line). Example: ["Jan", "Feb", "Mar", "Apr"]',
+          description: translate("generate_chart.params.items"),
         },
         datasets: {
           type: "array",
@@ -6543,8 +6534,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
             properties: {
               label: {
                 type: "string",
-                description:
-                  'Dataset name shown in the legend (e.g. "Revenue", "Temperature")',
+                description: translate("generate_chart.params.label"),
               },
               data: {
                 type: "array",
@@ -6554,8 +6544,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
             },
             required: ["label", "data"],
           },
-          description:
-            'One or more data series. For pie charts use a single dataset. Example: [{"label": "Sales", "data": [120, 190, 300, 500]}]',
+          description: translate("generate_chart.params.datasets"),
         },
       },
       required: ["type", "labels", "datasets"],
@@ -6593,14 +6582,14 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           description: translate("search_books.params.action"),
           enum: ["search", "code", "country", "nearest"],
         },
-        "q": { type: "string", description: "Search query (action=search)" },
+        "q": { type: "string", description: translate("search_airports.params.q") },
         code: {
           type: "string",
           description: translate("search_airports.params.code"),
         },
-        lat: { type: "number", description: "Latitude (action=nearest)" },
-        lng: { type: "number", description: "Longitude (action=nearest)" },
-        limit: { type: "number", description: "Max results (default: 10)" },
+        lat: { type: "number", description: translate("search_airports.params.lat") },
+        lng: { type: "number", description: translate("search_airports.params.lng") },
+        limit: { type: "number", description: translate("search_airports.params.limit") },
         country: {
           type: "string",
           description: translate("search_airports.params.country"),
@@ -7748,7 +7737,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           description: translate("run_git.params.action"),
           enum: ["status", "diff", "log"],
         },
-        path: { type: "string", description: "Absolute path to the repo root" },
+        path: { type: "string", description: translate("run_git.params.path") },
         staged: {
           type: "boolean",
           description: translate("run_git.params.staged"),
@@ -7757,12 +7746,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           type: "string",
           description: translate("run_git.params.file"),
         },
-        ref: { type: "string", description: "Git ref to diff against" },
+        ref: { type: "string", description: translate("run_git.params.ref") },
         limit: {
           type: "number",
           description: translate("run_git.params.limit"),
         },
-        author: { type: "string", description: "Filter by author (log)" },
+        author: { type: "string", description: translate("run_git.params.author") },
         since: {
           type: "string",
           description: translate("run_git.params.since"),
@@ -8115,16 +8104,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
   {
     name: "save_memory",
     dataSource: compute("Prism MemoryService"),
-    description:
-      "Persist a piece of information to long-term agent memory. Call this tool in TWO cases:\n" +
-      "1. **Explicit requests**: The user says 'remember', 'save', 'note', 'store', 'keep in mind', or 'don't forget'.\n" +
-      "2. **Implicit preference signals**: The user reveals a personal preference, opinion, or fact about themselves — " +
-      "even without asking you to remember it. Trigger words/patterns include: 'I like ...', 'I love ...', 'I hate ...', " +
-      "'I dislike ...', 'I prefer ...', 'I enjoy ...', 'I can\\'t stand ...', 'I always ...', 'I never ...', " +
-      "'my favorite ...', 'I\\'m allergic to ...', 'I\\'m a ... person', or any statement expressing a personal taste, " +
-      "habit, identity trait, or strong opinion. When in doubt, SAVE IT — over-remembering is better than forgetting.\n\n" +
-      "Memories are deduplicated automatically — calling this with content that already exists is safe and will " +
-      "not create duplicates. Returns the stored memory document or null if a near-duplicate was detected.",
+    description: translate("save_memory.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/memory/save",
@@ -8501,13 +8481,11 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
                     anyOf: [
                       {
                         type: "string",
-                        description:
-                          "Default fill color (CSS color, e.g. '#ef4444', 'rgba(0,0,0,0.5)', 'transparent').",
+                        description: translate("create_vector_animation.params.fillColor"),
                       },
                       {
                         type: "object",
-                        description:
-                          "Linear or radial gradient fill definition.",
+                        description: translate("create_vector_animation.params.fillGradient"),
                         properties: {
                           type: {
                             type: "string",
@@ -8515,51 +8493,49 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
                           },
                           x1: {
                             type: "number",
-                            description:
-                              "X coordinate of linear end point or radial end center.",
+                            description: translate("create_vector_animation.params.x1"),
                           },
                           y1: {
                             type: "number",
-                            description:
-                              "Y coordinate of linear end point or radial end center.",
+                            description: translate("create_vector_animation.params.y1"),
                           },
                           x2: {
                             type: "number",
-                            description: "X coordinate of linear end point.",
+                            description: translate("create_vector_animation.params.x2"),
                           },
                           y2: {
                             type: "number",
-                            description: "Y coordinate of linear end point.",
+                            description: translate("create_vector_animation.params.y2"),
                           },
                           x0: {
                             type: "number",
-                            description: "X coordinate of radial start center.",
+                            description: translate("create_vector_animation.params.x0"),
                           },
                           y0: {
                             type: "number",
-                            description: "Y coordinate of radial start center.",
+                            description: translate("create_vector_animation.params.y0"),
                           },
                           r0: {
                             type: "number",
-                            description: "Radius of radial start circle.",
+                            description: translate("create_vector_animation.params.r0"),
                           },
                           r1: {
                             type: "number",
-                            description: "Radius of radial end circle.",
+                            description: translate("create_vector_animation.params.r1"),
                           },
                           stops: {
                             type: "array",
-                            description: "Color stops for the gradient.",
+                            description: translate("create_vector_animation.params.stops"),
                             items: {
                               type: "object",
                               properties: {
                                 offset: {
                                   type: "number",
-                                  description: "Stop position from 0.0 to 1.0.",
+                                  description: translate("create_vector_animation.params.offset"),
                                 },
                                 color: {
                                   type: "string",
-                                  description: "CSS color string.",
+                                  description: translate("create_vector_animation.params.color"),
                                 },
                               },
                               required: ["offset", "color"],
@@ -8574,13 +8550,11 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
                     anyOf: [
                       {
                         type: "string",
-                        description:
-                          "Default stroke/outline color (CSS color, e.g. '#ffffff', 'rgba(255,255,255,0.8)', 'transparent').",
+                        description: translate("create_vector_animation.params.strokeColor"),
                       },
                       {
                         type: "object",
-                        description:
-                          "Linear or radial gradient stroke/outline definition.",
+                        description: translate("create_vector_animation.params.strokeGradient"),
                         properties: {
                           type: {
                             type: "string",
@@ -8588,51 +8562,49 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
                           },
                           x1: {
                             type: "number",
-                            description:
-                              "X coordinate of linear end point or radial end center.",
+                            description: translate("create_vector_animation.params.x1"),
                           },
                           y1: {
                             type: "number",
-                            description:
-                              "Y coordinate of linear end point or radial end center.",
+                            description: translate("create_vector_animation.params.y1"),
                           },
                           x2: {
                             type: "number",
-                            description: "X coordinate of linear end point.",
+                            description: translate("create_vector_animation.params.x22"),
                           },
                           y2: {
                             type: "number",
-                            description: "Y coordinate of linear end point.",
+                            description: translate("create_vector_animation.params.y22"),
                           },
                           x0: {
                             type: "number",
-                            description: "X coordinate of radial start center.",
+                            description: translate("create_vector_animation.params.x02"),
                           },
                           y0: {
                             type: "number",
-                            description: "Y coordinate of radial start center.",
+                            description: translate("create_vector_animation.params.y02"),
                           },
                           r0: {
                             type: "number",
-                            description: "Radius of radial start circle.",
+                            description: translate("create_vector_animation.params.r02"),
                           },
                           r1: {
                             type: "number",
-                            description: "Radius of radial end circle.",
+                            description: translate("create_vector_animation.params.r12"),
                           },
                           stops: {
                             type: "array",
-                            description: "Color stops for the gradient.",
+                            description: translate("create_vector_animation.params.stops2"),
                             items: {
                               type: "object",
                               properties: {
                                 offset: {
                                   type: "number",
-                                  description: "Stop position from 0.0 to 1.0.",
+                                  description: translate("create_vector_animation.params.offset2"),
                                 },
                                 color: {
                                   type: "string",
-                                  description: "CSS color string.",
+                                  description: translate("create_vector_animation.params.color2"),
                                 },
                               },
                               required: ["offset", "color"],
@@ -8771,31 +8743,31 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
             reverb: {
               type: "object",
               properties: {
-                wet: { type: "number", description: "Reverb mix (0.0–1.0). Default: 0.3." },
-                decayTime: { type: "number", description: "Decay time in seconds. Default: 0.5." },
+                wet: { type: "number", description: translate("generate_audio.params.wet") },
+                decayTime: { type: "number", description: translate("generate_audio.params.decayTime") },
               },
             },
             delay: {
               type: "object",
               properties: {
-                delayTime: { type: "number", description: "Delay time in seconds. Default: 0.25." },
-                feedback: { type: "number", description: "Feedback (0.0–0.95). Default: 0.3." },
-                pingPong: { type: "boolean", description: "Stereo ping-pong delay." },
+                delayTime: { type: "number", description: translate("generate_audio.params.delayTime") },
+                feedback: { type: "number", description: translate("generate_audio.params.feedback") },
+                pingPong: { type: "boolean", description: translate("generate_audio.params.pingPong") },
               },
             },
             filter: {
               type: "object",
               properties: {
                 type: { type: "string", enum: ["lowpass", "highpass", "bandpass"] },
-                cutoff: { type: "number", description: "Cutoff frequency in Hz." },
-                Q: { type: "number", description: "Filter resonance." },
+                cutoff: { type: "number", description: translate("generate_audio.params.cutoff") },
+                Q: { type: "number", description: translate("generate_audio.params.Q") },
               },
             },
             distortion: {
               type: "object",
               properties: {
                 algorithm: { type: "string", enum: ["soft_clip", "hard_clip", "bitcrush"] },
-                drive: { type: "number", description: "Distortion drive amount." },
+                drive: { type: "number", description: translate("generate_audio.params.drive") },
               },
             },
           },
@@ -8920,7 +8892,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
               type: "number",
               description: translate("generate_audio.params.lfo.params.frequency"),
             },
-            pitchDepth: { type: "number", description: "Vibrato depth in Hz." },
+            pitchDepth: { type: "number", description: translate("generate_audio.params.pitchDepth") },
             amplitudeDepth: {
               type: "number",
               description: translate("generate_audio.params.lfo.params.amplitudeDepth"),
@@ -8975,16 +8947,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
         nodes: {
           type: "object",
-          description:
-            "REQUIRED for modular mode. Defines the DSP node graph. Keys are unique custom node names that tracks reference in their nodeChain. " +
-            "Every name used in a track's nodeChain (except 'destination') MUST have a corresponding entry here, otherwise the audio will fail. " +
-            "Supported node types: 'oscillator' (waveform, detune, frequency), 'noise' (noiseType: white|pink), " +
-            "'biquad_filter' (filterType: lowpass|highpass|bandpass, cutoff, Q, modulate: {cutoff: 'envelope_name'}), " +
-            "'envelope' (attack, decay, sustain, release), 'gain' (gain, modulate: {gain: 'envelope_name'}), " +
-            "'distortion' (algorithm: soft_clip|hard_clip|bitcrush, drive: 1-100, bitDepth: 2-16, downsample: 1-32), " +
-            "'stereo_panner' (pan: -1.0 to 1.0), 'delay' (delayTime: seconds or beat fraction '1/8'|'1/4d', feedback, pingPong), " +
-            "'reverb' (wet: 0-1, decay: 0-1), 'drum_synth' (triggered by note name: KICK, SNARE, HAT). " +
-            'Example: { "osc": { "type": "oscillator", "waveform": "sawtooth" }, "env": { "type": "envelope", "attack": 0.01, "decay": 0.2, "sustain": 0.6, "release": 0.15 } }',
+          description: translate("generate_audio.params.nodes"),
         },
         tracks: {
           type: "array",
@@ -9180,22 +9143,22 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
                 type: "number",
                 description: translate("remix_audio.params.operations.items.params.speed"),
               },
-              threshold: { type: "number", description: "compressor: Threshold level." },
-              ratio: { type: "number", description: "compressor: Compression ratio." },
-              attack: { type: "number", description: "compressor: Attack time in ms." },
-              release: { type: "number", description: "compressor: Release time in ms." },
+              threshold: { type: "number", description: translate("remix_audio.params.threshold") },
+              ratio: { type: "number", description: translate("remix_audio.params.ratio") },
+              attack: { type: "number", description: translate("remix_audio.params.attack") },
+              release: { type: "number", description: translate("remix_audio.params.release") },
               duration: {
                 type: "number",
                 description: translate("remix_audio.params.operations.items.params.duration"),
               },
-              start: { type: "number", description: "trim: Start time in seconds (absolute position in source audio). Combine with 'end' in a single trim operation." },
-              end: { type: "number", description: "trim: End time in seconds (absolute position in source audio, NOT duration). Must be in the same trim operation as 'start'. E.g. start=30, end=40 extracts a 10-second clip." },
-              level: { type: "number", description: "volume: Volume level (0.0 to 3.0)." },
+              start: { type: "number", description: translate("remix_audio.params.start") },
+              end: { type: "number", description: translate("remix_audio.params.end") },
+              level: { type: "number", description: translate("remix_audio.params.level") },
               pan: {
                 type: "number",
                 description: translate("remix_audio.params.operations.items.params.pan"),
               },
-              bits: { type: "number", description: "bitcrush: Bit depth (1 to 16)." },
+              bits: { type: "number", description: translate("remix_audio.params.bits") },
               sampleRate: {
                 type: "number",
                 description: translate("remix_audio.params.operations.items.params.sampleRate"),
@@ -10145,9 +10108,9 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
                 description: translate("set_light_states.params.states.items.params.selector"),
               },
               power: { type: "string", enum: ["on", "off"] },
-              color: { type: "string", description: "Color string." },
-              brightness: { type: "number", description: "0.0 to 1.0." },
-              duration: { type: "number", description: "Transition seconds." },
+              color: { type: "string", description: translate("set_light_states.params.color") },
+              brightness: { type: "number", description: translate("set_light_states.params.brightness") },
+              duration: { type: "number", description: translate("set_light_states.params.duration") },
               kelvin: {
                 type: "number",
                 description: translate("set_light_states.params.states.items.params.kelvin"),
@@ -10444,12 +10407,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
   {
     name: "search_tools",
     dataSource: onDemand("ToolSchemaService"),
-    description:
-      "Search the FULL tool catalog ({{TOOL_COUNT}} tools) by keyword or domain. Returns matching tool names, " +
-      "descriptions, schemas, and an isEnabled flag. Use this whenever the user requests a capability " +
-      "you don't currently have — tools span: {{DOMAIN_CAPABILITIES}}. " +
-      "If results show isEnabled: false, you MUST call enable_tools with those tool names " +
-      "before you can use them. This is a read-only discovery tool — it does not execute anything.",
+    description: translate("search_tools.description"),
     endpoint: {
       method: "POST",
       path: "/agentic/tool/search",
@@ -10460,15 +10418,11 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         query: {
           type: "string",
-          description:
-            "Search keyword(s) to match against tool names and descriptions. " +
-            "Use capability-specific terms for best results. " +
-            "Examples: {{QUERY_EXAMPLES}}.",
+          description: translate("search_tools.params.query"),
         },
         domain: {
           type: "string",
-          description:
-            "Filter by tool domain. Known domains: {{KNOWN_DOMAINS}}.",
+          description: translate("search_tools.params.domain"),
         },
         limit: {
           type: "number",
