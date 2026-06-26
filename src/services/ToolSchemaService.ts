@@ -2029,7 +2029,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           description: translate("get_events.params.action"),
           enum: ["search", "upcoming", "today", "summary"],
         },
-        "q": { type: "string", description: translate("get_events.params.q") },
+        "q": { type: "string", description: translate("common.params.searchQuery") },
         source: {
           type: "string",
           description: translate("get_events.params.source"),
@@ -2045,7 +2045,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         limit: { type: "number", description: translate("get_events.params.limit") },
         fields: {
           type: "string",
-          description: translate("search_media.params.fields"),
+          description: translate("common.params.fieldsCsv"),
         },
       },
       required: ["action"],
@@ -2066,7 +2066,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         action: {
           type: "string",
-          description: translate("get_sec_filings.params.action"),
+          description: translate("common.params.queryMode"),
           enum: ["summary", "category", "ticker", "categories", "history"],
         },
         category: {
@@ -2301,7 +2301,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
         fields: {
           type: "string",
-          description: translate("search_media.params.fields"),
+          description: translate("common.params.fieldsCsv"),
         },
       },
       required: ["action", "symbol"],
@@ -2331,15 +2331,15 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         action: {
           type: "string",
-          description: translate("get_sec_filings.params.action"),
+          description: translate("common.params.queryMode"),
           enum: ["indicators", "search", "series", "observations"],
         },
-        "q": { type: "string", description: translate("get_macro.params.q") },
+        "q": { type: "string", description: translate("common.params.searchQuery") },
         seriesId: {
           type: "string",
           description: translate("get_macro.params.seriesId"),
         },
-        limit: { type: "number", description: translate("get_macro.params.limit") },
+        limit: { type: "number", description: translate("common.params.maxResultsDefault10") },
         orderBy: { type: "string", description: translate("get_macro.params.orderBy") },
         sortOrder: {
           type: "string",
@@ -2356,7 +2356,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
         fields: {
           type: "string",
-          description: translate("search_media.params.fields"),
+          description: translate("common.params.fieldsCsv"),
         },
       },
       required: ["action"],
@@ -2484,7 +2484,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         action: {
           type: "string",
-          description: translate("get_sec_filings.params.action"),
+          description: translate("common.params.queryMode"),
           enum: ["filings", "search", "facts"],
         },
         cik: {
@@ -2542,7 +2542,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           description: translate("search_books.params.action"),
           enum: ["search", "work", "author"],
         },
-        "q": { type: "string", description: translate("search_books.params.q") },
+        "q": { type: "string", description: translate("common.params.searchQuery") },
         workKey: {
           type: "string",
           description: translate("search_books.params.workKey"),
@@ -2557,7 +2557,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
         fields: {
           type: "string",
-          description: translate("search_media.params.fields"),
+          description: translate("common.params.fieldsCsv"),
         },
       },
       required: ["action"],
@@ -2584,7 +2584,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         action: {
           type: "string",
-          description: translate("get_sec_filings.params.action"),
+          description: translate("common.params.queryMode"),
           enum: ["info", "code", "indicators", "rank", "compare"],
         },
         name: { type: "string", description: translate("get_country.params.name") },
@@ -2611,7 +2611,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
         fields: {
           type: "string",
-          description: translate("search_media.params.fields"),
+          description: translate("common.params.fieldsCsv"),
         },
       },
       required: ["action"],
@@ -2639,10 +2639,10 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         action: {
           type: "string",
-          description: translate("get_sec_filings.params.action"),
+          description: translate("common.params.queryMode"),
           enum: ["search", "lookup", "rank", "categories"],
         },
-        "q": { type: "string", description: translate("get_element.params.q") },
+        "q": { type: "string", description: translate("common.params.searchQuery") },
         symbol: {
           type: "string",
           description: translate("get_element.params.symbol"),
@@ -2651,7 +2651,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           type: "string",
           description: translate("get_exoplanet.params.field"),
         },
-        limit: { type: "number", description: translate("get_element.params.limit") },
+        limit: { type: "number", description: translate("common.params.maxResultsDefault10") },
         order: {
           type: "string",
           enum: ["asc", "desc"],
@@ -2677,16 +2677,16 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         action: {
           type: "string",
-          description: translate("get_sec_filings.params.action"),
+          description: translate("common.params.queryMode"),
           enum: ["search", "lookup", "rank", "stats", "habitable"],
         },
-        "q": { type: "string", description: translate("get_exoplanet.params.q") },
+        "q": { type: "string", description: translate("common.params.searchQuery") },
         name: { type: "string", description: translate("get_exoplanet.params.name") },
         field: {
           type: "string",
           description: translate("get_exoplanet.params.field"),
         },
-        limit: { type: "number", description: translate("get_exoplanet.params.limit") },
+        limit: { type: "number", description: translate("common.params.maxResultsDefault10") },
         order: {
           type: "string",
           enum: ["asc", "desc"],
@@ -2698,7 +2698,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
         fields: {
           type: "string",
-          description: translate("search_media.params.fields"),
+          description: translate("common.params.fieldsCsv"),
         },
       },
       required: ["action"],
@@ -2717,10 +2717,10 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         action: {
           type: "string",
-          description: translate("get_sec_filings.params.action"),
+          description: translate("common.params.queryMode"),
           enum: ["search", "top", "season", "schedule", "details"],
         },
-        "q": { type: "string", description: translate("get_anime.params.q") },
+        "q": { type: "string", description: translate("common.params.searchQuery") },
         id: { type: "number", description: translate("get_anime.params.id") },
         year: { type: "number", description: translate("get_anime.params.year") },
         season: {
@@ -3187,7 +3187,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
     parameters: {
       type: "object",
       properties: {
-        subreddit: { type: "string", description: translate("get_reddit_subreddit_feed.params.subreddit") },
+        subreddit: { type: "string", description: translate("common.params.subredditName") },
         sort: {
           type: "string",
           enum: ["hot", "new", "top", "rising", "controversial"],
@@ -3222,7 +3222,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
     parameters: {
       type: "object",
       properties: {
-        subreddit: { type: "string", description: translate("get_reddit_subreddit_rules.params.subreddit") },
+        subreddit: { type: "string", description: translate("common.params.subredditName") },
       },
       required: ["subreddit"],
     },
@@ -3238,7 +3238,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
     parameters: {
       type: "object",
       properties: {
-        subreddit: { type: "string", description: translate("get_reddit_subreddit_wiki_pages.params.subreddit") },
+        subreddit: { type: "string", description: translate("common.params.subredditName") },
       },
       required: ["subreddit"],
     },
@@ -3254,7 +3254,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
     parameters: {
       type: "object",
       properties: {
-        subreddit: { type: "string", description: translate("get_reddit_subreddit_wiki_page.params.subreddit") },
+        subreddit: { type: "string", description: translate("common.params.subredditName") },
         page: {
           type: "string",
           description: translate("get_reddit_subreddit_wiki_page.params.page"),
@@ -3373,7 +3373,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         page: { type: "number", description: translate("search_media.params.page") },
         fields: {
           type: "string",
-          description: translate("search_media.params.fields"),
+          description: translate("common.params.fieldsCsv"),
         },
       },
       required: ["type", "q"],
@@ -3394,12 +3394,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         type: {
           type: "string",
           enum: ["movie", "tv"],
-          description: translate("get_watch_providers.params.type"),
+          description: translate("common.params.mediaType"),
         },
         id: { type: "number", description: translate("get_media_details.params.id") },
         fields: {
           type: "string",
-          description: translate("search_media.params.fields"),
+          description: translate("common.params.fieldsCsv"),
         },
       },
       required: ["type", "id"],
@@ -3420,12 +3420,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         type: {
           type: "string",
           enum: ["movie", "tv"],
-          description: translate("get_watch_providers.params.type"),
+          description: translate("common.params.mediaType"),
         },
         id: { type: "number", description: translate("get_media_credits.params.id") },
         fields: {
           type: "string",
-          description: translate("search_media.params.fields"),
+          description: translate("common.params.fieldsCsv"),
         },
       },
       required: ["type", "id"],
@@ -3445,17 +3445,17 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         type: {
           type: "string",
           enum: ["movie", "tv"],
-          description: translate("get_watch_providers.params.type"),
+          description: translate("common.params.mediaType"),
         },
         timeWindow: {
           type: "string",
           enum: ["day", "week"],
           description: translate("get_trending_media.params.timeWindow"),
         },
-        limit: { type: "number", description: translate("get_trending_media.params.limit") },
+        limit: { type: "number", description: translate("common.params.maxResultsDefault10") },
         fields: {
           type: "string",
-          description: translate("search_media.params.fields"),
+          description: translate("common.params.fieldsCsv"),
         },
       },
       required: ["type"],
@@ -3483,7 +3483,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         type: {
           type: "string",
           enum: ["movie", "tv"],
-          description: translate("get_watch_providers.params.type"),
+          description: translate("common.params.mediaType"),
         },
         genreId: {
           type: "number",
@@ -3502,7 +3502,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         page: { type: "number", description: translate("browse_media.params.page") },
         fields: {
           type: "string",
-          description: translate("search_media.params.fields"),
+          description: translate("common.params.fieldsCsv"),
         },
       },
       required: ["type"],
@@ -3522,7 +3522,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         type: {
           type: "string",
           enum: ["movie", "tv"],
-          description: translate("get_watch_providers.params.type"),
+          description: translate("common.params.mediaType"),
         },
       },
       required: ["type"],
@@ -3575,7 +3575,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         type: {
           type: "string",
           enum: ["movie", "tv"],
-          description: translate("get_watch_providers.params.type"),
+          description: translate("common.params.mediaType"),
         },
         id: { type: "number", description: translate("get_media_recommendations.params.id") },
         action: {
@@ -3583,7 +3583,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           enum: ["recommendations", "similar"],
           description: translate("get_media_recommendations.params.action"),
         },
-        limit: { type: "number", description: translate("get_media_recommendations.params.limit") },
+        limit: { type: "number", description: translate("common.params.maxResultsDefault10") },
       },
       required: ["type", "id", "action"],
     },
@@ -3631,7 +3631,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         type: {
           type: "string",
           enum: ["movie", "tv"],
-          description: translate("get_watch_providers.params.type"),
+          description: translate("common.params.mediaType"),
         },
         id: { type: "number", description: translate("get_watch_providers.params.id") },
         region: {
@@ -3672,7 +3672,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           type: "string",
           description: translate("rank_foods_by_category.params.nutrient"),
         },
-        limit: { type: "number", description: translate("rank_foods_by_category.params.limit") },
+        limit: { type: "number", description: translate("common.params.maxResultsDefault10") },
         kingdom: { type: "string", enum: ["animalia", "plantae", "fungi"] },
         foodType: { type: "string" },
         ...fieldsParam(FIELDS.USDA_NUTRIENT_RANKING),
@@ -3706,7 +3706,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
             "pharm_class",
           ],
         },
-        limit: { type: "number", description: translate("search_drugs.params.limit") },
+        limit: { type: "number", description: translate("common.params.maxResultsDefault10") },
         dosageForm: {
           type: "string",
           description: translate("search_drugs.params.dosageForm"),
@@ -3717,7 +3717,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
         fields: {
           type: "string",
-          description: translate("search_media.params.fields"),
+          description: translate("common.params.fieldsCsv"),
         },
       },
       required: ["q"],
@@ -3741,7 +3741,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
         limit: {
           type: "number",
-          description: translate("search_usda_nutrition.params.limit"),
+          description: translate("common.params.maxResultsDefault10"),
         },
         ...fieldsParam(FIELDS.DRUG_ADVERSE_EVENTS),
       },
@@ -3765,7 +3765,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
         limit: {
           type: "number",
-          description: translate("search_usda_nutrition.params.limit"),
+          description: translate("common.params.maxResultsDefault10"),
         },
         ...fieldsParam(FIELDS.DRUG_RECALLS),
       },
@@ -3799,7 +3799,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
         limit: {
           type: "number",
-          description: translate("search_usda_nutrition.params.limit"),
+          description: translate("common.params.maxResultsDefault10"),
         },
         category: {
           type: "string",
@@ -3881,7 +3881,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
         limit: {
           type: "number",
-          description: translate("search_usda_nutrition.params.limit"),
+          description: translate("common.params.maxResultsDefault10"),
         },
         kingdom: {
           type: "string",
@@ -3918,7 +3918,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
         limit: {
           type: "number",
-          description: translate("search_usda_nutrition.params.limit"),
+          description: translate("common.params.maxResultsDefault10"),
         },
         kingdom: {
           type: "string",
@@ -4317,7 +4317,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
         limit: {
           type: "number",
-          description: translate("search_usda_nutrition.params.limit"),
+          description: translate("common.params.maxResultsDefault10"),
         },
       },
       required: ["food"],
@@ -5558,7 +5558,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
             },
             background: {
               type: "string",
-              description: translate("create_3d_voxel.params.options.params.background"),
+              description: translate("common.params.backgroundColorDefault"),
             },
             meshColor: {
               type: "string",
@@ -5583,7 +5583,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
             },
             title: {
               type: "string",
-              description: translate("create_3d_voxel.params.options.params.title"),
+              description: translate("common.params.overlayTitle"),
             },
           },
           description: translate("create_3d_voxel.params.options"),
@@ -5725,7 +5725,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
             },
             background: {
               type: "string",
-              description: translate("create_3d_voxel.params.options.params.background"),
+              description: translate("common.params.backgroundColorDefault"),
             },
             autoRotate: {
               type: "boolean",
@@ -5758,7 +5758,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
             },
             title: {
               type: "string",
-              description: translate("create_3d_voxel.params.options.params.title"),
+              description: translate("common.params.overlayTitle"),
             },
           },
           description: translate("create_3d_voxel.params.options"),
@@ -5915,7 +5915,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
             },
             background: {
               type: "string",
-              description: translate("create_3d_voxel.params.options.params.background"),
+              description: translate("common.params.backgroundColorDefault"),
             },
             enableShadows: {
               type: "boolean",
@@ -5940,7 +5940,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
             },
             title: {
               type: "string",
-              description: translate("create_3d_voxel.params.options.params.title"),
+              description: translate("common.params.overlayTitle"),
             },
           },
           description: translate("create_3d_model.params.options"),
@@ -5992,7 +5992,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
             },
             background: {
               type: "string",
-              description: translate("create_3d_voxel.params.options.params.background"),
+              description: translate("common.params.backgroundColorDefault"),
             },
             ground: {
               type: "object",
@@ -6092,7 +6092,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
                 ],
                 description: translate("create_3d_scene.params.objects.items.params.type"),
               },
-              name: { type: "string", description: translate("create_3d_scene.params.name") },
+              name: { type: "string", description: translate("common.params.optionalName") },
               size: {
                 type: "array",
                 items: { type: "number" },
@@ -6124,10 +6124,10 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
               material: {
                 type: "object",
                 properties: {
-                  color: { type: "string", description: translate("create_3d_scene.params.color") },
-                  metalness: { type: "number", description: translate("create_3d_scene.params.metalness") },
-                  roughness: { type: "number", description: translate("create_3d_scene.params.roughness") },
-                  opacity: { type: "number", description: translate("create_3d_scene.params.opacity") },
+                  color: { type: "string", description: translate("common.params.cssColor") },
+                  metalness: { type: "number", description: translate("common.params.zeroToOne") },
+                  roughness: { type: "number", description: translate("common.params.zeroToOne") },
+                  opacity: { type: "number", description: translate("common.params.zeroToOne") },
                   emissive: {
                     type: "string",
                     description: translate("create_3d_scene.params.objects.items.params.material.params.emissive"),
@@ -6199,7 +6199,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
                       ],
                       description: translate("create_3d_scene.params.objects.items.params.children.items.params.type"),
                     },
-                    name: { type: "string", description: translate("create_3d_scene.params.name2") },
+                    name: { type: "string", description: translate("common.params.optionalName") },
                     size: {
                       type: "array",
                       items: { type: "number" },
@@ -6231,10 +6231,10 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
                     material: {
                       type: "object",
                       properties: {
-                        color: { type: "string", description: translate("create_3d_scene.params.color2") },
-                        metalness: { type: "number", description: translate("create_3d_scene.params.metalness2") },
-                        roughness: { type: "number", description: translate("create_3d_scene.params.roughness2") },
-                        opacity: { type: "number", description: translate("create_3d_scene.params.opacity2") },
+                        color: { type: "string", description: translate("common.params.cssColor") },
+                        metalness: { type: "number", description: translate("common.params.zeroToOne") },
+                        roughness: { type: "number", description: translate("common.params.zeroToOne") },
+                        opacity: { type: "number", description: translate("common.params.zeroToOne") },
                         emissive: {
                           type: "string",
                           description: translate("create_3d_scene.params.objects.items.params.material.params.emissive"),
@@ -6307,7 +6307,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           properties: {
             title: {
               type: "string",
-              description: translate("create_3d_voxel.params.options.params.title"),
+              description: translate("common.params.overlayTitle"),
             },
             showGrid: {
               type: "boolean",
@@ -6582,21 +6582,21 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           description: translate("search_books.params.action"),
           enum: ["search", "code", "country", "nearest"],
         },
-        "q": { type: "string", description: translate("search_airports.params.q") },
+        "q": { type: "string", description: translate("common.params.searchQuery") },
         code: {
           type: "string",
           description: translate("search_airports.params.code"),
         },
         lat: { type: "number", description: translate("search_airports.params.lat") },
         lng: { type: "number", description: translate("search_airports.params.lng") },
-        limit: { type: "number", description: translate("search_airports.params.limit") },
+        limit: { type: "number", description: translate("common.params.maxResultsDefault10") },
         country: {
           type: "string",
           description: translate("search_airports.params.country"),
         },
         fields: {
           type: "string",
-          description: translate("search_media.params.fields"),
+          description: translate("common.params.fieldsCsv"),
         },
       },
       required: ["action"],
@@ -9504,7 +9504,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         guildId: {
           type: "string",
-          description: translate("get_discord_word_frequencies.params.guildId"),
+          description: translate("common.params.discordGuildId"),
         },
         userId: {
           type: "string",
@@ -9516,15 +9516,15 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
         years: {
           type: "number",
-          description: translate("get_discord_word_frequencies.params.years"),
+          description: translate("common.params.yearsOfHistory"),
         },
         months: {
           type: "number",
-          description: translate("get_discord_word_frequencies.params.months"),
+          description: translate("common.params.monthsOfHistory"),
         },
         days: {
           type: "number",
-          description: translate("get_discord_word_frequencies.params.days"),
+          description: translate("common.params.daysOfHistory"),
         },
       },
       required: ["guildId", "userId"],
@@ -9550,7 +9550,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         guildId: {
           type: "string",
-          description: translate("get_discord_word_frequencies.params.guildId"),
+          description: translate("common.params.discordGuildId"),
         },
         userId: {
           type: "string",
@@ -9558,15 +9558,15 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
         years: {
           type: "number",
-          description: translate("get_discord_word_frequencies.params.years"),
+          description: translate("common.params.yearsOfHistory"),
         },
         months: {
           type: "number",
-          description: translate("get_discord_word_frequencies.params.months"),
+          description: translate("common.params.monthsOfHistory"),
         },
         days: {
           type: "number",
-          description: translate("get_discord_word_frequencies.params.days"),
+          description: translate("common.params.daysOfHistory"),
         },
         channelId: {
           type: "string",
@@ -9589,19 +9589,19 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         guildId: {
           type: "string",
-          description: translate("get_discord_word_frequencies.params.guildId"),
+          description: translate("common.params.discordGuildId"),
         },
         years: {
           type: "number",
-          description: translate("get_discord_word_frequencies.params.years"),
+          description: translate("common.params.yearsOfHistory"),
         },
         months: {
           type: "number",
-          description: translate("get_discord_word_frequencies.params.months"),
+          description: translate("common.params.monthsOfHistory"),
         },
         days: {
           type: "number",
-          description: translate("get_discord_word_frequencies.params.days"),
+          description: translate("common.params.daysOfHistory"),
         },
         channelId: {
           type: "string",
@@ -9624,7 +9624,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         guildId: {
           type: "string",
-          description: translate("get_discord_word_frequencies.params.guildId"),
+          description: translate("common.params.discordGuildId"),
         },
         userId: {
           type: "string",
@@ -9632,15 +9632,15 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
         years: {
           type: "number",
-          description: translate("get_discord_word_frequencies.params.years"),
+          description: translate("common.params.yearsOfHistory"),
         },
         months: {
           type: "number",
-          description: translate("get_discord_word_frequencies.params.months"),
+          description: translate("common.params.monthsOfHistory"),
         },
         days: {
           type: "number",
-          description: translate("get_discord_word_frequencies.params.days"),
+          description: translate("common.params.daysOfHistory"),
         },
         limit: {
           type: "number",
@@ -9820,7 +9820,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         selector: {
           type: "string",
-          description: translate("toggle_light_power.params.selector"),
+          description: translate("common.params.lifxSelector"),
         },
         duration: {
           type: "number",
@@ -9843,7 +9843,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         selector: {
           type: "string",
-          description: translate("toggle_light_power.params.selector"),
+          description: translate("common.params.lifxSelector"),
         },
         color: {
           type: "string",
@@ -9890,7 +9890,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         selector: {
           type: "string",
-          description: translate("toggle_light_power.params.selector"),
+          description: translate("common.params.lifxSelector"),
         },
         color: {
           type: "string",
@@ -9914,7 +9914,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
         powerOn: {
           type: "boolean",
-          description: translate("start_light_pulse_effect.params.powerOn"),
+          description: translate("common.params.lifxAutoOn"),
         },
       },
       required: ["color"],
@@ -9933,7 +9933,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         selector: {
           type: "string",
-          description: translate("toggle_light_power.params.selector"),
+          description: translate("common.params.lifxSelector"),
         },
         powerOff: {
           type: "boolean",
@@ -9997,7 +9997,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         selector: {
           type: "string",
-          description: translate("toggle_light_power.params.selector"),
+          description: translate("common.params.lifxSelector"),
         },
         direction: {
           type: "string",
@@ -10014,7 +10014,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
         powerOn: {
           type: "boolean",
-          description: translate("start_light_pulse_effect.params.powerOn"),
+          description: translate("common.params.lifxAutoOn"),
         },
       },
       required: [],
@@ -10033,7 +10033,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         selector: {
           type: "string",
-          description: translate("toggle_light_power.params.selector"),
+          description: translate("common.params.lifxSelector"),
         },
         period: {
           type: "number",
@@ -10045,7 +10045,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
         powerOn: {
           type: "boolean",
-          description: translate("start_light_pulse_effect.params.powerOn"),
+          description: translate("common.params.lifxAutoOn"),
         },
       },
       required: [],
@@ -10064,7 +10064,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         selector: {
           type: "string",
-          description: translate("toggle_light_power.params.selector"),
+          description: translate("common.params.lifxSelector"),
         },
         palette: {
           type: "array",
@@ -10081,7 +10081,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
         powerOn: {
           type: "boolean",
-          description: translate("start_light_pulse_effect.params.powerOn"),
+          description: translate("common.params.lifxAutoOn"),
         },
       },
       required: [],
@@ -10140,7 +10140,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         selector: {
           type: "string",
-          description: translate("toggle_light_power.params.selector"),
+          description: translate("common.params.lifxSelector"),
         },
         hue: {
           type: "number",
