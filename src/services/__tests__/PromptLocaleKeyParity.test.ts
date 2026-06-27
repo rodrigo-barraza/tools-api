@@ -9,6 +9,12 @@ import { fileURLToPath } from "url";
 // Enforces that every non-English locale has the exact same
 // keys as the English (en) source-of-truth locale.
 // English is canonical — all other locales must match 1:1.
+//
+// Additional checks:
+// - No empty string values (untranslated placeholders)
+// - Template variables ({{varName}}) preserved across locales
+// - No extra files in non-English locales
+// - Valid JSON in all locale files
 // ────────────────────────────────────────────────────────────
 
 const currentFilePath = fileURLToPath(import.meta.url);
@@ -18,12 +24,6 @@ const localesRootDirectory = path.resolve(
   "..",
   "locales",
 );
-
-function loadJsonFileKeys(filePath: string): string[] {
-  const rawContent = fs.readFileSync(filePath, "utf-8");
-  const parsedContent = JSON.parse(rawContent) as Record<string, unknown>;
-  return Object.keys(parsedContent).sort();
-}
 
 function deepFlattenKeys(
   source: Record<string, unknown>,
@@ -64,6 +64,7 @@ function discoverLocaleDirectories(): string[] {
   return fs
     .readdirSync(localesRootDirectory, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
+    .filter((entry) => !entry.name.startsWith("__") && !entry.name.startsWith("."))
     .map((entry) => entry.name)
     .sort();
 }
@@ -110,6 +111,17 @@ describe("PromptLocaleService — Key Parity", () => {
       ).toEqual([]);
     });
 
+    it("should NOT have extra JSON files that English does not have", () => {
+      const extraFiles = localeJsonFiles.filter(
+        (fileName) => !englishJsonFiles.includes(fileName),
+      );
+
+      expect(
+        extraFiles,
+        `Locale "${localeName}" has extra JSON file(s) not in "en": ${extraFiles.join(", ")}`,
+      ).toEqual([]);
+    });
+
     describe.each(englishJsonFiles)("file '%s'", (jsonFileName) => {
       const englishFilePath = path.join(
         localesRootDirectory,
@@ -127,6 +139,15 @@ describe("PromptLocaleService — Key Parity", () => {
           fs.existsSync(localeFilePath),
           `Missing file: locales/${localeName}/${jsonFileName}`,
         ).toBe(true);
+      });
+
+      it("should be valid JSON", () => {
+        if (!fs.existsSync(localeFilePath)) return;
+
+        expect(() => {
+          const rawContent = fs.readFileSync(localeFilePath, "utf-8");
+          JSON.parse(rawContent);
+        }).not.toThrow();
       });
 
       it("should have the exact same number of keys as English", () => {
@@ -192,6 +213,131 @@ describe("PromptLocaleService — Key Parity", () => {
 
           expect.fail(errorLines.join("\n"));
         }
+      });
+
+      it("should not have empty string values (untranslated placeholders)", () => {
+        if (!fs.existsSync(localeFilePath)) return;
+
+        const rawContent = fs.readFileSync(localeFilePath, "utf-8");
+        const parsedContent = JSON.parse(rawContent) as Record<string, unknown>;
+
+        function findEmptyValues(
+          source: Record<string, unknown>,
+          prefix = "",
+        ): string[] {
+          const emptyKeys: string[] = [];
+
+          for (const [key, value] of Object.entries(source)) {
+            const flatKey = prefix ? `${prefix}.${key}` : key;
+
+            if (
+              value !== null &&
+              typeof value === "object" &&
+              !Array.isArray(value)
+            ) {
+              emptyKeys.push(
+                ...findEmptyValues(value as Record<string, unknown>, flatKey),
+              );
+            } else if (typeof value === "string" && value.trim() === "") {
+              emptyKeys.push(flatKey);
+            }
+          }
+
+          return emptyKeys;
+        }
+
+        const emptyValueKeys = findEmptyValues(parsedContent);
+
+        expect(
+          emptyValueKeys,
+          `Empty string values found in "${localeName}/${jsonFileName}" (likely untranslated): ${emptyValueKeys.join(", ")}`,
+        ).toEqual([]);
+      });
+
+      it("should preserve template variables ({{varName}}) from English", () => {
+        if (!fs.existsSync(localeFilePath)) return;
+
+        const englishContent = JSON.parse(
+          fs.readFileSync(englishFilePath, "utf-8"),
+        ) as Record<string, unknown>;
+        const localeContent = JSON.parse(
+          fs.readFileSync(localeFilePath, "utf-8"),
+        ) as Record<string, unknown>;
+
+        const templateVariablePattern = /\{\{(\w+)\}\}/g;
+
+        function extractTemplateVariables(
+          source: Record<string, unknown>,
+          prefix = "",
+        ): Map<string, Set<string>> {
+          const variablesByKey = new Map<string, Set<string>>();
+
+          for (const [key, value] of Object.entries(source)) {
+            const flatKey = prefix ? `${prefix}.${key}` : key;
+
+            if (
+              value !== null &&
+              typeof value === "object" &&
+              !Array.isArray(value)
+            ) {
+              const nestedVariables = extractTemplateVariables(
+                value as Record<string, unknown>,
+                flatKey,
+              );
+              for (const [nestedKey, variables] of nestedVariables) {
+                variablesByKey.set(nestedKey, variables);
+              }
+            } else if (typeof value === "string") {
+              const matches = [...value.matchAll(templateVariablePattern)];
+              if (matches.length > 0) {
+                variablesByKey.set(
+                  flatKey,
+                  new Set(matches.map((match) => match[1])),
+                );
+              }
+            }
+          }
+
+          return variablesByKey;
+        }
+
+        const englishVariables = extractTemplateVariables(englishContent);
+        const localeVariables = extractTemplateVariables(localeContent);
+        const mismatchedKeys: string[] = [];
+
+        for (const [key, expectedVariables] of englishVariables) {
+          const actualVariables = localeVariables.get(key);
+
+          if (!actualVariables) {
+            mismatchedKeys.push(
+              `${key}: expected {{${[...expectedVariables].join("}}, {{")}}} but locale has no template variables`,
+            );
+            continue;
+          }
+
+          const missingVariables = [...expectedVariables].filter(
+            (variable) => !actualVariables.has(variable),
+          );
+          const extraVariables = [...actualVariables].filter(
+            (variable) => !expectedVariables.has(variable),
+          );
+
+          if (missingVariables.length > 0 || extraVariables.length > 0) {
+            const parts: string[] = [`${key}:`];
+            if (missingVariables.length > 0) {
+              parts.push(`missing {{${missingVariables.join("}}, {{")}}}}`);
+            }
+            if (extraVariables.length > 0) {
+              parts.push(`extra {{${extraVariables.join("}}, {{")}}}}`);
+            }
+            mismatchedKeys.push(parts.join(" "));
+          }
+        }
+
+        expect(
+          mismatchedKeys,
+          `Template variable mismatches in "${localeName}/${jsonFileName}":\n${mismatchedKeys.join("\n")}`,
+        ).toEqual([]);
       });
     });
   });
