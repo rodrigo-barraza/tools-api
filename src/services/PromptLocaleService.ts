@@ -101,13 +101,9 @@ function initialize() {
 
   const localesRootDirectory = getLocalesDirectory();
 
-  logger.info(
-    `[PromptLocaleService] Resolving locales directory: ${localesRootDirectory}`,
-  );
-
   if (!fs.existsSync(localesRootDirectory)) {
     logger.warn(
-      `[PromptLocaleService] Locales directory NOT FOUND: ${localesRootDirectory}`,
+      `[PromptLocaleService] Locales directory not found: ${localesRootDirectory}`,
     );
     isInitialized = true;
     return;
@@ -168,21 +164,6 @@ const PromptLocaleService = {
     const rawValue =
       (localeData?.[key] as string | undefined) ??
       (fallbackData?.[key] as string | undefined);
-
-    // Debug: trace locale resolution for non-default locales
-    if (locale !== DEFAULT_LOCALE) {
-      const resolvedFrom = localeData?.[key] !== undefined
-        ? locale
-        : fallbackData?.[key] !== undefined
-          ? `FALLBACK(${DEFAULT_LOCALE})`
-          : "MISSING";
-      // Only log description keys to avoid spam
-      if (key.endsWith(".description")) {
-        logger.info(
-          `[PromptLocaleService] get("${locale}", "${key}") → resolved from ${resolvedFrom}, localeData exists=${!!localeData} (${localeData ? Object.keys(localeData).length : 0} keys)`,
-        );
-      }
-    }
 
     if (rawValue === undefined) {
       logger.warn(

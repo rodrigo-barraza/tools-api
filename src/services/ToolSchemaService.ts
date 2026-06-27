@@ -11792,25 +11792,10 @@ const localizedDefinitionsCache = new Map<string, ToolDefinition[]>();
 function getLocalizedToolDefinitions(locale: string): ToolDefinition[] {
   let definitions = localizedDefinitionsCache.get(locale);
   if (!definitions) {
-    logger.info(
-      `[ToolSchemaService] Building localized definitions for locale="${locale}" (available locales: ${PromptLocaleService.getAvailableLocales().join(", ")}, locale exists: ${PromptLocaleService.isLocaleAvailable(locale)})`,
-    );
     const translate = (key: string, variables?: Record<string, string>) =>
       PromptLocaleService.get(locale, `tools.${key}`, variables);
     definitions = createLocalizedToolDefinitions(translate);
     localizedDefinitionsCache.set(locale, definitions);
-
-    // Debug: sample a description to verify locale data is flowing
-    const sampleTool = definitions.find((tool) => tool.name === "sleep") || definitions[0];
-    if (sampleTool) {
-      logger.info(
-        `[ToolSchemaService] Locale "${locale}" sample "${sampleTool.name}": "${(sampleTool.description || "").slice(0, 100)}..."`,
-      );
-    }
-  } else {
-    logger.info(
-      `[ToolSchemaService] Returning cached definitions for locale="${locale}" (${definitions.length} tools)`,
-    );
   }
   return definitions;
 }
