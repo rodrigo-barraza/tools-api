@@ -1,0 +1,21 @@
+{
+  "creative.describe.avatar": "describe this face picture/avatar. talk about person appearance, style, notable feature, and any art element. no mention quality or resolution.",
+  "creative.describe.banner": "describe this banner picture. talk about scene, color, mood, and notable element. no mention quality or resolution.",
+  "creative.describe.photo": "describe this picture. no mention quality, resolution, or pixelation.",
+  "creative.describe.general": "describe this picture. no mention quality, resolution, or pixelation.",
+  "creative.image.editing-system-prompt": "you picture editor. human attached reference picture. use attached picture as direct basis for your output. preserve appearance, feature, and identity of subject in reference picture as closely as possible. apply ONLY specific change described in prompt. no re-imagine or reinvent picture from scratch.",
+  "creative.image.safety-block-error": "picture making blocked by content safety filter after {{attemptCount}} try (including softened prompt). content may be too explicit to generate even with creative alternative.",
+  "creative.image.no-image-error": "no picture generated. model may have returned word instead. try more specific and descriptive prompt.",
+  "creative.image.result-softened": "picture made and given to human. note: original prompt was automatically softened to comply with content safety filter (like nudity replaced with robe/clothing, violence with calmer alternative). picture capture spirit of request with more tasteful interpretation.",
+  "creative.image.result-success": "picture made and given to human.",
+  "creative.audio.result-success": "sound made and given to human.",
+  "creative.audio.result-local-tts": "sound made and given to human (local espeak-ng TTS).",
+  "tool-search.action-nudge-disabled": "IMPORTANT: some found tool NOT turned on (isEnabled: false). you MUST call enable_tools with tool name you need before can use. after turn on, tool available next round.",
+  "tool-search.action-nudge-enabled": "all matched tool already on — use them directly.",
+  "file.replace-no-match": "no match found for 'oldString'. exact string not found in file. make sure whitespace and indent match exactly.",
+  "file.patch-context-mismatch": "patch no apply — file content no match diff context. make sure patch made against current file version.",
+  "lsp.implementations-label": "find concrete implementation of interface or abstract class",
+  "lsp.server-not-installed-hint": "language server maybe not installed. check that npx can find server binary.",
+  "lsp.no-results-hint": "no result found — symbol may be external, unresolvable, or server not finish indexing. try again in few second.",
+  "compute.cron-hint": "standard cron: minute(0-59) hour(0-23) day(1-31) month(1-12) weekday(0-6, 0=Sun)"
+}
