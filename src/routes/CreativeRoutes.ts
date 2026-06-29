@@ -1360,43 +1360,43 @@ function buildVectorAnimationEmbedHtml(
 
           ctx.beginPath();
           const type = layer.shapeType;
-          const d = layer.shapeData || {};
+          const shapeData = layer.shapeData || {};
 
           if (type === "rectangle") {
-            const w = props.width ?? d.width ?? 100;
-            const h = props.height ?? d.height ?? 100;
-            const rx = props.rx ?? d.rx ?? 0;
-            const ry = props.ry ?? d.ry ?? 0;
+            const width = props.width ?? shapeData.width ?? 100;
+            const height = props.height ?? shapeData.height ?? 100;
+            const rx = props.rx ?? shapeData.rx ?? 0;
+            const ry = props.ry ?? shapeData.ry ?? 0;
             if (rx > 0 || ry > 0) {
-              ctx.roundRect(-w/2, -h/2, w, h, [rx, ry]);
+              ctx.roundRect(-width/2, -height/2, width, height, [rx, ry]);
             } else {
-              ctx.rect(-w/2, -h/2, w, h);
+              ctx.rect(-width/2, -height/2, width, height);
             }
           } else if (type === "circle") {
-            const r = props.radius ?? d.radius ?? 50;
-            ctx.arc(0, 0, r, 0, Math.PI * 2);
+            const radius = props.radius ?? shapeData.radius ?? 50;
+            ctx.arc(0, 0, radius, 0, Math.PI * 2);
           } else if (type === "ellipse") {
-            const rx = props.rx ?? d.rx ?? 50;
-            const ry = props.ry ?? d.ry ?? 30;
+            const rx = props.rx ?? shapeData.rx ?? 50;
+            const ry = props.ry ?? shapeData.ry ?? 30;
             ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
           } else if (type === "line") {
-            const x1 = d.x1 ?? 0;
-            const y1 = d.y1 ?? 0;
-            const x2 = d.x2 ?? 100;
-            const y2 = d.y2 ?? 100;
+            const x1 = shapeData.x1 ?? 0;
+            const y1 = shapeData.y1 ?? 0;
+            const x2 = shapeData.x2 ?? 100;
+            const y2 = shapeData.y2 ?? 100;
             ctx.moveTo(x1, y1);
             ctx.lineTo(x2, y2);
           } else if (type === "polygon") {
-            const pts = props.points || d.points || [];
-            if (pts.length > 0) {
-              ctx.moveTo(pts[0][0], pts[0][1]);
-              for (let i = 1; i < pts.length; i++) {
-                ctx.lineTo(pts[i][0], pts[i][1]);
+            const points = props.points || shapeData.points || [];
+            if (points.length > 0) {
+              ctx.moveTo(points[0][0], points[0][1]);
+              for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i][0], points[i][1]);
               }
               ctx.closePath();
             }
           } else if (type === "path") {
-            const pathStr = props.path || d.path || "";
+            const pathStr = props.path || shapeData.path || "";
             if (pathStr) {
               const path2d = new Path2D(pathStr);
               const imageUrl = props.imageUrl || layer.imageUrl;

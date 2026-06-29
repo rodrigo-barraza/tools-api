@@ -603,15 +603,15 @@ router.post(
               if (Array.isArray(result) && Array.isArray(op.keys)) {
                 result = result.map((item: Record<string, unknown>) => {
                   const picked: Record<string, unknown> = {};
-                  for (const k of op.keys) {
-                    if (k in item) picked[k] = item[k];
+                  for (const key of op.keys) {
+                    if (key in item) picked[key] = item[key];
                   }
                   return picked;
                 });
               } else if (typeof result === "object" && Array.isArray(op.keys)) {
                 const picked: Record<string, unknown> = {};
-                for (const k of op.keys) {
-                  if (k in result) picked[k] = result[k];
+                for (const key of op.keys) {
+                  if (key in result) picked[key] = result[key];
                 }
                 result = picked;
               }
@@ -620,12 +620,12 @@ router.post(
               if (Array.isArray(result) && Array.isArray(op.keys)) {
                 result = result.map((item: Record<string, unknown>) => {
                   const omitted = { ...item };
-                  for (const k of op.keys) delete omitted[k];
+                  for (const key of op.keys) delete omitted[key];
                   return omitted;
                 });
               } else if (typeof result === "object" && Array.isArray(op.keys)) {
                 result = { ...result };
-                for (const k of op.keys) delete result[k];
+                for (const key of op.keys) delete result[key];
               }
               break;
             case "groupBy":

@@ -23,18 +23,18 @@ export async function fetchTwilight() {
     throw new Error(`Sunrise-Sunset API returned status: ${data.status}`);
   }
 
-  const r = data.results;
+  const results = data.results;
 
   return {
-    sunrise: r.sunrise,
-    sunset: r.sunset,
-    solarNoon: r.solar_noon,
-    dayLength: r.day_length,
-    civilTwilightBegin: r.civil_twilight_begin,
-    civilTwilightEnd: r.civil_twilight_end,
-    nauticalTwilightBegin: r.nautical_twilight_begin,
-    nauticalTwilightEnd: r.nautical_twilight_end,
-    astronomicalTwilightBegin: r.astronomical_twilight_begin,
-    astronomicalTwilightEnd: r.astronomical_twilight_end,
+    sunrise: results.sunrise,
+    sunset: results.sunset,
+    solarNoon: results.solar_noon,
+    dayLength: results.day_length,
+    civilTwilightBegin: results.civil_twilight_begin,
+    civilTwilightEnd: results.civil_twilight_end,
+    nauticalTwilightBegin: results.nautical_twilight_begin,
+    nauticalTwilightEnd: results.nautical_twilight_end,
+    astronomicalTwilightBegin: results.astronomical_twilight_begin,
+    astronomicalTwilightEnd: results.astronomical_twilight_end,
   };
 }

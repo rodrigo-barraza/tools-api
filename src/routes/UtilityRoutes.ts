@@ -56,7 +56,7 @@ const dispatchToRoute = router as unknown as (request: Request, response: Respon
 router.get("/calculate", (req: Request, res: Response) => {
   const operation = req.query.operation as string | undefined;
   const firstOperand = req.query['a'] as string | undefined;
-  const b = req.query['b'] as string | undefined;
+  const secondOperand = req.query['b'] as string | undefined;
   if (!operation || !firstOperand) {
     return res
       .status(400)
@@ -65,8 +65,8 @@ router.get("/calculate", (req: Request, res: Response) => {
   try {
     const operandA = new BigNumber(firstOperand);
     let operandB: BigNumber | undefined;
-    if (b !== undefined && b !== "") {
-      operandB = new BigNumber(b);
+    if (secondOperand !== undefined && secondOperand !== "") {
+      operandB = new BigNumber(secondOperand);
     }
     let result: BigNumber;
     switch (operation) {
@@ -108,7 +108,7 @@ router.get("/calculate", (req: Request, res: Response) => {
     res.json({
       operation,
       firstOperand,
-      b: b || null,
+      b: secondOperand || null,
       result: result.toFixed(),
     });
   } catch (error: unknown) {

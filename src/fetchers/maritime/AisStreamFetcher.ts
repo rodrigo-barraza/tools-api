@@ -186,14 +186,14 @@ function buildSubscription(options: AisStreamOptions): AisSubscription {
 }
 
 function buildDefaultBbox() {
-  const lat = CONFIG.LATITUDE || 0;
-  const lng = CONFIG.LONGITUDE || 0;
-  const r = AIS_STREAM_BBOX_RADIUS_DEG;
+  const latitude = CONFIG.LATITUDE || 0;
+  const longitude = CONFIG.LONGITUDE || 0;
+  const radiusDegrees = AIS_STREAM_BBOX_RADIUS_DEG;
 
   return [
     [
-      [lat - r, lng - r],
-      [lat + r, lng + r],
+      [latitude - radiusDegrees, longitude - radiusDegrees],
+      [latitude + radiusDegrees, longitude + radiusDegrees],
     ],
   ];
 }

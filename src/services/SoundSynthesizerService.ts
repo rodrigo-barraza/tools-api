@@ -1603,10 +1603,10 @@ export function synthesizeSound(config: SynthesizerConfig): Float32Array {
 
     // 5. Additive synthesis / waveform evaluation
     let sampleValue = 0;
-    for (let h = 0; h < harmonics.length; h++) {
-      const harmonicFreqMultiplier = h + 1;
+    for (let harmonicIndex = 0; harmonicIndex < harmonics.length; harmonicIndex++) {
+      const harmonicFreqMultiplier = harmonicIndex + 1;
       const phase = carrierPhase * harmonicFreqMultiplier;
-      const amp = harmonics[h];
+      const amp = harmonics[harmonicIndex];
       if (amp <= 0) continue;
 
       let value = 0;
@@ -1636,7 +1636,7 @@ export function synthesizeSound(config: SynthesizerConfig): Float32Array {
 
     // Normalize additive samples to avoid clipping
     const totalHarmonicAmp = harmonics.reduce(
-      (accumulator, b) => accumulator + b,
+      (accumulator, harmonicAmplitude) => accumulator + harmonicAmplitude,
       0,
     );
     if (totalHarmonicAmp > 1.0) {

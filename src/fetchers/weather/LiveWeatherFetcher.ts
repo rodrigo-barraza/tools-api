@@ -179,17 +179,17 @@ async function geocodeLocation(
     return null;
   }
 
-  const r = data.results[0];
+  const locationResult = data.results[0];
   return {
-    name: r.name,
-    country: r.country,
-    countryCode: r.country_code,
-    admin1: r.admin1 || null,
-    latitude: r.latitude,
-    longitude: r.longitude,
-    timezone: r.timezone,
-    elevation: r.elevation || null,
-    population: r.population || null,
+    name: locationResult.name,
+    country: locationResult.country,
+    countryCode: locationResult.country_code,
+    admin1: locationResult.admin1 || null,
+    latitude: locationResult.latitude,
+    longitude: locationResult.longitude,
+    timezone: locationResult.timezone,
+    elevation: locationResult.elevation || null,
+    population: locationResult.population || null,
   };
 }
 

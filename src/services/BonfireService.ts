@@ -66,16 +66,16 @@ export function generateAnsiArt(
 
   // 1. Generate Flame Structure
   // Higher wind skews the flame further to the right as we go up.
-  for (let r = 0; r < flameHeight; r++) {
-    const rowIndex = logsStartRow - 1 - r;
+  for (let row = 0; row < flameHeight; row++) {
+    const rowIndex = logsStartRow - 1 - row;
     if (rowIndex < 0) continue;
 
     // Wind tilt offset
-    const skew = Math.floor(r * (breezeSpeed / 12));
+    const skew = Math.floor(row * (breezeSpeed / 12));
     const baseCenter = 27 + skew;
 
     // Flame width narrows as it goes up
-    const maxFlameWidth = Math.max(1, Math.floor((flameHeight - r) * 1.6));
+    const maxFlameWidth = Math.max(1, Math.floor((flameHeight - row) * 1.6));
 
     for (let column = -maxFlameWidth; column <= maxFlameWidth; column++) {
       const columnIndex = baseCenter + column;
@@ -85,10 +85,10 @@ export function generateAnsiArt(
       const dist = Math.abs(column);
       const ratio = dist / maxFlameWidth;
 
-      if (ratio < 0.3 && r < flameHeight * 0.6) {
-        grid[rowIndex][columnIndex] = r % 2 === 0 ? "#" : "@"; // Hottest inner core
+      if (ratio < 0.3 && row < flameHeight * 0.6) {
+        grid[rowIndex][columnIndex] = row % 2 === 0 ? "#" : "@"; // Hottest inner core
       } else if (ratio < 0.6) {
-        grid[rowIndex][columnIndex] = r % 2 === 0 ? "(" : ")"; // Hot middle flame
+        grid[rowIndex][columnIndex] = row % 2 === 0 ? "(" : ")"; // Hot middle flame
       } else {
         // Flickering outer edges / sparks
         const rand = (columnIndex + rowIndex) % 5;
@@ -101,12 +101,12 @@ export function generateAnsiArt(
 
   // Add blowing sparks if wind is high
   if (breezeSpeed > 10) {
-    for (let r = 0; r < flameHeight; r++) {
-      const rowIndex = logsStartRow - 2 - r;
+    for (let row = 0; row < flameHeight; row++) {
+      const rowIndex = logsStartRow - 2 - row;
       if (rowIndex < 0) continue;
-      const skew = Math.floor(r * (breezeSpeed / 12));
+      const skew = Math.floor(row * (breezeSpeed / 12));
       const sparklineColumn =
-        27 + skew + Math.floor((flameHeight - r) * 1.5) + 3 + (rowIndex % 3);
+        27 + skew + Math.floor((flameHeight - row) * 1.5) + 3 + (rowIndex % 3);
       if (sparklineColumn < width) {
         grid[rowIndex][sparklineColumn] = "*";
       }
@@ -218,10 +218,10 @@ export function generateAnsiArt(
   const flames = getFlameColors();
 
   let output = "";
-  for (let r = 0; r < height; r++) {
+  for (let row = 0; row < height; row++) {
     let line = "";
     for (let column = 0; column < width; column++) {
-      const char = grid[r][column];
+      const char = grid[row][column];
       if (char === " ") {
         line += " ";
         continue;
@@ -242,9 +242,9 @@ export function generateAnsiArt(
         char === "/"
       ) {
         // Logs or item
-        if (r < logsStartRow) {
+        if (row < logsStartRow) {
           // Could be wood logs, item, or skewers
-          if (grid[r].join("").includes("[🔥")) {
+          if (grid[row].join("").includes("[🔥")) {
             line += ANSI.ITEM + char + ANSI.RESET;
           } else if (char === "=") {
             line += ANSI.STICK + char + ANSI.RESET;
@@ -258,7 +258,7 @@ export function generateAnsiArt(
         line += ANSI.BOLD + ANSI.M_SHMALLOW + char + ANSI.RESET;
       } else if (char === "o") {
         line += ANSI.STONE + char + ANSI.RESET;
-      } else if (char === "🔥" || grid[r].join("").includes("[🔥")) {
+      } else if (char === "🔥" || grid[row].join("").includes("[🔥")) {
         line += ANSI.ITEM + char + ANSI.RESET;
       } else {
         // General text

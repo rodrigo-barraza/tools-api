@@ -130,15 +130,15 @@ async function collectUniversities() {
     ) as CachedEventParam;
 
     if (ubcEvents.length > 0) {
-      const r = await updateEvents(EVENT_SOURCES.UBC, ubcEvents);
+      const updateResult = await updateEvents(EVENT_SOURCES.UBC, ubcEvents);
       logger.info(
-        `[events_universities/UBC] ✅ ${ubcEvents.length} events | ${r?.upserted || 0} new`,
+        `[events_universities/UBC] ✅ ${ubcEvents.length} events | ${updateResult?.upserted || 0} new`,
       );
     }
     if (sfuEvents.length > 0) {
-      const r = await updateEvents(EVENT_SOURCES.SFU, sfuEvents);
+      const updateResult = await updateEvents(EVENT_SOURCES.SFU, sfuEvents);
       logger.info(
-        `[events_universities/SFU] ✅ ${sfuEvents.length} events | ${r?.upserted || 0} new`,
+        `[events_universities/SFU] ✅ ${sfuEvents.length} events | ${updateResult?.upserted || 0} new`,
       );
     }
     if (ubcEvents.length === 0 && sfuEvents.length === 0) {
@@ -167,21 +167,21 @@ async function collectSports() {
     ) as CachedEventParam;
 
     if (nhl.length > 0) {
-      const r = await updateEvents(EVENT_SOURCES.NHL, nhl);
+      const updateResult = await updateEvents(EVENT_SOURCES.NHL, nhl);
       logger.info(
-        `[events_sports/NHL] ✅ ${nhl.length} games | ${r?.upserted || 0} new`,
+        `[events_sports/NHL] ✅ ${nhl.length} games | ${updateResult?.upserted || 0} new`,
       );
     }
     if (caps.length > 0) {
-      const r = await updateEvents(EVENT_SOURCES.WHITECAPS, caps);
+      const updateResult = await updateEvents(EVENT_SOURCES.WHITECAPS, caps);
       logger.info(
-        `[events_sports/Whitecaps] ✅ ${caps.length} games | ${r?.upserted || 0} new`,
+        `[events_sports/Whitecaps] ✅ ${caps.length} games | ${updateResult?.upserted || 0} new`,
       );
     }
     if (lions.length > 0) {
-      const r = await updateEvents(EVENT_SOURCES.BC_LIONS, lions);
+      const updateResult = await updateEvents(EVENT_SOURCES.BC_LIONS, lions);
       logger.info(
-        `[events_sports/Lions] ✅ ${lions.length} games | ${r?.upserted || 0} new`,
+        `[events_sports/Lions] ✅ ${lions.length} games | ${updateResult?.upserted || 0} new`,
       );
     }
     if (events.length === 0) {
