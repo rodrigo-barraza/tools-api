@@ -1272,10 +1272,10 @@ function buildVectorAnimationEmbedHtml(
         const animation = ${animationJson};
         const canvas = document.getElementById("animation-canvas");
         const ctx = canvas.getContext("2d");
-        const playPauseBtn = document.getElementById("play-pause-btn");
+        const playPauseButton = document.getElementById("play-pause-btn");
         const playIcon = document.getElementById("play-icon");
         const pauseIcon = document.getElementById("pause-icon");
-        const loopBtn = document.getElementById("loop-btn");
+        const loopButton = document.getElementById("loop-btn");
         const timelineSlider = document.getElementById("timeline-slider");
         const timeDisplay = document.getElementById("time-display");
         const controls = document.getElementById("controls");
@@ -1513,7 +1513,7 @@ function buildVectorAnimationEmbedHtml(
           requestAnimationFrame(loop);
         }
 
-        playPauseBtn.addEventListener("click", () => {
+        playPauseButton.addEventListener("click", () => {
           isPlaying = !isPlaying;
           if (isPlaying && currentTime >= duration) {
             currentTime = 0;
@@ -1522,9 +1522,9 @@ function buildVectorAnimationEmbedHtml(
           updateUI();
         });
 
-        loopBtn.addEventListener("click", () => {
+        loopButton.addEventListener("click", () => {
           isLooping = !isLooping;
-          loopBtn.classList.toggle("active", isLooping);
+          loopButton.classList.toggle("active", isLooping);
         });
 
         timelineSlider.addEventListener("input", (event) => {

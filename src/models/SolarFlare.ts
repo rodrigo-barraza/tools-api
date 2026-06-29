@@ -19,24 +19,24 @@ export async function setupSolarFlareCollection() {
   const database = getDatabase();
   if (!database) throw new Error("Database not connected");
 
-  const col = database.collection<SolarFlareDocument>("solar_flares") as unknown as Collection<SolarFlareDocument>;
+  const collectionInstance = database.collection<SolarFlareDocument>("solar_flares") as unknown as Collection<SolarFlareDocument>;
 
-  await col.createIndex({ flrId: 1 }, { unique: true });
-  await col.createIndex({ peakTime: -1 });
-  await col.createIndex({ classType: 1 });
+  await collectionInstance.createIndex({ flrId: 1 }, { unique: true });
+  await collectionInstance.createIndex({ peakTime: -1 });
+  await collectionInstance.createIndex({ classType: 1 });
 
-  collection = col;
+  collection = collectionInstance;
   logger.info("☀️  Solar flare collection indexes ready");
 }
 
 export async function upsertSolarFlares(flares: SolarFlareDocument[]) {
   if (!collection || flares.length === 0) return { upserted: 0, modified: 0 };
 
-  const operations = flares.map((flr: SolarFlareDocument) => ({
+  const operations = flares.map((flare: SolarFlareDocument) => ({
     updateOne: {
-      filter: { flrId: flr.flrId },
+      filter: { flrId: flare.flrId },
       update: {
-        $set: { ...flr, lastSeen: new Date() },
+        $set: { ...flare, lastSeen: new Date() },
         $setOnInsert: { firstSeen: new Date() },
       },
       upsert: true,

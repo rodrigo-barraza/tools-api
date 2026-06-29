@@ -18,13 +18,13 @@ export async function setupWebcamCollection() {
   const database = getDatabase();
   if (!database) return;
 
-  const col = database.collection<WebcamDocument>("webcams") as unknown as Collection<WebcamDocument>;
+  const collectionInstance = database.collection<WebcamDocument>("webcams") as unknown as Collection<WebcamDocument>;
 
-  await col.createIndex({ id: 1 }, { unique: true });
-  await col.createIndex({ city: 1 });
-  await col.createIndex({ lastUpdated: -1 });
+  await collectionInstance.createIndex({ id: 1 }, { unique: true });
+  await collectionInstance.createIndex({ city: 1 });
+  await collectionInstance.createIndex({ lastUpdated: -1 });
 
-  collection = col;
+  collection = collectionInstance;
   logger.info("📷 Webcam collection indexes ready");
 }
 
@@ -32,11 +32,11 @@ export async function upsertWebcams(webcams: WebcamDocument[]) {
   if (!collection || webcams.length === 0) return null;
 
   const now = new Date();
-  const operations = webcams.map((cam: WebcamDocument) => ({
+  const operations = webcams.map((webcam: WebcamDocument) => ({
     updateOne: {
-      filter: { id: cam.id },
+      filter: { id: webcam.id },
       update: {
-        $set: { ...cam, lastUpdated: now },
+        $set: { ...webcam, lastUpdated: now },
         $setOnInsert: { firstSeen: now },
       },
       upsert: true,

@@ -1,4 +1,4 @@
-import type { Collection, Db } from "mongodb";
+import type { Collection } from "mongodb";
 import { days as daysToMs } from "@rodrigo-barraza/utilities-library";
 import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
 import logger from "../logger.ts";
@@ -49,20 +49,20 @@ let collection: Collection<EventDocument> | null = null;
  */
 export async function setupEventCollection(): Promise<void> {
   const database = getDatabase();
-  const col = database.collection<EventDocument>("events") as unknown as Collection<EventDocument>;
+  const collectionInstance = database.collection<EventDocument>("events") as unknown as Collection<EventDocument>;
 
-  await col.createIndex({ sourceId: 1, source: 1 }, { unique: true });
-  await col.createIndex({ startDate: -1 });
-  await col.createIndex({ startDate: 1 });
-  await col.createIndex({ category: 1 });
-  await col.createIndex({ "venue.city": 1 });
-  await col.createIndex({ source: 1 });
-  await col.createIndex(
+  await collectionInstance.createIndex({ sourceId: 1, source: 1 }, { unique: true });
+  await collectionInstance.createIndex({ startDate: -1 });
+  await collectionInstance.createIndex({ startDate: 1 });
+  await collectionInstance.createIndex({ category: 1 });
+  await collectionInstance.createIndex({ "venue.city": 1 });
+  await collectionInstance.createIndex({ source: 1 });
+  await collectionInstance.createIndex(
     { name: "text", "venue.name": "text", "venue.city": "text" },
     { name: "event_text_search" },
   );
 
-  collection = col;
+  collection = collectionInstance;
   logger.info("📅 Event collection indexes ready");
 }
 

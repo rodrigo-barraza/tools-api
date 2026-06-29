@@ -1722,7 +1722,6 @@ export function synthesizeSequence(
   // a more percussive "tracker-style" default envelope with a sharp
   // attack and pronounced decay, so individual notes are distinct
   // even on a bare sine wave.
-  const hasExplicitEnvelope = !!(baseConfig.envelope || baseConfig.instrument);
   const trackerDefaultEnvelope: ADSREnvelope = {
     attack: 0.005,
     decay: 0.25,

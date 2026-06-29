@@ -17,6 +17,7 @@ import {
   BROWSER_MAX_CONTENT_LENGTH,
 } from "../constants.ts";
 import { errorMessage } from "../utilities.ts";
+import CONFIG from "../config.ts";
 
 // ────────────────────────────────────────────────────────────
 // Session Management
@@ -54,8 +55,8 @@ async function getBrowser() {
   browser = await chromium.launch({
     headless: true,
     // In Docker, system Chromium is used instead of Playwright's bundled browser
-    ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH && {
-      executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
+    ...(CONFIG.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH && {
+      executablePath: CONFIG.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
     }),
     args: [
       "--no-sandbox",

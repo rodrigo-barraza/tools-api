@@ -23,14 +23,14 @@ export async function setupThreeDimensionalSceneCollection() {
   const database = getDatabase();
   if (!database) return;
 
-  const col = database.collection<ThreeDimensionalSceneDocument>("three_dimensional_scenes") as unknown as Collection<ThreeDimensionalSceneDocument>;
+  const collectionInstance = database.collection<ThreeDimensionalSceneDocument>("three_dimensional_scenes") as unknown as Collection<ThreeDimensionalSceneDocument>;
 
-  await col.createIndex({ sceneId: 1 }, { unique: true });
-  await col.createIndex({ sessionId: 1 });
-  await col.createIndex({ sceneType: 1 });
-  await col.createIndex({ createdAt: -1 });
+  await collectionInstance.createIndex({ sceneId: 1 }, { unique: true });
+  await collectionInstance.createIndex({ sessionId: 1 });
+  await collectionInstance.createIndex({ sceneType: 1 });
+  await collectionInstance.createIndex({ createdAt: -1 });
 
-  collection = col;
+  collection = collectionInstance;
   logger.info("🧊 3D scene collection indexes ready");
 }
 

@@ -48,22 +48,22 @@ let productCollection: Collection<ProductDocument> | null = null;
  */
 export async function setupProductCollection() {
   const database = getDatabase();
-  const col = database.collection<ProductDocument>("products") as unknown as Collection<ProductDocument>;
+  const collectionInstance = database.collection<ProductDocument>("products") as unknown as Collection<ProductDocument>;
 
-  await col.createIndex(
+  await collectionInstance.createIndex(
     { sourceId: 1, source: 1 },
     { unique: true },
   );
-  await col.createIndex({ category: 1 });
-  await col.createIndex({ source: 1 });
-  await col.createIndex({ lastSeenAt: -1 });
-  await col.createIndex({ trendingScore: -1 });
-  await col.createIndex(
+  await collectionInstance.createIndex({ category: 1 });
+  await collectionInstance.createIndex({ source: 1 });
+  await collectionInstance.createIndex({ lastSeenAt: -1 });
+  await collectionInstance.createIndex({ trendingScore: -1 });
+  await collectionInstance.createIndex(
     { name: "text", description: "text" },
     { weights: { name: 10, description: 1 } },
   );
 
-  productCollection = col;
+  productCollection = collectionInstance;
   logger.info("📦 Product collection indexes ready");
 }
 
@@ -74,7 +74,7 @@ export async function upsertProducts(products: ProductInput[]) {
   if (!productCollection || !products.length)
     return { upserted: 0, modified: 0 };
 
-  const ops = products.map((productInput: ProductInput) => ({
+  const operations = products.map((productInput: ProductInput) => ({
     updateOne: {
       filter: { sourceId: productInput.sourceId, source: productInput.source },
       update: {
@@ -100,7 +100,7 @@ export async function upsertProducts(products: ProductInput[]) {
     },
   }));
 
-  const result = await productCollection.bulkWrite(ops, { ordered: false });
+  const result = await productCollection.bulkWrite(operations, { ordered: false });
   return {
     upserted: result.upsertedCount,
     modified: result.modifiedCount,

@@ -24,13 +24,13 @@ export async function setupEarthquakeCollection() {
   const database = getDatabase();
   if (!database) throw new Error("Database not connected");
 
-  const col = database.collection<EarthquakeDocument>("earthquakes") as unknown as Collection<EarthquakeDocument>;
+  const collectionInstance = database.collection<EarthquakeDocument>("earthquakes") as unknown as Collection<EarthquakeDocument>;
 
-  await col.createIndex({ usgsId: 1 }, { unique: true });
-  await col.createIndex({ time: -1 });
-  await col.createIndex({ magnitude: -1 });
+  await collectionInstance.createIndex({ usgsId: 1 }, { unique: true });
+  await collectionInstance.createIndex({ time: -1 });
+  await collectionInstance.createIndex({ magnitude: -1 });
 
-  collection = col;
+  collection = collectionInstance;
   logger.info("🌍 Earthquake collection indexes ready");
 }
 

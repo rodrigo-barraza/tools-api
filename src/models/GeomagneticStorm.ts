@@ -18,12 +18,12 @@ export async function setupGeomagneticStormCollection() {
   const database = getDatabase();
   if (!database) throw new Error("Database not connected");
 
-  const col = database.collection<GeomagneticStormDocument>("geomagnetic_storms") as unknown as Collection<GeomagneticStormDocument>;
+  const collectionInstance = database.collection<GeomagneticStormDocument>("geomagnetic_storms") as unknown as Collection<GeomagneticStormDocument>;
 
-  await col.createIndex({ gstId: 1 }, { unique: true });
-  await col.createIndex({ startTime: -1 });
+  await collectionInstance.createIndex({ gstId: 1 }, { unique: true });
+  await collectionInstance.createIndex({ startTime: -1 });
 
-  collection = col;
+  collection = collectionInstance;
   logger.info("🧲 Geomagnetic storm collection indexes ready");
 }
 
@@ -32,11 +32,11 @@ export async function upsertGeomagneticStorms(
 ) {
   if (!collection || storms.length === 0) return { upserted: 0, modified: 0 };
 
-  const operations = storms.map((gst: GeomagneticStormDocument) => ({
+  const operations = storms.map((storm: GeomagneticStormDocument) => ({
     updateOne: {
-      filter: { gstId: gst.gstId },
+      filter: { gstId: storm.gstId },
       update: {
-        $set: { ...gst, lastSeen: new Date() },
+        $set: { ...storm, lastSeen: new Date() },
         $setOnInsert: { firstSeen: new Date() },
       },
       upsert: true,

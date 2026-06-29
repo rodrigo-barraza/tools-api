@@ -19,13 +19,13 @@ export async function setupCmeCollection() {
   const database = getDatabase();
   if (!database) throw new Error("Database not connected");
 
-  const col = database.collection<CmeDocument>("cmes") as unknown as Collection<CmeDocument>;
+  const collectionInstance = database.collection<CmeDocument>("cmes") as unknown as Collection<CmeDocument>;
 
-  await col.createIndex({ activityId: 1 }, { unique: true });
-  await col.createIndex({ startTime: -1 });
-  await col.createIndex({ isEarthDirected: 1 });
+  await collectionInstance.createIndex({ activityId: 1 }, { unique: true });
+  await collectionInstance.createIndex({ startTime: -1 });
+  await collectionInstance.createIndex({ isEarthDirected: 1 });
 
-  collection = col;
+  collection = collectionInstance;
   logger.info("💥 CME collection indexes ready");
 }
 

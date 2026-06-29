@@ -4,7 +4,7 @@
 // then uses yt-dlp to mux the streams into a single MP4 file.
 
 import { spawn } from "node:child_process";
-import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
+import { mkdtemp, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { USER_AGENT } from "../../constants.ts";

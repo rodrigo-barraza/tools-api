@@ -80,18 +80,7 @@ beforeAll(() => {
 // Comparison Helpers
 // ────────────────────────────────────────────────────────────
 
-function formatRanking(
-  results: { name: string; score: number }[],
-  maxResults = 5,
-): string {
-  return results
-    .slice(0, maxResults)
-    .map(
-      (result, index) =>
-        `  ${index + 1}. ${result.name} (${result.score.toFixed(1)})`,
-    )
-    .join("\n");
-}
+
 
 function runComparison(query: string, limit = 10) {
   const oldResults = oldSubstringSearch(discoverableTools, query, limit);
@@ -140,7 +129,7 @@ describe("before vs after: BM25 improvement comparison", () => {
   // ── 1. Parameter-name indexing (OLD: invisible, NEW: indexed) ──
 
   it("IMPROVEMENT: 'latitude longitude' — parameter name indexing finds tools the old algorithm missed", () => {
-    const { oldResults, newResults } = runComparison("latitude longitude");
+    const { newResults } = runComparison("latitude longitude");
 
     // Old algorithm: only searches name + description, so "latitude"
     // and "longitude" must appear literally in those fields
@@ -178,7 +167,7 @@ describe("before vs after: BM25 improvement comparison", () => {
   // ── 3. Multi-word specificity (OLD: flat additive, NEW: IDF-weighted) ──
 
   it("IMPROVEMENT: 'moon phase astronomy' — rare terms score higher than common ones", () => {
-    const { oldResults, newResults } = runComparison("moon phase astronomy");
+    const { newResults } = runComparison("moon phase astronomy");
 
     const newTopFiveNames = newResults
       .slice(0, 5)
@@ -209,7 +198,7 @@ describe("before vs after: BM25 improvement comparison", () => {
   // ── 5. Compound domain queries ──
 
   it("IMPROVEMENT: 'petroleum oil energy prices' — compound queries surface domain-specific tools", () => {
-    const { oldResults, newResults } = runComparison(
+    const { newResults } = runComparison(
       "petroleum oil energy prices",
     );
 
@@ -229,7 +218,7 @@ describe("before vs after: BM25 improvement comparison", () => {
   // ── 6. Parameter description search ──
 
   it("IMPROVEMENT: 'city name geocode' — finds tools via parameter descriptions", () => {
-    const { oldResults, newResults } = runComparison("city name geocode");
+    const { newResults } = runComparison("city name geocode");
 
     // The old algorithm can't see parameter descriptions at all.
     // BM25 indexes parameter descriptions, so "city name" matches
@@ -245,7 +234,7 @@ describe("before vs after: BM25 improvement comparison", () => {
   // ── 7. Noise resilience ──
 
   it("IMPROVEMENT: 'how do I read a file from disk' — natural language with noise words", () => {
-    const { oldResults, newResults } = runComparison(
+    const { newResults } = runComparison(
       "how do I read a file from disk",
     );
 

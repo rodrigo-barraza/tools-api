@@ -17,6 +17,7 @@ import {
   AGENTIC_COMMAND_KILL_GRACE_PERIOD_MS as KILL_GRACE_PERIOD_MS,
 } from "../constants.ts";
 import { errorMessage } from "../utilities.ts";
+import CONFIG from "../config.ts";
 
 export interface CommandResult {
   success: boolean;
@@ -190,7 +191,7 @@ export async function executeCommand(
   }
 
   // Validate CWD
-  const cwdValidation = validatePath(cwd || (process.env.HOME ?? ""));
+  const cwdValidation = validatePath(cwd || (CONFIG.HOME_DIR ?? ""));
   if (!cwdValidation.safe) {
     return {
       success: false,
@@ -433,7 +434,7 @@ export async function executeCommandStreaming(
     };
   }
 
-  const cwdValidation = validatePath(cwd || (process.env.HOME ?? ""));
+  const cwdValidation = validatePath(cwd || (CONFIG.HOME_DIR ?? ""));
   if (!cwdValidation.safe) {
     return {
       success: false,

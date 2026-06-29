@@ -20,13 +20,13 @@ export async function setupTurtleDrawingCollection() {
   const database = getDatabase();
   if (!database) return;
 
-  const col = database.collection<TurtleDrawingDocument>("turtle_drawings") as unknown as Collection<TurtleDrawingDocument>;
+  const collectionInstance = database.collection<TurtleDrawingDocument>("turtle_drawings") as unknown as Collection<TurtleDrawingDocument>;
 
-  await col.createIndex({ drawingId: 1 }, { unique: true });
-  await col.createIndex({ sessionId: 1 });
-  await col.createIndex({ createdAt: -1 });
+  await collectionInstance.createIndex({ drawingId: 1 }, { unique: true });
+  await collectionInstance.createIndex({ sessionId: 1 });
+  await collectionInstance.createIndex({ createdAt: -1 });
 
-  collection = col;
+  collection = collectionInstance;
   logger.info("🐢 Turtle drawing collection indexes ready");
 }
 

@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { writeFile, readFile, unlink } from "node:fs/promises";
 import crypto from "node:crypto";
 import { validatePath } from "./AgenticFileService.ts";
+import CONFIG from "../config.ts";
 
 const executeFileAsynchronously = promisify(execFile);
 
@@ -56,7 +57,7 @@ export async function convertVideoToGif({
   const boundedFps = fps;
   const boundedWidth = width;
 
-  const ffmpegBinaryPath = process.env.FFMPEG_PATH || "ffmpeg";
+  const ffmpegBinaryPath = CONFIG.FFMPEG_PATH || "ffmpeg";
 
   let resolvedInputPath = "";
   let isInputTemporaryFile = false;
@@ -180,7 +181,7 @@ export async function checkFfmpegAvailability(): Promise<{
   available: boolean;
   version?: string;
 }> {
-  const ffmpegBinaryPath = process.env.FFMPEG_PATH || "ffmpeg";
+  const ffmpegBinaryPath = CONFIG.FFMPEG_PATH || "ffmpeg";
   try {
     const { stdout } = await executeFileAsynchronously(
       ffmpegBinaryPath,
@@ -275,7 +276,7 @@ export async function trimVideo({
     );
   }
 
-  const ffmpegBinaryPath = process.env.FFMPEG_PATH || "ffmpeg";
+  const ffmpegBinaryPath = CONFIG.FFMPEG_PATH || "ffmpeg";
 
   let resolvedInputPath = "";
   let isInputTemporaryFile = false;

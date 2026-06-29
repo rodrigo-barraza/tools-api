@@ -137,6 +137,11 @@ interface ToolsServiceConfig {
 
   // Gaming (Steam Web API)
   STEAM_API_KEY: string | undefined;
+
+  // Environment variables needed in services
+  FFMPEG_PATH: string | undefined;
+  PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: string | undefined;
+  HOME_DIR: string | undefined;
 }
 
 const CONFIG: ToolsServiceConfig = {
@@ -252,6 +257,11 @@ const CONFIG: ToolsServiceConfig = {
 
   // ─── Gaming (Steam Web API) ─────────────────────────────────
   STEAM_API_KEY: process.env.STEAM_API_KEY,
+
+  // Environment variables needed in services
+  FFMPEG_PATH: process.env.FFMPEG_PATH,
+  PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
+  HOME_DIR: process.env.HOME,
 };
 
 /**

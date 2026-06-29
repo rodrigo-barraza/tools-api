@@ -23,13 +23,13 @@ export async function setupNeoCollection() {
   const database = getDatabase();
   if (!database) throw new Error("Database not connected");
 
-  const col = database.collection<NeoDocument>("neos") as unknown as Collection<NeoDocument>;
+  const collectionInstance = database.collection<NeoDocument>("neos") as unknown as Collection<NeoDocument>;
 
-  await col.createIndex({ neoId: 1 }, { unique: true });
-  await col.createIndex({ closeApproachDate: -1 });
-  await col.createIndex({ isPotentiallyHazardous: 1 });
+  await collectionInstance.createIndex({ neoId: 1 }, { unique: true });
+  await collectionInstance.createIndex({ closeApproachDate: -1 });
+  await collectionInstance.createIndex({ isPotentiallyHazardous: 1 });
 
-  collection = col;
+  collection = collectionInstance;
   logger.info("☄️  NEO collection indexes ready");
 }
 

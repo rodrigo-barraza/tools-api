@@ -1784,21 +1784,21 @@ function buildTurtleEmbedHtml(
       return;
     }
     drawTurtle();
-    var idx = startIndex;
+    var index = startIndex;
     status.className = "active";
     function step() {
-      if (idx >= COMMANDS.length) {
+      if (index >= COMMANDS.length) {
         drawTurtle();
         status.textContent = COMMANDS.length + " commands · done";
         status.className = "done";
         reportSize();
         return;
       }
-      const cmd = COMMANDS[idx];
+      const cmd = COMMANDS[index];
       executeCommand(cmd);
       drawTurtle();
-      status.textContent = (idx + 1) + "/" + COMMANDS.length + " · " + (cmd.action || cmd.command || "?");
-      idx++;
+      status.textContent = (index + 1) + "/" + COMMANDS.length + " · " + (cmd.action || cmd.command || "?");
+      index++;
       setTimeout(step, STEP_DELAY);
     }
     step();
