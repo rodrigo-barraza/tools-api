@@ -8,6 +8,13 @@ export interface CurrencySnapshotInput {
   lastUpdate: string;
 }
 
+export interface CurrencySnapshotDoc {
+  baseCurrency: string;
+  exchangeRates: Record<string, number>;
+  fetchedAt: Date;
+  lastUpdate: string;
+}
+
 export async function setupCurrencyCollection(): Promise<void> {
   const database = getDatabase();
   const currencySnapshotCollection = database.collection("currency_snapshots");
@@ -18,9 +25,12 @@ export async function setupCurrencyCollection(): Promise<void> {
   logger.info("💱 currency_snapshots collection ready");
 }
 
-export async function insertCurrencySnapshot(currencySnapshot: CurrencySnapshotInput): Promise<any> {
+export async function insertCurrencySnapshot(
+  currencySnapshot: CurrencySnapshotInput,
+): Promise<import("mongodb").InsertOneResult<CurrencySnapshotDoc>> {
   const database = getDatabase();
-  const currencySnapshotCollection = database.collection("currency_snapshots");
+  const currencySnapshotCollection =
+    database.collection<CurrencySnapshotDoc>("currency_snapshots");
 
   const result = await currencySnapshotCollection.insertOne({
     baseCurrency: currencySnapshot.baseCurrency,

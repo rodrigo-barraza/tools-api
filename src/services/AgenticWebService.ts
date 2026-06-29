@@ -1,9 +1,9 @@
 // ─── URL Fetching & Web Search ──────────────────────────────
 
 import * as cheerio from "cheerio";
-import type { CheerioAPI, Cheerio } from "cheerio";
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- domhandler's AnyNode is not directly importable under pnpm strict hoisting
-type AnyNode = any;
+type AnyNode = ReturnType<cheerio.CheerioAPI> extends cheerio.Cheerio<infer U> ? U : never;
+type CheerioAPI = cheerio.CheerioAPI;
+type Cheerio<T> = cheerio.Cheerio<T>;
 
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";

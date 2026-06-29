@@ -20,6 +20,12 @@ interface RequestLogEntry {
   outBytes: number;
 }
 
+interface RequestLogDocument extends RequestLogEntry {
+  _id: import("mongodb").ObjectId;
+  timestamp: Date;
+}
+
+
 interface RequestLogFilters {
   method?: string;
   path?: string;
@@ -121,7 +127,7 @@ async function persistRequest(entry: RequestLogEntry) {
 export async function queryRequestLogs(filters: RequestLogFilters = {}): Promise<{
   total: number;
   count: number;
-  requests: any[];
+  requests: RequestLogDocument[];
 }> {
   const database = getDatabase();
   const query: Record<string, unknown> = {};
@@ -155,7 +161,7 @@ export async function queryRequestLogs(filters: RequestLogFilters = {}): Promise
 
   const [requests, total] = await Promise.all([
     database
-      .collection(COLLECTION)
+      .collection<RequestLogDocument>(COLLECTION)
       .find(query)
       .sort({ timestamp: -1 })
       .skip(skip)

@@ -1,10 +1,9 @@
 // ─── Lightweight Article Extraction ─────────────────────────
 
 import * as cheerio from "cheerio";
-import type { CheerioAPI } from "cheerio";
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- domhandler's types are not directly importable under pnpm strict hoisting
-type AnyNode = any;
-type Element = any;
+type AnyNode = ReturnType<cheerio.CheerioAPI> extends cheerio.Cheerio<infer U> ? U : never;
+type CheerioAPI = cheerio.CheerioAPI;
+type Element = Extract<AnyNode, { tagName: string }>;
 import { errorMessage, randomUserAgent } from "../../utilities.ts";
 
 const MAX_BODY_CHARS = 15_000;

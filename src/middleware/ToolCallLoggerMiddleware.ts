@@ -42,6 +42,11 @@ interface ToolCallLogEntry {
   timestamp: Date;
 }
 
+interface ToolCallLogDocument extends ToolCallLogEntry {
+  _id: import("mongodb").ObjectId;
+}
+
+
 interface ToolCallFilters {
   toolName?: string;
   domain?: string;
@@ -366,7 +371,7 @@ export async function persistToolCall(entry: ToolCallLogEntry) {
 export async function queryToolCallLogs(filters: ToolCallFilters = {}): Promise<{
   total: number;
   count: number;
-  toolCalls: any[];
+  toolCalls: ToolCallLogDocument[];
 }> {
   const database = getDatabase();
   const query: Record<string, unknown> = {};
@@ -405,7 +410,7 @@ export async function queryToolCallLogs(filters: ToolCallFilters = {}): Promise<
 
   const [toolCalls, total] = await Promise.all([
     database
-      .collection(COLLECTION)
+      .collection<ToolCallLogDocument>(COLLECTION)
       .find(query)
       .sort({ timestamp: -1 })
       .skip(skip)

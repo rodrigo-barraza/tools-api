@@ -1,4 +1,4 @@
-import type { AnyBulkWriteOperation } from "mongodb";
+import type { AnyBulkWriteOperation, ObjectId } from "mongodb";
 import { hours as hoursToMs } from "@rodrigo-barraza/utilities-library";
 import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
 import logger from "../logger.ts";
@@ -26,6 +26,19 @@ export interface TrendDoc {
   firstSeen: Date;
   appearances: { timestamp: Date; volume: number }[];
 }
+
+export interface AggregatedTrend {
+  normalizedName: string;
+  name: string;
+  sources: string[];
+  sourceCount: number;
+  totalVolume: number;
+  category: string | null;
+  lastSeen: Date;
+  firstSeen: Date;
+  urls: (string | null)[];
+}
+
 
 /**
  * Sets up the trends collection with indexes.
@@ -97,9 +110,9 @@ export async function getRecentTrends(
   category: string | null = null,
   source: string | null = null,
   limit: number = 50,
-): Promise<any[]> {
+): Promise<(TrendDoc & { _id: ObjectId })[]> {
   const database = getDatabase();
-  const collection = database.collection("trends");
+  const collection = database.collection<TrendDoc>("trends");
   const since = new Date(Date.now() - hoursToMs(hours));
 
   const filter: Record<string, unknown> = { lastSeen: { $gte: since } };
@@ -112,9 +125,9 @@ export async function getRecentTrends(
 /**
  * Searches trends in the database by keyword.
  */
-export async function searchTrendsDB(query: string, limit: number = 50): Promise<any[]> {
+export async function searchTrendsDB(query: string, limit: number = 50): Promise<(TrendDoc & { _id: ObjectId })[]> {
   const database = getDatabase();
-  const collection = database.collection("trends");
+  const collection = database.collection<TrendDoc>("trends");
   return collection
     .find({ name: { $regex: query, $options: "i" } })
     .sort({ lastSeen: -1, volume: -1 })
@@ -125,13 +138,13 @@ export async function searchTrendsDB(query: string, limit: number = 50): Promise
 /**
  * Gets top trends aggregated across all sources.
  */
-export async function getTopTrends(hours: number = 24, limit: number = 20): Promise<any[]> {
+export async function getTopTrends(hours: number = 24, limit: number = 20): Promise<AggregatedTrend[]> {
   const database = getDatabase();
-  const collection = database.collection("trends");
+  const collection = database.collection<TrendDoc>("trends");
   const since = new Date(Date.now() - hoursToMs(hours));
 
   return collection
-    .aggregate([
+    .aggregate<AggregatedTrend>([
       { $match: { lastSeen: { $gte: since } } },
       {
         $group: {

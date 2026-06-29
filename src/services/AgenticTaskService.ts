@@ -162,9 +162,15 @@ export async function agenticTaskList(
   ]);
 
   const countsByStatus = Object.fromEntries(
-    statusCounts.map((entry: any) => [entry._id, entry.count]),
+    statusCounts.map((entry: { _id: string; count: number }) => [
+      entry._id,
+      entry.count,
+    ]),
   ) as Record<string, number>;
-  const total = statusCounts.reduce((sum: number, entry: any) => sum + entry.count, 0);
+  const total = statusCounts.reduce(
+    (sum: number, entry: { _id: string; count: number }) => sum + entry.count,
+    0,
+  );
 
   const summary = {
     total,

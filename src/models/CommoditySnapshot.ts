@@ -9,6 +9,11 @@ export interface CommodityQuoteInput {
   [key: string]: unknown;
 }
 
+export interface CommodityQuoteDocument extends CommodityQuoteInput {
+  _id: import("mongodb").ObjectId;
+  fetchedAt: Date;
+}
+
 /**
  * Set up the commodity_snapshots collection with a TTL index.
  */
@@ -42,9 +47,13 @@ export async function insertSnapshots(quotes: CommodityQuoteInput[]) {
 /**
  * Get historical price data for a specific ticker.
  */
-export async function getHistory(ticker: string, hours: number = 24): Promise<any[]> {
+export async function getHistory(
+  ticker: string,
+  hours: number = 24,
+): Promise<CommodityQuoteDocument[]> {
   const database = getDatabase();
-  const collection = database.collection("commodity_snapshots");
+  const collection =
+    database.collection<CommodityQuoteDocument>("commodity_snapshots");
   const since = new Date(Date.now() - hoursToMs(hours));
 
   return collection

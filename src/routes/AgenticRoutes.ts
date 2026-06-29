@@ -83,6 +83,7 @@ import {
 } from "../services/AgenticSchedulerService.ts";
 import { agenticNotebookEdit } from "../services/AgenticNotebookService.ts";
 import { TOOL_DEFINITIONS } from "../services/ToolSchemaService.ts";
+import type { AgenticTask } from "../types/agentic.ts";
 const router: ReturnType<typeof Router> = Router();
 const dispatchToRoute = router as unknown as (request: Request, response: Response, fallback: () => void) => void;
 // ─── 1. File Operations ─────────────────────────────────────
@@ -950,7 +951,7 @@ router.get(
       const database = (
         await import("@rodrigo-barraza/utilities-library/mongo")
       ).getDatabase();
-      const collection = database.collection("agent_tasks");
+      const collection = database.collection<AgenticTask>("agent_tasks");
       const filter: Record<string, unknown> = {};
       if (status) filter.status = status;
       // Support filtering by conversationId (preferred) or agentSessionId (legacy)
@@ -973,14 +974,14 @@ router.get(
       const allTasks = await collection.find(summaryFilter).toArray();
       const summary = {
         total: allTasks.length,
-        pending: allTasks.filter((task: any) => task.status === "pending").length,
-        in_progress: allTasks.filter((task: any) => task.status === "in_progress")
+        pending: allTasks.filter((task: AgenticTask) => task.status === "pending").length,
+        in_progress: allTasks.filter((task: AgenticTask) => task.status === "in_progress")
           .length,
-        completed: allTasks.filter((task: any) => task.status === "completed")
+        completed: allTasks.filter((task: AgenticTask) => task.status === "completed")
           .length,
       };
       // Sanitize _id
-      const sanitized = tasks.map((task: any) => {
+      const sanitized = tasks.map((task: AgenticTask) => {
         const { _id, ...rest } = task;
         return rest;
       });
