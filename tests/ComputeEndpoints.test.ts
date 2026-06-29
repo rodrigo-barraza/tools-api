@@ -9,8 +9,8 @@ import path from "node:path";
 const mockScenes = new Map();
 
 vi.mock("../src/models/ThreeDimensionalScene.ts", () => ({
-  saveThreeDimensionalScene: vi.fn(async (sceneId, sceneType, sceneData, options) => {
-    mockScenes.set(sceneId, { sceneType, sceneData, options });
+  saveThreeDimensionalScene: vi.fn(async (sceneId, sceneType, sceneData, options, sessionId, createdBy) => {
+    mockScenes.set(sceneId, { sceneType, sceneData, options, sessionId, createdBy });
   }),
   getThreeDimensionalScene: vi.fn(async (sceneId) => {
     return mockScenes.get(sceneId) || null;

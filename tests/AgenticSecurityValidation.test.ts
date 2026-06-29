@@ -4,10 +4,11 @@ import { createTestApp } from "./testApp.ts";
 import { ALLOWED_ROOTS } from "../src/services/AgenticFileService.ts";
 import { Express } from "express";
 import fs from "fs";
+import path from "node:path";
 
 describe("Agentic Security and Worktree Validation", () => {
   let app: Express;
-  const workspaceRoot = "/home/rodrigo/development";
+  const workspaceRoot = path.resolve(process.cwd(), "..");
 
   beforeAll(async () => {
     // Ensure the tools-service root exists in ALLOWED_ROOTS for standard tests
