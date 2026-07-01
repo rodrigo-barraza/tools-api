@@ -27,7 +27,7 @@ const YTDLP_BINARY = "yt-dlp";
 const YOUTUBE_URL_REGEX =
   /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/|live\/|embed\/|v\/)|youtu\.be\/)[a-zA-Z0-9_-]{11}/;
 
-function normalizeInputUrl(input: string): string | null {
+export function normalizeInputUrl(input: string): string | null {
   if (!input || typeof input !== "string") return null;
   const trimmed = input.trim();
 

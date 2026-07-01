@@ -103,6 +103,7 @@ interface ToolsServiceConfig {
 
   // MinIO
   MINIO_ENDPOINT: string | undefined;
+  MINIO_PUBLIC_URL: string | undefined;
   MINIO_ACCESS_KEY: string | undefined;
   MINIO_SECRET_KEY: string | undefined;
 
@@ -223,6 +224,7 @@ const CONFIG: ToolsServiceConfig = {
 
   // ─── MinIO (S3-compatible object storage) ───────────────────────
   MINIO_ENDPOINT: process.env.MINIO_ENDPOINT,
+  MINIO_PUBLIC_URL: process.env.MINIO_PUBLIC_URL,
   MINIO_ACCESS_KEY: process.env.MINIO_ACCESS_KEY,
   MINIO_SECRET_KEY: process.env.MINIO_SECRET_KEY,
 

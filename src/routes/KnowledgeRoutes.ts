@@ -93,6 +93,7 @@ import {
 import type { RedditDownloadFormat } from "../fetchers/web/RedditVideoFetcher.ts";
 import {
   downloadVideo,
+  normalizeInputUrl,
   isVideoFileResult,
   isVideoGifResult,
   isVideoErrorResult,
@@ -962,6 +963,11 @@ const VIDEO_DOWNLOAD_PREFIX = "video-downloads";
 
 const VALID_VIDEO_FORMATS = new Set<VideoDownloadFormat>(["mp4", "mp3", "gif"]);
 
+function buildStableVideoObjectKey(normalizedUrl: string, format: "mp4" | "mp3"): string {
+  const urlHash = crypto.createHash("sha256").update(`${normalizedUrl}:${format}`).digest("hex").slice(0, 32);
+  return `${VIDEO_DOWNLOAD_PREFIX}/${urlHash}.${format}`;
+}
+
 router.get(
   "/video/download",
   asyncHandler(async (req: Request, res: Response) => {
@@ -976,6 +982,26 @@ router.get(
       format && VALID_VIDEO_FORMATS.has(format as VideoDownloadFormat)
         ? (format as VideoDownloadFormat)
         : "mp4";
+
+    // ── Cache Check (MP4/MP3 only — GIFs are ephemeral) ──────
+    if (downloadFormat === "mp4" || downloadFormat === "mp3") {
+      const normalizedUrl = normalizeInputUrl(url);
+      if (normalizedUrl) {
+        const stableObjectKey = buildStableVideoObjectKey(normalizedUrl, downloadFormat);
+        const isCached = await MinioService.objectExists(VIDEO_DOWNLOAD_BUCKET, stableObjectKey);
+        if (isCached) {
+          const cachedDownloadUrl = MinioService.getPublicUrl(VIDEO_DOWNLOAD_BUCKET, stableObjectKey);
+          return res.json({
+            success: true,
+            cached: true,
+            message: `Video already downloaded. Download: ${cachedDownloadUrl}`,
+            downloadUrl: cachedDownloadUrl,
+            format: downloadFormat,
+            mimeType: downloadFormat === "mp3" ? "audio/mpeg" : "video/mp4",
+          });
+        }
+      }
+    }
 
     const result = await downloadVideo(url, downloadFormat);
 
@@ -1008,12 +1034,11 @@ router.get(
       });
     }
 
-    // ── MP4/MP3 Delivery via MinIO ────────────────────────────
+    // ── MP4/MP3 Delivery via MinIO (with stable cache key) ───
     if (isVideoFileResult(result)) {
       try {
         const fileBuffer = await readFile(result.filePath);
-        const uniqueId = crypto.randomUUID();
-        const objectKey = `${VIDEO_DOWNLOAD_PREFIX}/${uniqueId}.${result.format}`;
+        const objectKey = buildStableVideoObjectKey(result.metadata.originalUrl, result.format as "mp4" | "mp3");
 
         await MinioService.putBuffer(
           VIDEO_DOWNLOAD_BUCKET,

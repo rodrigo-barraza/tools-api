@@ -57,10 +57,19 @@ export default class MinioService {
   }
 
   static getPublicUrl(bucketName: string, objectName: string): string {
-    if (!CONFIG.MINIO_ENDPOINT) {
-      throw new Error("No MINIO_ENDPOINT configured");
+    if (!CONFIG.MINIO_PUBLIC_URL) {
+      throw new Error("No MINIO_PUBLIC_URL configured. Set it in projects.json under the minio config block.");
     }
-    return `${CONFIG.MINIO_ENDPOINT}/${bucketName}/${objectName}`;
+    return `${CONFIG.MINIO_PUBLIC_URL.replace(/\/$/, "")}/${bucketName}/${objectName}`;
+  }
+
+  static async objectExists(bucketName: string, objectName: string): Promise<boolean> {
+    try {
+      await MinioService.statObject(bucketName, objectName);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   static async seedWorkspaceAgent(): Promise<void> {
