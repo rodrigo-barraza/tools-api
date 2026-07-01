@@ -86,11 +86,20 @@ import {
 } from "../fetchers/web/RedditSubredditFetcher.ts";
 import {
   downloadRedditVideo,
+  normalizeRedditUrl,
   isRedditFileResult,
   isRedditGifResult,
   isRedditErrorResult,
 } from "../fetchers/web/RedditVideoFetcher.ts";
 import type { RedditDownloadFormat } from "../fetchers/web/RedditVideoFetcher.ts";
+import {
+  findRedditVideoCacheEntry,
+  upsertRedditVideoCacheEntry,
+} from "../models/RedditVideoCache.ts";
+import {
+  findVideoTrimCacheEntry,
+  upsertVideoTrimCacheEntry,
+} from "../models/VideoTrimCache.ts";
 import {
   downloadVideo,
   normalizeInputUrl,
@@ -889,13 +898,43 @@ router.get(
         ? (format as RedditDownloadFormat)
         : "mp4";
 
+    // ── Cache Check (MP4 only — GIFs are ephemeral) ───────────
+    if (downloadFormat === "mp4") {
+      const normalizedUrl = normalizeRedditUrl(url);
+      if (normalizedUrl) {
+        const urlHash = crypto.createHash("sha256").update(normalizedUrl).digest("hex").slice(0, 32);
+        const cachedEntry = await findRedditVideoCacheEntry(urlHash);
+        if (cachedEntry) {
+          return res.json({
+            success: true,
+            cached: true,
+            message: `Reddit video already downloaded: "${cachedEntry.title}" from r/${cachedEntry.subreddit} (${cachedEntry.durationSeconds ?? "?"}s). Download: ${cachedEntry.downloadUrl}`,
+            title: cachedEntry.title,
+            author: cachedEntry.author,
+            subreddit: cachedEntry.subreddit,
+            permalink: cachedEntry.permalink,
+            isNsfw: cachedEntry.isNsfw,
+            durationSeconds: cachedEntry.durationSeconds,
+            widthPixels: cachedEntry.widthPixels,
+            heightPixels: cachedEntry.heightPixels,
+            fileSizeBytes: cachedEntry.fileSizeBytes,
+            format: cachedEntry.format,
+            downloadUrl: cachedEntry.downloadUrl,
+            mimeType: cachedEntry.mimeType,
+            cachedAt: cachedEntry.cachedAt,
+            accessCount: cachedEntry.accessCount,
+          });
+        }
+      }
+    }
+
     const result = await downloadRedditVideo(url, downloadFormat);
 
     if (isRedditErrorResult(result)) {
       return res.status(400).json(result);
     }
 
-    // ── GIF Delivery ─────────────────────────────────────────
+    // ── GIF Delivery ────────────────────────────────────────
     if (isRedditGifResult(result)) {
       const gifId = redditGifStore.set({
         buffer: result.gifBuffer,
@@ -917,12 +956,13 @@ router.get(
       });
     }
 
-    // ── MP4 Delivery via MinIO ───────────────────────────────
+    // ── MP4 Delivery via MinIO + DB persistence ──────────────
     if (isRedditFileResult(result)) {
       try {
         const fileBuffer = await readFile(result.filePath);
-        const uniqueId = crypto.randomUUID();
-        const objectKey = `${REDDIT_DOWNLOAD_PREFIX}/${uniqueId}.${result.format}`;
+        const normalizedUrl = normalizeRedditUrl(url) ?? url;
+        const urlHash = crypto.createHash("sha256").update(normalizedUrl).digest("hex").slice(0, 32);
+        const objectKey = `${REDDIT_DOWNLOAD_PREFIX}/${urlHash}.${result.format}`;
 
         await MinioService.putBuffer(
           REDDIT_DOWNLOAD_BUCKET,
@@ -935,6 +975,24 @@ router.get(
           REDDIT_DOWNLOAD_BUCKET,
           objectKey,
         );
+
+        await upsertRedditVideoCacheEntry({
+          urlHash,
+          normalizedUrl,
+          format: "mp4",
+          minioObjectKey: objectKey,
+          downloadUrl,
+          title: result.metadata.title,
+          author: result.metadata.author,
+          subreddit: result.metadata.subreddit,
+          permalink: result.metadata.permalink,
+          isNsfw: result.metadata.isNsfw,
+          durationSeconds: result.metadata.durationSeconds,
+          widthPixels: result.metadata.widthPixels,
+          heightPixels: result.metadata.heightPixels,
+          fileSizeBytes: result.fileSize,
+          mimeType: result.mimeType,
+        });
 
         return res.json({
           success: true,
@@ -1137,6 +1195,27 @@ router.post(
       });
     }
 
+    // ── Cache Check ───────────────────────────────────────
+    const trimHashInput = `${url}:${start ?? ""}:${end ?? ""}`;
+    const trimHash = crypto.createHash("sha256").update(trimHashInput).digest("hex").slice(0, 32);
+    const cachedTrim = await findVideoTrimCacheEntry(trimHash);
+    if (cachedTrim) {
+      return res.json({
+        success: true,
+        cached: true,
+        message: `Trim already cached (${cachedTrim.trimStart} → ${cachedTrim.trimEnd}, ${(cachedTrim.fileSizeBytes / 1024 / 1024).toFixed(1)} MB). Download: ${cachedTrim.downloadUrl}`,
+        trimStart: cachedTrim.trimStart,
+        trimEnd: cachedTrim.trimEnd,
+        durationSeconds: cachedTrim.durationSeconds,
+        fileSizeBytes: cachedTrim.fileSizeBytes,
+        format: cachedTrim.format,
+        downloadUrl: cachedTrim.downloadUrl,
+        mimeType: cachedTrim.mimeType,
+        cachedAt: cachedTrim.cachedAt,
+        accessCount: cachedTrim.accessCount,
+      });
+    }
+
     try {
       const result = await trimVideo({
         input: url,
@@ -1144,8 +1223,7 @@ router.post(
         endTimestamp: end,
       });
 
-      const uniqueId = crypto.randomUUID();
-      const objectKey = `${TRIM_DOWNLOAD_PREFIX}/${uniqueId}.${result.format}`;
+      const objectKey = `${TRIM_DOWNLOAD_PREFIX}/${trimHash}.${result.format}`;
 
       await MinioService.putBuffer(
         TRIM_DOWNLOAD_BUCKET,
@@ -1158,6 +1236,19 @@ router.post(
         TRIM_DOWNLOAD_BUCKET,
         objectKey,
       );
+
+      await upsertVideoTrimCacheEntry({
+        trimHash,
+        sourceUrl: url,
+        trimStart: start ?? "0",
+        trimEnd: end ?? "end",
+        minioObjectKey: objectKey,
+        downloadUrl,
+        durationSeconds: result.durationSeconds,
+        fileSizeBytes: result.buffer.length,
+        mimeType: result.mimeType,
+        format: result.format,
+      });
 
       const trimRange = [
         start ? `from ${start}` : "from start",

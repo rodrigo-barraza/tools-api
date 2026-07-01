@@ -27,7 +27,7 @@ const REDDIT_SHORT_REGEX = /(?:https?:\/\/)?redd\.it\/([a-z0-9]+)/i;
 const REDDIT_VIDEO_REGEX =
   /(?:https?:\/\/)?v\.redd\.it\/([a-z0-9]+)/i;
 
-function normalizeRedditUrl(input: string): string | null {
+export function normalizeRedditUrl(input: string): string | null {
   if (!input || typeof input !== "string") return null;
   const trimmed = input.trim();
 
