@@ -33,6 +33,7 @@ import { setupVectorAnimationCollection } from "./models/VectorAnimation.ts";
 import { setupThreeDimensionalSceneCollection } from "./models/ThreeDimensionalScene.ts";
 import { setupEmbedAssetCollection } from "./models/EmbedAsset.ts";
 import { setupCurrencyCollection } from "./models/CurrencySnapshot.ts";
+import { setupVideoCacheCollection } from "./models/VideoCache.ts";
 
 
 import {
@@ -226,6 +227,7 @@ async function start() {
       setupThreeDimensionalSceneCollection(),
       setupEmbedAssetCollection(),
       setupCurrencyCollection(),
+      setupVideoCacheCollection(),
       setupToolCallsCollection(),
 
       setupRequestsCollection(),

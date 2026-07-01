@@ -99,6 +99,10 @@ import {
   isVideoErrorResult,
 } from "../fetchers/web/GenericVideoFetcher.ts";
 import type { VideoDownloadFormat } from "../fetchers/web/GenericVideoFetcher.ts";
+import {
+  findVideoCacheEntry,
+  upsertVideoCacheEntry,
+} from "../models/VideoCache.ts";
 import { getNpmPackage } from "../fetchers/web/NpmFetcher.ts";
 import { getPyPiPackage } from "../fetchers/web/PyPiFetcher.ts";
 
@@ -968,6 +972,10 @@ function buildStableVideoObjectKey(normalizedUrl: string, format: "mp4" | "mp3")
   return `${VIDEO_DOWNLOAD_PREFIX}/${urlHash}.${format}`;
 }
 
+function buildUrlHash(normalizedUrl: string, format: "mp4" | "mp3"): string {
+  return crypto.createHash("sha256").update(`${normalizedUrl}:${format}`).digest("hex").slice(0, 32);
+}
+
 router.get(
   "/video/download",
   asyncHandler(async (req: Request, res: Response) => {
@@ -987,17 +995,27 @@ router.get(
     if (downloadFormat === "mp4" || downloadFormat === "mp3") {
       const normalizedUrl = normalizeInputUrl(url);
       if (normalizedUrl) {
-        const stableObjectKey = buildStableVideoObjectKey(normalizedUrl, downloadFormat);
-        const isCached = await MinioService.objectExists(VIDEO_DOWNLOAD_BUCKET, stableObjectKey);
-        if (isCached) {
-          const cachedDownloadUrl = MinioService.getPublicUrl(VIDEO_DOWNLOAD_BUCKET, stableObjectKey);
+        const urlHash = buildUrlHash(normalizedUrl, downloadFormat);
+        const cachedEntry = await findVideoCacheEntry(urlHash);
+        if (cachedEntry) {
           return res.json({
             success: true,
             cached: true,
-            message: `Video already downloaded. Download: ${cachedDownloadUrl}`,
-            downloadUrl: cachedDownloadUrl,
-            format: downloadFormat,
-            mimeType: downloadFormat === "mp3" ? "audio/mpeg" : "video/mp4",
+            message: `Video already downloaded: "${cachedEntry.title}" by ${cachedEntry.channel ?? cachedEntry.uploader} [${cachedEntry.platform}] (${cachedEntry.durationSeconds ?? "?"}s). Download: ${cachedEntry.downloadUrl}`,
+            title: cachedEntry.title,
+            uploader: cachedEntry.uploader,
+            channel: cachedEntry.channel,
+            platform: cachedEntry.platform,
+            durationSeconds: cachedEntry.durationSeconds,
+            viewCount: cachedEntry.viewCount,
+            uploadDate: cachedEntry.uploadDate,
+            thumbnailUrl: cachedEntry.thumbnailUrl,
+            fileSizeBytes: cachedEntry.fileSizeBytes,
+            format: cachedEntry.format,
+            downloadUrl: cachedEntry.downloadUrl,
+            mimeType: cachedEntry.mimeType,
+            cachedAt: cachedEntry.cachedAt,
+            accessCount: cachedEntry.accessCount,
           });
         }
       }
@@ -1034,11 +1052,14 @@ router.get(
       });
     }
 
-    // ── MP4/MP3 Delivery via MinIO (with stable cache key) ───
+    // ── MP4/MP3 Delivery via MinIO + DB persistence ──────────
     if (isVideoFileResult(result)) {
       try {
         const fileBuffer = await readFile(result.filePath);
-        const objectKey = buildStableVideoObjectKey(result.metadata.originalUrl, result.format as "mp4" | "mp3");
+        const normalizedUrl = normalizeInputUrl(url) ?? result.metadata.originalUrl;
+        const resolvedFormat = result.format as "mp4" | "mp3";
+        const objectKey = buildStableVideoObjectKey(normalizedUrl, resolvedFormat);
+        const urlHash = buildUrlHash(normalizedUrl, resolvedFormat);
 
         await MinioService.putBuffer(
           VIDEO_DOWNLOAD_BUCKET,
@@ -1051,6 +1072,25 @@ router.get(
           VIDEO_DOWNLOAD_BUCKET,
           objectKey,
         );
+
+        await upsertVideoCacheEntry({
+          urlHash,
+          normalizedUrl,
+          format: resolvedFormat,
+          minioObjectKey: objectKey,
+          downloadUrl,
+          title: result.metadata.title,
+          uploader: result.metadata.uploader,
+          channel: result.metadata.channel,
+          platform: result.metadata.platform,
+          durationSeconds: result.metadata.durationSeconds,
+          viewCount: result.metadata.viewCount,
+          uploadDate: result.metadata.uploadDate,
+          description: result.metadata.description,
+          thumbnailUrl: result.metadata.thumbnailUrl,
+          fileSizeBytes: result.fileSize,
+          mimeType: result.mimeType,
+        });
 
         return res.json({
           success: true,
