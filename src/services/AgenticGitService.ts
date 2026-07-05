@@ -5,53 +5,14 @@ import { validatePath } from "./AgenticFileService.ts";
 import { WORKTREE_DIR } from "../config.ts";
 import { resolveAndRouteToAgent, sendRpc } from "./AgentConnectionManager.ts";
 
-export interface GitFileStatus {
-  status: string;
-  file: string;
-}
-
-export interface GitStatusResult {
-  path: string;
-  branch: string;
-  ahead: number;
-  behind: number;
-  staged: GitFileStatus[];
-  unstaged: GitFileStatus[];
-  untracked: string[];
-  totalChanges: number;
-  clean: boolean;
-  error?: string;
-}
-
-export interface GitDiffResult {
-  path?: string;
-  staged?: boolean;
-  file?: string;
-  ref?: string;
-  hasChanges?: boolean;
-  additions?: number;
-  deletions?: number;
-  diff?: string;
-  error?: string;
-}
-
-export interface GitCommit {
-  hash: string;
-  shortHash: string;
-  author: string;
-  email: string;
-  date: string;
-  message: string;
-}
-
-export interface GitLogResult {
-  path?: string;
-  totalCommits?: number;
-  author?: string;
-  since?: string;
-  commits?: GitCommit[];
-  error?: string;
-}
+import type {
+  GitFileChange as GitFileStatus,
+  GitStatusResult,
+  GitDiffResult,
+  GitLogResult,
+  GitCommit,
+} from "@rodrigo-barraza/utilities-library";
+export type { GitFileStatus, GitStatusResult, GitDiffResult, GitLogResult, GitCommit };
 
 export interface GitWorktreeCreateResult {
   worktreePath?: string;

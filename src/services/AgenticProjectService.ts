@@ -5,6 +5,9 @@ import { resolve, join, relative } from "node:path";
 import { validatePath } from "./AgenticFileService.ts";
 import { resolveAndRouteToAgent, sendRpc } from "./AgentConnectionManager.ts";
 import { errorMessage } from "../utilities.ts";
+import { WORKSPACE_SKIP_DIRECTORIES } from "@rodrigo-barraza/utilities-library";
+import type { ProjectSummaryResult as TransformedProjectSummary } from "@rodrigo-barraza/utilities-library";
+export type { TransformedProjectSummary };
 
 // ────────────────────────────────────────────────────────────
 // Constants
@@ -18,25 +21,7 @@ const MAX_SCAN_ENTRIES = 200;
 // Project Summary
 // ────────────────────────────────────────────────────────────
 
-export interface TransformedProjectSummary {
-  path?: string;
-  name?: string;
-  packageManager?: string | null;
-  version?: string | null;
-  description?: string | null;
-  scripts?: Record<string, string>;
-  dependencies?: string[];
-  devDependencies?: string[];
-  frameworks?: string[];
-  type?: string;
-  readme?: string;
-  structure?: Record<string, number>;
-  totalFiles?: number;
-  totalDirectories?: number;
-  entryPoints?: string[];
-  configFiles?: string[];
-  error?: string;
-}
+
 
 /**
  * Scan a project root and return structured metadata.
@@ -151,15 +136,7 @@ export async function agenticProjectSummary(
         if (totalFiles + totalDirs > MAX_SCAN_ENTRIES) break;
 
         // Skip non-essential dirs
-        if (
-          entry.name === "node_modules" ||
-          entry.name === ".git" ||
-          entry.name === ".next" ||
-          entry.name === "__pycache__" ||
-          entry.name === "dist" ||
-          entry.name === "build" ||
-          entry.name === ".cache"
-        ) {
+        if (WORKSPACE_SKIP_DIRECTORIES.has(entry.name)) {
           continue;
         }
 

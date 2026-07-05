@@ -1,4 +1,17 @@
-import { escapeRegex, errorMessage } from "@rodrigo-barraza/utilities-library";
+import {
+  escapeRegex,
+  errorMessage,
+  BINARY_FILE_EXTENSIONS as BINARY_EXTENSIONS,
+  PREVIEW_IMAGE_FILE_EXTENSIONS as PREVIEW_IMAGE_EXTENSIONS,
+  globToRegex,
+} from "@rodrigo-barraza/utilities-library";
+import type {
+  DirectoryEntry,
+  TreeEntry,
+  GlobMatch,
+  FileInfoEntry as FileInfoResult,
+} from "@rodrigo-barraza/utilities-library";
+export type { DirectoryEntry, TreeEntry, GlobMatch, FileInfoResult };
 import { requestLocalStorage } from "../middleware/HeaderPropagationMiddleware.ts";
 import PromptLocaleService from "./PromptLocaleService.ts";
 // ─── Sandboxed File Operations ──────────────────────────────
@@ -90,60 +103,8 @@ const BLOCKED_PATTERNS = [
   /id_ed25519/,
 ];
 
-// Binary file extensions — return metadata only, no content
-const BINARY_EXTENSIONS = new Set([
-  ".png",
-  ".jpg",
-  ".jpeg",
-  ".gif",
-  ".webp",
-  ".bmp",
-  ".ico",
-  ".mp3",
-  ".mp4",
-  ".wav",
-  ".ogg",
-  ".webm",
-  ".avi",
-  ".mov",
-  ".zip",
-  ".tar",
-  ".gz",
-  ".bz2",
-  ".7z",
-  ".rar",
-  ".woff",
-  ".woff2",
-  ".ttf",
-  ".otf",
-  ".eot",
-  ".pdf",
-  ".doc",
-  ".docx",
-  ".xls",
-  ".xlsx",
-  ".exe",
-  ".dll",
-  ".so",
-  ".dylib",
-  ".wasm",
-  ".pyc",
-  ".class",
-]);
-
 // Image extensions eligible for inline base64 preview (avoids /file/raw round-trip)
-const PREVIEW_IMAGE_EXTENSIONS = new Set([
-  ".png",
-  ".jpg",
-  ".jpeg",
-  ".gif",
-  ".webp",
-  ".bmp",
-  ".ico",
-  ".avif",
-  ".tiff",
-  ".tif",
-]);
+
 
 // ────────────────────────────────────────────────────────────
 // Dynamic Security Settings Caching
@@ -612,19 +573,7 @@ export async function agenticPatchFile(filePath: string, patch: string) {
 /**
  * List directory contents with metadata.
  */
-export interface DirectoryEntry {
-  name: string;
-  path: string;
-  isDir: boolean;
-  sizeBytes?: number;
-}
 
-export interface TreeEntry {
-  name: string;
-  path: string;
-  type: "file" | "directory";
-  children?: TreeEntry[];
-}
 
 export async function agenticListDirectory(
   dirPath: string,
@@ -962,12 +911,6 @@ export async function agenticGrepSearch(
 /**
  * Find files by glob pattern.
  */
-export interface GlobMatch {
-  path: string;
-  relativePath: string;
-  name: string;
-  sizeBytes?: number;
-}
 
 export async function agenticGlobFiles(pattern: string, searchPath: string) {
   // Agent routing
@@ -1111,18 +1054,6 @@ export async function agenticMultiFileRead(files: MultiFileReadItem[]) {
 /**
  * Get metadata for one or more files without reading content.
  */
-export interface FileInfoResult {
-  path: string;
-  exists: boolean;
-  isFile?: boolean;
-  isDirectory?: boolean;
-  sizeBytes?: number;
-  lastModified?: string;
-  extension?: string | null;
-  isBinary?: boolean;
-  lines?: number;
-  error?: string;
-}
 
 export async function agenticFileInfo(paths: string | string[]) {
   const pathList: string[] = Array.isArray(paths) ? paths : [paths];
@@ -1516,6 +1447,7 @@ export interface MultiReplaceChunk {
 
 /**
  * Perform multiple non-contiguous block replacements in a single file atomically.
+
  * Processed from bottom-to-top to ensure subsequent line index stability.
  */
 export async function agenticMultiReplace(
@@ -1662,18 +1594,7 @@ export async function agenticMultiReplace(
 
 // escapeRegex — imported from @rodrigo-barraza/utilities-library
 
-function globToRegex(glob: string) {
-  // Convert glob pattern to regex
-  // Supports: * (any except /), ** (any including /), ? (single char)
-  const regex = glob
-    .replace(/[.+^${}()|[\]\\]/g, "\\$&")
-    .replace(/\*\*/g, "<<<GLOBSTAR>>>")
-    .replace(/\*/g, "[^/]*")
-    .replace(/<<<GLOBSTAR>>>/g, ".*")
-    .replace(/\?/g, ".");
 
-  return new RegExp(`(^|/)${regex}$`, "i");
-}
 
 // Export validatePath and ALLOWED_ROOTS for reuse in other agentic services
 export { validatePath, ALLOWED_ROOTS };

@@ -20,19 +20,8 @@ import {
 import { errorMessage, RESOLVED_BASH_PATH } from "../utilities.ts";
 import CONFIG from "../config.ts";
 
-export interface CommandResult {
-  success: boolean;
-  stdout: string;
-  stderr: string;
-  exitCode: number | null;
-  executionTimeMs: number;
-  error?: string;
-  aborted?: boolean;
-  backgrounded?: boolean;
-  pid?: number;
-  backgroundReason?: string;
-  timedOut?: boolean;
-}
+import type { CommandExecutionResult as CommandResult } from "@rodrigo-barraza/utilities-library";
+export type { CommandResult };
 
 // ────────────────────────────────────────────────────────────
 // Validation
