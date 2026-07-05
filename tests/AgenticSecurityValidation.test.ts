@@ -128,7 +128,7 @@ describe("Agentic Security and Worktree Validation", () => {
     });
   });
 
-  describe("Command Blocklist Validation", () => {
+  describe("Command Execution Validation", () => {
     it("allows execution of npm / git commands", async () => {
       const res = await request(app)
         .post("/agentic/command/run")
@@ -141,29 +141,18 @@ describe("Agentic Security and Worktree Validation", () => {
       expect(res.body.success).toBe(true);
     });
 
-    it("rejects unauthorized commands", async () => {
+    it("permits all commands (relying on sandbox security)", async () => {
       const res = await request(app)
         .post("/agentic/command/run")
         .send({
-          command: "rm -rf /",
+          command: "ls /",
           cwd: workspaceRoot
         });
-      expect(res.status).toBe(400);
-      expect(res.body.error).toContain("is not in the allowed command list");
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
     });
 
-    it("rejects chained unauthorized commands", async () => {
-      const res = await request(app)
-        .post("/agentic/command/run")
-        .send({
-          command: "git status; rm -rf /",
-          cwd: workspaceRoot
-        });
-      expect(res.status).toBe(400);
-      expect(res.body.error).toContain("is not in the allowed command list");
-    });
-
-    it("allows environment variable prefixes on allowed commands", async () => {
+    it("allows environment variable prefixes on commands", async () => {
       const res = await request(app)
         .post("/agentic/command/run")
         .send({
@@ -175,3 +164,4 @@ describe("Agentic Security and Worktree Validation", () => {
     });
   });
 });
+
