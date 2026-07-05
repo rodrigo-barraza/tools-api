@@ -2,6 +2,8 @@ import type { Request, Response } from "express";
 import CONFIG from "./config.ts";
 import crypto from "node:crypto";
 import logger from "./logger.ts";
+import { existsSync } from "node:fs";
+import { execSync } from "node:child_process";
 import {
   USER_AGENTS,
   EPHEMERAL_TTL_MS,
@@ -9,6 +11,51 @@ import {
 } from "./constants.ts";
 
 // ─── Shared Utilities ──────────────────────────────────────────────
+
+// ─── Bash Binary Resolution ───────────────────────────────────────
+// Resolves the absolute path to bash once at module load time.
+// Prevents `spawn bash ENOENT` in containerized/sandboxed environments
+// where PATH may not include the bash binary's directory.
+
+const BASH_SEARCH_PATHS = [
+  "/bin/bash",
+  "/usr/bin/bash",
+  "/usr/local/bin/bash",
+];
+
+function resolveBashBinaryPath(): string {
+  // 1. Check well-known absolute paths first (instant, no subprocess)
+  for (const candidatePath of BASH_SEARCH_PATHS) {
+    if (existsSync(candidatePath)) {
+      return candidatePath;
+    }
+  }
+
+  // 2. Fall back to `which bash` for non-standard installations
+  try {
+    const whichResult = execSync("which bash", { encoding: "utf-8" }).trim();
+    if (whichResult && existsSync(whichResult)) {
+      return whichResult;
+    }
+  } catch {
+    // `which` itself may not exist — continue to fallback
+  }
+
+  // 3. Last resort: return unqualified "bash" and let PATH resolve it at spawn time.
+  // This preserves existing behavior for environments where bash IS on PATH.
+  logger.warn(
+    "[utilities] Could not resolve absolute bash path — falling back to unqualified 'bash'. " +
+    `Searched: ${BASH_SEARCH_PATHS.join(", ")}`,
+  );
+  return "bash";
+}
+
+/**
+ * Absolute path to the bash binary, resolved once at startup.
+ * Use this instead of the bare string "bash" in spawn() calls to
+ * prevent ENOENT errors in environments with incomplete PATH.
+ */
+export const RESOLVED_BASH_PATH = resolveBashBinaryPath();
 
 /**
  * Pick a random user-agent string.

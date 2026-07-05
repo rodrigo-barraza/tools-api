@@ -16,7 +16,7 @@ import {
   AGENTIC_COMMAND_BACKGROUND_WARMUP_MS as BACKGROUND_WARMUP_MS,
   AGENTIC_COMMAND_KILL_GRACE_PERIOD_MS as KILL_GRACE_PERIOD_MS,
 } from "../constants.ts";
-import { errorMessage } from "../utilities.ts";
+import { errorMessage, RESOLVED_BASH_PATH } from "../utilities.ts";
 import CONFIG from "../config.ts";
 
 export interface CommandResult {
@@ -228,7 +228,7 @@ export async function executeCommand(
     let settled = false;
 
     // Use bash -l -c to get full PATH (conda, nvm, etc.)
-    const child = spawn("bash", ["-l", "-c", command], {
+    const child = spawn(RESOLVED_BASH_PATH, ["-l", "-c", command], {
       cwd: cwdValidation.resolved,
       stdio: ["pipe", "pipe", "pipe"],
       env: {
@@ -470,7 +470,7 @@ export async function executeCommandStreaming(
     let aborted = false;
     let settled = false;
 
-    const child = spawn("bash", ["-l", "-c", command], {
+    const child = spawn(RESOLVED_BASH_PATH, ["-l", "-c", command], {
       cwd: cwdValidation.resolved,
       stdio: ["pipe", "pipe", "pipe"],
       env: {

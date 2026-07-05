@@ -1,6 +1,7 @@
 // ─── Allowlisted Command Execution ──────────────────────────
 
 import { spawn } from "node:child_process";
+import { RESOLVED_BASH_PATH } from "../utilities.ts";
 import {
   SHELL_DEFAULT_TIMEOUT_MS as DEFAULT_TIMEOUT_MS,
   SHELL_MAX_TIMEOUT_MS as MAX_TIMEOUT_MS,
@@ -200,7 +201,7 @@ export async function executeShell(
     // Run through bash with restricted flags
     // The -r flag disables some bash features, and we pass the command
     // via -c to avoid interactive mode
-    const child = spawn("bash", ["-r", "-c", command], {
+    const child = spawn(RESOLVED_BASH_PATH, ["-r", "-c", command], {
       stdio: ["pipe", "pipe", "pipe"],
       env: {
         PATH: "/usr/bin:/bin:/usr/local/bin",
@@ -336,7 +337,7 @@ export async function executeShellStreaming(
     let timedOut = false;
     let settled = false;
 
-    const child = spawn("bash", ["-r", "-c", command], {
+    const child = spawn(RESOLVED_BASH_PATH, ["-r", "-c", command], {
       stdio: ["pipe", "pipe", "pipe"],
       env: {
         PATH: "/usr/bin:/bin:/usr/local/bin",
