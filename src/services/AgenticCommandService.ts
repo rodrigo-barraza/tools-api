@@ -1,7 +1,9 @@
 // ─── Sandboxed Project Command Execution ────────────────────
 
 import { spawn } from "node:child_process";
-import { validatePath } from "./AgenticFileService.ts";
+import { resolve } from "node:path";
+import { validatePath, ALLOWED_ROOTS } from "./AgenticFileService.ts";
+import { requestLocalStorage } from "../middleware/HeaderPropagationMiddleware.ts";
 import {
   routeForPath,
   sendRpc,
@@ -62,6 +64,7 @@ const ALLOWED_COMMANDS = new Set([
   "tail",
   "tree",
   "du",
+  "pwd",
   // Process inspection
   "ps",
   "lsof",
@@ -128,7 +131,25 @@ async function tryAgentRouteCommand(
   cwd: string | null | undefined,
 ): Promise<CommandResult | null> {
   if (!cwd) return null;
-  const agent = routeForPath(cwd);
+
+  // Resolve relative cwd paths using the workspace root context so that
+  // remote agent routing matches correctly (e.g. "." → "/workspace").
+  let resolvedCwd = cwd;
+  if (!cwd.startsWith("/")) {
+    const requestStore = requestLocalStorage.getStore();
+    const workspaceOverride = requestStore?.workspaceOverride;
+    const workspaceRoot = requestStore?.workspaceRoot;
+
+    if (workspaceOverride && workspaceOverride.startsWith("/tmp/prism-worktrees/")) {
+      resolvedCwd = resolve(workspaceOverride, cwd);
+    } else if (workspaceRoot) {
+      resolvedCwd = resolve(workspaceRoot, cwd);
+    } else if (ALLOWED_ROOTS[0]) {
+      resolvedCwd = resolve(ALLOWED_ROOTS[0], cwd);
+    }
+  }
+
+  const agent = routeForPath(resolvedCwd);
   if (!agent) return null;
   try {
     return (await sendRpc(agent.id, method, params)) as CommandResult;
