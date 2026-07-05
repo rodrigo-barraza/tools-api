@@ -35,88 +35,18 @@ export interface CommandResult {
   timedOut?: boolean;
 }
 
-// Only these command prefixes are allowed as the first token.
-const ALLOWED_COMMANDS = new Set([
-  // Node.js ecosystem
-  "npm",
-  "npx",
-  "node",
-  // Linting / formatting
-  "eslint",
-  "prettier",
-  "tsc",
-  "stylelint",
-  // Python
-  "python3",
-  "pip",
-  "pip3",
-  // Git (read-only operations are safeguarded in args)
-  "git",
-  // File inspection (read-only)
-  "cat",
-  "ls",
-  "find",
-  "wc",
-  "diff",
-  "which",
-  "file",
-  "head",
-  "tail",
-  "tree",
-  "du",
-  "pwd",
-  // Process inspection
-  "ps",
-  "lsof",
-]);
-
 // ────────────────────────────────────────────────────────────
 // Validation
 // ────────────────────────────────────────────────────────────
+
+// No command allowlist — the Docker container (or workspace agent sandbox)
+// is the security boundary. CWD is still validated against ALLOWED_ROOTS
+// to ensure commands execute within permitted directories.
 
 function validateCommand(command: string): { valid: boolean; error?: string } {
   if (!command) {
     return { valid: false, error: "Command is required (string)" };
   }
-
-  // Split by semicolon, double ampersand, or pipe to check chained commands
-  const subCommands = command.split(/[;&|]/);
-  for (let subCommand of subCommands) {
-    subCommand = subCommand.trim();
-    if (!subCommand) continue;
-
-    // Split sub-command into tokens by whitespace
-    const tokens = subCommand.split(/\s+/);
-    let commandTokenIndex = 0;
-
-    // Skip environment variables: KEY=VALUE or export keyword
-    while (
-      commandTokenIndex < tokens.length &&
-      (tokens[commandTokenIndex].includes("=") || tokens[commandTokenIndex] === "export")
-    ) {
-      commandTokenIndex++;
-    }
-
-    if (commandTokenIndex >= tokens.length) {
-      continue; // Only env vars or exports, no actual command executable
-    }
-
-    let baseCommand = tokens[commandTokenIndex];
-
-    // If command starts with an absolute or relative path, take the basename
-    if (baseCommand.includes("/")) {
-      const parts = baseCommand.split("/");
-      baseCommand = parts[parts.length - 1];
-    }
-
-    if (!ALLOWED_COMMANDS.has(baseCommand)) {
-      return {
-        valid: false,
-        error: `Command '${baseCommand}' is not in the allowed command list: ${Array.from(ALLOWED_COMMANDS).join(", ")}`,
-      };
-    }
-  }
-
   return { valid: true };
 }
 
@@ -587,9 +517,11 @@ export async function executeCommandStreaming(
 
 /**
  * Get the list of allowed commands.
+ * Returns an empty array — all commands are now permitted.
+ * The Docker container / workspace agent sandbox is the security boundary.
  */
 export function getAllowedCommands(): string[] {
-  return [...ALLOWED_COMMANDS].sort();
+  return [];
 }
 
 /**
