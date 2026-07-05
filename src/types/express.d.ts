@@ -9,6 +9,7 @@ declare module "express-serve-static-core" {
     project: string;
     username: string;
     workspaceId: string | null;
+    workspaceRoot: string | null;
     workspaceOverride: string | null;
   }
 }

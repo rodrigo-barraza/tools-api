@@ -3,6 +3,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import type { Request, Response, NextFunction } from "express";
 
 export interface RequestStore {
+  workspaceRoot?: string | null;
   workspaceOverride?: string | null;
 }
 
@@ -11,9 +12,9 @@ export const requestLocalStorage = new AsyncLocalStorage<RequestStore>();
 /**
  * HeaderPropagationMiddleware — attaches identity headers to the request object.
  *
- * Reads x-project, x-username, and x-workspace-id from incoming headers and
- * attaches them to `req` so route handlers and services can access them without
- * re-parsing headers on every call.
+ * Reads x-project, x-username, x-workspace-root, and x-workspace-override
+ * from incoming headers and attaches them to `req` so route handlers and
+ * services can access them without re-parsing headers on every call.
  *
  * Mirrors Prism's AuthMiddleware pattern.
  */
@@ -35,10 +36,15 @@ export function headerPropagationMiddleware(
   // Workspace ID: optional — null means the default workspace
   req.workspaceId = (req.headers["x-workspace-id"] as string) || null;
 
+  // Workspace Root: user-selected workspace path from prism-client sidebar.
+  // Sent as X-Workspace-Root by prism-service's ToolOrchestratorService.
+  req.workspaceRoot = (req.headers["x-workspace-root"] as string) || null;
+
   // Workspace Override: optional — path to active worktree
   req.workspaceOverride = (req.headers["x-workspace-override"] as string) || null;
 
   const requestStore: RequestStore = {
+    workspaceRoot: req.workspaceRoot,
     workspaceOverride: req.workspaceOverride,
   };
 
@@ -46,3 +52,4 @@ export function headerPropagationMiddleware(
     next();
   });
 }
+

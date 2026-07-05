@@ -229,12 +229,26 @@ function validatePath(inputPath: string | unknown) {
 
   const requestStore = requestLocalStorage.getStore();
   const workspaceOverride = requestStore?.workspaceOverride;
+  const workspaceRoot = requestStore?.workspaceRoot;
 
-  // Resolve relative paths against the primary workspace root (or workspaceOverride), NOT process.cwd().
+  // Resolve relative paths against the active workspace context, NOT process.cwd().
+  // Priority: workspaceOverride (worktree) > workspaceRoot (user-selected) > ALLOWED_ROOTS[0] (static fallback).
   const isRelative = !inputPath.startsWith("/");
-  const baseRoot = (workspaceOverride && workspaceOverride.startsWith("/tmp/prism-worktrees/"))
-    ? workspaceOverride
-    : ALLOWED_ROOTS[0];
+  let baseRoot: string;
+
+  if (workspaceOverride && workspaceOverride.startsWith("/tmp/prism-worktrees/")) {
+    // Active worktree takes highest priority
+    baseRoot = workspaceOverride;
+  } else if (workspaceRoot) {
+    // User-selected workspace root — validate it's within an allowed root
+    const resolvedWorkspaceRoot = resolve(workspaceRoot);
+    const isWorkspaceRootAllowed = ALLOWED_ROOTS.some(
+      (root: string) => resolvedWorkspaceRoot.startsWith(root + "/") || resolvedWorkspaceRoot === root,
+    );
+    baseRoot = isWorkspaceRootAllowed ? resolvedWorkspaceRoot : ALLOWED_ROOTS[0];
+  } else {
+    baseRoot = ALLOWED_ROOTS[0];
+  }
 
   const resolved = isRelative
     ? resolve(baseRoot, inputPath)

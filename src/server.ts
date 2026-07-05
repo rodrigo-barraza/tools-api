@@ -109,7 +109,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   res.header("Access-Control-Allow-Credentials", "true");
   res.header(
     "Access-Control-Allow-Headers",
-    "Content-Type, X-Project, X-Username, X-Agent, X-Request-Id, X-Conversation-Id, X-Iteration, X-Workspace-Id",
+    "Content-Type, X-Project, X-Username, X-Agent, X-Request-Id, X-Conversation-Id, X-Iteration, X-Workspace-Id, X-Workspace-Root, X-Workspace-Override",
   );
   res.header(
     "Access-Control-Allow-Methods",
