@@ -1,17 +1,24 @@
 import {
   escapeRegex,
   errorMessage,
-  BINARY_FILE_EXTENSIONS as BINARY_EXTENSIONS,
-  PREVIEW_IMAGE_FILE_EXTENSIONS as PREVIEW_IMAGE_EXTENSIONS,
+  BINARY_FILE_EXTENSIONS,
+  PREVIEW_IMAGE_FILE_EXTENSIONS,
+  WORKSPACE_MAX_READ_BYTES,
+  WORKSPACE_MAX_WRITE_BYTES,
+  WORKSPACE_MAX_LINES_PER_READ,
+  WORKSPACE_MAX_GREP_RESULTS,
+  WORKSPACE_MAX_GLOB_RESULTS,
+  WORKSPACE_MAX_DIRECTORY_ENTRIES,
+  WORKSPACE_MAX_PREVIEW_BYTES,
   globToRegex,
 } from "@rodrigo-barraza/utilities-library";
 import type {
   DirectoryEntry,
   TreeEntry,
   GlobMatch,
-  FileInfoEntry as FileInfoResult,
+  FileInfoEntry,
 } from "@rodrigo-barraza/utilities-library";
-export type { DirectoryEntry, TreeEntry, GlobMatch, FileInfoResult };
+export type { DirectoryEntry, TreeEntry, GlobMatch, FileInfoEntry };
 import { requestLocalStorage } from "../middleware/HeaderPropagationMiddleware.ts";
 import PromptLocaleService from "./PromptLocaleService.ts";
 // ─── Sandboxed File Operations ──────────────────────────────
@@ -80,15 +87,7 @@ const STATIC_ROOTS = Object.freeze(
 // Mutated in-place so all importers automatically see updates.
 const ALLOWED_ROOTS = [...STATIC_ROOTS];
 
-import {
-  AGENT_FILE_MAX_READ_BYTES as MAX_READ_BYTES,
-  AGENT_FILE_MAX_WRITE_BYTES as MAX_WRITE_BYTES,
-  AGENT_FILE_MAX_LINES_PER_READ as MAX_LINES_PER_READ,
-  AGENT_FILE_MAX_GREP_RESULTS as MAX_GREP_RESULTS,
-  AGENT_FILE_MAX_GLOB_RESULTS as MAX_GLOB_RESULTS,
-  AGENT_FILE_MAX_DIR_ENTRIES as MAX_DIR_ENTRIES,
-  AGENT_FILE_MAX_PREVIEW_BYTES as MAX_PREVIEW_BYTES,
-} from "../constants.ts";
+
 
 // Patterns that are always blocked — even within allowed roots
 const BLOCKED_PATTERNS = [
@@ -295,15 +294,15 @@ export async function agenticReadFile(
         error: `'${resolved}' is a directory, not a file. Use list_directory instead.`,
       };
     }
-    if (stats.size > MAX_READ_BYTES) {
+    if (stats.size > WORKSPACE_MAX_READ_BYTES) {
       return {
-        error: `File is ${(stats.size / 1024).toFixed(1)} KB — exceeds max read size of ${(MAX_READ_BYTES / 1024).toFixed(0)} KB. Use startLine/endLine to read a portion.`,
+        error: `File is ${(stats.size / 1024).toFixed(1)} KB — exceeds max read size of ${(WORKSPACE_MAX_READ_BYTES / 1024).toFixed(0)} KB. Use startLine/endLine to read a portion.`,
       };
     }
 
     // Binary detection
     const fileExtension = extname(resolved).toLowerCase();
-    if (BINARY_EXTENSIONS.has(fileExtension)) {
+    if (BINARY_FILE_EXTENSIONS.has(fileExtension)) {
       const result: Record<string, unknown> = {
         filePath: resolved,
         isBinary: true,
@@ -313,8 +312,8 @@ export async function agenticReadFile(
 
       // Auto-include base64 for previewable image files under threshold
       if (
-        PREVIEW_IMAGE_EXTENSIONS.has(fileExtension) &&
-        stats.size <= MAX_PREVIEW_BYTES
+        PREVIEW_IMAGE_FILE_EXTENSIONS.has(fileExtension) &&
+        stats.size <= WORKSPACE_MAX_PREVIEW_BYTES
       ) {
         const buffer = await readFile(resolved);
         result.contentBase64 = buffer.toString("base64");
@@ -334,8 +333,8 @@ export async function agenticReadFile(
     let end = endLine ? Math.min(totalLines, endLine) : totalLines;
 
     // Enforce max lines per read
-    if (end - start + 1 > MAX_LINES_PER_READ) {
-      end = start + MAX_LINES_PER_READ - 1;
+    if (end - start + 1 > WORKSPACE_MAX_LINES_PER_READ) {
+      end = start + WORKSPACE_MAX_LINES_PER_READ - 1;
     }
 
     const selectedLines = allLines.slice(start - 1, end);
@@ -388,9 +387,9 @@ export async function agenticWriteFile(
   }
 
   const bytes = Buffer.byteLength(content, "utf-8");
-  if (bytes > MAX_WRITE_BYTES) {
+  if (bytes > WORKSPACE_MAX_WRITE_BYTES) {
     return {
-      error: `Content is ${(bytes / 1024).toFixed(1)} KB — exceeds max write size of ${(MAX_WRITE_BYTES / 1024).toFixed(0)} KB.`,
+      error: `Content is ${(bytes / 1024).toFixed(1)} KB — exceeds max write size of ${(WORKSPACE_MAX_WRITE_BYTES / 1024).toFixed(0)} KB.`,
     };
   }
 
@@ -608,13 +607,13 @@ export async function agenticListDirectory(
     const entries: DirectoryEntry[] = [];
 
     async function walk(dir: string, depth: number) {
-      if (entries.length >= MAX_DIR_ENTRIES) return;
+      if (entries.length >= WORKSPACE_MAX_DIRECTORY_ENTRIES) return;
       if (depth > maxDepth) return;
 
       const dirEntries = await readdir(dir, { withFileTypes: true });
 
       for (const entry of dirEntries) {
-        if (entries.length >= MAX_DIR_ENTRIES) break;
+        if (entries.length >= WORKSPACE_MAX_DIRECTORY_ENTRIES) break;
 
         const fullPath = resolve(dir, entry.name);
         const relativePath = relative(resolved, fullPath);
@@ -657,7 +656,7 @@ export async function agenticListDirectory(
     return {
       directory: resolved,
       totalEntries: entries.length,
-      truncated: entries.length >= MAX_DIR_ENTRIES,
+      truncated: entries.length >= WORKSPACE_MAX_DIRECTORY_ENTRIES,
       entries,
     };
   } catch (error: unknown) {
@@ -802,10 +801,10 @@ export async function agenticGrepSearch(
     const fileMatches = new Set<string>();
 
     async function searchFile(filePath: string) {
-      if (results.length >= MAX_GREP_RESULTS) return;
+      if (results.length >= WORKSPACE_MAX_GREP_RESULTS) return;
 
       const fileExtension = extname(filePath).toLowerCase();
-      if (BINARY_EXTENSIONS.has(fileExtension)) return;
+      if (BINARY_FILE_EXTENSIONS.has(fileExtension)) return;
 
       // Check blocked patterns
       const pathCheck = validatePath(filePath);
@@ -813,13 +812,13 @@ export async function agenticGrepSearch(
 
       try {
         const fileStat = await stat(filePath);
-        if (fileStat.size > MAX_READ_BYTES) return;
+        if (fileStat.size > WORKSPACE_MAX_READ_BYTES) return;
 
         const content = await readFile(filePath, "utf-8");
         const lines = content.split("\n");
 
         for (let i = 0; i < lines.length; i++) {
-          if (results.length >= MAX_GREP_RESULTS) break;
+          if (results.length >= WORKSPACE_MAX_GREP_RESULTS) break;
 
           regex.lastIndex = 0;
           if (regex.test(lines[i])) {
@@ -842,13 +841,13 @@ export async function agenticGrepSearch(
     }
 
     async function walkDir(dir: string) {
-      if (results.length >= MAX_GREP_RESULTS) return;
+      if (results.length >= WORKSPACE_MAX_GREP_RESULTS) return;
 
       try {
         const entries = await readdir(dir, { withFileTypes: true });
 
         for (const entry of entries) {
-          if (results.length >= MAX_GREP_RESULTS) break;
+          if (results.length >= WORKSPACE_MAX_GREP_RESULTS) break;
 
           const fullPath = resolve(dir, entry.name);
 
@@ -890,7 +889,7 @@ export async function agenticGrepSearch(
         searchPath: resolved,
         matchingFiles: [...fileMatches],
         totalFiles: fileMatches.size,
-        truncated: fileMatches.size >= MAX_GREP_RESULTS,
+        truncated: fileMatches.size >= WORKSPACE_MAX_GREP_RESULTS,
       };
     }
 
@@ -898,7 +897,7 @@ export async function agenticGrepSearch(
       pattern,
       searchPath: resolved,
       totalMatches: results.length,
-      truncated: results.length >= MAX_GREP_RESULTS,
+      truncated: results.length >= WORKSPACE_MAX_GREP_RESULTS,
       results,
     };
   } catch (error: unknown) {
@@ -937,13 +936,13 @@ export async function agenticGlobFiles(pattern: string, searchPath: string) {
   const globRegex = globToRegex(pattern);
 
   async function walk(dir: string) {
-    if (matches.length >= MAX_GLOB_RESULTS) return;
+    if (matches.length >= WORKSPACE_MAX_GLOB_RESULTS) return;
 
     try {
       const entries = await readdir(dir, { withFileTypes: true });
 
       for (const entry of entries) {
-        if (matches.length >= MAX_GLOB_RESULTS) break;
+        if (matches.length >= WORKSPACE_MAX_GLOB_RESULTS) break;
 
         const fullPath = resolve(dir, entry.name);
         const relativePath = relative(resolved, fullPath);
@@ -986,7 +985,7 @@ export async function agenticGlobFiles(pattern: string, searchPath: string) {
       pattern,
       searchPath: resolved,
       totalMatches: matches.length,
-      truncated: matches.length >= MAX_GLOB_RESULTS,
+      truncated: matches.length >= WORKSPACE_MAX_GLOB_RESULTS,
       matches,
     };
   } catch (error: unknown) {
@@ -1087,7 +1086,7 @@ export async function agenticFileInfo(paths: string | string[]) {
       try {
         const stats = await stat(resolved);
         const fileExtension = extname(resolved).toLowerCase();
-        const info: FileInfoResult = {
+        const info: FileInfoEntry = {
           path: resolved,
           exists: true,
           isFile: stats.isFile(),
@@ -1095,14 +1094,14 @@ export async function agenticFileInfo(paths: string | string[]) {
           sizeBytes: stats.size,
           lastModified: stats.mtime.toISOString(),
           extension: fileExtension || null,
-          isBinary: BINARY_EXTENSIONS.has(fileExtension),
+          isBinary: BINARY_FILE_EXTENSIONS.has(fileExtension),
         };
 
         // Line count for text files
         if (
           stats.isFile() &&
-          !BINARY_EXTENSIONS.has(fileExtension) &&
-          stats.size <= MAX_READ_BYTES
+          !BINARY_FILE_EXTENSIONS.has(fileExtension) &&
+          stats.size <= WORKSPACE_MAX_READ_BYTES
         ) {
           try {
             const content = await readFile(resolved, "utf-8");
@@ -1657,11 +1656,11 @@ export function refreshAllowedRoots(extraRoots: string[] = []) {
 export function getAgenticFileHealth() {
   return {
     allowedRoots: ALLOWED_ROOTS,
-    maxReadBytes: MAX_READ_BYTES,
-    maxWriteBytes: MAX_WRITE_BYTES,
-    maxLinesPerRead: MAX_LINES_PER_READ,
-    maxGrepResults: MAX_GREP_RESULTS,
-    maxGlobResults: MAX_GLOB_RESULTS,
-    maxDirEntries: MAX_DIR_ENTRIES,
+    maxReadBytes: WORKSPACE_MAX_READ_BYTES,
+    maxWriteBytes: WORKSPACE_MAX_WRITE_BYTES,
+    maxLinesPerRead: WORKSPACE_MAX_LINES_PER_READ,
+    maxGrepResults: WORKSPACE_MAX_GREP_RESULTS,
+    maxGlobResults: WORKSPACE_MAX_GLOB_RESULTS,
+    maxDirEntries: WORKSPACE_MAX_DIRECTORY_ENTRIES,
   };
 }

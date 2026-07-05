@@ -6,8 +6,8 @@ import { validatePath } from "./AgenticFileService.ts";
 import { resolveAndRouteToAgent, sendRpc } from "./AgentConnectionManager.ts";
 import { errorMessage } from "../utilities.ts";
 import { WORKSPACE_SKIP_DIRECTORIES } from "@rodrigo-barraza/utilities-library";
-import type { ProjectSummaryResult as TransformedProjectSummary } from "@rodrigo-barraza/utilities-library";
-export type { TransformedProjectSummary };
+import type { ProjectSummaryResult } from "@rodrigo-barraza/utilities-library";
+export type { ProjectSummaryResult };
 
 // ────────────────────────────────────────────────────────────
 // Constants
@@ -28,14 +28,14 @@ const MAX_SCAN_ENTRIES = 200;
  */
 export async function agenticProjectSummary(
   projectPath: string,
-): Promise<TransformedProjectSummary> {
+): Promise<ProjectSummaryResult> {
   // Agent routing
   const agent = resolveAndRouteToAgent(projectPath);
   if (agent) {
     try {
       return (await sendRpc(agent.id, "project.summary", {
         path: projectPath,
-      })) as TransformedProjectSummary;
+      })) as ProjectSummaryResult;
     } catch (error: unknown) {
       return { error: `Agent RPC failed: ${errorMessage(error)}` };
     }
@@ -57,7 +57,7 @@ export async function agenticProjectSummary(
     return { error: `Directory not found: ${root}` };
   }
 
-  const result: TransformedProjectSummary = {
+  const result: ProjectSummaryResult = {
     path: root,
     name: root.split("/").pop(),
   };

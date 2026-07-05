@@ -20,8 +20,8 @@ import {
 import { errorMessage, RESOLVED_BASH_PATH } from "../utilities.ts";
 import CONFIG from "../config.ts";
 
-import type { CommandExecutionResult as CommandResult } from "@rodrigo-barraza/utilities-library";
-export type { CommandResult };
+import type { CommandExecutionResult } from "@rodrigo-barraza/utilities-library";
+export type { CommandExecutionResult };
 
 // ────────────────────────────────────────────────────────────
 // Validation
@@ -47,13 +47,13 @@ async function tryAgentRouteCommand(
   method: string,
   params: Record<string, unknown>,
   cwd: string | null | undefined,
-): Promise<CommandResult | null> {
+): Promise<CommandExecutionResult | null> {
   if (!cwd) return null;
 
   const agent = resolveAndRouteToAgent(cwd, ALLOWED_ROOTS[0]);
   if (!agent) return null;
   try {
-    return (await sendRpc(agent.id, method, params)) as CommandResult;
+    return (await sendRpc(agent.id, method, params)) as CommandExecutionResult;
   } catch (error: unknown) {
     return {
       success: false,
@@ -88,7 +88,7 @@ export async function executeCommand(
     signal?: AbortSignal;
     runInBackground?: boolean;
   } = {},
-): Promise<CommandResult> {
+): Promise<CommandExecutionResult> {
   // Agent routing — if CWD is served by a remote agent, proxy the command
   const agentResult = await tryAgentRouteCommand(
     "command.run",
@@ -140,7 +140,7 @@ export async function executeCommand(
 
   const startTime = performance.now();
 
-  return new Promise<CommandResult>((resolve) => {
+  return new Promise<CommandExecutionResult>((resolve) => {
     const stdoutChunks: Buffer[] = [];
     const stderrChunks: Buffer[] = [];
     let stdoutLength = 0;
@@ -312,7 +312,7 @@ export async function executeCommandStreaming(
     onChunk?: (type: "stdout" | "stderr", chunk: string) => void;
     signal?: AbortSignal;
   } = {},
-): Promise<CommandResult> {
+): Promise<CommandExecutionResult> {
   // Agent routing for streaming commands
   if (cwd) {
     const agent = resolveAndRouteToAgent(cwd, ALLOWED_ROOTS[0]);
@@ -328,7 +328,7 @@ export async function executeCommandStreaming(
             else if (method === "command.stderr")
               onChunk?.("stderr", params.data as string);
           },
-        )) as CommandResult;
+        )) as CommandExecutionResult;
       } catch (error: unknown) {
         return {
           success: false,
@@ -383,7 +383,7 @@ export async function executeCommandStreaming(
 
   const startTime = performance.now();
 
-  return new Promise<CommandResult>((resolve) => {
+  return new Promise<CommandExecutionResult>((resolve) => {
     const stdoutChunks: Buffer[] = [];
     const stderrChunks: Buffer[] = [];
     let stdoutLength = 0;

@@ -6,13 +6,13 @@ import { WORKTREE_DIR } from "../config.ts";
 import { resolveAndRouteToAgent, sendRpc } from "./AgentConnectionManager.ts";
 
 import type {
-  GitFileChange as GitFileStatus,
+  GitFileChange,
   GitStatusResult,
   GitDiffResult,
   GitLogResult,
   GitCommit,
 } from "@rodrigo-barraza/utilities-library";
-export type { GitFileStatus, GitStatusResult, GitDiffResult, GitLogResult, GitCommit };
+export type { GitFileChange, GitStatusResult, GitDiffResult, GitLogResult, GitCommit };
 
 export interface GitWorktreeCreateResult {
   worktreePath?: string;
@@ -222,8 +222,8 @@ export async function agenticGitStatus(
   const behindMatch = branchLine.match(/behind (\d+)/);
 
   // Parse file changes
-  const staged: GitFileStatus[] = [];
-  const unstaged: GitFileStatus[] = [];
+  const staged: GitFileChange[] = [];
+  const unstaged: GitFileChange[] = [];
   const untracked: string[] = [];
 
   for (const line of fileLines) {
