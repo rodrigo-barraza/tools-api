@@ -618,7 +618,13 @@ export function routeForPath(absolutePath: string | undefined | null) {
 
   // Check each registered root
   for (const [root, agentId] of rootToAgent) {
-    if (normalizedPath.startsWith(root + "/") || normalizedPath === root) {
+    // Root "/" is a special case — it matches ALL absolute paths (the
+    // container filesystem IS the workspace, registered as virtual root "/").
+    const isMatch = root === "/"
+      ? normalizedPath.startsWith("/")
+      : (normalizedPath.startsWith(root + "/") || normalizedPath === root);
+
+    if (isMatch) {
       const agent = agents.get(agentId);
       if (agent && agent.websocket.readyState === 1) {
         return { id: agent.id, name: agent.name, roots: agent.roots };
