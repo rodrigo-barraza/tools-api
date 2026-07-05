@@ -46,11 +46,9 @@ function validateCommand(command: string): { valid: boolean; error?: string } {
 async function tryAgentRouteCommand(
   method: string,
   params: Record<string, unknown>,
-  cwd: string | null | undefined,
+  resolvedCwd: string,
 ): Promise<CommandExecutionResult | null> {
-  if (!cwd) return null;
-
-  const agent = resolveAndRouteToAgent(cwd, ALLOWED_ROOTS[0]);
+  const agent = resolveAndRouteToAgent(resolvedCwd, ALLOWED_ROOTS[0]);
   if (!agent) return null;
   try {
     return (await sendRpc(agent.id, method, params)) as CommandExecutionResult;
@@ -89,11 +87,13 @@ export async function executeCommand(
     runInBackground?: boolean;
   } = {},
 ): Promise<CommandExecutionResult> {
+  const resolvedCwd = cwd || ALLOWED_ROOTS[0];
+
   // Agent routing — if CWD is served by a remote agent, proxy the command
   const agentResult = await tryAgentRouteCommand(
     "command.run",
-    { command, cwd, timeout, runInBackground },
-    cwd,
+    { command, cwd: resolvedCwd, timeout, runInBackground },
+    resolvedCwd,
   );
   if (agentResult) return agentResult;
 
@@ -113,7 +113,7 @@ export async function executeCommand(
   }
 
   // Validate CWD
-  const cwdValidation = validatePath(cwd || (ALLOWED_ROOTS[0] ?? ""));
+  const cwdValidation = validatePath(resolvedCwd);
   if (!cwdValidation.safe) {
     return {
       success: false,
@@ -313,32 +313,32 @@ export async function executeCommandStreaming(
     signal?: AbortSignal;
   } = {},
 ): Promise<CommandExecutionResult> {
+  const resolvedCwd = cwd || ALLOWED_ROOTS[0];
+
   // Agent routing for streaming commands
-  if (cwd) {
-    const agent = resolveAndRouteToAgent(cwd, ALLOWED_ROOTS[0]);
-    if (agent) {
-      try {
-        return (await sendRpcStreaming(
-          agent.id,
-          "command.stream",
-          { command, cwd, timeout },
-          (method: string, params: Record<string, unknown>) => {
-            if (method === "command.stdout")
-              onChunk?.("stdout", params.data as string);
-            else if (method === "command.stderr")
-              onChunk?.("stderr", params.data as string);
-          },
-        )) as CommandExecutionResult;
-      } catch (error: unknown) {
-        return {
-          success: false,
-          stdout: "",
-          stderr: "",
-          exitCode: null,
-          executionTimeMs: 0,
-          error: `Agent RPC failed: ${errorMessage(error)}`,
-        };
-      }
+  const agent = resolveAndRouteToAgent(resolvedCwd, ALLOWED_ROOTS[0]);
+  if (agent) {
+    try {
+      return (await sendRpcStreaming(
+        agent.id,
+        "command.stream",
+        { command, cwd: resolvedCwd, timeout },
+        (method: string, params: Record<string, unknown>) => {
+          if (method === "command.stdout")
+            onChunk?.("stdout", params.data as string);
+          else if (method === "command.stderr")
+            onChunk?.("stderr", params.data as string);
+        },
+      )) as CommandExecutionResult;
+    } catch (error: unknown) {
+      return {
+        success: false,
+        stdout: "",
+        stderr: "",
+        exitCode: null,
+        executionTimeMs: 0,
+        error: `Agent RPC failed: ${errorMessage(error)}`,
+      };
     }
   }
 
@@ -356,7 +356,7 @@ export async function executeCommandStreaming(
     };
   }
 
-  const cwdValidation = validatePath(cwd || (ALLOWED_ROOTS[0] ?? ""));
+  const cwdValidation = validatePath(resolvedCwd);
   if (!cwdValidation.safe) {
     return {
       success: false,
