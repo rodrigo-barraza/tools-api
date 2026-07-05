@@ -753,6 +753,21 @@ async function rebuildAllowedRootsFromAgents() {
       }
     }
 
+    // If an agent registers root "/" (virtual root), it subsumes ALL other
+    // roots. Static roots like "/workspace" become redundant and should not
+    // appear in ALLOWED_ROOTS — otherwise prism-service picks up "/workspace"
+    // as the primary root (index 0), defeating workspace path virtualization.
+    const agentOwnsEverything = agentRoots.includes("/");
+
+    if (agentOwnsEverything) {
+      // Replace ALL roots with just "/" — the agent covers the entire filesystem.
+      // Preserve any user-configured roots that are NOT subsumed (none can be,
+      // since "/" covers everything), but keep the array clean.
+      ALLOWED_ROOTS.length = 0;
+      ALLOWED_ROOTS.push("/");
+      return;
+    }
+
     // refreshAllowedRoots merges: STATIC_ROOTS + extraRoots (de-duped)
     // We need to also preserve any user-configured roots from MongoDB.
     // Since ALLOWED_ROOTS may contain user roots not in agents or static,
