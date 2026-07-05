@@ -16,7 +16,7 @@ import {
 import { resolve, relative, extname, dirname } from "node:path";
 import { existsSync } from "node:fs";
 import { WORKSPACE_ROOTS as WORKSPACE_ROOTS_RAW } from "../config.ts";
-import { routeForPath, sendRpc } from "./AgentConnectionManager.ts";
+import { resolveAndRouteToAgent, sendRpc } from "./AgentConnectionManager.ts";
 import logger from "../logger.ts";
 
 // ────────────────────────────────────────────────────────────
@@ -24,38 +24,15 @@ import logger from "../logger.ts";
 // ────────────────────────────────────────────────────────────
 
 /**
- * Check if a path should be routed to a remote workspace agent.
- * If so, sends an RPC request and returns the result.
- * Returns null if the path should be handled locally.
- *
- * Resolves relative paths against the workspace root context (from the
- * X-Workspace-Root header) before checking agent routing, so that a
- * relative path like "." correctly matches a remote agent registered
- * at e.g. "/workspace".
+ * Route a workspace operation to a remote agent if one serves the target path.
+ * Returns null if no agent matches (caller falls back to local handling).
  */
 async function tryAgentRoute(
   method: string,
   params: Record<string, unknown>,
   targetPath: string,
 ): Promise<unknown> {
-  let resolvedTargetPath = targetPath;
-
-  // Resolve relative paths using the same workspace root context as validatePath
-  if (targetPath && !targetPath.startsWith("/")) {
-    const requestStore = requestLocalStorage.getStore();
-    const workspaceOverride = requestStore?.workspaceOverride;
-    const workspaceRoot = requestStore?.workspaceRoot;
-
-    if (workspaceOverride && workspaceOverride.startsWith("/tmp/prism-worktrees/")) {
-      resolvedTargetPath = resolve(workspaceOverride, targetPath);
-    } else if (workspaceRoot) {
-      resolvedTargetPath = resolve(workspaceRoot, targetPath);
-    } else if (ALLOWED_ROOTS[0]) {
-      resolvedTargetPath = resolve(ALLOWED_ROOTS[0], targetPath);
-    }
-  }
-
-  const agent = routeForPath(resolvedTargetPath);
+  const agent = resolveAndRouteToAgent(targetPath, ALLOWED_ROOTS[0]);
   if (!agent) return null;
   try {
     return await sendRpc(agent.id, method, params);

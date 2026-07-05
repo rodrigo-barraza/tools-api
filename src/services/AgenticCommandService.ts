@@ -3,9 +3,8 @@
 import { spawn } from "node:child_process";
 import { resolve } from "node:path";
 import { validatePath, ALLOWED_ROOTS } from "./AgenticFileService.ts";
-import { requestLocalStorage } from "../middleware/HeaderPropagationMiddleware.ts";
 import {
-  routeForPath,
+  resolveAndRouteToAgent,
   sendRpc,
   sendRpcStreaming,
 } from "./AgentConnectionManager.ts";
@@ -62,24 +61,7 @@ async function tryAgentRouteCommand(
 ): Promise<CommandResult | null> {
   if (!cwd) return null;
 
-  // Resolve relative cwd paths using the workspace root context so that
-  // remote agent routing matches correctly (e.g. "." → "/workspace").
-  let resolvedCwd = cwd;
-  if (!cwd.startsWith("/")) {
-    const requestStore = requestLocalStorage.getStore();
-    const workspaceOverride = requestStore?.workspaceOverride;
-    const workspaceRoot = requestStore?.workspaceRoot;
-
-    if (workspaceOverride && workspaceOverride.startsWith("/tmp/prism-worktrees/")) {
-      resolvedCwd = resolve(workspaceOverride, cwd);
-    } else if (workspaceRoot) {
-      resolvedCwd = resolve(workspaceRoot, cwd);
-    } else if (ALLOWED_ROOTS[0]) {
-      resolvedCwd = resolve(ALLOWED_ROOTS[0], cwd);
-    }
-  }
-
-  const agent = routeForPath(resolvedCwd);
+  const agent = resolveAndRouteToAgent(cwd, ALLOWED_ROOTS[0]);
   if (!agent) return null;
   try {
     return (await sendRpc(agent.id, method, params)) as CommandResult;
@@ -344,7 +326,7 @@ export async function executeCommandStreaming(
 ): Promise<CommandResult> {
   // Agent routing for streaming commands
   if (cwd) {
-    const agent = routeForPath(cwd);
+    const agent = resolveAndRouteToAgent(cwd, ALLOWED_ROOTS[0]);
     if (agent) {
       try {
         return (await sendRpcStreaming(

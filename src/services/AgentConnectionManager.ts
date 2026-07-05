@@ -2,10 +2,12 @@
 
 import { WebSocketServer, WebSocket } from "ws";
 import crypto from "node:crypto";
+import { resolve } from "node:path";
 import logger from "../logger.ts";
 import CONFIG from "../config.ts";
 import { Server, IncomingMessage } from "node:http";
 import { Duplex } from "node:stream";
+import { requestLocalStorage } from "../middleware/HeaderPropagationMiddleware.ts";
 import {
   AGENT_RPC_TIMEOUT_FILE_MS as RPC_TIMEOUT_FILE_MS,
   AGENT_RPC_TIMEOUT_GIT_MS as RPC_TIMEOUT_GIT_MS,
@@ -635,6 +637,47 @@ export function routeForPath(absolutePath: string | undefined | null) {
   return null;
 }
 
+/**
+ * Resolve a potentially-relative workspace path against the current request
+ * context, then route to the matching workspace agent.
+ *
+ * This is the single source of truth for workspace agent routing.
+ * All workspace tool services (file, git, command, project) should use this
+ * instead of calling routeForPath directly, to ensure relative paths like
+ * "." correctly resolve against the active workspace root.
+ *
+ * Resolution priority:
+ *   1. X-Workspace-Override (active worktree)
+ *   2. X-Workspace-Root (user-selected workspace)
+ *   3. fallbackRoot (typically ALLOWED_ROOTS[0])
+ *
+ * @param targetPath - The path to route (absolute or relative)
+ * @param fallbackRoot - Static fallback root when no request context exists
+ */
+export function resolveAndRouteToAgent(
+  targetPath: string | undefined | null,
+  fallbackRoot?: string,
+) {
+  if (!targetPath) return null;
+
+  let resolvedPath = targetPath;
+  if (!targetPath.startsWith("/")) {
+    const requestStore = requestLocalStorage.getStore();
+    const workspaceOverride = requestStore?.workspaceOverride;
+    const workspaceRoot = requestStore?.workspaceRoot;
+
+    if (workspaceOverride && workspaceOverride.startsWith("/tmp/prism-worktrees/")) {
+      resolvedPath = resolve(workspaceOverride, targetPath);
+    } else if (workspaceRoot) {
+      resolvedPath = resolve(workspaceRoot, targetPath);
+    } else if (fallbackRoot) {
+      resolvedPath = resolve(fallbackRoot, targetPath);
+    }
+  }
+
+  return routeForPath(resolvedPath);
+}
+
 // ────────────────────────────────────────────────────────────
 // Status / Health
 // ────────────────────────────────────────────────────────────
@@ -792,6 +835,7 @@ export default {
   sendRpc,
   sendRpcStreaming,
   routeForPath,
+  resolveAndRouteToAgent,
   isAgentPath,
   getConnectedAgents,
   getAgentInfoForRoot,

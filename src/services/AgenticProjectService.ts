@@ -2,9 +2,8 @@
 
 import { readFile, stat, readdir } from "node:fs/promises";
 import { resolve, join, relative } from "node:path";
-import { validatePath, ALLOWED_ROOTS } from "./AgenticFileService.ts";
-import { routeForPath, sendRpc } from "./AgentConnectionManager.ts";
-import { requestLocalStorage } from "../middleware/HeaderPropagationMiddleware.ts";
+import { validatePath } from "./AgenticFileService.ts";
+import { resolveAndRouteToAgent, sendRpc } from "./AgentConnectionManager.ts";
 import { errorMessage } from "../utilities.ts";
 
 // ────────────────────────────────────────────────────────────
@@ -45,25 +44,8 @@ export interface TransformedProjectSummary {
 export async function agenticProjectSummary(
   projectPath: string,
 ): Promise<TransformedProjectSummary> {
-  // Resolve relative paths against workspace context before routing,
-  // matching tryAgentRoute's pattern in AgenticFileService.
-  let resolvedRoutePath = projectPath;
-  if (projectPath && !projectPath.startsWith("/")) {
-    const requestStore = requestLocalStorage.getStore();
-    const workspaceOverride = requestStore?.workspaceOverride;
-    const workspaceRoot = requestStore?.workspaceRoot;
-
-    if (workspaceOverride && workspaceOverride.startsWith("/tmp/prism-worktrees/")) {
-      resolvedRoutePath = resolve(workspaceOverride, projectPath);
-    } else if (workspaceRoot) {
-      resolvedRoutePath = resolve(workspaceRoot, projectPath);
-    } else if (ALLOWED_ROOTS[0]) {
-      resolvedRoutePath = resolve(ALLOWED_ROOTS[0], projectPath);
-    }
-  }
-
   // Agent routing
-  const agent = routeForPath(resolvedRoutePath);
+  const agent = resolveAndRouteToAgent(projectPath);
   if (agent) {
     try {
       return (await sendRpc(agent.id, "project.summary", {

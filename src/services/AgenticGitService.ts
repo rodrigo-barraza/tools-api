@@ -3,7 +3,7 @@
 import { spawn } from "node:child_process";
 import { validatePath } from "./AgenticFileService.ts";
 import { WORKTREE_DIR } from "../config.ts";
-import { routeForPath, sendRpc } from "./AgentConnectionManager.ts";
+import { resolveAndRouteToAgent, sendRpc } from "./AgentConnectionManager.ts";
 
 export interface GitFileStatus {
   status: string;
@@ -95,7 +95,7 @@ async function tryAgentRoute(
   params: Record<string, unknown>,
   targetPath: string,
 ): Promise<unknown> {
-  const agent = routeForPath(targetPath);
+  const agent = resolveAndRouteToAgent(targetPath);
   if (!agent) return null;
   try {
     return await sendRpc(agent.id, method, params);
