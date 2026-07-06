@@ -15,6 +15,8 @@ interface BraveSearchItem {
   url?: string;
   description?: string;
   age?: string;
+  page_age?: string;
+  extra_snippets?: string[];
 }
 
 interface GoogleCseItem {
@@ -216,7 +218,7 @@ export async function agenticWebSearch(
 
   // siteSearch is prepended as site: operator for providers that use query strings
   const effectiveQuery = siteSearch ? `site:${siteSearch} ${query}` : query;
-  const clampedLimit = Math.min(Number(limit), 10);
+  const clampedLimit = Math.min(Number(limit), 20);
 
   // Build ordered provider chain based on config priority + optional override
   const providerChain = _buildProviderChain(provider);
@@ -338,6 +340,10 @@ async function _searchBrave(
   const params = new URLSearchParams({
     "q": query,
     count: String(limit),
+    text_decorations: "false",
+    extra_snippets: "true",
+    result_filter: "web",
+    safesearch: "off",
   });
 
   // Brave freshness parameters: "pd" (past day), "pw" (past week), "pm" (past month), "py" (past year)
@@ -397,9 +403,11 @@ async function _searchBrave(
   const results = webResults.slice(0, limit).map((item: BraveSearchItem) => ({
     title: item.title || "",
     url: item.url || "",
-    snippet: item.description?.replace(/<\/?[^>]+(>|$)/g, "").trim() || "",
+    snippet: item.description?.trim() || "",
     displayUrl: item.url ? new URL(item.url).hostname : "",
     age: item.age || "",
+    pageAge: item.page_age || "",
+    ...(item.extra_snippets?.length && { extraSnippets: item.extra_snippets }),
   }));
 
   return {

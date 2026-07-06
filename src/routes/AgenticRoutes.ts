@@ -416,7 +416,7 @@ router.post(
       return { error: "Request body must include 'query' (string)" };
     }
     return agenticWebSearch(query, {
-      limit: parseIntParam(limit, 5, 10),
+      limit: parseIntParam(limit, 5, 20),
       dateRestrict,
       siteSearch,
       provider,
