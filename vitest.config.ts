@@ -5,9 +5,10 @@ export default defineConfig({
   ...serviceVitestConfig,
   test: {
     ...serviceVitestConfig.test,
-    exclude: serviceVitestConfig.test?.exclude
-      ? [...serviceVitestConfig.test.exclude]
-      : undefined,
+    exclude: [
+      ...(serviceVitestConfig.test?.exclude || []),
+      "dist/**",
+    ],
     testTimeout: 30000,
     hookTimeout: 30000,
   },
