@@ -1,10 +1,21 @@
 // ─── MinIO Storage Service ──────────────────────────────────
 
 import { Client } from "minio";
+import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
+
+const TOOL_ASSETS_BUCKET = "artifacts";
+
+const MIME_TO_EXTENSION: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/gif": "gif",
+  "image/webp": "webp",
+  "image/svg+xml": "svg",
+};
 
 export default class MinioService {
   static client: Client | null = null;
@@ -69,6 +80,30 @@ export default class MinioService {
       return true;
     } catch {
       return false;
+    }
+  }
+
+  /**
+   * Upload a tool-generated image/asset buffer to MinIO and return a public URL.
+   * Returns null if MinIO is not configured, allowing callers to fall back to
+   * PersistentStore + render endpoints for local development.
+   */
+  static async uploadToolAsset(
+    buffer: Buffer,
+    mimeType: string,
+  ): Promise<string | null> {
+    if (!CONFIG.MINIO_ENDPOINT) return null;
+
+    try {
+      const fileExtension = MIME_TO_EXTENSION[mimeType] || "bin";
+      const objectName = `tool-assets/${crypto.randomUUID()}.${fileExtension}`;
+      await MinioService.putBuffer(TOOL_ASSETS_BUCKET, objectName, buffer, mimeType);
+      return MinioService.getPublicUrl(TOOL_ASSETS_BUCKET, objectName);
+    } catch (error: unknown) {
+      logger.warn(
+        `[MinioService] Tool asset upload failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return null;
     }
   }
 

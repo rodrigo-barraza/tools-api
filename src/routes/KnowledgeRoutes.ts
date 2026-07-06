@@ -937,11 +937,16 @@ router.get(
 
     // ── GIF Delivery ─────────────────────────────────────────
     if (isVideoGifResult(result)) {
+      // Upload to MinIO for permanent URL
+      const minioUrl = await MinioService.uploadToolAsset(
+        result.gifBuffer,
+        result.mimeType,
+      );
       const gifId = videoGifStore.set({
         buffer: result.gifBuffer,
         mimeType: result.mimeType,
       });
-      const gifImageUrl = buildLocalUrl("compute/image/render", { id: gifId });
+      const gifImageUrl = minioUrl || buildLocalUrl("compute/image/render", { id: gifId });
 
       return res.json({
         success: true,

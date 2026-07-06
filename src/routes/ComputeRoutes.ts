@@ -30,6 +30,7 @@ import {
   extractCallerContext,
 } from "../utilities.ts";
 import { PersistentStore } from "../models/EmbedAsset.ts";
+import MinioService from "../services/MinioService.ts";
 import {
   saveTurtleDrawing,
   getTurtleDrawing,
@@ -778,8 +779,12 @@ router.post(
         },
         margin: 2,
       });
+
+      // Upload to MinIO for permanent URL, fall back to render endpoint
+      const minioUrl = await MinioService.uploadToolAsset(pngBuffer, "image/png");
       const id = qrStore.set({ buffer: pngBuffer });
-      const qrImageUrl = buildLocalUrl("compute/qr/render", { id });
+      const qrImageUrl = minioUrl || buildLocalUrl("compute/qr/render", { id });
+
       res.json({ qrImageUrl, qrId: id, dataLength: data.length });
     } catch (error: unknown) {
       res
@@ -2332,11 +2337,13 @@ router.post(
           metadata: result.metadata,
         });
       }
+      // Upload to MinIO for permanent URL, keep ephemeral store for imageId chains
+      const minioUrl = await MinioService.uploadToolAsset(result.buffer!, result.mimeType!);
       const id = imageStore.set({
         buffer: result.buffer!,
         mimeType: result.mimeType!,
       });
-      const imageUrl = buildLocalUrl("compute/image/render", { id });
+      const imageUrl = minioUrl || buildLocalUrl("compute/image/render", { id });
       const response: Record<string, unknown> = {
         success: true,
         imageUrl,
@@ -2380,11 +2387,16 @@ router.post(
         width: width ? parseInt(width, 10) : undefined,
         fps: fps ? parseInt(fps, 10) : undefined,
       });
+      // Upload to MinIO for permanent URL
+      const minioUrl = await MinioService.uploadToolAsset(
+        conversionResult.buffer,
+        conversionResult.mimeType,
+      );
       const uniqueImageId = imageStore.set({
         buffer: conversionResult.buffer,
         mimeType: conversionResult.mimeType,
       });
-      const gifUrl = buildLocalUrl("compute/image/render", {
+      const gifUrl = minioUrl || buildLocalUrl("compute/image/render", {
         id: uniqueImageId,
       });
       res.json({

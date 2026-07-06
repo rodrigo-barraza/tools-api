@@ -39,6 +39,7 @@ import {
 import { MAX_CODE_LENGTH } from "../constants.ts";
 import { buildLocalUrl, errorMessage } from "../utilities.ts";
 import { PersistentStore } from "../models/EmbedAsset.ts";
+import MinioService from "../services/MinioService.ts";
 import { crawlSingleStatic } from "../services/CrawlerService.ts";
 
 interface MapMarker {
@@ -536,7 +537,7 @@ router.post(
 );
 // ─── Chart Generation ──────────────────────────────────────────────
 const VALID_CHART_TYPES = ["bar", "line", "pie"];
-router.post("/chart", (req: Request, res: Response) => {
+router.post("/chart", asyncHandler(async (req: Request, res: Response) => {
   const { type, title, labels, datasets } = req.body;
   if (!type || !VALID_CHART_TYPES.includes(type)) {
     return res.status(400).json({
@@ -584,8 +585,15 @@ router.post("/chart", (req: Request, res: Response) => {
     datasets,
     options: req.body.options || {},
   };
+
+  // Render PNG eagerly and attempt MinIO upload for permanent URL
+  const pngBuffer = await renderChartPng(chartConfig);
+  const minioUrl = await MinioService.uploadToolAsset(pngBuffer, "image/png");
+
+  // Fallback: store config for the legacy render endpoint
   const chartId = storeChart(chartConfig);
-  const chartImageUrl = buildLocalUrl("utility/chart/render", { id: chartId });
+  const chartImageUrl = minioUrl || buildLocalUrl("utility/chart/render", { id: chartId });
+
   res.json({
     chartImageUrl,
     chartId,
@@ -593,7 +601,7 @@ router.post("/chart", (req: Request, res: Response) => {
     labelCount: labels.length,
     datasetCount: datasets.length,
   });
-});
+}));
 router.get(
   "/chart/render",
   asyncHandler(async (req: Request, res: Response) => {
