@@ -41,6 +41,7 @@ interface BraveNewsItem {
   page_age?: string;
   thumbnail?: { src?: string };
   meta_url?: { hostname?: string };
+  extra_snippets?: string[];
 }
 
 interface BraveImageItem {
@@ -48,6 +49,7 @@ interface BraveImageItem {
   url?: string;
   source?: string;
   page_age?: string;
+  page_fetched?: string;
   thumbnail?: { src?: string; width?: number; height?: number };
   properties?: { url?: string; width?: number; height?: number; format?: string };
   meta_url?: { hostname?: string };
@@ -469,6 +471,7 @@ async function _searchBraveNews(
     q: query,
     count: String(limit),
     text_decorations: "false",
+    extra_snippets: "true",
     safesearch: "off",
   });
 
@@ -510,6 +513,7 @@ async function _searchBraveNews(
       publishedAt: item.age || "",
       publishedAtIso: item.page_age || "",
       ...(item.thumbnail?.src && { thumbnail: item.thumbnail.src }),
+      ...(item.extra_snippets?.length && { extraSnippets: item.extra_snippets }),
     })),
     totalResults: newsResults.length,
     provider: SEARCH_PROVIDER.BRAVE_NEWS,
@@ -1125,7 +1129,7 @@ export async function agenticNewsSearch(
 export async function agenticImageSearch(
   query: string,
   {
-    limit = 10,
+    limit = 20,
     safesearch = "off",
   }: {
     limit?: number;
@@ -1140,7 +1144,7 @@ export async function agenticImageSearch(
     return { error: "Image search requires a Brave Search API key" };
   }
 
-  const clampedLimit = Math.min(Math.max(Number(limit) || 10, 1), 50);
+  const clampedLimit = Math.min(Math.max(Number(limit) || 20, 1), 150);
 
   const params = new URLSearchParams({
     q: query,
@@ -1179,6 +1183,7 @@ export async function agenticImageSearch(
       width: item.properties?.width || null,
       height: item.properties?.height || null,
       format: item.properties?.format || "",
+      pageFetched: item.page_fetched || "",
     }));
 
     return {
@@ -1203,7 +1208,7 @@ export async function agenticImageSearch(
 export async function agenticVideoSearch(
   query: string,
   {
-    limit = 10,
+    limit = 20,
     dateRestrict,
     safesearch = "off",
   }: {

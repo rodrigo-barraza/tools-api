@@ -438,7 +438,7 @@ router.post(
     }
     return agenticNewsSearch(query, {
       topic,
-      limit: parseIntParam(limit, 10, 50),
+      limit: parseIntParam(limit, 20, 50),
       locale,
       countryEdition,
     });
@@ -453,7 +453,7 @@ router.post(
       return { error: "Request body must include 'query' (string)" };
     }
     return agenticImageSearch(query, {
-      limit: parseIntParam(limit, 10, 50),
+      limit: parseIntParam(limit, 20, 150),
     });
   }),
 );
@@ -466,7 +466,7 @@ router.post(
       return { error: "Request body must include 'query' (string)" };
     }
     return agenticVideoSearch(query, {
-      limit: parseIntParam(limit, 10, 50),
+      limit: parseIntParam(limit, 20, 50),
       dateRestrict,
     });
   }),
