@@ -410,7 +410,7 @@ router.post(
 router.post(
   "/web/search",
   agenticHandler(async (req: Request) => {
-    const { query, limit, dateRestrict, siteSearch } = req.body;
+    const { query, limit, dateRestrict, siteSearch, provider } = req.body;
     if (!query || typeof query !== "string") {
       return { error: "Request body must include 'query' (string)" };
     }
@@ -418,6 +418,7 @@ router.post(
       limit: parseIntParam(limit, 5, 10),
       dateRestrict,
       siteSearch,
+      provider,
     });
   }),
 );

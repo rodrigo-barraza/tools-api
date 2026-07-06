@@ -7,6 +7,7 @@ type Cheerio<T> = cheerio.Cheerio<T>;
 
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
+import rateLimiter from "./RateLimiterService.ts";
 import { errorMessage } from "../utilities.ts";
 
 interface BraveSearchItem {
@@ -56,6 +57,16 @@ const DUCKDUCKGO_HTML_BASE = "https://html.duckduckgo.com/html/";
 
 const DUCKDUCKGO_BROWSER_USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+
+const SEARCH_PROVIDER = {
+  BRAVE: "brave",
+  DUCKDUCKGO: "duckduckgo",
+  GOOGLE_CSE: "google_cse",
+} as const;
+
+const SEARCH_RATE_LIMIT_KEY = {
+  DUCKDUCKGO: "DUCKDUCKGO",
+} as const;
 
 // ────────────────────────────────────────────────────────────
 // URL Fetching
@@ -176,11 +187,14 @@ export async function agenticFetchUrl(
 }
 
 // ────────────────────────────────────────────────────────────
-// Web Search — Multi-Provider
-// Brave → DuckDuckGo (scrape) → Google CSE (deprecated)
+// Web Search — Multi-Provider (priority-configurable)
+// Default: Brave → DuckDuckGo → Google CSE (deprecated)
+// Set SEARCH_PROVIDER_PRIORITY=duckduckgo to flip primary
 // ────────────────────────────────────────────────────────────
 
 const BRAVE_SEARCH_BASE = "https://api.search.brave.com/res/v1/web/search";
+
+type SearchProvider = typeof SEARCH_PROVIDER.BRAVE | typeof SEARCH_PROVIDER.DUCKDUCKGO;
 
 export async function agenticWebSearch(
   query: string,
@@ -188,7 +202,13 @@ export async function agenticWebSearch(
     limit = 5,
     dateRestrict,
     siteSearch,
-  }: { limit?: number; dateRestrict?: string; siteSearch?: string } = {},
+    provider,
+  }: {
+    limit?: number;
+    dateRestrict?: string;
+    siteSearch?: string;
+    provider?: SearchProvider;
+  } = {},
 ) {
   if (!query || typeof query !== "string") {
     return { error: "'query' is required and must be a non-empty string" };
@@ -198,50 +218,21 @@ export async function agenticWebSearch(
   const effectiveQuery = siteSearch ? `site:${siteSearch} ${query}` : query;
   const clampedLimit = Math.min(Number(limit), 10);
 
-  // ── Provider 1: Brave Search ───────────────────────────────
-  if (CONFIG.BRAVE_SEARCH_API_KEY) {
-    try {
-      const result = await _searchBrave(effectiveQuery, {
-        limit: clampedLimit,
-        dateRestrict,
-      });
-      if (!result.error) return result;
-      logger.warn(
-        `[AgenticWebService] Brave Search failed, trying DuckDuckGo: ${result.error}`,
-      );
-    } catch (error: unknown) {
-      logger.warn(
-        `[AgenticWebService] Brave Search exception: ${errorMessage(error)}`,
-      );
-    }
-  }
+  // Build ordered provider chain based on config priority + optional override
+  const providerChain = _buildProviderChain(provider);
 
-  // ── Provider 2: DuckDuckGo HTML Scrape (zero-config) ──────
-  try {
-    const duckDuckGoResult = await _searchDuckDuckGo(effectiveQuery, {
-      limit: clampedLimit,
-      dateRestrict,
-    });
-    if (!duckDuckGoResult.error) return duckDuckGoResult;
-    logger.warn(
-      `[AgenticWebService] DuckDuckGo scrape failed, trying Google CSE: ${duckDuckGoResult.error}`,
-    );
-  } catch (error: unknown) {
-    logger.warn(
-      `[AgenticWebService] DuckDuckGo exception: ${errorMessage(error)}`,
-    );
-  }
+  logger.info(
+    `[AgenticWebService] Search provider chain: ${providerChain.join(" → ")}`,
+  );
 
-  // ── Provider 3: Google Custom Search (deprecated) ─────────
-  if (CONFIG.GOOGLE_CLOUD_GEMINI_API_KEY && CONFIG.GOOGLE_CSE_CX) {
-    logger.warn(
-      "[AgenticWebService] Using deprecated Google CSE fallback — this provider is being discontinued.",
-    );
-    return _searchGoogleCSE(query, {
+  for (const currentProvider of providerChain) {
+    const result = await _tryProvider(currentProvider, effectiveQuery, {
       limit: clampedLimit,
       dateRestrict,
       siteSearch,
+      query,
     });
+    if (result) return result;
   }
 
   return {
@@ -252,6 +243,90 @@ export async function agenticWebSearch(
       "All search providers failed. Brave API key not set, DuckDuckGo scrape failed, and Google CSE not configured.",
     provider: null,
   };
+}
+
+function _buildProviderChain(
+  forcedProvider?: SearchProvider,
+): string[] {
+  // If a specific provider is forced, use only that provider
+  if (forcedProvider) {
+    return [forcedProvider];
+  }
+
+  const priority = CONFIG.SEARCH_PROVIDER_PRIORITY;
+  const chain: string[] = [];
+
+  if (priority === SEARCH_PROVIDER.DUCKDUCKGO) {
+    chain.push(SEARCH_PROVIDER.DUCKDUCKGO);
+    if (CONFIG.BRAVE_SEARCH_API_KEY) chain.push(SEARCH_PROVIDER.BRAVE);
+  } else {
+    if (CONFIG.BRAVE_SEARCH_API_KEY) chain.push(SEARCH_PROVIDER.BRAVE);
+    chain.push(SEARCH_PROVIDER.DUCKDUCKGO);
+  }
+
+  // Google CSE always last (deprecated)
+  if (CONFIG.GOOGLE_CLOUD_GEMINI_API_KEY && CONFIG.GOOGLE_CSE_CX) {
+    chain.push(SEARCH_PROVIDER.GOOGLE_CSE);
+  }
+
+  return chain;
+}
+
+async function _tryProvider(
+  providerName: string,
+  effectiveQuery: string,
+  {
+    limit,
+    dateRestrict,
+    siteSearch,
+    query,
+  }: {
+    limit: number;
+    dateRestrict?: string;
+    siteSearch?: string;
+    query: string;
+  },
+): Promise<Record<string, unknown> | null> {
+  try {
+    switch (providerName) {
+      case SEARCH_PROVIDER.BRAVE: {
+        if (!CONFIG.BRAVE_SEARCH_API_KEY) return null;
+        const braveResult = await _searchBrave(effectiveQuery, {
+          limit,
+          dateRestrict,
+        });
+        if (!braveResult.error) return braveResult;
+        logger.warn(
+          `[AgenticWebService] Brave Search failed: ${braveResult.error}`,
+        );
+        return null;
+      }
+      case SEARCH_PROVIDER.DUCKDUCKGO: {
+        const duckDuckGoResult = await _searchDuckDuckGo(effectiveQuery, {
+          limit,
+          dateRestrict,
+        });
+        if (!duckDuckGoResult.error) return duckDuckGoResult;
+        logger.warn(
+          `[AgenticWebService] DuckDuckGo scrape failed: ${duckDuckGoResult.error}`,
+        );
+        return null;
+      }
+      case SEARCH_PROVIDER.GOOGLE_CSE: {
+        logger.warn(
+          "[AgenticWebService] Using deprecated Google CSE fallback — this provider is being discontinued.",
+        );
+        return _searchGoogleCSE(query, { limit, dateRestrict, siteSearch });
+      }
+      default:
+        return null;
+    }
+  } catch (error: unknown) {
+    logger.warn(
+      `[AgenticWebService] ${providerName} exception: ${errorMessage(error)}`,
+    );
+    return null;
+  }
 }
 
 // ── Brave Search Implementation ──────────────────────────────
@@ -306,13 +381,13 @@ async function _searchBrave(
       return {
         error: "Brave Search rate limit exceeded.",
         query,
-        provider: "brave",
+        provider: SEARCH_PROVIDER.BRAVE,
       };
     }
     return {
       error: `Brave Search API error: HTTP ${response.status} — ${body.slice(0, 500)}`,
       query,
-      provider: "brave",
+      provider: SEARCH_PROVIDER.BRAVE,
     };
   }
 
@@ -332,7 +407,7 @@ async function _searchBrave(
     limit,
     results,
     totalResults: String(webResults.length),
-    provider: "brave",
+    provider: SEARCH_PROVIDER.BRAVE,
   };
 }
 
@@ -365,6 +440,8 @@ async function _searchDuckDuckGo(
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
   try {
+    await rateLimiter.wait(SEARCH_RATE_LIMIT_KEY.DUCKDUCKGO);
+
     const response = await fetch(DUCKDUCKGO_HTML_BASE, {
       method: "POST",
       headers: {
@@ -382,7 +459,7 @@ async function _searchDuckDuckGo(
       return {
         error: `DuckDuckGo HTML error: HTTP ${response.status}`,
         query,
-        provider: "duckduckgo",
+        provider: SEARCH_PROVIDER.DUCKDUCKGO,
       };
     }
 
@@ -418,7 +495,7 @@ async function _searchDuckDuckGo(
       return {
         error: "DuckDuckGo returned no parseable results (possible rate-limit or CAPTCHA).",
         query,
-        provider: "duckduckgo",
+        provider: SEARCH_PROVIDER.DUCKDUCKGO,
       };
     }
 
@@ -427,7 +504,7 @@ async function _searchDuckDuckGo(
       limit,
       results,
       totalResults: String(results.length),
-      provider: "duckduckgo",
+      provider: SEARCH_PROVIDER.DUCKDUCKGO,
     };
   } finally {
     clearTimeout(timeout);
@@ -491,13 +568,13 @@ async function _searchGoogleCSE(
       return {
         error: "Google Custom Search daily quota exhausted (100/day free).",
         query,
-        provider: "google_cse",
+        provider: SEARCH_PROVIDER.GOOGLE_CSE,
       };
     }
     return {
       error: `Google CSE API error: HTTP ${response.status} — ${body.slice(0, 500)}`,
       query,
-      provider: "google_cse",
+      provider: SEARCH_PROVIDER.GOOGLE_CSE,
     };
   }
 
@@ -516,7 +593,7 @@ async function _searchGoogleCSE(
     results,
     totalResults: data.searchInformation?.totalResults || "0",
     searchTime: data.searchInformation?.searchTime || 0,
-    provider: "google_cse",
+    provider: SEARCH_PROVIDER.GOOGLE_CSE,
   };
 }
 

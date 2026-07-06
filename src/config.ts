@@ -74,6 +74,7 @@ interface ToolsServiceConfig {
   GOOGLE_CLOUD_GEMINI_API_KEY: string | undefined;
   GOOGLE_CSE_CX: string | undefined;
   BRAVE_SEARCH_API_KEY: string | undefined;
+  SEARCH_PROVIDER_PRIORITY: "brave" | "duckduckgo";
 
   // Transit
   TRANSLINK_API_KEY: string | undefined;
@@ -195,6 +196,8 @@ const CONFIG: ToolsServiceConfig = {
 
   // ─── Web Search ───────────────────────────────────────────────────
   BRAVE_SEARCH_API_KEY: process.env.BRAVE_SEARCH_API_KEY,
+  SEARCH_PROVIDER_PRIORITY:
+    (process.env.SEARCH_PROVIDER_PRIORITY as "brave" | "duckduckgo") || "brave",
 
   // ─── Transit ─────────────────────────────────────────────────────
   TRANSLINK_API_KEY: process.env.TRANSLINK_API_KEY,

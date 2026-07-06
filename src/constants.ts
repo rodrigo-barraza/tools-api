@@ -2027,6 +2027,14 @@ export const API_RATE_LIMITS = {
     qpd: null, // undocumented; key auto-suspended if exceeded
     requestDelayMs: 500, // conservative pacing
   },
+
+  // ─── Search Domain ────────────────────────────────────────────────
+  DUCKDUCKGO: {
+    qps: null,
+    qpm: 30,
+    qpd: null, // HTML scrape endpoint — no official API, 30 QPM to avoid CAPTCHA
+    requestDelayMs: 2_000, // 60000 / 30 QPM
+  },
 };
 
 // ─── Category Mappings ──────────────────────────────────────
