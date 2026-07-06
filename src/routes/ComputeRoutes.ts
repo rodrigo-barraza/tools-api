@@ -1523,7 +1523,7 @@ function buildTurtleEmbedHtml(
     showTurtle = true;
     clearCanvas();
   }
-  function degreesToRadians(degrees: number): number { return degrees * Math.PI / 180; }
+  function degreesToRadians(degrees) { return degrees * Math.PI / 180; }
   function drawTurtle() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = BG;
