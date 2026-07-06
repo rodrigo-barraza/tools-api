@@ -804,3 +804,188 @@ function processTable(
   }
   lines.push("");
 }
+
+// ────────────────────────────────────────────────────────────
+// Google News RSS Feed
+// ────────────────────────────────────────────────────────────
+
+const GOOGLE_NEWS_RSS_BASE = "https://news.google.com/rss";
+
+/**
+ * Pre-defined Google News topic IDs.
+ * These are stable, locale-independent tokens used in the RSS URL path.
+ */
+const GOOGLE_NEWS_TOPIC_ID: Record<string, string> = {
+  top: "",
+  world: "CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx1YlY4U0FtVnVHZ0pWVXlnQVAB",
+  nation: "CAAqIggKIhxDQkFTRHdvSkwyMHZNRGxqTjNjd0VnSmxiaWdBUAE",
+  business: "CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx6TVdZU0FtVnVHZ0pWVXlnQVAB",
+  technology: "CAAqJggKIiBDQkFTRWdvSUwyMHZNRGRqTVhZU0FtVnVHZ0pWVXlnQVAB",
+  entertainment: "CAAqJggKIiBDQkFTRWdvSUwyMHZNREpxYW5RU0FtVnVHZ0pWVXlnQVAB",
+  sports: "CAAqJggKIiBDQkFTRWdvSUwyMHZNRFp1ZEdvU0FtVnVHZ0pWVXlnQVAB",
+  science: "CAAqJggKIiBDQkFTRWdvSUwyMHZNRFp0Y1RjU0FtVnVHZ0pWVXlnQVAB",
+  health: "CAAqIQgKIhtDQkFTRGdvSUwyMHZNR3QwTlRFU0FtVnVLQUFQAQ",
+};
+
+interface GoogleNewsArticle {
+  title: string;
+  url: string;
+  source: string;
+  publishedAt: string;
+  publishedAtIso: string;
+}
+
+interface AgenticNewsSearchOptions {
+  topic?: string;
+  limit?: number;
+  locale?: string;
+  countryEdition?: string;
+}
+
+export async function agenticNewsSearch(
+  query?: string,
+  {
+    topic,
+    limit = 10,
+    locale = "en-US",
+    countryEdition = "US",
+  }: AgenticNewsSearchOptions = {},
+) {
+  // At least one of query or topic must be provided
+  if (!query && !topic) {
+    return {
+      error:
+        "'query' or 'topic' is required. Provide a search query string, a topic name (top, world, nation, business, technology, entertainment, sports, science, health), or both.",
+    };
+  }
+
+  const clampedLimit = Math.min(Math.max(Number(limit) || 10, 1), 50);
+  const [languageCode, regionCode] = locale.split("-");
+  const hostLanguage = `${languageCode}-${regionCode || countryEdition}`;
+  const ceid = `${countryEdition}:${languageCode}`;
+
+  // Build RSS URL
+  let rssUrl: string;
+
+  if (query) {
+    // Query-based search — optionally scoped to a topic is not supported
+    // by Google News RSS, so we just use the search endpoint
+    const searchParameters = new URLSearchParams({
+      q: query,
+      hl: hostLanguage,
+      gl: countryEdition,
+      ceid,
+    });
+    rssUrl = `${GOOGLE_NEWS_RSS_BASE}/search?${searchParameters}`;
+  } else if (topic) {
+    const normalizedTopic = topic.toLowerCase().trim();
+    const topicId = GOOGLE_NEWS_TOPIC_ID[normalizedTopic];
+
+    if (topicId === undefined) {
+      return {
+        error: `Unknown topic '${topic}'. Available topics: ${Object.keys(GOOGLE_NEWS_TOPIC_ID).join(", ")}`,
+      };
+    }
+
+    if (normalizedTopic === "top" || topicId === "") {
+      // Top stories — no topic path segment
+      const topParameters = new URLSearchParams({
+        hl: hostLanguage,
+        gl: countryEdition,
+        ceid,
+      });
+      rssUrl = `${GOOGLE_NEWS_RSS_BASE}?${topParameters}`;
+    } else {
+      const topicParameters = new URLSearchParams({
+        hl: hostLanguage,
+        gl: countryEdition,
+        ceid,
+      });
+      rssUrl = `${GOOGLE_NEWS_RSS_BASE}/topics/${topicId}?${topicParameters}`;
+    }
+  } else {
+    // Unreachable due to the guard above, but TypeScript needs it
+    return { error: "'query' or 'topic' is required." };
+  }
+
+  let fetchTimeout: NodeJS.Timeout | undefined;
+  try {
+    const controller = new AbortController();
+    fetchTimeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+    logger.info(
+      `[AgenticWebService] News RSS fetch: ${rssUrl}`,
+    );
+
+    const response = await fetch(rssUrl, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": USER_AGENT,
+        Accept: "application/rss+xml, application/xml, text/xml, */*",
+        "Accept-Language": locale,
+      },
+      redirect: "follow",
+    });
+
+    if (!response.ok) {
+      return {
+        error: `Google News RSS error: HTTP ${response.status} — ${response.statusText}`,
+        url: rssUrl,
+      };
+    }
+
+    const xmlContent = await response.text();
+    const parsedFeed = cheerio.load(xmlContent, { xml: true });
+
+    const articles: GoogleNewsArticle[] = [];
+
+    parsedFeed("item").each((_index: number, element: AnyNode) => {
+      if (articles.length >= clampedLimit) return false;
+
+      const $item = parsedFeed(element);
+      const rawTitle = $item.find("title").first().text().trim();
+      const rawLink = $item.find("link").first().text().trim();
+      const rawSource = $item.find("source").first().text().trim();
+      const rawPubDate = $item.find("pubDate").first().text().trim();
+
+      if (rawTitle && rawLink) {
+        const parsedDate = rawPubDate ? new Date(rawPubDate) : null;
+        articles.push({
+          title: rawTitle,
+          url: rawLink,
+          source: rawSource || "Unknown",
+          publishedAt: rawPubDate,
+          publishedAtIso: parsedDate && !isNaN(parsedDate.getTime())
+            ? parsedDate.toISOString()
+            : "",
+        });
+      }
+    });
+
+    return {
+      query: query || null,
+      topic: topic || null,
+      locale,
+      countryEdition,
+      limit: clampedLimit,
+      results: articles,
+      totalResults: articles.length,
+      provider: "google_news_rss",
+    };
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === "AbortError") {
+      return {
+        error: `Google News RSS request timed out after ${FETCH_TIMEOUT_MS}ms`,
+        url: rssUrl,
+      };
+    }
+    return {
+      error: `Google News RSS fetch failed: ${errorMessage(error)}`,
+      url: rssUrl,
+    };
+  } finally {
+    if (fetchTimeout) {
+      clearTimeout(fetchTimeout);
+    }
+  }
+}

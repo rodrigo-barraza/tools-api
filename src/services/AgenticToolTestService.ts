@@ -16,7 +16,7 @@ import {
   agenticFileDiff,
   agenticMoveFile,
 } from "./AgenticFileService.ts";
-import { agenticFetchUrl, agenticWebSearch } from "./AgenticWebService.ts";
+import { agenticFetchUrl, agenticWebSearch, agenticNewsSearch } from "./AgenticWebService.ts";
 import { readPdfUrl } from "../fetchers/web/PdfFetcher.ts";
 import { readDocxUrl } from "../fetchers/web/DocxFetcher.ts";
 import { readSpreadsheetUrl } from "../fetchers/web/SpreadsheetFetcher.ts";
@@ -314,6 +314,11 @@ const TESTS = {
 
   search_web: () =>
     runTest("search_web", () => agenticWebSearch("test", { limit: 1 })),
+
+  search_news: () =>
+    runTest("search_news", () =>
+      agenticNewsSearch(undefined, { topic: "technology", limit: 1 }),
+    ),
 
   // ── Command Execution ────────────────────────────────────
 

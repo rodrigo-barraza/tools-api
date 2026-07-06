@@ -29,6 +29,7 @@ import {
 import {
   agenticFetchUrl,
   agenticWebSearch,
+  agenticNewsSearch,
 } from "../services/AgenticWebService.ts";
 import { readPdfUrl } from "../fetchers/web/PdfFetcher.ts";
 import { readDocxUrl } from "../fetchers/web/DocxFetcher.ts";
@@ -419,6 +420,25 @@ router.post(
       dateRestrict,
       siteSearch,
       provider,
+    });
+  }),
+);
+// ── News Search ──────────────────────────────────────────────
+router.post(
+  "/web/news-search",
+  agenticHandler(async (req: Request) => {
+    const { query, topic, limit, locale, countryEdition } = req.body;
+    if (!query && !topic) {
+      return {
+        error:
+          "Request body must include 'query' (string) and/or 'topic' (string)",
+      };
+    }
+    return agenticNewsSearch(query, {
+      topic,
+      limit: parseIntParam(limit, 10, 50),
+      locale,
+      countryEdition,
     });
   }),
 );

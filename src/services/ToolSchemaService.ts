@@ -7513,6 +7513,42 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
     },
   },
   {
+    name: "search_news",
+    dataSource: onDemand("Google News RSS"),
+    description: translate("search_news.description"),
+    endpoint: {
+      method: "POST",
+      path: "/agentic/web/news-search",
+      bodyParams: ["query", "topic", "limit", "locale", "countryEdition"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: translate("search_news.params.query"),
+        },
+        topic: {
+          type: "string",
+          description: translate("search_news.params.topic"),
+        },
+        limit: {
+          type: "integer",
+          description: translate("search_news.params.limit"),
+        },
+        locale: {
+          type: "string",
+          description: translate("search_news.params.locale"),
+        },
+        countryEdition: {
+          type: "string",
+          description: translate("search_news.params.countryEdition"),
+        },
+      },
+      required: [],
+    },
+  },
+  {
     name: "read_files",
     dataSource: compute("sandboxed fs"),
     description: translate("read_files.description"),
@@ -12042,6 +12078,7 @@ const TOOL_DOMAINS = {
   read_docx: "Web",
   read_spreadsheet: "Web",
   search_web: "Core Harness Tools",
+  search_news: "Web",
 
   // Agentic — Command Execution
   execute_command: "Core Workspace Tools",
@@ -12463,6 +12500,7 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   read_docx: ["📝", "📄"],
   read_spreadsheet: ["📄", "📊"],
   search_web: ["🌐", "🔍"],
+  search_news: ["📰", "🔍"],
   execute_command: ["▶️", "🖥️"],
   run_git: ["📦", "🔀"],
   control_browser: ["🌐", "🖱️"],
