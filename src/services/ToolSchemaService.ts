@@ -3323,30 +3323,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
     },
   },
 
-  {
-    name: "download_reddit_video",
-    dataSource: onDemand("Reddit .json API + yt-dlp + ffmpeg"),
-    description: translate("download_reddit_video.description"),
-    endpoint: {
-      path: "/knowledge/reddit/video",
-      queryParams: ["url", "format"],
-    },
-    parameters: {
-      type: "object",
-      properties: {
-        url: {
-          type: "string",
-          description: translate("download_reddit_video.params.url"),
-        },
-        format: {
-          type: "string",
-          enum: ["mp4", "gif"],
-          description: translate("download_reddit_video.params.format"),
-        },
-      },
-      required: ["url"],
-    },
-  },
+
 
   // ── Movies & TV (12 → 6 unified + get_tv_season_details) ──────
   {
@@ -11995,7 +11972,7 @@ const TOOL_DOMAINS = {
   get_reddit_subreddit_wiki_page: "Reddit",
   get_reddit_user_history: "Reddit",
   get_reddit_user_profile: "Reddit",
-  download_reddit_video: "Reddit",
+
 
   // Movies & TV
   search_media: "Movies & TV",
@@ -12439,7 +12416,7 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   get_reddit_subreddit_wiki_page: ["🤖", "📖"],
   get_reddit_user_history: ["🤖", "📜"],
   get_reddit_user_profile: "👤",
-  download_reddit_video: ["🤖", "📥"],
+
   search_media: ["🎬", "🔍"],
   get_media_details: "🎥",
   get_media_credits: ["🌟", "💻"],

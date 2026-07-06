@@ -34,7 +34,7 @@ import { setupThreeDimensionalSceneCollection } from "./models/ThreeDimensionalS
 import { setupEmbedAssetCollection } from "./models/EmbedAsset.ts";
 import { setupCurrencyCollection } from "./models/CurrencySnapshot.ts";
 import { setupVideoCacheCollection } from "./models/VideoCache.ts";
-import { setupRedditVideoCacheCollection } from "./models/RedditVideoCache.ts";
+
 import { setupVideoTrimCacheCollection } from "./models/VideoTrimCache.ts";
 
 
@@ -230,7 +230,7 @@ async function start() {
       setupEmbedAssetCollection(),
       setupCurrencyCollection(),
       setupVideoCacheCollection(),
-      setupRedditVideoCacheCollection(),
+
       setupVideoTrimCacheCollection(),
       setupToolCallsCollection(),
 

@@ -84,18 +84,7 @@ import {
   getSubredditWikiPages,
   getSubredditWikiPage,
 } from "../fetchers/web/RedditSubredditFetcher.ts";
-import {
-  downloadRedditVideo,
-  normalizeRedditUrl,
-  isRedditFileResult,
-  isRedditGifResult,
-  isRedditErrorResult,
-} from "../fetchers/web/RedditVideoFetcher.ts";
-import type { RedditDownloadFormat } from "../fetchers/web/RedditVideoFetcher.ts";
-import {
-  findRedditVideoCacheEntry,
-  upsertRedditVideoCacheEntry,
-} from "../models/RedditVideoCache.ts";
+
 import {
   findVideoTrimCacheEntry,
   upsertVideoTrimCacheEntry,
@@ -874,148 +863,7 @@ router.get(
     res.json(result);
   }),
 );
-// ─── Reddit Video Download ─────────────────────────────────────────
 
-const redditGifStore = new PersistentStore<{ buffer: Buffer; mimeType: string }>("reddit-gif");
-
-const REDDIT_DOWNLOAD_BUCKET = "artifacts";
-const REDDIT_DOWNLOAD_PREFIX = "reddit-downloads";
-
-const VALID_REDDIT_FORMATS = new Set<RedditDownloadFormat>(["mp4", "gif"]);
-
-router.get(
-  "/reddit/video",
-  asyncHandler(async (req: Request, res: Response) => {
-    const { url, format } = req.query as Record<string, string | undefined>;
-    if (!url) {
-      return res
-        .status(400)
-        .json({ error: "Query parameter 'url' is required (Reddit post or v.redd.it URL)" });
-    }
-
-    const downloadFormat: RedditDownloadFormat =
-      format && VALID_REDDIT_FORMATS.has(format as RedditDownloadFormat)
-        ? (format as RedditDownloadFormat)
-        : "mp4";
-
-    // ── Cache Check (MP4 only — GIFs are ephemeral) ───────────
-    if (downloadFormat === "mp4") {
-      const normalizedUrl = normalizeRedditUrl(url);
-      if (normalizedUrl) {
-        const urlHash = crypto.createHash("sha256").update(normalizedUrl).digest("hex").slice(0, 32);
-        const cachedEntry = await findRedditVideoCacheEntry(urlHash);
-        if (cachedEntry) {
-          return res.json({
-            success: true,
-            cached: true,
-            message: `Reddit video already downloaded: "${cachedEntry.title}" from r/${cachedEntry.subreddit} (${cachedEntry.durationSeconds ?? "?"}s). Download: ${cachedEntry.downloadUrl}`,
-            title: cachedEntry.title,
-            author: cachedEntry.author,
-            subreddit: cachedEntry.subreddit,
-            permalink: cachedEntry.permalink,
-            isNsfw: cachedEntry.isNsfw,
-            durationSeconds: cachedEntry.durationSeconds,
-            widthPixels: cachedEntry.widthPixels,
-            heightPixels: cachedEntry.heightPixels,
-            fileSizeBytes: cachedEntry.fileSizeBytes,
-            format: cachedEntry.format,
-            downloadUrl: cachedEntry.downloadUrl,
-            mimeType: cachedEntry.mimeType,
-            cachedAt: cachedEntry.cachedAt,
-            accessCount: cachedEntry.accessCount,
-          });
-        }
-      }
-    }
-
-    const result = await downloadRedditVideo(url, downloadFormat);
-
-    if (isRedditErrorResult(result)) {
-      return res.status(400).json(result);
-    }
-
-    // ── GIF Delivery ────────────────────────────────────────
-    if (isRedditGifResult(result)) {
-      const gifId = redditGifStore.set({
-        buffer: result.gifBuffer,
-        mimeType: result.mimeType,
-      });
-      const gifImageUrl = buildLocalUrl("compute/image/render", { id: gifId });
-
-      return res.json({
-        success: true,
-        message: `Reddit video converted to GIF: "${result.metadata.title}" from ${result.metadata.subreddit}.`,
-        title: result.metadata.title,
-        author: result.metadata.author,
-        subreddit: result.metadata.subreddit,
-        permalink: result.metadata.permalink,
-        format: "gif",
-        imageUrl: gifImageUrl,
-        imageId: gifId,
-        mimeType: result.mimeType,
-      });
-    }
-
-    // ── MP4 Delivery via MinIO + DB persistence ──────────────
-    if (isRedditFileResult(result)) {
-      try {
-        const fileBuffer = await readFile(result.filePath);
-        const normalizedUrl = normalizeRedditUrl(url) ?? url;
-        const urlHash = crypto.createHash("sha256").update(normalizedUrl).digest("hex").slice(0, 32);
-        const objectKey = `${REDDIT_DOWNLOAD_PREFIX}/${urlHash}.${result.format}`;
-
-        await MinioService.putBuffer(
-          REDDIT_DOWNLOAD_BUCKET,
-          objectKey,
-          fileBuffer,
-          result.mimeType,
-        );
-
-        const downloadUrl = MinioService.getPublicUrl(
-          REDDIT_DOWNLOAD_BUCKET,
-          objectKey,
-        );
-
-        await upsertRedditVideoCacheEntry({
-          urlHash,
-          normalizedUrl,
-          format: "mp4",
-          minioObjectKey: objectKey,
-          downloadUrl,
-          title: result.metadata.title,
-          author: result.metadata.author,
-          subreddit: result.metadata.subreddit,
-          permalink: result.metadata.permalink,
-          isNsfw: result.metadata.isNsfw,
-          durationSeconds: result.metadata.durationSeconds,
-          widthPixels: result.metadata.widthPixels,
-          heightPixels: result.metadata.heightPixels,
-          fileSizeBytes: result.fileSize,
-          mimeType: result.mimeType,
-        });
-
-        return res.json({
-          success: true,
-          message: `Reddit video downloaded: "${result.metadata.title}" (${result.metadata.durationSeconds ?? "?"}s, ${(result.fileSize / 1024 / 1024).toFixed(1)} MB). Download: ${downloadUrl}`,
-          title: result.metadata.title,
-          author: result.metadata.author,
-          subreddit: result.metadata.subreddit,
-          permalink: result.metadata.permalink,
-          isNsfw: result.metadata.isNsfw,
-          durationSeconds: result.metadata.durationSeconds,
-          widthPixels: result.metadata.widthPixels,
-          heightPixels: result.metadata.heightPixels,
-          fileSize: result.fileSize,
-          format: result.format,
-          downloadUrl,
-          mimeType: result.mimeType,
-        });
-      } finally {
-        await rm(result.temporaryDirectory, { recursive: true, force: true }).catch(() => {});
-      }
-    }
-  }),
-);
 // ─── Video Download (unified) ─────────────────────────────────────
 
 const videoGifStore = new PersistentStore<{ buffer: Buffer; mimeType: string }>("video-gif");
@@ -1549,7 +1397,7 @@ export function getKnowledgeHealth() {
     youtube: "on-demand (oEmbed + youtube-transcript)",
     github: "on-demand (GitHub REST API v3)",
     reddit:
-      "on-demand (.json API + OAuth2: user history, search, subreddit discovery/feed/wiki/rules, video download via yt-dlp)",
+      "on-demand (.json API + OAuth2: user history, search, subreddit discovery/feed/wiki/rules)",
     npm: "on-demand (NPM Registry)",
     pypi: "on-demand (PyPI JSON API)",
 
