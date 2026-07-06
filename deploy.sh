@@ -14,6 +14,12 @@
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 IMAGE_NAME="tools-service"
 DISPLAY_NAME="🔧 Tools Service"
+ 
+# Pre-test hook: ensure host dist/ is synced so PromptLocaleService.test.ts passes
+PRE_TEST() {
+  info "Building host dist/ for test parity..."
+  npm run build | sed 's/^/  /'
+}
 
 # Pre-build hook: copy workspace-agent standalone files into the
 # Docker build context so the container can seed them to MinIO.
