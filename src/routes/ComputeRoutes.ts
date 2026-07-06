@@ -770,7 +770,7 @@ router.post(
     try {
       const qrcode = await getQRCode();
       const pngBuffer = await qrcode.toBuffer(data, {
-        width: Math.min(size || 400, 1024),
+        width: Math.min(size || 800, 1024),
         errorCorrectionLevel: errorCorrection || "M",
         color: {
           dark: darkColor || "#000000",
