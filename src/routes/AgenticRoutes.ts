@@ -30,6 +30,8 @@ import {
   agenticFetchUrl,
   agenticWebSearch,
   agenticNewsSearch,
+  agenticImageSearch,
+  agenticVideoSearch,
 } from "../services/AgenticWebService.ts";
 import { readPdfUrl } from "../fetchers/web/PdfFetcher.ts";
 import { readDocxUrl } from "../fetchers/web/DocxFetcher.ts";
@@ -439,6 +441,33 @@ router.post(
       limit: parseIntParam(limit, 10, 50),
       locale,
       countryEdition,
+    });
+  }),
+);
+// ── Image Search ─────────────────────────────────────────────
+router.post(
+  "/web/image-search",
+  agenticHandler(async (req: Request) => {
+    const { query, limit } = req.body;
+    if (!query || typeof query !== "string") {
+      return { error: "Request body must include 'query' (string)" };
+    }
+    return agenticImageSearch(query, {
+      limit: parseIntParam(limit, 10, 50),
+    });
+  }),
+);
+// ── Video Search ─────────────────────────────────────────────
+router.post(
+  "/web/video-search",
+  agenticHandler(async (req: Request) => {
+    const { query, limit, dateRestrict } = req.body;
+    if (!query || typeof query !== "string") {
+      return { error: "Request body must include 'query' (string)" };
+    }
+    return agenticVideoSearch(query, {
+      limit: parseIntParam(limit, 10, 50),
+      dateRestrict,
     });
   }),
 );

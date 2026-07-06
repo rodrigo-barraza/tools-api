@@ -33,6 +33,37 @@ interface DuckDuckGoSearchResult {
   displayUrl: string;
 }
 
+interface BraveNewsItem {
+  title?: string;
+  url?: string;
+  description?: string;
+  age?: string;
+  page_age?: string;
+  thumbnail?: { src?: string };
+  meta_url?: { hostname?: string };
+}
+
+interface BraveImageItem {
+  title?: string;
+  url?: string;
+  source?: string;
+  page_age?: string;
+  thumbnail?: { src?: string; width?: number; height?: number };
+  properties?: { url?: string; width?: number; height?: number; format?: string };
+  meta_url?: { hostname?: string };
+}
+
+interface BraveVideoItem {
+  title?: string;
+  url?: string;
+  description?: string;
+  age?: string;
+  page_age?: string;
+  thumbnail?: { src?: string };
+  video?: { duration?: string; views?: number; creator?: string; publisher?: string };
+  meta_url?: { hostname?: string };
+}
+
 // ────────────────────────────────────────────────────────────
 // Constants
 // ────────────────────────────────────────────────────────────
@@ -62,6 +93,7 @@ const DUCKDUCKGO_BROWSER_USER_AGENT =
 
 const SEARCH_PROVIDER = {
   BRAVE: "brave",
+  BRAVE_NEWS: "brave_news",
   DUCKDUCKGO: "duckduckgo",
   GOOGLE_CSE: "google_cse",
 } as const;
@@ -195,6 +227,20 @@ export async function agenticFetchUrl(
 // ────────────────────────────────────────────────────────────
 
 const BRAVE_SEARCH_BASE = "https://api.search.brave.com/res/v1/web/search";
+const BRAVE_NEWS_SEARCH_BASE = "https://api.search.brave.com/res/v1/news/search";
+const BRAVE_IMAGE_SEARCH_BASE = "https://api.search.brave.com/res/v1/images/search";
+const BRAVE_VIDEO_SEARCH_BASE = "https://api.search.brave.com/res/v1/videos/search";
+
+function _buildBraveRequestHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    "Accept-Encoding": "gzip",
+  };
+  if (CONFIG.BRAVE_SEARCH_API_KEY) {
+    headers["X-Subscription-Token"] = CONFIG.BRAVE_SEARCH_API_KEY;
+  }
+  return headers;
+}
 
 type SearchProvider = typeof SEARCH_PROVIDER.BRAVE | typeof SEARCH_PROVIDER.DUCKDUCKGO;
 
@@ -369,13 +415,7 @@ async function _searchBrave(
     params.set("freshness", freshness);
   }
 
-  const headers: Record<string, string> = {
-    Accept: "application/json",
-    "Accept-Encoding": "gzip",
-  };
-  if (CONFIG.BRAVE_SEARCH_API_KEY) {
-    headers["X-Subscription-Token"] = CONFIG.BRAVE_SEARCH_API_KEY;
-  }
+  const headers = _buildBraveRequestHeaders();
 
   const response = await fetch(`${BRAVE_SEARCH_BASE}?${params}`, {
     headers,
@@ -416,6 +456,63 @@ async function _searchBrave(
     results,
     totalResults: String(webResults.length),
     provider: SEARCH_PROVIDER.BRAVE,
+  };
+}
+
+// ── Brave News Search Implementation ─────────────────────────
+
+async function _searchBraveNews(
+  query: string,
+  { limit, dateRestrict }: { limit: number; dateRestrict?: string },
+) {
+  const params = new URLSearchParams({
+    q: query,
+    count: String(limit),
+    text_decorations: "false",
+    safesearch: "off",
+  });
+
+  if (dateRestrict) {
+    const freshnessMap: Record<string, string> = {
+      d1: "pd", d7: "pw", w1: "pw", w2: "pw",
+      m1: "pm", m3: "pm", y1: "py",
+    };
+    const freshness = freshnessMap[dateRestrict] || dateRestrict;
+    params.set("freshness", freshness);
+  }
+
+  const response = await fetch(`${BRAVE_NEWS_SEARCH_BASE}?${params}`, {
+    headers: _buildBraveRequestHeaders(),
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    if (response.status === 429) {
+      return null;
+    }
+    logger.warn(
+      `[AgenticWebService] Brave News API error: HTTP ${response.status} — ${body.slice(0, 200)}`,
+    );
+    return null;
+  }
+
+  const data = await response.json();
+  const newsResults = data.results || [];
+
+  if (newsResults.length === 0) return null;
+
+  return {
+    results: newsResults.slice(0, limit).map((item: BraveNewsItem) => ({
+      title: item.title || "",
+      url: item.url || "",
+      source: item.meta_url?.hostname || "",
+      snippet: item.description?.trim() || "",
+      publishedAt: item.age || "",
+      publishedAtIso: item.page_age || "",
+      ...(item.thumbnail?.src && { thumbnail: item.thumbnail.src }),
+    })),
+    totalResults: newsResults.length,
+    provider: SEARCH_PROVIDER.BRAVE_NEWS,
   };
 }
 
@@ -876,8 +973,31 @@ export async function agenticNewsSearch(
   let rssUrl: string;
 
   if (query) {
-    // Query-based search — optionally scoped to a topic is not supported
-    // by Google News RSS, so we just use the search endpoint
+    // Try Brave News first for query-based searches (better relevance ranking)
+    if (CONFIG.BRAVE_SEARCH_API_KEY) {
+      try {
+        const braveResult = await _searchBraveNews(query, {
+          limit: clampedLimit,
+          dateRestrict: undefined,
+        });
+        if (braveResult) {
+          return {
+            query,
+            topic: topic || null,
+            locale,
+            countryEdition,
+            limit: clampedLimit,
+            ...braveResult,
+          };
+        }
+      } catch (error: unknown) {
+        logger.warn(
+          `[AgenticWebService] Brave News failed, falling back to Google RSS: ${errorMessage(error)}`,
+        );
+      }
+    }
+
+    // Fallback to Google News RSS for query searches
     const searchParameters = new URLSearchParams({
       q: query,
       hl: hostLanguage,
@@ -995,5 +1115,175 @@ export async function agenticNewsSearch(
     if (fetchTimeout) {
       clearTimeout(fetchTimeout);
     }
+  }
+}
+
+// ────────────────────────────────────────────────────────────
+// Image Search (Brave)
+// ────────────────────────────────────────────────────────────
+
+export async function agenticImageSearch(
+  query: string,
+  {
+    limit = 10,
+    safesearch = "off",
+  }: {
+    limit?: number;
+    safesearch?: string;
+  } = {},
+) {
+  if (!query || typeof query !== "string") {
+    return { error: "'query' is required and must be a non-empty string" };
+  }
+
+  if (!CONFIG.BRAVE_SEARCH_API_KEY) {
+    return { error: "Image search requires a Brave Search API key" };
+  }
+
+  const clampedLimit = Math.min(Math.max(Number(limit) || 10, 1), 50);
+
+  const params = new URLSearchParams({
+    q: query,
+    count: String(clampedLimit),
+    safesearch,
+  });
+
+  try {
+    const response = await fetch(`${BRAVE_IMAGE_SEARCH_BASE}?${params}`, {
+      headers: _buildBraveRequestHeaders(),
+    });
+
+    if (!response.ok) {
+      const body = await response.text();
+      if (response.status === 429) {
+        return {
+          error: "Brave Image Search rate limit exceeded.",
+          query,
+        };
+      }
+      return {
+        error: `Brave Image Search API error: HTTP ${response.status} — ${body.slice(0, 500)}`,
+        query,
+      };
+    }
+
+    const data = await response.json();
+    const imageResults = data.results || [];
+
+    const results = imageResults.slice(0, clampedLimit).map((item: BraveImageItem) => ({
+      title: item.title || "",
+      sourceUrl: item.url || "",
+      imageUrl: item.properties?.url || "",
+      thumbnailUrl: item.thumbnail?.src || "",
+      source: item.meta_url?.hostname || item.source || "",
+      width: item.properties?.width || null,
+      height: item.properties?.height || null,
+      format: item.properties?.format || "",
+    }));
+
+    return {
+      query,
+      limit: clampedLimit,
+      results,
+      totalResults: imageResults.length,
+      provider: SEARCH_PROVIDER.BRAVE,
+    };
+  } catch (error: unknown) {
+    return {
+      error: `Image search failed: ${errorMessage(error)}`,
+      query,
+    };
+  }
+}
+
+// ────────────────────────────────────────────────────────────
+// Video Search (Brave)
+// ────────────────────────────────────────────────────────────
+
+export async function agenticVideoSearch(
+  query: string,
+  {
+    limit = 10,
+    dateRestrict,
+    safesearch = "off",
+  }: {
+    limit?: number;
+    dateRestrict?: string;
+    safesearch?: string;
+  } = {},
+) {
+  if (!query || typeof query !== "string") {
+    return { error: "'query' is required and must be a non-empty string" };
+  }
+
+  if (!CONFIG.BRAVE_SEARCH_API_KEY) {
+    return { error: "Video search requires a Brave Search API key" };
+  }
+
+  const clampedLimit = Math.min(Math.max(Number(limit) || 10, 1), 50);
+
+  const params = new URLSearchParams({
+    q: query,
+    count: String(clampedLimit),
+    text_decorations: "false",
+    safesearch,
+  });
+
+  if (dateRestrict) {
+    const freshnessMap: Record<string, string> = {
+      d1: "pd", d7: "pw", w1: "pw", w2: "pw",
+      m1: "pm", m3: "pm", y1: "py",
+    };
+    const freshness = freshnessMap[dateRestrict] || dateRestrict;
+    params.set("freshness", freshness);
+  }
+
+  try {
+    const response = await fetch(`${BRAVE_VIDEO_SEARCH_BASE}?${params}`, {
+      headers: _buildBraveRequestHeaders(),
+    });
+
+    if (!response.ok) {
+      const body = await response.text();
+      if (response.status === 429) {
+        return {
+          error: "Brave Video Search rate limit exceeded.",
+          query,
+        };
+      }
+      return {
+        error: `Brave Video Search API error: HTTP ${response.status} — ${body.slice(0, 500)}`,
+        query,
+      };
+    }
+
+    const data = await response.json();
+    const videoResults = data.results || [];
+
+    const results = videoResults.slice(0, clampedLimit).map((item: BraveVideoItem) => ({
+      title: item.title || "",
+      url: item.url || "",
+      snippet: item.description?.trim() || "",
+      source: item.meta_url?.hostname || "",
+      age: item.age || "",
+      pageAge: item.page_age || "",
+      thumbnailUrl: item.thumbnail?.src || "",
+      duration: item.video?.duration || "",
+      views: item.video?.views || null,
+      creator: item.video?.creator || item.video?.publisher || "",
+    }));
+
+    return {
+      query,
+      limit: clampedLimit,
+      results,
+      totalResults: videoResults.length,
+      provider: SEARCH_PROVIDER.BRAVE,
+    };
+  } catch (error: unknown) {
+    return {
+      error: `Video search failed: ${errorMessage(error)}`,
+      query,
+    };
   }
 }

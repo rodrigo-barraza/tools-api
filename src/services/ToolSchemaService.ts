@@ -7514,7 +7514,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
   },
   {
     name: "search_news",
-    dataSource: onDemand("Google News RSS"),
+    dataSource: onDemand("Brave News / Google News RSS"),
     description: translate("search_news.description"),
     endpoint: {
       method: "POST",
@@ -7546,6 +7546,58 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: [],
+    },
+  },
+  {
+    name: "search_images",
+    dataSource: onDemand("Brave Image Search"),
+    description: translate("search_images.description"),
+    endpoint: {
+      method: "POST",
+      path: "/agentic/web/image-search",
+      bodyParams: ["query", "limit"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: translate("search_images.params.query"),
+        },
+        limit: {
+          type: "integer",
+          description: translate("search_images.params.limit"),
+        },
+      },
+      required: ["query"],
+    },
+  },
+  {
+    name: "search_videos",
+    dataSource: onDemand("Brave Video Search"),
+    description: translate("search_videos.description"),
+    endpoint: {
+      method: "POST",
+      path: "/agentic/web/video-search",
+      bodyParams: ["query", "limit", "dateRestrict"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: translate("search_videos.params.query"),
+        },
+        limit: {
+          type: "integer",
+          description: translate("search_videos.params.limit"),
+        },
+        dateRestrict: {
+          type: "string",
+          description: translate("search_videos.params.dateRestrict"),
+        },
+      },
+      required: ["query"],
     },
   },
   {
@@ -12079,6 +12131,8 @@ const TOOL_DOMAINS = {
   read_spreadsheet: "Web",
   search_web: "Core Harness Tools",
   search_news: "Web",
+  search_images: "Web",
+  search_videos: "Web",
 
   // Agentic — Command Execution
   execute_command: "Core Workspace Tools",
@@ -12501,6 +12555,8 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   read_spreadsheet: ["📄", "📊"],
   search_web: ["🌐", "🔍"],
   search_news: ["📰", "🔍"],
+  search_images: ["🖼️", "🔍"],
+  search_videos: ["🎬", "🔍"],
   execute_command: ["▶️", "🖥️"],
   run_git: ["📦", "🔀"],
   control_browser: ["🌐", "🖱️"],
