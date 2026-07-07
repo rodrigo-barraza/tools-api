@@ -1,10 +1,10 @@
-// ─── Unit Tests for ToolSchemaService ───────────────────────────
+import { describe, it, expect } from "vitest";
 
 describe("ToolSchemaService", () => {
-  let getToolSchemas;
+  let getToolSchemas: any;
 
   it("loads tool schemas", async () => {
-    const mod = await import("../ToolSchemaService.js");
+    const mod = await import("../ToolSchemaService.js") as any;
     getToolSchemas = mod.getToolSchemas;
     const tools = getToolSchemas();
     expect(tools.length > 100, `expected >100 tools, got ${tools.length}`).toBeTruthy();
@@ -25,9 +25,9 @@ describe("ToolSchemaService", () => {
   it("no duplicate tool names", async () => {
     if (!getToolSchemas) return;
     const tools = getToolSchemas();
-    const names = tools.map((t) => t.name);
-    const dupes = names.filter((n, i) => names.indexOf(n) !== i);
-    expect(dupes).toEqual([], `duplicate tool names: ${dupes.join(", ")}`);
+    const names = tools.map((t: any) => t.name);
+    const dupes = names.filter((n: any, i: number) => names.indexOf(n) !== i);
+    expect(dupes).toEqual([]);
   });
 
 
@@ -35,7 +35,7 @@ describe("ToolSchemaService", () => {
   it("unified tools exist with correct schemas", async () => {
     if (!getToolSchemas) return;
     const tools = getToolSchemas();
-    const byName = Object.fromEntries(tools.map((t) => [t.name, t]));
+    const byName = Object.fromEntries(tools.map((t: any) => [t.name, t]));
 
     expect(byName.read_url).toBeTruthy();
     expect(byName.read_url.parameters.properties.url).toBeTruthy();
@@ -52,7 +52,7 @@ describe("ToolSchemaService", () => {
       "get_npm_package",
     ];
     for (const name of removed) {
-      expect(byName[name]).toBe(undefined, `${name} should be removed from schemas`);
+      expect(byName[name]).toBe(undefined);
     }
 
     expect(byName.get_youtube_video).toBeTruthy();

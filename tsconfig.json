@@ -27,6 +27,7 @@
   "exclude": [
     "node_modules",
     "dist",
-    "tests"
+    "tests",
+    "**/__tests__/**"
   ]
 }

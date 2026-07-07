@@ -123,9 +123,9 @@ describe("AgenticWebSearch — DuckDuckGo Fallback", () => {
 
       const result = await agenticWebSearch("test query");
 
-      expect(result.results[0].title).toBe("Example Page One");
-      expect(result.results[1].title).toBe("Second Result Title");
-      expect(result.results[2].title).toBe("Third Result");
+      expect((result as any).results[0].title).toBe("Example Page One");
+      expect((result as any).results[1].title).toBe("Second Result Title");
+      expect((result as any).results[2].title).toBe("Third Result");
 
       fetchSpy.mockRestore();
     });
@@ -139,9 +139,9 @@ describe("AgenticWebSearch — DuckDuckGo Fallback", () => {
 
       const result = await agenticWebSearch("test query");
 
-      expect(result.results[0].url).toBe("https://example.com/page-one");
-      expect(result.results[1].url).toBe("https://example.org/second-result");
-      expect(result.results[2].url).toBe("https://example.net/third");
+      expect((result as any).results[0].url).toBe("https://example.com/page-one");
+      expect((result as any).results[1].url).toBe("https://example.org/second-result");
+      expect((result as any).results[2].url).toBe("https://example.net/third");
 
       fetchSpy.mockRestore();
     });
@@ -155,10 +155,10 @@ describe("AgenticWebSearch — DuckDuckGo Fallback", () => {
 
       const result = await agenticWebSearch("test query");
 
-      expect(result.results[0].snippet).toBe(
+      expect((result as any).results[0].snippet).toBe(
         "This is the first search result snippet from DuckDuckGo.",
       );
-      expect(result.results[1].snippet).toBe(
+      expect((result as any).results[1].snippet).toBe(
         "Second result snippet with useful information.",
       );
 
@@ -174,8 +174,8 @@ describe("AgenticWebSearch — DuckDuckGo Fallback", () => {
 
       const result = await agenticWebSearch("test query");
 
-      expect(result.results[0].displayUrl).toBe("example.com/page-one");
-      expect(result.results[1].displayUrl).toBe("example.org/second-result");
+      expect((result as any).results[0].displayUrl).toBe("example.com/page-one");
+      expect((result as any).results[1].displayUrl).toBe("example.org/second-result");
 
       fetchSpy.mockRestore();
     });
@@ -369,7 +369,7 @@ describe("AgenticWebSearch — DuckDuckGo Fallback", () => {
 
       expect(fetchSpy).toHaveBeenCalledTimes(2);
       expect(result.provider).toBe("google_cse");
-      expect(result.results[0].title).toBe("Google CSE Result");
+      expect((result as any).results[0].title).toBe("Google CSE Result");
 
       fetchSpy.mockRestore();
     });
