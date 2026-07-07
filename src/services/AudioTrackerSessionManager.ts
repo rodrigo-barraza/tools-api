@@ -395,10 +395,29 @@ export function toSynthesizerConfig(
       session.timeSignature[0],
     );
 
+    // Auto-repeat: when a target duration is set and the pattern is shorter,
+    // calculate how many repetitions are needed to fill the target duration.
+    // This is the standard tracker/sequencer behavior — patterns loop.
+    let repeatCount: number | undefined;
+    if (session.duration && convertedNotes.length > 0) {
+      const patternDuration = computePatternDuration(
+        convertedNotes,
+        session.tempo,
+        session.timeSignature[0],
+      );
+      if (patternDuration > 0 && patternDuration < session.duration) {
+        repeatCount = Math.min(
+          Math.ceil(session.duration / patternDuration),
+          64,
+        );
+      }
+    }
+
     const track: TrackConfig = {
       nodeChain: channelNodeChain,
       notes: convertedNotes,
       volume: channel.volume,
+      ...(repeatCount !== undefined && repeatCount > 1 && { repeat: repeatCount }),
     };
 
     tracks.push(track);
@@ -435,6 +454,24 @@ export function toSynthesizerConfig(
 // ────────────────────────────────────────────────────────────
 // Internal Helpers
 // ────────────────────────────────────────────────────────────
+
+function computePatternDuration(
+  notes: NoteConfig[],
+  _tempo: number,
+  _beatsPerBar: number,
+): number {
+  let maximumEndTime = 0;
+  for (const note of notes) {
+    const startTime = typeof note.time === "number"
+      ? note.time
+      : 0;
+    const noteDuration = typeof note.duration === "number"
+      ? note.duration
+      : 0;
+    maximumEndTime = Math.max(maximumEndTime, startTime + noteDuration);
+  }
+  return maximumEndTime;
+}
 
 function convertPatternToNotes(
   pattern: TrackerRow[],

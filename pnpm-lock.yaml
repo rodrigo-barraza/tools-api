@@ -156,6 +156,9 @@ importers:
       eslint-config-prettier:
         specifier: ^10.1.8
         version: 10.1.8(eslint@10.5.0)
+      fast-check:
+        specifier: 4.8.0
+        version: 4.8.0
       globals:
         specifier: ^17.6.0
         version: 17.6.0
@@ -1872,6 +1875,10 @@ packages:
     resolution: {integrity: sha512-hIS4idWWai69NezIdRt2xFVofaF4j+6INOpJlVOLDO8zXGpUVEVzIYk12UUi2JzjEzWL3IOAxcTubgz9Po0yXw==}
     engines: {node: '>= 18'}
 
+  fast-check@4.8.0:
+    resolution: {integrity: sha512-GOJ158CUMnN6cSahsv4+ExARvIDuzzinFjkp0E9WtiBa5zcVeLozVkWaE4IzFcc+Y48Wp1EDlUZsXRyAztQcSg==}
+    engines: {node: '>=12.17.0'}
+
   fast-csv@4.3.6:
     resolution: {integrity: sha512-2RNSpuwwsJGP0frGsOmTb9oUF+VkFSM4SyLTDgwf2ciHWTarN0lQTC+F2f/t5J9QjW+c65VFIAAu85GsvMIusw==}
     engines: {node: '>=10.0.0'}
@@ -2980,6 +2987,9 @@ packages:
   punycode@2.3.1:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
+
+  pure-rand@8.4.1:
+    resolution: {integrity: sha512-c58R2+SPFcSIPXoU834QN/KPDDOSd8sXcSrqf6e83Me6Rrp1EYkxukkjXMVrKvKaADs1SOyNkWdfvLf6zY8qLQ==}
 
   pyright@1.1.410:
     resolution: {integrity: sha512-3ImEV3F3YPMJZDwmouvKj3Ytxkw/adZFGlsOsNKiS+B97Th4h7TFElFKpBG/j1nqx6kXFPQjnzOU+zTBOkki2g==}
@@ -5572,6 +5582,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  fast-check@4.8.0:
+    dependencies:
+      pure-rand: 8.4.1
+
   fast-csv@4.3.6:
     dependencies:
       '@fast-csv/format': 4.3.5
@@ -6700,6 +6714,8 @@ snapshots:
   punycode-esm@1.0.15: {}
 
   punycode@2.3.1: {}
+
+  pure-rand@8.4.1: {}
 
   pyright@1.1.410:
     optionalDependencies:

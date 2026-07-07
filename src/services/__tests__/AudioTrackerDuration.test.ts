@@ -558,10 +558,12 @@ describe("Full Pipeline — init → add_channel → write_pattern → render", 
     const audioResult = generateAudioWav(configResult.config!);
     const reportedDuration = audioResult.sampleCount / 44100;
 
-    // With the duration floor fix: should be at least 10 seconds
-    // Before the fix: would have been ~4 seconds
+    // With the auto-repeat fix: should be at least 10 seconds of real audio.
+    // Before the fix: would have been ~4 seconds of audio + silence.
+    // May slightly exceed 10s because auto-repeat uses ceil() and the last
+    // repetition's release tail extends past the target duration boundary.
     expect(reportedDuration).toBeGreaterThanOrEqual(9.9);
-    expect(reportedDuration).toBeLessThanOrEqual(10.2);
+    expect(reportedDuration).toBeLessThanOrEqual(12.5);
   });
 
   it("produces correct duration when LLM writes enough notes to exceed target", () => {
