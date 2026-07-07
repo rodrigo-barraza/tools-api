@@ -77,10 +77,13 @@ interface RawProduct {
 
 /**
  * Fetch avalanche forecasts from Avalanche Canada.
- * Free, no key required. Fetches all current product metadata
- * and filters for the Sea-to-Sky / South Coast regions.
+ * Free, no key required. Fetches all current product metadata.
+ * When a region keyword is provided, filters to matching areas.
+ * When omitted, returns all available regions.
  */
-export async function fetchAvalancheForecast(): Promise<AvalancheForecast[]> {
+export async function fetchAvalancheForecast(
+  region?: string,
+): Promise<AvalancheForecast[]> {
   const response = await fetch(AVCAN_PRODUCTS_URL, {
     headers: {
       Accept: "application/json",
@@ -97,87 +100,55 @@ export async function fetchAvalancheForecast(): Promise<AvalancheForecast[]> {
   if (!Array.isArray(products)) {
     throw new Error("Avalanche Canada returned unexpected data format");
   }
-  // Filter for BC regions relevant to Vancouver area
-  const bcKeywords = [
-    "sea-to-sky",
-    "south-coast",
-    "north-shore",
-    "whistler",
-    "squamish",
-    "howe sound",
-  ];
-  const forecasts: AvalancheForecast[] = [];
-  for (const product of products) {
-    const title = (
-      product.report?.title ||
-      product.area?.name ||
-      product.id ||
-      ""
-    ).toLowerCase();
+
+  const regionKeyword = region?.toLowerCase().trim();
+
+  function parseProduct(product: RawProduct): AvalancheForecast {
+    const report = product.report || {};
     const areaId = (product.area?.id || product.id || "").toLowerCase();
-    const isRelevant = bcKeywords.some(
-      (kw) => title.includes(kw) || areaId.includes(kw),
-    );
-    if (isRelevant) {
-      const report = product.report || {};
-      forecasts.push({
-        id: product.id || product.slug || "",
-        title: report.title || product.area?.name || areaId,
-        dateIssued: report.dateIssued || null,
-        validUntil: report.validUntil || null,
-        highlights: report.highlights ? stripHtml(report.highlights) : null,
-        confidence: report.confidence?.rating?.display || null,
-        dangerRatings: (report.dangerRatings || []).map(
-          (dr): DangerRating => ({
-            date: dr.date?.display || null,
-            alpine: dr.ratings?.alp?.rating?.display || null,
-            treeline: dr.ratings?.tln?.rating?.display || null,
-            belowTreeline: dr.ratings?.btl?.rating?.display || null,
-          }),
-        ),
-        problems: (report.problems || []).map(
-          (rawProblem): AvalancheProblem => ({
-            type: rawProblem.type?.display || null,
-            comment: rawProblem.comment ? stripHtml(rawProblem.comment) : null,
-          }),
-        ),
-        url:
-          product.url ||
-          `https://avalanche.ca/forecasts/${product.id || areaId}`,
-      });
-    }
+    return {
+      id: product.id || product.slug || "",
+      title: report.title || product.area?.name || areaId || "Unknown Region",
+      dateIssued: report.dateIssued || null,
+      validUntil: report.validUntil || null,
+      highlights: report.highlights ? stripHtml(report.highlights) : null,
+      confidence: report.confidence?.rating?.display || null,
+      dangerRatings: (report.dangerRatings || []).map(
+        (dr): DangerRating => ({
+          date: dr.date?.display || null,
+          alpine: dr.ratings?.alp?.rating?.display || null,
+          treeline: dr.ratings?.tln?.rating?.display || null,
+          belowTreeline: dr.ratings?.btl?.rating?.display || null,
+        }),
+      ),
+      problems: (report.problems || []).map(
+        (rawProblem): AvalancheProblem => ({
+          type: rawProblem.type?.display || null,
+          comment: rawProblem.comment ? stripHtml(rawProblem.comment) : null,
+        }),
+      ),
+      url:
+        product.url ||
+        `https://avalanche.ca/forecasts/${product.id || areaId || ""}`,
+    };
   }
-  // If no matching regions, return a summary of all available
-  if (forecasts.length === 0 && products.length > 0) {
-    for (const product of products.slice(0, 5)) {
-      const report = product.report || {};
+
+  if (regionKeyword) {
+    const forecasts: AvalancheForecast[] = [];
+    for (const product of products) {
+      const title = (
+        product.report?.title ||
+        product.area?.name ||
+        product.id ||
+        ""
+      ).toLowerCase();
       const areaId = (product.area?.id || product.id || "").toLowerCase();
-      forecasts.push({
-        id: product.id || product.slug || "",
-        title: report.title || product.area?.name || "Unknown Region",
-        dateIssued: report.dateIssued || null,
-        validUntil: report.validUntil || null,
-        highlights: report.highlights ? stripHtml(report.highlights) : null,
-        confidence: report.confidence?.rating?.display || null,
-        dangerRatings: (report.dangerRatings || []).map(
-          (dr): DangerRating => ({
-            date: dr.date?.display || null,
-            alpine: dr.ratings?.alp?.rating?.display || null,
-            treeline: dr.ratings?.tln?.rating?.display || null,
-            belowTreeline: dr.ratings?.btl?.rating?.display || null,
-          }),
-        ),
-        problems: (report.problems || []).map(
-          (rawProblem): AvalancheProblem => ({
-            type: rawProblem.type?.display || null,
-            comment: rawProblem.comment ? stripHtml(rawProblem.comment) : null,
-          }),
-        ),
-        url:
-          product.url ||
-          `https://avalanche.ca/forecasts/${product.id || areaId || ""}`,
-      });
+      if (title.includes(regionKeyword) || areaId.includes(regionKeyword)) {
+        forecasts.push(parseProduct(product));
+      }
     }
+    return forecasts;
   }
-  return forecasts;
+
+  return products.map(parseProduct);
 }

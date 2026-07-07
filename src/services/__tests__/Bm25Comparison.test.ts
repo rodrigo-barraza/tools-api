@@ -151,14 +151,14 @@ describe("before vs after: BM25 improvement comparison", () => {
     // Old: "get" matches ~80% of tools with +10 each, polluting results
     // New: "get" has near-zero IDF (too common), so "avalanche" drives ranking
 
-    expect(newResults[0].name).toBe("get_avalanche_forecast");
+    expect(newResults[0].name).toBe("get_canada_avalanche_forecast");
 
     // Check that the old algorithm also finds it, but the RANKING quality differs
     const oldAvIndex = oldResults.findIndex(
-      (result) => result.name === "get_avalanche_forecast",
+      (result) => result.name === "get_canada_avalanche_forecast",
     );
     const newAvIndex = newResults.findIndex(
-      (result) => result.name === "get_avalanche_forecast",
+      (result) => result.name === "get_canada_avalanche_forecast",
     );
     // BM25 should rank it at position 0 (or at least as high or higher than old)
     expect(newAvIndex).toBeLessThanOrEqual(oldAvIndex);

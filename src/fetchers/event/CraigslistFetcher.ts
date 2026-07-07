@@ -2,7 +2,7 @@ import * as cheerio from "cheerio";
 import { EVENT_SOURCES, EVENT_CATEGORIES } from "../../constants.ts";
 import type { CachedEvent } from "../../caches/EventCache.ts";
 
-const BASE_URL = "https://vancouver.craigslist.org/search/eee";
+const DEFAULT_CITY = "vancouver";
 
 const HEADERS = {
   "User-Agent":
@@ -23,14 +23,21 @@ function parseDate(dateString: string | null): Date | undefined {
 }
 
 /**
- * Fetch events from Craigslist Vancouver community events section.
+ * Fetch events from Craigslist community events section.
  * Scrapes HTML with cheerio since Craigslist has no public API.
+ * Accepts optional city subdomain (e.g. 'seattle', 'newyork', 'sfbay').
  */
-export async function fetchCraigslistEvents(): Promise<CachedEvent[]> {
-  const response = await fetch(BASE_URL, { headers: HEADERS });
+export async function fetchCraigslistEvents(
+  city: string = DEFAULT_CITY,
+): Promise<CachedEvent[]> {
+  const baseOrigin = `https://${city}.craigslist.org`;
+  const searchUrl = `${baseOrigin}/search/eee`;
+  const displayCity = city.charAt(0).toUpperCase() + city.slice(1);
+
+  const response = await fetch(searchUrl, { headers: HEADERS });
 
   if (!response.ok) {
-    throw new Error(`Craigslist returned ${response.status}`);
+    throw new Error(`Craigslist (${city}) returned ${response.status}`);
   }
 
   const html = await response.text();
@@ -49,7 +56,7 @@ export async function fetchCraigslistEvents(): Promise<CachedEvent[]> {
 
     const fullUrl = link?.startsWith("http")
       ? link
-      : `https://vancouver.craigslist.org${link}`;
+      : `${baseOrigin}${link}`;
 
     events.push({
       sourceId: fullUrl || `craigslist-${Date.now()}-${_index}`,
@@ -63,9 +70,9 @@ export async function fetchCraigslistEvents(): Promise<CachedEvent[]> {
       venue: {
         name: location || undefined,
         address: undefined,
-        city: "Vancouver",
-        state: "BC",
-        country: "CA",
+        city: displayCity,
+        state: undefined,
+        country: undefined,
         latitude: undefined,
         longitude: undefined,
       },
@@ -75,7 +82,7 @@ export async function fetchCraigslistEvents(): Promise<CachedEvent[]> {
         ? {
             min: parseFloat(price.replace(/[^0-9.]/g, "")) || 0,
             max: undefined,
-            currency: "CAD",
+            currency: undefined,
           }
         : undefined,
       status: "onsale",
@@ -97,7 +104,7 @@ export async function fetchCraigslistEvents(): Promise<CachedEvent[]> {
 
       const fullUrl = href?.startsWith("http")
         ? href
-        : `https://vancouver.craigslist.org${href}`;
+        : `${baseOrigin}${href}`;
 
       events.push({
         sourceId: fullUrl || `craigslist-${Date.now()}-${_index}`,
@@ -111,9 +118,9 @@ export async function fetchCraigslistEvents(): Promise<CachedEvent[]> {
         venue: {
           name: undefined,
           address: undefined,
-          city: "Vancouver",
-          state: "BC",
-          country: "CA",
+          city: displayCity,
+          state: undefined,
+          country: undefined,
           latitude: undefined,
           longitude: undefined,
         },

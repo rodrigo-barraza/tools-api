@@ -6,7 +6,7 @@
 // ────────────────────────────────────────────────────────────
 
 import {
-  // Weather domain — still used by get_weather_forecast, get_avalanche_forecast
+  // Weather domain — still used by get_weather_forecast, get_canada_avalanche_forecast
   OPEN_METEO_INTERVAL_MS,
   AVALANCHE_INTERVAL_MS,
   // Product domain
@@ -1601,14 +1601,19 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
     },
   },
   {
-    name: "get_avalanche_forecast",
+    name: "get_canada_avalanche_forecast",
     dataSource: cached("Avalanche Canada", AVALANCHE_INTERVAL_MS),
-    description: translate("get_avalanche_forecast.description"),
-    endpoint: { path: "/weather/avalanche" },
+    description: translate("get_canada_avalanche_forecast.description"),
+    endpoint: { path: "/weather/avalanche", queryParams: ["region"] },
     parameters: {
       type: "object",
-      properties: { ...fieldsParam(FIELDS.AVALANCHE) },
-      required: ["fields"],
+      properties: {
+        region: {
+          type: "string",
+          description: translate("get_canada_avalanche_forecast.params.region"),
+        },
+        ...fieldsParam(FIELDS.AVALANCHE),
+      },
     },
   },
   {
@@ -1932,16 +1937,20 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
 
   // ── Weather Warnings ───────────────────────────────────────
   {
-    name: "get_weather_warnings",
-    dataSource: onDemand("Environment Canada (cached)"),
-    description: translate("get_weather_warnings.description"),
+    name: "get_canada_weather_warnings",
+    dataSource: onDemand("Environment Canada"),
+    description: translate("get_canada_weather_warnings.description"),
     endpoint: {
       path: "/weather/warnings",
-      queryParams: ["fields"],
+      queryParams: ["regionCode", "fields"],
     },
     parameters: {
       type: "object",
       properties: {
+        regionCode: {
+          type: "string",
+          description: translate("get_canada_weather_warnings.params.regionCode"),
+        },
         ...fieldsParam(FIELDS.WEATHER_WARNINGS),
       },
     },
@@ -11896,7 +11905,7 @@ const TOOL_DOMAINS = {
   get_weather: "Weather & Environment",
   get_local_environment: "Weather & Environment",
   get_weather_forecast: "Weather & Environment",
-  get_avalanche_forecast: "Weather & Environment",
+  get_canada_avalanche_forecast: "Weather & Environment",
   get_earthquakes: "Weather & Environment",
   get_solar_activity: "Weather & Environment",
   get_aurora_forecast: "Weather & Environment",
@@ -11908,7 +11917,7 @@ const TOOL_DOMAINS = {
   get_near_earth_objects: "Weather & Environment",
   get_space_launches: "Weather & Environment",
   get_nasa_apod: "Weather & Environment",
-  get_weather_warnings: "Weather & Environment",
+  get_canada_weather_warnings: "Weather & Environment",
   get_detailed_air_quality: "Weather & Environment",
   get_weather_history: "Weather & Environment",
   get_weather_marine: "Weather & Environment",
@@ -12354,7 +12363,7 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   get_weather: "🌤️",
   get_local_environment: ["🌍", "💻"],
   get_weather_forecast: ["🌤️", "📅"],
-  get_avalanche_forecast: ["🏔️", "💻"],
+  get_canada_avalanche_forecast: ["🏔️", "💻"],
   get_earthquakes: ["🌋", "💻"],
   get_solar_activity: "☀️",
   get_aurora_forecast: ["🌌", "💻"],
@@ -12366,7 +12375,7 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   get_near_earth_objects: ["☄️", "💻"],
   get_space_launches: ["🚀", "🌌"],
   get_nasa_apod: "🔭",
-  get_weather_warnings: ["🌤️", "⚠️"],
+  get_canada_weather_warnings: ["🌤️", "⚠️"],
   get_detailed_air_quality: ["🫁", "💻"],
   get_pollen_forecast: ["🌸", "💻"],
   get_weather_history: ["🌤️", "📊"],

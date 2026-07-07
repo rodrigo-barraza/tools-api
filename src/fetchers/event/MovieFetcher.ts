@@ -19,16 +19,20 @@ interface TmdBMovie {
 /**
  * Fetch currently playing movies from TMDb.
  * Each movie is treated as an event with category "film".
+ * Accepts optional region (ISO 3166-1 country code) and language.
  */
-export async function fetchMovieEvents(): Promise<CachedEvent[]> {
+export async function fetchMovieEvents(
+  region: string = "CA",
+  language: string = "en-CA",
+): Promise<CachedEvent[]> {
   if (!CONFIG.TMDB_API_KEY) {
     throw new Error("TMDB_API_KEY is not configured");
   }
 
   const params = new URLSearchParams({
     api_key: CONFIG.TMDB_API_KEY,
-    region: "CA",
-    language: "en-CA",
+    region,
+    language,
     page: "1",
   });
 
@@ -76,9 +80,9 @@ export async function fetchMovieEvents(): Promise<CachedEvent[]> {
     venue: {
       name: "In Theatres",
       address: undefined,
-      city: "Vancouver",
-      state: "BC",
-      country: "CA",
+      city: undefined,
+      state: undefined,
+      country: region,
       latitude: undefined,
       longitude: undefined,
     },

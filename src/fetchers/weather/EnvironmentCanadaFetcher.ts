@@ -1,15 +1,26 @@
 import { stripHtml } from "@rodrigo-barraza/utilities-library";
 
 /**
- * Fetch weather warnings from Environment Canada for Metro Vancouver.
+ * Fetch weather warnings from Environment Canada for any Canadian region.
  * Scrapes the public warnings page since RSS/Atom feeds and GeoMet API
  * are currently unreliable (404/500).
  * Free, no key required.
+ *
+ * Region codes follow Environment Canada's convention:
+ *   bc74 = Metro Vancouver, on31 = Toronto, qc36 = Montreal,
+ *   ab38 = Calgary, sk32 = Saskatoon, mb36 = Winnipeg, etc.
  */
 
-const EC_WARNINGS_PAGE = "https://weather.gc.ca/warnings/report_e.html?bc74";
-// Backup: the city forecast page which includes warning banners
-const EC_CITY_PAGE = "https://weather.gc.ca/city/pages/bc-74_metric_e.html";
+const DEFAULT_REGION_CODE = "bc74";
+
+function buildWarningsPageUrl(regionCode: string): string {
+  return `https://weather.gc.ca/warnings/report_e.html?${regionCode}`;
+}
+
+function buildCityPageUrl(regionCode: string): string {
+  const dashSeparated = regionCode.replace(/(\D+)(\d+)/, "$1-$2");
+  return `https://weather.gc.ca/city/pages/${dashSeparated}_metric_e.html`;
+}
 
 export type WarningType =
   | "warning"
@@ -27,21 +38,22 @@ export interface CanadaWarning {
   url: string;
 }
 
-export async function fetchEnvironmentCanadaWarnings(): Promise<
-  CanadaWarning[]
-> {
-  // Try the main warnings page first
-  let warnings = await tryWarningsPage();
-  // Fallback to city page warning banners
+export async function fetchEnvironmentCanadaWarnings(
+  regionCode: string = DEFAULT_REGION_CODE,
+): Promise<CanadaWarning[]> {
+  const warningsPageUrl = buildWarningsPageUrl(regionCode);
+  const cityPageUrl = buildCityPageUrl(regionCode);
+
+  let warnings = await tryWarningsPage(warningsPageUrl);
   if (warnings.length === 0) {
-    warnings = await tryCityPage();
+    warnings = await tryCityPage(cityPageUrl);
   }
   return warnings;
 }
 
-async function tryWarningsPage(): Promise<CanadaWarning[]> {
+async function tryWarningsPage(url: string): Promise<CanadaWarning[]> {
   try {
-    const response = await fetch(EC_WARNINGS_PAGE, {
+    const response = await fetch(url, {
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
@@ -51,15 +63,15 @@ async function tryWarningsPage(): Promise<CanadaWarning[]> {
     });
     if (!response.ok) return [];
     const html = await response.text();
-    return parseWarningsHtml(html);
+    return parseWarningsHtml(html, url);
   } catch {
     return [];
   }
 }
 
-async function tryCityPage(): Promise<CanadaWarning[]> {
+async function tryCityPage(url: string): Promise<CanadaWarning[]> {
   try {
-    const response = await fetch(EC_CITY_PAGE, {
+    const response = await fetch(url, {
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
@@ -69,7 +81,7 @@ async function tryCityPage(): Promise<CanadaWarning[]> {
     });
     if (!response.ok) return [];
     const html = await response.text();
-    return parseCityWarnings(html);
+    return parseCityWarnings(html, url);
   } catch {
     return [];
   }
@@ -78,7 +90,7 @@ async function tryCityPage(): Promise<CanadaWarning[]> {
 /**
  * Parse warnings from the EC warnings report page.
  */
-function parseWarningsHtml(html: string): CanadaWarning[] {
+function parseWarningsHtml(html: string, pageUrl: string): CanadaWarning[] {
   const warnings: CanadaWarning[] = [];
   // Look for warning/watch/statement sections
   const sectionRegex =
@@ -93,7 +105,7 @@ function parseWarningsHtml(html: string): CanadaWarning[] {
         summary: content.substring(0, 500),
         type: classifyWarning(title),
         source: "weather.gc.ca",
-        url: EC_WARNINGS_PAGE,
+        url: pageUrl,
       });
     }
   }
@@ -110,7 +122,7 @@ function parseWarningsHtml(html: string): CanadaWarning[] {
           summary: content.substring(0, 500),
           type: classifyWarning(content),
           source: "weather.gc.ca",
-          url: EC_WARNINGS_PAGE,
+          url: pageUrl,
         });
       }
     }
@@ -121,7 +133,7 @@ function parseWarningsHtml(html: string): CanadaWarning[] {
 /**
  * Parse warning banners from the EC city forecast page.
  */
-function parseCityWarnings(html: string): CanadaWarning[] {
+function parseCityWarnings(html: string, pageUrl: string): CanadaWarning[] {
   const warnings: CanadaWarning[] = [];
   const warningRegex =
     /class="[^"]*(?:warning|alert|watch|advisory)[^"]*"[^>]*>([\s\S]*?)<\/(?:div|section|a)>/gi;
@@ -134,7 +146,7 @@ function parseCityWarnings(html: string): CanadaWarning[] {
         summary: content.substring(0, 500),
         type: classifyWarning(content),
         source: "weather.gc.ca",
-        url: EC_CITY_PAGE,
+        url: pageUrl,
       });
     }
   }

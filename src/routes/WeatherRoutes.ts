@@ -79,7 +79,9 @@ import {
   getWarningCount,
   getWarningHealth,
 } from "../caches/EnvironmentCanadaCache.ts";
+import { fetchEnvironmentCanadaWarnings } from "../fetchers/weather/EnvironmentCanadaFetcher.ts";
 import { getAvalanche, getAvalancheHealth } from "../caches/AvalancheCache.ts";
+import { fetchAvalancheForecast } from "../fetchers/weather/AvalancheFetcher.ts";
 import { getMoonPhase, getMoonPhaseHealth } from "../caches/MoonPhaseCache.ts";
 import { errorMessage } from "../utilities.ts";
 
@@ -233,15 +235,41 @@ router.get("/twilight", (_req: Request, res: Response) =>
   res.json(getTwilight()),
 );
 // ─── Environment Canada ────────────────────────────────────────────
-router.get("/warnings", (_req: Request, res: Response) =>
-  res.json(getWarnings()),
+router.get(
+  "/warnings",
+  asyncHandler(async (req: Request, res: Response) => {
+    const regionCode = req.query.regionCode as string | undefined;
+    if (regionCode) {
+      const warnings = await fetchEnvironmentCanadaWarnings(regionCode);
+      return res.json({
+        count: warnings.length,
+        regionCode,
+        warnings,
+        lastFetch: new Date().toISOString(),
+      });
+    }
+    res.json(getWarnings());
+  }),
 );
 router.get("/warnings/count", (_req: Request, res: Response) =>
   res.json(getWarningCount()),
 );
 // ─── Avalanche ─────────────────────────────────────────────────────
-router.get("/avalanche", (_req: Request, res: Response) =>
-  res.json(getAvalanche()),
+router.get(
+  "/avalanche",
+  asyncHandler(async (req: Request, res: Response) => {
+    const region = req.query.region as string | undefined;
+    if (region) {
+      const forecasts = await fetchAvalancheForecast(region);
+      return res.json({
+        count: forecasts.length,
+        region,
+        forecasts,
+        lastFetch: new Date().toISOString(),
+      });
+    }
+    res.json(getAvalanche());
+  }),
 );
 // ─── Moon Phase ────────────────────────────────────────────────────
 router.get("/moon-phase", (_req: Request, res: Response) =>

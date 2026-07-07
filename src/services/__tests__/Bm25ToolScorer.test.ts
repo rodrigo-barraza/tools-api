@@ -144,7 +144,7 @@ describe("BM25 IDF downweighting", () => {
   it("should rank rare-term matches higher than common-term matches", () => {
     const results = searchIndex.search("avalanche");
     expect(results.length).toBeGreaterThan(0);
-    expect(results[0].document.name).toBe("get_avalanche_forecast");
+    expect(results[0].document.name).toBe("get_canada_avalanche_forecast");
   });
 
   it("should find niche tools by specific domain terms", () => {

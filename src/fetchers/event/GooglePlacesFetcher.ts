@@ -28,16 +28,29 @@ interface GooglePlace {
   primaryType?: string;
 }
 
+interface GooglePlacesFetchOptions {
+  latitude?: number;
+  longitude?: number;
+  radiusMiles?: number;
+  city?: string;
+}
+
 /**
  * Fetch event venues from Google Places API (New).
  * Returns nearby event-related venues as potential event sources.
- * Note: Google Places doesn't directly list events — it lists venues
- * that are likely hosting events. We mark these as "venues" category.
+ * Accepts optional location overrides; falls back to CONFIG defaults.
  */
-export async function fetchGooglePlacesEvents(): Promise<CachedEvent[]> {
+export async function fetchGooglePlacesEvents(
+  options: GooglePlacesFetchOptions = {},
+): Promise<CachedEvent[]> {
   if (!CONFIG.GOOGLE_CLOUD_API_KEY) {
     throw new Error("GOOGLE_CLOUD_API_KEY is not configured");
   }
+
+  const searchLatitude = options.latitude ?? CONFIG.LATITUDE;
+  const searchLongitude = options.longitude ?? CONFIG.LONGITUDE;
+  const searchRadiusMiles = options.radiusMiles ?? CONFIG.RADIUS_MILES;
+  const venueCity = options.city ?? undefined;
 
   const body = {
     includedTypes: INCLUDED_TYPES,
@@ -45,10 +58,10 @@ export async function fetchGooglePlacesEvents(): Promise<CachedEvent[]> {
     locationRestriction: {
       circle: {
         center: {
-          latitude: CONFIG.LATITUDE,
-          longitude: CONFIG.LONGITUDE,
+          latitude: searchLatitude,
+          longitude: searchLongitude,
         },
-        radius: Math.min(CONFIG.RADIUS_MILES * 1609.34, 50000), // Convert miles to meters, API max is 50km
+        radius: Math.min(searchRadiusMiles * 1609.34, 50000),
       },
     },
   };
@@ -94,9 +107,9 @@ export async function fetchGooglePlacesEvents(): Promise<CachedEvent[]> {
       venue: {
         name: place.displayName?.text || undefined,
         address: place.formattedAddress || undefined,
-        city: "Vancouver",
-        state: "BC",
-        country: "CA",
+        city: venueCity,
+        state: undefined,
+        country: undefined,
         latitude: place.location?.latitude ?? undefined,
         longitude: place.location?.longitude ?? undefined,
       },
