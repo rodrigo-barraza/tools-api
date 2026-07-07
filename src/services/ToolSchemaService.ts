@@ -4225,8 +4225,16 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       type: "object",
       properties: {
         foods: {
-          type: "string",
+          type: "array",
           description: translate("analyze_nutrient_gaps.params.foods"),
+          items: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              grams: { type: "number" },
+            },
+            required: ["name", "grams"],
+          },
         },
         species: {
           type: "string",
@@ -6460,8 +6468,17 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       type: "object",
       properties: {
         markers: {
-          type: "string",
+          type: "array",
           description: translate("generate_map.params.markers"),
+          items: {
+            type: "object",
+            properties: {
+              latitude: { type: "number" },
+              longitude: { type: "number" },
+              label: { type: "string" },
+            },
+            required: ["latitude", "longitude"],
+          },
         },
         zoom: {
           type: "number",
