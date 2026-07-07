@@ -315,7 +315,7 @@ function _buildProviderChain(
   }
 
   // Google CSE always last (deprecated)
-  if (CONFIG.GOOGLE_CLOUD_GEMINI_API_KEY && CONFIG.GOOGLE_CSE_CX) {
+  if (CONFIG.GOOGLE_CLOUD_API_KEY && CONFIG.GOOGLE_CSE_CX) {
     chain.push(SEARCH_PROVIDER.GOOGLE_CSE);
   }
 
@@ -658,7 +658,7 @@ async function _searchGoogleCSE(
   }: { limit: number; dateRestrict?: string; siteSearch?: string },
 ) {
   const params = new URLSearchParams({
-    key: CONFIG.GOOGLE_CLOUD_GEMINI_API_KEY as string,
+    key: CONFIG.GOOGLE_CLOUD_API_KEY as string,
     cx: CONFIG.GOOGLE_CSE_CX as string,
     "q": query,
     "num": String(limit),

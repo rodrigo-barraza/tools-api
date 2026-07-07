@@ -81,13 +81,13 @@ let savedGoogleCseCx: string | undefined;
 
 beforeEach(() => {
   savedBraveSearchApiKey = CONFIG.BRAVE_SEARCH_API_KEY;
-  savedGoogleApiKey = CONFIG.GOOGLE_CLOUD_GEMINI_API_KEY;
+  savedGoogleApiKey = CONFIG.GOOGLE_CLOUD_API_KEY;
   savedGoogleCseCx = CONFIG.GOOGLE_CSE_CX;
 });
 
 afterEach(() => {
   CONFIG.BRAVE_SEARCH_API_KEY = savedBraveSearchApiKey;
-  CONFIG.GOOGLE_CLOUD_GEMINI_API_KEY = savedGoogleApiKey;
+  CONFIG.GOOGLE_CLOUD_API_KEY = savedGoogleApiKey;
   CONFIG.GOOGLE_CSE_CX = savedGoogleCseCx;
 });
 
@@ -97,7 +97,7 @@ describe("AgenticWebSearch — DuckDuckGo Fallback", () => {
   describe("DDG as Provider 2 (Brave unconfigured)", () => {
     it("uses DuckDuckGo when Brave API key is not set", async () => {
       CONFIG.BRAVE_SEARCH_API_KEY = undefined;
-      CONFIG.GOOGLE_CLOUD_GEMINI_API_KEY = undefined;
+      CONFIG.GOOGLE_CLOUD_API_KEY = undefined;
       CONFIG.GOOGLE_CSE_CX = undefined;
 
       const fetchSpy = vi
@@ -284,7 +284,7 @@ describe("AgenticWebSearch — DuckDuckGo Fallback", () => {
   describe("DDG error handling", () => {
     it("returns error when DDG returns empty results (possible CAPTCHA)", async () => {
       CONFIG.BRAVE_SEARCH_API_KEY = undefined;
-      CONFIG.GOOGLE_CLOUD_GEMINI_API_KEY = undefined;
+      CONFIG.GOOGLE_CLOUD_API_KEY = undefined;
       CONFIG.GOOGLE_CSE_CX = undefined;
 
       const fetchSpy = vi
@@ -301,7 +301,7 @@ describe("AgenticWebSearch — DuckDuckGo Fallback", () => {
 
     it("returns error when DDG returns non-200 HTTP status", async () => {
       CONFIG.BRAVE_SEARCH_API_KEY = undefined;
-      CONFIG.GOOGLE_CLOUD_GEMINI_API_KEY = undefined;
+      CONFIG.GOOGLE_CLOUD_API_KEY = undefined;
       CONFIG.GOOGLE_CSE_CX = undefined;
 
       const fetchSpy = vi
@@ -318,7 +318,7 @@ describe("AgenticWebSearch — DuckDuckGo Fallback", () => {
 
     it("handles fetch exceptions gracefully", async () => {
       CONFIG.BRAVE_SEARCH_API_KEY = undefined;
-      CONFIG.GOOGLE_CLOUD_GEMINI_API_KEY = undefined;
+      CONFIG.GOOGLE_CLOUD_API_KEY = undefined;
       CONFIG.GOOGLE_CSE_CX = undefined;
 
       const fetchSpy = vi
@@ -337,7 +337,7 @@ describe("AgenticWebSearch — DuckDuckGo Fallback", () => {
   describe("waterfall behavior", () => {
     it("falls through to Google CSE (deprecated) when DDG fails", async () => {
       CONFIG.BRAVE_SEARCH_API_KEY = undefined;
-      CONFIG.GOOGLE_CLOUD_GEMINI_API_KEY = "test-google-key";
+      CONFIG.GOOGLE_CLOUD_API_KEY = "test-google-key";
       CONFIG.GOOGLE_CSE_CX = "test-cse-cx";
 
       const fetchSpy = vi.spyOn(global, "fetch");
@@ -376,7 +376,7 @@ describe("AgenticWebSearch — DuckDuckGo Fallback", () => {
 
     it("returns final error message when all providers fail", async () => {
       CONFIG.BRAVE_SEARCH_API_KEY = undefined;
-      CONFIG.GOOGLE_CLOUD_GEMINI_API_KEY = undefined;
+      CONFIG.GOOGLE_CLOUD_API_KEY = undefined;
       CONFIG.GOOGLE_CSE_CX = undefined;
 
       const fetchSpy = vi

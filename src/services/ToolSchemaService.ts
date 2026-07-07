@@ -12695,14 +12695,14 @@ const TOOL_REQUIRED_KEYS = {
   // Places (require Google Places API key)
   search_nearby_places: ["GOOGLE_CLOUD_API_KEY"],
   search_places: ["GOOGLE_CLOUD_API_KEY"],
-  generate_map: ["GOOGLE_CLOUD_GEMINI_API_KEY"],
+  generate_map: ["GOOGLE_CLOUD_API_KEY"],
 
   // YouTube (requires Google API key with YouTube Data API v3 enabled)
   search_youtube: ["GOOGLE_CLOUD_API_KEY"],
 
   // Weather (only specific Google-powered tools)
-  get_detailed_air_quality: ["GOOGLE_CLOUD_GEMINI_API_KEY"],
-  get_pollen_forecast: ["GOOGLE_CLOUD_GEMINI_API_KEY"],
+  get_detailed_air_quality: ["GOOGLE_CLOUD_API_KEY"],
+  get_pollen_forecast: ["GOOGLE_CLOUD_API_KEY"],
 
   // Maritime (all require AIS Stream API key)
   get_tracked_vessels: ["AIS_STREAM_API_KEY"],

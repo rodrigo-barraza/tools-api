@@ -94,12 +94,12 @@ interface RawGooglePollenResponse {
  * Returns daily pollen indexes for grass, tree, and weed with plant breakdowns.
  */
 export async function fetchPollen(): Promise<PollenResponse> {
-  if (!CONFIG.GOOGLE_CLOUD_GEMINI_API_KEY) {
-    throw new Error("GOOGLE_CLOUD_GEMINI_API_KEY is not configured");
+  if (!CONFIG.GOOGLE_CLOUD_API_KEY) {
+    throw new Error("GOOGLE_CLOUD_API_KEY is not configured");
   }
 
   const params = new URLSearchParams({
-    key: CONFIG.GOOGLE_CLOUD_GEMINI_API_KEY,
+    key: CONFIG.GOOGLE_CLOUD_API_KEY,
     "location.latitude": CONFIG.LATITUDE.toString(),
     "location.longitude": CONFIG.LONGITUDE.toString(),
     days: "5",

@@ -132,13 +132,13 @@ export function buildStaticMapUrl(
   center: { latitude: number; longitude: number } | undefined,
   { size = "800x400", zoom, maptype = "roadmap" }: PlacesStaticMapOptions = {},
 ) {
-  if (!places.length || !CONFIG.GOOGLE_CLOUD_GEMINI_API_KEY) return null;
+  if (!places.length || !CONFIG.GOOGLE_CLOUD_API_KEY) return null;
 
   const params = new URLSearchParams({
     size,
     maptype,
     scale: "2", // Retina/HiDPI
-    key: CONFIG.GOOGLE_CLOUD_GEMINI_API_KEY,
+    key: CONFIG.GOOGLE_CLOUD_API_KEY,
   });
 
   if (zoom != null) {
