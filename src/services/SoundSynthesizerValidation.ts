@@ -42,6 +42,10 @@ const VALID_NODE_TYPES = new Set([
 ]);
 
 export function validateSynthesizerInput(config: SynthesizerConfig): string | null {
+  if (!config || typeof config !== "object") {
+    return "Invalid input: config must be a non-null object";
+  }
+
   if (config.soundType && !VALID_SOUND_TYPES.has(config.soundType)) {
     return `Invalid soundType '${config.soundType}'. Valid: ${[...VALID_SOUND_TYPES].join(", ")}`;
   }
@@ -54,7 +58,7 @@ export function validateSynthesizerInput(config: SynthesizerConfig): string | nu
     return `Invalid presetEffect '${config.presetEffect}'. Valid: ${[...VALID_PRESET_EFFECTS].join(", ")}`;
   }
 
-  if (config.instrument && !INSTRUMENT_PRESETS[config.instrument]) {
+  if (config.instrument && !Object.hasOwn(INSTRUMENT_PRESETS, config.instrument)) {
     return (
       `Invalid instrument '${config.instrument}'. Valid: ${Object.keys(INSTRUMENT_PRESETS).join(", ")}`
     );

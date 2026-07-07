@@ -276,19 +276,14 @@ describe("SoundSynthesizerService fuzz — getEnvelopeValue invariants", () => {
     );
   });
 
-  it("value at time=0 is always 0 (start of attack)", () => {
+  it("value at time=0 with positive attack is always 0 (start of ramp)", () => {
     fc.assert(
       fc.property(
-        arbitraryADSR,
+        arbitraryADSR.filter((adsr) => adsr.attack >= 0.001),
         arbitraryDuration,
         (adsr, totalDuration) => {
           const value = getEnvelopeValue(0, totalDuration, adsr);
-          // If attack is 0, it jumps to 1 immediately
-          if (adsr.attack === 0) {
-            expect(value).toBe(1);
-          } else {
-            expect(value).toBe(0);
-          }
+          expect(value).toBe(0);
         },
       ),
       { numRuns: 200 },

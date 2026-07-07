@@ -1449,11 +1449,18 @@ export function noteToFreq(note: number | string): number {
   // Handle flat notation (e.g. Bb4, Eb3)
   const flatMatch = trimmed.match(/^([A-G]b)(-?\d+)$/i);
   if (flatMatch) {
+    const originalRootLetter = flatMatch[1].charAt(0).toUpperCase();
     const sharpEquivalent =
-      FLAT_TO_SHARP[flatMatch[1].charAt(0).toUpperCase() + "b"];
+      FLAT_TO_SHARP[originalRootLetter + "b"];
     if (sharpEquivalent) {
-      const octave = parseInt(flatMatch[2], 10);
+      let octave = parseInt(flatMatch[2], 10);
       const semitone = NOTE_NAMES.indexOf(sharpEquivalent);
+      const originalRootSemitone = NOTE_NAMES.indexOf(originalRootLetter);
+      // Cb4 = B3, not B4: when the resolved semitone wraps below the
+      // octave boundary (C=0), we must decrement the octave.
+      if (semitone >= originalRootSemitone && originalRootSemitone === 0) {
+        octave -= 1;
+      }
       const a4Index = 4 * 12 + 9;
       const noteIndex = octave * 12 + semitone;
       return 440 * Math.pow(2, (noteIndex - a4Index) / 12);
