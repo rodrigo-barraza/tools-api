@@ -44,6 +44,7 @@ export interface TrackerSession {
   sampleRate: number;
   swing: number;
   humanize: number;
+  duration?: number;
   channels: TrackerChannel[];
   createdAt: number;
   updatedAt: number;
@@ -55,6 +56,7 @@ export interface TrackerInitOptions {
   sampleRate?: number;
   swing?: number;
   humanize?: number;
+  duration?: number;
 }
 
 export interface AddChannelOptions {
@@ -135,6 +137,10 @@ export function createTrackerSession(
   const sessionId = randomUUID();
   const now = Date.now();
 
+  const clampedDuration = options.duration != null
+    ? clampNumber(options.duration, 0.1, 60.0)
+    : undefined;
+
   const session: TrackerSession = {
     sessionId,
     tempo: clampNumber(options.tempo ?? 120, 20, 300),
@@ -142,6 +148,7 @@ export function createTrackerSession(
     sampleRate: clampNumber(options.sampleRate ?? 44100, 8000, 48000),
     swing: clampNumber(options.swing ?? 0, 0, 1),
     humanize: clampNumber(options.humanize ?? 0, 0, 1),
+    duration: clampedDuration,
     channels: [],
     createdAt: now,
     updatedAt: now,
@@ -404,6 +411,7 @@ export function toSynthesizerConfig(
     sampleRate: session.sampleRate,
     swing: session.swing > 0 ? session.swing : undefined,
     humanize: session.humanize > 0 ? session.humanize : undefined,
+    duration: session.duration,
     nodes,
     tracks,
   };

@@ -1258,9 +1258,10 @@ export function renderModularGraph(config: SynthesizerConfig): Float32Array {
     );
   }
 
-  let duration =
-    config.duration ||
-    computeTimelineDuration(tracks, nodes, tempo, beatsPerBar);
+  const timelineDuration = computeTimelineDuration(tracks, nodes, tempo, beatsPerBar);
+  let duration = config.duration
+    ? Math.max(config.duration, timelineDuration)
+    : timelineDuration;
   duration = Math.min(Math.max(duration, 0.1), 60.0);
 
   const numberSamples = Math.floor(duration * sampleRate);
@@ -2051,13 +2052,15 @@ export function generateAudioWav(config: SynthesizerConfig): {
   const wavBuffer = createWavBuffer(samples, sampleRate, numberChannels);
   const audioBase64 = wavBuffer.toString("base64");
 
+  const audioFrameCount = samples.length / numberChannels;
+
   logger.info(
-    `[SoundSynthesizerService] Synthesized ${samples.length} samples in ${Date.now() - start} ms`,
+    `[SoundSynthesizerService] Synthesized ${audioFrameCount} frames (${numberChannels}ch) in ${Date.now() - start} ms`,
   );
 
   return {
     audioBase64,
-    sampleCount: samples.length,
+    sampleCount: audioFrameCount,
   };
 }
 

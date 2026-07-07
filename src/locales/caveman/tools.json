@@ -441,7 +441,7 @@
   "generate_audio.params.delay": "echo/feedback delay effect.",
   "generate_audio.params.delay.params.delayTime": "echo delay in second (like 0.25).",
   "generate_audio.params.delay.params.feedback": "feedback 0-0.95 (default: 0.4).",
-  "generate_audio.params.duration": "total sound duration in second (default: 1.0, range: 0.1-60.0).",
+  "generate_audio.params.duration": "total sound duration in second (default: 1.0, range: 0.1-60.0). in tracker mode, pass during action: 'init' to set target minimum duration — rendered audio at least this long even if notes no fill it.",
   "generate_audio.params.effects": "channel effect chain for add_channel action.",
   "generate_audio.params.effects.params.delay.params.delayTime": "delay time in second. default: 0.25.",
   "generate_audio.params.effects.params.delay.params.feedback": "feedback (0-0.95). default: 0.3.",

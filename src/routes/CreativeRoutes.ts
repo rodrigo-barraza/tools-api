@@ -697,25 +697,47 @@ router.post(
       }
     };
 
+    // Compute duration progress feedback when a session has a target duration.
+    // Returns fields like targetDuration and remainingDuration so the LLM
+    // knows how much more content is needed without doing BPM math itself.
+    const buildDurationProgress = (
+      session: ReturnType<typeof getTrackerSession>,
+      preview: ReturnType<typeof tryRenderPreview>,
+    ): Record<string, number> => {
+      if (!session?.duration) return {};
+      const currentDuration = preview?.duration ?? 0;
+      const remaining = Math.max(0, session.duration - currentDuration);
+      return {
+        targetDuration: session.duration,
+        currentDuration: Math.round(currentDuration * 100) / 100,
+        remainingDuration: Math.round(remaining * 100) / 100,
+      };
+    };
+
     if (action === "init") {
-      const { tempo, timeSignature, sampleRate, swing, humanize } = req.body;
+      const { tempo, timeSignature, sampleRate, swing, humanize, duration } = req.body;
       const session = createTrackerSession({
         tempo: tempo != null ? Number(tempo) : undefined,
         timeSignature,
         sampleRate: sampleRate != null ? Number(sampleRate) : undefined,
         swing: swing != null ? Number(swing) : undefined,
         humanize: humanize != null ? Number(humanize) : undefined,
+        duration: duration != null ? Number(duration) : undefined,
       });
+      const durationMessage = session.duration
+        ? ` Target duration: ${session.duration}s.`
+        : "";
       return res.json({
         success: true,
         message:
           `Tracker session created. Tempo: ${session.tempo} BPM, ` +
-          `Time Signature: ${session.timeSignature.join("/")}. ` +
+          `Time Signature: ${session.timeSignature.join("/")}.${durationMessage} ` +
           `Now add channels with action: "add_channel".`,
         sessionId: session.sessionId,
         tempo: session.tempo,
         timeSignature: session.timeSignature,
         sampleRate: session.sampleRate,
+        targetDuration: session.duration,
         activeSessions: getActiveSessionCount(),
       });
     }
@@ -746,6 +768,7 @@ router.post(
       }
       const session = getTrackerSession(sessionId);
       const preview = tryRenderPreview(sessionId);
+      const durationProgress = buildDurationProgress(session, preview);
       return res.json({
         success: true,
         message:
@@ -761,6 +784,7 @@ router.post(
           duration: preview.duration,
           sampleCount: preview.sampleCount,
         }),
+        ...durationProgress,
       });
     }
 
@@ -788,6 +812,8 @@ router.post(
         return res.status(400).json({ error: writeResult.error });
       }
       const preview = tryRenderPreview(sessionId);
+      const session = getTrackerSession(sessionId);
+      const durationProgress = buildDurationProgress(session, preview);
       return res.json({
         success: true,
         message:
@@ -802,6 +828,7 @@ router.post(
           duration: preview.duration,
           sampleCount: preview.sampleCount,
         }),
+        ...durationProgress,
       });
     }
 

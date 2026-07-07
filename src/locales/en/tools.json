@@ -441,7 +441,7 @@
   "generate_audio.params.delay": "Echo/Feedback Delay effect.",
   "generate_audio.params.delay.params.delayTime": "Echo delay offset in seconds (e.g., 0.25).",
   "generate_audio.params.delay.params.feedback": "Feedback coefficient from 0.0 to 0.95 (default: 0.4).",
-  "generate_audio.params.duration": "Total sound duration in seconds (default: 1.0, range: 0.1 to 60.0).",
+  "generate_audio.params.duration": "Total sound duration in seconds (default: 1.0, range: 0.1 to 60.0). In tracker mode, pass this during action: 'init' to set the target minimum duration for the composition — the rendered audio buffer will be at least this long, even if the notes don't fully fill it.",
   "generate_audio.params.effects": "Channel effects chain for add_channel action.",
   "generate_audio.params.effects.params.delay.params.delayTime": "Delay time in seconds. Default: 0.25.",
   "generate_audio.params.effects.params.delay.params.feedback": "Feedback (0.0–0.95). Default: 0.3.",
