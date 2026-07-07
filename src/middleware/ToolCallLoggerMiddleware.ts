@@ -234,6 +234,17 @@ export function toolCallLoggerMiddleware(
     const success = status >= 200 && status < 400 && !responseBody?.error;
     const errorMessage = (responseBody?.error as string) || null;
 
+    // Console-log failed tool calls for immediate observability in container logs
+    if (!success) {
+      const formattedElapsed =
+        elapsed >= 1000
+          ? `${(elapsed / 1000).toFixed(2)}s`
+          : `${Math.round(elapsed)}ms`;
+      logger.warn(
+        `[ToolCall] ❌ ${tool.toolName} failed (${formattedElapsed}) — ${errorMessage || `HTTP ${status}`}`,
+      );
+    }
+
     // Sanitize args — strip large payloads to keep docs lean
     const hasBody = method !== "GET";
     const args = sanitizeArgs(hasBody ? req.body : req.query);
