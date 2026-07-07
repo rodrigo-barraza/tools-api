@@ -20,7 +20,7 @@ vi.mock("../../config.ts", () => ({
   default: {
     BRAVE_SEARCH_API_KEY: undefined,
     SEARCH_PROVIDER_PRIORITY: "duckduckgo",
-    GOOGLE_CLOUD_GEMINI_API_KEY: undefined,
+    GOOGLE_CLOUD_API_KEY: undefined,
     GOOGLE_CSE_CX: undefined,
   },
 }));

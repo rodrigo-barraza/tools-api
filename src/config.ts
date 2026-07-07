@@ -71,7 +71,6 @@ interface ToolsServiceConfig {
   // Weather / Search
   TOMORROWIO_API_KEY: string | undefined;
   NASA_API_KEY: string | undefined;
-  GOOGLE_CLOUD_GEMINI_API_KEY: string | undefined;
   GOOGLE_CSE_CX: string | undefined;
   BRAVE_SEARCH_API_KEY: string | undefined;
   SEARCH_PROVIDER_PRIORITY: "brave" | "duckduckgo";
@@ -191,7 +190,6 @@ const CONFIG: ToolsServiceConfig = {
   // ─── Weather ─────────────────────────────────────────────────────
   TOMORROWIO_API_KEY: process.env.TOMORROWIO_API_KEY,
   NASA_API_KEY: process.env.NASA_API_KEY,
-  GOOGLE_CLOUD_GEMINI_API_KEY: process.env.GOOGLE_CLOUD_GEMINI_API_KEY,
   GOOGLE_CSE_CX: process.env.GOOGLE_CSE_CX,
 
   // ─── Web Search ───────────────────────────────────────────────────
