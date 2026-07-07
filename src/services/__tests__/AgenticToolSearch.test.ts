@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { agenticToolSearch } from "../src/services/AgenticToolSearchService.ts";
+import { agenticToolSearch } from "../AgenticToolSearchService.ts";
 
 describe("Agentic Tool Search Service", () => {
   it("should return matching tools when query matches available tools", () => {

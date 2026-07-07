@@ -12,7 +12,7 @@ import { describe, it, expect } from "vitest";
 import {
   TOOL_DEFINITIONS,
   TOOL_DOMAINS,
-} from "../src/services/ToolSchemaService.ts";
+} from "../ToolSchemaService.ts";
 import { DOMAINS } from "@rodrigo-barraza/utilities-library/taxonomy";
 
 // ── Helpers ──────────────────────────────────────────────────

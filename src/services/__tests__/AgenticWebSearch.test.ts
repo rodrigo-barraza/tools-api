@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { agenticWebSearch } from "../src/services/AgenticWebService.ts";
-import CONFIG from "../src/config.ts";
+import { agenticWebSearch } from "../AgenticWebService.ts";
+import CONFIG from "../../config.ts";
 
 // ─── Realistic DDG HTML Fixture ─────────────────────────────────────────────
 // Mirrors the actual structure of html.duckduckgo.com/html/ results

@@ -13,7 +13,7 @@ import {
   getPathPointAt,
   VectorLayer,
   LinearGradient,
-} from "../src/utilities/VectorAnimationEngine.ts";
+} from "../../utilities/VectorAnimationEngine.ts";
 
 describe("VectorAnimationEngine Calculations", () => {
   describe("Cubic Bezier Solver", () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { TOOL_DEFINITIONS } from "../src/services/ToolSchemaService.ts";
+import { TOOL_DEFINITIONS } from "../ToolSchemaService.ts";
 
 /**
  * Guard test: ensures no two tool definitions in TOOL_DEFINITIONS share the

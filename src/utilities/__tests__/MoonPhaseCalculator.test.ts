@@ -4,7 +4,7 @@ import {
   SYNODIC_PERIOD_DAYS,
   REFERENCE_NEW_MOON_MS,
   PHASE_BOUNDARIES,
-} from "../src/utilities/MoonPhaseCalculator.ts";
+} from "../MoonPhaseCalculator.ts";
 
 const MILLISECONDS_PER_DAY = 86400000;
 

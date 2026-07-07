@@ -3,7 +3,7 @@ import {
   getToolSchemas,
   calculateToolComplexityScore,
   TOOL_DEFINITIONS,
-} from "../src/services/ToolSchemaService.ts";
+} from "../ToolSchemaService.ts";
 
 describe("Dynamic Complexity Scoring", () => {
   it("produces correct scores and tier distribution", () => {

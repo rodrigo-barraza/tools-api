@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
-import CONFIG from "../src/config.ts";
+import CONFIG from "../../../config.ts";
 import {
   fetchServiceStatuses,
   fetchContainerStats,
@@ -9,7 +9,7 @@ import {
   fetchDevices,
   fetchContainerLogs,
   isPortalConfigured,
-} from "../src/fetchers/PortalFetcher.ts";
+} from "../../PortalFetcher.ts";
 
 describe("PortalFetcher & SSE Log Parser", () => {
   const originalPortalUrl = CONFIG.PORTAL_SERVICE_URL;

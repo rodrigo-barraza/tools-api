@@ -13,7 +13,7 @@ import {
   getToolSchemas,
   getToolSchemasForAI,
   getDisabledTools,
-} from "../src/services/ToolSchemaService.ts";
+} from "../ToolSchemaService.ts";
 
 // ── Helpers ──────────────────────────────────────────────────
 

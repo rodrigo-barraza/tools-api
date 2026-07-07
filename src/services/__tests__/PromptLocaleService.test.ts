@@ -15,12 +15,14 @@ import { fileURLToPath } from "url";
 const LOCALES_DIRECTORY = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "..",
-  "src",
+  "..",
   "locales",
 );
 
 const DIST_LOCALES_DIRECTORY = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "..",
   "..",
   "dist",
   "locales",

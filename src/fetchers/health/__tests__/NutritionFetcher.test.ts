@@ -7,7 +7,7 @@ import {
   getFoodCategories,
   getTopFoodsByCategory,
   listCategoryNutrients,
-} from "../src/fetchers/health/NutritionFetcher.ts";
+} from "../NutritionFetcher.ts";
 
 // ─── searchFoods ───────────────────────────────────────────────────
 
