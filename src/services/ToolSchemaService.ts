@@ -8848,7 +8848,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         "envelope",
         "harmonics",
         "lfo",
-        "melody",
+
         "delay",
         "sampleRate",
         "tempo",
@@ -8959,8 +8959,6 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           type: "string",
           enum: [
             "synthesizer",
-            "arpeggio",
-            "melody",
             "sound_effect",
             "modular",
           ],
@@ -9048,28 +9046,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           },
           required: ["frequency"],
         },
-        melody: {
-          type: "array",
-          description: translate("generate_audio.params.melody"),
-          items: {
-            type: "object",
-            properties: {
-              note: {
-                type: "string",
-                description: translate("generate_audio.params.melody.items.params.note"),
-              },
-              duration: {
-                type: "string",
-                description: translate("generate_audio.params.melody.items.params.duration"),
-              },
-              velocity: {
-                type: "number",
-                description: translate("generate_audio.params.melody.items.params.velocity"),
-              },
-            },
-            required: ["note", "duration"],
-          },
-        },
+
         delay: {
           type: "object",
           description: translate("generate_audio.params.delay"),

@@ -418,8 +418,6 @@ export interface TrackConfig {
 export interface SynthesizerConfig {
   soundType?:
     | "synthesizer"
-    | "arpeggio"
-    | "melody"
     | "sound_effect"
     | "modular";
   presetEffect?:
@@ -440,7 +438,7 @@ export interface SynthesizerConfig {
   envelope?: ADSREnvelope;
   harmonics?: number[];
   lfo?: LFOConfig;
-  melody?: MelodyStep[];
+
   delay?: DelayConfig;
   sampleRate?: number;
 
@@ -2033,24 +2031,6 @@ export function generateAudioWav(config: SynthesizerConfig): {
       presetEffectToName(config.presetEffect),
       sampleRate,
     );
-  } else if (
-    config.soundType === "melody" &&
-    config.melody &&
-    config.melody.length > 0
-  ) {
-    logger.info(
-      `[SoundSynthesizerService] Synthesizing custom melody sequence with ${config.melody.length} steps`,
-    );
-    samples = synthesizeSequence(config.melody, config);
-  } else if (
-    config.soundType === "arpeggio" &&
-    config.melody &&
-    config.melody.length > 0
-  ) {
-    logger.info(
-      `[SoundSynthesizerService] Synthesizing custom arpeggio with ${config.melody.length} steps`,
-    );
-    samples = synthesizeSequence(config.melody, config);
   } else {
     logger.info(
       `[SoundSynthesizerService] Synthesizing custom waveform: ${config.waveform || "sine"} at ${config.frequency || 440} Hz`,
