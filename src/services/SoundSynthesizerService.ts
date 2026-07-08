@@ -345,7 +345,7 @@ export interface DelayConfig {
 
 export interface MelodyStep {
   note: number | string;
-  duration: number;
+  duration: string | number;
   velocity?: number; // 0.0–1.0, default 1.0
 }
 
@@ -1684,21 +1684,23 @@ export function synthesizeSequence(
     duration: number;
     velocity: number;
   }[] = [];
+  const tempo = baseConfig.tempo ?? 120;
   for (const step of steps) {
     const noteString = String(step.note).trim();
     const stepVelocity = step.velocity ?? 1.0;
+    const resolvedDuration = parseBeatDuration(step.duration, tempo);
 
     if (isChordNotation(noteString)) {
       const chordNotes = expandChordToNotes(noteString);
       expandedSteps.push({
         frequencies: chordNotes.map((chordNote) => noteToFreq(chordNote)),
-        duration: Math.max(step.duration, 0.02),
+        duration: Math.max(resolvedDuration, 0.02),
         velocity: stepVelocity,
       });
     } else {
       expandedSteps.push({
         frequencies: [noteToFreq(step.note)],
-        duration: Math.max(step.duration, 0.02),
+        duration: Math.max(resolvedDuration, 0.02),
         velocity: stepVelocity,
       });
     }

@@ -715,10 +715,11 @@ router.post(
     };
 
     if (action === "init") {
-      const { tempo, timeSignature, sampleRate, swing, humanize, duration } = req.body;
+      const { tempo, timeSignature, linesPerBeat, sampleRate, swing, humanize, duration } = req.body;
       const session = createTrackerSession({
         tempo: tempo != null ? Number(tempo) : undefined,
         timeSignature,
+        linesPerBeat: linesPerBeat != null ? Number(linesPerBeat) : undefined,
         sampleRate: sampleRate != null ? Number(sampleRate) : undefined,
         swing: swing != null ? Number(swing) : undefined,
         humanize: humanize != null ? Number(humanize) : undefined,
@@ -731,11 +732,13 @@ router.post(
         success: true,
         message:
           `Tracker session created. Tempo: ${session.tempo} BPM, ` +
-          `Time Signature: ${session.timeSignature.join("/")}.${durationMessage} ` +
+          `Time Signature: ${session.timeSignature.join("/")}, ` +
+          `Lines Per Beat: ${session.linesPerBeat} (each row = ${(60 / session.tempo / session.linesPerBeat * 1000).toFixed(1)}ms).${durationMessage} ` +
           `Now add channels with action: "add_channel".`,
         sessionId: session.sessionId,
         tempo: session.tempo,
         timeSignature: session.timeSignature,
+        linesPerBeat: session.linesPerBeat,
         sampleRate: session.sampleRate,
         targetDuration: session.duration,
         activeSessions: getActiveSessionCount(),

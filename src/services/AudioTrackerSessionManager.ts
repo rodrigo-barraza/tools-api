@@ -14,7 +14,6 @@ import type {
 
 export interface TrackerRow {
   note: string;
-  duration: string | number;
   velocity?: number;
   pitchBend?: PitchBendConfig;
 }
@@ -41,6 +40,7 @@ export interface TrackerSession {
   sessionId: string;
   tempo: number;
   timeSignature: [number, number];
+  linesPerBeat: number;
   sampleRate: number;
   swing: number;
   humanize: number;
@@ -53,6 +53,7 @@ export interface TrackerSession {
 export interface TrackerInitOptions {
   tempo?: number;
   timeSignature?: [number, number];
+  linesPerBeat?: number;
   sampleRate?: number;
   swing?: number;
   humanize?: number;
@@ -145,6 +146,7 @@ export function createTrackerSession(
     sessionId,
     tempo: clampNumber(options.tempo ?? 120, 20, 300),
     timeSignature: options.timeSignature ?? [4, 4],
+    linesPerBeat: clampNumber(options.linesPerBeat ?? 4, 1, 16),
     sampleRate: clampNumber(options.sampleRate ?? 44100, 8000, 48000),
     swing: clampNumber(options.swing ?? 0, 0, 1),
     humanize: clampNumber(options.humanize ?? 0, 0, 1),
@@ -158,7 +160,7 @@ export function createTrackerSession(
 
   logger.info(
     `[AudioTrackerSessionManager] Created session ${sessionId} — tempo=${session.tempo} BPM, ` +
-    `time=${session.timeSignature.join("/")}`,
+    `time=${session.timeSignature.join("/")}, LPB=${session.linesPerBeat}`,
   );
 
   return session;
@@ -257,7 +259,7 @@ export function writeTrackerPattern(
       const velocityLabel = row.velocity !== undefined
         ? ` v${Math.round(row.velocity * 127)}`
         : "";
-      return `${String(index).padStart(2, "0")}| ${row.note}${velocityLabel} [${row.duration}]`;
+      return `${String(index).padStart(2, "0")}| ${row.note}${velocityLabel}`;
     })
     .join("\n");
 
@@ -392,7 +394,7 @@ export function toSynthesizerConfig(
     const convertedNotes: NoteConfig[] = convertPatternToNotes(
       channel.pattern,
       session.tempo,
-      session.timeSignature[0],
+      session.linesPerBeat,
     );
 
     // Auto-repeat: when a target duration is set and the pattern is shorter,
@@ -455,10 +457,17 @@ export function toSynthesizerConfig(
 // Internal Helpers
 // ────────────────────────────────────────────────────────────
 
+// Step-grid symbols
+const NOTE_OFF_SYMBOLS = new Set(["===", "OFF", "KEY_OFF"]);
+const EMPTY_SYMBOLS = new Set(["---", "...", ""]);
+const SILENCE_SYMBOLS = new Set(["REST", "SILENCE"]);
+
+
+
 function computePatternDuration(
   notes: NoteConfig[],
   _tempo: number,
-  _beatsPerBar: number,
+  _linesPerBeat: number,
 ): number {
   let maximumEndTime = 0;
   for (const note of notes) {
@@ -473,28 +482,38 @@ function computePatternDuration(
   return maximumEndTime;
 }
 
+/**
+ * Step-based pattern-to-notes converter.
+ *
+ * Each row occupies a fixed time slot: `rowDuration = 60 / tempo / linesPerBeat`.
+ * A note plays from its row index until the next note trigger, note-off (`===`/`OFF`),
+ * rest/silence, or end of pattern. Empty rows (`---`/`...`) sustain the previous note.
+ */
 function convertPatternToNotes(
   pattern: TrackerRow[],
   tempo: number,
-  beatsPerBar: number,
+  linesPerBeat: number,
 ): NoteConfig[] {
   const notes: NoteConfig[] = [];
-  let currentTimeInBeats = 0;
-  const secondsPerBeat = 60.0 / tempo;
+  const rowDuration = 60.0 / tempo / linesPerBeat;
 
-  for (const row of pattern) {
-    const noteString = row.note.toUpperCase();
+  for (let rowIndex = 0; rowIndex < pattern.length; rowIndex++) {
+    const row = pattern[rowIndex];
+    const noteString = row.note.toUpperCase().trim();
 
-    if (noteString === "REST" || noteString === "---" || noteString === "SILENCE") {
-      const restDuration = resolveDuration(row.duration, secondsPerBeat, beatsPerBar);
-      currentTimeInBeats += restDuration / secondsPerBeat;
-      continue;
-    }
+    // Skip empty/sustain rows — they just extend the previous note
+    if (EMPTY_SYMBOLS.has(noteString)) continue;
 
-    const noteDuration = resolveDuration(row.duration, secondsPerBeat, beatsPerBar);
+    // Note-off and silence rows don't produce NoteConfig entries —
+    // they only terminate the previous note (handled by look-ahead below)
+    if (NOTE_OFF_SYMBOLS.has(noteString) || SILENCE_SYMBOLS.has(noteString)) continue;
+
+    // This is a note trigger — calculate its duration via look-ahead
+    const stepsUntilEnd = lookAheadForNoteEnd(pattern, rowIndex);
+    const noteDuration = stepsUntilEnd * rowDuration;
 
     const noteConfig: NoteConfig = {
-      time: currentTimeInBeats * secondsPerBeat,
+      time: rowIndex * rowDuration,
       duration: noteDuration,
       note: row.note,
       velocity: row.velocity,
@@ -502,33 +521,37 @@ function convertPatternToNotes(
     };
 
     notes.push(noteConfig);
-    currentTimeInBeats += noteDuration / secondsPerBeat;
   }
 
   return notes;
 }
 
-function resolveDuration(
-  durationValue: string | number,
-  secondsPerBeat: number,
-  _beatsPerBar: number,
+/**
+ * Scans ahead from a note trigger to determine how many steps it should ring for.
+ * Returns the number of rows (including the trigger row itself) before the note is
+ * terminated by: another note trigger, a note-off (`===`/`OFF`), a rest/silence, or
+ * the end of the pattern.
+ */
+function lookAheadForNoteEnd(
+  pattern: TrackerRow[],
+  triggerIndex: number,
 ): number {
-  if (typeof durationValue === "number") return durationValue;
+  let steps = 1;
 
-  // Beat fraction notation: "1/4", "1/8", "1/16", "1/4d" (dotted), "1/8t" (triplet)
-  const beatFractionMatch = durationValue.trim().match(/^1\/(\d+)(d|t)?$/i);
-  if (beatFractionMatch) {
-    const denominator = parseInt(beatFractionMatch[1], 10);
-    const modifier = beatFractionMatch[2]?.toLowerCase();
-    const wholeNoteDuration = secondsPerBeat * 4.0;
-    const baseDuration = wholeNoteDuration / denominator;
-    if (modifier === "d") return baseDuration * 1.5;
-    if (modifier === "t") return baseDuration * (2.0 / 3.0);
-    return baseDuration;
+  for (let nextIndex = triggerIndex + 1; nextIndex < pattern.length; nextIndex++) {
+    const nextNoteString = pattern[nextIndex].note.toUpperCase().trim();
+
+    // Empty/sustain rows extend the note
+    if (EMPTY_SYMBOLS.has(nextNoteString)) {
+      steps++;
+      continue;
+    }
+
+    // Anything else (note trigger, note-off, rest/silence) terminates the note
+    break;
   }
 
-  const parsed = parseFloat(durationValue);
-  return isNaN(parsed) ? 0.25 : parsed;
+  return steps;
 }
 
 function clampNumber(value: number, minimum: number, maximum: number): number {

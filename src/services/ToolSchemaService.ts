@@ -8832,6 +8832,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         "action",
         "sessionId",
         "channelId",
+        "linesPerBeat",
         "rows",
         "append",
         "startRow",
@@ -8883,6 +8884,10 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           type: "number",
           description: translate("generate_audio.params.volume"),
         },
+        linesPerBeat: {
+          type: "integer",
+          description: translate("generate_audio.params.linesPerBeat"),
+        },
         effects: {
           type: "object",
           description: translate("generate_audio.params.effects"),
@@ -8929,16 +8934,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
                 type: "string",
                 description: translate("generate_audio.params.rows.items.params.note"),
               },
-              duration: {
-                type: "string",
-                description: translate("generate_audio.params.rows.items.params.duration"),
-              },
               velocity: {
                 type: "number",
                 description: translate("generate_audio.params.rows.items.params.velocity"),
               },
             },
-            required: ["note", "duration"],
+            required: ["note"],
           },
         },
         append: {
@@ -9058,7 +9059,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
                 description: translate("generate_audio.params.melody.items.params.note"),
               },
               duration: {
-                type: "number",
+                type: "string",
                 description: translate("generate_audio.params.melody.items.params.duration"),
               },
               velocity: {

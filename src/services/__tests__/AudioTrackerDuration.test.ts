@@ -140,10 +140,10 @@ describe("Session Parameter Preservation — Full Tracker Workflow", () => {
       sessionId: session.sessionId,
       channelId: "bass",
       rows: [
-        { note: "C2", duration: "1/4" },
-        { note: "E2", duration: "1/4" },
-        { note: "G2", duration: "1/4" },
-        { note: "C3", duration: "1/4" },
+        { note: "C2" },
+        { note: "E2" },
+        { note: "G2" },
+        { note: "C3" },
       ],
     });
 
@@ -161,8 +161,8 @@ describe("Session Parameter Preservation — Full Tracker Workflow", () => {
       sessionId: session.sessionId,
       channelId: "lead",
       rows: [
-        { note: "E4", duration: "1/8" },
-        { note: "G4", duration: "1/8" },
+        { note: "E4" },
+        { note: "G4" },
       ],
     });
 
@@ -184,7 +184,6 @@ describe("Session Parameter Preservation — Full Tracker Workflow", () => {
       channelId: "melody",
       rows: Array.from({ length: 8 }, (_, index) => ({
         note: `C${3 + (index % 3)}`,
-        duration: "1/4" as const,
       })),
     });
 
@@ -194,7 +193,6 @@ describe("Session Parameter Preservation — Full Tracker Workflow", () => {
       channelId: "melody",
       rows: Array.from({ length: 8 }, (_, index) => ({
         note: `E${3 + (index % 3)}`,
-        duration: "1/4" as const,
       })),
     });
 
@@ -225,7 +223,7 @@ describe("toSynthesizerConfig — Parameter Propagation", () => {
     writeTrackerPattern({
       sessionId: session.sessionId,
       channelId: "lead",
-      rows: [{ note: "C4", duration: "1/4" }],
+      rows: [{ note: "C4" }],
     });
 
     const result = toSynthesizerConfig(session.sessionId);
@@ -249,7 +247,7 @@ describe("toSynthesizerConfig — Parameter Propagation", () => {
     writeTrackerPattern({
       sessionId: session.sessionId,
       channelId: "lead",
-      rows: [{ note: "C4", duration: "1/4" }],
+      rows: [{ note: "C4" }],
     });
 
     const result = toSynthesizerConfig(session.sessionId);
@@ -265,7 +263,7 @@ describe("toSynthesizerConfig — Parameter Propagation", () => {
     writeTrackerPattern({
       sessionId: session.sessionId,
       channelId: "lead",
-      rows: [{ note: "C4", duration: "1/4" }],
+      rows: [{ note: "C4" }],
     });
 
     const result = toSynthesizerConfig(session.sessionId);
@@ -353,92 +351,88 @@ describe("renderModularGraph — Duration Floor Semantics", () => {
 // 5. Tempo Fidelity — Beat Fraction Timing
 // ────────────────────────────────────────────────────────────
 
-describe("Tempo Fidelity — Beat Fractions Respect Session Tempo", () => {
-  it("quarter notes at 128 BPM produce ~0.469s per note", () => {
-    const session = createTrackerSession({ tempo: 128 });
+describe("Tempo Fidelity — Step Grid Respects Session Tempo", () => {
+  it("notes at 128 BPM with LPB=4 produce correct per-step duration", () => {
+    const session = createTrackerSession({ tempo: 128, linesPerBeat: 4 });
     trackSession(session.sessionId);
 
     addTrackerChannel(session.sessionId, { channelId: "test" });
+    // 4 notes, each occupying 1 step (16th note)
     writeTrackerPattern({
       sessionId: session.sessionId,
       channelId: "test",
-      rows: Array.from({ length: 4 }, () => ({
-        note: "C4",
-        duration: "1/4",
-      })),
+      rows: [
+        { note: "C4" },
+        { note: "D4" },
+        { note: "E4" },
+        { note: "F4" },
+      ],
     });
 
     const result = toSynthesizerConfig(session.sessionId);
     const config = result.config!;
     const notes = config.tracks![0].notes;
 
-    // At 128 BPM: 1 beat = 60/128 = 0.46875s
-    const expectedBeatDuration = 60 / 128;
+    // At 128 BPM, LPB=4: each row = 60/128/4 = 0.1171875s
+    const expectedRowDuration = 60 / 128 / 4;
 
     for (const note of notes) {
-      const noteDuration = typeof note.duration === "number"
-        ? note.duration
-        : parseFloat(String(note.duration));
-      expect(noteDuration).toBeCloseTo(expectedBeatDuration, 4);
+      const noteDuration = note.duration as number;
+      expect(noteDuration).toBeCloseTo(expectedRowDuration, 4);
     }
 
-    // Total span should be ~4 × 0.46875 = 1.875s
+    // Total span should be 4 × rowDuration
     const lastNote = notes[notes.length - 1];
-    const lastNoteTime = typeof lastNote.time === "number"
-      ? lastNote.time
-      : parseFloat(String(lastNote.time));
-    const totalSpan = lastNoteTime + expectedBeatDuration;
-    expect(totalSpan).toBeCloseTo(4 * expectedBeatDuration, 3);
+    const totalSpan = (lastNote.time as number) + (lastNote.duration as number);
+    expect(totalSpan).toBeCloseTo(4 * expectedRowDuration, 3);
   });
 
-  it("eighth notes at 90 BPM produce ~0.333s per note", () => {
-    const session = createTrackerSession({ tempo: 90 });
+  it("sustained notes at 90 BPM span multiple steps", () => {
+    // LPB=4: to make a quarter note, use 1 note + 3 sustain rows = 4 steps
+    const session = createTrackerSession({ tempo: 90, linesPerBeat: 4 });
     trackSession(session.sessionId);
 
     addTrackerChannel(session.sessionId, { channelId: "test" });
     writeTrackerPattern({
       sessionId: session.sessionId,
       channelId: "test",
-      rows: Array.from({ length: 4 }, () => ({
-        note: "E4",
-        duration: "1/8",
-      })),
+      rows: [
+        { note: "E4" },
+        { note: "---" },
+        { note: "---" },
+        { note: "---" },
+      ],
     });
 
     const result = toSynthesizerConfig(session.sessionId);
     const notes = result.config!.tracks![0].notes;
 
-    // At 90 BPM: 1 eighth note = (60/90)/2 = 0.333...s
-    const expectedEighthDuration = 60 / 90 / 2;
-
-    for (const note of notes) {
-      const noteDuration = typeof note.duration === "number"
-        ? note.duration
-        : parseFloat(String(note.duration));
-      expect(noteDuration).toBeCloseTo(expectedEighthDuration, 4);
-    }
+    // 1 note spanning 4 steps = 4 × (60/90/4) = 60/90 = 0.6667s (a quarter note)
+    expect(notes).toHaveLength(1);
+    const expectedQuarterDuration = 60 / 90;
+    expect(notes[0].duration as number).toBeCloseTo(expectedQuarterDuration, 4);
   });
 
-  it("different tempos produce proportionally different durations for the same beat fractions", () => {
-    // 8 quarter notes at 120 BPM = 4 seconds
-    const sessionSlow = createTrackerSession({ tempo: 120 });
+  it("different tempos produce proportionally different durations for the same pattern", () => {
+    // 8 notes (each 1 step) at 120 BPM
+    const sessionSlow = createTrackerSession({ tempo: 120, linesPerBeat: 4 });
     trackSession(sessionSlow.sessionId);
     addTrackerChannel(sessionSlow.sessionId, { channelId: "test" });
     writeTrackerPattern({
       sessionId: sessionSlow.sessionId,
       channelId: "test",
-      rows: Array.from({ length: 8 }, () => ({ note: "C4", duration: "1/4" })),
+      rows: Array.from({ length: 8 }, () => ({ note: "C4" })),
     });
     const configSlow = toSynthesizerConfig(sessionSlow.sessionId).config!;
 
-    // 8 quarter notes at 240 BPM = 2 seconds (half the time)
-    const sessionFast = createTrackerSession({ tempo: 240 });
+    // Same 8 notes at 240 BPM
+    const sessionFast = createTrackerSession({ tempo: 240, linesPerBeat: 4 });
     trackSession(sessionFast.sessionId);
     addTrackerChannel(sessionFast.sessionId, { channelId: "test" });
     writeTrackerPattern({
       sessionId: sessionFast.sessionId,
       channelId: "test",
-      rows: Array.from({ length: 8 }, () => ({ note: "C4", duration: "1/4" })),
+      rows: Array.from({ length: 8 }, () => ({ note: "C4" })),
     });
     const configFast = toSynthesizerConfig(sessionFast.sessionId).config!;
 
@@ -532,19 +526,20 @@ describe("generateAudioWav — Stereo Frame Count Correctness", () => {
 
 describe("Full Pipeline — init → add_channel → write_pattern → render", () => {
   it("reproduces and verifies the fix for the original 4s-instead-of-10s bug", () => {
-    // Exact reproduction: user asked for 10s at 128 BPM, LLM only wrote 8 quarter notes
-    const session = createTrackerSession({ duration: 10, tempo: 128 });
+    // Exact reproduction: user asked for 10s at 128 BPM, LPB=4
+    // Each row = 60/128/4 = 0.1171875s
+    // To get ~4s of content: 4 / 0.1171875 ≈ 34 rows of note content
+    const session = createTrackerSession({ duration: 10, tempo: 128, linesPerBeat: 4 });
     trackSession(session.sessionId);
 
     addTrackerChannel(session.sessionId, { channelId: "bass" });
 
-    // Only 8 quarter notes — at 128 BPM this is only ~4s of note content
+    // 34 rows of notes = ~4s of content — auto-repeat should fill to 10s
     writeTrackerPattern({
       sessionId: session.sessionId,
       channelId: "bass",
-      rows: Array.from({ length: 8 }, (_, index) => ({
+      rows: Array.from({ length: 34 }, (_, index) => ({
         note: index % 2 === 0 ? "G1" : "A1",
-        duration: "1/4",
         velocity: 1.0,
       })),
     });
@@ -558,27 +553,24 @@ describe("Full Pipeline — init → add_channel → write_pattern → render", 
     const audioResult = generateAudioWav(configResult.config!);
     const reportedDuration = audioResult.sampleCount / 44100;
 
-    // With the auto-repeat fix: should be at least 10 seconds of real audio.
-    // Before the fix: would have been ~4 seconds of audio + silence.
-    // May slightly exceed 10s because auto-repeat uses ceil() and the last
-    // repetition's release tail extends past the target duration boundary.
+    // With auto-repeat: should reach at least 10 seconds
     expect(reportedDuration).toBeGreaterThanOrEqual(9.9);
-    expect(reportedDuration).toBeLessThanOrEqual(12.5);
+    expect(reportedDuration).toBeLessThanOrEqual(14.0);
   });
 
-  it("produces correct duration when LLM writes enough notes to exceed target", () => {
-    const session = createTrackerSession({ duration: 5, tempo: 120 });
+  it("produces correct duration when notes exceed target", () => {
+    // LPB=4, 120 BPM: each row = 60/120/4 = 0.125s
+    // 80 rows = 10s, target is 5s — should NOT truncate
+    const session = createTrackerSession({ duration: 5, tempo: 120, linesPerBeat: 4 });
     trackSession(session.sessionId);
 
     addTrackerChannel(session.sessionId, { channelId: "lead" });
 
-    // 20 quarter notes at 120 BPM = 10 seconds — exceeds the 5s target
     writeTrackerPattern({
       sessionId: session.sessionId,
       channelId: "lead",
-      rows: Array.from({ length: 20 }, () => ({
+      rows: Array.from({ length: 80 }, () => ({
         note: "C4",
-        duration: "1/4",
       })),
     });
 
@@ -590,52 +582,52 @@ describe("Full Pipeline — init → add_channel → write_pattern → render", 
   });
 
   it("produces correct duration with no target duration set", () => {
-    const session = createTrackerSession({ tempo: 120 });
+    // LPB=4, 120 BPM: each row = 0.125s
+    // 32 rows = 4s (8 quarter notes expressed as step-grid)
+    const session = createTrackerSession({ tempo: 120, linesPerBeat: 4 });
     trackSession(session.sessionId);
 
     addTrackerChannel(session.sessionId, { channelId: "lead" });
 
-    // 8 quarter notes at 120 BPM = 4 seconds
+    // 32 note rows, each 1 step = 32 × 0.125 = 4s
     writeTrackerPattern({
       sessionId: session.sessionId,
       channelId: "lead",
-      rows: Array.from({ length: 8 }, () => ({
+      rows: Array.from({ length: 32 }, () => ({
         note: "C4",
-        duration: "1/4",
       })),
     });
 
     const audioResult = generateAudioWav(toSynthesizerConfig(session.sessionId).config!);
     const reportedDuration = audioResult.sampleCount / 44100;
 
-    // 8 × 0.5s = 4s + release ≈ 4.2s
+    // 32 × 0.125 = 4s + release ≈ 4.2s
     expect(reportedDuration).toBeGreaterThanOrEqual(3.8);
     expect(reportedDuration).toBeLessThanOrEqual(5.0);
   });
 
   it("multi-channel composition preserves tempo across all channels", () => {
-    const session = createTrackerSession({ duration: 10, tempo: 128 });
+    // LPB=4, 128 BPM: each row = 60/128/4 = 0.1171875s
+    const session = createTrackerSession({ duration: 10, tempo: 128, linesPerBeat: 4 });
     trackSession(session.sessionId);
 
-    // Channel 1: bass with quarter notes
+    // Channel 1: bass — 16 rows of notes (16 16th notes)
     addTrackerChannel(session.sessionId, { channelId: "bass" });
     writeTrackerPattern({
       sessionId: session.sessionId,
       channelId: "bass",
       rows: Array.from({ length: 16 }, () => ({
         note: "C2",
-        duration: "1/4",
       })),
     });
 
-    // Channel 2: melody with eighth notes
+    // Channel 2: melody — 16 rows of notes (same grid, same length)
     addTrackerChannel(session.sessionId, { channelId: "melody" });
     writeTrackerPattern({
       sessionId: session.sessionId,
       channelId: "melody",
-      rows: Array.from({ length: 32 }, (_, index) => ({
+      rows: Array.from({ length: 16 }, (_, index) => ({
         note: `C${4 + (index % 2)}`,
-        duration: "1/8",
       })),
     });
 
@@ -647,9 +639,8 @@ describe("Full Pipeline — init → add_channel → write_pattern → render", 
     expect(config.duration).toBe(10);
     expect(config.tracks).toHaveLength(2);
 
-    // Bass: 16 quarter notes at 128 BPM = 16 × 0.46875 = 7.5s
-    // Melody: 32 eighth notes at 128 BPM = 32 × 0.234375 = 7.5s
-    // Both should end at roughly the same time
+    // Both channels: 16 rows × 0.1171875 = 1.875s
+    // Both should end at the same time since they have the same number of rows
     const bassNotes = config.tracks![0].notes;
     const melodyNotes = config.tracks![1].notes;
 
@@ -660,7 +651,7 @@ describe("Full Pipeline — init → add_channel → write_pattern → render", 
 
     expect(bassEnd).toBeCloseTo(melodyEnd, 3);
 
-    // Generate audio — should be at least 10s due to duration floor
+    // Generate audio — should be at least 10s due to auto-repeat
     const audioResult = generateAudioWav(config);
     const reportedDuration = audioResult.sampleCount / 44100;
     expect(reportedDuration).toBeGreaterThanOrEqual(9.9);
