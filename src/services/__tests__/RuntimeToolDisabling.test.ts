@@ -284,3 +284,130 @@ describe("Runtime Tool Disabling — collector integration contracts", () => {
     enableToolRuntime("get_costco_ca_products");
   });
 });
+
+// ── Data File Gating ────────────────────────────────────────────
+
+describe("Data File Gating — static dataset tools", () => {
+  const DATA_FILE_GATED_TOOLS = [
+    "get_element",
+    "get_exoplanet",
+    "get_country",
+    "list_development_indicators",
+    "rank_foods_by_nutrient",
+    "search_food_substitutes",
+    "build_meal_plan",
+  ];
+
+  it("all data-file-gated tools exist in TOOL_DEFINITIONS", () => {
+    const definedToolNames = new Set(
+      TOOL_DEFINITIONS.map((tool) => tool.name),
+    );
+    for (const toolName of DATA_FILE_GATED_TOOLS) {
+      expect(definedToolNames.has(toolName)).toBe(true);
+    }
+  });
+
+  it("data-file-gated tools are available when data files exist locally", () => {
+    const schemas = getToolSchemas();
+    const schemaNames = new Set(schemas.map((schema) => schema.name));
+
+    for (const toolName of DATA_FILE_GATED_TOOLS) {
+      expect(schemaNames.has(toolName)).toBe(true);
+    }
+  });
+
+  it("data-file-gated tools are available in AI schemas when data files exist locally", () => {
+    const aiSchemas = getToolSchemasForAI();
+    const aiSchemaNames = new Set(aiSchemas.map((schema) => schema.name));
+
+    for (const toolName of DATA_FILE_GATED_TOOLS) {
+      expect(aiSchemaNames.has(toolName)).toBe(true);
+    }
+  });
+
+  it("simulated missing data file disables the tool", () => {
+    disableToolRuntime(
+      "get_element",
+      "Missing required data file: fetchers/knowledge/data/digest_elements.csv",
+    );
+
+    const schemas = getToolSchemas();
+    expect(findToolInSchemas(schemas, "get_element")).toBe(false);
+
+    const disabled = getDisabledTools();
+    const disabledElement = findToolInDisabled(disabled, "get_element");
+    expect(disabledElement).toBeDefined();
+    expect(disabledElement?.runtimeDisabled).toContain("Missing required data file");
+
+    enableToolRuntime("get_element");
+
+    const schemasAfterReEnable = getToolSchemas();
+    expect(findToolInSchemas(schemasAfterReEnable, "get_element")).toBe(true);
+  });
+
+  it("simulated missing data file hides all nutrition tools that share the same CSV", () => {
+    const nutritionDataTools = [
+      "rank_foods_by_nutrient",
+      "search_food_substitutes",
+      "build_meal_plan",
+    ];
+
+    for (const toolName of nutritionDataTools) {
+      disableToolRuntime(
+        toolName,
+        "Missing required data file: fetchers/health/data/digest_food.csv",
+      );
+    }
+
+    const aiSchemas = getToolSchemasForAI();
+    for (const toolName of nutritionDataTools) {
+      expect(findToolInSchemas(aiSchemas, toolName)).toBe(false);
+    }
+
+    for (const toolName of nutritionDataTools) {
+      enableToolRuntime(toolName);
+    }
+
+    const schemasAfterReEnable = getToolSchemasForAI();
+    for (const toolName of nutritionDataTools) {
+      expect(findToolInSchemas(schemasAfterReEnable, toolName)).toBe(true);
+    }
+  });
+
+  it("disabling world indicators CSV hides both get_country and list_development_indicators", () => {
+    disableToolRuntime(
+      "get_country",
+      "Missing required data file: fetchers/knowledge/data/digest_world_indicators.csv",
+    );
+    disableToolRuntime(
+      "list_development_indicators",
+      "Missing required data file: fetchers/knowledge/data/digest_world_indicators.csv",
+    );
+
+    const aiSchemas = getToolSchemasForAI();
+    expect(findToolInSchemas(aiSchemas, "get_country")).toBe(false);
+    expect(findToolInSchemas(aiSchemas, "list_development_indicators")).toBe(
+      false,
+    );
+
+    enableToolRuntime("get_country");
+    enableToolRuntime("list_development_indicators");
+  });
+
+  it("data-file-disabled tools appear in getDisabledTools() diagnostics", () => {
+    disableToolRuntime(
+      "get_exoplanet",
+      "Missing required data file: fetchers/knowledge/data/digest_exoplanets.csv",
+    );
+
+    const disabled = getDisabledTools();
+    const disabledExoplanet = findToolInDisabled(disabled, "get_exoplanet");
+    expect(disabledExoplanet).toBeDefined();
+    expect(disabledExoplanet?.runtimeDisabled).toContain(
+      "digest_exoplanets.csv",
+    );
+
+    enableToolRuntime("get_exoplanet");
+  });
+});
+

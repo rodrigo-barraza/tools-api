@@ -2028,7 +2028,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
     description: translate("get_events.description"),
     endpoint: {
       path: "/event/events",
-      queryParams: ["action", "q", "source", "category", "days", "limit"],
+      queryParams: ["action", "q", "source", "category", "city", "days", "limit"],
     },
     parameters: {
       type: "object",
@@ -2039,6 +2039,10 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           enum: ["search", "upcoming", "today", "summary"],
         },
         "q": { type: "string", description: translate("common.params.searchQuery") },
+        city: {
+          type: "string",
+          description: translate("get_events.params.city"),
+        },
         source: {
           type: "string",
           description: translate("get_events.params.source"),
@@ -6618,11 +6622,10 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           type: "string",
           description: translate("get_public_webcams.params.city"),
           enum: [
+            // Canada — British Columbia
             "vancouver",
-            "seattle",
+            // Canada — Ontario
             "toronto",
-            "calgary",
-            "austin",
             "ottawa",
             "hamilton",
             "london-on",
@@ -6634,6 +6637,8 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
             "sudbury",
             "niagara",
             "mississauga",
+            // Canada — Alberta
+            "calgary",
             "edmonton",
             "red-deer",
             "lethbridge",
@@ -6641,7 +6646,24 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
             "grande-prairie",
             "banff",
             "fort-mcmurray",
+            // Canada — Other provinces
+            "manitoba",
+            "new-brunswick",
+            "newfoundland",
+            "quebec",
+            // US — West
+            "seattle",
+            "nevada",
+            "idaho",
+            "utah",
+            // US — South
+            "austin",
             "baton-rouge",
+            "florida",
+            "georgia",
+            "north-carolina",
+            "virginia",
+            // US — Northeast
             "nyc",
             "buffalo",
             "syracuse",
@@ -6652,6 +6674,25 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
             "utica",
             "binghamton",
             "ithaca",
+            "maryland",
+            "washington-dc",
+            // US — Midwest
+            "chicago",
+            "ohio",
+            "minnesota",
+            "wisconsin",
+            // US — Pacific
+            "honolulu",
+            // US — South (additional)
+            "louisiana",
+            "arizona",
+            // US — Midwest (additional)
+            "iowa",
+            // Australia
+            "queensland",
+            // Europe
+            "germany",
+            "finland",
           ],
         },
         limit: {
@@ -12684,6 +12725,9 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
 
 import CONFIG, { ToolsServiceConfig } from "../config.ts";
 import logger from "../logger.ts";
+import { existsSync } from "fs";
+import { fileURLToPath } from "url";
+import { dirname, resolve } from "path";
 
 const TOOL_REQUIRED_KEYS = {
   // Movies & TV (all require TMDb API key — unified media tools)
@@ -12801,6 +12845,47 @@ const TOOL_REQUIRED_KEYS = {
 };
 
 // ────────────────────────────────────────────────────────────
+// Static Data File Gating — disables tools whose backing
+// CSV/data files are missing at runtime (e.g. when the Docker
+// build fails to copy the data/ directories into dist/).
+// Paths are relative to the project src/ root.
+// ────────────────────────────────────────────────────────────
+
+const TOOL_REQUIRED_DATA_FILES: Record<string, string[]> = {
+  get_element: ["fetchers/knowledge/data/digest_elements.csv"],
+  get_exoplanet: ["fetchers/knowledge/data/digest_exoplanets.csv"],
+  get_country: ["fetchers/knowledge/data/digest_world_indicators.csv"],
+  list_development_indicators: [
+    "fetchers/knowledge/data/digest_world_indicators.csv",
+  ],
+  rank_foods_by_nutrient: ["fetchers/health/data/digest_food.csv"],
+  search_food_substitutes: ["fetchers/health/data/digest_food.csv"],
+  build_meal_plan: ["fetchers/health/data/digest_food.csv"],
+};
+
+const serviceRootDirectory = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  "..",
+);
+
+function validateRequiredDataFiles(): void {
+  for (const [toolName, requiredFiles] of Object.entries(
+    TOOL_REQUIRED_DATA_FILES,
+  )) {
+    for (const relativeFilePath of requiredFiles) {
+      const absoluteFilePath = resolve(serviceRootDirectory, relativeFilePath);
+      if (!existsSync(absoluteFilePath)) {
+        disableToolRuntime(
+          toolName,
+          `Missing required data file: ${relativeFilePath}`,
+        );
+        break;
+      }
+    }
+  }
+}
+
+// ────────────────────────────────────────────────────────────
 // Runtime Tool Health Registry
 // ────────────────────────────────────────────────────────────
 // Collectors call disableToolRuntime() when they detect
@@ -12832,6 +12917,8 @@ export function enableToolRuntime(toolName: string): void {
     logger.info(`[ToolSchema] ✅ Re-enabled tool "${toolName}" at runtime`);
   }
 }
+
+validateRequiredDataFiles();
 
 /**
  * Check if a tool is available.

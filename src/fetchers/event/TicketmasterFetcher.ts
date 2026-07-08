@@ -174,23 +174,36 @@ function normalizeEvent(event: TicketmasterEvent) {
   };
 }
 
+export interface TicketmasterFetchOptions {
+  latitude?: number;
+  longitude?: number;
+  radiusMiles?: number;
+  lookAheadDays?: number;
+}
+
 /**
  * Fetch events from Ticketmaster Discovery API v2.
  * Searches within the configured radius of the configured lat/lng.
+ * Accepts optional location overrides for on-demand queries.
  * Paginates up to 1000 results (API limit: size * page < 1000).
  */
-export async function fetchTicketmasterEvents() {
+export async function fetchTicketmasterEvents(options: TicketmasterFetchOptions = {}) {
   if (!CONFIG.TICKETMASTER_API_KEY) {
     throw new Error("TICKETMASTER_API_KEY is not configured");
   }
 
+  const latitude = options.latitude ?? CONFIG.LATITUDE;
+  const longitude = options.longitude ?? CONFIG.LONGITUDE;
+  const radiusMiles = options.radiusMiles ?? CONFIG.RADIUS_MILES;
+  const lookAheadDays = options.lookAheadDays ?? 30;
+
   const now = new Date();
-  const endDate = new Date(now.getTime() + days(30));
+  const endDate = new Date(now.getTime() + days(lookAheadDays));
 
   const params = new URLSearchParams({
     apikey: CONFIG.TICKETMASTER_API_KEY,
-    latlong: `${CONFIG.LATITUDE},${CONFIG.LONGITUDE}`,
-    radius: String(CONFIG.RADIUS_MILES),
+    latlong: `${latitude},${longitude}`,
+    radius: String(radiusMiles),
     unit: "miles",
     size: "200",
     sort: "date,asc",
@@ -226,3 +239,4 @@ export async function fetchTicketmasterEvents() {
 
   return allEvents;
 }
+

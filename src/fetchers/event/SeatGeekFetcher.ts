@@ -169,24 +169,37 @@ function normalizeEvent(event: SeatGeekEvent) {
   };
 }
 
+export interface SeatGeekFetchOptions {
+  latitude?: number;
+  longitude?: number;
+  radiusMiles?: number;
+  lookAheadDays?: number;
+}
+
 /**
  * Fetch events from SeatGeek API v2.
  * Searches within the configured radius of the configured lat/lng.
+ * Accepts optional location overrides for on-demand queries.
  * Paginates through all available pages.
  */
-export async function fetchSeatGeekEvents() {
+export async function fetchSeatGeekEvents(options: SeatGeekFetchOptions = {}) {
   if (!CONFIG.SEATGEEK_CLIENT_ID) {
     throw new Error("SEATGEEK_CLIENT_ID is not configured");
   }
 
+  const latitude = options.latitude ?? CONFIG.LATITUDE;
+  const longitude = options.longitude ?? CONFIG.LONGITUDE;
+  const radiusMiles = options.radiusMiles ?? CONFIG.RADIUS_MILES;
+  const lookAheadDays = options.lookAheadDays ?? 30;
+
   const now = new Date();
-  const endDate = new Date(now.getTime() + days(30));
+  const endDate = new Date(now.getTime() + days(lookAheadDays));
 
   const params = new URLSearchParams({
     client_id: CONFIG.SEATGEEK_CLIENT_ID,
-    lat: String(CONFIG.LATITUDE),
-    lon: String(CONFIG.LONGITUDE),
-    range: `${CONFIG.RADIUS_MILES}mi`,
+    lat: String(latitude),
+    lon: String(longitude),
+    range: `${radiusMiles}mi`,
     per_page: "100",
     sort: "datetime_utc.asc",
     "datetime_utc.gte": now.toISOString(),
@@ -223,3 +236,4 @@ export async function fetchSeatGeekEvents() {
 
   return allEvents;
 }
+

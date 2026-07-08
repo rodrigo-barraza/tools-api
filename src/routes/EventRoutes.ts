@@ -14,6 +14,7 @@ import {
   getEventSummary,
   getHealth,
 } from "../caches/EventCache.ts";
+import { fetchOnDemandEvents } from "../services/OnDemandEventService.ts";
 const router = Router();
 // ─── Event Endpoints ───────────────────────────────────────────────
 router.get(
@@ -89,6 +90,7 @@ router.get(
     const searchQuery = req.query['q'] as string | undefined;
     const source = req.query.source as string | undefined;
     const category = req.query.category as string | undefined;
+    const city = req.query.city as string | undefined;
     const days = req.query.days as string | undefined;
     const rawLimit = req.query.limit as string | undefined;
     if (!action)
@@ -99,6 +101,24 @@ router.get(
           actions: ["search", "upcoming", "today", "summary"],
         });
     const limit = rawLimit ? parseIntParam(rawLimit, 100) : undefined;
+
+    // On-demand mode: when city is provided, fetch from global APIs
+    if (city) {
+      const result = await fetchOnDemandEvents({
+        city,
+        query: searchQuery,
+        category,
+        days: days ? parseIntParam(days, 30) : undefined,
+        limit: limit || 100,
+      });
+      return res.json({
+        action,
+        mode: "on-demand",
+        ...result,
+      });
+    }
+
+    // Local mode: query from the background-collected Vancouver database
     switch (action) {
       case "search": {
         const events = await searchEvents({

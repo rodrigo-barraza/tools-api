@@ -41,20 +41,56 @@ import { refreshUticaWebcams } from "./sources/utica.ts";
 import { refreshBinghamtonWebcams } from "./sources/binghamton.ts";
 import { refreshIthacaWebcams } from "./sources/ithaca.ts";
 
+// ─── Phase 1: Key-free US sources ────────────────────────────────
+import { refreshMarylandWebcams } from "./sources/maryland.ts";
+import { refreshVirginiaWebcams } from "./sources/virginia.ts";
+import { refreshMinnesotaWebcams } from "./sources/minnesota.ts";
+import { refreshHonoluluWebcams } from "./sources/honolulu.ts";
+import { refreshChicagoWebcams } from "./sources/chicago.ts";
+import { refreshDCWebcams } from "./sources/dc.ts";
+import { refreshFloridaWebcams } from "./sources/florida.ts";
+
+// ─── Phase 2: 511 v2 US states ──────────────────────────────────
+import { refreshGeorgiaWebcams } from "./sources/georgia.ts";
+import { refreshNorthCarolinaWebcams } from "./sources/north_carolina.ts";
+import { refreshNevadaWebcams } from "./sources/nevada.ts";
+import { refreshWisconsinWebcams } from "./sources/wisconsin.ts";
+import { refreshIdahoWebcams } from "./sources/idaho.ts";
+import { refreshUtahWebcams } from "./sources/utah.ts";
+import { refreshOhioWebcams } from "./sources/ohio.ts";
+
+// ─── Phase 2: Canadian provinces ────────────────────────────────
+import { refreshManitobaWebcams } from "./sources/manitoba.ts";
+import { refreshNewBrunswickWebcams } from "./sources/new_brunswick.ts";
+import { refreshNewfoundlandWebcams } from "./sources/newfoundland.ts";
+
+// ─── Phase 2: Additional US 511 v2 states ──────────────────────
+import { refreshLouisianaWebcams } from "./sources/louisiana.ts";
+import { refreshArizonaWebcams } from "./sources/arizona.ts";
+import { refreshIowaWebcams } from "./sources/iowa.ts";
+
+// ─── Phase 2: Additional Canadian provinces ─────────────────
+import { refreshQuebecWebcams } from "./sources/quebec.ts";
+
+// ─── Phase 3: International ─────────────────────────────────────
+import { refreshQueenslandWebcams } from "./sources/queensland.ts";
+import { refreshGermanyWebcams } from "./sources/germany.ts";
+import { refreshFinlandWebcams } from "./sources/finland.ts";
+
 /**
- * Registry mapping normalized city names to their specific
+ * Registry mapping normalized city/region names to their specific
  * refresh functions. Each function handles fetching and upserting
  * its data into the MongoDB 'webcams' collection.
  */
 export const WEBCAM_REGISTRY = {
-  // Original cities
+  // ─── Original cities ───────────────────────────────────────────
   vancouver: refreshVancouverWebcams,
   seattle: refreshSeattleWebcams,
   toronto: refreshTorontoWebcams,
   calgary: refreshCalgaryWebcams,
   austin: refreshAustinWebcams,
 
-  // Ontario 511
+  // ─── Ontario 511 ──────────────────────────────────────────────
   ottawa: refreshOttawaWebcams,
   hamilton: refreshHamiltonWebcams,
   "london-on": refreshLondonONWebcams,
@@ -67,7 +103,7 @@ export const WEBCAM_REGISTRY = {
   niagara: refreshNiagaraWebcams,
   mississauga: refreshMississaugaWebcams,
 
-  // Alberta 511
+  // ─── Alberta 511 ──────────────────────────────────────────────
   edmonton: refreshEdmontonWebcams,
   "red-deer": refreshRedDeerWebcams,
   lethbridge: refreshLethbridgeWebcams,
@@ -76,10 +112,10 @@ export const WEBCAM_REGISTRY = {
   banff: refreshBanffWebcams,
   "fort-mcmurray": refreshFortMcMurrayWebcams,
 
-  // US - Louisiana Socrata
+  // ─── US - Louisiana Socrata ───────────────────────────────────
   "baton-rouge": refreshBatonRougeWebcams,
 
-  // New York 511
+  // ─── New York 511 ─────────────────────────────────────────────
   nyc: refreshNYCWebcams,
   buffalo: refreshBuffaloWebcams,
   syracuse: refreshSyracuseWebcams,
@@ -90,6 +126,38 @@ export const WEBCAM_REGISTRY = {
   utica: refreshUticaWebcams,
   binghamton: refreshBinghamtonWebcams,
   ithaca: refreshIthacaWebcams,
+
+  // ─── US - Key-free sources ────────────────────────────────────
+  maryland: refreshMarylandWebcams,
+  virginia: refreshVirginiaWebcams,
+  minnesota: refreshMinnesotaWebcams,
+  honolulu: refreshHonoluluWebcams,
+  chicago: refreshChicagoWebcams,
+  "washington-dc": refreshDCWebcams,
+  florida: refreshFloridaWebcams,
+
+  // ─── US - 511 v2 states ───────────────────────────────────────
+  georgia: refreshGeorgiaWebcams,
+  "north-carolina": refreshNorthCarolinaWebcams,
+  nevada: refreshNevadaWebcams,
+  wisconsin: refreshWisconsinWebcams,
+  idaho: refreshIdahoWebcams,
+  utah: refreshUtahWebcams,
+  ohio: refreshOhioWebcams,
+  louisiana: refreshLouisianaWebcams,
+  arizona: refreshArizonaWebcams,
+  iowa: refreshIowaWebcams,
+
+  // ─── Canadian provinces ───────────────────────────────────────
+  manitoba: refreshManitobaWebcams,
+  "new-brunswick": refreshNewBrunswickWebcams,
+  newfoundland: refreshNewfoundlandWebcams,
+  quebec: refreshQuebecWebcams,
+
+  // ─── International ────────────────────────────────────────────
+  queensland: refreshQueenslandWebcams,
+  germany: refreshGermanyWebcams,
+  finland: refreshFinlandWebcams,
 };
 
 export function getSupportedCities() {

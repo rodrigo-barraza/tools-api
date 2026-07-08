@@ -1,8 +1,9 @@
 import { WMO_WEATHER_CODES } from "../../constants.ts";
 import rateLimiter from "../../services/RateLimiterService.ts";
+import { geocodeLocation } from "../shared/GeocodingUtility.ts";
+import type { GeocodeResult } from "../shared/GeocodingUtility.ts";
 
-// ─── Open-Meteo Geocoding API ──────────────────────────────────────
-const GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search";
+export type { GeocodeResult } from "../shared/GeocodingUtility.ts";
 
 // ─── Current Weather Variables ─────────────────────────────────────
 const CURRENT_VARIABLES = [
@@ -35,18 +36,6 @@ const DAILY_VARIABLES = [
   "precipitation_probability_max",
   "wind_speed_10m_max",
 ].join(",");
-
-export interface GeocodeResult {
-  name: string;
-  country: string;
-  countryCode: string;
-  admin1: string | null;
-  latitude: number;
-  longitude: number;
-  timezone: string;
-  elevation: number | null;
-  population: number | null;
-}
 
 export interface LiveWeatherOptions {
   location?: string;
@@ -108,22 +97,6 @@ export interface LiveWeatherResult {
   }>;
 }
 
-interface RawGeocodeResult {
-  name: string;
-  country: string;
-  country_code: string;
-  admin1?: string;
-  latitude: number;
-  longitude: number;
-  timezone: string;
-  elevation?: number;
-  population?: number;
-}
-
-interface RawGeocodeResponse {
-  results?: RawGeocodeResult[];
-}
-
 interface RawForecastResponse {
   timezone: string;
   current: {
@@ -156,40 +129,6 @@ interface RawForecastResponse {
     precipitation_sum: number[];
     precipitation_probability_max: number[];
     wind_speed_10m_max: number[];
-  };
-}
-
-/**
- * Geocode a location string to lat/lon using Open-Meteo's free geocoding API.
- */
-async function geocodeLocation(
-  location: string,
-): Promise<GeocodeResult | null> {
-  await rateLimiter.wait("OPEN_METEO");
-
-  const url = `${GEOCODING_URL}?name=${encodeURIComponent(location)}&count=1&language=en&format=json`;
-  const response = await fetch(url);
-
-  if (!response.ok) {
-    throw new Error(`Geocoding API returned ${response.status}`);
-  }
-
-  const data = (await response.json()) as RawGeocodeResponse;
-  if (!data.results || data.results.length === 0) {
-    return null;
-  }
-
-  const locationResult = data.results[0];
-  return {
-    name: locationResult.name,
-    country: locationResult.country,
-    countryCode: locationResult.country_code,
-    admin1: locationResult.admin1 || null,
-    latitude: locationResult.latitude,
-    longitude: locationResult.longitude,
-    timezone: locationResult.timezone,
-    elevation: locationResult.elevation || null,
-    population: locationResult.population || null,
   };
 }
 
