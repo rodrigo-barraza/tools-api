@@ -1,4 +1,3 @@
-import { buildScraperHeaders } from "../../../../utilities.ts";
 import {
   upsertWebcams,
   type WebcamDocument,
@@ -29,7 +28,10 @@ interface VirginiaGeoJSON {
 
 export async function refreshVirginiaWebcams() {
   const response = await fetch(GEOJSON_URL, {
-    headers: buildScraperHeaders(),
+    headers: {
+      "User-Agent": "tools-service/1.0",
+      Accept: "application/geo+json, application/json",
+    },
     signal: AbortSignal.timeout(30000),
   });
 

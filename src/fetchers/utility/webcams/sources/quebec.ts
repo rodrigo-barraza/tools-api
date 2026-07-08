@@ -1,4 +1,3 @@
-import { buildScraperHeaders } from "../../../../utilities.ts";
 import {
   upsertWebcams,
   type WebcamDocument,
@@ -34,7 +33,10 @@ interface QuebecGeoJSON {
 
 export async function refreshQuebecWebcams() {
   const response = await fetch(WFS_URL, {
-    headers: buildScraperHeaders(),
+    headers: {
+      "User-Agent": "tools-service/1.0",
+      Accept: "application/json",
+    },
     signal: AbortSignal.timeout(30000),
   });
 

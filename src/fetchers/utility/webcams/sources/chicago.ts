@@ -5,7 +5,7 @@ import {
 } from "../../../../models/Webcam.ts";
 
 const SPEED_CAMERAS_URL =
-  "https://data.cityofchicago.org/resource/hhkd-rzv4.json";
+  "https://data.cityofchicago.org/resource/8yq3-m6wp.json";
 const RED_LIGHT_CAMERAS_URL =
   "https://data.cityofchicago.org/resource/spqx-js37.json";
 

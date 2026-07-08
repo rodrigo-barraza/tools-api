@@ -6646,22 +6646,14 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
             "grande-prairie",
             "banff",
             "fort-mcmurray",
-            // Canada — Other provinces
-            "manitoba",
-            "new-brunswick",
-            "newfoundland",
+            // Canada — Quebec
             "quebec",
             // US — West
             "seattle",
-            "nevada",
-            "idaho",
-            "utah",
             // US — South
             "austin",
             "baton-rouge",
             "florida",
-            "georgia",
-            "north-carolina",
             "virginia",
             // US — Northeast
             "nyc",
@@ -6674,22 +6666,13 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
             "utica",
             "binghamton",
             "ithaca",
-            "maryland",
             "washington-dc",
             // US — Midwest
             "chicago",
-            "ohio",
             "minnesota",
-            "wisconsin",
+            "iowa",
             // US — Pacific
             "honolulu",
-            // US — South (additional)
-            "louisiana",
-            "arizona",
-            // US — Midwest (additional)
-            "iowa",
-            // Australia
-            "queensland",
             // Europe
             "germany",
             "finland",
