@@ -70,46 +70,6 @@ describe("POST /creative/generate-audio", () => {
     expect(res.body.sampleCount).toBe(Math.floor(0.5 * 44100));
   });
 
-  it("successfully generates a custom melody sequence", async () => {
-    const res = await request(app)
-      .post("/creative/generate-audio")
-      .send({
-        soundType: "melody",
-        melody: [
-          { note: "C4", duration: 0.1 },
-          { note: "E4", duration: 0.1 },
-          { note: "G4", duration: 0.2 },
-        ],
-        waveform: "sine",
-      });
-
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.audio.mimeType).toBe("audio/wav");
-    expect(res.body.duration).toBeCloseTo(0.4, 2);
-    expect(res.body.sampleCount).toBeGreaterThan(0);
-  });
-
-  it("successfully generates a custom melody sequence with a partial envelope", async () => {
-    const res = await request(app)
-      .post("/creative/generate-audio")
-      .send({
-        soundType: "melody",
-        melody: [
-          { note: "C4", duration: 0.1 },
-          { note: "E4", duration: 0.1 },
-        ],
-        envelope: { attack: 0.01 },
-        waveform: "sine",
-      });
-
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.audio.mimeType).toBe("audio/wav");
-    expect(res.body.duration).toBeCloseTo(0.2, 2);
-    expect(res.body.sampleCount).toBeGreaterThan(0);
-  });
-
   it("successfully generates advanced modular audio graph", async () => {
     const res = await request(app)
       .post("/creative/generate-audio")

@@ -12,7 +12,7 @@ import type { SynthesizerConfig } from "../SoundSynthesizerService.ts";
 // across thousands of randomized configurations.
 // ═══════════════════════════════════════════════════════════════
 
-const VALID_SOUND_TYPES = ["synthesizer", "arpeggio", "melody", "sound_effect", "modular"];
+const VALID_SOUND_TYPES = ["synthesizer", "sound_effect", "modular"];
 const VALID_WAVEFORMS = ["sine", "triangle", "sawtooth", "square", "noise"];
 const VALID_PRESET_EFFECTS = [
   "laser", "coin", "powerup", "jump", "explosion",
@@ -199,7 +199,6 @@ describe("SoundSynthesizerValidation fuzz — soundType", () => {
         fc.constantFrom(...VALID_SOUND_TYPES),
         (soundType) => {
           // Melody/arpeggio need melody, modular needs tracks+nodes
-          if (soundType === "melody" || soundType === "arpeggio") return;
           if (soundType === "modular") return;
           expect(validateSynthesizerInput({ soundType: soundType as any })).toBeNull();
         },

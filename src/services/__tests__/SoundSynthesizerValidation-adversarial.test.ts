@@ -165,50 +165,6 @@ describe("SoundSynthesizerValidation adversarial — waveform validation", () =>
   });
 });
 
-describe("SoundSynthesizerValidation adversarial — melody mode", () => {
-  it("melody mode without melody array should be rejected", () => {
-    const result = validateSynthesizerInput({ soundType: "melody" });
-    expect(result).not.toBeNull();
-    expect(result).toContain("requires a non-empty 'melody' array");
-  });
-
-  it("melody mode with empty array should be rejected", () => {
-    const result = validateSynthesizerInput({ soundType: "melody", melody: [] });
-    expect(result).not.toBeNull();
-  });
-
-  it("melody step without note or frequency should be rejected", () => {
-    const result = validateSynthesizerInput({
-      soundType: "melody",
-      melody: [{ duration: 0.5 } as any],
-    });
-    expect(result).not.toBeNull();
-    expect(result).toContain("must have a 'note'");
-  });
-
-  it("melody step with note should pass", () => {
-    const result = validateSynthesizerInput({
-      soundType: "melody",
-      melody: [{ note: "C4", duration: 0.5 }],
-    });
-    expect(result).toBeNull();
-  });
-
-  it("melody step with frequency should pass", () => {
-    const result = validateSynthesizerInput({
-      soundType: "melody",
-      melody: [{ frequency: 440, duration: 0.5 } as any],
-    });
-    expect(result).toBeNull();
-  });
-
-  it("arpeggio mode follows same melody validation", () => {
-    const result = validateSynthesizerInput({ soundType: "arpeggio" });
-    expect(result).not.toBeNull();
-    expect(result).toContain("requires a non-empty 'melody' array");
-  });
-});
-
 describe("SoundSynthesizerValidation adversarial — modular mode node resolution", () => {
   it("tracks with no nodes should be rejected", () => {
     const result = validateSynthesizerInput({

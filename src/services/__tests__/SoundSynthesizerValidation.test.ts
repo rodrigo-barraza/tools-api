@@ -36,17 +36,6 @@ describe("validateSynthesizerInput", () => {
     expect(result).toBeNull();
   });
 
-  it("returns null for a valid melody config", () => {
-    const result = validateSynthesizerInput({
-      soundType: "melody",
-      melody: [
-        { note: "C4", duration: 0.5 },
-        { note: "E4", duration: 0.5 },
-      ],
-    });
-    expect(result).toBeNull();
-  });
-
   it("rejects invalid soundType", () => {
     const result = validateSynthesizerInput({
       soundType: "invalid_type" as never,
@@ -148,30 +137,6 @@ describe("validateSynthesizerInput", () => {
       tempo: 1500,
     });
     expect(result).toContain("Invalid tempo");
-  });
-
-  it("rejects melody mode without melody array", () => {
-    const result = validateSynthesizerInput({
-      soundType: "melody",
-    });
-    expect(result).toContain("non-empty 'melody' array");
-  });
-
-  it("rejects melody mode with empty melody array", () => {
-    const result = validateSynthesizerInput({
-      soundType: "melody",
-      melody: [],
-    });
-    expect(result).toContain("non-empty 'melody' array");
-  });
-
-  it("rejects melody step missing both note and frequency", () => {
-    const result = validateSynthesizerInput({
-      soundType: "melody",
-      melody: [{ duration: 0.5 } as never],
-    });
-    expect(result).toContain("Melody step at index 0");
-    expect(result).toContain("note");
   });
 
   it("rejects modular mode without nodes", () => {

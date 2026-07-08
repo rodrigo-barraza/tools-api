@@ -3,8 +3,6 @@ import { INSTRUMENT_PRESETS } from "./SoundSynthesizerService.ts";
 
 const VALID_SOUND_TYPES = new Set([
   "synthesizer",
-  "arpeggio",
-  "melody",
   "sound_effect",
   "modular",
 ]);
@@ -96,18 +94,6 @@ export function validateSynthesizerInput(config: SynthesizerConfig): string | nu
     }
   }
 
-  const isMelodyMode = config.soundType === "melody" || config.soundType === "arpeggio";
-  if (isMelodyMode) {
-    if (!config.melody || !Array.isArray(config.melody) || config.melody.length === 0) {
-      return `soundType '${config.soundType}' requires a non-empty 'melody' array of { note, duration } step objects`;
-    }
-    for (let index = 0; index < config.melody.length; index++) {
-      const step = config.melody[index] as unknown as Record<string, unknown>;
-      if (!step || (step.note === undefined && step.frequency === undefined)) {
-        return `Melody step at index ${index} must have a 'note' (e.g. 'C4') or 'frequency' (e.g. 440) property`;
-      }
-    }
-  }
 
   const isModularMode =
     config.soundType === "modular" ||
