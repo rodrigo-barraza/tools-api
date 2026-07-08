@@ -38,6 +38,17 @@ export const EVENT_SOURCES: Record<string, string> = {
   BC_LIONS: "bc_lions",
   TMDB: "tmdb",
   GOOGLE_PLACES: "google_places",
+  NAGER_HOLIDAYS: "nager-holidays",
+  DEVELOPERS_EVENTS: "developer-events",
+  THESPORTSDB: "thesportsdb",
+  SPACEDEVS: "spacedevs",
+  ART_INSTITUTE_CHICAGO: "art-institute-chicago",
+  OPENLIGADB: "openligadb",
+  TVMAZE: "tvmaze",
+  OPENF1: "openf1",
+  CLEVELAND_MUSEUM: "cleveland-museum",
+  PARIS_EVENTS: "paris-events",
+  NYC_PARKS: "nyc-parks",
 };
 
 // Normalized event categories
@@ -50,6 +61,11 @@ export const EVENT_CATEGORIES: Record<string, string> = {
   FILM: "film",
   FOOD: "food",
   TECH: "tech",
+  ENTERTAINMENT: "entertainment",
+  HOLIDAY: "holiday",
+  SCIENCE: "science",
+  ASTRONOMY: "astronomy",
+  NATURAL_EVENTS: "natural-events",
   OTHER: "other",
 };
 

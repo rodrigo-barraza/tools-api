@@ -13,6 +13,12 @@ import { fetchDeveloperConferencesOnDemand } from "./sources/developers_events.t
 import { fetchSportsDbOnDemand } from "./sources/thesportsdb.ts";
 import { fetchSpaceDevsOnDemand } from "./sources/spacedevs.ts";
 import { fetchArtInstituteChicagoOnDemand } from "./sources/art_institute_chicago.ts";
+import { fetchOpenLigaDbOnDemand } from "./sources/openligadb.ts";
+import { fetchTvMazeOnDemand } from "./sources/tvmaze.ts";
+import { fetchOpenF1OnDemand } from "./sources/openf1.ts";
+import { fetchClevelandMuseumOnDemand } from "./sources/cleveland_museum.ts";
+import { fetchParisEventsOnDemand } from "./sources/paris_events.ts";
+import { fetchNycParksEventsOnDemand } from "./sources/nyc_parks.ts";
 
 // ─── Registry ───────────────────────────────────────────────────
 
@@ -81,6 +87,36 @@ const ALL_SOURCES: OnDemandEventSource[] = [
     name: "art-institute-chicago",
     requiresKey: false,
     fetch: fetchArtInstituteChicagoOnDemand,
+  },
+  {
+    name: "openligadb",
+    requiresKey: false,
+    fetch: fetchOpenLigaDbOnDemand,
+  },
+  {
+    name: "tvmaze",
+    requiresKey: false,
+    fetch: fetchTvMazeOnDemand,
+  },
+  {
+    name: "openf1",
+    requiresKey: false,
+    fetch: fetchOpenF1OnDemand,
+  },
+  {
+    name: "cleveland-museum",
+    requiresKey: false,
+    fetch: fetchClevelandMuseumOnDemand,
+  },
+  {
+    name: "paris-events",
+    requiresKey: false,
+    fetch: fetchParisEventsOnDemand,
+  },
+  {
+    name: "nyc-parks",
+    requiresKey: false,
+    fetch: fetchNycParksEventsOnDemand,
   },
 ];
 
