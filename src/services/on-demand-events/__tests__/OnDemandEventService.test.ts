@@ -2,38 +2,16 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // ─── Mock External Dependencies ────────────────────────────────
 
-vi.mock("../../fetchers/shared/GeocodingUtility.ts", () => ({
+vi.mock("../../../fetchers/shared/GeocodingUtility.ts", () => ({
   geocodeLocation: vi.fn(),
 }));
 
-vi.mock("../../fetchers/event/TicketmasterFetcher.ts", () => ({
-  fetchTicketmasterEvents: vi.fn(),
+// Mock the registry to control which sources are available
+vi.mock("../OnDemandEventRegistry.ts", () => ({
+  getAvailableSources: vi.fn(),
 }));
 
-vi.mock("../../fetchers/event/SeatGeekFetcher.ts", () => ({
-  fetchSeatGeekEvents: vi.fn(),
-}));
-
-vi.mock("../../fetchers/event/CraigslistFetcher.ts", () => ({
-  fetchCraigslistEvents: vi.fn(),
-}));
-
-vi.mock("../../fetchers/event/MovieFetcher.ts", () => ({
-  fetchMovieEvents: vi.fn(),
-}));
-
-vi.mock("../../config.ts", () => ({
-  default: {
-    TICKETMASTER_API_KEY: "test-tm-key",
-    SEATGEEK_CLIENT_ID: "test-sg-id",
-    TMDB_API_KEY: "test-tmdb-key",
-    LATITUDE: 49.2827,
-    LONGITUDE: -123.1207,
-    RADIUS_MILES: 50,
-  },
-}));
-
-vi.mock("../../logger.ts", () => ({
+vi.mock("../../../logger.ts", () => ({
   default: {
     info: vi.fn(),
     warn: vi.fn(),
@@ -41,28 +19,22 @@ vi.mock("../../logger.ts", () => ({
   },
 }));
 
-vi.mock("../../utilities.ts", () => ({
+vi.mock("../../../utilities.ts", () => ({
   errorMessage: (error: unknown) =>
     error instanceof Error ? error.message : String(error),
 }));
 
 import {
   fetchOnDemandEvents,
-  resolveCraigslistSubdomain,
   deduplicateEvents,
 } from "../OnDemandEventService.ts";
-import { geocodeLocation } from "../../fetchers/shared/GeocodingUtility.ts";
-import { fetchTicketmasterEvents } from "../../fetchers/event/TicketmasterFetcher.ts";
-import { fetchSeatGeekEvents } from "../../fetchers/event/SeatGeekFetcher.ts";
-import { fetchCraigslistEvents } from "../../fetchers/event/CraigslistFetcher.ts";
-import { fetchMovieEvents } from "../../fetchers/event/MovieFetcher.ts";
-import type { CachedEvent } from "../../caches/EventCache.ts";
+import { geocodeLocation } from "../../../fetchers/shared/GeocodingUtility.ts";
+import { getAvailableSources } from "../OnDemandEventRegistry.ts";
+import type { CachedEvent } from "../../../caches/EventCache.ts";
+import type { OnDemandEventSource } from "../sources/_helpers.ts";
 
 const mockedGeocode = vi.mocked(geocodeLocation);
-const mockedTicketmaster = vi.mocked(fetchTicketmasterEvents);
-const mockedSeatGeek = vi.mocked(fetchSeatGeekEvents);
-const mockedCraigslist = vi.mocked(fetchCraigslistEvents);
-const mockedMovies = vi.mocked(fetchMovieEvents);
+const mockedGetSources = vi.mocked(getAvailableSources);
 
 // ─── Helpers ────────────────────────────────────────────────────
 
@@ -73,6 +45,20 @@ function createMockEvent(overrides: Partial<CachedEvent> = {}): CachedEvent {
     sourceId: `tm-${Date.now()}-${Math.random()}`,
     startDate: new Date("2026-08-01T19:00:00Z"),
     ...overrides,
+  };
+}
+
+function createMockSource(
+  name: string,
+  events: CachedEvent[],
+  shouldFail = false,
+): OnDemandEventSource {
+  return {
+    name,
+    requiresKey: false,
+    fetch: shouldFail
+      ? vi.fn().mockRejectedValue(new Error(`${name} failed`))
+      : vi.fn().mockResolvedValue(events),
   };
 }
 
@@ -105,37 +91,6 @@ const tokyoGeocode = {
 describe("OnDemandEventService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  describe("resolveCraigslistSubdomain", () => {
-    it("resolves known Canadian cities", () => {
-      expect(resolveCraigslistSubdomain("Toronto")).toBe("toronto");
-      expect(resolveCraigslistSubdomain("Vancouver")).toBe("vancouver");
-      expect(resolveCraigslistSubdomain("Montreal")).toBe("montreal");
-    });
-
-    it("resolves known US cities", () => {
-      expect(resolveCraigslistSubdomain("New York")).toBe("newyork");
-      expect(resolveCraigslistSubdomain("San Francisco")).toBe("sfbay");
-      expect(resolveCraigslistSubdomain("Seattle")).toBe("seattle");
-      expect(resolveCraigslistSubdomain("Los Angeles")).toBe("losangeles");
-    });
-
-    it("is case-insensitive", () => {
-      expect(resolveCraigslistSubdomain("TORONTO")).toBe("toronto");
-      expect(resolveCraigslistSubdomain("seattle")).toBe("seattle");
-      expect(resolveCraigslistSubdomain("San francisco")).toBe("sfbay");
-    });
-
-    it("returns null for unknown cities", () => {
-      expect(resolveCraigslistSubdomain("Tokyo")).toBeNull();
-      expect(resolveCraigslistSubdomain("Paris")).toBeNull();
-      expect(resolveCraigslistSubdomain("Random Town")).toBeNull();
-    });
-
-    it("handles whitespace trimming", () => {
-      expect(resolveCraigslistSubdomain("  Toronto  ")).toBe("toronto");
-    });
   });
 
   describe("deduplicateEvents", () => {
@@ -220,125 +175,95 @@ describe("OnDemandEventService", () => {
   });
 
   describe("fetchOnDemandEvents", () => {
-    it("geocodes the city and fans out to all APIs", async () => {
+    it("geocodes the city and fans out to all registry sources", async () => {
       mockedGeocode.mockResolvedValue(torontoGeocode);
-      const ticketmasterEvent = createMockEvent({
-        name: "Raptors Game",
-        source: "ticketmaster",
-      });
-      const seatgeekEvent = createMockEvent({
-        name: "Blue Jays Game",
-        source: "seatgeek",
-      });
-      const craigslistEvent = createMockEvent({
-        name: "Community Fair",
-        source: "craigslist",
-      });
-      const movieEvent = createMockEvent({
-        name: "New Movie",
-        source: "tmdb",
-      });
 
-      mockedTicketmaster.mockResolvedValue([ticketmasterEvent] as never);
-      mockedSeatGeek.mockResolvedValue([seatgeekEvent] as never);
-      mockedCraigslist.mockResolvedValue([craigslistEvent]);
-      mockedMovies.mockResolvedValue([movieEvent]);
+      const ticketmasterSource = createMockSource("ticketmaster", [
+        createMockEvent({ name: "Raptors Game", source: "ticketmaster" }),
+      ]);
+      const nhlSource = createMockSource("nhl", [
+        createMockEvent({ name: "Leafs Game", source: "nhl" }),
+      ]);
+      const holidaySource = createMockSource("nager-holidays", [
+        createMockEvent({ name: "Canada Day", source: "nager-holidays" }),
+      ]);
+
+      mockedGetSources.mockReturnValue([
+        ticketmasterSource,
+        nhlSource,
+        holidaySource,
+      ]);
 
       const result = await fetchOnDemandEvents({ city: "Toronto" });
 
       expect(mockedGeocode).toHaveBeenCalledWith("Toronto");
-      expect(mockedTicketmaster).toHaveBeenCalledWith(
-        expect.objectContaining({
-          latitude: torontoGeocode.latitude,
-          longitude: torontoGeocode.longitude,
-        }),
-      );
-      expect(mockedSeatGeek).toHaveBeenCalledWith(
-        expect.objectContaining({
-          latitude: torontoGeocode.latitude,
-          longitude: torontoGeocode.longitude,
-        }),
-      );
-      expect(mockedCraigslist).toHaveBeenCalledWith("toronto");
-      expect(mockedMovies).toHaveBeenCalledWith("CA");
-
-      expect(result.count).toBe(4);
+      expect(result.count).toBe(3);
       expect(result.sources).toContain("ticketmaster");
-      expect(result.sources).toContain("seatgeek");
-      expect(result.sources).toContain("craigslist");
-      expect(result.sources).toContain("tmdb");
+      expect(result.sources).toContain("nhl");
+      expect(result.sources).toContain("nager-holidays");
       expect(result.location.city).toBe("Toronto");
       expect(result.location.countryCode).toBe("CA");
     });
 
     it("returns empty results when geocoding fails", async () => {
       mockedGeocode.mockResolvedValue(null);
+      mockedGetSources.mockReturnValue([]);
 
       const result = await fetchOnDemandEvents({ city: "Nonexistent City" });
 
       expect(result.count).toBe(0);
       expect(result.events).toHaveLength(0);
       expect(result.sources).toHaveLength(0);
-      expect(mockedTicketmaster).not.toHaveBeenCalled();
     });
 
-    it("gracefully handles partial API failures", async () => {
+    it("gracefully handles partial source failures", async () => {
       mockedGeocode.mockResolvedValue(torontoGeocode);
-      mockedTicketmaster.mockResolvedValue([
-        createMockEvent({ name: "Event A" }),
-      ] as never);
-      mockedSeatGeek.mockRejectedValue(new Error("SeatGeek rate limited"));
-      mockedCraigslist.mockResolvedValue([
-        createMockEvent({ name: "Event B" }),
+
+      const workingSource = createMockSource("nhl", [
+        createMockEvent({ name: "Leafs Game" }),
       ]);
-      mockedMovies.mockRejectedValue(new Error("TMDb timeout"));
+      const failingSource = createMockSource("seatgeek", [], true);
+      const anotherWorkingSource = createMockSource("nager-holidays", [
+        createMockEvent({ name: "Canada Day" }),
+      ]);
+
+      mockedGetSources.mockReturnValue([
+        workingSource,
+        failingSource,
+        anotherWorkingSource,
+      ]);
 
       const result = await fetchOnDemandEvents({ city: "Toronto" });
 
       expect(result.count).toBe(2);
-      expect(result.sources).toContain("ticketmaster");
-      expect(result.sources).toContain("craigslist");
+      expect(result.sources).toContain("nhl");
+      expect(result.sources).toContain("nager-holidays");
       expect(result.sources).not.toContain("seatgeek");
-      expect(result.sources).not.toContain("tmdb");
-    });
-
-    it("skips Craigslist for cities not in the map", async () => {
-      mockedGeocode.mockResolvedValue(tokyoGeocode);
-      mockedTicketmaster.mockResolvedValue([
-        createMockEvent({ name: "Tokyo Event" }),
-      ] as never);
-      mockedSeatGeek.mockResolvedValue([]);
-      mockedMovies.mockResolvedValue([
-        createMockEvent({ name: "Japanese Movie" }),
-      ]);
-
-      const result = await fetchOnDemandEvents({ city: "Tokyo" });
-
-      expect(mockedCraigslist).not.toHaveBeenCalled();
-      expect(result.location.countryCode).toBe("JP");
-      expect(mockedMovies).toHaveBeenCalledWith("JP");
     });
 
     it("deduplicates cross-source events", async () => {
       mockedGeocode.mockResolvedValue(torontoGeocode);
-      const sharedEvent = createMockEvent({
-        name: "Big Concert",
-        startDate: new Date("2026-09-01T19:00:00Z"),
-      });
-      mockedTicketmaster.mockResolvedValue([
-        { ...sharedEvent, source: "ticketmaster", sourceId: "tm-99" },
-      ] as never);
-      mockedSeatGeek.mockResolvedValue([
-        {
-          ...sharedEvent,
+
+      const sourceA = createMockSource("ticketmaster", [
+        createMockEvent({
+          name: "Big Concert",
+          source: "ticketmaster",
+          sourceId: "tm-99",
+          startDate: new Date("2026-09-01T19:00:00Z"),
+        }),
+      ]);
+      const sourceB = createMockSource("seatgeek", [
+        createMockEvent({
+          name: "Big Concert",
           source: "seatgeek",
           sourceId: "sg-99",
+          startDate: new Date("2026-09-01T19:30:00Z"),
           category: "music",
           url: "https://seatgeek.com/big-concert",
-        },
-      ] as never);
-      mockedCraigslist.mockResolvedValue([]);
-      mockedMovies.mockResolvedValue([]);
+        }),
+      ]);
+
+      mockedGetSources.mockReturnValue([sourceA, sourceB]);
 
       const result = await fetchOnDemandEvents({ city: "Toronto" });
 
@@ -347,19 +272,20 @@ describe("OnDemandEventService", () => {
 
     it("respects the limit parameter", async () => {
       mockedGeocode.mockResolvedValue(torontoGeocode);
+
       const manyEvents = Array.from({ length: 50 }, (_, index) => {
         const eventDate = new Date("2026-08-01T19:00:00Z");
         eventDate.setDate(eventDate.getDate() + index);
         return createMockEvent({
           name: `Event ${index}`,
-          sourceId: `tm-${index}`,
+          sourceId: `test-${index}`,
           startDate: eventDate,
         });
       });
-      mockedTicketmaster.mockResolvedValue(manyEvents as never);
-      mockedSeatGeek.mockResolvedValue([]);
-      mockedCraigslist.mockResolvedValue([]);
-      mockedMovies.mockResolvedValue([]);
+
+      mockedGetSources.mockReturnValue([
+        createMockSource("ticketmaster", manyEvents),
+      ]);
 
       const result = await fetchOnDemandEvents({
         city: "Toronto",
@@ -372,7 +298,8 @@ describe("OnDemandEventService", () => {
 
     it("sorts results by startDate ascending", async () => {
       mockedGeocode.mockResolvedValue(torontoGeocode);
-      mockedTicketmaster.mockResolvedValue([
+
+      const events = [
         createMockEvent({
           name: "Late Event",
           sourceId: "tm-late",
@@ -383,16 +310,16 @@ describe("OnDemandEventService", () => {
           sourceId: "tm-early",
           startDate: new Date("2026-08-01T20:00:00Z"),
         }),
-      ] as never);
-      mockedSeatGeek.mockResolvedValue([
         createMockEvent({
           name: "Mid Event",
           sourceId: "sg-mid",
           startDate: new Date("2026-08-20T20:00:00Z"),
         }),
-      ] as never);
-      mockedCraigslist.mockResolvedValue([]);
-      mockedMovies.mockResolvedValue([]);
+      ];
+
+      mockedGetSources.mockReturnValue([
+        createMockSource("ticketmaster", events),
+      ]);
 
       const result = await fetchOnDemandEvents({ city: "Toronto" });
 
@@ -401,20 +328,28 @@ describe("OnDemandEventService", () => {
       expect(result.events[2].name).toBe("Late Event");
     });
 
-    it("uses custom days parameter for lookahead", async () => {
-      mockedGeocode.mockResolvedValue(torontoGeocode);
-      mockedTicketmaster.mockResolvedValue([]);
-      mockedSeatGeek.mockResolvedValue([]);
-      mockedCraigslist.mockResolvedValue([]);
-      mockedMovies.mockResolvedValue([]);
+    it("passes correct options to each source", async () => {
+      mockedGeocode.mockResolvedValue(tokyoGeocode);
 
-      await fetchOnDemandEvents({ city: "Toronto", days: 14 });
+      const mockFetch = vi.fn().mockResolvedValue([]);
+      const testSource: OnDemandEventSource = {
+        name: "test-source",
+        requiresKey: false,
+        fetch: mockFetch,
+      };
 
-      expect(mockedTicketmaster).toHaveBeenCalledWith(
-        expect.objectContaining({ lookAheadDays: 14 }),
-      );
-      expect(mockedSeatGeek).toHaveBeenCalledWith(
-        expect.objectContaining({ lookAheadDays: 14 }),
+      mockedGetSources.mockReturnValue([testSource]);
+
+      await fetchOnDemandEvents({ city: "Tokyo", days: 14 });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          city: "Tokyo",
+          countryCode: "JP",
+          latitude: tokyoGeocode.latitude,
+          longitude: tokyoGeocode.longitude,
+          days: 14,
+        }),
       );
     });
   });

@@ -14,7 +14,7 @@ import {
   getEventSummary,
   getHealth,
 } from "../caches/EventCache.ts";
-import { fetchOnDemandEvents } from "../services/OnDemandEventService.ts";
+import { fetchOnDemandEvents } from "../services/on-demand-events/index.ts";
 const router = Router();
 // ─── Event Endpoints ───────────────────────────────────────────────
 router.get(

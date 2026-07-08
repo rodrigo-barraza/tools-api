@@ -53,9 +53,12 @@ import { refreshCaliforniaWebcams } from "./sources/california.ts";
 import { refreshWashingtonWebcams } from "./sources/washington.ts";
 import { refreshOregonWebcams } from "./sources/oregon.ts";
 import { refreshMichiganWebcams } from "./sources/michigan.ts";
+import { refreshKentuckyWebcams } from "./sources/kentucky.ts";
+import { refreshMontgomeryCountyWebcams } from "./sources/montgomery_county_tx.ts";
 
 // ─── Verified Canadian provinces ─────────────────────────────────
 import { refreshQuebecWebcams } from "./sources/quebec.ts";
+import { refreshBritishColumbiaWebcams } from "./sources/british_columbia.ts";
 
 // ─── Verified international ──────────────────────────────────────
 import { refreshQueenslandWebcams } from "./sources/queensland.ts";
@@ -63,6 +66,8 @@ import { refreshNewZealandWebcams } from "./sources/new_zealand.ts";
 import { refreshLondonWebcams } from "./sources/london.ts";
 import { refreshGermanyWebcams } from "./sources/germany.ts";
 import { refreshFinlandWebcams } from "./sources/finland.ts";
+import { refreshDonegalWebcams } from "./sources/donegal.ts";
+import { refreshSingaporeWebcams } from "./sources/singapore.ts";
 
 /**
  * Registry mapping normalized city/region names to their specific
@@ -129,9 +134,12 @@ export const WEBCAM_REGISTRY = {
   "washington-state": refreshWashingtonWebcams,
   oregon: refreshOregonWebcams,
   michigan: refreshMichiganWebcams,
+  kentucky: refreshKentuckyWebcams,
+  "montgomery-county-tx": refreshMontgomeryCountyWebcams,
 
   // ─── Canadian provinces ───────────────────────────────────────
   quebec: refreshQuebecWebcams,
+  "british-columbia": refreshBritishColumbiaWebcams,
 
   // ─── International ────────────────────────────────────────────
   queensland: refreshQueenslandWebcams,
@@ -139,6 +147,8 @@ export const WEBCAM_REGISTRY = {
   london: refreshLondonWebcams,
   germany: refreshGermanyWebcams,
   finland: refreshFinlandWebcams,
+  donegal: refreshDonegalWebcams,
+  singapore: refreshSingaporeWebcams,
 };
 
 export function getSupportedCities() {
