@@ -6648,13 +6648,15 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
             "fort-mcmurray",
             // Canada — Quebec
             "quebec",
-            // US — West
+            // US — West Coast
             "seattle",
+            "california",
+            "washington-state",
+            "oregon",
             // US — South
             "austin",
             "baton-rouge",
             "florida",
-            "virginia",
             // US — Northeast
             "nyc",
             "buffalo",
@@ -6669,13 +6671,18 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
             "washington-dc",
             // US — Midwest
             "chicago",
-            "minnesota",
+            "michigan",
             "iowa",
             // US — Pacific
             "honolulu",
+            // UK
+            "london",
             // Europe
             "germany",
             "finland",
+            // Oceania
+            "queensland",
+            "new-zealand",
           ],
         },
         limit: {

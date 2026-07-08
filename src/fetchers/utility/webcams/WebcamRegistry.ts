@@ -42,18 +42,25 @@ import { refreshBinghamtonWebcams } from "./sources/binghamton.ts";
 import { refreshIthacaWebcams } from "./sources/ithaca.ts";
 
 // ─── Verified key-free US sources ────────────────────────────────
-import { refreshVirginiaWebcams } from "./sources/virginia.ts";
-import { refreshMinnesotaWebcams } from "./sources/minnesota.ts";
 import { refreshHonoluluWebcams } from "./sources/honolulu.ts";
 import { refreshChicagoWebcams } from "./sources/chicago.ts";
 import { refreshDCWebcams } from "./sources/dc.ts";
 import { refreshFloridaWebcams } from "./sources/florida.ts";
 import { refreshIowaWebcams } from "./sources/iowa.ts";
 
+// ─── New ArcGIS US sources ───────────────────────────────────────
+import { refreshCaliforniaWebcams } from "./sources/california.ts";
+import { refreshWashingtonWebcams } from "./sources/washington.ts";
+import { refreshOregonWebcams } from "./sources/oregon.ts";
+import { refreshMichiganWebcams } from "./sources/michigan.ts";
+
 // ─── Verified Canadian provinces ─────────────────────────────────
 import { refreshQuebecWebcams } from "./sources/quebec.ts";
 
 // ─── Verified international ──────────────────────────────────────
+import { refreshQueenslandWebcams } from "./sources/queensland.ts";
+import { refreshNewZealandWebcams } from "./sources/new_zealand.ts";
+import { refreshLondonWebcams } from "./sources/london.ts";
 import { refreshGermanyWebcams } from "./sources/germany.ts";
 import { refreshFinlandWebcams } from "./sources/finland.ts";
 
@@ -111,18 +118,25 @@ export const WEBCAM_REGISTRY = {
   ithaca: refreshIthacaWebcams,
 
   // ─── US - Verified key-free sources ────────────────────────────
-  virginia: refreshVirginiaWebcams,
-  minnesota: refreshMinnesotaWebcams,
   honolulu: refreshHonoluluWebcams,
   chicago: refreshChicagoWebcams,
   "washington-dc": refreshDCWebcams,
   florida: refreshFloridaWebcams,
   iowa: refreshIowaWebcams,
 
+  // ─── US - ArcGIS sources ───────────────────────────────────────
+  california: refreshCaliforniaWebcams,
+  "washington-state": refreshWashingtonWebcams,
+  oregon: refreshOregonWebcams,
+  michigan: refreshMichiganWebcams,
+
   // ─── Canadian provinces ───────────────────────────────────────
   quebec: refreshQuebecWebcams,
 
   // ─── International ────────────────────────────────────────────
+  queensland: refreshQueenslandWebcams,
+  "new-zealand": refreshNewZealandWebcams,
+  london: refreshLondonWebcams,
   germany: refreshGermanyWebcams,
   finland: refreshFinlandWebcams,
 };
