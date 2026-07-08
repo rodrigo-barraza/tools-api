@@ -4522,9 +4522,9 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
 
   // ── Transit (TransLink Vancouver) ──────────────────────────────
   {
-    name: "get_next_bus",
+    name: "get_translink_next_bus",
     dataSource: onDemand("TransLink RTTI"),
-    description: translate("get_next_bus.description"),
+    description: translate("get_translink_next_bus.description"),
     endpoint: {
       path: "/transit/nextbus/:stopNo",
       pathParams: ["stopNo"],
@@ -4535,11 +4535,11 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         stopNo: {
           type: "number",
-          description: translate("get_next_bus.params.stopNo"),
+          description: translate("get_translink_next_bus.params.stopNo"),
         },
         route: {
           type: "string",
-          description: translate("get_next_bus.params.route"),
+          description: translate("get_translink_next_bus.params.route"),
         },
         ...fieldsParam(FIELDS.NEXT_BUS),
       },
@@ -4547,9 +4547,9 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
     },
   },
   {
-    name: "get_transit_stop_info",
+    name: "get_translink_stop_info",
     dataSource: onDemand("TransLink RTTI"),
-    description: translate("get_transit_stop_info.description"),
+    description: translate("get_translink_stop_info.description"),
     endpoint: {
       path: "/transit/stops/:stopNo",
       pathParams: ["stopNo"],
@@ -4559,7 +4559,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         stopNo: {
           type: "number",
-          description: translate("get_transit_stop_info.params.stopNo"),
+          description: translate("get_translink_stop_info.params.stopNo"),
         },
         ...fieldsParam(FIELDS.STOP_INFO),
       },
@@ -4567,9 +4567,9 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
     },
   },
   {
-    name: "search_transit_stops_nearby",
+    name: "search_translink_stops_nearby",
     dataSource: onDemand("TransLink RTTI"),
-    description: translate("search_transit_stops_nearby.description"),
+    description: translate("search_translink_stops_nearby.description"),
     endpoint: {
       path: "/transit/stops/nearby",
       queryParams: ["lat", "lng", "radius"],
@@ -4579,24 +4579,24 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         lat: {
           type: "number",
-          description: translate("search_transit_stops_nearby.params.lat"),
+          description: translate("search_translink_stops_nearby.params.lat"),
         },
         lng: {
           type: "number",
-          description: translate("search_transit_stops_nearby.params.lng"),
+          description: translate("search_translink_stops_nearby.params.lng"),
         },
         radius: {
           type: "number",
-          description: translate("search_transit_stops_nearby.params.radius"),
+          description: translate("search_translink_stops_nearby.params.radius"),
         },
         ...fieldsParam(FIELDS.NEARBY_STOPS),
       },
     },
   },
   {
-    name: "get_transit_route_info",
+    name: "get_translink_route_info",
     dataSource: onDemand("TransLink RTTI"),
-    description: translate("get_transit_route_info.description"),
+    description: translate("get_translink_route_info.description"),
     endpoint: {
       path: "/transit/routes/:routeNo",
       pathParams: ["routeNo"],
@@ -4606,7 +4606,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         routeNo: {
           type: "string",
-          description: translate("get_transit_route_info.params.routeNo"),
+          description: translate("get_translink_route_info.params.routeNo"),
         },
         ...fieldsParam(FIELDS.ROUTE_INFO),
       },
@@ -12040,10 +12040,10 @@ const TOOL_DOMAINS = {
   get_pollen_forecast: "Health",
 
   // Transit
-  get_next_bus: "Transit",
-  get_transit_stop_info: "Transit",
-  search_transit_stops_nearby: "Transit",
-  get_transit_route_info: "Transit",
+  get_translink_next_bus: "Transit",
+  get_translink_stop_info: "Transit",
+  search_translink_stops_nearby: "Transit",
+  get_translink_route_info: "Transit",
 
   // Utilities
   search_airports: "Utilities",
@@ -12477,10 +12477,10 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   calculate_hydration_needs: ["💧", "💻"],
   build_meal_plan: ["🍽️", "💻"],
   check_drug_nutrient_interactions: ["💊", "⚠️"],
-  get_next_bus: ["🚌", "💻"],
-  get_transit_stop_info: "🚏",
-  search_transit_stops_nearby: ["🚌", "📍"],
-  get_transit_route_info: ["🚌", "🗺️"],
+  get_translink_next_bus: ["🚌", "💻"],
+  get_translink_stop_info: "🚏",
+  search_translink_stops_nearby: ["🚌", "📍"],
+  get_translink_route_info: ["🚌", "🗺️"],
   search_airports: ["✈️", "💻"],
   evaluate_expression: "🧮",
   convert_currency: "💱",
@@ -12713,10 +12713,10 @@ const TOOL_REQUIRED_KEYS = {
   get_macro_observations: ["FRED_API_KEY"],
 
   // Transit (all require TransLink API key)
-  get_next_bus: ["TRANSLINK_API_KEY"],
-  get_transit_stop_info: ["TRANSLINK_API_KEY"],
-  search_transit_stops_nearby: ["TRANSLINK_API_KEY"],
-  get_transit_route_info: ["TRANSLINK_API_KEY"],
+  get_translink_next_bus: ["TRANSLINK_API_KEY"],
+  get_translink_stop_info: ["TRANSLINK_API_KEY"],
+  search_translink_stops_nearby: ["TRANSLINK_API_KEY"],
+  get_translink_route_info: ["TRANSLINK_API_KEY"],
 
   // Places (require Google Places API key)
   search_nearby_places: ["GOOGLE_CLOUD_API_KEY"],
