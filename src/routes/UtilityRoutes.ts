@@ -422,9 +422,13 @@ router.get(
 router.get(
   "/webcams",
   asyncHandler(async (req: Request) => {
-    const { city, limit } = req.query as Record<string, string | undefined>;
+    const { city, state, province, region, country, limit } = req.query as Record<string, string | undefined>;
     const webcams = await getPublicWebcams({
-      city: city || "vancouver",
+      city,
+      state,
+      province,
+      region,
+      country,
       limit: parseInt(limit || "", 10) || 100,
     });
     return { count: webcams.length, webcams };

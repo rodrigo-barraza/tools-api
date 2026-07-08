@@ -6614,7 +6614,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
     name: "get_public_webcams",
     dataSource: onDemand("Municipal Open Data APIs"),
     description: translate("get_public_webcams.description"),
-    endpoint: { path: "/utility/webcams", queryParams: ["city", "limit"] },
+    endpoint: { path: "/utility/webcams", queryParams: ["city", "state", "province", "region", "country", "limit"] },
     parameters: {
       type: "object",
       properties: {
@@ -6622,10 +6622,10 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           type: "string",
           description: translate("get_public_webcams.params.city"),
           enum: [
-            // Canada — British Columbia
+            // Canada
             "vancouver",
-            // Canada — Ontario
             "toronto",
+            "calgary",
             "ottawa",
             "hamilton",
             "london-on",
@@ -6637,8 +6637,6 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
             "sudbury",
             "niagara",
             "mississauga",
-            // Canada — Alberta
-            "calgary",
             "edmonton",
             "red-deer",
             "lethbridge",
@@ -6646,51 +6644,70 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
             "grande-prairie",
             "banff",
             "fort-mcmurray",
-            // Canada — Quebec
-            "quebec",
-            // Canada — British Columbia
-            "british-columbia",
-            // US — West Coast
+            // US
             "seattle",
-            "california",
-            "washington-state",
-            "oregon",
-            // US — South
             "austin",
             "baton-rouge",
-            "florida",
-            "montgomery-county-tx",
-            // US — Northeast
             "nyc",
             "buffalo",
             "syracuse",
             "albany",
             "rochester",
-            "long-island",
-            "westchester",
             "utica",
             "binghamton",
             "ithaca",
             "washington-dc",
-            // US — Midwest
-            "chicago",
-            "michigan",
-            "kentucky",
-            "iowa",
-            // US — Pacific
             "honolulu",
+            "chicago",
             // UK
             "london",
-            // Europe
-            "germany",
-            "finland",
-            // Ireland
-            "donegal",
-            // Oceania
+          ],
+        },
+        state: {
+          type: "string",
+          description: translate("get_public_webcams.params.state"),
+          enum: [
+            "washington-state",
+            "california",
+            "oregon",
+            "florida",
+            "iowa",
+            "michigan",
+            "kentucky",
+          ],
+        },
+        province: {
+          type: "string",
+          description: translate("get_public_webcams.params.province"),
+          enum: [
+            "quebec",
+            "british-columbia",
             "queensland",
-            "new-zealand",
-            // Asia
-            "singapore",
+          ],
+        },
+        region: {
+          type: "string",
+          description: translate("get_public_webcams.params.region"),
+          enum: [
+            "long-island",
+            "westchester",
+            "montgomery-county-tx",
+            "donegal",
+          ],
+        },
+        country: {
+          type: "string",
+          description: translate("get_public_webcams.params.country"),
+          enum: [
+            "CA",
+            "US",
+            "GB",
+            "DE",
+            "FI",
+            "IE",
+            "NZ",
+            "SG",
+            "AU",
           ],
         },
         limit: {
