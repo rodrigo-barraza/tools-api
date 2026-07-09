@@ -474,6 +474,7 @@
   "generate_audio.params.rows": "step-grid note row for write_pattern action. each row occupy fixed time slot on grid (from tempo and linesPerBeat). note ring until next note trigger, note-off, or end of pattern — no duration needed. use '---' or '...' for empty/sustain row, '===' or 'OFF' for note-off (cut sound).",
   "generate_audio.params.rows.items.params.note": "note name ('C4'), chord ('Am7'), drum ('KICK', 'SNARE', 'HIHAT'), empty/sustain ('---', '...'), or note-off ('===', 'OFF').",
   "generate_audio.params.rows.items.params.velocity": "note velocity 0-1. default: 1.0.",
+  "generate_audio.params.rows.items.params.duration": "REQUIRED. how many step this note ring for (1-64). duration of 4 mean note occupy 4 grid step before next note play. use 1 for short hit.",
   "generate_audio.params.sampleRate": "sample rate in Hz (default: 44100, range: 8000-48000).",
   "generate_audio.params.sessionId": "tracker session ID (from action: 'init'). need for add_channel, write_pattern, render.",
   "generate_audio.params.soundType": "synthesis mode. 'sound_effect' or skip for quick preset; 'synthesizer' for custom tone; 'modular' for advanced multi-track node graph. tracker workflow (action-based) always make modular output.",
