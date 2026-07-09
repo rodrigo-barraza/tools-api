@@ -18,6 +18,13 @@ export interface TrackerRow {
   pitchBend?: PitchBendConfig;
 }
 
+export interface TrackerInputRow {
+  note: string;
+  velocity?: number;
+  duration: number;
+  pitchBend?: PitchBendConfig;
+}
+
 export interface TrackerChannelEffects {
   reverb?: { wet?: number; decayTime?: number };
   delay?: { delayTime?: number | string; feedback?: number; pingPong?: boolean };
@@ -73,7 +80,7 @@ export interface AddChannelOptions {
 export interface WritePatternOptions {
   sessionId: string;
   channelId: string;
-  rows: TrackerRow[];
+  rows: TrackerInputRow[];
   startRow?: number;
   append?: boolean;
 }
@@ -238,16 +245,17 @@ export function writeTrackerPattern(
     };
   }
 
+  const expandedRows = expandDurationRows(options.rows);
   const shouldAppend = options.append !== false;
 
   if (shouldAppend) {
     const remainingCapacity = MAX_ROWS_PER_CHANNEL - channel.pattern.length;
-    const rowsToAdd = options.rows.slice(0, remainingCapacity);
+    const rowsToAdd = expandedRows.slice(0, remainingCapacity);
     channel.pattern.push(...rowsToAdd);
   } else {
     const insertionIndex = options.startRow ?? 0;
     const clampedIndex = Math.max(0, Math.min(insertionIndex, channel.pattern.length));
-    const rowsToInsert = options.rows.slice(0, MAX_ROWS_PER_CHANNEL - clampedIndex);
+    const rowsToInsert = expandedRows.slice(0, MAX_ROWS_PER_CHANNEL - clampedIndex);
     channel.pattern.splice(clampedIndex, rowsToInsert.length, ...rowsToInsert);
   }
 
@@ -264,7 +272,7 @@ export function writeTrackerPattern(
     .join("\n");
 
   logger.info(
-    `[AudioTrackerSessionManager] Wrote ${options.rows.length} row(s) to channel ` +
+    `[AudioTrackerSessionManager] Wrote ${options.rows.length} row(s) (${expandedRows.length} expanded) to channel ` +
     `'${options.channelId}' in session ${options.sessionId} — total=${channel.pattern.length}`,
   );
 
@@ -463,6 +471,31 @@ const EMPTY_SYMBOLS = new Set(["---", "...", ""]);
 const SILENCE_SYMBOLS = new Set(["REST", "SILENCE"]);
 
 
+
+/**
+ * Expands input rows that carry a required `duration` field (in steps) into the
+ * internal tracker grid representation. A row with `duration: N` becomes:
+ *   1) the note-trigger row (with duration stripped)
+ *   2) N-1 sustain rows (`---`)
+ *
+ * Duration is clamped to [1, 64] to prevent degenerate expansions.
+ */
+function expandDurationRows(inputRows: TrackerInputRow[]): TrackerRow[] {
+  const expandedRows: TrackerRow[] = [];
+
+  for (const row of inputRows) {
+    const stepCount = Math.max(1, Math.min(Math.round(row.duration), 64));
+
+    const { duration: _discardedDuration, ...triggerRow } = row;
+    expandedRows.push(triggerRow);
+
+    for (let sustainIndex = 1; sustainIndex < stepCount; sustainIndex++) {
+      expandedRows.push({ note: "---" });
+    }
+  }
+
+  return expandedRows;
+}
 
 function computePatternDuration(
   notes: NoteConfig[],

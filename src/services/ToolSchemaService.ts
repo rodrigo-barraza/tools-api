@@ -8938,8 +8938,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
                 type: "number",
                 description: translate("generate_audio.params.rows.items.params.velocity"),
               },
+              duration: {
+                type: "integer",
+                description: translate("generate_audio.params.rows.items.params.duration"),
+              },
             },
-            required: ["note"],
+            required: ["note", "duration"],
           },
         },
         append: {
