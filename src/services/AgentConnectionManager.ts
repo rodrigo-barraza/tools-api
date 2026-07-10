@@ -618,8 +618,13 @@ export function routeForPath(absolutePath: string | undefined | null) {
   // Normalize incoming path in case it uses Windows drive-letter format
   const normalizedPath = normalizeWindowsRootPath(absolutePath);
 
+  // Sort roots by descending length to match the most specific root first (e.g. /mnt/c/workspace before /)
+  const sortedRoots = Array.from(rootToAgent.keys()).sort((a, b) => b.length - a.length);
+
   // Check each registered root
-  for (const [root, agentId] of rootToAgent) {
+  for (const root of sortedRoots) {
+    const agentId = rootToAgent.get(root)!;
+
     // Root "/" is a special case — it matches ALL absolute paths (the
     // container filesystem IS the workspace, registered as virtual root "/").
     const isMatch = root === "/"
@@ -796,33 +801,37 @@ async function rebuildAllowedRootsFromAgents() {
       }
     }
 
-    // If an agent registers root "/" (virtual root), it subsumes ALL other
-    // roots. Static roots like "/workspace" become redundant and should not
-    // appear in ALLOWED_ROOTS — otherwise prism-service picks up "/workspace"
-    // as the primary root (index 0), defeating workspace path virtualization.
-    const agentOwnsEverything = agentRoots.includes("/");
+    // If any agent registers root "/" (virtual root), it subsumes local static
+    // roots like "/workspace" which should not appear in ALLOWED_ROOTS.
+    // However, other agents' roots (e.g. windows workspace mounts /mnt/c/workspace)
+    // must be preserved.
+    const staticRoots = getStaticRoots();
+    const staticRootsToKeep = staticRoots.filter((staticRoot) => {
+      return !agentRoots.some((agentRoot) => {
+        return agentRoot === "/"
+          ? staticRoot.startsWith("/")
+          : (staticRoot.startsWith(agentRoot + "/") || staticRoot === agentRoot);
+      });
+    });
 
-    if (agentOwnsEverything) {
-      // Replace ALL roots with just "/" — the agent covers the entire filesystem.
-      // Preserve any user-configured roots that are NOT subsumed (none can be,
-      // since "/" covers everything), but keep the array clean.
-      ALLOWED_ROOTS.length = 0;
-      ALLOWED_ROOTS.push("/");
-      return;
-    }
-
-    // refreshAllowedRoots merges: STATIC_ROOTS + extraRoots (de-duped)
     // We need to also preserve any user-configured roots from MongoDB.
     // Since ALLOWED_ROOTS may contain user roots not in agents or static,
     // collect the non-static, non-agent roots to preserve them.
-    const staticRoots = getStaticRoots();
     const staticSet = new Set(staticRoots);
     const agentSet = new Set(agentRoots);
     const userRoots = ALLOWED_ROOTS.filter(
       (r) => !staticSet.has(r) && !agentSet.has(r),
     );
 
-    refreshAllowedRoots([...userRoots, ...agentRoots]);
+    const mergedRoots = [...staticRootsToKeep];
+    for (const root of [...userRoots, ...agentRoots]) {
+      if (!mergedRoots.includes(root)) {
+        mergedRoots.push(root);
+      }
+    }
+
+    ALLOWED_ROOTS.length = 0;
+    ALLOWED_ROOTS.push(...mergedRoots);
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logger.warn(`[AgentWS] Failed to rebuild allowed roots: ${errorMessage}`);
