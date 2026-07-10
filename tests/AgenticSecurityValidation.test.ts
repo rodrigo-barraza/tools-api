@@ -42,7 +42,7 @@ describe("Agentic Security and Worktree Validation", () => {
         fs.unlinkSync(filePath);
       }
       if (fs.existsSync(mockWorktree)) {
-        fs.rmdirSync(mockWorktree);
+        fs.rmSync(mockWorktree, { recursive: true, force: true });
       }
 
       const res = await request(app)
@@ -61,7 +61,7 @@ describe("Agentic Security and Worktree Validation", () => {
         .post("/agentic/file/read")
         .set("X-Workspace-Override", mockWorktree)
         .send({
-          path: filePath
+          absolutePath: filePath
         });
       expect(readRes.status).toBe(200);
       expect(readRes.body.content).toBe("1: isolated worktree write");
@@ -70,7 +70,7 @@ describe("Agentic Security and Worktree Validation", () => {
       const noHeaderRes = await request(app)
         .post("/agentic/file/read")
         .send({
-          path: filePath
+          absolutePath: filePath
         });
       expect(noHeaderRes.status).toBe(403);
       expect(noHeaderRes.body.error).toContain("is outside allowed roots");
@@ -80,7 +80,7 @@ describe("Agentic Security and Worktree Validation", () => {
         fs.unlinkSync(filePath);
       }
       if (fs.existsSync(mockWorktree)) {
-        fs.rmdirSync(mockWorktree);
+        fs.rmSync(mockWorktree, { recursive: true, force: true });
       }
     });
 
@@ -123,7 +123,7 @@ describe("Agentic Security and Worktree Validation", () => {
         fs.unlinkSync(envLocalPath);
       }
       if (fs.existsSync(mockWorktree)) {
-        fs.rmdirSync(mockWorktree);
+        fs.rmSync(mockWorktree, { recursive: true, force: true });
       }
     });
   });

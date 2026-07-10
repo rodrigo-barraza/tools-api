@@ -111,7 +111,7 @@ describe("Workspace Root Propagation", () => {
       const response = await request(app)
         .post("/agentic/file/read")
         .set("X-Workspace-Root", workspaceAlpha)
-        .send({ path: "alpha-marker.txt" });
+        .send({ absolutePath: "alpha-marker.txt" });
 
       expect(response.status).toBe(200);
       expect(response.body.filePath).toBe(
@@ -155,7 +155,7 @@ describe("Workspace Root Propagation", () => {
       const response = await request(app)
         .post("/agentic/file/read")
         .set("X-Workspace-Root", workspaceBeta) // Different workspace, shouldn't matter
-        .send({ path: absoluteFilePath });
+        .send({ absolutePath: absoluteFilePath });
 
       expect(response.status).toBe(200);
       expect(response.body.filePath).toBe(absoluteFilePath);
@@ -263,7 +263,7 @@ describe("Workspace Root Propagation", () => {
       const responseAlpha = await request(app)
         .post("/agentic/file/read")
         .set("X-Workspace-Root", workspaceAlpha)
-        .send({ path: "alpha-marker.txt" });
+        .send({ absolutePath: "alpha-marker.txt" });
 
       expect(responseAlpha.status).toBe(200);
       expect(responseAlpha.body.content).toContain("This is project alpha");
@@ -272,7 +272,7 @@ describe("Workspace Root Propagation", () => {
       const responseBeta = await request(app)
         .post("/agentic/file/read")
         .set("X-Workspace-Root", workspaceBeta)
-        .send({ path: "beta-marker.txt" });
+        .send({ absolutePath: "beta-marker.txt" });
 
       expect(responseBeta.status).toBe(200);
       expect(responseBeta.body.content).toContain("This is project beta");
@@ -281,7 +281,7 @@ describe("Workspace Root Propagation", () => {
       const responseAlphaAgain = await request(app)
         .post("/agentic/file/read")
         .set("X-Workspace-Root", workspaceAlpha)
-        .send({ path: "alpha-marker.txt" });
+        .send({ absolutePath: "alpha-marker.txt" });
 
       expect(responseAlphaAgain.status).toBe(200);
       expect(responseAlphaAgain.body.content).toContain("This is project alpha");
@@ -291,7 +291,7 @@ describe("Workspace Root Propagation", () => {
       const response = await request(app)
         .post("/agentic/file/read")
         .set("X-Workspace-Root", workspaceBeta)
-        .send({ path: "alpha-marker.txt" });
+        .send({ absolutePath: "alpha-marker.txt" });
 
       // alpha-marker.txt does not exist in workspace beta — agenticHandler returns 400 with error body
       expect(response.status).toBe(400);
