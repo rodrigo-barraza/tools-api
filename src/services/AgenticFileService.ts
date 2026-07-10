@@ -1003,7 +1003,7 @@ export async function agenticGlobFiles(pattern: string, searchPath: string) {
  * Read multiple files in a single call.
  */
 export interface MultiFileReadItem {
-  path: string;
+  absolutePath: string;
   startLine?: number;
   endLine?: number;
 }
@@ -1012,7 +1012,7 @@ export async function agenticMultiFileRead(files: MultiFileReadItem[]) {
   if (!Array.isArray(files) || files.length === 0) {
     return {
       error:
-        "'files' must be a non-empty array of { path, startLine?, endLine? }",
+        "'files' must be a non-empty array of { absolutePath, startLine?, endLine? }",
     };
   }
   if (files.length > 20) {
@@ -1023,11 +1023,11 @@ export async function agenticMultiFileRead(files: MultiFileReadItem[]) {
 
   const results = await Promise.all(
     files.map(async (fileItem: MultiFileReadItem) => {
-      const result = await agenticReadFile(fileItem.path, {
+      const result = await agenticReadFile(fileItem.absolutePath, {
         startLine: fileItem.startLine,
         endLine: fileItem.endLine,
       });
-      return { path: fileItem.path, ...result };
+      return { absolutePath: fileItem.absolutePath, ...result };
     }),
   );
 

@@ -94,11 +94,11 @@ const dispatchToRoute = router as unknown as (request: Request, response: Respon
 router.post(
   "/file/read",
   agenticHandler(async (req: Request) => {
-    const { path, startLine, endLine } = req.body;
-    if (!path || typeof path !== "string") {
-      return { error: "Request body must include 'path' (string)" };
+    const { absolutePath, startLine, endLine } = req.body;
+    if (!absolutePath || typeof absolutePath !== "string") {
+      return { error: "Request body must include 'absolutePath' (string)" };
     }
-    return agenticReadFile(path, {
+    return agenticReadFile(absolutePath, {
       startLine: startLine ? parseInt(startLine, 10) : undefined,
       endLine: endLine ? parseInt(endLine, 10) : undefined,
     });
@@ -480,7 +480,7 @@ router.post(
     if (!Array.isArray(files) || files.length === 0) {
       return {
         error:
-          "Request body must include 'files' (array of { path, startLine?, endLine? })",
+          "Request body must include 'files' (array of { absolutePath, startLine?, endLine? })",
       };
     }
     return agenticMultiFileRead(files);

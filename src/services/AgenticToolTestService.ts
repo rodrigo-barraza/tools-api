@@ -220,7 +220,7 @@ const TESTS = {
 
   read_files: () =>
     runTest("read_files", () =>
-      agenticMultiFileRead([{ path: getFixtureFile() }]),
+      agenticMultiFileRead([{ absolutePath: getFixtureFile() }]),
     ),
 
   get_file_info: () =>

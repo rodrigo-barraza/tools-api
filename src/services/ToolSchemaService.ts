@@ -7093,14 +7093,14 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
     endpoint: {
       method: "POST",
       path: "/agentic/file/read",
-      bodyParams: ["path", "startLine", "endLine"],
+      bodyParams: ["absolutePath", "startLine", "endLine"],
     },
     parameters: {
       type: "object",
       properties: {
-        path: {
+        absolutePath: {
           type: "string",
-          description: translate("read_file.params.path"),
+          description: translate("read_file.params.absolutePath"),
         },
         startLine: {
           type: "integer",
@@ -7111,7 +7111,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           description: translate("read_file.params.endLine"),
         },
       },
-      required: ["path"],
+      required: ["absolutePath"],
     },
   },
   {
@@ -7676,9 +7676,9 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           items: {
             type: "object",
             properties: {
-              path: {
+              absolutePath: {
                 type: "string",
-                description: translate("read_files.params.files.items.params.path"),
+                description: translate("read_files.params.files.items.params.absolutePath"),
               },
               startLine: {
                 type: "integer",
@@ -7689,7 +7689,7 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
                 description: translate("read_files.params.files.items.params.endLine"),
               },
             },
-            required: ["path"],
+            required: ["absolutePath"],
           },
           description: translate("read_files.params.files"),
         },
