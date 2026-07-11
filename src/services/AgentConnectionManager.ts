@@ -522,6 +522,29 @@ function deregisterAgent(agentId: string, reason: string) {
   logger.info(`[AgentWS] Agent deregistered: "${agent.name}" (${reason})`);
 }
 
+/**
+ * Server-initiated disconnect — kicks an agent by notifying it first
+ * (so it can suppress auto-reconnect), then closing the WebSocket.
+ * Returns true if the agent was found and disconnected.
+ */
+export function disconnectAgent(agentId: string): boolean {
+  const agent = agents.get(agentId);
+  if (!agent) return false;
+
+  // Notify the agent so it can set intentionalClose = true and suppress reconnect
+  sendJson(agent.websocket, {
+    jsonrpc: "2.0",
+    method: "agent.kicked",
+    params: { reason: "Disconnected by admin" },
+  });
+
+  // Close the WebSocket — the on("close") handler will call deregisterAgent
+  agent.websocket.close(1000, "Kicked by admin");
+
+  logger.info(`[AgentWS] Agent kicked: "${agent.name}" (${agentId.slice(0, 8)})`);
+  return true;
+}
+
 // ────────────────────────────────────────────────────────────
 // RPC — Send request to agent, get response
 // ────────────────────────────────────────────────────────────
@@ -848,4 +871,5 @@ export default {
   isAgentPath,
   getConnectedAgents,
   getAgentInfoForRoot,
+  disconnectAgent,
 };

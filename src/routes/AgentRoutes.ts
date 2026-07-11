@@ -1,7 +1,7 @@
 // ─── Workspace Agent Status Endpoints ───────────────────────
 
 import { Request, Response, Router } from "express";
-import { getConnectedAgents } from "../services/AgentConnectionManager.ts";
+import { getConnectedAgents, disconnectAgent } from "../services/AgentConnectionManager.ts";
 import MinioService from "../services/MinioService.ts";
 import logger from "../logger.ts";
 import AgentCompilerService, { CompilationTarget } from "../services/AgentCompilerService.ts";
@@ -264,6 +264,20 @@ router.get("/:id", (req: Request, res: Response) => {
     return res.status(404).json({ error: "Agent not found" });
   }
   res.json(agent);
+});
+
+/**
+ * DELETE /agents/:id — Disconnect a specific agent by ID.
+ * Sends a kick notification so the agent suppresses auto-reconnect,
+ * then closes the WebSocket.
+ */
+router.delete("/:id", (req: Request, res: Response) => {
+  const agentId = req.params.id as string;
+  const wasDisconnected = disconnectAgent(agentId);
+  if (!wasDisconnected) {
+    return res.status(404).json({ error: "Agent not found" });
+  }
+  res.json({ disconnected: true, agentId });
 });
 
 export default router;
