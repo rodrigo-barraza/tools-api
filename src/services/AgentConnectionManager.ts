@@ -38,6 +38,7 @@ const TIMEOUT_MAP = {
   "command.stream": RPC_TIMEOUT_COMMAND_MS,
   "project.summary": RPC_TIMEOUT_FILE_MS * 3,
   "directory.create": RPC_TIMEOUT_FILE_MS,
+  "directory.tree": RPC_TIMEOUT_FILE_MS * 2,
   "watch.subscribe": RPC_TIMEOUT_FILE_MS,
   "watch.unsubscribe": RPC_TIMEOUT_FILE_MS,
 };
