@@ -75,6 +75,18 @@ export type ToolDataSource =
 
 export type ToolIntelligenceTier = "low" | "medium" | "high" | "frontier";
 
+// ─── Tool Display Metadata ──────────────────────────────────────
+
+export type ToolDisplaySubjectFormat = "basename" | "full" | "truncate" | "quoted" | "domain";
+
+export interface ToolDisplayMetadata {
+  activeVerb: string;
+  completedVerb: string;
+  subjectParam: string;
+  subjectFormat: ToolDisplaySubjectFormat;
+  filePathParam?: string;
+}
+
 // ─── Tool Definition ───────────────────────────────────────────
 
 export interface ToolDefinition {
@@ -84,6 +96,7 @@ export interface ToolDefinition {
   endpoint?: ToolEndpoint;
   parameters?: ToolParameters;
   intelligenceTier?: ToolIntelligenceTier;
+  display?: ToolDisplayMetadata;
 }
 
 // ─── Enriched Tool Schema (returned by getToolSchemas) ─────────

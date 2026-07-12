@@ -7113,6 +7113,13 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["absolutePath"],
     },
+    display: {
+      activeVerb: "Analyzing",
+      completedVerb: "Analyzed",
+      subjectParam: "absolutePath",
+      subjectFormat: "basename",
+      filePathParam: "absolutePath",
+    },
   },
   {
     name: "write_file",
@@ -7140,6 +7147,13 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["path", "content"],
+    },
+    display: {
+      activeVerb: "Writing",
+      completedVerb: "Wrote",
+      subjectParam: "path",
+      subjectFormat: "basename",
+      filePathParam: "path",
     },
   },
   {
@@ -7172,6 +7186,13 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["path", "oldString", "newString"],
+    },
+    display: {
+      activeVerb: "Editing",
+      completedVerb: "Edited",
+      subjectParam: "path",
+      subjectFormat: "basename",
+      filePathParam: "path",
     },
   },
   {
@@ -7220,6 +7241,13 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         "targetContent",
         "replacementContent",
       ],
+    },
+    display: {
+      activeVerb: "Editing",
+      completedVerb: "Edited",
+      subjectParam: "path",
+      subjectFormat: "basename",
+      filePathParam: "path",
     },
   },
   {
@@ -7272,6 +7300,13 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["path", "chunks"],
     },
+    display: {
+      activeVerb: "Editing",
+      completedVerb: "Edited",
+      subjectParam: "path",
+      subjectFormat: "basename",
+      filePathParam: "path",
+    },
   },
   {
     name: "patch_file",
@@ -7295,6 +7330,13 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["path", "patch"],
+    },
+    display: {
+      activeVerb: "Patching",
+      completedVerb: "Patched",
+      subjectParam: "path",
+      subjectFormat: "basename",
+      filePathParam: "path",
     },
   },
   {
@@ -7323,6 +7365,13 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["path"],
+    },
+    display: {
+      activeVerb: "Analyzing",
+      completedVerb: "Analyzed",
+      subjectParam: "path",
+      subjectFormat: "full",
+      filePathParam: "path",
     },
   },
   {
@@ -7419,6 +7468,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["url"],
+    },
+    display: {
+      activeVerb: "Reading",
+      completedVerb: "Read",
+      subjectParam: "url",
+      subjectFormat: "domain",
     },
   },
   {
@@ -7569,6 +7624,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["query"],
+    },
+    display: {
+      activeVerb: "Searching",
+      completedVerb: "Searched",
+      subjectParam: "query",
+      subjectFormat: "quoted",
     },
   },
   {
@@ -7805,6 +7866,13 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["path"],
     },
+    display: {
+      activeVerb: "Deleting",
+      completedVerb: "Deleted",
+      subjectParam: "path",
+      subjectFormat: "basename",
+      filePathParam: "path",
+    },
   },
   {
     name: "execute_command",
@@ -7837,6 +7905,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["command", "cwd"],
     },
+    display: {
+      activeVerb: "Running",
+      completedVerb: "Ran",
+      subjectParam: "command",
+      subjectFormat: "truncate",
+    },
   },
   {
     name: "summarize_project",
@@ -7856,6 +7930,13 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["path"],
+    },
+    display: {
+      activeVerb: "Summarizing",
+      completedVerb: "Summarized",
+      subjectParam: "path",
+      subjectFormat: "full",
+      filePathParam: "path",
     },
   },
   {
@@ -7905,6 +7986,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["action", "path"],
+    },
+    display: {
+      activeVerb: "Running",
+      completedVerb: "Ran",
+      subjectParam: "action",
+      subjectFormat: "truncate",
     },
   },
   {
@@ -8026,6 +8113,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["action"],
     },
+    display: {
+      activeVerb: "Browser:",
+      completedVerb: "Browser:",
+      subjectParam: "action",
+      subjectFormat: "full",
+    },
   },
   {
     name: "execute_browser_script",
@@ -8104,6 +8197,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["operation", "filePath"],
+    },
+    display: {
+      activeVerb: "Querying",
+      completedVerb: "Queried",
+      subjectParam: "operation",
+      subjectFormat: "full",
     },
   },
 
