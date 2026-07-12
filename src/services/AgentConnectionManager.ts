@@ -115,11 +115,27 @@ const rootToAgent = new Map<string, string>();
 let healthCheckTimer: NodeJS.Timeout | null = null;
 
 /**
- * Normalize a Windows drive-letter path (e.g. C:\workspace) to a POSIX
- * WSL-compatible path (e.g. /mnt/c/workspace). On the server side all paths
- * are stored as POSIX — this ensures remote Windows agents integrate cleanly.
+ * Normalize a Windows path to a POSIX path for server-side consistency.
+ *
+ * Handles two cases:
+ *  1. WSL UNC paths: \\wsl.localhost\<distro>\path or \\wsl$\<distro>\path
+ *     → strips the UNC prefix and distro name to yield the Linux-native path.
+ *  2. Drive-letter paths: C:\workspace → /mnt/c/workspace
  */
-function normalizeWindowsRootPath(rootPath: string): string {
+export function normalizeWindowsRootPath(rootPath: string): string {
+  // Normalize all forward slashes to backslashes for uniform matching
+  const backslashNormalized = rootPath.replace(/\//g, "\\");
+
+  // WSL UNC paths: \\wsl.localhost\<distro>\... or \\wsl$\<distro>\...
+  const wslUncPattern = /^\\\\(?:wsl\.localhost|wsl\$)\\([^\\]+)(\\.*)?$/i;
+  const wslMatch = backslashNormalized.match(wslUncPattern);
+  if (wslMatch) {
+    const remainingWindowsPath = wslMatch[2] || "";
+    const linuxPath = remainingWindowsPath.replace(/\\/g, "/") || "/";
+    return linuxPath;
+  }
+
+  // Windows drive-letter paths: C:\... → /mnt/c/...
   const windowsDrivePattern = /^([A-Za-z]):[/\\](.*)/;
   const driveMatch = rootPath.match(windowsDrivePattern);
   if (driveMatch) {
@@ -127,6 +143,7 @@ function normalizeWindowsRootPath(rootPath: string): string {
     const remainingPath = driveMatch[2].replace(/\\/g, "/").replace(/\/+$/, "");
     return remainingPath ? `/mnt/${driveLetter}/${remainingPath}` : `/mnt/${driveLetter}`;
   }
+
   return rootPath;
 }
 
