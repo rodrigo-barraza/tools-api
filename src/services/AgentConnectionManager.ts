@@ -53,7 +53,7 @@ interface PendingRpc {
   timer: NodeJS.Timeout;
 }
 
-interface HostInfo {
+interface MachineInfo {
   hostname?: string;
   platform?: string;
   arch?: string;
@@ -72,7 +72,7 @@ interface AgentRegistryEntry {
   normalizedToOriginalRoot: Map<string, string>;
   capabilities: string[];
   version: string;
-  hostInfo?: HostInfo;
+  machineInfo?: MachineInfo;
   websocket: WebSocket & { isAlive?: boolean };
   clientIp?: string;
   connectedAt: Date;
@@ -92,7 +92,7 @@ interface AgentRpcMessage {
     roots?: string[];
     capabilities?: string[];
     version?: string;
-    hostInfo?: HostInfo;
+    machineInfo?: MachineInfo;
     path?: string;
     paths?: string[];
     searchPath?: string;
@@ -457,7 +457,7 @@ function handleAgentMessage(
       normalizedToOriginalRoot,
       capabilities: capabilities || [],
       version: version || "unknown",
-      hostInfo: message.params?.hostInfo || undefined,
+      machineInfo: message.params?.machineInfo || undefined,
       websocket,
       clientIp,
       connectedAt: new Date(),
@@ -504,6 +504,23 @@ function handleAgentMessage(
       const agent = agents.get(agentId);
       if (agent) {
         agent.lastPong = new Date();
+      }
+    }
+    return;
+  }
+
+  // Heartbeat (application-level ping from agent → server responds with agent.ping)
+  if (message.method === "agent.heartbeat") {
+    const { agentId } = message.params || {};
+    if (agentId && agents.has(agentId)) {
+      const agent = agents.get(agentId);
+      if (agent) {
+        agent.lastPong = new Date();
+        sendJson(websocket, {
+          jsonrpc: "2.0",
+          method: "agent.ping",
+          params: {},
+        });
       }
     }
     return;
@@ -774,7 +791,7 @@ export function getConnectedAgents() {
     roots: agentRegistryEntry.roots,
     capabilities: agentRegistryEntry.capabilities,
     version: agentRegistryEntry.version,
-    hostInfo: agentRegistryEntry.hostInfo || null,
+    machineInfo: agentRegistryEntry.machineInfo || null,
     clientIp: agentRegistryEntry.clientIp,
     connectedAt: agentRegistryEntry.connectedAt.toISOString(),
     lastPong: agentRegistryEntry.lastPong.toISOString(),
