@@ -170,16 +170,7 @@ function translatePathForAgent(
 
 import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
 
-const AGENT_SECRET_CACHE_LIFETIME_MILLISECONDS = 60_000;
-let cachedAgentSecret: string | undefined;
-let agentSecretCacheTimestamp = 0;
-
 export async function resolveAgentSecret(): Promise<string | undefined> {
-  const now = Date.now();
-  if (now - agentSecretCacheTimestamp < AGENT_SECRET_CACHE_LIFETIME_MILLISECONDS) {
-    return cachedAgentSecret;
-  }
-
   try {
     const database = getDatabase();
     const databaseInternal = database as unknown as {
@@ -194,19 +185,14 @@ export async function resolveAgentSecret(): Promise<string | undefined> {
         .findOne({ _key: "global" });
       const workspaceSecret = document?.data?.workspace?.agentSecret;
       if (workspaceSecret && typeof workspaceSecret === "string" && workspaceSecret.trim()) {
-        cachedAgentSecret = workspaceSecret.trim();
-        agentSecretCacheTimestamp = now;
-        return cachedAgentSecret;
+        return workspaceSecret.trim();
       }
     }
   } catch {
     // DB unavailable — fall through to env config
   }
 
-  // Fallback: environment variable config
-  cachedAgentSecret = CONFIG.AGENT_SECRET || CONFIG.API_SECRET || undefined;
-  agentSecretCacheTimestamp = now;
-  return cachedAgentSecret;
+  return CONFIG.AGENT_SECRET || CONFIG.API_SECRET || undefined;
 }
 
 // ────────────────────────────────────────────────────────────
