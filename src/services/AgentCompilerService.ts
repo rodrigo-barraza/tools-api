@@ -8,6 +8,7 @@ import crypto from "node:crypto";
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
 import MinioService from "./MinioService.ts";
+import { resolveAgentSecret } from "./AgentConnectionManager.ts";
 
 export type CompilationTarget = "win-x64" | "mac-x64" | "mac-arm64" | "linux-x64";
 
@@ -177,7 +178,7 @@ export default class AgentCompilerService {
     const finalExecutablePath = join(buildPath, outputFileName);
 
     // 1. Resolve agent secret & backend public WebSocket URL
-    const apiSecret = CONFIG.AGENT_SECRET || CONFIG.API_SECRET || "";
+    const apiSecret = (await resolveAgentSecret()) || "";
     let publicBackendUrl = CONFIG.TOOLS_SERVICE_PUBLIC_URL || CONFIG.TOOLS_SERVICE_URL || "";
     if (publicBackendUrl.startsWith("http://")) {
       publicBackendUrl = publicBackendUrl.replace("http://", "ws://");

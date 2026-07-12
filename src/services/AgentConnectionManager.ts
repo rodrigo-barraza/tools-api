@@ -165,6 +165,51 @@ function translatePathForAgent(
 }
 
 // ────────────────────────────────────────────────────────────
+// Workspace Agent Secret (from MongoDB settings, cached)
+// ────────────────────────────────────────────────────────────
+
+import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
+
+const AGENT_SECRET_CACHE_LIFETIME_MILLISECONDS = 60_000;
+let cachedAgentSecret: string | undefined;
+let agentSecretCacheTimestamp = 0;
+
+export async function resolveAgentSecret(): Promise<string | undefined> {
+  const now = Date.now();
+  if (now - agentSecretCacheTimestamp < AGENT_SECRET_CACHE_LIFETIME_MILLISECONDS) {
+    return cachedAgentSecret;
+  }
+
+  try {
+    const database = getDatabase();
+    const databaseInternal = database as unknown as {
+      client?: { db: (name: string) => import("mongodb").Db };
+      s?: { client?: { db: (name: string) => import("mongodb").Db } };
+    };
+    const client = databaseInternal.client || databaseInternal.s?.client;
+    if (client) {
+      const prismDatabase = client.db("prism");
+      const document = await prismDatabase
+        .collection("settings")
+        .findOne({ _key: "global" });
+      const workspaceSecret = document?.data?.workspace?.agentSecret;
+      if (workspaceSecret && typeof workspaceSecret === "string" && workspaceSecret.trim()) {
+        cachedAgentSecret = workspaceSecret.trim();
+        agentSecretCacheTimestamp = now;
+        return cachedAgentSecret;
+      }
+    }
+  } catch {
+    // DB unavailable — fall through to env config
+  }
+
+  // Fallback: environment variable config
+  cachedAgentSecret = CONFIG.AGENT_SECRET || CONFIG.API_SECRET || undefined;
+  agentSecretCacheTimestamp = now;
+  return cachedAgentSecret;
+}
+
+// ────────────────────────────────────────────────────────────
 // WebSocket Server Setup
 // ────────────────────────────────────────────────────────────
 
@@ -178,7 +223,7 @@ export function initAgentWebSocket(httpServer: Server) {
 
   httpServer.on(
     "upgrade",
-    (req: IncomingMessage, socket: Duplex, head: Buffer) => {
+    async (req: IncomingMessage, socket: Duplex, head: Buffer) => {
       const url = new URL(
         req.url || "",
         `http://${req.headers.host || "localhost"}`,
@@ -186,7 +231,7 @@ export function initAgentWebSocket(httpServer: Server) {
 
       // Auth check (shared across both endpoints)
       const secret = req.headers["x-api-secret"];
-      const expectedSecret = CONFIG.AGENT_SECRET || CONFIG.API_SECRET;
+      const expectedSecret = await resolveAgentSecret();
 
       if (expectedSecret && secret !== expectedSecret) {
         logger.warn(`[AgentWS] Rejected connection — invalid secret`);
