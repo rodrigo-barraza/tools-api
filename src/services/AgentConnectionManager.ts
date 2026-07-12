@@ -737,18 +737,22 @@ export function resolveAndRouteToAgent(
 ) {
   if (!targetPath) return null;
 
-  let resolvedPath = targetPath;
-  if (!targetPath.startsWith("/")) {
+  // Strip surrounding quotes from LLM-generated path values
+  const sanitizedTargetPath = targetPath.trim().replace(/^["']+|["']+$/g, "").trim();
+  if (!sanitizedTargetPath) return null;
+
+  let resolvedPath = sanitizedTargetPath;
+  if (!sanitizedTargetPath.startsWith("/")) {
     const requestStore = requestLocalStorage.getStore();
     const workspaceOverride = requestStore?.workspaceOverride;
     const workspaceRoot = requestStore?.workspaceRoot;
 
     if (workspaceOverride && workspaceOverride.startsWith("/tmp/prism-worktrees/")) {
-      resolvedPath = resolve(workspaceOverride, targetPath);
+      resolvedPath = resolve(workspaceOverride, sanitizedTargetPath);
     } else if (workspaceRoot) {
-      resolvedPath = resolve(workspaceRoot, targetPath);
+      resolvedPath = resolve(workspaceRoot, sanitizedTargetPath);
     } else if (fallbackRoot) {
-      resolvedPath = resolve(fallbackRoot, targetPath);
+      resolvedPath = resolve(fallbackRoot, sanitizedTargetPath);
     }
   }
 

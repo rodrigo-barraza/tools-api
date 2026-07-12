@@ -183,6 +183,14 @@ function validatePath(inputPath: string | unknown) {
     return { safe: false, resolved: "", error: "Path is required (string)" };
   }
 
+  // Sanitize LLM-generated paths: strip surrounding quotes and whitespace.
+  // Models sometimes send path values like `"."` or `'./src'` with literal
+  // quote characters embedded in the string, producing invalid filesystem paths.
+  const sanitizedPath = inputPath.trim().replace(/^["']+|["']+$/g, "").trim();
+  if (!sanitizedPath) {
+    return { safe: false, resolved: "", error: "Path is required (string)" };
+  }
+
   // Trigger non-blocking lazy refresh of security settings
   triggerSecuritySettingsRefresh();
 
@@ -192,7 +200,7 @@ function validatePath(inputPath: string | unknown) {
 
   // Resolve relative paths against the active workspace context, NOT process.cwd().
   // Priority: workspaceOverride (worktree) > workspaceRoot (user-selected) > ALLOWED_ROOTS[0] (static fallback).
-  const isRelative = !inputPath.startsWith("/");
+  const isRelative = !sanitizedPath.startsWith("/");
   let baseRoot: string;
 
   if (workspaceOverride && workspaceOverride.startsWith("/tmp/prism-worktrees/")) {
@@ -210,8 +218,8 @@ function validatePath(inputPath: string | unknown) {
   }
 
   const resolved = isRelative
-    ? resolve(baseRoot, inputPath)
-    : resolve(inputPath);
+    ? resolve(baseRoot, sanitizedPath)
+    : resolve(sanitizedPath);
 
   // Check against allowed roots
   let inAllowedRoot = ALLOWED_ROOTS.some(
