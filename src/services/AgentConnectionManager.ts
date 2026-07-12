@@ -189,10 +189,10 @@ export async function resolveAgentSecret(): Promise<string | undefined> {
       }
     }
   } catch {
-    // DB unavailable — fall through to env config
+    // DB unavailable — no secret enforcement
   }
 
-  return CONFIG.AGENT_SECRET || CONFIG.API_SECRET || undefined;
+  return undefined;
 }
 
 // ────────────────────────────────────────────────────────────
@@ -216,11 +216,11 @@ export function initAgentWebSocket(httpServer: Server) {
       );
 
       // Auth check (shared across both endpoints)
-      const secret =
+      const incomingSecret =
         req.headers["x-api-secret"] || url.searchParams.get("secret") || "";
       const expectedSecret = await resolveAgentSecret();
 
-      if (expectedSecret && secret !== expectedSecret) {
+      if (expectedSecret && incomingSecret !== expectedSecret) {
         logger.warn(`[AgentWS] Rejected connection — invalid secret`);
         socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
         socket.destroy();

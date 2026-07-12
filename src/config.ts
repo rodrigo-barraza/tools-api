@@ -108,9 +108,7 @@ interface ToolsServiceConfig {
   MINIO_SECRET_KEY: string | undefined;
 
   // Workspace Agent
-  AGENT_SECRET: string | undefined;
   AGENT_MAX_CONNECTIONS: string;
-  API_SECRET: string | undefined;
 
   // qBittorrent
   QBITTORRENT_URL: string | undefined;
@@ -230,9 +228,7 @@ const CONFIG: ToolsServiceConfig = {
   MINIO_SECRET_KEY: process.env.MINIO_SECRET_KEY,
 
   // ─── Workspace Agent ────────────────────────────────────────────
-  AGENT_SECRET: process.env.AGENT_SECRET,
   AGENT_MAX_CONNECTIONS: process.env.AGENT_MAX_CONNECTIONS || "5",
-  API_SECRET: process.env.API_SECRET,
 
   // ─── qBittorrent (Torrent Search & Download) ────────────────────
   QBITTORRENT_URL: process.env.QBITTORRENT_URL,
