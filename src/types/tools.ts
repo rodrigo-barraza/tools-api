@@ -77,10 +77,11 @@ export type ToolIntelligenceTier = "low" | "medium" | "high" | "frontier";
 
 // ─── Tool Display Metadata ──────────────────────────────────────
 // Canonical source: @rodrigo-barraza/utilities-library
-export type {
-  ToolDisplayMetadata,
-  ToolDisplaySubjectFormat,
+import {
+  type ToolDisplayMetadata,
+  type ToolDisplaySubjectFormat,
 } from "@rodrigo-barraza/utilities-library";
+export { type ToolDisplayMetadata, type ToolDisplaySubjectFormat };
 
 // ─── Tool Definition ───────────────────────────────────────────
 
