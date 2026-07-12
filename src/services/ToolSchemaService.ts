@@ -1599,6 +1599,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["fields"],
     },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
+    },
   },
   {
     name: "get_canada_avalanche_forecast",
@@ -1614,6 +1620,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
         ...fieldsParam(FIELDS.AVALANCHE),
       },
+    },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "region",
+      subjectFormat: "full",
     },
   },
   {
@@ -1645,6 +1657,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           enum: ["metric", "imperial"],
         },
       },
+    },
+    display: {
+      activeVerb: "Fetching weather for",
+      completedVerb: "Fetched weather for",
+      subjectParam: "location",
+      subjectFormat: "full",
     },
   },
   {
@@ -1688,6 +1706,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["source"],
     },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "source",
+      subjectFormat: "full",
+    },
   },
 
   // ── Earthquakes ────────────────────────────────────────────
@@ -1717,6 +1741,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.EARTHQUAKES),
       },
     },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
+    },
   },
 
   // ── Space Weather ──────────────────────────────────────────
@@ -1733,6 +1763,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         ...fieldsParam(FIELDS.SOLAR_ACTIVITY),
       },
+    },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
     },
   },
 
@@ -1751,6 +1787,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.AURORA),
       },
     },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
+    },
   },
 
   // ── Solar Wind ─────────────────────────────────────────────
@@ -1767,6 +1809,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         ...fieldsParam(FIELDS.SOLAR_WIND),
       },
+    },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
     },
   },
 
@@ -1785,6 +1833,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.TWILIGHT),
       },
     },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
+    },
   },
 
   // ── Tides ──────────────────────────────────────────────────
@@ -1801,6 +1855,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         ...fieldsParam(FIELDS.TIDES),
       },
+    },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
     },
   },
 
@@ -1819,6 +1879,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.WILDFIRES),
       },
     },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
+    },
   },
 
   // ── ISS ────────────────────────────────────────────────────
@@ -1835,6 +1901,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         ...fieldsParam(FIELDS.ISS),
       },
+    },
+    display: {
+      activeVerb: "Locating",
+      completedVerb: "Located",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
     },
   },
 
@@ -1865,6 +1937,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.NEO),
       },
     },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
+    },
   },
 
   // ── Space Launches ─────────────────────────────────────────
@@ -1881,6 +1959,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         ...fieldsParam(FIELDS.LAUNCHES),
       },
+    },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
     },
   },
 
@@ -1899,6 +1983,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.APOD),
       },
     },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
+    },
   },
 
   // ── Moon Phase ──────────────────────────────────────────────
@@ -1916,6 +2006,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.MOON_PHASE),
       },
     },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
+    },
   },
 
   // ── Pollen Forecast ────────────────────────────────────────
@@ -1932,6 +2028,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         ...fieldsParam(FIELDS.POLLEN),
       },
+    },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
     },
   },
 
@@ -1954,6 +2056,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.WEATHER_WARNINGS),
       },
     },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "regionCode",
+      subjectFormat: "full",
+    },
   },
 
   // ── Detailed Air Quality ───────────────────────────────────
@@ -1970,6 +2078,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         ...fieldsParam(FIELDS.GOOGLE_AIR_QUALITY),
       },
+    },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
     },
   },
 
@@ -1998,6 +2112,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["url"],
     },
+    display: {
+      activeVerb: "Reading",
+      completedVerb: "Read",
+      subjectParam: "url",
+      subjectFormat: "domain",
+    },
   },
 
   // ── PyPI Package ───────────────────────────────────────────
@@ -2018,6 +2138,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["name"],
+    },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "name",
+      subjectFormat: "full",
     },
   },
 
@@ -2063,6 +2189,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["action"],
     },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "action",
+      subjectFormat: "full",
+    },
   },
 
   // ── Commodities (5 → 1) ───────────────────────────────────
@@ -2098,6 +2230,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["action"],
     },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "action",
+      subjectFormat: "full",
+    },
   },
 
   // ── Trends (3 → 1) ────────────────────────────────────────
@@ -2129,6 +2267,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.TRENDS),
       },
       required: ["action"],
+    },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "action",
+      subjectFormat: "full",
     },
   },
 
@@ -2163,6 +2307,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["fields"],
     },
+    display: {
+      activeVerb: "Searching",
+      completedVerb: "Searched",
+      subjectParam: "q",
+      subjectFormat: "quoted",
+    },
   },
   {
     name: "get_trending_products",
@@ -2186,6 +2336,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["fields"],
     },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
+    },
   },
   {
     name: "get_watchlist_availability",
@@ -2196,6 +2352,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       type: "object",
       properties: { ...fieldsParam(FIELDS.PRODUCT_AVAILABILITY) },
       required: ["fields"],
+    },
+    display: {
+      activeVerb: "Checking",
+      completedVerb: "Checked",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
     },
   },
   {
@@ -2217,6 +2379,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["skus", "fields"],
     },
+    display: {
+      activeVerb: "Checking",
+      completedVerb: "Checked",
+      subjectParam: "skus",
+      subjectFormat: "truncate",
+    },
   },
   {
     name: "get_costco_us_products",
@@ -2229,6 +2397,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       type: "object",
       properties: { ...fieldsParam(FIELDS.PRODUCTS) },
       required: ["fields"],
+    },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
     },
   },
   {
@@ -2243,6 +2417,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: { ...fieldsParam(FIELDS.PRODUCTS) },
       required: ["fields"],
     },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
+    },
   },
   {
     name: "search_amazon_products",
@@ -2255,6 +2435,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       type: "object",
       properties: { ...fieldsParam(FIELDS.PRODUCTS) },
       required: ["fields"],
+    },
+    display: {
+      activeVerb: "Searching",
+      completedVerb: "Searched",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
     },
   },
 
@@ -2278,6 +2464,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["fields"],
     },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "symbol",
+      subjectFormat: "full",
+    },
   },
   {
     name: "get_earnings_calendar",
@@ -2288,6 +2480,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       type: "object",
       properties: { ...fieldsParam(FIELDS.EARNINGS) },
       required: ["fields"],
+    },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
     },
   },
 
@@ -2318,6 +2516,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["action", "symbol"],
+    },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "symbol",
+      subjectFormat: "full",
     },
   },
 
@@ -2374,6 +2578,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["action"],
     },
+    display: {
+      activeVerb: "Fetching",
+      completedVerb: "Fetched",
+      subjectParam: "action",
+      subjectFormat: "full",
+    },
   },
 
   // ── Finance: Historical Prices ─────────────────────────────────
@@ -2406,6 +2616,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.HISTORICAL_PRICES),
       },
       required: ["symbol"],
+    },
+    display: {
+      activeVerb: "Fetching historical prices for",
+      completedVerb: "Fetched historical prices for",
+      subjectParam: "symbol",
+      subjectFormat: "full",
     },
   },
 
@@ -2443,6 +2659,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["symbol"],
     },
+    display: {
+      activeVerb: "Analyzing technical indicators for",
+      completedVerb: "Analyzed technical indicators for",
+      subjectParam: "symbol",
+      subjectFormat: "full",
+    },
   },
 
   // ── Finance: Volatility Dashboard ──────────────────────────────
@@ -2458,6 +2680,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         ...fieldsParam(FIELDS.VOLATILITY),
       },
+    },
+    display: {
+      activeVerb: "Fetching market volatility",
+      completedVerb: "Fetched market volatility",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
     },
   },
 
@@ -2479,6 +2707,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
         ...fieldsParam(FIELDS.FEAR_GREED),
       },
+    },
+    display: {
+      activeVerb: "Fetching Fear and Greed index",
+      completedVerb: "Fetched Fear and Greed index",
+      subjectParam: "limit",
+      subjectFormat: "truncate",
     },
   },
 
@@ -2520,6 +2754,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["action"],
     },
+    display: {
+      activeVerb: "Fetching SEC filings for",
+      completedVerb: "Fetched SEC filings for",
+      subjectParam: "cik",
+      subjectFormat: "full",
+    },
   },
 
   // ── Finance: Sector Performance ────────────────────────────────
@@ -2535,6 +2775,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         ...fieldsParam(FIELDS.SECTOR_PERFORMANCE),
       },
+    },
+    display: {
+      activeVerb: "Fetching sector performance",
+      completedVerb: "Fetched sector performance",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
     },
   },
 
@@ -2574,6 +2820,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["action"],
+    },
+    display: {
+      activeVerb: "Searching books for",
+      completedVerb: "Searched books for",
+      subjectParam: "q",
+      subjectFormat: "quoted",
     },
   },
   {
@@ -2629,6 +2881,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["action"],
     },
+    display: {
+      activeVerb: "Fetching country details for",
+      completedVerb: "Fetched country details for",
+      subjectParam: "name",
+      subjectFormat: "full",
+    },
   },
   {
     name: "get_element",
@@ -2676,6 +2934,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["action"],
     },
+    display: {
+      activeVerb: "Fetching element details for",
+      completedVerb: "Fetched element details for",
+      subjectParam: "symbol",
+      subjectFormat: "full",
+    },
   },
   {
     name: "get_exoplanet",
@@ -2716,6 +2980,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["action"],
     },
+    display: {
+      activeVerb: "Fetching exoplanet archive data",
+      completedVerb: "Fetched exoplanet archive data",
+      subjectParam: "action",
+      subjectFormat: "full",
+    },
   },
   {
     name: "get_anime",
@@ -2746,6 +3016,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["action"],
     },
+    display: {
+      activeVerb: "Searching anime for",
+      completedVerb: "Searched anime for",
+      subjectParam: "q",
+      subjectFormat: "quoted",
+    },
   },
 
   {
@@ -2766,6 +3042,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.DICTIONARY),
       },
       required: ["word"],
+    },
+    display: {
+      activeVerb: "Looking up definition for",
+      completedVerb: "Looked up definition for",
+      subjectParam: "word",
+      subjectFormat: "quoted",
     },
   },
   {
@@ -2799,6 +3081,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.PAPERS),
       },
       required: ["q"],
+    },
+    display: {
+      activeVerb: "Searching academic papers for",
+      completedVerb: "Searched academic papers for",
+      subjectParam: "q",
+      subjectFormat: "quoted",
     },
   },
   {
@@ -2859,6 +3147,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["q"],
     },
+    display: {
+      activeVerb: "Searching YouTube for",
+      completedVerb: "Searched YouTube for",
+      subjectParam: "q",
+      subjectFormat: "quoted",
+    },
   },
   {
     name: "get_youtube_video",
@@ -2893,6 +3187,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["url"],
     },
+    display: {
+      activeVerb: "Fetching YouTube video info for",
+      completedVerb: "Fetched YouTube video info for",
+      subjectParam: "url",
+      subjectFormat: "domain",
+    },
   },
   {
     name: "download_video",
@@ -2916,6 +3216,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["url"],
+    },
+    display: {
+      activeVerb: "Downloading video from",
+      completedVerb: "Downloaded video from",
+      subjectParam: "url",
+      subjectFormat: "domain",
     },
   },
   {
@@ -2944,6 +3250,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["url"],
+    },
+    display: {
+      activeVerb: "Trimming video from",
+      completedVerb: "Trimmed video from",
+      subjectParam: "url",
+      subjectFormat: "domain",
     },
   },
 
@@ -3006,6 +3318,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["url"],
     },
+    display: {
+      activeVerb: "Reading",
+      completedVerb: "Read",
+      subjectParam: "url",
+      subjectFormat: "domain",
+    },
   },
   {
     name: "get_package_info",
@@ -3035,6 +3353,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["name", "registry"],
     },
+    display: {
+      activeVerb: "Fetching package info for",
+      completedVerb: "Fetched package info for",
+      subjectParam: "name",
+      subjectFormat: "full",
+    },
   },
   {
     name: "get_wikipedia_summary",
@@ -3054,6 +3378,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.WIKIPEDIA_SUMMARY),
       },
       required: ["title"],
+    },
+    display: {
+      activeVerb: "Fetching Wikipedia summary for",
+      completedVerb: "Fetched Wikipedia summary for",
+      subjectParam: "title",
+      subjectFormat: "quoted",
     },
   },
   {
@@ -3082,6 +3412,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
         ...fieldsParam(FIELDS.ON_THIS_DAY),
       },
+    },
+    display: {
+      activeVerb: "Checking historical events",
+      completedVerb: "Checked historical events",
+      subjectParam: "type",
+      subjectFormat: "full",
     },
   },
   {
@@ -3140,6 +3476,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["q"],
     },
+    display: {
+      activeVerb: "Searching Reddit for",
+      completedVerb: "Searched Reddit for",
+      subjectParam: "q",
+      subjectFormat: "quoted",
+    },
   },
   {
     name: "search_reddit_subreddits",
@@ -3168,6 +3510,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["q"],
     },
+    display: {
+      activeVerb: "Searching subreddits for",
+      completedVerb: "Searched subreddits for",
+      subjectParam: "q",
+      subjectFormat: "quoted",
+    },
   },
   {
     name: "get_reddit_subreddit_info",
@@ -3186,6 +3534,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["subreddit"],
+    },
+    display: {
+      activeVerb: "Fetching subreddit details for",
+      completedVerb: "Fetched subreddit details for",
+      subjectParam: "subreddit",
+      subjectFormat: "full",
     },
   },
   {
@@ -3223,6 +3577,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["subreddit"],
     },
+    display: {
+      activeVerb: "Fetching subreddit feed for",
+      completedVerb: "Fetched subreddit feed for",
+      subjectParam: "subreddit",
+      subjectFormat: "full",
+    },
   },
   {
     name: "get_reddit_subreddit_rules",
@@ -3239,6 +3599,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["subreddit"],
     },
+    display: {
+      activeVerb: "Fetching subreddit rules for",
+      completedVerb: "Fetched subreddit rules for",
+      subjectParam: "subreddit",
+      subjectFormat: "full",
+    },
   },
   {
     name: "get_reddit_subreddit_wiki_pages",
@@ -3254,6 +3620,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         subreddit: { type: "string", description: translate("common.params.subredditName") },
       },
       required: ["subreddit"],
+    },
+    display: {
+      activeVerb: "Fetching subreddit wiki pages for",
+      completedVerb: "Fetched subreddit wiki pages for",
+      subjectParam: "subreddit",
+      subjectFormat: "full",
     },
   },
   {
@@ -3274,6 +3646,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["subreddit", "page"],
+    },
+    display: {
+      activeVerb: "Fetching wiki page for",
+      completedVerb: "Fetched wiki page for",
+      subjectParam: "page",
+      subjectFormat: "quoted",
     },
   },
   {
@@ -3318,6 +3696,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["username"],
     },
+    display: {
+      activeVerb: "Fetching Reddit user history for",
+      completedVerb: "Fetched Reddit user history for",
+      subjectParam: "username",
+      subjectFormat: "full",
+    },
   },
   {
     name: "get_reddit_user_profile",
@@ -3333,6 +3717,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         username: { type: "string", description: translate("get_reddit_user_profile.params.username") },
       },
       required: ["username"],
+    },
+    display: {
+      activeVerb: "Fetching Reddit user profile for",
+      completedVerb: "Fetched Reddit user profile for",
+      subjectParam: "username",
+      subjectFormat: "full",
     },
   },
 
@@ -3368,6 +3758,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["type", "q"],
     },
+    display: {
+      activeVerb: "Searching media for",
+      completedVerb: "Searched media for",
+      subjectParam: "q",
+      subjectFormat: "quoted",
+    },
   },
   {
     name: "get_media_details",
@@ -3394,6 +3790,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["type", "id"],
     },
+    display: {
+      activeVerb: "Fetching media details for ID",
+      completedVerb: "Fetched media details for ID",
+      subjectParam: "id",
+      subjectFormat: "full",
+    },
   },
   {
     name: "get_media_credits",
@@ -3419,6 +3821,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["type", "id"],
+    },
+    display: {
+      activeVerb: "Fetching credits for media ID",
+      completedVerb: "Fetched credits for media ID",
+      subjectParam: "id",
+      subjectFormat: "full",
     },
   },
   {
@@ -3449,6 +3857,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["type"],
+    },
+    display: {
+      activeVerb: "Fetching trending",
+      completedVerb: "Fetched trending",
+      subjectParam: "type",
+      subjectFormat: "full",
     },
   },
   {
@@ -3497,6 +3911,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["type"],
     },
+    display: {
+      activeVerb: "Discovering",
+      completedVerb: "Discovered",
+      subjectParam: "type",
+      subjectFormat: "full",
+    },
   },
   {
     name: "get_media_genres",
@@ -3516,6 +3936,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["type"],
+    },
+    display: {
+      activeVerb: "Fetching genres for",
+      completedVerb: "Fetched genres for",
+      subjectParam: "type",
+      subjectFormat: "full",
     },
   },
 
@@ -3547,6 +3973,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["action"],
     },
+    display: {
+      activeVerb: "Fetching media list for",
+      completedVerb: "Fetched media list for",
+      subjectParam: "action",
+      subjectFormat: "full",
+    },
   },
 
   // ── Media Recommendations & Similar ────────────────────────────
@@ -3577,6 +4009,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["type", "id", "action"],
     },
+    display: {
+      activeVerb: "Fetching recommendations for ID",
+      completedVerb: "Fetched recommendations for ID",
+      subjectParam: "id",
+      subjectFormat: "full",
+    },
   },
 
   // ── Person / Actor Search ──────────────────────────────────────
@@ -3602,6 +4040,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.PERSON),
       },
       required: ["action"],
+    },
+    display: {
+      activeVerb: "Searching movie/TV personnel for",
+      completedVerb: "Searched movie/TV personnel for",
+      subjectParam: "q",
+      subjectFormat: "quoted",
     },
   },
 
@@ -3630,6 +4074,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["type", "id"],
+    },
+    display: {
+      activeVerb: "Fetching watch providers for ID",
+      completedVerb: "Fetched watch providers for ID",
+      subjectParam: "id",
+      subjectFormat: "full",
     },
   },
 
@@ -3668,6 +4118,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.USDA_NUTRIENT_RANKING),
       },
       required: ["category", "nutrient"],
+    },
+    display: {
+      activeVerb: "Ranking foods by",
+      completedVerb: "Ranked foods by",
+      subjectParam: "nutrient",
+      subjectFormat: "full",
     },
   },
   {
@@ -3712,6 +4168,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["q"],
     },
+    display: {
+      activeVerb: "Searching FDA drugs database for",
+      completedVerb: "Searched FDA drugs database for",
+      subjectParam: "q",
+      subjectFormat: "quoted",
+    },
   },
 
   {
@@ -3737,6 +4199,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["drug"],
     },
+    display: {
+      activeVerb: "Fetching adverse events for",
+      completedVerb: "Fetched adverse events for",
+      subjectParam: "drug",
+      subjectFormat: "quoted",
+    },
   },
   {
     name: "get_drug_recalls",
@@ -3759,6 +4227,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
         ...fieldsParam(FIELDS.DRUG_RECALLS),
       },
+    },
+    display: {
+      activeVerb: "Searching drug recalls for",
+      completedVerb: "Searched drug recalls for",
+      subjectParam: "q",
+      subjectFormat: "quoted",
     },
   },
 
@@ -3818,6 +4292,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.EXERCISES),
       },
     },
+    display: {
+      activeVerb: "Searching gym exercises for",
+      completedVerb: "Searched gym exercises for",
+      subjectParam: "q",
+      subjectFormat: "quoted",
+    },
   },
   {
     name: "get_gym_exercise_categories",
@@ -3830,6 +4310,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
     parameters: {
       type: "object",
       properties: {},
+    },
+    display: {
+      activeVerb: "Fetching gym exercise categories",
+      completedVerb: "Fetched gym exercise categories",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
     },
   },
   {
@@ -3850,6 +4336,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.EXERCISES),
       },
       required: ["id"],
+    },
+    display: {
+      activeVerb: "Fetching gym exercise details for ID",
+      completedVerb: "Fetched gym exercise details for ID",
+      subjectParam: "id",
+      subjectFormat: "full",
     },
   },
 
@@ -3890,6 +4382,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["q"],
     },
+    display: {
+      activeVerb: "Searching USDA nutrition data for",
+      completedVerb: "Searched USDA nutrition data for",
+      subjectParam: "q",
+      subjectFormat: "quoted",
+    },
   },
   {
     name: "rank_foods_by_nutrient",
@@ -3923,6 +4421,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["nutrient"],
     },
+    display: {
+      activeVerb: "Ranking foods by nutrient",
+      completedVerb: "Ranked foods by nutrient",
+      subjectParam: "nutrient",
+      subjectFormat: "full",
+    },
   },
   {
     name: "compare_food_nutrition",
@@ -3947,6 +4451,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["foods"],
     },
+    display: {
+      activeVerb: "Comparing nutritional values for",
+      completedVerb: "Compared nutritional values for",
+      subjectParam: "foods",
+      subjectFormat: "quoted",
+    },
   },
   {
     name: "get_food_categories",
@@ -3959,6 +4469,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       type: "object",
       properties: {},
     },
+    display: {
+      activeVerb: "Fetching food categories",
+      completedVerb: "Fetched food categories",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
+    },
   },
   {
     name: "get_nutrient_types",
@@ -3970,6 +4486,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
     parameters: {
       type: "object",
       properties: {},
+    },
+    display: {
+      activeVerb: "Fetching nutrient types",
+      completedVerb: "Fetched nutrient types",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
     },
   },
   {
@@ -3998,6 +4520,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["category"],
+    },
+    display: {
+      activeVerb: "Listing nutrients for category",
+      completedVerb: "Listed nutrients for category",
+      subjectParam: "category",
+      subjectFormat: "full",
     },
   },
   {
@@ -4048,6 +4576,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.USDA_TAXONOMY),
       },
       required: ["rank", "value"],
+    },
+    display: {
+      activeVerb: "Searching foods by taxonomy value",
+      completedVerb: "Searched foods by taxonomy value",
+      subjectParam: "value",
+      subjectFormat: "quoted",
     },
   },
   {
@@ -4105,6 +4639,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
     },
+    display: {
+      activeVerb: "Fetching food taxonomy tree",
+      completedVerb: "Fetched food taxonomy tree",
+      subjectParam: "rank",
+      subjectFormat: "full",
+    },
   },
   {
     name: "get_nutritional_requirements",
@@ -4153,6 +4693,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           description: translate("get_nutritional_requirements.params.caloricIntake"),
         },
       },
+    },
+    display: {
+      activeVerb: "Fetching nutritional requirements",
+      completedVerb: "Fetched nutritional requirements",
+      subjectParam: "species",
+      subjectFormat: "full",
     },
   },
 
@@ -4216,6 +4762,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["sex", "weightKg", "heightCm", "ageYears"],
     },
+    display: {
+      activeVerb: "Calculating caloric needs for",
+      completedVerb: "Calculated caloric needs for",
+      subjectParam: "sex",
+      subjectFormat: "full",
+    },
   },
 
   // ── Nutrient Gap Analysis ───────────────────────────────────────
@@ -4270,6 +4822,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["foods"],
     },
+    display: {
+      activeVerb: "Analyzing nutrient gaps for",
+      completedVerb: "Analyzed nutrient gaps for",
+      subjectParam: "species",
+      subjectFormat: "full",
+    },
   },
 
   // ── Food Substitute Finder ─────────────────────────────────────
@@ -4320,6 +4878,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["food"],
     },
+    display: {
+      activeVerb: "Searching food substitutes for",
+      completedVerb: "Searched food substitutes for",
+      subjectParam: "food",
+      subjectFormat: "quoted",
+    },
   },
 
   // ── Exercise Calorie Estimator ──────────────────────────────────
@@ -4363,6 +4927,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["exercise", "durationMinutes", "weightKg"],
+    },
+    display: {
+      activeVerb: "Estimating calorie burn for",
+      completedVerb: "Estimated calorie burn for",
+      subjectParam: "exercise",
+      subjectFormat: "quoted",
     },
   },
 
@@ -4431,6 +5001,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["weightKg"],
     },
+    display: {
+      activeVerb: "Calculating hydration needs",
+      completedVerb: "Calculated hydration needs",
+      subjectParam: "activityLevel",
+      subjectFormat: "full",
+    },
   },
 
   // ── Meal Plan Builder ──────────────────────────────────────────
@@ -4497,6 +5073,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["caloricTarget"],
     },
+    display: {
+      activeVerb: "Building meal plan for target",
+      completedVerb: "Built meal plan for target",
+      subjectParam: "caloricTarget",
+      subjectFormat: "full",
+    },
   },
 
   // ── Drug-Nutrient Interactions ──────────────────────────────────
@@ -4521,6 +5103,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["drug"],
+    },
+    display: {
+      activeVerb: "Checking drug-nutrient interactions for",
+      completedVerb: "Checked drug-nutrient interactions for",
+      subjectParam: "drug",
+      subjectFormat: "quoted",
     },
   },
 
@@ -4549,6 +5137,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["stopNo"],
     },
+    display: {
+      activeVerb: "Checking next bus for stop",
+      completedVerb: "Checked next bus for stop",
+      subjectParam: "stopNo",
+      subjectFormat: "full",
+    },
   },
   {
     name: "get_translink_stop_info",
@@ -4568,6 +5162,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.STOP_INFO),
       },
       required: ["stopNo"],
+    },
+    display: {
+      activeVerb: "Fetching stop info for stop",
+      completedVerb: "Fetched stop info for stop",
+      subjectParam: "stopNo",
+      subjectFormat: "full",
     },
   },
   {
@@ -4596,6 +5196,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.NEARBY_STOPS),
       },
     },
+    display: {
+      activeVerb: "Searching nearby transit stops",
+      completedVerb: "Searched nearby transit stops",
+      subjectParam: "radius",
+      subjectFormat: "full",
+    },
   },
   {
     name: "get_translink_route_info",
@@ -4615,6 +5221,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.ROUTE_INFO),
       },
       required: ["routeNo"],
+    },
+    display: {
+      activeVerb: "Fetching route info for route",
+      completedVerb: "Fetched route info for route",
+      subjectParam: "routeNo",
+      subjectFormat: "full",
     },
   },
 
@@ -4641,6 +5253,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["code"],
+    },
+    display: {
+      activeVerb: "Executing Python code",
+      completedVerb: "Executed Python code",
+      subjectParam: "code",
+      subjectFormat: "truncate",
     },
   },
   {
@@ -4678,6 +5296,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["operation", "a"],
     },
+    display: {
+      activeVerb: "Evaluating math expression",
+      completedVerb: "Evaluated math expression",
+      subjectParam: "a",
+      subjectFormat: "full",
+    },
   },
   {
     name: "execute_javascript",
@@ -4701,6 +5325,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["code"],
+    },
+    display: {
+      activeVerb: "Executing JavaScript code",
+      completedVerb: "Executed JavaScript code",
+      subjectParam: "code",
+      subjectFormat: "truncate",
     },
   },
   {
@@ -4730,6 +5360,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["command"],
     },
+    display: {
+      activeVerb: "Executing shell command",
+      completedVerb: "Executed shell command",
+      subjectParam: "command",
+      subjectFormat: "truncate",
+    },
   },
   {
     name: "convert_units",
@@ -4756,6 +5392,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["value", "from", "to"],
+    },
+    display: {
+      activeVerb: "Converting units of",
+      completedVerb: "Converted units of",
+      subjectParam: "value",
+      subjectFormat: "full",
     },
   },
   {
@@ -4835,6 +5477,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["operation"],
     },
+    display: {
+      activeVerb: "Parsing date/time",
+      completedVerb: "Parsed date/time",
+      subjectParam: "operation",
+      subjectFormat: "full",
+    },
   },
   {
     name: "transform_json",
@@ -4884,6 +5532,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["data"],
     },
+    display: {
+      activeVerb: "Transforming JSON data",
+      completedVerb: "Transformed JSON data",
+      subjectParam: "expression",
+      subjectFormat: "quoted",
+    },
   },
   {
     name: "generate_csv",
@@ -4917,6 +5571,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["data"],
+    },
+    display: {
+      activeVerb: "Generating CSV dataset",
+      completedVerb: "Generated CSV dataset",
+      subjectParam: "filename",
+      subjectFormat: "full",
     },
   },
   {
@@ -4961,6 +5621,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["data"],
     },
+    display: {
+      activeVerb: "Generating QR code for",
+      completedVerb: "Generated QR code for",
+      subjectParam: "data",
+      subjectFormat: "truncate",
+    },
   },
   {
     name: "render_latex",
@@ -4984,6 +5650,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["latex"],
+    },
+    display: {
+      activeVerb: "Rendering LaTeX formula",
+      completedVerb: "Rendered LaTeX formula",
+      subjectParam: "latex",
+      subjectFormat: "truncate",
     },
   },
   {
@@ -5009,6 +5681,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["definition"],
+    },
+    display: {
+      activeVerb: "Generating diagram",
+      completedVerb: "Generated diagram",
+      subjectParam: "definition",
+      subjectFormat: "truncate",
     },
   },
   {
@@ -5038,6 +5716,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["textA", "textB"],
+    },
+    display: {
+      activeVerb: "Diffing text segments",
+      completedVerb: "Diffed text segments",
+      subjectParam: "mode",
+      subjectFormat: "full",
     },
   },
   {
@@ -5070,6 +5754,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["data"],
     },
+    display: {
+      activeVerb: "Generating cryptographic hash",
+      completedVerb: "Generated cryptographic hash",
+      subjectParam: "algorithm",
+      subjectFormat: "full",
+    },
   },
   {
     name: "test_regex",
@@ -5097,6 +5787,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["pattern", "text"],
+    },
+    display: {
+      activeVerb: "Testing regex pattern",
+      completedVerb: "Tested regex pattern",
+      subjectParam: "pattern",
+      subjectFormat: "quoted",
     },
   },
   {
@@ -5136,6 +5832,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["data", "format"],
     },
+    display: {
+      activeVerb: "Converting data encoding to",
+      completedVerb: "Converted data encoding to",
+      subjectParam: "format",
+      subjectFormat: "full",
+    },
   },
   {
     name: "convert_color",
@@ -5166,6 +5868,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["color"],
+    },
+    display: {
+      activeVerb: "Converting color values",
+      completedVerb: "Converted color values",
+      subjectParam: "color",
+      subjectFormat: "quoted",
     },
   },
 
@@ -5367,6 +6075,13 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["input", "operations"],
     },
+    display: {
+      activeVerb: "Processing image",
+      completedVerb: "Processed image",
+      subjectParam: "input",
+      subjectFormat: "basename",
+      filePathParam: "input",
+    },
   },
 
   // ── Image to ASCII Art ──────────────────────────────────────
@@ -5405,6 +6120,13 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["input"],
     },
+    display: {
+      activeVerb: "Converting image to ASCII",
+      completedVerb: "Converted image to ASCII",
+      subjectParam: "input",
+      subjectFormat: "basename",
+      filePathParam: "input",
+    },
   },
 
   // ── Video to GIF Conversion ────────────────────────────────
@@ -5440,6 +6162,13 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["input"],
     },
+    display: {
+      activeVerb: "Converting video to GIF",
+      completedVerb: "Converted video to GIF",
+      subjectParam: "input",
+      subjectFormat: "basename",
+      filePathParam: "input",
+    },
   },
 
   // ── Turtle Graphics (LOGO Language) ──────────────────────────
@@ -5473,6 +6202,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["code"],
+    },
+    display: {
+      activeVerb: "Drawing turtle graphics",
+      completedVerb: "Drew turtle graphics",
+      subjectParam: "code",
+      subjectFormat: "truncate",
     },
   },
 
@@ -5588,6 +6323,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["vertices", "faces"],
+    },
+    display: {
+      activeVerb: "Creating 3D mesh model",
+      completedVerb: "Created 3D mesh model",
+      subjectParam: "sessionId",
+      subjectFormat: "full",
     },
   },
 
@@ -5762,6 +6503,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           description: translate("create_3d_voxel.params.options"),
         },
       },
+    },
+    display: {
+      activeVerb: "Creating 3D voxel model",
+      completedVerb: "Created 3D voxel model",
+      subjectParam: "sessionId",
+      subjectFormat: "full",
     },
   },
 
@@ -5945,6 +6692,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["objects"],
+    },
+    display: {
+      activeVerb: "Creating 3D model",
+      completedVerb: "Created 3D model",
+      subjectParam: "sessionId",
+      subjectFormat: "full",
     },
   },
 
@@ -6325,6 +7078,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["objects"],
     },
+    display: {
+      activeVerb: "Creating 3D scene",
+      completedVerb: "Created 3D scene",
+      subjectParam: "sessionId",
+      subjectFormat: "full",
+    },
   },
   {
     name: "convert_currency",
@@ -6353,6 +7112,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["from", "to"],
     },
+    display: {
+      activeVerb: "Converting currency from",
+      completedVerb: "Converted currency from",
+      subjectParam: "from",
+      subjectFormat: "full",
+    },
   },
   {
     name: "get_time_in_timezone",
@@ -6377,6 +7142,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["area", "location"],
     },
+    display: {
+      activeVerb: "Fetching time in",
+      completedVerb: "Fetched time in",
+      subjectParam: "location",
+      subjectFormat: "full",
+    },
   },
   {
     name: "get_ip_info",
@@ -6395,6 +7166,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
         ...fieldsParam(FIELDS.IP_GEOLOCATION),
       },
+    },
+    display: {
+      activeVerb: "Fetching geolocation info for IP",
+      completedVerb: "Fetched geolocation info for IP",
+      subjectParam: "ip",
+      subjectFormat: "full",
     },
   },
   {
@@ -6432,6 +7209,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["type"],
     },
+    display: {
+      activeVerb: "Searching nearby places for type",
+      completedVerb: "Searched nearby places for type",
+      subjectParam: "type",
+      subjectFormat: "full",
+    },
   },
   {
     name: "search_places",
@@ -6467,6 +7250,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.PLACES),
       },
       required: ["q"],
+    },
+    display: {
+      activeVerb: "Searching places for",
+      completedVerb: "Searched places for",
+      subjectParam: "q",
+      subjectFormat: "quoted",
     },
   },
   {
@@ -6504,6 +7293,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["markers"],
+    },
+    display: {
+      activeVerb: "Generating map",
+      completedVerb: "Generated map",
+      subjectParam: "maptype",
+      subjectFormat: "full",
     },
   },
 
@@ -6556,6 +7351,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["type", "labels", "datasets"],
     },
+    display: {
+      activeVerb: "Generating chart",
+      completedVerb: "Generated chart",
+      subjectParam: "title",
+      subjectFormat: "quoted",
+    },
   },
 
   // ── Periodic Table ─────────────────────────────────────────
@@ -6569,6 +7370,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
     parameters: {
       type: "object",
       properties: {},
+    },
+    display: {
+      activeVerb: "Listing development indicators",
+      completedVerb: "Listed development indicators",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
     },
   },
 
@@ -6607,6 +7414,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["action"],
+    },
+    display: {
+      activeVerb: "Searching airports",
+      completedVerb: "Searched airports",
+      subjectParam: "q",
+      subjectFormat: "quoted",
     },
   },
 
@@ -6717,6 +7530,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.WEBCAMS),
       },
     },
+    display: {
+      activeVerb: "Fetching public webcams",
+      completedVerb: "Fetched public webcams",
+      subjectParam: "city",
+      subjectFormat: "full",
+    },
   },
 
   // ── Exoplanet Tools ────────────────────────────────────────────
@@ -6733,6 +7552,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         ...fieldsParam(FIELDS.FDA_DOSAGE_FORMS),
       },
+    },
+    display: {
+      activeVerb: "Listing drug dosage forms",
+      completedVerb: "Listed drug dosage forms",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
     },
   },
 
@@ -6755,6 +7580,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.VESSELS),
       },
     },
+    display: {
+      activeVerb: "Fetching tracked vessels",
+      completedVerb: "Fetched tracked vessels",
+      subjectParam: "limit",
+      subjectFormat: "full",
+    },
   },
   {
     name: "get_vessel_by_mmsi",
@@ -6774,6 +7605,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.VESSELS),
       },
       required: ["mmsi"],
+    },
+    display: {
+      activeVerb: "Fetching vessel by MMSI",
+      completedVerb: "Fetched vessel by MMSI",
+      subjectParam: "mmsi",
+      subjectFormat: "full",
     },
   },
   {
@@ -6798,6 +7635,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.VESSELS),
       },
       required: ["q"],
+    },
+    display: {
+      activeVerb: "Searching vessels for",
+      completedVerb: "Searched vessels for",
+      subjectParam: "q",
+      subjectFormat: "quoted",
     },
   },
   {
@@ -6835,6 +7678,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["minLat", "maxLat", "minLng", "maxLng"],
     },
+    display: {
+      activeVerb: "Fetching vessels in area",
+      completedVerb: "Fetched vessels in area",
+      subjectParam: "limit",
+      subjectFormat: "full",
+    },
   },
   {
     name: "get_ais_messages",
@@ -6858,6 +7707,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.AIS_MESSAGES),
       },
     },
+    display: {
+      activeVerb: "Fetching AIS messages",
+      completedVerb: "Fetched AIS messages",
+      subjectParam: "type",
+      subjectFormat: "full",
+    },
   },
 
   // ── Energy Domain (EIA) ──────────────────────────────────────
@@ -6871,6 +7726,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       properties: {
         ...fieldsParam(FIELDS.ENERGY_INDICATORS),
       },
+    },
+    display: {
+      activeVerb: "Fetching energy indicators",
+      completedVerb: "Fetched energy indicators",
+      subjectParam: "fields",
+      subjectFormat: "truncate",
     },
   },
   {
@@ -6890,6 +7751,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
         ...fieldsParam(FIELDS.EIA_BROWSE),
       },
+    },
+    display: {
+      activeVerb: "Browsing energy catalog",
+      completedVerb: "Browsed energy catalog",
+      subjectParam: "route",
+      subjectFormat: "full",
     },
   },
   {
@@ -6914,6 +7781,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         ...fieldsParam(FIELDS.EIA_FACETS),
       },
       required: ["route", "facetId"],
+    },
+    display: {
+      activeVerb: "Fetching energy facets",
+      completedVerb: "Fetched energy facets",
+      subjectParam: "facetId",
+      subjectFormat: "full",
     },
   },
   {
@@ -6966,6 +7839,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["route"],
     },
+    display: {
+      activeVerb: "Searching energy database",
+      completedVerb: "Searched energy database",
+      subjectParam: "route",
+      subjectFormat: "full",
+    },
   },
   {
     name: "get_electricity_retail_sales",
@@ -7003,6 +7882,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           description: translate("get_petroleum_prices.params.length"),
         },
       },
+    },
+    display: {
+      activeVerb: "Fetching electricity sales data",
+      completedVerb: "Fetched electricity sales data",
+      subjectParam: "state",
+      subjectFormat: "full",
     },
   },
   {
@@ -7042,6 +7927,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
     },
+    display: {
+      activeVerb: "Fetching petroleum prices",
+      completedVerb: "Fetched petroleum prices",
+      subjectParam: "product",
+      subjectFormat: "full",
+    },
   },
   {
     name: "get_natural_gas_prices",
@@ -7079,6 +7970,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
           description: translate("get_petroleum_prices.params.length"),
         },
       },
+    },
+    display: {
+      activeVerb: "Fetching natural gas prices",
+      completedVerb: "Fetched natural gas prices",
+      subjectParam: "process",
+      subjectFormat: "full",
     },
   },
 
@@ -10941,6 +11838,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["expression"],
     },
+    display: {
+      activeVerb: "Parsing cron expression",
+      completedVerb: "Parsed cron expression",
+      subjectParam: "expression",
+      subjectFormat: "quoted",
+    },
   },
 
   // ── Dota 2 (OpenDota) ─────────────────────────────────────────
@@ -11009,6 +11912,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["action"],
     },
+    display: {
+      activeVerb: "Fetching Dota 2 data for action",
+      completedVerb: "Fetched Dota 2 data for action",
+      subjectParam: "action",
+      subjectFormat: "full",
+    },
   },
 
   // ── Steam Profile Lookup ─────────────────────────────────────
@@ -11044,6 +11953,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["action", "steamId"],
+    },
+    display: {
+      activeVerb: "Fetching Steam data for",
+      completedVerb: "Fetched Steam data for",
+      subjectParam: "steamId",
+      subjectFormat: "full",
     },
   },
 
@@ -11101,6 +12016,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
     },
+    display: {
+      activeVerb: "Creating cozy bonfire",
+      completedVerb: "Created cozy bonfire",
+      subjectParam: "woodType",
+      subjectFormat: "full",
+    },
   },
 
   // ── Music (MusicBrainz) ────────────────────────────────────────
@@ -11145,6 +12066,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["action"],
     },
+    display: {
+      activeVerb: "Fetching music data from MusicBrainz",
+      completedVerb: "Fetched music data from MusicBrainz",
+      subjectParam: "action",
+      subjectFormat: "full",
+    },
   },
 
   // ── Wayback Machine ────────────────────────────────────────────
@@ -11186,6 +12113,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["action", "url"],
+    },
+    display: {
+      activeVerb: "Fetching Wayback Machine snapshot for",
+      completedVerb: "Fetched Wayback Machine snapshot for",
+      subjectParam: "url",
+      subjectFormat: "domain",
     },
   },
 
@@ -11240,6 +12173,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["action", "q"],
     },
+    display: {
+      activeVerb: "Searching torrents for",
+      completedVerb: "Searched torrents for",
+      subjectParam: "q",
+      subjectFormat: "quoted",
+    },
   },
   {
     name: "download_torrent",
@@ -11275,6 +12214,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["url"],
+    },
+    display: {
+      activeVerb: "Downloading torrent from",
+      completedVerb: "Downloaded torrent from",
+      subjectParam: "url",
+      subjectFormat: "domain",
     },
   },
   {
@@ -11326,6 +12271,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["action"],
     },
+    display: {
+      activeVerb: "Checking torrent transfer status",
+      completedVerb: "Checked torrent transfer status",
+      subjectParam: "action",
+      subjectFormat: "full",
+    },
   },
   // ── Network Intelligence ──────────────────────────────────
   {
@@ -11352,6 +12303,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["hostname"],
     },
+    display: {
+      activeVerb: "Performing DNS lookup for",
+      completedVerb: "Performed DNS lookup for",
+      subjectParam: "hostname",
+      subjectFormat: "full",
+    },
   },
   {
     name: "whois_lookup",
@@ -11370,6 +12327,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["domain"],
+    },
+    display: {
+      activeVerb: "Performing WHOIS lookup for",
+      completedVerb: "Performed WHOIS lookup for",
+      subjectParam: "domain",
+      subjectFormat: "full",
     },
   },
   {
@@ -11395,6 +12358,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["hostname"],
     },
+    display: {
+      activeVerb: "Checking SSL certificate validity for",
+      completedVerb: "Checked SSL certificate validity for",
+      subjectParam: "hostname",
+      subjectFormat: "full",
+    },
   },
   {
     name: "port_scan",
@@ -11419,6 +12388,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["host"],
     },
+    display: {
+      activeVerb: "Scanning network ports on",
+      completedVerb: "Scanned network ports on",
+      subjectParam: "host",
+      subjectFormat: "full",
+    },
   },
   {
     name: "http_headers",
@@ -11437,6 +12412,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["url"],
+    },
+    display: {
+      activeVerb: "Fetching HTTP response headers for",
+      completedVerb: "Fetched HTTP response headers for",
+      subjectParam: "url",
+      subjectFormat: "domain",
     },
   },
   {
@@ -11462,6 +12443,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["host"],
     },
+    display: {
+      activeVerb: "Pinging network host",
+      completedVerb: "Pinged network host",
+      subjectParam: "host",
+      subjectFormat: "full",
+    },
   },
   // ── Security ─────────────────────────────────────────────────
   {
@@ -11486,6 +12473,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["type", "value"],
+    },
+    display: {
+      activeVerb: "Checking security breach status for",
+      completedVerb: "Checked security breach status for",
+      subjectParam: "type",
+      subjectFormat: "full",
     },
   },
   // ── Communication ────────────────────────────────────────────
@@ -11529,6 +12522,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["topic", "message"],
     },
+    display: {
+      activeVerb: "Sending push notification",
+      completedVerb: "Sent push notification",
+      subjectParam: "topic",
+      subjectFormat: "full",
+    },
   },
   {
     name: "send_webhook",
@@ -11561,6 +12560,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["url", "payload"],
     },
+    display: {
+      activeVerb: "Sending webhook to",
+      completedVerb: "Sent webhook to",
+      subjectParam: "url",
+      subjectFormat: "domain",
+    },
   },
   // ── Calendar ─────────────────────────────────────────────────
   {
@@ -11592,6 +12597,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: [],
+    },
+    display: {
+      activeVerb: "Fetching calendar events",
+      completedVerb: "Fetched calendar events",
+      subjectParam: "calendarId",
+      subjectFormat: "full",
     },
   },
   {
@@ -11641,6 +12652,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["summary", "startDateTime", "endDateTime"],
     },
+    display: {
+      activeVerb: "Creating calendar event",
+      completedVerb: "Created calendar event",
+      subjectParam: "summary",
+      subjectFormat: "quoted",
+    },
   },
   {
     name: "get_free_busy",
@@ -11668,6 +12685,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["calendarIds", "timeMin", "timeMax"],
+    },
+    display: {
+      activeVerb: "Checking free/busy calendar status",
+      completedVerb: "Checked free/busy calendar status",
+      subjectParam: "timeMin",
+      subjectFormat: "full",
     },
   },
   // ── GitHub Trending ──────────────────────────────────────────
@@ -11698,6 +12721,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: [],
     },
+    display: {
+      activeVerb: "Fetching GitHub trending repositories",
+      completedVerb: "Fetched GitHub trending repositories",
+      subjectParam: "language",
+      subjectFormat: "full",
+    },
   },
   // ── Data & Analysis ──────────────────────────────────────────
   {
@@ -11723,6 +12752,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["data"],
     },
+    display: {
+      activeVerb: "Analyzing CSV dataset structure",
+      completedVerb: "Analyzed CSV dataset structure",
+      subjectParam: "data",
+      subjectFormat: "truncate",
+    },
   },
   {
     name: "compare_json",
@@ -11746,6 +12781,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["a", "b"],
     },
+    display: {
+      activeVerb: "Comparing JSON structures",
+      completedVerb: "Compared JSON structures",
+      subjectParam: "a",
+      subjectFormat: "truncate",
+    },
   },
   {
     name: "validate_json_schema",
@@ -11768,6 +12809,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["data", "schema"],
+    },
+    display: {
+      activeVerb: "Validating JSON against schema",
+      completedVerb: "Validated JSON against schema",
+      subjectParam: "data",
+      subjectFormat: "truncate",
     },
   },
   // ── Knowledge ────────────────────────────────────────────────
@@ -11802,6 +12849,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: ["q"],
     },
+    display: {
+      activeVerb: "Searching StackOverflow questions for",
+      completedVerb: "Searched StackOverflow questions for",
+      subjectParam: "q",
+      subjectFormat: "quoted",
+    },
   },
   {
     name: "search_patents",
@@ -11832,6 +12885,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["q"],
+    },
+    display: {
+      activeVerb: "Searching USPTO patents for",
+      completedVerb: "Searched USPTO patents for",
+      subjectParam: "q",
+      subjectFormat: "quoted",
     },
   },
   // ── Satellite Imagery ────────────────────────────────────────
@@ -11869,6 +12928,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["latitude", "longitude"],
+    },
+    display: {
+      activeVerb: "Fetching satellite imagery",
+      completedVerb: "Fetched satellite imagery",
+      subjectParam: "date",
+      subjectFormat: "full",
     },
   },
   // ── Flight Status ────────────────────────────────────────────
@@ -11911,6 +12976,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
       },
       required: [],
     },
+    display: {
+      activeVerb: "Checking flight status",
+      completedVerb: "Checked flight status",
+      subjectParam: "flight",
+      subjectFormat: "full",
+    },
   },
 
   // ── Infrastructure Observability ────────────────────────────
@@ -11932,6 +13003,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["action"],
+    },
+    display: {
+      activeVerb: "Checking infrastructure status for",
+      completedVerb: "Checked infrastructure status for",
+      subjectParam: "action",
+      subjectFormat: "full",
     },
   },
   {
@@ -11969,6 +13046,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: ["action"],
+    },
+    display: {
+      activeVerb: "Checking container diagnostics",
+      completedVerb: "Checked container diagnostics",
+      subjectParam: "container",
+      subjectFormat: "full",
     },
   },
   {
@@ -12009,6 +13092,12 @@ function createLocalizedToolDefinitions(translate: (key: string, variables?: Rec
         },
       },
       required: [],
+    },
+    display: {
+      activeVerb: "Fetching container logs",
+      completedVerb: "Fetched container logs",
+      subjectParam: "container",
+      subjectFormat: "full",
     },
   },
   ];
