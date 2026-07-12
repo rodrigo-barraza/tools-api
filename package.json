@@ -22,7 +22,7 @@
   "license": "ISC",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "@rodrigo-barraza/utilities-library": "^0.2.0",
+    "@rodrigo-barraza/utilities-library": "github:rodrigo-barraza/utilities-library#master",
     "ajv": "^8.20.0",
     "bignumber.js": "^10.0.2",
     "chart.js": "^4.5.1",
