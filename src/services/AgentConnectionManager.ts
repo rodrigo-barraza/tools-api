@@ -216,7 +216,8 @@ export function initAgentWebSocket(httpServer: Server) {
       );
 
       // Auth check (shared across both endpoints)
-      const secret = req.headers["x-api-secret"];
+      const secret =
+        req.headers["x-api-secret"] || url.searchParams.get("secret") || "";
       const expectedSecret = await resolveAgentSecret();
 
       if (expectedSecret && secret !== expectedSecret) {
