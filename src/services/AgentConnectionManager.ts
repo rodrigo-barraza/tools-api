@@ -69,6 +69,7 @@ interface AgentRegistryEntry {
   name: string;
   roots: string[];
   originalRoots: string[];
+  displayRoots: string[];
   normalizedToOriginalRoot: Map<string, string>;
   capabilities: string[];
   version: string;
@@ -90,9 +91,11 @@ interface AgentRpcMessage {
     agentId?: string;
     name?: string;
     roots?: string[];
+    displayRoots?: string[];
     capabilities?: string[];
     version?: string;
     machineInfo?: MachineInfo;
+    hostInfo?: MachineInfo;
     path?: string;
     paths?: string[];
     searchPath?: string;
@@ -415,7 +418,7 @@ function handleAgentMessage(
 ) {
   // Registration
   if (message.method === "agent.register") {
-    const { agentId, name, roots, capabilities, version } =
+    const { agentId, name, roots, displayRoots, capabilities, version } =
       message.params || {};
 
     if (!agentId || !Array.isArray(roots) || roots.length === 0) {
@@ -448,16 +451,20 @@ function handleAgentMessage(
       normalizedToOriginalRoot.set(normalizedRoots[rootIndex], roots[rootIndex]);
     }
 
+    // Accept both "machineInfo" (current) and "hostInfo" (legacy pre-bundle rename)
+    const resolvedMachineInfo = message.params?.machineInfo || message.params?.hostInfo || undefined;
+
     // Register
     const entry: AgentRegistryEntry = {
       id: agentId,
       name: name || `agent-${agentId.slice(0, 8)}`,
       roots: normalizedRoots,
       originalRoots: [...roots],
+      displayRoots: Array.isArray(displayRoots) && displayRoots.length > 0 ? displayRoots : normalizedRoots,
       normalizedToOriginalRoot,
       capabilities: capabilities || [],
       version: version || "unknown",
-      machineInfo: message.params?.machineInfo || undefined,
+      machineInfo: resolvedMachineInfo,
       websocket,
       clientIp,
       connectedAt: new Date(),
@@ -789,6 +796,7 @@ export function getConnectedAgents() {
     id: agentRegistryEntry.id,
     name: agentRegistryEntry.name,
     roots: agentRegistryEntry.roots,
+    displayRoots: agentRegistryEntry.displayRoots,
     capabilities: agentRegistryEntry.capabilities,
     version: agentRegistryEntry.version,
     machineInfo: agentRegistryEntry.machineInfo || null,
