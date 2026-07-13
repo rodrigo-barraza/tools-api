@@ -460,7 +460,7 @@ function handleAgentMessage(
       name: name || `agent-${agentId.slice(0, 8)}`,
       roots: normalizedRoots,
       originalRoots: [...roots],
-      displayRoots: Array.isArray(displayRoots) && displayRoots.length > 0 ? displayRoots : normalizedRoots,
+      displayRoots: Array.isArray(displayRoots) && displayRoots.length > 0 ? displayRoots : [],
       normalizedToOriginalRoot,
       capabilities: capabilities || [],
       version: version || "unknown",
