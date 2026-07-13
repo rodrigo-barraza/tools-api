@@ -23,12 +23,12 @@ import { readSpreadsheetUrl } from "../fetchers/web/SpreadsheetFetcher.ts";
 import { executeCommand } from "./AgenticCommandService.ts";
 import { agenticProjectSummary } from "./AgenticProjectService.ts";
 import { agenticToolSearch } from "./AgenticToolSearchService.ts";
-import { WORKSPACE_ROOTS } from "../config.ts";
+import { ALLOWED_ROOTS } from "./AgenticFileService.ts";
 import { errorMessage } from "../utilities.ts";
 
 // ── Test Fixture ─────────────────────────────────────────────
-// Lazily resolved — WORKSPACE_ROOTS may be empty at import time
-// (e.g. when users configure workspaces via the Settings UI).
+// Lazily resolved — ALLOWED_ROOTS may be empty at import time
+// (populated dynamically by agent registration and user config).
 
 export type ToolTestResult =
   | Record<string, unknown>
@@ -53,9 +53,9 @@ let _fixtureFile: string | undefined;
 
 function getFixtureDir() {
   if (!_fixtureDir) {
-    const root = WORKSPACE_ROOTS[0];
+    const root = ALLOWED_ROOTS[0];
     if (!root)
-      throw new Error("Cannot run tool tests — no WORKSPACE_ROOTS configured.");
+      throw new Error("Cannot run tool tests — no workspace roots configured.");
     _fixtureDir = join(resolve(root), ".tool-test-fixtures");
   }
   return _fixtureDir;
@@ -283,7 +283,7 @@ const TESTS = {
 
   summarize_project: () =>
     runTest("summarize_project", () =>
-      agenticProjectSummary(resolve(WORKSPACE_ROOTS[0] || "")),
+      agenticProjectSummary(resolve(ALLOWED_ROOTS[0] || "")),
     ),
 
   // ── Web ──────────────────────────────────────────────────
@@ -325,7 +325,7 @@ const TESTS = {
   execute_command: () =>
     runTest("execute_command", () =>
       executeCommand("ls -la", {
-        cwd: resolve(WORKSPACE_ROOTS[0] || ""),
+        cwd: resolve(ALLOWED_ROOTS[0] || ""),
         timeout: 5000,
       }),
     ),

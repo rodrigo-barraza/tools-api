@@ -1,22 +1,4 @@
-// ─── Configuration ──────────────────────────────────────────
-
-/**
- * Parse a comma-separated env var into an array of strings.
- * Returns empty array if not set.
- */
-function parseCommaSeparated(envKey: string): string[] {
-  const raw = process.env[envKey];
-  return raw
-    ? raw
-        .split(",")
-        .map((s: string) => s.trim())
-        .filter(Boolean)
-    : [];
-}
-
 // ── Workspace / Agentic ────────────────────────────────────────────
-// Exported individually for AgenticFileService, AgenticGitService, etc.
-export const WORKSPACE_ROOTS = parseCommaSeparated("WORKSPACE_ROOTS");
 export const WORKTREE_DIR = process.env.WORKTREE_DIR;
 
 // ── Location (mutable — populated dynamically by LocationService) ──

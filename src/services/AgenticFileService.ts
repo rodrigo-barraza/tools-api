@@ -35,7 +35,6 @@ import {
 } from "node:fs/promises";
 import { resolve, relative, extname, dirname } from "node:path";
 import { existsSync } from "node:fs";
-import { WORKSPACE_ROOTS as WORKSPACE_ROOTS_RAW } from "../config.ts";
 import { resolveAndRouteToAgent, sendRpc } from "./AgentConnectionManager.ts";
 import logger from "../logger.ts";
 
@@ -62,30 +61,10 @@ async function tryAgentRoute(
   }
 }
 
-// ────────────────────────────────────────────────────────────
-// Configuration
-// ────────────────────────────────────────────────────────────
-
-// Validated from config.js WORKSPACE_ROOTS (array of absolute paths).
-// If not configured, the service starts with no static roots — users must
-// add workspaces via Settings UI or set the WORKSPACE_ROOTS env var to
-// match their Docker volume mounts.
-if (!Array.isArray(WORKSPACE_ROOTS_RAW) || WORKSPACE_ROOTS_RAW.length === 0) {
-  logger.warn(
-    "[AgenticFileService] WORKSPACE_ROOTS is empty — no static workspace roots configured. Users must add workspaces via the Settings UI.",
-  );
-}
-
-// Static roots — immutable baseline from config.js
-const STATIC_ROOTS = Object.freeze(
-  (Array.isArray(WORKSPACE_ROOTS_RAW) ? WORKSPACE_ROOTS_RAW : [])
-    .filter(Boolean)
-    .map((r: string) => resolve(r.trim())),
-);
-
-// Dynamic roots — mutable array that includes static + user-configured roots.
-// Mutated in-place so all importers automatically see updates.
-const ALLOWED_ROOTS = [...STATIC_ROOTS];
+// Dynamic roots — mutable array populated by agent registration and user config.
+// Starts empty; agents add their roots on connect, and user-configured roots
+// are loaded from MongoDB at boot.
+const ALLOWED_ROOTS: string[] = [];
 
 
 
@@ -1607,13 +1586,6 @@ export async function agenticMultiReplace(
 export { validatePath, ALLOWED_ROOTS };
 
 /**
- * Return only the immutable roots from config.js (for UI "pinned" distinction).
- */
-export function getStaticRoots() {
-  return [...STATIC_ROOTS];
-}
-
-/**
  * Normalize a workspace path for the host OS.
  * Windows-style paths (e.g. C:\Users\foo) are translated to WSL mount
  * paths (/mnt/c/Users/foo) when the server runs on Linux/macOS.
@@ -1635,8 +1607,8 @@ export function normalizeWorkspacePath(rawPath: string): string | null {
 }
 
 /**
- * Merge extra roots (from MongoDB user config) into ALLOWED_ROOTS.
- * Static roots are always preserved. Duplicates are de-duped.
+ * Merge extra roots (from MongoDB user config or agents) into ALLOWED_ROOTS.
+ * Duplicates are de-duped.
  * Mutates the array in-place so all importers see the update.
  * Windows paths are auto-translated to WSL mount paths on Linux hosts.
  */
@@ -1646,7 +1618,7 @@ export function refreshAllowedRoots(extraRoots: string[] = []) {
     .map((r: string) => normalizeWorkspacePath(r))
     .filter((r): r is string => r !== null);
 
-  const merged = [...STATIC_ROOTS];
+  const merged: string[] = [];
   for (const root of resolved) {
     if (!merged.includes(root)) {
       merged.push(root);

@@ -882,15 +882,14 @@ function sendJson(websocket: WebSocket, object: Record<string, unknown>) {
 
 /**
  * Rebuild ALLOWED_ROOTS by collecting all connected agent roots and merging
- * them as extra roots alongside the static + user-configured roots.
- * Uses refreshAllowedRoots() which preserves static roots and de-dups.
+ * them with user-configured roots from MongoDB.
  *
  * Uses dynamic import() to avoid circular dependency with AgenticFileService
  * (which imports routeForPath/sendRpc from this module).
  */
 async function rebuildAllowedRootsFromAgents() {
   try {
-    const { ALLOWED_ROOTS, refreshAllowedRoots, getStaticRoots } =
+    const { ALLOWED_ROOTS } =
       await import("./AgenticFileService.ts");
 
     // Collect all agent roots
@@ -903,29 +902,13 @@ async function rebuildAllowedRootsFromAgents() {
       }
     }
 
-    // If any agent registers root "/" (virtual root), it subsumes local static
-    // roots like "/workspace" which should not appear in ALLOWED_ROOTS.
-    // However, other agents' roots (e.g. windows workspace mounts /mnt/c/workspace)
-    // must be preserved.
-    const staticRoots = getStaticRoots();
-    const staticRootsToKeep = staticRoots.filter((staticRoot) => {
-      return !agentRoots.some((agentRoot) => {
-        return agentRoot === "/"
-          ? staticRoot.startsWith("/")
-          : (staticRoot.startsWith(agentRoot + "/") || staticRoot === agentRoot);
-      });
-    });
-
-    // We need to also preserve any user-configured roots from MongoDB.
-    // Since ALLOWED_ROOTS may contain user roots not in agents or static,
-    // collect the non-static, non-agent roots to preserve them.
-    const staticSet = new Set(staticRoots);
+    // Preserve any user-configured roots from MongoDB that aren't agent roots
     const agentSet = new Set(agentRoots);
     const userRoots = ALLOWED_ROOTS.filter(
-      (r) => !staticSet.has(r) && !agentSet.has(r),
+      (r) => !agentSet.has(r),
     );
 
-    const mergedRoots = [...staticRootsToKeep];
+    const mergedRoots: string[] = [];
     for (const root of [...userRoots, ...agentRoots]) {
       if (!mergedRoots.includes(root)) {
         mergedRoots.push(root);

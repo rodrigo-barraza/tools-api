@@ -17,7 +17,6 @@ import {
 } from "../services/ToolSchemaService.ts";
 import {
   ALLOWED_ROOTS,
-  getStaticRoots,
   refreshAllowedRoots,
   normalizeWorkspacePath,
 } from "../services/AgenticFileService.ts";
@@ -147,13 +146,11 @@ router.get(
  * GET /admin/config
  * Exposes workspace configuration so downstream services (Prism)
  * can fetch it at startup instead of duplicating in their secrets.
- * Includes both the full merged list and the immutable static roots.
  */
 router.get("/config", (_req: Request, res: Response) => {
   const agents = getConnectedAgents();
   res.json({
     workspaceRoots: ALLOWED_ROOTS,
-    staticRoots: getStaticRoots(),
     agents,
   });
 });
@@ -161,7 +158,6 @@ router.get("/config", (_req: Request, res: Response) => {
  * PUT /admin/config/workspaces
  * Update user-configured workspace roots.
  * Validates each path (must be absolute, must exist on disk).
- * Static roots from config.js are always preserved.
  *
  * Body: { roots: string[] }
  */
@@ -174,7 +170,6 @@ router.put(
         .status(400)
         .json({ error: "'roots' must be an array of path strings" });
     }
-    const staticRoots = getStaticRoots();
     const errors: { path: string; resolved?: string; error: string }[] = [];
     const validRoots: string[] = [];
     for (const rawPath of roots) {
@@ -183,8 +178,6 @@ router.put(
         errors.push({ path: rawPath, error: "Invalid or empty path" });
         continue;
       }
-      // Skip if this is already a static root
-      if (staticRoots.includes(resolved)) continue;
       // Must be absolute
       if (!resolved.startsWith("/")) {
         errors.push({
@@ -238,7 +231,6 @@ router.put(
     refreshAllowedRoots(validRoots);
     res.json({
       workspaceRoots: ALLOWED_ROOTS,
-      staticRoots: staticRoots,
       userRoots: validRoots,
       errors: errors.length > 0 ? errors : undefined,
     });
