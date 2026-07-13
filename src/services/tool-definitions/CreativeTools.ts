@@ -1722,23 +1722,11 @@ export function getCreativeTools(
         "append",
         "startRow",
         "clearSession",
-        "soundType",
-        "presetEffect",
         "duration",
         "waveform",
-        "frequency",
-        "endFrequency",
-        "modulatorFrequency",
-        "modulationIndex",
-        "envelope",
-        "harmonics",
-        "lfo",
-
-        "delay",
         "sampleRate",
         "tempo",
         "nodes",
-        "tracks",
         "instrument",
         "swing",
         "humanize",
@@ -1751,7 +1739,6 @@ export function getCreativeTools(
     parameters: {
       type: "object",
       properties: {
-        // ── Tracker workflow params (set action to use) ────────
         action: {
           type: "string",
           enum: ["init", "add_channel", "write_pattern", "render"],
@@ -1824,8 +1811,27 @@ export function getCreativeTools(
                 description: translate("generate_audio.params.rows.items.params.velocity"),
               },
               duration: {
-                type: "integer",
+                type: "string",
                 description: translate("generate_audio.params.rows.items.params.duration"),
+              },
+              pitchBend: {
+                type: "object",
+                description: translate("generate_audio.params.rows.items.params.pitchBend"),
+                properties: {
+                  target: {
+                    type: "string",
+                    description: translate("generate_audio.params.rows.items.params.pitchBend.params.target"),
+                  },
+                  startTime: {
+                    type: "number",
+                    description: translate("generate_audio.params.rows.items.params.pitchBend.params.startTime"),
+                  },
+                  endTime: {
+                    type: "number",
+                    description: translate("generate_audio.params.rows.items.params.pitchBend.params.endTime"),
+                  },
+                },
+                required: ["target"],
               },
             },
             required: ["note", "duration"],
@@ -1843,30 +1849,6 @@ export function getCreativeTools(
           type: "boolean",
           description: translate("generate_audio.params.clearSession"),
         },
-        // ── Direct synthesis params (no action needed) ─────────
-        soundType: {
-          type: "string",
-          enum: [
-            "synthesizer",
-            "sound_effect",
-            "modular",
-          ],
-          description: translate("generate_audio.params.soundType"),
-        },
-        presetEffect: {
-          type: "string",
-          enum: [
-            "laser",
-            "coin",
-            "powerup",
-            "jump",
-            "explosion",
-            "synthwave_bass",
-            "ambient_pad",
-            "sci_fi_sweep",
-          ],
-          description: translate("generate_audio.params.presetEffect"),
-        },
         duration: {
           type: "number",
           description: translate("generate_audio.params.duration"),
@@ -1875,81 +1857,6 @@ export function getCreativeTools(
           type: "string",
           enum: ["sine", "triangle", "sawtooth", "square", "noise"],
           description: translate("generate_audio.params.waveform"),
-        },
-        frequency: {
-          type: "string",
-          description: translate("generate_audio.params.frequency"),
-        },
-        endFrequency: {
-          type: "string",
-          description: translate("generate_audio.params.endFrequency"),
-        },
-        modulatorFrequency: {
-          type: "number",
-          description: translate("generate_audio.params.modulatorFrequency"),
-        },
-        modulationIndex: {
-          type: "number",
-          description: translate("generate_audio.params.modulationIndex"),
-        },
-        envelope: {
-          type: "object",
-          description: translate("generate_audio.params.envelope"),
-          properties: {
-            attack: {
-              type: "number",
-              description: translate("generate_audio.params.envelope.params.attack"),
-            },
-            decay: {
-              type: "number",
-              description: translate("generate_audio.params.envelope.params.decay"),
-            },
-            sustain: {
-              type: "number",
-              description: translate("generate_audio.params.envelope.params.sustain"),
-            },
-            release: {
-              type: "number",
-              description: translate("generate_audio.params.envelope.params.release"),
-            },
-          },
-        },
-        harmonics: {
-          type: "array",
-          items: { type: "number" },
-          description: translate("generate_audio.params.harmonics"),
-        },
-        lfo: {
-          type: "object",
-          description: translate("generate_audio.params.lfo"),
-          properties: {
-            frequency: {
-              type: "number",
-              description: translate("generate_audio.params.lfo.params.frequency"),
-            },
-            pitchDepth: { type: "number", description: translate("generate_audio.params.pitchDepth") },
-            amplitudeDepth: {
-              type: "number",
-              description: translate("generate_audio.params.lfo.params.amplitudeDepth"),
-            },
-          },
-          required: ["frequency"],
-        },
-
-        delay: {
-          type: "object",
-          description: translate("generate_audio.params.delay"),
-          properties: {
-            delayTime: {
-              type: "number",
-              description: translate("generate_audio.params.delay.params.delayTime"),
-            },
-            feedback: {
-              type: "number",
-              description: translate("generate_audio.params.delay.params.feedback"),
-            },
-          },
-          required: ["delayTime", "feedback"],
         },
         sampleRate: {
           type: "number",
@@ -1963,72 +1870,10 @@ export function getCreativeTools(
           type: "object",
           description: translate("generate_audio.params.nodes"),
         },
-        tracks: {
+        nodeChain: {
           type: "array",
-          description: translate("generate_audio.params.tracks"),
-          items: {
-            type: "object",
-            properties: {
-              nodeChain: {
-                type: "array",
-                items: { type: "string" },
-                description: translate("generate_audio.params.tracks.items.params.nodeChain"),
-              },
-              notes: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    time: {
-                      type: "string",
-                      description: translate("generate_audio.params.tracks.items.params.notes.items.params.time"),
-                    },
-                    duration: {
-                      type: "string",
-                      description: translate("generate_audio.params.tracks.items.params.notes.items.params.duration"),
-                    },
-                    note: {
-                      type: "string",
-                      description: translate("generate_audio.params.tracks.items.params.notes.items.params.note"),
-                    },
-                    velocity: {
-                      type: "number",
-                      description: translate("generate_audio.params.tracks.items.params.notes.items.params.velocity"),
-                    },
-                    pitchBend: {
-                      type: "object",
-                      description: translate("generate_audio.params.tracks.items.params.notes.items.params.pitchBend"),
-                      properties: {
-                        target: {
-                          type: "string",
-                          description: translate("generate_audio.params.tracks.items.params.notes.items.params.pitchBend.params.target"),
-                        },
-                        startTime: {
-                          type: "number",
-                          description: translate("generate_audio.params.tracks.items.params.notes.items.params.pitchBend.params.startTime"),
-                        },
-                        endTime: {
-                          type: "number",
-                          description: translate("generate_audio.params.tracks.items.params.notes.items.params.pitchBend.params.endTime"),
-                        },
-                      },
-                      required: ["target"],
-                    },
-                  },
-                  required: ["time", "duration", "note"],
-                },
-              },
-              volume: {
-                type: "number",
-                description: translate("generate_audio.params.tracks.items.params.volume"),
-              },
-              repeat: {
-                type: "integer",
-                description: translate("generate_audio.params.tracks.items.params.repeat"),
-              },
-            },
-            required: ["nodeChain", "notes"],
-          },
+          items: { type: "string" },
+          description: translate("generate_audio.params.nodeChain"),
         },
         instrument: {
           type: "string",
@@ -2068,6 +1913,7 @@ export function getCreativeTools(
           description: translate("generate_audio.params.timeSignature"),
         },
       },
+      required: ["action"],
     },
   },
   {

@@ -6,145 +6,190 @@ import creativeRoutes from "../src/routes/CreativeRoutes.ts";
 const app = createTestApp("/creative", creativeRoutes);
 
 describe("POST /creative/generate-audio", () => {
-  it("successfully generates a coin preset sound", async () => {
+  it("rejects requests without an action (tracker workflow is the only workflow)", async () => {
     const res = await request(app).post("/creative/generate-audio").send({
       presetEffect: "coin",
     });
 
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.message).toContain("retro sound preset: 'coin'");
-    expect(res.body.audio.mimeType).toBe("audio/wav");
-    expect(typeof res.body.audio.data).toBe("string"); // base64
-    expect(res.body.duration).toBeCloseTo(0.38, 2); // 0.08 + 0.3 seconds
-    expect(res.body.sampleCount).toBeGreaterThan(0);
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain("tracker workflow");
+    expect(res.body.error).toContain("init");
   });
 
-  it("successfully generates a custom sweep sound", async () => {
-    const res = await request(app)
-      .post("/creative/generate-audio")
-      .send({
-        soundType: "synthesizer",
-        duration: 0.5,
-        waveform: "triangle",
-        frequency: 440,
-        endFrequency: 220,
-        envelope: {
-          attack: 0.05,
-          decay: 0.05,
-          sustain: 0.6,
-          release: 0.1,
-        },
-      });
+  it("rejects unknown actions", async () => {
+    const res = await request(app).post("/creative/generate-audio").send({
+      action: "compose",
+    });
 
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.audio.mimeType).toBe("audio/wav");
-    expect(typeof res.body.audio.data).toBe("string");
-    expect(res.body.duration).toBe(0.5);
-    expect(res.body.sampleCount).toBe(Math.floor(0.5 * 44100));
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain("Valid actions");
   });
 
-  it("successfully generates a custom sweep sound with sawtooth waveform", async () => {
-    const res = await request(app)
-      .post("/creative/generate-audio")
-      .send({
-        soundType: "synthesizer",
-        duration: 0.5,
-        waveform: "sawtooth",
-        frequency: 440,
-        endFrequency: 220,
-        envelope: {
-          attack: 0.05,
-          decay: 0.05,
-          sustain: 0.6,
-          release: 0.1,
-        },
-      });
+  it("rejects the literal string 'null' as a sessionId with recovery guidance", async () => {
+    const res = await request(app).post("/creative/generate-audio").send({
+      action: "add_channel",
+      sessionId: "null",
+      channelId: "drums",
+    });
 
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.audio.mimeType).toBe("audio/wav");
-    expect(typeof res.body.audio.data).toBe("string");
-    expect(res.body.duration).toBe(0.5);
-    expect(res.body.sampleCount).toBe(Math.floor(0.5 * 44100));
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain("sessionId");
+    expect(res.body.error).toContain('action: "init"');
   });
 
-  it("successfully generates advanced modular audio graph", async () => {
-    const res = await request(app)
+  it("rejects unknown instruments with the valid list and drum guidance", async () => {
+    const initRes = await request(app)
       .post("/creative/generate-audio")
-      .send({
-        soundType: "modular",
-        duration: 0.5,
-        nodes: {
-          sub_bass: { type: "oscillator", waveform: "sine" },
-          lead_osc: { type: "oscillator", waveform: "sawtooth", detune: 10.0 },
-          filter_env: {
-            type: "envelope",
-            attack: 0.05,
-            decay: 0.1,
-            sustain: 0.4,
-            release: 0.1,
-          },
-          lpf: {
-            type: "biquad_filter",
-            filterType: "lowpass",
-            cutoff: 800,
-            Q: 3.0,
-            modulate: { cutoff: "filter_env" },
-          },
-          panner: { type: "stereo_panner", pan: -0.5 },
-        },
-        tracks: [
-          {
-            nodeChain: ["sub_bass", "destination"],
-            notes: [{ time: 0.0, duration: 0.3, note: "C2" }],
-          },
-          {
-            nodeChain: ["lead_osc", "lpf", "panner", "destination"],
-            notes: [
-              { time: 0.0, duration: 0.2, note: "C4" },
-              { time: 0.2, duration: 0.2, note: "G4" },
-            ],
-          },
-        ],
-      });
+      .send({ action: "init" });
+    expect(initRes.status).toBe(200);
 
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.audio.mimeType).toBe("audio/wav");
-    expect(res.body.duration).toBeGreaterThan(0.3);
-    expect(res.body.sampleCount).toBeGreaterThan(0);
+    const res = await request(app).post("/creative/generate-audio").send({
+      action: "add_channel",
+      sessionId: initRes.body.sessionId,
+      channelId: "drums",
+      instrument: "drum_synth",
+    });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain("Invalid instrument 'drum_synth'");
+    expect(res.body.error).toContain("KICK/SNARE/HAT");
   });
 
-  it("successfully generates procedural drum track with time grid markers", async () => {
-    const res = await request(app)
-      .post("/creative/generate-audio")
-      .send({
-        soundType: "modular",
-        tempo: 120,
-        nodes: {
-          drums: { type: "drum_synth" },
-          reverb: { type: "reverb", wet: 0.3, decay: 0.4 },
-        },
-        tracks: [
-          {
-            nodeChain: ["drums", "reverb", "destination"],
-            notes: [
-              { time: "1.1.1", duration: "0.2.0", note: "KICK" },
-              { time: "1.2.1", duration: "0.2.0", note: "HAT" },
-              { time: "1.3.1", duration: "0.2.0", note: "SNARE" },
-              { time: "1.4.1", duration: "0.2.0", note: "HAT" },
-            ],
-          },
-        ],
-      });
+  it("runs the full workflow: init → add_channel with inline rows → render", async () => {
+    const initRes = await request(app).post("/creative/generate-audio").send({
+      action: "init",
+      tempo: 120,
+      linesPerBeat: 4,
+    });
+    expect(initRes.status).toBe(200);
+    expect(initRes.body.sessionId).toBeTruthy();
 
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.audio.mimeType).toBe("audio/wav");
-    expect(res.body.duration).toBeGreaterThan(1.0);
-    expect(res.body.sampleCount).toBeGreaterThan(0);
+    const channelRes = await request(app).post("/creative/generate-audio").send({
+      action: "add_channel",
+      sessionId: initRes.body.sessionId,
+      channelId: "melody",
+      instrument: "piano",
+      rows: [
+        { note: "C4", duration: 4 },
+        { note: "E4", duration: 4 },
+        { note: "G4", duration: 8 },
+      ],
+    });
+    expect(channelRes.status).toBe(200);
+    expect(channelRes.body.sessionId).toBe(initRes.body.sessionId);
+    expect(channelRes.body.totalRows).toBe(16);
+    expect(channelRes.body.previewNotation).toContain("C4");
+    expect(channelRes.body.audio.mimeType).toBe("audio/wav");
+
+    const renderRes = await request(app).post("/creative/generate-audio").send({
+      action: "render",
+      sessionId: initRes.body.sessionId,
+      clearSession: true,
+    });
+    expect(renderRes.status).toBe(200);
+    expect(renderRes.body.success).toBe(true);
+    expect(renderRes.body.audio.mimeType).toBe("audio/wav");
+    expect(typeof renderRes.body.audio.data).toBe("string");
+    // 16 rows at 120 BPM / 4 LPB = 16 × 0.125s = 2s of pattern; with no
+    // target duration the render adds the envelope release tail
+    expect(renderRes.body.duration).toBeGreaterThanOrEqual(2.0);
+    expect(renderRes.body.duration).toBeLessThan(3.0);
+    expect(renderRes.body.sessionCleared).toBe(true);
+  });
+
+  it("accepts beat-fraction row durations and reports authored progress", async () => {
+    const initRes = await request(app).post("/creative/generate-audio").send({
+      action: "init",
+      tempo: 120,
+      linesPerBeat: 4,
+      duration: 4,
+    });
+    expect(initRes.status).toBe(200);
+
+    const channelRes = await request(app).post("/creative/generate-audio").send({
+      action: "add_channel",
+      sessionId: initRes.body.sessionId,
+      channelId: "bass",
+      instrument: "synth_bass",
+    });
+    expect(channelRes.status).toBe(200);
+    expect(channelRes.body.targetDuration).toBe(4);
+    expect(channelRes.body.authoredDuration).toBe(0);
+    expect(channelRes.body.remainingDuration).toBe(4);
+
+    // Four quarter notes = 4 beats = 2s at 120 BPM
+    const writeRes = await request(app).post("/creative/generate-audio").send({
+      action: "write_pattern",
+      sessionId: initRes.body.sessionId,
+      channelId: "bass",
+      rows: [
+        { note: "G1", duration: "1/4" },
+        { note: "G1", duration: "1/4" },
+        { note: "A1", duration: "1/4" },
+        { note: "B1", duration: "1/4" },
+      ],
+    });
+    expect(writeRes.status).toBe(200);
+    expect(writeRes.body.totalRows).toBe(16); // 4 quarter notes × 4 steps each
+    expect(writeRes.body.authoredDuration).toBeCloseTo(2.0, 1);
+    expect(writeRes.body.remainingDuration).toBeCloseTo(2.0, 1);
+    expect(writeRes.body.message).toContain("auto-loop");
+  });
+
+  it("rejects rows with uninterpretable durations", async () => {
+    const initRes = await request(app)
+      .post("/creative/generate-audio")
+      .send({ action: "init" });
+    const channelRes = await request(app).post("/creative/generate-audio").send({
+      action: "add_channel",
+      sessionId: initRes.body.sessionId,
+      channelId: "lead",
+    });
+    expect(channelRes.status).toBe(200);
+
+    const res = await request(app).post("/creative/generate-audio").send({
+      action: "write_pattern",
+      sessionId: initRes.body.sessionId,
+      channelId: "lead",
+      rows: [{ note: "C4", duration: "fast" }],
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain("invalid duration 'fast'");
+    expect(res.body.error).toContain("1/4");
+  });
+
+  it("renders exactly the target duration when patterns are shorter (auto-loop + trim)", async () => {
+    const initRes = await request(app).post("/creative/generate-audio").send({
+      action: "init",
+      tempo: 120,
+      linesPerBeat: 4,
+      duration: 5,
+    });
+
+    const channelRes = await request(app).post("/creative/generate-audio").send({
+      action: "add_channel",
+      sessionId: initRes.body.sessionId,
+      channelId: "drums",
+      rows: [
+        { note: "KICK", duration: 4 },
+        { note: "SNARE", duration: 4 },
+        { note: "KICK", duration: 4 },
+        { note: "SNARE", duration: 4 },
+      ],
+    });
+    expect(channelRes.status).toBe(200);
+
+    const renderRes = await request(app).post("/creative/generate-audio").send({
+      action: "render",
+      sessionId: initRes.body.sessionId,
+      clearSession: true,
+    });
+    expect(renderRes.status).toBe(200);
+    // Pattern is 2s; target is 5s — looped and trimmed to exactly 5s
+    expect(renderRes.body.duration).toBeCloseTo(5.0, 2);
+    expect(renderRes.body.targetDuration).toBe(5);
+    expect(renderRes.body.authoredDuration).toBeCloseTo(2.0, 1);
+    expect(renderRes.body.message).toContain("looped");
   });
 });
 

@@ -277,13 +277,13 @@ describe("toSynthesizerConfig — Parameter Propagation", () => {
 // 4. Duration Floor Semantics in renderModularGraph
 // ────────────────────────────────────────────────────────────
 
-describe("renderModularGraph — Duration Floor Semantics", () => {
+describe("renderModularGraph — Exact Duration Semantics", () => {
   const shortNotes = [
     { time: 0, duration: 0.5, note: "C4" },
     { time: 0.5, duration: 0.5, note: "E4" },
   ];
 
-  it("uses config.duration as a minimum buffer length when notes are shorter", () => {
+  it("pads the buffer to config.duration when notes are shorter", () => {
     const result = renderModularGraph({
       soundType: "modular",
       sampleRate: 44100,
@@ -299,7 +299,7 @@ describe("renderModularGraph — Duration Floor Semantics", () => {
     expect(actualDuration).toBeLessThanOrEqual(10.1);
   });
 
-  it("does not truncate audio when notes exceed config.duration (Math.max, not override)", () => {
+  it("trims audio to exactly config.duration when notes exceed it", () => {
     const longNotes = Array.from({ length: 30 }, (_, index) => ({
       time: index * 0.5,
       duration: 0.5,
@@ -312,6 +312,7 @@ describe("renderModularGraph — Duration Floor Semantics", () => {
       120,
       4,
     );
+    expect(timelineDuration).toBeGreaterThan(5);
 
     const result = renderModularGraph({
       soundType: "modular",
@@ -323,7 +324,30 @@ describe("renderModularGraph — Duration Floor Semantics", () => {
     });
 
     const actualDuration = result.length / 2 / 44100;
-    expect(actualDuration).toBeGreaterThanOrEqual(timelineDuration - 0.2);
+    expect(actualDuration).toBeCloseTo(5.0, 2);
+  });
+
+  it("fades out the trimmed buffer end instead of cutting mid-note", () => {
+    const longNotes = Array.from({ length: 30 }, (_, index) => ({
+      time: index * 0.5,
+      duration: 0.5,
+      note: "C4",
+    }));
+
+    const result = renderModularGraph({
+      soundType: "modular",
+      sampleRate: 44100,
+      tempo: 120,
+      duration: 5,
+      nodes: STANDARD_NODES,
+      tracks: [{ nodeChain: ["oscillator", "envelope"], notes: longNotes }],
+    });
+
+    // The very last frame of a trimmed render must be silent (fade target)
+    const lastLeft = result[result.length - 2];
+    const lastRight = result[result.length - 1];
+    expect(Math.abs(lastLeft)).toBeLessThan(0.01);
+    expect(Math.abs(lastRight)).toBeLessThan(0.01);
   });
 
   it("falls back to timeline computation when no config.duration is set", () => {
@@ -558,9 +582,9 @@ describe("Full Pipeline — init → add_channel → write_pattern → render", 
     expect(reportedDuration).toBeLessThanOrEqual(14.0);
   });
 
-  it("produces correct duration when notes exceed target", () => {
+  it("trims to the exact target duration when notes exceed it", () => {
     // LPB=4, 120 BPM: each row = 60/120/4 = 0.125s
-    // 80 rows = 10s, target is 5s — should NOT truncate
+    // 80 rows = 10s of content, target is 5s — the target is authoritative
     const session = createTrackerSession({ duration: 5, tempo: 120, linesPerBeat: 4 });
     trackSession(session.sessionId);
 
@@ -577,8 +601,7 @@ describe("Full Pipeline — init → add_channel → write_pattern → render", 
     const audioResult = generateAudioWav(toSynthesizerConfig(session.sessionId).config!);
     const reportedDuration = audioResult.sampleCount / 44100;
 
-    // Should NOT truncate to 5s — Math.max ensures notes win
-    expect(reportedDuration).toBeGreaterThanOrEqual(9.5);
+    expect(reportedDuration).toBeCloseTo(5.0, 2);
   });
 
   it("produces correct duration with no target duration set", () => {

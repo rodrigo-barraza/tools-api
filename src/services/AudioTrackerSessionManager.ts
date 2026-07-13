@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import logger from "../logger.ts";
+import { INSTRUMENT_PRESETS } from "./SoundSynthesizerService.ts";
 import type {
   SynthesizerConfig,
   NodeConfig,
@@ -21,7 +22,8 @@ export interface TrackerRow {
 export interface TrackerInputRow {
   note: string;
   velocity?: number;
-  duration: number;
+  /** Grid steps (1-64) or a beat fraction like "1/4"; defaults to 1 step */
+  duration?: number | string;
   pitchBend?: PitchBendConfig;
 }
 
@@ -245,7 +247,11 @@ export function writeTrackerPattern(
     };
   }
 
-  const expandedRows = expandDurationRows(options.rows);
+  const expansionResult = expandDurationRows(options.rows, session.linesPerBeat);
+  if ("error" in expansionResult) {
+    return { success: false, error: expansionResult.error };
+  }
+  const expandedRows = expansionResult.rows;
   const shouldAppend = options.append !== false;
 
   if (shouldAppend) {
@@ -293,12 +299,28 @@ export function getActiveSessionCount(): number {
   return sessionStore.size;
 }
 
+/**
+ * Length in seconds of the pattern content actually written to the session
+ * (longest channel × row duration). Unlike a rendered preview, this is not
+ * inflated by auto-repeat looping — it's the number an agent needs when
+ * deciding whether to write more rows to reach a target duration.
+ */
+export function getAuthoredDurationSeconds(session: TrackerSession): number {
+  const rowDuration = 60.0 / session.tempo / session.linesPerBeat;
+  const longestChannelRows = session.channels.reduce(
+    (max, channel) => Math.max(max, channel.pattern.length),
+    0,
+  );
+  return longestChannelRows * rowDuration;
+}
+
 // ────────────────────────────────────────────────────────────
 // Conversion — Tracker State → SynthesizerConfig
 // ────────────────────────────────────────────────────────────
 
 export function toSynthesizerConfig(
   sessionId: string,
+  options: { forPreview?: boolean } = {},
 ): { config: SynthesizerConfig; error?: string } | { config: null; error: string } {
   const session = sessionStore.get(sessionId);
   if (!session) {
@@ -336,21 +358,32 @@ export function toSynthesizerConfig(
       channelNodeChain.push(
         ...channel.nodeChain.map((nodeId) => `${channelPrefix}_${nodeId}`),
       );
+    } else if (patternHasDrumTriggers(channel.pattern)) {
+      // Drum mode: drum triggers (KICK/SNARE/HAT) must be synthesized by a
+      // drum_synth node — an oscillator would render them as a flat tone.
+      // DrumSynthNode shapes its own amplitude, so no envelope is needed.
+      const drumId = `${channelPrefix}_drums`;
+      nodes[drumId] = { type: "drum_synth" };
+      channelNodeChain.push(drumId);
     } else {
-      // Simple mode: auto-build from instrument/waveform + effects
+      // Simple mode: auto-build from instrument/waveform + effects.
+      // Instrument presets map their waveform + ADSR onto the node graph
+      // (harmonics/FM/LFO have no modular node equivalent).
+      const instrumentPreset = channel.instrument
+        ? INSTRUMENT_PRESETS[channel.instrument]
+        : undefined;
+
       const oscillatorId = `${channelPrefix}_osc`;
       nodes[oscillatorId] = {
         type: "oscillator",
-        waveform: channel.waveform ?? "sine",
+        waveform: channel.waveform ?? instrumentPreset?.waveform ?? "sine",
       };
       channelNodeChain.push(oscillatorId);
 
       const envelopeId = `${channelPrefix}_env`;
-      if (channel.instrument) {
-        nodes[envelopeId] = { type: "envelope", attack: 0.005, decay: 0.3, sustain: 0.4, release: 0.2 };
-      } else {
-        nodes[envelopeId] = { type: "envelope", attack: 0.005, decay: 0.2, sustain: 0.5, release: 0.15 };
-      }
+      nodes[envelopeId] = instrumentPreset
+        ? { type: "envelope", ...instrumentPreset.envelope }
+        : { type: "envelope", attack: 0.005, decay: 0.2, sustain: 0.5, release: 0.15 };
       channelNodeChain.push(envelopeId);
 
       // Effects chain
@@ -406,10 +439,12 @@ export function toSynthesizerConfig(
     );
 
     // Auto-repeat: when a target duration is set and the pattern is shorter,
-    // calculate how many repetitions are needed to fill the target duration.
-    // This is the standard tracker/sequencer behavior — patterns loop.
+    // calculate how many repetitions are needed to fill the target duration
+    // (the final render trims back to the exact target). This is the standard
+    // tracker/sequencer behavior — patterns loop. Previews skip the looping
+    // and play only what's actually been written.
     let repeatCount: number | undefined;
-    if (session.duration && convertedNotes.length > 0) {
+    if (!options.forPreview && session.duration && convertedNotes.length > 0) {
       const patternDuration = computePatternDuration(
         convertedNotes,
         session.tempo,
@@ -440,23 +475,10 @@ export function toSynthesizerConfig(
     sampleRate: session.sampleRate,
     swing: session.swing > 0 ? session.swing : undefined,
     humanize: session.humanize > 0 ? session.humanize : undefined,
-    duration: session.duration,
+    duration: options.forPreview ? undefined : session.duration,
     nodes,
     tracks,
   };
-
-  // When ALL channels use a named instrument preset, set the instrument
-  // on the config for the synthesizer engine to resolve the preset chain.
-  // For mixed channels, we rely on the per-channel node graphs built above.
-  const instrumentChannels = session.channels.filter(
-    (channel) => channel.instrument && !channel.nodes,
-  );
-  if (
-    instrumentChannels.length === session.channels.length &&
-    instrumentChannels.length === 1
-  ) {
-    config.instrument = instrumentChannels[0].instrument;
-  }
 
   return { config };
 }
@@ -469,22 +491,83 @@ export function toSynthesizerConfig(
 const NOTE_OFF_SYMBOLS = new Set(["===", "OFF", "KEY_OFF"]);
 const EMPTY_SYMBOLS = new Set(["---", "...", ""]);
 const SILENCE_SYMBOLS = new Set(["REST", "SILENCE"]);
+const DRUM_TRIGGER_SYMBOLS = new Set(["KICK", "SNARE", "HAT", "HIHAT"]);
+
+function patternHasDrumTriggers(pattern: TrackerRow[]): boolean {
+  return pattern.some((row) =>
+    DRUM_TRIGGER_SYMBOLS.has(row.note.toUpperCase().trim()),
+  );
+}
 
 
 
 /**
- * Expands input rows that carry a required `duration` field (in steps) into the
- * internal tracker grid representation. A row with `duration: N` becomes:
+ * Resolves a row duration into a whole number of grid steps.
+ *
+ * Accepted forms:
+ *   - number (or numeric string): step count, e.g. 4 = four grid rows
+ *   - beat fraction string: "1/4" (quarter note), "1/8", "1/2", with
+ *     optional dotted ("1/4d") or triplet ("1/4t") modifiers — converted
+ *     to steps via linesPerBeat (one beat = linesPerBeat rows)
+ *
+ * Returns null when the value can't be interpreted.
+ */
+export function resolveDurationSteps(
+  duration: number | string,
+  linesPerBeat: number,
+): number | null {
+  if (typeof duration === "number") {
+    if (!Number.isFinite(duration) || duration <= 0) return null;
+    return Math.max(1, Math.min(Math.round(duration), 64));
+  }
+
+  const trimmed = String(duration).trim();
+  const beatFractionMatch = trimmed.match(/^(\d+)\/(\d+)(d|t)?$/i);
+  if (beatFractionMatch) {
+    const numerator = parseInt(beatFractionMatch[1], 10);
+    const denominator = parseInt(beatFractionMatch[2], 10);
+    if (denominator <= 0 || numerator <= 0) return null;
+    const modifier = beatFractionMatch[3]?.toLowerCase();
+    // A whole note = 4 beats, so "1/4" = 1 beat = linesPerBeat steps
+    let beats = (numerator * 4) / denominator;
+    if (modifier === "d") beats *= 1.5;
+    if (modifier === "t") beats *= 2 / 3;
+    return Math.max(1, Math.min(Math.round(beats * linesPerBeat), 64));
+  }
+
+  const parsed = Number(trimmed);
+  if (Number.isFinite(parsed) && parsed > 0) {
+    return Math.max(1, Math.min(Math.round(parsed), 64));
+  }
+
+  return null;
+}
+
+/**
+ * Expands input rows that carry a required `duration` field into the
+ * internal tracker grid representation. A row resolving to N steps becomes:
  *   1) the note-trigger row (with duration stripped)
  *   2) N-1 sustain rows (`---`)
  *
- * Duration is clamped to [1, 64] to prevent degenerate expansions.
+ * Step counts are clamped to [1, 64] to prevent degenerate expansions.
  */
-function expandDurationRows(inputRows: TrackerInputRow[]): TrackerRow[] {
+function expandDurationRows(
+  inputRows: TrackerInputRow[],
+  linesPerBeat: number,
+): { rows: TrackerRow[] } | { error: string } {
   const expandedRows: TrackerRow[] = [];
 
-  for (const row of inputRows) {
-    const stepCount = Math.max(1, Math.min(Math.round(row.duration), 64));
+  for (let rowIndex = 0; rowIndex < inputRows.length; rowIndex++) {
+    const row = inputRows[rowIndex];
+    const stepCount = resolveDurationSteps(row.duration ?? 1, linesPerBeat);
+    if (stepCount === null) {
+      return {
+        error:
+          `Row ${rowIndex} has invalid duration '${row.duration}'. ` +
+          `Use a whole number of grid steps (1-64) or a beat fraction ` +
+          `like '1/4' (quarter note), '1/8', '1/4d' (dotted), '1/4t' (triplet).`,
+      };
+    }
 
     const { duration: _discardedDuration, ...triggerRow } = row;
     expandedRows.push(triggerRow);
@@ -494,7 +577,7 @@ function expandDurationRows(inputRows: TrackerInputRow[]): TrackerRow[] {
     }
   }
 
-  return expandedRows;
+  return { rows: expandedRows };
 }
 
 function computePatternDuration(

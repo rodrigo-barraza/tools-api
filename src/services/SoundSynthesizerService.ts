@@ -1257,10 +1257,12 @@ export function renderModularGraph(config: SynthesizerConfig): Float32Array {
   }
 
   const timelineDuration = computeTimelineDuration(tracks, nodes, tempo, beatsPerBar);
-  let duration = config.duration
-    ? Math.max(config.duration, timelineDuration)
-    : timelineDuration;
+  // An explicit duration is authoritative: shorter timelines are padded with
+  // silence, longer ones are trimmed (with a fade-out below). Anything else
+  // makes "make a 10 second clip" overshoot when patterns auto-repeat.
+  let duration = config.duration ?? timelineDuration;
   duration = Math.min(Math.max(duration, 0.1), 60.0);
+  const isTrimmed = config.duration != null && timelineDuration > duration;
 
   const numberSamples = Math.floor(duration * sampleRate);
   const masterBuffer = new Float32Array(numberSamples * 2);
@@ -1416,6 +1418,20 @@ export function renderModularGraph(config: SynthesizerConfig): Float32Array {
     masterBuffer[currentSample * 2 + 1] = masterRight;
   }
 
+  if (isTrimmed) {
+    // Fade the last 30ms so a mid-note cut doesn't click
+    const fadeSamples = Math.min(
+      Math.floor(0.03 * sampleRate),
+      numberSamples,
+    );
+    for (let i = 0; i < fadeSamples; i++) {
+      const gain = i / fadeSamples;
+      const frameIndex = numberSamples - 1 - i;
+      masterBuffer[frameIndex * 2] *= gain;
+      masterBuffer[frameIndex * 2 + 1] *= gain;
+    }
+  }
+
   let maxPeak = 0.0;
   for (let i = 0; i < masterBuffer.length; i++) {
     const absValue = Math.abs(masterBuffer[i]);
@@ -1441,8 +1457,11 @@ export function noteToFreq(note: number | string): number {
 
   const trimmed = String(note).trim();
 
-  // REST / SILENCE produces zero frequency (silent output)
-  if (/^(rest|silence)$/i.test(trimmed)) return 0;
+  // REST / SILENCE produces zero frequency (silent output).
+  // Drum triggers are synthesized by drum_synth nodes, which ignore
+  // frequency — if one reaches an oscillator (mixed channel), silence
+  // beats the 440 Hz fallback tone.
+  if (/^(rest|silence|kick|snare|hat|hihat)$/i.test(trimmed)) return 0;
 
   // Handle flat notation (e.g. Bb4, Eb3)
   const flatMatch = trimmed.match(/^([A-G]b)(-?\d+)$/i);

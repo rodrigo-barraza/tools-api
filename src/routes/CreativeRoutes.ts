@@ -4,7 +4,7 @@ import PromptLocaleService from "../services/PromptLocaleService.ts";
 
 import { Request, Response, Router } from "express";
 import PrismService from "../services/PrismService.ts";
-import { generateAudioWav } from "../services/SoundSynthesizerService.ts";
+import { generateAudioWav, INSTRUMENT_PRESETS } from "../services/SoundSynthesizerService.ts";
 import { validateSynthesizerInput } from "../services/SoundSynthesizerValidation.ts";
 import { processAudio, getAvailablePresets } from "../services/AudioRemixService.ts";
 import { validateAudioRemixInput } from "../services/AudioRemixValidation.ts";
@@ -16,6 +16,7 @@ import {
   toSynthesizerConfig,
   deleteTrackerSession,
   getActiveSessionCount,
+  getAuthoredDurationSeconds,
 } from "../services/AudioTrackerSessionManager.ts";
 import { validateVectorAnimationInput } from "../services/VectorAnimationValidation.ts";
 import { synthesizeSpeech, getSupportedVoices, isEspeakAvailable } from "../services/TextToSpeechService.ts";
@@ -668,19 +669,62 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const { action } = req.body;
 
-    // ── Tracker Sequencer Actions ──────────────────────────────
-    // When `action` is present, dispatch to the stateful tracker
-    // workflow. Each action is a small incremental step, and every
-    // step auto-renders a live audio preview of the current state.
+    // ── Tracker Sequencer Workflow ─────────────────────────────
+    // generate_audio is tracker-only: init → add_channel →
+    // write_pattern → render. Each action is a small incremental
+    // step, and every step auto-renders a live audio preview of
+    // the content written so far.
 
-    // Shared helper: attempt to render the current session state.
-    // Returns audio payload if there's renderable content, null otherwise.
+    const VALID_ACTIONS = ["init", "add_channel", "write_pattern", "render"];
+    if (!action || !VALID_ACTIONS.includes(action)) {
+      return res.status(400).json({
+        error:
+          `Missing or invalid 'action' (got: ${JSON.stringify(action ?? null)}). ` +
+          `generate_audio uses the tracker workflow: 1) action "init" creates a session ` +
+          `(tempo, timeSignature, linesPerBeat, duration), 2) "add_channel" once per ` +
+          `instrument, 3) "write_pattern" writes note rows to a channel, 4) "render" ` +
+          `produces the final audio. Valid actions: ${VALID_ACTIONS.join(", ")}.`,
+      });
+    }
+
+    // Shared helper: resolve and validate the sessionId parameter.
+    const requireSession = (
+      sessionId: unknown,
+    ):
+      | { session: NonNullable<ReturnType<typeof getTrackerSession>> }
+      | { errorStatus: number; error: string } => {
+      if (!sessionId || sessionId === "null" || sessionId === "undefined") {
+        return {
+          errorStatus: 400,
+          error:
+            `Missing or invalid sessionId (got: ${JSON.stringify(sessionId ?? null)}). ` +
+            `Pass the exact sessionId returned by action: "init". If you no longer ` +
+            `have it, call action: "init" again to start a new session.`,
+        };
+      }
+      const session = getTrackerSession(String(sessionId));
+      if (!session) {
+        return {
+          errorStatus: 400,
+          error:
+            `Session '${sessionId}' not found or expired (sessions expire after 30 ` +
+            `minutes of inactivity). Call action: "init" again and rebuild the ` +
+            `channels and patterns with the new sessionId.`,
+        };
+      }
+      return { session };
+    };
+
+    // Shared helper: attempt to render a preview of the content written so
+    // far. Previews are NOT looped or padded to the target duration — they
+    // play exactly what has been authored. Returns null if nothing is
+    // renderable yet.
     const tryRenderPreview = (sessionId: string): {
       audio: { data: string; mimeType: string };
       duration: number;
       sampleCount: number;
     } | null => {
-      const conversionResult = toSynthesizerConfig(sessionId);
+      const conversionResult = toSynthesizerConfig(sessionId, { forPreview: true });
       if (!conversionResult.config) return null;
       const validationError = validateSynthesizerInput(conversionResult.config);
       if (validationError) return null;
@@ -697,21 +741,36 @@ router.post(
       }
     };
 
-    // Compute duration progress feedback when a session has a target duration.
-    // Returns fields like targetDuration and remainingDuration so the LLM
-    // knows how much more content is needed without doing BPM math itself.
+    // Duration progress feedback based on AUTHORED pattern length (longest
+    // channel), never on a rendered preview — auto-repeat looping would
+    // inflate that and tell the model it's done when it isn't.
     const buildDurationProgress = (
-      session: ReturnType<typeof getTrackerSession>,
-      preview: ReturnType<typeof tryRenderPreview>,
+      session: NonNullable<ReturnType<typeof getTrackerSession>>,
     ): Record<string, number> => {
-      if (!session?.duration) return {};
-      const currentDuration = preview?.duration ?? 0;
-      const remaining = Math.max(0, session.duration - currentDuration);
+      const authored = Math.round(getAuthoredDurationSeconds(session) * 100) / 100;
+      if (!session.duration) return { authoredDuration: authored };
       return {
         targetDuration: session.duration,
-        currentDuration: Math.round(currentDuration * 100) / 100,
-        remainingDuration: Math.round(remaining * 100) / 100,
+        authoredDuration: authored,
+        remainingDuration: Math.round(Math.max(0, session.duration - authored) * 100) / 100,
       };
+    };
+
+    // Human-readable progress sentence appended to action messages.
+    const describeDurationProgress = (
+      session: NonNullable<ReturnType<typeof getTrackerSession>>,
+    ): string => {
+      if (!session.duration) return "";
+      const authored = getAuthoredDurationSeconds(session);
+      const remaining = Math.max(0, session.duration - authored);
+      if (remaining <= 0) {
+        return ` Authored content covers the ${session.duration}s target.`;
+      }
+      return (
+        ` Authored ${authored.toFixed(2)}s of the ${session.duration}s target ` +
+        `(${remaining.toFixed(2)}s remaining — shorter patterns auto-loop at ` +
+        `render to fill the target; write more rows if looping is not wanted).`
+      );
     };
 
     if (action === "init") {
@@ -725,16 +784,17 @@ router.post(
         humanize: humanize != null ? Number(humanize) : undefined,
         duration: duration != null ? Number(duration) : undefined,
       });
+      const rowMilliseconds = (60 / session.tempo / session.linesPerBeat) * 1000;
       const durationMessage = session.duration
-        ? ` Target duration: ${session.duration}s.`
+        ? ` Target duration: ${session.duration}s (the final render will be exactly this long — shorter patterns auto-loop, longer ones are trimmed).`
         : "";
       return res.json({
         success: true,
         message:
           `Tracker session created. Tempo: ${session.tempo} BPM, ` +
           `Time Signature: ${session.timeSignature.join("/")}, ` +
-          `Lines Per Beat: ${session.linesPerBeat} (each row = ${(60 / session.tempo / session.linesPerBeat * 1000).toFixed(1)}ms).${durationMessage} ` +
-          `Now add channels with action: "add_channel".`,
+          `Lines Per Beat: ${session.linesPerBeat} (each row = ${rowMilliseconds.toFixed(1)}ms).${durationMessage} ` +
+          `Now add channels with action: "add_channel" (pass this sessionId).`,
         sessionId: session.sessionId,
         tempo: session.tempo,
         timeSignature: session.timeSignature,
@@ -746,18 +806,26 @@ router.post(
     }
 
     if (action === "add_channel") {
-      const { sessionId, channelId, instrument, waveform, volume, effects, nodes, nodeChain } = req.body;
-      if (!sessionId) {
-        return res.status(400).json({
-          error: "Missing required parameter: sessionId. Call action: \"init\" first.",
-        });
+      const { sessionId, channelId, instrument, waveform, volume, effects, nodes, nodeChain, rows } = req.body;
+      const sessionResult = requireSession(sessionId);
+      if ("error" in sessionResult) {
+        return res.status(sessionResult.errorStatus).json({ error: sessionResult.error });
       }
+      const session = sessionResult.session;
       if (!channelId) {
         return res.status(400).json({
           error: "Missing required parameter: channelId (a descriptive name like 'lead', 'bass', 'drums').",
         });
       }
-      const result = addTrackerChannel(sessionId, {
+      if (instrument && !Object.hasOwn(INSTRUMENT_PRESETS, instrument)) {
+        return res.status(400).json({
+          error:
+            `Invalid instrument '${instrument}'. Valid: ${Object.keys(INSTRUMENT_PRESETS).join(", ")}. ` +
+            `For drum beats, omit the instrument entirely and write KICK/SNARE/HAT ` +
+            `rows — drum synthesis is automatic.`,
+        });
+      }
+      const result = addTrackerChannel(session.sessionId, {
         channelId,
         instrument,
         waveform,
@@ -769,33 +837,69 @@ router.post(
       if (!result.success) {
         return res.status(400).json({ error: result.error });
       }
-      const session = getTrackerSession(sessionId);
-      const preview = tryRenderPreview(sessionId);
-      const durationProgress = buildDurationProgress(session, preview);
+
+      // Optional inline pattern: writing rows together with the channel
+      // saves an extra round trip for the common one-pattern-per-channel case.
+      let writtenRows = 0;
+      let previewNotation: string | undefined;
+      if (rows != null) {
+        if (!Array.isArray(rows) || rows.length === 0) {
+          return res.status(400).json({
+            error:
+              `Channel '${channelId}' was created, but 'rows' must be a non-empty ` +
+              `array of {note, duration, velocity?} to write a pattern inline. ` +
+              `Write it with action: "write_pattern".`,
+          });
+        }
+        const writeResult = writeTrackerPattern({
+          sessionId: session.sessionId,
+          channelId,
+          rows,
+        });
+        if (!writeResult.success) {
+          return res.status(400).json({
+            error:
+              `Channel '${channelId}' was created, but writing its pattern failed: ` +
+              `${writeResult.error} Fix the rows and use action: "write_pattern".`,
+          });
+        }
+        writtenRows = writeResult.totalRows ?? 0;
+        previewNotation = writeResult.previewNotation;
+      }
+
+      const preview = tryRenderPreview(session.sessionId);
       return res.json({
         success: true,
         message:
           `Channel '${channelId}' added` +
           (instrument ? ` with instrument preset '${instrument}'` : "") +
-          `. ${result.channelCount} channel(s) in session. ` +
-          `Now write patterns with action: "write_pattern".`,
+          (writtenRows > 0 ? ` and ${writtenRows} pattern row(s) written` : "") +
+          `. ${result.channelCount} channel(s) in session.` +
+          describeDurationProgress(session) +
+          (writtenRows > 0
+            ? ` Add more channels, write more rows, or call action: "render".`
+            : ` Now write its pattern with action: "write_pattern".`),
+        sessionId: session.sessionId,
         channelId,
         channelCount: result.channelCount,
-        allChannels: session?.channels.map((channel) => channel.channelId) ?? [],
+        allChannels: session.channels.map((channel) => channel.channelId),
+        ...(previewNotation && { totalRows: writtenRows, previewNotation }),
         ...(preview && {
           audio: preview.audio,
           duration: preview.duration,
           sampleCount: preview.sampleCount,
         }),
-        ...durationProgress,
+        ...buildDurationProgress(session),
       });
     }
 
     if (action === "write_pattern") {
       const { sessionId, channelId, rows, startRow, append } = req.body;
-      if (!sessionId) {
-        return res.status(400).json({ error: "Missing required parameter: sessionId." });
+      const sessionResult = requireSession(sessionId);
+      if ("error" in sessionResult) {
+        return res.status(sessionResult.errorStatus).json({ error: sessionResult.error });
       }
+      const session = sessionResult.session;
       if (!channelId) {
         return res.status(400).json({ error: "Missing required parameter: channelId." });
       }
@@ -805,7 +909,7 @@ router.post(
         });
       }
       const writeResult = writeTrackerPattern({
-        sessionId,
+        sessionId: session.sessionId,
         channelId,
         rows,
         startRow: startRow != null ? Number(startRow) : undefined,
@@ -814,15 +918,15 @@ router.post(
       if (!writeResult.success) {
         return res.status(400).json({ error: writeResult.error });
       }
-      const preview = tryRenderPreview(sessionId);
-      const session = getTrackerSession(sessionId);
-      const durationProgress = buildDurationProgress(session, preview);
+      const preview = tryRenderPreview(session.sessionId);
       return res.json({
         success: true,
         message:
           `Wrote ${rows.length} row(s) to channel '${channelId}'. ` +
-          `Total rows: ${writeResult.totalRows}. ` +
-          `Add more patterns or call action: "render" for the final output.`,
+          `Total rows: ${writeResult.totalRows}.` +
+          describeDurationProgress(session) +
+          ` Add more patterns or call action: "render" for the final output.`,
+        sessionId: session.sessionId,
         channelId,
         totalRows: writeResult.totalRows,
         previewNotation: writeResult.previewNotation,
@@ -831,16 +935,18 @@ router.post(
           duration: preview.duration,
           sampleCount: preview.sampleCount,
         }),
-        ...durationProgress,
+        ...buildDurationProgress(session),
       });
     }
 
     if (action === "render") {
       const { sessionId, clearSession } = req.body;
-      if (!sessionId) {
-        return res.status(400).json({ error: "Missing required parameter: sessionId." });
+      const sessionResult = requireSession(sessionId);
+      if ("error" in sessionResult) {
+        return res.status(sessionResult.errorStatus).json({ error: sessionResult.error });
       }
-      const conversionResult = toSynthesizerConfig(sessionId);
+      const session = sessionResult.session;
+      const conversionResult = toSynthesizerConfig(session.sessionId);
       if (!conversionResult.config) {
         return res.status(400).json({ error: conversionResult.error });
       }
@@ -850,29 +956,36 @@ router.post(
         return res.status(400).json({ error: validationError });
       }
       try {
-        const session = getTrackerSession(sessionId);
         const boundedSampleRate = synthesizerConfig.sampleRate ?? 44100;
         const result = generateAudioWav(synthesizerConfig);
         const actualDuration = result.sampleCount / boundedSampleRate;
-        const channelSummary = session
-          ? session.channels
-            .map((channel) => `${channel.channelId} (${channel.pattern.length} rows)`)
-            .join(", ")
-          : "unknown";
+        const authoredDuration = getAuthoredDurationSeconds(session);
+        const channelSummary = session.channels
+          .map((channel) => `${channel.channelId} (${channel.pattern.length} rows)`)
+          .join(", ");
+        let durationNote = "";
+        if (session.duration && authoredDuration < session.duration - 0.05) {
+          durationNote =
+            ` Only ${authoredDuration.toFixed(2)}s of pattern content was written, ` +
+            `so it was looped to fill the ${session.duration}s target.`;
+        }
         if (clearSession) {
-          deleteTrackerSession(sessionId);
+          deleteTrackerSession(session.sessionId);
         }
         return res.json({
           success: true,
           message:
             `Successfully rendered tracker composition (${actualDuration.toFixed(2)}s, ` +
-            `${boundedSampleRate}Hz). Channels: ${channelSummary}.` +
+            `${boundedSampleRate}Hz). Channels: ${channelSummary}.${durationNote}` +
             (clearSession ? " Session cleared." : " Session preserved for further editing."),
+          sessionId: session.sessionId,
           audio: {
             data: result.audioBase64,
             mimeType: "audio/wav",
           },
           duration: actualDuration,
+          targetDuration: session.duration,
+          authoredDuration: Math.round(authoredDuration * 100) / 100,
           sampleCount: result.sampleCount,
           sessionCleared: !!clearSession,
         });
@@ -886,91 +999,10 @@ router.post(
       }
     }
 
-    // ── Default: Direct Synthesis (existing behavior) ─────────
-    const {
-      soundType,
-      presetEffect,
-      duration,
-      waveform = "sine",
-      frequency = 440,
-      endFrequency,
-      modulatorFrequency,
-      modulationIndex,
-      envelope,
-      harmonics,
-      lfo,
-      delay,
-      sampleRate = 44100,
-      tempo,
-      nodes,
-      tracks,
-      swing,
-      humanize,
-      instrument,
-      timeSignature,
-    } = req.body;
-
-    const requestedDuration = Number(duration);
-    const boundedDuration = isNaN(requestedDuration)
-      ? undefined
-      : Math.min(Math.max(requestedDuration, 0.1), 60.0);
-    const boundedSampleRate = Math.min(
-      Math.max(Number(sampleRate) || 44100, 8000),
-      48000,
-    );
-
-    const synthesizerConfig = {
-      soundType,
-      presetEffect,
-      duration: boundedDuration,
-      waveform,
-      frequency,
-      endFrequency,
-      modulatorFrequency,
-      modulationIndex,
-      envelope,
-      harmonics,
-      lfo,
-      delay,
-      sampleRate: boundedSampleRate,
-      tempo: tempo ? Number(tempo) : undefined,
-      nodes,
-      tracks,
-      swing: swing != null ? Number(swing) : undefined,
-      humanize: humanize != null ? Number(humanize) : undefined,
-      instrument,
-      timeSignature,
-    };
-
-    const validationError = validateSynthesizerInput(synthesizerConfig);
-    if (validationError) {
-      return res.status(400).json({ error: validationError });
-    }
-
-    try {
-      const result = generateAudioWav(synthesizerConfig);
-      const actualDuration = result.sampleCount / boundedSampleRate;
-
-      res.json({
-        success: true,
-        message: presetEffect
-          ? `Successfully generated retro sound preset: '${presetEffect}'.`
-          : `Successfully generated custom audio clip (${actualDuration.toFixed(2)}s, ${boundedSampleRate}Hz).`,
-        audio: {
-          data: result.audioBase64,
-          mimeType: "audio/wav",
-        },
-        duration: actualDuration,
-        sampleCount: result.sampleCount,
-      });
-    } catch (error: unknown) {
-      logger.error(
-        `[CreativeRoutes] generate-audio failed: ${errorMessage(error)}`,
-      );
-      res
-        .status(500)
-        .json({ error: `Audio generation failed: ${errorMessage(error)}` });
-    }
+    // Unreachable — the action guard above returns for unknown actions.
+    return res.status(400).json({
+      error: `Unhandled action '${action}'. Valid actions: ${VALID_ACTIONS.join(", ")}.`,
+    });
   }),
 );
 
