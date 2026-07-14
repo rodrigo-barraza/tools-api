@@ -75,6 +75,7 @@ import creativeRoutes, { getCreativeHealth } from "./routes/CreativeRoutes.ts";
 import gamingRoutes, { getGamingHealth } from "./routes/GamingRoutes.ts";
 import torrentRoutes, { getTorrentHealth } from "./routes/TorrentRoutes.ts";
 import infrastructureRoutes, { getInfrastructureHealth } from "./routes/InfrastructureRoutes.ts";
+import analyticsRoutes, { getAnalyticsHealth } from "./routes/AnalyticsRoutes.ts";
 
 import discordRoutes, { getDiscordHealth } from "./routes/DiscordRoutes.ts";
 import lightsRoutes, { getLightsHealth } from "./routes/LightsRoutes.ts";
@@ -151,6 +152,7 @@ app.use("/creative", express.json({ limit: "50mb" }), creativeRoutes);
 app.use("/gaming", gamingRoutes);
 app.use("/torrent", torrentRoutes);
 app.use("/infrastructure", infrastructureRoutes);
+app.use("/analytics", analyticsRoutes);
 
 app.use("/discord", discordRoutes);
 app.use("/lights", lightsRoutes);
@@ -199,6 +201,7 @@ app.get("/health", async (_req: Request, res: Response) => {
       discord: getDiscordHealth(),
       lights: getLightsHealth(),
       infrastructure: getInfrastructureHealth(),
+      analytics: getAnalyticsHealth(),
     },
   });
 });

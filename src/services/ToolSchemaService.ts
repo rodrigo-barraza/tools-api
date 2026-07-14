@@ -499,6 +499,9 @@ const TOOL_DOMAINS = {
   get_infrastructure_status: "Infrastructure",
   get_container_diagnostics: "Infrastructure",
   get_container_logs: "Infrastructure",
+
+  // Web Analytics
+  get_web_analytics: "Analytics",
 };
 
 // ────────────────────────────────────────────────────────────
@@ -881,6 +884,9 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   get_infrastructure_status: ["🌀", "📊"],
   get_container_diagnostics: ["🐳", "📈"],
   get_container_logs: ["📋", "🔍"],
+
+  // Web Analytics
+  get_web_analytics: ["📈", "🌐"],
 };
 
 // ────────────────────────────────────────────────────────────
@@ -1005,6 +1011,9 @@ const TOOL_REQUIRED_KEYS = {
   get_infrastructure_status: ["PORTAL_SERVICE_URL"],
   get_container_diagnostics: ["PORTAL_SERVICE_URL"],
   get_container_logs: ["PORTAL_SERVICE_URL"],
+
+  // Web Analytics (GA + sessions-service, both proxied by Portal)
+  get_web_analytics: ["PORTAL_SERVICE_URL"],
 };
 
 // ────────────────────────────────────────────────────────────
