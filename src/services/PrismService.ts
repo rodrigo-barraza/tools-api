@@ -1,5 +1,9 @@
 // ─── HTTP Client for Prism LLM Gateway ──────────────────────
+//
+// Thin wrapper around the shared PrismApiClient: tools-service defaults
+// (project/username, per-endpoint timeouts) plus trace-header propagation.
 
+import { PrismApiClient } from "@rodrigo-barraza/service-library";
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
 import {
@@ -8,10 +12,7 @@ import {
   PRISM_TTS_TIMEOUT_MS,
   PRISM_STT_TIMEOUT_MS,
 } from "../constants.ts";
-import { errorMessage } from "../utilities.ts";
 import { getTraceHeaders } from "../middleware/HeaderPropagationMiddleware.ts";
-
-const PRISM_SERVICE_URL = CONFIG.PRISM_SERVICE_URL;
 
 // ────────────────────────────────────────────────────────────
 // Types
@@ -21,7 +22,12 @@ export interface PrismChatParams {
   project?: string;
   username?: string;
   model?: string;
-  messages?: Array<{ role: string; content: string; [key: string]: unknown }>;
+  messages?: Array<{
+    role: string;
+    content: string;
+    name?: string;
+    images?: string[];
+  }>;
   temperature?: number;
   maxTokens?: number;
   [key: string]: unknown;
@@ -61,6 +67,25 @@ export interface TransformedPrismSTTResult {
   [key: string]: unknown;
 }
 
+// Lazy so a missing PRISM_SERVICE_URL fails at call time, not module load.
+let client: PrismApiClient | null = null;
+function prism(): PrismApiClient {
+  if (!client) {
+    // Cast: constructor throws a clear error at first call if unset.
+    client = new PrismApiClient({
+      baseUrl: CONFIG.PRISM_SERVICE_URL as string,
+      project: "tools-api",
+      defaultUsername: "system",
+      // Request-scoped trace/identity headers win over the static defaults,
+      // so calls made while serving a request keep the caller's identity.
+      getExtraHeaders: getTraceHeaders,
+      defaultTimeoutMs: PRISM_CHAT_TIMEOUT_MS,
+      logger,
+    });
+  }
+  return client;
+}
+
 /**
  * Call Prism's /chat endpoint for text/image generation.
  */
@@ -68,32 +93,20 @@ export async function chat(
   params: PrismChatParams,
 ): Promise<TransformedPrismChatResult> {
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), PRISM_CHAT_TIMEOUT_MS);
-
-    const response = await fetch(`${PRISM_SERVICE_URL}/chat?stream=false`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...getTraceHeaders() },
-      body: JSON.stringify({
-        ...params,
-        project: params.project || "tools-api",
-        username: params.username || "system",
-        skipConversation: true,
-      }),
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "");
-      throw new Error(
-        `Prism returned ${response.status}: ${errorText.slice(0, 200)}`,
-      );
-    }
-
-    return (await response.json()) as TransformedPrismChatResult;
+    const { username, ...body } = params;
+    return (await prism().chat({
+      ...body,
+      messages: body.messages ?? [],
+      // Body project beats headers on the Prism side — keeps cost accounting
+      // attributed exactly as before the shared-client migration.
+      project: body.project || "tools-api",
+      username: username || "system",
+      timeoutMs: PRISM_CHAT_TIMEOUT_MS,
+    })) as TransformedPrismChatResult;
   } catch (error: unknown) {
-    logger.error(`[PrismService] chat failed: ${errorMessage(error)}`);
+    logger.error(
+      `[PrismService] chat failed: ${error instanceof Error ? error.message : String(error)}`,
+    );
     throw error;
   }
 }
@@ -102,20 +115,7 @@ export async function chat(
  * Check Prism health/connectivity.
  */
 export async function health(): Promise<boolean> {
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(
-      () => controller.abort(),
-      PRISM_HEALTH_TIMEOUT_MS,
-    );
-    const response = await fetch(`${PRISM_SERVICE_URL}/health`, {
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-    return response.ok;
-  } catch {
-    return false;
-  }
+  return prism().health(PRISM_HEALTH_TIMEOUT_MS);
 }
 
 /**
@@ -126,39 +126,19 @@ export async function textToSpeech(
   params: PrismTTSParams,
 ): Promise<TransformedPrismSpeechResult> {
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), PRISM_TTS_TIMEOUT_MS);
-
-    const response = await fetch(`${PRISM_SERVICE_URL}/text-to-audio`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...getTraceHeaders() },
-      body: JSON.stringify({
-        provider: params.provider || "elevenlabs",
-        text: params.text,
-        voice: params.voice || undefined,
-        model: params.model || undefined,
-        skipConversation: true,
-        project: params.project || "tools-api",
-        username: params.username || "system",
-      }),
-      signal: controller.signal,
+    return await prism().textToSpeech({
+      provider: params.provider || "elevenlabs",
+      text: params.text,
+      voice: params.voice || undefined,
+      model: params.model || undefined,
+      project: params.project || "tools-api",
+      username: params.username || "system",
+      timeoutMs: PRISM_TTS_TIMEOUT_MS,
     });
-    clearTimeout(timeout);
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "");
-      throw new Error(
-        `Prism TTS returned ${response.status}: ${errorText.slice(0, 200)}`,
-      );
-    }
-
-    const contentType = response.headers.get("content-type") || "audio/mpeg";
-    const arrayBuffer = await response.arrayBuffer();
-    const audioBase64 = Buffer.from(arrayBuffer).toString("base64");
-
-    return { audioBase64, contentType };
   } catch (error: unknown) {
-    logger.error(`[PrismService] textToSpeech failed: ${errorMessage(error)}`);
+    logger.error(
+      `[PrismService] textToSpeech failed: ${error instanceof Error ? error.message : String(error)}`,
+    );
     throw error;
   }
 }
@@ -170,35 +150,19 @@ export async function speechToText(
   params: PrismSTTParams,
 ): Promise<TransformedPrismSTTResult> {
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), PRISM_STT_TIMEOUT_MS);
-
-    const response = await fetch(`${PRISM_SERVICE_URL}/audio-to-text`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...getTraceHeaders() },
-      body: JSON.stringify({
-        provider: params.provider || "openai",
-        audio: params.audio,
-        model: params.model || undefined,
-        language: params.language || undefined,
-        skipConversation: true,
-        project: params.project || "tools-api",
-        username: params.username || "system",
-      }),
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "");
-      throw new Error(
-        `Prism STT returned ${response.status}: ${errorText.slice(0, 200)}`,
-      );
-    }
-
-    return (await response.json()) as TransformedPrismSTTResult;
+    return (await prism().transcribeAudio({
+      provider: params.provider || "openai",
+      audio: params.audio,
+      model: params.model || undefined,
+      language: params.language || undefined,
+      project: params.project || "tools-api",
+      username: params.username || "system",
+      timeoutMs: PRISM_STT_TIMEOUT_MS,
+    })) as TransformedPrismSTTResult;
   } catch (error: unknown) {
-    logger.error(`[PrismService] speechToText failed: ${errorMessage(error)}`);
+    logger.error(
+      `[PrismService] speechToText failed: ${error instanceof Error ? error.message : String(error)}`,
+    );
     throw error;
   }
 }
@@ -207,27 +171,7 @@ export async function speechToText(
  * Fetch global user settings from Prism's /settings endpoint.
  */
 export async function getSettings(): Promise<Record<string, unknown> | null> {
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(
-      () => controller.abort(),
-      PRISM_HEALTH_TIMEOUT_MS,
-    );
-
-    const response = await fetch(`${PRISM_SERVICE_URL}/settings`, {
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-
-    if (!response.ok) {
-      throw new Error(`Prism returned ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error: unknown) {
-    logger.error(`[PrismService] getSettings failed: ${errorMessage(error)}`);
-    return null;
-  }
+  return prism().getSettings(PRISM_HEALTH_TIMEOUT_MS);
 }
 
 export default { chat, health, textToSpeech, speechToText, getSettings };

@@ -1,7 +1,7 @@
 {
   "name": "tools-service",
   "version": "0.2.0",
-  "description": "Unified data aggregator API — events, market, products, trends, weather",
+  "description": "Unified data aggregator API \u2014 events, market, products, trends, weather",
   "type": "module",
   "main": "dist/boot.js",
   "scripts": {
@@ -22,6 +22,7 @@
   "license": "ISC",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "@rodrigo-barraza/service-library": "github:rodrigo-barraza/service-library",
     "@rodrigo-barraza/utilities-library": "github:rodrigo-barraza/utilities-library#master",
     "ajv": "^8.20.0",
     "bignumber.js": "^10.0.2",
