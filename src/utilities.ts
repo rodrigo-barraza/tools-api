@@ -8,6 +8,8 @@ import {
   USER_AGENTS,
   EPHEMERAL_TTL_MS,
   EPHEMERAL_MAX_SIZE,
+  AGENTIC_HANDLER_TIMEOUT_MS,
+  AGENTIC_RESULT_SIZE_WARN_BYTES,
 } from "./constants.ts";
 
 // ─── Shared Utilities ──────────────────────────────────────────────
@@ -244,30 +246,105 @@ export function computeTrendingScore(product: ProductForScoring): number {
 // ─── Agentic Route Handler ────────────────────────────────────
 
 /**
+ * Machine-readable error classification, additive to the `error` string.
+ * The calling agentic loop (and the model) can branch on `code` and
+ * `retryable` instead of pattern-matching free-form messages.
+ */
+export type AgenticErrorCode =
+  | "TIMEOUT"
+  | "NOT_FOUND"
+  | "FORBIDDEN"
+  | "VALIDATION"
+  | "AGENT_DISCONNECTED"
+  | "INTERNAL";
+
+export function classifyAgenticError(message: string): {
+  code: AgenticErrorCode;
+  retryable: boolean;
+} {
+  if (/timed?\s?out|timeout/i.test(message)) {
+    return { code: "TIMEOUT", retryable: true };
+  }
+  if (/not connected|disconnected|websocket|socket hang up|ECONNREFUSED|ECONNRESET/i.test(message)) {
+    return { code: "AGENT_DISCONNECTED", retryable: true };
+  }
+  if (/outside allowed|blocked/i.test(message)) {
+    return { code: "FORBIDDEN", retryable: false };
+  }
+  if (/not found|ENOENT|does not exist/i.test(message)) {
+    return { code: "NOT_FOUND", retryable: false };
+  }
+  if (/must include|required|invalid|expected/i.test(message)) {
+    return { code: "VALIDATION", retryable: false };
+  }
+  return { code: "INTERNAL", retryable: false };
+}
+
+/**
  * Wrap an agentic service call with standard error-status mapping.
  * Agentic services return `{ error }` objects (not throw). This wrapper
  * maps "outside allowed"/"blocked" errors to 403, other errors to 400,
  * and sends the result as JSON on success.
+ *
+ * Thrown errors return their sanitized message (no stack) plus a
+ * machine-readable `code`/`retryable` — an opaque "internal error" gives
+ * the model nothing to act on. Handlers are raced against a hard timeout
+ * so a hung local operation can't stall the loop forever, and oversized
+ * results are logged (log-only for now) for size-governance telemetry.
  */
 export function agenticHandler<T extends object>(
   toolFunction: (req: Request) => Promise<T>,
 ) {
   return async (req: Request, res: Response) => {
     try {
-      const result = await toolFunction(req);
+      const result = await promiseWithTimeout(
+        toolFunction(req),
+        AGENTIC_HANDLER_TIMEOUT_MS,
+        `Tool handler timed out after ${AGENTIC_HANDLER_TIMEOUT_MS}ms (${req.method} ${req.originalUrl})`,
+      );
       const errorValue = (result as Record<string, unknown>).error;
       if (typeof errorValue === "string") {
-        const isForbidden =
-          errorValue.includes("outside allowed") ||
-          errorValue.includes("blocked");
-        return res.status(isForbidden ? 403 : 400).json(result);
+        const { code, retryable } = classifyAgenticError(errorValue);
+        return res
+          .status(code === "FORBIDDEN" ? 403 : 400)
+          .json({ code, retryable, ...result });
       }
       res.json(result);
+
+      const responseBytes = Number(res.getHeader("content-length") || 0);
+      if (responseBytes > AGENTIC_RESULT_SIZE_WARN_BYTES) {
+        logger.warn(
+          `[AgenticHandler] Oversized tool result: ${req.method} ${req.originalUrl} returned ${Math.round(responseBytes / 1024)}KB (warn threshold ${Math.round(AGENTIC_RESULT_SIZE_WARN_BYTES / 1024)}KB)`,
+        );
+      }
     } catch (error: unknown) {
-      logger.error(`Agentic handler error: ${errorMessage(error)}`);
-      res.status(500).json({ error: "Internal agentic tool error" });
+      const message = errorMessage(error) || "Internal agentic tool error";
+      logger.error(`Agentic handler error: ${message}`);
+      const { code, retryable } = classifyAgenticError(message);
+      res.status(code === "TIMEOUT" ? 504 : 500).json({
+        // Sanitized message only — never a stack trace
+        error: message.slice(0, 500),
+        code,
+        retryable,
+      });
     }
   };
+}
+
+/** Race a promise against a timeout that rejects with `message`. */
+function promiseWithTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  message: string,
+): Promise<T> {
+  let timer: NodeJS.Timeout;
+  return Promise.race([
+    promise.finally(() => clearTimeout(timer)),
+    new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error(message)), timeoutMs);
+      timer.unref?.();
+    }),
+  ]);
 }
 
 // ─── Ephemeral Store ──────────────────────────────────────────

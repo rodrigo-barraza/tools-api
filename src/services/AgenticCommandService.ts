@@ -16,8 +16,12 @@ import {
   AGENTIC_COMMAND_MAX_OUTPUT_BYTES as MAX_OUTPUT_BYTES,
   AGENTIC_COMMAND_BACKGROUND_WARMUP_MS as BACKGROUND_WARMUP_MS,
   AGENTIC_COMMAND_KILL_GRACE_PERIOD_MS as KILL_GRACE_PERIOD_MS,
+  AGENTIC_COMMAND_ENV_ALLOWED_NAMES as ENV_ALLOWED_NAMES,
+  AGENTIC_COMMAND_ENV_ALLOWED_PREFIXES as ENV_ALLOWED_PREFIXES,
 } from "../constants.ts";
 import { errorMessage, RESOLVED_BASH_PATH } from "../utilities.ts";
+import { OutputAccumulator } from "../utilities/OutputAccumulator.ts";
+import type { ChildProcess } from "node:child_process";
 
 
 import type { CommandExecutionResult } from "@rodrigo-barraza/utilities-library";
@@ -36,6 +40,54 @@ function validateCommand(command: string): { valid: boolean; error?: string } {
     return { valid: false, error: "Command is required (string)" };
   }
   return { valid: true };
+}
+
+// ────────────────────────────────────────────────────────────
+// Spawn Environment
+// ────────────────────────────────────────────────────────────
+
+/**
+ * Environment for spawned commands: allowlisted passthrough of shell and
+ * toolchain plumbing only — the service's own env carries API keys and DB
+ * credentials that arbitrary commands must not inherit.
+ */
+export function buildCommandEnv(): NodeJS.ProcessEnv {
+  if (process.env.AGENTIC_COMMAND_INHERIT_FULL_ENV === "true") {
+    return {
+      ...process.env,
+      CI: "true", // Disable interactive features
+      FORCE_COLOR: "0",
+      NO_COLOR: "1",
+    };
+  }
+
+  const env: NodeJS.ProcessEnv = {};
+  for (const [name, value] of Object.entries(process.env)) {
+    if (
+      ENV_ALLOWED_NAMES.has(name) ||
+      ENV_ALLOWED_PREFIXES.some((prefix) => name.startsWith(prefix))
+    ) {
+      env[name] = value;
+    }
+  }
+  env.CI = "true";
+  env.FORCE_COLOR = "0";
+  env.NO_COLOR = "1";
+  return env;
+}
+
+/**
+ * Kill a spawned command's entire process group (children spawn detached,
+ * so the bash child is its group leader). Signaling only the direct child
+ * orphans grandchildren — npm→node, python -m http.server, etc.
+ */
+function killChildGroup(child: ChildProcess, signal: NodeJS.Signals): void {
+  if (!child.pid) return;
+  try {
+    process.kill(-child.pid, signal);
+  } catch {
+    child.kill(signal);
+  }
 }
 
 // ────────────────────────────────────────────────────────────
@@ -141,25 +193,20 @@ export async function executeCommand(
   const startTime = performance.now();
 
   return new Promise<CommandExecutionResult>((resolve) => {
-    const stdoutChunks: Buffer[] = [];
-    const stderrChunks: Buffer[] = [];
-    let stdoutLength = 0;
-    let stderrLength = 0;
+    const stdoutAccumulator = new OutputAccumulator(MAX_OUTPUT_BYTES);
+    const stderrAccumulator = new OutputAccumulator(MAX_OUTPUT_BYTES);
     const timedOut = false;
     let aborted = false;
     let settled = false;
 
     // Use bash -l -c to get full PATH (conda, nvm, etc.)
+    // detached: true makes the bash child a process-group leader so
+    // kill(-pid) reaches grandchildren (npm→node, dev servers).
     const child = spawn(RESOLVED_BASH_PATH, ["-l", "-c", command], {
       cwd: cwdValidation.resolved,
       stdio: ["pipe", "pipe", "pipe"],
-      env: {
-        ...process.env,
-        CI: "true", // Disable interactive features
-        FORCE_COLOR: "0",
-        NO_COLOR: "1",
-      },
-      detached: false,
+      env: buildCommandEnv(),
+      detached: true,
     });
 
     child.stdin.end();
@@ -171,8 +218,6 @@ export async function executeCommand(
       clearTimeout(timer);
       if (signal) signal.removeEventListener("abort", onAbort);
 
-      const stdout = Buffer.concat(stdoutChunks).toString("utf-8");
-      const stderr = Buffer.concat(stderrChunks).toString("utf-8");
       const executionTimeMs = Math.round(performance.now() - startTime);
 
       // Register in the background process registry
@@ -186,14 +231,8 @@ export async function executeCommand(
 
       resolve({
         success: true,
-        stdout:
-          stdoutLength > MAX_OUTPUT_BYTES
-            ? stdout + "\n... [output truncated]"
-            : stdout,
-        stderr:
-          stderrLength > MAX_OUTPUT_BYTES
-            ? stderr + "\n... [output truncated]"
-            : stderr,
+        stdout: stdoutAccumulator.toString(),
+        stderr: stderrAccumulator.toString(),
         exitCode: null,
         executionTimeMs,
         backgrounded: true,
@@ -203,17 +242,11 @@ export async function executeCommand(
     }
 
     child.stdout.on("data", (chunk: Buffer) => {
-      if (stdoutLength < MAX_OUTPUT_BYTES) {
-        stdoutChunks.push(chunk);
-        stdoutLength += chunk.length;
-      }
+      stdoutAccumulator.append(chunk);
     });
 
     child.stderr.on("data", (chunk: Buffer) => {
-      if (stderrLength < MAX_OUTPUT_BYTES) {
-        stderrChunks.push(chunk);
-        stderrLength += chunk.length;
-      }
+      stderrAccumulator.append(chunk);
     });
 
     // Tier 3: On timeout, auto-background instead of killing
@@ -229,7 +262,7 @@ export async function executeCommand(
     const onAbort = () => {
       if (!settled) {
         aborted = true;
-        child.kill("SIGKILL");
+        killChildGroup(child, "SIGKILL");
       }
     };
     if (signal && !signal.aborted) {
@@ -251,20 +284,12 @@ export async function executeCommand(
       clearTimeout(timer);
       if (signal) signal.removeEventListener("abort", onAbort);
 
-      const stdout = Buffer.concat(stdoutChunks).toString("utf-8");
-      const stderr = Buffer.concat(stderrChunks).toString("utf-8");
       const executionTimeMs = Math.round(performance.now() - startTime);
 
       resolve({
         success: exitCode === 0 && !timedOut && !aborted,
-        stdout:
-          stdoutLength > MAX_OUTPUT_BYTES
-            ? stdout + "\n... [output truncated]"
-            : stdout,
-        stderr:
-          stderrLength > MAX_OUTPUT_BYTES
-            ? stderr + "\n... [output truncated]"
-            : stderr,
+        stdout: stdoutAccumulator.toString(),
+        stderr: stderrAccumulator.toString(),
         exitCode: timedOut || aborted ? null : exitCode,
         executionTimeMs,
         timedOut,
@@ -384,10 +409,9 @@ export async function executeCommandStreaming(
   const startTime = performance.now();
 
   return new Promise<CommandExecutionResult>((resolve) => {
-    const stdoutChunks: Buffer[] = [];
-    const stderrChunks: Buffer[] = [];
-    let stdoutLength = 0;
-    let stderrLength = 0;
+    const stdoutAccumulator = new OutputAccumulator(MAX_OUTPUT_BYTES);
+    const stderrAccumulator = new OutputAccumulator(MAX_OUTPUT_BYTES);
+    let streamedBytes = 0;
     let timedOut = false;
     let aborted = false;
     let settled = false;
@@ -395,43 +419,41 @@ export async function executeCommandStreaming(
     const child = spawn(RESOLVED_BASH_PATH, ["-l", "-c", command], {
       cwd: cwdValidation.resolved,
       stdio: ["pipe", "pipe", "pipe"],
-      env: {
-        ...process.env,
-        CI: "true",
-        FORCE_COLOR: "0",
-        NO_COLOR: "1",
-      },
-      detached: false,
+      env: buildCommandEnv(),
+      detached: true,
     });
 
     child.stdin.end();
 
-    child.stdout.on("data", (chunk: Buffer) => {
-      if (stdoutLength < MAX_OUTPUT_BYTES) {
-        stdoutChunks.push(chunk);
-        stdoutLength += chunk.length;
-        onChunk?.("stdout", chunk.toString("utf-8"));
+    // SSE emission stays capped so a runaway command can't flood the
+    // client; the buffered result keeps the tail via the accumulator.
+    function streamChunk(type: "stdout" | "stderr", chunk: Buffer) {
+      if (streamedBytes < MAX_OUTPUT_BYTES) {
+        streamedBytes += chunk.length;
+        onChunk?.(type, chunk.toString("utf-8"));
       }
+    }
+
+    child.stdout.on("data", (chunk: Buffer) => {
+      stdoutAccumulator.append(chunk);
+      streamChunk("stdout", chunk);
     });
 
     child.stderr.on("data", (chunk: Buffer) => {
-      if (stderrLength < MAX_OUTPUT_BYTES) {
-        stderrChunks.push(chunk);
-        stderrLength += chunk.length;
-        onChunk?.("stderr", chunk.toString("utf-8"));
-      }
+      stderrAccumulator.append(chunk);
+      streamChunk("stderr", chunk);
     });
 
     const timer = setTimeout(() => {
       timedOut = true;
-      child.kill("SIGKILL");
+      killChildGroup(child, "SIGKILL");
     }, clampedTimeout);
 
     // Kill child process when upstream abort signal fires (user pressed Stop)
     const onAbort = () => {
       if (!settled) {
         aborted = true;
-        child.kill("SIGKILL");
+        killChildGroup(child, "SIGKILL");
       }
     };
     if (signal && !signal.aborted) {
@@ -443,18 +465,10 @@ export async function executeCommandStreaming(
       settled = true;
       clearTimeout(timer);
       if (signal) signal.removeEventListener("abort", onAbort);
-      const stdout = Buffer.concat(stdoutChunks).toString("utf-8");
-      const stderr = Buffer.concat(stderrChunks).toString("utf-8");
       resolve({
         success: exitCode === 0 && !timedOut && !aborted,
-        stdout:
-          stdoutLength > MAX_OUTPUT_BYTES
-            ? stdout + "\n... [output truncated]"
-            : stdout,
-        stderr:
-          stderrLength > MAX_OUTPUT_BYTES
-            ? stderr + "\n... [output truncated]"
-            : stderr,
+        stdout: stdoutAccumulator.toString(),
+        stderr: stderrAccumulator.toString(),
         exitCode: timedOut || aborted ? null : exitCode,
         executionTimeMs: Math.round(performance.now() - startTime),
         timedOut,

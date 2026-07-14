@@ -273,6 +273,13 @@ async function start() {
   const port = CONFIG.TOOLS_SERVICE_PORT;
   const httpServer = http.createServer(app);
 
+  // Request lifecycle ceilings — a hung handler must not hold a socket
+  // forever. Sized above the longest legitimate operation (commands cap at
+  // 120s, the agentic handler backstop at 150s); SSE streams send data
+  // continuously so they survive the idle timeout.
+  httpServer.requestTimeout = 300_000;
+  httpServer.headersTimeout = 60_000;
+
   // Initialize workspace agent WebSocket (handles upgrade on /ws/agent)
   initAgentWebSocket(httpServer);
 

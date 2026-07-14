@@ -12,6 +12,8 @@ import {
   PYTHON_HEALTH_CHECK_TIMEOUT_MS as HEALTH_CHECK_TIMEOUT_MS,
 } from "../constants.ts";
 import { errorMessage } from "../utilities.ts";
+import { OutputAccumulator } from "../utilities/OutputAccumulator.ts";
+import { buildCommandEnv } from "./AgenticCommandService.ts";
 
 const PYTHON_BIN = "python3";
 
@@ -99,21 +101,18 @@ export async function executePython(
   }
 
   return new Promise<PythonExecutionResult>((resolve) => {
-    const stdoutChunks: Buffer[] = [];
-    const stderrChunks: Buffer[] = [];
-    let stdoutLength = 0;
-    let stderrLength = 0;
+    const stdoutAccumulator = new OutputAccumulator(MAX_OUTPUT_BYTES);
+    const stderrAccumulator = new OutputAccumulator(MAX_OUTPUT_BYTES);
     let timedOut = false;
     let settled = false;
 
     const child = spawn(PYTHON_BIN, ["-u", scriptPath], {
       stdio: ["pipe", "pipe", "pipe"],
       env: {
-        ...process.env,
+        ...buildCommandEnv(),
         PYTHONDONTWRITEBYTECODE: "1",
         PYTHONUNBUFFERED: "1",
       },
-      // Kill entire process group on timeout
       detached: false,
     });
 
@@ -124,19 +123,13 @@ export async function executePython(
 
     if (child.stdout) {
       child.stdout.on("data", (chunk: Buffer) => {
-        if (stdoutLength < MAX_OUTPUT_BYTES) {
-          stdoutChunks.push(chunk);
-          stdoutLength += chunk.length;
-        }
+        stdoutAccumulator.append(chunk);
       });
     }
 
     if (child.stderr) {
       child.stderr.on("data", (chunk: Buffer) => {
-        if (stderrLength < MAX_OUTPUT_BYTES) {
-          stderrChunks.push(chunk);
-          stderrLength += chunk.length;
-        }
+        stderrAccumulator.append(chunk);
       });
     }
 
@@ -150,8 +143,6 @@ export async function executePython(
       settled = true;
       clearTimeout(timer);
 
-      const stdout = Buffer.concat(stdoutChunks).toString("utf-8");
-      const stderr = Buffer.concat(stderrChunks).toString("utf-8");
       const executionTimeMs = Math.round(performance.now() - startTime);
 
       // Cleanup temp dir (includes the script file)
@@ -161,19 +152,10 @@ export async function executePython(
         );
       }
 
-      const truncatedStdout =
-        stdoutLength > MAX_OUTPUT_BYTES
-          ? stdout + `\n... [output truncated at ${MAX_OUTPUT_BYTES} bytes]`
-          : stdout;
-      const truncatedStderr =
-        stderrLength > MAX_OUTPUT_BYTES
-          ? stderr + `\n... [output truncated at ${MAX_OUTPUT_BYTES} bytes]`
-          : stderr;
-
       resolve({
         success: exitCode === 0 && !timedOut,
-        stdout: truncatedStdout,
-        stderr: truncatedStderr,
+        stdout: stdoutAccumulator.toString(),
+        stderr: stderrAccumulator.toString(),
         exitCode: timedOut ? null : exitCode,
         executionTimeMs,
         timedOut,
@@ -239,17 +221,16 @@ export async function executePythonStreaming(
   }
 
   return new Promise<PythonExecutionResult>((resolve) => {
-    const stdoutChunks: Buffer[] = [];
-    const stderrChunks: Buffer[] = [];
-    let stdoutLength = 0;
-    let stderrLength = 0;
+    const stdoutAccumulator = new OutputAccumulator(MAX_OUTPUT_BYTES);
+    const stderrAccumulator = new OutputAccumulator(MAX_OUTPUT_BYTES);
+    let streamedBytes = 0;
     let timedOut = false;
     let settled = false;
 
     const child = spawn(PYTHON_BIN, ["-u", scriptPath], {
       stdio: ["pipe", "pipe", "pipe"],
       env: {
-        ...process.env,
+        ...buildCommandEnv(),
         PYTHONDONTWRITEBYTECODE: "1",
         PYTHONUNBUFFERED: "1",
       },
@@ -260,23 +241,25 @@ export async function executePythonStreaming(
       child.stdin.end();
     }
 
+    // SSE emission stays capped; the buffered result keeps the tail.
+    function streamChunk(type: "stdout" | "stderr", chunk: Buffer) {
+      if (streamedBytes < MAX_OUTPUT_BYTES) {
+        streamedBytes += chunk.length;
+        onChunk?.(type, chunk.toString("utf-8"));
+      }
+    }
+
     if (child.stdout) {
       child.stdout.on("data", (chunk: Buffer) => {
-        if (stdoutLength < MAX_OUTPUT_BYTES) {
-          stdoutChunks.push(chunk);
-          stdoutLength += chunk.length;
-          onChunk?.("stdout", chunk.toString("utf-8"));
-        }
+        stdoutAccumulator.append(chunk);
+        streamChunk("stdout", chunk);
       });
     }
 
     if (child.stderr) {
       child.stderr.on("data", (chunk: Buffer) => {
-        if (stderrLength < MAX_OUTPUT_BYTES) {
-          stderrChunks.push(chunk);
-          stderrLength += chunk.length;
-          onChunk?.("stderr", chunk.toString("utf-8"));
-        }
+        stderrAccumulator.append(chunk);
+        streamChunk("stderr", chunk);
       });
     }
 
@@ -290,9 +273,6 @@ export async function executePythonStreaming(
       settled = true;
       clearTimeout(timer);
 
-      const stdout = Buffer.concat(stdoutChunks).toString("utf-8");
-      const stderr = Buffer.concat(stderrChunks).toString("utf-8");
-
       if (temporaryDirectory) {
         rm(temporaryDirectory, { recursive: true, force: true }).catch(
           () => {},
@@ -301,14 +281,8 @@ export async function executePythonStreaming(
 
       resolve({
         success: exitCode === 0 && !timedOut,
-        stdout:
-          stdoutLength > MAX_OUTPUT_BYTES
-            ? stdout + `\n... [output truncated]`
-            : stdout,
-        stderr:
-          stderrLength > MAX_OUTPUT_BYTES
-            ? stderr + `\n... [output truncated]`
-            : stderr,
+        stdout: stdoutAccumulator.toString(),
+        stderr: stderrAccumulator.toString(),
         exitCode: timedOut ? null : exitCode,
         executionTimeMs: Math.round(performance.now() - startTime),
         timedOut,

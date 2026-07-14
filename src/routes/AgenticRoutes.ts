@@ -6,6 +6,7 @@ import { Request, Response, Router } from "express";
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
 import { agenticHandler, errorMessage } from "../utilities.ts";
+import { getTraceHeaders } from "../middleware/HeaderPropagationMiddleware.ts";
 import { createReadStream } from "node:fs";
 import { stat as fsStat } from "node:fs/promises";
 import { extname } from "node:path";
@@ -1166,7 +1167,7 @@ router.post(
         `${CONFIG.PRISM_SERVICE_URL}/agent-memories`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...getTraceHeaders() },
           body: JSON.stringify({
             agent,
             project: project || DEFAULT_PROJECT,
@@ -1247,7 +1248,7 @@ router.post(
         `${CONFIG.PRISM_SERVICE_URL}/custom-agents`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...getTraceHeaders() },
           body: JSON.stringify({
             name: name.trim(),
             description: description || "",
@@ -1294,7 +1295,7 @@ router.get(
   "/custom-agent/list",
   asyncHandler(async (_req: Request, res: Response) => {
     try {
-      const prismResponse = await fetch(`${CONFIG.PRISM_SERVICE_URL}/custom-agents`);
+      const prismResponse = await fetch(`${CONFIG.PRISM_SERVICE_URL}/custom-agents`, { headers: getTraceHeaders() });
       if (!prismResponse.ok) {
         const errorBody = await prismResponse.json().catch(() => ({}));
         return res
@@ -1324,7 +1325,7 @@ router.get(
   "/agent/list",
   asyncHandler(async (_req: Request, res: Response) => {
     try {
-      const prismResponse = await fetch(`${CONFIG.PRISM_SERVICE_URL}/config/agents`);
+      const prismResponse = await fetch(`${CONFIG.PRISM_SERVICE_URL}/config/agents`, { headers: getTraceHeaders() });
       if (!prismResponse.ok) {
         const errorBody = await prismResponse.json().catch(() => ({}));
         return res
@@ -1405,7 +1406,7 @@ router.post(
         `${CONFIG.PRISM_SERVICE_URL}/custom-agents/${id}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...getTraceHeaders() },
           body: JSON.stringify({
             ...(name !== undefined && { name }),
             ...(description !== undefined && { description }),

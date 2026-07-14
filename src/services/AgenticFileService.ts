@@ -33,8 +33,8 @@ import {
   unlink,
   rm,
 } from "node:fs/promises";
-import { resolve, relative, extname, dirname } from "node:path";
-import { existsSync } from "node:fs";
+import { resolve, relative, extname, dirname, basename, join } from "node:path";
+import { existsSync, realpathSync } from "node:fs";
 import { resolveAndRouteToAgent, sendRpc } from "./AgentConnectionManager.ts";
 import logger from "../logger.ts";
 
@@ -155,6 +155,38 @@ function triggerSecuritySettingsRefresh() {
 // ────────────────────────────────────────────────────────────
 
 /**
+ * Resolve symlinks in a path so the sandbox check runs against the REAL
+ * location — `path.resolve` only normalizes `..`, so a symlink inside an
+ * allowed root pointing outside it would otherwise pass validation.
+ * For not-yet-existing targets (writes), the nearest existing ancestor is
+ * realpathed and the remaining segments are rejoined.
+ */
+function resolveSymlinks(targetPath: string): string {
+  let existing = targetPath;
+  let suffix = "";
+  for (;;) {
+    try {
+      const real = realpathSync(existing);
+      return suffix ? join(real, suffix) : real;
+    } catch {
+      const parent = dirname(existing);
+      if (parent === existing) return targetPath; // reached filesystem root
+      suffix = suffix ? join(basename(existing), suffix) : basename(existing);
+      existing = parent;
+    }
+  }
+}
+
+/** Realpath a root for comparison, tolerating roots that don't exist yet. */
+function realRoot(root: string): string {
+  try {
+    return realpathSync(root);
+  } catch {
+    return root;
+  }
+}
+
+/**
  * Validate and resolve a path against the sandbox.
  */
 function validatePath(inputPath: string | unknown) {
@@ -196,18 +228,23 @@ function validatePath(inputPath: string | unknown) {
     baseRoot = ALLOWED_ROOTS[0];
   }
 
-  const resolved = isRelative
-    ? resolve(baseRoot, sanitizedPath)
-    : resolve(sanitizedPath);
-
-  // Check against allowed roots
-  let inAllowedRoot = ALLOWED_ROOTS.some(
-    (root: string) => resolved.startsWith(root + "/") || resolved === root,
+  const resolved = resolveSymlinks(
+    isRelative ? resolve(baseRoot, sanitizedPath) : resolve(sanitizedPath),
   );
+
+  // Check against allowed roots — both as configured and symlink-resolved,
+  // so a root that is itself a symlink (or contains one) still matches.
+  const isWithin = (root: string) =>
+    resolved.startsWith(root + "/") ||
+    resolved === root ||
+    resolved.startsWith(realRoot(root) + "/") ||
+    resolved === realRoot(root);
+
+  let inAllowedRoot = ALLOWED_ROOTS.some(isWithin);
 
   // Also check workspaceOverride
   if (!inAllowedRoot && workspaceOverride && workspaceOverride.startsWith("/tmp/prism-worktrees/")) {
-    if (resolved.startsWith(workspaceOverride + "/") || resolved === workspaceOverride) {
+    if (isWithin(workspaceOverride)) {
       inAllowedRoot = true;
     }
   }

@@ -9,6 +9,7 @@ import {
   PRISM_STT_TIMEOUT_MS,
 } from "../constants.ts";
 import { errorMessage } from "../utilities.ts";
+import { getTraceHeaders } from "../middleware/HeaderPropagationMiddleware.ts";
 
 const PRISM_SERVICE_URL = CONFIG.PRISM_SERVICE_URL;
 
@@ -72,7 +73,7 @@ export async function chat(
 
     const response = await fetch(`${PRISM_SERVICE_URL}/chat?stream=false`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...getTraceHeaders() },
       body: JSON.stringify({
         ...params,
         project: params.project || "tools-api",
@@ -130,7 +131,7 @@ export async function textToSpeech(
 
     const response = await fetch(`${PRISM_SERVICE_URL}/text-to-audio`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...getTraceHeaders() },
       body: JSON.stringify({
         provider: params.provider || "elevenlabs",
         text: params.text,
@@ -174,7 +175,7 @@ export async function speechToText(
 
     const response = await fetch(`${PRISM_SERVICE_URL}/audio-to-text`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...getTraceHeaders() },
       body: JSON.stringify({
         provider: params.provider || "openai",
         audio: params.audio,

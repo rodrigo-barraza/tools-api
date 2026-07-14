@@ -2,6 +2,7 @@
 
 import { spawn } from "node:child_process";
 import { RESOLVED_BASH_PATH } from "../utilities.ts";
+import { OutputAccumulator } from "../utilities/OutputAccumulator.ts";
 import {
   SHELL_DEFAULT_TIMEOUT_MS as DEFAULT_TIMEOUT_MS,
   SHELL_MAX_TIMEOUT_MS as MAX_TIMEOUT_MS,
@@ -191,10 +192,8 @@ export async function executeShell(
   const startTime = performance.now();
 
   return new Promise<ShellResult>((resolve) => {
-    const stdoutChunks: Buffer[] = [];
-    const stderrChunks: Buffer[] = [];
-    let stdoutLength = 0;
-    let stderrLength = 0;
+    const stdoutAccumulator = new OutputAccumulator(MAX_OUTPUT_BYTES);
+    const stderrAccumulator = new OutputAccumulator(MAX_OUTPUT_BYTES);
     let timedOut = false;
     let settled = false;
 
@@ -219,17 +218,11 @@ export async function executeShell(
     child.stdin.end();
 
     child.stdout.on("data", (chunk: Buffer) => {
-      if (stdoutLength < MAX_OUTPUT_BYTES) {
-        stdoutChunks.push(chunk);
-        stdoutLength += chunk.length;
-      }
+      stdoutAccumulator.append(chunk);
     });
 
     child.stderr.on("data", (chunk: Buffer) => {
-      if (stderrLength < MAX_OUTPUT_BYTES) {
-        stderrChunks.push(chunk);
-        stderrLength += chunk.length;
-      }
+      stderrAccumulator.append(chunk);
     });
 
     const timer = setTimeout(() => {
@@ -242,20 +235,12 @@ export async function executeShell(
       settled = true;
       clearTimeout(timer);
 
-      const stdout = Buffer.concat(stdoutChunks).toString("utf-8");
-      const stderr = Buffer.concat(stderrChunks).toString("utf-8");
       const executionTimeMs = Math.round(performance.now() - startTime);
 
       resolve({
         success: exitCode === 0 && !timedOut,
-        stdout:
-          stdoutLength > MAX_OUTPUT_BYTES
-            ? stdout + "\n... [output truncated]"
-            : stdout,
-        stderr:
-          stderrLength > MAX_OUTPUT_BYTES
-            ? stderr + "\n... [output truncated]"
-            : stderr,
+        stdout: stdoutAccumulator.toString(),
+        stderr: stderrAccumulator.toString(),
         exitCode: timedOut ? null : exitCode,
         executionTimeMs,
         timedOut,
@@ -330,10 +315,9 @@ export async function executeShellStreaming(
   const startTime = performance.now();
 
   return new Promise<ShellResult>((resolve) => {
-    const stdoutChunks: Buffer[] = [];
-    const stderrChunks: Buffer[] = [];
-    let stdoutLength = 0;
-    let stderrLength = 0;
+    const stdoutAccumulator = new OutputAccumulator(MAX_OUTPUT_BYTES);
+    const stderrAccumulator = new OutputAccumulator(MAX_OUTPUT_BYTES);
+    let streamedBytes = 0;
     let timedOut = false;
     let settled = false;
 
@@ -351,20 +335,22 @@ export async function executeShellStreaming(
     if (stdin) child.stdin.write(stdin);
     child.stdin.end();
 
-    child.stdout.on("data", (chunk: Buffer) => {
-      if (stdoutLength < MAX_OUTPUT_BYTES) {
-        stdoutChunks.push(chunk);
-        stdoutLength += chunk.length;
-        onChunk?.("stdout", chunk.toString("utf-8"));
+    // SSE emission stays capped; the buffered result keeps the tail.
+    function streamChunk(type: "stdout" | "stderr", chunk: Buffer) {
+      if (streamedBytes < MAX_OUTPUT_BYTES) {
+        streamedBytes += chunk.length;
+        onChunk?.(type, chunk.toString("utf-8"));
       }
+    }
+
+    child.stdout.on("data", (chunk: Buffer) => {
+      stdoutAccumulator.append(chunk);
+      streamChunk("stdout", chunk);
     });
 
     child.stderr.on("data", (chunk: Buffer) => {
-      if (stderrLength < MAX_OUTPUT_BYTES) {
-        stderrChunks.push(chunk);
-        stderrLength += chunk.length;
-        onChunk?.("stderr", chunk.toString("utf-8"));
-      }
+      stderrAccumulator.append(chunk);
+      streamChunk("stderr", chunk);
     });
 
     const timer = setTimeout(() => {
@@ -376,18 +362,10 @@ export async function executeShellStreaming(
       if (settled) return;
       settled = true;
       clearTimeout(timer);
-      const stdout = Buffer.concat(stdoutChunks).toString("utf-8");
-      const stderr = Buffer.concat(stderrChunks).toString("utf-8");
       resolve({
         success: exitCode === 0 && !timedOut,
-        stdout:
-          stdoutLength > MAX_OUTPUT_BYTES
-            ? stdout + "\n... [output truncated]"
-            : stdout,
-        stderr:
-          stderrLength > MAX_OUTPUT_BYTES
-            ? stderr + "\n... [output truncated]"
-            : stderr,
+        stdout: stdoutAccumulator.toString(),
+        stderr: stderrAccumulator.toString(),
         exitCode: timedOut ? null : exitCode,
         executionTimeMs: Math.round(performance.now() - startTime),
         timedOut,

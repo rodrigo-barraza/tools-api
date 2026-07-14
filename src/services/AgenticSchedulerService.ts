@@ -4,6 +4,7 @@ import { AGENT_IDS } from "@rodrigo-barraza/utilities-library/taxonomy";
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
+import { getTraceHeaders } from "../middleware/HeaderPropagationMiddleware.ts";
 
 // ────────────────────────────────────────────────────────────
 // Collection Setup — No-op since we proxy to prism-service
@@ -117,6 +118,7 @@ export async function agenticScheduleCreate(data: ScheduleCreateData, username?:
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...getTraceHeaders(),
         "x-project": project,
         "x-username": username || "system",
       },
@@ -159,6 +161,7 @@ export async function agenticScheduleList(
     const schedulerResponse = await fetch(`${getPrismUrl()}/scheduled-tasks`, {
       method: "GET",
       headers: {
+        ...getTraceHeaders(),
         "x-project": project,
         "x-username": username || "system",
       },
@@ -205,6 +208,7 @@ export async function agenticScheduleDelete(
       {
         method: "DELETE",
         headers: {
+          ...getTraceHeaders(),
           "x-project": project,
           "x-username": username || "system",
         },
@@ -254,6 +258,7 @@ export async function agenticTriggerFire(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...getTraceHeaders(),
           "x-project": project,
           "x-username": username || "system",
         },

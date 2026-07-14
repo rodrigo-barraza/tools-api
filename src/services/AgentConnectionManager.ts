@@ -231,6 +231,26 @@ export function initAgentWebSocket(httpServer: Server) {
         return;
       }
 
+      // No secret configured — auth is effectively OFF for this connection.
+      // Warn loudly every time; refuse entirely when enforcement is enabled
+      // (set AGENT_WS_REQUIRE_SECRET=true once a secret is configured in
+      // prism settings.workspace.agentSecret and baked into agents).
+      if (!expectedSecret) {
+        if (process.env.AGENT_WS_REQUIRE_SECRET === "true") {
+          logger.error(
+            `[AgentWS] Rejected connection — no agent secret configured and AGENT_WS_REQUIRE_SECRET=true. ` +
+              `Set settings.workspace.agentSecret in the prism settings collection.`,
+          );
+          socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
+          socket.destroy();
+          return;
+        }
+        logger.warn(
+          `[AgentWS] ⚠️ Accepting UNAUTHENTICATED ${url.pathname} connection — no agent secret configured. ` +
+            `Set settings.workspace.agentSecret (and AGENT_WS_REQUIRE_SECRET=true) to enforce auth.`,
+        );
+      }
+
       // Agent connections (workspace-service sidecar → tools-service)
       if (url.pathname === "/ws/agent") {
         wss.handleUpgrade(req, socket, head, (websocket) => {

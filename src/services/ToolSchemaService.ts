@@ -98,7 +98,7 @@ function createLocalizedToolDefinitions(
 // Per-locale definition cache — rebuilt once per locale, never on hot path
 const localizedDefinitionsCache = new Map<string, ToolDefinition[]>();
 
-function getLocalizedToolDefinitions(locale: string): ToolDefinition[] {
+export function getLocalizedToolDefinitions(locale: string): ToolDefinition[] {
   let definitions = localizedDefinitionsCache.get(locale);
   if (!definitions) {
     const translate = (key: string, variables?: Record<string, string>) =>
@@ -357,6 +357,9 @@ const TOOL_DOMAINS = {
 
   // Agentic — Command Execution
   execute_command: "Core Workspace Tools",
+  get_background_output: "Core Workspace Tools",
+  list_background_processes: "Core Workspace Tools",
+  kill_process: "Core Workspace Tools",
 
   // Agentic — Git
 
@@ -779,6 +782,9 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   search_images: ["🖼️", "🔍"],
   search_videos: ["🎬", "🔍"],
   execute_command: ["▶️", "🖥️"],
+  get_background_output: ["📟", "👀"],
+  list_background_processes: ["📟", "📋"],
+  kill_process: ["📟", "🛑"],
   run_git: ["📦", "🔀"],
   control_browser: ["🌐", "🖱️"],
   execute_browser_script: ["🌐", "📜"],
@@ -920,18 +926,12 @@ const TOOL_REQUIRED_KEYS = {
   get_watch_providers: ["TMDB_API_KEY"],
 
   // Finance — Finnhub
-  get_stock_quote: ["FINNHUB_API_KEY"],
-  get_company_profile: ["FINNHUB_API_KEY"],
+  get_stock: ["FINNHUB_API_KEY"],
   get_market_news: ["FINNHUB_API_KEY"],
   get_earnings_calendar: ["FINNHUB_API_KEY"],
-  get_stock_recommendation: ["FINNHUB_API_KEY"],
-  get_stock_financials: ["FINNHUB_API_KEY"],
 
   // Finance — FRED
-  get_macro_indicators: ["FRED_API_KEY"],
-  search_macro_series: ["FRED_API_KEY"],
-  get_macro_series_info: ["FRED_API_KEY"],
-  get_macro_observations: ["FRED_API_KEY"],
+  get_macro: ["FRED_API_KEY"],
 
   // Transit (all require TransLink API key)
   get_translink_next_bus: ["TRANSLINK_API_KEY"],
@@ -1096,6 +1096,64 @@ export function enableToolRuntime(toolName: string): void {
 }
 
 validateRequiredDataFiles();
+
+// ────────────────────────────────────────────────────────────
+// Registry Integrity Validation — catches metadata maps that
+// drifted from the real tool catalog (e.g. a tool was renamed
+// but its TOOL_REQUIRED_KEYS entry kept the old name, silently
+// disabling the gate). Runs once at boot; warn-only so a drift
+// never blocks startup. The Vitest suite asserts zero drift.
+// ────────────────────────────────────────────────────────────
+
+export interface RegistryDriftReport {
+  /** Map name → keys that don't match any tool definition */
+  staleKeys: Record<string, string[]>;
+  /** Tool names with no TOOL_DOMAINS entry */
+  missingDomains: string[];
+  /** Tool names with no TOOL_EMOJIS entry */
+  missingEmojis: string[];
+}
+
+export function validateToolRegistries(): RegistryDriftReport {
+  const definedNames = new Set(TOOL_DEFINITIONS.map((tool) => tool.name));
+
+  const registries: Record<string, Record<string, unknown>> = {
+    TOOL_DOMAINS,
+    TOOL_EMOJIS,
+    TOOL_REQUIRED_KEYS,
+    TOOL_REQUIRED_DATA_FILES,
+  };
+
+  const staleKeys: Record<string, string[]> = {};
+  for (const [registryName, registry] of Object.entries(registries)) {
+    const stale = Object.keys(registry).filter(
+      (toolName) => !definedNames.has(toolName),
+    );
+    if (stale.length > 0) staleKeys[registryName] = stale;
+  }
+
+  const missingDomains = [...definedNames].filter(
+    (name) => !(name in TOOL_DOMAINS),
+  );
+  const missingEmojis = [...definedNames].filter(
+    (name) => !(name in TOOL_EMOJIS),
+  );
+
+  for (const [registryName, stale] of Object.entries(staleKeys)) {
+    logger.warn(
+      `[ToolSchema] ⚠️ ${registryName} has ${stale.length} entr${stale.length === 1 ? "y" : "ies"} that match no tool definition (renamed/removed tool?): ${stale.join(", ")}`,
+    );
+  }
+  if (missingDomains.length > 0) {
+    logger.warn(
+      `[ToolSchema] ⚠️ ${missingDomains.length} tools have no TOOL_DOMAINS entry: ${missingDomains.join(", ")}`,
+    );
+  }
+
+  return { staleKeys, missingDomains, missingEmojis };
+}
+
+validateToolRegistries();
 
 /**
  * Check if a tool is available.
@@ -1291,6 +1349,23 @@ function resolveToolIntelligenceTier(
   };
 }
 
+// Tier resolution walks the whole parameter schema recursively; memoize per
+// definition object (definition arrays are cached per locale, so identity is
+// stable) instead of re-scoring all ~270 tools on every schema request.
+const tierCache = new WeakMap<
+  ToolDefinition,
+  { intelligenceTier: ToolIntelligenceTier; complexityScore: number }
+>();
+
+function resolveToolIntelligenceTierCached(tool: ToolDefinition) {
+  let tier = tierCache.get(tool);
+  if (!tier) {
+    tier = resolveToolIntelligenceTier(tool.name, tool.parameters);
+    tierCache.set(tool, tier);
+  }
+  return tier;
+}
+
 // ────────────────────────────────────────────────────────────
 // Public API
 // ────────────────────────────────────────────────────────────
@@ -1349,7 +1424,7 @@ export function getToolSchemas(locale?: string): ToolSchema[] {
       const domain =
         TOOL_DOMAINS[tool.name as keyof typeof TOOL_DOMAINS] || "Other";
       const { intelligenceTier, complexityScore } =
-        resolveToolIntelligenceTier(tool.name, tool.parameters);
+        resolveToolIntelligenceTierCached(tool);
       return {
         ...tool,
         domain,
@@ -1373,9 +1448,10 @@ export function getToolSchemasForAI(locale?: string): ToolSchemaForAI[] {
     : TOOL_DEFINITIONS;
 
   return definitions.filter((tool) => isToolAvailable(tool.name)).map(
-    ({ endpoint: _endpoint, dataSource: _dataSource, ...rest }) => {
+    (tool) => {
+      const { endpoint: _endpoint, dataSource: _dataSource, ...rest } = tool;
       const { intelligenceTier, complexityScore } =
-        resolveToolIntelligenceTier(rest.name, rest.parameters);
+        resolveToolIntelligenceTierCached(tool);
       return {
         ...rest,
         intelligenceTier,

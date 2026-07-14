@@ -4,6 +4,7 @@ import vm from "node:vm";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { errorMessage } from "../utilities.ts";
+import { OutputAccumulator } from "../utilities/OutputAccumulator.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const nodeRequire = createRequire(__filename);
@@ -23,18 +24,17 @@ const MAX_OUTPUT_BYTES = 512 * 1024; // 512 KB max stdout
 /**
  * Build the globals object injected into the vm context.
  */
-function buildGlobals(outputBuffer: string[], execution: string = "sandboxed") {
-  let outputLength = 0;
-
+function buildGlobals(
+  outputBuffer: OutputAccumulator,
+  execution: string = "sandboxed",
+) {
   const safePrint = (...args: unknown[]) => {
-    if (outputLength >= MAX_OUTPUT_BYTES) return;
     const line = args
       .map((arg: unknown) =>
         typeof arg === "string" ? arg : (JSON.stringify(arg, null, 2) ?? String(arg)),
       )
       .join(" ");
-    outputBuffer.push(line);
-    outputLength += line.length;
+    outputBuffer.append(line + "\n");
   };
 
   // ── Shared globals (both tiers) ────────────────────────────
@@ -182,7 +182,7 @@ export function executeJavaScript(
     MAX_TIMEOUT_MS,
   );
   const startTime = performance.now();
-  const outputBuffer: string[] = [];
+  const outputBuffer = new OutputAccumulator(MAX_OUTPUT_BYTES);
 
   try {
     const sandbox = buildGlobals(outputBuffer, execution);
@@ -195,7 +195,7 @@ export function executeJavaScript(
     });
 
     const executionTimeMs = Math.round(performance.now() - startTime);
-    const output = outputBuffer.join("\n");
+    const output = outputBuffer.toString().replace(/\n$/, "");
 
     // Serialize the result for JSON transport
     let serializedResult: unknown;
@@ -215,10 +215,7 @@ export function executeJavaScript(
 
     return {
       success: true,
-      output:
-        output.length > MAX_OUTPUT_BYTES
-          ? output.slice(0, MAX_OUTPUT_BYTES) + "\n... [output truncated]"
-          : output,
+      output,
       result: serializedResult,
       executionTimeMs,
       timedOut: false,
@@ -234,7 +231,7 @@ export function executeJavaScript(
 
     return {
       success: false,
-      output: outputBuffer.join("\n"),
+      output: outputBuffer.toString().replace(/\n$/, ""),
       result: null,
       executionTimeMs,
       timedOut,

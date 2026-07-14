@@ -564,6 +564,71 @@ export function getCoreWorkspaceTools(
     },
   },
   {
+    name: "get_background_output",
+    dataSource: compute("background process registry"),
+    description: translate("get_background_output.description"),
+    endpoint: {
+      method: "GET",
+      path: "/agentic/command/background/:pid",
+      pathParams: ["pid"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        pid: {
+          type: "integer",
+          description: translate("get_background_output.params.pid"),
+        },
+      },
+      required: ["pid"],
+    },
+    display: {
+      activeVerb: "Checking",
+      completedVerb: "Checked",
+      subjectParam: "pid",
+      subjectFormat: "full",
+    },
+  },
+  {
+    name: "list_background_processes",
+    dataSource: compute("background process registry"),
+    description: translate("list_background_processes.description"),
+    endpoint: {
+      method: "GET",
+      path: "/agentic/command/background/list",
+    },
+    parameters: {
+      type: "object",
+      properties: {},
+    },
+  },
+  {
+    name: "kill_process",
+    dataSource: compute("background process registry"),
+    description: translate("kill_process.description"),
+    endpoint: {
+      method: "POST",
+      path: "/agentic/command/kill",
+      bodyParams: ["pid"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        pid: {
+          type: "integer",
+          description: translate("kill_process.params.pid"),
+        },
+      },
+      required: ["pid"],
+    },
+    display: {
+      activeVerb: "Killing",
+      completedVerb: "Killed",
+      subjectParam: "pid",
+      subjectFormat: "full",
+    },
+  },
+  {
     name: "summarize_project",
     dataSource: compute("fs scan"),
     description: translate("summarize_project.description"),

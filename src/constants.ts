@@ -2700,11 +2700,63 @@ export const SHELL_MAX_TIMEOUT_MS = 30_000;
 export const SHELL_MAX_OUTPUT_BYTES = 512 * 1024;
 export const SHELL_MAX_INPUT_BYTES = 1024 * 1024;
 
+/**
+ * Hard ceiling for any single agentic tool handler. Command routes clamp to
+ * 120s themselves; this backstop covers local file/grep/git/LSP/parse work
+ * that previously had no timeout at all and could hang a request forever.
+ */
+export const AGENTIC_HANDLER_TIMEOUT_MS = 150_000;
+
+/**
+ * Outbound tool-result size threshold (log-only). Results above this are
+ * logged so oversized tools can be found via telemetry before any
+ * enforcement is turned on. LLM context is the scarce resource here.
+ */
+export const AGENTIC_RESULT_SIZE_WARN_BYTES = 200 * 1024;
+
 export const AGENTIC_COMMAND_DEFAULT_TIMEOUT_MS = 60_000;
 export const AGENTIC_COMMAND_MAX_TIMEOUT_MS = 120_000;
 export const AGENTIC_COMMAND_MAX_OUTPUT_BYTES = 512 * 1024;
 export const AGENTIC_COMMAND_BACKGROUND_WARMUP_MS = 2_500;
 export const AGENTIC_COMMAND_KILL_GRACE_PERIOD_MS = 3_000;
+
+// Environment allowlist for spawned commands. The service process env holds
+// API keys and DB credentials that arbitrary commands have no business seeing;
+// only shell/toolchain plumbing passes through. Commands run via `bash -l`,
+// so login profiles rebuild PATH and toolchain vars regardless.
+// Escape hatch: set AGENTIC_COMMAND_INHERIT_FULL_ENV=true on the service.
+export const AGENTIC_COMMAND_ENV_ALLOWED_NAMES = new Set([
+  "PATH",
+  "HOME",
+  "USER",
+  "LOGNAME",
+  "SHELL",
+  "LANG",
+  "TERM",
+  "TMPDIR",
+  "TZ",
+  "COLUMNS",
+  "LINES",
+  "DISPLAY",
+  "SSH_AUTH_SOCK",
+  "JAVA_HOME",
+  "GOPATH",
+  "GOROOT",
+  "CARGO_HOME",
+  "RUSTUP_HOME",
+]);
+export const AGENTIC_COMMAND_ENV_ALLOWED_PREFIXES = [
+  "LC_",
+  "XDG_",
+  "NVM_",
+  "PYENV_",
+  "CONDA_",
+  "RBENV_",
+  "NODE_",
+  "DENO_",
+  "BUN_",
+  "npm_config_",
+];
 
 export const BACKGROUND_PROCESS_MAX_TTL_MS = 30 * 60 * 1000;
 export const BACKGROUND_PROCESS_CLEANUP_INTERVAL_MS = 60 * 1000;
