@@ -478,6 +478,40 @@ ${scripts}
 </body></html>`;
 }
 
+// ─── Embed Content Sanitizers ─────────────────────────────────
+
+/**
+ * Escape a model/user-provided string for interpolation into embed HTML.
+ * Embed titles and similar values are stored verbatim and re-served from
+ * the tools origin, so unescaped markup would execute in the embed iframe.
+ */
+export function escapeHtml(value: unknown): string {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/**
+ * Restrict a model-provided CSS color to characters that cannot escape a
+ * style declaration. Returns the fallback for anything suspicious.
+ */
+export function sanitizeCssColor(value: unknown, fallback: string): string {
+  const color = String(value ?? "").trim();
+  return /^[#a-zA-Z0-9(),.%\s/-]{1,64}$/.test(color) ? color : fallback;
+}
+
+/**
+ * Serialize a value for interpolation inside an inline <script> block.
+ * Escapes `<` so stored strings containing "</script>" cannot terminate
+ * the script element.
+ */
+export function toEmbedScriptJson(value: unknown): string {
+  return JSON.stringify(value).replace(/</g, "\\u003c");
+}
+
 // ─── Caller Context Extraction ────────────────────────────────
 
 interface CallerContext {

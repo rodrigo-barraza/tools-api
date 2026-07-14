@@ -7,7 +7,19 @@ import { THREE_JS_CDN } from "./ThreeDimensionalBaseService.ts";
 
 // ─── Constants ─────────────────────────────────────────────────
 
-const MAX_VOXEL_COUNT = 100_000;
+export const MAX_RENDERABLE_VOXELS = 100_000;
+const MAX_VOXEL_COUNT = MAX_RENDERABLE_VOXELS;
+const MAX_SHAPE_EXTENT = 64;
+
+const VALID_VOXEL_SHAPE_TYPES = new Set([
+  "box",
+  "sphere",
+  "cylinder",
+  "cone",
+  "pyramid",
+  "ellipsoid",
+  "torus",
+]);
 
 // ─── Types ─────────────────────────────────────────────────────
 
@@ -23,7 +35,7 @@ export interface VoxelShape {
   color?: string;
   opacity?: number;
   hollow?: boolean;
-  size?: [number, number, number]; // for box
+  size?: [number, number, number] | number; // array for box; pyramid accepts a scalar base width too
   radius?: number; // for sphere, cylinder, cone
   height?: number; // for cylinder, cone, pyramid
   radii?: [number, number, number]; // for ellipsoid
@@ -85,22 +97,40 @@ export function validateVoxelInput(input: VoxelBuildInput): string | null {
       if (!shape || !shape.type) {
         return `Shape at index ${index} is missing its 'type' property`;
       }
+      if (!VALID_VOXEL_SHAPE_TYPES.has(shape.type)) {
+        return `Shape at index ${index} has unknown type '${shape.type}'. Valid: ${[...VALID_VOXEL_SHAPE_TYPES].join(", ")}`;
+      }
       if (!shape.center || !Array.isArray(shape.center) || shape.center.length !== 3) {
         return `Shape at index ${index} must have a valid 'center' array of exactly 3 numbers [x, y, z]`;
       }
       if (shape.center.some((coordinate: number) => typeof coordinate !== "number" || !isFinite(coordinate))) {
         return `Shape center at index ${index} contains non-finite or non-numeric values`;
       }
+      if (shape.opacity !== undefined && (typeof shape.opacity !== "number" || shape.opacity < 0 || shape.opacity > 1)) {
+        return `Shape opacity at index ${index} must be a number between 0 and 1`;
+      }
+
+      // Each extent is bounded: rasterization iterates the shape's bounding
+      // box, so an unbounded radius would synchronously lock up the service.
+      const extentError = (label: string, value: number) =>
+        `${label} of shape at index ${index} is ${value}, over the maximum of ${MAX_SHAPE_EXTENT} voxel units — voxel builds operate on a small integer grid`;
 
       // Check type-specific parameters
       if (shape.type === "box") {
         if (!shape.size || !Array.isArray(shape.size) || shape.size.length !== 3) {
           return `Box shape at index ${index} requires a 'size' array of exactly 3 numbers [width, height, depth]`;
         }
+        for (const dimension of shape.size) {
+          if (typeof dimension !== "number" || !isFinite(dimension) || dimension <= 0) {
+            return `Box shape at index ${index} has a non-positive or non-numeric 'size' dimension`;
+          }
+          if (dimension > MAX_SHAPE_EXTENT) return extentError("'size' dimension", dimension);
+        }
       } else if (shape.type === "sphere") {
         if (shape.radius === undefined || typeof shape.radius !== "number" || shape.radius <= 0) {
           return `Sphere shape at index ${index} requires a positive 'radius' number`;
         }
+        if (shape.radius > MAX_SHAPE_EXTENT) return extentError("'radius'", shape.radius);
       } else if (shape.type === "cylinder") {
         if (shape.radius === undefined || typeof shape.radius !== "number" || shape.radius <= 0) {
           return `Cylinder shape at index ${index} requires a positive 'radius' number`;
@@ -108,6 +138,8 @@ export function validateVoxelInput(input: VoxelBuildInput): string | null {
         if (shape.height === undefined || typeof shape.height !== "number" || shape.height <= 0) {
           return `Cylinder shape at index ${index} requires a positive 'height' number`;
         }
+        if (shape.radius > MAX_SHAPE_EXTENT) return extentError("'radius'", shape.radius);
+        if (shape.height > MAX_SHAPE_EXTENT) return extentError("'height'", shape.height);
       } else if (shape.type === "cone") {
         if (shape.radius === undefined || typeof shape.radius !== "number" || shape.radius <= 0) {
           return `Cone shape at index ${index} requires a positive 'radius' number`;
@@ -115,16 +147,29 @@ export function validateVoxelInput(input: VoxelBuildInput): string | null {
         if (shape.height === undefined || typeof shape.height !== "number" || shape.height <= 0) {
           return `Cone shape at index ${index} requires a positive 'height' number`;
         }
+        if (shape.radius > MAX_SHAPE_EXTENT) return extentError("'radius'", shape.radius);
+        if (shape.height > MAX_SHAPE_EXTENT) return extentError("'height'", shape.height);
       } else if (shape.type === "pyramid") {
-        if (shape.size === undefined || typeof shape.size !== "number" || shape.size <= 0) {
-          return `Pyramid shape at index ${index} requires a positive 'size' base width number`;
+        // The published schema declares 'size' as an array; accept both the
+        // scalar base width and a [width, height, depth] array.
+        const baseWidth = Array.isArray(shape.size) ? shape.size[0] : shape.size;
+        if (baseWidth === undefined || typeof baseWidth !== "number" || baseWidth <= 0) {
+          return `Pyramid shape at index ${index} requires a positive 'size' (base width number, or [width, height, depth] array)`;
         }
         if (shape.height === undefined || typeof shape.height !== "number" || shape.height <= 0) {
           return `Pyramid shape at index ${index} requires a positive 'height' number`;
         }
+        if (baseWidth > MAX_SHAPE_EXTENT) return extentError("'size'", baseWidth);
+        if (shape.height > MAX_SHAPE_EXTENT) return extentError("'height'", shape.height);
       } else if (shape.type === "ellipsoid") {
         if (!shape.radii || !Array.isArray(shape.radii) || shape.radii.length !== 3) {
           return `Ellipsoid shape at index ${index} requires a 'radii' array of exactly 3 positive numbers [rx, ry, rz]`;
+        }
+        for (const radiusComponent of shape.radii) {
+          if (typeof radiusComponent !== "number" || !isFinite(radiusComponent) || radiusComponent <= 0) {
+            return `Ellipsoid shape at index ${index} has a non-positive or non-numeric 'radii' component`;
+          }
+          if (radiusComponent > MAX_SHAPE_EXTENT) return extentError("'radii' component", radiusComponent);
         }
       } else if (shape.type === "torus") {
         if (shape.majorRadius === undefined || typeof shape.majorRadius !== "number" || shape.majorRadius <= 0) {
@@ -132,6 +177,9 @@ export function validateVoxelInput(input: VoxelBuildInput): string | null {
         }
         if (shape.minorRadius === undefined || typeof shape.minorRadius !== "number" || shape.minorRadius <= 0) {
           return `Torus shape at index ${index} requires a positive 'minorRadius' number`;
+        }
+        if (shape.majorRadius + shape.minorRadius > MAX_SHAPE_EXTENT) {
+          return extentError("'majorRadius' + 'minorRadius'", shape.majorRadius + shape.minorRadius);
         }
       }
     }
@@ -432,7 +480,7 @@ export function resolveVoxels(input: VoxelBuildInput): Voxel[] {
           }
         }
       } else if (shape.type === "pyramid") {
-        const size = shape.size as unknown as number;
+        const size = Array.isArray(shape.size) ? shape.size[0] : (shape.size as unknown as number);
         const height = shape.height!;
         const halfSize = size / 2;
         const halfHeight = height / 2;

@@ -1,6 +1,7 @@
 // ─── VCS Introspection for AI Coding Loops ──────────────────
 
 import { spawn } from "node:child_process";
+import { join } from "node:path";
 import { validatePath } from "./AgenticFileService.ts";
 import { WORKTREE_DIR } from "../config.ts";
 import { resolveAndRouteToAgent, sendRpc } from "./AgentConnectionManager.ts";
@@ -76,6 +77,21 @@ interface GitRunResult {
   stderr: string;
   error?: string;
   exitCode?: number | null;
+  truncated?: boolean;
+}
+
+/**
+ * Reject values that git would interpret as an option flag. An LLM-supplied
+ * `ref` or `file` beginning with `-` (e.g. `--output=/etc/x`) can otherwise be
+ * smuggled into the git argument vector and write arbitrary files while the
+ * command still reports "(no changes)". Callers must surface the returned
+ * message as a teaching error.
+ */
+function rejectOptionLikeArg(value: string, label: string): string | null {
+  if (value.startsWith("-")) {
+    return `git ${label} must not start with '-'`;
+  }
+  return null;
 }
 
 // ────────────────────────────────────────────────────────────
@@ -88,6 +104,7 @@ async function runGit(args: string[], cwd: string): Promise<GitRunResult> {
     const stderrChunks: Buffer[] = [];
     let stdoutLength = 0;
     let stderrLength = 0;
+    let truncated = false;
     let settled = false;
 
     const child = spawn("git", args, {
@@ -108,10 +125,13 @@ async function runGit(args: string[], cwd: string): Promise<GitRunResult> {
 
     if (child.stdout) {
       child.stdout.on("data", (chunk: Buffer) => {
-        if (stdoutLength < MAX_OUTPUT_BYTES) {
-          stdoutChunks.push(chunk);
-          stdoutLength += chunk.length;
+        if (stdoutLength >= MAX_OUTPUT_BYTES) {
+          truncated = true;
+          return;
         }
+        stdoutChunks.push(chunk);
+        stdoutLength += chunk.length;
+        if (stdoutLength > MAX_OUTPUT_BYTES) truncated = true;
       });
     }
 
@@ -150,11 +170,18 @@ async function runGit(args: string[], cwd: string): Promise<GitRunResult> {
           stderr,
           error: stderr.trim() || `Git exited with code ${code}`,
           exitCode: code,
+          ...(truncated && { truncated }),
         });
         return;
       }
 
-      resolve({ stdout, stderr: stderr.trim() });
+      // A >512KB diff/log used to be silently cut — the caller (an LLM) would
+      // read partial output as complete. Mark it, and append a visible marker.
+      resolve({
+        stdout: truncated ? stdout + "\n... [output truncated]" : stdout,
+        stderr: stderr.trim(),
+        ...(truncated && { truncated }),
+      });
     });
 
     child.on("error", (error: Error) => {
@@ -180,7 +207,7 @@ async function runGit(args: string[], cwd: string): Promise<GitRunResult> {
  */
 export async function agenticGitStatus(
   repoPath: string,
-): Promise<GitStatusResult | { error: string; path?: string }> {
+): Promise<(GitStatusResult & { detached?: boolean }) | { error: string; path?: string }> {
   // Agent routing
   const agentResult = await tryAgentRoute(
     "git.status",
@@ -202,7 +229,18 @@ export async function agenticGitStatus(
     return { error: branchResult.error, path: cwd };
   }
 
-  const branch = branchResult.stdout.trim();
+  let branch = branchResult.stdout.trim();
+
+  // Detached HEAD: `git branch --show-current` yields empty. Fall back to the
+  // short commit hash so the response isn't a misleading empty branch name.
+  let detached = false;
+  if (!branch) {
+    const headResult = await runGit(["rev-parse", "--short", "HEAD"], cwd);
+    if (!headResult.error) {
+      branch = headResult.stdout.trim();
+      detached = true;
+    }
+  }
 
   // Get status
   const statusResult = await runGit(
@@ -246,6 +284,7 @@ export async function agenticGitStatus(
   return {
     path: cwd,
     branch,
+    ...(detached && { detached: true }),
     ahead: aheadMatch ? parseInt(aheadMatch[1]) : 0,
     behind: behindMatch ? parseInt(behindMatch[1]) : 0,
     staged,
@@ -273,7 +312,7 @@ interface DiffOptions {
 export async function agenticGitDiff(
   repoPath: string,
   { staged = false, path: filePath, ref }: DiffOptions = {},
-): Promise<GitDiffResult> {
+): Promise<GitDiffResult & { truncated?: boolean }> {
   // Agent routing
   const agentResult = await tryAgentRoute(
     "git.diff",
@@ -291,11 +330,19 @@ export async function agenticGitDiff(
   const args = ["diff", "--stat", "--patch"];
 
   if (staged) args.push("--cached");
-  if (ref) args.push(ref);
+  if (ref) {
+    const refError = rejectOptionLikeArg(ref, "ref");
+    if (refError) return { error: refError };
+    args.push(ref);
+  }
   args.push("--");
   if (filePath) {
-    // Validate the file path too
-    const fileValidation = validatePath(filePath);
+    const fileError = rejectOptionLikeArg(filePath, "file");
+    if (fileError) return { error: fileError };
+    // Resolve a relative `file` against the validated repo path — not the
+    // workspace root — so the diff targets a file inside THIS repo.
+    const fileInput = filePath.startsWith("/") ? filePath : join(cwd, filePath);
+    const fileValidation = validatePath(fileInput);
     if (!fileValidation.safe) {
       return { error: fileValidation.error };
     }
@@ -322,6 +369,7 @@ export async function agenticGitDiff(
     hasChanges,
     additions,
     deletions,
+    ...(result.truncated && { truncated: true }),
     diff: hasChanges ? diff : "(no changes)",
   };
 }
@@ -340,10 +388,12 @@ interface LogOptions {
 /**
  * Get git log.
  */
+const DEFAULT_LOG_LIMIT = 20;
+
 export async function agenticGitLog(
   repoPath: string,
-  { limit = 20, author, since, path: filePath }: LogOptions = {},
-): Promise<GitLogResult> {
+  { limit = DEFAULT_LOG_LIMIT, author, since, path: filePath }: LogOptions = {},
+): Promise<GitLogResult & { appliedLimit?: number; truncated?: boolean }> {
   // Agent routing
   const agentResult = await tryAgentRoute(
     "git.log",
@@ -358,7 +408,10 @@ export async function agenticGitLog(
   }
 
   const cwd = validation.resolved;
-  const clampedLimit = Math.min(Math.max(limit, 1), 100);
+  // Route coercion is best-effort; a NaN limit would become `-n NaN`. Fall back
+  // to the default, then clamp to a sane range and echo the value actually used.
+  const requestedLimit = Number.isFinite(limit) ? limit : DEFAULT_LOG_LIMIT;
+  const clampedLimit = Math.min(Math.max(requestedLimit, 1), 100);
 
   // Use a structured format for reliable parsing
   const separator = "<<<COMMIT>>>";
@@ -369,7 +422,11 @@ export async function agenticGitLog(
   if (since) args.push(`--since=${since}`);
 
   if (filePath) {
-    const fileValidation = validatePath(filePath);
+    const fileError = rejectOptionLikeArg(filePath, "file");
+    if (fileError) return { error: fileError };
+    // Resolve relative paths against the repo path arg, not the workspace root.
+    const fileInput = filePath.startsWith("/") ? filePath : join(cwd, filePath);
+    const fileValidation = validatePath(fileInput);
     if (!fileValidation.safe) {
       return { error: fileValidation.error };
     }
@@ -399,8 +456,10 @@ export async function agenticGitLog(
   return {
     path: cwd,
     totalCommits: commits.length,
+    appliedLimit: clampedLimit,
     ...(author && { author }),
     ...(since && { since }),
+    ...(result.truncated && { truncated: true }),
     commits,
   };
 }

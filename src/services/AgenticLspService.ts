@@ -61,6 +61,9 @@ interface LspActionParams {
   line?: number;
   character?: number;
   workspacePath?: string;
+  // Optional locale for error/hint prompts. Defaults to "en" when absent, so
+  // this is backward compatible with callers that never pass it.
+  locale?: string;
 }
 
 // ────────────────────────────────────────────────────────────
@@ -163,6 +166,7 @@ export async function agenticLspAction({
   line,
   character,
   workspacePath,
+  locale = "en",
 }: LspActionParams) {
   // ── 1. Validate operation ──────────────────────────────────
   if (!operation || !OPERATIONS[operation]) {
@@ -223,18 +227,49 @@ export async function agenticLspAction({
     return { error: `Cannot read file: ${errorMessage(error)}` };
   }
 
-  // ── 5. Determine workspace root ────────────────────────────
-  const workspaceRoot = resolvedWorkspace(resolvedPath, workspacePath);
+  // ── 5. Determine & validate workspace root ─────────────────
+  // An explicit workspacePath must live inside an allowed root — otherwise a
+  // varying/attacker-controlled path both escapes the sandbox and spawns a new
+  // language-server keyed by that raw string.
+  let workspaceRoot: string;
+  if (workspacePath != null) {
+    if (typeof workspacePath !== "string") {
+      return { error: "'workspacePath' must be a string" };
+    }
+    const resolvedWorkspacePath = resolve(workspacePath);
+    const workspaceInRoot = ALLOWED_ROOTS.some(
+      (root: string) =>
+        resolvedWorkspacePath.startsWith(root + "/") ||
+        resolvedWorkspacePath === root,
+    );
+    if (!workspaceInRoot) {
+      return {
+        error: `workspacePath '${resolvedWorkspacePath}' is outside allowed roots`,
+      };
+    }
+    // Normalized (resolved) path is used as the manager key downstream.
+    workspaceRoot = resolvedWorkspacePath;
+  } else {
+    workspaceRoot = resolvedWorkspace(resolvedPath, undefined);
+  }
 
   // ── 6. Get manager & ensure file is open ───────────────────
   let manager: ReturnType<typeof getLspManager>;
   try {
     manager = getLspManager(workspaceRoot);
-    await manager.openFile(resolvedPath, fileContent);
+    // If the document is already open on the server, push the current file
+    // content via didChange (incremented version) so queries reflect edits
+    // made since it was first opened. openFile() skips already-open URIs, so
+    // without this the server would answer about stale text.
+    if (manager.isFileOpen(resolvedPath)) {
+      await manager.changeFile(resolvedPath, fileContent);
+    } else {
+      await manager.openFile(resolvedPath, fileContent);
+    }
   } catch (error: unknown) {
     return {
       error: `LSP server failed to start for '${fileExtension}' files: ${errorMessage(error)}`,
-      hint: PromptLocaleService.get("en", "prompts.lsp.server-not-installed-hint"),
+      hint: PromptLocaleService.get(locale, "prompts.lsp.server-not-installed-hint"),
     };
   }
 
@@ -279,7 +314,7 @@ export async function agenticLspAction({
 
   // ── 9. Format & return ─────────────────────────────────────
   try {
-    return formatResult(operation, result, resolvedPath, workspaceRoot);
+    return formatResult(operation, result, resolvedPath, workspaceRoot, locale);
   } catch (error: unknown) {
     return { error: `Failed to format result: ${errorMessage(error)}` };
   }
@@ -294,13 +329,14 @@ function formatResult(
   result: unknown,
   filePath: string,
   workspaceRoot: string,
+  locale: string = "en",
 ) {
   if (result === null || result === undefined) {
     return {
       operation,
       filePath,
       result: null,
-      message: PromptLocaleService.get("en", "prompts.lsp.no-results-hint"),
+      message: PromptLocaleService.get(locale, "prompts.lsp.no-results-hint"),
     };
   }
 
@@ -474,13 +510,19 @@ function formatSymbols(result: LspSymbol[], filePath: string, _workspaceRoot: st
     };
   }
 
-  const symbols = flattenSymbols(result).slice(0, MAX_SYMBOLS_RETURNED);
+  // Truncation must be judged against the FLATTENED list (what we actually
+  // slice), not the top-level array — a file with few top-level symbols but
+  // many nested members would otherwise report truncated:false while dropping
+  // members.
+  const flattened = flattenSymbols(result);
+  const symbols = flattened.slice(0, MAX_SYMBOLS_RETURNED);
 
   return {
     operation: "documentSymbol",
     filePath,
     count: symbols.length,
-    truncated: result.length > MAX_SYMBOLS_RETURNED,
+    totalFound: flattened.length,
+    truncated: flattened.length > MAX_SYMBOLS_RETURNED,
     symbols,
   };
 }
@@ -590,3 +632,6 @@ function resolvedWorkspace(
 
 export { shutdownAllLspManagers as agenticLspShutdown };
 export { getAllLspHealth as agenticLspHealth };
+
+// Exposed for unit testing only (truncation-flag correctness).
+export { formatSymbols as __formatSymbolsForTest };

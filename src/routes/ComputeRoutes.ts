@@ -63,6 +63,7 @@ import {
   validateVoxelInput,
   buildVoxelEmbedHtml,
   resolveVoxels,
+  MAX_RENDERABLE_VOXELS,
 } from "../services/ThreeDimensionalVoxelService.ts";
 import type { Voxel, VoxelShape, VoxelOptions } from "../services/ThreeDimensionalVoxelService.ts";
 import { processImage, convertToAscii, type AsciiPixel } from "../services/ImageService.ts";
@@ -2819,6 +2820,66 @@ router.get("/image/ascii/embed", asyncHandler(async (req: Request, res: Response
 }));
 
 // ─── 3D Object Creation ─────────────────────────────────────
+
+// Shared session resolution for the four 3D builders. Sessions used to be
+// silently recreated when an ID was unknown or expired, which reported
+// isAppend: true while all previously-built geometry was gone.
+type ThreeDimensionalSessionResolution<T> =
+  | { error: string }
+  | { sessionKey: string; existing: T | null };
+
+function resolveThreeDimensionalSession<T>(
+  sessions: Map<string, T>,
+  sessionId: unknown,
+  buildKindHint: string,
+): ThreeDimensionalSessionResolution<T> {
+  if (sessionId === undefined || sessionId === null || sessionId === "") {
+    return { sessionKey: crypto.randomUUID().slice(0, 12), existing: null };
+  }
+  if (typeof sessionId !== "string" || sessionId === "null" || sessionId === "undefined") {
+    return {
+      error:
+        `Invalid sessionId (got: ${JSON.stringify(sessionId)}). Pass the exact sessionId ` +
+        `returned by a previous call, or omit it to start a new ${buildKindHint}.`,
+    };
+  }
+  const existing = sessions.get(sessionId);
+  if (!existing) {
+    return {
+      error:
+        `Session '${sessionId}' not found or expired (sessions expire after 30 minutes of ` +
+        `inactivity). Omit sessionId to start a new ${buildKindHint} — the response returns ` +
+        `a server-assigned sessionId for appending — and resend the full content, not just ` +
+        `the additions.`,
+    };
+  }
+  return { sessionKey: sessionId, existing };
+}
+
+/**
+ * Coerce a geometry array parameter that a model sent as a string. Valid
+ * JSON (with or without outer brackets) parses; anything else — Python list
+ * comprehensions are a real production occurrence — gets a teaching error.
+ */
+function coerceGeometryArray(value: unknown, parameterName: string): { value: unknown } | { error: string } {
+  if (typeof value !== "string") return { value };
+  for (const candidate of [value, `[${value}]`]) {
+    try {
+      const parsed = JSON.parse(candidate);
+      if (Array.isArray(parsed)) return { value: parsed };
+      break;
+    } catch {
+      // try the bracket-wrapped variant, then fall through to the error
+    }
+  }
+  return {
+    error:
+      `'${parameterName}' was sent as a string that is not a JSON array. Send a literal ` +
+      `JSON array of numbers — code expressions or list comprehensions are not evaluated. ` +
+      `Example: [[0, 0, 0], [1, 0, 0], [0, 1, 0]]`,
+  };
+}
+
 // ── Create 3D Mesh (Triangle-level vertex + face data) ────────
 interface MeshSession {
   vertices: MeshVertex[];
@@ -2842,18 +2903,48 @@ function cleanupMeshSessions() {
 }
 
 router.post("/3d/mesh", asyncHandler(async (req: Request, res: Response) => {
-  const { vertices, faces, normals, colors, options, sessionId } = req.body;
+  const { options, sessionId } = req.body;
+  let { vertices, faces, normals, colors } = req.body;
 
+  // Models regularly send geometry arrays as strings; parse them instead of
+  // failing with "is required" (the string production pattern behind a third
+  // of all mesh errors).
+  for (const [parameterName, rawValue] of [["vertices", vertices], ["faces", faces], ["normals", normals], ["colors", colors]] as const) {
+    if (typeof rawValue !== "string") continue;
+    const coerced = coerceGeometryArray(rawValue, parameterName);
+    if ("error" in coerced) {
+      return res.status(400).json({ error: coerced.error });
+    }
+    if (parameterName === "vertices") vertices = coerced.value;
+    else if (parameterName === "faces") faces = coerced.value;
+    else if (parameterName === "normals") normals = coerced.value;
+    else colors = coerced.value;
+  }
+
+  const oversizeHint =
+    " If you did include this parameter, the call's arguments may have exceeded the " +
+    "tool-argument size limit and arrived empty — send the mesh in smaller batches: " +
+    "create it with the first batch, then append with the returned sessionId.";
   if (!vertices || !Array.isArray(vertices) || vertices.length === 0) {
     return res.status(400).json({
-      error: "'vertices' is required (non-empty array of [x, y, z] triples)",
+      error: "'vertices' is required (non-empty array of [x, y, z] triples)." + oversizeHint,
     });
   }
   if (!faces || !Array.isArray(faces) || faces.length === 0) {
     return res.status(400).json({
-      error: "'faces' is required (non-empty array of [v0, v1, v2] index triples)",
+      error:
+        "'faces' is required (non-empty array of [v0, v1, v2] vertex-index triples that " +
+        "triangulate the surface — this tool renders triangle meshes, not point clouds)." +
+        oversizeHint,
     });
   }
+
+  const sessionResolution = resolveThreeDimensionalSession(meshSessions, sessionId, "mesh");
+  if ("error" in sessionResolution) {
+    return res.status(400).json({ error: sessionResolution.error });
+  }
+  const { sessionKey, existing: existingSession } = sessionResolution;
+  const isAppend = existingSession !== null;
 
   const { username: callerUsername } = extractCallerContext(req);
 
@@ -2862,30 +2953,27 @@ router.post("/3d/mesh", asyncHandler(async (req: Request, res: Response) => {
   let combinedNormals = normals;
   let combinedColors = colors;
   let combinedOptions = options || {};
-  let finalSessionId = sessionId;
+  const previousVertexCount = existingSession ? existingSession.vertices.length : 0;
 
-  if (sessionId && meshSessions.has(sessionId)) {
-    const session = meshSessions.get(sessionId)!;
-    const previousVertexCount = session.vertices.length;
+  if (existingSession) {
+    combinedOptions = { ...existingSession.options, ...options };
+    combinedVertices = [...existingSession.vertices, ...vertices];
 
-    combinedOptions = { ...session.options, ...options };
-    combinedVertices = [...session.vertices, ...vertices];
+    // Face indices are ABSOLUTE across the accumulated mesh (as documented):
+    // new-vertex indices start at previousVertexCount, and faces may also
+    // reference vertices from earlier calls to stitch geometry together.
+    combinedFaces = [...existingSession.faces, ...faces];
 
-    const rebasedFaces = faces.map((face: MeshFace) =>
-      [face[0] + previousVertexCount, face[1] + previousVertexCount, face[2] + previousVertexCount] as MeshFace,
-    );
-    combinedFaces = [...session.faces, ...rebasedFaces];
-
-    if (session.normals || normals) {
+    if (existingSession.normals || normals) {
       const padNorm = () => [0, 1, 0] as MeshVertex;
-      const previousNorms = session.normals || Array.from({ length: previousVertexCount }, padNorm);
+      const previousNorms = existingSession.normals || Array.from({ length: previousVertexCount }, padNorm);
       const newNorms = normals || Array.from({ length: vertices.length }, padNorm);
       combinedNormals = [...previousNorms, ...newNorms];
     }
 
-    if (session.colors || colors) {
+    if (existingSession.colors || colors) {
       const defaultColor = combinedOptions.meshColor || "#38bdf8";
-      const previousColors = session.colors || Array.from({ length: previousVertexCount }, () => defaultColor);
+      const previousColors = existingSession.colors || Array.from({ length: previousVertexCount }, () => defaultColor);
       const newColors = colors || Array.from({ length: vertices.length }, () => defaultColor);
       combinedColors = [...previousColors, ...newColors];
     }
@@ -2901,41 +2989,23 @@ router.post("/3d/mesh", asyncHandler(async (req: Request, res: Response) => {
 
   const validationError = validateMeshInput(combinedInput);
   if (validationError) {
-    return res.status(400).json({ error: validationError });
+    const appendContext = isAppend
+      ? ` (this call appends to session '${sessionKey}': the accumulated mesh has ` +
+        `${combinedVertices.length} vertices, and face indices are absolute — this call's ` +
+        `new vertices are indices ${previousVertexCount}-${combinedVertices.length - 1})`
+      : "";
+    return res.status(400).json({ error: validationError + appendContext });
   }
 
-  if (sessionId) {
-    if (meshSessions.has(sessionId)) {
-      const session = meshSessions.get(sessionId)!;
-      session.vertices = combinedVertices;
-      session.faces = combinedFaces;
-      session.normals = combinedNormals;
-      session.colors = combinedColors;
-      session.options = combinedOptions;
-      session.updatedAt = Date.now();
-    } else {
-      meshSessions.set(sessionId, {
-        vertices: combinedVertices,
-        faces: combinedFaces,
-        normals: combinedNormals,
-        colors: combinedColors,
-        options: combinedOptions,
-        updatedAt: Date.now(),
-      });
-    }
-    cleanupMeshSessions();
-  } else {
-    finalSessionId = crypto.randomUUID().slice(0, 12);
-    meshSessions.set(finalSessionId, {
-      vertices: combinedVertices,
-      faces: combinedFaces,
-      normals: combinedNormals,
-      colors: combinedColors,
-      options: combinedOptions,
-      updatedAt: Date.now(),
-    });
-    cleanupMeshSessions();
-  }
+  meshSessions.set(sessionKey, {
+    vertices: combinedVertices,
+    faces: combinedFaces,
+    normals: combinedNormals,
+    colors: combinedColors,
+    options: combinedOptions,
+    updatedAt: Date.now(),
+  });
+  cleanupMeshSessions();
 
   const sceneId = crypto.randomUUID().slice(0, 12);
   await saveThreeDimensionalScene(
@@ -2948,22 +3018,34 @@ router.post("/3d/mesh", asyncHandler(async (req: Request, res: Response) => {
       colors: combinedColors || null,
     },
     combinedOptions,
-    finalSessionId,
+    sessionKey,
     callerUsername,
   );
 
   const sceneEmbedUrl = buildLocalUrl("compute/3d/embed", { id: sceneId, type: "mesh" });
-  
+
+  const message = isAppend
+    ? `Appended ${vertices.length} vertices (absolute indices ${previousVertexCount}-` +
+      `${combinedVertices.length - 1}) and ${faces.length} faces to session '${sessionKey}'. ` +
+      `The mesh now has ${combinedVertices.length} vertices and ${combinedFaces.length} faces. ` +
+      `Face indices are absolute across the accumulated mesh, so appended faces may also ` +
+      `reference earlier vertices.`
+    : `Created mesh with ${vertices.length} vertices and ${faces.length} faces. To append ` +
+      `more geometry, call again with sessionId '${sessionKey}' — face indices are absolute, ` +
+      `so vertices added next start at index ${combinedVertices.length}. Sessions expire ` +
+      `after 30 minutes of inactivity.`;
+
   res.json({
+    message,
     sceneEmbedUrl,
     sceneId,
     sceneType: "mesh",
-    sessionId: finalSessionId,
+    sessionId: sessionKey,
     vertexCount: vertices.length,
     faceCount: faces.length,
     totalVertices: combinedVertices.length,
     totalFaces: combinedFaces.length,
-    isAppend: sessionId && meshSessions.has(sessionId) ? true : false,
+    isAppend,
     hasVertexColors: !!combinedColors && combinedColors.length > 0,
     hasCustomNormals: !!combinedNormals && combinedNormals.length > 0,
   });
@@ -2997,15 +3079,37 @@ router.post("/3d/scene", asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
+  // Scene objects use 'type' but the sibling create_3d_model tool uses
+  // 'shape' — models mix them up constantly, so accept both (recursively,
+  // since group children nest).
+  const aliasShapeToType = (objectList: Array<Record<string, unknown>>) => {
+    for (const sceneObject of objectList) {
+      if (!sceneObject || typeof sceneObject !== "object") continue;
+      if (sceneObject.type === undefined && typeof sceneObject.shape === "string") {
+        sceneObject.type = sceneObject.shape;
+      }
+      if (Array.isArray(sceneObject.children)) {
+        aliasShapeToType(sceneObject.children as Array<Record<string, unknown>>);
+      }
+    }
+  };
+  aliasShapeToType(sceneObjects);
+
+  const sessionResolution = resolveThreeDimensionalSession(sceneSessions, sessionId, "scene");
+  if ("error" in sessionResolution) {
+    return res.status(400).json({ error: sessionResolution.error });
+  }
+  const { sessionKey, existing } = sessionResolution;
+  const isAppend = existing !== null;
+
   const { username: callerUsername } = extractCallerContext(req);
 
   let combinedSceneConfiguration = sceneConfiguration || {};
   let combinedSceneObjects = sceneObjects;
   let combinedSceneOptions = sceneOptions || {};
-  let finalSessionId = sessionId;
 
-  if (sessionId && sceneSessions.has(sessionId)) {
-    const existingSession = sceneSessions.get(sessionId)!;
+  if (existing) {
+    const existingSession = existing;
 
     // Merge options
     combinedSceneOptions = { ...existingSession.options, ...sceneOptions };
@@ -3067,32 +3171,13 @@ router.post("/3d/scene", asyncHandler(async (req: Request, res: Response) => {
     return res.status(400).json({ error: validationError });
   }
 
-  if (sessionId) {
-    if (sceneSessions.has(sessionId)) {
-      const existingSession = sceneSessions.get(sessionId)!;
-      existingSession.scene = combinedSceneConfiguration;
-      existingSession.objects = combinedSceneObjects;
-      existingSession.options = combinedSceneOptions;
-      existingSession.updatedAt = Date.now();
-    } else {
-      sceneSessions.set(sessionId, {
-        scene: combinedSceneConfiguration,
-        objects: combinedSceneObjects,
-        options: combinedSceneOptions,
-        updatedAt: Date.now(),
-      });
-    }
-    cleanupSceneSessions();
-  } else {
-    finalSessionId = crypto.randomUUID().slice(0, 12);
-    sceneSessions.set(finalSessionId, {
-      scene: combinedSceneConfiguration,
-      objects: combinedSceneObjects,
-      options: combinedSceneOptions,
-      updatedAt: Date.now(),
-    });
-    cleanupSceneSessions();
-  }
+  sceneSessions.set(sessionKey, {
+    scene: combinedSceneConfiguration,
+    objects: combinedSceneObjects,
+    options: combinedSceneOptions,
+    updatedAt: Date.now(),
+  });
+  cleanupSceneSessions();
 
   const sceneId = crypto.randomUUID().slice(0, 12);
   await saveThreeDimensionalScene(
@@ -3100,20 +3185,23 @@ router.post("/3d/scene", asyncHandler(async (req: Request, res: Response) => {
     "scene",
     { scene: combinedSceneConfiguration || {}, objects: combinedSceneObjects },
     combinedSceneOptions,
-    finalSessionId,
+    sessionKey,
     callerUsername,
   );
 
   const sceneEmbedUrl = buildLocalUrl("compute/3d/embed", { id: sceneId, type: "scene" });
 
   res.json({
+    message: isAppend
+      ? `Appended ${sceneObjects.length} object(s) to session '${sessionKey}' — the scene now has ${combinedSceneObjects.length}. Call again with this sessionId to keep building; sessions expire after 30 minutes of inactivity.`
+      : `Created scene with ${sceneObjects.length} object(s). To append more, call again with sessionId '${sessionKey}'; sessions expire after 30 minutes of inactivity.`,
     sceneEmbedUrl,
     sceneId,
     sceneType: "scene",
-    sessionId: finalSessionId,
+    sessionId: sessionKey,
     objectCount: sceneObjects.length,
     totalObjects: combinedSceneObjects.length,
-    isAppend: sessionId && sceneSessions.has(sessionId) ? true : false,
+    isAppend,
     environment: combinedSceneConfiguration?.environment || "studio",
   });
 }));
@@ -3146,20 +3234,32 @@ router.post("/3d/model", asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
+  // Model objects use 'shape' but the sibling create_3d_scene tool uses
+  // 'type' — accept both.
+  for (const modelObject of modelObjects) {
+    if (modelObject && typeof modelObject === "object" && modelObject.shape === undefined && typeof modelObject.type === "string") {
+      modelObject.shape = modelObject.type;
+    }
+  }
+
+  const sessionResolution = resolveThreeDimensionalSession(modelSessions, sessionId, "model");
+  if ("error" in sessionResolution) {
+    return res.status(400).json({ error: sessionResolution.error });
+  }
+  const { sessionKey, existing: existingModelSession } = sessionResolution;
+  const isAppend = existingModelSession !== null;
+
   const { username: callerUsername } = extractCallerContext(req);
 
   let combinedModelObjects = modelObjects;
   let combinedModelOptions = modelOptions || {};
-  let finalSessionId = sessionId;
 
-  if (sessionId && modelSessions.has(sessionId)) {
-    const existingSession = modelSessions.get(sessionId)!;
-
+  if (existingModelSession) {
     // Merge options
-    combinedModelOptions = { ...existingSession.options, ...modelOptions };
+    combinedModelOptions = { ...existingModelSession.options, ...modelOptions };
 
     // Append objects
-    combinedModelObjects = [...existingSession.objects, ...modelObjects];
+    combinedModelObjects = [...existingModelSession.objects, ...modelObjects];
   }
 
   const combinedModelInput = {
@@ -3184,29 +3284,12 @@ router.post("/3d/model", asyncHandler(async (req: Request, res: Response) => {
     return res.status(400).json({ error: validationError });
   }
 
-  if (sessionId) {
-    if (modelSessions.has(sessionId)) {
-      const existingSession = modelSessions.get(sessionId)!;
-      existingSession.objects = combinedModelObjects;
-      existingSession.options = combinedModelOptions;
-      existingSession.updatedAt = Date.now();
-    } else {
-      modelSessions.set(sessionId, {
-        objects: combinedModelObjects,
-        options: combinedModelOptions,
-        updatedAt: Date.now(),
-      });
-    }
-    cleanupModelSessions();
-  } else {
-    finalSessionId = crypto.randomUUID().slice(0, 12);
-    modelSessions.set(finalSessionId, {
-      objects: combinedModelObjects,
-      options: combinedModelOptions,
-      updatedAt: Date.now(),
-    });
-    cleanupModelSessions();
-  }
+  modelSessions.set(sessionKey, {
+    objects: combinedModelObjects,
+    options: combinedModelOptions,
+    updatedAt: Date.now(),
+  });
+  cleanupModelSessions();
 
   const sceneId = crypto.randomUUID().slice(0, 12);
   await saveThreeDimensionalScene(
@@ -3214,20 +3297,23 @@ router.post("/3d/model", asyncHandler(async (req: Request, res: Response) => {
     "model",
     { objects: combinedModelObjects },
     combinedModelOptions,
-    finalSessionId,
+    sessionKey,
     callerUsername,
   );
 
   const sceneEmbedUrl = buildLocalUrl("compute/3d/embed", { id: sceneId, type: "model" });
 
   res.json({
+    message: isAppend
+      ? `Appended ${modelObjects.length} object(s) to session '${sessionKey}' — the model now has ${combinedModelObjects.length}. Call again with this sessionId to keep building; sessions expire after 30 minutes of inactivity.`
+      : `Created model with ${modelObjects.length} object(s). To append more, call again with sessionId '${sessionKey}'; sessions expire after 30 minutes of inactivity.`,
     sceneEmbedUrl,
     sceneId,
     sceneType: "model",
-    sessionId: finalSessionId,
+    sessionId: sessionKey,
     objectCount: modelObjects.length,
     totalObjects: combinedModelObjects.length,
-    isAppend: sessionId && modelSessions.has(sessionId) ? true : false,
+    isAppend,
   });
 }));
 // ── Create 3D Voxel (Instanced voxels + primitive shape rasterization) ──
@@ -3259,19 +3345,23 @@ router.post("/3d/voxel", asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
+  const sessionResolution = resolveThreeDimensionalSession(voxelSessions, sessionId, "voxel build");
+  if ("error" in sessionResolution) {
+    return res.status(400).json({ error: sessionResolution.error });
+  }
+  const { sessionKey, existing: existingVoxelSession } = sessionResolution;
+  const isAppend = existingVoxelSession !== null;
+
   const { username: callerUsername } = extractCallerContext(req);
 
   let combinedVoxels = voxels || [];
   let combinedShapes = shapes || [];
   let combinedOptions = options || {};
-  let finalSessionId = sessionId;
 
-  if (sessionId && voxelSessions.has(sessionId)) {
-    const existingSession = voxelSessions.get(sessionId)!;
-
-    combinedOptions = { ...existingSession.options, ...options };
-    combinedVoxels = [...existingSession.voxels, ...(voxels || [])];
-    combinedShapes = [...existingSession.shapes, ...(shapes || [])];
+  if (existingVoxelSession) {
+    combinedOptions = { ...existingVoxelSession.options, ...options };
+    combinedVoxels = [...existingVoxelSession.voxels, ...(voxels || [])];
+    combinedShapes = [...existingVoxelSession.shapes, ...(shapes || [])];
   }
 
   const combinedVoxelInput = {
@@ -3285,32 +3375,25 @@ router.post("/3d/voxel", asyncHandler(async (req: Request, res: Response) => {
     return res.status(400).json({ error: validationError });
   }
 
-  if (sessionId) {
-    if (voxelSessions.has(sessionId)) {
-      const existingSession = voxelSessions.get(sessionId)!;
-      existingSession.voxels = combinedVoxels;
-      existingSession.shapes = combinedShapes;
-      existingSession.options = combinedOptions;
-      existingSession.updatedAt = Date.now();
-    } else {
-      voxelSessions.set(sessionId, {
-        voxels: combinedVoxels,
-        shapes: combinedShapes,
-        options: combinedOptions,
-        updatedAt: Date.now(),
-      });
-    }
-    cleanupVoxelSessions();
-  } else {
-    finalSessionId = crypto.randomUUID().slice(0, 12);
-    voxelSessions.set(finalSessionId, {
-      voxels: combinedVoxels,
-      shapes: combinedShapes,
-      options: combinedOptions,
-      updatedAt: Date.now(),
+  // Resolve before persisting so an over-budget build errors instead of
+  // being silently truncated at render time.
+  const resolvedVoxelArray = resolveVoxels(combinedVoxelInput);
+  if (resolvedVoxelArray.length > MAX_RENDERABLE_VOXELS) {
+    return res.status(400).json({
+      error:
+        `This build resolves to ${resolvedVoxelArray.length.toLocaleString()} voxels, over the ` +
+        `${MAX_RENDERABLE_VOXELS.toLocaleString()} maximum. Reduce shape sizes/radii, use ` +
+        `hollow: true for large shapes, or split the build across sessions.`,
     });
-    cleanupVoxelSessions();
   }
+
+  voxelSessions.set(sessionKey, {
+    voxels: combinedVoxels,
+    shapes: combinedShapes,
+    options: combinedOptions,
+    updatedAt: Date.now(),
+  });
+  cleanupVoxelSessions();
 
   const sceneId = crypto.randomUUID().slice(0, 12);
   await saveThreeDimensionalScene(
@@ -3318,21 +3401,24 @@ router.post("/3d/voxel", asyncHandler(async (req: Request, res: Response) => {
     "voxel",
     { voxels: combinedVoxels, shapes: combinedShapes },
     combinedOptions,
-    finalSessionId,
+    sessionKey,
     callerUsername,
   );
 
   const sceneEmbedUrl = buildLocalUrl("compute/3d/embed", { id: sceneId, type: "voxel" });
-  const resolvedVoxelArray = resolveVoxels(combinedVoxelInput);
 
   res.json({
+    message: isAppend
+      ? `Appended ${(voxels || []).length} voxel(s) and ${(shapes || []).length} shape(s) to session '${sessionKey}' — the build now renders ${resolvedVoxelArray.length} voxels. Sessions expire after 30 minutes of inactivity.`
+      : `Created voxel build rendering ${resolvedVoxelArray.length} voxels (${(voxels || []).length} explicit voxel(s), ${(shapes || []).length} shape(s)). To append more, call again with sessionId '${sessionKey}'; sessions expire after 30 minutes of inactivity.`,
     sceneEmbedUrl,
     sceneId,
     sceneType: "voxel",
-    sessionId: finalSessionId,
-    voxelCount: (voxels || []).length + (shapes || []).length,
+    sessionId: sessionKey,
+    addedVoxels: (voxels || []).length,
+    addedShapes: (shapes || []).length,
     totalVoxels: resolvedVoxelArray.length,
-    isAppend: sessionId && voxelSessions.has(sessionId) ? true : false,
+    isAppend,
   });
 }));
 // ── Serve 3D Embed HTML ───────────────────────────────────────

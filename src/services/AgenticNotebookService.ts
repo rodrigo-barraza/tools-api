@@ -1,6 +1,7 @@
 // ─── Jupyter .ipynb Editing ─────────────────────────────────
 
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, writeFile, rename } from "node:fs/promises";
+import { dirname, join } from "node:path";
 import { validatePath } from "./AgenticFileService.ts";
 import { errorMessage } from "../utilities.ts";
 
@@ -88,6 +89,7 @@ export async function agenticNotebookEdit(
 
   // Read and parse notebook
   let notebook: Notebook;
+  let createdNew = false;
   try {
     const raw = await readFile(resolved, "utf-8");
     if (Buffer.byteLength(raw) > MAX_NOTEBOOK_SIZE) {
@@ -104,6 +106,7 @@ export async function agenticNotebookEdit(
       // For insert_cell on a non-existent file, create a blank notebook
       if (action === "insert_cell") {
         notebook = createBlankNotebook();
+        createdNew = true;
       } else {
         return { error: `Notebook not found: ${resolved}` };
       }
@@ -133,11 +136,16 @@ export async function agenticNotebookEdit(
       return getCell(resolved, notebook, cellIndex);
 
     case "insert_cell":
-      return insertCell(resolved, notebook, {
-        cellIndex: cellIndex as number | undefined,
-        content: content as string | undefined,
-        cellType: cellType as string | undefined,
-      });
+      return insertCell(
+        resolved,
+        notebook,
+        {
+          cellIndex: cellIndex as number | undefined,
+          content: content as string | undefined,
+          cellType: cellType as string | undefined,
+        },
+        createdNew,
+      );
 
     case "replace_cell":
       return replaceCell(resolved, notebook, {
@@ -188,6 +196,11 @@ function getCell(filePath: string, notebook: Notebook, cellIndex: unknown) {
   if (cellIndex == null || typeof cellIndex !== "number") {
     return { error: "'cellIndex' is required (number, 0-based)" };
   }
+  if (!Number.isInteger(cellIndex)) {
+    return {
+      error: `cellIndex must be an integer (0-based); received ${describeIndex(cellIndex)}`,
+    };
+  }
   if (cellIndex < 0 || cellIndex >= notebook.cells.length) {
     return {
       error: `Cell index ${cellIndex} out of range (0–${notebook.cells.length - 1})`,
@@ -219,6 +232,7 @@ async function insertCell(
   filePath: string,
   notebook: Notebook,
   { cellIndex, content, cellType }: NotebookEditParams,
+  createdNew: boolean = false,
 ) {
   if (!content || typeof content !== "string") {
     return { error: "'content' is required for insert_cell (string)" };
@@ -231,12 +245,23 @@ async function insertCell(
     };
   }
 
-  // Default: append at end
-  const index = cellIndex != null ? cellIndex : notebook.cells.length;
-  if (index < 0 || index > notebook.cells.length) {
-    return {
-      error: `Cell index ${index} out of range for insert (0–${notebook.cells.length})`,
-    };
+  // Append affordance: omitting cellIndex or passing -1 appends at the end.
+  const appendRequested = cellIndex == null || cellIndex === -1;
+  let index: number;
+  if (appendRequested) {
+    index = notebook.cells.length;
+  } else {
+    if (typeof cellIndex !== "number" || !Number.isInteger(cellIndex)) {
+      return {
+        error: `cellIndex must be an integer (0-based); received ${describeIndex(cellIndex)}. Omit cellIndex or pass -1 to append.`,
+      };
+    }
+    if (cellIndex < 0 || cellIndex > notebook.cells.length) {
+      return {
+        error: `Cell index ${cellIndex} out of range for insert (0–${notebook.cells.length})`,
+      };
+    }
+    index = cellIndex;
   }
 
   const newCell = createCell(type, content);
@@ -244,13 +269,22 @@ async function insertCell(
 
   await writeNotebook(filePath, notebook);
 
+  const placement = appendRequested
+    ? `Appended ${type} cell at index ${index}`
+    : `Inserted ${type} cell at index ${index}`;
+  const message = createdNew
+    ? `${placement}. Note: notebook did not exist and a new blank notebook was created at ${filePath}`
+    : placement;
+
   return {
     filePath,
     action: "insert_cell",
     cellIndex: index,
     cellType: type,
     totalCells: notebook.cells.length,
-    message: `Inserted ${type} cell at index ${index}`,
+    created: createdNew,
+    appended: appendRequested,
+    message,
   };
 }
 
@@ -263,6 +297,16 @@ async function replaceCell(
     return {
       error: "'cellIndex' is required for replace_cell (number, 0-based)",
     };
+  }
+  if (!Number.isInteger(cellIndex)) {
+    return {
+      error: `cellIndex must be an integer (0-based); received ${describeIndex(cellIndex)}`,
+    };
+  }
+  // Reject no-op replacements: nothing to change without content or cellType.
+  // (An explicit empty-string content is allowed — it clears the cell.)
+  if (content == null && !cellType) {
+    return { error: "provide content and/or cellType to replace" };
   }
   if (cellIndex < 0 || cellIndex >= notebook.cells.length) {
     return {
@@ -319,6 +363,11 @@ async function deleteCell(
   if (cellIndex == null || typeof cellIndex !== "number") {
     return {
       error: "'cellIndex' is required for delete_cell (number, 0-based)",
+    };
+  }
+  if (!Number.isInteger(cellIndex)) {
+    return {
+      error: `cellIndex must be an integer (0-based); received ${describeIndex(cellIndex)}`,
     };
   }
   if (cellIndex < 0 || cellIndex >= notebook.cells.length) {
@@ -428,8 +477,28 @@ function summarizeOutput(output: CellOutput) {
   return summary;
 }
 
+/**
+ * Human-readable rendering of an invalid cellIndex for teaching errors.
+ * NaN/undefined/floats all stringify usefully here.
+ */
+function describeIndex(value: unknown): string {
+  if (typeof value === "number" && Number.isNaN(value)) return "NaN";
+  if (value === undefined) return "undefined";
+  if (typeof value === "string") return `"${value}"`;
+  return String(value);
+}
+
 async function writeNotebook(filePath: string, notebook: Notebook) {
   // Write with 1-space indentation (Jupyter standard) and trailing newline
   const json = JSON.stringify(notebook, null, 1) + "\n";
-  await writeFile(filePath, json, "utf-8");
+
+  // Atomic write: write to a temp file in the same directory, then rename.
+  // rename() is atomic on the same filesystem, so a crash mid-write cannot
+  // leave a truncated/corrupt .ipynb in place.
+  const tempPath = join(
+    dirname(filePath),
+    `.${Date.now()}-${Math.random().toString(36).slice(2)}.ipynb.tmp`,
+  );
+  await writeFile(tempPath, json, "utf-8");
+  await rename(tempPath, filePath);
 }

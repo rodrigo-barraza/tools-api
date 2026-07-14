@@ -8,6 +8,7 @@ import {
   THREE_JS_CDN,
   CLIENT_GEOMETRY_FACTORY,
   CLIENT_MATERIAL_FACTORY,
+  validateVector3,
 } from "./ThreeDimensionalBaseService.ts";
 
 // ─── Constants ─────────────────────────────────────────────────
@@ -19,6 +20,7 @@ export const VALID_PRIMITIVE_SHAPES = new Set([
   "sphere",
   "cylinder",
   "cone",
+  "pyramid",
   "torus",
   "plane",
   "ring",
@@ -106,7 +108,21 @@ export function validateModelInput(input: ModelBuildInput): string | null {
     if (!VALID_PRIMITIVE_SHAPES.has(modelObject.shape)) {
       return `Object at index ${index} has unknown shape '${modelObject.shape}'. Valid: ${[...VALID_PRIMITIVE_SHAPES].join(", ")}`;
     }
+    for (const [vectorField, vectorValue] of [
+      ["position", modelObject.position],
+      ["rotation", modelObject.rotation],
+      ["scale", modelObject.scale],
+      ["size", modelObject.size],
+    ] as const) {
+      const vectorError = validateVector3(vectorValue, `Object at index ${index}: '${vectorField}'`);
+      if (vectorError) return vectorError;
+    }
   }
+
+  const cameraError = validateVector3(input.options?.cameraPosition, "options.cameraPosition");
+  if (cameraError) return cameraError;
+  const targetError = validateVector3(input.options?.cameraTarget, "options.cameraTarget");
+  if (targetError) return targetError;
 
   return null;
 }

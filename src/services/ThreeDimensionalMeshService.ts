@@ -80,6 +80,32 @@ export function validateMeshInput(input: MeshBuildInput): string | null {
     }
   }
 
+  // The renderer only applies per-vertex colors/normals when their length
+  // matches the vertex count — a mismatch used to silently fall back to the
+  // flat mesh color while the response claimed hasVertexColors: true.
+  if (input.colors !== undefined && input.colors !== null) {
+    if (!Array.isArray(input.colors)) {
+      return "'colors' must be an array of CSS color strings, one per vertex";
+    }
+    if (input.colors.length !== vertexCount) {
+      return `'colors' has ${input.colors.length} entries but there are ${vertexCount} vertices — provide exactly one color per vertex, or omit 'colors' and set options.meshColor`;
+    }
+  }
+  if (input.normals !== undefined && input.normals !== null) {
+    if (!Array.isArray(input.normals)) {
+      return "'normals' must be an array of [x, y, z] triples, one per vertex";
+    }
+    if (input.normals.length !== vertexCount) {
+      return `'normals' has ${input.normals.length} entries but there are ${vertexCount} vertices — provide exactly one normal per vertex, or omit 'normals' to auto-compute them`;
+    }
+    for (let index = 0; index < input.normals.length; index++) {
+      const normal = input.normals[index];
+      if (!Array.isArray(normal) || normal.length !== 3 || normal.some((component: number) => typeof component !== "number" || !isFinite(component))) {
+        return `Normal at index ${index} must be an array of exactly 3 finite numbers [x, y, z]`;
+      }
+    }
+  }
+
   return null;
 }
 

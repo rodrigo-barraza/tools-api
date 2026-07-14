@@ -48,6 +48,9 @@ export function createLspServerManager(
   const servers = new Map<string, LspServerInstance>();
   const extensionMap = new Map<string, string[]>();
   const openedFiles = new Map<string, string>();
+  // Tracks the last LSP document version sent per file URI so didChange
+  // notifications carry a monotonically increasing version (required by LSP).
+  const documentVersions = new Map<string, number>();
   let initialized = false;
 
   // ── Initialization ─────────────────────────────────────────
@@ -202,6 +205,7 @@ export function createLspServerManager(
         },
       });
       openedFiles.set(fileUri, server.name);
+      documentVersions.set(fileUri, 1);
     } catch (error: unknown) {
       logger.error(
         `[LSP Manager] didOpen failed for ${basename(filePath)}: ${errorMessage(error)}`,
@@ -226,9 +230,15 @@ export function createLspServerManager(
       return openFile(filePath, content);
     }
 
+    // Monotonically increasing document version — didChange with a stale or
+    // constant version is ignored by many servers, which is why edits used to
+    // be invisible to subsequent queries.
+    const version = (documentVersions.get(fileUri) ?? 1) + 1;
+    documentVersions.set(fileUri, version);
+
     try {
       await server.sendNotification("textDocument/didChange", {
-        textDocument: { uri: fileUri, version: 1 },
+        textDocument: { uri: fileUri, version },
         contentChanges: [{ text: content }],
       });
     } catch (error: unknown) {
@@ -253,6 +263,7 @@ export function createLspServerManager(
         textDocument: { uri: fileUri },
       });
       openedFiles.delete(fileUri);
+      documentVersions.delete(fileUri);
     } catch (error: unknown) {
       logger.error(
         `[LSP Manager] didClose failed for ${basename(filePath)}: ${errorMessage(error)}`,
@@ -311,6 +322,7 @@ export function createLspServerManager(
     servers.clear();
     extensionMap.clear();
     openedFiles.clear();
+    documentVersions.clear();
     initialized = false;
 
     if (errors.length > 0) {

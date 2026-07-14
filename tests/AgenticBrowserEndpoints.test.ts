@@ -202,11 +202,24 @@ describe("Agentic Browser Endpoints", () => {
   });
 
   describe("unknown action", () => {
-    it("lists the valid actions", async () => {
+    it("lists the valid actions without advertising run_script", async () => {
       const res = await act({ action: "look_at" });
       expect(res.status).toBe(400);
       expect(res.body.error).toContain("navigate");
       expect(res.body.error).toContain("close");
+      expect(res.body.error).not.toContain("run_script");
+    });
+
+    it("rejects run_script via /browser/action, pointing to execute_browser_script (production: a model reached it through the backdoor)", async () => {
+      const res = await act({ action: "run_script", script: "console.log(1);" });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain("execute_browser_script");
+    });
+
+    it("rejects action 'execute_browser_script' with the same redirect (production failure)", async () => {
+      const res = await act({ action: "execute_browser_script" });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain("execute_browser_script");
     });
   });
 

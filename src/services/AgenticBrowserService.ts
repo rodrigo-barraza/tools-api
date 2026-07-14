@@ -1281,8 +1281,12 @@ export async function agenticBrowserAction(params: AgenticBrowserParams) {
 
   const handler = ACTION_HANDLERS[action as keyof typeof ACTION_HANDLERS];
   if (!handler) {
+    // run_script is internal dispatch for /browser/script — don't advertise it
+    const validActions = Object.keys(ACTION_HANDLERS).filter(
+      (name) => name !== "run_script",
+    );
     return {
-      error: `Unknown action: "${action}". Valid actions: ${Object.keys(ACTION_HANDLERS).join(", ")}, close`,
+      error: `Unknown action: "${action}". Valid actions: ${validActions.join(", ")}, close`,
     };
   }
 

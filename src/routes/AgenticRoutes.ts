@@ -6,6 +6,7 @@ import { Request, Response, Router } from "express";
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
 import { agenticHandler, errorMessage } from "../utilities.ts";
+import { coerceInt, coerceBool } from "../utilities/agenticCoercion.ts";
 import { getTraceHeaders } from "@rodrigo-barraza/service-library";
 import { createReadStream } from "node:fs";
 import { stat as fsStat } from "node:fs/promises";
@@ -95,13 +96,19 @@ const dispatchToRoute = router as unknown as (request: Request, response: Respon
 router.post(
   "/file/read",
   agenticHandler(async (req: Request) => {
-    const { absolutePath, startLine, endLine } = req.body;
-    if (!absolutePath || typeof absolutePath !== "string") {
+    const { absolutePath, startLine, endLine, path } = req.body;
+    // Models overwhelmingly send `path`; accept it as an alias for absolutePath.
+    const target = absolutePath ?? path;
+    if (!target || typeof target !== "string") {
       return { error: "Request body must include 'absolutePath' (string)" };
     }
-    return agenticReadFile(absolutePath, {
-      startLine: startLine ? parseInt(startLine, 10) : undefined,
-      endLine: endLine ? parseInt(endLine, 10) : undefined,
+    const start = coerceInt(startLine, { name: "startLine", min: 1, default: 0 });
+    if (!start.ok) return { error: start.error };
+    const end = coerceInt(endLine, { name: "endLine", min: 1, default: 0 });
+    if (!end.ok) return { error: end.error };
+    return agenticReadFile(target, {
+      startLine: start.value || undefined,
+      endLine: end.value || undefined,
     });
   }),
 );
@@ -219,8 +226,10 @@ router.post(
     if (typeof content !== "string") {
       return { error: "Request body must include 'content' (string)" };
     }
+    const cd = coerceBool(createDirs, "createDirs", true);
+    if (!cd.ok) return { error: cd.error };
     return agenticWriteFile(path, content, {
-      createDirs: createDirs !== false,
+      createDirs: cd.value,
     });
   }),
 );
@@ -238,8 +247,10 @@ router.post(
     if (typeof newString !== "string") {
       return { error: "Request body must include 'newString' (string)" };
     }
+    const am = coerceBool(allowMultiple, "allowMultiple", false);
+    if (!am.ok) return { error: am.error };
     return agenticStringReplace(path, oldString, newString, {
-      allowMultiple: allowMultiple === true,
+      allowMultiple: am.value,
     });
   }),
 );
@@ -268,12 +279,10 @@ router.post(
     if (!path || typeof path !== "string") {
       return { error: "Request body must include 'path' (string)" };
     }
-    if (typeof startLine !== "number") {
-      return { error: "Request body must include 'startLine' (number)" };
-    }
-    if (typeof endLine !== "number") {
-      return { error: "Request body must include 'endLine' (number)" };
-    }
+    const start = coerceInt(startLine, { name: "startLine", min: 1 });
+    if (!start.ok) return { error: start.error };
+    const end = coerceInt(endLine, { name: "endLine", min: 1 });
+    if (!end.ok) return { error: end.error };
     if (typeof targetContent !== "string") {
       return { error: "Request body must include 'targetContent' (string)" };
     }
@@ -284,8 +293,8 @@ router.post(
     }
     return agenticBlockReplace(
       path,
-      startLine,
-      endLine,
+      start.value,
+      end.value,
       targetContent,
       replacementContent,
     );
@@ -316,9 +325,13 @@ router.post(
     if (!path || typeof path !== "string") {
       return { error: "Request body must include 'path' (string)" };
     }
+    const rec = coerceBool(recursive, "recursive", false);
+    if (!rec.ok) return { error: rec.error };
+    const depth = coerceInt(maxDepth, { name: "maxDepth", min: 1, max: 5, default: 3 });
+    if (!depth.ok) return { error: depth.error };
     return agenticListDirectory(path, {
-      recursive: recursive === true,
-      maxDepth: maxDepth ? Math.min(parseInt(maxDepth, 10), 5) : 3,
+      recursive: rec.value,
+      maxDepth: depth.value,
     });
   }),
 );
@@ -341,11 +354,17 @@ router.post(
     if (!searchPath || typeof searchPath !== "string") {
       return { error: "Request body must include 'searchPath' (string)" };
     }
+    const rx = coerceBool(isRegex, "isRegex", false);
+    if (!rx.ok) return { error: rx.error };
+    const ci = coerceBool(caseInsensitive, "caseInsensitive", false);
+    if (!ci.ok) return { error: ci.error };
+    const mpl = coerceBool(matchPerLine, "matchPerLine", true);
+    if (!mpl.ok) return { error: mpl.error };
     return agenticGrepSearch(pattern, searchPath, {
-      isRegex: isRegex === true,
+      isRegex: rx.value,
       includes: Array.isArray(includes) ? includes : [],
-      caseInsensitive: caseInsensitive === true,
-      matchPerLine: matchPerLine !== false,
+      caseInsensitive: ci.value,
+      matchPerLine: mpl.value,
     });
   }),
 );
@@ -484,7 +503,26 @@ router.post(
           "Request body must include 'files' (array of { absolutePath, startLine?, endLine? })",
       };
     }
-    return agenticMultiFileRead(files);
+    // Validate/coerce each item's line range so a bad startLine can't produce
+    // NaN-labeled lines that later corrupt a line-based edit.
+    const coercedFiles = [];
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i] ?? {};
+      const target = f.absolutePath ?? f.path;
+      if (!target || typeof target !== "string") {
+        return { error: `files[${i}] must include 'absolutePath' (string)` };
+      }
+      const start = coerceInt(f.startLine, { name: `files[${i}].startLine`, min: 1, default: 0 });
+      if (!start.ok) return { error: start.error };
+      const end = coerceInt(f.endLine, { name: `files[${i}].endLine`, min: 1, default: 0 });
+      if (!end.ok) return { error: end.error };
+      coercedFiles.push({
+        absolutePath: target,
+        startLine: start.value || undefined,
+        endLine: end.value || undefined,
+      });
+    }
+    return agenticMultiFileRead(coercedFiles);
   }),
 );
 // ── File Info ─────────────────────────────────────────────────
@@ -518,7 +556,9 @@ router.post(
           "Request body must include either 'pathB' (string) or 'content' (string)",
       };
     }
-    return agenticFileDiff(pathA, { pathB, content, contextLines });
+    const ctx = coerceInt(contextLines, { name: "contextLines", min: 0, max: 100, default: 3 });
+    if (!ctx.ok) return { error: ctx.error };
+    return agenticFileDiff(pathA, { pathB, content, contextLines: ctx.value });
   }),
 );
 // ── Move File ─────────────────────────────────────────────────
@@ -532,8 +572,10 @@ router.post(
     if (!destination || typeof destination !== "string") {
       return { error: "Request body must include 'destination' (string)" };
     }
+    const cd = coerceBool(createDirs, "createDirs", true);
+    if (!cd.ok) return { error: cd.error };
     return agenticMoveFile(source, destination, {
-      createDirs: createDirs !== false,
+      createDirs: cd.value,
     });
   }),
 );
@@ -545,10 +587,46 @@ router.post(
     if (!path || typeof path !== "string") {
       return { error: "Request body must include 'path' (string)" };
     }
-    return agenticDeleteFile(path, { recursive: recursive === true });
+    const rec = coerceBool(recursive, "recursive", false);
+    if (!rec.ok) return { error: rec.error };
+    return agenticDeleteFile(path, { recursive: rec.value });
   }),
 );
 // ─── 6. Command Execution ───────────────────────────────────
+// Timeout is documented in milliseconds. Models frequently send seconds
+// ("30" meaning 30s → historically became 30ms) or unit suffixes ("60s",
+// "2m"). Accept the unambiguous suffix forms, and reject bare sub-second
+// integers with a teaching error rather than silently running for 1ms.
+const MAX_COMMAND_TIMEOUT_MS = 120_000;
+function normalizeTimeoutMs(
+  raw: unknown,
+): { ok: true; value: number | undefined } | { ok: false; error: string } {
+  if (raw === null || raw === undefined || raw === "") return { ok: true, value: undefined };
+  if (typeof raw === "string") {
+    const m = raw.trim().toLowerCase().match(/^(\d+)\s*(ms|s|m|sec|secs|min|mins)?$/);
+    if (!m) {
+      return {
+        ok: false,
+        error: `'timeout' must be a number of milliseconds (1000–${MAX_COMMAND_TIMEOUT_MS}), or a value like "60s"/"2m"; received ${JSON.stringify(raw)}.`,
+      };
+    }
+    const n = Number(m[1]);
+    const unit = m[2] || "ms";
+    const ms =
+      unit === "ms" ? n : unit === "s" || unit === "sec" || unit === "secs" ? n * 1000 : n * 60_000;
+    return { ok: true, value: Math.min(Math.max(ms, 1000), MAX_COMMAND_TIMEOUT_MS) };
+  }
+  if (typeof raw === "number" && Number.isFinite(raw)) {
+    if (raw > 0 && raw < 1000) {
+      return {
+        ok: false,
+        error: `'timeout' is in milliseconds; ${raw} is under 1 second. If you meant ${raw} seconds, send ${raw * 1000} (or "${raw}s").`,
+      };
+    }
+    return { ok: true, value: Math.min(Math.max(raw, 1000), MAX_COMMAND_TIMEOUT_MS) };
+  }
+  return { ok: false, error: `'timeout' must be a number of milliseconds; received ${typeof raw}.` };
+}
 router.post(
   "/command/run",
   asyncHandler(async (req: Request, res: Response) => {
@@ -558,6 +636,12 @@ router.post(
         .status(400)
         .json({ error: "Request body must include 'command' (string)" });
     }
+    const timeoutResult = normalizeTimeoutMs(timeout);
+    if (!timeoutResult.ok) {
+      return res.status(400).json({ error: timeoutResult.error });
+    }
+    const rib = coerceBool(run_in_background, "run_in_background", false);
+    if (!rib.ok) return res.status(400).json({ error: rib.error });
     // Create an AbortController so we can kill the child process if the
     // upstream client disconnects (e.g. user pressed Stop in the UI).
     const abortController = new AbortController();
@@ -568,9 +652,9 @@ router.post(
     });
     const result = await executeCommand(command, {
       cwd: cwd || undefined,
-      timeout: timeout ? Math.min(parseInt(timeout, 10), 120_000) : undefined,
+      timeout: timeoutResult.value,
       signal: abortController.signal,
-      runInBackground: run_in_background === true,
+      runInBackground: rib.value,
     });
     // Guard: response may already be closed if the client disconnected
     if (res.headersSent || res.writableEnded) return;
@@ -589,6 +673,10 @@ router.post(
         .status(400)
         .json({ error: "Request body must include 'command' (string)" });
     }
+    const timeoutResult = normalizeTimeoutMs(timeout);
+    if (!timeoutResult.ok) {
+      return res.status(400).json({ error: timeoutResult.error });
+    }
     const { setupStreamingServerSentEvents } =
       await import("@rodrigo-barraza/utilities-library/express");
     const send = setupStreamingServerSentEvents(res);
@@ -603,7 +691,7 @@ router.post(
     });
     const result = await executeCommandStreaming(command, {
       cwd: cwd || undefined,
-      timeout: timeout ? Math.min(parseInt(timeout, 10), 120_000) : undefined,
+      timeout: timeoutResult.value,
       onChunk: (event: string, data: string) => send({ event, data }),
       signal: abortController.signal,
     });
@@ -630,12 +718,11 @@ router.post(
   "/command/kill",
   asyncHandler(async (req: Request, res: Response) => {
     const { pid } = req.body;
-    if (!pid || typeof pid !== "number") {
-      return res
-        .status(400)
-        .json({ error: "Request body must include 'pid' (positive integer)" });
+    const pidResult = coerceInt(pid, { name: "pid", min: 1 });
+    if (!pidResult.ok) {
+      return res.status(400).json({ error: pidResult.error });
     }
-    const result = await killProcessTree(pid);
+    const result = await killProcessTree(pidResult.value);
     if (!result.success) {
       return res.status(400).json(result);
     }
@@ -677,7 +764,9 @@ router.post(
     if (!path || typeof path !== "string") {
       return { error: "Request body must include 'path' (string)" };
     }
-    return agenticGitDiff(path, { staged, path: file, ref });
+    const st = coerceBool(staged, "staged", false);
+    if (!st.ok) return { error: st.error };
+    return agenticGitDiff(path, { staged: st.value, path: file, ref });
   }),
 );
 router.post(
@@ -687,7 +776,9 @@ router.post(
     if (!path || typeof path !== "string") {
       return { error: "Request body must include 'path' (string)" };
     }
-    return agenticGitLog(path, { limit, author, since, path: file });
+    const lim = coerceInt(limit, { name: "limit", min: 1, max: 100, default: 20 });
+    if (!lim.ok) return { error: lim.error };
+    return agenticGitLog(path, { limit: lim.value, author, since, path: file });
   }),
 );
 // ── Git Worktree (Coordinator Mode) ───────────────────────────
@@ -803,6 +894,12 @@ router.post(
     if (!action || typeof action !== "string") {
       return { error: "Request body must include 'action' (string)" };
     }
+    if (action === "run_script" || action === "execute_browser_script") {
+      return {
+        error:
+          "Script execution is not a control_browser action. Use the 'execute_browser_script' tool instead — it runs a full Playwright script in a fresh isolated browser (no shared session state).",
+      };
+    }
     return agenticBrowserAction(req.body);
   }),
 );
@@ -833,11 +930,15 @@ router.post(
     if (!filePath || typeof filePath !== "string") {
       return { error: "Request body must include 'filePath' (string)" };
     }
+    const ln = coerceInt(line, { name: "line", min: 1, default: 0 });
+    if (!ln.ok) return { error: `${ln.error} LSP positions are 1-based.` };
+    const ch = coerceInt(character, { name: "character", min: 1, default: 0 });
+    if (!ch.ok) return { error: `${ch.error} LSP positions are 1-based.` };
     return agenticLspAction({
       operation,
       filePath,
-      line: line != null ? parseInt(line, 10) : undefined,
-      character: character != null ? parseInt(character, 10) : undefined,
+      line: ln.value || undefined,
+      character: ch.value || undefined,
       workspacePath,
     });
   }),
@@ -1629,9 +1730,17 @@ router.post(
     if (!action || typeof action !== "string") {
       return { error: "Request body must include 'action' (string)" };
     }
+    let cellIndexValue: number | undefined;
+    if (cellIndex != null) {
+      // Allow -1 as explicit "append" sugar for insert_cell; otherwise require
+      // a real 0-based integer so "last"/NaN can't splice cell 0.
+      const ci = coerceInt(cellIndex, { name: "cellIndex", min: -1 });
+      if (!ci.ok) return { error: `${ci.error} cellIndex is 0-based.` };
+      cellIndexValue = ci.value;
+    }
     return agenticNotebookEdit(path, {
       action,
-      cellIndex: cellIndex != null ? parseInt(cellIndex, 10) : undefined,
+      cellIndex: cellIndexValue,
       content,
       cellType,
     });

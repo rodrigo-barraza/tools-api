@@ -18,10 +18,15 @@ import {
   getActiveSessionCount,
   getAuthoredDurationSeconds,
 } from "../services/AudioTrackerSessionManager.ts";
-import { validateVectorAnimationInput } from "../services/VectorAnimationValidation.ts";
+import {
+  validateVectorAnimationInput,
+  normalizeEasing,
+  findKeyframeBeyondDuration,
+  type VectorLayer as VectorLayerInput,
+} from "../services/VectorAnimationValidation.ts";
 import { synthesizeSpeech, getSupportedVoices, isEspeakAvailable } from "../services/TextToSpeechService.ts";
 import logger from "../logger.ts";
-import { extractCallerContext, errorMessage, buildLocalUrl, buildEmbedHtml } from "../utilities.ts";
+import { extractCallerContext, errorMessage, buildLocalUrl, buildEmbedHtml, escapeHtml, sanitizeCssColor, toEmbedScriptJson } from "../utilities.ts";
 import { saveVectorAnimation, getVectorAnimation, type VectorAnimationConfig, type VectorAnimationOptions } from "../models/VectorAnimation.ts";
 import crypto from "node:crypto";
 import CONFIG from "../config.ts";
@@ -1163,6 +1168,47 @@ function cleanupVectorAnimationSessions() {
   }
 }
 
+/**
+ * Normalize incoming layers to the shapes the engine expects: numeric
+ * keyframe times (the merge logic compares them with ===), canonical easing
+ * names (models send camelCase variants), and object-form motion paths
+ * (models send bare SVG path strings). Merge-control markers (action,
+ * deleted, replaceKeyframes) are preserved for the session-merge logic.
+ */
+function normalizeVectorLayers(layers: VectorLayerInput[]): VectorLayerInput[] {
+  return layers.map((layer) => {
+    const normalized: VectorLayerInput = { ...layer };
+    if (Array.isArray(layer.keyframes)) {
+      normalized.keyframes = layer.keyframes
+        .map((keyframe) => {
+          const normalizedKeyframe = { ...keyframe, time: Number(keyframe.time) };
+          if (typeof keyframe.easing === "string") {
+            normalizedKeyframe.easing = normalizeEasing(keyframe.easing) ?? keyframe.easing;
+          }
+          if (typeof keyframe.motionPath === "string") {
+            normalizedKeyframe.motionPath = { path: keyframe.motionPath };
+          }
+          return normalizedKeyframe;
+        })
+        .sort((keyframeA, keyframeB) => Number(keyframeA.time) - Number(keyframeB.time));
+    }
+    return normalized;
+  });
+}
+
+/** Strip merge-control markers so they are never stored as renderable data. */
+function stripLayerMarkers(layer: VectorLayerInput): VectorLayer {
+  const { action: _action, deleted: _deleted, replaceKeyframes: _replaceKeyframes, ...rest } = layer;
+  return rest as unknown as VectorLayer;
+}
+
+/** Drop delete-marked layers and strip markers — for new-session storage. */
+function toRenderableLayers(layers: VectorLayerInput[]): VectorLayer[] {
+  return layers
+    .filter((layer) => layer.action !== "delete" && layer.deleted !== true)
+    .map(stripLayerMarkers);
+}
+
 function buildVectorAnimationEmbedHtml(
   animation: VectorAnimationConfig,
   options: VectorAnimationOptions = {},
@@ -1171,12 +1217,15 @@ function buildVectorAnimationEmbedHtml(
     loop = true,
     autoplay = true,
   } = options;
-  const width = animation.width || 800;
-  const height = animation.height || 600;
-  const background = animation.background || "#0f172a";
-  const duration = animation.duration || 5;
-  
-  const animationJson = JSON.stringify(animation);
+  const width = Number(animation.width) || 800;
+  const height = Number(animation.height) || 600;
+  const background = sanitizeCssColor(animation.background, "#0f172a");
+  const duration = Number(animation.duration) || 5;
+  const titleHtml = options.title
+    ? `<div id="animation-title">${escapeHtml(options.title)}</div>`
+    : "";
+
+  const animationJson = toEmbedScriptJson(animation);
 
   const engineScripts = `
     const parseColorToRgba = ${parseColorToRgba.toString()};
@@ -1309,9 +1358,25 @@ function buildVectorAnimationEmbedHtml(
         color: #38bdf8;
         background: rgba(56, 189, 248, 0.15);
       }
+      #animation-title {
+        position: absolute;
+        top: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: #f8fafc;
+        font-size: 14px;
+        font-weight: 600;
+        background: rgba(15, 23, 42, 0.75);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 6px 16px;
+        z-index: 10;
+      }
     `,
     bodyContent: `
       <div id="player-container">
+        ${titleHtml}
         <canvas id="animation-canvas" width="${width}" height="${height}"></canvas>
         <div id="controls">
           <button id="play-pause-btn" title="Play/Pause">
@@ -1340,11 +1405,18 @@ function buildVectorAnimationEmbedHtml(
         const timeDisplay = document.getElementById("time-display");
         const controls = document.getElementById("controls");
 
-        let duration = animation.duration || 5;
+        let duration = Number(animation.duration) || 5;
+        const fps = Number(animation.fps) || 24;
         let isPlaying = ${autoplay};
         let isLooping = ${loop};
         let currentTime = 0;
         let lastFrameTime = performance.now();
+
+        // Quantize render time to the authored fps so the advertised fps
+        // parameter has a real effect (the loop itself is wall-clock rAF).
+        function quantizeTime(t) {
+          return Math.min(duration, Math.floor(t * fps) / fps);
+        }
 
         ${engineScripts}
 
@@ -1474,12 +1546,12 @@ function buildVectorAnimationEmbedHtml(
               return;
             }
           } else if (type === "text") {
-            const textVal = props.text ?? d.text ?? "";
-            const fontSize = props.fontSize ?? d.fontSize ?? 20;
-            const fontFamily = d.fontFamily || "system-ui, sans-serif";
+            const textVal = props.text ?? shapeData.text ?? "";
+            const fontSize = props.fontSize ?? shapeData.fontSize ?? 20;
+            const fontFamily = shapeData.fontFamily || "system-ui, sans-serif";
             ctx.font = fontSize + "px " + fontFamily;
-            ctx.textAlign = d.textAlign || "center";
-            ctx.textBaseline = d.textBaseline || "middle";
+            ctx.textAlign = shapeData.textAlign || "center";
+            ctx.textBaseline = shapeData.textBaseline || "middle";
             if (ctx.fillStyle !== "transparent") ctx.fillText(textVal, 0, 0);
             if (ctx.strokeStyle !== "transparent") ctx.strokeText(textVal, 0, 0);
           }
@@ -1492,27 +1564,27 @@ function buildVectorAnimationEmbedHtml(
             ctx.clip();
             let xValue = -50, yValue = -50, widthValue = 100, heightValue = 100;
             if (type === "rectangle") {
-              const rectWidth = props.width ?? d.width ?? 100;
-              const rectHeight = props.height ?? d.height ?? 100;
+              const rectWidth = props.width ?? shapeData.width ?? 100;
+              const rectHeight = props.height ?? shapeData.height ?? 100;
               xValue = -rectWidth / 2;
               yValue = -rectHeight / 2;
               widthValue = rectWidth;
               heightValue = rectHeight;
             } else if (type === "circle") {
-              const circleRadius = props.radius ?? d.radius ?? 50;
+              const circleRadius = props.radius ?? shapeData.radius ?? 50;
               xValue = -circleRadius;
               yValue = -circleRadius;
               widthValue = circleRadius * 2;
               heightValue = circleRadius * 2;
             } else if (type === "ellipse") {
-              const ellipseRadiusX = props.rx ?? d.rx ?? 50;
-              const ellipseRadiusY = props.ry ?? d.ry ?? 30;
+              const ellipseRadiusX = props.rx ?? shapeData.rx ?? 50;
+              const ellipseRadiusY = props.ry ?? shapeData.ry ?? 30;
               xValue = -ellipseRadiusX;
               yValue = -ellipseRadiusY;
               widthValue = ellipseRadiusX * 2;
               heightValue = ellipseRadiusY * 2;
             } else if (type === "polygon") {
-              const polygonPoints = props.points || d.points || [];
+              const polygonPoints = props.points || shapeData.points || [];
               if (polygonPoints.length > 0) {
                 let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
                 for (const point of polygonPoints) {
@@ -1569,7 +1641,7 @@ function buildVectorAnimationEmbedHtml(
             updateUI();
           }
 
-          renderFrame(currentTime);
+          renderFrame(quantizeTime(currentTime));
           requestAnimationFrame(loop);
         }
 
@@ -1591,7 +1663,7 @@ function buildVectorAnimationEmbedHtml(
           isPlaying = false;
           currentTime = (parseInt(event.target.value) / 1000) * duration;
           updateUI();
-          renderFrame(currentTime);
+          renderFrame(quantizeTime(currentTime));
         });
 
         let controlsTimeout;
@@ -1625,9 +1697,58 @@ function cleanupVectorAnimationEmbeds() {
 }
 
 router.post("/vector-animation", asyncHandler(async (req: Request, res: Response) => {
-  const { animation, options, sessionId, referenceImageUrl } = req.body;
-  if (!animation) {
-    return res.status(400).json({ error: "'animation' is required" });
+  const { options, sessionId, referenceImageUrl } = req.body;
+  let { animation } = req.body;
+
+  // Models frequently send `animation` as a JSON-encoded string. Before this
+  // was parsed, those calls "succeeded" with an empty animation (0 layers,
+  // 0 keyframes) — parse it, or reject with a format the model can copy.
+  if (typeof animation === "string") {
+    try {
+      animation = JSON.parse(animation);
+    } catch {
+      return res.status(400).json({
+        error:
+          "'animation' was sent as a string that is not valid JSON. Send it as a JSON " +
+          "object, e.g. {\"duration\": 5, \"layers\": [{\"id\": \"ball\", \"shapeType\": " +
+          "\"circle\", \"shapeData\": {\"radius\": 40}, \"fillColor\": \"#38bdf8\", " +
+          "\"keyframes\": [...]}]}",
+      });
+    }
+  }
+  if (!animation || typeof animation !== "object" || Array.isArray(animation)) {
+    return res.status(400).json({
+      error: "'animation' is required and must be an object with a 'layers' array",
+    });
+  }
+  // Unwrap accidental double-nesting ({animation: {animation: {...}}}).
+  if (!animation.layers && animation.animation && typeof animation.animation === "object") {
+    animation = { ...animation, ...animation.animation };
+    delete animation.animation;
+  }
+
+  const trimmedSessionId = typeof sessionId === "string" ? sessionId.trim() : sessionId;
+  if (trimmedSessionId !== undefined && trimmedSessionId !== null && trimmedSessionId !== "") {
+    if (
+      typeof trimmedSessionId !== "string" ||
+      trimmedSessionId === "null" ||
+      trimmedSessionId === "undefined"
+    ) {
+      return res.status(400).json({
+        error:
+          `Invalid sessionId (got: ${JSON.stringify(trimmedSessionId)}). Pass the exact ` +
+          `sessionId string returned by a previous call, or omit it to create a new animation.`,
+      });
+    }
+    if (!vectorAnimationSessions.has(trimmedSessionId)) {
+      return res.status(400).json({
+        error:
+          `Session '${trimmedSessionId}' not found or expired (sessions expire after 30 ` +
+          `minutes of inactivity). Omit sessionId to create a new animation — the response ` +
+          `returns a server-assigned sessionId for later edits — and resend the complete ` +
+          `animation, not just the changes.`,
+      });
+    }
   }
 
   const validationError = validateVectorAnimationInput(animation);
@@ -1636,85 +1757,126 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
   }
 
   const { username: callerUsername } = extractCallerContext(req);
-  const isExistingSession = !!(sessionId && vectorAnimationSessions.has(sessionId));
+  const isExistingSession = !!(trimmedSessionId && vectorAnimationSessions.has(trimmedSessionId));
+
+  const requestedWidth = animation.width != null ? Number(animation.width) : undefined;
+  const requestedHeight = animation.height != null ? Number(animation.height) : undefined;
+  const clampWarnings: string[] = [];
+  if (requestedWidth !== undefined && requestedWidth > 1920) {
+    clampWarnings.push(`width ${requestedWidth} was clamped to 1920`);
+  }
+  if (requestedHeight !== undefined && requestedHeight > 1080) {
+    clampWarnings.push(`height ${requestedHeight} was clamped to 1080`);
+  }
 
   let sessionAnimation = {
-    width: Math.min(animation.width || 800, 1920),
-    height: Math.min(animation.height || 600, 1080),
-    duration: animation.duration || 5,
-    fps: Math.min(animation.fps || 24, 60),
+    width: Math.min(requestedWidth || 800, 1920),
+    height: Math.min(requestedHeight || 600, 1080),
+    duration: animation.duration != null ? Number(animation.duration) : 5,
+    fps: animation.fps != null ? Number(animation.fps) : 24,
     background: animation.background || "#0f172a",
-    layers: animation.layers || [],
+    layers: [] as VectorLayer[],
   };
 
-  const animationOptions = {
+  const animationOptions: { loop: boolean; autoplay: boolean; title?: string } = {
     loop: options?.loop !== false,
     autoplay: options?.autoplay !== false,
-    title: options?.title || "Creative Vector Animation",
   };
+  if (typeof options?.title === "string" && options.title.trim()) {
+    animationOptions.title = options.title.trim();
+  }
 
-  const activeSessionId = sessionId || crypto.randomUUID().slice(0, 12);
+  const activeSessionId = isExistingSession
+    ? trimmedSessionId
+    : crypto.randomUUID().slice(0, 12);
+
+  const normalizedLayers = normalizeVectorLayers(animation.layers || []);
+  sessionAnimation.layers = toRenderableLayers(normalizedLayers);
+
+  // Keyframes past the effective duration would never play — reject with
+  // guidance instead of counting them toward totalKeyframes.
+  const effectiveDuration =
+    animation.duration != null
+      ? Number(animation.duration)
+      : isExistingSession
+        ? Number(vectorAnimationSessions.get(trimmedSessionId).animation.duration) || 5
+        : sessionAnimation.duration;
+  const keyframeTimeError = findKeyframeBeyondDuration(normalizedLayers, effectiveDuration);
+  if (keyframeTimeError) {
+    return res.status(400).json({ error: keyframeTimeError });
+  }
+
+  // A layer that doesn't already exist in the session must declare its shape —
+  // without one the player would silently render nothing for it.
+  const existingLayerIds = new Set<string>(
+    isExistingSession
+      ? vectorAnimationSessions.get(trimmedSessionId).animation.layers.map((layer: VectorLayer) => layer.id)
+      : [],
+  );
+  for (const layer of normalizedLayers) {
+    if (layer.action === "delete" || layer.deleted === true) continue;
+    if (!layer.shapeType && !existingLayerIds.has(layer.id)) {
+      return res.status(400).json({
+        error:
+          `Layer '${layer.id}' is new, so it needs a 'shapeType' (rectangle, circle, ` +
+          `ellipse, line, polygon, path, or text). shapeType may only be omitted when ` +
+          `updating a layer that already exists in the session.`,
+      });
+    }
+  }
 
   if (isExistingSession) {
-    const session = vectorAnimationSessions.get(sessionId);
-    
-    if (options?.clearSession === true || animation.clearSession === true) {
-      session.animation = {
-        width: Math.min(animation.width || 800, 1920),
-        height: Math.min(animation.height || 600, 1080),
-        duration: animation.duration || 5,
-        fps: Math.min(animation.fps || 24, 60),
-        background: animation.background || "#0f172a",
-        layers: animation.layers || [],
-      };
-    } else {
-      if (animation.width) session.animation.width = Math.min(animation.width, 1920);
-      if (animation.height) session.animation.height = Math.min(animation.height, 1080);
-      if (animation.duration) session.animation.duration = animation.duration;
-      if (animation.fps) session.animation.fps = Math.min(animation.fps, 60);
-      if (animation.background) session.animation.background = animation.background;
-      
-      if (animation.layers && Array.isArray(animation.layers)) {
-        for (const newLayer of animation.layers) {
-          // Support layer deletion
-          if (newLayer.action === "delete" || newLayer.deleted === true) {
-            session.animation.layers = session.animation.layers.filter((layer: VectorLayer) => layer.id !== newLayer.id);
-            continue;
-          }
+    const session = vectorAnimationSessions.get(trimmedSessionId);
 
-          const existingLayer = session.animation.layers.find((layer: VectorLayer) => layer.id === newLayer.id);
-          if (existingLayer) {
-            if (newLayer.shapeType) existingLayer.shapeType = newLayer.shapeType;
-            if (newLayer.shapeData) existingLayer.shapeData = { ...existingLayer.shapeData, ...newLayer.shapeData };
-            if (newLayer.opacity !== undefined) existingLayer.opacity = newLayer.opacity;
-            if (newLayer.fillColor) existingLayer.fillColor = newLayer.fillColor;
-            if (newLayer.strokeColor) existingLayer.strokeColor = newLayer.strokeColor;
-            if (newLayer.strokeWidth !== undefined) existingLayer.strokeWidth = newLayer.strokeWidth;
-            
-            if (newLayer.keyframes && Array.isArray(newLayer.keyframes)) {
-              if (newLayer.replaceKeyframes === true) {
-                existingLayer.keyframes = [...newLayer.keyframes];
-              } else {
-                if (!existingLayer.keyframes) existingLayer.keyframes = [];
-                for (const newKf of newLayer.keyframes) {
-                  const existingKfIndex = existingLayer.keyframes.findIndex((keyframe: Keyframe) => keyframe.time === newKf.time);
-                  if (existingKfIndex !== -1) {
-                    existingLayer.keyframes[existingKfIndex].properties = {
-                      ...existingLayer.keyframes[existingKfIndex].properties,
-                      ...newKf.properties,
-                    };
-                    if (newKf.easing) existingLayer.keyframes[existingKfIndex].easing = newKf.easing;
-                    if (newKf.motionPath) existingLayer.keyframes[existingKfIndex].motionPath = newKf.motionPath;
-                  } else {
-                    existingLayer.keyframes.push(newKf);
-                  }
+    if (options?.clearSession === true || animation.clearSession === true) {
+      session.animation = { ...sessionAnimation };
+    } else {
+      if (animation.width) session.animation.width = sessionAnimation.width;
+      if (animation.height) session.animation.height = sessionAnimation.height;
+      if (animation.duration) session.animation.duration = sessionAnimation.duration;
+      if (animation.fps) session.animation.fps = sessionAnimation.fps;
+      if (animation.background) session.animation.background = animation.background;
+
+      for (const newLayer of normalizedLayers) {
+        // Support layer deletion
+        if (newLayer.action === "delete" || newLayer.deleted === true) {
+          session.animation.layers = session.animation.layers.filter((layer: VectorLayer) => layer.id !== newLayer.id);
+          continue;
+        }
+
+        const existingLayer = session.animation.layers.find((layer: VectorLayer) => layer.id === newLayer.id);
+        if (existingLayer) {
+          if (newLayer.shapeType) existingLayer.shapeType = newLayer.shapeType;
+          if (newLayer.shapeData) existingLayer.shapeData = { ...existingLayer.shapeData, ...newLayer.shapeData };
+          if (newLayer.opacity !== undefined) existingLayer.opacity = newLayer.opacity;
+          if (newLayer.fillColor !== undefined) existingLayer.fillColor = newLayer.fillColor;
+          if (newLayer.strokeColor !== undefined) existingLayer.strokeColor = newLayer.strokeColor;
+          if (newLayer.strokeWidth !== undefined) existingLayer.strokeWidth = newLayer.strokeWidth;
+          if (newLayer.imageUrl !== undefined) existingLayer.imageUrl = newLayer.imageUrl;
+
+          if (newLayer.keyframes && Array.isArray(newLayer.keyframes)) {
+            if (newLayer.replaceKeyframes === true) {
+              existingLayer.keyframes = [...newLayer.keyframes];
+            } else {
+              if (!existingLayer.keyframes) existingLayer.keyframes = [];
+              for (const newKf of newLayer.keyframes) {
+                const existingKfIndex = existingLayer.keyframes.findIndex((keyframe: Keyframe) => Number(keyframe.time) === Number(newKf.time));
+                if (existingKfIndex !== -1) {
+                  existingLayer.keyframes[existingKfIndex].properties = {
+                    ...existingLayer.keyframes[existingKfIndex].properties,
+                    ...newKf.properties,
+                  };
+                  if (newKf.easing) existingLayer.keyframes[existingKfIndex].easing = newKf.easing;
+                  if (newKf.motionPath) existingLayer.keyframes[existingKfIndex].motionPath = newKf.motionPath;
+                } else {
+                  existingLayer.keyframes.push(newKf);
                 }
               }
-              existingLayer.keyframes.sort((keyframeA: Keyframe, keyframeB: Keyframe) => keyframeA.time - keyframeB.time);
             }
-          } else {
-            session.animation.layers.push(newLayer);
+            existingLayer.keyframes.sort((keyframeA: Keyframe, keyframeB: Keyframe) => keyframeA.time - keyframeB.time);
           }
+        } else {
+          session.animation.layers.push(stripLayerMarkers(newLayer));
         }
       }
     }
@@ -1722,9 +1884,11 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
     if (options) {
       if (options.loop !== undefined) session.options.loop = options.loop;
       if (options.autoplay !== undefined) session.options.autoplay = options.autoplay;
-      if (options.title) session.options.title = options.title;
+      if (typeof options.title === "string") {
+        session.options.title = options.title.trim() || undefined;
+      }
     }
-    
+
     session.updatedAt = Date.now();
     sessionAnimation = session.animation;
   } else {
@@ -1772,13 +1936,25 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
   
   const embedUrl = buildLocalUrl("creative/vector-animation/embed", { id: embedId });
   const totalKeyframes = sessionAnimation.layers.reduce((sum: number, layer: VectorLayer) => sum + (layer.keyframes?.length || 0), 0);
+  const layerIds = sessionAnimation.layers.map((layer: VectorLayer) => layer.id);
+
+  const warningSuffix = clampWarnings.length > 0 ? ` Note: ${clampWarnings.join("; ")}.` : "";
+  const message =
+    `Animation ${isExistingSession ? "updated" : "created"}: ${sessionAnimation.layers.length} ` +
+    `layer(s) [${layerIds.join(", ")}], ${totalKeyframes} keyframe(s), ` +
+    `${sessionAnimation.duration}s at ${sessionAnimation.fps}fps. To edit, call again with ` +
+    `sessionId '${activeSessionId}' — layers merge by id, layers with {"action": "delete"} ` +
+    `are removed, and the session expires after 30 minutes of inactivity.` +
+    warningSuffix;
 
   res.json({
+    message,
     embedUrl,
     sessionId: activeSessionId,
     animationId: embedId,
     duration: sessionAnimation.duration,
     layerCount: sessionAnimation.layers.length,
+    layerIds,
     totalKeyframes,
     canvasSize: `${sessionAnimation.width}x${sessionAnimation.height}`,
     isAppend: isExistingSession,

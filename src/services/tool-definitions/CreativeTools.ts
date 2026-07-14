@@ -1587,63 +1587,6 @@ export function getCreativeTools(
                       {
                         type: "object",
                         description: translate("create_vector_animation.params.strokeGradient"),
-                        properties: {
-                          type: {
-                            type: "string",
-                            enum: ["linear", "radial"],
-                          },
-                          x1: {
-                            type: "number",
-                            description: translate("create_vector_animation.params.x1"),
-                          },
-                          y1: {
-                            type: "number",
-                            description: translate("create_vector_animation.params.y1"),
-                          },
-                          x2: {
-                            type: "number",
-                            description: translate("create_vector_animation.params.x22"),
-                          },
-                          y2: {
-                            type: "number",
-                            description: translate("create_vector_animation.params.y22"),
-                          },
-                          x0: {
-                            type: "number",
-                            description: translate("create_vector_animation.params.x02"),
-                          },
-                          y0: {
-                            type: "number",
-                            description: translate("create_vector_animation.params.y02"),
-                          },
-                          r0: {
-                            type: "number",
-                            description: translate("create_vector_animation.params.r02"),
-                          },
-                          r1: {
-                            type: "number",
-                            description: translate("create_vector_animation.params.r12"),
-                          },
-                          stops: {
-                            type: "array",
-                            description: translate("create_vector_animation.params.stops2"),
-                            items: {
-                              type: "object",
-                              properties: {
-                                offset: {
-                                  type: "number",
-                                  description: translate("create_vector_animation.params.offset2"),
-                                },
-                                color: {
-                                  type: "string",
-                                  description: translate("create_vector_animation.params.color2"),
-                                },
-                              },
-                              required: ["offset", "color"],
-                            },
-                          },
-                        },
-                        required: ["type", "stops"],
                       },
                     ],
                   },
@@ -1696,7 +1639,7 @@ export function getCreativeTools(
                     },
                   },
                 },
-                required: ["id", "shapeType"],
+                required: ["id"],
               },
             },
           },

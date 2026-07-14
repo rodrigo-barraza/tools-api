@@ -5,10 +5,27 @@
 export const THREE_JS_CDN = "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js";
 
 export const VALID_SHAPES = new Set([
-  "box", "sphere", "cylinder", "cone", "torus", "plane", "ring",
+  "box", "sphere", "cylinder", "cone", "pyramid", "torus", "plane", "ring",
   "dodecahedron", "icosahedron", "octahedron", "tetrahedron",
   "capsule", "circle", "torusKnot", "group", "text3d",
 ]);
+
+/**
+ * Validate an optional [x, y, z] parameter. Wrong-arity or non-numeric
+ * vectors used to flow into Vector3.set(...) producing NaN transforms —
+ * the object silently disappeared while the tool reported success.
+ */
+export function validateVector3(value: unknown, label: string): string | null {
+  if (value === undefined || value === null) return null;
+  if (
+    !Array.isArray(value) ||
+    value.length !== 3 ||
+    value.some((component) => typeof component !== "number" || !isFinite(component))
+  ) {
+    return `${label} must be an array of exactly 3 finite numbers [x, y, z]`;
+  }
+  return null;
+}
 
 export const VALID_ANIMATIONS = new Set([
   "spin", "bounce", "orbit", "pulse", "float",
@@ -41,6 +58,16 @@ function createGeometry(objectDefinition) {
       );
     case "cone":
       return new THREE.ConeGeometry(objectDefinition.radius || 0.5, objectDefinition.height || 1, segmentCount);
+    case "pyramid": {
+      // Square-based pyramid: a 4-segment cone rotated so the base sits flat.
+      const pyramidGeometry = new THREE.ConeGeometry(
+        objectDefinition.radius || (objectDefinition.size && objectDefinition.size[0] ? objectDefinition.size[0] * Math.SQRT1_2 : 0.7),
+        objectDefinition.height || 1,
+        4
+      );
+      pyramidGeometry.rotateY(Math.PI / 4);
+      return pyramidGeometry;
+    }
     case "torus":
       return new THREE.TorusGeometry(
         objectDefinition.radius || 0.5,

@@ -35,7 +35,8 @@ import {
   rm,
 } from "node:fs/promises";
 import { resolve, relative, extname, dirname, basename, join } from "node:path";
-import { existsSync, realpathSync } from "node:fs";
+import { existsSync, realpathSync, createReadStream } from "node:fs";
+import { createInterface } from "node:readline";
 import { resolveAndRouteToAgent, sendRpc } from "./AgentConnectionManager.ts";
 import logger from "../logger.ts";
 
@@ -319,14 +320,22 @@ export async function agenticReadFile(
         error: `'${resolved}' is a directory, not a file. Use list_directory instead.`,
       };
     }
+    const fileExtension = extname(resolved).toLowerCase();
     if (stats.size > WORKSPACE_MAX_READ_BYTES) {
+      // The whole-file gate must not trap the model: honor a line range by
+      // streaming just those lines so the advertised recovery actually works.
+      if (
+        (startLine || endLine) &&
+        !BINARY_FILE_EXTENSIONS.has(fileExtension)
+      ) {
+        return await readOversizedRange(resolved, stats.size, startLine, endLine);
+      }
       return {
-        error: `File is ${(stats.size / 1024).toFixed(1)} KB — exceeds max read size of ${(WORKSPACE_MAX_READ_BYTES / 1024).toFixed(0)} KB. Use startLine/endLine to read a portion.`,
+        error: `File is ${(stats.size / 1024).toFixed(1)} KB — exceeds max whole-file read size of ${(WORKSPACE_MAX_READ_BYTES / 1024).toFixed(0)} KB. Re-call with startLine and endLine to read a portion (a range up to ${WORKSPACE_MAX_LINES_PER_READ} lines is served directly), or use execute_command with sed/grep for targeted extraction.`,
       };
     }
 
     // Binary detection
-    const fileExtension = extname(resolved).toLowerCase();
     if (BINARY_FILE_EXTENSIONS.has(fileExtension)) {
       const result: Record<string, unknown> = {
         filePath: resolved,
