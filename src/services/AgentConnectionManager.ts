@@ -130,6 +130,17 @@ const rootToAgent = new Map<string, string>();
  */
 const knownRemoteRoots = new Set<string>();
 
+/**
+ * Mark a root as remote-only without an agent ever having connected for it.
+ * Used at boot for user-configured roots that do not exist on this host's
+ * filesystem: they can only ever be served by a workspace agent, so ops on
+ * them must wait for that agent rather than fall back to local execution
+ * (the original S1 production failure — EACCES/ENOENT storms on /workspace).
+ */
+export function registerRemoteOnlyRoot(root: string) {
+  if (root && root !== "/") knownRemoteRoots.add(root);
+}
+
 let healthCheckTimer: NodeJS.Timeout | null = null;
 
 /**

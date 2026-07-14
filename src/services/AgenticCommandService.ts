@@ -96,12 +96,20 @@ function killChildGroup(child: ChildProcess, signal: NodeJS.Signals): void {
 // Execution Engine
 // ────────────────────────────────────────────────────────────
 
+/**
+ * Sentinel returned by tryAgentRouteCommand when no remote agent serves the
+ * cwd, so callers fall back to local execution. Mirrors the NO_AGENT sentinel
+ * in AgenticFileService: a remote result can never be mistaken for "no agent"
+ * and silently re-run locally on the wrong machine.
+ */
+const NO_AGENT = Symbol("no-agent");
+
 // Agent routing helper
 async function tryAgentRouteCommand(
   method: string,
   params: Record<string, unknown>,
   resolvedCwd: string,
-): Promise<CommandExecutionResult | null> {
+): Promise<CommandExecutionResult | typeof NO_AGENT> {
   const agent = resolveAndRouteToAgent(resolvedCwd, ALLOWED_ROOTS[0]);
   if (!agent) {
     const offlineRoot = offlineRemoteRootForPath(resolvedCwd, ALLOWED_ROOTS[0]);
@@ -115,7 +123,7 @@ async function tryAgentRouteCommand(
         error: `The workspace agent serving '${offlineRoot}' is offline, so this command was NOT run (running it locally on the server would execute on the wrong machine). Reconnect the workspace agent and retry.`,
       };
     }
-    return null;
+    return NO_AGENT;
   }
   try {
     return (await sendRpc(agent.id, method, params)) as CommandExecutionResult;
@@ -162,7 +170,7 @@ export async function executeCommand(
     { command, cwd: resolvedCwd, timeout, runInBackground },
     resolvedCwd,
   );
-  if (agentResult) return agentResult;
+  if (agentResult !== NO_AGENT) return agentResult;
 
   const clampedTimeout = Math.min(Math.max(timeout, 1000), MAX_TIMEOUT_MS);
 

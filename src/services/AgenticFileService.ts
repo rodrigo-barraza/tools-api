@@ -274,6 +274,17 @@ function validatePath(inputPath: string | unknown) {
     baseRoot = ALLOWED_ROOTS[0];
   }
 
+  // No local roots at all (e.g. every configured root is remote-only and its
+  // agent hasn't connected): error clearly instead of resolve(undefined, …).
+  if (isRelative && !baseRoot) {
+    return {
+      safe: false,
+      resolved: "",
+      error:
+        "No local workspace roots are available on this server. If this workspace lives on another machine, its workspace agent must be connected.",
+    };
+  }
+
   const resolved = resolveSymlinks(
     isRelative ? resolve(baseRoot, sanitizedPath) : resolve(sanitizedPath),
   );
@@ -1265,15 +1276,6 @@ export async function agenticMultiFileRead(files: MultiFileReadItem[]) {
 
 export async function agenticFileInfo(paths: string | string[]) {
   const pathList: string[] = Array.isArray(paths) ? paths : [paths];
-  // Agent routing — if first path is agent-served, proxy the entire batch
-  if (pathList.length > 0) {
-    const agentResult = await tryAgentRoute(
-      "file.info",
-      { paths: pathList },
-      pathList[0],
-    );
-    if (agentResult !== NO_AGENT) return agentResult as Record<string, unknown>;
-  }
 
   if (pathList.length === 0) {
     return { error: "'paths' must be a non-empty string or array of strings" };
@@ -1284,8 +1286,26 @@ export async function agenticFileInfo(paths: string | string[]) {
     };
   }
 
+  // Agent routing is per-path, not per-batch: a single batch can mix paths
+  // served by a remote agent with local ones, so routing the whole batch by
+  // its first path would stat the wrong machine for the rest.
   const results = await Promise.all(
     pathList.map(async (filePath: string) => {
+      const agentResult = await tryAgentRoute(
+        "file.info",
+        { paths: [filePath] },
+        filePath,
+      );
+      if (agentResult !== NO_AGENT) {
+        // Remote single-path file.info returns a bare entry; normalize
+        // routing-level failures (agent offline, RPC error) into entry shape.
+        const entry = agentResult as Record<string, unknown>;
+        if (entry && typeof entry === "object" && "error" in entry && !("path" in entry)) {
+          return { path: filePath, exists: false, error: entry.error };
+        }
+        return entry;
+      }
+
       const validation = validatePath(filePath);
       if (!validation.safe) {
         return { path: filePath, exists: false, error: validation.error };

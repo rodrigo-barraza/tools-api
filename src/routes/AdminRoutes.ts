@@ -20,7 +20,7 @@ import {
   refreshAllowedRoots,
   normalizeWorkspacePath,
 } from "../services/AgenticFileService.ts";
-import { getConnectedAgents } from "../services/AgentConnectionManager.ts";
+import { getConnectedAgents, registerRemoteOnlyRoot } from "../services/AgentConnectionManager.ts";
 import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
@@ -320,8 +320,31 @@ export async function loadUserWorkspaceRoots() {
         .map((storedPath: string) => normalizeWorkspacePath(storedPath))
         .filter((resolvedPath: string | null): resolvedPath is string => resolvedPath !== null);
 
-      refreshAllowedRoots(normalizedRoots);
-      logger.info(`   📂 User workspace roots: ${normalizedRoots.join(", ")}`);
+      // Only advertise LOCAL execution for roots that actually exist on this
+      // host. A configured root that is absent here (e.g. /workspace living on
+      // a user's machine) can only be served by a workspace agent — register
+      // it as remote-only so ops error with "agent offline" instead of falling
+      // back to local EACCES/ENOENT (the S1 production error storm).
+      const localRoots: string[] = [];
+      for (const root of normalizedRoots) {
+        let isLocalDirectory = false;
+        try {
+          isLocalDirectory = (await stat(root)).isDirectory();
+        } catch {
+          // absent on this host
+        }
+        if (isLocalDirectory) {
+          localRoots.push(root);
+        } else {
+          registerRemoteOnlyRoot(root);
+          logger.warn(
+            `   📂 Workspace root '${root}' does not exist on this host — treating as remote-only (requires its workspace agent to be connected)`,
+          );
+        }
+      }
+
+      refreshAllowedRoots(localRoots);
+      logger.info(`   📂 User workspace roots (local): ${localRoots.join(", ") || "(none)"}`);
 
       const hasStaleEntries = document.roots.some(
         (originalPath: string, index: number) => originalPath !== normalizedRoots[index],

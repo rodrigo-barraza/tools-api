@@ -96,3 +96,34 @@ describe("normalizeWindowsRootPath", () => {
     });
   });
 });
+
+// ── Remote-only roots (S1 never-connected case) ──────────────
+
+import { registerRemoteOnlyRoot, offlineRemoteRootForPath } from "../AgentConnectionManager";
+
+describe("registerRemoteOnlyRoot + offlineRemoteRootForPath", () => {
+  it("flags paths under a registered remote-only root even though no agent ever connected", () => {
+    registerRemoteOnlyRoot("/remote-only/workspace");
+
+    expect(offlineRemoteRootForPath("/remote-only/workspace/src/app.ts")).toBe("/remote-only/workspace");
+    expect(offlineRemoteRootForPath("/remote-only/workspace")).toBe("/remote-only/workspace");
+  });
+
+  it("does not flag unrelated local paths or prefix-sharing siblings", () => {
+    registerRemoteOnlyRoot("/remote-only/workspace");
+
+    expect(offlineRemoteRootForPath("/home/rodrigo/development/x.ts")).toBeNull();
+    expect(offlineRemoteRootForPath("/remote-only/workspace-evil/x.ts")).toBeNull();
+  });
+
+  it("refuses to register the virtual '/' root (would block all local paths)", () => {
+    registerRemoteOnlyRoot("/");
+    expect(offlineRemoteRootForPath("/etc/hostname")).toBeNull();
+  });
+
+  it("resolves relative paths against the fallback root before matching", () => {
+    registerRemoteOnlyRoot("/remote-only/workspace");
+    expect(offlineRemoteRootForPath("src/app.ts", "/remote-only/workspace")).toBe("/remote-only/workspace");
+    expect(offlineRemoteRootForPath("src/app.ts", "/home/rodrigo/development")).toBeNull();
+  });
+});
