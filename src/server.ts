@@ -47,6 +47,7 @@ import {
 } from "./models/LuposMessage.ts";
 import { setupToolCallsCollection } from "./middleware/ToolCallLoggerMiddleware.ts";
 import { setupAgenticTaskCollection } from "./services/AgenticTaskService.ts";
+import { setupAgenticDatastoreCollection } from "./services/AgenticDatastoreService.ts";
 import {
   setupAgenticScheduleCollection,
   startSchedulePoller,
@@ -249,6 +250,7 @@ async function start() {
 
       setupRequestsCollection(),
       setupAgenticTaskCollection(),
+      setupAgenticDatastoreCollection(),
       setupAgenticScheduleCollection(),
     ]);
 
