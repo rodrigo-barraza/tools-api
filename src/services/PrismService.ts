@@ -3,7 +3,7 @@
 // Thin wrapper around the shared PrismApiClient: tools-service defaults
 // (project/username, per-endpoint timeouts) plus trace-header propagation.
 
-import { PrismApiClient } from "@rodrigo-barraza/service-library";
+import { PrismApiClient } from "@rodrigo-barraza/utilities-library/service";
 import { getErrorMessage } from "@rodrigo-barraza/utilities-library";
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
@@ -13,7 +13,7 @@ import {
   PRISM_TTS_TIMEOUT_MS,
   PRISM_STT_TIMEOUT_MS,
 } from "../constants.ts";
-import { getTraceHeaders } from "@rodrigo-barraza/service-library";
+import { getTraceHeaders } from "@rodrigo-barraza/utilities-library/service";
 
 // ────────────────────────────────────────────────────────────
 // Types

@@ -6,7 +6,7 @@ import express, {
 } from "express";
 import logger from "./logger.ts";
 import CONFIG, { applyLocation } from "./config.ts";
-import { connectDatabase } from "@rodrigo-barraza/service-library/mongo";
+import { connectDatabase } from "@rodrigo-barraza/utilities-library/service/mongo";
 import { initLocation } from "./services/LocationService.ts";
 import {
   requestLoggerMiddleware,
@@ -14,7 +14,7 @@ import {
 } from "./middleware/RequestLoggerMiddleware.ts";
 import { toolCallLoggerMiddleware } from "./middleware/ToolCallLoggerMiddleware.ts";
 import { fieldProjectionMiddleware } from "./middleware/FieldProjectionMiddleware.ts";
-import { createAuthMiddleware } from "@rodrigo-barraza/service-library";
+import { createAuthMiddleware } from "@rodrigo-barraza/utilities-library/service";
 import { DEFAULT_USERNAME, CORS_ALLOWED_HEADERS_STRING } from "@rodrigo-barraza/utilities-library/taxonomy";
 
 // ─── Model Setup ───────────────────────────────────────────────────

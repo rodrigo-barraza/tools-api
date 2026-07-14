@@ -7,7 +7,7 @@ import CONFIG from "../config.ts";
 import logger from "../logger.ts";
 import { agenticHandler, errorMessage } from "../utilities.ts";
 import { coerceInt, coerceBool } from "../utilities/agenticCoercion.ts";
-import { getTraceHeaders } from "@rodrigo-barraza/service-library";
+import { getTraceHeaders } from "@rodrigo-barraza/utilities-library/service";
 import { createReadStream } from "node:fs";
 import { stat as fsStat } from "node:fs/promises";
 import { extname } from "node:path";
@@ -1116,7 +1116,7 @@ router.get(
         string | undefined
       >;
       const database = (
-        await import("@rodrigo-barraza/service-library/mongo")
+        await import("@rodrigo-barraza/utilities-library/service/mongo")
       ).getDatabase();
       const collection = database.collection<AgenticTask>("agent_tasks");
       const filter: Record<string, unknown> = {};

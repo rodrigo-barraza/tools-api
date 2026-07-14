@@ -1,5 +1,5 @@
 import type { Collection } from "mongodb";
-import { getDatabase } from "@rodrigo-barraza/service-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/utilities-library/service/mongo";
 import { EphemeralStore, errorMessage } from "../utilities.ts";
 import { EPHEMERAL_TTL_MS, EPHEMERAL_MAX_SIZE } from "../constants.ts";
 import logger from "../logger.ts";

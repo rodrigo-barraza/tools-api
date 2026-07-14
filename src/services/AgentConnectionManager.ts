@@ -9,7 +9,7 @@ import logger from "../logger.ts";
 import CONFIG from "../config.ts";
 import { Server, IncomingMessage } from "node:http";
 import { Duplex } from "node:stream";
-import { requestLocalStorage } from "@rodrigo-barraza/service-library";
+import { requestLocalStorage } from "@rodrigo-barraza/utilities-library/service";
 import {
   AGENT_RPC_TIMEOUT_FILE_MS as RPC_TIMEOUT_FILE_MS,
   AGENT_RPC_TIMEOUT_GIT_MS as RPC_TIMEOUT_GIT_MS,
@@ -198,7 +198,7 @@ function translatePathForAgent(
 // Workspace Agent Secret (from MongoDB settings, cached)
 // ────────────────────────────────────────────────────────────
 
-import { getDatabase } from "@rodrigo-barraza/service-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/utilities-library/service/mongo";
 
 export async function resolveAgentSecret(): Promise<string | undefined> {
   try {

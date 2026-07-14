@@ -1,5 +1,5 @@
 import type { Collection } from "mongodb";
-import { getDatabase } from "@rodrigo-barraza/service-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/utilities-library/service/mongo";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
 import { getMetadataBySource } from "../fetchers/utility/webcams/WebcamMetadata.ts";

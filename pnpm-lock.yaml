@@ -14,12 +14,9 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.29.0
         version: 1.29.0(zod@4.4.3)
-      '@rodrigo-barraza/service-library':
-        specifier: github:rodrigo-barraza/service-library
-        version: https://codeload.github.com/rodrigo-barraza/service-library/tar.gz/447b6fb4bc9dadd8f6e0b9ee62d3964c65d4b023(express@5.2.1)(mongodb@7.3.0(socks@2.8.9))(socks@2.8.9)
       '@rodrigo-barraza/utilities-library':
         specifier: github:rodrigo-barraza/utilities-library#master
-        version: https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/e16f415e82ca21aef685a91bff3b7caf274814cb(socks@2.8.9)
+        version: https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/c27b5796b79d8fe763253b9271bfaaec97a2e9df(express@5.2.1)(socks@2.8.9)
       ajv:
         specifier: ^8.20.0
         version: 8.20.0
@@ -94,7 +91,7 @@ importers:
         version: 6.0.2
       typescript:
         specifier: next
-        version: 7.1.0-dev.20260712.1
+        version: 7.1.0-dev.20260713.1
       typescript-language-server:
         specifier: ^5.1.3
         version: 5.3.0
@@ -176,7 +173,7 @@ importers:
         version: 4.22.4
       typescript-eslint:
         specifier: ^8.33.0
-        version: 8.61.1(eslint@10.5.0)(typescript@7.1.0-dev.20260712.1)
+        version: 8.61.1(eslint@10.5.0)(typescript@7.1.0-dev.20260713.1)
       vitest:
         specifier: ^4.1.5
         version: 4.1.9(@types/node@25.9.4)(jsdom@26.1.0(canvas@3.2.3))(vite@8.0.16(@types/node@25.9.4)(esbuild@0.28.1)(tsx@4.22.4))
@@ -861,23 +858,14 @@ packages:
   '@paralleldrive/cuid2@2.3.1':
     resolution: {integrity: sha512-XO7cAxhnTZl0Yggq6jOgjiOHhbgcO4NqFqwSmQpjK3b6TEE6Uj/jfSk6wzYyemh3+I0sHirKSetjQwn5cZktFw==}
 
-  '@rodrigo-barraza/service-library@https://codeload.github.com/rodrigo-barraza/service-library/tar.gz/447b6fb4bc9dadd8f6e0b9ee62d3964c65d4b023':
-    resolution: {gitHosted: true, integrity: sha512-jJ21tZMq+YK9EYneGbqVbCwhuHusrzsu8ALOFBN5UfbcFNXgYExOQ22jXIxvphCYvprJgxaq8WQk4hKyB97bsw==, tarball: https://codeload.github.com/rodrigo-barraza/service-library/tar.gz/447b6fb4bc9dadd8f6e0b9ee62d3964c65d4b023}
-    version: 0.3.0
+  '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/c27b5796b79d8fe763253b9271bfaaec97a2e9df':
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/c27b5796b79d8fe763253b9271bfaaec97a2e9df}
+    version: 0.4.0
     peerDependencies:
       express: '>=5.0.0'
-      mongodb: '>=7.0.0'
     peerDependenciesMeta:
-      mongodb:
+      express:
         optional: true
-
-  '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/dc470b7b96cc52edcdff6e811a309305bb34568f':
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/dc470b7b96cc52edcdff6e811a309305bb34568f}
-    version: 0.3.0
-
-  '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/e16f415e82ca21aef685a91bff3b7caf274814cb':
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/e16f415e82ca21aef685a91bff3b7caf274814cb}
-    version: 0.2.1
 
   '@rolldown/binding-android-arm64@1.0.3':
     resolution: {integrity: sha512-454rs7jHngixp/NMxd5srYD57OnzSlZ/eFTETjORQHLwJG1lRtmNOJcBerZlfu4GjKqeq8aCCIQrMdHyhI51Hw==}
@@ -1172,44 +1160,44 @@ packages:
     resolution: {integrity: sha512-6fJ9MHWtK14C1DSkiMlHUSOmrVebL7150xZJBlJiL62jjhIA4JmOq6flwBgDxIdBKKdoiZRel+dfPD5MLfny3w==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@typescript/typescript-darwin-arm64@7.1.0-dev.20260712.1':
-    resolution: {integrity: sha512-v6TgRV/lOTcIzxVp8+VOv16vq7mexLQmTK5GM10bFaXpQxXU9VTQRb2nK4gGlS+kMjG39aZahGSAg9Gsh0hYkg==}
+  '@typescript/typescript-darwin-arm64@7.1.0-dev.20260713.1':
+    resolution: {integrity: sha512-7oMADhNkMy9rwgfJNIZsnky6eOPMlAF342t3t5FJaaim9iNPZKJ8pIaiYW7VY2d/oSUWVsIqXOMb15nONXNE2Q==}
     engines: {node: '>=16.20.0'}
     cpu: [arm64]
     os: [darwin]
 
-  '@typescript/typescript-darwin-x64@7.1.0-dev.20260712.1':
-    resolution: {integrity: sha512-ZqaaSF623Rt78osHYndMMvv3PVgRB8r0bsjB25EoGJKTcFRrJvLCjeEZZFvkQloymDc9uMTYQLjtFjpQIlw/kQ==}
+  '@typescript/typescript-darwin-x64@7.1.0-dev.20260713.1':
+    resolution: {integrity: sha512-LZ+JdrWadoM5dnL0VLuRsM+7RXzUoHz+E/sKlD4KyxwJujfdQgiaJdpFedZmlvlZ+tInJ8C6LyrsMeFeQCo4Lw==}
     engines: {node: '>=16.20.0'}
     cpu: [x64]
     os: [darwin]
 
-  '@typescript/typescript-linux-arm64@7.1.0-dev.20260712.1':
-    resolution: {integrity: sha512-VWo7uxUwtklv8k/LZe9Lk4L8lCFiI9BsKL+qoutqNyJ6a0d85OCfz8Q5CGRHx+KrJraRpIm6nJaHOTtmgRHkGA==}
+  '@typescript/typescript-linux-arm64@7.1.0-dev.20260713.1':
+    resolution: {integrity: sha512-9nv5asegOwmkG0+OsYGh2UBP+JaUvgIaQYWESOGI4JMv7BvNowi5d76Nv9f+fB1ZCGpayhjALpCHdAyUkF7CgA==}
     engines: {node: '>=16.20.0'}
     cpu: [arm64]
     os: [linux]
 
-  '@typescript/typescript-linux-arm@7.1.0-dev.20260712.1':
-    resolution: {integrity: sha512-s9U19QfQIHxJsUINU9b7xEhq1B0HW9u2lAjN167jEQvjqBixHTsLF6RQYE92lcCaCy/+SIzJtSnKAHDAWsvOvw==}
+  '@typescript/typescript-linux-arm@7.1.0-dev.20260713.1':
+    resolution: {integrity: sha512-YteTBBhAVeziJFAdUUK4CgrExmBgKYqnteHbZqqrhTkI/q6cpilnBibYQzM8MPtkQdvmkdJBo8plVl5lUiz6Tg==}
     engines: {node: '>=16.20.0'}
     cpu: [arm]
     os: [linux]
 
-  '@typescript/typescript-linux-x64@7.1.0-dev.20260712.1':
-    resolution: {integrity: sha512-K9iLj8jqQrFRC0dRztRjMxUEFK7A1P0kA9oLI0AgL0W7ToR9mYQBcx21roYawkoU6EqLUpxTr4pSOs1Cb9H2Fg==}
+  '@typescript/typescript-linux-x64@7.1.0-dev.20260713.1':
+    resolution: {integrity: sha512-9bdgDqg5ZDjtgFiMIVo/G56yTDXgxSaKFkxL9i9wL4ly5WMyyVlDjw30KRwG4bEmhICkgJNKOy7TEaSzBeSLVQ==}
     engines: {node: '>=16.20.0'}
     cpu: [x64]
     os: [linux]
 
-  '@typescript/typescript-win32-arm64@7.1.0-dev.20260712.1':
-    resolution: {integrity: sha512-3LJRwqoe23L8ts3zYKQYbt/IksO47u8GAEE0OZvHfvV0URVbmryGuZUJfTAQtRqQST9xj8V7jM1wgYKZAXK9ew==}
+  '@typescript/typescript-win32-arm64@7.1.0-dev.20260713.1':
+    resolution: {integrity: sha512-jbzSc4ABytSim/jzBXX09H7fHttAvC+mS/ZyuMzjBUCyIgDbyrXML6a2ILzbnAWIva6D3+scPRHQaUSEfACW+Q==}
     engines: {node: '>=16.20.0'}
     cpu: [arm64]
     os: [win32]
 
-  '@typescript/typescript-win32-x64@7.1.0-dev.20260712.1':
-    resolution: {integrity: sha512-NWkefBLwYoPS78hhE3hvgwpMBxktMfMMp3FTlBGoJ5Z3/6T2QIGv3ohf92P3qVRXtFey7AtHCd9JKj3nrGwe2Q==}
+  '@typescript/typescript-win32-x64@7.1.0-dev.20260713.1':
+    resolution: {integrity: sha512-n/iEHAFPXxlPuPX+ylMbzYyRs8+udC8Qh9mn/hqARf/REKmrgiM1jegY+DjOxLg1ESS/Q0N9c7TatnJCR/royg==}
     engines: {node: '>=16.20.0'}
     cpu: [x64]
     os: [win32]
@@ -2996,8 +2984,8 @@ packages:
     resolution: {integrity: sha512-40QW5YalBNfQo5yRYmiw7Yz6TKKVr3h6970B2YE+3fQpsWcrbj1PzJgxeJ19DRQjhMbKPIuMY8rFaXc8moolVw==}
     engines: {node: '>=10.13.0'}
 
-  postcss@8.5.18:
-    resolution: {integrity: sha512-xdB1oSLHbz1vRWgCDalrCqEFTWzFlhqFC5tIHLMOSUIjhm3XXQ1qrFy8S/ESr1JYRRXqM3c1QFiMZUJdUTqyMQ==}
+  postcss@8.5.19:
+    resolution: {integrity: sha512-Mz8SaolMd8nB+G13WkORcxQKHZ/NE4xXevtkJHVuG+guo9/wYKlIMTKAqGdEmYOXR2ijPjTYNHssizdaVSUNdQ==}
     engines: {node: ^10 || ^12 || >=14}
 
   postject@1.0.0-alpha.6:
@@ -3510,8 +3498,8 @@ packages:
     engines: {node: '>=20'}
     hasBin: true
 
-  typescript@7.1.0-dev.20260712.1:
-    resolution: {integrity: sha512-rUy0KvE5OkmZ+TxedRzV5aRP2bsKKU3Fzx75l0u7Fs1gz4MxienCjtDLMSOSSGE+oskyh2VQos5/1lTj2GLTSQ==}
+  typescript@7.1.0-dev.20260713.1:
+    resolution: {integrity: sha512-MwGvZUXp6BUNLFrdUtPVZEAMCg/HlBeKy3zuQYknoy/kUwHYtM9ZXme6RpDJyegInqVyaRmrPUPfj/JVl5UaJg==}
     engines: {node: '>=16.20.0'}
     hasBin: true
 
@@ -4534,40 +4522,13 @@ snapshots:
     dependencies:
       '@noble/hashes': 1.8.0
 
-  '@rodrigo-barraza/service-library@https://codeload.github.com/rodrigo-barraza/service-library/tar.gz/447b6fb4bc9dadd8f6e0b9ee62d3964c65d4b023(express@5.2.1)(mongodb@7.3.0(socks@2.8.9))(socks@2.8.9)':
+  '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/c27b5796b79d8fe763253b9271bfaaec97a2e9df(express@5.2.1)(socks@2.8.9)':
     dependencies:
-      '@rodrigo-barraza/utilities-library': https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/dc470b7b96cc52edcdff6e811a309305bb34568f(socks@2.8.9)
-      express: 5.2.1
+      mongodb: 7.3.0(socks@2.8.9)
+      nanoid: 5.1.16
+      zod: 4.4.3
     optionalDependencies:
-      mongodb: 7.3.0(socks@2.8.9)
-    transitivePeerDependencies:
-      - '@aws-sdk/credential-providers'
-      - '@mongodb-js/zstd'
-      - gcp-metadata
-      - kerberos
-      - mongodb-client-encryption
-      - snappy
-      - socks
-
-  '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/dc470b7b96cc52edcdff6e811a309305bb34568f(socks@2.8.9)':
-    dependencies:
-      mongodb: 7.3.0(socks@2.8.9)
-      nanoid: 5.1.16
-      zod: 4.4.3
-    transitivePeerDependencies:
-      - '@aws-sdk/credential-providers'
-      - '@mongodb-js/zstd'
-      - gcp-metadata
-      - kerberos
-      - mongodb-client-encryption
-      - snappy
-      - socks
-
-  '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/e16f415e82ca21aef685a91bff3b7caf274814cb(socks@2.8.9)':
-    dependencies:
-      mongodb: 7.3.0(socks@2.8.9)
-      nanoid: 5.1.16
-      zod: 4.4.3
+      express: 5.2.1
     transitivePeerDependencies:
       - '@aws-sdk/credential-providers'
       - '@mongodb-js/zstd'
@@ -4775,40 +4736,40 @@ snapshots:
     dependencies:
       '@types/node': 25.9.4
 
-  '@typescript-eslint/eslint-plugin@8.61.1(@typescript-eslint/parser@8.61.1(eslint@10.5.0)(typescript@7.1.0-dev.20260712.1))(eslint@10.5.0)(typescript@7.1.0-dev.20260712.1)':
+  '@typescript-eslint/eslint-plugin@8.61.1(@typescript-eslint/parser@8.61.1(eslint@10.5.0)(typescript@7.1.0-dev.20260713.1))(eslint@10.5.0)(typescript@7.1.0-dev.20260713.1)':
     dependencies:
       '@eslint-community/regexpp': 4.12.2
-      '@typescript-eslint/parser': 8.61.1(eslint@10.5.0)(typescript@7.1.0-dev.20260712.1)
+      '@typescript-eslint/parser': 8.61.1(eslint@10.5.0)(typescript@7.1.0-dev.20260713.1)
       '@typescript-eslint/scope-manager': 8.61.1
-      '@typescript-eslint/type-utils': 8.61.1(eslint@10.5.0)(typescript@7.1.0-dev.20260712.1)
-      '@typescript-eslint/utils': 8.61.1(eslint@10.5.0)(typescript@7.1.0-dev.20260712.1)
+      '@typescript-eslint/type-utils': 8.61.1(eslint@10.5.0)(typescript@7.1.0-dev.20260713.1)
+      '@typescript-eslint/utils': 8.61.1(eslint@10.5.0)(typescript@7.1.0-dev.20260713.1)
       '@typescript-eslint/visitor-keys': 8.61.1
       eslint: 10.5.0
       ignore: 7.0.5
       natural-compare: 1.4.0
-      ts-api-utils: 2.5.0(typescript@7.1.0-dev.20260712.1)
-      typescript: 7.1.0-dev.20260712.1
+      ts-api-utils: 2.5.0(typescript@7.1.0-dev.20260713.1)
+      typescript: 7.1.0-dev.20260713.1
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/parser@8.61.1(eslint@10.5.0)(typescript@7.1.0-dev.20260712.1)':
+  '@typescript-eslint/parser@8.61.1(eslint@10.5.0)(typescript@7.1.0-dev.20260713.1)':
     dependencies:
       '@typescript-eslint/scope-manager': 8.61.1
       '@typescript-eslint/types': 8.61.1
-      '@typescript-eslint/typescript-estree': 8.61.1(typescript@7.1.0-dev.20260712.1)
+      '@typescript-eslint/typescript-estree': 8.61.1(typescript@7.1.0-dev.20260713.1)
       '@typescript-eslint/visitor-keys': 8.61.1
       debug: 4.4.3
       eslint: 10.5.0
-      typescript: 7.1.0-dev.20260712.1
+      typescript: 7.1.0-dev.20260713.1
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/project-service@8.61.1(typescript@7.1.0-dev.20260712.1)':
+  '@typescript-eslint/project-service@8.61.1(typescript@7.1.0-dev.20260713.1)':
     dependencies:
-      '@typescript-eslint/tsconfig-utils': 8.61.1(typescript@7.1.0-dev.20260712.1)
+      '@typescript-eslint/tsconfig-utils': 8.61.1(typescript@7.1.0-dev.20260713.1)
       '@typescript-eslint/types': 8.61.1
       debug: 4.4.3
-      typescript: 7.1.0-dev.20260712.1
+      typescript: 7.1.0-dev.20260713.1
     transitivePeerDependencies:
       - supports-color
 
@@ -4817,47 +4778,47 @@ snapshots:
       '@typescript-eslint/types': 8.61.1
       '@typescript-eslint/visitor-keys': 8.61.1
 
-  '@typescript-eslint/tsconfig-utils@8.61.1(typescript@7.1.0-dev.20260712.1)':
+  '@typescript-eslint/tsconfig-utils@8.61.1(typescript@7.1.0-dev.20260713.1)':
     dependencies:
-      typescript: 7.1.0-dev.20260712.1
+      typescript: 7.1.0-dev.20260713.1
 
-  '@typescript-eslint/type-utils@8.61.1(eslint@10.5.0)(typescript@7.1.0-dev.20260712.1)':
+  '@typescript-eslint/type-utils@8.61.1(eslint@10.5.0)(typescript@7.1.0-dev.20260713.1)':
     dependencies:
       '@typescript-eslint/types': 8.61.1
-      '@typescript-eslint/typescript-estree': 8.61.1(typescript@7.1.0-dev.20260712.1)
-      '@typescript-eslint/utils': 8.61.1(eslint@10.5.0)(typescript@7.1.0-dev.20260712.1)
+      '@typescript-eslint/typescript-estree': 8.61.1(typescript@7.1.0-dev.20260713.1)
+      '@typescript-eslint/utils': 8.61.1(eslint@10.5.0)(typescript@7.1.0-dev.20260713.1)
       debug: 4.4.3
       eslint: 10.5.0
-      ts-api-utils: 2.5.0(typescript@7.1.0-dev.20260712.1)
-      typescript: 7.1.0-dev.20260712.1
+      ts-api-utils: 2.5.0(typescript@7.1.0-dev.20260713.1)
+      typescript: 7.1.0-dev.20260713.1
     transitivePeerDependencies:
       - supports-color
 
   '@typescript-eslint/types@8.61.1': {}
 
-  '@typescript-eslint/typescript-estree@8.61.1(typescript@7.1.0-dev.20260712.1)':
+  '@typescript-eslint/typescript-estree@8.61.1(typescript@7.1.0-dev.20260713.1)':
     dependencies:
-      '@typescript-eslint/project-service': 8.61.1(typescript@7.1.0-dev.20260712.1)
-      '@typescript-eslint/tsconfig-utils': 8.61.1(typescript@7.1.0-dev.20260712.1)
+      '@typescript-eslint/project-service': 8.61.1(typescript@7.1.0-dev.20260713.1)
+      '@typescript-eslint/tsconfig-utils': 8.61.1(typescript@7.1.0-dev.20260713.1)
       '@typescript-eslint/types': 8.61.1
       '@typescript-eslint/visitor-keys': 8.61.1
       debug: 4.4.3
       minimatch: 10.2.5
       semver: 7.8.5
       tinyglobby: 0.2.17
-      ts-api-utils: 2.5.0(typescript@7.1.0-dev.20260712.1)
-      typescript: 7.1.0-dev.20260712.1
+      ts-api-utils: 2.5.0(typescript@7.1.0-dev.20260713.1)
+      typescript: 7.1.0-dev.20260713.1
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/utils@8.61.1(eslint@10.5.0)(typescript@7.1.0-dev.20260712.1)':
+  '@typescript-eslint/utils@8.61.1(eslint@10.5.0)(typescript@7.1.0-dev.20260713.1)':
     dependencies:
       '@eslint-community/eslint-utils': 4.9.1(eslint@10.5.0)
       '@typescript-eslint/scope-manager': 8.61.1
       '@typescript-eslint/types': 8.61.1
-      '@typescript-eslint/typescript-estree': 8.61.1(typescript@7.1.0-dev.20260712.1)
+      '@typescript-eslint/typescript-estree': 8.61.1(typescript@7.1.0-dev.20260713.1)
       eslint: 10.5.0
-      typescript: 7.1.0-dev.20260712.1
+      typescript: 7.1.0-dev.20260713.1
     transitivePeerDependencies:
       - supports-color
 
@@ -4866,25 +4827,25 @@ snapshots:
       '@typescript-eslint/types': 8.61.1
       eslint-visitor-keys: 5.0.1
 
-  '@typescript/typescript-darwin-arm64@7.1.0-dev.20260712.1':
+  '@typescript/typescript-darwin-arm64@7.1.0-dev.20260713.1':
     optional: true
 
-  '@typescript/typescript-darwin-x64@7.1.0-dev.20260712.1':
+  '@typescript/typescript-darwin-x64@7.1.0-dev.20260713.1':
     optional: true
 
-  '@typescript/typescript-linux-arm64@7.1.0-dev.20260712.1':
+  '@typescript/typescript-linux-arm64@7.1.0-dev.20260713.1':
     optional: true
 
-  '@typescript/typescript-linux-arm@7.1.0-dev.20260712.1':
+  '@typescript/typescript-linux-arm@7.1.0-dev.20260713.1':
     optional: true
 
-  '@typescript/typescript-linux-x64@7.1.0-dev.20260712.1':
+  '@typescript/typescript-linux-x64@7.1.0-dev.20260713.1':
     optional: true
 
-  '@typescript/typescript-win32-arm64@7.1.0-dev.20260712.1':
+  '@typescript/typescript-win32-arm64@7.1.0-dev.20260713.1':
     optional: true
 
-  '@typescript/typescript-win32-x64@7.1.0-dev.20260712.1':
+  '@typescript/typescript-win32-x64@7.1.0-dev.20260713.1':
     optional: true
 
   '@vitest/expect@4.1.9':
@@ -6766,7 +6727,7 @@ snapshots:
 
   pngjs@5.0.0: {}
 
-  postcss@8.5.18:
+  postcss@8.5.19:
     dependencies:
       nanoid: 3.3.16
       picocolors: 1.1.1
@@ -7302,9 +7263,9 @@ snapshots:
     dependencies:
       escape-string-regexp: 1.0.5
 
-  ts-api-utils@2.5.0(typescript@7.1.0-dev.20260712.1):
+  ts-api-utils@2.5.0(typescript@7.1.0-dev.20260713.1):
     dependencies:
-      typescript: 7.1.0-dev.20260712.1
+      typescript: 7.1.0-dev.20260713.1
 
   tslib@2.8.1: {}
 
@@ -7347,14 +7308,14 @@ snapshots:
       media-typer: 1.1.0
       mime-types: 3.0.2
 
-  typescript-eslint@8.61.1(eslint@10.5.0)(typescript@7.1.0-dev.20260712.1):
+  typescript-eslint@8.61.1(eslint@10.5.0)(typescript@7.1.0-dev.20260713.1):
     dependencies:
-      '@typescript-eslint/eslint-plugin': 8.61.1(@typescript-eslint/parser@8.61.1(eslint@10.5.0)(typescript@7.1.0-dev.20260712.1))(eslint@10.5.0)(typescript@7.1.0-dev.20260712.1)
-      '@typescript-eslint/parser': 8.61.1(eslint@10.5.0)(typescript@7.1.0-dev.20260712.1)
-      '@typescript-eslint/typescript-estree': 8.61.1(typescript@7.1.0-dev.20260712.1)
-      '@typescript-eslint/utils': 8.61.1(eslint@10.5.0)(typescript@7.1.0-dev.20260712.1)
+      '@typescript-eslint/eslint-plugin': 8.61.1(@typescript-eslint/parser@8.61.1(eslint@10.5.0)(typescript@7.1.0-dev.20260713.1))(eslint@10.5.0)(typescript@7.1.0-dev.20260713.1)
+      '@typescript-eslint/parser': 8.61.1(eslint@10.5.0)(typescript@7.1.0-dev.20260713.1)
+      '@typescript-eslint/typescript-estree': 8.61.1(typescript@7.1.0-dev.20260713.1)
+      '@typescript-eslint/utils': 8.61.1(eslint@10.5.0)(typescript@7.1.0-dev.20260713.1)
       eslint: 10.5.0
-      typescript: 7.1.0-dev.20260712.1
+      typescript: 7.1.0-dev.20260713.1
     transitivePeerDependencies:
       - supports-color
 
@@ -7363,15 +7324,15 @@ snapshots:
       vscode-jsonrpc: 5.0.1
       vscode-languageserver-protocol: 3.18.0
 
-  typescript@7.1.0-dev.20260712.1:
+  typescript@7.1.0-dev.20260713.1:
     optionalDependencies:
-      '@typescript/typescript-darwin-arm64': 7.1.0-dev.20260712.1
-      '@typescript/typescript-darwin-x64': 7.1.0-dev.20260712.1
-      '@typescript/typescript-linux-arm': 7.1.0-dev.20260712.1
-      '@typescript/typescript-linux-arm64': 7.1.0-dev.20260712.1
-      '@typescript/typescript-linux-x64': 7.1.0-dev.20260712.1
-      '@typescript/typescript-win32-arm64': 7.1.0-dev.20260712.1
-      '@typescript/typescript-win32-x64': 7.1.0-dev.20260712.1
+      '@typescript/typescript-darwin-arm64': 7.1.0-dev.20260713.1
+      '@typescript/typescript-darwin-x64': 7.1.0-dev.20260713.1
+      '@typescript/typescript-linux-arm': 7.1.0-dev.20260713.1
+      '@typescript/typescript-linux-arm64': 7.1.0-dev.20260713.1
+      '@typescript/typescript-linux-x64': 7.1.0-dev.20260713.1
+      '@typescript/typescript-win32-arm64': 7.1.0-dev.20260713.1
+      '@typescript/typescript-win32-x64': 7.1.0-dev.20260713.1
 
   uhyphen@0.2.0: {}
 
@@ -7429,7 +7390,7 @@ snapshots:
     dependencies:
       lightningcss: 1.32.0
       picomatch: 4.0.5
-      postcss: 8.5.18
+      postcss: 8.5.19
       rolldown: 1.0.3
       tinyglobby: 0.2.17
     optionalDependencies:

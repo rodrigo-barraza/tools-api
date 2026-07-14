@@ -26,7 +26,7 @@ import logger from "../logger.ts";
 import type { Request, Response, Application } from "express";
 import { errorMessage } from "../utilities.ts";
 import type { ToolEndpoint } from "../types/tools.ts";
-import { IDENTITY_HEADERS } from "@rodrigo-barraza/service-library";
+import { IDENTITY_HEADERS } from "@rodrigo-barraza/utilities-library/service";
 
 // ── Self base URL (vault-resolved, localhost fallback) ───────
 const SELF_BASE_URL = CONFIG.TOOLS_SERVICE_URL;

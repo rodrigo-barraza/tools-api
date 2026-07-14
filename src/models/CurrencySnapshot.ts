@@ -1,4 +1,4 @@
-import { getDatabase } from "@rodrigo-barraza/service-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/utilities-library/service/mongo";
 import logger from "../logger.ts";
 
 export interface CurrencySnapshotInput {

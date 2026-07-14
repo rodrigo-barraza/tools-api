@@ -20,7 +20,7 @@ import type {
   FileInfoEntry,
 } from "@rodrigo-barraza/utilities-library";
 export type { DirectoryEntry, TreeEntry, GlobMatch, FileInfoEntry };
-import { requestLocalStorage } from "@rodrigo-barraza/service-library";
+import { requestLocalStorage } from "@rodrigo-barraza/utilities-library/service";
 import PromptLocaleService from "./PromptLocaleService.ts";
 // ─── Sandboxed File Operations ──────────────────────────────
 
@@ -135,7 +135,7 @@ const BLOCKED_PATTERNS = [
 // ────────────────────────────────────────────────────────────
 
 import { MongoClient } from "mongodb";
-import { getDatabase } from "@rodrigo-barraza/service-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/utilities-library/service/mongo";
 
 let settingsClient: MongoClient | null = null;
 let cachedAllowEnvFiles = false;

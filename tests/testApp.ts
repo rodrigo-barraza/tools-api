@@ -1,6 +1,6 @@
 import express from "express";
 import { fieldProjectionMiddleware } from "../src/middleware/FieldProjectionMiddleware.ts";
-import { createAuthMiddleware } from "@rodrigo-barraza/service-library";
+import { createAuthMiddleware } from "@rodrigo-barraza/utilities-library/service";
 import { DEFAULT_USERNAME } from "@rodrigo-barraza/utilities-library/taxonomy";
 
 /**

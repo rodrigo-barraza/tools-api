@@ -1,6 +1,6 @@
 import type { AnyBulkWriteOperation, ObjectId } from "mongodb";
 import { hours as hoursToMs } from "@rodrigo-barraza/utilities-library";
-import { getDatabase } from "@rodrigo-barraza/service-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/utilities-library/service/mongo";
 import logger from "../logger.ts";
 
 // ─── Types ──────────────────────────────────────────────────────

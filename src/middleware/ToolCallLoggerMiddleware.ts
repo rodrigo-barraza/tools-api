@@ -3,7 +3,7 @@
 import { performance } from "node:perf_hooks";
 import type { Request, Response, NextFunction } from "express";
 import logger from "../logger.ts";
-import { getDatabase } from "@rodrigo-barraza/service-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/utilities-library/service/mongo";
 import { IDENTITY_HEADERS } from "@rodrigo-barraza/utilities-library/taxonomy";
 import { getToolSchemas } from "../services/ToolSchemaService.ts";
 import { errorMessage } from "../utilities.ts";
