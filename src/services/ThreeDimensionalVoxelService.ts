@@ -66,6 +66,86 @@ interface VoxelBuildInput {
   options?: VoxelOptions;
 }
 
+export interface VoxelSlice {
+  y?: number;
+  rows: string[];
+}
+
+// ─── Slice-Grid Expansion ──────────────────────────────────────
+// Palette + text-grid layers are the agentic-native way to author voxel
+// art: one character per voxel instead of ~30 JSON tokens per voxel.
+
+export function expandVoxelSlices(
+  palette: unknown,
+  slices: unknown,
+): { voxels: Voxel[] } | { error: string } {
+  if (!Array.isArray(slices) || slices.length === 0) {
+    return { error: "'slices' must be a non-empty array of {y, rows} layer objects" };
+  }
+  if (slices.length > MAX_SHAPE_EXTENT) {
+    return { error: `Too many slices (${slices.length}) — the voxel grid is limited to ${MAX_SHAPE_EXTENT} layers` };
+  }
+  if (!palette || typeof palette !== "object" || Array.isArray(palette)) {
+    return {
+      error:
+        "'palette' is required when using 'slices' — an object mapping single characters " +
+        `to CSS colors, e.g. {"r": "#ef4444", "g": "green"}`,
+    };
+  }
+  const paletteMap = palette as Record<string, unknown>;
+  for (const [character, color] of Object.entries(paletteMap)) {
+    if (character.length !== 1 || character === "." || character === " ") {
+      return { error: `Palette key ${JSON.stringify(character)} is invalid — keys must be a single character, and '.'/' ' are reserved for empty cells` };
+    }
+    if (typeof color !== "string" || color.trim().length === 0) {
+      return { error: `Palette entry '${character}' must map to a CSS color string (got: ${JSON.stringify(color)})` };
+    }
+  }
+
+  const voxels: Voxel[] = [];
+  for (let sliceIndex = 0; sliceIndex < slices.length; sliceIndex++) {
+    const slice = slices[sliceIndex] as VoxelSlice | null;
+    if (!slice || typeof slice !== "object" || !Array.isArray(slice.rows)) {
+      return { error: `Slice at index ${sliceIndex} must be an object with a 'rows' array of strings` };
+    }
+    const layerY = slice.y !== undefined && slice.y !== null ? Number(slice.y) : sliceIndex;
+    if (!Number.isInteger(layerY) || Math.abs(layerY) > MAX_SHAPE_EXTENT) {
+      return { error: `Slice at index ${sliceIndex} has invalid 'y' ${JSON.stringify(slice.y)} — must be an integer between -${MAX_SHAPE_EXTENT} and ${MAX_SHAPE_EXTENT} (or omitted to stack from 0 upward)` };
+    }
+    if (slice.rows.length > MAX_SHAPE_EXTENT) {
+      return { error: `Slice at y=${layerY} has ${slice.rows.length} rows — the voxel grid is limited to ${MAX_SHAPE_EXTENT} per dimension` };
+    }
+    for (let rowIndex = 0; rowIndex < slice.rows.length; rowIndex++) {
+      const row = slice.rows[rowIndex];
+      if (typeof row !== "string") {
+        return { error: `Slice at y=${layerY}, row ${rowIndex} must be a string (one character per voxel)` };
+      }
+      if (row.length > MAX_SHAPE_EXTENT) {
+        return { error: `Slice at y=${layerY}, row ${rowIndex} is ${row.length} characters wide — the voxel grid is limited to ${MAX_SHAPE_EXTENT} per dimension` };
+      }
+      for (let columnIndex = 0; columnIndex < row.length; columnIndex++) {
+        const character = row[columnIndex];
+        if (character === "." || character === " ") continue;
+        const color = paletteMap[character];
+        if (typeof color !== "string") {
+          return {
+            error:
+              `Unknown character '${character}' at slice y=${layerY}, row ${rowIndex}, column ${columnIndex} — ` +
+              `not in the palette. Palette characters: ${Object.keys(paletteMap).map((key) => `'${key}'`).join(", ")} ` +
+              `('.' or ' ' for empty cells)`,
+          };
+        }
+        voxels.push({ position: [columnIndex, layerY, rowIndex], color });
+      }
+    }
+  }
+
+  if (voxels.length === 0) {
+    return { error: "The provided slices paint no voxels — every cell is '.' or ' '. Use palette characters to paint at least one cell" };
+  }
+  return { voxels };
+}
+
 // ─── Validation ────────────────────────────────────────────────
 
 export function validateVoxelInput(input: VoxelBuildInput): string | null {

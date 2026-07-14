@@ -45,6 +45,10 @@ export interface SceneAnimation {
 export interface SceneObject {
   type: string;
   name?: string;
+  assetId?: string;
+  vertices?: number[][];
+  faces?: number[][];
+  colors?: string[];
   size?: number[];
   radius?: number;
   width?: number;
@@ -96,6 +100,10 @@ export interface SceneOptions {
   showGrid?: boolean;
   showAxes?: boolean;
   enableShadows?: boolean;
+  // Manual overrides applied on top of the environment preset (absorbed
+  // from the retired create_3d_model tool, whose users set these directly).
+  ambientLightIntensity?: number;
+  directionalLightIntensity?: number;
 }
 
 interface SceneBuildInput {
@@ -137,6 +145,11 @@ function validateObjectsRecursive(objects: SceneObject[], depth: number = 0): st
     }
     if (sceneObject.type === "text3d" && (typeof sceneObject.content !== "string" || sceneObject.content.length === 0)) {
       return `text3d object at index ${index} (depth ${depth}) requires a 'content' string — the text to display`;
+    }
+    if (sceneObject.type === "mesh") {
+      if (!Array.isArray(sceneObject.vertices) || sceneObject.vertices.length === 0 || !Array.isArray(sceneObject.faces) || sceneObject.faces.length === 0) {
+        return `mesh object at index ${index} (depth ${depth}) requires non-empty 'vertices' and 'faces' arrays — usually you place a saved mesh via {"type": "asset", "assetId": "<sceneId from create_3d_mesh>"} instead of authoring these inline`;
+      }
     }
     for (const [vectorField, vectorValue] of [
       ["position", sceneObject.position],
@@ -236,6 +249,10 @@ export function buildSceneEmbedHtml(input: SceneBuildInput): string {
       color: fog.color || background,
       near: fog.near || 10,
       far: fog.far || 50,
+    },
+    lighting: {
+      ambientIntensity: options.ambientLightIntensity ?? null,
+      directionalIntensity: options.directionalLightIntensity ?? null,
     },
     showGrid,
     showAxes,
@@ -387,6 +404,14 @@ const hemisphereLight = new THREE.HemisphereLight(
 );
 scene.add(hemisphereLight);
 
+// Manual intensity overrides sit on top of the environment preset.
+if (CONFIG.lighting.ambientIntensity != null) {
+  ambientLight.intensity = CONFIG.lighting.ambientIntensity;
+}
+if (CONFIG.lighting.directionalIntensity != null) {
+  directionalLight.intensity = CONFIG.lighting.directionalIntensity;
+}
+
 // ── Geometry & Material Factories ──
 ${CLIENT_GEOMETRY_FACTORY}
 
@@ -460,9 +485,33 @@ function buildObject(objectDefinition, parentGroup) {
     return;
   }
 
-  // Standard geometry object
-  const geometry = createGeometry(objectDefinition);
+  // Raw triangle geometry (inlined mesh assets from create_3d_mesh)
+  let geometry;
+  if (objectDefinition.type === "mesh") {
+    geometry = new THREE.BufferGeometry();
+    const positionArray = new Float32Array(objectDefinition.vertices.flat());
+    geometry.setAttribute("position", new THREE.BufferAttribute(positionArray, 3));
+    geometry.setIndex(objectDefinition.faces.flat());
+    if (Array.isArray(objectDefinition.colors) && objectDefinition.colors.length === objectDefinition.vertices.length) {
+      const colorHelper = new THREE.Color();
+      const colorArray = new Float32Array(objectDefinition.colors.length * 3);
+      objectDefinition.colors.forEach((colorString, vertexIndex) => {
+        colorHelper.set(colorString);
+        colorArray[vertexIndex * 3] = colorHelper.r;
+        colorArray[vertexIndex * 3 + 1] = colorHelper.g;
+        colorArray[vertexIndex * 3 + 2] = colorHelper.b;
+      });
+      geometry.setAttribute("color", new THREE.BufferAttribute(colorArray, 3));
+    }
+    geometry.computeVertexNormals();
+  } else {
+    // Standard geometry object
+    geometry = createGeometry(objectDefinition);
+  }
   const material = createMaterial(objectDefinition.material);
+  if (geometry.getAttribute("color") && !(objectDefinition.material && objectDefinition.material.color)) {
+    material.vertexColors = true;
+  }
   const meshObject = new THREE.Mesh(geometry, material);
 
   if (objectDefinition.position) meshObject.position.set(...objectDefinition.position);

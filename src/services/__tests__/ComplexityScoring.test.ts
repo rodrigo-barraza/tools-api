@@ -10,7 +10,7 @@ describe("Dynamic Complexity Scoring", () => {
     const schemas = getToolSchemas();
 
     const targetToolNames = [
-      "create_3d_scene", "generate_audio", "create_vector_animation",
+      "create_3d", "generate_audio", "create_vector_animation",
       "manipulate_image", "build_meal_plan", "draw_turtle_graphics",
       "get_weather", "evaluate_expression", "get_moon_phase",
       "execute_python", "execute_javascript", "execute_shell",

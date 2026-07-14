@@ -552,6 +552,117 @@ describe("POST /compute/3d/scene", () => {
     expect(postResponse.body.error).toContain("not found or expired");
   });
 
+  it("places a saved mesh build into a scene via {type: 'asset', assetId}", async () => {
+    const meshResponse = await request(app)
+      .post("/compute/3d/mesh")
+      .send({
+        vertices: [[0, 1, 0], [1, -1, 0], [-1, -1, 0]],
+        faces: [[0, 1, 2]],
+        colors: ["#ff0000", "#00ff00", "#0000ff"],
+      });
+    expect(meshResponse.status).toBe(200);
+    const meshAssetId = meshResponse.body.sceneId;
+
+    const sceneResponse = await request(app)
+      .post("/compute/3d/scene")
+      .send({
+        objects: [
+          { type: "asset", assetId: meshAssetId, position: [0, 2, 0], scale: [2, 2, 2] },
+          { type: "box", position: [0, 0, 0] },
+        ],
+      });
+
+    expect(sceneResponse.status).toBe(200);
+    expect(sceneResponse.body.objectCount).toBe(2);
+
+    const savedScene = mockScenes.get(sceneResponse.body.sceneId);
+    const inlinedMesh = savedScene.sceneData.objects.find((sceneObject) => sceneObject.type === "mesh");
+    expect(inlinedMesh).toBeTruthy();
+    expect(inlinedMesh.vertices).toEqual([[0, 1, 0], [1, -1, 0], [-1, -1, 0]]);
+    expect(inlinedMesh.position).toEqual([0, 2, 0]);
+    expect(inlinedMesh.colors).toEqual(["#ff0000", "#00ff00", "#0000ff"]);
+
+    // Embed renders the inlined geometry via BufferGeometry
+    const embedResponse = await request(app).get(`/compute/3d/embed?id=${sceneResponse.body.sceneId}`);
+    expect(embedResponse.status).toBe(200);
+    expect(embedResponse.text).toContain("BufferGeometry");
+  });
+
+  it("places a saved scene build into another scene as a group", async () => {
+    const modelResponse = await request(app)
+      .post("/compute/3d/scene")
+      .send({
+        objects: [
+          { type: "sphere", radius: 1, position: [0, 1, 0] },
+          { type: "sphere", radius: 0.7, position: [0, 2.2, 0] },
+        ],
+      });
+    const assetId = modelResponse.body.sceneId;
+
+    const sceneResponse = await request(app)
+      .post("/compute/3d/scene")
+      .send({
+        objects: [
+          { type: "asset", assetId, position: [5, 0, 0], name: "snowman" },
+        ],
+      });
+
+    expect(sceneResponse.status).toBe(200);
+    const savedScene = mockScenes.get(sceneResponse.body.sceneId);
+    const placedGroup = savedScene.sceneData.objects[0];
+    expect(placedGroup.type).toBe("group");
+    expect(placedGroup.name).toBe("snowman");
+    expect(placedGroup.position).toEqual([5, 0, 0]);
+    expect(placedGroup.children).toHaveLength(2);
+  });
+
+  it("teaches recovery when an assetId does not exist or is missing", async () => {
+    const missingResponse = await request(app)
+      .post("/compute/3d/scene")
+      .send({ objects: [{ type: "asset", assetId: "no-such-build" }] });
+    expect(missingResponse.status).toBe(400);
+    expect(missingResponse.body.error).toContain("No saved 3D build");
+
+    const noIdResponse = await request(app)
+      .post("/compute/3d/scene")
+      .send({ objects: [{ type: "asset" }] });
+    expect(noIdResponse.status).toBe(400);
+    expect(noIdResponse.body.error).toContain("no 'assetId'");
+  });
+
+  it("rejects voxel builds as scene assets with guidance", async () => {
+    const voxelResponse = await request(app)
+      .post("/compute/3d/voxel")
+      .send({ palette: { r: "red" }, slices: [{ rows: ["r"] }] });
+    const voxelAssetId = voxelResponse.body.sceneId;
+
+    const sceneResponse = await request(app)
+      .post("/compute/3d/scene")
+      .send({ objects: [{ type: "asset", assetId: voxelAssetId }] });
+
+    expect(sceneResponse.status).toBe(400);
+    expect(sceneResponse.body.error).toContain("voxel build");
+  });
+
+  it("applies lighting overrides and consolidated geometry fields (absorbed from create_3d_model)", async () => {
+    const sceneResponse = await request(app)
+      .post("/compute/3d/scene")
+      .send({
+        objects: [
+          { type: "cylinder", radiusTop: 0, radiusBottom: 1, height: 2, segments: 16 },
+          { type: "torus", radius: 1, tube: 0.3 },
+        ],
+        options: { ambientLightIntensity: 0.9, directionalLightIntensity: 0.1 },
+      });
+
+    expect(sceneResponse.status).toBe(200);
+    const embedResponse = await request(app).get(`/compute/3d/embed?id=${sceneResponse.body.sceneId}`);
+    expect(embedResponse.status).toBe(200);
+    expect(embedResponse.text).toContain('"ambientIntensity":0.9');
+    expect(embedResponse.text).toContain('"directionalIntensity":0.1');
+    expect(embedResponse.text).toContain('"radiusTop":0');
+  });
+
   it("successfully creates a 3D scene with a textureUrl and doubleSided material", async () => {
     const postResponse = await request(app)
       .post("/compute/3d/scene")
@@ -748,6 +859,93 @@ describe("POST /compute/3d/voxel", () => {
 
     expect(postResponse.status).toBe(200);
     expect(postResponse.body.totalVoxels).toBeGreaterThan(0);
+  });
+
+  it("builds from palette + slices text grids", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/voxel")
+      .send({
+        palette: { r: "#ef4444", w: "#ffffff" },
+        slices: [
+          { rows: ["..r..", ".rrr.", "..r.."] },
+          { rows: ["..w..", ".w.w.", "..w.."] },
+        ],
+      });
+
+    expect(postResponse.status).toBe(200);
+    // slice 0: 5 'r' cells; slice 1 (y defaults to index 1): 4 'w' cells
+    expect(postResponse.body.totalVoxels).toBe(9);
+    expect(postResponse.body.addedVoxels).toBe(9);
+
+    const savedScene = mockScenes.get(postResponse.body.sceneId);
+    const savedVoxels = savedScene.sceneData.voxels;
+    expect(savedVoxels).toContainEqual({ position: [2, 0, 0], color: "#ef4444" });
+    expect(savedVoxels).toContainEqual({ position: [1, 1, 1], color: "#ffffff" });
+  });
+
+  it("respects explicit slice y levels and combines slices with shapes", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/voxel")
+      .send({
+        palette: { g: "green" },
+        slices: [{ y: 5, rows: ["g"] }],
+        shapes: [{ type: "box", center: [10, 0, 0], size: [1, 1, 1] }],
+      });
+
+    expect(postResponse.status).toBe(200);
+    const savedVoxels = mockScenes.get(postResponse.body.sceneId).sceneData.voxels;
+    expect(savedVoxels).toContainEqual({ position: [0, 5, 0], color: "green" });
+    expect(postResponse.body.addedShapes).toBe(1);
+  });
+
+  it("teaches when a slice character is not in the palette", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/voxel")
+      .send({
+        palette: { r: "#ef4444" },
+        slices: [{ rows: ["rq"] }],
+      });
+
+    expect(postResponse.status).toBe(400);
+    expect(postResponse.body.error).toContain("Unknown character 'q'");
+    expect(postResponse.body.error).toContain("'r'");
+  });
+
+  it("requires a palette when slices are used", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/voxel")
+      .send({ slices: [{ rows: ["x"] }] });
+
+    expect(postResponse.status).toBe(400);
+    expect(postResponse.body.error).toContain("'palette' is required");
+  });
+
+  it("rejects all-empty slices", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/voxel")
+      .send({ palette: { r: "red" }, slices: [{ rows: ["...", ". ."] }] });
+
+    expect(postResponse.status).toBe(400);
+    expect(postResponse.body.error).toContain("paint no voxels");
+  });
+
+  it("appends slices to an existing voxel session", async () => {
+    const firstResponse = await request(app)
+      .post("/compute/3d/voxel")
+      .send({ palette: { r: "red" }, slices: [{ rows: ["r"] }] });
+    const sessionId = firstResponse.body.sessionId;
+
+    const secondResponse = await request(app)
+      .post("/compute/3d/voxel")
+      .send({
+        sessionId,
+        palette: { b: "blue" },
+        slices: [{ y: 1, rows: ["b"] }],
+      });
+
+    expect(secondResponse.status).toBe(200);
+    expect(secondResponse.body.isAppend).toBe(true);
+    expect(secondResponse.body.totalVoxels).toBe(2);
   });
 });
 

@@ -7,7 +7,7 @@ export const THREE_JS_CDN = "https://cdn.jsdelivr.net/npm/three@0.170.0/build/th
 export const VALID_SHAPES = new Set([
   "box", "sphere", "cylinder", "cone", "pyramid", "torus", "plane", "ring",
   "dodecahedron", "icosahedron", "octahedron", "tetrahedron",
-  "capsule", "circle", "torusKnot", "group", "text3d",
+  "capsule", "circle", "torusKnot", "group", "text3d", "mesh",
 ]);
 
 /**

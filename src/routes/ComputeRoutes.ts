@@ -63,6 +63,7 @@ import {
   validateVoxelInput,
   buildVoxelEmbedHtml,
   resolveVoxels,
+  expandVoxelSlices,
   MAX_RENDERABLE_VOXELS,
 } from "../services/ThreeDimensionalVoxelService.ts";
 import type { Voxel, VoxelShape, VoxelOptions } from "../services/ThreeDimensionalVoxelService.ts";
@@ -3050,6 +3051,77 @@ router.post("/3d/mesh", asyncHandler(async (req: Request, res: Response) => {
     hasCustomNormals: !!combinedNormals && combinedNormals.length > 0,
   });
 }));
+// Resolve {type: "asset", assetId} placeholders into real geometry by
+// fetching the referenced build from the persistent scene store. Model and
+// scene assets inline as a group; mesh assets inline as a raw-geometry
+// object the scene renderer builds a BufferGeometry from.
+async function resolveSceneAssetReferences(
+  sceneObjects: Array<Record<string, unknown>>,
+): Promise<{ objects: SceneObject[] } | { error: string }> {
+  const resolvedObjects: SceneObject[] = [];
+  for (let index = 0; index < sceneObjects.length; index++) {
+    const sceneObject = sceneObjects[index];
+    if (!sceneObject || typeof sceneObject !== "object" || sceneObject.type !== "asset") {
+      resolvedObjects.push(sceneObject as unknown as SceneObject);
+      continue;
+    }
+    const assetId = sceneObject.assetId;
+    if (typeof assetId !== "string" || assetId.trim().length === 0) {
+      return {
+        error:
+          `Object at index ${index} has type "asset" but no 'assetId'. Pass the sceneId ` +
+          `returned by a previous create_3d or create_3d_mesh call.`,
+      };
+    }
+    const assetDocument = await getThreeDimensionalScene(assetId.trim());
+    if (!assetDocument) {
+      return {
+        error:
+          `No saved 3D build found with assetId '${assetId}'. Use the exact sceneId returned ` +
+          `by a previous create_3d or create_3d_mesh call (asset builds persist across ` +
+          `sessions, so any past sceneId works).`,
+      };
+    }
+    const placement = {
+      name: (sceneObject.name as string | undefined) ?? `asset-${assetId}`,
+      position: sceneObject.position as [number, number, number] | undefined,
+      rotation: sceneObject.rotation as [number, number, number] | undefined,
+      scale: sceneObject.scale as [number, number, number] | undefined,
+      animation: sceneObject.animation as SceneObject["animation"],
+    };
+    if (assetDocument.sceneType === "mesh") {
+      resolvedObjects.push({
+        type: "mesh",
+        vertices: assetDocument.sceneData.vertices as number[][],
+        faces: assetDocument.sceneData.faces as number[][],
+        colors: (assetDocument.sceneData.colors as string[] | null) ?? undefined,
+        material: sceneObject.material as SceneObject["material"],
+        ...placement,
+      });
+    } else if (assetDocument.sceneType === "model" || assetDocument.sceneType === "scene") {
+      const assetObjects = (assetDocument.sceneData.objects ?? []) as Array<Record<string, unknown>>;
+      for (const assetObject of assetObjects) {
+        if (assetObject && typeof assetObject === "object" && assetObject.type === undefined && typeof assetObject.shape === "string") {
+          assetObject.type = assetObject.shape;
+        }
+      }
+      resolvedObjects.push({
+        type: "group",
+        children: assetObjects as unknown as SceneObject[],
+        ...placement,
+      });
+    } else {
+      return {
+        error:
+          `Asset '${assetId}' is a ${assetDocument.sceneType} build, which can't be placed in ` +
+          `a scene yet. Placeable assets: mesh, model, and scene builds. For voxel-style ` +
+          `content inside a scene, compose primitive shapes instead.`,
+      };
+    }
+  }
+  return { objects: resolvedObjects };
+}
+
 // ── Create 3D Scene (Declarative scene graph) ─────────────────
 interface SceneSession {
   scene?: SceneConfig;
@@ -3095,6 +3167,12 @@ router.post("/3d/scene", asyncHandler(async (req: Request, res: Response) => {
   };
   aliasShapeToType(sceneObjects);
 
+  const assetResolution = await resolveSceneAssetReferences(sceneObjects);
+  if ("error" in assetResolution) {
+    return res.status(400).json({ error: assetResolution.error });
+  }
+  const resolvedSceneObjects = assetResolution.objects;
+
   const sessionResolution = resolveThreeDimensionalSession(sceneSessions, sessionId, "scene");
   if ("error" in sessionResolution) {
     return res.status(400).json({ error: sessionResolution.error });
@@ -3105,7 +3183,7 @@ router.post("/3d/scene", asyncHandler(async (req: Request, res: Response) => {
   const { username: callerUsername } = extractCallerContext(req);
 
   let combinedSceneConfiguration = sceneConfiguration || {};
-  let combinedSceneObjects = sceneObjects;
+  let combinedSceneObjects = resolvedSceneObjects;
   let combinedSceneOptions = sceneOptions || {};
 
   if (existing) {
@@ -3139,7 +3217,7 @@ router.post("/3d/scene", asyncHandler(async (req: Request, res: Response) => {
     }
 
     // Append new objects
-    combinedSceneObjects = [...existingSession.objects, ...sceneObjects];
+    combinedSceneObjects = [...existingSession.objects, ...resolvedSceneObjects];
   }
 
   const combinedSceneInput = {
@@ -3193,13 +3271,13 @@ router.post("/3d/scene", asyncHandler(async (req: Request, res: Response) => {
 
   res.json({
     message: isAppend
-      ? `Appended ${sceneObjects.length} object(s) to session '${sessionKey}' — the scene now has ${combinedSceneObjects.length}. Call again with this sessionId to keep building; sessions expire after 30 minutes of inactivity.`
-      : `Created scene with ${sceneObjects.length} object(s). To append more, call again with sessionId '${sessionKey}'; sessions expire after 30 minutes of inactivity.`,
+      ? `Appended ${resolvedSceneObjects.length} object(s) to session '${sessionKey}' — the scene now has ${combinedSceneObjects.length}. Call again with this sessionId to keep building; sessions expire after 30 minutes of inactivity.`
+      : `Created scene with ${resolvedSceneObjects.length} object(s). To append more, call again with sessionId '${sessionKey}'; sessions expire after 30 minutes of inactivity.`,
     sceneEmbedUrl,
     sceneId,
     sceneType: "scene",
     sessionId: sessionKey,
-    objectCount: sceneObjects.length,
+    objectCount: resolvedSceneObjects.length,
     totalObjects: combinedSceneObjects.length,
     isAppend,
     environment: combinedSceneConfiguration?.environment || "studio",
@@ -3234,7 +3312,7 @@ router.post("/3d/model", asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
-  // Model objects use 'shape' but the sibling create_3d_scene tool uses
+  // Model objects use 'shape' but the sibling create_3d tool uses
   // 'type' — accept both.
   for (const modelObject of modelObjects) {
     if (modelObject && typeof modelObject === "object" && modelObject.shape === undefined && typeof modelObject.type === "string") {
@@ -3337,12 +3415,26 @@ function cleanupVoxelSessions() {
 }
 
 router.post("/3d/voxel", asyncHandler(async (req: Request, res: Response) => {
-  const { voxels, shapes, options, sessionId } = req.body;
+  const { voxels, shapes, palette, slices, options, sessionId } = req.body;
 
-  if ((!voxels || voxels.length === 0) && (!shapes || shapes.length === 0)) {
+  const hasSlices = slices !== undefined && slices !== null;
+  if ((!voxels || voxels.length === 0) && (!shapes || shapes.length === 0) && !hasSlices) {
     return res.status(400).json({
-      error: "At least one of 'voxels' or 'shapes' is required",
+      error:
+        "Nothing to build — provide 'palette' + 'slices' (text-grid layers, one character " +
+        "per voxel), 'shapes' (primitives rasterized into voxels), or both.",
     });
+  }
+
+  // Expand palette + slice grids into explicit voxels. This is the primary
+  // authoring format: ~1 character per voxel instead of a JSON object each.
+  let sliceVoxels: Voxel[] = [];
+  if (hasSlices) {
+    const expansion = expandVoxelSlices(palette, slices);
+    if ("error" in expansion) {
+      return res.status(400).json({ error: expansion.error });
+    }
+    sliceVoxels = expansion.voxels;
   }
 
   const sessionResolution = resolveThreeDimensionalSession(voxelSessions, sessionId, "voxel build");
@@ -3354,13 +3446,14 @@ router.post("/3d/voxel", asyncHandler(async (req: Request, res: Response) => {
 
   const { username: callerUsername } = extractCallerContext(req);
 
-  let combinedVoxels = voxels || [];
+  const incomingVoxels = [...sliceVoxels, ...(voxels || [])];
+  let combinedVoxels = incomingVoxels;
   let combinedShapes = shapes || [];
   let combinedOptions = options || {};
 
   if (existingVoxelSession) {
     combinedOptions = { ...existingVoxelSession.options, ...options };
-    combinedVoxels = [...existingVoxelSession.voxels, ...(voxels || [])];
+    combinedVoxels = [...existingVoxelSession.voxels, ...incomingVoxels];
     combinedShapes = [...existingVoxelSession.shapes, ...(shapes || [])];
   }
 
@@ -3409,13 +3502,13 @@ router.post("/3d/voxel", asyncHandler(async (req: Request, res: Response) => {
 
   res.json({
     message: isAppend
-      ? `Appended ${(voxels || []).length} voxel(s) and ${(shapes || []).length} shape(s) to session '${sessionKey}' — the build now renders ${resolvedVoxelArray.length} voxels. Sessions expire after 30 minutes of inactivity.`
-      : `Created voxel build rendering ${resolvedVoxelArray.length} voxels (${(voxels || []).length} explicit voxel(s), ${(shapes || []).length} shape(s)). To append more, call again with sessionId '${sessionKey}'; sessions expire after 30 minutes of inactivity.`,
+      ? `Appended ${incomingVoxels.length} voxel(s) and ${(shapes || []).length} shape(s) to session '${sessionKey}' — the build now renders ${resolvedVoxelArray.length} voxels. Sessions expire after 30 minutes of inactivity.`
+      : `Created voxel build rendering ${resolvedVoxelArray.length} voxels (${incomingVoxels.length} painted voxel(s), ${(shapes || []).length} shape(s)). To append more, call again with sessionId '${sessionKey}' — new slices with the same coordinates overwrite existing voxels. Sessions expire after 30 minutes of inactivity.`,
     sceneEmbedUrl,
     sceneId,
     sceneType: "voxel",
     sessionId: sessionKey,
-    addedVoxels: (voxels || []).length,
+    addedVoxels: incomingVoxels.length,
     addedShapes: (shapes || []).length,
     totalVoxels: resolvedVoxelArray.length,
     isAppend,
