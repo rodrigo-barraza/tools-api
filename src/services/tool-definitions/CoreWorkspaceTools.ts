@@ -365,6 +365,10 @@ export function getCoreWorkspaceTools(
           type: "string",
           description: translate("execute_command.params.command"),
         },
+        description: {
+          type: "string",
+          description: translate("execute_command.params.description"),
+        },
         cwd: {
           type: "string",
           description: translate("execute_command.params.cwd"),
@@ -385,6 +389,8 @@ export function getCoreWorkspaceTools(
       completedVerb: "Ran",
       subjectParam: "command",
       subjectFormat: "truncate",
+      descriptionParam: "description",
+      toolLabel: "Bash",
     },
   },
   {

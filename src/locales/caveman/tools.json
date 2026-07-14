@@ -355,6 +355,7 @@
   "execute_browser_script.params.timeout": "script timeout in ms (default: 60000, max: 120000).",
   "execute_command.description": "run command in work cave subprocess. handle any shell command (test, compile, dev server, package management, file/directory operation). working directory must be within allowed work cave. timeout default: 60s, max: 120s. for dev server and long-running watcher, set run_in_background: true — command start, collect ~2.5s output, then return right away with process ID. command that exceed timeout without background also auto-backgrounded.",
   "execute_command.params.command": "command to run.",
+  "execute_command.params.description": "Short words say what command do (5-10 words). Human see this as title.",
   "execute_command.params.cwd": "absolute path of working directory. must be within work cave.",
   "execute_command.params.run_in_background": "set true to run in background. command start, collect ~2.5 sec output, then return with process ID. use for dev server, watcher, or any long-running process.",
   "execute_command.params.timeout": "timeout in ms (default: 60000, max: 120000).",
