@@ -423,6 +423,31 @@ export function buildLocalUrl(
   return `${base}?${queryString}`;
 }
 
+// ─── Tool Result Display Contract ─────────────────────────────
+
+/**
+ * Self-describing display metadata attached to visual tool results.
+ * Clients render `display` generically — "embed" becomes a sandboxed
+ * auto-resizing iframe, "image" an <img> — without needing a per-tool
+ * renderer. `url` must be absolute (or a ref the client already
+ * resolves, e.g. minio://).
+ */
+export interface ToolResultDisplay {
+  kind: "embed" | "image";
+  url: string;
+  /** Fallback iframe height in px until the embed reports its own size. */
+  height?: number;
+  title?: string;
+}
+
+export function buildDisplay(
+  kind: ToolResultDisplay["kind"],
+  url: string,
+  options: { height?: number; title?: string } = {},
+): ToolResultDisplay {
+  return { kind, url, ...options };
+}
+
 // ─── HTML Embed Shell ─────────────────────────────────────────
 
 interface EmbedHtmlOptions {

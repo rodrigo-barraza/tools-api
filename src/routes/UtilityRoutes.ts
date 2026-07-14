@@ -37,7 +37,7 @@ import {
   renderChartPng,
 } from "../services/ChartService.ts";
 import { MAX_CODE_LENGTH } from "../constants.ts";
-import { buildLocalUrl, errorMessage } from "../utilities.ts";
+import { buildDisplay, buildLocalUrl, errorMessage } from "../utilities.ts";
 import { PersistentStore } from "../models/EmbedAsset.ts";
 import MinioService from "../services/MinioService.ts";
 import { crawlSingleStatic } from "../services/CrawlerService.ts";
@@ -409,6 +409,7 @@ router.get(
       );
       res.json({
         mapEmbedUrl,
+        display: buildDisplay("embed", mapEmbedUrl, { height: 360, title: "Map" }),
         markerCount: markerList.length,
       });
     } catch (error: unknown) {
@@ -600,6 +601,7 @@ router.post("/chart", asyncHandler(async (req: Request, res: Response) => {
 
   res.json({
     chartImageUrl,
+    display: buildDisplay("image", chartImageUrl, { title: "Chart" }),
     chartId,
     type,
     labelCount: labels.length,

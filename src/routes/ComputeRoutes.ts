@@ -24,6 +24,7 @@ import {
 import { MAX_CODE_LENGTH, MAX_COMMAND_LENGTH } from "../constants.ts";
 import crypto from "node:crypto";
 import {
+  buildDisplay,
   buildLocalUrl,
   buildEmbedHtml,
   errorMessage,
@@ -787,7 +788,12 @@ router.post(
       const id = qrStore.set({ buffer: pngBuffer });
       const qrImageUrl = minioUrl || buildLocalUrl("compute/qr/render", { id });
 
-      res.json({ qrImageUrl, qrId: id, dataLength: data.length });
+      res.json({
+        qrImageUrl,
+        qrId: id,
+        dataLength: data.length,
+        display: buildDisplay("image", qrImageUrl, { title: "QR Code" }),
+      });
     } catch (error: unknown) {
       res
         .status(400)
@@ -855,7 +861,11 @@ router.post("/latex", (req: Request, res: Response) => {
     displayMode: displayMode !== false,
   });
   const latexEmbedUrl = buildLocalUrl("compute/latex/embed", { id });
-  res.json({ latexEmbedUrl, latexId: id });
+  res.json({
+    latexEmbedUrl,
+    latexId: id,
+    display: buildDisplay("embed", latexEmbedUrl, { height: 160, title: "LaTeX" }),
+  });
 });
 router.get("/latex/embed", asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.query as Record<string, string>;
@@ -917,7 +927,11 @@ router.post("/diagram", (req: Request, res: Response) => {
     theme: theme || "dark",
   });
   const diagramEmbedUrl = buildLocalUrl("compute/diagram/embed", { id });
-  res.json({ diagramEmbedUrl, diagramId: id });
+  res.json({
+    diagramEmbedUrl,
+    diagramId: id,
+    display: buildDisplay("embed", diagramEmbedUrl, { height: 420, title: "Diagram" }),
+  });
 });
 router.get("/diagram/embed", asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.query as Record<string, string>;
@@ -1921,6 +1935,7 @@ router.post("/turtle", asyncHandler(async (req: Request, res: Response) => {
 
   res.json({
     turtleEmbedUrl,
+    display: buildDisplay("embed", turtleEmbedUrl, { height: 420, title: "Turtle Graphics" }),
     drawingId: embedId,
     commandCount: totalCommandCount,
     newCommandCount: logoResult.commands.length,
@@ -2351,6 +2366,7 @@ router.post(
         imageUrl,
         imageId: id,
         mimeType: result.mimeType,
+        display: buildDisplay("image", imageUrl, { title: "Image" }),
       };
       if (result.metadata) response.metadata = result.metadata;
       res.json(response);
@@ -2406,6 +2422,7 @@ router.post(
         imageUrl: gifUrl,
         imageId: uniqueImageId,
         mimeType: conversionResult.mimeType,
+        display: buildDisplay("image", gifUrl, { title: "GIF" }),
       });
     } catch (error: unknown) {
       res
@@ -2798,6 +2815,7 @@ router.post(
         ansi: result.ansi,
         asciiId,
         asciiEmbedUrl,
+        display: buildDisplay("embed", asciiEmbedUrl, { height: 600, title: "ASCII Art" }),
         width: result.width,
         height: result.height,
       });
@@ -3039,6 +3057,7 @@ router.post("/3d/mesh", asyncHandler(async (req: Request, res: Response) => {
   res.json({
     message,
     sceneEmbedUrl,
+    display: buildDisplay("embed", sceneEmbedUrl, { height: 480, title: "3D Mesh" }),
     sceneId,
     sceneType: "mesh",
     sessionId: sessionKey,
@@ -3274,6 +3293,7 @@ router.post("/3d/scene", asyncHandler(async (req: Request, res: Response) => {
       ? `Appended ${resolvedSceneObjects.length} object(s) to session '${sessionKey}' — the scene now has ${combinedSceneObjects.length}. Call again with this sessionId to keep building; sessions expire after 30 minutes of inactivity.`
       : `Created scene with ${resolvedSceneObjects.length} object(s). To append more, call again with sessionId '${sessionKey}'; sessions expire after 30 minutes of inactivity.`,
     sceneEmbedUrl,
+    display: buildDisplay("embed", sceneEmbedUrl, { height: 480, title: "3D Scene" }),
     sceneId,
     sceneType: "scene",
     sessionId: sessionKey,
@@ -3386,6 +3406,7 @@ router.post("/3d/model", asyncHandler(async (req: Request, res: Response) => {
       ? `Appended ${modelObjects.length} object(s) to session '${sessionKey}' — the model now has ${combinedModelObjects.length}. Call again with this sessionId to keep building; sessions expire after 30 minutes of inactivity.`
       : `Created model with ${modelObjects.length} object(s). To append more, call again with sessionId '${sessionKey}'; sessions expire after 30 minutes of inactivity.`,
     sceneEmbedUrl,
+    display: buildDisplay("embed", sceneEmbedUrl, { height: 480, title: "3D Model" }),
     sceneId,
     sceneType: "model",
     sessionId: sessionKey,
@@ -3505,6 +3526,7 @@ router.post("/3d/voxel", asyncHandler(async (req: Request, res: Response) => {
       ? `Appended ${incomingVoxels.length} voxel(s) and ${(shapes || []).length} shape(s) to session '${sessionKey}' — the build now renders ${resolvedVoxelArray.length} voxels. Sessions expire after 30 minutes of inactivity.`
       : `Created voxel build rendering ${resolvedVoxelArray.length} voxels (${incomingVoxels.length} painted voxel(s), ${(shapes || []).length} shape(s)). To append more, call again with sessionId '${sessionKey}' — new slices with the same coordinates overwrite existing voxels. Sessions expire after 30 minutes of inactivity.`,
     sceneEmbedUrl,
+    display: buildDisplay("embed", sceneEmbedUrl, { height: 480, title: "3D Voxels" }),
     sceneId,
     sceneType: "voxel",
     sessionId: sessionKey,

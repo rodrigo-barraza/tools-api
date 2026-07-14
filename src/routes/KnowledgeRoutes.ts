@@ -121,7 +121,7 @@ import {
   getSnapshot as getWaybackSnapshot,
   getSnapshotHistory,
 } from "../fetchers/web/WaybackFetcher.ts";
-import { errorMessage, buildLocalUrl } from "../utilities.ts";
+import { errorMessage, buildDisplay, buildLocalUrl } from "../utilities.ts";
 import MinioService from "../services/MinioService.ts";
 import crypto from "node:crypto";
 import { readFile, rm } from "node:fs/promises";
@@ -958,6 +958,7 @@ router.get(
         durationSeconds: result.metadata.durationSeconds,
         format: "gif",
         imageUrl: gifImageUrl,
+        display: buildDisplay("image", gifImageUrl, { title: "GIF" }),
         imageId: gifId,
         mimeType: result.mimeType,
       });

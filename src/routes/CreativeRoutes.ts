@@ -26,7 +26,7 @@ import {
 } from "../services/VectorAnimationValidation.ts";
 import { synthesizeSpeech, getSupportedVoices, isEspeakAvailable } from "../services/TextToSpeechService.ts";
 import logger from "../logger.ts";
-import { extractCallerContext, errorMessage, buildLocalUrl, buildEmbedHtml, escapeHtml, sanitizeCssColor, toEmbedScriptJson } from "../utilities.ts";
+import { extractCallerContext, errorMessage, buildDisplay, buildLocalUrl, buildEmbedHtml, escapeHtml, sanitizeCssColor, toEmbedScriptJson } from "../utilities.ts";
 import { saveVectorAnimation, getVectorAnimation, type VectorAnimationConfig, type VectorAnimationOptions } from "../models/VectorAnimation.ts";
 import crypto from "node:crypto";
 import CONFIG from "../config.ts";
@@ -1950,6 +1950,7 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
   res.json({
     message,
     embedUrl,
+    display: buildDisplay("embed", embedUrl, { height: 420, title: "Vector Animation" }),
     sessionId: activeSessionId,
     animationId: embedId,
     duration: sessionAnimation.duration,
