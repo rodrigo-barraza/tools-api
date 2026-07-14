@@ -1,6 +1,7 @@
 import {
   escapeRegex,
   errorMessage,
+  getErrorMessage,
   BINARY_FILE_EXTENSIONS,
   PREVIEW_IMAGE_FILE_EXTENSIONS,
   WORKSPACE_MAX_READ_BYTES,
@@ -56,7 +57,7 @@ async function tryAgentRoute(
   try {
     return await sendRpc(agent.id, method, params);
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorMessage = getErrorMessage(error);
     return { error: `Agent RPC failed: ${errorMessage}` };
   }
 }

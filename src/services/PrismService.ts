@@ -4,6 +4,7 @@
 // (project/username, per-endpoint timeouts) plus trace-header propagation.
 
 import { PrismApiClient } from "@rodrigo-barraza/service-library";
+import { getErrorMessage } from "@rodrigo-barraza/utilities-library";
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
 import {
@@ -105,7 +106,7 @@ export async function chat(
     })) as TransformedPrismChatResult;
   } catch (error: unknown) {
     logger.error(
-      `[PrismService] chat failed: ${error instanceof Error ? error.message : String(error)}`,
+      `[PrismService] chat failed: ${getErrorMessage(error)}`,
     );
     throw error;
   }
@@ -137,7 +138,7 @@ export async function textToSpeech(
     });
   } catch (error: unknown) {
     logger.error(
-      `[PrismService] textToSpeech failed: ${error instanceof Error ? error.message : String(error)}`,
+      `[PrismService] textToSpeech failed: ${getErrorMessage(error)}`,
     );
     throw error;
   }
@@ -161,7 +162,7 @@ export async function speechToText(
     })) as TransformedPrismSTTResult;
   } catch (error: unknown) {
     logger.error(
-      `[PrismService] speechToText failed: ${error instanceof Error ? error.message : String(error)}`,
+      `[PrismService] speechToText failed: ${getErrorMessage(error)}`,
     );
     throw error;
   }

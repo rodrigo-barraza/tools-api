@@ -9,6 +9,8 @@
 // variables (make/thing/:var), math functions, and the standard 16-color
 // LOGO palette.
 
+import { getErrorMessage } from "@rodrigo-barraza/utilities-library";
+
 // ─── Types ──────────────────────────────────────────────────────────
 
 export interface LogoExecutionResult {
@@ -1617,7 +1619,7 @@ export function executeLogoProgram(
     return executor.getResult();
   } catch (error: unknown) {
     const executionTimeMs = Math.round(performance.now() - startTime);
-    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorMessage = getErrorMessage(error);
     return {
       success: false,
       commands: [],

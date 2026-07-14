@@ -1,6 +1,7 @@
 // ─── MinIO Storage Service ──────────────────────────────────
 
 import { Client } from "minio";
+import { getErrorMessage } from "@rodrigo-barraza/utilities-library";
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -101,7 +102,7 @@ export default class MinioService {
       return MinioService.getPublicUrl(TOOL_ASSETS_BUCKET, objectName);
     } catch (error: unknown) {
       logger.warn(
-        `[MinioService] Tool asset upload failed: ${error instanceof Error ? error.message : String(error)}`,
+        `[MinioService] Tool asset upload failed: ${getErrorMessage(error)}`,
       );
       return null;
     }
@@ -204,8 +205,7 @@ export default class MinioService {
         );
       }
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = getErrorMessage(error);
       logger.error(
         `[MinioService] Failed to seed workspace agent: ${errorMessage}`,
       );

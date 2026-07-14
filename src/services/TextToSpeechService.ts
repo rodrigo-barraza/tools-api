@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import { getErrorMessage } from "@rodrigo-barraza/utilities-library";
 import { promisify } from "node:util";
 import { randomUUID } from "node:crypto";
 import { tmpdir } from "node:os";
@@ -139,8 +140,7 @@ export async function synthesizeSpeech(
       ),
     };
   } catch (error: unknown) {
-    const errorText =
-      error instanceof Error ? error.message : String(error);
+    const errorText = getErrorMessage(error);
     logger.error(
       `[TextToSpeechService] espeak-ng failed: ${errorText}`,
     );

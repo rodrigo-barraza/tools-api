@@ -1,6 +1,7 @@
 // ─── Remote Workspace Agent Registry ────────────────────────
 
 import { WebSocketServer, WebSocket } from "ws";
+import { getErrorMessage } from "@rodrigo-barraza/utilities-library";
 import crypto from "node:crypto";
 import { resolve } from "node:path";
 import logger from "../logger.ts";
@@ -291,8 +292,7 @@ export function initAgentWebSocket(httpServer: Server) {
           const message = JSON.parse(data.toString()) as AgentRpcMessage;
           handleAgentMessage(websocket, message, clientIp);
         } catch (error: unknown) {
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
+          const errorMessage = getErrorMessage(error);
           logger.error(`[AgentWS] Invalid message: ${errorMessage}`);
         }
       });
@@ -395,8 +395,7 @@ export function initAgentWebSocket(httpServer: Server) {
             );
             sendJson(websocket, { jsonrpc: "2.0", id: message.id, result });
           } catch (error: unknown) {
-            const errorMessage =
-              error instanceof Error ? error.message : String(error);
+            const errorMessage = getErrorMessage(error);
             sendJson(websocket, {
               jsonrpc: "2.0",
               id: message.id,
@@ -404,8 +403,7 @@ export function initAgentWebSocket(httpServer: Server) {
             });
           }
         } catch (error: unknown) {
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
+          const errorMessage = getErrorMessage(error);
           logger.error(`[ClientWS] Invalid message: ${errorMessage}`);
         }
       });
@@ -938,7 +936,7 @@ async function rebuildAllowedRootsFromAgents() {
     ALLOWED_ROOTS.length = 0;
     ALLOWED_ROOTS.push(...mergedRoots);
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorMessage = getErrorMessage(error);
     logger.warn(`[AgentWS] Failed to rebuild allowed roots: ${errorMessage}`);
   }
 }

@@ -1,6 +1,7 @@
 // ─── Hybrid Sharp + ImageMagick Engine ──────────────────────
 
 import sharp from "sharp";
+import { getErrorMessage } from "@rodrigo-barraza/utilities-library";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { tmpdir } from "node:os";
@@ -116,7 +117,7 @@ async function resolveInput(input: string, store?: ImageStore) {
         const buffer = await readFile(validation.resolved);
         return buffer;
       } catch (error: unknown) {
-        throw new Error(`Failed to read local image file: ${error instanceof Error ? error.message : String(error)}`);
+        throw new Error(`Failed to read local image file: ${getErrorMessage(error)}`);
       }
     } else {
       throw new Error(`Local path validation failed: ${validation.error}`);

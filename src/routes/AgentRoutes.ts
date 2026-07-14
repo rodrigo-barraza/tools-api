@@ -1,6 +1,7 @@
 // ─── Workspace Agent Status Endpoints ───────────────────────
 
 import { Request, Response, Router } from "express";
+import { getErrorMessage } from "@rodrigo-barraza/utilities-library";
 import { getConnectedAgents, disconnectAgent } from "../services/AgentConnectionManager.ts";
 import MinioService from "../services/MinioService.ts";
 import logger from "../logger.ts";
@@ -113,8 +114,7 @@ router.get("/download/agent", async (req: Request, res: Response) => {
         res.on("error", (error) => rejectPromise(error));
       });
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = getErrorMessage(error);
       logger.error(
         `[Agents] Failed to compile or download workspace agent: ${errorMessage}`,
       );
@@ -140,8 +140,7 @@ router.get("/download/agent", async (req: Request, res: Response) => {
 
     objectStream.pipe(res);
   } catch (error: unknown) {
-    const errorMessage =
-      error instanceof Error ? error.message : String(error);
+    const errorMessage = getErrorMessage(error);
     logger.warn(`[Agents] Failed to serve agent download: ${errorMessage}`);
     res.status(404).json({ error: "Workspace agent file not available" });
   }
@@ -182,8 +181,7 @@ router.get("/download/tray-app", async (req: Request, res: Response) => {
 
     objectStream.pipe(res);
   } catch (error: unknown) {
-    const errorMessage =
-      error instanceof Error ? error.message : String(error);
+    const errorMessage = getErrorMessage(error);
     logger.warn(`[Agents] Failed to serve tray app installer (${platform}): ${errorMessage}`);
     res.status(404).json({
       error: "Tray app installer not available for this platform",
@@ -244,8 +242,7 @@ router.put("/upload/tray-app", async (req: Request, res: Response) => {
       sizeBytes: fileBuffer.length,
     });
   } catch (error: unknown) {
-    const errorMessage =
-      error instanceof Error ? error.message : String(error);
+    const errorMessage = getErrorMessage(error);
     logger.error(`[Agents] Failed to upload tray app installer (${platform}): ${errorMessage}`);
     res.status(500).json({
       error: "Failed to upload tray app installer",

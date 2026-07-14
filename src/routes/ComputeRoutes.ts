@@ -3,7 +3,7 @@ import {
   setupStreamingServerSentEvents,
   lazyImport,
 } from "@rodrigo-barraza/utilities-library/express";
-import { validateMaxLength } from "@rodrigo-barraza/utilities-library";
+import { getErrorMessage, validateMaxLength } from "@rodrigo-barraza/utilities-library";
 import {
   parseHex as hexToRgb,
   toHex as rgbToHex,
@@ -3655,7 +3655,7 @@ router.post(
       });
     } catch (error: unknown) {
       res.status(400).json({
-        error: `Schema compilation failed: ${error instanceof Error ? error.message : String(error)}`,
+        error: `Schema compilation failed: ${getErrorMessage(error)}`,
       });
     }
   }),

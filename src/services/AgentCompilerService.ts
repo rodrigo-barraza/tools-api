@@ -1,6 +1,7 @@
 // ─── Standalone Workspace Agent Compiler Service ────────────────
 
 import { execSync } from "node:child_process";
+import { getErrorMessage } from "@rodrigo-barraza/utilities-library";
 import { existsSync } from "node:fs";
 import { readFile, writeFile, copyFile, rm, mkdir } from "node:fs/promises";
 import { join, resolve, dirname } from "node:path";
@@ -114,7 +115,7 @@ async function loadAgentSourceCode(): Promise<{ wrapperSource: string; coreSourc
 
     logger.info("[AgentCompiler] Loaded agent source from MinIO.");
   } catch (minioError: unknown) {
-    const minioErrorMessage = minioError instanceof Error ? minioError.message : String(minioError);
+    const minioErrorMessage = getErrorMessage(minioError);
     logger.warn(`[AgentCompiler] MinIO fetch failed (${minioErrorMessage}), falling back to local filesystem.`);
   }
 
@@ -252,7 +253,7 @@ export default class AgentCompilerService {
       try {
         execSync(`codesign --sign - "${finalExecutablePath}"`);
       } catch (error: unknown) {
-        const codesignError = error instanceof Error ? error.message : String(error);
+        const codesignError = getErrorMessage(error);
         logger.warn(`[AgentCompiler] Codesign skipped/failed: ${codesignError}`);
       }
     }
@@ -273,7 +274,7 @@ export default class AgentCompilerService {
         await rm(buildDirectory, { recursive: true, force: true });
       }
     } catch (error: unknown) {
-      const cleanupError = error instanceof Error ? error.message : String(error);
+      const cleanupError = getErrorMessage(error);
       logger.error(`[AgentCompiler] Clean build failed: ${cleanupError}`);
     }
   }

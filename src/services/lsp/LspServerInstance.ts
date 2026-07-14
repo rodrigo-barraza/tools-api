@@ -1,4 +1,4 @@
-import { sleep } from "@rodrigo-barraza/utilities-library";
+import { getErrorMessage, sleep } from "@rodrigo-barraza/utilities-library";
 // ─── Single Server Lifecycle Manager ────────────────────────
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -263,10 +263,7 @@ export function createLspServerInstance(
         break;
       }
     }
-    const errorMessage =
-      lastAttemptError instanceof Error
-        ? lastAttemptError.message
-        : String(lastAttemptError);
+    const errorMessage = getErrorMessage(lastAttemptError);
     throw new Error(
       `LSP request '${method}' failed for server '${name}': ${errorMessage}`,
     );
