@@ -35,7 +35,6 @@ export function getBrowserTools(
         "limit",
         "ref",
         "value",
-        "script",
       ],
     },
     parameters: {
@@ -60,7 +59,6 @@ export function getBrowserTools(
             "type_ref",
             "hover_ref",
             "select_ref",
-            "run_script",
           ],
         },
         sessionId: {
@@ -123,10 +121,6 @@ export function getBrowserTools(
           type: "integer",
           description: translate("control_browser.params.limit"),
         },
-        script: {
-          type: "string",
-          description: translate("control_browser.params.script"),
-        },
       },
       required: ["action"],
     },
@@ -144,7 +138,7 @@ export function getBrowserTools(
     endpoint: {
       method: "POST",
       path: "/agentic/browser/script",
-      bodyParams: ["script", "sessionId", "timeout"],
+      bodyParams: ["script", "timeout"],
     },
     parameters: {
       type: "object",
@@ -152,10 +146,6 @@ export function getBrowserTools(
         script: {
           type: "string",
           description: translate("execute_browser_script.params.script"),
-        },
-        sessionId: {
-          type: "string",
-          description: translate("execute_browser_script.params.sessionId"),
         },
         timeout: {
           type: "integer",

@@ -1,10 +1,11 @@
 // ─── Headless Playwright Automation ─────────────────────────
 
-import { chromium, Browser, BrowserContext, Page } from "playwright";
+import { chromium, Browser, BrowserContext, Page, Locator } from "playwright";
 import { writeFile, unlink, mkdtemp } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { spawn } from "node:child_process";
+import { createRequire } from "node:module";
 import logger from "../logger.ts";
 import {
   BROWSER_SESSION_IDLE_MS,
@@ -15,9 +16,59 @@ import {
   BROWSER_SCRIPT_TIMEOUT_MS,
   BROWSER_MAX_SCRIPT_OUTPUT,
   BROWSER_MAX_CONTENT_LENGTH,
+  BROWSER_MAX_SNAPSHOT_LENGTH,
+  BROWSER_MAX_EVALUATE_LENGTH,
+  BROWSER_WAIT_MAX_TIMEOUT_MS,
 } from "../constants.ts";
 import { errorMessage } from "../utilities.ts";
 import CONFIG from "../config.ts";
+
+// ────────────────────────────────────────────────────────────
+// Input Coercion
+// ────────────────────────────────────────────────────────────
+
+/**
+ * Coerce a numeric parameter that models may send as a number or a numeric
+ * string. Uninterpretable input returns a teaching error instead of silently
+ * becoming NaN (which degenerates Math.min/max clamps and setTimeout).
+ */
+function coerceInteger(
+  value: unknown,
+  name: string,
+  options: { min: number; max: number; fallback: number },
+): { value: number; error?: undefined } | { error: string; value?: undefined } {
+  if (value === undefined || value === null) return { value: options.fallback };
+  const parsed =
+    typeof value === "number"
+      ? value
+      : typeof value === "string" && value.trim() !== ""
+        ? Number(value)
+        : NaN;
+  if (!Number.isFinite(parsed)) {
+    return {
+      error: `Invalid ${name}: ${JSON.stringify(value)}. Pass a plain number, e.g. ${name}=${options.fallback}.`,
+    };
+  }
+  return {
+    value: Math.min(Math.max(Math.round(parsed), options.min), options.max),
+  };
+}
+
+/** Allowed URL schemes for navigation. Blocks file:// and chrome:// access. */
+const ALLOWED_URL_PROTOCOLS = new Set(["http:", "https:", "data:", "about:"]);
+
+function validateUrl(url: string): string | null {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return `Invalid url "${url}" — pass an absolute URL like "https://example.com".`;
+  }
+  if (!ALLOWED_URL_PROTOCOLS.has(parsed.protocol)) {
+    return `Unsupported URL scheme "${parsed.protocol}//" — only http(s), data and about URLs can be opened.`;
+  }
+  return null;
+}
 
 // ────────────────────────────────────────────────────────────
 // Session Management
@@ -176,6 +227,8 @@ function cleanupIdleSessions() {
 
 async function actionNavigate(page: Page, { url }: { url?: string }) {
   if (!url) return { error: "Missing required parameter: url" };
+  const urlError = validateUrl(url);
+  if (urlError) return { error: urlError };
 
   try {
     const response = await page.goto(url, {
@@ -230,11 +283,51 @@ async function actionScreenshot(
   }
 }
 
+/**
+ * Resolve a CSS selector to a single clickable target, failing fast with a
+ * teaching error instead of burning the full action timeout when the selector
+ * matches nothing (models frequently guess selectors that don't exist), and
+ * preferring the first VISIBLE match when several elements match.
+ */
+async function resolveSelectorTarget(
+  page: Page,
+  selector: string,
+): Promise<
+  | { locator: Locator; matchedCount: number; error?: undefined }
+  | { error: string; locator?: undefined }
+> {
+  const locator = page.locator(selector);
+  let count: number;
+  try {
+    count = await locator.count();
+  } catch (error: unknown) {
+    return { error: `Invalid selector "${selector}": ${errorMessage(error)}` };
+  }
+  if (count === 0) {
+    return {
+      error: `No element matches selector "${selector}" on ${page.url()}. Use 'snapshot' or 'get_elements' to discover what is on the page, or 'wait' with this selector if the page is still loading.`,
+    };
+  }
+  if (count === 1) return { locator: locator.first(), matchedCount: 1 };
+
+  const visible = locator.filter({ visible: true });
+  const visibleCount = await visible.count();
+  if (visibleCount === 0) {
+    return {
+      error: `Selector "${selector}" matches ${count} elements but none are visible. Narrow the selector — use 'snapshot' or 'get_elements' to find a visible target.`,
+    };
+  }
+  return { locator: visible.first(), matchedCount: count };
+}
+
 async function actionClick(page: Page, { selector }: { selector?: string }) {
   if (!selector) return { error: "Missing required parameter: selector" };
 
+  const target = await resolveSelectorTarget(page, selector);
+  if (target.error !== undefined) return { error: target.error };
+
   try {
-    await page.click(selector, { timeout: BROWSER_ACTION_TIMEOUT_MS });
+    await target.locator.click({ timeout: BROWSER_ACTION_TIMEOUT_MS });
 
     // Wait for potential navigation or re-render
     await page
@@ -244,6 +337,9 @@ async function actionClick(page: Page, { selector }: { selector?: string }) {
     return {
       action: "click",
       selector,
+      ...(target.matchedCount > 1 && {
+        note: `Selector matched ${target.matchedCount} elements; clicked the first visible one.`,
+      }),
       url: page.url(),
       title: await page.title(),
     };
@@ -264,13 +360,16 @@ async function actionType(
   if (text === undefined || text === null)
     return { error: "Missing required parameter: text" };
 
+  const target = await resolveSelectorTarget(page, selector);
+  if (target.error !== undefined) return { error: target.error };
+
   try {
     // Clear existing content and type new text
-    await page.fill(selector, "", { timeout: BROWSER_ACTION_TIMEOUT_MS });
-    await page.fill(selector, text, { timeout: BROWSER_ACTION_TIMEOUT_MS });
+    await target.locator.fill("", { timeout: BROWSER_ACTION_TIMEOUT_MS });
+    await target.locator.fill(text, { timeout: BROWSER_ACTION_TIMEOUT_MS });
 
     if (pressEnter) {
-      await page.press(selector, "Enter");
+      await target.locator.press("Enter");
       await page
         .waitForLoadState("domcontentloaded", {
           timeout: BROWSER_DOM_TIMEOUT_MS,
@@ -299,6 +398,19 @@ async function actionScroll(
     amount,
   }: { direction?: string; selector?: string; amount?: number },
 ) {
+  if (direction && direction !== "up" && direction !== "down") {
+    return {
+      error: `Invalid direction "${direction}". Valid values: "up", "down".`,
+    };
+  }
+
+  const pixelsResult = coerceInteger(amount, "amount", {
+    min: -20_000,
+    max: 20_000,
+    fallback: 500,
+  });
+  if (pixelsResult.error !== undefined) return { error: pixelsResult.error };
+
   try {
     if (selector) {
       await page.evaluate(
@@ -310,7 +422,7 @@ async function actionScroll(
         { sel: selector },
       );
     } else {
-      const pixels = amount || 500;
+      const pixels = Math.abs(pixelsResult.value) || 500;
       const delta = direction === "up" ? -pixels : pixels;
 
       await page.evaluate((scrollDelta: number) => window.scrollBy(0, scrollDelta), delta);
@@ -338,12 +450,20 @@ async function actionEvaluate(
   try {
     const result = await page.evaluate(expression);
 
+    let serialized =
+      typeof result === "object"
+        ? JSON.stringify(result, null, 2)
+        : String(result);
+    const truncated = serialized.length > BROWSER_MAX_EVALUATE_LENGTH;
+    if (truncated) serialized = serialized.slice(0, BROWSER_MAX_EVALUATE_LENGTH);
+
     return {
       action: "evaluate",
-      result:
-        typeof result === "object"
-          ? JSON.stringify(result, null, 2)
-          : String(result),
+      result: serialized,
+      ...(truncated && {
+        truncated: true,
+        note: `Result truncated to ${BROWSER_MAX_EVALUATE_LENGTH} chars. Return a smaller value (e.g. slice arrays, pick specific fields).`,
+      }),
       url: page.url(),
     };
   } catch (error: unknown) {
@@ -374,7 +494,9 @@ async function actionGetContent(
     }
 
     if (content === null) {
-      return { error: `Element not found: ${selector}` };
+      return {
+        error: `No element matches selector "${selector}" on ${page.url()}. Omit 'selector' to get the whole page, or use 'get_elements' to discover selectors.`,
+      };
     }
 
     // Truncate to max content length (same as fetch_url)
@@ -408,10 +530,25 @@ async function actionWait(
     state?: "attached" | "detached" | "visible" | "hidden";
   },
 ) {
+  const VALID_STATES = ["attached", "detached", "visible", "hidden"] as const;
+  if (state && !VALID_STATES.includes(state)) {
+    return {
+      error: `Invalid state "${state}". Valid values: ${VALID_STATES.join(", ")}.`,
+    };
+  }
+
+  const timeoutResult = coerceInteger(timeout, "timeout", {
+    min: 100,
+    max: BROWSER_WAIT_MAX_TIMEOUT_MS,
+    fallback: selector ? BROWSER_ACTION_TIMEOUT_MS : 2_000,
+  });
+  if (timeoutResult.error !== undefined) return { error: timeoutResult.error };
+  const waitMs = timeoutResult.value;
+
   try {
     if (selector) {
       await page.waitForSelector(selector, {
-        timeout: timeout || BROWSER_ACTION_TIMEOUT_MS,
+        timeout: waitMs,
         state: state || "visible",
       });
       return {
@@ -422,7 +559,6 @@ async function actionWait(
     }
 
     // Wait for timeout duration
-    const waitMs = Math.min(timeout || 2_000, 30_000);
     await page.waitForTimeout(waitMs);
     return {
       action: "wait",
@@ -438,8 +574,15 @@ async function actionGetElements(
   page: Page,
   { selector, limit }: { selector?: string; limit?: number },
 ) {
+  const limitResult = coerceInteger(limit, "limit", {
+    min: 1,
+    max: 100,
+    fallback: 50,
+  });
+  if (limitResult.error !== undefined) return { error: limitResult.error };
+
   try {
-    const maxElements = Math.min(limit || 50, 100);
+    const maxElements = limitResult.value;
     const scope = selector || "body";
 
     const elements = await page.evaluate(
@@ -570,12 +713,18 @@ async function actionSnapshot(page: Page, { selector }: { selector?: string }) {
       ariaSnapshot?: () => Promise<string>;
     };
     if (typeof locWithSnapshot.ariaSnapshot === "function") {
-      const snapshot = await locWithSnapshot.ariaSnapshot();
+      let snapshot = await locWithSnapshot.ariaSnapshot();
+      const truncated = snapshot.length > BROWSER_MAX_SNAPSHOT_LENGTH;
+      if (truncated) snapshot = snapshot.slice(0, BROWSER_MAX_SNAPSHOT_LENGTH);
       return {
         action: "snapshot",
         url: page.url(),
         title: await page.title(),
         snapshot,
+        ...(truncated && {
+          truncated: true,
+          note: `Snapshot truncated to ${BROWSER_MAX_SNAPSHOT_LENGTH} chars. Pass 'selector' to snapshot a smaller region (e.g. selector="main").`,
+        }),
         format: "aria",
       };
     }
@@ -592,12 +741,19 @@ async function actionSnapshot(page: Page, { selector }: { selector?: string }) {
       (await pgWithAccessibility.accessibility?.snapshot({
         interestingOnly: true,
       })) || null;
-    const formatted = formatAccessibilityTree(tree, 0);
+    let formatted = formatAccessibilityTree(tree, 0);
+    const treeTruncated = formatted.length > BROWSER_MAX_SNAPSHOT_LENGTH;
+    if (treeTruncated)
+      formatted = formatted.slice(0, BROWSER_MAX_SNAPSHOT_LENGTH);
     return {
       action: "snapshot",
       url: page.url(),
       title: await page.title(),
       snapshot: formatted,
+      ...(treeTruncated && {
+        truncated: true,
+        note: `Snapshot truncated to ${BROWSER_MAX_SNAPSHOT_LENGTH} chars. Pass 'selector' to snapshot a smaller region (e.g. selector="main").`,
+      }),
       format: "a11y-tree",
     };
   } catch (error: unknown) {
@@ -673,18 +829,41 @@ function formatAccessibilityTree(
 /**
  * Resolve a ref string from an aria snapshot to a Playwright locator.
  *
- * Supports two modes:
- * 1. If ariaSnapshot gave us [ref=X] IDs (Playwright ≥1.49), use getByRole/getByLabel
- * 2. Direct role + name matching: "button:Submit", "link:Home", "textbox:Search"
+ * Models copy refs straight out of snapshot output, so we accept every shape
+ * they realistically send (production evidence: gemma-4 sent the snapshot's
+ * own `link "English 7,189,000+ articles"` format and got a 10s timeout):
+ * 1. `role:name` — the documented format ("button:Submit", "link:Home")
+ * 2. `role "name"` — the snapshot's output format (`link "Canada"`)
+ * 3. Raw snapshot lines — leading "- ", trailing ":" and [attr] annotations
+ *    are stripped ('- link "Home" [level=1]:' works)
+ * 4. Anything else — matched as an aria-label
  */
-function resolveRef(page: Page, ref: string) {
+function resolveRef(page: Page, rawRef: string) {
+  let ref = rawRef
+    .trim()
+    .replace(/^-\s*/, "")
+    .replace(/:\s*$/, "")
+    .replace(/\s*(\[[^\]]*\])+\s*$/, "")
+    .trim();
+
+  // Format: role "name" (snapshot output format)
+  const quoted = ref.match(/^([A-Za-z]+)\s+"(.*)"$/s);
+  if (quoted) {
+    const role = quoted[1].toLowerCase() as Parameters<typeof page.getByRole>[0];
+    return page.getByRole(role, { name: quoted[2], exact: false });
+  }
+
   // Format: "role:name" (e.g. "button:Submit", "link:Get started")
   const colonIndex = ref.indexOf(":");
   if (colonIndex > 0) {
-    const role = ref.slice(0, colonIndex).trim() as Parameters<
-      typeof page.getByRole
-    >[0];
-    const name = ref.slice(colonIndex + 1).trim();
+    const role = ref
+      .slice(0, colonIndex)
+      .trim()
+      .toLowerCase() as Parameters<typeof page.getByRole>[0];
+    const name = ref
+      .slice(colonIndex + 1)
+      .trim()
+      .replace(/^"(.*)"$/s, "$1");
     return page.getByRole(role, { name, exact: false });
   }
 
@@ -692,12 +871,44 @@ function resolveRef(page: Page, ref: string) {
   return page.getByLabel(ref, { exact: false });
 }
 
+/**
+ * Resolve a ref to a single actionable locator, failing fast with a teaching
+ * error when nothing matches (instead of a raw 10s Playwright timeout) and
+ * picking the first match when several do (getByRole would otherwise throw a
+ * strict-mode violation).
+ */
+async function resolveRefTarget(
+  page: Page,
+  ref: string,
+): Promise<
+  | { locator: Locator; matchedCount: number; error?: undefined }
+  | { error: string; locator?: undefined }
+> {
+  const locator = resolveRef(page, ref);
+  let count: number;
+  try {
+    count = await locator.count();
+  } catch (error: unknown) {
+    return {
+      error: `Could not resolve ref "${ref}" (${errorMessage(error)}). Use the format 'role:name' or 'role "name"' with a role and name copied from 'snapshot' output, e.g. ref='button:Submit' or ref='link "Home"'.`,
+    };
+  }
+  if (count === 0) {
+    return {
+      error: `No element matches ref "${ref}" on ${page.url()}. Take a fresh 'snapshot' and copy the element's role and name exactly, e.g. ref='link "Canada"'.`,
+    };
+  }
+  return { locator: locator.first(), matchedCount: count };
+}
+
 async function actionClickRef(page: Page, { ref }: { ref?: string }) {
   if (!ref) return { error: "Missing required parameter: ref" };
 
+  const target = await resolveRefTarget(page, ref);
+  if (target.error !== undefined) return { error: target.error };
+
   try {
-    const locator = resolveRef(page, ref);
-    await locator.click({ timeout: BROWSER_ACTION_TIMEOUT_MS });
+    await target.locator.click({ timeout: BROWSER_ACTION_TIMEOUT_MS });
     await page
       .waitForLoadState("domcontentloaded", { timeout: BROWSER_DOM_TIMEOUT_MS })
       .catch(() => {});
@@ -725,8 +936,11 @@ async function actionTypeRef(
   if (text === undefined || text === null)
     return { error: "Missing required parameter: text" };
 
+  const target = await resolveRefTarget(page, ref);
+  if (target.error !== undefined) return { error: target.error };
+
   try {
-    const locator = resolveRef(page, ref);
+    const locator = target.locator;
     await locator.fill("", { timeout: BROWSER_ACTION_TIMEOUT_MS });
     await locator.fill(text, { timeout: BROWSER_ACTION_TIMEOUT_MS });
 
@@ -755,9 +969,11 @@ async function actionTypeRef(
 async function actionHoverRef(page: Page, { ref }: { ref?: string }) {
   if (!ref) return { error: "Missing required parameter: ref" };
 
+  const target = await resolveRefTarget(page, ref);
+  if (target.error !== undefined) return { error: target.error };
+
   try {
-    const locator = resolveRef(page, ref);
-    await locator.hover({ timeout: BROWSER_ACTION_TIMEOUT_MS });
+    await target.locator.hover({ timeout: BROWSER_ACTION_TIMEOUT_MS });
 
     return {
       action: "hover_ref",
@@ -776,9 +992,13 @@ async function actionSelectRef(
   if (!ref) return { error: "Missing required parameter: ref" };
   if (!value) return { error: "Missing required parameter: value" };
 
+  const target = await resolveRefTarget(page, ref);
+  if (target.error !== undefined) return { error: target.error };
+
   try {
-    const locator = resolveRef(page, ref);
-    await locator.selectOption(value, { timeout: BROWSER_ACTION_TIMEOUT_MS });
+    await target.locator.selectOption(value, {
+      timeout: BROWSER_ACTION_TIMEOUT_MS,
+    });
 
     return {
       action: "select_ref",
@@ -799,12 +1019,12 @@ async function actionSelectRef(
 /**
  * Execute an arbitrary Playwright script in a subprocess.
  *
- * The script is written to a temp file and executed via `node`. It receives
- * the browser's WebSocket endpoint via the BROWSER_WS_ENDPOINT env var,
- * allowing it to connect to the existing singleton browser session.
- *
- * Scripts should use `chromium.connectOverCDP(process.env.BROWSER_WS_ENDPOINT)`
- * to connect.
+ * The script is written to a temp file and executed via `node` in a fresh,
+ * isolated browser (a subprocess survives sync infinite loops — SIGKILL on
+ * timeout). The playwright module and the Chromium executable are resolved
+ * from THIS service and injected as absolute paths: a bare require('playwright')
+ * cannot resolve from a temp dir, which made every production call fail with
+ * "Cannot find module 'playwright'".
  */
 async function actionRunScript(
   _page: Page,
@@ -812,27 +1032,38 @@ async function actionRunScript(
 ) {
   if (!script) return { error: "Missing required parameter: script" };
 
-  // Ensure the browser is running and get its WebSocket endpoint
-  const browserInstance = await getBrowser();
-  const websocketEndpoint =
-    (
-      browserInstance as Browser & { "wsEndpoint"?: () => string }
-    )["wsEndpoint"]?.() || null;
+  const timeoutResult = coerceInteger(timeout, "timeout", {
+    min: 5_000,
+    max: 120_000,
+    fallback: BROWSER_SCRIPT_TIMEOUT_MS,
+  });
+  if (timeoutResult.error !== undefined) return { error: timeoutResult.error };
 
-  // Wrap the user script with boilerplate for connecting to our browser
+  let playwrightPath: string;
+  try {
+    playwrightPath = createRequire(import.meta.url).resolve("playwright");
+  } catch {
+    return { error: "Playwright module could not be resolved on the server" };
+  }
+
+  const launchOptions = {
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+    ...(CONFIG.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH && {
+      executablePath: CONFIG.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
+    }),
+  };
+
+  // Wrap the user script with boilerplate that launches an isolated browser
   const wrappedScript = `
-const { chromium } = require('playwright');
+const { chromium } = require(${JSON.stringify(playwrightPath)});
 
 (async () => {
-  const BROWSER_WS = process.env.BROWSER_WS_ENDPOINT;
-  let browser;
-  if (BROWSER_WS) {
-    browser = await chromium.connectOverCDP(BROWSER_WS);
-  } else {
-    browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
-  }
-  const context = browser.contexts()[0] || await browser.newContext();
-  const page = context.pages()[0] || await context.newPage();
+  const browser = await chromium.launch(${JSON.stringify(launchOptions)});
+  const context = await browser.newContext({
+    viewport: ${JSON.stringify(VIEWPORT)},
+  });
+  const page = await context.newPage();
 
   try {
     // ── User Script Start ──
@@ -840,9 +1071,9 @@ const { chromium } = require('playwright');
     // ── User Script End ──
   } catch (error) {
     console.error('Script error:', error.message);
-    process.exit(1);
+    process.exitCode = 1;
   } finally {
-    if (!BROWSER_WS) await browser.close();
+    await browser.close();
   }
 })();
 `;
@@ -856,12 +1087,7 @@ const { chromium } = require('playwright');
     scriptPath = join(temporaryDirectory, "script.cjs");
     await writeFile(scriptPath, wrappedScript, "utf-8");
 
-    // Execute in subprocess
-    const clampedTimeout = Math.min(
-      Math.max(timeout || BROWSER_SCRIPT_TIMEOUT_MS, 5_000),
-      120_000,
-    );
-    const result = await executeScript(scriptPath, websocketEndpoint, clampedTimeout);
+    const result = await executeScript(scriptPath, timeoutResult.value);
 
     return {
       action: "run_script",
@@ -883,13 +1109,22 @@ const { chromium } = require('playwright');
 }
 
 /**
+ * Map common script failure signatures to recovery hints for the model.
+ */
+function scriptErrorHint(stderr: string): string | undefined {
+  if (stderr.includes("await is only valid in async")) {
+    return "Your script body already runs inside an async function, so top-level await works — but helper functions you define must themselves be declared 'async' to use await inside them.";
+  }
+  if (stderr.includes("Cannot find module")) {
+    return "Only the 'playwright' module (pre-loaded as 'chromium', with 'browser', 'context' and 'page' ready) is available — you cannot require other packages.";
+  }
+  return undefined;
+}
+
+/**
  * Execute a Playwright script file in a subprocess.
  */
-function executeScript(
-  scriptPath: string,
-  websocketEndpoint: string | null,
-  timeoutMs: number,
-) {
+function executeScript(scriptPath: string, timeoutMs: number) {
   return new Promise<unknown>((resolve) => {
     const stdoutChunks: Buffer[] = [];
     const stderrChunks: Buffer[] = [];
@@ -902,7 +1137,6 @@ function executeScript(
       stdio: ["pipe", "pipe", "pipe"],
       env: {
         ...process.env,
-        "BROWSER_WS_ENDPOINT": websocketEndpoint || "",
         CI: "true",
         FORCE_COLOR: "0",
         NO_COLOR: "1",
@@ -938,6 +1172,7 @@ function executeScript(
 
       const stdout = Buffer.concat(stdoutChunks).toString("utf-8");
       const stderr = Buffer.concat(stderrChunks).toString("utf-8");
+      const hint = scriptErrorHint(stderr);
 
       resolve({
         success: exitCode === 0 && !timedOut,
@@ -951,6 +1186,7 @@ function executeScript(
             : stderr,
         exitCode: timedOut ? null : exitCode,
         timedOut,
+        ...(hint && { hint }),
         ...(timedOut && { error: `Script timed out after ${timeoutMs}ms` }),
       });
     }
@@ -1016,6 +1252,17 @@ export interface AgenticBrowserParams {
 }
 
 /**
+ * Actions that accept an optional `url` to navigate first in the same call,
+ * fusing the near-universal navigate → X round-trip pair.
+ */
+const URL_FUSABLE_ACTIONS = new Set([
+  "screenshot",
+  "snapshot",
+  "get_content",
+  "get_elements",
+]);
+
+/**
  * Execute a browser action.
  */
 export async function agenticBrowserAction(params: AgenticBrowserParams) {
@@ -1039,10 +1286,30 @@ export async function agenticBrowserAction(params: AgenticBrowserParams) {
     };
   }
 
+  // run_script executes in an isolated subprocess browser — no session needed
+  if (action === "run_script") {
+    return actionRunScript(null as unknown as Page, actionParams);
+  }
+
   const sessionId = requestedSessionId || "default";
 
   try {
     const session = await getSession(sessionId);
+
+    // Optional navigate-first fusion for read actions
+    if (
+      typeof actionParams.url === "string" &&
+      actionParams.url &&
+      URL_FUSABLE_ACTIONS.has(action)
+    ) {
+      const navResult = await actionNavigate(session.page, {
+        url: actionParams.url,
+      });
+      if ("error" in navResult) {
+        return { ...navResult, sessionId };
+      }
+    }
+
     const result = await handler(session.page, actionParams);
 
     return {

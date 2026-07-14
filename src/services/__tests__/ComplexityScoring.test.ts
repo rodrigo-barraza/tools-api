@@ -72,9 +72,17 @@ describe("Dynamic Complexity Scoring", () => {
     const executeShell = schemas.find((schema) => schema.name === "execute_shell");
     expect(executeShell?.intelligenceTier).toBe("high");
 
-    // control_browser must remain frontier
+    // control_browser dropped from frontier to high when the run_script
+    // action + script param moved out of its schema (2026-07): production
+    // usage showed its only real users are small local models, and the
+    // code-generation surface lives in execute_browser_script instead.
     const controlBrowser = schemas.find((schema) => schema.name === "control_browser");
-    expect(controlBrowser?.intelligenceTier).toBe("frontier");
+    expect(controlBrowser?.intelligenceTier).toBe("high");
+
+    const executeBrowserScript = schemas.find(
+      (schema) => schema.name === "execute_browser_script",
+    );
+    expect(executeBrowserScript?.intelligenceTier).toBe("high");
 
     // Simple tools must stay low
     const sleep = schemas.find((schema) => schema.name === "sleep");

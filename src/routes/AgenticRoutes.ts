@@ -809,13 +809,12 @@ router.post(
 router.post(
   "/browser/script",
   agenticHandler(async (req: Request) => {
-    const { script, sessionId, timeout } = req.body;
+    const { script, timeout } = req.body;
     if (!script || typeof script !== "string") {
       return { error: "Request body must include 'script' (string)" };
     }
     return agenticBrowserAction({
       action: "run_script",
-      sessionId,
       script,
       timeout,
     });

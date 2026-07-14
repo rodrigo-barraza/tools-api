@@ -12,6 +12,9 @@ export const BROWSER_DOM_TIMEOUT_MS = 5_000;
 export const BROWSER_SCRIPT_TIMEOUT_MS = 60_000;
 export const BROWSER_MAX_SCRIPT_OUTPUT = 256 * 1024;
 export const BROWSER_MAX_CONTENT_LENGTH = 100_000;
+export const BROWSER_MAX_SNAPSHOT_LENGTH = 30_000;
+export const BROWSER_MAX_EVALUATE_LENGTH = 20_000;
+export const BROWSER_WAIT_MAX_TIMEOUT_MS = 30_000;
 
 // ─── EVENT DOMAIN ───────────────────────────────────────────
 
