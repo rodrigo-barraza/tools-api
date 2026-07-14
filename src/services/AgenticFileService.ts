@@ -135,7 +135,7 @@ const BLOCKED_PATTERNS = [
 // ────────────────────────────────────────────────────────────
 
 import { MongoClient } from "mongodb";
-import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/service-library/mongo";
 
 let settingsClient: MongoClient | null = null;
 let cachedAllowEnvFiles = false;

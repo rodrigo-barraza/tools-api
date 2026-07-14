@@ -3,7 +3,8 @@
 import { performance } from "node:perf_hooks";
 import type { Request, Response, NextFunction } from "express";
 import logger from "../logger.ts";
-import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/service-library/mongo";
+import { IDENTITY_HEADERS } from "@rodrigo-barraza/utilities-library/taxonomy";
 import { getToolSchemas } from "../services/ToolSchemaService.ts";
 import { errorMessage } from "../utilities.ts";
 
@@ -207,17 +208,17 @@ export function toolCallLoggerMiddleware(
     if (!tool) return;
 
     // Extract caller context from headers (sent by Prism/Prism Client)
-    const callerProject = (req.headers["x-project"] as string) || null;
-    const callerUsername = (req.headers["x-username"] as string) || null;
-    const callerAgent = (req.headers["x-agent"] as string) || null;
-    const callerRequestId = (req.headers["x-request-id"] as string) || null;
+    const callerProject = (req.headers[IDENTITY_HEADERS.project] as string) || null;
+    const callerUsername = (req.headers[IDENTITY_HEADERS.username] as string) || null;
+    const callerAgent = (req.headers[IDENTITY_HEADERS.agent] as string) || null;
+    const callerRequestId = (req.headers[IDENTITY_HEADERS.requestId] as string) || null;
     const callerConversationId =
-      (req.headers["x-conversation-id"] as string) || null;
-    const callerIteration = req.headers["x-iteration"]
-      ? parseInt(req.headers["x-iteration"] as string, 10)
+      (req.headers[IDENTITY_HEADERS.conversationId] as string) || null;
+    const callerIteration = req.headers[IDENTITY_HEADERS.iteration]
+      ? parseInt(req.headers[IDENTITY_HEADERS.iteration] as string, 10)
       : null;
     const clientIp =
-      (req.headers["x-forwarded-for"] as string | undefined)
+      (req.headers[IDENTITY_HEADERS.forwardedFor] as string | undefined)
         ?.split(",")[0]
         ?.trim() ||
       req.ip ||

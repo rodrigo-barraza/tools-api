@@ -1,4 +1,4 @@
-import { AGENT_IDS } from "@rodrigo-barraza/utilities-library/taxonomy";
+import { AGENT_IDS, IDENTITY_HEADERS } from "@rodrigo-barraza/utilities-library/taxonomy";
 // ─── Cron + Remote Trigger System ───────────────────────────
 
 import CONFIG from "../config.ts";
@@ -119,8 +119,8 @@ export async function agenticScheduleCreate(data: ScheduleCreateData, username?:
       headers: {
         "Content-Type": "application/json",
         ...getTraceHeaders(),
-        "x-project": project,
-        "x-username": username || "system",
+        [IDENTITY_HEADERS.project]: project,
+        [IDENTITY_HEADERS.username]: username || "system",
       },
       body: JSON.stringify(body),
     });
@@ -162,8 +162,8 @@ export async function agenticScheduleList(
       method: "GET",
       headers: {
         ...getTraceHeaders(),
-        "x-project": project,
-        "x-username": username || "system",
+        [IDENTITY_HEADERS.project]: project,
+        [IDENTITY_HEADERS.username]: username || "system",
       },
     });
 
@@ -209,8 +209,8 @@ export async function agenticScheduleDelete(
         method: "DELETE",
         headers: {
           ...getTraceHeaders(),
-          "x-project": project,
-          "x-username": username || "system",
+          [IDENTITY_HEADERS.project]: project,
+          [IDENTITY_HEADERS.username]: username || "system",
         },
       },
     );
@@ -259,8 +259,8 @@ export async function agenticTriggerFire(
         headers: {
           "Content-Type": "application/json",
           ...getTraceHeaders(),
-          "x-project": project,
-          "x-username": username || "system",
+          [IDENTITY_HEADERS.project]: project,
+          [IDENTITY_HEADERS.username]: username || "system",
         },
         body: JSON.stringify({ payload }),
       },

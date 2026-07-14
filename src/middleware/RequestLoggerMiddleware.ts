@@ -2,7 +2,8 @@ import { performance } from "node:perf_hooks";
 import type { Request, Response, NextFunction } from "express";
 import { formatBytes } from "@rodrigo-barraza/utilities-library";
 import logger from "../logger.ts";
-import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/service-library/mongo";
+import { IDENTITY_HEADERS } from "@rodrigo-barraza/utilities-library/taxonomy";
 import { errorMessage } from "../utilities.ts";
 
 const COLLECTION = "requests";
@@ -65,7 +66,7 @@ export function requestLoggerMiddleware(
     const path = req.originalUrl;
     const status = res.statusCode;
     const clientIp =
-      (req.headers["x-forwarded-for"] as string | undefined)
+      (req.headers[IDENTITY_HEADERS.forwardedFor] as string | undefined)
         ?.split(",")[0]
         ?.trim() || req.ip;
 

@@ -2,6 +2,7 @@
 
 import { WebSocketServer, WebSocket } from "ws";
 import { getErrorMessage } from "@rodrigo-barraza/utilities-library";
+import { IDENTITY_HEADERS, AUTH_HEADERS } from "@rodrigo-barraza/utilities-library/taxonomy";
 import crypto from "node:crypto";
 import { resolve } from "node:path";
 import logger from "../logger.ts";
@@ -197,7 +198,7 @@ function translatePathForAgent(
 // Workspace Agent Secret (from MongoDB settings, cached)
 // ────────────────────────────────────────────────────────────
 
-import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/service-library/mongo";
 
 export async function resolveAgentSecret(): Promise<string | undefined> {
   try {
@@ -246,7 +247,7 @@ export function initAgentWebSocket(httpServer: Server) {
 
       // Auth check (shared across both endpoints)
       const incomingSecret =
-        req.headers["x-api-secret"] || url.searchParams.get("secret") || "";
+        req.headers[AUTH_HEADERS.apiSecret] || url.searchParams.get("secret") || "";
       const expectedSecret = await resolveAgentSecret();
 
       if (expectedSecret && incomingSecret !== expectedSecret) {
@@ -300,7 +301,7 @@ export function initAgentWebSocket(httpServer: Server) {
     "connection",
     (websocket: WebSocket & { isAlive?: boolean }, req: IncomingMessage) => {
       const clientIp =
-        (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
+        (req.headers[IDENTITY_HEADERS.forwardedFor] as string)?.split(",")[0]?.trim() ||
         req.socket.remoteAddress?.replace(/^::ffff:/, "");
 
       logger.info(`[AgentWS] New connection from ${clientIp}`);
@@ -342,7 +343,7 @@ export function initAgentWebSocket(httpServer: Server) {
     "connection",
     (websocket: WebSocket & { isAlive?: boolean }, req: IncomingMessage) => {
       const clientIp =
-        (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
+        (req.headers[IDENTITY_HEADERS.forwardedFor] as string)?.split(",")[0]?.trim() ||
         req.socket.remoteAddress?.replace(/^::ffff:/, "");
 
       logger.info(`[ClientWS] New client connection from ${clientIp}`);

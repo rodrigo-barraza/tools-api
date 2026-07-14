@@ -71,6 +71,7 @@ export function randomUserAgent() {
  * across tools-service get the single-source-of-truth version.
  */
 import { errorMessage } from "@rodrigo-barraza/utilities-library";
+import { IDENTITY_HEADERS } from "@rodrigo-barraza/utilities-library/taxonomy";
 export { errorMessage };
 
 // ─── XML Utilities ─────────────────────────────────────────────────
@@ -555,11 +556,11 @@ interface CallerContext {
  */
 export function extractCallerContext(req: Request): CallerContext {
   return {
-    project: (req.headers["x-project"] as string) || "tools-api",
-    username: (req.headers["x-username"] as string) || "system",
-    agent: (req.headers["x-agent"] as string) || null,
+    project: (req.headers[IDENTITY_HEADERS.project] as string) || "tools-api",
+    username: (req.headers[IDENTITY_HEADERS.username] as string) || "system",
+    agent: (req.headers[IDENTITY_HEADERS.agent] as string) || null,
     traceId: (req.headers["x-trace-id"] as string) || null,
     agentSessionId: (req.headers["x-agent-session-id"] as string) || null,
-    conversationId: (req.headers["x-conversation-id"] as string) || null,
+    conversationId: (req.headers[IDENTITY_HEADERS.conversationId] as string) || null,
   };
 }

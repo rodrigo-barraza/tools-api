@@ -1,6 +1,6 @@
 // ─── Persistent Task State Management ───────────────────────
 
-import { getDatabase } from "@rodrigo-barraza/utilities-library/mongo";
+import { getDatabase } from "@rodrigo-barraza/service-library/mongo";
 import logger from "../logger.ts";
 import type { WithId, Document } from "mongodb";
 import type {

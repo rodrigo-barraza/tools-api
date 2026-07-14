@@ -1,4 +1,5 @@
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
+import { IDENTITY_HEADERS } from "@rodrigo-barraza/utilities-library/taxonomy";
 import PromptLocaleService from "../services/PromptLocaleService.ts";
 // ─── Image Generation & Vision ──────────────────────────────
 
@@ -398,7 +399,7 @@ router.post(
       const descriptions: unknown[] = [];
 
       // Per-request dedup cache keyed by X-Request-Id header
-      const requestId = req.headers["x-request-id"] || "default";
+      const requestId = req.headers[IDENTITY_HEADERS.requestId] || "default";
       if (!visionCache.has(requestId)) {
         visionCache.set(requestId, new Map());
         setTimeout(() => visionCache.delete(requestId), VISION_CACHE_TTL_MS);

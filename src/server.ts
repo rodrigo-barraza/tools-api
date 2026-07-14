@@ -6,7 +6,7 @@ import express, {
 } from "express";
 import logger from "./logger.ts";
 import CONFIG, { applyLocation } from "./config.ts";
-import { connectDatabase } from "@rodrigo-barraza/utilities-library/mongo";
+import { connectDatabase } from "@rodrigo-barraza/service-library/mongo";
 import { initLocation } from "./services/LocationService.ts";
 import {
   requestLoggerMiddleware,
@@ -15,7 +15,7 @@ import {
 import { toolCallLoggerMiddleware } from "./middleware/ToolCallLoggerMiddleware.ts";
 import { fieldProjectionMiddleware } from "./middleware/FieldProjectionMiddleware.ts";
 import { createAuthMiddleware } from "@rodrigo-barraza/service-library";
-import { DEFAULT_USERNAME } from "@rodrigo-barraza/utilities-library/taxonomy";
+import { DEFAULT_USERNAME, CORS_ALLOWED_HEADERS_STRING } from "@rodrigo-barraza/utilities-library/taxonomy";
 
 // ─── Model Setup ───────────────────────────────────────────────────
 
@@ -110,7 +110,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   res.header("Access-Control-Allow-Credentials", "true");
   res.header(
     "Access-Control-Allow-Headers",
-    "Content-Type, X-Project, X-Username, X-Agent, X-Request-Id, X-Conversation-Id, X-Iteration, X-Workspace-Id, X-Workspace-Root, X-Workspace-Override",
+    CORS_ALLOWED_HEADERS_STRING,
   );
   res.header(
     "Access-Control-Allow-Methods",
@@ -207,7 +207,7 @@ app.get("/health", async (_req: Request, res: Response) => {
 
 async function start() {
   try {
-    await connectDatabase(CONFIG.MONGODB_URI!, CONFIG.MONGODB_DB_NAME);
+    await connectDatabase(CONFIG.MONGODB_URI!, { dbName: CONFIG.MONGODB_DB_NAME });
 
     // Resolve location from IP geolocation + NOAA (cached in DB, 24h TTL)
     const location = await initLocation();

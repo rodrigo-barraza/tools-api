@@ -1,4 +1,4 @@
-import { AGENT_IDS, DEFAULT_PROJECT } from "@rodrigo-barraza/utilities-library/taxonomy";
+import { AGENT_IDS, DEFAULT_PROJECT, IDENTITY_HEADERS } from "@rodrigo-barraza/utilities-library/taxonomy";
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { parseIntParam } from "@rodrigo-barraza/utilities-library";
 // ─── File System & Web Interaction Endpoints ────────────────
@@ -1079,7 +1079,7 @@ router.post(
     const agentSessionId =
       (req.headers["x-agent-session-id"] as string) || null;
     const conversationId =
-      (req.headers["x-conversation-id"] as string) || null;
+      (req.headers[IDENTITY_HEADERS.conversationId] as string) || null;
     const result = await agenticTaskCreate(project, {
       subject,
       description,
@@ -1116,7 +1116,7 @@ router.get(
         string | undefined
       >;
       const database = (
-        await import("@rodrigo-barraza/utilities-library/mongo")
+        await import("@rodrigo-barraza/service-library/mongo")
       ).getDatabase();
       const collection = database.collection<AgenticTask>("agent_tasks");
       const filter: Record<string, unknown> = {};
@@ -1200,7 +1200,7 @@ router.post(
     // Auto-inject agentSessionId and conversationId from Prism telemetry headers
     const agentSessionId = req.headers["x-agent-session-id"];
     if (agentSessionId) updates.agentSessionId = agentSessionId;
-    const conversationId = req.headers["x-conversation-id"];
+    const conversationId = req.headers[IDENTITY_HEADERS.conversationId];
     if (conversationId) updates.conversationId = conversationId as string;
     return agenticTaskUpdate(project, taskId, updates);
   }),
@@ -1275,9 +1275,9 @@ router.post(
     // Trusted context: arrives via X-headers (telemetry) and body injection
     // (ToolOrchestratorService injects project/agent/username from session ctx).
     // The model never provides these — they're stripped from the tool schema.
-    const project = req.headers["x-project"] || req.body.project || DEFAULT_PROJECT;
-    const agent = req.headers["x-agent"] || req.body.agent || AGENT_IDS.CODING;
-    const username = req.headers["x-username"] || req.body.username || null;
+    const project = req.headers[IDENTITY_HEADERS.project] || req.body.project || DEFAULT_PROJECT;
+    const agent = req.headers[IDENTITY_HEADERS.agent] || req.body.agent || AGENT_IDS.CODING;
+    const username = req.headers[IDENTITY_HEADERS.username] || req.body.username || null;
     const agentSessionId = req.headers["x-agent-session-id"] || null;
     try {
       const prismResponse = await fetch(
@@ -1568,7 +1568,7 @@ router.post(
       };
     }
     const enabledToolsHeader = req.headers["x-enabled-tools"];
-    const agentHeader = req.headers["x-agent"];
+    const agentHeader = req.headers[IDENTITY_HEADERS.agent];
     let enabledTools: string[] | undefined;
     if (
       enabledToolsHeader &&
@@ -1613,10 +1613,10 @@ router.post(
     if (!prompt || typeof prompt !== "string") {
       return { error: "Request body must include 'prompt' (string)" };
     }
-    const username = (req.headers["x-username"] as string) || undefined;
+    const username = (req.headers[IDENTITY_HEADERS.username] as string) || undefined;
     const providerFromHeader = (req.headers["x-provider"] as string) || undefined;
     const modelFromHeader = (req.headers["x-model"] as string) || undefined;
-    const agentFromHeader = (req.headers["x-agent"] as string) || undefined;
+    const agentFromHeader = (req.headers[IDENTITY_HEADERS.agent] as string) || undefined;
     const enabledToolsHeader = req.headers["x-enabled-tools"];
     let enabledTools: string[] | undefined;
     if (enabledToolsHeader && typeof enabledToolsHeader === "string") {
@@ -1650,7 +1650,7 @@ router.post(
     if (!project || typeof project !== "string") {
       return { error: "Request body must include 'project' (string)" };
     }
-    const username = (req.headers["x-username"] as string) || undefined;
+    const username = (req.headers[IDENTITY_HEADERS.username] as string) || undefined;
     return agenticScheduleList(project, undefined, username);
   }),
 );
@@ -1666,7 +1666,7 @@ router.post(
     if (!scheduleId) {
       return { error: "Request body must include 'scheduleId' (string)" };
     }
-    const username = (req.headers["x-username"] as string) || undefined;
+    const username = (req.headers[IDENTITY_HEADERS.username] as string) || undefined;
     return agenticScheduleDelete(project, scheduleId, username);
   }),
 );
@@ -1682,7 +1682,7 @@ router.post(
     if (!triggerName || typeof triggerName !== "string") {
       return { error: "Request body must include 'triggerName' (string)" };
     }
-    const username = (req.headers["x-username"] as string) || undefined;
+    const username = (req.headers[IDENTITY_HEADERS.username] as string) || undefined;
     return agenticTriggerFire(project, triggerName, payload || {}, username);
   }),
 );
@@ -1692,10 +1692,10 @@ router.post(
   "/schedule/create",
   agenticHandler(async (req: Request) => {
     const { project, name, schedule, prompt, type, agent, model } = req.body;
-    const username = (req.headers["x-username"] as string) || undefined;
+    const username = (req.headers[IDENTITY_HEADERS.username] as string) || undefined;
     const providerFromHeader = (req.headers["x-provider"] as string) || undefined;
     const modelFromHeader = (req.headers["x-model"] as string) || undefined;
-    const agentFromHeader = (req.headers["x-agent"] as string) || undefined;
+    const agentFromHeader = (req.headers[IDENTITY_HEADERS.agent] as string) || undefined;
     return agenticScheduleCreate({
       project,
       name,
@@ -1712,7 +1712,7 @@ router.post(
   "/schedule/list",
   agenticHandler(async (req: Request) => {
     const { project } = req.body;
-    const username = (req.headers["x-username"] as string) || undefined;
+    const username = (req.headers[IDENTITY_HEADERS.username] as string) || undefined;
     return agenticScheduleList(project, undefined, username);
   }),
 );
@@ -1720,7 +1720,7 @@ router.post(
   "/schedule/delete",
   agenticHandler(async (req: Request) => {
     const { project, scheduleId } = req.body;
-    const username = (req.headers["x-username"] as string) || undefined;
+    const username = (req.headers[IDENTITY_HEADERS.username] as string) || undefined;
     return agenticScheduleDelete(project, scheduleId, username);
   }),
 );
@@ -1728,7 +1728,7 @@ router.post(
   "/trigger/fire",
   agenticHandler(async (req: Request) => {
     const { project, triggerName, payload } = req.body;
-    const username = (req.headers["x-username"] as string) || undefined;
+    const username = (req.headers[IDENTITY_HEADERS.username] as string) || undefined;
     return agenticTriggerFire(project, triggerName, payload || {}, username);
   }),
 );
