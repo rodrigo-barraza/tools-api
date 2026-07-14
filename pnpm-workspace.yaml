@@ -1,3 +1,4 @@
+blockExoticSubdeps: false
 allowBuilds:
   '@rodrigo-barraza/utilities-library': true
   canvas: true
