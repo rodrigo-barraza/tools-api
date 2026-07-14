@@ -6,6 +6,7 @@
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
+import { sleep } from "@rodrigo-barraza/utilities-library";
 
 const LOG_PREFIX = "🧲 QBittorrent";
 
@@ -492,7 +493,7 @@ export async function addTorrent(
   logger.info(`${LOG_PREFIX} — Torrent added: ${urls.slice(0, 80)}...`);
 
   // Brief delay for magnet metadata resolution before re-fetching
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  await sleep(500);
   return listTorrents();
 }
 

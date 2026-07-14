@@ -3,6 +3,7 @@
 import CONFIG from "../../config.ts";
 import { USER_AGENT } from "../../constants.ts";
 import logger from "../../logger.ts";
+import { sleep } from "@rodrigo-barraza/utilities-library";
 
 // ─── Constants ─────────────────────────────────────────────────────
 
@@ -120,7 +121,7 @@ async function waitForRateLimit(): Promise<void> {
           requestTimestamps.length,
           RATE_LIMIT_MAX_REQUESTS,
         );
-        await new Promise((resolve) => setTimeout(resolve, waitDuration));
+        await sleep(waitDuration);
         pruneExpiredTimestamps();
       }
     }

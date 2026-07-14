@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto";
+import { clamp } from "@rodrigo-barraza/utilities-library";
 import logger from "../logger.ts";
 import { INSTRUMENT_PRESETS } from "./SoundSynthesizerService.ts";
 import type {
@@ -148,17 +149,17 @@ export function createTrackerSession(
   const now = Date.now();
 
   const clampedDuration = options.duration != null
-    ? clampNumber(options.duration, 0.1, 60.0)
+    ? clamp(options.duration, 0.1, 60.0)
     : undefined;
 
   const session: TrackerSession = {
     sessionId,
-    tempo: clampNumber(options.tempo ?? 120, 20, 300),
+    tempo: clamp(options.tempo ?? 120, 20, 300),
     timeSignature: options.timeSignature ?? [4, 4],
-    linesPerBeat: clampNumber(options.linesPerBeat ?? 4, 1, 16),
-    sampleRate: clampNumber(options.sampleRate ?? 44100, 8000, 48000),
-    swing: clampNumber(options.swing ?? 0, 0, 1),
-    humanize: clampNumber(options.humanize ?? 0, 0, 1),
+    linesPerBeat: clamp(options.linesPerBeat ?? 4, 1, 16),
+    sampleRate: clamp(options.sampleRate ?? 44100, 8000, 48000),
+    swing: clamp(options.swing ?? 0, 0, 1),
+    humanize: clamp(options.humanize ?? 0, 0, 1),
     duration: clampedDuration,
     channels: [],
     createdAt: now,
@@ -211,7 +212,7 @@ export function addTrackerChannel(
     channelId: options.channelId,
     instrument: options.instrument,
     waveform: options.waveform,
-    volume: clampNumber(options.volume ?? 1.0, 0, 2),
+    volume: clamp(options.volume ?? 1.0, 0, 2),
     effects: options.effects ?? {},
     nodes: options.nodes,
     nodeChain: options.nodeChain,
@@ -668,8 +669,4 @@ function lookAheadForNoteEnd(
   }
 
   return steps;
-}
-
-function clampNumber(value: number, minimum: number, maximum: number): number {
-  return Math.min(Math.max(value, minimum), maximum);
 }

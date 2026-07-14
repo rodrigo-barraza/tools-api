@@ -1,4 +1,4 @@
-import { MILLISECONDS_PER_DAY } from "@rodrigo-barraza/utilities-library";
+import { MILLISECONDS_PER_DAY, escapeRegex } from "@rodrigo-barraza/utilities-library";
 import {
   getWebcams,
   getWebcamsLastUpdatedByKey,
@@ -24,10 +24,6 @@ export interface WebcamOptions {
 
 function normalizeGeo(str: string): string {
   return str.toLowerCase().replace(/-/g, " ").trim();
-}
-
-function escapeRegExp(string: string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 export async function getPublicWebcams({
@@ -114,16 +110,16 @@ export async function getPublicWebcams({
   // 3. Build MongoDB query
   const dbQuery: Record<string, unknown> = {};
   if (activeCity) {
-    dbQuery.city = { $regex: new RegExp(`^${escapeRegExp(activeCity)}$`, "i") };
+    dbQuery.city = { $regex: new RegExp(`^${escapeRegex(activeCity)}$`, "i") };
   }
   if (state) {
-    dbQuery.state = { $regex: new RegExp(`^${escapeRegExp(state)}$`, "i") };
+    dbQuery.state = { $regex: new RegExp(`^${escapeRegex(state)}$`, "i") };
   }
   if (province) {
-    dbQuery.province = { $regex: new RegExp(`^${escapeRegExp(province)}$`, "i") };
+    dbQuery.province = { $regex: new RegExp(`^${escapeRegex(province)}$`, "i") };
   }
   if (region) {
-    dbQuery.region = { $regex: new RegExp(`^${escapeRegExp(region)}$`, "i") };
+    dbQuery.region = { $regex: new RegExp(`^${escapeRegex(region)}$`, "i") };
   }
   if (countryCode) {
     dbQuery.country = countryCode;
