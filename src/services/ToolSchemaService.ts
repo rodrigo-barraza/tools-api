@@ -330,12 +330,8 @@ const TOOL_DOMAINS = {
   read_file: "Core Workspace Tools",
   write_file: "Core Workspace Tools",
   replace_in_file: "Core Workspace Tools",
-  replace_file_block: "Core Workspace Tools",
-  replace_file_regions: "Core Workspace Tools",
-  patch_file: "Core Workspace Tools",
   read_files: "Core Workspace Tools",
   get_file_info: "Core Workspace Tools",
-  diff_files: "Core Workspace Tools",
   move_file: "Core Workspace Tools",
   delete_file: "Core Workspace Tools",
 
@@ -367,9 +363,6 @@ const TOOL_DOMAINS = {
   // Agentic — Browser Automation
   control_browser: "Browser",
   execute_browser_script: "Browser",
-
-  // Agentic — Code Intelligence (LSP)
-  query_language_server: "Core Workspace Tools",
 
   // Agentic — Task Management
   create_task: "Core Task Tools",
@@ -758,12 +751,8 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   read_file: "📄",
   write_file: ["✏️", "💻"],
   replace_in_file: ["🔧", "📄"],
-  replace_file_block: ["🧱", "📄"],
-  replace_file_regions: ["🩹", "📄"],
-  patch_file: "🩹",
   read_files: "📑",
   get_file_info: ["📄", "ℹ️"],
-  diff_files: ["🔀", "📄"],
   move_file: "📂",
   delete_file: ["💻", "🗑️"],
   edit_notebook: "📓",
@@ -786,7 +775,6 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   run_git: ["📦", "🔀"],
   control_browser: ["🌐", "🖱️"],
   execute_browser_script: ["🌐", "📜"],
-  query_language_server: ["🧩", "💻"],
   create_task: "➕",
   get_task: ["📋", "📌"],
   list_tasks: ["📝", "📋"],
