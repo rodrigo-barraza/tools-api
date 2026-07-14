@@ -16,7 +16,7 @@ importers:
         version: 1.29.0(zod@4.4.3)
       '@rodrigo-barraza/utilities-library':
         specifier: github:rodrigo-barraza/utilities-library#master
-        version: https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/c27b5796b79d8fe763253b9271bfaaec97a2e9df(express@5.2.1)(socks@2.8.9)
+        version: https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/eeb0b30253298c71873ee307c7d75d3b2dc30386(express@5.2.1)(socks@2.8.9)
       ajv:
         specifier: ^8.20.0
         version: 8.20.0
@@ -858,8 +858,8 @@ packages:
   '@paralleldrive/cuid2@2.3.1':
     resolution: {integrity: sha512-XO7cAxhnTZl0Yggq6jOgjiOHhbgcO4NqFqwSmQpjK3b6TEE6Uj/jfSk6wzYyemh3+I0sHirKSetjQwn5cZktFw==}
 
-  '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/c27b5796b79d8fe763253b9271bfaaec97a2e9df':
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/c27b5796b79d8fe763253b9271bfaaec97a2e9df}
+  '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/eeb0b30253298c71873ee307c7d75d3b2dc30386':
+    resolution: {gitHosted: true, integrity: sha512-MehH1YBqIi0R2B5TYuRLNHYkL6xxZPUmM9KU+dYCS8eiTxqT/QB1QBOXLcf7WRr4jrLA52lFvudzqJKMK4crNQ==, tarball: https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/eeb0b30253298c71873ee307c7d75d3b2dc30386}
     version: 0.4.0
     peerDependencies:
       express: '>=5.0.0'
@@ -4522,7 +4522,7 @@ snapshots:
     dependencies:
       '@noble/hashes': 1.8.0
 
-  '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/c27b5796b79d8fe763253b9271bfaaec97a2e9df(express@5.2.1)(socks@2.8.9)':
+  '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/eeb0b30253298c71873ee307c7d75d3b2dc30386(express@5.2.1)(socks@2.8.9)':
     dependencies:
       mongodb: 7.3.0(socks@2.8.9)
       nanoid: 5.1.16
