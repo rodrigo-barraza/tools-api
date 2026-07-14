@@ -37,7 +37,14 @@ export function getAnalyticsTools(
           breakdown: {
             type: "string",
             description: translate("get_web_analytics.params.breakdown"),
-            enum: ["overview", "timeseries", "pages", "sources", "geo", "devices"],
+            enum: [
+              "overview",
+              "timeseries",
+              "pages",
+              "sources",
+              "geo",
+              "devices",
+            ],
           },
         },
         required: [],

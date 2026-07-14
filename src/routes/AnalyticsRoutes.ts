@@ -30,7 +30,8 @@ router.get(
     const property = request.query.property as string | undefined;
     const period = (request.query.period as string | undefined) ?? "30d";
     const source = (request.query.source as string | undefined) ?? "all";
-    const breakdown = (request.query.breakdown as string | undefined) ?? "overview";
+    const breakdown =
+      (request.query.breakdown as string | undefined) ?? "overview";
 
     if (!VALID_PERIODS.includes(period as AnalyticsPeriod)) {
       return response.status(400).json({

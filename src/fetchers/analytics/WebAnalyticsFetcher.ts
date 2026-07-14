@@ -80,14 +80,18 @@ async function portalGet<T = unknown>(path: string): Promise<T> {
 
     if (!response.ok) {
       const errorBody = await response.text().catch(() => "");
-      throw new Error(`Portal API ${response.status}: ${errorBody || response.statusText}`);
+      throw new Error(
+        `Portal API ${response.status}: ${errorBody || response.statusText}`,
+      );
     }
 
     return (await response.json()) as T;
   } catch (error: unknown) {
     clearTimeout(timeout);
     if (error instanceof Error && error.name === "AbortError") {
-      throw new Error(`Portal API timeout after ${REQUEST_TIMEOUT_MS}ms: ${fullUrl}`);
+      throw new Error(
+        `Portal API timeout after ${REQUEST_TIMEOUT_MS}ms: ${fullUrl}`,
+      );
     }
     throw error;
   }
@@ -109,7 +113,7 @@ async function safeGet<T = unknown>(path: string): Promise<T | null> {
 async function safeSessionsGet<T = unknown>(path: string): Promise<T | null> {
   const response = await safeGet<{ success?: boolean; data?: T }>(path);
   if (!response) return null;
-  return (response.data ?? (response as unknown as T)) ?? null;
+  return response.data ?? (response as unknown as T) ?? null;
 }
 
 // ─── Source enumeration ────────────────────────────────────────
@@ -136,7 +140,9 @@ async function listGaProperties(): Promise<GaProperty[]> {
   return response?.properties ?? [];
 }
 
-async function listSessionsProjects(period: string): Promise<SessionsProject[]> {
+async function listSessionsProjects(
+  period: string,
+): Promise<SessionsProject[]> {
   const data = await safeSessionsGet<SessionsProject[]>(
     `/session-analytics/projects?period=${encodeURIComponent(period)}`,
   );
@@ -257,7 +263,9 @@ interface SessionsOverviewPayload {
   bounceRate?: number; // 0..100
 }
 
-function normalizeSessionsOverview(session: SessionsOverviewPayload): NormalizedOverview {
+function normalizeSessionsOverview(
+  session: SessionsOverviewPayload,
+): NormalizedOverview {
   return {
     sessions: session.totalSessions ?? 0,
     pageviews: session.totalPageViews ?? 0,
@@ -275,31 +283,46 @@ function normalizeSessionsOverview(session: SessionsOverviewPayload): Normalized
 
 const BREAKDOWN_ENDPOINTS: Record<
   AnalyticsBreakdown,
-  { ga: (propertyId: string, period: string) => string; sessions: (projectId: string, period: string) => string }
+  {
+    ga: (propertyId: string, period: string) => string;
+    sessions: (projectId: string, period: string) => string;
+  }
 > = {
   overview: {
-    ga: (id, p) => `/google-analytics/${encodeURIComponent(id)}/overview?period=${p}`,
-    sessions: (k, p) => `/session-analytics/overview?projectId=${encodeURIComponent(k)}&period=${p}`,
+    ga: (id, p) =>
+      `/google-analytics/${encodeURIComponent(id)}/overview?period=${p}`,
+    sessions: (k, p) =>
+      `/session-analytics/overview?projectId=${encodeURIComponent(k)}&period=${p}`,
   },
   timeseries: {
-    ga: (id, p) => `/google-analytics/${encodeURIComponent(id)}/timeseries?period=${p}`,
-    sessions: (k, p) => `/session-analytics/timeseries?projectId=${encodeURIComponent(k)}&period=${p}`,
+    ga: (id, p) =>
+      `/google-analytics/${encodeURIComponent(id)}/timeseries?period=${p}`,
+    sessions: (k, p) =>
+      `/session-analytics/timeseries?projectId=${encodeURIComponent(k)}&period=${p}`,
   },
   pages: {
-    ga: (id, p) => `/google-analytics/${encodeURIComponent(id)}/pages?period=${p}`,
-    sessions: (k, p) => `/session-analytics/pages?projectId=${encodeURIComponent(k)}&period=${p}`,
+    ga: (id, p) =>
+      `/google-analytics/${encodeURIComponent(id)}/pages?period=${p}`,
+    sessions: (k, p) =>
+      `/session-analytics/pages?projectId=${encodeURIComponent(k)}&period=${p}`,
   },
   sources: {
-    ga: (id, p) => `/google-analytics/${encodeURIComponent(id)}/sources?period=${p}`,
-    sessions: (k, p) => `/session-analytics/referrers?projectId=${encodeURIComponent(k)}&period=${p}`,
+    ga: (id, p) =>
+      `/google-analytics/${encodeURIComponent(id)}/sources?period=${p}`,
+    sessions: (k, p) =>
+      `/session-analytics/referrers?projectId=${encodeURIComponent(k)}&period=${p}`,
   },
   geo: {
-    ga: (id, p) => `/google-analytics/${encodeURIComponent(id)}/geography?period=${p}`,
-    sessions: (k, p) => `/session-analytics/geo?projectId=${encodeURIComponent(k)}&period=${p}`,
+    ga: (id, p) =>
+      `/google-analytics/${encodeURIComponent(id)}/geography?period=${p}`,
+    sessions: (k, p) =>
+      `/session-analytics/geo?projectId=${encodeURIComponent(k)}&period=${p}`,
   },
   devices: {
-    ga: (id, p) => `/google-analytics/${encodeURIComponent(id)}/devices?period=${p}`,
-    sessions: (k, p) => `/session-analytics/devices?projectId=${encodeURIComponent(k)}&period=${p}`,
+    ga: (id, p) =>
+      `/google-analytics/${encodeURIComponent(id)}/devices?period=${p}`,
+    sessions: (k, p) =>
+      `/session-analytics/devices?projectId=${encodeURIComponent(k)}&period=${p}`,
   },
 };
 
@@ -329,7 +352,9 @@ async function buildOverviewProperty(
       ? safeGet<GaOverviewPayload>(endpoints.ga(meta.gaPropertyId, period))
       : Promise.resolve(null),
     includeSessions && meta.hasSessions
-      ? safeSessionsGet<SessionsOverviewPayload>(endpoints.sessions(meta.key, period))
+      ? safeSessionsGet<SessionsOverviewPayload>(
+          endpoints.sessions(meta.key, period),
+        )
       : Promise.resolve(null),
   ]);
 
@@ -390,10 +415,14 @@ async function buildBreakdownProperty(
 
   const [google, firstParty] = await Promise.all([
     includeGoogle && meta.gaPropertyId
-      ? safeGet<Record<string, unknown>>(endpoints.ga(meta.gaPropertyId, period))
+      ? safeGet<Record<string, unknown>>(
+          endpoints.ga(meta.gaPropertyId, period),
+        )
       : Promise.resolve(null),
     includeSessions && meta.hasSessions
-      ? safeSessionsGet<Record<string, unknown>>(endpoints.sessions(meta.key, period))
+      ? safeSessionsGet<Record<string, unknown>>(
+          endpoints.sessions(meta.key, period),
+        )
       : Promise.resolve(null),
   ]);
 
@@ -434,10 +463,14 @@ export interface WebAnalyticsResult {
 export async function getWebAnalytics(
   options: WebAnalyticsOptions = {},
 ): Promise<WebAnalyticsResult> {
-  const period: AnalyticsPeriod = VALID_PERIODS.includes(options.period as AnalyticsPeriod)
+  const period: AnalyticsPeriod = VALID_PERIODS.includes(
+    options.period as AnalyticsPeriod,
+  )
     ? (options.period as AnalyticsPeriod)
     : "30d";
-  const source: AnalyticsSource = VALID_SOURCES.includes(options.source as AnalyticsSource)
+  const source: AnalyticsSource = VALID_SOURCES.includes(
+    options.source as AnalyticsSource,
+  )
     ? (options.source as AnalyticsSource)
     : "all";
   const breakdown: AnalyticsBreakdown = VALID_BREAKDOWNS.includes(
@@ -460,11 +493,15 @@ export async function getWebAnalytics(
 
   // A `source` filter also restricts which properties appear at all:
   // google-only excludes sessions-only sites, and vice versa.
-  if (source === "google") candidates = candidates.filter((meta) => meta.gaPropertyId);
-  if (source === "firstParty") candidates = candidates.filter((meta) => meta.hasSessions);
+  if (source === "google")
+    candidates = candidates.filter((meta) => meta.gaPropertyId);
+  if (source === "firstParty")
+    candidates = candidates.filter((meta) => meta.hasSessions);
 
   if (options.property) {
-    candidates = candidates.filter((meta) => matchesFilter(meta, options.property!));
+    candidates = candidates.filter((meta) =>
+      matchesFilter(meta, options.property!),
+    );
   }
 
   candidates.sort((a, b) => a.key.localeCompare(b.key));
@@ -473,13 +510,21 @@ export async function getWebAnalytics(
     candidates.map((meta) =>
       breakdown === "overview"
         ? buildOverviewProperty(meta, period, includeGoogle, includeSessions)
-        : buildBreakdownProperty(meta, breakdown, period, includeGoogle, includeSessions),
+        : buildBreakdownProperty(
+            meta,
+            breakdown,
+            period,
+            includeGoogle,
+            includeSessions,
+          ),
     ),
   );
 
   const notes: string[] = [];
   if (!isAnalyticsConfigured()) {
-    notes.push("PORTAL_SERVICE_URL is not configured; no analytics sources are reachable.");
+    notes.push(
+      "PORTAL_SERVICE_URL is not configured; no analytics sources are reachable.",
+    );
   }
   if (options.property && properties.length === 0) {
     notes.push(`No web property matched "${options.property}".`);
