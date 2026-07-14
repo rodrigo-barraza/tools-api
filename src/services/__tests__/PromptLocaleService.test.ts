@@ -258,7 +258,7 @@ describe("PromptLocaleService — Common Params Shared Keys", () => {
     { key: "tools.common.params.mediaType", expectedValue: "Movie or TV show" },
     { key: "tools.common.params.queryMode", expectedValue: "Query mode" },
     { key: "tools.common.params.searchQuery", expectedValue: "Search query (action=search)" },
-    { key: "tools.common.params.backgroundColorDefault", expectedValue: "Background color (default: '#0f172a')" },
+    { key: "tools.common.params.backgroundColorDefault", expectedValue: "Background color (default: '#4c4c4c' neutral viewport grey; create_3d derives it from the environment preset)" },
     { key: "tools.common.params.overlayTitle", expectedValue: "Title displayed in the overlay" },
     { key: "tools.common.params.cssColor", expectedValue: "CSS color" },
     { key: "tools.common.params.optionalName", expectedValue: "Optional name" },

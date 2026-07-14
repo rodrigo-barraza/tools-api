@@ -11,6 +11,7 @@ import {
   getDefaultValue,
   resolveAnimatedProperties,
   getPathPointAt,
+  buildEngineEmbedScript,
   VectorLayer,
   LinearGradient,
 } from "../../utilities/VectorAnimationEngine.ts";
@@ -271,6 +272,70 @@ describe("VectorAnimationEngine Calculations", () => {
       } finally {
         globalObject.document = originalDocument;
       }
+    });
+  });
+
+  // The embed player is built by serializing engine functions with
+  // Function.toString(), which drops closures over module-level symbols
+  // (NAMED_COLORS, pathCache, interpolateNumber). These tests execute the
+  // serialized script the way the browser does — importing the functions
+  // directly would never catch a missing declaration.
+  describe("Embed Script Serialization", () => {
+    type EmbedEngine = {
+      interpolate: typeof interpolate;
+      parseColorToRgba: typeof parseColorToRgba;
+      interpolateGradient: typeof interpolateGradient;
+      resolveAnimatedProperties: typeof resolveAnimatedProperties;
+      getPathPointAt: typeof getPathPointAt;
+    };
+
+    function evaluateEmbedScript(): EmbedEngine {
+      const script = buildEngineEmbedScript();
+      return new Function(
+        `"use strict"; ${script}; return { interpolate, parseColorToRgba, interpolateGradient, resolveAnimatedProperties, getPathPointAt };`,
+      )() as EmbedEngine;
+    }
+
+    it("evaluates without ReferenceError and interpolates numbers (production blank-canvas regression)", () => {
+      const engine = evaluateEmbedScript();
+      expect(engine.interpolate(0, 100, 0.5)).toBe(50);
+    });
+
+    it("resolves animated properties between two keyframes like the player's renderFrame", () => {
+      const engine = evaluateEmbedScript();
+      const layer: VectorLayer = {
+        id: "ball",
+        shapeType: "circle",
+        shapeData: { radius: 40 },
+        fillColor: "#38bdf8",
+        keyframes: [
+          { time: 0, easing: "linear", properties: { y: 500 } },
+          { time: 2, easing: "linear", properties: { y: 100 } },
+        ],
+      };
+      const props = engine.resolveAnimatedProperties(layer, 1);
+      expect(props.y).toBe(300);
+    });
+
+    it("parses named colors via the serialized NAMED_COLORS table", () => {
+      const engine = evaluateEmbedScript();
+      expect(engine.parseColorToRgba("red")).toEqual({ r: 255, g: 0, b: 0, a: 1 });
+    });
+
+    it("interpolates gradients via the serialized interpolateNumber helper", () => {
+      const engine = evaluateEmbedScript();
+      const gradientA: LinearGradient = { type: "linear", x1: 0, y1: 0, x2: 100, y2: 0, stops: [{ offset: 0, color: "#000000" }] };
+      const gradientB: LinearGradient = { type: "linear", x1: 0, y1: 0, x2: 200, y2: 0, stops: [{ offset: 1, color: "#ffffff" }] };
+      const mid = engine.interpolateGradient(gradientA, gradientB, 0.5) as LinearGradient;
+      expect(mid.x2).toBe(150);
+      expect(mid.stops?.[0].offset).toBe(0.5);
+    });
+
+    it("resolves motion paths via the serialized pathCache (non-DOM fallback)", () => {
+      const engine = evaluateEmbedScript();
+      const point = engine.getPathPointAt("M 0 0 L 100 100", 0.5);
+      expect(point.x).toBe(50);
+      expect(point.y).toBe(50);
     });
   });
 });

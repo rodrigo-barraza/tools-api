@@ -3,7 +3,7 @@
 // utilizing optimized GPU-based InstancedMesh for voxel grid rendering.
 
 import { buildEmbedHtml, escapeHtml, sanitizeCssColor, toEmbedScriptJson } from "../utilities.ts";
-import { THREE_JS_CDN } from "./ThreeDimensionalBaseService.ts";
+import { THREE_JS_CDN, DEFAULT_VIEWPORT_BACKGROUND } from "./ThreeDimensionalBaseService.ts";
 
 // ─── Constants ─────────────────────────────────────────────────
 
@@ -686,7 +686,7 @@ export function buildVoxelEmbedHtml(input: VoxelBuildInput): string {
     flatShading = true,
     showGrid = true,
     showAxes = false,
-    background = "#0f172a",
+    background = DEFAULT_VIEWPORT_BACKGROUND,
     autoRotate = true,
     autoRotateSpeed = 1.0,
     voxelSize = 0.95, // leave small margin default to make individual voxels visible
@@ -722,7 +722,7 @@ export function buildVoxelEmbedHtml(input: VoxelBuildInput): string {
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
-    background: ${sanitizeCssColor(background, "#0f172a")};
+    background: ${sanitizeCssColor(background, DEFAULT_VIEWPORT_BACKGROUND)};
   }
   #scene-container {
     width: 100%;
@@ -926,7 +926,7 @@ controls.update();
 // ── Grid & Axes ──
 if (OPTIONS.showGrid) {
   const gridSize = Math.ceil(boundingRadius * 3.5);
-  const grid = new THREE.GridHelper(gridSize, gridSize, 0x334155, 0x1e293b);
+  const grid = new THREE.GridHelper(gridSize, gridSize, 0x8a8a8a, 0x606060);
   grid.position.set(centerX, minY - size / 2, centerZ);
   scene.add(grid);
 }

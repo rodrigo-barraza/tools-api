@@ -369,10 +369,11 @@ router.get("/map/embed", asyncHandler(async (req: Request, res: Response) => {
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(html);
 }));
+const MAX_MAP_MARKERS = 500;
 router.get(
   "/map",
   asyncHandler(async (req: Request, res: Response) => {
-    const { markers, zoom, maptype } = req.query as Record<
+    const { markers, zoom, maptype, mapId } = req.query as Record<
       string,
       string | undefined
     >;
@@ -398,9 +399,45 @@ router.get(
           .status(400)
           .json({ error: "'markers' must be a non-empty array" });
       }
+
+      // Iterative mode: append new markers to a previously created map.
+      let existing: { markers: MapMarker[] } | null = null;
+      if (mapId !== undefined && mapId !== "") {
+        if (mapId === "null" || mapId === "undefined") {
+          return res.status(400).json({
+            error:
+              `Invalid mapId (got: ${JSON.stringify(mapId)}). Pass the exact mapId string ` +
+              `returned by a previous call, or omit it to create a new map.`,
+          });
+        }
+        existing = await mapStore.getWithFallback(mapId);
+        if (!existing) {
+          return res.status(400).json({
+            error:
+              `Map '${mapId}' not found or expired. Omit mapId and resend all markers to ` +
+              `create a new map — the response returns a mapId you can pass back to add more.`,
+          });
+        }
+      }
+
+      const allMarkers = existing
+        ? [...existing.markers, ...markerList]
+        : markerList;
+      if (allMarkers.length > MAX_MAP_MARKERS) {
+        return res.status(400).json({
+          error: `Map would have ${allMarkers.length} markers (max ${MAX_MAP_MARKERS}).`,
+        });
+      }
+
       // Store markers and build a short embed URL
-      const mapId = storeMarkers(markerList);
-      const embedParams = new URLSearchParams({ id: mapId });
+      let activeMapId: string;
+      if (existing && mapId) {
+        activeMapId = mapId;
+        mapStore.setWithId(activeMapId, { markers: allMarkers });
+      } else {
+        activeMapId = storeMarkers(allMarkers);
+      }
+      const embedParams = new URLSearchParams({ id: activeMapId });
       if (zoom) embedParams.set("zoom", zoom);
       if (maptype) embedParams.set("maptype", maptype);
       const mapEmbedUrl = buildLocalUrl(
@@ -408,9 +445,15 @@ router.get(
         Object.fromEntries(embedParams),
       );
       res.json({
+        message:
+          `Map ${existing ? "extended" : "created"}: ${allMarkers.length} marker(s). The ` +
+          `user can see this version now. To add more markers, call again with mapId ` +
+          `'${activeMapId}' and only the new markers.`,
         mapEmbedUrl,
         display: buildDisplay("embed", mapEmbedUrl, { height: 360, title: "Map" }),
-        markerCount: markerList.length,
+        mapId: activeMapId,
+        markerCount: allMarkers.length,
+        newMarkerCount: markerList.length,
       });
     } catch (error: unknown) {
       res

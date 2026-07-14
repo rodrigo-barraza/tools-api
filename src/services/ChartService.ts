@@ -15,7 +15,7 @@ const CHART_HEIGHT = 500;
 const renderer = new ChartJSNodeCanvas({
   width: CHART_WIDTH,
   height: CHART_HEIGHT,
-  backgroundColour: "#0f172a",
+  backgroundColour: "#ffffff",
 });
 
 // ─── Persistent Chart Store ────────────────────────────────────
@@ -24,6 +24,11 @@ const chartStore = new PersistentStore<ChartConfig>("chart", MILLISECONDS_PER_HO
 
 export function storeChart(chartConfig: ChartConfig): string {
   return chartStore.set(chartConfig);
+}
+
+/** Store or replace a chart under a stable ID — used by iterative chart building. */
+export function storeChartWithId(id: string, chartConfig: ChartConfig): void {
+  chartStore.setWithId(id, chartConfig);
 }
 
 export async function getStoredChart(id: string): Promise<ChartConfig | null> {
@@ -128,14 +133,14 @@ export async function renderChartPng(chartConfig: ChartConfig) {
         title: {
           display: !!title,
           text: title || "",
-          color: "#e2e8f0",
+          color: "#1e293b",
           font: { size: 18, weight: "600", family: "sans-serif" },
           padding: { top: 16, bottom: 24 },
         },
         legend: {
           display: type === "pie" || datasets.length > 1,
           labels: {
-            color: "#cbd5e1",
+            color: "#334155",
             font: { size: 12, family: "sans-serif" },
             usePointStyle: true,
             padding: 16,
@@ -145,14 +150,14 @@ export async function renderChartPng(chartConfig: ChartConfig) {
       ...(type !== "pie" && {
         scales: {
           x: {
-            ticks: { color: "#94a3b8", font: { size: 11 } },
-            grid: { color: "rgba(148, 163, 184, 0.12)" },
-            border: { color: "rgba(148, 163, 184, 0.2)" },
+            ticks: { color: "#64748b", font: { size: 11 } },
+            grid: { color: "rgba(100, 116, 139, 0.15)" },
+            border: { color: "rgba(100, 116, 139, 0.35)" },
           },
           y: {
-            ticks: { color: "#94a3b8", font: { size: 11 } },
-            grid: { color: "rgba(148, 163, 184, 0.12)" },
-            border: { color: "rgba(148, 163, 184, 0.2)" },
+            ticks: { color: "#64748b", font: { size: 11 } },
+            grid: { color: "rgba(100, 116, 139, 0.15)" },
+            border: { color: "rgba(100, 116, 139, 0.35)" },
             beginAtZero: options.beginAtZero !== false,
           },
         },

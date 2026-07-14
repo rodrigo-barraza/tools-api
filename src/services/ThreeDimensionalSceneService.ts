@@ -13,6 +13,8 @@ import {
   CLIENT_MATERIAL_FACTORY,
   CLIENT_ENVIRONMENT_PRESETS,
   CLIENT_ANIMATION_SYSTEM,
+  ENVIRONMENT_SCENE_DEFAULTS,
+  DEFAULT_VIEWPORT_BACKGROUND,
   validateVector3,
 } from "./ThreeDimensionalBaseService.ts";
 
@@ -215,11 +217,13 @@ export function buildSceneEmbedHtml(input: SceneBuildInput): string {
 
   const {
     environment = "studio",
-    background = "#0f172a",
     ground = {},
     camera = {},
     fog = {},
   } = sceneConfig;
+
+  const presetDefaults = ENVIRONMENT_SCENE_DEFAULTS[environment] || ENVIRONMENT_SCENE_DEFAULTS.studio;
+  const background = sceneConfig.background || presetDefaults.background;
 
   const {
     title = "",
@@ -233,7 +237,7 @@ export function buildSceneEmbedHtml(input: SceneBuildInput): string {
     background,
     ground: {
       enabled: ground.enabled !== false,
-      color: ground.color || "#1e293b",
+      color: ground.color || presetDefaults.ground,
       size: ground.size || 10,
       opacity: ground.opacity ?? 0.8,
     },
@@ -271,7 +275,7 @@ export function buildSceneEmbedHtml(input: SceneBuildInput): string {
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
-    background: ${sanitizeCssColor(background, "#0f172a")};
+    background: ${sanitizeCssColor(background, DEFAULT_VIEWPORT_BACKGROUND)};
   }
   #scene-container {
     width: 100%;
@@ -587,7 +591,7 @@ controls.update();
 // ── Grid & Axes ──
 if (CONFIG.showGrid) {
   const gridSize = Math.ceil(maxDimension * 3);
-  const grid = new THREE.GridHelper(gridSize, gridSize, 0x334155, 0x1e293b);
+  const grid = new THREE.GridHelper(gridSize, gridSize, 0x8a8a8a, 0x606060);
   grid.position.y = sceneBoundingBox.min.y;
   scene.add(grid);
 }

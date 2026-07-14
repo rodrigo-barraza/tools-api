@@ -8,6 +8,7 @@ import {
   THREE_JS_CDN,
   CLIENT_GEOMETRY_FACTORY,
   CLIENT_MATERIAL_FACTORY,
+  DEFAULT_VIEWPORT_BACKGROUND,
   validateVector3,
 } from "./ThreeDimensionalBaseService.ts";
 
@@ -137,7 +138,7 @@ export function buildModelEmbedHtml(input: ModelBuildInput): string {
     autoRotateSpeed = 1.0,
     showGrid = true,
     showAxes = false,
-    background = "#0f172a",
+    background = DEFAULT_VIEWPORT_BACKGROUND,
     ambientLightColor = "#ffffff",
     ambientLightIntensity = 0.5,
     directionalLightColor = "#ffffff",
@@ -177,7 +178,7 @@ export function buildModelEmbedHtml(input: ModelBuildInput): string {
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
-    background: ${sanitizeCssColor(background, "#0f172a")};
+    background: ${sanitizeCssColor(background, DEFAULT_VIEWPORT_BACKGROUND)};
   }
   #scene-container {
     width: 100%;
@@ -370,7 +371,7 @@ controls.update();
 // ── Grid & Axes ──
 if (OPTIONS.showGrid) {
   const gridSize = Math.ceil(maxDimension * 3);
-  const grid = new THREE.GridHelper(gridSize, gridSize, 0x334155, 0x1e293b);
+  const grid = new THREE.GridHelper(gridSize, gridSize, 0x8a8a8a, 0x606060);
   grid.position.y = sceneBoundingBox.min.y;
   if (OPTIONS.enableShadows) grid.receiveShadow = true;
   scene.add(grid);

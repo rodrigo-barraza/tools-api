@@ -32,19 +32,7 @@ import { saveVectorAnimation, getVectorAnimation, type VectorAnimationConfig, ty
 import crypto from "node:crypto";
 import CONFIG from "../config.ts";
 import {
-  parseColorToRgba,
-  hslToRgb,
-  hueToRgbComponent,
-  parseColor,
-  interpolateColor,
-  isGradient,
-  interpolateGradient,
-  interpolate,
-  solveCubicBezier,
-  ease,
-  getPathPointAt,
-  getDefaultValue,
-  resolveAnimatedProperties,
+  buildEngineEmbedScript,
   type VectorLayer,
   type Keyframe,
 } from "../utilities/VectorAnimationEngine.ts";
@@ -1220,7 +1208,7 @@ function buildVectorAnimationEmbedHtml(
   } = options;
   const width = Number(animation.width) || 800;
   const height = Number(animation.height) || 600;
-  const background = sanitizeCssColor(animation.background, "#0f172a");
+  const background = sanitizeCssColor(animation.background, "#ffffff");
   const duration = Number(animation.duration) || 5;
   const titleHtml = options.title
     ? `<div id="animation-title">${escapeHtml(options.title)}</div>`
@@ -1228,21 +1216,7 @@ function buildVectorAnimationEmbedHtml(
 
   const animationJson = toEmbedScriptJson(animation);
 
-  const engineScripts = `
-    const parseColorToRgba = ${parseColorToRgba.toString()};
-    const hslToRgb = ${hslToRgb.toString()};
-    const hueToRgbComponent = ${hueToRgbComponent.toString()};
-    const parseColor = ${parseColor.toString()};
-    const interpolateColor = ${interpolateColor.toString()};
-    const isGradient = ${isGradient.toString()};
-    const interpolateGradient = ${interpolateGradient.toString()};
-    const interpolate = ${interpolate.toString()};
-    const solveCubicBezier = ${solveCubicBezier.toString()};
-    const ease = ${ease.toString()};
-    const getPathPointAt = ${getPathPointAt.toString()};
-    const getDefaultValue = ${getDefaultValue.toString()};
-    const resolveAnimatedProperties = ${resolveAnimatedProperties.toString()};
-  `;
+  const engineScripts = buildEngineEmbedScript();
 
   return buildEmbedHtml({
     styles: `
@@ -1775,7 +1749,7 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
     height: Math.min(requestedHeight || 600, 1080),
     duration: animation.duration != null ? Number(animation.duration) : 5,
     fps: animation.fps != null ? Number(animation.fps) : 24,
-    background: animation.background || "#0f172a",
+    background: animation.background || "#ffffff",
     layers: [] as VectorLayer[],
   };
 
@@ -1943,9 +1917,11 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
   const message =
     `Animation ${isExistingSession ? "updated" : "created"}: ${sessionAnimation.layers.length} ` +
     `layer(s) [${layerIds.join(", ")}], ${totalKeyframes} keyframe(s), ` +
-    `${sessionAnimation.duration}s at ${sessionAnimation.fps}fps. To edit, call again with ` +
-    `sessionId '${activeSessionId}' — layers merge by id, layers with {"action": "delete"} ` +
-    `are removed, and the session expires after 30 minutes of inactivity.` +
+    `${sessionAnimation.duration}s at ${sessionAnimation.fps}fps. The user can see this ` +
+    `version now. To keep building on it, call again with sessionId '${activeSessionId}' and ` +
+    `only the layers you are adding or changing — layers merge by id, keyframes merge by time, ` +
+    `layers with {"action": "delete"} are removed, and the session expires after 30 minutes ` +
+    `of inactivity.` +
     warningSuffix;
 
   res.json({

@@ -35,6 +35,22 @@ export const VALID_ENVIRONMENTS = new Set([
   "studio", "outdoor", "night", "sunset", "dawn", "warehouse", "neutral",
 ]);
 
+// Neutral editor-viewport grey (Blender/Unity-style), the default backdrop
+// for every 3D embed instead of the old midnight-navy slate.
+export const DEFAULT_VIEWPORT_BACKGROUND = "#4c4c4c";
+
+// Backdrop and ground colors paired with each lighting preset, so the
+// backdrop finally agrees with the lighting instead of always being dark.
+export const ENVIRONMENT_SCENE_DEFAULTS: Record<string, { background: string; ground: string }> = {
+  studio: { background: "#4c4c4c", ground: "#3d3d3d" },
+  outdoor: { background: "#87ceeb", ground: "#5d6b4a" },
+  night: { background: "#0b1026", ground: "#14141c" },
+  sunset: { background: "#553649", ground: "#33222f" },
+  dawn: { background: "#c9ab99", ground: "#7a6a5e" },
+  warehouse: { background: "#565656", ground: "#474747" },
+  neutral: { background: "#808080", ground: "#6a6a6a" },
+};
+
 // ── Client-Side JavaScript Fragments (Interpolated into Iframe Templates) ──
 
 export const CLIENT_GEOMETRY_FACTORY = `

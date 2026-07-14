@@ -1745,6 +1745,14 @@ export const TOMORROWIO_WEATHER_CODES = {
 // null = unlimited or not documented.
 
 export const API_RATE_LIMITS = {
+  // ─── Classifieds Domain ────────────────────────────────────────────
+  CRAIGSLIST: {
+    qps: null,
+    qpm: null,
+    qpd: 200, // self-imposed — no API; scraped gently to stay in human-browsing territory
+    requestDelayMs: 10_000, // plus 0-5s jitter added in CraigslistFetcher
+  },
+
   // ─── Event Domain ──────────────────────────────────────────────────
   TICKETMASTER: {
     qps: 5,

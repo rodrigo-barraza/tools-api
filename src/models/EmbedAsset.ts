@@ -95,6 +95,15 @@ export class PersistentStore<T = unknown> {
     return id;
   }
 
+  /** Store or replace a value under a stable caller-supplied ID (upsert). */
+  setWithId(id: string, value: T): void {
+    this.#ephemeral.setWithId(id, value);
+    saveEmbedAsset(id, this.#assetType, value)
+      .catch(error =>
+        logger.warn(`[PersistentStore:${this.#assetType}] DB write failed: ${errorMessage(error)}`),
+      );
+  }
+
   get(id: string): T | null {
     return this.#ephemeral.get(id);
   }

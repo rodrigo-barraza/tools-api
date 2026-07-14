@@ -3,7 +3,7 @@
 // raw vertex + face index data — the fundamental polygon mesh.
 
 import { buildEmbedHtml, escapeHtml, sanitizeCssColor, toEmbedScriptJson } from "../utilities.ts";
-import { THREE_JS_CDN } from "./ThreeDimensionalBaseService.ts";
+import { THREE_JS_CDN, DEFAULT_VIEWPORT_BACKGROUND } from "./ThreeDimensionalBaseService.ts";
 
 // ─── Constants ─────────────────────────────────────────────────
 
@@ -128,7 +128,7 @@ export function buildMeshEmbedHtml(input: MeshBuildInput): string {
     autoRotateSpeed = 1.0,
     showGrid = true,
     showAxes = false,
-    background = "#0f172a",
+    background = DEFAULT_VIEWPORT_BACKGROUND,
     meshColor = "#38bdf8",
     opacity = 1.0,
     metalness = 0.2,
@@ -169,7 +169,7 @@ export function buildMeshEmbedHtml(input: MeshBuildInput): string {
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
-    background: ${sanitizeCssColor(background, "#0f172a")};
+    background: ${sanitizeCssColor(background, DEFAULT_VIEWPORT_BACKGROUND)};
   }
   #scene-container {
     width: 100%;
@@ -319,7 +319,7 @@ controls.update();
 // ── Grid & Axes ──
 if (OPTIONS.showGrid) {
   const gridSize = boundingSphere ? Math.ceil(boundingSphere.radius * 4) : 10;
-  const grid = new THREE.GridHelper(gridSize, gridSize, 0x334155, 0x1e293b);
+  const grid = new THREE.GridHelper(gridSize, gridSize, 0x8a8a8a, 0x606060);
   grid.position.y = boundingBox ? boundingBox.min.y : 0;
   scene.add(grid);
 }

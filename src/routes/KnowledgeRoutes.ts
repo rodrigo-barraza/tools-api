@@ -12,6 +12,7 @@ import {
   getCountryByCode,
 } from "../fetchers/knowledge/RestCountriesFetcher.ts";
 import { searchPapers } from "../fetchers/knowledge/ArxivFetcher.ts";
+import { searchCraigslist } from "../fetchers/web/CraigslistFetcher.ts";
 import {
   getArticleSummary,
   getOnThisDay,
@@ -1999,6 +2000,45 @@ router.get(
         limit: limit ? parseInt(limit, 10) : undefined,
       }),
     );
+  }),
+);
+router.get(
+  "/craigslist/search",
+  asyncHandler(async (req: Request, res: Response) => {
+    const query = req.query['q'] as string | undefined;
+    const city = req.query.city as string | undefined;
+    const category = req.query.category as string | undefined;
+    const from = req.query.from as string | undefined;
+    const to = req.query.to as string | undefined;
+    const limit = req.query.limit as string | undefined;
+    if (!query) {
+      return res.status(400).json({ error: "Query parameter 'q' is required" });
+    }
+    if (!city) {
+      return res.status(400).json({ error: "Query parameter 'city' is required" });
+    }
+    if (!category) {
+      return res
+        .status(400)
+        .json({ error: "Query parameter 'category' is required" });
+    }
+    const fromDate = from ? new Date(from) : undefined;
+    const toDate = to ? new Date(to) : undefined;
+    if (fromDate && Number.isNaN(fromDate.getTime())) {
+      return res.status(400).json({ error: "Invalid 'from' date" });
+    }
+    if (toDate && Number.isNaN(toDate.getTime())) {
+      return res.status(400).json({ error: "Invalid 'to' date" });
+    }
+    const result = await searchCraigslist(city, category, query, {
+      from: fromDate,
+      to: toDate,
+      limit: limit ? parseIntParam(limit, 50) : undefined,
+    });
+    if ("error" in result) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
   }),
 );
 export default router;

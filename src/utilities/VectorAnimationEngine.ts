@@ -441,3 +441,31 @@ export function resolveAnimatedProperties(layer: VectorLayer, time: number): Key
 
   return interpolatedProperties;
 }
+
+/**
+ * Serialized engine source for the browser embed player. Function.toString()
+ * does not carry closures, so every module-level symbol these functions
+ * reference (NAMED_COLORS, pathCache, interpolateNumber, each other) must be
+ * re-declared in the script explicitly — one missing symbol throws a
+ * ReferenceError on the first rendered frame and blanks the player.
+ */
+export function buildEngineEmbedScript(): string {
+  return `
+    const NAMED_COLORS = ${JSON.stringify(NAMED_COLORS)};
+    const pathCache = {};
+    const interpolateNumber = ${interpolateNumber.toString()};
+    const hueToRgbComponent = ${hueToRgbComponent.toString()};
+    const hslToRgb = ${hslToRgb.toString()};
+    const parseColorToRgba = ${parseColorToRgba.toString()};
+    const parseColor = ${parseColor.toString()};
+    const interpolateColor = ${interpolateColor.toString()};
+    const isGradient = ${isGradient.toString()};
+    const interpolateGradient = ${interpolateGradient.toString()};
+    const interpolate = ${interpolate.toString()};
+    const solveCubicBezier = ${solveCubicBezier.toString()};
+    const ease = ${ease.toString()};
+    const getPathPointAt = ${getPathPointAt.toString()};
+    const getDefaultValue = ${getDefaultValue.toString()};
+    const resolveAnimatedProperties = ${resolveAnimatedProperties.toString()};
+  `;
+}

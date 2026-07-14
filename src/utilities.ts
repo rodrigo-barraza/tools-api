@@ -385,6 +385,15 @@ export class EphemeralStore<T = unknown> {
   }
 
   /**
+   * Store or replace a value under a caller-supplied ID. Resets the TTL —
+   * used by iterative tools that rebuild an artifact under a stable ID.
+   */
+  setWithId(id: string, value: T): void {
+    this.#map.set(id, { value, createdAt: Date.now() });
+    this.#cleanup();
+  }
+
+  /**
    * Retrieve a stored value by ID. Returns null if expired or not found.
    */
   get(id: string): T | null {
@@ -475,7 +484,7 @@ export function buildEmbedHtml({
 ${headExtra}<style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{
-    background:#0f172a;
+    background:#f8fafc;
     display:flex;
     align-items:center;
     justify-content:center;

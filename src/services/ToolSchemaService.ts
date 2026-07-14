@@ -206,6 +206,9 @@ const TOOL_DOMAINS = {
   read_rss_feed: "Knowledge",
   get_pypi_package: "Knowledge",
 
+  // Classifieds
+  search_craigslist: "Knowledge",
+
   // Reddit
   search_reddit: "Reddit",
   search_reddit_subreddits: "Reddit",
@@ -649,6 +652,7 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   get_pypi_package: ["🐍", "📦"],
   get_music: "🎵",
   get_wayback_snapshot: ["🕰️", "💻"],
+  search_craigslist: ["📋", "🔍"],
   search_reddit: ["🤖", "💬"],
   search_reddit_subreddits: ["🤖", "🔍"],
   get_reddit_subreddit_info: "ℹ️",

@@ -37,6 +37,7 @@ import { getSecurityTools } from "./SecurityTools.ts";
 import { getCalendarTools } from "./CalendarTools.ts";
 import { getInfrastructureTools } from "./InfrastructureTools.ts";
 import { getAnalyticsTools } from "./AnalyticsTools.ts";
+import { getClassifiedsTools } from "./ClassifiedsTools.ts";
 
 export { FIELDS } from "./fields.ts";
 
@@ -78,5 +79,6 @@ export function createToolDefinitions(
     ...getCalendarTools(translate),
     ...getInfrastructureTools(translate),
     ...getAnalyticsTools(translate),
+    ...getClassifiedsTools(translate),
   ];
 }

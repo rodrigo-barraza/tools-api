@@ -691,18 +691,67 @@ router.post(
   }),
 );
 // ─── 6. CSV Generation ──────────────────────────────────────
-const csvStore = new PersistentStore<{ csv: string; filename: string }>("csv");
-router.post("/csv", (req: Request, res: Response) => {
-  const { data, columns, filename, delimiter } = req.body;
+const MAX_CSV_CHARS = 4_000_000;
+const csvStore = new PersistentStore<{
+  csv: string;
+  filename: string;
+  columns?: string[];
+  delimiter?: string;
+  rowCount?: number;
+}>("csv");
+router.post("/csv", asyncHandler(async (req: Request, res: Response) => {
+  const { data, columns, filename, delimiter, csvId } = req.body;
   if (!data || !Array.isArray(data) || data.length === 0) {
     return res
       .status(400)
       .json({ error: "'data' must be a non-empty array of objects" });
   }
+
+  // Iterative mode: load the existing file and append rows to it.
+  let existing: { csv: string; filename: string; columns?: string[]; delimiter?: string; rowCount?: number } | null = null;
+  if (csvId !== undefined && csvId !== null && csvId !== "") {
+    if (typeof csvId !== "string" || csvId === "null" || csvId === "undefined") {
+      return res.status(400).json({
+        error:
+          `Invalid csvId (got: ${JSON.stringify(csvId)}). Pass the exact csvId string ` +
+          `returned by a previous call, or omit it to create a new CSV.`,
+      });
+    }
+    existing = await csvStore.getWithFallback(csvId);
+    if (!existing) {
+      return res.status(400).json({
+        error:
+          `CSV '${csvId}' not found or expired. Omit csvId to create a new CSV — the ` +
+          `response returns a csvId you can pass back to append more rows.`,
+      });
+    }
+    if (!existing.columns) {
+      return res.status(400).json({
+        error:
+          `CSV '${csvId}' predates append support and cannot be extended. Omit csvId and ` +
+          `resend the full data to create a new appendable CSV.`,
+      });
+    }
+    if (delimiter && existing.delimiter && delimiter !== existing.delimiter) {
+      return res.status(400).json({
+        error:
+          `Delimiter mismatch: CSV '${csvId}' uses ${JSON.stringify(existing.delimiter)}. ` +
+          `Omit 'delimiter' when appending.`,
+      });
+    }
+    if (columns && JSON.stringify(columns) !== JSON.stringify(existing.columns)) {
+      return res.status(400).json({
+        error:
+          `Column mismatch: CSV '${csvId}' has columns [${existing.columns.join(", ")}]. ` +
+          `Omit 'columns' when appending — new rows are mapped onto the existing columns.`,
+      });
+    }
+  }
+
   try {
-    const delimiterValue = delimiter || ",";
-    // Determine columns from explicit list or first object keys
-    const resolvedColumns = columns || Object.keys(data[0]);
+    const delimiterValue = existing?.delimiter || delimiter || ",";
+    // Determine columns from the existing file, explicit list, or first object keys
+    const resolvedColumns = existing?.columns || columns || Object.keys(data[0]);
     // Escape CSV values
     const escape = (value: unknown) => {
       if (value === null || value === undefined) return "";
@@ -716,7 +765,7 @@ router.post("/csv", (req: Request, res: Response) => {
       }
       return stringValue;
     };
-    const lines = [resolvedColumns.map(escape).join(delimiterValue)];
+    const lines = existing ? [] : [resolvedColumns.map(escape).join(delimiterValue)];
     for (const row of data) {
       lines.push(
         resolvedColumns
@@ -724,13 +773,37 @@ router.post("/csv", (req: Request, res: Response) => {
           .join(delimiterValue),
       );
     }
-    const csv = lines.join("\n");
-    const id = csvStore.set({ csv, filename: filename || "export.csv" });
+    const csv = existing ? existing.csv + "\n" + lines.join("\n") : lines.join("\n");
+    if (csv.length > MAX_CSV_CHARS) {
+      return res.status(400).json({
+        error: `CSV would exceed ${MAX_CSV_CHARS.toLocaleString()} characters. Split the data into separate files.`,
+      });
+    }
+    const totalRows = (existing?.rowCount || 0) + data.length;
+    const entry = {
+      csv,
+      filename: filename || existing?.filename || "export.csv",
+      columns: resolvedColumns,
+      delimiter: delimiterValue,
+      rowCount: totalRows,
+    };
+    let id: string;
+    if (existing && typeof csvId === "string") {
+      id = csvId;
+      csvStore.setWithId(id, entry);
+    } else {
+      id = csvStore.set(entry);
+    }
     const downloadUrl = buildLocalUrl("compute/csv/download", { id });
     res.json({
+      message:
+        `CSV ${existing ? "extended" : "created"}: ${totalRows} row(s), ` +
+        `${resolvedColumns.length} column(s). To append more rows, call again with ` +
+        `csvId '${id}' and only the new rows in 'data'.`,
       downloadUrl,
       csvId: id,
-      rows: data.length,
+      rows: totalRows,
+      newRows: data.length,
       columns: resolvedColumns.length,
     });
   } catch (error: unknown) {
@@ -738,7 +811,7 @@ router.post("/csv", (req: Request, res: Response) => {
       .status(400)
       .json({ error: `CSV generation failed: ${errorMessage(error)}` });
   }
-});
+}));
 router.get("/csv/download", asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.query as Record<string, string>;
   if (!id) return res.status(400).send("Missing 'id' parameter");
@@ -823,13 +896,13 @@ function buildLatexEmbedHtml(latex: string, displayMode: boolean = true) {
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></${"script"}>
 `,
     styles: `  #math{
-    color:#e2e8f0;
+    color:#1e293b;
     font-size:1.4em;
     max-width:100%;
     overflow-x:auto;
   }
   .katex{font-size:1.4em}
-  .katex .base{color:#e2e8f0}`,
+  .katex .base{color:#1e293b}`,
     bodyContent: `<div id="math"></div>`,
     scripts: `<script>
   try {
@@ -882,7 +955,7 @@ const diagramStore = new PersistentStore<{
   definition: string;
   theme: string;
 }>("diagram");
-function buildMermaidEmbedHtml(definition: string, theme: string = "dark") {
+function buildMermaidEmbedHtml(definition: string, theme: string = "default") {
   return buildEmbedHtml({
     styles: `  #diagram{
     max-width:100%;
@@ -905,34 +978,73 @@ function buildMermaidEmbedHtml(definition: string, theme: string = "dark") {
     const { svg } = await mermaid.render('mermaid-svg', ${JSON.stringify(definition)});
     document.getElementById('diagram').innerHTML = svg;
   } catch (error) {
-    document.getElementById('diagram').textContent = 'Diagram error: ' + e.message;
+    document.getElementById('diagram').textContent = 'Diagram error: ' + error.message;
   }
 </${"script"}>`,
   });
 }
-router.post("/diagram", (req: Request, res: Response) => {
-  const { definition, theme } = req.body;
+router.post("/diagram", asyncHandler(async (req: Request, res: Response) => {
+  const { definition, theme, diagramId } = req.body;
   if (!definition || typeof definition !== "string") {
     return res
       .status(400)
       .json({ error: "'definition' (Mermaid syntax string) is required" });
   }
-  if (definition.length > 50_000) {
+
+  // Iterative mode: append new lines to a previously created diagram.
+  let existing: { definition: string; theme: string } | null = null;
+  if (diagramId !== undefined && diagramId !== null && diagramId !== "") {
+    if (typeof diagramId !== "string" || diagramId === "null" || diagramId === "undefined") {
+      return res.status(400).json({
+        error:
+          `Invalid diagramId (got: ${JSON.stringify(diagramId)}). Pass the exact diagramId ` +
+          `string returned by a previous call, or omit it to create a new diagram.`,
+      });
+    }
+    existing = await diagramStore.getWithFallback(diagramId);
+    if (!existing) {
+      return res.status(400).json({
+        error:
+          `Diagram '${diagramId}' not found or expired. Omit diagramId and send the complete ` +
+          `definition (including the diagram type header) to create a new diagram.`,
+      });
+    }
+  }
+
+  const combinedDefinition = existing
+    ? existing.definition + "\n" + definition
+    : definition;
+  if (combinedDefinition.length > 50_000) {
     return res
       .status(400)
       .json({ error: "Diagram definition exceeds 50,000 characters" });
   }
-  const id = diagramStore.set({
-    definition,
-    theme: theme || "dark",
-  });
+
+  const entry = {
+    definition: combinedDefinition,
+    theme: theme || existing?.theme || "default",
+  };
+  let id: string;
+  if (existing && typeof diagramId === "string") {
+    id = diagramId;
+    diagramStore.setWithId(id, entry);
+  } else {
+    id = diagramStore.set(entry);
+  }
   const diagramEmbedUrl = buildLocalUrl("compute/diagram/embed", { id });
+  const totalLines = combinedDefinition.split("\n").length;
   res.json({
+    message:
+      `Diagram ${existing ? "extended" : "created"}: ${totalLines} line(s). The user can ` +
+      `see this version now. To build on it, call again with diagramId '${id}' and only ` +
+      `the new lines (nodes, edges, participants...) in 'definition' — they are appended ` +
+      `to the existing diagram. Omit diagramId to start a fresh diagram instead.`,
     diagramEmbedUrl,
     diagramId: id,
+    totalLines,
     display: buildDisplay("embed", diagramEmbedUrl, { height: 420, title: "Diagram" }),
   });
-});
+}));
 router.get("/diagram/embed", asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.query as Record<string, string>;
   if (!id) return res.status(400).send("Missing 'id' parameter");
@@ -1474,10 +1586,10 @@ function buildTurtleEmbedHtml(
     height: auto;
     object-fit: contain;
     border-radius: 2px;
-    box-shadow: 0 0 40px rgba(255, 255, 255, 0.04);
+    box-shadow: 0 4px 24px rgba(15, 23, 42, 0.18);
   }
   #title {
-    color: #94a3b8;
+    color: #475569;
     font-family: system-ui, -apple-system, sans-serif;
     font-size: 13px;
     font-weight: 500;
@@ -1491,8 +1603,8 @@ function buildTurtleEmbedHtml(
     height: 16px;
     transition: color 0.3s;
   }
-  #status.active { color: #38bdf8; }
-  #status.done { color: #4ade80; }`,
+  #status.active { color: #0284c7; }
+  #status.done { color: #16a34a; }`,
     bodyContent: `<div id="container">
   ${title ? '<div id="title">' + title + '</div>' : ""}
   <canvas id="turtle" width="${canvasWidth}" height="${canvasHeight}"></canvas>
