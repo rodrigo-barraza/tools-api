@@ -26,6 +26,7 @@ import logger from "../logger.ts";
 import type { Request, Response, Application } from "express";
 import { errorMessage } from "../utilities.ts";
 import type { ToolEndpoint } from "../types/tools.ts";
+import { IDENTITY_HEADERS } from "@rodrigo-barraza/service-library";
 
 // ── Self base URL (vault-resolved, localhost fallback) ───────
 const SELF_BASE_URL = CONFIG.TOOLS_SERVICE_URL;
@@ -104,9 +105,9 @@ async function executeTool(
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
-      if (context.project) headers["X-Project"] = context.project;
-      if (context.agent) headers["X-Agent"] = context.agent;
-      if (context.username) headers["X-Username"] = context.username;
+      if (context.project) headers[IDENTITY_HEADERS.project] = context.project;
+      if (context.agent) headers[IDENTITY_HEADERS.agent] = context.agent;
+      if (context.username) headers[IDENTITY_HEADERS.username] = context.username;
 
       // Also inject into body for endpoints that might read from body
       const bodyArgs = { ...resolvedArgs };
@@ -136,9 +137,9 @@ async function executeTool(
 
     const url = buildUrl(endpoint, resolvedArgs);
     const headers: Record<string, string> = {};
-    if (context.project) headers["X-Project"] = context.project;
-    if (context.agent) headers["X-Agent"] = context.agent;
-    if (context.username) headers["X-Username"] = context.username;
+    if (context.project) headers[IDENTITY_HEADERS.project] = context.project;
+    if (context.agent) headers[IDENTITY_HEADERS.agent] = context.agent;
+    if (context.username) headers[IDENTITY_HEADERS.username] = context.username;
 
     const response = await fetch(url, { headers });
     if (!response.ok) {

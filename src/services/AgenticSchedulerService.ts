@@ -4,7 +4,7 @@ import { AGENT_IDS } from "@rodrigo-barraza/utilities-library/taxonomy";
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
 import { errorMessage } from "../utilities.ts";
-import { getTraceHeaders } from "../middleware/HeaderPropagationMiddleware.ts";
+import { getTraceHeaders } from "@rodrigo-barraza/service-library";
 
 // ────────────────────────────────────────────────────────────
 // Collection Setup — No-op since we proxy to prism-service

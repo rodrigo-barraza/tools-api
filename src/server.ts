@@ -14,7 +14,8 @@ import {
 } from "./middleware/RequestLoggerMiddleware.ts";
 import { toolCallLoggerMiddleware } from "./middleware/ToolCallLoggerMiddleware.ts";
 import { fieldProjectionMiddleware } from "./middleware/FieldProjectionMiddleware.ts";
-import { headerPropagationMiddleware } from "./middleware/HeaderPropagationMiddleware.ts";
+import { createAuthMiddleware } from "@rodrigo-barraza/service-library";
+import { DEFAULT_USERNAME } from "@rodrigo-barraza/utilities-library/taxonomy";
 
 // ─── Model Setup ───────────────────────────────────────────────────
 
@@ -122,7 +123,12 @@ app.use(express.json({ limit: "50mb" }));
 app.use(requestLoggerMiddleware);
 app.use(toolCallLoggerMiddleware);
 app.use(fieldProjectionMiddleware);
-app.use(headerPropagationMiddleware);
+app.use(
+  createAuthMiddleware({
+    defaultUsername: DEFAULT_USERNAME,
+    traceContext: true,
+  }),
+);
 
 // ─── Mount Domain Routers ──────────────────────────────────────────
 

@@ -6,7 +6,7 @@ import { Request, Response, Router } from "express";
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
 import { agenticHandler, errorMessage } from "../utilities.ts";
-import { getTraceHeaders } from "../middleware/HeaderPropagationMiddleware.ts";
+import { getTraceHeaders } from "@rodrigo-barraza/service-library";
 import { createReadStream } from "node:fs";
 import { stat as fsStat } from "node:fs/promises";
 import { extname } from "node:path";

@@ -20,7 +20,7 @@ import type {
   FileInfoEntry,
 } from "@rodrigo-barraza/utilities-library";
 export type { DirectoryEntry, TreeEntry, GlobMatch, FileInfoEntry };
-import { requestLocalStorage } from "../middleware/HeaderPropagationMiddleware.ts";
+import { requestLocalStorage } from "@rodrigo-barraza/service-library";
 import PromptLocaleService from "./PromptLocaleService.ts";
 // ─── Sandboxed File Operations ──────────────────────────────
 

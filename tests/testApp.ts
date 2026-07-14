@@ -1,6 +1,7 @@
 import express from "express";
 import { fieldProjectionMiddleware } from "../src/middleware/FieldProjectionMiddleware.ts";
-import { headerPropagationMiddleware } from "../src/middleware/HeaderPropagationMiddleware.ts";
+import { createAuthMiddleware } from "@rodrigo-barraza/service-library";
+import { DEFAULT_USERNAME } from "@rodrigo-barraza/utilities-library/taxonomy";
 
 /**
  * Creates a minimal Express app for in-process testing (supertest).
@@ -11,7 +12,12 @@ export function createTestApp(path: string, router: express.Router): express.Exp
   const app = express();
   app.use(express.json({ limit: "1mb" }));
   app.use(fieldProjectionMiddleware);
-  app.use(headerPropagationMiddleware);
+  app.use(
+    createAuthMiddleware({
+      defaultUsername: DEFAULT_USERNAME,
+      traceContext: true,
+    }),
+  );
   app.use(path, router);
   return app;
 }

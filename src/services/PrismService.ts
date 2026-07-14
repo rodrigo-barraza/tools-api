@@ -13,7 +13,7 @@ import {
   PRISM_TTS_TIMEOUT_MS,
   PRISM_STT_TIMEOUT_MS,
 } from "../constants.ts";
-import { getTraceHeaders } from "../middleware/HeaderPropagationMiddleware.ts";
+import { getTraceHeaders } from "@rodrigo-barraza/service-library";
 
 // ────────────────────────────────────────────────────────────
 // Types

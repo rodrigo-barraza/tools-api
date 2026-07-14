@@ -8,7 +8,7 @@ import logger from "../logger.ts";
 import CONFIG from "../config.ts";
 import { Server, IncomingMessage } from "node:http";
 import { Duplex } from "node:stream";
-import { requestLocalStorage } from "../middleware/HeaderPropagationMiddleware.ts";
+import { requestLocalStorage } from "@rodrigo-barraza/service-library";
 import {
   AGENT_RPC_TIMEOUT_FILE_MS as RPC_TIMEOUT_FILE_MS,
   AGENT_RPC_TIMEOUT_GIT_MS as RPC_TIMEOUT_GIT_MS,
