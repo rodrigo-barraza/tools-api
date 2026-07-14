@@ -78,6 +78,11 @@ import {
   agenticTaskUpdate,
   agenticTaskDelete,
 } from "../services/AgenticTaskService.ts";
+import {
+  datastoreWrite,
+  datastoreQuery,
+  datastoreDelete,
+} from "../services/AgenticDatastoreService.ts";
 import { agenticToolSearch } from "../services/AgenticToolSearchService.ts";
 import * as BackgroundProcessRegistry from "../services/BackgroundProcessRegistry.ts";
 import {
@@ -1217,6 +1222,61 @@ router.post(
       return { error: "Request body must include 'taskId' (number)" };
     }
     return agenticTaskDelete(project, taskId);
+  }),
+);
+// ─── 12b. Structured Datastore ──────────────────────────────
+// Namespaced queryable record store (MongoDB agent_datastore).
+// project/agent/username arrive via trusted orchestrator body
+// injection + X-headers — stripped from the model-facing schema.
+// ── Write records ─────────────────────────────────────────────
+router.post(
+  "/datastore/write",
+  agenticHandler(async (req: Request) => {
+    const { project, namespace, records, keyField } = req.body;
+    if (!project || typeof project !== "string") {
+      return { error: "Request body must include 'project' (string)" };
+    }
+    return datastoreWrite(project, namespace, records, keyField, {
+      agent: (req.headers[IDENTITY_HEADERS.agent] as string) || req.body.agent || null,
+      username: (req.headers[IDENTITY_HEADERS.username] as string) || req.body.username || null,
+      agentSessionId: (req.headers["x-agent-session-id"] as string) || null,
+    });
+  }),
+);
+// ── Query records / list namespaces ───────────────────────────
+router.post(
+  "/datastore/query",
+  agenticHandler(async (req: Request) => {
+    const { project, namespace, filter, sort, fields, limit, skip, pipeline } =
+      req.body;
+    if (!project || typeof project !== "string") {
+      return { error: "Request body must include 'project' (string)" };
+    }
+    return datastoreQuery(project, namespace, {
+      filter,
+      sort,
+      fields,
+      limit,
+      skip,
+      pipeline,
+    });
+  }),
+);
+// ── Delete records ────────────────────────────────────────────
+router.post(
+  "/datastore/delete",
+  agenticHandler(async (req: Request) => {
+    const { project, namespace, ids, filter, all } = req.body;
+    if (!project || typeof project !== "string") {
+      return { error: "Request body must include 'project' (string)" };
+    }
+    const allFlag = coerceBool(all, "all", false);
+    if (!allFlag.ok) return { error: allFlag.error };
+    return datastoreDelete(project, namespace, {
+      ids,
+      filter,
+      all: allFlag.value,
+    });
   }),
 );
 // ─── 13. Tool Smoke Tests ───────────────────────────────────

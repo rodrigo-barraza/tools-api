@@ -24,6 +24,7 @@ import { getCoreWorkspaceTools } from "./CoreWorkspaceTools.ts";
 import { getWebTools } from "./WebTools.ts";
 import { getBrowserTools } from "./BrowserTools.ts";
 import { getCoreTaskTools } from "./CoreTaskTools.ts";
+import { getCoreDatastoreTools } from "./CoreDatastoreTools.ts";
 import { getCommunicationTools } from "./CommunicationTools.ts";
 import { getDiscordTools } from "./DiscordTools.ts";
 import { getSmartHomeTools } from "./SmartHomeTools.ts";
@@ -66,6 +67,7 @@ export function createToolDefinitions(
     ...getWebTools(translate),
     ...getBrowserTools(translate),
     ...getCoreTaskTools(translate),
+    ...getCoreDatastoreTools(translate),
     ...getCommunicationTools(translate),
     ...getDiscordTools(translate),
     ...getSmartHomeTools(translate),

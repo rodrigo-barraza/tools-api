@@ -186,3 +186,169 @@ describe("POST /utility/python/execute", () => {
     expect(res.body.stderr).toContain("SyntaxError");
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════
+//  Iterative map building — GET /utility/map with mapId
+// ═══════════════════════════════════════════════════════════════════
+
+describe("GET /utility/map (iterative)", () => {
+  const markersParam = (markers: unknown) =>
+    encodeURIComponent(JSON.stringify(markers));
+
+  it("adds markers to an existing map under the same mapId", async () => {
+    const first = await request(app).get(
+      `/utility/map?markers=${markersParam([
+        { latitude: 49.28, longitude: -123.12, label: "Vancouver" },
+      ])}`,
+    );
+    expect(first.status).toBe(200);
+    expect(first.body.mapId).toBeTruthy();
+    expect(first.body.markerCount).toBe(1);
+    expect(first.body.message).toContain(first.body.mapId);
+
+    const second = await request(app).get(
+      `/utility/map?mapId=${first.body.mapId}&markers=${markersParam([
+        { latitude: 47.6, longitude: -122.33, label: "Seattle" },
+        { latitude: 45.5, longitude: -122.68, label: "Portland" },
+      ])}`,
+    );
+    expect(second.status).toBe(200);
+    expect(second.body.mapId).toBe(first.body.mapId);
+    expect(second.body.markerCount).toBe(3);
+    expect(second.body.newMarkerCount).toBe(2);
+    expect(second.body.mapEmbedUrl).toContain(first.body.mapId);
+  });
+
+  it("rejects an unknown mapId with recovery guidance", async () => {
+    const response = await request(app).get(
+      `/utility/map?mapId=does-not-exist&markers=${markersParam([
+        { latitude: 1, longitude: 2 },
+      ])}`,
+    );
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain("not found or expired");
+    expect(response.body.error).toContain("Omit mapId");
+  });
+
+  it("rejects the literal string 'null' as mapId", async () => {
+    const response = await request(app).get(
+      `/utility/map?mapId=null&markers=${markersParam([
+        { latitude: 1, longitude: 2 },
+      ])}`,
+    );
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain("Invalid mapId");
+  });
+
+  it("enforces the marker cap on the combined map", async () => {
+    // Batches stay small enough for a GET query string (431 above ~16KB),
+    // so the cap is reached by appending rather than in one call.
+    const bulk = Array.from({ length: 180 }, () => ({
+      latitude: 1,
+      longitude: 1,
+    }));
+    const first = await request(app).get(
+      `/utility/map?markers=${markersParam(bulk)}`,
+    );
+    expect(first.status).toBe(200);
+    const second = await request(app).get(
+      `/utility/map?mapId=${first.body.mapId}&markers=${markersParam(bulk)}`,
+    );
+    expect(second.status).toBe(200);
+    expect(second.body.markerCount).toBe(360);
+    const third = await request(app).get(
+      `/utility/map?mapId=${first.body.mapId}&markers=${markersParam(bulk)}`,
+    );
+    expect(third.status).toBe(400);
+    expect(third.body.error).toContain("max 500");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  Iterative chart building — POST /utility/chart with chartId
+// ═══════════════════════════════════════════════════════════════════
+
+describe("POST /utility/chart (iterative)", () => {
+  const baseChart = {
+    type: "bar",
+    title: "Revenue",
+    labels: ["Q1", "Q2"],
+    datasets: [{ label: "2025", data: [10, 20] }],
+  };
+
+  it("adds a new dataset by label under the same chartId", async () => {
+    const first = await request(app).post("/utility/chart").send(baseChart);
+    expect(first.status).toBe(200);
+    expect(first.body.chartId).toBeTruthy();
+    expect(first.body.datasetCount).toBe(1);
+    expect(first.body.message).toContain(first.body.chartId);
+
+    const second = await request(app)
+      .post("/utility/chart")
+      .send({
+        type: "bar",
+        chartId: first.body.chartId,
+        datasets: [{ label: "2026", data: [15, 25] }],
+      });
+    expect(second.status).toBe(200);
+    expect(second.body.chartId).toBe(first.body.chartId);
+    expect(second.body.datasetCount).toBe(2);
+    expect(second.body.labelCount).toBe(2); // labels kept from first call
+  });
+
+  it("replaces an existing dataset when the label matches", async () => {
+    const first = await request(app).post("/utility/chart").send(baseChart);
+    const second = await request(app)
+      .post("/utility/chart")
+      .send({
+        type: "bar",
+        chartId: first.body.chartId,
+        datasets: [{ label: "2025", data: [11, 21] }], // same label → replace
+      });
+    expect(second.status).toBe(200);
+    expect(second.body.datasetCount).toBe(1);
+  });
+
+  it("keeps title and labels when only datasets are sent", async () => {
+    const first = await request(app).post("/utility/chart").send(baseChart);
+    const second = await request(app)
+      .post("/utility/chart")
+      .send({
+        type: "bar",
+        chartId: first.body.chartId,
+        datasets: [{ label: "2026", data: [1, 2] }],
+      });
+    expect(second.status).toBe(200);
+    expect(second.body.labelCount).toBe(2);
+  });
+
+  it("validates merged datasets against effective labels", async () => {
+    const first = await request(app).post("/utility/chart").send(baseChart);
+    const second = await request(app)
+      .post("/utility/chart")
+      .send({
+        type: "bar",
+        chartId: first.body.chartId,
+        datasets: [{ label: "2026", data: [1, 2, 3] }], // 3 points, 2 labels
+      });
+    expect(second.status).toBe(400);
+    expect(second.body.error).toContain("2 labels");
+  });
+
+  it("rejects an unknown chartId with recovery guidance", async () => {
+    const response = await request(app)
+      .post("/utility/chart")
+      .send({ ...baseChart, chartId: "does-not-exist" });
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain("not found or expired");
+    expect(response.body.error).toContain("Omit chartId");
+  });
+
+  it("still requires datasets when creating a new chart", async () => {
+    const response = await request(app)
+      .post("/utility/chart")
+      .send({ type: "bar", labels: ["a"] });
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain("datasets");
+  });
+});

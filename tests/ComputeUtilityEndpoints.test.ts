@@ -1418,3 +1418,184 @@ describe("POST /compute/shell/execute", () => {
     expect(response.body.stdout).toContain("hello");
   });
 });
+
+// ═══════════════════════════════════════════════════════════════
+//  Iterative CSV building — POST /compute/csv with csvId
+// ═══════════════════════════════════════════════════════════════
+
+describe("POST /compute/csv (iterative)", () => {
+  it("appends rows to an existing CSV under the same csvId", async () => {
+    const first = await request(app)
+      .post("/compute/csv")
+      .send({
+        data: [{ name: "Ada", born: 1815 }],
+        filename: "people.csv",
+      });
+    expect(first.status).toBe(200);
+    expect(first.body.csvId).toBeTruthy();
+    expect(first.body.rows).toBe(1);
+    expect(first.body.newRows).toBe(1);
+    expect(first.body.message).toContain(first.body.csvId);
+
+    const second = await request(app)
+      .post("/compute/csv")
+      .send({
+        csvId: first.body.csvId,
+        data: [{ name: "Grace", born: 1906 }, { name: "Alan", born: 1912 }],
+      });
+    expect(second.status).toBe(200);
+    expect(second.body.csvId).toBe(first.body.csvId);
+    expect(second.body.rows).toBe(3);
+    expect(second.body.newRows).toBe(2);
+
+    const download = await request(app).get(
+      `/compute/csv/download?id=${first.body.csvId}`,
+    );
+    expect(download.status).toBe(200);
+    const lines = download.text.split("\n");
+    expect(lines).toHaveLength(4); // header + 3 rows
+    expect(lines[0]).toBe("name,born");
+    expect(lines[1]).toContain("Ada");
+    expect(lines[3]).toContain("Alan");
+    expect(download.headers["content-disposition"]).toContain("people.csv");
+  });
+
+  it("maps appended rows onto the original columns", async () => {
+    const first = await request(app)
+      .post("/compute/csv")
+      .send({ data: [{ a: 1, b: 2 }] });
+    const second = await request(app)
+      .post("/compute/csv")
+      .send({
+        csvId: first.body.csvId,
+        data: [{ b: 20, c: 99 }], // 'c' is not a column; 'a' missing
+      });
+    expect(second.status).toBe(200);
+
+    const download = await request(app).get(
+      `/compute/csv/download?id=${first.body.csvId}`,
+    );
+    expect(download.text.split("\n")[2]).toBe(",20"); // a empty, b=20, c dropped
+  });
+
+  it("rejects an unknown csvId with recovery guidance", async () => {
+    const response = await request(app)
+      .post("/compute/csv")
+      .send({ csvId: "does-not-exist", data: [{ a: 1 }] });
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain("not found or expired");
+    expect(response.body.error).toContain("Omit csvId");
+  });
+
+  it("rejects the literal string 'null' as csvId", async () => {
+    const response = await request(app)
+      .post("/compute/csv")
+      .send({ csvId: "null", data: [{ a: 1 }] });
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain("Invalid csvId");
+  });
+
+  it("rejects conflicting columns when appending", async () => {
+    const first = await request(app)
+      .post("/compute/csv")
+      .send({ data: [{ a: 1, b: 2 }] });
+    const second = await request(app)
+      .post("/compute/csv")
+      .send({
+        csvId: first.body.csvId,
+        columns: ["x", "y"],
+        data: [{ x: 1, y: 2 }],
+      });
+    expect(second.status).toBe(400);
+    expect(second.body.error).toContain("Column mismatch");
+  });
+
+  it("rejects conflicting delimiter when appending", async () => {
+    const first = await request(app)
+      .post("/compute/csv")
+      .send({ data: [{ a: 1 }], delimiter: ";" });
+    const second = await request(app)
+      .post("/compute/csv")
+      .send({ csvId: first.body.csvId, data: [{ a: 2 }], delimiter: "," });
+    expect(second.status).toBe(400);
+    expect(second.body.error).toContain("Delimiter mismatch");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  Iterative diagram building — POST /compute/diagram with diagramId
+// ═══════════════════════════════════════════════════════════════
+
+describe("POST /compute/diagram (iterative)", () => {
+  it("appends definition lines to an existing diagram", async () => {
+    const first = await request(app)
+      .post("/compute/diagram")
+      .send({ definition: "flowchart TD\n  A-->B" });
+    expect(first.status).toBe(200);
+    expect(first.body.diagramId).toBeTruthy();
+    expect(first.body.totalLines).toBe(2);
+    expect(first.body.message).toContain(first.body.diagramId);
+
+    const second = await request(app)
+      .post("/compute/diagram")
+      .send({ diagramId: first.body.diagramId, definition: "  B-->C\n  C-->A" });
+    expect(second.status).toBe(200);
+    expect(second.body.diagramId).toBe(first.body.diagramId);
+    expect(second.body.totalLines).toBe(4);
+
+    const embed = await request(app).get(
+      `/compute/diagram/embed?id=${first.body.diagramId}`,
+    );
+    expect(embed.status).toBe(200);
+    expect(embed.text).toContain("A-->B");
+    expect(embed.text).toContain("B-->C");
+    expect(embed.text).toContain("C-->A");
+  });
+
+  it("keeps the original theme when extending unless overridden", async () => {
+    const first = await request(app)
+      .post("/compute/diagram")
+      .send({ definition: "flowchart TD\n  A-->B", theme: "forest" });
+    const second = await request(app)
+      .post("/compute/diagram")
+      .send({ diagramId: first.body.diagramId, definition: "  B-->C" });
+    expect(second.status).toBe(200);
+
+    const embed = await request(app).get(
+      `/compute/diagram/embed?id=${first.body.diagramId}`,
+    );
+    expect(embed.text).toContain("forest");
+  });
+
+  it("rejects an unknown diagramId with recovery guidance", async () => {
+    const response = await request(app)
+      .post("/compute/diagram")
+      .send({ diagramId: "does-not-exist", definition: "  B-->C" });
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain("not found or expired");
+    expect(response.body.error).toContain("Omit diagramId");
+  });
+
+  it("rejects the literal string 'undefined' as diagramId", async () => {
+    const response = await request(app)
+      .post("/compute/diagram")
+      .send({ diagramId: "undefined", definition: "flowchart TD\n  A-->B" });
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain("Invalid diagramId");
+  });
+
+  it("enforces the 50k character cap on the combined definition", async () => {
+    const first = await request(app)
+      .post("/compute/diagram")
+      .send({ definition: "flowchart TD\n" + "  A-->B\n".repeat(3000) });
+    expect(first.status).toBe(200);
+    const second = await request(app)
+      .post("/compute/diagram")
+      .send({
+        diagramId: first.body.diagramId,
+        definition: "  X-->Y\n".repeat(4000),
+      });
+    expect(second.status).toBe(400);
+    expect(second.body.error).toContain("50,000");
+  });
+});

@@ -52,6 +52,52 @@ export interface AgenticTaskListOptions {
 
 export type SanitizedTask = Omit<AgenticTask, "_id">;
 
+// ─── Agent Datastore Document ───────────────────────────────────
+
+export interface DatastoreRecord extends Document {
+  _id?: ObjectId;
+  project: string;
+  namespace: string;
+  key: string | null;
+  data: Record<string, unknown>;
+  agent: string | null;
+  username: string | null;
+  agentSessionId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface DatastoreProvenance {
+  agent?: string | null;
+  username?: string | null;
+  agentSessionId?: string | null;
+}
+
+export interface DatastoreQueryOptions {
+  filter?: unknown;
+  sort?: unknown;
+  fields?: unknown;
+  limit?: unknown;
+  skip?: unknown;
+  pipeline?: unknown;
+}
+
+export interface DatastoreDeleteOptions {
+  ids?: unknown;
+  filter?: unknown;
+  all?: unknown;
+}
+
+export interface SanitizedDatastoreRecord {
+  id: string | null;
+  key: string | null;
+  data: Record<string, unknown>;
+  agent: string | null;
+  username: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // ─── Collector Task (FreshnessService) ──────────────────────────
 
 export interface CollectorTask<T = never> {

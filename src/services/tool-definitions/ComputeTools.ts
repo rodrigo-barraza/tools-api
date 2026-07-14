@@ -224,7 +224,7 @@ export function getComputeTools(
     endpoint: {
       method: "POST",
       path: "/compute/csv",
-      bodyParams: ["data", "columns", "filename", "delimiter"],
+      bodyParams: ["data", "columns", "filename", "delimiter", "csvId"],
     },
     parameters: {
       type: "object",
@@ -233,6 +233,10 @@ export function getComputeTools(
           type: "array",
           description: translate("generate_csv.params.data"),
           items: { type: "object" },
+        },
+        csvId: {
+          type: "string",
+          description: translate("generate_csv.params.csvId"),
         },
         columns: {
           type: "array",
@@ -294,7 +298,7 @@ export function getComputeTools(
     endpoint: {
       method: "POST",
       path: "/compute/diagram",
-      bodyParams: ["definition", "theme"],
+      bodyParams: ["definition", "theme", "diagramId"],
     },
     parameters: {
       type: "object",
@@ -302,6 +306,10 @@ export function getComputeTools(
         definition: {
           type: "string",
           description: translate("generate_diagram.params.definition"),
+        },
+        diagramId: {
+          type: "string",
+          description: translate("generate_diagram.params.diagramId"),
         },
         theme: {
           type: "string",

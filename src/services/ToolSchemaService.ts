@@ -206,8 +206,12 @@ const TOOL_DOMAINS = {
   read_rss_feed: "Knowledge",
   get_pypi_package: "Knowledge",
 
-  // Classifieds
+  // Classifieds & Marketplaces
   search_craigslist: "Knowledge",
+  search_kijiji: "Knowledge",
+  search_autotrader: "Knowledge",
+  search_ebay: "Products",
+  search_etsy: "Products",
 
   // Reddit
   search_reddit: "Reddit",
@@ -375,6 +379,11 @@ const TOOL_DOMAINS = {
 
   // Agentic — Memory Persistence
   save_memory: "Core Harness Tools",
+
+  // Agentic — Structured Datastore
+  write_datastore: "Core Harness Tools",
+  query_datastore: "Core Harness Tools",
+  delete_datastore: "Core Harness Tools",
 
   // Agentic — Agent Management
   create_custom_agent: "Agent Management",
@@ -653,6 +662,10 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   get_music: "🎵",
   get_wayback_snapshot: ["🕰️", "💻"],
   search_craigslist: ["📋", "🔍"],
+  search_kijiji: ["🍁", "🔍"],
+  search_autotrader: ["🚗", "🔍"],
+  search_ebay: ["🛒", "🔍"],
+  search_etsy: ["🧶", "🔍"],
   search_reddit: ["🤖", "💬"],
   search_reddit_subreddits: ["🤖", "🔍"],
   get_reddit_subreddit_info: "ℹ️",
@@ -787,6 +800,9 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   list_tasks: ["📝", "📋"],
   update_task: ["✏️", "📋"],
   save_memory: ["💻", "🧠"],
+  write_datastore: ["🗄️", "✏️"],
+  query_datastore: ["🗄️", "🔍"],
+  delete_datastore: ["🗄️", "🗑️"],
   create_custom_agent: ["💻", "🤖"],
   list_custom_agents: ["🤖", "📋"],
   list_agents: ["🤖", "📋"],
@@ -988,6 +1004,10 @@ const TOOL_REQUIRED_KEYS = {
   search_torrents: ["QBITTORRENT_URL"],
   download_torrent: ["QBITTORRENT_URL"],
   get_torrent_status: ["QBITTORRENT_URL"],
+
+  // Marketplaces
+  search_ebay: ["EBAY_CLIENT_ID", "EBAY_CLIENT_SECRET"],
+  search_etsy: ["ETSY_API_KEY", "ETSY_SHARED_SECRET"],
 
   // Reddit
   search_reddit: ["REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET"],

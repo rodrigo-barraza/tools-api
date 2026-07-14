@@ -191,7 +191,7 @@ export function getUtilitiesTools(
     description: translate("generate_map.description"),
     endpoint: {
       path: "/utility/map",
-      queryParams: ["markers", "zoom", "maptype"],
+      queryParams: ["markers", "zoom", "maptype", "mapId"],
     },
     parameters: {
       type: "object",
@@ -208,6 +208,10 @@ export function getUtilitiesTools(
             },
             required: ["latitude", "longitude"],
           },
+        },
+        mapId: {
+          type: "string",
+          description: translate("generate_map.params.mapId"),
         },
         zoom: {
           type: "number",
@@ -235,7 +239,7 @@ export function getUtilitiesTools(
     endpoint: {
       method: "POST",
       path: "/utility/chart",
-      bodyParams: ["type", "title", "labels", "datasets"],
+      bodyParams: ["type", "title", "labels", "datasets", "chartId"],
     },
     parameters: {
       type: "object",
@@ -244,6 +248,10 @@ export function getUtilitiesTools(
           type: "string",
           description: translate("generate_chart.params.type"),
           enum: ["bar", "line", "pie"],
+        },
+        chartId: {
+          type: "string",
+          description: translate("generate_chart.params.chartId"),
         },
         title: {
           type: "string",
@@ -274,7 +282,7 @@ export function getUtilitiesTools(
           description: translate("generate_chart.params.datasets"),
         },
       },
-      required: ["type", "labels", "datasets"],
+      required: ["type"],
     },
     display: {
       activeVerb: "Generating chart",

@@ -45,6 +45,122 @@ interface EbayItemSummary {
   thumbnailImages?: Array<{ imageUrl: string }>;
   itemWebUrl?: string;
   shortDescription?: string;
+  condition?: string;
+  buyingOptions?: string[];
+  itemLocation?: { city?: string; stateOrProvince?: string; country?: string };
+  seller?: { username?: string; feedbackPercentage?: string; feedbackScore?: number };
+  itemCreationDate?: string;
+  shippingOptions?: Array<{ shippingCost?: { value: string; currency: string } }>;
+}
+
+// ─── On-Demand Keyword Search ─────────────────────────────────────
+
+const EBAY_SEARCH_SORTS: Record<string, string | null> = {
+  best_match: null, // API default
+  price_asc: "price",
+  price_desc: "-price",
+  newest: "newlyListed",
+};
+
+export interface EbaySearchOptions {
+  limit?: number;
+  sort?: string;
+  marketplace?: string;
+}
+
+export interface EbaySearchResult {
+  query: string;
+  marketplace: string;
+  totalOnEbay: number;
+  listings: {
+    itemId: string;
+    title: string;
+    price: number | null;
+    currency: string | null;
+    condition: string | null;
+    buyingOptions: string[];
+    url: string | null;
+    imageUrl: string | null;
+    location: string | null;
+    sellerUsername: string | null;
+    sellerFeedbackPercentage: string | null;
+    listedAt: string | null;
+  }[];
+}
+
+/**
+ * Search live eBay listings by keyword via the official Browse API.
+ */
+export async function searchEbayListings(
+  query: string,
+  { limit = 20, sort = "best_match", marketplace = "EBAY_CA" }: EbaySearchOptions = {},
+): Promise<EbaySearchResult | { error: string }> {
+  if (!CONFIG.EBAY_CLIENT_ID || !CONFIG.EBAY_CLIENT_SECRET) {
+    return { error: "EBAY_CLIENT_ID and EBAY_CLIENT_SECRET not configured" };
+  }
+  const trimmed = query.trim();
+  if (!trimmed) return { error: "Query is required" };
+  if (!(sort in EBAY_SEARCH_SORTS)) {
+    return {
+      error: `Unknown sort '${sort}'. Use one of: ${Object.keys(EBAY_SEARCH_SORTS).join(", ")}`,
+    };
+  }
+
+  const params = new URLSearchParams({
+    "q": trimmed,
+    limit: String(Math.min(Math.max(limit, 1), 50)),
+  });
+  const sortValue = EBAY_SEARCH_SORTS[sort];
+  if (sortValue) params.set("sort", sortValue);
+
+  await rateLimiter.wait("EBAY");
+  try {
+    const token = await ebayTokenManager.getToken();
+    const response = await fetch(
+      `${BASE_URL}/item_summary/search?${params}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "X-EBAY-C-MARKETPLACE-ID": marketplace,
+          "Content-Type": "application/json",
+        },
+      },
+    );
+    if (!response.ok) {
+      return { error: `eBay Browse API returned ${response.status}` };
+    }
+    const data = (await response.json()) as {
+      total?: number;
+      itemSummaries?: EbayItemSummary[];
+    };
+    const items = data.itemSummaries ?? [];
+
+    return {
+      query: trimmed,
+      marketplace,
+      totalOnEbay: data.total ?? items.length,
+      listings: items.map((item: EbayItemSummary) => ({
+        itemId: item.itemId,
+        title: item.title,
+        price: item.price ? parseFloat(item.price.value) : null,
+        currency: item.price?.currency ?? null,
+        condition: item.condition ?? null,
+        buyingOptions: item.buyingOptions ?? [],
+        url: item.itemWebUrl ?? null,
+        imageUrl:
+          item.image?.imageUrl ?? item.thumbnailImages?.[0]?.imageUrl ?? null,
+        location:
+          [item.itemLocation?.city, item.itemLocation?.stateOrProvince, item.itemLocation?.country]
+            .filter(Boolean)
+            .join(", ") || null,
+        sellerUsername: item.seller?.username ?? null,
+        sellerFeedbackPercentage: item.seller?.feedbackPercentage ?? null,
+        listedAt: item.itemCreationDate ?? null,
+      })),
+    };
+  } catch (error: unknown) {
+    return { error: `eBay search failed: ${errorMessage(error)}` };
+  }
 }
 
 /**

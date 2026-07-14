@@ -23,6 +23,8 @@ import {
   getAvailabilityHealth,
 } from "../caches/BestBuyCAAvailabilityCache.ts";
 import { fetchBestBuyCAAvailability } from "../fetchers/product/BestBuyCAAvailabilityFetcher.ts";
+import { searchEbayListings } from "../fetchers/product/EbayFetcher.ts";
+import { searchEtsyListings } from "../fetchers/product/EtsyFetcher.ts";
 import { errorMessage } from "../utilities.ts";
 
 const router = Router();
@@ -173,4 +175,52 @@ export function getProductHealth() {
     availability: getAvailabilityHealth(),
   };
 }
+
+// ─── Marketplace Keyword Search (eBay / Etsy) ──────────────────────
+
+router.get(
+  "/ebay/search",
+  asyncHandler(async (req: Request, res: Response) => {
+    const query = req.query['q'] as string | undefined;
+    const limit = req.query.limit as string | undefined;
+    const sort = req.query.sort as string | undefined;
+    const marketplace = req.query.marketplace as string | undefined;
+    if (!query) {
+      return res.status(400).json({ error: "Query parameter 'q' is required" });
+    }
+    const result = await searchEbayListings(query, {
+      limit: limit ? parseIntParam(limit, 20) : undefined,
+      sort,
+      marketplace,
+    });
+    if ("error" in result) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  }),
+);
+
+router.get(
+  "/etsy/search",
+  asyncHandler(async (req: Request, res: Response) => {
+    const query = req.query['q'] as string | undefined;
+    const limit = req.query.limit as string | undefined;
+    const sort = req.query.sort as string | undefined;
+    const minPrice = req.query.minPrice as string | undefined;
+    const maxPrice = req.query.maxPrice as string | undefined;
+    if (!query) {
+      return res.status(400).json({ error: "Query parameter 'q' is required" });
+    }
+    const result = await searchEtsyListings(query, {
+      limit: limit ? parseIntParam(limit, 20) : undefined,
+      sort,
+      minPrice: minPrice ? Number(minPrice) : undefined,
+      maxPrice: maxPrice ? Number(maxPrice) : undefined,
+    });
+    if ("error" in result) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  }),
+);
 export default router;

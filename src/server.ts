@@ -36,6 +36,7 @@ import { setupEmbedAssetCollection } from "./models/EmbedAsset.ts";
 import { setupCurrencyCollection } from "./models/CurrencySnapshot.ts";
 import { setupVideoCacheCollection } from "./models/VideoCache.ts";
 import { setupCraigslistCollections } from "./models/CraigslistListing.ts";
+import { setupClassifiedsCollections } from "./models/ClassifiedsArchive.ts";
 
 import { setupVideoTrimCacheCollection } from "./models/VideoTrimCache.ts";
 
@@ -241,6 +242,7 @@ async function start() {
       setupCurrencyCollection(),
       setupVideoCacheCollection(),
       setupCraigslistCollections(),
+      setupClassifiedsCollections(),
 
       setupVideoTrimCacheCollection(),
       setupToolCallsCollection(),

@@ -1752,6 +1752,18 @@ export const API_RATE_LIMITS = {
     qpd: 200, // self-imposed — no API; scraped gently to stay in human-browsing territory
     requestDelayMs: 10_000, // plus 0-5s jitter added in CraigslistFetcher
   },
+  KIJIJI: {
+    qps: null,
+    qpm: null,
+    qpd: 200, // self-imposed — scraped gently via ClassifiedsEngine
+    requestDelayMs: 10_000, // plus 0-5s jitter added in ClassifiedsEngine
+  },
+  AUTOTRADER: {
+    qps: null,
+    qpm: null,
+    qpd: 200, // self-imposed — scraped gently via ClassifiedsEngine
+    requestDelayMs: 10_000, // plus 0-5s jitter added in ClassifiedsEngine
+  },
 
   // ─── Event Domain ──────────────────────────────────────────────────
   TICKETMASTER: {

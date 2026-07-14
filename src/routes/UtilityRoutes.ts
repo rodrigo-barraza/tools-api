@@ -33,6 +33,7 @@ import {
 } from "../services/PythonInterpreterService.ts";
 import {
   storeChart,
+  storeChartWithId,
   getStoredChart,
   renderChartPng,
 } from "../services/ChartService.ts";
@@ -586,30 +587,60 @@ router.post(
 // ─── Chart Generation ──────────────────────────────────────────────
 const VALID_CHART_TYPES = ["bar", "line", "pie"];
 router.post("/chart", asyncHandler(async (req: Request, res: Response) => {
-  const { type, title, labels, datasets } = req.body;
-  if (!type || !VALID_CHART_TYPES.includes(type)) {
+  const { type, title, labels, datasets, chartId } = req.body;
+
+  // Iterative mode: load the existing chart and merge changes into it.
+  let existing: import("../types/chart.ts").ChartConfig | null = null;
+  if (chartId !== undefined && chartId !== null && chartId !== "") {
+    if (typeof chartId !== "string" || chartId === "null" || chartId === "undefined") {
+      return res.status(400).json({
+        error:
+          `Invalid chartId (got: ${JSON.stringify(chartId)}). Pass the exact chartId string ` +
+          `returned by a previous call, or omit it to create a new chart.`,
+      });
+    }
+    existing = await getStoredChart(chartId);
+    if (!existing) {
+      return res.status(400).json({
+        error:
+          `Chart '${chartId}' not found or expired. Omit chartId and resend the complete ` +
+          `chart (type, labels, datasets) to create a new one — the response returns a ` +
+          `chartId you can pass back to add or update datasets.`,
+      });
+    }
+  }
+
+  const effectiveType = type || existing?.type;
+  if (!effectiveType || !VALID_CHART_TYPES.includes(effectiveType)) {
     return res.status(400).json({
       error: `'type' is required and must be one of: ${VALID_CHART_TYPES.join(", ")}`,
     });
   }
-  if (!labels || !Array.isArray(labels) || labels.length === 0) {
+  const effectiveLabels = labels || existing?.labels;
+  if (!effectiveLabels || !Array.isArray(effectiveLabels) || effectiveLabels.length === 0) {
     return res.status(400).json({
       error: "'labels' is required (non-empty array of category/axis labels)",
     });
   }
-  if (labels.length > 1000) {
+  if (effectiveLabels.length > 1000) {
     return res.status(400).json({
-      error: `Maximum 1000 labels allowed (got ${labels.length}). Reduce your data points for chart rendering.`,
+      error: `Maximum 1000 labels allowed (got ${effectiveLabels.length}). Reduce your data points for chart rendering.`,
     });
   }
-  if (!datasets || !Array.isArray(datasets) || datasets.length === 0) {
+  if (!existing && (!datasets || !Array.isArray(datasets) || datasets.length === 0)) {
     return res.status(400).json({
       error:
         "'datasets' is required (non-empty array of { label, data } objects)",
     });
   }
-  for (let datasetIndex = 0; datasetIndex < datasets.length; datasetIndex++) {
-    const dataset = datasets[datasetIndex];
+  if (datasets !== undefined && (!Array.isArray(datasets) || datasets.length === 0)) {
+    return res.status(400).json({
+      error: "'datasets' must be a non-empty array of { label, data } objects when provided",
+    });
+  }
+  const newDatasets = datasets || [];
+  for (let datasetIndex = 0; datasetIndex < newDatasets.length; datasetIndex++) {
+    const dataset = newDatasets[datasetIndex];
     if (!dataset.data || !Array.isArray(dataset.data)) {
       return res.status(400).json({
         error: `Dataset at index ${datasetIndex} must have a 'data' array of numeric values`,
@@ -620,35 +651,68 @@ router.post("/chart", asyncHandler(async (req: Request, res: Response) => {
         error: `Dataset at index ${datasetIndex} must have a 'label' string (used for the chart legend)`,
       });
     }
-    if (type !== "pie" && dataset.data.length !== labels.length) {
+  }
+
+  // Merge datasets by label: an incoming dataset replaces the existing one
+  // with the same label; unseen labels are appended as new series.
+  let mergedDatasets: import("../types/chart.ts").ChartDataset[];
+  if (existing) {
+    mergedDatasets = [...existing.datasets];
+    for (const dataset of newDatasets) {
+      const matchIndex = mergedDatasets.findIndex(
+        (candidate) => candidate.label === dataset.label,
+      );
+      if (matchIndex !== -1) mergedDatasets[matchIndex] = dataset;
+      else mergedDatasets.push(dataset);
+    }
+  } else {
+    mergedDatasets = newDatasets;
+  }
+
+  for (const dataset of mergedDatasets) {
+    if (effectiveType !== "pie" && dataset.data.length !== effectiveLabels.length) {
       return res.status(400).json({
-        error: `Dataset '${dataset.label}' at index ${datasetIndex} has ${dataset.data.length} data points but there are ${labels.length} labels. These must match for '${type}' charts.`,
+        error: `Dataset '${dataset.label}' has ${dataset.data.length} data points but there are ${effectiveLabels.length} labels. These must match for '${effectiveType}' charts.`,
       });
     }
   }
+
   const chartConfig = {
-    type,
-    title: title || "",
-    labels,
-    datasets,
-    options: req.body.options || {},
+    type: effectiveType,
+    title: title !== undefined ? title : existing?.title || "",
+    labels: effectiveLabels,
+    datasets: mergedDatasets,
+    options: req.body.options || existing?.options || {},
   };
 
   // Render PNG eagerly and attempt MinIO upload for permanent URL
   const pngBuffer = await renderChartPng(chartConfig);
   const minioUrl = await MinioService.uploadToolAsset(pngBuffer, "image/png");
 
-  // Fallback: store config for the legacy render endpoint
-  const chartId = storeChart(chartConfig);
-  const chartImageUrl = minioUrl || buildLocalUrl("utility/chart/render", { id: chartId });
+  // Store config under a stable id so later calls can build on this chart
+  // (also serves the legacy render endpoint as a MinIO fallback)
+  let activeChartId: string;
+  if (existing && typeof chartId === "string") {
+    activeChartId = chartId;
+    storeChartWithId(activeChartId, chartConfig);
+  } else {
+    activeChartId = storeChart(chartConfig);
+  }
+  const chartImageUrl = minioUrl || buildLocalUrl("utility/chart/render", { id: activeChartId });
 
   res.json({
+    message:
+      `Chart ${existing ? "updated" : "created"}: ${mergedDatasets.length} dataset(s), ` +
+      `${effectiveLabels.length} label(s). The user can see this version now. To build on ` +
+      `it, call again with chartId '${activeChartId}' — datasets merge by label (same ` +
+      `label replaces that series, new labels add series); type/title/labels/options ` +
+      `update when provided and are otherwise kept.`,
     chartImageUrl,
     display: buildDisplay("image", chartImageUrl, { title: "Chart" }),
-    chartId,
-    type,
-    labelCount: labels.length,
-    datasetCount: datasets.length,
+    chartId: activeChartId,
+    type: effectiveType,
+    labelCount: effectiveLabels.length,
+    datasetCount: mergedDatasets.length,
   });
 }));
 router.get(
