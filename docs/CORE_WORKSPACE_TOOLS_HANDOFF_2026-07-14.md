@@ -5,8 +5,13 @@
 > - **§4.2** — `get_file_info` now routes **per path**, not by the batch's first path; mixed local/remote batches return correct per-machine results (test: `src/services/__tests__/AgenticFileInfoRouting.test.ts`).
 > - **§4.7** — `tryAgentRouteCommand` now uses the same `NO_AGENT` sentinel as the file service.
 > - **§3 S1 "never-connected root" hole (partially closed in code):** `loadUserWorkspaceRoots` (AdminRoutes) now stats each Mongo-configured root at boot; roots absent on the host are **not** added to `ALLOWED_ROOTS` — they're registered via new `registerRemoteOnlyRoot()` into `knownRemoteRoots`, so the S1 offline guard errors cleanly instead of local EACCES/ENOENT. `validatePath` also errors clearly when no local roots exist at all. Phase 0 (redeploy + container provisioning) is **still required** for the guard to reach production.
-> - Suites after these changes: tools-service **1888/1888**, workspace-service **193/193**; `tsc --noEmit` clean in both.
-> - Still open: Phase 0 deploy, live-agent end-to-end drive (§2), the schema diet (§4.1, needs product sign-off), shared-implementation extraction, `globToRegex` anchoring (utilities-library release), LSP idle-reaping/locale threading, caveman locale.
+> - Suites after these changes: tools-service **1888/1888**, workspace-service **195/195**; `tsc --noEmit` clean in both.
+>
+> **Phase 0 is DONE (same session):** both services deployed to the NAS (tools-service `76a4a49`, workspace-service `3b48109`), containers healthy. The agent container provisions `/workspace` + bash + git 2.47.3 (verified via docker exec). The agent reconnects and registers after deploys.
+>
+> **Live-agent drive (§2/§5.2) is DONE** against the sandbox agent over real WebSocket RPC: write/read, `file.blockReplace`, `file.multiReplace`, recursive `file.delete`, `command.run`, per-path `file.info`, and the `run_in_background` honest refusal (immediate, ~9ms) all verified working; remote BLOCKED_PATTERNS confirmed live (`.env` write and `node_modules` read refused by the agent). Offline behavior: killed the agent mid-session — ops on `/workspace` fail safe with "outside allowed roots: /" (the sandbox agent registers virtual root `/`, which the S1 guard deliberately excludes; no silent local execution occurs because `/` never matches in local validation). Reconnect recovers cleanly. Note: gateway route param is `run_in_background` (snake_case), not `runInBackground`.
+> - **New fix found during the drive:** the workspace-service container binary crashed with `ERR_UNHANDLED_ERROR` (re-emitting the reserved `error` event with no subscriber) whenever the backend dropped. Fixed in `3b48109` + regression tests; redeployed.
+> - Still open: the schema diet (§4.1, needs product sign-off), shared-implementation extraction, `get_file_info` remote batches >20 uncapped pre-RPC (minor), `globToRegex` anchoring (utilities-library release), LSP idle-reaping/locale threading, caveman locale, concurrency/crash-during-write coverage (§2).
 
 Audience: the next agent picking up the core workspace tooling. Read this with a skeptical eye — it is deliberately critical about what was actually verified vs. asserted.
 
