@@ -37,7 +37,11 @@ import {
 import { resolve, relative, extname, dirname, basename, join } from "node:path";
 import { existsSync, realpathSync, createReadStream } from "node:fs";
 import { createInterface } from "node:readline";
-import { resolveAndRouteToAgent, sendRpc } from "./AgentConnectionManager.ts";
+import {
+  resolveAndRouteToAgent,
+  sendRpc,
+  offlineRemoteRootForPath,
+} from "./AgentConnectionManager.ts";
 import logger from "../logger.ts";
 
 // ────────────────────────────────────────────────────────────
@@ -45,8 +49,18 @@ import logger from "../logger.ts";
 // ────────────────────────────────────────────────────────────
 
 /**
+ * Sentinel returned by tryAgentRoute when no remote agent serves the path, so
+ * callers fall back to local execution. Using a distinct sentinel (rather than
+ * null/undefined) means a remote handler that legitimately resolves to a falsy
+ * value can NEVER be mistaken for "no agent" and silently re-run locally on the
+ * wrong machine.
+ */
+const NO_AGENT = Symbol("no-agent");
+
+/**
  * Route a workspace operation to a remote agent if one serves the target path.
- * Returns null if no agent matches (caller falls back to local handling).
+ * Returns the NO_AGENT sentinel if no agent matches (caller falls back to local
+ * handling); otherwise returns the remote result (or an { error } object).
  */
 async function tryAgentRoute(
   method: string,
@@ -54,12 +68,42 @@ async function tryAgentRoute(
   targetPath: string,
 ): Promise<unknown> {
   const agent = resolveAndRouteToAgent(targetPath, ALLOWED_ROOTS[0]);
-  if (!agent) return null;
+  if (!agent) {
+    const offlineRoot = offlineRemoteRootForPath(targetPath, ALLOWED_ROOTS[0]);
+    if (offlineRoot) {
+      return {
+        error: `The workspace agent serving '${offlineRoot}' is offline, so this path cannot be accessed. Reconnect the workspace agent and retry — the operation was NOT run locally on the server.`,
+      };
+    }
+    return NO_AGENT;
+  }
   try {
     return await sendRpc(agent.id, method, params);
   } catch (error: unknown) {
     const errorMessage = getErrorMessage(error);
     return { error: `Agent RPC failed: ${errorMessage}` };
+  }
+}
+
+/**
+ * Write a file atomically: write to a temp file in the same directory, then
+ * rename over the target. A crash mid-write leaves the original intact instead
+ * of a truncated file. Matches the remote workspace-service behavior so local
+ * and remote writes have the same durability guarantee.
+ */
+async function writeFileAtomic(resolved: string, data: string): Promise<void> {
+  const tmp = `${resolved}.tmp-${process.pid}-${Date.now()}`;
+  try {
+    await writeFile(tmp, data, "utf-8");
+    await rename(tmp, resolved);
+  } catch (error) {
+    // Best-effort cleanup of the temp file on failure.
+    try {
+      await rm(tmp, { force: true });
+    } catch {
+      /* ignore */
+    }
+    throw error;
   }
 }
 
@@ -304,7 +348,7 @@ export async function agenticReadFile(
     { path: filePath, startLine, endLine },
     filePath,
   );
-  if (agentResult) return agentResult;
+  if (agentResult !== NO_AGENT) return agentResult as Record<string, unknown>;
 
   const validation = validatePath(filePath);
   if (!validation.safe) {
@@ -362,13 +406,28 @@ export async function agenticReadFile(
     const allLines = raw.split("\n");
     const totalLines = allLines.length;
 
+    // Reject degenerate ranges explicitly instead of "succeeding" with 0 lines
+    // (which reads as an empty file and misleads the model).
+    if (startLine && startLine > totalLines) {
+      return {
+        error: `startLine (${startLine}) exceeds the file length (${totalLines} lines). ${resolved} has lines 1–${totalLines}.`,
+      };
+    }
+    if (startLine && endLine && endLine < startLine) {
+      return {
+        error: `startLine (${startLine}) is greater than endLine (${endLine}). Provide a range where startLine <= endLine.`,
+      };
+    }
+
     // Apply line range
     const start = startLine ? Math.max(1, startLine) : 1;
     let end = endLine ? Math.min(totalLines, endLine) : totalLines;
 
     // Enforce max lines per read
+    let cappedByMaxLines = false;
     if (end - start + 1 > WORKSPACE_MAX_LINES_PER_READ) {
       end = start + WORKSPACE_MAX_LINES_PER_READ - 1;
+      cappedByMaxLines = true;
     }
 
     const selectedLines = allLines.slice(start - 1, end);
@@ -376,6 +435,7 @@ export async function agenticReadFile(
       .map((line: string, i: number) => `${start + i}: ${line}`)
       .join("\n");
 
+    const truncated = end < totalLines;
     return {
       filePath: resolved,
       totalLines,
@@ -383,7 +443,15 @@ export async function agenticReadFile(
       startLine: start,
       endLine: Math.min(end, totalLines),
       linesReturned: selectedLines.length,
-      truncated: end < totalLines,
+      truncated,
+      ...(truncated
+        ? {
+            truncationReason: cappedByMaxLines
+              ? `Capped at ${WORKSPACE_MAX_LINES_PER_READ} lines per read.`
+              : "More lines follow the requested range.",
+            nextStartLine: end + 1,
+          }
+        : {}),
       content: numberedContent,
     };
   } catch (error: unknown) {
@@ -393,6 +461,57 @@ export async function agenticReadFile(
     }
     return { error: `Read failed: ${errorMessage(error)}` };
   }
+}
+
+/**
+ * Read a bounded line range out of a file too large to load whole. Streams
+ * line-by-line so memory stays bounded; only lines in [start, end] (capped at
+ * WORKSPACE_MAX_LINES_PER_READ) are buffered. totalLines is not known without
+ * reading to EOF, so it is reported as null and truncated is true.
+ */
+async function readOversizedRange(
+  resolved: string,
+  sizeBytes: number,
+  startLine?: number,
+  endLine?: number,
+): Promise<Record<string, unknown>> {
+  const start = startLine ? Math.max(1, startLine) : 1;
+  let end = endLine ? Math.max(start, endLine) : start + WORKSPACE_MAX_LINES_PER_READ - 1;
+  if (end - start + 1 > WORKSPACE_MAX_LINES_PER_READ) {
+    end = start + WORKSPACE_MAX_LINES_PER_READ - 1;
+  }
+  const collected: string[] = [];
+  let lineNo = 0;
+  let reachedEof = true;
+  const rl = createInterface({
+    input: createReadStream(resolved, "utf-8"),
+    crlfDelay: Infinity,
+  });
+  try {
+    for await (const line of rl) {
+      lineNo++;
+      if (lineNo < start) continue;
+      if (lineNo > end) {
+        reachedEof = false;
+        break;
+      }
+      collected.push(`${lineNo}: ${line}`);
+    }
+  } finally {
+    rl.close();
+  }
+  return {
+    filePath: resolved,
+    totalLines: reachedEof ? lineNo : null,
+    totalBytes: sizeBytes,
+    oversized: true,
+    startLine: start,
+    endLine: Math.min(end, lineNo),
+    linesReturned: collected.length,
+    truncated: !reachedEof,
+    ...(reachedEof ? {} : { nextStartLine: end + 1 }),
+    content: collected.join("\n"),
+  };
 }
 
 /**
@@ -409,7 +528,7 @@ export async function agenticWriteFile(
     { path: filePath, content, createDirs },
     filePath,
   );
-  if (agentResult) return agentResult;
+  if (agentResult !== NO_AGENT) return agentResult as Record<string, unknown>;
 
   const validation = validatePath(filePath);
   if (!validation.safe) {
@@ -430,13 +549,21 @@ export async function agenticWriteFile(
   const resolved = validation.resolved;
 
   try {
+    if (existsSync(resolved)) {
+      const targetStat = await stat(resolved);
+      if (targetStat.isDirectory()) {
+        return {
+          error: `'${resolved}' is a directory, not a file. Choose a file path (e.g. ${resolved}/yourfile).`,
+        };
+      }
+    }
     if (createDirs) {
       const dir = dirname(resolved);
       await mkdir(dir, { recursive: true });
     }
 
     const existed = existsSync(resolved);
-    await writeFile(resolved, content, "utf-8");
+    await writeFileAtomic(resolved, content);
 
     const lines = content.split("\n").length;
 
@@ -468,7 +595,7 @@ export async function agenticStringReplace(
     { path: filePath, oldString, newString, allowMultiple },
     filePath,
   );
-  if (agentResult) return agentResult;
+  if (agentResult !== NO_AGENT) return agentResult as Record<string, unknown>;
 
   const validation = validatePath(filePath);
   if (!validation.safe) {
@@ -487,11 +614,16 @@ export async function agenticStringReplace(
   try {
     const content = await readFile(resolved, "utf-8");
 
-    // Count occurrences
+    // Count occurrences. Advance by oldString.length (NOT index+1) so
+    // overlapping matches aren't double-counted — otherwise a single-match
+    // edit like replacing "\n\n" inside "\n\n\n" is spuriously rejected as
+    // ambiguous, and replacementsApplied over-reports. (Mirrors the remote
+    // FileHandler fix.)
     let count = 0;
-    let index = -1;
-    while ((index = content.indexOf(oldString, index + 1)) !== -1) {
+    let index = content.indexOf(oldString);
+    while (index !== -1) {
       count++;
+      index = content.indexOf(oldString, index + oldString.length);
     }
 
     if (count === 0) {
@@ -518,7 +650,7 @@ export async function agenticStringReplace(
       updated = content.replace(oldString, newString);
     }
 
-    await writeFile(resolved, updated, "utf-8");
+    await writeFileAtomic(resolved, updated);
 
     // Compute a simple diff summary
     const oldLines = oldString.split("\n").length;
@@ -553,7 +685,7 @@ export async function agenticPatchFile(filePath: string, patch: string) {
     { path: filePath, patch },
     filePath,
   );
-  if (agentResult) return agentResult;
+  if (agentResult !== NO_AGENT) return agentResult as Record<string, unknown>;
 
   const validation = validatePath(filePath);
   if (!validation.safe) {
@@ -580,7 +712,7 @@ export async function agenticPatchFile(filePath: string, patch: string) {
       };
     }
 
-    await writeFile(resolved, patched, "utf-8");
+    await writeFileAtomic(resolved, patched);
 
     const oldLines = content.split("\n").length;
     const newLines = patched.split("\n").length;
@@ -621,7 +753,7 @@ export async function agenticListDirectory(
     { path: dirPath, recursive, maxDepth },
     dirPath,
   );
-  if (agentResult) return agentResult;
+  if (agentResult !== NO_AGENT) return agentResult as Record<string, unknown>;
 
   const validation = validatePath(dirPath);
   if (!validation.safe) {
@@ -717,7 +849,7 @@ export async function agenticGetDirectoryTree(
     { path: directoryPath, maxDepth },
     directoryPath,
   );
-  if (agentResult) return agentResult as Record<string, unknown>;
+  if (agentResult !== NO_AGENT) return agentResult as Record<string, unknown>;
 
   const validation = validatePath(directoryPath);
   if (!validation.safe) {
@@ -806,7 +938,7 @@ export async function agenticGrepSearch(
     { pattern, searchPath, isRegex, includes, caseInsensitive, matchPerLine },
     searchPath,
   );
-  if (agentResult) return agentResult;
+  if (agentResult !== NO_AGENT) return agentResult as Record<string, unknown>;
 
   const validation = validatePath(searchPath);
   if (!validation.safe) {
@@ -833,12 +965,39 @@ export async function agenticGrepSearch(
 
     const results: GrepResult[] = [];
     const fileMatches = new Set<string>();
+    let skippedOversized = 0;
+    let skippedBinary = 0;
+    let capReached = false;
+
+    // Precompile include globs so "**/*.ts", "src/**/*.ts", and "*.ts" all
+    // work — the old code only handled suffix "*.ext" and exact names, so any
+    // path-glob silently matched nothing and grep reported 0 matches.
+    const includeRegexes: RegExp[] = includes
+      .filter((g): g is string => typeof g === "string" && g.length > 0)
+      .map((g) => globToRegex(g));
+    const matchesInclude = (name: string, relPath: string): boolean => {
+      if (includeRegexes.length === 0) return true;
+      return includeRegexes.some((r) => r.test(name) || r.test(relPath));
+    };
+
+    // In file-list mode (matchPerLine:false) results[] never grows, so the
+    // cap must gate on fileMatches instead — otherwise the search is unbounded.
+    const capHit = () =>
+      matchPerLine
+        ? results.length >= WORKSPACE_MAX_GREP_RESULTS
+        : fileMatches.size >= WORKSPACE_MAX_GREP_RESULTS;
 
     async function searchFile(filePath: string) {
-      if (results.length >= WORKSPACE_MAX_GREP_RESULTS) return;
+      if (capHit()) {
+        capReached = true;
+        return;
+      }
 
       const fileExtension = extname(filePath).toLowerCase();
-      if (BINARY_FILE_EXTENSIONS.has(fileExtension)) return;
+      if (BINARY_FILE_EXTENSIONS.has(fileExtension)) {
+        skippedBinary++;
+        return;
+      }
 
       // Check blocked patterns
       const pathCheck = validatePath(filePath);
@@ -846,13 +1005,19 @@ export async function agenticGrepSearch(
 
       try {
         const fileStat = await stat(filePath);
-        if (fileStat.size > WORKSPACE_MAX_READ_BYTES) return;
+        if (fileStat.size > WORKSPACE_MAX_READ_BYTES) {
+          skippedOversized++;
+          return;
+        }
 
         const content = await readFile(filePath, "utf-8");
         const lines = content.split("\n");
 
         for (let i = 0; i < lines.length; i++) {
-          if (results.length >= WORKSPACE_MAX_GREP_RESULTS) break;
+          if (capHit()) {
+            capReached = true;
+            break;
+          }
 
           regex.lastIndex = 0;
           if (regex.test(lines[i])) {
@@ -866,6 +1031,9 @@ export async function agenticGrepSearch(
                     ? lines[i].slice(0, 500) + "..."
                     : lines[i],
               });
+            } else {
+              // File-list mode: one match is enough for this file.
+              break;
             }
           }
         }
@@ -875,13 +1043,19 @@ export async function agenticGrepSearch(
     }
 
     async function walkDir(dir: string) {
-      if (results.length >= WORKSPACE_MAX_GREP_RESULTS) return;
+      if (capHit()) {
+        capReached = true;
+        return;
+      }
 
       try {
         const entries = await readdir(dir, { withFileTypes: true });
 
         for (const entry of entries) {
-          if (results.length >= WORKSPACE_MAX_GREP_RESULTS) break;
+          if (capHit()) {
+            capReached = true;
+            break;
+          }
 
           const fullPath = resolve(dir, entry.name);
 
@@ -891,17 +1065,7 @@ export async function agenticGrepSearch(
               continue;
             await walkDir(fullPath);
           } else {
-            // Apply include filters
-            if (includes.length > 0) {
-              const name = entry.name;
-              const matched = includes.some((glob: string) => {
-                if (glob.startsWith("*.")) {
-                  return name.endsWith(glob.slice(1));
-                }
-                return name === glob;
-              });
-              if (!matched) continue;
-            }
+            if (!matchesInclude(entry.name, relative(resolved, fullPath))) continue;
             await searchFile(fullPath);
           }
         }
@@ -917,13 +1081,23 @@ export async function agenticGrepSearch(
       await walkDir(resolved);
     }
 
+    const skipNote =
+      skippedOversized || skippedBinary
+        ? {
+            skippedOversized,
+            skippedBinary,
+            skipNote: `${skippedOversized} file(s) skipped for exceeding the size limit and ${skippedBinary} binary file(s) were not searched.`,
+          }
+        : {};
+
     if (!matchPerLine) {
       return {
         pattern,
         searchPath: resolved,
         matchingFiles: [...fileMatches],
         totalFiles: fileMatches.size,
-        truncated: fileMatches.size >= WORKSPACE_MAX_GREP_RESULTS,
+        truncated: capReached,
+        ...skipNote,
       };
     }
 
@@ -931,7 +1105,8 @@ export async function agenticGrepSearch(
       pattern,
       searchPath: resolved,
       totalMatches: results.length,
-      truncated: results.length >= WORKSPACE_MAX_GREP_RESULTS,
+      truncated: capReached,
+      ...skipNote,
       results,
     };
   } catch (error: unknown) {
@@ -952,7 +1127,7 @@ export async function agenticGlobFiles(pattern: string, searchPath: string) {
     { pattern, searchPath },
     searchPath,
   );
-  if (agentResult) return agentResult;
+  if (agentResult !== NO_AGENT) return agentResult as Record<string, unknown>;
 
   const validation = validatePath(searchPath);
   if (!validation.safe) {
@@ -1097,7 +1272,7 @@ export async function agenticFileInfo(paths: string | string[]) {
       { paths: pathList },
       pathList[0],
     );
-    if (agentResult) return agentResult;
+    if (agentResult !== NO_AGENT) return agentResult as Record<string, unknown>;
   }
 
   if (pathList.length === 0) {
@@ -1191,7 +1366,7 @@ export async function agenticFileDiff(
     { pathA, pathB, content, contextLines },
     pathA,
   );
-  if (agentResult) return agentResult;
+  if (agentResult !== NO_AGENT) return agentResult as Record<string, unknown>;
 
   if (!pathA) {
     return { error: "'pathA' is required" };
@@ -1274,7 +1449,7 @@ export async function agenticMoveFile(
     { source, destination, createDirs },
     source,
   );
-  if (agentResult) return agentResult;
+  if (agentResult !== NO_AGENT) return agentResult as Record<string, unknown>;
 
   const validSource = validatePath(source);
   if (!validSource.safe) {
@@ -1330,7 +1505,7 @@ export async function agenticDeleteFile(
     { path: filePath, recursive },
     filePath,
   );
-  if (agentResult) return agentResult;
+  if (agentResult !== NO_AGENT) return agentResult as Record<string, unknown>;
 
   const validation = validatePath(filePath);
   if (!validation.safe) {
@@ -1390,7 +1565,7 @@ export async function agenticBlockReplace(
     { path: filePath, startLine, endLine, targetContent, replacementContent },
     filePath,
   );
-  if (agentResult) return agentResult;
+  if (agentResult !== NO_AGENT) return agentResult as Record<string, unknown>;
 
   const validation = validatePath(filePath);
   if (!validation.safe) {
@@ -1448,7 +1623,7 @@ export async function agenticBlockReplace(
     const newSegmentLines = replacementContent.split("\n");
     const updatedContent = [...before, ...newSegmentLines, ...after].join("\n");
 
-    await writeFile(resolved, updatedContent, "utf-8");
+    await writeFileAtomic(resolved, updatedContent);
 
     const oldLinesCount = endLine - startLine + 1;
     const newLinesCount = newSegmentLines.length;
@@ -1493,7 +1668,7 @@ export async function agenticMultiReplace(
     { path: filePath, chunks },
     filePath,
   );
-  if (agentResult) return agentResult;
+  if (agentResult !== NO_AGENT) return agentResult as Record<string, unknown>;
 
   const validation = validatePath(filePath);
   if (!validation.safe) {
@@ -1601,7 +1776,7 @@ export async function agenticMultiReplace(
     }
 
     // Write back updated content
-    await writeFile(resolved, lines.join("\n"), "utf-8");
+    await writeFileAtomic(resolved, lines.join("\n"));
 
     return {
       filePath: resolved,

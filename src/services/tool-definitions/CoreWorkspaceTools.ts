@@ -793,7 +793,7 @@ export function getCoreWorkspaceTools(
           description: translate("edit_notebook.params.action"),
         },
         cellIndex: {
-          type: "number",
+          type: "integer",
           description: translate("edit_notebook.params.cellIndex"),
         },
         content: {

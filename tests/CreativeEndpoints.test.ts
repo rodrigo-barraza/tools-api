@@ -248,13 +248,12 @@ describe("POST /creative/vector-animation", () => {
   });
 
   it("successively appends/edits layers progressively using the same sessionId", async () => {
-    const sessionId = "session-" + Math.random().toString(36).slice(2, 8);
-
-    // Step 1: Create initial ball
+    // Intentional behavior change: sessions are created only by the server
+    // (omit sessionId on the first call); unknown IDs are rejected instead of
+    // silently adopted.
     const step1 = await request(app)
       .post("/creative/vector-animation")
       .send({
-        sessionId,
         animation: {
           layers: [
             {
@@ -271,7 +270,8 @@ describe("POST /creative/vector-animation", () => {
       });
 
     expect(step1.status).toBe(200);
-    expect(step1.body.sessionId).toBe(sessionId);
+    const sessionId = step1.body.sessionId;
+    expect(sessionId).toBeTruthy();
     expect(step1.body.layerCount).toBe(1);
     expect(step1.body.totalKeyframes).toBe(2);
     expect(step1.body.isAppend).toBe(false);
@@ -489,6 +489,68 @@ describe("GET /creative/vector-animation/embed", () => {
     expect(res.text).toContain("ctx.clip()");
     expect(res.text).toContain("ctx.drawImage(");
   });
+
+  it("player script has no references to the undefined 'd' variable (text/image layers used to crash)", async () => {
+    const createRes = await request(app)
+      .post("/creative/vector-animation")
+      .send({
+        animation: {
+          layers: [
+            { id: "label", shapeType: "text", shapeData: { text: "hi", fontSize: 24 } },
+          ],
+        },
+      });
+
+    const res = await request(app).get(
+      `/creative/vector-animation/embed?id=${createRes.body.animationId}`,
+    );
+    expect(res.status).toBe(200);
+    expect(res.text).not.toMatch(/[^a-zA-Z0-9_.]d\.(text|fontSize|fontFamily|textAlign|textBaseline|width|radius|rx|points)\b/);
+    expect(res.text).toContain("shapeData.text");
+  });
+
+  it("escapes HTML in the animation title and </script> in stored strings", async () => {
+    const createRes = await request(app)
+      .post("/creative/vector-animation")
+      .send({
+        animation: {
+          layers: [
+            {
+              id: "sneaky",
+              shapeType: "text",
+              shapeData: { text: "</script><script>window.pwned=1</script>" },
+            },
+          ],
+        },
+        options: { title: "<img src=x onerror=alert(1)>" },
+      });
+
+    expect(createRes.status).toBe(200);
+    const res = await request(app).get(
+      `/creative/vector-animation/embed?id=${createRes.body.animationId}`,
+    );
+    expect(res.status).toBe(200);
+    expect(res.text).not.toContain("<img src=x onerror=alert(1)>");
+    expect(res.text).toContain("&lt;img src=x onerror=alert(1)&gt;");
+    expect(res.text).not.toContain("</script><script>window.pwned=1</script>");
+  });
+
+  it("quantizes playback to the authored fps in the player script", async () => {
+    const createRes = await request(app)
+      .post("/creative/vector-animation")
+      .send({
+        animation: {
+          fps: 12,
+          layers: [{ id: "l1", shapeType: "circle" }],
+        },
+      });
+
+    const res = await request(app).get(
+      `/creative/vector-animation/embed?id=${createRes.body.animationId}`,
+    );
+    expect(res.status).toBe(200);
+    expect(res.text).toContain("quantizeTime");
+  });
 });
 
 describe("POST /creative/vector-animation input validation", () => {
@@ -497,7 +559,207 @@ describe("POST /creative/vector-animation input validation", () => {
       .post("/creative/vector-animation")
       .send({});
     expect(apiResponse.status).toBe(400);
-    expect(apiResponse.body.error).toBe("'animation' is required");
+    expect(apiResponse.body.error).toContain("'animation' is required");
+  });
+
+  it("parses animation sent as a JSON string instead of rendering an empty animation (production model behavior)", async () => {
+    const apiResponse = await request(app)
+      .post("/creative/vector-animation")
+      .send({
+        animation: JSON.stringify({
+          duration: 2,
+          layers: [
+            {
+              id: "ball",
+              shapeType: "circle",
+              keyframes: [{ time: 0, properties: { x: 10 } }],
+            },
+          ],
+        }),
+      });
+
+    expect(apiResponse.status).toBe(200);
+    expect(apiResponse.body.layerCount).toBe(1);
+    expect(apiResponse.body.totalKeyframes).toBe(1);
+    expect(apiResponse.body.duration).toBe(2);
+  });
+
+  it("rejects animation strings that are not valid JSON with a teaching error", async () => {
+    const apiResponse = await request(app)
+      .post("/creative/vector-animation")
+      .send({ animation: "a bouncing ball, 5 seconds" });
+
+    expect(apiResponse.status).toBe(400);
+    expect(apiResponse.body.error).toContain("JSON object");
+  });
+
+  it("unwraps accidental animation.animation nesting (production model behavior)", async () => {
+    const apiResponse = await request(app)
+      .post("/creative/vector-animation")
+      .send({
+        animation: {
+          background: "#000000",
+          animation: {
+            duration: 3,
+            layers: [{ id: "sq", shapeType: "rectangle" }],
+          },
+        },
+      });
+
+    expect(apiResponse.status).toBe(200);
+    expect(apiResponse.body.layerCount).toBe(1);
+    expect(apiResponse.body.duration).toBe(3);
+  });
+
+  it("rejects an unknown or expired sessionId with recovery guidance", async () => {
+    const apiResponse = await request(app)
+      .post("/creative/vector-animation")
+      .send({
+        sessionId: "hotdog-v2-a1b2c3",
+        animation: { layers: [{ id: "l1", shapeType: "circle" }] },
+      });
+
+    expect(apiResponse.status).toBe(400);
+    expect(apiResponse.body.error).toContain("not found or expired");
+    expect(apiResponse.body.error).toContain("Omit sessionId");
+  });
+
+  it("rejects literal 'null'/'undefined' sessionId strings", async () => {
+    for (const badSessionId of ["null", "undefined"]) {
+      const apiResponse = await request(app)
+        .post("/creative/vector-animation")
+        .send({
+          sessionId: badSessionId,
+          animation: { layers: [{ id: "l1", shapeType: "circle" }] },
+        });
+      expect(apiResponse.status).toBe(400);
+      expect(apiResponse.body.error).toContain("Invalid sessionId");
+    }
+  });
+
+  it("coerces string duration to a number so the embed does not 500", async () => {
+    const createResponse = await request(app)
+      .post("/creative/vector-animation")
+      .send({
+        animation: {
+          duration: "5",
+          layers: [{ id: "l1", shapeType: "circle" }],
+        },
+      });
+
+    expect(createResponse.status).toBe(200);
+    expect(createResponse.body.duration).toBe(5);
+
+    const embedResponse = await request(app).get(
+      `/creative/vector-animation/embed?id=${createResponse.body.animationId}`,
+    );
+    expect(embedResponse.status).toBe(200);
+  });
+
+  it("rejects gradient stops with out-of-range offsets", async () => {
+    const apiResponse = await request(app)
+      .post("/creative/vector-animation")
+      .send({
+        animation: {
+          layers: [
+            {
+              id: "grad",
+              shapeType: "circle",
+              fillColor: {
+                type: "linear",
+                stops: [{ offset: 50, color: "#ff0000" }],
+              },
+            },
+          ],
+        },
+      });
+
+    expect(apiResponse.status).toBe(400);
+    expect(apiResponse.body.error).toContain("offset");
+  });
+
+  it("rejects gradients missing type/stops with an example", async () => {
+    const apiResponse = await request(app)
+      .post("/creative/vector-animation")
+      .send({
+        animation: {
+          layers: [{ id: "grad", shapeType: "circle", fillColor: { x1: 0 } }],
+        },
+      });
+
+    expect(apiResponse.status).toBe(400);
+    expect(apiResponse.body.error).toContain('"linear" or "radial"');
+  });
+
+  it("normalizes camelCase easing aliases and rejects unknown easings", async () => {
+    const okResponse = await request(app)
+      .post("/creative/vector-animation")
+      .send({
+        animation: {
+          layers: [
+            {
+              id: "eased",
+              shapeType: "circle",
+              keyframes: [
+                { time: 0, properties: { x: 0 }, easing: "easeInOut" },
+                { time: 1, properties: { x: 10 } },
+              ],
+            },
+          ],
+        },
+      });
+    expect(okResponse.status).toBe(200);
+
+    const badResponse = await request(app)
+      .post("/creative/vector-animation")
+      .send({
+        animation: {
+          layers: [
+            {
+              id: "eased",
+              shapeType: "circle",
+              keyframes: [
+                { time: 0, properties: { x: 0 }, easing: "bounce" },
+                { time: 1, properties: { x: 10 } },
+              ],
+            },
+          ],
+        },
+      });
+    expect(badResponse.status).toBe(400);
+    expect(badResponse.body.error).toContain("unknown easing");
+    expect(badResponse.body.error).toContain("ease-in-out");
+  });
+
+  it("rejects keyframes beyond the animation duration", async () => {
+    const apiResponse = await request(app)
+      .post("/creative/vector-animation")
+      .send({
+        animation: {
+          duration: 2,
+          layers: [
+            {
+              id: "late",
+              shapeType: "circle",
+              keyframes: [{ time: 5, properties: { x: 0 } }],
+            },
+          ],
+        },
+      });
+
+    expect(apiResponse.status).toBe(400);
+    expect(apiResponse.body.error).toContain("never play");
+  });
+
+  it("rejects new layers without a shapeType", async () => {
+    const apiResponse = await request(app)
+      .post("/creative/vector-animation")
+      .send({
+        animation: { layers: [{ id: "mystery" }] },
+      });
+
+    expect(apiResponse.status).toBe(400);
+    expect(apiResponse.body.error).toContain("shapeType");
   });
 
   it("rejects non-integer animation width", async () => {

@@ -2,7 +2,7 @@
 // Generates self-contained HTML embeds with Three.js rendering
 // utilizing optimized GPU-based InstancedMesh for voxel grid rendering.
 
-import { buildEmbedHtml } from "../utilities.ts";
+import { buildEmbedHtml, escapeHtml, sanitizeCssColor, toEmbedScriptJson } from "../utilities.ts";
 import { THREE_JS_CDN } from "./ThreeDimensionalBaseService.ts";
 
 // ─── Constants ─────────────────────────────────────────────────
@@ -221,7 +221,7 @@ export function resolveVoxels(input: VoxelBuildInput): Voxel[] {
       const [centerX, centerY, centerZ] = shape.center;
 
       if (shape.type === "box") {
-        const [width, height, depth] = shape.size!;
+        const [width, height, depth] = shape.size as [number, number, number];
         const halfWidth = width / 2;
         const halfHeight = height / 2;
         const halfDepth = depth / 2;
@@ -617,8 +617,8 @@ export function buildVoxelEmbedHtml(input: VoxelBuildInput): string {
     outlineOpacity = 0.35,
   } = options;
 
-  const voxelDataJson = JSON.stringify(voxels);
-  const optionsJson = JSON.stringify({
+  const voxelDataJson = toEmbedScriptJson(voxels);
+  const optionsJson = toEmbedScriptJson({
     wireframe,
     flatShading,
     showGrid,
@@ -642,7 +642,7 @@ export function buildVoxelEmbedHtml(input: VoxelBuildInput): string {
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
-    background: ${background};
+    background: ${sanitizeCssColor(background, "#0f172a")};
   }
   #scene-container {
     width: 100%;
@@ -681,7 +681,7 @@ export function buildVoxelEmbedHtml(input: VoxelBuildInput): string {
   }`,
     bodyContent: `<div id="scene-container">
   <div id="scene-overlay">
-    <div id="scene-title">${title}</div>
+    <div id="scene-title">${escapeHtml(title)}</div>
     <div id="scene-status">initializing…</div>
   </div>
 </div>`,

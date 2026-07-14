@@ -2,7 +2,7 @@
 // Generates self-contained HTML embeds with Three.js rendering
 // raw vertex + face index data — the fundamental polygon mesh.
 
-import { buildEmbedHtml } from "../utilities.ts";
+import { buildEmbedHtml, escapeHtml, sanitizeCssColor, toEmbedScriptJson } from "../utilities.ts";
 import { THREE_JS_CDN } from "./ThreeDimensionalBaseService.ts";
 
 // ─── Constants ─────────────────────────────────────────────────
@@ -137,14 +137,14 @@ export function buildMeshEmbedHtml(input: MeshBuildInput): string {
     title = "",
   } = options;
 
-  const sceneDataJson = JSON.stringify({
+  const sceneDataJson = toEmbedScriptJson({
     vertices,
     faces,
     normals: normals || null,
     colors: colors || null,
   });
 
-  const optionsJson = JSON.stringify({
+  const optionsJson = toEmbedScriptJson({
     wireframe,
     flatShading,
     doubleSided,
@@ -169,7 +169,7 @@ export function buildMeshEmbedHtml(input: MeshBuildInput): string {
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
-    background: ${background};
+    background: ${sanitizeCssColor(background, "#0f172a")};
   }
   #scene-container {
     width: 100%;
@@ -208,7 +208,7 @@ export function buildMeshEmbedHtml(input: MeshBuildInput): string {
   }`,
     bodyContent: `<div id="scene-container">
   <div id="scene-overlay">
-    <div id="scene-title">${title}</div>
+    <div id="scene-title">${escapeHtml(title)}</div>
     <div id="scene-status">initializing…</div>
   </div>
 </div>`,

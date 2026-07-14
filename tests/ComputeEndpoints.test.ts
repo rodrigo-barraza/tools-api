@@ -172,6 +172,44 @@ describe("POST /compute/3d/model", () => {
     expect(postResponse.body.isAppend).toBe(false);
   });
 
+  it("renders a pyramid shape and accepts 'type' as an alias for 'shape' (production model behavior)", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/model")
+      .send({
+        objects: [
+          { shape: "box", position: [0, 0, 0] },
+          { type: "pyramid", position: [0, 1, 0], radius: 0.7, height: 1 },
+        ],
+      });
+
+    expect(postResponse.status).toBe(200);
+    expect(postResponse.body.objectCount).toBe(2);
+  });
+
+  it("rejects wrong-arity transform vectors with a teaching error", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/model")
+      .send({
+        objects: [{ shape: "box", position: [1, 2] }],
+      });
+
+    expect(postResponse.status).toBe(400);
+    expect(postResponse.body.error).toContain("'position'");
+    expect(postResponse.body.error).toContain("exactly 3");
+  });
+
+  it("rejects an unknown or expired sessionId instead of silently restarting", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/model")
+      .send({
+        sessionId: "model-session-that-never-existed",
+        objects: [{ shape: "box" }],
+      });
+
+    expect(postResponse.status).toBe(400);
+    expect(postResponse.body.error).toContain("not found or expired");
+  });
+
   it("successfully creates a 3D model with a textureUrl and doubleSided material", async () => {
     const postResponse = await request(app)
       .post("/compute/3d/model")
@@ -300,12 +338,15 @@ describe("POST /compute/3d/mesh", () => {
     expect(firstResponse.status).toBe(200);
     const sessionId = firstResponse.body.sessionId;
 
+    // Intentional behavior change: face indices in append calls are ABSOLUTE
+    // across the accumulated mesh (matching the tool docs), no longer rebased
+    // by the previous vertex count.
     const secondResponse = await request(app)
       .post("/compute/3d/mesh")
       .send({
         sessionId,
         vertices: [[0, 2, 0], [2, -2, 0], [-2, -2, 0]],
-        faces: [[0, 1, 2]],
+        faces: [[3, 4, 5]],
       });
 
     expect(secondResponse.status).toBe(200);
@@ -327,6 +368,107 @@ describe("POST /compute/3d/mesh", () => {
       [0, 1, 2],
       [3, 4, 5]
     ]);
+  });
+
+  it("allows appended faces to stitch to vertices from earlier calls", async () => {
+    const firstResponse = await request(app)
+      .post("/compute/3d/mesh")
+      .send({
+        vertices: [[0, 1, 0], [1, -1, 0], [-1, -1, 0]],
+        faces: [[0, 1, 2]],
+      });
+    const sessionId = firstResponse.body.sessionId;
+
+    const secondResponse = await request(app)
+      .post("/compute/3d/mesh")
+      .send({
+        sessionId,
+        vertices: [[0, 0, 2]],
+        faces: [[0, 1, 3]],
+      });
+
+    expect(secondResponse.status).toBe(200);
+    expect(secondResponse.body.totalVertices).toBe(4);
+    const savedScene = mockScenes.get(secondResponse.body.sceneId);
+    expect(savedScene.sceneData.faces).toEqual([[0, 1, 2], [0, 1, 3]]);
+  });
+
+  it("coerces geometry arrays sent as JSON strings (production model behavior)", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/mesh")
+      .send({
+        vertices: "[[0, 1, 0], [1, -1, 0], [-1, -1, 0]]",
+        faces: "[[0, 1, 2]]",
+      });
+
+    expect(postResponse.status).toBe(200);
+    expect(postResponse.body.totalVertices).toBe(3);
+    expect(postResponse.body.totalFaces).toBe(1);
+  });
+
+  it("coerces bracketless vertex strings (production model behavior)", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/mesh")
+      .send({
+        vertices: "[0, 1, 0], [1, -1, 0], [-1, -1, 0]",
+        faces: [[0, 1, 2]],
+      });
+
+    expect(postResponse.status).toBe(200);
+    expect(postResponse.body.totalVertices).toBe(3);
+  });
+
+  it("rejects code-expression strings with a teaching error (production model behavior)", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/mesh")
+      .send({
+        vertices: "[[0, i, 1+i] for i in range(10)]",
+        faces: [[0, 1, 2]],
+      });
+
+    expect(postResponse.status).toBe(400);
+    expect(postResponse.body.error).toContain("not evaluated");
+  });
+
+  it("rejects an unknown or expired sessionId instead of silently restarting", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/mesh")
+      .send({
+        sessionId: "expired-session-id",
+        vertices: [[0, 1, 0], [1, -1, 0], [-1, -1, 0]],
+        faces: [[0, 1, 2]],
+      });
+
+    expect(postResponse.status).toBe(400);
+    expect(postResponse.body.error).toContain("not found or expired");
+    expect(postResponse.body.error).toContain("Omit sessionId");
+  });
+
+  it("rejects literal 'null'/'undefined' sessionId strings", async () => {
+    for (const badSessionId of ["null", "undefined"]) {
+      const postResponse = await request(app)
+        .post("/compute/3d/mesh")
+        .send({
+          sessionId: badSessionId,
+          vertices: [[0, 1, 0], [1, -1, 0], [-1, -1, 0]],
+          faces: [[0, 1, 2]],
+        });
+      expect(postResponse.status).toBe(400);
+      expect(postResponse.body.error).toContain("Invalid sessionId");
+    }
+  });
+
+  it("rejects colors whose length does not match the vertex count", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/mesh")
+      .send({
+        vertices: [[0, 1, 0], [1, -1, 0], [-1, -1, 0]],
+        faces: [[0, 1, 2]],
+        colors: ["#ff0000", "#00ff00"],
+      });
+
+    expect(postResponse.status).toBe(400);
+    expect(postResponse.body.error).toContain("one color per vertex");
   });
 });
 
@@ -351,6 +493,63 @@ describe("POST /compute/3d/scene", () => {
     expect(postResponse.body.objectCount).toBe(1);
     expect(postResponse.body.totalObjects).toBe(1);
     expect(postResponse.body.isAppend).toBe(false);
+  });
+
+  it("accepts 'shape' as an alias for 'type' on scene objects (production model behavior)", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/scene")
+      .send({
+        objects: [{ shape: "sphere", radius: 1 }],
+      });
+
+    expect(postResponse.status).toBe(200);
+    expect(postResponse.body.objectCount).toBe(1);
+  });
+
+  it("rejects children on non-group objects with wrap guidance", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/scene")
+      .send({
+        objects: [{ type: "box", children: [{ type: "sphere" }] }],
+      });
+
+    expect(postResponse.status).toBe(400);
+    expect(postResponse.body.error).toContain('only type "group" renders children');
+  });
+
+  it("rejects text3d objects without content", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/scene")
+      .send({
+        objects: [{ type: "text3d" }],
+      });
+
+    expect(postResponse.status).toBe(400);
+    expect(postResponse.body.error).toContain("'content'");
+  });
+
+  it("rejects invalid animation axis values", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/scene")
+      .send({
+        objects: [{ type: "box", animation: { type: "spin", axis: "vertical" } }],
+      });
+
+    expect(postResponse.status).toBe(400);
+    expect(postResponse.body.error).toContain("axis");
+    expect(postResponse.body.error).toContain("x, y, z");
+  });
+
+  it("rejects an unknown or expired sessionId instead of silently restarting", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/scene")
+      .send({
+        sessionId: "scene-session-that-never-existed",
+        objects: [{ type: "box" }],
+      });
+
+    expect(postResponse.status).toBe(400);
+    expect(postResponse.body.error).toContain("not found or expired");
   });
 
   it("successfully creates a 3D scene with a textureUrl and doubleSided material", async () => {
@@ -476,7 +675,8 @@ describe("POST /compute/3d/voxel", () => {
     expect(postResponse.body.sceneEmbedUrl).toBeTruthy();
     expect(postResponse.body.sceneId).toBeTruthy();
     expect(postResponse.body.sessionId).toBeTruthy();
-    expect(postResponse.body.voxelCount).toBe(1);
+    expect(postResponse.body.addedVoxels).toBe(1);
+    expect(postResponse.body.addedShapes).toBe(0);
     expect(postResponse.body.totalVoxels).toBe(1);
     expect(postResponse.body.isAppend).toBe(false);
   });
@@ -510,9 +710,44 @@ describe("POST /compute/3d/voxel", () => {
 
     expect(secondResponse.status).toBe(200);
     expect(secondResponse.body.sessionId).toBe(sessionId);
-    expect(secondResponse.body.voxelCount).toBe(1);
+    expect(secondResponse.body.addedVoxels).toBe(0);
+    expect(secondResponse.body.addedShapes).toBe(1);
     expect(secondResponse.body.totalVoxels).toBe(2); // 1 from first + 1 from box center voxel rasterized
     expect(secondResponse.body.isAppend).toBe(true);
+  });
+
+  it("rejects unknown shape types against the real registry", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/voxel")
+      .send({
+        shapes: [{ type: "cube", center: [0, 0, 0], size: [2, 2, 2] }],
+      });
+
+    expect(postResponse.status).toBe(400);
+    expect(postResponse.body.error).toContain("unknown type 'cube'");
+    expect(postResponse.body.error).toContain("box");
+  });
+
+  it("rejects shapes whose extent exceeds the rasterization bound", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/voxel")
+      .send({
+        shapes: [{ type: "sphere", center: [0, 0, 0], radius: 5000 }],
+      });
+
+    expect(postResponse.status).toBe(400);
+    expect(postResponse.body.error).toContain("maximum of 64");
+  });
+
+  it("accepts a pyramid with an array 'size' (matches the published schema)", async () => {
+    const postResponse = await request(app)
+      .post("/compute/3d/voxel")
+      .send({
+        shapes: [{ type: "pyramid", center: [0, 0, 0], size: [4, 4, 4], height: 4 }],
+      });
+
+    expect(postResponse.status).toBe(200);
+    expect(postResponse.body.totalVoxels).toBeGreaterThan(0);
   });
 });
 

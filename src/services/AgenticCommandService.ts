@@ -1,12 +1,14 @@
 // ─── Sandboxed Project Command Execution ────────────────────
 
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { validatePath, ALLOWED_ROOTS } from "./AgenticFileService.ts";
 import {
   resolveAndRouteToAgent,
   sendRpc,
   sendRpcStreaming,
+  offlineRemoteRootForPath,
 } from "./AgentConnectionManager.ts";
 import * as BackgroundProcessRegistry from "./BackgroundProcessRegistry.ts";
 import logger from "../logger.ts";
@@ -101,7 +103,20 @@ async function tryAgentRouteCommand(
   resolvedCwd: string,
 ): Promise<CommandExecutionResult | null> {
   const agent = resolveAndRouteToAgent(resolvedCwd, ALLOWED_ROOTS[0]);
-  if (!agent) return null;
+  if (!agent) {
+    const offlineRoot = offlineRemoteRootForPath(resolvedCwd, ALLOWED_ROOTS[0]);
+    if (offlineRoot) {
+      return {
+        success: false,
+        stdout: "",
+        stderr: "",
+        exitCode: null,
+        executionTimeMs: 0,
+        error: `The workspace agent serving '${offlineRoot}' is offline, so this command was NOT run (running it locally on the server would execute on the wrong machine). Reconnect the workspace agent and retry.`,
+      };
+    }
+    return null;
+  }
   try {
     return (await sendRpc(agent.id, method, params)) as CommandExecutionResult;
   } catch (error: unknown) {
@@ -174,6 +189,18 @@ export async function executeCommand(
       exitCode: null,
       executionTimeMs: 0,
       error: `Invalid working directory: ${cwdValidation.error}`,
+    };
+  }
+  // Check the cwd actually exists — otherwise the spawn fails with a cryptic
+  // "spawn bash ENOENT" that reads as "bash is missing", not "cwd not found".
+  if (!existsSync(cwdValidation.resolved)) {
+    return {
+      success: false,
+      stdout: "",
+      stderr: "",
+      exitCode: null,
+      executionTimeMs: 0,
+      error: `Working directory does not exist: ${cwdValidation.resolved}. Pass an existing absolute 'cwd', or create it first.`,
     };
   }
 
@@ -278,13 +305,19 @@ export async function executeCommand(
       }, BACKGROUND_WARMUP_MS);
     }
 
-    function finish(exitCode: number | null) {
+    function finish(exitCode: number | null, signalName?: NodeJS.Signals | null) {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
       if (signal) signal.removeEventListener("abort", onAbort);
 
       const executionTimeMs = Math.round(performance.now() - startTime);
+
+      // A process killed by a signal (OOM SIGKILL, segfault SIGSEGV, …) exits
+      // with code null and signalName set. Without this the model saw a bare
+      // { success:false, exitCode:null } with no reason and usually just retried.
+      const killedBySignal =
+        exitCode === null && signalName && !timedOut && !aborted;
 
       resolve({
         success: exitCode === 0 && !timedOut && !aborted,
@@ -299,10 +332,17 @@ export async function executeCommand(
         ...(timedOut && !aborted
           ? { error: `Command timed out after ${clampedTimeout}ms` }
           : {}),
+        ...(killedBySignal
+          ? {
+              error: `Process terminated by signal ${signalName}${signalName === "SIGKILL" ? " (often an out-of-memory kill)" : ""}.`,
+            }
+          : {}),
       });
     }
 
-    child.on("close", (code: number | null) => finish(code));
+    child.on("close", (code: number | null, signalName: NodeJS.Signals | null) =>
+      finish(code, signalName),
+    );
     child.on("error", (error: Error) => {
       if (!settled) {
         settled = true;
@@ -521,6 +561,14 @@ export function listBackgroundProcesses(): BackgroundProcessRegistry.ProcessList
  */
 export function getBackgroundProcess(pid: number) {
   return BackgroundProcessRegistry.getProcess(pid);
+}
+
+/**
+ * Kill a tracked background process (registry-scoped, process-group aware).
+ * Unlike killProcessTree this only touches PIDs in the background registry.
+ */
+export function killBackgroundProcess(pid: number) {
+  return BackgroundProcessRegistry.kill(pid);
 }
 
 /**

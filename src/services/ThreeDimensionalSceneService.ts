@@ -3,7 +3,7 @@
 // from a declarative scene graph with hierarchical grouping,
 // animations, environment presets, ground planes, and text labels.
 
-import { buildEmbedHtml } from "../utilities.ts";
+import { buildEmbedHtml, escapeHtml, sanitizeCssColor, toEmbedScriptJson } from "../utilities.ts";
 import {
   THREE_JS_CDN,
   VALID_SHAPES as VALID_SCENE_SHAPES,
@@ -13,6 +13,7 @@ import {
   CLIENT_MATERIAL_FACTORY,
   CLIENT_ENVIRONMENT_PRESETS,
   CLIENT_ANIMATION_SYSTEM,
+  validateVector3,
 } from "./ThreeDimensionalBaseService.ts";
 
 // ─── Constants ─────────────────────────────────────────────────
@@ -129,17 +130,38 @@ function validateObjectsRecursive(objects: SceneObject[], depth: number = 0): st
   for (let index = 0; index < objects.length; index++) {
     const sceneObject = objects[index];
     if (!sceneObject.type || typeof sceneObject.type !== "string") {
-      return `Object at index ${index} (depth ${depth}) must have a 'type' field`;
+      return `Object at index ${index} (depth ${depth}) must have a 'type' field (the shape name, e.g. "box" — 'shape' is accepted as an alias)`;
     }
     if (!VALID_SCENE_SHAPES.has(sceneObject.type)) {
       return `Object at index ${index} (depth ${depth}) has unknown type '${sceneObject.type}'. Valid: ${[...VALID_SCENE_SHAPES].join(", ")}`;
+    }
+    if (sceneObject.type === "text3d" && (typeof sceneObject.content !== "string" || sceneObject.content.length === 0)) {
+      return `text3d object at index ${index} (depth ${depth}) requires a 'content' string — the text to display`;
+    }
+    for (const [vectorField, vectorValue] of [
+      ["position", sceneObject.position],
+      ["rotation", sceneObject.rotation],
+      ["scale", sceneObject.scale],
+      ["size", sceneObject.size],
+    ] as const) {
+      const vectorError = validateVector3(vectorValue, `Object at index ${index} (depth ${depth}): '${vectorField}'`);
+      if (vectorError) return vectorError;
     }
     if (sceneObject.animation && sceneObject.animation.type) {
       if (!VALID_ANIMATION_TYPES.has(sceneObject.animation.type)) {
         return `Object at index ${index} (depth ${depth}) has unknown animation type '${sceneObject.animation.type}'. Valid: ${[...VALID_ANIMATION_TYPES].join(", ")}`;
       }
+      if (sceneObject.animation.axis !== undefined && !["x", "y", "z"].includes(sceneObject.animation.axis)) {
+        return `Object at index ${index} (depth ${depth}) has invalid animation axis '${sceneObject.animation.axis}'. Valid: x, y, z`;
+      }
     }
-    if (sceneObject.children && Array.isArray(sceneObject.children)) {
+    if (sceneObject.children !== undefined && sceneObject.children !== null) {
+      if (!Array.isArray(sceneObject.children)) {
+        return `Object at index ${index} (depth ${depth}) has a non-array 'children' field`;
+      }
+      if (sceneObject.children.length > 0 && sceneObject.type !== "group") {
+        return `Object at index ${index} (depth ${depth}) has children but type '${sceneObject.type}' — only type "group" renders children. Wrap the objects in {"type": "group", "children": [...]} instead`;
+      }
       const childError = validateObjectsRecursive(sceneObject.children, depth + 1);
       if (childError) return childError;
     }
@@ -164,6 +186,11 @@ export function validateSceneInput(input: SceneBuildInput): string | null {
   if (input.scene?.environment && !VALID_ENVIRONMENT_PRESETS.has(input.scene.environment)) {
     return `Unknown environment preset '${input.scene.environment}'. Valid: ${[...VALID_ENVIRONMENT_PRESETS].join(", ")}`;
   }
+
+  const cameraPositionError = validateVector3(input.scene?.camera?.position, "scene.camera.position");
+  if (cameraPositionError) return cameraPositionError;
+  const cameraTargetError = validateVector3(input.scene?.camera?.target, "scene.camera.target");
+  if (cameraTargetError) return cameraTargetError;
 
   return validateObjectsRecursive(input.objects);
 }
@@ -199,7 +226,7 @@ export function buildSceneEmbedHtml(input: SceneBuildInput): string {
     },
     camera: {
       position: camera.position || null,
-      target: camera.target || [0, 0, 0],
+      target: camera.target || null,
       fov: camera.fov || 50,
       autoOrbit: camera.autoOrbit !== false,
       autoOrbitSpeed: camera.autoOrbitSpeed ?? 1.0,
@@ -215,8 +242,8 @@ export function buildSceneEmbedHtml(input: SceneBuildInput): string {
     enableShadows,
   };
 
-  const objectsJson = JSON.stringify(objects);
-  const configJson = JSON.stringify(fullConfig);
+  const objectsJson = toEmbedScriptJson(objects);
+  const configJson = toEmbedScriptJson(fullConfig);
 
   return buildEmbedHtml({
     headExtra: "",
@@ -227,7 +254,7 @@ export function buildSceneEmbedHtml(input: SceneBuildInput): string {
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
-    background: ${background};
+    background: ${sanitizeCssColor(background, "#0f172a")};
   }
   #scene-container {
     width: 100%;
@@ -266,7 +293,7 @@ export function buildSceneEmbedHtml(input: SceneBuildInput): string {
   }`,
     bodyContent: `<div id="scene-container">
   <div id="scene-overlay">
-    <div id="scene-title">${title}</div>
+    <div id="scene-title">${escapeHtml(title)}</div>
     <div id="scene-status">initializing…</div>
   </div>
 </div>`,
@@ -323,7 +350,9 @@ controls.enableDamping = true;
 controls.dampingFactor = 0.08;
 controls.autoRotate = CONFIG.camera.autoOrbit;
 controls.autoRotateSpeed = CONFIG.camera.autoOrbitSpeed;
-controls.target.set(...CONFIG.camera.target);
+if (CONFIG.camera.target) {
+  controls.target.set(...CONFIG.camera.target);
+}
 
 // ── Environment Lighting Presets ──
 ${CLIENT_ENVIRONMENT_PRESETS}
@@ -500,7 +529,10 @@ if (CONFIG.camera.position) {
     sceneCenter.z + fitDistance
   );
 }
-controls.target.copy(sceneCenter);
+// Respect an explicit camera target — auto-fit only fills the gap.
+if (!CONFIG.camera.target) {
+  controls.target.copy(sceneCenter);
+}
 controls.update();
 
 // ── Grid & Axes ──

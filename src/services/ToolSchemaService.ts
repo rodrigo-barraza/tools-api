@@ -427,7 +427,6 @@ const TOOL_DOMAINS = {
   create_3d_mesh: "Creative",
   create_3d_scene: "Creative",
   create_3d_model: "Creative",
-  create_3d_voxel: "Creative",
 
   // Discord (Lupos DB)
   search_discord_messages: "Discord",
@@ -735,7 +734,6 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   create_3d_mesh: "🔺",
   create_3d_scene: ["🌐", "🧱"],
   create_3d_model: ["🧊", "💻"],
-  create_3d_voxel: ["🧱", "🧊"],
   think: ["🧠", "💭"],
   sleep: "💤",
   emit_structured_output: "📝",

@@ -28,7 +28,7 @@ Also check `ToolSchemaService` complexity scoring / `intelligenceTier` — note 
 
 The agentic harness (prism-service) persists conversations in MongoDB. Environment facts as of 2026-07 — verify each, they may drift:
 
-- Mongo URI is in `/home/rodrigo/development/vault-service/projects.json` (`MONGO_URI`); `mongosh` is installed.
+- Mongo URI is in `/home/rodrigo/development/vault-service/projects.json` at `config.MONGO_URI` (nested under the top-level `config` key — `require(...).MONGO_URI` is undefined, and passing the resulting literal string "undefined" to mongosh silently connects to an empty localhost instance); `mongosh` is installed.
 - Database `prism`, collection `agent_conversations` (~15k docs).
 - `createdAt` is an **ISO string, not a Date** — filter with string comparison (`{createdAt: {$gte: "2026-07-06"}}`).
 - Tool calls live on assistant messages: `messages[].toolCalls[]` with `.name`, `.args`, `.id`.

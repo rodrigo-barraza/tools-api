@@ -1,5 +1,14 @@
 # Core Workspace Tools — Deep Audit (2026-07-14)
 
+> **STATUS 2026-07-14 (implemented):** The correctness + ergonomics fixes below are implemented and pinned with tests. tools-service: `npx tsc --noEmit` clean, `npx vitest run` 1881/1881 green (new file `tests/AgenticWorkspaceHardening.test.ts` + service-level tests). workspace-service: 188/188 green (new `file.blockReplace`/`file.multiReplace` RPCs, recursive delete, honest `runInBackground` refusal). **Not committed; both services need a redeploy before agents see the changes.**
+>
+> Shipped: shared coercion helper (`src/utilities/agenticCoercion.ts`) wired into every route (int/bool/timeout-units, `path` alias for read_file); S1 offline-agent guard (`offlineRemoteRootForPath`) so a path served by a now-offline agent errors instead of running locally; S2 twin-drift fixes back-ported to local (grep `includes` glob, `replace_in_file` overlap count, git 512 KB truncation flag) + the missing remote RPCs implemented; S3 NaN/string coercion holes closed (cellIndex `"last"` no longer deletes cell 0, timeout `"60s"`/`30` no longer becomes 1 ms); kill_process registry-scoped (+ group-kill in the registry); git `ref` argument-injection rejected; atomic local writes; read degenerate-range + >1 MB streaming-range fixes; grep skip counters + honest `truncated`; command signal-death reason + cwd existence check; RPC `pathKeys` gained `destination`/`pathB`; schema `cellIndex` → integer; locale corrections (git limit default, read-only note, timeout units, background TTL) synced to dist.
+>
+> **Deliberately deferred (not bugs / product decisions / cross-repo published lib):** the schema diet (merging `replace_file_block` into `replace_file_regions`, retiring `patch_file`, demoting unused tools) — evidence-backed but a tool-surface change to decide explicitly; remote `BLOCKED_PATTERNS`/containment divergence (P1-6, workspace-service security posture); `get_file_info` batch routing-by-first-path (P1-7); `globToRegex` anchoring for `find_files` (lives in published utilities-library, tarball dep — needs a lib release); LSP idle-reaping and request-locale threading (subagent deferred, non-breaking); `patch_file` hunk-level error reporting.
+
+---
+
+
 Scope: all 22 tools in `src/services/tool-definitions/CoreWorkspaceTools.ts`, both execution paths (local `Agentic*Service` in tools-service, remote RPC via `AgentConnectionManager` → workspace-service), locales, tests, and real production usage mined from `prism.agent_conversations`.
 
 ## Production evidence (window 2026-06-30 → 07-14; all-time since 2026-04-06)

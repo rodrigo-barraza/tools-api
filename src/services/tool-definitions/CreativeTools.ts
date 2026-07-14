@@ -457,11 +457,11 @@ export function getCreativeTools(
             },
             showGrid: {
               type: "boolean",
-              description: translate("create_3d_voxel.params.options.params.showGrid"),
+              description: translate("common.params.showGrid"),
             },
             showAxes: {
               type: "boolean",
-              description: translate("create_3d_voxel.params.options.params.showAxes"),
+              description: translate("common.params.showAxes"),
             },
             background: {
               type: "string",
@@ -486,14 +486,14 @@ export function getCreativeTools(
             cameraPosition: {
               type: "array",
               items: { type: "number" },
-              description: translate("create_3d_voxel.params.options.params.cameraPosition"),
+              description: translate("common.params.cameraPositionAutoFit"),
             },
             title: {
               type: "string",
               description: translate("common.params.overlayTitle"),
             },
           },
-          description: translate("create_3d_voxel.params.options"),
+          description: translate("common.params.renderingOptions"),
         },
       },
       required: ["vertices", "faces"],
@@ -501,184 +501,6 @@ export function getCreativeTools(
     display: {
       activeVerb: "Creating 3D mesh model",
       completedVerb: "Created 3D mesh model",
-      subjectParam: "sessionId",
-      subjectFormat: "full",
-    },
-  },
-  {
-    name: "create_3d_voxel",
-    dataSource: compute("internal"),
-    description: translate("create_3d_voxel.description"),
-    endpoint: {
-      method: "POST",
-      path: "/compute/3d/voxel",
-      bodyParams: ["voxels", "shapes", "options", "sessionId"],
-    },
-    parameters: {
-      type: "object",
-      properties: {
-        sessionId: {
-          type: "string",
-          description: translate("create_3d_voxel.params.sessionId"),
-        },
-        voxels: {
-          type: "array",
-          description: translate("create_3d_voxel.params.voxels"),
-          items: {
-            type: "object",
-            properties: {
-              position: {
-                type: "array",
-                description: translate("create_3d_voxel.params.voxels.items.params.position"),
-                items: { type: "integer" },
-              },
-              color: {
-                type: "string",
-                description: translate("create_3d_voxel.params.voxels.items.params.color"),
-              },
-              opacity: {
-                type: "number",
-                description: translate("create_3d_voxel.params.voxels.items.params.opacity"),
-              },
-            },
-            required: ["position"],
-          },
-        },
-        shapes: {
-          type: "array",
-          description: translate("create_3d_voxel.params.shapes"),
-          items: {
-            type: "object",
-            properties: {
-              type: {
-                type: "string",
-                enum: [
-                  "box",
-                  "sphere",
-                  "cylinder",
-                  "cone",
-                  "pyramid",
-                  "ellipsoid",
-                  "torus",
-                ],
-                description: translate("create_3d_voxel.params.shapes.items.params.type"),
-              },
-              center: {
-                type: "array",
-                description: translate("create_3d_voxel.params.shapes.items.params.center"),
-                items: { type: "number" },
-              },
-              color: {
-                type: "string",
-                description: translate("create_3d_voxel.params.shapes.items.params.color"),
-              },
-              opacity: {
-                type: "number",
-                description: translate("create_3d_voxel.params.shapes.items.params.opacity"),
-              },
-              hollow: {
-                type: "boolean",
-                description: translate("create_3d_voxel.params.shapes.items.params.hollow"),
-              },
-              size: {
-                type: "array",
-                description: translate("create_3d_voxel.params.shapes.items.params.size"),
-                items: { type: "number" },
-              },
-              radius: {
-                type: "number",
-                description: translate("create_3d_voxel.params.shapes.items.params.radius"),
-              },
-              height: {
-                type: "number",
-                description: translate("create_3d_voxel.params.shapes.items.params.height"),
-              },
-              radii: {
-                type: "array",
-                description: translate("create_3d_voxel.params.shapes.items.params.radii"),
-                items: { type: "number" },
-              },
-              majorRadius: {
-                type: "number",
-                description: translate("create_3d_voxel.params.shapes.items.params.majorRadius"),
-              },
-              minorRadius: {
-                type: "number",
-                description: translate("create_3d_voxel.params.shapes.items.params.minorRadius"),
-              },
-              axis: {
-                type: "string",
-                enum: ["x", "y", "z"],
-                description: translate("create_3d_voxel.params.shapes.items.params.axis"),
-              },
-            },
-            required: ["type", "center"],
-          },
-        },
-        options: {
-          type: "object",
-          properties: {
-            wireframe: {
-              type: "boolean",
-              description: translate("create_3d_voxel.params.options.params.wireframe"),
-            },
-            flatShading: {
-              type: "boolean",
-              description: translate("create_3d_voxel.params.options.params.flatShading"),
-            },
-            showGrid: {
-              type: "boolean",
-              description: translate("create_3d_voxel.params.options.params.showGrid"),
-            },
-            showAxes: {
-              type: "boolean",
-              description: translate("create_3d_voxel.params.options.params.showAxes"),
-            },
-            background: {
-              type: "string",
-              description: translate("common.params.backgroundColorDefault"),
-            },
-            autoRotate: {
-              type: "boolean",
-              description: translate("create_3d_voxel.params.options.params.autoRotate"),
-            },
-            autoRotateSpeed: {
-              type: "number",
-              description: translate("create_3d_voxel.params.options.params.autoRotateSpeed"),
-            },
-            voxelSize: {
-              type: "number",
-              description: translate("create_3d_voxel.params.options.params.voxelSize"),
-            },
-            voxelSpacing: {
-              type: "number",
-              description: translate("create_3d_voxel.params.options.params.voxelSpacing"),
-            },
-            outlineColor: {
-              type: "string",
-              description: translate("create_3d_voxel.params.options.params.outlineColor"),
-            },
-            outlineOpacity: {
-              type: "number",
-              description: translate("create_3d_voxel.params.options.params.outlineOpacity"),
-            },
-            cameraPosition: {
-              type: "array",
-              items: { type: "number" },
-              description: translate("create_3d_voxel.params.options.params.cameraPosition"),
-            },
-            title: {
-              type: "string",
-              description: translate("common.params.overlayTitle"),
-            },
-          },
-          description: translate("create_3d_voxel.params.options"),
-        },
-      },
-    },
-    display: {
-      activeVerb: "Creating 3D voxel model",
-      completedVerb: "Created 3D voxel model",
       subjectParam: "sessionId",
       subjectFormat: "full",
     },
@@ -712,6 +534,7 @@ export function getCreativeTools(
                   "sphere",
                   "cylinder",
                   "cone",
+                  "pyramid",
                   "torus",
                   "torusKnot",
                   "plane",
@@ -723,7 +546,7 @@ export function getCreativeTools(
                   "tetrahedron",
                   "capsule",
                 ],
-                description: translate("create_3d_voxel.params.shapes.items.params.type"),
+                description: translate("create_3d_model.params.objects.items.params.shape"),
               },
               size: {
                 type: "array",
@@ -826,7 +649,7 @@ export function getCreativeTools(
             },
             showGrid: {
               type: "boolean",
-              description: translate("create_3d_voxel.params.options.params.showGrid"),
+              description: translate("common.params.showGrid"),
             },
             background: {
               type: "string",
@@ -847,7 +670,7 @@ export function getCreativeTools(
             cameraPosition: {
               type: "array",
               items: { type: "number" },
-              description: translate("create_3d_voxel.params.options.params.cameraPosition"),
+              description: translate("common.params.cameraPositionAutoFit"),
             },
             fieldOfView: {
               type: "number",
@@ -996,6 +819,7 @@ export function getCreativeTools(
                   "sphere",
                   "cylinder",
                   "cone",
+                  "pyramid",
                   "torus",
                   "torusKnot",
                   "plane",
@@ -1077,6 +901,7 @@ export function getCreativeTools(
                   },
                   axis: {
                     type: "string",
+                    enum: ["x", "y", "z"],
                     description: translate("create_3d_scene.params.objects.items.params.children.items.params.animation.params.axis"),
                   },
                   amplitude: {
@@ -1095,117 +920,7 @@ export function getCreativeTools(
                 description: translate("create_3d_scene.params.objects.items.params.children"),
                 items: {
                   type: "object",
-                  properties: {
-                    type: {
-                      type: "string",
-                      enum: [
-                        "box",
-                        "sphere",
-                        "cylinder",
-                        "cone",
-                        "torus",
-                        "torusKnot",
-                        "plane",
-                        "ring",
-                        "circle",
-                        "dodecahedron",
-                        "icosahedron",
-                        "octahedron",
-                        "tetrahedron",
-                        "capsule",
-                        "group",
-                        "text3d",
-                      ],
-                      description: translate("create_3d_scene.params.objects.items.params.children.items.params.type"),
-                    },
-                    name: { type: "string", description: translate("common.params.optionalName") },
-                    size: {
-                      type: "array",
-                      items: { type: "number" },
-                      description: translate("create_3d_scene.params.objects.items.params.size"),
-                    },
-                    radius: {
-                      type: "number",
-                      description: translate("create_3d_scene.params.objects.items.params.radius"),
-                    },
-                    height: {
-                      type: "number",
-                      description: translate("create_3d_scene.params.objects.items.params.height"),
-                    },
-                    position: {
-                      type: "array",
-                      items: { type: "number" },
-                      description: translate("create_3d_scene.params.objects.items.params.position"),
-                    },
-                    rotation: {
-                      type: "array",
-                      items: { type: "number" },
-                      description: translate("create_3d_scene.params.objects.items.params.rotation"),
-                    },
-                    scale: {
-                      type: "array",
-                      items: { type: "number" },
-                      description: translate("create_3d_scene.params.objects.items.params.scale"),
-                    },
-                    material: {
-                      type: "object",
-                      properties: {
-                        color: { type: "string", description: translate("common.params.cssColor") },
-                        metalness: { type: "number", description: translate("common.params.zeroToOne") },
-                        roughness: { type: "number", description: translate("common.params.zeroToOne") },
-                        opacity: { type: "number", description: translate("common.params.zeroToOne") },
-                        emissive: {
-                          type: "string",
-                          description: translate("create_3d_scene.params.objects.items.params.material.params.emissive"),
-                        },
-                        wireframe: { type: "boolean" },
-                        doubleSided: {
-                          type: "boolean",
-                          description: translate("create_3d_scene.params.objects.items.params.material.params.doubleSided"),
-                        },
-                        textureUrl: {
-                          type: "string",
-                          description: translate("create_3d_scene.params.objects.items.params.material.params.textureUrl"),
-                        },
-                      },
-                      description: translate("create_3d_scene.params.objects.items.params.material"),
-                    },
-                    animation: {
-                      type: "object",
-                      properties: {
-                        type: {
-                          type: "string",
-                          enum: ["spin", "bounce", "orbit", "pulse", "float"],
-                          description: translate("create_3d_scene.params.objects.items.params.children.items.params.animation.params.type"),
-                        },
-                        speed: {
-                          type: "number",
-                          description: translate("create_3d_scene.params.objects.items.params.children.items.params.animation.params.speed"),
-                        },
-                        axis: {
-                          type: "string",
-                          description: translate("create_3d_scene.params.objects.items.params.children.items.params.animation.params.axis"),
-                        },
-                        amplitude: {
-                          type: "number",
-                          description: translate("create_3d_scene.params.objects.items.params.children.items.params.animation.params.amplitude"),
-                        },
-                        radius: {
-                          type: "number",
-                          description: translate("create_3d_scene.params.objects.items.params.children.items.params.animation.params.radius"),
-                        },
-                      },
-                      description: translate("create_3d_scene.params.objects.items.params.children.items.params.animation"),
-                    },
-                    content: {
-                      type: "string",
-                      description: translate("create_3d_scene.params.objects.items.params.content"),
-                    },
-                    fontSize: {
-                      type: "number",
-                      description: translate("create_3d_scene.params.objects.items.params.fontSize"),
-                    },
-                  },
+                  description: translate("create_3d_scene.params.objects.items.params.children.items"),
                   required: ["type"],
                 },
               },

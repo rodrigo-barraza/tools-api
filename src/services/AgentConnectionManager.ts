@@ -23,6 +23,8 @@ const TIMEOUT_MAP = {
   "file.read": RPC_TIMEOUT_FILE_MS,
   "file.write": RPC_TIMEOUT_FILE_MS,
   "file.strReplace": RPC_TIMEOUT_FILE_MS,
+  "file.blockReplace": RPC_TIMEOUT_FILE_MS,
+  "file.multiReplace": RPC_TIMEOUT_FILE_MS,
   "file.patch": RPC_TIMEOUT_FILE_MS,
   "file.info": RPC_TIMEOUT_FILE_MS,
   "file.diff": RPC_TIMEOUT_FILE_MS,
@@ -116,6 +118,17 @@ const agents = new Map<string, AgentRegistryEntry>();
 
 /** rootPath → agentId (for fast routing) */
 const rootToAgent = new Map<string, string>();
+
+/**
+ * Specific (non-"/") roots that a workspace agent has served at least once this
+ * process lifetime. Unlike rootToAgent, entries are NOT removed on disconnect,
+ * so we can distinguish "this path belongs to a workspace machine whose agent is
+ * currently offline" from "this is a genuinely local path". The former must
+ * error rather than silently execute on the tools-service host (wrong machine).
+ * "/" is deliberately excluded — it matches every local path and would block
+ * all local execution when a container agent drops.
+ */
+const knownRemoteRoots = new Set<string>();
 
 let healthCheckTimer: NodeJS.Timeout | null = null;
 
@@ -495,6 +508,7 @@ function handleAgentMessage(
     // Map roots to this agent
     for (const root of normalizedRoots) {
       rootToAgent.set(root, agentId);
+      if (root !== "/") knownRemoteRoots.add(root);
     }
 
     // Merge agent roots into ALLOWED_ROOTS so they appear in the workspace list
@@ -663,7 +677,7 @@ export function sendRpc(
 
     // Translate normalized POSIX paths back to the agent's native format
     const translatedParams = { ...params };
-    const pathKeys = ["path", "searchPath", "source", "pathA", "cwd", "filePath"] as const;
+    const pathKeys = ["path", "searchPath", "source", "destination", "pathA", "pathB", "cwd", "filePath"] as const;
     for (const key of pathKeys) {
       if (typeof translatedParams[key] === "string") {
         translatedParams[key] = translatePathForAgent(
@@ -800,6 +814,51 @@ export function resolveAndRouteToAgent(
   }
 
   return routeForPath(resolvedPath);
+}
+
+/**
+ * Detect the "wrong machine" hazard: a path that belongs to a workspace root a
+ * remote agent has served, but which no live agent currently serves. Executing
+ * such an op locally on the tools-service host would silently target the wrong
+ * filesystem (or fail with a cryptic ENOENT/EACCES). Returns the offline root
+ * so the caller can return a teaching error instead of falling back to local.
+ * Returns null when the path is genuinely local or an agent is available.
+ */
+export function offlineRemoteRootForPath(
+  targetPath: string | undefined | null,
+  fallbackRoot?: string,
+): string | null {
+  if (!targetPath || knownRemoteRoots.size === 0) return null;
+
+  const sanitized = targetPath.trim().replace(/^["']+|["']+$/g, "").trim();
+  if (!sanitized) return null;
+
+  let resolvedPath = sanitized;
+  if (!sanitized.startsWith("/")) {
+    const requestStore = requestLocalStorage.getStore();
+    const workspaceOverride = requestStore?.workspaceOverride;
+    const workspaceRoot = requestStore?.workspaceRoot;
+    if (workspaceOverride && workspaceOverride.startsWith("/tmp/prism-worktrees/")) {
+      resolvedPath = resolve(workspaceOverride, sanitized);
+    } else if (workspaceRoot) {
+      resolvedPath = resolve(workspaceRoot, sanitized);
+    } else if (fallbackRoot) {
+      resolvedPath = resolve(fallbackRoot, sanitized);
+    }
+  }
+  const normalized = normalizeWindowsRootPath(resolvedPath);
+
+  // If a live agent already serves this path, there is no hazard.
+  if (routeForPath(normalized)) return null;
+
+  // Otherwise, is it under a known-remote root whose agent is now gone?
+  for (const root of Array.from(knownRemoteRoots).sort((a, b) => b.length - a.length)) {
+    const underRoot = normalized === root || normalized.startsWith(root + "/");
+    if (underRoot && !rootToAgent.has(root)) {
+      return root;
+    }
+  }
+  return null;
 }
 
 // ────────────────────────────────────────────────────────────

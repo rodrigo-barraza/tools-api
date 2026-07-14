@@ -44,7 +44,7 @@ import {
   getAllowedCommands,
   listBackgroundProcesses,
   getBackgroundProcess,
-  killProcessTree,
+  killBackgroundProcess,
 } from "../services/AgenticCommandService.ts";
 import {
   agenticGitStatus,
@@ -722,7 +722,23 @@ router.post(
     if (!pidResult.ok) {
       return res.status(400).json({ error: pidResult.error });
     }
-    const result = await killProcessTree(pidResult.value);
+    // Only kill PIDs this service is tracking as background processes.
+    // killProcessTree signals arbitrary host PIDs/process-groups, so a
+    // hallucinated or recycled PID could take down an unrelated process.
+    const tracked = getBackgroundProcess(pidResult.value);
+    if (!tracked) {
+      const running = listBackgroundProcesses()
+        .filter((p) => !p.exited)
+        .map((p) => `${p.pid} (${p.command.slice(0, 40)})`);
+      return res.status(400).json({
+        error: `PID ${pidResult.value} is not a tracked background process, so it cannot be killed. ${
+          running.length
+            ? `Tracked background processes: ${running.join(", ")}.`
+            : "There are no tracked background processes."
+        }`,
+      });
+    }
+    const result = killBackgroundProcess(pidResult.value);
     if (!result.success) {
       return res.status(400).json(result);
     }

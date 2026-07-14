@@ -3,7 +3,7 @@
 // primitive shapes (box, sphere, cylinder, etc.) with transforms
 // and PBR materials.
 
-import { buildEmbedHtml } from "../utilities.ts";
+import { buildEmbedHtml, escapeHtml, sanitizeCssColor, toEmbedScriptJson } from "../utilities.ts";
 import {
   THREE_JS_CDN,
   CLIENT_GEOMETRY_FACTORY,
@@ -144,14 +144,14 @@ export function buildModelEmbedHtml(input: ModelBuildInput): string {
     directionalLightIntensity = 0.8,
     directionalLightPosition = [5, 10, 7],
     cameraPosition,
-    cameraTarget = [0, 0, 0],
+    cameraTarget,
     fieldOfView = 50,
     enableShadows = true,
     title = "",
   } = options;
 
-  const objectsJson = JSON.stringify(objects);
-  const optionsJson = JSON.stringify({
+  const objectsJson = toEmbedScriptJson(objects);
+  const optionsJson = toEmbedScriptJson({
     autoRotate,
     autoRotateSpeed,
     showGrid,
@@ -163,7 +163,7 @@ export function buildModelEmbedHtml(input: ModelBuildInput): string {
     directionalLightIntensity,
     directionalLightPosition,
     cameraPosition: cameraPosition || null,
-    cameraTarget,
+    cameraTarget: cameraTarget || null,
     fieldOfView,
     enableShadows,
   });
@@ -177,7 +177,7 @@ export function buildModelEmbedHtml(input: ModelBuildInput): string {
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
-    background: ${background};
+    background: ${sanitizeCssColor(background, "#0f172a")};
   }
   #scene-container {
     width: 100%;
@@ -216,7 +216,7 @@ export function buildModelEmbedHtml(input: ModelBuildInput): string {
   }`,
     bodyContent: `<div id="scene-container">
   <div id="scene-overlay">
-    <div id="scene-title">${title}</div>
+    <div id="scene-title">${escapeHtml(title)}</div>
     <div id="scene-status">initializing…</div>
   </div>
 </div>`,
@@ -263,7 +263,9 @@ controls.enableDamping = true;
 controls.dampingFactor = 0.08;
 controls.autoRotate = OPTIONS.autoRotate;
 controls.autoRotateSpeed = OPTIONS.autoRotateSpeed;
-controls.target.set(...OPTIONS.cameraTarget);
+if (OPTIONS.cameraTarget) {
+  controls.target.set(...OPTIONS.cameraTarget);
+}
 
 // ── Lighting ──
 const ambientLight = new THREE.AmbientLight(
@@ -359,7 +361,10 @@ if (OPTIONS.cameraPosition) {
     sceneCenter.z + fitDistance
   );
 }
-controls.target.copy(sceneCenter);
+// Respect an explicit cameraTarget — auto-fit only fills the gap.
+if (!OPTIONS.cameraTarget) {
+  controls.target.copy(sceneCenter);
+}
 controls.update();
 
 // ── Grid & Axes ──

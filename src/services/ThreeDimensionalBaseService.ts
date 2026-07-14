@@ -83,8 +83,13 @@ function createGeometry(objectDefinition) {
         objectDefinition.tubularSegments || 64,
         objectDefinition.radialSegments || 8
       );
-    case "plane":
-      return new THREE.PlaneGeometry(objectDefinition.width || 1, objectDefinition.height || 1);
+    case "plane": {
+      const planeSize = objectDefinition.size || [];
+      return new THREE.PlaneGeometry(
+        objectDefinition.width || planeSize[0] || 1,
+        objectDefinition.height || planeSize[1] || 1
+      );
+    }
     case "ring":
       return new THREE.RingGeometry(
         objectDefinition.radius ? objectDefinition.radius * 0.5 : 0.25,

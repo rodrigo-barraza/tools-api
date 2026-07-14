@@ -170,7 +170,6 @@ export function kill(pid: number, signal: NodeJS.Signals = "SIGTERM") {
   }
 
   if (entry.exited) {
-    registry.delete(pid);
     return {
       success: true,
       pid,
@@ -178,24 +177,38 @@ export function kill(pid: number, signal: NodeJS.Signals = "SIGTERM") {
     };
   }
 
+  // Kill the whole process group, not just the wrapper. Children are spawned
+  // detached (bash → npm → node dev server), so signalling only entry.child
+  // leaves grandchildren orphaned and still holding their ports. Fall back to
+  // a single-PID kill if the group signal fails (not a group leader).
+  const killGroup = (sig: NodeJS.Signals) => {
+    try {
+      process.kill(-pid, sig);
+    } catch {
+      try {
+        entry.child.kill(sig);
+      } catch {
+        /* already dead */
+      }
+    }
+  };
+
   try {
-    entry.child.kill(signal);
+    killGroup(signal);
     // Schedule forced kill if SIGTERM doesn't work
     if (signal === "SIGTERM") {
       setTimeout(() => {
-        try {
-          if (!entry.exited) entry.child.kill("SIGKILL");
-        } catch {
-          /* already dead */
-        }
+        if (!entry.exited) killGroup("SIGKILL");
       }, FORCE_KILL_DELAY_MS);
     }
-    registry.delete(pid);
+    // Do NOT delete the entry here — leave it so a confirming get_background_output
+    // poll still resolves; the child's 'close' handler marks it exited and the
+    // exit-TTL reaper removes it shortly after.
     return {
       success: true,
       pid,
       signal,
-      message: `Sent ${signal} to PID ${pid}`,
+      message: `Sent ${signal} to process group ${pid}`,
     };
   } catch (error: unknown) {
     return {
