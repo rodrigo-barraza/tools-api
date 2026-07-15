@@ -1080,9 +1080,7 @@ router.post(
         .status(400)
         .json({ error: "Request body must include 'description' (string)" });
     }
-    // Auto-inject agentSessionId and conversationId from Prism telemetry headers
-    const agentSessionId =
-      (req.headers["x-agent-session-id"] as string) || null;
+    // Auto-inject conversationId from Prism telemetry headers
     const conversationId =
       (req.headers[IDENTITY_HEADERS.conversationId] as string) || null;
     const result = await agenticTaskCreate(project, {
@@ -1091,7 +1089,6 @@ router.post(
       status,
       activeForm,
       metadata,
-      agentSessionId: agentSessionId as string | null,
       conversationId: conversationId as string | null,
     });
     if (result.error) return res.status(400).json(result);
@@ -1116,7 +1113,7 @@ router.get(
   "/task/list-all",
   asyncHandler(
     async (req: Request) => {
-      const { status, limit, agentSessionId, conversationId } = req.query as Record<
+      const { status, limit, conversationId } = req.query as Record<
         string,
         string | undefined
       >;
@@ -1126,23 +1123,14 @@ router.get(
       const collection = database.collection<AgenticTask>("agent_tasks");
       const filter: Record<string, unknown> = {};
       if (status) filter.status = status;
-      // Support filtering by conversationId (preferred) or agentSessionId (legacy)
-      if (conversationId) {
-        filter.$or = [{ conversationId }, { agentSessionId: conversationId }];
-      } else if (agentSessionId) {
-        filter.agentSessionId = agentSessionId;
-      }
+      if (conversationId) filter.conversationId = conversationId;
       const tasks = await collection
         .find(filter)
         .sort({ taskId: 1 })
         .limit(parseIntParam(limit, 100, 500))
         .toArray();
       // Summary counts (scoped to same filter base)
-      const summaryFilter = conversationId
-        ? { $or: [{ conversationId }, { agentSessionId: conversationId }] }
-        : agentSessionId
-          ? { agentSessionId }
-          : {};
+      const summaryFilter = conversationId ? { conversationId } : {};
       const allTasks = await collection.find(summaryFilter).toArray();
       const summary = {
         total: allTasks.length,
@@ -1202,9 +1190,7 @@ router.post(
     if (description) updates.description = description;
     if (activeForm !== undefined) updates.activeForm = activeForm;
     if (metadata) updates.metadata = metadata;
-    // Auto-inject agentSessionId and conversationId from Prism telemetry headers
-    const agentSessionId = req.headers["x-agent-session-id"];
-    if (agentSessionId) updates.agentSessionId = agentSessionId;
+    // Auto-inject conversationId from Prism telemetry headers
     const conversationId = req.headers[IDENTITY_HEADERS.conversationId];
     if (conversationId) updates.conversationId = conversationId as string;
     return agenticTaskUpdate(project, taskId, updates);
@@ -1239,7 +1225,6 @@ router.post(
     return datastoreWrite(project, namespace, records, keyField, {
       agent: (req.headers[IDENTITY_HEADERS.agent] as string) || req.body.agent || null,
       username: (req.headers[IDENTITY_HEADERS.username] as string) || req.body.username || null,
-      agentSessionId: (req.headers["x-agent-session-id"] as string) || null,
     });
   }),
 );
@@ -1338,7 +1323,6 @@ router.post(
     const project = req.headers[IDENTITY_HEADERS.project] || req.body.project || DEFAULT_PROJECT;
     const agent = req.headers[IDENTITY_HEADERS.agent] || req.body.agent || AGENT_IDS.CODING;
     const username = req.headers[IDENTITY_HEADERS.username] || req.body.username || null;
-    const agentSessionId = req.headers["x-agent-session-id"] || null;
     try {
       const prismResponse = await fetch(
         `${CONFIG.PRISM_SERVICE_URL}/agent-memories`,
@@ -1349,7 +1333,6 @@ router.post(
             agent,
             project: project || DEFAULT_PROJECT,
             username,
-            agentSessionId,
             content,
             type: type || "project",
             title: title || null,
@@ -1747,51 +1730,6 @@ router.post(
   }),
 );
 
-// ── Legacy Schedule Aliases ──────────────────────────────────
-router.post(
-  "/schedule/create",
-  agenticHandler(async (req: Request) => {
-    const { project, name, schedule, prompt, type, agent, model } = req.body;
-    const username = (req.headers[IDENTITY_HEADERS.username] as string) || undefined;
-    const providerFromHeader = (req.headers["x-provider"] as string) || undefined;
-    const modelFromHeader = (req.headers["x-model"] as string) || undefined;
-    const agentFromHeader = (req.headers[IDENTITY_HEADERS.agent] as string) || undefined;
-    return agenticScheduleCreate({
-      project,
-      name,
-      schedule,
-      prompt,
-      type,
-      agent: agent || agentFromHeader || null,
-      provider: providerFromHeader,
-      model: model || modelFromHeader,
-    }, username);
-  }),
-);
-router.post(
-  "/schedule/list",
-  agenticHandler(async (req: Request) => {
-    const { project } = req.body;
-    const username = (req.headers[IDENTITY_HEADERS.username] as string) || undefined;
-    return agenticScheduleList(project, undefined, username);
-  }),
-);
-router.post(
-  "/schedule/delete",
-  agenticHandler(async (req: Request) => {
-    const { project, scheduleId } = req.body;
-    const username = (req.headers[IDENTITY_HEADERS.username] as string) || undefined;
-    return agenticScheduleDelete(project, scheduleId, username);
-  }),
-);
-router.post(
-  "/trigger/fire",
-  agenticHandler(async (req: Request) => {
-    const { project, triggerName, payload } = req.body;
-    const username = (req.headers[IDENTITY_HEADERS.username] as string) || undefined;
-    return agenticTriggerFire(project, triggerName, payload || {}, username);
-  }),
-);
 // ─── 18. Notebook Editing ───────────────────────────────────
 router.post(
   "/notebook/edit",

@@ -285,7 +285,6 @@ export async function datastoreWrite(
   const stamp = {
     agent: provenance.agent ?? null,
     username: provenance.username ?? null,
-    agentSessionId: provenance.agentSessionId ?? null,
   };
 
   let inserted = 0;
@@ -396,7 +395,7 @@ export async function datastoreQuery(
 
     const pipeline = [
       { $match: { project, namespace } },
-      { $project: { project: 0, namespace: 0, agentSessionId: 0 } },
+      { $project: { project: 0, namespace: 0 } },
       ...(options.pipeline as Record<string, unknown>[]),
     ];
     const hasLimit = (options.pipeline as Record<string, unknown>[]).some(

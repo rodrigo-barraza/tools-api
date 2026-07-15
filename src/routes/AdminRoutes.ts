@@ -302,8 +302,7 @@ router.post(
  * Load user-configured workspace roots from MongoDB and merge into ALLOWED_ROOTS.
  * Re-normalizes stored paths through the cross-platform resolver so any stale
  * Windows paths (e.g. `C:\workspace` stored before WSL translation was added)
- * get corrected to their WSL mount equivalents. If corrections are made,
- * the cleaned paths are persisted back to MongoDB.
+ * get corrected to their WSL mount equivalents for this run.
  * Called at boot time from server.js.
  */
 export async function loadUserWorkspaceRoots() {
@@ -345,18 +344,6 @@ export async function loadUserWorkspaceRoots() {
 
       refreshAllowedRoots(localRoots);
       logger.info(`   📂 User workspace roots (local): ${localRoots.join(", ") || "(none)"}`);
-
-      const hasStaleEntries = document.roots.some(
-        (originalPath: string, index: number) => originalPath !== normalizedRoots[index],
-      ) || document.roots.length !== normalizedRoots.length;
-
-      if (hasStaleEntries) {
-        await collection.updateOne(
-          { _key: "user_roots" },
-          { $set: { roots: normalizedRoots, updatedAt: new Date().toISOString() } },
-        );
-        logger.info(`   🔧 Migrated ${document.roots.length} stale workspace path(s) to normalized form`);
-      }
     }
   } catch (error: unknown) {
     logger.warn(

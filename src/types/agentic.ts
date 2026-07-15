@@ -14,7 +14,6 @@ export interface AgenticTask extends Document {
   description: string;
   status: "pending" | "in_progress" | "completed";
   activeForm: string | null;
-  agentSessionId: string | null;
   conversationId: string | null;
   owner: string | null;
   blocks: number[];
@@ -29,7 +28,6 @@ export interface AgenticTaskCreateData {
   description: string;
   status?: string;
   activeForm?: string | null;
-  agentSessionId?: string | null;
   conversationId?: string | null;
   owner?: string | null;
   metadata?: Record<string, unknown>;
@@ -40,7 +38,6 @@ export interface AgenticTaskUpdates {
   subject?: string;
   description?: string;
   activeForm?: string | null;
-  agentSessionId?: string;
   conversationId?: string;
   metadata?: Record<string, unknown>;
 }
@@ -62,7 +59,6 @@ export interface DatastoreRecord extends Document {
   data: Record<string, unknown>;
   agent: string | null;
   username: string | null;
-  agentSessionId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -70,7 +66,6 @@ export interface DatastoreRecord extends Document {
 export interface DatastoreProvenance {
   agent?: string | null;
   username?: string | null;
-  agentSessionId?: string | null;
 }
 
 export interface DatastoreQueryOptions {

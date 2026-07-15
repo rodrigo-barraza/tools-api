@@ -219,7 +219,6 @@ router.post(
       username: callerUsername,
       agent: callerAgent,
       traceId: callerTraceId,
-      agentSessionId: callerAgentSessionId,
     } = extractCallerContext(req);
 
     try {
@@ -260,7 +259,6 @@ router.post(
             username: callerUsername,
             agent: callerAgent,
             traceId: callerTraceId,
-            agentSessionId: callerAgentSessionId,
             skipConversation: true,
             ...(systemPrompt && { systemPrompt }),
           });
@@ -370,7 +368,6 @@ router.post(
       username: callerUsername,
       agent: callerAgent,
       traceId: callerTraceId,
-      agentSessionId: callerAgentSessionId,
     } = extractCallerContext(req);
 
     // Tailor the prompt based on image context
@@ -422,7 +419,6 @@ router.post(
               username: callerUsername,
               agent: callerAgent,
               traceId: callerTraceId,
-              agentSessionId: callerAgentSessionId,
               skipConversation: true,
             });
 

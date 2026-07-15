@@ -99,7 +99,6 @@ interface AgentRpcMessage {
     capabilities?: string[];
     version?: string;
     machineInfo?: MachineInfo;
-    hostInfo?: MachineInfo;
     path?: string;
     paths?: string[];
     searchPath?: string;
@@ -494,8 +493,7 @@ function handleAgentMessage(
       normalizedToOriginalRoot.set(normalizedRoots[rootIndex], roots[rootIndex]);
     }
 
-    // Accept both "machineInfo" (current) and "hostInfo" (legacy pre-bundle rename)
-    const resolvedMachineInfo = message.params?.machineInfo || message.params?.hostInfo || undefined;
+    const resolvedMachineInfo = message.params?.machineInfo || undefined;
 
     // Register
     const entry: AgentRegistryEntry = {

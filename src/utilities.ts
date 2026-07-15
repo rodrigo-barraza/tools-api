@@ -554,7 +554,6 @@ interface CallerContext {
   username: string;
   agent: string | null;
   traceId: string | null;
-  agentSessionId: string | null;
   conversationId: string | null;
 }
 
@@ -569,7 +568,6 @@ export function extractCallerContext(req: Request): CallerContext {
     username: (req.headers[IDENTITY_HEADERS.username] as string) || "system",
     agent: (req.headers[IDENTITY_HEADERS.agent] as string) || null,
     traceId: (req.headers["x-trace-id"] as string) || null,
-    agentSessionId: (req.headers["x-agent-session-id"] as string) || null,
     conversationId: (req.headers[IDENTITY_HEADERS.conversationId] as string) || null,
   };
 }

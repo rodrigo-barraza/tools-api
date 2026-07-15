@@ -179,8 +179,8 @@ export async function fetchContainerLogs(
                   stream: parsed.stream ?? "stdout",
                 });
               } catch {
-                // Backwards compatibility: treat raw string data as stdout
-                collectedLines.push({ line: dataLine, stream: "stdout" });
+                // Portal must emit the JSON {line, stream} shape — drop malformed
+                // data lines rather than coercing raw strings to stdout.
               }
             }
           } else if (eventType === "end" || eventType === "error") {
