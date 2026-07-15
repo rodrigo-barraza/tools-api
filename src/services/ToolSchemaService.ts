@@ -430,7 +430,7 @@ const TOOL_DOMAINS = {
   convert_image_to_ascii: "Creative",
   draw_turtle_graphics: "Creative",
   create_3d_mesh: "Creative",
-  create_3d: "Creative",
+  create_3d_scene: "Creative",
   create_3d_voxel: "Creative",
 
   // Discord (Lupos DB)
@@ -745,7 +745,7 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   parse_cron_expression: ["⏰", "🔣"],
   draw_turtle_graphics: ["🐢", "💻"],
   create_3d_mesh: "🔺",
-  create_3d: ["🌐", "🧱"],
+  create_3d_scene: ["🌐", "🧱"],
   create_3d_voxel: ["🧱", "🧊"],
   think: ["🧠", "💭"],
   sleep: "💤",

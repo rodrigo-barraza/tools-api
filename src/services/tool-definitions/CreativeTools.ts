@@ -647,9 +647,9 @@ export function getCreativeTools(
     },
   },
   {
-    name: "create_3d",
+    name: "create_3d_scene",
     dataSource: compute("internal"),
-    description: translate("create_3d.description"),
+    description: translate("create_3d_scene.description"),
     endpoint: {
       method: "POST",
       path: "/compute/3d/scene",
@@ -666,11 +666,11 @@ export function getCreativeTools(
       properties: {
         sessionId: {
           type: "string",
-          description: translate("create_3d.params.sessionId"),
+          description: translate("create_3d_scene.params.sessionId"),
         },
         scene: {
           type: "object",
-          description: translate("create_3d.params.scene"),
+          description: translate("create_3d_scene.params.scene"),
           properties: {
             environment: {
               type: "string",
@@ -683,7 +683,7 @@ export function getCreativeTools(
                 "warehouse",
                 "neutral",
               ],
-              description: translate("create_3d.params.scene.params.environment"),
+              description: translate("create_3d_scene.params.scene.params.environment"),
             },
             background: {
               type: "string",
@@ -694,18 +694,18 @@ export function getCreativeTools(
               properties: {
                 enabled: {
                   type: "boolean",
-                  description: translate("create_3d.params.scene.params.ground.params.enabled"),
+                  description: translate("create_3d_scene.params.scene.params.ground.params.enabled"),
                 },
                 color: {
                   type: "string",
-                  description: translate("create_3d.params.scene.params.ground.params.color"),
+                  description: translate("create_3d_scene.params.scene.params.ground.params.color"),
                 },
                 size: {
                   type: "number",
-                  description: translate("create_3d.params.scene.params.ground.params.size"),
+                  description: translate("create_3d_scene.params.scene.params.ground.params.size"),
                 },
               },
-              description: translate("create_3d.params.scene.params.ground"),
+              description: translate("create_3d_scene.params.scene.params.ground"),
             },
             camera: {
               type: "object",
@@ -713,55 +713,55 @@ export function getCreativeTools(
                 position: {
                   type: "array",
                   items: { type: "number" },
-                  description: translate("create_3d.params.scene.params.camera.params.position"),
+                  description: translate("create_3d_scene.params.scene.params.camera.params.position"),
                 },
                 target: {
                   type: "array",
                   items: { type: "number" },
-                  description: translate("create_3d.params.scene.params.camera.params.target"),
+                  description: translate("create_3d_scene.params.scene.params.camera.params.target"),
                 },
                 fov: {
                   type: "number",
-                  description: translate("create_3d.params.scene.params.camera.params.fov"),
+                  description: translate("create_3d_scene.params.scene.params.camera.params.fov"),
                 },
                 autoOrbit: {
                   type: "boolean",
-                  description: translate("create_3d.params.scene.params.camera.params.autoOrbit"),
+                  description: translate("create_3d_scene.params.scene.params.camera.params.autoOrbit"),
                 },
                 autoOrbitSpeed: {
                   type: "number",
-                  description: translate("create_3d.params.scene.params.camera.params.autoOrbitSpeed"),
+                  description: translate("create_3d_scene.params.scene.params.camera.params.autoOrbitSpeed"),
                 },
               },
-              description: translate("create_3d.params.scene.params.camera"),
+              description: translate("create_3d_scene.params.scene.params.camera"),
             },
             fog: {
               type: "object",
               properties: {
                 enabled: {
                   type: "boolean",
-                  description: translate("create_3d.params.scene.params.fog.params.enabled"),
+                  description: translate("create_3d_scene.params.scene.params.fog.params.enabled"),
                 },
                 color: {
                   type: "string",
-                  description: translate("create_3d.params.scene.params.fog.params.color"),
+                  description: translate("create_3d_scene.params.scene.params.fog.params.color"),
                 },
                 near: {
                   type: "number",
-                  description: translate("create_3d.params.scene.params.fog.params.near"),
+                  description: translate("create_3d_scene.params.scene.params.fog.params.near"),
                 },
                 far: {
                   type: "number",
-                  description: translate("create_3d.params.scene.params.fog.params.far"),
+                  description: translate("create_3d_scene.params.scene.params.fog.params.far"),
                 },
               },
-              description: translate("create_3d.params.scene.params.fog"),
+              description: translate("create_3d_scene.params.scene.params.fog"),
             },
           },
         },
         objects: {
           type: "array",
-          description: translate("create_3d.params.objects"),
+          description: translate("create_3d_scene.params.objects"),
           items: {
             type: "object",
             properties: {
@@ -787,60 +787,60 @@ export function getCreativeTools(
                   "text3d",
                   "asset",
                 ],
-                description: translate("create_3d.params.objects.items.params.type"),
+                description: translate("create_3d_scene.params.objects.items.params.type"),
               },
               name: { type: "string", description: translate("common.params.optionalName") },
               assetId: {
                 type: "string",
-                description: translate("create_3d.params.objects.items.params.assetId"),
+                description: translate("create_3d_scene.params.objects.items.params.assetId"),
               },
               size: {
                 type: "array",
                 items: { type: "number" },
-                description: translate("create_3d.params.objects.items.params.size"),
+                description: translate("create_3d_scene.params.objects.items.params.size"),
               },
               radius: {
                 type: "number",
-                description: translate("create_3d.params.objects.items.params.radius"),
+                description: translate("create_3d_scene.params.objects.items.params.radius"),
               },
               height: {
                 type: "number",
-                description: translate("create_3d.params.objects.items.params.height"),
+                description: translate("create_3d_scene.params.objects.items.params.height"),
               },
               width: {
                 type: "number",
-                description: translate("create_3d.params.objects.items.params.width"),
+                description: translate("create_3d_scene.params.objects.items.params.width"),
               },
               radiusTop: {
                 type: "number",
-                description: translate("create_3d.params.objects.items.params.radiusTop"),
+                description: translate("create_3d_scene.params.objects.items.params.radiusTop"),
               },
               radiusBottom: {
                 type: "number",
-                description: translate("create_3d.params.objects.items.params.radiusBottom"),
+                description: translate("create_3d_scene.params.objects.items.params.radiusBottom"),
               },
               tube: {
                 type: "number",
-                description: translate("create_3d.params.objects.items.params.tube"),
+                description: translate("create_3d_scene.params.objects.items.params.tube"),
               },
               segments: {
                 type: "integer",
-                description: translate("create_3d.params.objects.items.params.segments"),
+                description: translate("create_3d_scene.params.objects.items.params.segments"),
               },
               position: {
                 type: "array",
                 items: { type: "number" },
-                description: translate("create_3d.params.objects.items.params.position"),
+                description: translate("create_3d_scene.params.objects.items.params.position"),
               },
               rotation: {
                 type: "array",
                 items: { type: "number" },
-                description: translate("create_3d.params.objects.items.params.rotation"),
+                description: translate("create_3d_scene.params.objects.items.params.rotation"),
               },
               scale: {
                 type: "array",
                 items: { type: "number" },
-                description: translate("create_3d.params.objects.items.params.scale"),
+                description: translate("create_3d_scene.params.objects.items.params.scale"),
               },
               material: {
                 type: "object",
@@ -851,19 +851,19 @@ export function getCreativeTools(
                   opacity: { type: "number", description: translate("common.params.zeroToOne") },
                   emissive: {
                     type: "string",
-                    description: translate("create_3d.params.objects.items.params.material.params.emissive"),
+                    description: translate("create_3d_scene.params.objects.items.params.material.params.emissive"),
                   },
                   wireframe: { type: "boolean" },
                   doubleSided: {
                     type: "boolean",
-                    description: translate("create_3d.params.objects.items.params.material.params.doubleSided"),
+                    description: translate("create_3d_scene.params.objects.items.params.material.params.doubleSided"),
                   },
                   textureUrl: {
                     type: "string",
-                    description: translate("create_3d.params.objects.items.params.material.params.textureUrl"),
+                    description: translate("create_3d_scene.params.objects.items.params.material.params.textureUrl"),
                   },
                 },
-                description: translate("create_3d.params.objects.items.params.material"),
+                description: translate("create_3d_scene.params.objects.items.params.material"),
               },
               animation: {
                 type: "object",
@@ -871,41 +871,41 @@ export function getCreativeTools(
                   type: {
                     type: "string",
                     enum: ["spin", "bounce", "orbit", "pulse", "float"],
-                    description: translate("create_3d.params.objects.items.params.children.items.params.animation.params.type"),
+                    description: translate("create_3d_scene.params.objects.items.params.children.items.params.animation.params.type"),
                   },
                   speed: {
                     type: "number",
-                    description: translate("create_3d.params.objects.items.params.children.items.params.animation.params.speed"),
+                    description: translate("create_3d_scene.params.objects.items.params.children.items.params.animation.params.speed"),
                   },
                   axis: {
                     type: "string",
                     enum: ["x", "y", "z"],
-                    description: translate("create_3d.params.objects.items.params.children.items.params.animation.params.axis"),
+                    description: translate("create_3d_scene.params.objects.items.params.children.items.params.animation.params.axis"),
                   },
                   amplitude: {
                     type: "number",
-                    description: translate("create_3d.params.objects.items.params.children.items.params.animation.params.amplitude"),
+                    description: translate("create_3d_scene.params.objects.items.params.children.items.params.animation.params.amplitude"),
                   },
                   radius: {
                     type: "number",
-                    description: translate("create_3d.params.objects.items.params.children.items.params.animation.params.radius"),
+                    description: translate("create_3d_scene.params.objects.items.params.children.items.params.animation.params.radius"),
                   },
                 },
-                description: translate("create_3d.params.objects.items.params.animation"),
+                description: translate("create_3d_scene.params.objects.items.params.animation"),
               },
               children: {
                 type: "array",
-                description: translate("create_3d.params.objects.items.params.children"),
+                description: translate("create_3d_scene.params.objects.items.params.children"),
                 items: {
                   type: "object",
-                  description: translate("create_3d.params.objects.items.params.children.items"),
+                  description: translate("create_3d_scene.params.objects.items.params.children.items"),
                   // Google's API requires every `required` name to exist in
                   // `properties` — an object with required but no properties
                   // is rejected with INVALID_ARGUMENT for the whole request.
                   properties: {
                     type: {
                       type: "string",
-                      description: translate("create_3d.params.objects.items.params.type"),
+                      description: translate("create_3d_scene.params.objects.items.params.type"),
                     },
                   },
                   required: ["type"],
@@ -913,11 +913,11 @@ export function getCreativeTools(
               },
               content: {
                 type: "string",
-                description: translate("create_3d.params.objects.items.params.content"),
+                description: translate("create_3d_scene.params.objects.items.params.content"),
               },
               fontSize: {
                 type: "number",
-                description: translate("create_3d.params.objects.items.params.fontSize"),
+                description: translate("create_3d_scene.params.objects.items.params.fontSize"),
               },
             },
             required: ["type"],
@@ -932,26 +932,26 @@ export function getCreativeTools(
             },
             showGrid: {
               type: "boolean",
-              description: translate("create_3d.params.options.params.showGrid"),
+              description: translate("create_3d_scene.params.options.params.showGrid"),
             },
             showAxes: {
               type: "boolean",
-              description: translate("create_3d.params.options.params.showAxes"),
+              description: translate("create_3d_scene.params.options.params.showAxes"),
             },
             enableShadows: {
               type: "boolean",
-              description: translate("create_3d.params.options.params.enableShadows"),
+              description: translate("create_3d_scene.params.options.params.enableShadows"),
             },
             ambientLightIntensity: {
               type: "number",
-              description: translate("create_3d.params.options.params.ambientLightIntensity"),
+              description: translate("create_3d_scene.params.options.params.ambientLightIntensity"),
             },
             directionalLightIntensity: {
               type: "number",
-              description: translate("create_3d.params.options.params.directionalLightIntensity"),
+              description: translate("create_3d_scene.params.options.params.directionalLightIntensity"),
             },
           },
-          description: translate("create_3d.params.options"),
+          description: translate("create_3d_scene.params.options"),
         },
       },
       required: ["objects"],

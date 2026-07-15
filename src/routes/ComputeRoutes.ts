@@ -3201,7 +3201,7 @@ async function resolveSceneAssetReferences(
       return {
         error:
           `Object at index ${index} has type "asset" but no 'assetId'. Pass the sceneId ` +
-          `returned by a previous create_3d or create_3d_mesh call.`,
+          `returned by a previous create_3d_scene or create_3d_mesh call.`,
       };
     }
     const assetDocument = await getThreeDimensionalScene(assetId.trim());
@@ -3209,7 +3209,7 @@ async function resolveSceneAssetReferences(
       return {
         error:
           `No saved 3D build found with assetId '${assetId}'. Use the exact sceneId returned ` +
-          `by a previous create_3d or create_3d_mesh call (asset builds persist across ` +
+          `by a previous create_3d_scene or create_3d_mesh call (asset builds persist across ` +
           `sessions, so any past sceneId works).`,
       };
     }
@@ -3444,7 +3444,7 @@ router.post("/3d/model", asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
-  // Model objects use 'shape' but the sibling create_3d tool uses
+  // Model objects use 'shape' but the sibling create_3d_scene tool uses
   // 'type' — accept both.
   for (const modelObject of modelObjects) {
     if (modelObject && typeof modelObject === "object" && modelObject.shape === undefined && typeof modelObject.type === "string") {
