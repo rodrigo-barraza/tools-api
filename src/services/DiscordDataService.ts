@@ -415,6 +415,7 @@ const DiscordDataService = {
                 height: attachment.height || null,
                 duration: attachment.duration ?? null,
                 waveform: attachment.waveform ?? null,
+                spoiler: attachment.spoiler === true,
               };
             })
           : undefined;
@@ -469,6 +470,15 @@ const DiscordDataService = {
                   }),
                   ...(embed.provider && { provider: embed.provider }),
                   ...(embed.color != null && { color: embed.color }),
+                  // Rich embed body — author, footer, fields, timestamp
+                  // (bot embeds lose most of their content without these)
+                  ...(embed.author && { author: embed.author }),
+                  ...(embed.footer && { footer: embed.footer }),
+                  ...(Array.isArray(embed.fields) &&
+                    embed.fields.length > 0 && {
+                      fields: embed.fields.slice(0, 25),
+                    }),
+                  ...(embed.timestamp && { timestamp: embed.timestamp }),
                 };
               })
               .filter(Boolean)
@@ -545,7 +555,19 @@ const DiscordDataService = {
         // Media indicators
         ...(attachments && { attachments }),
         ...(embeds && { embeds }),
-        ...(messageDoc.stickers?.length > 0 && { stickerCount: messageDoc.stickers.length }),
+        ...(messageDoc.stickers?.length > 0 && {
+          stickerCount: messageDoc.stickers.length,
+          // Sticker data for rendering — CDN URL is
+          // https://media.discordapp.net/stickers/{id}.{png|gif}
+          stickers: messageDoc.stickers.map((sticker: Document) => ({
+            id: sticker.id,
+            name: sticker.name || null,
+            // discord.js serializes StickerFormatType as `format`;
+            // raw API payloads use `format_type`
+            format: sticker.format ?? sticker.formatType ?? sticker.format_type ?? null,
+            url: sticker.url || null,
+          })),
+        }),
       };
     });
 
