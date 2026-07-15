@@ -114,8 +114,8 @@ describe("PortalFetcher & SSE Log Parser", () => {
     it("filters out connected metadata event and collects standard log lines", async () => {
       const sseChunks = [
         "event: connected\ndata: {\"container\":\"prism-service\",\"device\":\"synology\",\"deviceName\":\"Synology NAS\",\"tail\":200,\"follow\":false}\n\n",
-        "data: 2026-06-22T20:10:00.123Z Actual log line 1\n\n",
-        "data: 2026-06-22T20:10:01.456Z Actual log line 2\n\n",
+        "data: {\"line\":\"2026-06-22T20:10:00.123Z Actual log line 1\",\"stream\":\"stdout\"}\n\n",
+        "data: {\"line\":\"2026-06-22T20:10:01.456Z Actual log line 2\",\"stream\":\"stdout\"}\n\n",
       ];
 
       const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
@@ -139,9 +139,9 @@ describe("PortalFetcher & SSE Log Parser", () => {
 
     it("terminates parsing early upon event: end sentinel", async () => {
       const sseChunks = [
-        "data: 2026-06-22T20:10:00.123Z Log 1\n\n",
+        "data: {\"line\":\"2026-06-22T20:10:00.123Z Log 1\",\"stream\":\"stdout\"}\n\n",
         "event: end\ndata: {\"code\":0}\n\n",
-        "data: 2026-06-22T20:10:01.456Z Log 2\n\n", // Should be ignored since stream ended
+        "data: {\"line\":\"2026-06-22T20:10:01.456Z Log 2\",\"stream\":\"stdout\"}\n\n", // Should be ignored since stream ended
       ];
 
       const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
@@ -162,7 +162,7 @@ describe("PortalFetcher & SSE Log Parser", () => {
 
     it("terminates parsing early upon event: error sentinel", async () => {
       const sseChunks = [
-        "data: 2026-06-22T20:10:00.123Z Log 1\n\n",
+        "data: {\"line\":\"2026-06-22T20:10:00.123Z Log 1\",\"stream\":\"stdout\"}\n\n",
         "event: error\ndata: {\"error\":\"Docker API down\"}\n\n",
       ];
 
