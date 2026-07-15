@@ -899,6 +899,15 @@ export function getCreativeTools(
                 items: {
                   type: "object",
                   description: translate("create_3d.params.objects.items.params.children.items"),
+                  // Google's API requires every `required` name to exist in
+                  // `properties` — an object with required but no properties
+                  // is rejected with INVALID_ARGUMENT for the whole request.
+                  properties: {
+                    type: {
+                      type: "string",
+                      description: translate("create_3d.params.objects.items.params.type"),
+                    },
+                  },
                   required: ["type"],
                 },
               },
