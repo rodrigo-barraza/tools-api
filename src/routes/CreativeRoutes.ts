@@ -1094,6 +1094,9 @@ router.get(
     res.json({
       success: true,
       ...combination,
+      display: buildDisplay("image", combination.gStaticUrl, {
+        title: combination.alt,
+      }),
     });
   }),
 );

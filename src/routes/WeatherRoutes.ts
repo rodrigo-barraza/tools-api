@@ -83,7 +83,8 @@ import { fetchEnvironmentCanadaWarnings } from "../fetchers/weather/EnvironmentC
 import { getAvalanche, getAvalancheHealth } from "../caches/AvalancheCache.ts";
 import { fetchAvalancheForecast } from "../fetchers/weather/AvalancheFetcher.ts";
 import { getMoonPhase, getMoonPhaseHealth } from "../caches/MoonPhaseCache.ts";
-import { errorMessage } from "../utilities.ts";
+import { buildDisplay, errorMessage } from "../utilities.ts";
+import MinioService from "../services/MinioService.ts";
 
 const router = Router();
 // ─── Weather ───────────────────────────────────────────────────────
@@ -219,7 +220,19 @@ router.get("/pollen/today", (_req: Request, res: Response) =>
   res.json(getPollenToday()),
 );
 // ─── APOD ──────────────────────────────────────────────────────────
-router.get("/apod", (_req: Request, res: Response) => res.json(getApod()));
+router.get("/apod", (_req: Request, res: Response) => {
+  const apod = getApod();
+  const url = apod.url as string | undefined;
+  if (!url) return res.json(apod);
+  const title = (apod.title as string) || "Astronomy Picture of the Day";
+  // Video days carry a YouTube/Vimeo embed URL — frame it; image days
+  // display the standard-resolution image (hdUrl stays in the result).
+  const display =
+    apod.mediaType === "video"
+      ? buildDisplay("embed", url, { height: 420, title })
+      : buildDisplay("image", url, { title });
+  res.json({ ...apod, display });
+});
 // ─── Launches ──────────────────────────────────────────────────────
 router.get("/launches", (_req: Request, res: Response) =>
   res.json(getLaunches()),
@@ -432,15 +445,40 @@ router.get(
         ),
       );
     } else {
-      res.json(
-        await getSatelliteImagery(
-          parsedLatitude,
-          parsedLongitude,
-          CONFIG.NASA_API_KEY,
-          date,
-          dimension ? parseFloat(dimension) : undefined,
-        ),
+      const imagery = await getSatelliteImagery(
+        parsedLatitude,
+        parsedLongitude,
+        CONFIG.NASA_API_KEY,
+        date,
+        dimension ? parseFloat(dimension) : undefined,
       );
+      // NASA returns a signed, short-lived Google-hosted URL — re-host
+      // to MinIO so the image survives past the signature expiry. Fall
+      // back to the ephemeral URL if the re-host fails.
+      let imageUrl = imagery.imageUrl;
+      try {
+        const imageResponse = await fetch(imagery.imageUrl, {
+          signal: AbortSignal.timeout(30_000),
+        });
+        if (imageResponse.ok) {
+          const contentType =
+            imageResponse.headers.get("content-type") || "image/png";
+          const hostedUrl = await MinioService.uploadToolAsset(
+            Buffer.from(await imageResponse.arrayBuffer()),
+            contentType,
+          );
+          if (hostedUrl) imageUrl = hostedUrl;
+        }
+      } catch {
+        // keep the ephemeral NASA URL
+      }
+      res.json({
+        ...imagery,
+        imageUrl,
+        display: buildDisplay("image", imageUrl, {
+          title: `Satellite imagery (${imagery.date})`,
+        }),
+      });
     }
   }),
 );

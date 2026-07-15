@@ -19,7 +19,7 @@ import {
   getPlayerBans,
   resolveVanityUrl,
 } from "../fetchers/gaming/SteamFetcher.ts";
-import { errorMessage } from "../utilities.ts";
+import { buildDisplay, errorMessage } from "../utilities.ts";
 
 const router: ReturnType<typeof Router> = Router();
 const dispatchToRoute = router as unknown as (request: Request, response: Response, fallback: () => void) => void;
@@ -351,7 +351,13 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     try {
       const result = createBonfire(req.body);
-      res.json(result);
+      res.json({
+        ...result,
+        display: buildDisplay("embed", result.embedUrl, {
+          height: 420,
+          title: "Bonfire",
+        }),
+      });
     } catch (error: unknown) {
       res.status(400).json({ error: errorMessage(error) });
     }

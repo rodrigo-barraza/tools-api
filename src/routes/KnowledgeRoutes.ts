@@ -925,6 +925,14 @@ router.get(
             mimeType: cachedEntry.mimeType,
             cachedAt: cachedEntry.cachedAt,
             accessCount: cachedEntry.accessCount,
+            display: buildDisplay(
+              cachedEntry.format === "mp3" ? "audio" : "video",
+              cachedEntry.downloadUrl,
+              {
+                title: cachedEntry.title,
+                poster: cachedEntry.thumbnailUrl ?? undefined,
+              },
+            ),
           });
         }
       }
@@ -1022,6 +1030,14 @@ router.get(
           format: result.format,
           downloadUrl,
           mimeType: result.mimeType,
+          display: buildDisplay(
+            result.format === "mp3" ? "audio" : "video",
+            downloadUrl,
+            {
+              title: result.metadata.title,
+              poster: result.metadata.thumbnailUrl ?? undefined,
+            },
+          ),
         });
       } finally {
         await rm(result.temporaryDirectory, { recursive: true, force: true }).catch(() => {});
@@ -1070,6 +1086,9 @@ router.post(
         mimeType: cachedTrim.mimeType,
         cachedAt: cachedTrim.cachedAt,
         accessCount: cachedTrim.accessCount,
+        display: buildDisplay("video", cachedTrim.downloadUrl, {
+          title: `Trimmed video (${cachedTrim.trimStart} → ${cachedTrim.trimEnd})`,
+        }),
       });
     }
 
@@ -1122,6 +1141,9 @@ router.post(
         format: result.format,
         downloadUrl,
         mimeType: result.mimeType,
+        display: buildDisplay("video", downloadUrl, {
+          title: `Trimmed video (${trimRange})`,
+        }),
       });
     } catch (error: unknown) {
       return res.status(400).json({

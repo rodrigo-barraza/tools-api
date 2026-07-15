@@ -438,22 +438,24 @@ export function buildLocalUrl(
 /**
  * Self-describing display metadata attached to visual tool results.
  * Clients render `display` generically — "embed" becomes a sandboxed
- * auto-resizing iframe, "image" an <img> — without needing a per-tool
- * renderer. `url` must be absolute (or a ref the client already
- * resolves, e.g. minio://).
+ * auto-resizing iframe, "image" an <img>, "video"/"audio" native media
+ * players — without needing a per-tool renderer. `url` must be absolute
+ * (or a ref the client already resolves, e.g. minio://).
  */
 export interface ToolResultDisplay {
-  kind: "embed" | "image";
+  kind: "embed" | "image" | "video" | "audio";
   url: string;
   /** Fallback iframe height in px until the embed reports its own size. */
   height?: number;
   title?: string;
+  /** Poster image shown before a video plays (video only). */
+  poster?: string;
 }
 
 export function buildDisplay(
   kind: ToolResultDisplay["kind"],
   url: string,
-  options: { height?: number; title?: string } = {},
+  options: { height?: number; title?: string; poster?: string } = {},
 ): ToolResultDisplay {
   return { kind, url, ...options };
 }
