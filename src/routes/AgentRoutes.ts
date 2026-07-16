@@ -222,13 +222,11 @@ router.put("/upload/tray-app", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Empty request body" });
     }
 
-    const minioClient = MinioService._getClient();
-    await minioClient.putObject(
+    await MinioService.putBuffer(
       AGENT_BUCKET,
       installerInfo.objectKey,
       fileBuffer,
-      fileBuffer.length,
-      { "Content-Type": installerInfo.contentType },
+      installerInfo.contentType,
     );
 
     logger.info(

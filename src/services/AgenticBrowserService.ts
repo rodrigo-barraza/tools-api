@@ -67,6 +67,14 @@ function validateUrl(url: string): string | null {
   if (!ALLOWED_URL_PROTOCOLS.has(parsed.protocol)) {
     return `Unsupported URL scheme "${parsed.protocol}//" — only http(s), data and about URLs can be opened.`;
   }
+  // SSRF: block link-local (cloud metadata, 169.254.169.254) outright —
+  // no legitimate browsing target lives there. Broader private ranges stay
+  // allowed here (browsing one's own LAN is a legitimate interactive use);
+  // the headless auto-tier fetch path (SsrfGuard.ts) blocks them fully.
+  const hostname = parsed.hostname.replace(/^\[|\]$/g, "");
+  if (/^169\.254\.\d+\.\d+$/.test(hostname) || /^fe[89ab]/i.test(hostname)) {
+    return `Blocked link-local/metadata address: ${hostname}`;
+  }
   return null;
 }
 

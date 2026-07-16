@@ -1512,7 +1512,7 @@
   "generate_avatar.params.size": "size in px, square (32-1024, default 256).",
   "generate_avatar.params.backgroundColor": "optional 6-digit hex background ('#b6e3f4'). omit for style default (usually transparent).",
   "generate_avatar.params.format": "'png' (default, best for Discord) or 'svg' (scale forever).",
-  "generate_ascii_banner.description": "make short text into big ASCII-art letter (FIGlet) — opposite of convert_image_to_ascii. 328 font from clean (Standard, Big, Slant) to fancy (Ghost, Isometric1, Larry 3D, ANSI Shadow). give back banner as text: put inside fenced code block so monospace art line up. good for header, celebration, retro flair. max 60 character.",
+  "generate_ascii_banner.description": "make short text into big ASCII-art letter (FIGlet) — opposite of convert_image_to_ascii. 328 font from clean (Standard, Big, Slant) to fancy (Ghost, Isometric1, Larry 3D, ANSI Shadow). want show banner in reply? put {{tool_output:banner}} token from result message inside fenced code block, no retype art. good for header, celebration, retro flair. max 60 character.",
   "generate_ascii_banner.params.text": "text to render (max 60 char — banner for short phrase).",
   "generate_ascii_banner.params.font": "FIGlet font name (default 'Standard'). popular: Big, Slant, Small, Banner, Block, Doom, Ghost, Graffiti, Isometric1, Larry 3D, Ogre, Shadow, Speed, Star Wars, Sub-Zero, ANSI Shadow, 3-D, Bloody. unknown name give back list.",
   "generate_ascii_banner.params.width": "max output width in character before wrap (40-200, default 80).",

@@ -439,10 +439,15 @@ export function buildLocalUrl(
  * Self-describing display metadata attached to visual tool results.
  * Clients render `display` generically — "embed" becomes a sandboxed
  * auto-resizing iframe, "image" an <img>, "video"/"audio" native media
- * players — without needing a per-tool renderer. `url` must be absolute
- * (or a ref the client already resolves, e.g. minio://).
+ * players, "code" a whitespace-exact monospace block — without needing
+ * a per-tool renderer. `url` must be absolute (or a ref the client
+ * already resolves, e.g. minio://).
+ *
+ * "code" carries no content of its own: `sourceField` names the sibling
+ * result field holding the verbatim text, so the payload is never
+ * duplicated (tool results are model-visible in full).
  */
-export interface ToolResultDisplay {
+export interface ToolResultMediaDisplay {
   kind: "embed" | "image" | "video" | "audio";
   url: string;
   /** Fallback iframe height in px until the embed reports its own size. */
@@ -452,12 +457,30 @@ export interface ToolResultDisplay {
   poster?: string;
 }
 
+export interface ToolResultCodeDisplay {
+  kind: "code";
+  /** Name of the top-level sibling result field holding the verbatim text. */
+  sourceField: string;
+  /** Syntax-highlight hint, e.g. "text", "diff", "python", "json". */
+  language?: string;
+  title?: string;
+}
+
+export type ToolResultDisplay = ToolResultMediaDisplay | ToolResultCodeDisplay;
+
 export function buildDisplay(
-  kind: ToolResultDisplay["kind"],
+  kind: ToolResultMediaDisplay["kind"],
   url: string,
   options: { height?: number; title?: string; poster?: string } = {},
-): ToolResultDisplay {
+): ToolResultMediaDisplay {
   return { kind, url, ...options };
+}
+
+export function buildCodeDisplay(
+  sourceField: string,
+  options: { language?: string; title?: string } = {},
+): ToolResultCodeDisplay {
+  return { kind: "code", sourceField, ...options };
 }
 
 // ─── HTML Embed Shell ─────────────────────────────────────────

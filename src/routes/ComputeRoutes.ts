@@ -25,6 +25,7 @@ import { MAX_CODE_LENGTH, MAX_COMMAND_LENGTH } from "../constants.ts";
 import crypto from "node:crypto";
 import {
   buildDisplay,
+  buildCodeDisplay,
   buildLocalUrl,
   buildEmbedHtml,
   errorMessage,
@@ -127,7 +128,15 @@ router.post("/js/execute", (req: Request, res: Response) => {
       ? Math.min(Math.max(parseInt(timeout), 100), 30_000)
       : undefined,
   });
-  res.json(result);
+  res.json({
+    ...result,
+    ...(result.output && {
+      display: buildCodeDisplay("output", {
+        language: "text",
+        title: "Console output",
+      }),
+    }),
+  });
 });
 router.get("/js/info", (_req: Request, res: Response) => {
   res.json(getJsInterpreterInfo());
@@ -182,7 +191,15 @@ router.post(
         ? Math.min(Math.max(parseInt(timeout), 500), 30_000)
         : undefined,
     });
-    res.json(result);
+    res.json({
+      ...result,
+      ...(result.stdout && {
+        display: buildCodeDisplay("stdout", {
+          language: "text",
+          title: "stdout",
+        }),
+      }),
+    });
   }),
 );
 router.get("/shell/binaries", (_req: Request, res: Response) => {
@@ -1036,8 +1053,12 @@ router.post(
         font: chosenFont,
         lineCount: lines.length,
         widestLine: Math.max(...lineLengths, 0),
+        display: buildCodeDisplay("banner", {
+          language: "text",
+          title: `Banner: ${text}`,
+        }),
         message:
-          "Present the banner inside a fenced code block (```) so the monospace art lines up.",
+          "To include the banner in your reply, put the literal token {{tool_output:banner}} alone on a line inside a fenced code block (```) — it is replaced with the exact banner text. Do not retype the art character-by-character unless you are intentionally altering it.",
       });
     } catch (error: unknown) {
       res
@@ -1351,6 +1372,7 @@ router.post(
           count: change.count,
         })),
         patch,
+        display: buildCodeDisplay("patch", { language: "diff", title: "Diff" }),
       });
     } catch (error: unknown) {
       res.status(400).json({ error: `Diff failed: ${errorMessage(error)}` });
@@ -1383,6 +1405,10 @@ router.get("/hash", (req: Request, res: Response) => {
       encoding: enc,
       hash,
       dataLength: data.length,
+      display: buildCodeDisplay("hash", {
+        language: "text",
+        title: key ? `HMAC-${algo}` : algo,
+      }),
     });
   } catch (error: unknown) {
     const algos = crypto.getHashes().filter((h: string) => !h.includes("RSA"));

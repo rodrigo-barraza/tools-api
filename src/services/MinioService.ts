@@ -1,6 +1,12 @@
 // ─── MinIO Storage Service ──────────────────────────────────
+// Facade over the shared MinioManager from utilities-library — the
+// single MinIO implementation across the workspace (same pattern as
+// PrismApiClient). The per-call bucketName parameters are kept for
+// API stability; they route through MinioManager's bucket override.
+// Initialized once at boot via MinioService.init() (which also
+// ensures the artifacts bucket exists with a public-read policy).
 
-import { Client } from "minio";
+import { MinioManager } from "@rodrigo-barraza/utilities-library/service/minio";
 import { getErrorMessage } from "@rodrigo-barraza/utilities-library";
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
@@ -19,41 +25,44 @@ const MIME_TO_EXTENSION: Record<string, string> = {
 };
 
 export default class MinioService {
-  static client: Client | null = null;
-
-  static _getClient(): Client {
-    if (MinioService.client) return MinioService.client;
-
+  /**
+   * Connect the shared MinioManager. Call once at boot before any
+   * other method. No-op (with a warning) when MinIO isn't configured.
+   */
+  static async init(): Promise<void> {
     if (!CONFIG.MINIO_ENDPOINT) {
-      throw new Error("No MINIO_ENDPOINT configured");
+      logger.warn("[MinioService] No MINIO_ENDPOINT configured — MinIO disabled");
+      return;
     }
-
-    const url = new URL(CONFIG.MINIO_ENDPOINT);
-    MinioService.client = new Client({
-      endPoint: url.hostname,
-      port: parseInt(url.port, 10) || (url.protocol === "https:" ? 443 : 80),
-      useSSL: url.protocol === "https:",
+    await MinioManager.init({
+      endpoint: CONFIG.MINIO_ENDPOINT,
       accessKey: CONFIG.MINIO_ACCESS_KEY || "",
       secretKey: CONFIG.MINIO_SECRET_KEY || "",
+      bucket: TOOL_ASSETS_BUCKET,
+      publicRead: true,
+      logger,
     });
+  }
 
-    logger.info(`[MinioService] Client initialized → ${CONFIG.MINIO_ENDPOINT}`);
-    return MinioService.client;
+  static isAvailable(): boolean {
+    return MinioManager.isAvailable();
   }
 
   static async statObject(bucketName: string, objectName: string) {
-    const minioClient = MinioService._getClient();
-    return minioClient.statObject(bucketName, objectName);
+    return MinioManager.stat(objectName, bucketName);
   }
 
   static async getObject(bucketName: string, objectName: string) {
-    const minioClient = MinioService._getClient();
-    return minioClient.getObject(bucketName, objectName);
+    return MinioManager.get(objectName, bucketName);
   }
 
-  static async fPutObject(bucketName: string, objectName: string, filePath: string, metadata: Record<string, string> = {}) {
-    const minioClient = MinioService._getClient();
-    return minioClient.fPutObject(bucketName, objectName, filePath, metadata);
+  static async fPutObject(
+    bucketName: string,
+    objectName: string,
+    filePath: string,
+    metadata: Record<string, string> = {},
+  ) {
+    return MinioManager.uploadFile(objectName, filePath, metadata, bucketName);
   }
 
   static async putBuffer(
@@ -62,10 +71,7 @@ export default class MinioService {
     buffer: Buffer,
     contentType: string,
   ) {
-    const minioClient = MinioService._getClient();
-    return minioClient.putObject(bucketName, objectName, buffer, buffer.length, {
-      "Content-Type": contentType,
-    });
+    return MinioManager.upload(objectName, buffer, contentType, bucketName);
   }
 
   static getPublicUrl(bucketName: string, objectName: string): string {
@@ -76,12 +82,7 @@ export default class MinioService {
   }
 
   static async objectExists(bucketName: string, objectName: string): Promise<boolean> {
-    try {
-      await MinioService.statObject(bucketName, objectName);
-      return true;
-    } catch {
-      return false;
-    }
+    return MinioManager.exists(objectName, bucketName);
   }
 
   /**
@@ -93,7 +94,7 @@ export default class MinioService {
     buffer: Buffer,
     mimeType: string,
   ): Promise<string | null> {
-    if (!CONFIG.MINIO_ENDPOINT) return null;
+    if (!MinioManager.isAvailable()) return null;
 
     try {
       const fileExtension = MIME_TO_EXTENSION[mimeType] || "bin";
@@ -109,42 +110,14 @@ export default class MinioService {
   }
 
   static async seedWorkspaceAgent(): Promise<void> {
-    if (!CONFIG.MINIO_ENDPOINT) {
+    if (!MinioManager.isAvailable()) {
       logger.warn(
-        "[MinioService] MinIO not configured; skipping workspace agent seed.",
+        "[MinioService] MinIO not available; skipping workspace agent seed.",
       );
       return;
     }
     try {
-      const minioClient = MinioService._getClient();
-      const bucketName = "artifacts";
-
-      const bucketExists = await minioClient
-        .bucketExists(bucketName)
-        .catch(() => false);
-      if (!bucketExists) {
-        await minioClient.makeBucket(bucketName);
-        logger.info(`[MinioService] Created bucket: ${bucketName}`);
-      }
-
-      const publicPolicy = JSON.stringify({
-        Version: "2012-10-17",
-        Statement: [
-          {
-            Effect: "Allow",
-            Principal: { AWS: ["*"] },
-            Action: ["s3:GetObject"],
-            Resource: [`arn:aws:s3:::${bucketName}/*`],
-          },
-        ],
-      });
-      await minioClient
-        .setBucketPolicy(bucketName, publicPolicy)
-        .catch((error: Error) => {
-          logger.warn(
-            `[MinioService] Failed to set bucket policy: ${error.message}`,
-          );
-        });
+      // Bucket existence + public-read policy are ensured by init()
 
       const filesToSeed = [
         {
@@ -196,12 +169,15 @@ export default class MinioService {
           `[MinioService] Seeding ${fileEntry.fileName} from local file: ${localFilePath}`,
         );
 
-        await minioClient.fPutObject(bucketName, fileEntry.objectName, localFilePath, {
-          "Content-Type": "application/javascript",
-        });
+        await MinioService.fPutObject(
+          TOOL_ASSETS_BUCKET,
+          fileEntry.objectName,
+          localFilePath,
+          { "Content-Type": "application/javascript" },
+        );
 
         logger.success(
-          `[MinioService] Successfully seeded ${fileEntry.fileName} into MinIO bucket '${bucketName}'`,
+          `[MinioService] Successfully seeded ${fileEntry.fileName} into MinIO bucket '${TOOL_ASSETS_BUCKET}'`,
         );
       }
     } catch (error: unknown) {

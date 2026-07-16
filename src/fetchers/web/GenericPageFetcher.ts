@@ -5,6 +5,7 @@ type AnyNode = ReturnType<cheerio.CheerioAPI> extends cheerio.Cheerio<infer U> ?
 type CheerioAPI = cheerio.CheerioAPI;
 type Element = Extract<AnyNode, { tagName: string }>;
 import { errorMessage, randomUserAgent } from "../../utilities.ts";
+import { fetchPublicUrl } from "./SsrfGuard.ts";
 
 const MAX_BODY_CHARS = 15_000;
 const FETCH_TIMEOUT_MS = 10_000;
@@ -246,14 +247,15 @@ export async function fetchGenericPage(
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
-    response = await fetch(url, {
+    // SSRF guard: agent-controlled URL — every hop (including redirects)
+    // must land in public address space (see SsrfGuard.ts)
+    response = await fetchPublicUrl(url, {
       headers: {
         "User-Agent": randomUserAgent(),
         Accept:
           "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9",
       },
-      redirect: "follow",
       signal: controller.signal,
     });
 

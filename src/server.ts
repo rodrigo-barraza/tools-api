@@ -261,7 +261,9 @@ async function start() {
     // Load user-configured workspace roots from MongoDB
     await loadUserWorkspaceRoots();
 
-    // Automatically seed the standalone workspace-agent.mjs file to MinIO
+    // Connect the shared MinIO manager (ensures artifacts bucket + policy),
+    // then seed the standalone workspace-agent.mjs file
+    await MinioService.init();
     await MinioService.seedWorkspaceAgent();
   } catch (error: unknown) {
     logger.error(`Failed to connect to MongoDB: ${errorMessage(error)}`);

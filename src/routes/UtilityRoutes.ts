@@ -41,7 +41,12 @@ import {
   VALID_CHART_TYPES,
 } from "../services/ChartService.ts";
 import { MAX_CODE_LENGTH } from "../constants.ts";
-import { buildDisplay, buildLocalUrl, errorMessage } from "../utilities.ts";
+import {
+  buildDisplay,
+  buildCodeDisplay,
+  buildLocalUrl,
+  errorMessage,
+} from "../utilities.ts";
 import { PersistentStore } from "../models/EmbedAsset.ts";
 import MinioService from "../services/MinioService.ts";
 import { crawlSingleStatic } from "../services/CrawlerService.ts";
@@ -608,8 +613,17 @@ router.post(
     });
     const published = await publishPythonFigures(result);
     const { figures: _rawFigures, totalFigureFiles: _total, ...textResult } = result;
+    // Figure display (image) wins when present; otherwise surface stdout
+    // as a whitespace-exact code block.
     res.json({
       ...textResult,
+      ...(published.length === 0 &&
+        result.stdout && {
+          display: buildCodeDisplay("stdout", {
+            language: "text",
+            title: "stdout",
+          }),
+        }),
       ...buildPythonFigurePayload(result, published),
     });
   }),

@@ -27,9 +27,7 @@ vi.mock("../src/services/MinioService.ts", () => ({
   default: {
     statObject: vi.fn(),
     getObject: vi.fn(),
-    _getClient: vi.fn(() => ({
-      putObject: vi.fn(),
-    })),
+    putBuffer: vi.fn(),
   },
 }));
 

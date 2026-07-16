@@ -731,7 +731,16 @@ router.post(
     if (result.error && !result.stdout && !result.stderr) {
       return res.status(400).json(result);
     }
-    res.json(result);
+    const { buildCodeDisplay } = await import("../utilities.ts");
+    res.json({
+      ...result,
+      ...(result.stdout && {
+        display: buildCodeDisplay("stdout", {
+          language: "text",
+          title: "stdout",
+        }),
+      }),
+    });
   }),
 );
 router.post(
@@ -852,7 +861,17 @@ router.post(
     }
     const st = coerceBool(staged, "staged", false);
     if (!st.ok) return { error: st.error };
-    return agenticGitDiff(path, { staged: st.value, path: file, ref });
+    const result = await agenticGitDiff(path, {
+      staged: st.value,
+      path: file,
+      ref,
+    });
+    if (result.error || !result.diff) return result;
+    const { buildCodeDisplay } = await import("../utilities.ts");
+    return {
+      ...result,
+      display: buildCodeDisplay("diff", { language: "diff", title: "git diff" }),
+    };
   }),
 );
 router.post(
