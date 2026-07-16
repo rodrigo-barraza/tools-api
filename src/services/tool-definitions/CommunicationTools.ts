@@ -11,6 +11,139 @@ export function getCommunicationTools(
   
 
   return [
+  // Email trio: nodemailer SMTP + imapflow IMAP (same-author pairing,
+  // https://github.com/nodemailer/nodemailer + https://github.com/postalsys/imapflow;
+  // combo proven by https://github.com/codefuturist/email-mcp).
+  {
+    name: "send_email",
+    dataSource: onDemand("SMTP"),
+    description: translate("send_email.description"),
+    endpoint: {
+      path: "/communication/email/send",
+      method: "POST",
+      bodyParams: ["to", "subject", "body", "cc", "bcc", "replyTo"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        to: {
+          type: "string",
+          description: translate("send_email.params.to"),
+        },
+        subject: {
+          type: "string",
+          description: translate("send_email.params.subject"),
+        },
+        body: {
+          type: "string",
+          description: translate("send_email.params.body"),
+        },
+        cc: {
+          type: "string",
+          description: translate("send_email.params.cc"),
+        },
+        bcc: {
+          type: "string",
+          description: translate("send_email.params.cc"),
+        },
+        replyTo: {
+          type: "string",
+          description: translate("send_email.params.replyTo"),
+        },
+      },
+      required: ["to", "subject", "body"],
+    },
+    display: {
+      activeVerb: "Sending email to",
+      completedVerb: "Sent email to",
+      subjectParam: "to",
+      subjectFormat: "truncate",
+    },
+  },
+  {
+    name: "search_email",
+    dataSource: onDemand("IMAP"),
+    description: translate("search_email.description"),
+    endpoint: {
+      path: "/communication/email/search",
+      method: "POST",
+      bodyParams: ["mailbox", "text", "from", "subject", "since", "unseenOnly", "limit"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        mailbox: {
+          type: "string",
+          description: translate("search_email.params.mailbox"),
+        },
+        text: {
+          type: "string",
+          description: translate("search_email.params.text"),
+        },
+        from: {
+          type: "string",
+          description: translate("search_email.params.from"),
+        },
+        subject: {
+          type: "string",
+          description: translate("search_email.params.subject"),
+        },
+        since: {
+          type: "string",
+          description: translate("search_email.params.since"),
+        },
+        unseenOnly: {
+          type: "boolean",
+          description: translate("search_email.params.unseenOnly"),
+        },
+        limit: {
+          type: "integer",
+          description: translate("search_email.params.limit"),
+        },
+      },
+      required: [],
+    },
+    display: {
+      activeVerb: "Searching email",
+      completedVerb: "Searched email",
+      subjectParam: "text",
+      subjectFormat: "truncate",
+    },
+  },
+  {
+    name: "read_email",
+    dataSource: onDemand("IMAP"),
+    description: translate("read_email.description"),
+    endpoint: {
+      path: "/communication/email/read",
+      method: "POST",
+      bodyParams: ["uid", "mailbox", "markSeen"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        uid: {
+          type: "integer",
+          description: translate("read_email.params.uid"),
+        },
+        mailbox: {
+          type: "string",
+          description: translate("read_email.params.mailbox"),
+        },
+        markSeen: {
+          type: "boolean",
+          description: translate("read_email.params.markSeen"),
+        },
+      },
+      required: ["uid"],
+    },
+    display: {
+      activeVerb: "Reading email",
+      completedVerb: "Read email",
+      subjectParam: "uid",
+      subjectFormat: "full",
+    },
+  },
   {
     name: "send_sms",
     dataSource: onDemand("Twilio"),

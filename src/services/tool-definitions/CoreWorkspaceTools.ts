@@ -81,6 +81,8 @@ export function getCoreWorkspaceTools(
       filePathParam: "path",
     },
   },
+  // Batch mode (edits[]) follows Claude Code's MultiEdit contract: ordered
+  // string replacements applied as one all-or-nothing transaction.
   {
     name: "replace_in_file",
     dataSource: compute("sandboxed fs"),
@@ -88,7 +90,7 @@ export function getCoreWorkspaceTools(
     endpoint: {
       method: "POST",
       path: "/agentic/file/str-replace",
-      bodyParams: ["path", "oldString", "newString", "allowMultiple"],
+      bodyParams: ["path", "oldString", "newString", "allowMultiple", "edits"],
     },
     parameters: {
       type: "object",
@@ -109,8 +111,30 @@ export function getCoreWorkspaceTools(
           type: "boolean",
           description: translate("replace_in_file.params.allowMultiple"),
         },
+        edits: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              oldString: {
+                type: "string",
+                description: translate("replace_in_file.params.oldString"),
+              },
+              newString: {
+                type: "string",
+                description: translate("replace_in_file.params.newString"),
+              },
+              allowMultiple: {
+                type: "boolean",
+                description: translate("replace_in_file.params.allowMultiple"),
+              },
+            },
+            required: ["oldString", "newString"],
+          },
+          description: translate("replace_in_file.params.edits"),
+        },
       },
-      required: ["path", "oldString", "newString"],
+      required: ["path"],
     },
     display: {
       activeVerb: "Editing",

@@ -185,6 +185,85 @@ describe("Agentic File Operations Router — block-replace and multi-replace", (
     });
   });
 
+  describe("POST /agentic/file/str-replace with edits[] (atomic multi-edit)", () => {
+    it("applies an ordered batch where later edits see earlier output", async () => {
+      resetFileContent("const a = 1;\nconst b = 2;\n");
+      const res = await request(app)
+        .post("/agentic/file/str-replace")
+        .send({
+          path: testFilePath,
+          edits: [
+            { oldString: "const a = 1;", newString: "const a = 10;" },
+            // Only matches AFTER the first edit ran
+            { oldString: "const a = 10;\nconst b = 2;", newString: "const a = 10;\nconst b = 20;" },
+          ],
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.editsApplied).toBe(2);
+      expect(fs.readFileSync(testFilePath, "utf8")).toBe(
+        "const a = 10;\nconst b = 20;\n",
+      );
+    });
+
+    it("aborts the WHOLE batch when any edit fails to match", async () => {
+      resetFileContent("alpha\nbeta\ngamma\n");
+      const res = await request(app)
+        .post("/agentic/file/str-replace")
+        .send({
+          path: testFilePath,
+          edits: [
+            { oldString: "alpha", newString: "ALPHA" },
+            { oldString: "does-not-exist", newString: "x" },
+          ],
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.failedEditIndex).toBe(2);
+      // First edit must NOT have been written
+      expect(fs.readFileSync(testFilePath, "utf8")).toBe("alpha\nbeta\ngamma\n");
+    });
+
+    it("rejects ambiguous matches without allowMultiple, atomically", async () => {
+      resetFileContent("x\nx\n");
+      const res = await request(app)
+        .post("/agentic/file/str-replace")
+        .send({
+          path: testFilePath,
+          edits: [{ oldString: "x", newString: "y" }],
+        });
+      expect(res.status).toBe(400);
+      expect(res.body.matchCount).toBe(2);
+      expect(fs.readFileSync(testFilePath, "utf8")).toBe("x\nx\n");
+    });
+
+    it("supports allowMultiple per edit", async () => {
+      resetFileContent("x x x\n");
+      const res = await request(app)
+        .post("/agentic/file/str-replace")
+        .send({
+          path: testFilePath,
+          edits: [{ oldString: "x", newString: "y", allowMultiple: true }],
+        });
+      expect(res.status).toBe(200);
+      expect(res.body.totalReplacements).toBe(3);
+      expect(fs.readFileSync(testFilePath, "utf8")).toBe("y y y\n");
+    });
+
+    it("rejects mixing edits[] with top-level oldString/newString", async () => {
+      const res = await request(app)
+        .post("/agentic/file/str-replace")
+        .send({
+          path: testFilePath,
+          oldString: "a",
+          newString: "b",
+          edits: [{ oldString: "a", newString: "b" }],
+        });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain("not both");
+    });
+  });
+
   describe("POST /agentic/file/patch (apply_patch tool)", () => {
     it("applies a unified diff to the file", async () => {
       resetFileContent("line one\nline two\nline three\n");

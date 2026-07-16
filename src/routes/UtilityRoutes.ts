@@ -37,6 +37,8 @@ import {
   storeChartWithId,
   getStoredChart,
   renderChartPng,
+  validateChartData,
+  VALID_CHART_TYPES,
 } from "../services/ChartService.ts";
 import { MAX_CODE_LENGTH } from "../constants.ts";
 import { buildDisplay, buildLocalUrl, errorMessage } from "../utilities.ts";
@@ -666,8 +668,7 @@ router.post(
     res.end();
   }),
 );
-// ─── Chart Generation ──────────────────────────────────────────────
-const VALID_CHART_TYPES = ["bar", "line", "pie"];
+// ─── Chart Generation (ECharts SSR) ────────────────────────────────
 router.post("/chart", asyncHandler(async (req: Request, res: Response) => {
   const { type, title, labels, datasets, chartId } = req.body;
 
@@ -698,8 +699,10 @@ router.post("/chart", asyncHandler(async (req: Request, res: Response) => {
       error: `'type' is required and must be one of: ${VALID_CHART_TYPES.join(", ")}`,
     });
   }
-  const effectiveLabels = labels || existing?.labels;
-  if (!effectiveLabels || !Array.isArray(effectiveLabels) || effectiveLabels.length === 0) {
+  // Scatter plots data numeric [x, y] pairs — category labels are unused
+  const rawLabels = labels ?? existing?.labels;
+  const effectiveLabels: string[] = Array.isArray(rawLabels) ? rawLabels : [];
+  if (effectiveType !== "scatter" && effectiveLabels.length === 0) {
     return res.status(400).json({
       error: "'labels' is required (non-empty array of category/axis labels)",
     });
@@ -751,12 +754,9 @@ router.post("/chart", asyncHandler(async (req: Request, res: Response) => {
     mergedDatasets = newDatasets;
   }
 
-  for (const dataset of mergedDatasets) {
-    if (effectiveType !== "pie" && dataset.data.length !== effectiveLabels.length) {
-      return res.status(400).json({
-        error: `Dataset '${dataset.label}' has ${dataset.data.length} data points but there are ${effectiveLabels.length} labels. These must match for '${effectiveType}' charts.`,
-      });
-    }
+  const shapeError = validateChartData(effectiveType, effectiveLabels, mergedDatasets);
+  if (shapeError) {
+    return res.status(400).json({ error: shapeError });
   }
 
   const chartConfig = {

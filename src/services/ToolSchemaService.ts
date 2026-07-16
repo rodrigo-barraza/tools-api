@@ -353,6 +353,7 @@ const TOOL_DOMAINS = {
   // Agentic — Web
   read_web_page: "Web",
   read_pdf: "Web",
+  read_image_text: "Web",
   read_docx: "Web",
   read_spreadsheet: "Web",
   search_web: "Core Harness Tools",
@@ -409,6 +410,9 @@ const TOOL_DOMAINS = {
   edit_notebook: "Core Workspace Tools",
 
   // Communication (Twilio)
+  send_email: "Communication",
+  search_email: "Communication",
+  read_email: "Communication",
   send_sms: "Communication",
   list_sms_messages: "Communication",
   get_sms_account: "Communication",
@@ -799,6 +803,7 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   summarize_project: "📋",
   read_web_page: ["🌐", "📄"],
   read_pdf: ["📄", "📕"],
+  read_image_text: ["📷", "📝"],
   read_docx: ["📝", "📄"],
   read_spreadsheet: ["📄", "📊"],
   search_web: ["🌐", "🔍"],
@@ -831,6 +836,9 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   list_cron_jobs: ["⏰", "📋"],
   delete_cron_job: ["⏰", "🗑️"],
   trigger_cron_job: ["💻", "🚀"],
+  send_email: ["📧", "📤"],
+  search_email: ["📧", "🔍"],
+  read_email: ["📧", "📖"],
   send_sms: ["💬", "💻"],
   list_sms_messages: "📨",
   get_sms_account: ["📱", "💬"],
@@ -998,6 +1006,9 @@ const TOOL_REQUIRED_KEYS = {
   get_natural_gas_prices: ["EIA_API_KEY"],
 
   // Communication (Twilio — all require account SID + auth token)
+  send_email: ["SMTP_HOST", "SMTP_USER", "SMTP_PASS"],
+  search_email: ["IMAP_HOST", "IMAP_USER", "IMAP_PASS"],
+  read_email: ["IMAP_HOST", "IMAP_USER", "IMAP_PASS"],
   send_sms: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
   list_sms_messages: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
   get_sms_account: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],

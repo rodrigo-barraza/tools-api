@@ -247,7 +247,22 @@ export function getUtilitiesTools(
         type: {
           type: "string",
           description: translate("generate_chart.params.type"),
-          enum: ["bar", "line", "pie"],
+          // Rendered via Apache ECharts SSR (no browser):
+          // https://apache.github.io/echarts-handbook/en/how-to/cross-platform/server/
+          enum: [
+            "bar",
+            "line",
+            "pie",
+            "area",
+            "scatter",
+            "radar",
+            "heatmap",
+            "candlestick",
+            "funnel",
+            "stacked_bar",
+            "stacked_area",
+            "horizontal_bar",
+          ],
         },
         chartId: {
           type: "string",
@@ -273,7 +288,12 @@ export function getUtilitiesTools(
               },
               data: {
                 type: "array",
-                items: { type: "number" },
+                items: {
+                  anyOf: [
+                    { type: "number" },
+                    { type: "array", items: { type: "number" } },
+                  ],
+                },
                 description: translate("generate_chart.params.datasets.items.params.data"),
               },
             },

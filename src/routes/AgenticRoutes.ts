@@ -15,6 +15,7 @@ import {
   agenticReadFile,
   agenticWriteFile,
   agenticStringReplace,
+  agenticMultiEdit,
   agenticPatchFile,
   agenticListDirectory,
   agenticGrepSearch,
@@ -238,13 +239,29 @@ router.post(
     });
   }),
 );
-// ── String Replace ────────────────────────────────────────────
+// ── String Replace (single edit, or atomic edits[] batch) ────
 router.post(
   "/file/str-replace",
   agenticHandler(async (req: Request) => {
-    const { path, oldString, newString, allowMultiple } = req.body;
+    const { path, oldString, newString, allowMultiple, edits } = req.body;
     if (!path || typeof path !== "string") {
       return { error: "Request body must include 'path' (string)" };
+    }
+    // Batch mode: ordered edits applied as one all-or-nothing transaction
+    if (edits !== undefined) {
+      if (!Array.isArray(edits) || edits.length === 0) {
+        return {
+          error:
+            "'edits' must be a non-empty array of { oldString, newString, allowMultiple? }",
+        };
+      }
+      if (oldString !== undefined || newString !== undefined) {
+        return {
+          error:
+            "Pass EITHER top-level oldString/newString (single edit) OR 'edits' (batch), not both",
+        };
+      }
+      return agenticMultiEdit(path, edits);
     }
     if (!oldString || typeof oldString !== "string") {
       return { error: "Request body must include 'oldString' (non-empty string)" };
@@ -408,6 +425,54 @@ router.post(
       return { error: "Request body must include 'url' (string)" };
     }
     return readPdfUrl(url, { maxPages, maxChars, pages, startPage, endPage });
+  }),
+);
+
+// ── OCR: image → verbatim text (tesseract.js) ─────────────────
+router.post(
+  "/web/image-text",
+  agenticHandler(async (req: Request) => {
+    const { input, lang, annotate } = req.body;
+    if (!input || typeof input !== "string") {
+      return {
+        error:
+          "Request body must include 'input' (image URL, base64 data URI, imageId, or local path)",
+      };
+    }
+    const { readImageText } = await import("../services/OcrService.ts");
+    let result;
+    try {
+      result = await readImageText({
+        input,
+        lang,
+        annotate: annotate === true,
+      });
+    } catch (error: unknown) {
+      return { error: `OCR failed: ${errorMessage(error)}` };
+    }
+
+    // Annotated overlay is best-effort display sugar
+    let display;
+    if (result.annotatedImage) {
+      const { default: MinioService } = await import(
+        "../services/MinioService.ts"
+      );
+      const { buildDisplay } = await import("../utilities.ts");
+      const url = await MinioService.uploadToolAsset(
+        result.annotatedImage,
+        "image/png",
+      );
+      if (url) display = buildDisplay("image", url, { title: "OCR" });
+    }
+
+    const { annotatedImage: _omit, ...rest } = result;
+    return {
+      ...rest,
+      ...(display && { display }),
+      ...(result.confidence < 60 && {
+        hint: "Low confidence — try a sharper image, higher resolution, or crop closer to the text.",
+      }),
+    };
   }),
 );
 

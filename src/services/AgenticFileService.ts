@@ -686,6 +686,130 @@ export async function agenticStringReplace(
   }
 }
 
+export interface MultiEditOperation {
+  oldString: string;
+  newString: string;
+  allowMultiple?: boolean;
+}
+
+/**
+ * Apply an ordered batch of string replacements as ONE all-or-nothing
+ * transaction (Claude Code MultiEdit semantics,
+ * https://docs.anthropic.com/en/docs/claude-code — the `edits[]` shape):
+ * every edit is validated and folded against an in-memory buffer
+ * sequentially, so later edits see earlier edits' output, and the file is
+ * written exactly once at the end. Any failed match aborts the whole batch
+ * with zero changes on disk — killing the half-applied-batch failure class
+ * of issuing several replace_in_file calls in a row.
+ */
+export async function agenticMultiEdit(
+  filePath: string,
+  edits: MultiEditOperation[],
+) {
+  // Agent routing
+  const agentResult = await tryAgentRoute(
+    "file.multiEdit",
+    { path: filePath, edits },
+    filePath,
+  );
+  if (agentResult !== NO_AGENT) return agentResult as Record<string, unknown>;
+
+  const validation = validatePath(filePath);
+  if (!validation.safe) {
+    return { error: validation.error };
+  }
+  if (!Array.isArray(edits) || edits.length === 0) {
+    return {
+      error:
+        "'edits' must be a non-empty array of { oldString, newString } operations",
+    };
+  }
+  if (edits.length > 50) {
+    return { error: `Maximum 50 edits per call. Received ${edits.length}.` };
+  }
+
+  const resolved = validation.resolved;
+
+  try {
+    const original = await readFile(resolved, "utf-8");
+    let working = original;
+    let totalReplacements = 0;
+
+    for (let editIndex = 0; editIndex < edits.length; editIndex++) {
+      const edit = edits[editIndex] ?? ({} as MultiEditOperation);
+      const { oldString, newString, allowMultiple = false } = edit;
+      const editLabel = `Edit ${editIndex + 1}/${edits.length}`;
+
+      if (!oldString || typeof oldString !== "string") {
+        return {
+          error: `${editLabel}: 'oldString' is required (non-empty string). No changes were made.`,
+        };
+      }
+      if (typeof newString !== "string") {
+        return {
+          error: `${editLabel}: 'newString' must be a string. No changes were made.`,
+        };
+      }
+      if (oldString === newString) {
+        return {
+          error: `${editLabel}: 'oldString' and 'newString' are identical. No changes were made.`,
+        };
+      }
+
+      // Count non-overlapping occurrences (same advance-by-length rule as
+      // agenticStringReplace so overlapping matches aren't double-counted).
+      let count = 0;
+      let index = working.indexOf(oldString);
+      while (index !== -1) {
+        count++;
+        index = working.indexOf(oldString, index + oldString.length);
+      }
+
+      if (count === 0) {
+        return {
+          error:
+            `${editLabel}: oldString not found. Edits apply in order — this edit sees the ` +
+            `output of the previous ones, so an earlier edit may have altered this text. ` +
+            `No changes were made.`,
+          failedEditIndex: editIndex + 1,
+          filePath: resolved,
+        };
+      }
+      if (count > 1 && !allowMultiple) {
+        return {
+          error:
+            `${editLabel}: found ${count} occurrences of oldString but allowMultiple is false. ` +
+            `Add more surrounding context to make it unique, or set allowMultiple on that edit. ` +
+            `No changes were made.`,
+          failedEditIndex: editIndex + 1,
+          matchCount: count,
+          filePath: resolved,
+        };
+      }
+
+      working = allowMultiple
+        ? working.split(oldString).join(newString)
+        : working.replace(oldString, newString);
+      totalReplacements += allowMultiple ? count : 1;
+    }
+
+    await writeFileAtomic(resolved, working);
+
+    return {
+      filePath: resolved,
+      editsApplied: edits.length,
+      totalReplacements,
+      lineDelta: working.split("\n").length - original.split("\n").length,
+    };
+  } catch (error: unknown) {
+    const nodeError = error as NodeJS.ErrnoException;
+    if (nodeError.code === "ENOENT") {
+      return { error: `File not found: ${resolved}` };
+    }
+    return { error: `multi_edit failed: ${errorMessage(error)}` };
+  }
+}
+
 /**
  * Apply a unified diff patch to a file.
  */

@@ -206,3 +206,55 @@ describe("POST /communication/webhook", () => {
     expect(response.body.statusCode).toBe(200);
   });
 });
+
+// ═══════════════════════════════════════════════════════════════
+//  Email — /communication/email/* (SMTP/IMAP unconfigured in tests)
+// ═══════════════════════════════════════════════════════════════
+
+describe("POST /communication/email/send", () => {
+  it("returns 400 when required fields are missing", async () => {
+    const missingTo = await request(app)
+      .post("/communication/email/send")
+      .send({ subject: "s", body: "b" });
+    expect(missingTo.status).toBe(400);
+    expect(missingTo.body.error).toContain("to");
+
+    const missingSubject = await request(app)
+      .post("/communication/email/send")
+      .send({ to: "a@b.c", body: "b" });
+    expect(missingSubject.status).toBe(400);
+    expect(missingSubject.body.error).toContain("subject");
+
+    const missingBody = await request(app)
+      .post("/communication/email/send")
+      .send({ to: "a@b.c", subject: "s" });
+    expect(missingBody.status).toBe(400);
+    expect(missingBody.body.error).toContain("body");
+  });
+
+  it("returns 502 with a clear message when SMTP is not configured", async () => {
+    const res = await request(app)
+      .post("/communication/email/send")
+      .send({ to: "a@b.c", subject: "s", body: "b" });
+    expect(res.status).toBe(502);
+    expect(res.body.error).toContain("SMTP is not configured");
+  });
+});
+
+describe("POST /communication/email/read", () => {
+  it("returns 400 for a missing or invalid uid", async () => {
+    const res = await request(app)
+      .post("/communication/email/read")
+      .send({ uid: "not-a-number" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain("uid");
+  });
+});
+
+describe("POST /communication/email/search", () => {
+  it("returns 502 with a clear message when IMAP is not configured", async () => {
+    const res = await request(app).post("/communication/email/search").send({});
+    expect(res.status).toBe(502);
+    expect(res.body.error).toContain("IMAP is not configured");
+  });
+});

@@ -73,6 +73,17 @@ interface ToolsServiceConfig {
   TWILIO_ACCOUNT_SID: string | undefined;
   TWILIO_AUTH_TOKEN: string | undefined;
 
+  // Communication (Email — SMTP send / IMAP read)
+  SMTP_HOST: string | undefined;
+  SMTP_PORT: string | undefined;
+  SMTP_USER: string | undefined;
+  SMTP_PASS: string | undefined;
+  SMTP_FROM: string | undefined;
+  IMAP_HOST: string | undefined;
+  IMAP_PORT: string | undefined;
+  IMAP_USER: string | undefined;
+  IMAP_PASS: string | undefined;
+
   // Prism (LLM Gateway)
   PRISM_SERVICE_URL: string | undefined;
 
@@ -192,6 +203,15 @@ const CONFIG: ToolsServiceConfig = {
   // ─── Communication (Twilio) ─────────────────────────────────────
   TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID,
   TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN,
+  SMTP_HOST: process.env.SMTP_HOST,
+  SMTP_PORT: process.env.SMTP_PORT,
+  SMTP_USER: process.env.SMTP_USER,
+  SMTP_PASS: process.env.SMTP_PASS,
+  SMTP_FROM: process.env.SMTP_FROM,
+  IMAP_HOST: process.env.IMAP_HOST,
+  IMAP_PORT: process.env.IMAP_PORT,
+  IMAP_USER: process.env.IMAP_USER,
+  IMAP_PASS: process.env.IMAP_PASS,
 
   // ─── Prism (LLM Gateway) ────────────────────────────────────────
   PRISM_SERVICE_URL: process.env.PRISM_SERVICE_URL,

@@ -6,7 +6,11 @@
 
 export interface ChartDataset {
   label?: string;
-  data: number[];
+  /**
+   * Plain numbers for most types; per-point arrays for scatter ([x, y])
+   * and candlestick ([open, close, low, high]).
+   */
+  data: (number | number[])[];
   backgroundColor?: string | string[];
   borderColor?: string | string[];
   borderWidth?: number;

@@ -3,7 +3,7 @@
 // ────────────────────────────────────────────────────────────
 
 import type { ToolDefinition } from "../../types/tools.ts";
-import { onDemand } from "./utils.ts";
+import { onDemand, compute } from "./utils.ts";
 
 export function getWebTools(
   translate: (key: string, variables?: Record<string, string>) => string
@@ -39,6 +39,43 @@ export function getWebTools(
       completedVerb: "Read",
       subjectParam: "url",
       subjectFormat: "domain",
+    },
+  },
+  // Verbatim OCR via tesseract.js (https://github.com/naptha/tesseract.js);
+  // complements describe_image (semantic VLM). Hard cases can later route
+  // to olmOCR (https://github.com/allenai/olmocr) on the vLLM box.
+  {
+    name: "read_image_text",
+    dataSource: compute("tesseract.js WASM"),
+    description: translate("read_image_text.description"),
+    endpoint: {
+      method: "POST",
+      path: "/agentic/web/image-text",
+      bodyParams: ["input", "lang", "annotate"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        input: {
+          type: "string",
+          description: translate("read_image_text.params.input"),
+        },
+        lang: {
+          type: "string",
+          description: translate("read_image_text.params.lang"),
+        },
+        annotate: {
+          type: "boolean",
+          description: translate("read_image_text.params.annotate"),
+        },
+      },
+      required: ["input"],
+    },
+    display: {
+      activeVerb: "Reading text from",
+      completedVerb: "Read text from",
+      subjectParam: "input",
+      subjectFormat: "truncate",
     },
   },
   {
