@@ -1,5 +1,28 @@
 // ─── Language Server Registry ───────────────────────────────
 
+import { createRequire } from "node:module";
+import { dirname, join } from "node:path";
+
+// tsserver-compatible TypeScript fallback for workspaces without a usable
+// install. typescript-language-server resolves: user tsserver.path →
+// workspace node_modules (skipped when invalid) → this fallbackPath →
+// bundled. Needed because a workspace pinning the TS 7 native preview
+// (tsgo) has a node_modules/typescript with no lib/tsserver.js, and bare
+// workspaces have none at all. `typescript5` is an npm alias of
+// typescript@5.x in package.json — aliased so it can't collide with the
+// repo's own `typescript: "next"` build pin.
+// https://github.com/typescript-language-server/typescript-language-server#initializationoptions
+function resolveFallbackTsserverPath(): string | undefined {
+  try {
+    const require = createRequire(import.meta.url);
+    // Resolves the package main (lib/typescript.js); tsserver.js sits beside it.
+    return join(dirname(require.resolve("typescript5")), "tsserver.js");
+  } catch {
+    return undefined; // Not installed — workspace-only resolution.
+  }
+}
+const FALLBACK_TSSERVER_PATH = resolveFallbackTsserverPath();
+
 export interface LspServerConfig {
   command: string;
   args: string[];
@@ -26,6 +49,11 @@ export const LSP_SERVER_CONFIGS: Record<string, LspServerConfig> = {
     },
     maxRestarts: 3,
     startupTimeout: 30_000,
+    ...(FALLBACK_TSSERVER_PATH && {
+      initializationOptions: {
+        tsserver: { fallbackPath: FALLBACK_TSSERVER_PATH },
+      },
+    }),
   },
 
   // ── Python ───────────────────────────────────────────────

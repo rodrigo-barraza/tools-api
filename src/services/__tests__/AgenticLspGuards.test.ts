@@ -291,4 +291,33 @@ describe("LSP diagnostics integration", () => {
     expect(clean.stale).toBeUndefined();
     expect(clean.diagnostics).toEqual([]);
   }, 90_000);
+
+  it("reports TypeScript errors in a bare workspace via the tsserver fallbackPath", async () => {
+    // No node_modules here at all — tsserver must come from the aliased
+    // typescript5 fallback wired in LspConfig, not workspace resolution.
+    const filePath = join(tempRoot, "broken.ts");
+    writeFileSync(
+      filePath,
+      'const answer: number = "not a number";\nconsole.log(answer);\n',
+      "utf-8",
+    );
+
+    const broken = (await agenticLspAction({
+      operation: "diagnostics",
+      filePath,
+      workspacePath: tempRoot,
+    })) as Record<string, unknown>;
+
+    expect(broken.error).toBeUndefined();
+    const diagnostics = broken.diagnostics as Array<Record<string, unknown>>;
+    expect(diagnostics?.length).toBeGreaterThan(0);
+    expect(
+      diagnostics.some(
+        (diagnostic) =>
+          diagnostic.severity === "error" &&
+          diagnostic.line === 1 &&
+          /not assignable/i.test(String(diagnostic.message)),
+      ),
+    ).toBe(true);
+  }, 90_000);
 });
