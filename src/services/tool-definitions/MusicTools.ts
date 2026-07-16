@@ -93,6 +93,7 @@ export function getMusicTools(
       activeVerb: "Fetching Spotify",
       completedVerb: "Fetched Spotify",
       subjectParam: "action",
+      subjectFormat: "full",
     },
   },
   {
@@ -158,6 +159,7 @@ export function getMusicTools(
       activeVerb: "Controlling Spotify playback",
       completedVerb: "Controlled Spotify playback",
       subjectParam: "action",
+      subjectFormat: "full",
     },
   },
   ];
