@@ -59,6 +59,7 @@ import eventRoutes, { getEventHealth } from "./routes/EventRoutes.ts";
 import financeRoutes, { getFinanceHealth } from "./routes/FinanceRoutes.ts";
 import marketRoutes, { getMarketHealth } from "./routes/MarketRoutes.ts";
 import productRoutes, { getProductHealth } from "./routes/ProductRoutes.ts";
+import musicRoutes from "./routes/MusicRoutes.ts";
 import trendRoutes, { getTrendHealth } from "./routes/TrendRoutes.ts";
 import weatherRoutes, { getWeatherHealth } from "./routes/WeatherRoutes.ts";
 import knowledgeRoutes, {
@@ -140,6 +141,7 @@ app.use("/event", eventRoutes);
 app.use("/finance", financeRoutes);
 app.use("/market", marketRoutes);
 app.use("/product", productRoutes);
+app.use("/music", musicRoutes);
 app.use("/trend", trendRoutes);
 app.use("/weather", weatherRoutes);
 app.use("/knowledge", knowledgeRoutes);

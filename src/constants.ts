@@ -1838,6 +1838,12 @@ export const API_RATE_LIMITS = {
     qpd: 5_000,
     requestDelayMs: 200, // 1000 / 5 QPS
   },
+  SPOTIFY: {
+    qps: 5,
+    qpm: null,
+    qpd: null, // rolling 30s window (~180 req); 5 QPS keeps well under it
+    requestDelayMs: 200, // 1000 / 5 QPS
+  },
   AMAZON: {
     qps: null,
     qpm: null,

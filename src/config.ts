@@ -44,6 +44,11 @@ interface ToolsServiceConfig {
   ETSY_API_KEY: string | undefined;
   ETSY_SHARED_SECRET: string | undefined;
 
+  // Music
+  SPOTIFY_CLIENT_ID: string | undefined;
+  SPOTIFY_CLIENT_SECRET: string | undefined;
+  SPOTIFY_REDIRECT_URI: string | undefined;
+
   // Trend
   REDDIT_CLIENT_ID: string | undefined;
   REDDIT_CLIENT_SECRET: string | undefined;
@@ -171,6 +176,11 @@ const CONFIG: ToolsServiceConfig = {
   EBAY_CLIENT_SECRET: process.env.EBAY_CLIENT_SECRET,
   ETSY_API_KEY: process.env.ETSY_API_KEY,
   ETSY_SHARED_SECRET: process.env.ETSY_SHARED_SECRET,
+
+  // ─── Music ───────────────────────────────────────────────────────
+  SPOTIFY_CLIENT_ID: process.env.SPOTIFY_CLIENT_ID,
+  SPOTIFY_CLIENT_SECRET: process.env.SPOTIFY_CLIENT_SECRET,
+  SPOTIFY_REDIRECT_URI: process.env.SPOTIFY_REDIRECT_URI,
 
   // ─── Trend ───────────────────────────────────────────────────────
   REDDIT_CLIENT_ID: process.env.REDDIT_CLIENT_ID,

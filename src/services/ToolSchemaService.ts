@@ -213,6 +213,11 @@ const TOOL_DOMAINS = {
   search_ebay: "Products",
   search_etsy: "Products",
 
+  // Music (Spotify)
+  search_spotify: "Knowledge",
+  get_spotify: "Knowledge",
+  control_spotify: "Knowledge",
+
   // Reddit
   search_reddit: "Reddit",
   search_reddit_subreddits: "Reddit",
@@ -679,6 +684,9 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   search_autotrader: ["🚗", "🔍"],
   search_ebay: ["🛒", "🔍"],
   search_etsy: ["🧶", "🔍"],
+  search_spotify: ["🎧", "🔍"],
+  get_spotify: ["🎧", "📄"],
+  control_spotify: ["🎧", "▶️"],
   search_reddit: ["🤖", "💬"],
   search_reddit_subreddits: ["🤖", "🔍"],
   get_reddit_subreddit_info: "ℹ️",
@@ -1037,6 +1045,11 @@ const TOOL_REQUIRED_KEYS = {
   // Marketplaces
   search_ebay: ["EBAY_CLIENT_ID", "EBAY_CLIENT_SECRET"],
   search_etsy: ["ETSY_API_KEY", "ETSY_SHARED_SECRET"],
+
+  // Music (Spotify)
+  search_spotify: ["SPOTIFY_CLIENT_ID", "SPOTIFY_CLIENT_SECRET"],
+  get_spotify: ["SPOTIFY_CLIENT_ID", "SPOTIFY_CLIENT_SECRET"],
+  control_spotify: ["SPOTIFY_CLIENT_ID", "SPOTIFY_CLIENT_SECRET"],
 
   // Reddit
   search_reddit: ["REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET"],

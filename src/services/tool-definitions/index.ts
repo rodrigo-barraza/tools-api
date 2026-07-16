@@ -39,6 +39,7 @@ import { getCalendarTools } from "./CalendarTools.ts";
 import { getInfrastructureTools } from "./InfrastructureTools.ts";
 import { getAnalyticsTools } from "./AnalyticsTools.ts";
 import { getClassifiedsTools } from "./ClassifiedsTools.ts";
+import { getMusicTools } from "./MusicTools.ts";
 
 export { FIELDS } from "./fields.ts";
 
@@ -82,5 +83,6 @@ export function createToolDefinitions(
     ...getInfrastructureTools(translate),
     ...getAnalyticsTools(translate),
     ...getClassifiedsTools(translate),
+    ...getMusicTools(translate),
   ];
 }
