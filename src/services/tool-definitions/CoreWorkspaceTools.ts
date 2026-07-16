@@ -120,6 +120,40 @@ export function getCoreWorkspaceTools(
       filePathParam: "path",
     },
   },
+  // Exposes the previously dormant unified-diff endpoint (jsdiff applyPatch,
+  // https://github.com/kpdecker/jsdiff); tool shape follows the apply_patch
+  // pattern from OpenAI Codex (https://github.com/openai/codex).
+  {
+    name: "apply_patch",
+    dataSource: compute("sandboxed fs + diff"),
+    description: translate("apply_patch.description"),
+    endpoint: {
+      method: "POST",
+      path: "/agentic/file/patch",
+      bodyParams: ["path", "patch"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        path: {
+          type: "string",
+          description: translate("apply_patch.params.path"),
+        },
+        patch: {
+          type: "string",
+          description: translate("apply_patch.params.patch"),
+        },
+      },
+      required: ["path", "patch"],
+    },
+    display: {
+      activeVerb: "Patching",
+      completedVerb: "Patched",
+      subjectParam: "path",
+      subjectFormat: "basename",
+      filePathParam: "path",
+    },
+  },
   {
     name: "list_directory",
     dataSource: compute("sandboxed fs"),
@@ -538,6 +572,57 @@ export function getCoreWorkspaceTools(
       completedVerb: "Ran",
       subjectParam: "action",
       subjectFormat: "truncate",
+    },
+  },
+  // Agent-facing surface for the LSP subsystem (diagnostics close the
+  // edit-verify loop). Pattern follows isaacphi/mcp-language-server
+  // (https://github.com/isaacphi/mcp-language-server) and oraios/serena
+  // (https://github.com/oraios/serena).
+  {
+    name: "code_intel",
+    dataSource: compute("LSP language servers"),
+    description: translate("code_intel.description"),
+    endpoint: {
+      method: "POST",
+      path: "/agentic/lsp/action",
+      bodyParams: ["operation", "filePath", "line", "character"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        operation: {
+          type: "string",
+          enum: [
+            "diagnostics",
+            "goToDefinition",
+            "findReferences",
+            "hover",
+            "documentSymbol",
+            "goToImplementation",
+          ],
+          description: translate("code_intel.params.operation"),
+        },
+        filePath: {
+          type: "string",
+          description: translate("code_intel.params.filePath"),
+        },
+        line: {
+          type: "integer",
+          description: translate("code_intel.params.line"),
+        },
+        character: {
+          type: "integer",
+          description: translate("code_intel.params.character"),
+        },
+      },
+      required: ["operation", "filePath"],
+    },
+    display: {
+      activeVerb: "Analyzing",
+      completedVerb: "Analyzed",
+      subjectParam: "filePath",
+      subjectFormat: "basename",
+      filePathParam: "filePath",
     },
   },
   {

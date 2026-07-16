@@ -9,6 +9,10 @@ import {
   shutdownAllLspManagers,
   getAllLspHealth,
 } from "./lsp/LspServerManager.ts";
+import type {
+  FileDiagnostics,
+  LspRawDiagnostic,
+} from "./lsp/LspServerManager.ts";
 import type { LspParams } from "./lsp/LspClient.ts";
 import { ALLOWED_ROOTS } from "./AgenticFileService.ts";
 import { errorMessage } from "../utilities.ts";
@@ -73,6 +77,8 @@ interface LspActionParams {
 const MAX_FILE_SIZE_FOR_OPEN = 1_048_576; // 1 MB — don't send huge files to LSP
 const MAX_LOCATIONS_RETURNED = 30; // Cap locations in results
 const MAX_SYMBOLS_RETURNED = 100; // Cap symbols for documentSymbol
+const MAX_DIAGNOSTICS_RETURNED = 100; // Cap diagnostics for a single file
+const DIAGNOSTICS_TIMEOUT_MS = 8_000; // Max wait for a fresh publish
 
 // Extension whitelist — only open files we can actually process
 const SUPPORTED_EXTENSIONS = new Set([
@@ -102,6 +108,15 @@ const SUPPORTED_EXTENSIONS = new Set([
 // ── Supported operations ─────────────────────────────────────
 
 const OPERATIONS: Record<string, LspOperation> = {
+  diagnostics: {
+    // Push-based (textDocument/publishDiagnostics) — handled specially in
+    // agenticLspAction rather than via sendRequest. Closes the edit-verify
+    // loop; pattern follows https://github.com/isaacphi/mcp-language-server
+    // and https://github.com/oraios/serena
+    method: "textDocument/publishDiagnostics",
+    needsPosition: false,
+    description: "Get errors and warnings for a file",
+  },
   goToDefinition: {
     method: "textDocument/definition",
     needsPosition: true,
@@ -254,6 +269,9 @@ export async function agenticLspAction({
   }
 
   // ── 6. Get manager & ensure file is open ───────────────────
+  // Timestamp taken BEFORE didOpen/didChange: only diagnostics published in
+  // response to this sync (or later) count as fresh.
+  const diagnosticsSince = Date.now();
   let manager: ReturnType<typeof getLspManager>;
   try {
     manager = getLspManager(workspaceRoot);
@@ -271,6 +289,15 @@ export async function agenticLspAction({
       error: `LSP server failed to start for '${fileExtension}' files: ${errorMessage(error)}`,
       hint: PromptLocaleService.get(locale, "prompts.lsp.server-not-installed-hint"),
     };
+  }
+
+  // ── 6b. Diagnostics are pushed, not requested — wait for the publish ──
+  if (operation === "diagnostics") {
+    const entry = await manager.waitForDiagnostics(resolvedPath, {
+      since: diagnosticsSince,
+      timeoutMs: DIAGNOSTICS_TIMEOUT_MS,
+    });
+    return formatDiagnostics(entry, resolvedPath, diagnosticsSince);
   }
 
   // ── 7. Build LSP params ────────────────────────────────────
@@ -499,6 +526,79 @@ function formatHover(result: LspHoverResult, filePath: string) {
   };
 }
 
+const DIAGNOSTIC_SEVERITY_MAP: Record<number, string> = {
+  1: "error",
+  2: "warning",
+  3: "info",
+  4: "hint",
+};
+
+function formatDiagnostics(
+  entry: FileDiagnostics | undefined,
+  filePath: string,
+  since: number,
+) {
+  if (!entry) {
+    return {
+      operation: "diagnostics",
+      filePath,
+      status: "unavailable",
+      message:
+        "The language server did not report diagnostics in time. Retry once — " +
+        "after a cold start the server may still be analyzing the project.",
+    };
+  }
+
+  // A publish older than this request's file sync survived the wait timeout —
+  // results describe an earlier version of the file.
+  const stale = entry.receivedAt < since;
+
+  const sorted = [...entry.diagnostics].sort((a, b) => {
+    const lineDelta = (a.range?.start?.line ?? 0) - (b.range?.start?.line ?? 0);
+    if (lineDelta !== 0) return lineDelta;
+    return (a.range?.start?.character ?? 0) - (b.range?.start?.character ?? 0);
+  });
+
+  const formatted = sorted
+    .slice(0, MAX_DIAGNOSTICS_RETURNED)
+    .map((diagnostic: LspRawDiagnostic) => ({
+      severity:
+        DIAGNOSTIC_SEVERITY_MAP[diagnostic.severity ?? 3] ?? "info",
+      line: (diagnostic.range?.start?.line ?? 0) + 1, // 0-based → 1-based
+      character: (diagnostic.range?.start?.character ?? 0) + 1,
+      endLine: (diagnostic.range?.end?.line ?? 0) + 1,
+      endCharacter: (diagnostic.range?.end?.character ?? 0) + 1,
+      message: diagnostic.message,
+      ...(diagnostic.code != null && { code: diagnostic.code }),
+      ...(diagnostic.source && { source: diagnostic.source }),
+    }));
+
+  const counts: Record<string, number> = {};
+  for (const diagnostic of formatted) {
+    counts[diagnostic.severity] = (counts[diagnostic.severity] ?? 0) + 1;
+  }
+
+  return {
+    operation: "diagnostics",
+    filePath,
+    count: formatted.length,
+    totalFound: sorted.length,
+    truncated: sorted.length > MAX_DIAGNOSTICS_RETURNED,
+    counts,
+    diagnostics: formatted,
+    ...(stale && {
+      stale: true,
+      message:
+        "The server did not re-analyze in time; these diagnostics may describe " +
+        "an earlier version of the file. Retry to refresh.",
+    }),
+    ...(!stale &&
+      sorted.length === 0 && {
+        message: "No problems reported — the file is clean.",
+      }),
+  };
+}
+
 function formatSymbols(result: LspSymbol[], filePath: string, _workspaceRoot: string) {
   if (!result || !Array.isArray(result) || result.length === 0) {
     return {
@@ -635,3 +735,4 @@ export { getAllLspHealth as agenticLspHealth };
 
 // Exposed for unit testing only (truncation-flag correctness).
 export { formatSymbols as __formatSymbolsForTest };
+export { formatDiagnostics as __formatDiagnosticsForTest };

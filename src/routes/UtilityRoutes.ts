@@ -2,7 +2,7 @@ import {
   asyncHandler,
   setupStreamingServerSentEvents,
 } from "@rodrigo-barraza/utilities-library/express";
-import { validateMaxLength } from "@rodrigo-barraza/utilities-library";
+import { validateMaxLength, MILLISECONDS_PER_HOUR } from "@rodrigo-barraza/utilities-library";
 import { Request, Response, Router } from "express";
 import BigNumber from "bignumber.js";
 import CONFIG from "../config.ts";
@@ -30,6 +30,7 @@ import {
   executePython,
   executePythonStreaming,
   getInterpreterInfo,
+  type PythonExecutionResult,
 } from "../services/PythonInterpreterService.ts";
 import {
   storeChart,
@@ -528,6 +529,63 @@ router.get("/airports/nearest", (req: Request, res: Response) => {
   );
 });
 // ─── Python Code Interpreter ───────────────────────────────────────
+// Rich results (auto-captured matplotlib figures → image display) follow the
+// Jupyter/e2b code-interpreter result model: https://github.com/e2b-dev/code-interpreter
+const pythonFigureStore = new PersistentStore<{ mimeType: string; base64: string }>(
+  "python-figure",
+  MILLISECONDS_PER_HOUR,
+);
+
+interface PublishedPythonFigure {
+  filename: string;
+  url: string;
+  bytes: number;
+}
+
+/**
+ * Upload captured figures to MinIO (falling back to the persistent store +
+ * local render endpoint) and return URL-bearing entries — base64 never
+ * reaches the LLM context.
+ */
+async function publishPythonFigures(
+  result: PythonExecutionResult,
+): Promise<PublishedPythonFigure[]> {
+  const published: PublishedPythonFigure[] = [];
+  for (const figure of result.figures ?? []) {
+    const buffer = Buffer.from(figure.data, "base64");
+    let url = await MinioService.uploadToolAsset(buffer, figure.mimeType);
+    if (!url) {
+      const id = pythonFigureStore.set({
+        mimeType: figure.mimeType,
+        base64: figure.data,
+      });
+      url = buildLocalUrl("utility/python/figure", { id });
+    }
+    published.push({ filename: figure.filename, url, bytes: figure.bytes });
+  }
+  return published;
+}
+
+function buildPythonFigurePayload(
+  result: PythonExecutionResult,
+  figures: PublishedPythonFigure[],
+) {
+  if (figures.length === 0) return {};
+  const total = result.totalFigureFiles ?? figures.length;
+  return {
+    figures,
+    display: buildDisplay("image", figures[0].url, { title: "Python figure" }),
+    message:
+      `${figures.length} figure(s) captured — the user can see the first one now.` +
+      (figures.length > 1
+        ? " Reference the other figure URLs in your reply to show them."
+        : "") +
+      (total > figures.length
+        ? ` (${total - figures.length} more image file(s) exceeded the figure cap and were dropped.)`
+        : ""),
+  };
+}
+
 router.post(
   "/python/execute",
   asyncHandler(async (req: Request, res: Response) => {
@@ -546,7 +604,29 @@ router.post(
         ? Math.min(Math.max(parseInt(timeout), 1000), 60_000)
         : undefined,
     });
-    res.json(result);
+    const published = await publishPythonFigures(result);
+    const { figures: _rawFigures, totalFigureFiles: _total, ...textResult } = result;
+    res.json({
+      ...textResult,
+      ...buildPythonFigurePayload(result, published),
+    });
+  }),
+);
+// Fallback figure host for when MinIO is not configured (local dev)
+router.get(
+  "/python/figure",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.query as Record<string, string | undefined>;
+    if (!id) {
+      return res.status(400).send("Missing 'id' parameter");
+    }
+    const stored = await pythonFigureStore.getWithFallback(id);
+    if (!stored) {
+      return res.status(404).send("Figure not found or expired");
+    }
+    res.setHeader("Content-Type", stored.mimeType);
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.send(Buffer.from(stored.base64, "base64"));
   }),
 );
 router.get(
@@ -573,6 +653,7 @@ router.post(
         : undefined,
       onChunk: (event: string, data: string) => send({ event, data }),
     });
+    const published = await publishPythonFigures(result);
     send({
       event: "exit",
       exitCode: result.exitCode,
@@ -580,6 +661,7 @@ router.post(
       success: result.success,
       timedOut: result.timedOut,
       error: result.error || undefined,
+      ...buildPythonFigurePayload(result, published),
     });
     res.end();
   }),

@@ -31,7 +31,11 @@ export const LSP_SERVER_CONFIGS: Record<string, LspServerConfig> = {
   // ── Python ───────────────────────────────────────────────
   pyright: {
     command: "npx",
-    args: ["--yes", "pyright-langserver", "--stdio"],
+    // --package is required: "pyright-langserver" is a BINARY inside the
+    // "pyright" package, not a package name. Without it, npx 404s against
+    // the registry from any workspace that doesn't have pyright installed
+    // locally, and the server crashes on start.
+    args: ["--yes", "--package=pyright", "pyright-langserver", "--stdio"],
     extensionToLanguage: {
       ".py": "python",
       ".pyi": "python",

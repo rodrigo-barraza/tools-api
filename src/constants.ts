@@ -2789,6 +2789,9 @@ export const PYTHON_MAX_TIMEOUT_MS = 60_000;
 export const PYTHON_MAX_OUTPUT_BYTES = 512 * 1024;
 export const PYTHON_MEMORY_LIMIT_MB = 256;
 export const PYTHON_HEALTH_CHECK_TIMEOUT_MS = 5_000;
+/** Max matplotlib figures / image files returned per execute_python run. */
+export const PYTHON_MAX_FIGURES = 6;
+export const PYTHON_MAX_FIGURE_BYTES = 8 * 1024 * 1024;
 
 /** Default JavaScript sandbox execution timeout. */
 export const JS_DEFAULT_TIMEOUT_MS = 5_000;

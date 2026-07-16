@@ -185,6 +185,47 @@ describe("POST /utility/python/execute", () => {
     expect(res.body.success).toBe(false);
     expect(res.body.stderr).toContain("SyntaxError");
   });
+
+  it("returns figure urls + display for matplotlib plots, without base64", async () => {
+    const res = await request(app)
+      .post("/utility/python/execute")
+      .send({
+        code: "import matplotlib.pyplot as plt\nplt.plot([1, 2], [3, 4])\n",
+        timeout: 60000,
+      });
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.figures).toHaveLength(1);
+    // MinIO is not configured in tests → local fallback endpoint
+    expect(res.body.figures[0].url).toContain("/utility/python/figure?id=");
+    expect(res.body.figures[0].data).toBeUndefined();
+    expect(res.body.display?.kind).toBe("image");
+    expect(res.body.display?.url).toBe(res.body.figures[0].url);
+    expect(res.body.message).toContain("figure");
+  }, 70000);
+
+  it("serves stored figures from the fallback endpoint", async () => {
+    const executed = await request(app)
+      .post("/utility/python/execute")
+      .send({
+        code: "import matplotlib.pyplot as plt\nplt.bar(['a'], [1])\n",
+        timeout: 60000,
+      });
+    expect(executed.body.figures).toHaveLength(1);
+    const figureId = String(executed.body.figures[0].url).split("id=")[1];
+
+    const figure = await request(app).get(
+      `/utility/python/figure?id=${figureId}`,
+    );
+    expect(figure.status).toBe(200);
+    expect(figure.headers["content-type"]).toContain("image/png");
+    expect(figure.body.subarray(0, 4).toString("hex")).toBe("89504e47");
+  }, 70000);
+
+  it("returns 404 for unknown figure ids", async () => {
+    const res = await request(app).get("/utility/python/figure?id=nope");
+    expect(res.status).toBe(404);
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════════

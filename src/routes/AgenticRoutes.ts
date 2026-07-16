@@ -1017,6 +1017,7 @@ export function getAgenticHealth() {
     browserAction: getBrowserHealth(),
     browserScript: "on-demand (Playwright subprocess)",
     lspAction: "on-demand (LSP stdio JSON-RPC)",
+    lspDiagnostics: "on-demand (publishDiagnostics capture)",
     lspServers: agenticLspHealth(),
     taskManagement: "on-demand (MongoDB agent_tasks)",
     memoryUpsert: "on-demand (Prism MemoryService post-processing)",

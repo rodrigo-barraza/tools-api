@@ -20,6 +20,34 @@ export interface LspConfigurationParams {
   items: LspConfigurationItem[];
 }
 
+// Raw diagnostic shape from textDocument/publishDiagnostics (LSP 3.x)
+export interface LspRawDiagnostic {
+  range?: {
+    start: { line: number; character: number };
+    end: { line: number; character: number };
+  };
+  severity?: number;
+  code?: string | number;
+  source?: string;
+  message: string;
+}
+
+export interface FileDiagnostics {
+  uri: string;
+  version?: number;
+  diagnostics: LspRawDiagnostic[];
+  receivedAt: number;
+}
+
+export interface WaitForDiagnosticsOptions {
+  /** Only publishes at/after this timestamp count as fresh. */
+  since?: number;
+  /** How long to wait for a fresh publish before giving up. */
+  timeoutMs?: number;
+  /** Linger after the first fresh publish to absorb multi-pass servers. */
+  settleMs?: number;
+}
+
 export interface LspServerManager {
   initialize(): void;
   getServerForFile(filePath: string): LspServerInstance | undefined;
@@ -33,6 +61,11 @@ export interface LspServerManager {
   changeFile(filePath: string, content: string): Promise<void>;
   closeFile(filePath: string): Promise<void>;
   isFileOpen(filePath: string): boolean;
+  getDiagnostics(filePath: string): FileDiagnostics | undefined;
+  waitForDiagnostics(
+    filePath: string,
+    options?: WaitForDiagnosticsOptions,
+  ): Promise<FileDiagnostics | undefined>;
   getHealth(): Record<string, string>;
   getAllServers(): Map<string, LspServerInstance>;
   shutdown(): Promise<void>;
@@ -51,6 +84,16 @@ export function createLspServerManager(
   // Tracks the last LSP document version sent per file URI so didChange
   // notifications carry a monotonically increasing version (required by LSP).
   const documentVersions = new Map<string, number>();
+  // Diagnostics are PUSHED by servers (textDocument/publishDiagnostics)
+  // rather than requested, so we store the latest publish per file URI and
+  // let waiters block until a fresh one lands. Pattern follows
+  // https://github.com/isaacphi/mcp-language-server and
+  // https://github.com/oraios/serena
+  const fileDiagnostics = new Map<string, FileDiagnostics>();
+  const diagnosticsWaiters = new Map<
+    string,
+    Array<(entry: FileDiagnostics) => void>
+  >();
   let initialized = false;
 
   // ── Initialization ─────────────────────────────────────────
@@ -102,6 +145,27 @@ export function createLspServerManager(
             return (params?.items || []).map(() => null);
           },
         );
+
+        // Capture pushed diagnostics and release any waiters for that file
+        instance.onNotification<{
+          uri?: string;
+          version?: number;
+          diagnostics?: LspRawDiagnostic[];
+        }>("textDocument/publishDiagnostics", (params) => {
+          if (!params?.uri) return;
+          const entry: FileDiagnostics = {
+            uri: params.uri,
+            version: params.version,
+            diagnostics: params.diagnostics ?? [],
+            receivedAt: Date.now(),
+          };
+          fileDiagnostics.set(params.uri, entry);
+          const waiters = diagnosticsWaiters.get(params.uri);
+          if (waiters?.length) {
+            diagnosticsWaiters.delete(params.uri);
+            for (const waiter of waiters) waiter(entry);
+          }
+        });
 
         servers.set(serverName, instance);
       } catch (error: unknown) {
@@ -279,6 +343,68 @@ export function createLspServerManager(
     return openedFiles.has(fileUri);
   }
 
+  // ── Diagnostics ────────────────────────────────────────────
+
+  /**
+   * Latest published diagnostics for a file, if any have arrived.
+   */
+  function getDiagnostics(filePath: string): FileDiagnostics | undefined {
+    return fileDiagnostics.get(pathToFileURL(resolve(filePath)).href);
+  }
+
+  /**
+   * Wait for a diagnostics publish newer than `since` for this file.
+   * Servers publish asynchronously (and debounced) after didOpen/didChange.
+   * After the first fresh publish, lingers `settleMs` and returns the latest
+   * stored entry — tsserver sends syntax and semantic passes as separate
+   * publishes, and resolving on the first one would miss type errors.
+   * On timeout, falls back to whatever is stored (possibly stale) so the
+   * caller can decide how to report it.
+   */
+  async function waitForDiagnostics(
+    filePath: string,
+    {
+      since = 0,
+      timeoutMs = 8_000,
+      settleMs = 400,
+    }: WaitForDiagnosticsOptions = {},
+  ): Promise<FileDiagnostics | undefined> {
+    const fileUri = pathToFileURL(resolve(filePath)).href;
+
+    const stored = fileDiagnostics.get(fileUri);
+    let fresh = stored && stored.receivedAt >= since ? stored : undefined;
+
+    if (!fresh) {
+      fresh = await new Promise<FileDiagnostics | undefined>(
+        (resolvePromise) => {
+          const waiter = (entry: FileDiagnostics) => {
+            clearTimeout(timer);
+            resolvePromise(entry);
+          };
+          const timer = setTimeout(() => {
+            const waiters = diagnosticsWaiters.get(fileUri);
+            if (waiters) {
+              const remaining = waiters.filter((w) => w !== waiter);
+              if (remaining.length > 0) diagnosticsWaiters.set(fileUri, remaining);
+              else diagnosticsWaiters.delete(fileUri);
+            }
+            resolvePromise(undefined);
+          }, timeoutMs);
+          const waiters = diagnosticsWaiters.get(fileUri) ?? [];
+          waiters.push(waiter);
+          diagnosticsWaiters.set(fileUri, waiters);
+        },
+      );
+    }
+
+    if (!fresh) return fileDiagnostics.get(fileUri);
+
+    if (settleMs > 0) {
+      await new Promise((resolveSleep) => setTimeout(resolveSleep, settleMs));
+    }
+    return fileDiagnostics.get(fileUri) ?? fresh;
+  }
+
   // ── Status & Shutdown ──────────────────────────────────────
 
   /**
@@ -323,6 +449,8 @@ export function createLspServerManager(
     extensionMap.clear();
     openedFiles.clear();
     documentVersions.clear();
+    fileDiagnostics.clear();
+    diagnosticsWaiters.clear();
     initialized = false;
 
     if (errors.length > 0) {
@@ -342,6 +470,8 @@ export function createLspServerManager(
     changeFile,
     closeFile,
     isFileOpen,
+    getDiagnostics,
+    waitForDiagnostics,
     getHealth,
     getAllServers,
     shutdown,

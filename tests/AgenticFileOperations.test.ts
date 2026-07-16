@@ -185,6 +185,62 @@ describe("Agentic File Operations Router — block-replace and multi-replace", (
     });
   });
 
+  describe("POST /agentic/file/patch (apply_patch tool)", () => {
+    it("applies a unified diff to the file", async () => {
+      resetFileContent("line one\nline two\nline three\n");
+      const patch = [
+        "--- a/mock-file.txt",
+        "+++ b/mock-file.txt",
+        "@@ -1,3 +1,3 @@",
+        " line one",
+        "-line two",
+        "+line 2",
+        " line three",
+        "",
+      ].join("\n");
+
+      const res = await request(app)
+        .post("/agentic/file/patch")
+        .send({ path: testFilePath, patch });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(fs.readFileSync(testFilePath, "utf8")).toBe(
+        "line one\nline 2\nline three\n",
+      );
+    });
+
+    it("rejects a patch whose context does not match, leaving the file untouched", async () => {
+      resetFileContent("alpha\nbeta\n");
+      const patch = [
+        "--- a/mock-file.txt",
+        "+++ b/mock-file.txt",
+        "@@ -1,2 +1,2 @@",
+        " gamma",
+        "-delta",
+        "+epsilon",
+        "",
+      ].join("\n");
+
+      const res = await request(app)
+        .post("/agentic/file/patch")
+        .send({ path: testFilePath, patch });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBeTruthy();
+      expect(fs.readFileSync(testFilePath, "utf8")).toBe("alpha\nbeta\n");
+    });
+
+    it("requires the patch body field", async () => {
+      const res = await request(app)
+        .post("/agentic/file/patch")
+        .send({ path: testFilePath });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain("patch");
+    });
+  });
+
   describe("POST /agentic/file/delete", () => {
     const subFolder = path.join(testRoot, "sub-folder-to-delete");
     const subFile = path.join(subFolder, "temp-file.txt");
