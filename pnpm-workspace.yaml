@@ -34,5 +34,6 @@ allowBuilds:
   '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/e9949146f0677a545022cd2abca02efa597b9934': true
   tesseract.js: true
   '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/86b121279fd11a45cec10a1d320e54855f867e98': true
+  '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/82a2f6ac75423f5212b7d2a52429f6181406ab71': true
 overrides:
   '@rodrigo-barraza/utilities-library': github:rodrigo-barraza/utilities-library#master
