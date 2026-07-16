@@ -825,6 +825,193 @@ export async function annotateDetections(
   return { width, height, objects, annotatedPng };
 }
 
+// ─── Segmentation-Based Background Removal ─────────────────────
+// Gemini vision segmentation returns, per object, a box_2d (0-1000
+// normalized) plus a base64 PNG probability map (0-255) cropped to
+// that box. Applying the mask to the ORIGINAL pixels yields a
+// pixel-faithful cut-out — unlike generative chromakey, nothing is
+// re-drawn. Format ref: ai.google.dev/gemini-api/docs/image-understanding
+
+export interface SegmentationItem {
+  /** [ymin, xmin, ymax, xmax], each 0-1000 */
+  box_2d: [number, number, number, number];
+  label: string;
+  /** Decoded probability-map PNG, cropped to the box region */
+  maskPng: Buffer;
+}
+
+/**
+ * Parse a segmentation response: detection items that also carry a
+ * base64 PNG mask (raw base64 or data URI). Items without a decodable
+ * mask are dropped.
+ */
+export function parseSegmentationJson(
+  text: string | null | undefined,
+  maxSegments: number,
+): SegmentationItem[] {
+  if (!text) return [];
+  const start = text.indexOf("[");
+  const end = text.lastIndexOf("]");
+  if (start === -1 || end <= start) return [];
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text.slice(start, end + 1));
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(parsed)) return [];
+
+  const clamp = (value: number) =>
+    Math.min(1000, Math.max(0, Math.round(value)));
+  const items: SegmentationItem[] = [];
+  for (const candidate of parsed) {
+    if (items.length >= maxSegments) break;
+    const record = candidate as {
+      box_2d?: unknown;
+      label?: unknown;
+      mask?: unknown;
+    };
+    const box = record?.box_2d;
+    if (
+      !Array.isArray(box) ||
+      box.length !== 4 ||
+      box.some((value) => typeof value !== "number" || !Number.isFinite(value))
+    ) {
+      continue;
+    }
+    const [ymin, xmin, ymax, xmax] = (box as number[]).map(clamp);
+    if (ymax <= ymin || xmax <= xmin) continue;
+
+    if (typeof record.mask !== "string" || !record.mask) continue;
+    const base64 = record.mask.includes("base64,")
+      ? record.mask.slice(record.mask.indexOf("base64,") + 7)
+      : record.mask;
+    let maskPng: Buffer;
+    try {
+      maskPng = Buffer.from(base64, "base64");
+    } catch {
+      continue;
+    }
+    if (maskPng.length === 0) continue;
+
+    items.push({
+      box_2d: [ymin, xmin, ymax, xmax],
+      label: String(record.label ?? "object").slice(0, 80),
+      maskPng,
+    });
+  }
+  return items;
+}
+
+export interface SegmentationCutoutResult {
+  /** PNG of the original pixels with everything outside the masks transparent */
+  buffer: Buffer;
+  width: number;
+  height: number;
+  /** Fraction of pixels kept as subject (alpha > 127) */
+  coverage: number;
+  labels: string[];
+}
+
+/** Below this probability (0-255) mask values are treated as background noise */
+const MASK_NOISE_FLOOR = 32;
+
+/**
+ * Cut the segmented subject(s) out of the original image. Each mask is
+ * resized to its box, unioned into a full-canvas alpha map (soft edges
+ * preserved from the probability values), and applied to the source pixels.
+ */
+export async function applySegmentationMasks(
+  input: Buffer,
+  segments: SegmentationItem[],
+): Promise<SegmentationCutoutResult> {
+  const { data, info } = await sharp(input, {
+    failOn: "none",
+    limitInputPixels: MAX_DIMENSION * MAX_DIMENSION,
+  })
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  const { width, height } = info;
+  const alphaCanvas = new Uint8Array(width * height);
+
+  for (const segment of segments) {
+    const [ymin, xmin, ymax, xmax] = segment.box_2d;
+    const boxLeft = Math.round((xmin / 1000) * width);
+    const boxTop = Math.round((ymin / 1000) * height);
+    const boxWidth = Math.max(1, Math.round(((xmax - xmin) / 1000) * width));
+    const boxHeight = Math.max(1, Math.round(((ymax - ymin) / 1000) * height));
+
+    const { data: maskData, info: maskInfo } = await sharp(segment.maskPng, {
+      failOn: "none",
+    })
+      .resize(boxWidth, boxHeight, { fit: "fill" })
+      .grayscale()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+
+    for (let y = 0; y < boxHeight; y++) {
+      const canvasY = boxTop + y;
+      if (canvasY < 0 || canvasY >= height) continue;
+      for (let x = 0; x < boxWidth; x++) {
+        const canvasX = boxLeft + x;
+        if (canvasX < 0 || canvasX >= width) continue;
+        const value = maskData[(y * boxWidth + x) * maskInfo.channels];
+        if (value < MASK_NOISE_FLOOR) continue;
+        const canvasIndex = canvasY * width + canvasX;
+        if (value > alphaCanvas[canvasIndex]) alphaCanvas[canvasIndex] = value;
+      }
+    }
+  }
+
+  let subjectCount = 0;
+  const pixelCount = width * height;
+  for (let index = 0; index < pixelCount; index++) {
+    const offset = index * 4;
+    const alpha = Math.min(data[offset + 3], alphaCanvas[index]);
+    data[offset + 3] = alpha;
+    if (alpha > 127) subjectCount++;
+  }
+
+  const buffer = await sharp(data, {
+    raw: { width, height, channels: 4 },
+  })
+    .png()
+    .toBuffer();
+
+  return {
+    buffer,
+    width,
+    height,
+    coverage: subjectCount / pixelCount,
+    labels: segments.map((segment) => segment.label),
+  };
+}
+
+/** Longest edge sent to the vision model — boxes/masks are normalized, so
+ * detection fidelity survives the downscale while token cost drops ~4x for 2K+ inputs */
+const VISION_INPUT_MAX_EDGE = 1024;
+
+/**
+ * Prepare an image for a vision call: downscale to a bounded edge and
+ * return a PNG data URI.
+ */
+export async function toVisionDataUri(input: Buffer): Promise<string> {
+  const resized = await sharp(input, {
+    failOn: "none",
+    limitInputPixels: MAX_DIMENSION * MAX_DIMENSION,
+  })
+    .resize(VISION_INPUT_MAX_EDGE, VISION_INPUT_MAX_EDGE, {
+      fit: "inside",
+      withoutEnlargement: true,
+    })
+    .png()
+    .toBuffer();
+  return `data:image/png;base64,${resized.toString("base64")}`;
+}
+
 export interface ConvertToAsciiInput {
   input: string;
   width?: number;

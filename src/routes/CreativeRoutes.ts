@@ -31,6 +31,9 @@ import {
   resolveInput as resolveImageInput,
   parseDetectionJson,
   annotateDetections,
+  parseSegmentationJson,
+  applySegmentationMasks,
+  toVisionDataUri,
 } from "../services/ImageService.ts";
 import { PersistentStore } from "../models/EmbedAsset.ts";
 import MinioService from "../services/MinioService.ts";
@@ -525,6 +528,121 @@ router.get(
     const { id } = req.query as Record<string, string>;
     if (!id) return res.status(400).send("Missing 'id' parameter");
     const entry = await detectionStore.getWithFallback(id);
+    if (!entry) {
+      return res.status(404).send("Image not found or expired");
+    }
+    res.setHeader("Content-Type", entry.mimeType || "image/png");
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.send(Buffer.from(entry.buffer));
+  }),
+);
+
+// ────────────────────────────────────────────────────────────
+// POST /creative/remove-background
+// Pixel-faithful cut-out: Gemini segmentation masks applied to the
+// ORIGINAL pixels — nothing is re-drawn. (Generative cut-outs of new
+// images live in generate-image's transparentBackground flag.)
+// ────────────────────────────────────────────────────────────
+
+const cutoutStore = new PersistentStore<{ buffer: Buffer; mimeType: string }>("cutout");
+const MAX_SEGMENTS = 10;
+
+router.post(
+  "/remove-background",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { image, subject } = req.body;
+
+    if (!image || typeof image !== "string") {
+      return res.status(400).json({
+        error: "Missing required parameter: image (URL or base64 data URI)",
+      });
+    }
+
+    const target =
+      typeof subject === "string" && subject.trim()
+        ? subject.trim()
+        : PromptLocaleService.get("en", "prompts.creative.segment.default-subject");
+
+    const {
+      project: callerProject,
+      username: callerUsername,
+      agent: callerAgent,
+      traceId: callerTraceId,
+    } = extractCallerContext(req);
+
+    try {
+      const creativeSettings = await getCreativeSettings();
+      const inputBuffer = await resolveImageInput(image);
+      const visionImage = await toVisionDataUri(inputBuffer);
+
+      const segmentationPrompt = PromptLocaleService.get(
+        "en",
+        "prompts.creative.segment.instruction",
+        { subject: target },
+      );
+
+      // Docs recommend minimal thinking for segmentation accuracy
+      const result = await PrismService.chat({
+        provider: creativeSettings.visionProvider,
+        model: creativeSettings.visionModel,
+        messages: [
+          { role: "user", content: segmentationPrompt, images: [visionImage] },
+        ],
+        responseMimeType: "application/json",
+        thinkingEnabled: false,
+        project: callerProject,
+        username: callerUsername,
+        agent: callerAgent,
+        traceId: callerTraceId,
+        skipConversation: true,
+      });
+
+      const segments = parseSegmentationJson(result.text, MAX_SEGMENTS);
+
+      if (segments.length === 0) {
+        return res.status(422).json({
+          success: false,
+          error: PromptLocaleService.get("en", "prompts.creative.segment.none-found", {
+            subject: target,
+          }),
+        });
+      }
+
+      const cutout = await applySegmentationMasks(inputBuffer, segments);
+
+      const minioUrl = await MinioService.uploadToolAsset(cutout.buffer, "image/png");
+      const id = cutoutStore.set({ buffer: cutout.buffer, mimeType: "image/png" });
+      const imageUrl = minioUrl || buildLocalUrl("creative/cutout/render", { id });
+
+      res.json({
+        success: true,
+        message: PromptLocaleService.get("en", "prompts.creative.segment.result-success", {
+          labels: cutout.labels.join(", "),
+        }),
+        subjects: cutout.labels,
+        coverage: Number(cutout.coverage.toFixed(3)),
+        imageWidth: cutout.width,
+        imageHeight: cutout.height,
+        imageUrl,
+        display: buildDisplay("image", imageUrl, { title: "Background removed" }),
+      });
+    } catch (error: unknown) {
+      logger.error(
+        `[CreativeRoutes] remove-background failed: ${errorMessage(error)}`,
+      );
+      res
+        .status(500)
+        .json({ error: `Background removal failed: ${errorMessage(error)}` });
+    }
+  }),
+);
+
+router.get(
+  "/cutout/render",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.query as Record<string, string>;
+    if (!id) return res.status(400).send("Missing 'id' parameter");
+    const entry = await cutoutStore.getWithFallback(id);
     if (!entry) {
       return res.status(404).send("Image not found or expired");
     }

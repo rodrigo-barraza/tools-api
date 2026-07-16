@@ -1262,6 +1262,39 @@ export function getCreativeTools(
       subjectFormat: "truncate",
     },
   },
+  // Pixel-faithful cut-outs via Gemini segmentation masks (base64 PNG
+  // probability maps per box_2d region) applied to the original pixels:
+  // https://ai.google.dev/gemini-api/docs/image-understanding
+  {
+    name: "remove_background",
+    dataSource: onDemand("Google Gemini via Prism + sharp"),
+    description: translate("remove_background.description"),
+    endpoint: {
+      method: "POST",
+      path: "/creative/remove-background",
+      bodyParams: ["image", "subject"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        image: {
+          type: "string",
+          description: translate("remove_background.params.image"),
+        },
+        subject: {
+          type: "string",
+          description: translate("remove_background.params.subject"),
+        },
+      },
+      required: ["image"],
+    },
+    display: {
+      activeVerb: "Removing background from",
+      completedVerb: "Removed background from",
+      subjectParam: "subject",
+      subjectFormat: "truncate",
+    },
+  },
   {
     name: "synthesize_speech",
     dataSource: onDemand("Inworld / ElevenLabs / OpenAI / Google via Prism"),
