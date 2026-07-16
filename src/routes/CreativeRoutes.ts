@@ -26,7 +26,14 @@ import {
   type VectorLayer as VectorLayerInput,
 } from "../services/VectorAnimationValidation.ts";
 import { synthesizeSpeech, getSupportedVoices, isEspeakAvailable } from "../services/TextToSpeechService.ts";
-import { removeChromakeyBackground } from "../services/ImageService.ts";
+import {
+  removeChromakeyBackground,
+  resolveInput as resolveImageInput,
+  parseDetectionJson,
+  annotateDetections,
+} from "../services/ImageService.ts";
+import { PersistentStore } from "../models/EmbedAsset.ts";
+import MinioService from "../services/MinioService.ts";
 import logger from "../logger.ts";
 import { extractCallerContext, errorMessage, buildDisplay, buildLocalUrl, buildEmbedHtml, escapeHtml, sanitizeCssColor, toEmbedScriptJson } from "../utilities.ts";
 import { saveVectorAnimation, getVectorAnimation, type VectorAnimationConfig, type VectorAnimationOptions } from "../models/VectorAnimation.ts";
@@ -206,12 +213,26 @@ const VISION_CACHE_TTL_MS = 5 * 60 * 1000;
 router.post(
   "/generate-image",
   asyncHandler(async (req: Request, res: Response) => {
-    const { prompt, referenceImages, transparentBackground } = req.body;
+    const { prompt, referenceImages, transparentBackground, aspectRatio, size } = req.body;
 
     if (!prompt) {
       return res
         .status(400)
         .json({ error: "Missing required parameter: prompt" });
+    }
+
+    const VALID_ASPECT_RATIOS = ["1:1", "2:3", "3:2", "3:4", "4:3", "9:16", "16:9", "21:9"];
+    if (aspectRatio && !VALID_ASPECT_RATIOS.includes(aspectRatio)) {
+      return res.status(400).json({
+        error: `Invalid aspectRatio '${aspectRatio}'. Valid: ${VALID_ASPECT_RATIOS.join(", ")}`,
+      });
+    }
+    const VALID_SIZES = ["1K", "2K", "4K"];
+    const imageSize = size ? String(size).toUpperCase() : undefined;
+    if (imageSize && !VALID_SIZES.includes(imageSize)) {
+      return res.status(400).json({
+        error: `Invalid size '${size}'. Valid: ${VALID_SIZES.join(", ")}`,
+      });
     }
 
     // Extract caller context from headers for Prism attribution
@@ -265,6 +286,8 @@ router.post(
             model: creativeSettings.imageModel,
             messages,
             forceImageGeneration: true,
+            ...(aspectRatio && { aspectRatio }),
+            ...(imageSize && { imageSize }),
             project: callerProject,
             username: callerUsername,
             agent: callerAgent,
@@ -388,6 +411,126 @@ router.post(
         .status(500)
         .json({ error: `Image generation failed: ${errorMessage(error)}` });
     }
+  }),
+);
+
+// ────────────────────────────────────────────────────────────
+// POST /creative/detect-objects
+// Gemini vision object detection: normalized box_2d → pixel boxes,
+// optionally rasterized as a labeled overlay.
+// ────────────────────────────────────────────────────────────
+
+const detectionStore = new PersistentStore<{ buffer: Buffer; mimeType: string }>("detection");
+const MAX_DETECTION_OBJECTS = 50;
+
+router.post(
+  "/detect-objects",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { image, instruction, annotate = true, maxObjects } = req.body;
+
+    if (!image || typeof image !== "string") {
+      return res.status(400).json({
+        error: "Missing required parameter: image (URL or base64 data URI)",
+      });
+    }
+
+    const objectLimit = Math.min(
+      Math.max(Number(maxObjects) || 20, 1),
+      MAX_DETECTION_OBJECTS,
+    );
+    const target =
+      typeof instruction === "string" && instruction.trim()
+        ? instruction.trim()
+        : PromptLocaleService.get("en", "prompts.creative.detect.default-target");
+
+    const {
+      project: callerProject,
+      username: callerUsername,
+      agent: callerAgent,
+      traceId: callerTraceId,
+    } = extractCallerContext(req);
+
+    try {
+      const creativeSettings = await getCreativeSettings();
+      const detectionPrompt = PromptLocaleService.get(
+        "en",
+        "prompts.creative.detect.instruction",
+        { target, max: String(objectLimit) },
+      );
+
+      const result = await PrismService.chat({
+        provider: creativeSettings.visionProvider,
+        model: creativeSettings.visionModel,
+        messages: [{ role: "user", content: detectionPrompt, images: [image] }],
+        responseMimeType: "application/json",
+        project: callerProject,
+        username: callerUsername,
+        agent: callerAgent,
+        traceId: callerTraceId,
+        skipConversation: true,
+      });
+
+      const detections = parseDetectionJson(result.text, objectLimit);
+
+      if (detections.length === 0) {
+        return res.json({
+          success: true,
+          count: 0,
+          objects: [],
+          message: PromptLocaleService.get("en", "prompts.creative.detect.none-found", {
+            target,
+          }),
+        });
+      }
+
+      const inputBuffer = await resolveImageInput(image);
+      const { width, height, objects, annotatedPng } = await annotateDetections(
+        inputBuffer,
+        detections,
+        { annotate: annotate !== false },
+      );
+
+      let imageUrl: string | null = null;
+      if (annotatedPng) {
+        const minioUrl = await MinioService.uploadToolAsset(annotatedPng, "image/png");
+        const id = detectionStore.set({ buffer: annotatedPng, mimeType: "image/png" });
+        imageUrl = minioUrl || buildLocalUrl("creative/detection/render", { id });
+      }
+
+      res.json({
+        success: true,
+        count: objects.length,
+        imageWidth: width,
+        imageHeight: height,
+        objects,
+        ...(imageUrl && {
+          imageUrl,
+          display: buildDisplay("image", imageUrl, { title: "Detected objects" }),
+        }),
+      });
+    } catch (error: unknown) {
+      logger.error(
+        `[CreativeRoutes] detect-objects failed: ${errorMessage(error)}`,
+      );
+      res
+        .status(500)
+        .json({ error: `Object detection failed: ${errorMessage(error)}` });
+    }
+  }),
+);
+
+router.get(
+  "/detection/render",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.query as Record<string, string>;
+    if (!id) return res.status(400).send("Missing 'id' parameter");
+    const entry = await detectionStore.getWithFallback(id);
+    if (!entry) {
+      return res.status(404).send("Image not found or expired");
+    }
+    res.setHeader("Content-Type", entry.mimeType || "image/png");
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.send(Buffer.from(entry.buffer));
   }),
 );
 

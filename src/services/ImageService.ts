@@ -53,7 +53,7 @@ const MAGICK_OPERATIONS = new Set(["text", "distort", "border", "ico"]);
  * Resolve an input source to a Sharp-compatible buffer.
  * Supports: URL, base64 data URI, previous imageId, or local workspace paths.
  */
-async function resolveInput(input: string, store?: ImageStore) {
+export async function resolveInput(input: string, store?: ImageStore) {
   if (!input || typeof input !== "string") {
     throw new Error(
       "'input' is required (URL, base64 data URI, local path, or previous imageId)",
@@ -669,6 +669,160 @@ export async function removeChromakeyBackground(
     keyed: backgroundFraction >= CHROMAKEY_MIN_BACKGROUND_FRACTION,
     backgroundFraction,
   };
+}
+
+// ─── Object Detection Post-Processing ──────────────────────────
+// Gemini vision returns bounding boxes as [ymin, xmin, ymax, xmax]
+// normalized to 0-1000. These helpers parse that JSON, scale it to
+// pixels, and rasterize labeled overlays.
+
+export interface DetectionItem {
+  /** [ymin, xmin, ymax, xmax], each 0-1000 */
+  box_2d: [number, number, number, number];
+  label: string;
+}
+
+export interface DetectedObject {
+  label: string;
+  box2d: [number, number, number, number];
+  pixelBox: { left: number; top: number; width: number; height: number };
+}
+
+/**
+ * Parse a model response into detection items. Tolerates markdown
+ * fences and surrounding prose; invalid or degenerate boxes are dropped.
+ */
+export function parseDetectionJson(
+  text: string | null | undefined,
+  maxObjects: number,
+): DetectionItem[] {
+  if (!text) return [];
+  const start = text.indexOf("[");
+  const end = text.lastIndexOf("]");
+  if (start === -1 || end <= start) return [];
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text.slice(start, end + 1));
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(parsed)) return [];
+
+  const clamp = (value: number) =>
+    Math.min(1000, Math.max(0, Math.round(value)));
+  const items: DetectionItem[] = [];
+  for (const candidate of parsed) {
+    if (items.length >= maxObjects) break;
+    const box = (candidate as { box_2d?: unknown })?.box_2d;
+    if (
+      !Array.isArray(box) ||
+      box.length !== 4 ||
+      box.some((value) => typeof value !== "number" || !Number.isFinite(value))
+    ) {
+      continue;
+    }
+    const [ymin, xmin, ymax, xmax] = (box as number[]).map(clamp);
+    if (ymax <= ymin || xmax <= xmin) continue;
+    const label = String(
+      (candidate as { label?: unknown }).label ?? "object",
+    ).slice(0, 80);
+    items.push({ box_2d: [ymin, xmin, ymax, xmax], label });
+  }
+  return items;
+}
+
+const BOX_PALETTE = [
+  "#ff3b30",
+  "#34c759",
+  "#007aff",
+  "#ff9500",
+  "#af52de",
+  "#00c7be",
+  "#ffcc00",
+  "#ff2d55",
+];
+
+function escapeXml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+export interface AnnotatedDetectionsResult {
+  width: number;
+  height: number;
+  objects: DetectedObject[];
+  /** Labeled-overlay PNG, or null when `annotate` is false or nothing was detected */
+  annotatedPng: Buffer | null;
+}
+
+/**
+ * Scale normalized detections to pixel space and (optionally) draw
+ * labeled bounding boxes onto the image via an SVG composite.
+ */
+export async function annotateDetections(
+  input: Buffer,
+  detections: DetectionItem[],
+  { annotate = true }: { annotate?: boolean } = {},
+): Promise<AnnotatedDetectionsResult> {
+  const metadata = await sharp(input, { failOn: "none" }).metadata();
+  const width = metadata.width ?? 0;
+  const height = metadata.height ?? 0;
+  if (!width || !height) {
+    throw new Error("Invalid or unsupported image dimensions");
+  }
+
+  const objects: DetectedObject[] = detections.map((detection) => {
+    const [ymin, xmin, ymax, xmax] = detection.box_2d;
+    return {
+      label: detection.label,
+      box2d: detection.box_2d,
+      pixelBox: {
+        left: Math.round((xmin / 1000) * width),
+        top: Math.round((ymin / 1000) * height),
+        width: Math.round(((xmax - xmin) / 1000) * width),
+        height: Math.round(((ymax - ymin) / 1000) * height),
+      },
+    };
+  });
+
+  if (!annotate || objects.length === 0) {
+    return { width, height, objects, annotatedPng: null };
+  }
+
+  const strokeWidth = Math.max(2, Math.round(Math.min(width, height) / 300));
+  const fontSize = Math.max(12, Math.round(Math.min(width, height) / 40));
+  const labelPadding = Math.round(fontSize * 0.35);
+
+  const shapes = objects
+    .map((object, index) => {
+      const color = BOX_PALETTE[index % BOX_PALETTE.length];
+      const { left, top, width: boxWidth, height: boxHeight } = object.pixelBox;
+      const label = escapeXml(object.label);
+      const labelWidth = Math.round(
+        object.label.length * fontSize * 0.62 + labelPadding * 2,
+      );
+      const labelHeight = fontSize + labelPadding * 2;
+      // Label above the box when there's room, otherwise inside it
+      const labelTop = top >= labelHeight ? top - labelHeight : top;
+      const labelLeft = Math.min(left, Math.max(0, width - labelWidth));
+      return `
+  <rect x="${left}" y="${top}" width="${boxWidth}" height="${boxHeight}" fill="none" stroke="${color}" stroke-width="${strokeWidth}"/>
+  <rect x="${labelLeft}" y="${labelTop}" width="${labelWidth}" height="${labelHeight}" fill="${color}"/>
+  <text x="${labelLeft + labelPadding}" y="${labelTop + labelHeight - labelPadding - Math.round(fontSize * 0.15)}" font-family="sans-serif" font-size="${fontSize}" font-weight="bold" fill="#ffffff">${label}</text>`;
+    })
+    .join("");
+
+  const svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">${shapes}\n</svg>`;
+  const annotatedPng = await sharp(input, { failOn: "none" })
+    .composite([{ input: Buffer.from(svg), left: 0, top: 0 }])
+    .png()
+    .toBuffer();
+
+  return { width, height, objects, annotatedPng };
 }
 
 export interface ConvertToAsciiInput {

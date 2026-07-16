@@ -7,6 +7,7 @@ import { cached, onDemand, compute } from "./utils.ts";
 import {
   EMOJI_KITCHEN_INTERVAL_MS
 } from "../../constants.ts";
+import { AVATAR_STYLES } from "../AvatarService.ts";
 
 export function getCreativeTools(
   translate: (key: string, variables?: Record<string, string>) => string
@@ -162,6 +163,53 @@ export function getCreativeTools(
       activeVerb: "Rendering code card",
       completedVerb: "Rendered code card",
       subjectParam: "title",
+      subjectFormat: "truncate",
+    },
+  },
+  // Deterministic seed→avatar via DiceBear (https://github.com/dicebear/dicebear):
+  // same seed + style always yields the identical face; identity primitive
+  // for custom agents, NPCs, and project icons.
+  {
+    name: "generate_avatar",
+    dataSource: compute("@dicebear/core"),
+    description: translate("generate_avatar.description"),
+    endpoint: {
+      method: "POST",
+      path: "/compute/avatar",
+      bodyParams: ["seed", "style", "size", "backgroundColor", "format"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        seed: {
+          type: "string",
+          description: translate("generate_avatar.params.seed"),
+        },
+        style: {
+          type: "string",
+          enum: [...AVATAR_STYLES],
+          description: translate("generate_avatar.params.style"),
+        },
+        size: {
+          type: "integer",
+          description: translate("generate_avatar.params.size"),
+        },
+        backgroundColor: {
+          type: "string",
+          description: translate("generate_avatar.params.backgroundColor"),
+        },
+        format: {
+          type: "string",
+          enum: ["png", "svg"],
+          description: translate("generate_avatar.params.format"),
+        },
+      },
+      required: ["seed"],
+    },
+    display: {
+      activeVerb: "Generating avatar for",
+      completedVerb: "Generated avatar for",
+      subjectParam: "seed",
       subjectFormat: "truncate",
     },
   },
@@ -1121,7 +1169,7 @@ export function getCreativeTools(
     endpoint: {
       method: "POST",
       path: "/creative/generate-image",
-      bodyParams: ["prompt", "referenceImages", "transparentBackground"],
+      bodyParams: ["prompt", "referenceImages", "transparentBackground", "aspectRatio", "size"],
     },
     parameters: {
       type: "object",
@@ -1133,6 +1181,16 @@ export function getCreativeTools(
         transparentBackground: {
           type: "boolean",
           description: translate("generate_image.params.transparentBackground"),
+        },
+        aspectRatio: {
+          type: "string",
+          enum: ["1:1", "2:3", "3:2", "3:4", "4:3", "9:16", "16:9", "21:9"],
+          description: translate("generate_image.params.aspectRatio"),
+        },
+        size: {
+          type: "string",
+          enum: ["1K", "2K", "4K"],
+          description: translate("generate_image.params.size"),
         },
       },
       required: ["prompt"],
@@ -1162,6 +1220,46 @@ export function getCreativeTools(
         },
       },
       required: ["imageUrls"],
+    },
+  },
+  // Gemini vision object detection (box_2d normalized 0-1000):
+  // https://ai.google.dev/gemini-api/docs/image-understanding
+  {
+    name: "detect_objects",
+    dataSource: onDemand("Google Gemini via Prism"),
+    description: translate("detect_objects.description"),
+    endpoint: {
+      method: "POST",
+      path: "/creative/detect-objects",
+      bodyParams: ["image", "instruction", "annotate", "maxObjects"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        image: {
+          type: "string",
+          description: translate("detect_objects.params.image"),
+        },
+        instruction: {
+          type: "string",
+          description: translate("detect_objects.params.instruction"),
+        },
+        annotate: {
+          type: "boolean",
+          description: translate("detect_objects.params.annotate"),
+        },
+        maxObjects: {
+          type: "integer",
+          description: translate("detect_objects.params.maxObjects"),
+        },
+      },
+      required: ["image"],
+    },
+    display: {
+      activeVerb: "Detecting objects in",
+      completedVerb: "Detected objects in",
+      subjectParam: "instruction",
+      subjectFormat: "truncate",
     },
   },
   {

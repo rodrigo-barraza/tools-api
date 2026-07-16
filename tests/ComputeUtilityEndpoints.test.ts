@@ -610,6 +610,86 @@ describe("POST /compute/code-image", () => {
 });
 
 // ═══════════════════════════════════════════════════════════════
+//  7d. Deterministic Avatars — /compute/avatar
+// ═══════════════════════════════════════════════════════════════
+
+describe("POST /compute/avatar", () => {
+  it("returns 400 when seed is missing", async () => {
+    const response = await request(app).post("/compute/avatar").send({});
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain("seed");
+  });
+
+  it("rejects unknown styles with the available list", async () => {
+    const response = await request(app)
+      .post("/compute/avatar")
+      .send({ seed: "rodrigo", style: "cubist" });
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain("pixel-art");
+  });
+
+  it("rejects malformed background colors", async () => {
+    const response = await request(app)
+      .post("/compute/avatar")
+      .send({ seed: "rodrigo", backgroundColor: "bluish" });
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain("hex");
+  });
+
+  it("generates a PNG avatar with display metadata", async () => {
+    const response = await request(app)
+      .post("/compute/avatar")
+      .send({ seed: "rodrigo", style: "bottts", size: 128 });
+
+    expect(response.status).toBe(200);
+    expect(response.body.avatarUrl).toContain("/compute/avatar/render?id=");
+    expect(response.body.style).toBe("bottts");
+    expect(response.body.size).toBe(128);
+    expect(response.body.format).toBe("png");
+    expect(response.body.display?.kind).toBe("image");
+    expect(response.body.message).toContain("same seed");
+
+    const image = await request(app).get(
+      `/compute/avatar/render?id=${response.body.avatarId}`,
+    );
+    expect(image.status).toBe(200);
+    expect(image.headers["content-type"]).toContain("image/png");
+    expect(image.body.subarray(0, 4).toString("hex")).toBe("89504e47");
+  }, 30_000);
+
+  it("is deterministic: same seed+style yields identical bytes, different seed differs", async () => {
+    const fetchAvatarBytes = async (seed: string) => {
+      const response = await request(app)
+        .post("/compute/avatar")
+        .send({ seed, style: "pixel-art", format: "svg" });
+      expect(response.status).toBe(200);
+      const image = await request(app).get(
+        `/compute/avatar/render?id=${response.body.avatarId}`,
+      );
+      expect(image.headers["content-type"]).toContain("image/svg");
+      return image.text ?? image.body.toString("utf-8");
+    };
+
+    const first = await fetchAvatarBytes("lupos");
+    const second = await fetchAvatarBytes("lupos");
+    const other = await fetchAvatarBytes("lupos-2");
+    expect(first).toBe(second);
+    expect(first).not.toBe(other);
+  }, 30_000);
+
+  it("AVATAR_STYLES stays in sync with the installed @dicebear/styles package", async () => {
+    const { AVATAR_STYLES } = await import("../src/services/AvatarService.ts");
+    const { readdir } = await import("node:fs/promises");
+    const files = await readdir("node_modules/@dicebear/styles/dist");
+    const packStyles = files
+      .filter((file) => file.endsWith(".min.json"))
+      .map((file) => file.replace(".min.json", ""))
+      .sort();
+    expect([...AVATAR_STYLES].sort()).toEqual(packStyles);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
 //  8. LaTeX Rendering — /compute/latex
 // ═══════════════════════════════════════════════════════════════
 

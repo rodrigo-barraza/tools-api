@@ -70,6 +70,7 @@ import {
 import type { Voxel, VoxelShape, VoxelOptions } from "../services/ThreeDimensionalVoxelService.ts";
 import { processImage, convertToAscii, scanImageBarcodes, type AsciiPixel } from "../services/ImageService.ts";
 import { renderCodeImage } from "../services/CodeImageService.ts";
+import { generateAvatar } from "../services/AvatarService.ts";
 import { convertVideoToGif } from "../services/VideoService.ts";
 // ─── Lazy-loaded dependencies ──────────────────────────────────────
 // These are loaded on first use to avoid blocking startup.
@@ -982,6 +983,73 @@ router.get(
       return res.status(404).send("Code image not found or expired");
     }
     res.setHeader("Content-Type", "image/png");
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.send(Buffer.from(entry.buffer));
+  }),
+);
+// ─── 7d. Deterministic Avatars (DiceBear) ───────────────────
+const avatarStore = new PersistentStore<{ buffer: Buffer; mimeType: string }>(
+  "avatar",
+);
+router.post(
+  "/avatar",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { seed, style, size, backgroundColor, format } = req.body;
+    if (!seed || typeof seed !== "string") {
+      return res.status(400).json({
+        error: "'seed' (string) is required — any name or phrase; the same seed always yields the same avatar",
+      });
+    }
+    try {
+      const avatar = await generateAvatar({
+        seed,
+        style,
+        size,
+        backgroundColor,
+        format,
+      });
+
+      const minioUrl = await MinioService.uploadToolAsset(
+        avatar.buffer,
+        avatar.mimeType,
+      );
+      const id = avatarStore.set({
+        buffer: avatar.buffer,
+        mimeType: avatar.mimeType,
+      });
+      const avatarUrl =
+        minioUrl || buildLocalUrl("compute/avatar/render", { id });
+
+      res.json({
+        avatarUrl,
+        avatarId: id,
+        seed: avatar.seed,
+        style: avatar.style,
+        size: avatar.size,
+        format: avatar.format,
+        display: buildDisplay("image", avatarUrl, { title: "Avatar" }),
+        message:
+          `Generated a ${avatar.style} avatar for seed '${avatar.seed}' — the user can see it now. ` +
+          "The same seed + style always reproduces this exact avatar; vary the seed for a different face. " +
+          "The avatarUrl can be passed directly as create_custom_agent's 'avatar' parameter.",
+      });
+    } catch (error: unknown) {
+      res
+        .status(400)
+        .json({ error: `Avatar generation failed: ${errorMessage(error)}` });
+    }
+  }),
+);
+router.get(
+  "/avatar/render",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.query as Record<string, string>;
+    if (!id) return res.status(400).send("Missing 'id' parameter");
+    const entry = await avatarStore.getWithFallback(id);
+    if (!entry) {
+      return res.status(404).send("Avatar not found or expired");
+    }
+    res.setHeader("Content-Type", entry.mimeType);
     res.setHeader("Cache-Control", "public, max-age=3600");
     res.send(Buffer.from(entry.buffer));
   }),
@@ -3807,6 +3875,7 @@ export function getComputeHealth() {
     qrCode: "on-demand (qrcode)",
     barcodeScan: "on-demand (zxing-wasm)",
     codeImage: "on-demand (shiki + playwright)",
+    avatar: "on-demand (@dicebear/core)",
     latex: "on-demand (KaTeX CDN embed)",
     diagram: "on-demand (Mermaid CDN embed)",
     textDiff: "on-demand (diff)",

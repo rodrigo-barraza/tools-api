@@ -21,6 +21,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@dicebear/core": "^10.3.0",
+    "@dicebear/styles": "^10.2.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@rodrigo-barraza/utilities-library": "github:rodrigo-barraza/utilities-library#master",
     "ajv": "^8.20.0",
