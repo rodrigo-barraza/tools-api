@@ -160,6 +160,48 @@ describe("POST /creative/generate-image with transparentBackground", () => {
     expect(corner.alpha).toBe(255);
   });
 
+  it("passes aspectRatio and normalized size through to Prism", async () => {
+    const res = await request(app)
+      .post("/creative/generate-image")
+      .send({ prompt: "a wide banner", aspectRatio: "16:9", size: "2k" });
+
+    expect(res.status).toBe(200);
+    const chatCall = vi.mocked(PrismService.chat).mock.calls.at(-1)?.[0] as {
+      aspectRatio?: string;
+      imageSize?: string;
+    };
+    expect(chatCall.aspectRatio).toBe("16:9");
+    expect(chatCall.imageSize).toBe("2K");
+  });
+
+  it("omits image config fields from the Prism call when not requested", async () => {
+    const res = await request(app)
+      .post("/creative/generate-image")
+      .send({ prompt: "a red square" });
+
+    expect(res.status).toBe(200);
+    const chatCall = vi.mocked(PrismService.chat).mock.calls.at(-1)?.[0] as Record<
+      string,
+      unknown
+    >;
+    expect("aspectRatio" in chatCall).toBe(false);
+    expect("imageSize" in chatCall).toBe(false);
+  });
+
+  it("rejects invalid aspectRatio and size values", async () => {
+    const badRatio = await request(app)
+      .post("/creative/generate-image")
+      .send({ prompt: "x", aspectRatio: "7:3" });
+    expect(badRatio.status).toBe(400);
+    expect(badRatio.body.error).toContain("aspectRatio");
+
+    const badSize = await request(app)
+      .post("/creative/generate-image")
+      .send({ prompt: "x", size: "8K" });
+    expect(badSize.status).toBe(400);
+    expect(badSize.body.error).toContain("size");
+  });
+
   it("delivers the opaque image with a note when keying finds no green", async () => {
     const blueImage = await makeSubjectOnBackground({ r: 40, g: 60, b: 220 });
     vi.mocked(PrismService.chat).mockResolvedValueOnce({
