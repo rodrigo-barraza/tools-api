@@ -68,7 +68,8 @@ import {
   MAX_RENDERABLE_VOXELS,
 } from "../services/ThreeDimensionalVoxelService.ts";
 import type { Voxel, VoxelShape, VoxelOptions } from "../services/ThreeDimensionalVoxelService.ts";
-import { processImage, convertToAscii, type AsciiPixel } from "../services/ImageService.ts";
+import { processImage, convertToAscii, scanImageBarcodes, type AsciiPixel } from "../services/ImageService.ts";
+import { renderCodeImage } from "../services/CodeImageService.ts";
 import { convertVideoToGif } from "../services/VideoService.ts";
 // ─── Lazy-loaded dependencies ──────────────────────────────────────
 // These are loaded on first use to avoid blocking startup.
@@ -885,6 +886,106 @@ router.get("/qr/render", asyncHandler(async (req: Request, res: Response) => {
   res.setHeader("Cache-Control", "public, max-age=3600");
   res.send(Buffer.from(entry.buffer));
 }));
+// ─── 7b. Barcode / QR Scanning (inverse of QR generation) ───
+router.post(
+  "/barcode/scan",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { input } = req.body;
+    if (!input || typeof input !== "string") {
+      return res.status(400).json({
+        error:
+          "'input' (string) is required — image URL, base64 data URI, imageId, or local path",
+      });
+    }
+    try {
+      const { barcodes } = await scanImageBarcodes({ input });
+      if (barcodes.length === 0) {
+        return res.json({
+          count: 0,
+          barcodes: [],
+          message:
+            "No barcode or QR code detected. Try a sharper/larger image, or crop closer to the code.",
+        });
+      }
+      res.json({
+        count: barcodes.length,
+        barcodes,
+        message: `Decoded ${barcodes.length} symbol(s): ${barcodes
+          .map((barcode) => barcode.format)
+          .join(", ")}`,
+      });
+    } catch (error: unknown) {
+      res
+        .status(400)
+        .json({ error: `Barcode scan failed: ${errorMessage(error)}` });
+    }
+  }),
+);
+// ─── 7c. Code → Image (carbon.now.sh-style screenshot) ──────
+const codeImageStore = new PersistentStore<{ buffer: Buffer }>("code-image");
+router.post(
+  "/code-image",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { code, lang, theme, title, windowChrome, background, fontSize } =
+      req.body;
+    if (!code || typeof code !== "string") {
+      return res
+        .status(400)
+        .json({ error: "'code' (string) is required" });
+    }
+    try {
+      const rendered = await renderCodeImage({
+        code,
+        lang,
+        theme,
+        title,
+        windowChrome: windowChrome !== false,
+        background,
+        fontSize,
+      });
+
+      const minioUrl = await MinioService.uploadToolAsset(
+        rendered.buffer,
+        "image/png",
+      );
+      const id = codeImageStore.set({ buffer: rendered.buffer });
+      const codeImageUrl =
+        minioUrl || buildLocalUrl("compute/code-image/render", { id });
+
+      res.json({
+        codeImageUrl,
+        codeImageId: id,
+        lang: rendered.lang,
+        theme: rendered.theme,
+        lineCount: rendered.lineCount,
+        display: buildDisplay("image", codeImageUrl, { title: "Code" }),
+        message:
+          `Rendered ${rendered.lineCount} line(s) as a ${rendered.theme} code card — the user can see it now.` +
+          (rendered.langFallback
+            ? ` (Unknown language '${rendered.langFallback}' — highlighted as plain text.)`
+            : ""),
+      });
+    } catch (error: unknown) {
+      res
+        .status(400)
+        .json({ error: `Code image rendering failed: ${errorMessage(error)}` });
+    }
+  }),
+);
+router.get(
+  "/code-image/render",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.query as Record<string, string>;
+    if (!id) return res.status(400).send("Missing 'id' parameter");
+    const entry = await codeImageStore.getWithFallback(id);
+    if (!entry) {
+      return res.status(404).send("Code image not found or expired");
+    }
+    res.setHeader("Content-Type", "image/png");
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.send(Buffer.from(entry.buffer));
+  }),
+);
 // ─── 8. LaTeX Rendering (KaTeX CDN embed) ───────────────────
 const latexStore = new PersistentStore<{
   latex: string;
@@ -3704,6 +3805,8 @@ export function getComputeHealth() {
     jsonTransform: "on-demand (jsonpath-plus)",
     csvGenerator: "on-demand (internal)",
     qrCode: "on-demand (qrcode)",
+    barcodeScan: "on-demand (zxing-wasm)",
+    codeImage: "on-demand (shiki + playwright)",
     latex: "on-demand (KaTeX CDN embed)",
     diagram: "on-demand (Mermaid CDN embed)",
     textDiff: "on-demand (diff)",

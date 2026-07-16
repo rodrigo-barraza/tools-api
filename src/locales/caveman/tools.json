@@ -433,6 +433,7 @@
   "generate_hash.params.key": "optional HMAC key. if given, compute HMAC instead of plain hash.",
   "generate_image.description": "make or edit picture using AI picture generation. when reference picture attached, they auto passed to model — write SHORT edit instruction (like 'Make this blue'). no re-describe attached picture. when NO reference picture attached, write rich detailed prompt. made picture go to human auto. IMPORTANT: no call this tool unless human explicitly ask for picture, drawing, painting, or artwork. never call for greeting or casual talk.",
   "generate_image.params.prompt": "when reference picture attached: write SHORT edit instruction. when NO picture attached: write detailed prompt with style, composition, subject, color, mood, lighting.",
+  "generate_image.params.transparentBackground": "set true when human want cut-out, sticker, logo, or see-through background PNG (subject alone, no background). work for new picture AND for edit of attached picture (cut subject out of original background). no describe any background in prompt when using this. no good for mostly-green subject.",
   "generate_map.description": "make interactive Google Map with labeled marker for set of location. use AFTER places search, IP lookup, or any query that give coordinates. pass location as markers array. to add more location later, call again with returned mapId and only new marker. interactive map show automatic in tool result panel — no put URL or link in text response — human already see it rendered above.",
   "generate_map.params.maptype": "map type: roadmap, satellite, terrain, hybrid (default: roadmap)",
   "generate_map.params.mapId": "optional. pass mapId from earlier call to ADD new markers to that map instead of make new one.",
@@ -1484,5 +1485,15 @@
   "code_intel.params.operation": "diagnostics = error/warning for whole file (no position need); goToDefinition / goToImplementation = where symbol defined or implemented; findReferences = all usage; hover = type info and doc; documentSymbol = outline (no position need).",
   "code_intel.params.filePath": "absolute path to source file.",
   "code_intel.params.line": "1-based line of symbol. need for goToDefinition, findReferences, hover, goToImplementation.",
-  "code_intel.params.character": "1-based column of symbol. need for same position operation."
+  "code_intel.params.character": "1-based column of symbol. need for same position operation.",
+  "scan_barcode.description": "decode QR code and barcode from image — opposite of generate_qr_code. read QR, Aztec, DataMatrix, PDF417, and 1D format (EAN, UPC, Code 128/39) from photo or screenshot. many code in one image ok, rotated or inverted ok. give back decoded text (URL, WiFi config, vCard, product number) so you can act on it.",
+  "scan_barcode.params.input": "image with code: URL, base64 data URI, previous imageId, or local file path.",
+  "render_code.description": "render source code as pretty syntax-highlighted image card (carbon.now.sh style) — shareable PNG with macOS-style window, theme color, gradient backdrop. use when user want code as image or to show snippet visual. ~200 language plus 'ansi' for colored terminal output. deterministic and free. max 300 line — use excerpt for long file.",
+  "render_code.params.code": "source code to render, exact (max 300 line / 20k char).",
+  "render_code.params.lang": "language for highlight (typescript, python, rust, sql, bash, json, html). 'ansi' for terminal output, 'text' for plain. unknown language fall back to plain text.",
+  "render_code.params.theme": "color theme for card. default github-dark.",
+  "render_code.params.title": "optional filename/title in window bar (like 'app.ts').",
+  "render_code.params.windowChrome": "show macOS-style window bar with dots (default true).",
+  "render_code.params.background": "backdrop: 'gradient' (default), 'plain' (flat theme color), or 'transparent' (bare card, good for compositing).",
+  "render_code.params.fontSize": "code font size px (8-28, default 14)."
 }

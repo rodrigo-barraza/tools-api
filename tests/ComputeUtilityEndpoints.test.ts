@@ -500,6 +500,116 @@ describe("POST /compute/qr", () => {
 });
 
 // ═══════════════════════════════════════════════════════════════
+//  7b. Barcode / QR Scanning — /compute/barcode/scan
+// ═══════════════════════════════════════════════════════════════
+
+describe("POST /compute/barcode/scan", () => {
+  it("returns 400 when input is missing", async () => {
+    const response = await request(app).post("/compute/barcode/scan").send({});
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain("input");
+  });
+
+  it("decodes a generated QR code (round-trip with the QR tool)", async () => {
+    const qrcode = await import("qrcode");
+    const png = await qrcode.default.toBuffer("https://rod.dev/roundtrip?x=1", {
+      width: 300,
+    });
+    const response = await request(app)
+      .post("/compute/barcode/scan")
+      .send({ input: `data:image/png;base64,${png.toString("base64")}` });
+
+    expect(response.status).toBe(200);
+    expect(response.body.count).toBe(1);
+    expect(response.body.barcodes[0].text).toBe("https://rod.dev/roundtrip?x=1");
+    expect(response.body.barcodes[0].format).toBe("QRCode");
+    expect(response.body.message).toContain("QRCode");
+  }, 30_000);
+
+  it("reports zero symbols for an image without codes", async () => {
+    const sharp = (await import("sharp")).default;
+    const blank = await sharp({
+      create: {
+        width: 120,
+        height: 120,
+        channels: 3,
+        background: "#ffffff",
+      },
+    })
+      .png()
+      .toBuffer();
+    const response = await request(app)
+      .post("/compute/barcode/scan")
+      .send({ input: `data:image/png;base64,${blank.toString("base64")}` });
+
+    expect(response.status).toBe(200);
+    expect(response.body.count).toBe(0);
+    expect(response.body.message).toContain("No barcode");
+  }, 30_000);
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  7c. Code → Image — /compute/code-image
+// ═══════════════════════════════════════════════════════════════
+
+describe("POST /compute/code-image", () => {
+  it("returns 400 when code is missing", async () => {
+    const response = await request(app).post("/compute/code-image").send({});
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain("code");
+  });
+
+  it("rejects code over the line cap", async () => {
+    const response = await request(app)
+      .post("/compute/code-image")
+      .send({ code: "x = 1\n".repeat(400) });
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain("lines");
+  });
+
+  it("renders a code card PNG served by the fallback endpoint", async () => {
+    const response = await request(app)
+      .post("/compute/code-image")
+      .send({
+        code: 'const answer: number = 42;\nconsole.log("answer", answer);',
+        lang: "typescript",
+        title: "example.ts",
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.codeImageUrl).toContain("/compute/code-image/render?id=");
+    expect(response.body.codeImageId).toBeTruthy();
+    expect(response.body.lineCount).toBe(2);
+    expect(response.body.display?.kind).toBe("image");
+
+    const image = await request(app).get(
+      `/compute/code-image/render?id=${response.body.codeImageId}`,
+    );
+    expect(image.status).toBe(200);
+    expect(image.headers["content-type"]).toContain("image/png");
+    expect(image.body.subarray(0, 4).toString("hex")).toBe("89504e47");
+  }, 60_000);
+
+  it("falls back to plain text for unknown languages and says so", async () => {
+    const response = await request(app)
+      .post("/compute/code-image")
+      .send({ code: "nuqneH tera'ngan", lang: "klingon" });
+
+    expect(response.status).toBe(200);
+    expect(response.body.lang).toBe("text");
+    expect(response.body.message).toContain("klingon");
+  }, 60_000);
+
+  it("rejects unknown themes with the available list", async () => {
+    const response = await request(app)
+      .post("/compute/code-image")
+      .send({ code: "x = 1", theme: "hotdog-stand" });
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain("github-dark");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
 //  8. LaTeX Rendering — /compute/latex
 // ═══════════════════════════════════════════════════════════════
 

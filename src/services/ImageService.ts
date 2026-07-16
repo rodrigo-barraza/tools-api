@@ -553,6 +553,124 @@ export async function checkMagickAvailability() {
   }
 }
 
+// ─── Chromakey Background Removal ──────────────────────────────
+// Image models (Gemini/Nano Banana) can't output an alpha channel.
+// Cut-outs are recovered by generating on a pure #00FF00 background
+// and keying it out in HSV space. Technique per philschmid.de/generate-stickers.
+
+export interface ChromakeyResult {
+  buffer: Buffer;
+  /** True when enough background was detected for the cut-out to be trustworthy */
+  keyed: boolean;
+  /** Fraction of pixels removed as background (0..1) */
+  backgroundFraction: number;
+}
+
+/** HSV green window: hue 90-150° at meaningful saturation/brightness */
+function isChromaGreen(r: number, g: number, b: number) {
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  if (max !== g) return false;
+  const value = max / 255;
+  const saturation = max === 0 ? 0 : (max - min) / max;
+  if (saturation < 0.55 || value < 0.45) return false;
+  const hue = 60 * (2 + (b - r) / (max - min));
+  return hue >= 90 && hue <= 150;
+}
+
+/** Grow a binary mask by one pixel (8-neighborhood) per iteration */
+function dilateMask(
+  mask: Uint8Array,
+  width: number,
+  height: number,
+  iterations: number,
+) {
+  let current = mask;
+  for (let iteration = 0; iteration < iterations; iteration++) {
+    const next = new Uint8Array(current);
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const index = y * width + x;
+        if (current[index]) continue;
+        neighborScan: for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            const ny = y + dy;
+            const nx = x + dx;
+            if (ny < 0 || ny >= height || nx < 0 || nx >= width) continue;
+            if (current[ny * width + nx]) {
+              next[index] = 1;
+              break neighborScan;
+            }
+          }
+        }
+      }
+    }
+    current = next;
+  }
+  return current;
+}
+
+/** Minimum share of keyed pixels for the result to count as a real cut-out */
+const CHROMAKEY_MIN_BACKGROUND_FRACTION = 0.03;
+
+/**
+ * Remove a chromakey-green background, producing a PNG with real alpha.
+ * The green mask is dilated one pixel to swallow anti-aliased fringe, and
+ * a despill pass strips the green halo from edge pixels next to the cut.
+ */
+export async function removeChromakeyBackground(
+  input: Buffer,
+): Promise<ChromakeyResult> {
+  const { data, info } = await sharp(input, {
+    failOn: "none",
+    limitInputPixels: MAX_DIMENSION * MAX_DIMENSION,
+  })
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  const { width, height } = info;
+  const pixelCount = width * height;
+
+  const rawMask = new Uint8Array(pixelCount);
+  for (let index = 0; index < pixelCount; index++) {
+    const offset = index * 4;
+    if (isChromaGreen(data[offset], data[offset + 1], data[offset + 2])) {
+      rawMask[index] = 1;
+    }
+  }
+
+  const mask = dilateMask(rawMask, width, height, 1);
+
+  // Despill: edge pixels just outside the cut keep their alpha but lose
+  // the green cast blended in by anti-aliasing
+  const despillZone = dilateMask(mask, width, height, 2);
+  let removedCount = 0;
+  for (let index = 0; index < pixelCount; index++) {
+    const offset = index * 4;
+    if (mask[index]) {
+      data[offset + 3] = 0;
+      removedCount++;
+    } else if (despillZone[index]) {
+      const spillCeiling = Math.max(data[offset], data[offset + 2]);
+      if (data[offset + 1] > spillCeiling) data[offset + 1] = spillCeiling;
+    }
+  }
+
+  const backgroundFraction = removedCount / pixelCount;
+  const buffer = await sharp(data, {
+    raw: { width, height, channels: 4 },
+  })
+    .png()
+    .toBuffer();
+
+  return {
+    buffer,
+    keyed: backgroundFraction >= CHROMAKEY_MIN_BACKGROUND_FRACTION,
+    backgroundFraction,
+  };
+}
+
 export interface ConvertToAsciiInput {
   input: string;
   width?: number;
@@ -670,4 +788,90 @@ export async function convertToAscii({
     height: info.height,
     pixels,
   };
+}
+
+// ─── Barcode / QR Decoding ─────────────────────────────────────
+// zxing-wasm (ZXing-C++ compiled to WASM, https://github.com/Sec-ant/zxing-wasm)
+// decodes QR / Aztec / DataMatrix / PDF417 and 1D EAN/UPC/Code128/39 codes
+// from encoded image bytes — fully local, no external service. The inverse
+// of generate_qr_code.
+
+export interface DecodedBarcode {
+  text: string;
+  format: string;
+  isValid: boolean;
+}
+
+export interface ScanBarcodesInput {
+  input: string;
+  store?: ImageStore;
+}
+
+const MAX_BARCODE_SYMBOLS = 8;
+
+// Node can't fetch() the module's wasm from disk, so hand the binary over
+// once via prepareZXingModule and reuse the initialized module thereafter.
+let zxingReaderPromise: Promise<typeof import("zxing-wasm/reader")> | null = null;
+
+function getZXingReader() {
+  if (!zxingReaderPromise) {
+    zxingReaderPromise = (async () => {
+      const reader = await import("zxing-wasm/reader");
+      const { createRequire } = await import("node:module");
+      const { dirname, basename } = await import("node:path");
+      const require = createRequire(import.meta.url);
+      // The package's exports map blocks './package.json', so walk up from
+      // the resolvable reader module to the package root.
+      let packageRoot = dirname(require.resolve("zxing-wasm/reader"));
+      while (packageRoot !== "/" && basename(packageRoot) !== "zxing-wasm") {
+        packageRoot = dirname(packageRoot);
+      }
+      const wasmBinary = await readFile(
+        join(packageRoot, "dist", "reader", "zxing_reader.wasm"),
+      );
+      reader.prepareZXingModule({
+        overrides: { wasmBinary: wasmBinary.buffer as ArrayBuffer },
+        fireImmediately: true,
+      });
+      return reader;
+    })();
+    // Allow a retry on failure instead of caching a rejected promise forever
+    zxingReaderPromise.catch(() => {
+      zxingReaderPromise = null;
+    });
+  }
+  return zxingReaderPromise;
+}
+
+/**
+ * Decode all barcodes/QR codes in an image (URL, data URI, imageId, or
+ * local workspace path). Returns decoded symbols in reading order.
+ */
+export async function scanImageBarcodes({
+  input,
+  store,
+}: ScanBarcodesInput): Promise<{ barcodes: DecodedBarcode[] }> {
+  const buffer = await resolveInput(input, store);
+  const reader = await getZXingReader();
+
+  // Copy into a standalone ArrayBuffer — a Buffer's backing store may be a
+  // shared pool slab with a nonzero offset, which zxing would misread.
+  const bytes = new Uint8Array(buffer);
+  const results = await reader.readBarcodes(bytes.buffer as ArrayBuffer, {
+    tryHarder: true,
+    tryRotate: true,
+    tryInvert: true,
+    maxNumberOfSymbols: MAX_BARCODE_SYMBOLS,
+  });
+
+  const decoded = results.map((result) => ({
+    text: result.text,
+    format: String(result.format),
+    isValid: result.isValid,
+  }));
+
+  // Prefer clean reads; only surface invalid/partial symbols when nothing
+  // decoded cleanly (they can still hint at a damaged code's presence).
+  const valid = decoded.filter((barcode) => barcode.isValid);
+  return { barcodes: valid.length > 0 ? valid : decoded };
 }

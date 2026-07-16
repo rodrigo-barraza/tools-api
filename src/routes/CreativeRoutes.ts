@@ -26,6 +26,7 @@ import {
   type VectorLayer as VectorLayerInput,
 } from "../services/VectorAnimationValidation.ts";
 import { synthesizeSpeech, getSupportedVoices, isEspeakAvailable } from "../services/TextToSpeechService.ts";
+import { removeChromakeyBackground } from "../services/ImageService.ts";
 import logger from "../logger.ts";
 import { extractCallerContext, errorMessage, buildDisplay, buildLocalUrl, buildEmbedHtml, escapeHtml, sanitizeCssColor, toEmbedScriptJson } from "../utilities.ts";
 import { saveVectorAnimation, getVectorAnimation, type VectorAnimationConfig, type VectorAnimationOptions } from "../models/VectorAnimation.ts";
@@ -205,7 +206,7 @@ const VISION_CACHE_TTL_MS = 5 * 60 * 1000;
 router.post(
   "/generate-image",
   asyncHandler(async (req: Request, res: Response) => {
-    const { prompt, referenceImages } = req.body;
+    const { prompt, referenceImages, transparentBackground } = req.body;
 
     if (!prompt) {
       return res
@@ -233,11 +234,20 @@ router.post(
         | undefined;
       let safetyRetries = 0;
 
+      // The model can't output alpha — for cut-outs we ask for a chromakey
+      // green background and key it out after generation. Appended at
+      // message-build time so safety softening still sees the raw prompt.
+      const greenscreenDirective = transparentBackground
+        ? PromptLocaleService.get("en", "prompts.creative.image.greenscreen-directive")
+        : null;
+
       for (let attempt = 0; attempt <= MAX_SAFETY_RETRIES; attempt++) {
         const messages = [
           {
             role: "user",
-            content: currentPrompt,
+            content: greenscreenDirective
+              ? `${currentPrompt}\n\n${greenscreenDirective}`
+              : currentPrompt,
             ...(referenceImages?.length > 0 && { images: referenceImages }),
           },
         ];
@@ -316,21 +326,55 @@ router.post(
       }
 
       const image = result.images[0];
+      let imageData = image.data;
+      let imageMimeType = image.mimeType || "image/png";
+      let transparencyApplied = false;
+
+      if (transparentBackground) {
+        try {
+          const keyResult = await removeChromakeyBackground(
+            Buffer.from(image.data, "base64"),
+          );
+          if (keyResult.keyed) {
+            imageData = keyResult.buffer.toString("base64");
+            imageMimeType = "image/png";
+            transparencyApplied = true;
+          } else {
+            logger.warn(
+              `[CreativeRoutes] generate-image: transparent background requested but only ` +
+                `${(keyResult.backgroundFraction * 100).toFixed(1)}% chromakey coverage — returning opaque image`,
+            );
+          }
+        } catch (error: unknown) {
+          logger.warn(
+            `[CreativeRoutes] generate-image: chromakey removal failed, returning opaque image: ${errorMessage(error)}`,
+          );
+        }
+      }
 
       // Build the result message — note if prompt was softened
-      const resultMessage =
+      let resultMessage =
         safetyRetries > 0
           ? PromptLocaleService.get("en", "prompts.creative.image.result-softened")
           : PromptLocaleService.get("en", "prompts.creative.image.result-success");
+      if (transparentBackground) {
+        resultMessage += ` ${PromptLocaleService.get(
+          "en",
+          transparencyApplied
+            ? "prompts.creative.image.result-transparent"
+            : "prompts.creative.image.transparent-failed",
+        )}`;
+      }
 
       res.json({
         success: true,
         message: resultMessage,
         description: result.text || null,
         image: {
-          data: image.data,
-          mimeType: image.mimeType || "image/png",
+          data: imageData,
+          mimeType: imageMimeType,
         },
+        ...(transparentBackground && { transparencyApplied }),
         ...(safetyRetries > 0 && {
           safetyRetries,
           softenedPrompt: currentPrompt.slice(0, 200),

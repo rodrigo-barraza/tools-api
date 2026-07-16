@@ -63,6 +63,108 @@ export function getCreativeTools(
       subjectFormat: "truncate",
     },
   },
+  // Inverse of generate_qr_code: decodes QR/barcodes from images via
+  // zxing-wasm (ZXing-C++ → WASM, https://github.com/Sec-ant/zxing-wasm).
+  {
+    name: "scan_barcode",
+    dataSource: compute("zxing-wasm"),
+    description: translate("scan_barcode.description"),
+    endpoint: {
+      method: "POST",
+      path: "/compute/barcode/scan",
+      bodyParams: ["input"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        input: {
+          type: "string",
+          description: translate("scan_barcode.params.input"),
+        },
+      },
+      required: ["input"],
+    },
+    display: {
+      activeVerb: "Scanning",
+      completedVerb: "Scanned",
+      subjectParam: "input",
+      subjectFormat: "truncate",
+    },
+  },
+  // carbon.now.sh-style code screenshots: Shiki highlighting
+  // (https://github.com/shikijs/shiki) rasterized via the shared Playwright
+  // Chromium; inspired by charmbracelet/freeze
+  // (https://github.com/charmbracelet/freeze) and Aloxaf/silicon
+  // (https://github.com/Aloxaf/silicon).
+  {
+    name: "render_code",
+    dataSource: compute("shiki + playwright"),
+    description: translate("render_code.description"),
+    endpoint: {
+      method: "POST",
+      path: "/compute/code-image",
+      bodyParams: [
+        "code",
+        "lang",
+        "theme",
+        "title",
+        "windowChrome",
+        "background",
+        "fontSize",
+      ],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        code: {
+          type: "string",
+          description: translate("render_code.params.code"),
+        },
+        lang: {
+          type: "string",
+          description: translate("render_code.params.lang"),
+        },
+        theme: {
+          type: "string",
+          enum: [
+            "github-dark",
+            "github-light",
+            "dracula",
+            "nord",
+            "one-dark-pro",
+            "monokai",
+            "solarized-light",
+            "catppuccin-mocha",
+          ],
+          description: translate("render_code.params.theme"),
+        },
+        title: {
+          type: "string",
+          description: translate("render_code.params.title"),
+        },
+        windowChrome: {
+          type: "boolean",
+          description: translate("render_code.params.windowChrome"),
+        },
+        background: {
+          type: "string",
+          enum: ["gradient", "plain", "transparent"],
+          description: translate("render_code.params.background"),
+        },
+        fontSize: {
+          type: "integer",
+          description: translate("render_code.params.fontSize"),
+        },
+      },
+      required: ["code"],
+    },
+    display: {
+      activeVerb: "Rendering code card",
+      completedVerb: "Rendered code card",
+      subjectParam: "title",
+      subjectFormat: "truncate",
+    },
+  },
   {
     name: "convert_color",
     dataSource: compute("internal"),
@@ -1019,7 +1121,7 @@ export function getCreativeTools(
     endpoint: {
       method: "POST",
       path: "/creative/generate-image",
-      bodyParams: ["prompt", "referenceImages"],
+      bodyParams: ["prompt", "referenceImages", "transparentBackground"],
     },
     parameters: {
       type: "object",
@@ -1027,6 +1129,10 @@ export function getCreativeTools(
         prompt: {
           type: "string",
           description: translate("generate_image.params.prompt"),
+        },
+        transparentBackground: {
+          type: "boolean",
+          description: translate("generate_image.params.transparentBackground"),
         },
       },
       required: ["prompt"],

@@ -90,6 +90,8 @@ let cleanupInterval: NodeJS.Timeout | null = null;
 
 /**
  * Get or launch the singleton browser instance.
+ * Also exported (as getSharedBrowser) for services that need a one-shot
+ * rendering context (e.g. CodeImageService) without a tracked session.
  */
 async function getBrowser() {
   if (browser && browser.isConnected()) return browser;
@@ -1338,3 +1340,6 @@ export function getBrowserHealth() {
     maxSessions: MAX_SESSIONS,
   };
 }
+
+/** Shared warm Chromium for one-shot rendering (no session bookkeeping). */
+export { getBrowser as getSharedBrowser };
