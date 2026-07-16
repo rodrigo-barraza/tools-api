@@ -390,6 +390,47 @@ export function getSmartHomeTools(
       required: ["states"],
     },
   },
+  // Photo → lighting scene: node-vibrant palette extraction
+  // (https://github.com/Vibrant-Colors/node-vibrant) distributed across the
+  // room's lights via the existing batch states endpoint.
+  {
+    name: "paint_lights_from_image",
+    dataSource: onDemand("LIFX Cloud API"),
+    description: translate("paint_lights_from_image.description"),
+    endpoint: {
+      method: "POST",
+      path: "/lights/paint-from-image",
+      bodyParams: ["input", "selector", "brightness", "duration"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        input: {
+          type: "string",
+          description: translate("paint_lights_from_image.params.input"),
+        },
+        selector: {
+          type: "string",
+          description: translate("common.params.lifxSelector"),
+        },
+        brightness: {
+          type: "number",
+          description: translate("paint_lights_from_image.params.brightness"),
+        },
+        duration: {
+          type: "number",
+          description: translate("paint_lights_from_image.params.duration"),
+        },
+      },
+      required: ["input"],
+    },
+    display: {
+      activeVerb: "Painting lights from",
+      completedVerb: "Painted lights from",
+      subjectParam: "input",
+      subjectFormat: "truncate",
+    },
+  },
   {
     name: "adjust_light_state",
     dataSource: onDemand("LIFX Cloud API"),

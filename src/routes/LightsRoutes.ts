@@ -96,6 +96,80 @@ router.put(
   ),
 );
 
+// ─── POST /paint-from-image ─────────────────────────────────────
+// "Set the room to match this photo": extract the image's dominant colors
+// (node-vibrant) and distribute them across the matched lights.
+
+router.post(
+  "/paint-from-image",
+  asyncHandler(
+    async (req: Request, res: Response) => {
+      const { input, selector, brightness, duration } = req.body;
+      if (!input || typeof input !== "string") {
+        return res.status(400).json({
+          error:
+            "'input' (string) is required — image URL, base64 data URI, imageId, or local path",
+        });
+      }
+      if (
+        brightness !== undefined &&
+        (typeof brightness !== "number" || brightness < 0 || brightness > 1)
+      ) {
+        return res
+          .status(400)
+          .json({ error: "'brightness' must be a number between 0 and 1" });
+      }
+      const { paintLightsFromImage, renderPaletteStrip } = await import(
+        "../services/LightPainterService.ts"
+      );
+      const { default: MinioService } = await import(
+        "../services/MinioService.ts"
+      );
+      const { buildDisplay } = await import("../utilities.ts");
+
+      const result = await paintLightsFromImage({
+        input,
+        selector,
+        brightness,
+        duration,
+      });
+
+      // Palette-strip receipt is best-effort: painting the room is the
+      // deliverable, the visual only renders when MinIO is available.
+      let display;
+      try {
+        const strip = await renderPaletteStrip(result.colors);
+        const stripUrl = await MinioService.uploadToolAsset(
+          strip,
+          "image/png",
+        );
+        if (stripUrl) {
+          display = buildDisplay("image", stripUrl, { title: "Palette" });
+        }
+      } catch {
+        /* palette strip is optional */
+      }
+
+      return {
+        palette: result.colors.map((color) => ({
+          hex: color.hex,
+          population: color.population,
+        })),
+        assignments: result.assignments,
+        lights: result.lights,
+        ...(display && { display }),
+        message:
+          `Painted ${result.assignments.length} light(s) with the image's ` +
+          `${result.colors.length} dominant color(s): ${result.colors
+            .map((color) => color.hex)
+            .join(", ")}.`,
+      };
+    },
+    "Paint lights from image",
+    { errorStatus: 502, health },
+  ),
+);
+
 // ─── POST /toggle ───────────────────────────────────────────────
 // Toggle power on/off.
 

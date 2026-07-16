@@ -213,6 +213,42 @@ export function getCreativeTools(
       subjectFormat: "truncate",
     },
   },
+  // Inverse of convert_image_to_ascii: text → FIGfont ASCII lettering via
+  // figlet.js (https://github.com/patorjk/figlet.js).
+  {
+    name: "generate_ascii_banner",
+    dataSource: compute("figlet"),
+    description: translate("generate_ascii_banner.description"),
+    endpoint: {
+      method: "POST",
+      path: "/compute/ascii-banner",
+      bodyParams: ["text", "font", "width"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        text: {
+          type: "string",
+          description: translate("generate_ascii_banner.params.text"),
+        },
+        font: {
+          type: "string",
+          description: translate("generate_ascii_banner.params.font"),
+        },
+        width: {
+          type: "integer",
+          description: translate("generate_ascii_banner.params.width"),
+        },
+      },
+      required: ["text"],
+    },
+    display: {
+      activeVerb: "Generating banner",
+      completedVerb: "Generated banner",
+      subjectParam: "text",
+      subjectFormat: "truncate",
+    },
+  },
   {
     name: "convert_color",
     dataSource: compute("internal"),

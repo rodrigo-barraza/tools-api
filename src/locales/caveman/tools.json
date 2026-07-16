@@ -1511,5 +1511,13 @@
   "generate_avatar.params.style": "art style. notable: adventurer/lorelei/micah/personas (people), bottts (robot), pixel-art (retro sprite), avataaars (cartoon), fun-emoji, thumbs (cute blob), identicon/shapes/rings (abstract), initials (letter). '-neutral' = face-only. default adventurer.",
   "generate_avatar.params.size": "size in px, square (32-1024, default 256).",
   "generate_avatar.params.backgroundColor": "optional 6-digit hex background ('#b6e3f4'). omit for style default (usually transparent).",
-  "generate_avatar.params.format": "'png' (default, best for Discord) or 'svg' (scale forever)."
+  "generate_avatar.params.format": "'png' (default, best for Discord) or 'svg' (scale forever).",
+  "generate_ascii_banner.description": "make short text into big ASCII-art letter (FIGlet) — opposite of convert_image_to_ascii. 328 font from clean (Standard, Big, Slant) to fancy (Ghost, Isometric1, Larry 3D, ANSI Shadow). give back banner as text: put inside fenced code block so monospace art line up. good for header, celebration, retro flair. max 60 character.",
+  "generate_ascii_banner.params.text": "text to render (max 60 char — banner for short phrase).",
+  "generate_ascii_banner.params.font": "FIGlet font name (default 'Standard'). popular: Big, Slant, Small, Banner, Block, Doom, Ghost, Graffiti, Isometric1, Larry 3D, Ogre, Shadow, Speed, Star Wars, Sub-Zero, ANSI Shadow, 3-D, Bloody. unknown name give back list.",
+  "generate_ascii_banner.params.width": "max output width in character before wrap (40-200, default 80).",
+  "paint_lights_from_image.description": "make room light match photo: pull dominant color from image (vibrant/muted/dark/light swatch weighted by coverage) and spread across matched LIFX light, one color per bulb round-robin — sunset photo become sunset room. give back palette, which color went to which light, and palette-strip image. work with any image: generated image, search result, attachment.",
+  "paint_lights_from_image.params.input": "image to take color from: URL, base64 data URI, previous imageId, or local path.",
+  "paint_lights_from_image.params.brightness": "optional brightness 0.0-1.0 for all painted light. omit to keep current.",
+  "paint_lights_from_image.params.duration": "fade time in second (default 1)."
 }

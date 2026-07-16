@@ -1511,5 +1511,13 @@
   "generate_avatar.params.style": "Art style. Notable: adventurer/lorelei/micah/personas (illustrated people), bottts (robots), pixel-art (retro sprites), avataaars (cartoon), fun-emoji, thumbs (cute blobs), identicon/shapes/rings (abstract marks), initials (lettermark). '-neutral' variants are face-only crops. Default adventurer.",
   "generate_avatar.params.size": "Output size in px, square (32-1024, default 256).",
   "generate_avatar.params.backgroundColor": "Optional 6-digit hex background (e.g. '#b6e3f4'). Omit for the style's default (usually transparent).",
-  "generate_avatar.params.format": "'png' (default, best for Discord) or 'svg' (infinitely scalable)."
+  "generate_avatar.params.format": "'png' (default, best for Discord) or 'svg' (infinitely scalable).",
+  "generate_ascii_banner.description": "Render short text as large ASCII-art lettering (FIGlet) — the inverse of convert_image_to_ascii. 328 fonts from clean (Standard, Big, Slant) to ornate (Ghost, Isometric1, Larry 3D, ANSI Shadow). Returns the banner as text: present it inside a fenced code block so the monospace art lines up. Great for headers, celebrations, and retro flair. Max 60 characters.",
+  "generate_ascii_banner.params.text": "The text to render (max 60 chars — banners are for short phrases).",
+  "generate_ascii_banner.params.font": "FIGlet font name (default 'Standard'). Popular: Big, Slant, Small, Banner, Block, Doom, Ghost, Graffiti, Isometric1, Larry 3D, Ogre, Shadow, Speed, Star Wars, Sub-Zero, ANSI Shadow, 3-D, Bloody. Unknown names return the list.",
+  "generate_ascii_banner.params.width": "Max output width in characters before wrapping (40-200, default 80).",
+  "paint_lights_from_image.description": "Set the room's lights to match a photo: extracts the image's dominant colors (vibrant/muted/dark/light swatches weighted by coverage) and distributes them across the matched LIFX lights, one color per bulb round-robin — a sunset photo becomes a sunset room. Returns the palette, which color went to which light, and a palette-strip image. Works with any image source: generated images, search results, or attachments.",
+  "paint_lights_from_image.params.input": "The image to take colors from: URL, base64 data URI, a previous imageId, or a local workspace path.",
+  "paint_lights_from_image.params.brightness": "Optional brightness 0.0-1.0 applied to all painted lights. Omit to keep current brightness.",
+  "paint_lights_from_image.params.duration": "Fade time in seconds for the transition (default 1)."
 }

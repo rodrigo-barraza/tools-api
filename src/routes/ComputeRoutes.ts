@@ -987,6 +987,65 @@ router.get(
     res.send(Buffer.from(entry.buffer));
   }),
 );
+// ─── 7c-bis. ASCII Banner (figlet) ──────────────────────────
+// Inverse of convert_image_to_ascii: text → FIGfont ASCII lettering via
+// figlet.js (https://github.com/patorjk/figlet.js), the full FIGfont spec
+// with all kerning/smushing layout modes.
+const getFiglet = lazyImport<(typeof import("figlet"))["default"]>("figlet");
+const MAX_BANNER_TEXT_LENGTH = 60;
+const POPULAR_BANNER_FONTS = [
+  "Standard", "Big", "Slant", "Small", "Banner", "Block", "Doom", "Ghost",
+  "Graffiti", "Isometric1", "Larry 3D", "Ogre", "Shadow", "Small Slant",
+  "Speed", "Star Wars", "Sub-Zero", "ANSI Shadow", "3-D", "Bloody",
+];
+let bannerFontSet: Set<string> | null = null;
+router.post(
+  "/ascii-banner",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { text, font, width } = req.body;
+    if (!text || typeof text !== "string") {
+      return res
+        .status(400)
+        .json({ error: "'text' (string) is required" });
+    }
+    if (text.length > MAX_BANNER_TEXT_LENGTH) {
+      return res.status(400).json({
+        error: `Text exceeds ${MAX_BANNER_TEXT_LENGTH} characters — banners are for short phrases`,
+      });
+    }
+    try {
+      const figlet = await getFiglet();
+      bannerFontSet ??= new Set<string>(figlet.fontsSync());
+      const chosenFont = font || "Standard";
+      if (!bannerFontSet.has(chosenFont)) {
+        return res.status(400).json({
+          error:
+            `Unknown font '${chosenFont}'. Popular fonts: ${POPULAR_BANNER_FONTS.join(", ")} ` +
+            `(${bannerFontSet.size} available in total).`,
+        });
+      }
+      const banner = figlet.textSync(text, {
+        font: chosenFont as import("figlet").FontName,
+        width: Math.min(Math.max(parseInt(width) || 80, 40), 200),
+        whitespaceBreak: true,
+      });
+      const lines = banner.replace(/\s+$/, "").split("\n");
+      const lineLengths = lines.map((line: string) => line.length);
+      res.json({
+        banner,
+        font: chosenFont,
+        lineCount: lines.length,
+        widestLine: Math.max(...lineLengths, 0),
+        message:
+          "Present the banner inside a fenced code block (```) so the monospace art lines up.",
+      });
+    } catch (error: unknown) {
+      res
+        .status(400)
+        .json({ error: `Banner generation failed: ${errorMessage(error)}` });
+    }
+  }),
+);
 // ─── 7d. Deterministic Avatars (DiceBear) ───────────────────
 const avatarStore = new PersistentStore<{ buffer: Buffer; mimeType: string }>(
   "avatar",
@@ -3876,6 +3935,7 @@ export function getComputeHealth() {
     barcodeScan: "on-demand (zxing-wasm)",
     codeImage: "on-demand (shiki + playwright)",
     avatar: "on-demand (@dicebear/core)",
+    asciiBanner: "on-demand (figlet)",
     latex: "on-demand (KaTeX CDN embed)",
     diagram: "on-demand (Mermaid CDN embed)",
     textDiff: "on-demand (diff)",

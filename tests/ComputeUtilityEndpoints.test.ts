@@ -610,6 +610,57 @@ describe("POST /compute/code-image", () => {
 });
 
 // ═══════════════════════════════════════════════════════════════
+//  7c-bis. ASCII Banner — /compute/ascii-banner
+// ═══════════════════════════════════════════════════════════════
+
+describe("POST /compute/ascii-banner", () => {
+  it("returns 400 when text is missing", async () => {
+    const response = await request(app).post("/compute/ascii-banner").send({});
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain("text");
+  });
+
+  it("returns 400 when text is too long", async () => {
+    const response = await request(app)
+      .post("/compute/ascii-banner")
+      .send({ text: "x".repeat(100) });
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain("60");
+  });
+
+  it("rejects unknown fonts with popular suggestions", async () => {
+    const response = await request(app)
+      .post("/compute/ascii-banner")
+      .send({ text: "hi", font: "Comic Sans" });
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain("Standard");
+  });
+
+  it("renders a multi-line banner with metadata", async () => {
+    const response = await request(app)
+      .post("/compute/ascii-banner")
+      .send({ text: "PRISM" });
+
+    expect(response.status).toBe(200);
+    expect(response.body.font).toBe("Standard");
+    expect(response.body.lineCount).toBeGreaterThan(3);
+    expect(response.body.widestLine).toBeGreaterThan(10);
+    // The banner spells the text in FIGlet art — sanity check a glyph edge
+    expect(response.body.banner).toContain("_");
+    expect(response.body.message).toContain("code block");
+  });
+
+  it("honors a non-default font", async () => {
+    const response = await request(app)
+      .post("/compute/ascii-banner")
+      .send({ text: "hi", font: "Banner" });
+    expect(response.status).toBe(200);
+    expect(response.body.font).toBe("Banner");
+    expect(response.body.banner.length).toBeGreaterThan(10);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
 //  7d. Deterministic Avatars — /compute/avatar
 // ═══════════════════════════════════════════════════════════════
 
