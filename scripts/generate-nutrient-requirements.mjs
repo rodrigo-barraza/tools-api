@@ -8,14 +8,24 @@
 //   - Human: NASEM/IOM Dietary Reference Intakes (adults 19-50), sodium CDRR
 //     (2019), WHO free-sugar guideline, Health Canada caffeine guidance.
 //     Amino acids: IOM/WHO adult requirements in mg per kg body weight per day.
-//   - Canine/Feline: AAFCO Dog and Cat Food Nutrient Profiles, "per 1000 kcal
-//     ME" basis (adult maintenance and growth profiles).
+//   - Canine/Feline: AAFCO Dog and Cat Food Nutrient Profiles, transcribed from
+//     the "BASED ON CALORIE CONTENT" (per 1000 kcal ME) tables of AAFCO Official
+//     Publication Appendix A (2014 revision), which presume a caloric density of
+//     4000 kcal ME/kg DM. Both growth & reproduction and adult maintenance
+//     columns are carried, plus the published Maximum column.
+//     https://www.aafco.org/wp-content/uploads/2023/01/Pet_Food_Report_Annual_2014-Appendix_A-Revised_AAFCO_Nutrient_Profiles-Final_092214.pdf
 //
 // Metrics understood by NutritionRequirementFetcher / NutrientGapFetcher:
 //   RDA, AI, UL, RECOMMENDATION, GUIDELINE_MAX (informational, never a gap
 //   target), RDA_multiplier_per_kg (scaled by weightKg),
-//   MIN_per_1000kcal / MAX_per_1000kcal (scaled by caloricIntake / 1000),
+//   MIN_per_1000kcal / MAX_per_1000kcal (scaled by caloricIntake / 1000;
+//   MAX_per_1000kcal acts as the safety ceiling for pets, like UL for humans),
 //   NO_DRI (compositional marker).
+//
+// Combined nutrient ids (methionine_cystine, phenylalanine_tyrosine, epa_dha)
+// are requirements published as the SUM of two nutrients. NutrientGapFetcher
+// maps each to several food columns and sums intake across them — do not
+// rename one to a single-nutrient id, or intake will be understated.
 //
 // Units must stay convertible (g/mg/mcg) to the food DB columns in
 // src/constants.ts NUTRITION_*_FIELDS — see FOOD_COLUMN_UNITS in
@@ -86,21 +96,21 @@ const HUMAN = [
   ["fluoride", "AI", 4, 3, "mg"],
   ["fluoride", "UL", 10, 10, "mg"],
   // Essential amino acids — mg per kg body weight per day (IOM/WHO).
-  // methionine row = total sulfur AAs (met+cys); phenylalanine row = total
-  // aromatic AAs (phe+tyr) — matches how the requirement tables publish them.
+  // The sulfur and aromatic AAs are published only as combined totals, so they
+  // use combined ids that the gap fetcher scores against both food columns.
   ["histidine", "RDA_multiplier_per_kg", 14, 14, "mg"],
   ["isoleucine", "RDA_multiplier_per_kg", 19, 19, "mg"],
   ["leucine", "RDA_multiplier_per_kg", 42, 42, "mg"],
   ["lysine", "RDA_multiplier_per_kg", 38, 38, "mg"],
-  ["methionine", "RDA_multiplier_per_kg", 19, 19, "mg"],
-  ["phenylalanine", "RDA_multiplier_per_kg", 33, 33, "mg"],
+  ["methionine_cystine", "RDA_multiplier_per_kg", 19, 19, "mg"],
+  ["phenylalanine_tyrosine", "RDA_multiplier_per_kg", 33, 33, "mg"],
   ["threonine", "RDA_multiplier_per_kg", 20, 20, "mg"],
   ["tryptophan", "RDA_multiplier_per_kg", 5, 5, "mg"],
   ["valine", "RDA_multiplier_per_kg", 24, 24, "mg"],
   // Essential fatty acids
   ["c18_d2_n6_cis_cis", "AI", 17, 12, "g"], // linoleic
   ["c18_d3_n3_cis_cis_cis", "AI", 1.6, 1.1, "g"], // alpha-linolenic
-  ["c22_d6_n3", "RECOMMENDATION", 0.25, 0.25, "g"], // EPA+DHA combined guidance
+  ["epa_dha", "RECOMMENDATION", 0.25, 0.25, "g"], // EPA+DHA combined guidance
 ];
 
 for (const [nutrient, metric, male, female, unit] of HUMAN) {
@@ -108,71 +118,168 @@ for (const [nutrient, metric, male, female, unit] of HUMAN) {
   add("human", "adult_female", "US_DRI", nutrient, metric, female, unit);
 }
 
-// ─── Canine — AAFCO (per 1000 kcal ME) ─────────────────────────
-const CANINE_ADULT = [
-  ["protein", 45, "g_per_1000kcal"],
-  ["lipid", 13.8, "g_per_1000kcal"],
-  ["calcium", 1250, "mg_per_1000kcal"],
-  ["phosphorus", 1000, "mg_per_1000kcal"],
-  ["potassium", 1500, "mg_per_1000kcal"],
-  ["sodium", 200, "mg_per_1000kcal"],
-  ["magnesium", 150, "mg_per_1000kcal"],
-  ["iron", 10, "mg_per_1000kcal"],
-  ["copper", 1.83, "mg_per_1000kcal"],
-  ["manganese", 1.25, "mg_per_1000kcal"],
-  ["zinc", 20, "mg_per_1000kcal"],
-  ["selenium", 80, "mcg_per_1000kcal"],
-  ["iodine", 250, "mcg_per_1000kcal"],
-  ["vitamin_a", 1250, "mcg_per_1000kcal"],
-  ["vitamin_d", 3.1, "mcg_per_1000kcal"],
-  ["alpha_tocopherol", 8.4, "mg_per_1000kcal"],
-  ["thiamin", 0.56, "mg_per_1000kcal"],
-  ["riboflavin", 1.3, "mg_per_1000kcal"],
-  ["choline", 340, "mg_per_1000kcal"],
-];
-for (const [nutrient, value, unit] of CANINE_ADULT) {
-  add("canine", "adult_maintenance", "AAFCO", nutrient, "MIN_per_1000kcal", value, unit);
-}
-const CANINE_PUPPY = [
-  ["protein", 56.3, "g_per_1000kcal"],
-  ["lipid", 21.3, "g_per_1000kcal"],
-  ["calcium", 3000, "mg_per_1000kcal"],
-  ["phosphorus", 2500, "mg_per_1000kcal"],
-];
-for (const [nutrient, value, unit] of CANINE_PUPPY) {
-  add("canine", "puppy", "AAFCO", nutrient, "MIN_per_1000kcal", value, unit);
-}
-add("canine", "puppy", "AAFCO", "calcium", "MAX_per_1000kcal", 4500, "mg_per_1000kcal");
+// ─── AAFCO transcription helpers ───────────────────────────────
+// AAFCO publishes the fat-soluble vitamins in IU and several minerals in
+// g or mg; the food DB stores mcg RAE (A), mcg (D), mg alpha-tocopherol (E),
+// mg (macrominerals) and mcg (trace). Convert at transcription time so the CSV
+// is directly comparable to food columns, and keep the published figure visible
+// in the call so a reader can check it against the source table.
+const round4 = (n) => Number(n.toFixed(4));
+const iuVitaminA = (iu) => round4(iu * 0.3); // 1 IU retinol = 0.3 mcg RAE
+const iuVitaminD = (iu) => round4(iu * 0.025); // 1 IU = 0.025 mcg
+const iuVitaminE = (iu) => round4(iu * 0.67); // 1 IU d-alpha-tocopherol = 0.67 mg
+const gToMg = (grams) => round4(grams * 1000);
+const mgToMcg = (milligrams) => round4(milligrams * 1000);
 
-// ─── Feline — AAFCO (per 1000 kcal ME) ─────────────────────────
-const FELINE_ADULT = [
-  ["protein", 65, "g_per_1000kcal"],
-  ["lipid", 22.5, "g_per_1000kcal"],
-  ["calcium", 1500, "mg_per_1000kcal"],
-  ["phosphorus", 1250, "mg_per_1000kcal"],
-  ["potassium", 1500, "mg_per_1000kcal"],
-  ["sodium", 500, "mg_per_1000kcal"],
-  ["magnesium", 100, "mg_per_1000kcal"],
-  ["iron", 20, "mg_per_1000kcal"],
-  ["copper", 1.25, "mg_per_1000kcal"],
-  ["manganese", 1.9, "mg_per_1000kcal"],
-  ["zinc", 18.75, "mg_per_1000kcal"],
-  ["selenium", 75, "mcg_per_1000kcal"],
-  ["taurine", 250, "mg_per_1000kcal"],
+// Emit a species profile. Rows are [nutrient, growth, adultMaintenance, unit];
+// a null column means the value is published as "ND" (Not Determined) for that
+// life stage and must not become a target. Stages are
+// [lifeStage, columnIndex, maxOverrides].
+const emitPetProfile = (species, stages, minRows, maxRows) => {
+  for (const [lifeStage, column, maxOverrides] of stages) {
+    for (const [nutrient, ...cols] of minRows) {
+      if (cols[column] === null) continue;
+      add(species, lifeStage, "AAFCO", nutrient, "MIN_per_1000kcal", cols[column], cols[2]);
+    }
+    for (const [nutrient, ...cols] of maxRows) {
+      const value = nutrient in maxOverrides ? maxOverrides[nutrient] : cols[column];
+      if (value === null) continue;
+      add(species, lifeStage, "AAFCO", nutrient, "MAX_per_1000kcal", value, cols[2]);
+    }
+  }
+};
+
+// ─── Canine — AAFCO Dog Food Nutrient Profiles (per 1000 kcal ME) ─
+const CANINE_MIN = [
+  ["protein", 56.3, 45.0, "g_per_1000kcal"],
+  ["arginine", 2.5, 1.28, "g_per_1000kcal"],
+  ["histidine", 1.1, 0.48, "g_per_1000kcal"],
+  ["isoleucine", 1.78, 0.95, "g_per_1000kcal"],
+  ["leucine", 3.23, 1.7, "g_per_1000kcal"],
+  ["lysine", 2.25, 1.58, "g_per_1000kcal"],
+  ["methionine", 0.88, 0.83, "g_per_1000kcal"],
+  ["methionine_cystine", 1.75, 1.63, "g_per_1000kcal"],
+  ["phenylalanine", 2.08, 1.13, "g_per_1000kcal"],
+  ["phenylalanine_tyrosine", 3.25, 1.85, "g_per_1000kcal"],
+  ["threonine", 2.6, 1.2, "g_per_1000kcal"],
+  ["tryptophan", 0.5, 0.4, "g_per_1000kcal"],
+  ["valine", 1.7, 1.23, "g_per_1000kcal"],
+  ["lipid", 21.3, 13.8, "g_per_1000kcal"], // crude fat
+  ["c18_d2_n6_cis_cis", 3.3, 2.8, "g_per_1000kcal"], // linoleic
+  ["c18_d3_n3_cis_cis_cis", 0.2, null, "g_per_1000kcal"], // alpha-linolenic
+  ["epa_dha", 0.1, null, "g_per_1000kcal"],
+  ["calcium", gToMg(3.0), gToMg(1.25), "mg_per_1000kcal"],
+  ["phosphorus", gToMg(2.5), gToMg(1.0), "mg_per_1000kcal"],
+  ["potassium", gToMg(1.5), gToMg(1.5), "mg_per_1000kcal"],
+  ["sodium", gToMg(0.8), gToMg(0.2), "mg_per_1000kcal"],
+  ["chloride", gToMg(1.1), gToMg(0.3), "mg_per_1000kcal"],
+  ["magnesium", gToMg(0.15), gToMg(0.15), "mg_per_1000kcal"],
+  ["iron", 22, 10, "mg_per_1000kcal"],
+  ["copper", 3.1, 1.83, "mg_per_1000kcal"],
+  ["manganese", 1.8, 1.25, "mg_per_1000kcal"],
+  ["zinc", 25, 20, "mg_per_1000kcal"],
+  ["iodine", mgToMcg(0.25), mgToMcg(0.25), "mcg_per_1000kcal"],
+  ["selenium", mgToMcg(0.09), mgToMcg(0.08), "mcg_per_1000kcal"],
+  ["vitamin_a", iuVitaminA(1250), iuVitaminA(1250), "mcg_per_1000kcal"],
+  ["vitamin_d", iuVitaminD(125), iuVitaminD(125), "mcg_per_1000kcal"],
+  ["alpha_tocopherol", iuVitaminE(12.5), iuVitaminE(12.5), "mg_per_1000kcal"],
+  ["thiamin", 0.56, 0.56, "mg_per_1000kcal"],
+  ["riboflavin", 1.3, 1.3, "mg_per_1000kcal"],
+  ["vitamin_b5", 3.0, 3.0, "mg_per_1000kcal"], // pantothenic acid
+  ["niacin", 3.4, 3.4, "mg_per_1000kcal"],
+  ["vitamin_b6", 0.38, 0.38, "mg_per_1000kcal"], // pyridoxine
+  ["folate", mgToMcg(0.054), mgToMcg(0.054), "mcg_per_1000kcal"],
+  ["cyanocobalamin", mgToMcg(0.007), mgToMcg(0.007), "mcg_per_1000kcal"],
+  ["choline", 340, 340, "mg_per_1000kcal"],
 ];
-for (const [nutrient, value, unit] of FELINE_ADULT) {
-  add("feline", "adult_maintenance", "AAFCO", nutrient, "MIN_per_1000kcal", value, unit);
-}
-const FELINE_KITTEN = [
-  ["protein", 75, "g_per_1000kcal"],
-  ["lipid", 22.5, "g_per_1000kcal"],
-  ["calcium", 2400, "mg_per_1000kcal"],
-  ["phosphorus", 2000, "mg_per_1000kcal"],
-  ["taurine", 250, "mg_per_1000kcal"],
+// The Maximum column is a single column in the source table, so it applies to
+// growth and adult maintenance alike.
+const CANINE_MAX = [
+  ["calcium", gToMg(6.25), gToMg(6.25), "mg_per_1000kcal"],
+  ["phosphorus", gToMg(4.0), gToMg(4.0), "mg_per_1000kcal"],
+  ["iodine", mgToMcg(2.75), mgToMcg(2.75), "mcg_per_1000kcal"],
+  ["selenium", mgToMcg(0.5), mgToMcg(0.5), "mcg_per_1000kcal"],
+  ["vitamin_a", iuVitaminA(62500), iuVitaminA(62500), "mcg_per_1000kcal"],
+  ["vitamin_d", iuVitaminD(750), iuVitaminD(750), "mcg_per_1000kcal"],
 ];
-for (const [nutrient, value, unit] of FELINE_KITTEN) {
-  add("feline", "kitten", "AAFCO", nutrient, "MIN_per_1000kcal", value, unit);
-}
+emitPetProfile(
+  "canine",
+  [
+    ["puppy", 0, {}],
+    // Excess calcium during growth causes developmental orthopedic disease in
+    // large breeds, so AAFCO caps formulas that may be fed to puppies who will
+    // mature at 70 lb or more at 4.5 g/1000 kcal rather than the general 6.25.
+    ["puppy_large_breed", 0, { calcium: gToMg(4.5) }],
+    ["adult_maintenance", 1, {}],
+  ],
+  CANINE_MIN,
+  CANINE_MAX,
+);
+
+// ─── Feline — AAFCO Cat Food Nutrient Profiles (per 1000 kcal ME) ─
+const FELINE_MIN = [
+  ["protein", 75, 65, "g_per_1000kcal"],
+  ["arginine", 3.1, 2.6, "g_per_1000kcal"],
+  ["histidine", 0.83, 0.78, "g_per_1000kcal"],
+  ["isoleucine", 1.4, 1.3, "g_per_1000kcal"],
+  ["leucine", 3.2, 3.1, "g_per_1000kcal"],
+  ["lysine", 3.0, 2.08, "g_per_1000kcal"],
+  ["methionine", 1.55, 0.5, "g_per_1000kcal"],
+  ["methionine_cystine", 2.75, 1.0, "g_per_1000kcal"],
+  ["phenylalanine", 1.3, 1.05, "g_per_1000kcal"],
+  ["phenylalanine_tyrosine", 4.8, 3.83, "g_per_1000kcal"],
+  ["threonine", 1.83, 1.83, "g_per_1000kcal"],
+  ["tryptophan", 0.63, 0.4, "g_per_1000kcal"],
+  ["valine", 1.55, 1.55, "g_per_1000kcal"],
+  ["lipid", 22.5, 22.5, "g_per_1000kcal"], // crude fat
+  ["c18_d2_n6_cis_cis", 1.4, 1.4, "g_per_1000kcal"], // linoleic
+  ["c18_d3_n3_cis_cis_cis", 0.05, null, "g_per_1000kcal"], // alpha-linolenic
+  // Cats cannot desaturate linoleic acid to arachidonic at a useful rate, so
+  // unlike dogs and humans they have a dietary arachidonic requirement.
+  ["c20_d4_n6", 0.05, 0.05, "g_per_1000kcal"],
+  ["epa_dha", 0.03, null, "g_per_1000kcal"],
+  ["calcium", gToMg(2.5), gToMg(1.5), "mg_per_1000kcal"],
+  ["phosphorus", gToMg(2.0), gToMg(1.25), "mg_per_1000kcal"],
+  ["potassium", gToMg(1.5), gToMg(1.5), "mg_per_1000kcal"],
+  ["sodium", gToMg(0.5), gToMg(0.5), "mg_per_1000kcal"],
+  ["chloride", gToMg(0.75), gToMg(0.75), "mg_per_1000kcal"],
+  ["magnesium", gToMg(0.2), gToMg(0.1), "mg_per_1000kcal"],
+  ["iron", 20.0, 20.0, "mg_per_1000kcal"],
+  ["copper", 3.75, 1.25, "mg_per_1000kcal"], // extruded-diet figures
+  ["manganese", 1.9, 1.9, "mg_per_1000kcal"],
+  ["zinc", 18.8, 18.8, "mg_per_1000kcal"],
+  ["iodine", mgToMcg(0.45), mgToMcg(0.15), "mcg_per_1000kcal"],
+  ["selenium", mgToMcg(0.075), mgToMcg(0.075), "mcg_per_1000kcal"],
+  ["vitamin_a", iuVitaminA(1667), iuVitaminA(833), "mcg_per_1000kcal"],
+  ["vitamin_d", iuVitaminD(70), iuVitaminD(70), "mcg_per_1000kcal"],
+  ["alpha_tocopherol", iuVitaminE(10), iuVitaminE(10), "mg_per_1000kcal"],
+  ["phylloquinone", mgToMcg(0.025), mgToMcg(0.025), "mcg_per_1000kcal"],
+  ["thiamin", 1.4, 1.4, "mg_per_1000kcal"],
+  ["riboflavin", 1.0, 1.0, "mg_per_1000kcal"],
+  ["vitamin_b5", 1.44, 1.44, "mg_per_1000kcal"], // pantothenic acid
+  ["niacin", 15, 15, "mg_per_1000kcal"],
+  ["vitamin_b6", 1.0, 1.0, "mg_per_1000kcal"], // pyridoxine
+  ["folate", mgToMcg(0.2), mgToMcg(0.2), "mcg_per_1000kcal"],
+  ["biotin", mgToMcg(0.018), mgToMcg(0.018), "mcg_per_1000kcal"],
+  ["cyanocobalamin", mgToMcg(0.005), mgToMcg(0.005), "mcg_per_1000kcal"],
+  ["choline", 600, 600, "mg_per_1000kcal"],
+  ["taurine", gToMg(0.25), gToMg(0.25), "mg_per_1000kcal"], // extruded
+];
+const FELINE_MAX = [
+  ["methionine", 3.75, 3.75, "g_per_1000kcal"],
+  ["tryptophan", 4.25, 4.25, "g_per_1000kcal"],
+  ["vitamin_a", iuVitaminA(83325), iuVitaminA(83325), "mcg_per_1000kcal"],
+  ["vitamin_d", iuVitaminD(7520), iuVitaminD(7520), "mcg_per_1000kcal"],
+];
+emitPetProfile(
+  "feline",
+  [
+    ["kitten", 0, {}],
+    ["adult_maintenance", 1, {}],
+  ],
+  FELINE_MIN,
+  FELINE_MAX,
+);
 
 // ─── Emit ──────────────────────────────────────────────────────
 const header = "species,demographic_life_stage,authority,nutrient_id,metric,value_numeric,unit";

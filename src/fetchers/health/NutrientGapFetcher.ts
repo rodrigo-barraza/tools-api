@@ -29,7 +29,12 @@ import {
 
 // ─── Mapping: requirement nutrient_id → food CSV column ────────
 
-const REQUIREMENT_TO_FOOD_COLUMN = {
+// Requirement nutrient_id → food column(s). An array means the requirement is
+// published as the SUM of several nutrients (e.g. AAFCO/IOM give a single
+// methionine-cystine figure), so intake is summed across those columns —
+// scoring such a target against one column alone understates intake and
+// invents deficiencies.
+const REQUIREMENT_TO_FOOD_COLUMN: Record<string, string | string[]> = {
   // Direct matches (most nutrients share the same ID)
   protein: "protein",
   carbohydrate: "carbohydrate",
@@ -77,12 +82,16 @@ const REQUIREMENT_TO_FOOD_COLUMN = {
   tyrosine: "tyrosine",
   arginine: "arginine",
   taurine: "taurine",
+  // Combined amino acid targets: total sulfur AAs and total aromatic AAs
+  methionine_cystine: ["methionine", "cystine"],
+  phenylalanine_tyrosine: ["phenylalanine", "tyrosine"],
   // Lipids
   c18_d2_n6_cis_cis: "c18_d2_n6_cis_cis",
   c18_d3_n3_cis_cis_cis: "c18_d3_n3_cis_cis_cis",
   c20_d5_n3: "c20_d5_n3",
   c22_d6_n3: "c22_d6_n3_dha",
   c20_d4_n6: "c20_d4_undifferentiated",
+  epa_dha: ["c20_d5_n3", "c22_d6_n3_dha"],
   // Sterols
   cholesterol: "cholesterol",
   phytosterol: "phytosterol",
@@ -364,7 +373,7 @@ export function analyzeNutrientGaps({
 
   const typedRequirements = requirements as TargetProfileResult;
 
-  // ── Build reverse label→column map for matching ──────────────
+  // ── Build column→label map for matching ─────────────────────
   const ALL_FIELD_MAPS: Record<string, string> = {
     ...NUTRITION_MACRO_FIELDS,
     ...NUTRITION_MINERAL_FIELDS,
@@ -374,29 +383,29 @@ export function analyzeNutrientGaps({
     ...NUTRITION_STEROL_FIELDS,
   };
 
-  const labelToColumn: Record<string, string> = {};
-  for (const [columnKey, label] of Object.entries(ALL_FIELD_MAPS)) {
-    labelToColumn[label] = columnKey;
-  }
-
   // ── Gap analysis per nutrient ────────────────────────────────
   const gaps: NutrientGapItem[] = [];
   const { requirements: requestMap } = typedRequirements;
 
   for (const [nutrientId, metrics] of Object.entries(requestMap)) {
-    // Find the food column for this requirement nutrient
-    const foodColumn =
-      REQUIREMENT_TO_FOOD_COLUMN[
-        nutrientId as keyof typeof REQUIREMENT_TO_FOOD_COLUMN
-      ];
-    if (!foodColumn) continue;
+    // Find the food column(s) backing this requirement nutrient
+    const mapping = REQUIREMENT_TO_FOOD_COLUMN[nutrientId];
+    if (!mapping) continue;
+    const foodColumns = Array.isArray(mapping) ? mapping : [mapping];
 
-    // Find the label used in consumed data
-    const label = ALL_FIELD_MAPS[foodColumn];
-    if (!label) continue;
+    // Some requirements (iodine, taurine) have no food column at all — they
+    // stay informational in the requirement profile rather than being scored.
+    // A combined target needs every component, or its intake would be partial.
+    const labels = foodColumns.map((column) => ALL_FIELD_MAPS[column]);
+    if (labels.some((label) => !label)) continue;
 
-    const consumedValue = consumed[label] || 0;
-    const foodUnit = FOOD_COLUMN_UNITS[foodColumn] || "unknown";
+    // Components of a combined target come from one field group, so they share
+    // a unit and can be summed directly.
+    const consumedValue = labels.reduce(
+      (total, label) => total + (consumed[label] || 0),
+      0,
+    );
+    const foodUnit = FOOD_COLUMN_UNITS[foodColumns[0]] || "unknown";
 
     // Find target value (use RDA_multiplier_per_kg > RDA > AI > MIN)
     let targetValue: number | null = null;
@@ -408,12 +417,14 @@ export function analyzeNutrientGaps({
       if (metric === "NO_DRI") continue;
 
       const metricLower = metric.toLowerCase();
-      if (metricLower === "ul") {
+      // UL (human) and MAX_per_1000kcal (AAFCO pet maxima) are the same idea:
+      // a safety ceiling to measure intake against, not a target to hit.
+      if (metricLower === "ul" || metricLower === "max_per_1000kcal") {
         ulValue = data.value;
         continue;
       }
+      // GUIDELINE_MAX stays informational — it is advice, not a tolerable limit.
       if (metricLower.includes("max")) continue;
-      if (metricLower.includes("guideline_max")) continue;
 
       // Priority: RDA_multiplier_per_kg (weight-personalized) > RDA > AI > MIN_per_1000kcal > RECOMMENDATION
       if (!targetValue || priorityOf(metric) > priorityOf(targetMetric)) {

@@ -212,6 +212,75 @@ describe("calculateTargetProfile — regenerated DRI/AAFCO dataset", () => {
   });
 });
 
+// ─── AAFCO pet profiles: full transcription ────────────────────
+
+describe("calculateTargetProfile — AAFCO pet profiles", () => {
+  const profileOf = (species: string, lifeStage?: string) =>
+    (
+      calculateTargetProfile({ species, lifeStage, caloricIntake: 1000 }) as {
+        requirements: Record<string, Record<string, { value: number; unit: string }>>;
+      }
+    ).requirements;
+
+  it("converts the IU-published fat-soluble vitamins to food-DB units", () => {
+    const dog = profileOf("canine");
+    // AAFCO publishes 1250 IU/1000 kcal; the IU figure was previously emitted
+    // verbatim as mcg, overstating the target 3.3x and faking a deficiency.
+    expect(dog.vitamin_a.MIN_per_1000kcal.value).toBe(375); // 1250 IU x 0.3
+    expect(dog.vitamin_a.MIN_per_1000kcal.unit).toBe("mcg");
+    expect(dog.vitamin_d.MIN_per_1000kcal.value).toBeCloseTo(3.125); // 125 IU
+    expect(dog.alpha_tocopherol.MIN_per_1000kcal.value).toBeCloseTo(8.375); // 12.5 IU
+  });
+
+  it("carries the canine amino acid, fatty acid and B-vitamin panels", () => {
+    const dog = profileOf("canine");
+    expect(dog.arginine.MIN_per_1000kcal.value).toBeCloseTo(1.28);
+    expect(dog.methionine_cystine.MIN_per_1000kcal.value).toBeCloseTo(1.63);
+    expect(dog.phenylalanine_tyrosine.MIN_per_1000kcal.value).toBeCloseTo(1.85);
+    expect(dog.c18_d2_n6_cis_cis.MIN_per_1000kcal.value).toBeCloseTo(2.8);
+    expect(dog.vitamin_b5.MIN_per_1000kcal.value).toBeCloseTo(3.0);
+    expect(dog.folate.MIN_per_1000kcal.value).toBeCloseTo(54);
+    expect(dog.cyanocobalamin.MIN_per_1000kcal.value).toBeCloseTo(7);
+  });
+
+  it("gives cats the nutrients their obligate carnivory requires", () => {
+    const cat = profileOf("feline");
+    // Cats cannot make arachidonic acid from linoleic the way dogs can.
+    expect(cat.c20_d4_n6.MIN_per_1000kcal.value).toBeCloseTo(0.05);
+    expect(cat.taurine.MIN_per_1000kcal.value).toBe(250);
+    expect(cat.arginine.MIN_per_1000kcal.value).toBeCloseTo(2.6);
+    expect(cat.vitamin_a.MIN_per_1000kcal.value).toBeCloseTo(249.9); // 833 IU
+    expect(cat.niacin.MIN_per_1000kcal.value).toBe(15);
+    expect(cat.cyanocobalamin.MIN_per_1000kcal.value).toBeCloseTo(5);
+  });
+
+  it("uses the published kitten calcium minimum", () => {
+    expect(profileOf("feline", "kitten").calcium.MIN_per_1000kcal.value).toBe(2500);
+  });
+
+  it("omits nutrients published as ND for a life stage", () => {
+    // Adult dog alpha-linolenic is "Not Determined"; growth has a real minimum.
+    expect(profileOf("canine").c18_d3_n3_cis_cis_cis).toBeUndefined();
+    expect(
+      profileOf("canine", "puppy").c18_d3_n3_cis_cis_cis.MIN_per_1000kcal.value,
+    ).toBeCloseTo(0.2);
+  });
+
+  it("caps large-breed puppy calcium tighter than general growth", () => {
+    expect(profileOf("canine", "puppy").calcium.MAX_per_1000kcal.value).toBe(6250);
+    expect(
+      profileOf("canine", "puppy_large_breed").calcium.MAX_per_1000kcal.value,
+    ).toBe(4500);
+  });
+
+  it("publishes safety ceilings for the pet toxicity nutrients", () => {
+    const dog = profileOf("canine");
+    expect(dog.vitamin_a.MAX_per_1000kcal.value).toBe(18750); // 62500 IU
+    expect(dog.vitamin_d.MAX_per_1000kcal.value).toBeCloseTo(18.75); // 750 IU
+    expect(profileOf("feline").vitamin_d.MAX_per_1000kcal.value).toBeCloseTo(188);
+  });
+});
+
 // ─── Gap analysis: end-to-end revival ──────────────────────────
 
 describe("analyzeNutrientGaps — revived end-to-end", () => {
@@ -245,6 +314,36 @@ describe("analyzeNutrientGaps — revived end-to-end", () => {
     )!;
     expect(proteinFixed.metric).toBe("RDA");
     expect(proteinFixed.target).toBe(56); // adult_male reference-weight RDA
+  });
+
+  it("scores a combined target against every component nutrient", () => {
+    // The met+cys requirement is a sum, so intake must count cystine too —
+    // scoring it against methionine alone understates intake and fakes a gap.
+    const food = searchFoods("chicken", { limit: 1 });
+    const aminoAcids = ("foods" in food && food.foods[0].perHundredGrams.aminoAcids) as Record<string, number>;
+    const expected = (aminoAcids.methionine_g + aminoAcids.cystine_g) * 3; // 300 g
+
+    const result = analyzeNutrientGaps({
+      foods: [{ name: "chicken", grams: 300 }],
+      species: "canine",
+      caloricIntake: 1000,
+    });
+    const combined = result.gaps!.find((gap) => gap.nutrient === "methionine_cystine")!;
+    const methionineOnly = result.gaps!.find((gap) => gap.nutrient === "methionine")!;
+
+    expect(combined.consumed).toBeCloseTo(expected, 3);
+    expect(combined.consumed).toBeGreaterThan(methionineOnly.consumed);
+  });
+
+  it("measures pet intake against AAFCO maxima, not just minima", () => {
+    const result = analyzeNutrientGaps({
+      foods: [{ name: "chicken", grams: 300 }],
+      species: "canine",
+      caloricIntake: 1000,
+    });
+    const calcium = result.gaps!.find((gap) => gap.nutrient === "calcium")!;
+    expect(calcium.metric).toBe("MIN_per_1000kcal");
+    expect(calcium.percentageUL).not.toBeNull(); // ceiling comes from MAX_per_1000kcal
   });
 
   it("meal plans pick up micronutrient targets from the dataset", () => {
