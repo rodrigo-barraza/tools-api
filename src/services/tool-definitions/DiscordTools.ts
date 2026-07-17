@@ -23,6 +23,7 @@ export function getDiscordTools(
         "userId",
         "username",
         "query",
+        "messageId",
         "before",
         "after",
         "limit",
@@ -51,6 +52,10 @@ export function getDiscordTools(
         query: {
           type: "string",
           description: translate("search_discord_messages.params.query"),
+        },
+        messageId: {
+          type: "string",
+          description: translate("search_discord_messages.params.messageId"),
         },
         before: {
           type: "string",

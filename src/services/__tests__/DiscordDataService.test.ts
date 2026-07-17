@@ -18,7 +18,8 @@ function createChainableFindMock() {
   const projectMock = vi.fn(() => ({ toArray: toArrayMock }));
   const limitMock = vi.fn(() => ({ project: projectMock }));
   const sortMock = vi.fn(() => ({ limit: limitMock }));
-  mockFind = vi.fn(() => ({ sort: sortMock }));
+  // ID lookups skip sort/limit and project directly off the cursor.
+  mockFind = vi.fn(() => ({ sort: sortMock, project: projectMock }));
   mockCountDocuments = vi.fn(async () => 0);
   mockAggregate = vi.fn(() => ({ toArray: vi.fn(async () => []) }));
 
@@ -119,6 +120,55 @@ describe("DiscordDataService.searchMessages — Filter Construction", () => {
     const sortResult = findResult.sort.mock.results[0].value;
     const limitCall = sortResult.limit.mock.calls[0][0];
     expect(limitCall).toBe(500);
+  });
+});
+
+// ── searchMessages — Message-ID Lookup ───────────────────────
+
+describe("DiscordDataService.searchMessages — Message-ID Lookup", () => {
+  const SNOWFLAKE = "1526820952019701853";
+
+  it("fetches by exact id when messageId is provided (bots included, categories still excluded)", async () => {
+    await DiscordDataService.searchMessages({
+      guildId: "g1",
+      messageId: SNOWFLAKE,
+    });
+    const filter = lastFilter();
+    expect(filter.id).toBe(SNOWFLAKE);
+    expect(filter.guildId).toBe("g1");
+    expect(filter.$text).toBeUndefined();
+    // Fetching a known ID implies intent — bot messages are included
+    expect(filter["author.bot"]).toBeUndefined();
+    // The hard privacy filter still applies
+    expect(filter["channel.parentId"]).toBeDefined();
+  });
+
+  it("falls back to an id lookup when a bare snowflake query matches nothing as text", async () => {
+    await DiscordDataService.searchMessages({ query: SNOWFLAKE });
+    expect(mockFind).toHaveBeenCalledTimes(2);
+    expect(mockFind.mock.calls[0][0].$text).toEqual({ $search: SNOWFLAKE });
+    expect(lastFilter().id).toBe(SNOWFLAKE);
+  });
+
+  it("does not fall back for non-snowflake queries with zero hits", async () => {
+    await DiscordDataService.searchMessages({ query: "hello world" });
+    expect(mockFind).toHaveBeenCalledTimes(1);
+  });
+
+  it("applies the id lookup in compact and count modes too", async () => {
+    await DiscordDataService.searchMessages({
+      messageId: SNOWFLAKE,
+      mode: "compact",
+    });
+    expect(lastFilter().id).toBe(SNOWFLAKE);
+
+    await DiscordDataService.searchMessages({
+      messageId: SNOWFLAKE,
+      mode: "count",
+    });
+    const countFilter =
+      mockCountDocuments.mock.calls[mockCountDocuments.mock.calls.length - 1][0];
+    expect(countFilter.id).toBe(SNOWFLAKE);
   });
 });
 

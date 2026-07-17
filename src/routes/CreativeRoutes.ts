@@ -911,6 +911,16 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const { audioUrl, audio, provider, model, language } = req.body;
 
+    if (typeof audioUrl === "string" && audioUrl.trim().toLowerCase() === "attached") {
+      // Normally substituted by the agent harness with the conversation's
+      // attached audio — reaching us unresolved means there wasn't one.
+      return res.status(400).json({
+        error:
+          "No attached audio was found in the conversation to substitute for 'attached'. " +
+          "Ask the user to (re-)upload the audio, or pass an explicit URL.",
+      });
+    }
+
     // Accept either a URL (we fetch it) or raw base64 audio
     let audioData = audio;
     if (!audioData && audioUrl) {

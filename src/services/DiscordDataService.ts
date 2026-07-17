@@ -10,6 +10,8 @@ interface MessageSearchParams {
   userId?: string;
   username?: string;
   query?: string;
+  /** Exact Discord message ID (snowflake) — fetches that one message. */
+  messageId?: string;
   before?: string | number;
   after?: string | number;
   limit?: number;
@@ -65,6 +67,10 @@ const EXCLUDED_CATEGORY_IDS = [
   "609652454375555082", // Private/staff channels
   "665736600042340352", // Staff/admin channels
 ];
+
+// Discord snowflake shape — used to fall back from text search to an
+// exact message-ID lookup when the query is a bare ID.
+const SNOWFLAKE_PATTERN = /^\d{17,20}$/;
 
 // ── Discord User Badge Flags ─────────────────────────────────
 // Maps UserFlags bitfield values to badge identifiers used by the
@@ -272,6 +278,7 @@ const DiscordDataService = {
     userId,
     username,
     query,
+    messageId,
     before,
     after,
     limit = 50,
@@ -291,35 +298,61 @@ const DiscordDataService = {
     });
     const cappedLimit = Math.min(Number(limit), 500);
 
+    // ── Exact message-ID lookup ────────────────────────────────
+    // A direct `messageId` fetches one specific message. As a fallback, a
+    // bare snowflake typed into `query` that matches nothing as text is
+    // retried as an ID lookup — models reach for this tool with IDs from
+    // reply chains and message links, and $text search can't find those.
+    // Bot messages are included (fetching a known ID implies intent); the
+    // restricted-category exclusion still applies.
+    const idLookupFilter = (idValue: string): Document => ({
+      id: idValue,
+      ...(guildId ? { guildId } : {}),
+      "channel.parentId": { $not: { $in: EXCLUDED_CATEGORY_IDS } },
+    });
+    const snowflakeQuery =
+      !messageId && query && SNOWFLAKE_PATTERN.test(query.trim())
+        ? query.trim()
+        : null;
+
     // ── Count mode — return only the total, zero payloads ──────
     if (mode === "count") {
-      const total = await collection.countDocuments(filter);
+      const total = await collection.countDocuments(
+        messageId ? idLookupFilter(messageId) : filter,
+      );
       return { count: total };
     }
 
     // ── Compact mode — minimal per-message data ───────────────
     if (mode === "compact") {
-      const messages = await collection
-        .find(filter)
+      const compactProjection = {
+        _id: 0,
+        id: 1,
+        content: 1,
+        "author.id": 1,
+        "author.username": 1,
+        "author.globalName": 1,
+        "author.avatar": 1,
+        "author.defaultAvatarURL": 1,
+        "member.displayName": 1,
+        "member.avatar": 1,
+        guildId: 1,
+        channelId: 1,
+        "channel.name": 1,
+        createdTimestamp: 1,
+      };
+      let messages = await collection
+        .find(messageId ? idLookupFilter(messageId) : filter)
         .sort({ createdTimestamp: -1 })
         .limit(cappedLimit)
-        .project({
-          _id: 0,
-          id: 1,
-          content: 1,
-          "author.id": 1,
-          "author.username": 1,
-          "author.globalName": 1,
-          "author.avatar": 1,
-          "author.defaultAvatarURL": 1,
-          "member.displayName": 1,
-          "member.avatar": 1,
-          guildId: 1,
-          channelId: 1,
-          "channel.name": 1,
-          createdTimestamp: 1,
-        })
+        .project(compactProjection)
         .toArray();
+      if (messages.length === 0 && snowflakeQuery) {
+        messages = await collection
+          .find(idLookupFilter(snowflakeQuery))
+          .project(compactProjection)
+          .toArray();
+      }
 
       const formatted = messages.map((messageDoc: Document) => ({
         id: messageDoc.id,
@@ -339,11 +372,7 @@ const DiscordDataService = {
     }
 
     // ── Messages mode — full message objects (default) ─────────
-    const messages = await collection
-      .find(filter)
-      .sort({ createdTimestamp: -1 })
-      .limit(cappedLimit)
-      .project({
+    const fullProjection = {
         _id: 0,
         id: 1,
         content: 1,
@@ -388,8 +417,19 @@ const DiscordDataService = {
         "author.flags": 1,
         // Archived media URLs (MinIO permanent URLs)
         mediaArchive: 1,
-      })
+      };
+    let messages = await collection
+      .find(messageId ? idLookupFilter(messageId) : filter)
+      .sort({ createdTimestamp: -1 })
+      .limit(cappedLimit)
+      .project(fullProjection)
       .toArray();
+    if (messages.length === 0 && snowflakeQuery) {
+      messages = await collection
+        .find(idLookupFilter(snowflakeQuery))
+        .project(fullProjection)
+        .toArray();
+    }
 
     // Format into a clean shape with human-readable names
     const formatted = messages.map((messageDoc: Document) => {

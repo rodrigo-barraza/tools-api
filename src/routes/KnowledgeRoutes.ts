@@ -1061,6 +1061,15 @@ router.post(
         error: "Body parameter 'url' is required (video URL to trim)",
       });
     }
+    if (url.trim().toLowerCase() === "attached") {
+      // Normally substituted by the agent harness with the conversation's
+      // attached video — reaching us unresolved means there wasn't one.
+      return res.status(400).json({
+        error:
+          "No attached video was found in the conversation to substitute for 'attached'. " +
+          "Ask the user to (re-)upload the video, or pass an explicit URL.",
+      });
+    }
 
     if (!start && !end) {
       return res.status(400).json({

@@ -30,6 +30,7 @@ router.get(
         userId: req.query.userId as string,
         username: req.query.username as string,
         query: req.query.query as string,
+        messageId: req.query.messageId as string,
         before: req.query.before as string,
         after: req.query.after as string,
         limit: parseIntParam(req.query.limit as string, 50),
