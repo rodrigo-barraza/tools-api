@@ -398,7 +398,7 @@ export function analyzeNutrientGaps({
     const consumedValue = consumed[label] || 0;
     const foodUnit = FOOD_COLUMN_UNITS[foodColumn] || "unknown";
 
-    // Find target value (use RDA > AI > MIN > RDA_multiplier_per_kg)
+    // Find target value (use RDA_multiplier_per_kg > RDA > AI > MIN)
     let targetValue: number | null = null;
     let targetMetric: string | null = null;
     let targetUnit: string | null = null;
@@ -415,7 +415,7 @@ export function analyzeNutrientGaps({
       if (metricLower.includes("max")) continue;
       if (metricLower.includes("guideline_max")) continue;
 
-      // Priority: RDA > RDA_multiplier_per_kg > AI > MIN_per_1000kcal > RECOMMENDATION
+      // Priority: RDA_multiplier_per_kg (weight-personalized) > RDA > AI > MIN_per_1000kcal > RECOMMENDATION
       if (!targetValue || priorityOf(metric) > priorityOf(targetMetric)) {
         targetValue = data.value;
         targetMetric = metric;
@@ -529,8 +529,12 @@ export function analyzeNutrientGaps({
 function priorityOf(metric: string | null): number {
   if (!metric) return -1;
   const normalizedMetric = metric.toLowerCase();
+  // The per-kg metric only reaches this map when weightKg was supplied
+  // (calculateTargetProfile omits it otherwise), and the fixed RDA is just
+  // the per-kg RDA applied to a reference body weight — so the
+  // weight-personalized value outranks it.
+  if (normalizedMetric === "rda_multiplier_per_kg") return 11;
   if (normalizedMetric === "rda") return 10;
-  if (normalizedMetric === "rda_multiplier_per_kg") return 9;
   if (normalizedMetric === "ai") return 8;
   if (normalizedMetric.includes("min_per_1000kcal")) return 7;
   if (normalizedMetric === "recommendation") return 6;

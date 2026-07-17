@@ -230,6 +230,23 @@ describe("analyzeNutrientGaps — revived end-to-end", () => {
     expect(result.summary!.totalCalories).toBeGreaterThan(100);
   });
 
+  it("personalizes the protein target per kg when weightKg is given", () => {
+    const foods = [{ name: "chicken", grams: 200 }];
+    const withWeight = analyzeNutrientGaps({ foods, weightKg: 100 });
+    const proteinPersonalized = withWeight.gaps!.find(
+      (gap) => gap.nutrient === "protein",
+    )!;
+    expect(proteinPersonalized.metric).toBe("RDA_multiplier_per_kg");
+    expect(proteinPersonalized.target).toBeCloseTo(80); // 0.8 g/kg × 100
+
+    const withoutWeight = analyzeNutrientGaps({ foods });
+    const proteinFixed = withoutWeight.gaps!.find(
+      (gap) => gap.nutrient === "protein",
+    )!;
+    expect(proteinFixed.metric).toBe("RDA");
+    expect(proteinFixed.target).toBe(56); // adult_male reference-weight RDA
+  });
+
   it("meal plans pick up micronutrient targets from the dataset", () => {
     const plan = buildMealPlan({ caloricTarget: 2000, weightKg: 75 });
     expect(plan.error).toBeUndefined();
