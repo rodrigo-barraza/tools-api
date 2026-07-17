@@ -16,6 +16,7 @@ import { readFileSync, readdirSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { FoodItem } from "../../types/health.ts";
+import { DIET_FILTER_KEYS, resolveDietFilter } from "./dietFilters.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -85,34 +86,6 @@ export function ensureFoodCache(): FoodItem[] {
   return foods;
 }
 
-// ─── Dietary Preference Filters ────────────────────────────────
-
-const DIET_FILTERS: Record<string, (food: FoodItem) => boolean> = {
-  omnivore: () => true,
-  vegetarian: (food: FoodItem) => {
-    const normalizedKingdom = (food.kingdom || "").toLowerCase();
-    const normalizedFoodType = (food.food_type || "").toLowerCase();
-    return (
-      normalizedKingdom !== "animalia" ||
-      normalizedFoodType === "dairy" ||
-      normalizedFoodType === "egg"
-    );
-  },
-  vegan: (food: FoodItem) => (food.kingdom || "").toLowerCase() !== "animalia",
-  pescatarian: (food: FoodItem) => {
-    const normalizedKingdom = (food.kingdom || "").toLowerCase();
-    const normalizedFoodType = (food.food_type || "").toLowerCase();
-    return (
-      normalizedKingdom !== "animalia" ||
-      ["fish", "seafood", "dairy", "egg"].includes(normalizedFoodType)
-    );
-  },
-  keto: (food: FoodItem) => {
-    // Low carb: prefer foods with <10g carbs per 100g
-    const carbs = food.carbohydrate || 0;
-    return typeof carbs === "number" && carbs < 10;
-  },
-};
 
 // ─── Key Nutrients for Score ───────────────────────────────────
 
@@ -215,7 +188,7 @@ export function buildMealPlan({
   excludeFoods,
   emphasizeNutrients,
   species = "human",
-  lifeStage = "adult_male",
+  lifeStage, // species-aware default applied by calculateTargetProfile
   weightKg,
   itemsPerMeal = 4,
 }: BuildMealPlanOptions) {
@@ -272,12 +245,16 @@ export function buildMealPlan({
   }
 
   // ── Apply filters ────────────────────────────────────────────
-  const dietKey = (dietaryPreference || "omnivore")
-    .toLowerCase()
-    .replace(/[\s-]+/g, "_");
-  const dietFilter = DIET_FILTERS[dietKey] || DIET_FILTERS.omnivore;
+  const resolvedDiet = resolveDietFilter(dietaryPreference);
+  if (!resolvedDiet) {
+    return {
+      error: `Unknown dietaryPreference: "${dietaryPreference}"`,
+      validPreferences: DIET_FILTER_KEYS,
+    };
+  }
+  const dietKey = resolvedDiet.key;
 
-  let candidates = allFoods.filter(dietFilter);
+  let candidates = allFoods.filter(resolvedDiet.filter);
 
   // Filter out excluded foods
   if (excludeFoods) {

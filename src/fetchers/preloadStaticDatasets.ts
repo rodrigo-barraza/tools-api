@@ -3,6 +3,7 @@ import { ensureLoaded as loadFdaDrugs } from "./health/FdaDrugFetcher.ts";
 import { ensureFoodCache as loadFoodSubstitutes } from "./health/FoodSubstituteFetcher.ts";
 import { ensureFoodCache as loadMealPlanFoods } from "./health/MealPlanFetcher.ts";
 import { ensureLoaded as loadNutrition } from "./health/NutritionFetcher.ts";
+import { ensureLoaded as loadNutritionRequirements } from "./health/NutritionRequirementFetcher.ts";
 import { ensureLoaded as loadExoplanets } from "./knowledge/ExoplanetFetcher.ts";
 import { ensureLoaded as loadPeriodicTable } from "./knowledge/PeriodicTableFetcher.ts";
 import { ensureLoaded as loadWorldBank } from "./knowledge/WorldBankFetcher.ts";
@@ -18,6 +19,7 @@ import { ensureLoaded as loadAirports } from "./utility/AirportFetcher.ts";
  */
 export function preloadStaticDatasets(): void {
   loadNutrition();
+  loadNutritionRequirements();
   loadExercises();
   loadFdaDrugs();
   loadFoodSubstitutes();

@@ -12,6 +12,7 @@
  */
 
 import { searchFoods } from "./NutritionFetcher.ts";
+import { DIET_FILTER_KEYS, resolveDietFilter } from "./dietFilters.ts";
 import {
   NUTRITION_MACRO_FIELDS,
   NUTRITION_MINERAL_FIELDS,
@@ -138,35 +139,6 @@ function normalizeSearch(searchText: string): string {
   return searchText.toLowerCase().replace(/[^a-z0-9\s]/g, "");
 }
 
-// ─── Kingdom/Type Filters ──────────────────────────────────────
-
-const DIETARY_FILTERS: Record<string, (food: FoodItem) => boolean> = {
-  vegetarian: (food: FoodItem) => {
-    const type = (food.food_type || "").toLowerCase();
-    const kingdom = (food.kingdom || "").toLowerCase();
-    // Allow everything except meat/fish
-    return kingdom !== "animalia" || type === "dairy" || type === "egg";
-  },
-  vegan: (food: FoodItem) => {
-    const kingdom = (food.kingdom || "").toLowerCase();
-    return kingdom !== "animalia";
-  },
-  pescatarian: (food: FoodItem) => {
-    const type = (food.food_type || "").toLowerCase();
-    const kingdom = (food.kingdom || "").toLowerCase();
-    return (
-      kingdom !== "animalia" ||
-      type === "fish" ||
-      type === "seafood" ||
-      type === "dairy" ||
-      type === "egg"
-    );
-  },
-  plant_only: (food: FoodItem) => {
-    const kingdom = (food.kingdom || "").toLowerCase();
-    return kingdom === "plantae";
-  },
-};
 
 export interface FindSubstitutesOptions {
   food: string;
@@ -207,7 +179,7 @@ export function findFoodSubstitutes({
   if (!sourceFood) {
     // Fuzzy fallback
     const searchResult = searchFoods(food, { limit: 1 });
-    if (!searchResult.foods || searchResult.foods.length === 0) {
+    if (!("foods" in searchResult) || searchResult.foods.length === 0) {
       return { error: `Food not found: "${food}"` };
     }
     const matchedName = normalizeSearch(searchResult.foods[0].name);
@@ -256,11 +228,14 @@ export function findFoodSubstitutes({
 
   // Dietary preference filter
   if (dietaryPreference) {
-    const key = dietaryPreference.toLowerCase().replace(/[\s-]+/g, "_");
-    const filterFunction = DIETARY_FILTERS[key];
-    if (filterFunction) {
-      candidates = candidates.filter(filterFunction);
+    const resolvedDiet = resolveDietFilter(dietaryPreference);
+    if (!resolvedDiet) {
+      return {
+        error: `Unknown dietaryPreference: "${dietaryPreference}"`,
+        validPreferences: DIET_FILTER_KEYS,
+      };
     }
+    candidates = candidates.filter(resolvedDiet.filter);
   }
 
   // Kingdom exclusion
@@ -361,7 +336,7 @@ function formatKeyNutrients(food: FoodItem) {
  */
 export function getDietaryPreferences() {
   return {
-    preferences: Object.keys(DIETARY_FILTERS).map((k: string) => ({
+    preferences: DIET_FILTER_KEYS.map((k: string) => ({
       key: k,
       description: `Filter for ${k.replace(/_/g, " ")} diet`,
     })),

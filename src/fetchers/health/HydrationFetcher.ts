@@ -99,8 +99,25 @@ export function calculateHydrationNeeds({
   caffeineIntakeMg,
 }: CalculateHydrationNeedsOptions) {
   // ── Validate ─────────────────────────────────────────────────
-  if (!weightKg || weightKg <= 0) {
+  if (!weightKg || isNaN(weightKg) || weightKg <= 0) {
     return { error: "'weightKg' must be a positive number" };
+  }
+
+  // NaN from an unparseable string must error, not flow into the range
+  // checks (NaN fails every comparison, which used to classify an
+  // unparseable climateTemp as extreme heat: +750 mL).
+  const numericInputs: [string, number | undefined][] = [
+    ["climateTemp", climateTemp],
+    ["exerciseMinutes", exerciseMinutes],
+    ["altitudeM", altitudeM],
+    ["caffeineIntakeMg", caffeineIntakeMg],
+  ];
+  for (const [name, value] of numericInputs) {
+    if (value !== undefined && value !== null && isNaN(value)) {
+      return {
+        error: `'${name}' must be a number (e.g. climateTemp: 32 for 32°C) — got an unparseable value.`,
+      };
+    }
   }
 
   const normalizedActivity = (activityLevel || "moderate")
@@ -115,13 +132,21 @@ export function calculateHydrationNeeds({
     };
   }
 
+  const normalizedIntensity = (exerciseIntensity || "moderate").toLowerCase();
+  if (!["low", "moderate", "high"].includes(normalizedIntensity)) {
+    return {
+      error: `Unknown exerciseIntensity: "${exerciseIntensity}"`,
+      validIntensities: ["low", "moderate", "high"],
+    };
+  }
+
   // ── Base calculation ─────────────────────────────────────────
   const baseIntake = weightKg * multiplier;
 
   // ── Adjustments ──────────────────────────────────────────────
   const climateAdj = climateAdjustment(climateTemp);
   const altitudeAdj = altitudeAdjustment(altitudeM);
-  const exerciseAdj = exerciseFluid(exerciseMinutes, exerciseIntensity);
+  const exerciseAdj = exerciseFluid(exerciseMinutes, normalizedIntensity);
   const pregnancyAdj = pregnant ? 300 : 0; // IOM: +300 mL/day during pregnancy
   const lactationAdj = breastfeeding ? 700 : 0; // IOM: +700 mL/day during lactation
   const caffeineAdj = caffeineIntakeMg ? Math.round(caffeineIntakeMg * 0.5) : 0; // ~50% of caffeine volume as diuretic offset

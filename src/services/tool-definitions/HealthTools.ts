@@ -34,48 +34,6 @@ export function getHealthTools(
     },
   },
   {
-    name: "rank_foods_by_category",
-    dataSource: staticDataset("USDA SR Legacy"),
-    description: translate("rank_foods_by_category.description"),
-    endpoint: {
-      path: "/health/nutrition/top",
-      queryParams: ["category", "nutrient", "limit", "kingdom", "foodType"],
-    },
-    parameters: {
-      type: "object",
-      properties: {
-        category: {
-          type: "string",
-          description: translate("rank_foods_by_category.params.category"),
-          enum: [
-            "macros",
-            "minerals",
-            "vitamins",
-            "amino_acids",
-            "lipids",
-            "carbs",
-            "sterols",
-          ],
-        },
-        nutrient: {
-          type: "string",
-          description: translate("rank_foods_by_category.params.nutrient"),
-        },
-        limit: { type: "number", description: translate("common.params.maxResultsDefault10") },
-        kingdom: { type: "string", enum: ["animalia", "plantae", "fungi"] },
-        foodType: { type: "string" },
-        ...fieldsParam(FIELDS.USDA_NUTRIENT_RANKING),
-      },
-      required: ["category", "nutrient"],
-    },
-    display: {
-      activeVerb: "Ranking foods by",
-      completedVerb: "Ranked foods by",
-      subjectParam: "nutrient",
-      subjectFormat: "full",
-    },
-  },
-  {
     name: "search_drugs",
     dataSource: onDemand("OpenFDA + FDA NDC API"),
     description: translate("search_drugs.description"),
@@ -291,19 +249,27 @@ export function getHealthTools(
     },
   },
   {
-    name: "search_usda_nutrition",
-    dataSource: staticDataset("USDA SR Legacy"),
-    description: translate("search_usda_nutrition.description"),
+    name: "search_food_nutrition",
+    dataSource: staticDataset("Multi-source food composition DB"),
+    description: translate("search_food_nutrition.description"),
     endpoint: {
       path: "/health/nutrition/search",
-      queryParams: ["q", "limit", "kingdom", "foodType", "nutrientTypes"],
+      queryParams: [
+        "q",
+        "limit",
+        "kingdom",
+        "foodType",
+        "nutrientTypes",
+        "taxonRank",
+        "taxonValue",
+      ],
     },
     parameters: {
       type: "object",
       properties: {
         "q": {
           type: "string",
-          description: translate("search_usda_nutrition.params.q"),
+          description: translate("search_food_nutrition.params.q"),
         },
         limit: {
           type: "number",
@@ -311,24 +277,50 @@ export function getHealthTools(
         },
         kingdom: {
           type: "string",
-          description: translate("search_usda_nutrition.params.kingdom"),
-          enum: ["animalia", "plantae", "fungi"],
+          description: translate("search_food_nutrition.params.kingdom"),
+          enum: ["animalia", "plantae", "fungi", "protista"],
         },
         foodType: {
           type: "string",
-          description: translate("search_usda_nutrition.params.foodType"),
+          description: translate("search_food_nutrition.params.foodType"),
+          enum: [
+            "animal",
+            "animal product",
+            "plant",
+            "fungus",
+            "mushroom",
+            "mineral",
+          ],
         },
         nutrientTypes: {
           type: "string",
-          description: translate("search_usda_nutrition.params.nutrientTypes"),
+          description: translate("search_food_nutrition.params.nutrientTypes"),
+        },
+        taxonRank: {
+          type: "string",
+          description: translate("search_food_nutrition.params.taxonRank"),
+          enum: [
+            "kingdom",
+            "phylum",
+            "class",
+            "order",
+            "family",
+            "genus",
+            "species",
+            "cultivar",
+          ],
+        },
+        taxonValue: {
+          type: "string",
+          description: translate("search_food_nutrition.params.taxonValue"),
         },
         ...fieldsParam(FIELDS.USDA_NUTRITION),
       },
-      required: ["q"],
+      required: [],
     },
     display: {
-      activeVerb: "Searching USDA nutrition data for",
-      completedVerb: "Searched USDA nutrition data for",
+      activeVerb: "Searching food nutrition data for",
+      completedVerb: "Searched food nutrition data for",
       subjectParam: "q",
       subjectFormat: "quoted",
     },
@@ -339,7 +331,14 @@ export function getHealthTools(
     description: translate("rank_foods_by_nutrient.description"),
     endpoint: {
       path: "/health/nutrition/rank",
-      queryParams: ["nutrient", "limit", "kingdom", "foodType"],
+      queryParams: [
+        "nutrient",
+        "category",
+        "limit",
+        "kingdom",
+        "foodType",
+        "sources",
+      ],
     },
     parameters: {
       type: "object",
@@ -348,6 +347,19 @@ export function getHealthTools(
           type: "string",
           description: translate("rank_foods_by_nutrient.params.nutrient"),
         },
+        category: {
+          type: "string",
+          description: translate("rank_foods_by_nutrient.params.category"),
+          enum: [
+            "macros",
+            "minerals",
+            "vitamins",
+            "amino_acids",
+            "lipids",
+            "carbs",
+            "sterols",
+          ],
+        },
         limit: {
           type: "number",
           description: translate("common.params.maxResultsDefault10"),
@@ -355,11 +367,24 @@ export function getHealthTools(
         kingdom: {
           type: "string",
           description: translate("rank_foods_by_nutrient.params.kingdom"),
-          enum: ["animalia", "plantae", "fungi"],
+          enum: ["animalia", "plantae", "fungi", "protista"],
         },
         foodType: {
           type: "string",
           description: translate("rank_foods_by_nutrient.params.foodType"),
+          enum: [
+            "animal",
+            "animal product",
+            "plant",
+            "fungus",
+            "mushroom",
+            "mineral",
+          ],
+        },
+        sources: {
+          type: "string",
+          description: translate("rank_foods_by_nutrient.params.sources"),
+          enum: ["usda", "all"],
         },
         ...fieldsParam(FIELDS.USDA_NUTRIENT_RANKING),
       },
@@ -403,55 +428,24 @@ export function getHealthTools(
     },
   },
   {
-    name: "get_food_categories",
-    dataSource: staticDataset("USDA SR Legacy"),
-    description: translate("get_food_categories.description"),
+    name: "get_nutrition_reference",
+    dataSource: staticDataset("Multi-source food composition DB"),
+    description: translate("get_nutrition_reference.description"),
     endpoint: {
-      path: "/health/nutrition/categories",
-    },
-    parameters: {
-      type: "object",
-      properties: {},
-    },
-    display: {
-      activeVerb: "Fetching food categories",
-      completedVerb: "Fetched food categories",
-      subjectParam: "fields",
-      subjectFormat: "truncate",
-    },
-  },
-  {
-    name: "get_nutrient_types",
-    dataSource: staticDataset("USDA SR Legacy"),
-    description: translate("get_nutrient_types.description"),
-    endpoint: {
-      path: "/health/nutrition/nutrient-types",
-    },
-    parameters: {
-      type: "object",
-      properties: {},
-    },
-    display: {
-      activeVerb: "Fetching nutrient types",
-      completedVerb: "Fetched nutrient types",
-      subjectParam: "fields",
-      subjectFormat: "truncate",
-    },
-  },
-  {
-    name: "list_category_nutrients",
-    dataSource: staticDataset("USDA SR Legacy"),
-    description: translate("list_category_nutrients.description"),
-    endpoint: {
-      path: "/health/nutrition/nutrients/:category",
-      pathParams: ["category"],
+      path: "/health/nutrition/reference",
+      queryParams: ["topic", "category", "rank", "parentRank", "parentValue"],
     },
     parameters: {
       type: "object",
       properties: {
+        topic: {
+          type: "string",
+          description: translate("get_nutrition_reference.params.topic"),
+          enum: ["categories", "nutrients", "taxonomy"],
+        },
         category: {
           type: "string",
-          description: translate("list_category_nutrients.params.category"),
+          description: translate("get_nutrition_reference.params.category"),
           enum: [
             "macros",
             "minerals",
@@ -462,135 +456,40 @@ export function getHealthTools(
             "sterols",
           ],
         },
-      },
-      required: ["category"],
-    },
-    display: {
-      activeVerb: "Listing nutrients for category",
-      completedVerb: "Listed nutrients for category",
-      subjectParam: "category",
-      subjectFormat: "full",
-    },
-  },
-  {
-    name: "search_foods_by_taxonomy",
-    dataSource: staticDataset("USDA SR Legacy"),
-    description: translate("search_foods_by_taxonomy.description"),
-    endpoint: {
-      path: "/health/nutrition/taxonomy/search",
-      queryParams: ["rank", "value", "limit", "nutrientTypes"],
-    },
-    parameters: {
-      type: "object",
-      properties: {
         rank: {
           type: "string",
-          description: translate("search_foods_by_taxonomy.params.rank"),
+          description: translate("get_nutrition_reference.params.rank"),
           enum: [
             "kingdom",
             "phylum",
             "class",
             "order",
-            "suborder",
             "family",
-            "subfamily",
-            "tribe",
             "genus",
             "species",
-            "subspecies",
-            "variety",
-            "form",
-            "group",
             "cultivar",
-            "phenotype",
-          ],
-        },
-        value: {
-          type: "string",
-          description: translate("search_foods_by_taxonomy.params.value"),
-        },
-        limit: {
-          type: "number",
-          description: translate("search_foods_by_taxonomy.params.limit"),
-        },
-        nutrientTypes: {
-          type: "string",
-          description: translate("search_usda_nutrition.params.nutrientTypes"),
-        },
-        ...fieldsParam(FIELDS.USDA_TAXONOMY),
-      },
-      required: ["rank", "value"],
-    },
-    display: {
-      activeVerb: "Searching foods by taxonomy value",
-      completedVerb: "Searched foods by taxonomy value",
-      subjectParam: "value",
-      subjectFormat: "quoted",
-    },
-  },
-  {
-    name: "get_food_taxonomy",
-    dataSource: staticDataset("USDA SR Legacy"),
-    description: translate("get_food_taxonomy.description"),
-    endpoint: {
-      path: "/health/nutrition/taxonomy/tree",
-      queryParams: ["rank", "parentRank", "parentValue"],
-    },
-    parameters: {
-      type: "object",
-      properties: {
-        rank: {
-          type: "string",
-          description: translate("get_food_taxonomy.params.rank"),
-          enum: [
-            "kingdom",
-            "phylum",
-            "class",
-            "order",
-            "suborder",
-            "family",
-            "subfamily",
-            "tribe",
-            "genus",
-            "species",
-            "subspecies",
-            "variety",
-            "form",
-            "group",
-            "cultivar",
-            "phenotype",
           ],
         },
         parentRank: {
           type: "string",
-          description: translate("get_food_taxonomy.params.parentRank"),
-          enum: [
-            "kingdom",
-            "phylum",
-            "class",
-            "order",
-            "suborder",
-            "family",
-            "subfamily",
-            "tribe",
-            "genus",
-            "species",
-          ],
+          description: translate("get_nutrition_reference.params.parentRank"),
+          enum: ["kingdom", "phylum", "class", "order", "family", "genus"],
         },
         parentValue: {
           type: "string",
-          description: translate("get_food_taxonomy.params.parentValue"),
+          description: translate("get_nutrition_reference.params.parentValue"),
         },
       },
+      required: ["topic"],
     },
     display: {
-      activeVerb: "Fetching food taxonomy tree",
-      completedVerb: "Fetched food taxonomy tree",
-      subjectParam: "rank",
+      activeVerb: "Fetching nutrition reference",
+      completedVerb: "Fetched nutrition reference",
+      subjectParam: "topic",
       subjectFormat: "full",
     },
   },
-  {
+      {
     name: "get_nutritional_requirements",
     dataSource: staticDataset("Multispecies Standards Database"),
     description: translate("get_nutritional_requirements.description"),
@@ -626,7 +525,7 @@ export function getHealthTools(
         authority: {
           type: "string",
           description: translate("get_nutritional_requirements.params.authority"),
-          enum: ["US_DRI", "AAFCO", "EFSA", "NRC", "WHO", "FEDIAF"],
+          enum: ["US_DRI", "AAFCO"],
         },
         weightKg: {
           type: "number",
@@ -749,7 +648,13 @@ export function getHealthTools(
         lifeStage: {
           type: "string",
           description: translate("build_meal_plan.params.lifeStage"),
-          enum: ["adult_male", "adult_female", "adult_maintenance"],
+          enum: [
+            "adult_male",
+            "adult_female",
+            "adult_maintenance",
+            "puppy",
+            "kitten",
+          ],
         },
         weightKg: {
           type: "number",
@@ -798,7 +703,7 @@ export function getHealthTools(
         dietaryPreference: {
           type: "string",
           description: translate("search_food_substitutes.params.dietaryPreference"),
-          enum: ["vegetarian", "vegan", "pescatarian", "plant_only"],
+          enum: ["vegetarian", "vegan", "pescatarian", "plant_only", "keto"],
         },
         excludeKingdom: {
           type: "string",
@@ -974,7 +879,14 @@ export function getHealthTools(
         dietaryPreference: {
           type: "string",
           description: translate("search_food_substitutes.params.dietaryPreference"),
-          enum: ["omnivore", "vegetarian", "vegan", "pescatarian", "keto"],
+          enum: [
+            "omnivore",
+            "vegetarian",
+            "vegan",
+            "pescatarian",
+            "plant_only",
+            "keto",
+          ],
         },
         excludeFoods: {
           type: "string",
@@ -992,7 +904,13 @@ export function getHealthTools(
         lifeStage: {
           type: "string",
           description: translate("build_meal_plan.params.lifeStage"),
-          enum: ["adult_male", "adult_female", "adult_maintenance"],
+          enum: [
+            "adult_male",
+            "adult_female",
+            "adult_maintenance",
+            "puppy",
+            "kitten",
+          ],
         },
         weightKg: {
           type: "number",

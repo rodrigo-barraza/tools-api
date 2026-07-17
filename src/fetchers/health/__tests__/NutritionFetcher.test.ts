@@ -85,10 +85,11 @@ describe("searchFoods", () => {
     expect(result.foods).toEqual([]);
   });
 
-  it("returns empty results for empty query", () => {
+  // Intentional change 2026-07: an empty query without a taxonomy filter now
+  // returns a teaching error instead of a silent empty result.
+  it("returns a teaching error for empty query", () => {
     const result = searchFoods("");
-    expect(result.count).toBe(0);
-    expect(result.foods).toEqual([]);
+    expect("error" in result && result.error).toMatch(/search query|taxonRank/i);
   });
 
   it("includes taxonomy fields in results", () => {
@@ -186,13 +187,16 @@ describe("rankByNutrient", () => {
     }
   });
 
+  // Intentional change 2026-07: the error now teaches compactly (categories +
+  // reference-tool hint) instead of dumping ~100 raw column names.
   it("returns an error for an unknown nutrient", () => {
     const result = rankByNutrient("nonexistent_nutrient_xyz");
     expect(result.error).toBeTruthy();
     expect(
-      result.availableNutrients,
-      "should list available nutrients on error",
+      result.availableCategories,
+      "should list nutrient categories on error",
     ).toBeTruthy();
+    expect(result.hint).toMatch(/get_nutrition_reference/);
   });
 
   it("food items include expected fields", () => {

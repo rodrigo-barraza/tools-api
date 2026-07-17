@@ -183,8 +183,10 @@ export function ensureLoaded(): void {
     NUTRIENT_DB.push(row);
   }
 
+  const scrubbed = scrubCrossSourceOutliers();
+
   logger.info(
-    `🥦 Nutrition DB loaded: ${FOOD_DB.length} foods (${counts.join(", ")}), ${NUTRIENT_DB.length} nutrients`,
+    `🥦 Nutrition DB loaded: ${FOOD_DB.length} foods (${counts.join(", ")}), ${NUTRIENT_DB.length} nutrients${scrubbed ? `, ${scrubbed} outlier values nulled` : ""}`,
   );
 
   // Only latch after a fully successful load — latching up front turns a
@@ -192,10 +194,133 @@ export function ensureLoaded(): void {
   loaded = true;
 }
 
+/**
+ * Cross-source plausibility screen.
+ *
+ * The source digests contain scattered per-row unit errors (e.g. FAO tomato
+ * cultivars listing vitamin C in what must be µg as mg — 26,322 mg/100g),
+ * which dominate any "highest in X" ranking with garbage. A value is nulled
+ * when it exceeds 3× the maximum reported by every OTHER source for that
+ * nutrient — real champions (acerola vitamin C, brazil-nut selenium) are
+ * corroborated across sources and survive; lone 1000× typos do not. Columns
+ * covered by fewer than two other sources are left untouched.
+ */
+function scrubCrossSourceOutliers(): number {
+  let nulled = 0;
+
+  // Iterate to a fixed point: corrupt values in several sources inflate
+  // each other's ceilings, so one pass isn't enough — each round removes
+  // the worst offenders and tightens the ceilings for the next.
+  for (let round = 0; round < 5; round++) {
+    // Per-column, per-source maxima over the still-trusted values
+    const maxima = new Map<string, Map<string, number>>();
+    for (const food of FOOD_DB) {
+      const source = food._source || "unknown";
+      for (const [column, value] of Object.entries(food)) {
+        if (typeof value !== "number" || value <= 0) continue;
+        let bySource = maxima.get(column);
+        if (!bySource) maxima.set(column, (bySource = new Map()));
+        if (value > (bySource.get(source) || 0)) bySource.set(source, value);
+      }
+    }
+
+    let nulledThisRound = 0;
+    for (const food of FOOD_DB) {
+      const source = food._source || "unknown";
+      for (const [column, value] of Object.entries(food)) {
+        if (typeof value !== "number" || value <= 0) continue;
+        const bySource = maxima.get(column);
+        if (!bySource) continue;
+        const others = [...bySource.entries()].filter(([s]) => s !== source);
+        if (others.length < 2) continue;
+        const otherMax = Math.max(...others.map(([, m]) => m));
+        if (value > otherMax * 3) {
+          food[column] = null;
+          nulledThisRound++;
+        }
+      }
+    }
+
+    nulled += nulledThisRound;
+    if (nulledThisRound === 0) break;
+  }
+
+  return nulled;
+}
+
 // ─── Search Helpers ────────────────────────────────────────────
 
 function normalizeSearch(searchText: string): string {
   return searchText.toLowerCase().replace(/[^a-z0-9\s]/g, "");
+}
+
+// ─── Filter Alias Coercion ─────────────────────────────────────
+// Models constantly send "plant" for "plantae" or "meat" for "animal".
+// Coerce the intuitive forms; reject unknowns with the valid vocabulary
+// instead of silently matching nothing.
+
+const KINGDOM_ALIASES: Record<string, string> = {
+  plantae: "plantae",
+  plant: "plantae",
+  plants: "plantae",
+  vegetable: "plantae",
+  animalia: "animalia",
+  animal: "animalia",
+  animals: "animalia",
+  fungi: "fungi",
+  fungus: "fungi",
+  mushrooms: "fungi",
+  protista: "protista",
+  protist: "protista",
+};
+
+const FOOD_TYPE_ALIASES: Record<string, string> = {
+  animal: "animal",
+  meat: "animal",
+  fish: "animal",
+  seafood: "animal",
+  "animal product": "animal product",
+  animal_product: "animal product",
+  dairy: "animal product",
+  egg: "animal product",
+  eggs: "animal product",
+  plant: "plant",
+  vegetable: "plant",
+  fruit: "plant",
+  grain: "plant",
+  legume: "plant",
+  fungus: "fungus",
+  mushroom: "mushroom",
+  mineral: "mineral",
+};
+
+interface ResolvedFilter {
+  value?: string;
+  error?: { error: string; validValues: string[] };
+}
+
+function resolveKingdom(kingdom: string | undefined): ResolvedFilter {
+  if (!kingdom) return {};
+  const resolved = KINGDOM_ALIASES[kingdom.toLowerCase().trim()];
+  if (resolved) return { value: resolved };
+  return {
+    error: {
+      error: `Unknown kingdom: "${kingdom}"`,
+      validValues: ["animalia", "plantae", "fungi", "protista"],
+    },
+  };
+}
+
+function resolveFoodType(foodType: string | undefined): ResolvedFilter {
+  if (!foodType) return {};
+  const resolved = FOOD_TYPE_ALIASES[foodType.toLowerCase().trim()];
+  if (resolved) return { value: resolved };
+  return {
+    error: {
+      error: `Unknown foodType: "${foodType}"`,
+      validValues: [...new Set(Object.values(FOOD_TYPE_ALIASES))],
+    },
+  };
 }
 
 function scoreMatch(food: FoodRow, terms: string[]): number {
@@ -413,47 +538,130 @@ export function searchFoods(
     kingdom?: string;
     foodType?: string;
     nutrientTypes?: string | null;
+    taxonRank?: string;
+    taxonValue?: string;
   } = {},
 ) {
   ensureLoaded();
 
-  const { limit = 10, kingdom, foodType, nutrientTypes } = opts;
-  const terms = normalizeSearch(query).split(/\s+/).filter(Boolean);
+  const { limit = 10, kingdom, foodType, nutrientTypes, taxonRank, taxonValue } =
+    opts;
+  const terms = normalizeSearch(query || "")
+    .split(/\s+/)
+    .filter(Boolean);
 
-  if (!terms.length) {
-    return { count: 0, query, foods: [] };
+  const resolvedKingdom = resolveKingdom(kingdom);
+  if (resolvedKingdom.error) return resolvedKingdom.error;
+  const resolvedFoodType = resolveFoodType(foodType);
+  if (resolvedFoodType.error) return resolvedFoodType.error;
+
+  if ((taxonRank && !taxonValue) || (!taxonRank && taxonValue)) {
+    return {
+      error:
+        "Taxonomy filtering needs both taxonRank and taxonValue (e.g. taxonRank='family', taxonValue='Rosaceae').",
+      validRanks: TAXONOMY_RANKS,
+    };
+  }
+  if (!terms.length && !taxonRank) {
+    return {
+      error:
+        "Provide a search query 'q' (e.g. 'chicken breast'), or taxonRank + taxonValue to browse by taxonomy.",
+    };
   }
 
   let candidates = FOOD_DB;
 
   // Apply filters
-  if (kingdom) {
-    const normalizedKingdom = kingdom.toLowerCase();
+  if (resolvedKingdom.value) {
     candidates = candidates.filter(
       (food) =>
-        food.kingdom && food.kingdom.toLowerCase() === normalizedKingdom,
+        food.kingdom && food.kingdom.toLowerCase() === resolvedKingdom.value,
     );
   }
-  if (foodType) {
-    const normalizedFoodType = foodType.toLowerCase();
+  if (resolvedFoodType.value) {
     candidates = candidates.filter(
       (food) =>
-        food.food_type && food.food_type.toLowerCase() === normalizedFoodType,
+        food.food_type &&
+        food.food_type.toLowerCase() === resolvedFoodType.value,
     );
+  }
+  if (taxonRank && taxonValue) {
+    const normalizedRank = taxonRank.toLowerCase().trim();
+    if (!TAXONOMY_RANKS.includes(normalizedRank)) {
+      return {
+        error: `Unknown taxonomic rank: "${taxonRank}"`,
+        validRanks: TAXONOMY_RANKS,
+      };
+    }
+    const normalizedValue = taxonValue.toLowerCase().trim();
+    candidates = candidates.filter((food) => {
+      const fieldValue = String(food[normalizedRank] || "")
+        .toLowerCase()
+        .trim();
+      return (
+        fieldValue === normalizedValue || fieldValue.includes(normalizedValue)
+      );
+    });
   }
 
-  // Score and rank
-  const scored = candidates
+  // No query at all (pure taxonomy browse) — return the filtered set
+  if (!terms.length) {
+    const sliced = candidates.slice(0, limit);
+    return {
+      count: sliced.length,
+      query: query || "",
+      note: SOURCES_NOTE,
+      foods: sliced.map((food) => formatFood(food, nutrientTypes)),
+    };
+  }
+
+  // Score and rank — all terms must match
+  let scored = candidates
     .map((food) => ({ food, score: scoreMatch(food, terms) }))
     .filter((entry) => entry.score > 0)
-    .sort((agent, b) => b.score - agent.score)
-    .slice(0, limit);
+    .sort((agent, b) => b.score - agent.score);
+
+  // Auto-relax: an over-specified query ("chicken breast meat, cooked")
+  // should degrade to its best single-term matches instead of forcing the
+  // model into a rephrase-and-retry loop.
+  let relaxedFrom: string | null = null;
+  if (scored.length === 0 && terms.length > 1) {
+    const perTerm = new Map<FoodRow, number>();
+    for (const term of terms) {
+      for (const food of candidates) {
+        const score = scoreMatch(food, [term]);
+        if (score > 0) perTerm.set(food, (perTerm.get(food) || 0) + score);
+      }
+    }
+    scored = [...perTerm.entries()]
+      .map(([food, score]) => ({ food, score }))
+      .sort((agent, b) => b.score - agent.score);
+    if (scored.length > 0) relaxedFrom = terms.join(" ");
+  }
+
+  const top = scored.slice(0, limit);
+
+  if (top.length === 0) {
+    return {
+      count: 0,
+      query,
+      note: SOURCES_NOTE,
+      foods: [],
+      hint: "No match. This database contains raw whole foods (e.g. 'chicken', 'salmon', 'spinach') — not prepared dishes or brand names. Try the base ingredient.",
+    };
+  }
 
   return {
-    count: scored.length,
+    count: top.length,
     query,
+    ...(relaxedFrom
+      ? {
+          relaxedMatch: true,
+          hint: `No food matched all of "${relaxedFrom}" — showing closest matches by individual terms instead.`,
+        }
+      : {}),
     note: SOURCES_NOTE,
-    foods: scored.map((entry) => formatFood(entry.food, nutrientTypes)),
+    foods: top.map((entry) => formatFood(entry.food, nutrientTypes)),
   };
 }
 
@@ -484,66 +692,114 @@ export function getFoodByName(
  */
 export function rankByNutrient(
   nutrient: string,
-  opts: { limit?: number; kingdom?: string; foodType?: string } = {},
+  opts: {
+    limit?: number;
+    kingdom?: string;
+    foodType?: string;
+    category?: string;
+    sources?: string;
+  } = {},
 ) {
   ensureLoaded();
 
-  const { limit = 10, kingdom, foodType } = opts;
+  const { limit = 10, kingdom, foodType, category, sources } = opts;
+  // Rankings amplify data errors: a single mis-scaled row anywhere becomes
+  // the "highest in X" answer. Default to the curated USDA subset; the
+  // international sources remain available via sources="all".
+  const usdaOnly = (sources || "usda").toLowerCase() !== "all";
 
-  // Validate nutrient exists
-  if (!FOOD_DB[0] || !(nutrient in FOOD_DB[0])) {
-    // Try to find a close match
-    const allKeys = Object.keys(FOOD_DB[0] || {}).filter(
-      (key) => typeof FOOD_DB[0][key] === "number" || FOOD_DB[0][key] === null,
-    );
+  const resolvedKingdom = resolveKingdom(kingdom);
+  if (resolvedKingdom.error) return resolvedKingdom.error;
+  const resolvedFoodType = resolveFoodType(foodType);
+  if (resolvedFoodType.error) return resolvedFoodType.error;
+
+  if (category && !CATEGORY_FIELD_MAP[category]) {
     return {
-      error: `Unknown nutrient: "${nutrient}"`,
-      availableNutrients: allKeys.slice(35), // skip taxonomy fields
+      error: `Unknown category: "${category}"`,
+      availableCategories: Object.keys(CATEGORY_FIELD_MAP),
     };
   }
 
-  let candidates = FOOD_DB;
+  // Resolve human-friendly nutrient names ("vitamin C", "omega3", "iron")
+  // to their CSV column, searching the given category or all of them.
+  const column = resolveNutrientAnyCategory(nutrient, category);
+  if (!column) {
+    return {
+      error: `Unknown nutrient: "${nutrient}". Use names like 'protein', 'iron', 'vitamin C', 'omega3 DHA', 'fiber', 'kilocalories'.`,
+      availableCategories: Object.keys(CATEGORY_FIELD_MAP),
+      hint: "Call get_nutrition_reference with topic='nutrients' and a category to list every nutrient it contains.",
+    };
+  }
 
-  if (kingdom) {
-    const normalizedKingdom = kingdom.toLowerCase();
+  let candidates = usdaOnly
+    ? FOOD_DB.filter((food) => food._source === "USDA")
+    : FOOD_DB;
+
+  if (resolvedKingdom.value) {
     candidates = candidates.filter(
       (food) =>
-        food.kingdom && food.kingdom.toLowerCase() === normalizedKingdom,
+        food.kingdom && food.kingdom.toLowerCase() === resolvedKingdom.value,
     );
   }
-  if (foodType) {
-    const normalizedFoodType = foodType.toLowerCase();
+  if (resolvedFoodType.value) {
     candidates = candidates.filter(
       (food) =>
-        food.food_type && food.food_type.toLowerCase() === normalizedFoodType,
+        food.food_type &&
+        food.food_type.toLowerCase() === resolvedFoodType.value,
     );
   }
 
   const ranked = candidates
-    .filter((food) => food[nutrient] !== null && (food[nutrient] as number) > 0)
-    .sort((foodRow, b) => (b[nutrient] as number) - (foodRow[nutrient] as number))
+    .filter((food) => food[column] !== null && (food[column] as number) > 0)
+    .sort((foodRow, b) => (b[column] as number) - (foodRow[column] as number))
     .slice(0, limit);
 
   // Find unit from nutrient metadata
   const nutrientMeta = NUTRIENT_DB.find(
-    (nutrientEntry) => nutrientEntry.nutrient_id === nutrient,
+    (nutrientEntry) => nutrientEntry.nutrient_id === column,
   );
 
   return {
-    nutrient,
-    nutrientName: nutrientMeta?.nutrient_name || nutrient,
+    nutrient: column,
+    nutrientName: nutrientMeta?.nutrient_name || column,
     type: nutrientMeta?.nutrient_type || "unknown",
+    unit: nutrientMeta?.unit || null,
     count: ranked.length,
-    note: SOURCES_NOTE,
+    note: usdaOnly
+      ? "Ranked within the curated USDA subset (~1,347 raw whole foods) for data reliability. Pass sources=\"all\" to rank across all 7 international databases."
+      : SOURCES_NOTE,
     foods: ranked.map((food) => ({
       name: food.food_name,
       description: food.description_long,
       source: food._source || "USDA",
       kingdom: food.kingdom,
       foodType: food.food_type,
-      value: food[nutrient] as number,
+      value: food[column] as number,
     })),
   };
+}
+
+/**
+ * Resolve a nutrient name to its CSV column, searching one category or all.
+ * Accepts CSV column names, human labels ("vitaminC_mg"), and loose names
+ * ("vitamin C", "omega 3", "b12").
+ */
+function resolveNutrientAnyCategory(
+  nutrient: string,
+  category?: string,
+): string | null {
+  if (!nutrient) return null;
+
+  // Exact CSV column (covers everything numeric, including kilocalories)
+  const direct = nutrient.toLowerCase().trim().replace(/[\s-]+/g, "_");
+  if (FOOD_DB[0] && direct in FOOD_DB[0]) return direct;
+
+  const categories = category ? [category] : Object.keys(CATEGORY_FIELD_MAP);
+  for (const categoryKey of categories) {
+    const resolved = resolveNutrientColumn(categoryKey, nutrient);
+    if (resolved) return resolved.column;
+  }
+  return null;
 }
 
 /**
@@ -683,6 +939,22 @@ function resolveNutrientColumn(category: string, nutrient: string) {
       (label as string).toLowerCase().includes(lower)
     ) {
       return { column: columnKey, label };
+    }
+  }
+
+  // Squashed match — "vitamin C" → "vitaminc" matches label "vitaminC_mg",
+  // "b12" matches "vitaminB12_mcg". Separator styles differ between the
+  // column names and display labels, so compare with separators stripped.
+  const squash = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const squashedQuery = squash(nutrient);
+  if (squashedQuery.length >= 2) {
+    for (const [columnKey, label] of Object.entries(fields)) {
+      if (
+        squash(columnKey).includes(squashedQuery) ||
+        squash(label as string).includes(squashedQuery)
+      ) {
+        return { column: columnKey, label };
+      }
     }
   }
 

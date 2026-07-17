@@ -59,23 +59,24 @@ router.get("/nutrition/search", (req: Request, res: Response) => {
   const kingdom = req.query.kingdom as string | undefined;
   const foodType = req.query.foodType as string | undefined;
   const nutrientTypes = req.query.nutrientTypes as string | undefined;
-  if (!query) {
-    return res.status(400).json({ error: "Query parameter 'q' is required" });
+  const taxonRank = req.query.taxonRank as string | undefined;
+  const taxonValue = req.query.taxonValue as string | undefined;
+  const result = searchFoods(query || "", {
+    limit: parseIntParam(limit, 10),
+    kingdom,
+    foodType,
+    nutrientTypes,
+    taxonRank,
+    taxonValue,
+  });
+  if ("error" in result && result.error) {
+    return res.status(400).json(result);
   }
-  res.json(
-    searchFoods(query, {
-      limit: parseIntParam(limit, 10),
-      kingdom,
-      foodType,
-      nutrientTypes,
-    }),
-  );
+  res.json(result);
 });
 router.get("/nutrition/rank", (req: Request, res: Response) => {
-  const { nutrient, limit, kingdom, foodType } = req.query as Record<
-    string,
-    string | undefined
-  >;
+  const { nutrient, category, limit, kingdom, foodType, sources } =
+    req.query as Record<string, string | undefined>;
   if (!nutrient) {
     return res
       .status(400)
@@ -85,11 +86,51 @@ router.get("/nutrition/rank", (req: Request, res: Response) => {
     limit: parseIntParam(limit, 10),
     kingdom,
     foodType,
+    category,
+    sources,
   });
   if (result.error) {
     return res.status(400).json(result);
   }
   res.json(result);
+});
+// Unified reference/discovery endpoint (categories | nutrients | taxonomy)
+router.get("/nutrition/reference", (req: Request, res: Response) => {
+  const { topic, category, rank, parentRank, parentValue } =
+    req.query as Record<string, string | undefined>;
+  switch ((topic || "").toLowerCase()) {
+    case "categories": {
+      return res.json({
+        ...getFoodCategories(),
+        nutrientTypes: getNutrientTypes().types,
+      });
+    }
+    case "nutrients": {
+      if (!category) {
+        return res.status(400).json({
+          error:
+            "topic='nutrients' needs a 'category'. Valid categories: macros, minerals, vitamins, amino_acids, lipids, carbs, sterols.",
+        });
+      }
+      const result = listCategoryNutrients(category);
+      if (result.error) return res.status(400).json(result);
+      return res.json(result);
+    }
+    case "taxonomy": {
+      const result = getTaxonomyTree(
+        rank || null,
+        parentRank || null,
+        parentValue || null,
+      );
+      if (result.error) return res.status(400).json(result);
+      return res.json(result);
+    }
+    default:
+      return res.status(400).json({
+        error: `Unknown topic: "${topic}"`,
+        validTopics: ["categories", "nutrients", "taxonomy"],
+      });
+  }
 });
 router.get("/nutrition/compare", (req: Request, res: Response) => {
   const { foods, nutrientTypes } = req.query as Record<
@@ -340,6 +381,7 @@ router.get("/calories/calculate", (req: Request, res: Response) => {
     activityLevel,
     goal,
     macroSplit,
+    bodyFatPct,
     bodyFatPercentage,
   } = req.query as Record<string, string | undefined>;
   if (!sex || !weightKg || !heightCm || !ageYears) {
@@ -347,6 +389,8 @@ router.get("/calories/calculate", (req: Request, res: Response) => {
       error: "Required parameters: sex, weightKg, heightCm, ageYears",
     });
   }
+  // The tool schema sends bodyFatPct; bodyFatPercentage kept for direct callers
+  const bodyFat = bodyFatPct ?? bodyFatPercentage;
   const result = calculateCaloricNeeds({
     sex,
     weightKg: parseFloat(weightKg),
@@ -355,7 +399,7 @@ router.get("/calories/calculate", (req: Request, res: Response) => {
     activityLevel,
     goal,
     macroSplit,
-    bodyFatPercentage: bodyFatPercentage ? parseFloat(bodyFatPercentage) : undefined,
+    bodyFatPercentage: bodyFat ? parseFloat(bodyFat) : undefined,
   });
   if (result.error) return res.status(400).json(result);
   res.json(result);
@@ -549,7 +593,8 @@ router.get(
 export function getHealthDomainHealth() {
   return {
     openFda: "on-demand",
-    usdaNutrition: "on-demand (in-memory, ~1346 raw whole foods)",
+    foodNutrition:
+      "on-demand (in-memory, ~15,465 raw whole foods from 7 national databases)",
     fdaDrugNdc: "on-demand (in-memory, ~26,000 products)",
     freeExerciseDb:
       "on-demand (in-memory, ~1700+ exercises from multiple sources)",

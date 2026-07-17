@@ -280,7 +280,7 @@ export interface AnalyzeNutrientGapsResult {
 export function analyzeNutrientGaps({
   foods,
   species = "human",
-  lifeStage = "adult_male",
+  lifeStage, // species-aware default applied by calculateTargetProfile
   authority,
   weightKg,
   caloricIntake,
@@ -307,7 +307,7 @@ export function analyzeNutrientGaps({
 
   for (const { name, grams } of foods) {
     const result = searchFoods(name, { limit: 1 });
-    if (result.foods && result.foods.length > 0) {
+    if ("foods" in result && result.foods.length > 0) {
       resolvedFoods.push({
         query: name,
         matched: result.foods[0].name,

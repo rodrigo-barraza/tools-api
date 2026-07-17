@@ -108,11 +108,13 @@ describe("GET /nutrition/rank", () => {
     expect(res.body.error).toBeTruthy();
   });
 
+  // Intentional change 2026-07: compact teaching error (categories + hint)
+  // instead of a ~100-entry column dump.
   it("returns 400 for unknown nutrient", async () => {
     const res = await request(app).get("/health/nutrition/rank?nutrient=nonexistent_xyz");
     expect(res.status).toBe(400);
     expect(res.body.error).toBeTruthy();
-    expect(res.body.availableNutrients).toBeTruthy();
+    expect(res.body.availableCategories).toBeTruthy();
   });
 
   it("food items include name, value, kingdom, foodType", async () => {
@@ -332,5 +334,114 @@ describe("GET /nutrition/taxonomy/tree", () => {
     const res = await request(app).get("/health/nutrition/taxonomy/tree?rank=zz_invalid");
     expect(res.status).toBe(400);
     expect(res.body.error).toBeTruthy();
+  });
+});
+
+// ─── /nutrition/reference (unified discovery, 2026-07) ─────────
+
+describe("GET /nutrition/reference", () => {
+  it("topic=categories returns filters and nutrient categories", async () => {
+    const res = await request(app).get("/health/nutrition/reference?topic=categories");
+    expect(res.status).toBe(200);
+    expect(res.body.kingdoms).toContain("plantae");
+    expect(res.body.foodTypes).toContain("animal product");
+    expect(Array.isArray(res.body.nutrientTypes)).toBeTruthy();
+  });
+
+  it("topic=nutrients requires a category", async () => {
+    const res = await request(app).get("/health/nutrition/reference?topic=nutrients");
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/category/);
+  });
+
+  it("topic=nutrients lists a category's nutrients", async () => {
+    const res = await request(app).get("/health/nutrition/reference?topic=nutrients&category=minerals");
+    expect(res.status).toBe(200);
+    expect(res.body.nutrients.some((n: { column: string }) => n.column === "calcium")).toBeTruthy();
+  });
+
+  it("topic=taxonomy returns the tree", async () => {
+    const res = await request(app).get("/health/nutrition/reference?topic=taxonomy&rank=kingdom");
+    expect(res.status).toBe(200);
+    expect(res.body.values.map((v: string) => v.toLowerCase())).toContain(
+      "plantae",
+    );
+  });
+
+  it("unknown topic teaches the valid ones", async () => {
+    const res = await request(app).get("/health/nutrition/reference?topic=stuff");
+    expect(res.status).toBe(400);
+    expect(res.body.validTopics).toEqual(["categories", "nutrients", "taxonomy"]);
+  });
+});
+
+// ─── Merged search behaviors (2026-07) ─────────────────────────
+
+describe("GET /nutrition/search — merged behaviors", () => {
+  it("supports taxonomy browse without q", async () => {
+    const res = await request(app).get(
+      "/health/nutrition/search?taxonRank=family&taxonValue=Rosaceae&limit=3",
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.count).toBeGreaterThan(0);
+  });
+
+  it("coerces kingdom alias and rejects unknown values", async () => {
+    const ok = await request(app).get("/health/nutrition/search?q=banana&kingdom=plant");
+    expect(ok.status).toBe(200);
+    expect(ok.body.count).toBeGreaterThan(0);
+
+    const bad = await request(app).get("/health/nutrition/search?q=banana&kingdom=vegetal");
+    expect(bad.status).toBe(400);
+    expect(bad.body.validValues).toContain("plantae");
+  });
+});
+
+describe("GET /nutrition/rank — merged behaviors", () => {
+  it("resolves loose nutrient names", async () => {
+    const res = await request(app).get("/health/nutrition/rank?nutrient=vitamin%20C&limit=3");
+    expect(res.status).toBe(200);
+    expect(res.body.nutrient).toBe("ascorbic_acid");
+  });
+
+  it("accepts sources=all", async () => {
+    const res = await request(app).get("/health/nutrition/rank?nutrient=protein&sources=all&limit=3");
+    expect(res.status).toBe(200);
+    expect(res.body.count).toBeGreaterThan(0);
+  });
+});
+
+// ─── /calories/calculate — bodyFatPct fix (2026-07) ────────────
+
+describe("GET /calories/calculate — bodyFatPct", () => {
+  it("consumes the schema's bodyFatPct parameter", async () => {
+    const res = await request(app).get(
+      "/health/calories/calculate?sex=male&weightKg=80&heightCm=180&ageYears=30&bodyFatPct=15",
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.bodyComposition).not.toBeNull();
+    expect(res.body.bodyComposition.leanMassKg).toBe(68);
+  });
+});
+
+// ─── /nutrition/requirements — revived dataset (2026-07) ───────
+
+describe("GET /nutrition/requirements", () => {
+  it("returns a human profile with real values", async () => {
+    const res = await request(app).get(
+      "/health/nutrition/requirements?species=human&lifeStage=adult_female&weightKg=60",
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.requirements.iron.RDA.value).toBe(18);
+  });
+
+  it("gap analysis returns real gaps end-to-end", async () => {
+    const res = await request(app).get(
+      "/health/nutrition/gap-analysis?foods=" +
+        encodeURIComponent(JSON.stringify([{ name: "chicken", grams: 200 }])) +
+        "&weightKg=75",
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.summary.nutrientsEvaluated).toBeGreaterThan(20);
   });
 });
