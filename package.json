@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node dist/boot.js",
     "dev": "tsx watch src/boot.ts",
-    "build": "rm -rf dist && tsc && cp -r src/locales dist/locales",
+    "build": "rm -rf dist && tsc && cp -r src/locales dist/locales && node scripts/copy-static-data.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",

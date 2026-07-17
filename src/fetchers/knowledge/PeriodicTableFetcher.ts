@@ -49,9 +49,8 @@ function parseCSVLine(line: string): string[] {
 const ELEMENT_DB: PeriodicElement[] = [];
 let loaded = false;
 
-function ensureLoaded() {
+export function ensureLoaded() {
   if (loaded) return;
-  loaded = true;
 
   const csvPath = join(__dirname, "data", "digest_elements.csv");
   const raw = readFileSync(csvPath, "utf-8");
@@ -91,6 +90,7 @@ function ensureLoaded() {
   }
 
   logger.info(`⚛️  Periodic Table loaded: ${ELEMENT_DB.length} elements`);
+  loaded = true;
 }
 
 // ─── Helpers ───────────────────────────────────────────────────

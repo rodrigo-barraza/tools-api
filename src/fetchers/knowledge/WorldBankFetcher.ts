@@ -84,9 +84,8 @@ const INDICATOR_META: Record<string, IndicatorMetadata> = {
 
 const INDICATOR_KEYS = Object.keys(INDICATOR_META);
 
-function ensureLoaded(): void {
+export function ensureLoaded(): void {
   if (loaded) return;
-  loaded = true;
 
   const csvPath = join(__dirname, "data", "digest_world_indicators.csv");
   const raw = readFileSync(csvPath, "utf-8");
@@ -116,6 +115,7 @@ function ensureLoaded(): void {
   logger.info(
     `🌍 World Bank indicators loaded: ${COUNTRY_DB.length} countries, ${INDICATOR_KEYS.length} indicators`,
   );
+  loaded = true;
 }
 
 // ─── Helpers ───────────────────────────────────────────────────

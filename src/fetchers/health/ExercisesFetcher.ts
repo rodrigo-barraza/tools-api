@@ -3,7 +3,6 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import logger from "../../logger.ts";
 import { Exercise } from "../../types/health.ts";
-import { errorMessage } from "../../utilities.ts";
 
 /**
  * Exercises Fetcher — Static In-Memory Database
@@ -37,21 +36,14 @@ function parseCSVLine(line: string): string[] {
 const EXERCISE_DB: Exercise[] = [];
 let loaded = false;
 
-function ensureLoaded(): void {
+export function ensureLoaded(): void {
   if (loaded) return;
-  loaded = true;
 
   const dataDir = join(__dirname, "data");
-  let files: string[] = [];
-  try {
-    files = readdirSync(dataDir).filter(
-      (fileName: string) =>
-        fileName.startsWith("digest_exercises") && fileName.endsWith(".csv"),
-    );
-  } catch (error) {
-    logger.error(`Error reading exercises directory: ${errorMessage(error)}`);
-    return;
-  }
+  const files = readdirSync(dataDir).filter(
+    (fileName: string) =>
+      fileName.startsWith("digest_exercises") && fileName.endsWith(".csv"),
+  );
 
   let totalCount = 0;
 
@@ -108,6 +100,7 @@ function ensureLoaded(): void {
   logger.info(
     `🏋️ Exercises DB loaded: ${totalCount} exercises from ${files.length} sources`,
   );
+  loaded = true;
 }
 
 function normalizeSearch(searchText: string): string {

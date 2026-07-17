@@ -68,9 +68,8 @@ function haversineKm(
 const AIRPORT_DB: AirportInfo[] = [];
 let loaded = false;
 
-function ensureLoaded(): void {
+export function ensureLoaded(): void {
   if (loaded) return;
-  loaded = true;
 
   try {
     const csvPath = join(__dirname, "data", "digest_airports.csv");
@@ -113,9 +112,11 @@ function ensureLoaded(): void {
     }
   } catch (error) {
     logger.error(`Failed to load airport database: ${errorMessage(error)}`);
+    throw error;
   }
 
   logger.info(`✈️  Airport database loaded: ${AIRPORT_DB.length} airports`);
+  loaded = true;
 }
 
 // ─── Helpers ───────────────────────────────────────────────────

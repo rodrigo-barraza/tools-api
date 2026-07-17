@@ -102,6 +102,7 @@ import { startEmojiKitchenCollectors } from "./collectors/EmojiKitchenCollector.
 import { startCurrencyCollector } from "./collectors/CurrencyCollector.ts";
 
 import { startAisStream } from "./fetchers/maritime/AisStreamFetcher.ts";
+import { preloadStaticDatasets } from "./fetchers/preloadStaticDatasets.ts";
 
 import { errorMessage } from "./utilities.ts";
 
@@ -214,6 +215,16 @@ app.get("/health", async (_req: Request, res: Response) => {
 // ─── Startup ───────────────────────────────────────────────────────
 
 async function start() {
+  // Fail fast if the static CSV datasets didn't ship with the build — a
+  // missing file must abort startup (the healthcheck fails the deploy),
+  // not surface later as empty tool results.
+  try {
+    preloadStaticDatasets();
+  } catch (error: unknown) {
+    logger.error(`Static dataset preload failed: ${errorMessage(error)}`);
+    process.exit(1);
+  }
+
   try {
     await connectDatabase(CONFIG.MONGODB_URI!, { dbName: CONFIG.MONGODB_DB_NAME });
 

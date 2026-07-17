@@ -82,9 +82,8 @@ const NUMERIC_FIELDS = new Set([
   "dec",
 ]);
 
-function ensureLoaded() {
+export function ensureLoaded() {
   if (loaded) return;
-  loaded = true;
 
   const csvPath = join(__dirname, "data", "digest_exoplanets.csv");
   const raw = readFileSync(csvPath, "utf-8");
@@ -110,6 +109,7 @@ function ensureLoaded() {
   }
 
   logger.info(`🪐 Exoplanet database loaded: ${PLANET_DB.length} planets`);
+  loaded = true;
 }
 
 // ─── Helpers ───────────────────────────────────────────────────

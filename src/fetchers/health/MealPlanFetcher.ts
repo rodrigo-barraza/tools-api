@@ -43,7 +43,7 @@ function parseCSVLine(line: string): string[] {
   return fields;
 }
 
-function ensureFoodCache(): FoodItem[] {
+export function ensureFoodCache(): FoodItem[] {
   if (FOOD_CACHE) return FOOD_CACHE;
 
   const dataDir = join(__dirname, "data");

@@ -50,9 +50,8 @@ function parseCSVLine(line: string): string[] {
 const DRUG_DB: RawDrugRow[] = [];
 let loaded = false;
 
-function ensureLoaded(): void {
+export function ensureLoaded(): void {
   if (loaded) return;
-  loaded = true;
 
   try {
     const csvPath = join(__dirname, "data", "digest_fda_drugs.csv");
@@ -86,9 +85,11 @@ function ensureLoaded(): void {
     }
   } catch (error) {
     logger.error(`Failed to load FDA drug database: ${errorMessage(error)}`);
+    throw error;
   }
 
   logger.info(`💊 FDA drug database loaded: ${DRUG_DB.length} products`);
+  loaded = true;
 }
 
 // ─── Helpers ───────────────────────────────────────────────────

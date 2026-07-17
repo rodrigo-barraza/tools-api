@@ -153,9 +153,8 @@ function loadFoodCSV(filename: string, source: string): number {
   return count;
 }
 
-function ensureLoaded(): void {
+export function ensureLoaded(): void {
   if (loaded) return;
-  loaded = true;
 
   // Load all food data files
   const counts: string[] = [];
@@ -187,6 +186,10 @@ function ensureLoaded(): void {
   logger.info(
     `🥦 Nutrition DB loaded: ${FOOD_DB.length} foods (${counts.join(", ")}), ${NUTRIENT_DB.length} nutrients`,
   );
+
+  // Only latch after a fully successful load — latching up front turns a
+  // missing data file into one 500 followed by silent empty results forever.
+  loaded = true;
 }
 
 // ─── Search Helpers ────────────────────────────────────────────
