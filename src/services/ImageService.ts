@@ -60,6 +60,16 @@ export async function resolveInput(input: string, store?: ImageStore) {
     );
   }
 
+  // The 'attached' sentinel is normally substituted by the agent harness
+  // with the conversation's attached image before the request reaches us.
+  // Seeing it here means no attached image could be resolved.
+  if (input.trim().toLowerCase() === "attached") {
+    throw new Error(
+      "No attached image was found in the conversation to substitute for 'attached'. " +
+        "Ask the user to (re-)upload the image, or pass an explicit URL, data URI, or imageId.",
+    );
+  }
+
   // ── Data URI ──────────────────────────────────────────────
   if (input.startsWith("data:")) {
     const match = input.match(/^data:[^;]+;base64,(.+)$/s);

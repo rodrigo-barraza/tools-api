@@ -436,6 +436,15 @@ router.post(
         error: "Missing required parameter: image (URL or base64 data URI)",
       });
     }
+    if (image.trim().toLowerCase() === "attached") {
+      // Normally substituted by the agent harness with the conversation's
+      // attached image — reaching us unresolved means there wasn't one.
+      return res.status(400).json({
+        error:
+          "No attached image was found in the conversation to substitute for 'attached'. " +
+          "Ask the user to (re-)upload the image, or pass an explicit URL or data URI.",
+      });
+    }
 
     const objectLimit = Math.min(
       Math.max(Number(maxObjects) || 20, 1),
@@ -555,6 +564,15 @@ router.post(
     if (!image || typeof image !== "string") {
       return res.status(400).json({
         error: "Missing required parameter: image (URL or base64 data URI)",
+      });
+    }
+    if (image.trim().toLowerCase() === "attached") {
+      // Normally substituted by the agent harness with the conversation's
+      // attached image — reaching us unresolved means there wasn't one.
+      return res.status(400).json({
+        error:
+          "No attached image was found in the conversation to substitute for 'attached'. " +
+          "Ask the user to (re-)upload the image, or pass an explicit URL or data URI.",
       });
     }
 
