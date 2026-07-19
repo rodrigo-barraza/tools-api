@@ -544,15 +544,9 @@ ${scripts}
  * Escape a model/user-provided string for interpolation into embed HTML.
  * Embed titles and similar values are stored verbatim and re-served from
  * the tools origin, so unescaped markup would execute in the embed iframe.
+ * (Identical implementation promoted to the shared utilities library.)
  */
-export function escapeHtml(value: unknown): string {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
+export { escapeHtml } from "@rodrigo-barraza/utilities-library";
 
 /**
  * Restrict a model-provided CSS color to characters that cannot escape a

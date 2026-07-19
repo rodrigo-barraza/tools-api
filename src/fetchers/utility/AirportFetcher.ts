@@ -4,6 +4,7 @@ import { dirname, join } from "path";
 import logger from "../../logger.ts";
 import { AirportInfo, FormattedAirport } from "../../types/utility.ts";
 import { errorMessage } from "../../utilities.ts";
+import { normalizeSearchText } from "@rodrigo-barraza/utilities-library";
 
 /**
  * Airport Fetcher — Static In-Memory Airport Database
@@ -122,7 +123,7 @@ export function ensureLoaded(): void {
 // ─── Helpers ───────────────────────────────────────────────────
 
 function normalizeSearch(searchText: string): string {
-  return searchText.toLowerCase().replace(/[^a-z0-9\s]/g, "");
+  return normalizeSearchText(searchText);
 }
 
 function formatAirport(ap: AirportInfo): FormattedAirport {

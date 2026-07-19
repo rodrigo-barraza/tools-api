@@ -1,3 +1,4 @@
+import { toAlphanumeric } from "@rodrigo-barraza/utilities-library";
 import { geocodeLocation } from "../../fetchers/shared/GeocodingUtility.ts";
 import type { GeocodeResult } from "../../fetchers/shared/GeocodingUtility.ts";
 import type { CachedEvent } from "../../caches/EventCache.ts";
@@ -32,7 +33,7 @@ export interface OnDemandEventResult {
 // ─── Deduplication ──────────────────────────────────────────────
 
 function normalizeEventName(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]/g, "");
+  return toAlphanumeric(name);
 }
 
 function deduplicateEvents(events: CachedEvent[]): CachedEvent[] {

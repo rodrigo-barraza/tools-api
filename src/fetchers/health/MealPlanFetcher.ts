@@ -17,6 +17,7 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { FoodItem } from "../../types/health.ts";
 import { DIET_FILTER_KEYS, resolveDietFilter } from "./dietFilters.ts";
+import { normalizeSearchText } from "@rodrigo-barraza/utilities-library";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -133,7 +134,7 @@ function computeGapScore(
 }
 
 function normalizeSearch(searchText: string): string {
-  return searchText.toLowerCase().replace(/[^a-z0-9\s]/g, "");
+  return normalizeSearchText(searchText);
 }
 
 // ─── Public API ────────────────────────────────────────────────

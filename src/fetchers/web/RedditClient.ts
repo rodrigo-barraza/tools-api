@@ -4,6 +4,7 @@ import CONFIG from "../../config.ts";
 import { USER_AGENT } from "../../constants.ts";
 import logger from "../../logger.ts";
 import { sleep } from "@rodrigo-barraza/utilities-library";
+import { TokenManager } from "@rodrigo-barraza/utilities-library/node";
 
 // ─── Constants ─────────────────────────────────────────────────────
 
@@ -22,25 +23,14 @@ const RATE_LIMIT_MAX_REQUESTS = 80;
 
 // ─── OAuth2 Token Manager (Client Credentials Grant) ──────────────
 
-interface OAuthToken {
-  accessToken: string;
-  expiresAt: number;
-}
-
-let cachedToken: OAuthToken | null = null;
-
 export function buildUserAgent(): string {
   return CONFIG.REDDIT_USER_AGENT || USER_AGENT;
 }
 
-async function acquireOAuthToken(): Promise<string> {
-  if (
-    cachedToken &&
-    Date.now() < cachedToken.expiresAt - TOKEN_REFRESH_BUFFER_SECONDS * 1_000
-  ) {
-    return cachedToken.accessToken;
-  }
-
+// Token expiry is shortened by the refresh buffer so a fresh token is
+// acquired TOKEN_REFRESH_BUFFER_SECONDS before Reddit's actual expiry —
+// same semantics as the previous hand-rolled cachedToken check.
+const redditTokenManager = new TokenManager(async () => {
   const clientId = CONFIG.REDDIT_CLIENT_ID;
   const clientSecret = CONFIG.REDDIT_CLIENT_SECRET;
 
@@ -73,18 +63,17 @@ async function acquireOAuthToken(): Promise<string> {
     expires_in: number;
   };
 
-  cachedToken = {
-    accessToken: tokenData.access_token,
-    expiresAt: Date.now() + tokenData.expires_in * 1_000,
-  };
-
   logger.info(
     "Reddit OAuth2 token acquired (expires in %ds)",
     tokenData.expires_in,
   );
 
-  return cachedToken.accessToken;
-}
+  return {
+    token: tokenData.access_token,
+    expiresInMilliseconds:
+      tokenData.expires_in * 1_000 - TOKEN_REFRESH_BUFFER_SECONDS * 1_000,
+  };
+});
 
 // ─── Rate Limiter (Sliding Window) ─────────────────────────────────
 
@@ -170,7 +159,7 @@ export async function redditApiRequest<T>(
 
   await waitForRateLimit();
 
-  const token = await acquireOAuthToken();
+  const token = await redditTokenManager.getToken();
   const queryString = new URLSearchParams({
     ...parameters,
     raw_json: "1",

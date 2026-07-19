@@ -1,4 +1,4 @@
-import { getErrorMessage, sleep } from "@rodrigo-barraza/utilities-library";
+import { getErrorMessage, retry } from "@rodrigo-barraza/utilities-library";
 // ─── Single Server Lifecycle Manager ────────────────────────
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -239,34 +239,33 @@ export function createLspServerInstance(
           (lastError ? `, last error: ${lastError.message}` : ""),
       );
     }
-    let lastAttemptError: unknown = null;
-    for (let attempt = 0; attempt <= MAX_RETRIES_FOR_TRANSIENT; attempt++) {
-      try {
-        return await client.sendRequest(method, params);
-      } catch (error: unknown) {
-        lastAttemptError = error;
-        const errorCode =
-          error && typeof error === "object" && "code" in error
-            ? (error as { code: unknown }).code
-            : undefined;
-        const isTransient =
-          typeof errorCode === "number" &&
-          errorCode === LSP_ERROR_CONTENT_MODIFIED;
-        if (isTransient && attempt < MAX_RETRIES_FOR_TRANSIENT) {
-          const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
-          logger.info(
-            `[LSP:${name}] ${method} got ContentModified, retrying in ${delay}ms (${attempt + 1}/${MAX_RETRIES_FOR_TRANSIENT})...`,
-          );
-          await sleep(delay);
-          continue;
-        }
-        break;
-      }
+    try {
+      return await retry(() => client.sendRequest(method, params), {
+        retries: MAX_RETRIES_FOR_TRANSIENT,
+        delay: RETRY_BASE_DELAY_MS,
+        backoff: 2,
+        shouldRetry: (error, attempt) => {
+          const errorCode =
+            error && typeof error === "object" && "code" in error
+              ? (error as { code: unknown }).code
+              : undefined;
+          const isTransient =
+            typeof errorCode === "number" &&
+            errorCode === LSP_ERROR_CONTENT_MODIFIED;
+          if (isTransient) {
+            const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
+            logger.info(
+              `[LSP:${name}] ${method} got ContentModified, retrying in ${delay}ms (${attempt + 1}/${MAX_RETRIES_FOR_TRANSIENT})...`,
+            );
+          }
+          return isTransient;
+        },
+      });
+    } catch (error: unknown) {
+      throw new Error(
+        `LSP request '${method}' failed for server '${name}': ${getErrorMessage(error)}`,
+      );
     }
-    const errorMessage = getErrorMessage(lastAttemptError);
-    throw new Error(
-      `LSP request '${method}' failed for server '${name}': ${errorMessage}`,
-    );
   }
 
   async function sendNotification(

@@ -5,6 +5,7 @@
 // Apollo cache. One request returns a whole results page. Traffic is
 // governed by the shared ClassifiedsEngine (see its module header).
 
+import { toAlphanumeric } from "@rodrigo-barraza/utilities-library";
 import {
   createClassifiedsSource,
   type ClassifiedsSearchOptions,
@@ -59,7 +60,7 @@ const KIJIJI_LOCATIONS: Record<string, KijijiLocation> = {
 };
 
 function resolveLocation(cityInput: string): KijijiLocation | null {
-  const normalized = cityInput.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const normalized = toAlphanumeric(cityInput);
   return KIJIJI_LOCATIONS[normalized] ?? null;
 }
 
@@ -192,7 +193,7 @@ export async function searchKijiji(
       error: `Unsupported Kijiji city '${cityInput}'. Supported: ${kijijiSupportedCities().join(", ")}`,
     };
   }
-  const normalized = cityInput.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const normalized = toAlphanumeric(cityInput);
   return kijijiSource.search(
     normalized,
     String(category.id),

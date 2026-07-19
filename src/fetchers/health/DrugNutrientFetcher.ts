@@ -11,6 +11,8 @@
  *   - Natural Medicines Comprehensive Database
  */
 
+import { normalizeSearchText } from "@rodrigo-barraza/utilities-library";
+
 export interface DrugNutrientInteraction {
   drugPattern: RegExp;
   nutrient: string;
@@ -529,10 +531,7 @@ const INTERACTION_DB: DrugNutrientInteraction[] = [
 // ─── Search Helpers ────────────────────────────────────────────
 
 function normalizeSearch(searchText: string): string {
-  return searchText
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, "")
-    .trim();
+  return normalizeSearchText(searchText).trim();
 }
 
 // ─── Public API ────────────────────────────────────────────────

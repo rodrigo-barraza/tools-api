@@ -4,6 +4,7 @@ import { dirname, join } from "path";
 import logger from "../../logger.ts";
 import { DrugProduct, RawDrugRow } from "../../types/health.ts";
 import { errorMessage } from "../../utilities.ts";
+import { normalizeSearchText } from "@rodrigo-barraza/utilities-library";
 
 /**
  * FDA Drug Fetcher — Static In-Memory FDA NDC Drug Database
@@ -95,7 +96,7 @@ export function ensureLoaded(): void {
 // ─── Helpers ───────────────────────────────────────────────────
 
 function normalizeSearch(searchText: string): string {
-  return searchText.toLowerCase().replace(/[^a-z0-9\s]/g, "");
+  return normalizeSearchText(searchText);
 }
 
 function formatDrug(drugRow: RawDrugRow): DrugProduct {

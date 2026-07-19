@@ -3,6 +3,7 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import logger from "../../logger.ts";
 import { Exercise } from "../../types/health.ts";
+import { normalizeSearchText } from "@rodrigo-barraza/utilities-library";
 
 /**
  * Exercises Fetcher — Static In-Memory Database
@@ -104,7 +105,7 @@ export function ensureLoaded(): void {
 }
 
 function normalizeSearch(searchText: string): string {
-  return searchText.toLowerCase().replace(/[^a-z0-9\s]/g, "");
+  return normalizeSearchText(searchText);
 }
 
 function normalizeQuery(searchText: string | undefined | null): string {

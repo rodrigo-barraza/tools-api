@@ -3,6 +3,7 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import logger from "../../logger.ts";
 import { PeriodicElement, FormattedElement } from "../../types/knowledge.ts";
+import { normalizeSearchText } from "@rodrigo-barraza/utilities-library";
 
 /**
  * Periodic Table Fetcher — Static In-Memory Element Database
@@ -96,7 +97,7 @@ export function ensureLoaded() {
 // ─── Helpers ───────────────────────────────────────────────────
 
 function normalizeSearch(searchText: string): string {
-  return searchText.toLowerCase().replace(/[^a-z0-9\s]/g, "");
+  return normalizeSearchText(searchText);
 }
 
 function formatElement(element: PeriodicElement): FormattedElement {

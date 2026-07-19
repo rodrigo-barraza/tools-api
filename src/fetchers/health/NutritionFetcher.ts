@@ -2,6 +2,7 @@ import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import logger from "../../logger.ts";
+import { normalizeSearchText, toAlphanumeric } from "@rodrigo-barraza/utilities-library";
 import {
   DATASET_REGISTRY,
   NUTRITION_NUTRIENT_TYPES,
@@ -251,7 +252,7 @@ function scrubCrossSourceOutliers(): number {
 // ─── Search Helpers ────────────────────────────────────────────
 
 function normalizeSearch(searchText: string): string {
-  return searchText.toLowerCase().replace(/[^a-z0-9\s]/g, "");
+  return normalizeSearchText(searchText);
 }
 
 // ─── Filter Alias Coercion ─────────────────────────────────────
@@ -945,7 +946,7 @@ function resolveNutrientColumn(category: string, nutrient: string) {
   // Squashed match — "vitamin C" → "vitaminc" matches label "vitaminC_mg",
   // "b12" matches "vitaminB12_mcg". Separator styles differ between the
   // column names and display labels, so compare with separators stripped.
-  const squash = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const squash = (value: string) => toAlphanumeric(value);
   const squashedQuery = squash(nutrient);
   if (squashedQuery.length >= 2) {
     for (const [columnKey, label] of Object.entries(fields)) {

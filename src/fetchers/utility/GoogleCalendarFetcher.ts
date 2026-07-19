@@ -1,23 +1,18 @@
 // ─── Google Calendar Fetcher ───────────────────────────────────────
 // Uses Google Calendar API v3 with service account credentials.
 
+import { TokenManager } from "@rodrigo-barraza/utilities-library/node";
+
 const CALENDAR_API_BASE = "https://www.googleapis.com/calendar/v3";
 
-interface GoogleAuth {
-  accessToken: string;
-  expiresAt: number;
-}
+// The token cache has always been global (a valid cached token is served
+// regardless of which credentials the caller passes); the TokenManager
+// preserves that by reading the most recently supplied credentials.
+// Expiry is shortened by the previous 60s refresh buffer.
+let currentCredentialsJson = "";
 
-let cachedGoogleAuth: GoogleAuth | null = null;
-
-async function getServiceAccountToken(
-  credentialsJson: string,
-): Promise<string> {
-  if (cachedGoogleAuth && Date.now() < cachedGoogleAuth.expiresAt - 60_000) {
-    return cachedGoogleAuth.accessToken;
-  }
-
-  const credentials = JSON.parse(credentialsJson);
+const googleTokenManager = new TokenManager(async () => {
+  const credentials = JSON.parse(currentCredentialsJson);
   const now = Math.floor(Date.now() / 1000);
   const jwtHeader = Buffer.from(
     JSON.stringify({ alg: "RS256", typ: "JWT" }),
@@ -58,12 +53,18 @@ async function getServiceAccountToken(
     access_token: string;
     expires_in: number;
   };
-  cachedGoogleAuth = {
-    accessToken: tokenData.access_token,
-    expiresAt: Date.now() + tokenData.expires_in * 1000,
-  };
 
-  return tokenData.access_token;
+  return {
+    token: tokenData.access_token,
+    expiresInMilliseconds: tokenData.expires_in * 1000 - 60_000,
+  };
+});
+
+async function getServiceAccountToken(
+  credentialsJson: string,
+): Promise<string> {
+  currentCredentialsJson = credentialsJson;
+  return googleTokenManager.getToken();
 }
 
 // ─── Get Calendar Events ───────────────────────────────────────────

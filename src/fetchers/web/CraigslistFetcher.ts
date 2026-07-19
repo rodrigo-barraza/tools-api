@@ -13,6 +13,7 @@
 //     sign: cool down for hours, never retry).
 //   • from/to date queries never fetch — archive only.
 
+import { toAlphanumeric } from "@rodrigo-barraza/utilities-library";
 import * as cheerio from "cheerio";
 import rateLimiter from "../../services/RateLimiterService.ts";
 import logger from "../../logger.ts";
@@ -99,7 +100,7 @@ const CITY_ALIASES: Record<string, string> = {
 };
 
 function normalizeCity(input: string): string {
-  const normalized = input.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const normalized = toAlphanumeric(input);
   return CITY_ALIASES[normalized] ?? normalized;
 }
 

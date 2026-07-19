@@ -6,6 +6,7 @@
 // via the kwd query param. Traffic is governed by the shared
 // ClassifiedsEngine (see its module header).
 
+import { toAlphanumeric } from "@rodrigo-barraza/utilities-library";
 import {
   createClassifiedsSource,
   type ClassifiedsSearchOptions,
@@ -175,7 +176,7 @@ export async function searchAutotrader(
   query: string,
   options: ClassifiedsSearchOptions = {},
 ): Promise<ClassifiedsSearchResponse | { error: string }> {
-  const normalized = cityInput.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const normalized = toAlphanumeric(cityInput);
   if (!AUTOTRADER_CITIES[normalized]) {
     return {
       error: `Unsupported AutoTrader city '${cityInput}'. Supported: ${autotraderSupportedCities().join(", ")}`,

@@ -1,42 +1,14 @@
 // ─── Repository Metadata + README ───────────────────────────
 
+import {
+  createGitHubClient,
+  parseGitHubRepoInput,
+} from "@rodrigo-barraza/utilities-library/github";
 import { USER_AGENT } from "../../constants.ts";
 
-const GITHUB_API = "https://api.github.com";
-const GITHUB_HEADERS = {
-  Accept: "application/vnd.github.v3+json",
-  "User-Agent": USER_AGENT,
-};
+const githubClient = createGitHubClient({ userAgent: USER_AGENT });
 
 const MAX_README_CHARS = 15_000;
-
-// ─── URL Parsing ───────────────────────────────────────────────────
-
-const GITHUB_REPO_REGEX =
-  /(?:https?:\/\/)?(?:www\.)?github\.com\/([^/\s#?]+)\/([^/\s#?]+)/;
-
-/**
- * Parse a GitHub repo URL or "owner/repo" shorthand.
-
- */
-function parseGitHubInput(input: string) {
-  if (!input || typeof input !== "string") return null;
-  const trimmed = input
-    .trim()
-    .replace(/\.git$/, "")
-    .replace(/\/$/, "");
-
-  const match = trimmed.match(GITHUB_REPO_REGEX);
-  if (match) return { owner: match[1], repo: match[2].replace(/\.git$/, "") };
-
-  // owner/repo shorthand
-  const parts = trimmed.split("/");
-  if (parts.length === 2 && parts[0] && parts[1]) {
-    return { owner: parts[0], repo: parts[1] };
-  }
-
-  return null;
-}
 
 // ─── Public API ───────────────────────────────────────────────────
 
@@ -49,7 +21,7 @@ export async function getGitHubRepo(
   input: string,
   options: Record<string, unknown> = {},
 ) {
-  const parsed = parseGitHubInput(input);
+  const parsed = parseGitHubRepoInput(input);
   if (!parsed) {
     return { error: `Invalid GitHub URL or owner/repo: "${input}"` };
   }
@@ -58,20 +30,20 @@ export async function getGitHubRepo(
   const { includeReadme = true, includeLanguages = true } = options;
 
   // Fetch repo metadata + optional README + languages concurrently
-  const repoPromise = fetch(`${GITHUB_API}/repos/${owner}/${repo}`, {
-    headers: GITHUB_HEADERS,
-  });
+  const repoPromise = githubClient.requestRaw(`/repos/${owner}/${repo}`);
 
   const readmePromise = includeReadme
-    ? fetch(`${GITHUB_API}/repos/${owner}/${repo}/readme`, {
-        headers: { ...GITHUB_HEADERS, Accept: "application/vnd.github.v3.raw" },
-      }).catch(() => null)
+    ? githubClient
+        .requestRaw(`/repos/${owner}/${repo}/readme`, {
+          headers: { Accept: "application/vnd.github.v3.raw" },
+        })
+        .catch(() => null)
     : Promise.resolve(null);
 
   const langsPromise = includeLanguages
-    ? fetch(`${GITHUB_API}/repos/${owner}/${repo}/languages`, {
-        headers: GITHUB_HEADERS,
-      }).catch(() => null)
+    ? githubClient
+        .requestRaw(`/repos/${owner}/${repo}/languages`)
+        .catch(() => null)
     : Promise.resolve(null);
 
   const [repoResponse, readmeResponse, langsResponse] = await Promise.all([

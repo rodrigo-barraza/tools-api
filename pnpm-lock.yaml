@@ -22,7 +22,7 @@ importers:
         version: 1.29.0(zod@4.4.3)
       '@rodrigo-barraza/utilities-library':
         specifier: github:rodrigo-barraza/utilities-library#master
-        version: https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/ef70da8952b9062ec86092b9b7a214204cf02393(express@5.2.1)(socks@2.8.9)
+        version: https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/0ef937e0571adb7c82aabfb5b1f7b2b2597a4fed(express@5.2.1)(socks@2.8.9)
       ajv:
         specifier: ^8.20.0
         version: 8.20.0
@@ -951,9 +951,9 @@ packages:
   '@pinojs/redact@0.4.0':
     resolution: {integrity: sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg==}
 
-  '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/ef70da8952b9062ec86092b9b7a214204cf02393':
-    resolution: {gitHosted: true, integrity: sha512-Z7QBfTmgL06VkJE9LViRBD7UPO4AvIyL8totTKqMnktu7/MJQlzk0DhjAaMG2LTCqoiU2IVhTo20CVZ62wNwew==, tarball: https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/ef70da8952b9062ec86092b9b7a214204cf02393}
-    version: 0.5.0
+  '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/0ef937e0571adb7c82aabfb5b1f7b2b2597a4fed':
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/0ef937e0571adb7c82aabfb5b1f7b2b2597a4fed}
+    version: 0.6.0
     peerDependencies:
       express: '>=5.0.0'
     peerDependenciesMeta:
@@ -5202,7 +5202,7 @@ snapshots:
 
   '@pinojs/redact@0.4.0': {}
 
-  '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/ef70da8952b9062ec86092b9b7a214204cf02393(express@5.2.1)(socks@2.8.9)':
+  '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/0ef937e0571adb7c82aabfb5b1f7b2b2597a4fed(express@5.2.1)(socks@2.8.9)':
     dependencies:
       mongodb: 7.3.0(socks@2.8.9)
       nanoid: 5.1.16

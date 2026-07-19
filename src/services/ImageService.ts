@@ -1,7 +1,7 @@
 // ─── Hybrid Sharp + ImageMagick Engine ──────────────────────
 
 import sharp from "sharp";
-import { getErrorMessage } from "@rodrigo-barraza/utilities-library";
+import { getErrorMessage, escapeHtml } from "@rodrigo-barraza/utilities-library";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { tmpdir } from "node:os";
@@ -753,14 +753,6 @@ const BOX_PALETTE = [
   "#ff2d55",
 ];
 
-function escapeXml(value: string) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
 export interface AnnotatedDetectionsResult {
   width: number;
   height: number;
@@ -811,7 +803,7 @@ export async function annotateDetections(
     .map((object, index) => {
       const color = BOX_PALETTE[index % BOX_PALETTE.length];
       const { left, top, width: boxWidth, height: boxHeight } = object.pixelBox;
-      const label = escapeXml(object.label);
+      const label = escapeHtml(object.label);
       const labelWidth = Math.round(
         object.label.length * fontSize * 0.62 + labelPadding * 2,
       );

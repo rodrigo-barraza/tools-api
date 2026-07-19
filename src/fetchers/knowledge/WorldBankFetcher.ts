@@ -3,6 +3,7 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import logger from "../../logger.ts";
 import { WorldBankCountry, FormattedCountry } from "../../types/knowledge.ts";
+import { normalizeSearchText } from "@rodrigo-barraza/utilities-library";
 
 /**
  * World Bank Fetcher — Static In-Memory Country Indicators Database
@@ -121,7 +122,7 @@ export function ensureLoaded(): void {
 // ─── Helpers ───────────────────────────────────────────────────
 
 function normalizeSearch(searchText: string): string {
-  return searchText.toLowerCase().replace(/[^a-z0-9\s]/g, "");
+  return normalizeSearchText(searchText);
 }
 
 function formatCountry(country: WorldBankCountry): FormattedCountry {
