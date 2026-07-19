@@ -2543,7 +2543,10 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
   }
   if (!animation || typeof animation !== "object" || Array.isArray(animation)) {
     return res.status(400).json({
-      error: "'animation' is required and must be an object with a 'layers' array",
+      error:
+        "'animation' is required and must be an object with a 'layers' array. To change " +
+        "only settings (duration, fps, background) or retime an existing session, pass " +
+        "your sessionId with animation: {\"layers\": []} plus the fields to change.",
     });
   }
   // Unwrap accidental double-nesting ({animation: {animation: {...}}}).
