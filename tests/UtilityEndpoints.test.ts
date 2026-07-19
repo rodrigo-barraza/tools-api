@@ -229,6 +229,91 @@ describe("POST /utility/python/execute", () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════
+//  POST /utility/python/execute — inputFiles staging
+// ═══════════════════════════════════════════════════════════════════
+
+describe("POST /utility/python/execute — inputFiles", () => {
+  const csvText = "name,score\nAda,90\nGrace,95";
+  const csvDataUri = `data:text/csv;base64,${Buffer.from(csvText, "utf-8").toString("base64")}`;
+
+  it("stages a data: URI file the code can open(), and lists it in the result", async () => {
+    const res = await request(app)
+      .post("/utility/python/execute")
+      .send({
+        code: 'print(open("input_1.csv").read().splitlines()[0])',
+        inputFiles: [csvDataUri],
+      });
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.stdout.trim()).toBe("name,score");
+    expect(res.body.inputFiles).toEqual([
+      { filename: "input_1.csv", bytes: csvText.length, mimeType: "text/csv" },
+    ]);
+  });
+
+  it("stages a URL download under its basename before the code runs", async () => {
+    const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      headers: {
+        get: (name: string) =>
+          name.toLowerCase() === "content-type" ? "text/csv" : null,
+      },
+      arrayBuffer: async () => new TextEncoder().encode(csvText).buffer,
+    } as unknown as Response);
+
+    const res = await request(app)
+      .post("/utility/python/execute")
+      .send({
+        code: 'print(len(open("scores.csv").read()))',
+        inputFiles: ["https://example.com/data/scores.csv"],
+      });
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.stdout.trim()).toBe(String(csvText.length));
+    expect(res.body.inputFiles[0].filename).toBe("scores.csv");
+    fetchSpy.mockRestore();
+  });
+
+  it("accepts a single string (normalized to an array)", async () => {
+    const res = await request(app)
+      .post("/utility/python/execute")
+      .send({
+        code: 'print(open("input_1.csv").read().splitlines()[-1])',
+        inputFiles: csvDataUri,
+      });
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.stdout.trim()).toBe("Grace,95");
+  });
+
+  it("returns 400 with the standard re-attach error for the unresolved 'attached' sentinel", async () => {
+    const res = await request(app)
+      .post("/utility/python/execute")
+      .send({ code: 'print("hi")', inputFiles: ["attached"] });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain("No attached document was found");
+  });
+
+  it("returns 400 for non-string inputFiles entries", async () => {
+    const res = await request(app)
+      .post("/utility/python/execute")
+      .send({ code: 'print("hi")', inputFiles: [{ url: "x" }] });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain("'inputFiles' must be");
+  });
+
+  it("fails the run without executing code for disallowed schemes", async () => {
+    const res = await request(app)
+      .post("/utility/python/execute")
+      .send({ code: 'print("should not run")', inputFiles: ["file:///etc/passwd"] });
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(false);
+    expect(res.body.stdout).toBe("");
+    expect(res.body.error).toContain("Unsupported scheme");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════
 //  Iterative map building — GET /utility/map with mapId
 // ═══════════════════════════════════════════════════════════════════
 

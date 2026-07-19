@@ -83,7 +83,7 @@ export function getCoreHarnessTools(
     endpoint: {
       method: "POST",
       path: "/utility/python/execute",
-      bodyParams: ["code", "timeout"],
+      bodyParams: ["code", "timeout", "inputFiles"],
     },
     parameters: {
       type: "object",
@@ -95,6 +95,11 @@ export function getCoreHarnessTools(
         timeout: {
           type: "integer",
           description: translate("execute_python.params.timeout"),
+        },
+        inputFiles: {
+          type: "array",
+          items: { type: "string" },
+          description: translate("execute_python.params.inputFiles"),
         },
       },
       required: ["code"],

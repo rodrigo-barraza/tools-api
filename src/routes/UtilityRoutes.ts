@@ -30,6 +30,7 @@ import {
   executePython,
   executePythonStreaming,
   getInterpreterInfo,
+  normalizeInputFileSources,
   type PythonExecutionResult,
 } from "../services/PythonInterpreterService.ts";
 import {
@@ -596,7 +597,7 @@ function buildPythonFigurePayload(
 router.post(
   "/python/execute",
   asyncHandler(async (req: Request, res: Response) => {
-    const { code, timeout } = req.body;
+    const { code, timeout, inputFiles } = req.body;
     if (!code || typeof code !== "string") {
       return res
         .status(400)
@@ -606,10 +607,17 @@ router.post(
     if (lengthError) {
       return res.status(400).json({ error: lengthError });
     }
+    // Normalize + sentinel-check input files up front (routes return 400
+    // for the unresolved "attached" sentinel, per AttachedMediaSentinel).
+    const normalizedInputs = normalizeInputFileSources(inputFiles);
+    if ("error" in normalizedInputs) {
+      return res.status(400).json({ error: normalizedInputs.error });
+    }
     const result = await executePython(code, {
       timeout: timeout
         ? Math.min(Math.max(parseInt(timeout), 1000), 60_000)
         : undefined,
+      inputFiles: normalizedInputs.sources,
     });
     const published = await publishPythonFigures(result);
     const { figures: _rawFigures, totalFigureFiles: _total, ...textResult } = result;
@@ -653,7 +661,7 @@ router.get(
 router.post(
   "/python/stream",
   asyncHandler(async (req: Request, res: Response) => {
-    const { code, timeout } = req.body;
+    const { code, timeout, inputFiles } = req.body;
     if (!code || typeof code !== "string") {
       return res
         .status(400)
@@ -661,12 +669,17 @@ router.post(
     }
     const lengthError = validateMaxLength(code, MAX_CODE_LENGTH, "Code");
     if (lengthError) return res.status(400).json({ error: lengthError });
+    const normalizedInputs = normalizeInputFileSources(inputFiles);
+    if ("error" in normalizedInputs) {
+      return res.status(400).json({ error: normalizedInputs.error });
+    }
     const send = setupStreamingServerSentEvents(res);
     send({ event: "start", language: "python" });
     const result = await executePythonStreaming(code, {
       timeout: timeout
         ? Math.min(Math.max(parseInt(timeout), 1000), 60_000)
         : undefined,
+      inputFiles: normalizedInputs.sources,
       onChunk: (event: string, data: string) => send({ event, data }),
     });
     const published = await publishPythonFigures(result);
@@ -677,6 +690,7 @@ router.post(
       success: result.success,
       timedOut: result.timedOut,
       error: result.error || undefined,
+      ...(result.inputFiles && { inputFiles: result.inputFiles }),
       ...buildPythonFigurePayload(result, published),
     });
     res.end();

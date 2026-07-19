@@ -44,6 +44,12 @@ export interface VectorSymbolInput {
   action?: "delete";
 }
 
+export interface VectorRetimeInput {
+  scale?: number;
+  offset?: number;
+  layerIds?: string[];
+}
+
 export interface VectorAnimationInput {
   width?: number;
   height?: number;
@@ -52,6 +58,7 @@ export interface VectorAnimationInput {
   background?: string;
   layers?: VectorLayer[];
   symbols?: Record<string, VectorSymbolInput | null>;
+  retime?: VectorRetimeInput;
 }
 
 const VALID_SHAPE_TYPES = new Set([
@@ -64,6 +71,11 @@ const VALID_SHAPE_TYPES = new Set([
   "text",
   "group",
   "instance",
+  // Preset shapes — baked to path layers at merge time.
+  "star",
+  "heart",
+  "arrow",
+  "gear",
 ]);
 
 /** Shape types whose outline can act as a clipping mask. */
@@ -369,6 +381,25 @@ export function validateVectorAnimationInput(
     for (let layerIndex = 0; layerIndex < animation.layers.length; layerIndex++) {
       const layerError = validateLayer(animation.layers[layerIndex], layerIndex, "");
       if (layerError) return layerError;
+    }
+  }
+
+  if (animation.retime !== undefined && animation.retime !== null) {
+    const retime = animation.retime;
+    if (typeof retime !== "object" || Array.isArray(retime)) {
+      return "'retime' must be an object like {\"scale\": 2} (slow to half speed) or {\"offset\": 1, \"layerIds\": [\"ball\"]}";
+    }
+    if (retime.scale !== undefined && (typeof retime.scale !== "number" || retime.scale <= 0)) {
+      return "'retime.scale' must be a positive number (2 = twice as long/slow, 0.5 = twice as fast)";
+    }
+    if (retime.offset !== undefined && typeof retime.offset !== "number") {
+      return "'retime.offset' must be a number of seconds (positive shifts keyframes later)";
+    }
+    if (
+      retime.layerIds !== undefined &&
+      (!Array.isArray(retime.layerIds) || retime.layerIds.some((id) => typeof id !== "string"))
+    ) {
+      return "'retime.layerIds' must be an array of layer id strings";
     }
   }
 

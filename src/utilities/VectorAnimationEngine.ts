@@ -527,11 +527,22 @@ export function resolveAnimatedProperties(layer: VectorLayer, time: number): Key
     }
   }
 
-  const interpolatedProperties: KeyframeProperty = {};
+  // Transform statics set on the layer itself survive keyframing: a layer
+  // with only rotation keyframes keeps its static x/y instead of snapping
+  // to the origin. (Opacity is excluded — the player multiplies the static
+  // layer opacity in separately.)
+  const staticBase: KeyframeProperty = {};
+  if (layer.x !== undefined) staticBase.x = layer.x;
+  if (layer.y !== undefined) staticBase.y = layer.y;
+  if (layer.scaleX !== undefined) staticBase.scaleX = layer.scaleX;
+  if (layer.scaleY !== undefined) staticBase.scaleY = layer.scaleY;
+  if (layer.rotation !== undefined) staticBase.rotation = layer.rotation;
+
+  const interpolatedProperties: KeyframeProperty = { ...staticBase };
   if (!previousKeyframe) {
-    return { ...keyframes[0].properties };
+    return { ...staticBase, ...keyframes[0].properties };
   } else if (!nextKeyframe) {
-    return { ...previousKeyframe.properties };
+    return { ...staticBase, ...previousKeyframe.properties };
   } else {
     const progress = (time - previousKeyframe.time) / (nextKeyframe.time - previousKeyframe.time);
     const easedProgress = ease(progress, previousKeyframe.easing);
@@ -561,6 +572,101 @@ export function resolveAnimatedProperties(layer: VectorLayer, time: number): Key
   }
 
   return interpolatedProperties;
+}
+
+// ─── Preset shapes ───────────────────────────────────────────
+// Named primitives agents would otherwise have to hand-author as SVG path
+// strings. They are converted to `path` layers server-side at merge time,
+// so masking, morphing, and image fills work on them unchanged.
+
+export const PRESET_SHAPE_TYPES = ["star", "heart", "arrow", "gear"] as const;
+export type PresetShapeType = (typeof PRESET_SHAPE_TYPES)[number];
+
+function formatPathPoints(points: Array<[number, number]>): string {
+  return points
+    .map(([x, y], index) => `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`)
+    .join(" ");
+}
+
+/** Build the centered-at-origin SVG path for a preset shape. */
+export function buildPresetPath(shapeType: PresetShapeType, shapeData: ShapeData = {}): string {
+  if (shapeType === "star") {
+    const requestedPoints =
+      Number(shapeData.spikes) || (typeof shapeData.points === "number" ? shapeData.points : 0) || 5;
+    const pointCount = Math.max(3, Math.min(24, Math.round(requestedPoints)));
+    const outerRadius = Number(shapeData.outerRadius) || Number(shapeData.radius) || 50;
+    const innerRadius = Number(shapeData.innerRadius) || outerRadius * 0.4;
+    const vertices: Array<[number, number]> = [];
+    for (let index = 0; index < pointCount * 2; index++) {
+      const radius = index % 2 === 0 ? outerRadius : innerRadius;
+      const angle = -Math.PI / 2 + (index * Math.PI) / pointCount;
+      vertices.push([radius * Math.cos(angle), radius * Math.sin(angle)]);
+    }
+    return formatPathPoints(vertices) + " Z";
+  }
+
+  if (shapeType === "heart") {
+    const size = Number(shapeData.size) || Number(shapeData.width) || 100;
+    const scale = size / 100;
+    const coordinates = [
+      [0, -27.5], [-15, -42.5], [-50, -32.5], [-50, -7.5],
+      [-50, 17.5], [0, 42.5], [0, 42.5],
+      [0, 42.5], [50, 17.5], [50, -7.5],
+      [50, -32.5], [15, -42.5], [0, -27.5],
+    ].map(([x, y]) => `${(x * scale).toFixed(2)} ${(y * scale).toFixed(2)}`);
+    return (
+      `M ${coordinates[0]} ` +
+      `C ${coordinates[1]}, ${coordinates[2]}, ${coordinates[3]} ` +
+      `C ${coordinates[4]}, ${coordinates[5]}, ${coordinates[6]} ` +
+      `C ${coordinates[7]}, ${coordinates[8]}, ${coordinates[9]} ` +
+      `C ${coordinates[10]}, ${coordinates[11]}, ${coordinates[12]} Z`
+    );
+  }
+
+  if (shapeType === "arrow") {
+    const length = Number(shapeData.length) || Number(shapeData.width) || 100;
+    const width = Number(shapeData.height) || Number(shapeData.thickness) || length * 0.4;
+    const headLength = Math.min(length * 0.35, width * 1.2);
+    const headStartX = length / 2 - headLength;
+    return (
+      formatPathPoints([
+        [-length / 2, -width * 0.25],
+        [headStartX, -width * 0.25],
+        [headStartX, -width * 0.5],
+        [length / 2, 0],
+        [headStartX, width * 0.5],
+        [headStartX, width * 0.25],
+        [-length / 2, width * 0.25],
+      ]) + " Z"
+    );
+  }
+
+  // gear
+  const toothCount = Math.max(4, Math.min(32, Math.round(Number(shapeData.teeth as unknown) || 8)));
+  const outerRadius = Number(shapeData.outerRadius) || Number(shapeData.radius) || 50;
+  const innerRadius = Number(shapeData.innerRadius) || outerRadius * 0.72;
+  const holeRadius = shapeData.holeRadius !== undefined ? Number(shapeData.holeRadius) : outerRadius * 0.28;
+  const segment = (Math.PI * 2) / toothCount;
+  const vertices: Array<[number, number]> = [];
+  for (let index = 0; index < toothCount; index++) {
+    const base = index * segment;
+    for (const [radius, fraction] of [
+      [innerRadius, 0],
+      [outerRadius, 0.2],
+      [outerRadius, 0.5],
+      [innerRadius, 0.7],
+    ] as Array<[number, number]>) {
+      const angle = base + fraction * segment;
+      vertices.push([radius * Math.cos(angle), radius * Math.sin(angle)]);
+    }
+  }
+  let path = formatPathPoints(vertices) + " Z";
+  if (holeRadius > 0) {
+    const h = holeRadius.toFixed(2);
+    // Counter-clockwise subpath so the nonzero winding rule cuts the hole.
+    path += ` M ${h} 0 A ${h} ${h} 0 1 0 -${h} 0 A ${h} ${h} 0 1 0 ${h} 0 Z`;
+  }
+  return path;
 }
 
 /** Stable draw-order sort: higher zIndex on top, ties keep array order. */

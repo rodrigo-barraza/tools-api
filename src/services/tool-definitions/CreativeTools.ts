@@ -1427,7 +1427,10 @@ export function getCreativeTools(
               description: translate("create_vector_animation.params.options.params.title"),
             },
             snapshot: {
-              type: "boolean",
+              anyOf: [
+                { type: "boolean" },
+                { type: "string", enum: ["debug"] },
+              ],
               description: translate("create_vector_animation.params.options.params.snapshot"),
             },
             snapshotTimes: {
@@ -1439,6 +1442,14 @@ export function getCreativeTools(
               type: "string",
               enum: ["mp4", "gif"],
               description: translate("create_vector_animation.params.options.params.export"),
+            },
+            audioUrl: {
+              type: "string",
+              description: translate("create_vector_animation.params.options.params.audioUrl"),
+            },
+            includeState: {
+              type: "boolean",
+              description: translate("create_vector_animation.params.options.params.includeState"),
             },
           },
         },
@@ -1474,6 +1485,25 @@ export function getCreativeTools(
               type: "object",
               description: translate("create_vector_animation.params.animation.params.symbols"),
             },
+            retime: {
+              type: "object",
+              description: translate("create_vector_animation.params.animation.params.retime"),
+              properties: {
+                scale: {
+                  type: "number",
+                  description: translate("create_vector_animation.params.animation.params.retime.params.scale"),
+                },
+                offset: {
+                  type: "number",
+                  description: translate("create_vector_animation.params.animation.params.retime.params.offset"),
+                },
+                layerIds: {
+                  type: "array",
+                  items: { type: "string" },
+                  description: translate("create_vector_animation.params.animation.params.retime.params.layerIds"),
+                },
+              },
+            },
             layers: {
               type: "array",
               description: translate("create_vector_animation.params.animation.params.layers"),
@@ -1505,6 +1535,10 @@ export function getCreativeTools(
                       "text",
                       "group",
                       "instance",
+                      "star",
+                      "heart",
+                      "arrow",
+                      "gear",
                     ],
                     description: translate("create_vector_animation.params.animation.params.layers.items.params.shapeType"),
                   },

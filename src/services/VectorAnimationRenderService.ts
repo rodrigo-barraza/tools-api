@@ -34,6 +34,7 @@ const LABEL_BAR_HEIGHT = 26;
 export async function renderAnimationFrames(
   embedHtml: string,
   times: number[],
+  options: { debug?: boolean } = {},
 ): Promise<Buffer[]> {
   const browser = await getSharedBrowser();
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
@@ -46,8 +47,14 @@ export async function renderAnimationFrames(
     const frames: Buffer[] = [];
     for (const time of times) {
       const dataUrl = await page.evaluate(
-        (frameTime) => (window as unknown as { __vaRenderAt: (t: number) => string }).__vaRenderAt(frameTime),
-        time,
+        ({ frameTime, debug }) => {
+          const hooks = window as unknown as {
+            __vaRenderAt: (t: number) => string;
+            __vaRenderDebugAt: (t: number) => string;
+          };
+          return debug ? hooks.__vaRenderDebugAt(frameTime) : hooks.__vaRenderAt(frameTime);
+        },
+        { frameTime: time, debug: options.debug === true },
       );
       const base64 = String(dataUrl).replace(/^data:image\/png;base64,/, "");
       frames.push(Buffer.from(base64, "base64"));
@@ -115,13 +122,17 @@ export interface EncodedAnimationVideo {
   format: "mp4" | "gif";
 }
 
+const MAXIMUM_AUDIO_BYTES = 20 * 1024 * 1024;
+
 /**
  * Encode a PNG frame sequence into mp4 (H.264) or gif (two-pass palette).
+ * `audioUrl` (mp4 only) muxes a soundtrack in, trimmed to the video length.
  */
 export async function encodeAnimationVideo(
   frames: Buffer[],
   fps: number,
   format: "mp4" | "gif",
+  audioUrl?: string,
 ): Promise<EncodedAnimationVideo> {
   if (frames.length === 0) throw new Error("No frames to encode");
 
@@ -135,6 +146,24 @@ export async function encodeAnimationVideo(
     );
     const framePattern = join(workDirectory, "frame%05d.png");
     const boundedFps = Math.max(1, Math.min(60, Math.round(fps)));
+
+    let audioPath: string | null = null;
+    if (audioUrl && format === "mp4") {
+      if (audioUrl.startsWith("data:")) {
+        const base64 = audioUrl.slice(audioUrl.indexOf(",") + 1);
+        const audioBuffer = Buffer.from(base64, "base64");
+        if (audioBuffer.length > MAXIMUM_AUDIO_BYTES) throw new Error("Audio track exceeds 20 MB limit");
+        audioPath = join(workDirectory, "audio-in");
+        await writeFile(audioPath, audioBuffer);
+      } else {
+        const response = await fetch(audioUrl, { signal: AbortSignal.timeout(30_000) });
+        if (!response.ok) throw new Error(`Failed to fetch audio track: HTTP ${response.status}`);
+        const audioBuffer = Buffer.from(await response.arrayBuffer());
+        if (audioBuffer.length > MAXIMUM_AUDIO_BYTES) throw new Error("Audio track exceeds 20 MB limit");
+        audioPath = join(workDirectory, "audio-in");
+        await writeFile(audioPath, audioBuffer);
+      }
+    }
 
     if (format === "gif") {
       const palettePath = join(workDirectory, "palette.png");
@@ -164,27 +193,22 @@ export async function encodeAnimationVideo(
     }
 
     const outputPath = join(workDirectory, "out.mp4");
-    await executeFileAsynchronously(
-      ffmpegBinaryPath,
-      [
-        "-y",
-        "-framerate",
-        String(boundedFps),
-        "-i",
-        framePattern,
-        "-c:v",
-        "libx264",
-        "-pix_fmt",
-        "yuv420p",
-        // H.264 requires even dimensions; pad rather than scale to keep pixels exact.
-        "-vf",
-        "pad=ceil(iw/2)*2:ceil(ih/2)*2",
-        "-movflags",
-        "+faststart",
-        outputPath,
-      ],
-      { timeout: ENCODE_TIMEOUT_MS },
+    const mp4Arguments = ["-y", "-framerate", String(boundedFps), "-i", framePattern];
+    if (audioPath) mp4Arguments.push("-i", audioPath);
+    mp4Arguments.push(
+      "-c:v",
+      "libx264",
+      "-pix_fmt",
+      "yuv420p",
+      // H.264 requires even dimensions; pad rather than scale to keep pixels exact.
+      "-vf",
+      "pad=ceil(iw/2)*2:ceil(ih/2)*2",
+      "-movflags",
+      "+faststart",
     );
+    if (audioPath) mp4Arguments.push("-c:a", "aac", "-shortest");
+    mp4Arguments.push(outputPath);
+    await executeFileAsynchronously(ffmpegBinaryPath, mp4Arguments, { timeout: ENCODE_TIMEOUT_MS });
     return { buffer: await readFile(outputPath), mimeType: "video/mp4", format: "mp4" };
   } catch (error) {
     logger.warn(`[VectorAnimationRender] ${format} encode failed: ${error instanceof Error ? error.message : String(error)}`);

@@ -12,10 +12,17 @@ import {
   PYTHON_HEALTH_CHECK_TIMEOUT_MS as HEALTH_CHECK_TIMEOUT_MS,
   PYTHON_MAX_FIGURES as MAX_FIGURES,
   PYTHON_MAX_FIGURE_BYTES as MAX_FIGURE_BYTES,
+  PYTHON_MAX_INPUT_FILES as MAX_INPUT_FILES,
+  PYTHON_MAX_INPUT_FILE_BYTES as MAX_INPUT_FILE_BYTES,
+  PYTHON_INPUT_FETCH_TIMEOUT_MS as INPUT_FETCH_TIMEOUT_MS,
 } from "../constants.ts";
-import { errorMessage } from "../utilities.ts";
+import { errorMessage, randomUserAgent } from "../utilities.ts";
 import { OutputAccumulator } from "../utilities/OutputAccumulator.ts";
 import { buildCommandEnv } from "./AgenticCommandService.ts";
+import {
+  isUnresolvedAttachedSentinel,
+  buildAttachedSentinelError,
+} from "./AttachedMediaSentinel.ts";
 
 const PYTHON_BIN = "python3";
 
@@ -112,10 +119,13 @@ export interface PythonFigure {
 /**
  * Collect image files from the run's working directory (auto-captured
  * figures sort first via their _prism_ prefix). Returns at most MAX_FIGURES
- * figures plus the total number of candidate files found.
+ * figures plus the total number of candidate files found. Staged input
+ * files are excluded — echoing an uploaded photo back as a "figure" would
+ * both confuse the model and waste the figure budget.
  */
 async function collectFigures(
   directory: string,
+  excludeFilenames?: ReadonlySet<string>,
 ): Promise<{ figures: PythonFigure[]; totalFigureFiles: number }> {
   let entries: string[];
   try {
@@ -126,6 +136,7 @@ async function collectFigures(
 
   const candidates = entries
     .filter((name) => FIGURE_MIME_BY_EXTENSION[extname(name).toLowerCase()])
+    .filter((name) => !excludeFilenames?.has(name))
     .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
   const figures: PythonFigure[] = [];
@@ -153,11 +164,286 @@ async function collectFigures(
 }
 
 // ────────────────────────────────────────────────────────────
+// Input File Staging (execute_python `inputFiles`)
+// ────────────────────────────────────────────────────────────
+// Downloads/decodes each source (http(s) URL or data: URI) into the run's
+// temp working directory BEFORE the user code executes, so the code can
+// open("<filename>") them. The directory is per-invocation and wiped by
+// the existing cleanup, so staged files need no extra lifecycle.
+
+// Fallback-name extensions when the URL basename is unusable. Mirrors the
+// common upload types; anything unknown lands as .bin.
+const INPUT_EXTENSION_BY_MIME: Record<string, string> = {
+  "text/csv": "csv",
+  "text/tab-separated-values": "tsv",
+  "text/plain": "txt",
+  "text/markdown": "md",
+  "text/html": "html",
+  "application/json": "json",
+  "application/xml": "xml",
+  "text/xml": "xml",
+  "application/pdf": "pdf",
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/gif": "gif",
+  "image/webp": "webp",
+  "image/svg+xml": "svg",
+  "audio/mpeg": "mp3",
+  "audio/wav": "wav",
+  "audio/x-wav": "wav",
+  "audio/ogg": "ogg",
+  "audio/flac": "flac",
+  "audio/mp4": "m4a",
+  "video/mp4": "mp4",
+  "video/webm": "webm",
+  "application/zip": "zip",
+  "application/gzip": "gz",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+  "application/vnd.ms-excel": "xls",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+    "docx",
+};
+
+// Names an input file must never claim: the staged script itself, plus the
+// _prism_ prefix reserved for the figure epilogue's auto-captures.
+const RESERVED_INPUT_FILENAMES = new Set(["script.py"]);
+const RESERVED_INPUT_PREFIX = "_prism_";
+
+export interface StagedInputFile {
+  /** Filename relative to the run's working directory. */
+  filename: string;
+  bytes: number;
+  mimeType: string;
+}
+
+/**
+ * Normalize the tool's `inputFiles` parameter (single string or array of
+ * strings) into a validated source list. Rejects non-strings, over-cap
+ * batches, and the unresolved "attached" sentinel (standard error copy).
+ */
+export function normalizeInputFileSources(
+  input: unknown,
+): { sources: string[] } | { error: string } {
+  if (input === undefined || input === null) return { sources: [] };
+  const entries = Array.isArray(input) ? input : [input];
+  if (
+    entries.some((entry) => typeof entry !== "string" || entry.trim() === "")
+  ) {
+    return {
+      error:
+        "'inputFiles' must be a string or an array of non-empty strings " +
+        "(http(s) URL, data: URI, or the literal string 'attached')",
+    };
+  }
+  if (entries.length > MAX_INPUT_FILES) {
+    return {
+      error: `Too many input files: ${entries.length} (max ${MAX_INPUT_FILES})`,
+    };
+  }
+  if (entries.some((entry) => isUnresolvedAttachedSentinel(entry))) {
+    return {
+      error: buildAttachedSentinelError(
+        "document",
+        "an explicit http(s) URL or data: URI",
+      ),
+    };
+  }
+  return { sources: (entries as string[]).map((entry) => entry.trim()) };
+}
+
+/**
+ * Reduce a URL path basename to a safe, workspace-relative filename.
+ * Basename-only (no traversal), safe charset, no leading dots, and never
+ * a name the run itself uses (script.py / _prism_* figure captures).
+ * Returns null when nothing usable remains — caller falls back to
+ * input_<n>.<ext>.
+ */
+export function sanitizeInputFilename(rawName: string): string | null {
+  const base = rawName.split(/[/\\]/).pop() ?? "";
+  let decoded = base;
+  try {
+    decoded = decodeURIComponent(base);
+  } catch {
+    // Malformed percent-encoding — sanitize the raw basename instead
+  }
+  const cleaned = decoded
+    .replace(/[^A-Za-z0-9._-]/g, "_")
+    .replace(/^[.]+/, "")
+    .slice(0, 100);
+  if (!cleaned || /^[._-]+$/.test(cleaned)) return null;
+  if (
+    RESERVED_INPUT_FILENAMES.has(cleaned) ||
+    cleaned.startsWith(RESERVED_INPUT_PREFIX)
+  ) {
+    return null;
+  }
+  return cleaned;
+}
+
+function extensionForMime(mimeType: string): string {
+  const bare = mimeType.split(";")[0].trim().toLowerCase();
+  return INPUT_EXTENSION_BY_MIME[bare] ?? "bin";
+}
+
+/** Short echo label for a source — avoids returning megabytes of base64. */
+function describeInputSource(source: string): string {
+  return source.startsWith("data:")
+    ? `data: URI (${source.length} chars)`
+    : source.length > 200
+      ? source.slice(0, 200) + "…"
+      : source;
+}
+
+type ResolvedInputSource =
+  | { buffer: Buffer; mimeType: string; suggestedName: string | null }
+  | { error: string };
+
+async function resolveInputSource(
+  source: string,
+): Promise<ResolvedInputSource> {
+  if (source.startsWith("data:")) {
+    const commaIndex = source.indexOf(",");
+    if (commaIndex === -1) {
+      return { error: "Invalid data: URI (missing comma separator)" };
+    }
+    const header = source.slice(5, commaIndex);
+    const payload = source.slice(commaIndex + 1);
+    const mimeType =
+      header.split(";")[0].trim().toLowerCase() || "application/octet-stream";
+    let buffer: Buffer;
+    try {
+      buffer = header.includes("base64")
+        ? Buffer.from(payload, "base64")
+        : Buffer.from(decodeURIComponent(payload), "utf-8");
+    } catch {
+      return { error: "Invalid data: URI payload" };
+    }
+    if (buffer.length > MAX_INPUT_FILE_BYTES) {
+      return {
+        error: `Input file too large: ${(buffer.length / 1_048_576).toFixed(1)} MB (max: 40 MB)`,
+      };
+    }
+    return { buffer, mimeType, suggestedName: null };
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(source);
+  } catch {
+    return {
+      error:
+        `Invalid input file source '${describeInputSource(source)}': ` +
+        "must be an http(s) URL or a data: URI",
+    };
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    return {
+      error:
+        `Unsupported scheme '${parsed.protocol}' — only http(s) URLs and ` +
+        "data: URIs are allowed",
+    };
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), INPUT_FETCH_TIMEOUT_MS);
+  try {
+    const response = await fetch(parsed.href, {
+      signal: controller.signal,
+      headers: { "User-Agent": randomUserAgent(), Accept: "*/*" },
+    });
+    if (!response.ok) {
+      return { error: `HTTP ${response.status}: ${response.statusText}` };
+    }
+    const contentLength = parseInt(
+      response.headers.get("content-length") || "0",
+      10,
+    );
+    if (contentLength > MAX_INPUT_FILE_BYTES) {
+      return {
+        error: `Input file too large: ${(contentLength / 1_048_576).toFixed(1)} MB (max: 40 MB)`,
+      };
+    }
+    const buffer = Buffer.from(await response.arrayBuffer());
+    if (buffer.length > MAX_INPUT_FILE_BYTES) {
+      return {
+        error: `Input file too large: ${(buffer.length / 1_048_576).toFixed(1)} MB (max: 40 MB)`,
+      };
+    }
+    const mimeType =
+      response.headers.get("content-type")?.split(";")[0].trim().toLowerCase() ||
+      "application/octet-stream";
+    return { buffer, mimeType, suggestedName: parsed.pathname };
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === "AbortError") {
+      return {
+        error: `Download timed out after ${INPUT_FETCH_TIMEOUT_MS / 1000}s`,
+      };
+    }
+    return { error: `Download failed: ${errorMessage(error)}` };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Download/decode each source and write it into `directory` (the run's
+ * working directory). Fails fast on the first bad entry — user code never
+ * runs against a partial input set.
+ */
+export async function stageInputFiles(
+  directory: string,
+  sources: string[],
+): Promise<{ files: StagedInputFile[] } | { error: string }> {
+  const files: StagedInputFile[] = [];
+  const usedNames = new Set<string>();
+
+  for (let index = 0; index < sources.length; index++) {
+    const source = sources[index];
+    const resolved = await resolveInputSource(source);
+    if ("error" in resolved) {
+      return { error: `inputFiles[${index}]: ${resolved.error}` };
+    }
+
+    let filename = resolved.suggestedName
+      ? sanitizeInputFilename(resolved.suggestedName)
+      : null;
+    if (!filename) {
+      filename = `input_${index + 1}.${extensionForMime(resolved.mimeType)}`;
+    }
+    if (usedNames.has(filename)) {
+      filename = `input_${index + 1}_${filename}`.slice(0, 120);
+    }
+
+    try {
+      await writeFile(join(directory, filename), resolved.buffer);
+    } catch (error: unknown) {
+      return {
+        error: `inputFiles[${index}]: failed to write '${filename}': ${errorMessage(error)}`,
+      };
+    }
+    usedNames.add(filename);
+    files.push({
+      filename,
+      bytes: resolved.buffer.length,
+      mimeType: resolved.mimeType,
+    });
+  }
+
+  return { files };
+}
+
+// ────────────────────────────────────────────────────────────
 // Execution Engine
 // ────────────────────────────────────────────────────────────
 
 export interface PythonExecutionOptions {
   timeout?: number;
+  /**
+   * Input files to stage into the working directory before the code runs.
+   * A single source string or an array of http(s) URLs / data: URIs
+   * (normalized + sentinel-checked via normalizeInputFileSources).
+   */
+  inputFiles?: string | string[];
 }
 
 export interface PythonExecutionResult {
@@ -172,10 +458,11 @@ export interface PythonExecutionResult {
   figures?: PythonFigure[];
   /** Total image files found (may exceed figures.length when capped). */
   totalFigureFiles?: number;
+  /** Files staged into the working directory before the code ran. */
+  inputFiles?: StagedInputFile[];
 }
 
-export interface PythonStreamingOptions {
-  timeout?: number;
+export interface PythonStreamingOptions extends PythonExecutionOptions {
   onChunk?: (stream: "stdout" | "stderr", chunk: string) => void;
 }
 
@@ -187,24 +474,74 @@ export interface InterpreterInfo {
   memoryLimitMb?: number;
 }
 
+type StagedRun =
+  | {
+      temporaryDirectory: string;
+      scriptPath: string;
+      stagedInputFiles: StagedInputFile[];
+    }
+  | { stagingError: string };
+
+/**
+ * Create the run's temp working directory, stage any input files into it
+ * (BEFORE the code runs, so open("<filename>") works), then write the
+ * script. Any failure wipes the directory and aborts the run — user code
+ * never executes against a partial input set.
+ */
+async function stageRun(
+  code: string,
+  inputFiles?: string | string[],
+): Promise<StagedRun> {
+  const normalized = normalizeInputFileSources(inputFiles);
+  if ("error" in normalized) return { stagingError: normalized.error };
+
+  let temporaryDirectory = "";
+  try {
+    temporaryDirectory = await mkdtemp(join(tmpdir(), "pyexec-"));
+    let stagedInputFiles: StagedInputFile[] = [];
+    if (normalized.sources.length > 0) {
+      const staged = await stageInputFiles(
+        temporaryDirectory,
+        normalized.sources,
+      );
+      if ("error" in staged) {
+        rm(temporaryDirectory, { recursive: true, force: true }).catch(
+          () => {},
+        );
+        return {
+          stagingError: `Failed to stage input files — code was not executed. ${staged.error}`,
+        };
+      }
+      stagedInputFiles = staged.files;
+    }
+    // Write code to a temp file (avoids shell injection via -c)
+    const scriptPath = join(temporaryDirectory, "script.py");
+    await writeFile(
+      scriptPath,
+      PREAMBLE + "\n" + code + "\n" + EPILOGUE,
+      "utf-8",
+    );
+    return { temporaryDirectory, scriptPath, stagedInputFiles };
+  } catch (error: unknown) {
+    if (temporaryDirectory) {
+      rm(temporaryDirectory, { recursive: true, force: true }).catch(() => {});
+    }
+    return { stagingError: `Failed to stage script: ${errorMessage(error)}` };
+  }
+}
+
 /**
  * Execute Python code in a sandboxed subprocess.
  */
 export async function executePython(
   code: string,
-  { timeout = DEFAULT_TIMEOUT_MS }: PythonExecutionOptions = {},
+  { timeout = DEFAULT_TIMEOUT_MS, inputFiles }: PythonExecutionOptions = {},
 ): Promise<PythonExecutionResult> {
   const clampedTimeout = Math.min(Math.max(timeout, 1000), MAX_TIMEOUT_MS);
   const startTime = performance.now();
 
-  // Write code to a temp file (avoids shell injection via -c)
-  let temporaryDirectory = "";
-  let scriptPath = "";
-  try {
-    temporaryDirectory = await mkdtemp(join(tmpdir(), "pyexec-"));
-    scriptPath = join(temporaryDirectory, "script.py");
-    await writeFile(scriptPath, PREAMBLE + "\n" + code + "\n" + EPILOGUE, "utf-8");
-  } catch (error: unknown) {
+  const stagedRun = await stageRun(code, inputFiles);
+  if ("stagingError" in stagedRun) {
     return {
       success: false,
       stdout: "",
@@ -212,9 +549,10 @@ export async function executePython(
       exitCode: null,
       executionTimeMs: Math.round(performance.now() - startTime),
       timedOut: false,
-      error: `Failed to stage script: ${errorMessage(error)}`,
+      error: stagedRun.stagingError,
     };
   }
+  const { temporaryDirectory, scriptPath, stagedInputFiles } = stagedRun;
 
   return new Promise<PythonExecutionResult>((resolve) => {
     const stdoutAccumulator = new OutputAccumulator(MAX_OUTPUT_BYTES);
@@ -265,9 +603,10 @@ export async function executePython(
 
       const executionTimeMs = Math.round(performance.now() - startTime);
 
-      // Collect figures before wiping the temp dir
+      // Collect figures before wiping the temp dir (staged inputs excluded)
       const { figures, totalFigureFiles } = await collectFigures(
         temporaryDirectory,
+        new Set(stagedInputFiles.map((file) => file.filename)),
       );
 
       // Cleanup temp dir (includes the script file)
@@ -288,6 +627,7 @@ export async function executePython(
           error: `Execution timed out after ${clampedTimeout}ms`,
         }),
         ...(figures.length > 0 && { figures, totalFigureFiles }),
+        ...(stagedInputFiles.length > 0 && { inputFiles: stagedInputFiles }),
       });
     }
 
@@ -323,18 +663,17 @@ export async function executePython(
  */
 export async function executePythonStreaming(
   code: string,
-  { timeout = DEFAULT_TIMEOUT_MS, onChunk }: PythonStreamingOptions = {},
+  {
+    timeout = DEFAULT_TIMEOUT_MS,
+    inputFiles,
+    onChunk,
+  }: PythonStreamingOptions = {},
 ): Promise<PythonExecutionResult> {
   const clampedTimeout = Math.min(Math.max(timeout, 1000), MAX_TIMEOUT_MS);
   const startTime = performance.now();
 
-  let temporaryDirectory = "";
-  let scriptPath = "";
-  try {
-    temporaryDirectory = await mkdtemp(join(tmpdir(), "pyexec-"));
-    scriptPath = join(temporaryDirectory, "script.py");
-    await writeFile(scriptPath, PREAMBLE + "\n" + code + "\n" + EPILOGUE, "utf-8");
-  } catch (error: unknown) {
+  const stagedRun = await stageRun(code, inputFiles);
+  if ("stagingError" in stagedRun) {
     return {
       success: false,
       stdout: "",
@@ -342,9 +681,10 @@ export async function executePythonStreaming(
       exitCode: null,
       executionTimeMs: Math.round(performance.now() - startTime),
       timedOut: false,
-      error: `Failed to stage script: ${errorMessage(error)}`,
+      error: stagedRun.stagingError,
     };
   }
+  const { temporaryDirectory, scriptPath, stagedInputFiles } = stagedRun;
 
   return new Promise<PythonExecutionResult>((resolve) => {
     const stdoutAccumulator = new OutputAccumulator(MAX_OUTPUT_BYTES);
@@ -403,6 +743,7 @@ export async function executePythonStreaming(
 
       const { figures, totalFigureFiles } = await collectFigures(
         temporaryDirectory,
+        new Set(stagedInputFiles.map((file) => file.filename)),
       );
 
       if (temporaryDirectory) {
@@ -422,6 +763,7 @@ export async function executePythonStreaming(
           error: `Execution timed out after ${clampedTimeout}ms`,
         }),
         ...(figures.length > 0 && { figures, totalFigureFiles }),
+        ...(stagedInputFiles.length > 0 && { inputFiles: stagedInputFiles }),
       });
     }
 

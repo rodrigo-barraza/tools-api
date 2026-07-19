@@ -1,7 +1,13 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 import {
   executePython,
   getInterpreterInfo,
+  normalizeInputFileSources,
+  sanitizeInputFilename,
+  stageInputFiles,
 } from "../PythonInterpreterService.ts";
 
 // ═══════════════════════════════════════════════════════════════
@@ -264,5 +270,268 @@ plt.figure(); plt.plot([2, 1], [1, 2])
     const result = await executePython('print("no plots here")');
     expect(result.success).toBe(true);
     expect(result.figures).toBeUndefined();
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  Input File Staging (inputFiles)
+// ═══════════════════════════════════════════════════════════════
+
+const SAMPLE_CSV = "name,score\nAda,90\nGrace,95";
+const SAMPLE_CSV_DATA_URI = `data:text/csv;base64,${Buffer.from(
+  SAMPLE_CSV,
+  "utf-8",
+).toString("base64")}`;
+// 1x1 transparent PNG
+const TINY_PNG_BASE64 =
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+
+describe("normalizeInputFileSources", () => {
+  it("returns an empty list for undefined/null", () => {
+    expect(normalizeInputFileSources(undefined)).toEqual({ sources: [] });
+    expect(normalizeInputFileSources(null)).toEqual({ sources: [] });
+  });
+
+  it("normalizes a single string to a one-element array", () => {
+    const normalized = normalizeInputFileSources("https://example.com/a.csv");
+    expect(normalized).toEqual({ sources: ["https://example.com/a.csv"] });
+  });
+
+  it("passes arrays through (trimmed)", () => {
+    const normalized = normalizeInputFileSources([
+      " https://example.com/a.csv ",
+    ]);
+    expect(normalized).toEqual({ sources: ["https://example.com/a.csv"] });
+  });
+
+  it("rejects non-string and empty entries", () => {
+    for (const bad of [[42], [""], [{ url: "x" }], [null]]) {
+      const normalized = normalizeInputFileSources(bad);
+      expect("error" in normalized && normalized.error).toContain(
+        "'inputFiles' must be",
+      );
+    }
+  });
+
+  it("caps the batch at 8 files", () => {
+    const normalized = normalizeInputFileSources(
+      Array.from({ length: 9 }, (_, index) => `https://example.com/${index}`),
+    );
+    expect("error" in normalized && normalized.error).toContain(
+      "Too many input files: 9 (max 8)",
+    );
+  });
+
+  it("returns the standard re-attach error for the unresolved sentinel", () => {
+    for (const sentinel of ["attached", " Attached "]) {
+      const normalized = normalizeInputFileSources([sentinel]);
+      expect("error" in normalized && normalized.error).toContain(
+        "No attached document was found",
+      );
+    }
+  });
+});
+
+describe("sanitizeInputFilename", () => {
+  it("keeps a plain safe basename", () => {
+    expect(sanitizeInputFilename("/data/sales.csv")).toBe("sales.csv");
+  });
+
+  it("is basename-only — traversal segments are discarded", () => {
+    expect(sanitizeInputFilename("../../etc/passwd")).toBe("passwd");
+    expect(sanitizeInputFilename("..\\..\\evil.exe")).toBe("evil.exe");
+  });
+
+  it("neutralizes encoded slashes after decoding", () => {
+    // %2F decodes to "/" AFTER the path split — must not create a path
+    expect(sanitizeInputFilename("a%2F..%2Fb.csv")).toBe("a_.._b.csv");
+  });
+
+  it("rejects dot-only and empty names", () => {
+    expect(sanitizeInputFilename("..")).toBeNull();
+    expect(sanitizeInputFilename(".")).toBeNull();
+    expect(sanitizeInputFilename("")).toBeNull();
+    expect(sanitizeInputFilename("///")).toBeNull();
+  });
+
+  it("strips leading dots (no hidden files)", () => {
+    expect(sanitizeInputFilename(".bashrc")).toBe("bashrc");
+  });
+
+  it("replaces unsafe characters with underscores", () => {
+    expect(sanitizeInputFilename("my report (final).csv")).toBe(
+      "my_report__final_.csv",
+    );
+  });
+
+  it("refuses names reserved by the run itself", () => {
+    expect(sanitizeInputFilename("script.py")).toBeNull();
+    expect(sanitizeInputFilename("_prism_figure_1.png")).toBeNull();
+  });
+});
+
+describe("stageInputFiles", () => {
+  let directory: string;
+
+  beforeEach(async () => {
+    directory = await mkdtemp(join(tmpdir(), "pyexec-test-"));
+  });
+
+  afterEach(async () => {
+    vi.restoreAllMocks();
+    await rm(directory, { recursive: true, force: true });
+  });
+
+  it("decodes a data: URI to input_<n>.<ext> from the MIME type", async () => {
+    const staged = await stageInputFiles(directory, [SAMPLE_CSV_DATA_URI]);
+    expect(staged).toEqual({
+      files: [
+        {
+          filename: "input_1.csv",
+          bytes: SAMPLE_CSV.length,
+          mimeType: "text/csv",
+        },
+      ],
+    });
+    const written = await readFile(join(directory, "input_1.csv"), "utf-8");
+    expect(written).toBe(SAMPLE_CSV);
+  });
+
+  it("downloads a URL and names the file from the path basename", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      headers: {
+        get: (name: string) =>
+          name.toLowerCase() === "content-type" ? "text/csv" : null,
+      },
+      arrayBuffer: async () => new TextEncoder().encode(SAMPLE_CSV).buffer,
+    } as unknown as Response);
+
+    const staged = await stageInputFiles(directory, [
+      "https://example.com/reports/sales.csv?version=2",
+    ]);
+    expect("files" in staged && staged.files[0]).toEqual({
+      filename: "sales.csv",
+      bytes: SAMPLE_CSV.length,
+      mimeType: "text/csv",
+    });
+    const written = await readFile(join(directory, "sales.csv"), "utf-8");
+    expect(written).toBe(SAMPLE_CSV);
+    expect(fetchSpy).toHaveBeenCalledOnce();
+  });
+
+  it("falls back to input_<n>.<ext> when the URL has no usable basename", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      headers: {
+        get: (name: string) =>
+          name.toLowerCase() === "content-type"
+            ? "application/json; charset=utf-8"
+            : null,
+      },
+      arrayBuffer: async () => new TextEncoder().encode("{}").buffer,
+    } as unknown as Response);
+
+    const staged = await stageInputFiles(directory, ["https://example.com/"]);
+    expect("files" in staged && staged.files[0].filename).toBe("input_1.json");
+  });
+
+  it("de-duplicates colliding filenames within a batch", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      headers: {
+        get: (name: string) =>
+          name.toLowerCase() === "content-type" ? "text/csv" : null,
+      },
+      arrayBuffer: async () => new TextEncoder().encode(SAMPLE_CSV).buffer,
+    } as unknown as Response);
+
+    const staged = await stageInputFiles(directory, [
+      "https://example.com/data.csv",
+      "https://mirror.example.com/data.csv",
+    ]);
+    expect("files" in staged && staged.files.map((file) => file.filename)).toEqual(
+      ["data.csv", "input_2_data.csv"],
+    );
+  });
+
+  it("rejects file:// and other non-http(s) schemes", async () => {
+    for (const source of ["file:///etc/passwd", "ftp://example.com/a.csv"]) {
+      const staged = await stageInputFiles(directory, [source]);
+      expect("error" in staged && staged.error).toContain("Unsupported scheme");
+    }
+  });
+
+  it("rejects non-URL garbage sources", async () => {
+    const staged = await stageInputFiles(directory, ["not a url"]);
+    expect("error" in staged && staged.error).toContain(
+      "must be an http(s) URL or a data: URI",
+    );
+  });
+
+  it("enforces the 40 MB per-file cap via content-length", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      headers: {
+        get: (name: string) =>
+          name.toLowerCase() === "content-length" ? String(100 * 1024 * 1024) : null,
+      },
+      arrayBuffer: async () => new ArrayBuffer(0),
+    } as unknown as Response);
+
+    const staged = await stageInputFiles(directory, [
+      "https://example.com/huge.bin",
+    ]);
+    expect("error" in staged && staged.error).toContain("max: 40 MB");
+  });
+
+  it("fails fast with the entry index on the first bad source", async () => {
+    const staged = await stageInputFiles(directory, [
+      SAMPLE_CSV_DATA_URI,
+      "file:///etc/passwd",
+    ]);
+    expect("error" in staged && staged.error).toContain("inputFiles[1]:");
+  });
+});
+
+describe("executePython — inputFiles", () => {
+  it("stages files before the code runs so open() works (single string form)", async () => {
+    const result = await executePython(
+      'print(open("input_1.csv").read().splitlines()[1])',
+      { inputFiles: SAMPLE_CSV_DATA_URI },
+    );
+    expect(result.success).toBe(true);
+    expect(result.stdout.trim()).toBe("Ada,90");
+    expect(result.inputFiles).toEqual([
+      { filename: "input_1.csv", bytes: SAMPLE_CSV.length, mimeType: "text/csv" },
+    ]);
+  });
+
+  it("does not echo staged image inputs back as figures", async () => {
+    const result = await executePython('print("done")', {
+      inputFiles: [`data:image/png;base64,${TINY_PNG_BASE64}`],
+    });
+    expect(result.success).toBe(true);
+    expect(result.figures).toBeUndefined();
+    expect(result.inputFiles?.[0].filename).toBe("input_1.png");
+  });
+
+  it("returns the standard sentinel error without executing the code", async () => {
+    const result = await executePython('open("marker", "w").write("ran")', {
+      inputFiles: ["attached"],
+    });
+    expect(result.success).toBe(false);
+    expect(result.exitCode).toBeNull();
+    expect(result.error).toContain("No attached document was found");
+  });
+
+  it("aborts the run (code not executed) when staging fails", async () => {
+    const result = await executePython('print("should not run")', {
+      inputFiles: ["file:///etc/passwd"],
+    });
+    expect(result.success).toBe(false);
+    expect(result.stdout).toBe("");
+    expect(result.error).toContain("code was not executed");
+    expect(result.error).toContain("Unsupported scheme");
   });
 });

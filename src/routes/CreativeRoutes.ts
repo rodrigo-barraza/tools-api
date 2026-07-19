@@ -65,10 +65,14 @@ import crypto from "node:crypto";
 import CONFIG from "../config.ts";
 import {
   buildEngineEmbedScript,
+  buildPresetPath,
+  PRESET_SHAPE_TYPES,
+  type PresetShapeType,
   type VectorLayer,
   type Keyframe,
   type SymbolMap,
 } from "../utilities/VectorAnimationEngine.ts";
+import { lintAnimation } from "../services/VectorAnimationLint.ts";
 import {
   queryEmojiCombination,
   queryEmojiCombinations,
@@ -1643,6 +1647,18 @@ function normalizeVectorLayers(layers: VectorLayerInput[]): VectorLayerInput[] {
     const normalized: VectorLayerInput = { ...layer };
     // Shorthand: a layer with a symbol reference is an instance layer.
     if (layer.symbol && !layer.shapeType) normalized.shapeType = "instance";
+    // Preset shapes bake to path layers so masking/morphing work unchanged.
+    if (layer.shapeType && (PRESET_SHAPE_TYPES as readonly string[]).includes(layer.shapeType)) {
+      normalized.shapeData = {
+        ...layer.shapeData,
+        preset: layer.shapeType,
+        path: buildPresetPath(
+          layer.shapeType as PresetShapeType,
+          (layer.shapeData || {}) as Parameters<typeof buildPresetPath>[1],
+        ),
+      };
+      normalized.shapeType = "path";
+    }
     if (Array.isArray(layer.keyframes)) {
       normalized.keyframes = layer.keyframes
         .map((keyframe) => {
@@ -2341,6 +2357,124 @@ export function buildVectorAnimationEmbedHtml(
           return canvas.toDataURL("image/png");
         };
 
+        // Debug snapshot: coordinate grid + world-space bounding boxes with
+        // layer ids, so an agent can see WHERE its layers are, not just how
+        // the frame looks.
+        function estimateLocalBox(layer, props) {
+          const shapeData = layer.shapeData || {};
+          const type = layer.shapeType;
+          if (type === "rectangle") {
+            const w = props.width ?? shapeData.width ?? 100;
+            const h = props.height ?? shapeData.height ?? 100;
+            return { minX: -w/2, minY: -h/2, maxX: w/2, maxY: h/2 };
+          }
+          if (type === "circle") {
+            const r = props.radius ?? shapeData.radius ?? 50;
+            return { minX: -r, minY: -r, maxX: r, maxY: r };
+          }
+          if (type === "ellipse") {
+            const rx = props.rx ?? shapeData.rx ?? 50;
+            const ry = props.ry ?? shapeData.ry ?? 30;
+            return { minX: -rx, minY: -ry, maxX: rx, maxY: ry };
+          }
+          if (type === "polygon" || type === "path" || type === "line") {
+            let coords = [];
+            if (type === "polygon") {
+              coords = (props.points || shapeData.points || []).flat();
+            } else if (type === "line") {
+              coords = [shapeData.x1 ?? 0, shapeData.y1 ?? 0, shapeData.x2 ?? 100, shapeData.y2 ?? 100];
+            } else {
+              coords = (String(props.path || shapeData.path || "").match(/-?\\d*\\.?\\d+/g) || []).map(Number);
+            }
+            if (coords.length < 4) return null;
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            for (let i = 0; i + 1 < coords.length; i += 2) {
+              minX = Math.min(minX, coords[i]); maxX = Math.max(maxX, coords[i]);
+              minY = Math.min(minY, coords[i+1]); maxY = Math.max(maxY, coords[i+1]);
+            }
+            return { minX, minY, maxX, maxY };
+          }
+          if (type === "text") {
+            const textVal = String(props.text ?? shapeData.text ?? "");
+            const fontSize = props.fontSize ?? shapeData.fontSize ?? 20;
+            const w = Math.max(fontSize, textVal.length * fontSize * 0.6);
+            return { minX: -w/2, minY: -fontSize/2, maxX: w/2, maxY: fontSize/2 };
+          }
+          return null;
+        }
+
+        function drawDebugOverlay(t) {
+          ctx.save();
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          // Grid: light lines every 50px, labels every 100px.
+          ctx.strokeStyle = "rgba(148, 163, 184, 0.25)";
+          ctx.lineWidth = 1;
+          ctx.font = "10px monospace";
+          for (let x = 0; x <= canvas.width; x += 50) {
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+            if (x % 100 === 0) { ctx.fillStyle = "rgba(226, 232, 240, 0.7)"; ctx.fillText(String(x), x + 2, 10); }
+          }
+          for (let y = 0; y <= canvas.height; y += 50) {
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+            if (y % 100 === 0 && y > 0) { ctx.fillStyle = "rgba(226, 232, 240, 0.7)"; ctx.fillText(String(y), 2, y - 2); }
+          }
+
+          // Layer boxes/markers in world space (top-level scope only).
+          for (const id in treeIndex.byId) {
+            const layer = treeIndex.byId[id];
+            const props = resolveAnimatedProperties(layer, t);
+            const matrix = getScopeMatrix(layer.id, treeIndex, t);
+            const isMarkerOnly = layer.shapeType === "group" || layer.shapeType === "instance";
+            const color = layer.isMask ? "#a78bfa" : isMarkerOnly ? "#34d399" : "#f43f5e";
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.setLineDash(layer.isMask ? [4, 4] : []);
+            ctx.lineWidth = 1;
+
+            let labelX, labelY;
+            const box = isMarkerOnly ? null : estimateLocalBox(layer, props);
+            if (box) {
+              const corners = [
+                matrix.transformPoint(new DOMPoint(box.minX, box.minY)),
+                matrix.transformPoint(new DOMPoint(box.maxX, box.minY)),
+                matrix.transformPoint(new DOMPoint(box.maxX, box.maxY)),
+                matrix.transformPoint(new DOMPoint(box.minX, box.maxY)),
+              ];
+              ctx.beginPath();
+              ctx.moveTo(corners[0].x, corners[0].y);
+              for (let i = 1; i < 4; i++) ctx.lineTo(corners[i].x, corners[i].y);
+              ctx.closePath();
+              ctx.stroke();
+              labelX = Math.min(corners[0].x, corners[1].x, corners[2].x, corners[3].x);
+              labelY = Math.min(corners[0].y, corners[1].y, corners[2].y, corners[3].y);
+            } else {
+              const origin = matrix.transformPoint(new DOMPoint(0, 0));
+              ctx.beginPath();
+              ctx.moveTo(origin.x - 6, origin.y); ctx.lineTo(origin.x + 6, origin.y);
+              ctx.moveTo(origin.x, origin.y - 6); ctx.lineTo(origin.x, origin.y + 6);
+              ctx.stroke();
+              labelX = origin.x + 4;
+              labelY = origin.y - 4;
+            }
+            ctx.setLineDash([]);
+            ctx.font = "11px monospace";
+            const label = layer.id + (layer.isMask ? " (mask)" : layer.shapeType === "group" ? " (group)" : layer.shapeType === "instance" ? " (instance)" : "");
+            const textWidth = ctx.measureText(label).width;
+            ctx.fillStyle = "rgba(2, 6, 23, 0.75)";
+            ctx.fillRect(labelX, labelY - 12, textWidth + 6, 13);
+            ctx.fillStyle = color;
+            ctx.fillText(label, labelX + 3, labelY - 2);
+          }
+          ctx.restore();
+        }
+
+        window.__vaRenderDebugAt = function(t) {
+          const clamped = Math.max(0, Math.min(duration, t));
+          renderFrame(clamped);
+          drawDebugOverlay(clamped);
+          return canvas.toDataURL("image/png");
+        };
+
         if (${headless}) {
           controls.style.display = "none";
           renderFrame(0);
@@ -2556,6 +2690,30 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
       for (const symbolName of symbolsPatch.remove) delete nextAnimation.symbols[symbolName];
       Object.assign(nextAnimation.symbols, symbolsPatch.set);
 
+      // Retime existing keyframes ("make it slower/faster/later") before
+      // merging this call's layers. Global retime rescales the duration too.
+      const retime = (animation as { retime?: { scale?: number; offset?: number; layerIds?: string[] } }).retime;
+      if (retime && typeof retime === "object") {
+        const scale = retime.scale !== undefined ? Number(retime.scale) : 1;
+        const offset = retime.offset !== undefined ? Number(retime.offset) : 0;
+        const targetIds =
+          Array.isArray(retime.layerIds) && retime.layerIds.length > 0 ? new Set(retime.layerIds) : null;
+        if (!targetIds) {
+          nextAnimation.duration = Math.max(
+            0.1,
+            (Number(nextAnimation.duration) || 5) * scale + Math.max(0, offset),
+          );
+        }
+        const maxTime = Number(nextAnimation.duration) || 5;
+        for (const targetLayer of nextAnimation.layers) {
+          if (targetIds && !targetIds.has(targetLayer.id)) continue;
+          for (const keyframe of targetLayer.keyframes || []) {
+            keyframe.time = Math.max(0, Math.min(maxTime, Number(keyframe.time) * scale + offset));
+          }
+          targetLayer.keyframes?.sort((keyframeA, keyframeB) => keyframeA.time - keyframeB.time);
+        }
+      }
+
       for (const newLayer of normalizedLayers) {
         // Support layer deletion
         if (newLayer.action === "delete" || newLayer.deleted === true) {
@@ -2580,7 +2738,9 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
             } else {
               if (!existingLayer.keyframes) existingLayer.keyframes = [];
               for (const newKf of newLayer.keyframes) {
-                const existingKfIndex = existingLayer.keyframes.findIndex((keyframe: Keyframe) => Number(keyframe.time) === Number(newKf.time));
+                // Epsilon match: 0.3333 should update the keyframe stored at
+                // 0.333 rather than pile up a float-precision duplicate.
+                const existingKfIndex = existingLayer.keyframes.findIndex((keyframe: Keyframe) => Math.abs(Number(keyframe.time) - Number(newKf.time)) < 0.001);
                 if (existingKfIndex !== -1) {
                   existingLayer.keyframes[existingKfIndex].properties = {
                     ...existingLayer.keyframes[existingKfIndex].properties,
@@ -2680,14 +2840,25 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
   const layerIds = sessionAnimation.layers.map((layer: VectorLayer) => layer.id);
   const symbolNames = Object.keys(sessionAnimation.symbols || {});
 
+  // Static sanity analysis — catches the silent failures (off-canvas,
+  // invisible, empty symbols, float-dupe keyframes) on every call.
+  let lintWarnings: string[] = [];
+  try {
+    lintWarnings = lintAnimation(sessionAnimation as Parameters<typeof lintAnimation>[0]);
+  } catch (error: unknown) {
+    logger.warn(`[CreativeRoutes] vector-animation lint failed: ${errorMessage(error)}`);
+  }
+
   // ── Optional server-side rendering: snapshot filmstrip (agent
   // self-inspection via describe_image) and mp4/gif export ──
-  let snapshotInfo: { url: string; times: number[] } | null = null;
-  let exportInfo: { url: string; format: "mp4" | "gif" } | null = null;
-  const featureNotes: string[] = [...clampWarnings];
+  let snapshotInfo: { url: string; times: number[]; mode?: string } | null = null;
+  let exportInfo: { url: string; format: "mp4" | "gif"; audio?: boolean } | null = null;
+  const featureNotes: string[] = [...clampWarnings, ...lintWarnings];
 
+  const snapshotDebug = options?.snapshot === "debug";
   const wantsSnapshot =
     options?.snapshot === true ||
+    snapshotDebug ||
     (Array.isArray(options?.snapshotTimes) && options.snapshotTimes.length > 0);
   const exportFormat: "mp4" | "gif" | null =
     options?.export === "mp4" || options?.export === "gif" ? options.export : null;
@@ -2709,9 +2880,13 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
         const times = requestedTimes
           .slice(0, 8)
           .map((time) => Math.max(0, Math.min(durationSeconds, Number(time) || 0)));
-        const frames = await renderAnimationFrames(headlessHtml, times);
+        const frames = await renderAnimationFrames(headlessHtml, times, { debug: snapshotDebug });
         const filmstrip = await buildFilmstripImage(frames, times);
-        snapshotInfo = { url: await storeVectorAnimationAsset(filmstrip, "image/png"), times };
+        snapshotInfo = {
+          url: await storeVectorAnimationAsset(filmstrip, "image/png"),
+          times,
+          ...(snapshotDebug && { mode: "debug" }),
+        };
       } catch (error: unknown) {
         featureNotes.push(`snapshot rendering failed (${errorMessage(error)})`);
         logger.warn(`[CreativeRoutes] vector-animation snapshot failed: ${errorMessage(error)}`);
@@ -2726,10 +2901,18 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
         const effectiveFps = (frameCount - 1) / durationSeconds;
         const times = Array.from({ length: frameCount }, (_, index) => index / effectiveFps);
         const frames = await renderAnimationFrames(headlessHtml, times);
-        const encoded = await encodeAnimationVideo(frames, effectiveFps, exportFormat);
+        const audioUrl =
+          exportFormat === "mp4" && typeof options?.audioUrl === "string" && /^(https?:|data:)/.test(options.audioUrl)
+            ? options.audioUrl
+            : undefined;
+        if (options?.audioUrl && exportFormat === "gif") {
+          featureNotes.push("audioUrl ignored for gif export — use export: 'mp4' for sound");
+        }
+        const encoded = await encodeAnimationVideo(frames, effectiveFps, exportFormat, audioUrl);
         exportInfo = {
           url: await storeVectorAnimationAsset(encoded.buffer, encoded.mimeType),
           format: exportFormat,
+          ...(audioUrl && { audio: true }),
         };
       } catch (error: unknown) {
         featureNotes.push(`${exportFormat} export failed (${errorMessage(error)})`);
@@ -2741,7 +2924,7 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
   const noteSuffix = featureNotes.length > 0 ? ` Note: ${featureNotes.join("; ")}.` : "";
   const snapshotSuffix = snapshotInfo
     ? ` Filmstrip snapshot rendered at [${snapshotInfo.times.map((time) => time.toFixed(2)).join(", ")}]s — ` +
-      `pass snapshot.url to describe_image to visually inspect your work before continuing.`
+      `the filmstrip image is attached for you to inspect (fallback: pass snapshot.url to describe_image).`
     : "";
   const exportSuffix = exportInfo
     ? ` Exported ${exportInfo.format} is attached for the user.`
@@ -2777,8 +2960,17 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
     totalKeyframes,
     canvasSize: `${sessionAnimation.width}x${sessionAnimation.height}`,
     isAppend: isExistingSession,
+    ...(lintWarnings.length > 0 && { warnings: lintWarnings }),
     ...(snapshotInfo && { snapshot: snapshotInfo }),
     ...(exportInfo && { export: exportInfo }),
+    // Session readback for context recovery: pass options.includeState with
+    // animation.layers: [] to read the merged state without changing it.
+    ...(options?.includeState === true && {
+      state: {
+        animation: sessionAnimation,
+        options: vectorAnimationSessions.get(activeSessionId)?.options ?? animationOptions,
+      },
+    }),
   });
 }));
 

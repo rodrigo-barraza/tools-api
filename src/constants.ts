@@ -2799,6 +2799,12 @@ export const PYTHON_HEALTH_CHECK_TIMEOUT_MS = 5_000;
 /** Max matplotlib figures / image files returned per execute_python run. */
 export const PYTHON_MAX_FIGURES = 6;
 export const PYTHON_MAX_FIGURE_BYTES = 8 * 1024 * 1024;
+/** Max entries in execute_python's inputFiles parameter. */
+export const PYTHON_MAX_INPUT_FILES = 8;
+/** Per-file cap for staged input files — aligned with the 40 MB upload cap. */
+export const PYTHON_MAX_INPUT_FILE_BYTES = 40 * 1024 * 1024;
+/** Per-file download timeout when staging input files. */
+export const PYTHON_INPUT_FETCH_TIMEOUT_MS = 15_000;
 
 /** Default JavaScript sandbox execution timeout. */
 export const JS_DEFAULT_TIMEOUT_MS = 5_000;

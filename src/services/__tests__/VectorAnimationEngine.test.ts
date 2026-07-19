@@ -19,6 +19,7 @@ import {
   sortLayersForRender,
   getSymbolDuration,
   getInstanceLocalTime,
+  buildPresetPath,
   VectorLayer,
   VectorSymbol,
   LinearGradient,
@@ -247,6 +248,37 @@ describe("VectorAnimationEngine Calculations", () => {
       expect(propertiesTime4.strokeWidth).toBe(5);
     });
 
+    it("keeps static layer transforms when keyframes animate other properties", () => {
+      const gear: VectorLayer = {
+        id: "gear",
+        shapeType: "path",
+        x: 520,
+        y: 120,
+        keyframes: [
+          { time: 0, easing: "linear", properties: { rotation: 0 } },
+          { time: 2, properties: { rotation: 90 } },
+        ],
+      };
+      const midProps = resolveAnimatedProperties(gear, 1);
+      expect(midProps.x).toBe(520);
+      expect(midProps.y).toBe(120);
+      expect(midProps.rotation).toBe(45);
+      // Before-first and after-last clamps keep statics too
+      expect(resolveAnimatedProperties(gear, -1).x).toBe(520);
+      expect(resolveAnimatedProperties(gear, 99).x).toBe(520);
+      // Keyframed values still win over statics
+      const override: VectorLayer = {
+        id: "o",
+        shapeType: "circle",
+        x: 10,
+        keyframes: [
+          { time: 0, easing: "linear", properties: { x: 100 } },
+          { time: 2, properties: { x: 200 } },
+        ],
+      };
+      expect(resolveAnimatedProperties(override, 1).x).toBe(150);
+    });
+
     it("resolves keyframe bounds correctly for times outside timeline range", () => {
       const layer: VectorLayer = {
         id: "box",
@@ -420,6 +452,43 @@ describe("VectorAnimationEngine Calculations", () => {
       const once = { id: "w", shapeType: "instance", symbol: "walk", symbolLoop: false } as VectorLayer;
       expect(getInstanceLocalTime(once, 5, 0.6)).toBe(0.6);
       expect(getInstanceLocalTime(once, -1, 0.6)).toBe(0);
+    });
+  });
+
+  describe("Preset Shape Paths", () => {
+    it("builds a star with alternating outer/inner vertices", () => {
+      const path = buildPresetPath("star", { spikes: 5, outerRadius: 50, innerRadius: 20 });
+      expect(path.startsWith("M ")).toBe(true);
+      expect(path.trim().endsWith("Z")).toBe(true);
+      // 5 spikes → 10 vertices → 1 M + 9 L
+      expect((path.match(/L /g) || []).length).toBe(9);
+      // First vertex is the top outer point
+      expect(path.startsWith("M 0.00 -50.00")).toBe(true);
+    });
+
+    it("builds a heart from cubic curves, scaled by size", () => {
+      const path = buildPresetPath("heart", { size: 100 });
+      expect(path.startsWith("M ")).toBe(true);
+      expect((path.match(/C /g) || []).length).toBe(4);
+      const half = buildPresetPath("heart", { size: 50 });
+      expect(half).toContain("-25.00");
+    });
+
+    it("builds a symmetric right-pointing arrow", () => {
+      const path = buildPresetPath("arrow", { length: 100, thickness: 40 });
+      expect(path).toContain("M -50.00 -10.00");
+      expect(path).toContain("L 50.00 0.00");
+      expect(path.trim().endsWith("Z")).toBe(true);
+    });
+
+    it("builds a gear with teeth and a counter-wound center hole", () => {
+      const path = buildPresetPath("gear", { teeth: 8, outerRadius: 50, holeRadius: 15 });
+      // 8 teeth × 4 vertices → 1 M + 31 L, plus the hole arcs
+      expect((path.match(/L /g) || []).length).toBe(31);
+      expect((path.match(/A /g) || []).length).toBe(2);
+      expect(path).toContain("M 15.00 0");
+      const noHole = buildPresetPath("gear", { teeth: 8, outerRadius: 50, holeRadius: 0 });
+      expect(noHole).not.toContain("A ");
     });
   });
 
