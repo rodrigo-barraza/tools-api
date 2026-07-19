@@ -1,3 +1,4 @@
+import { createTtlCache } from "@rodrigo-barraza/utilities-library/cache";
 import CONFIG from "../../config.ts";
 import { EIA_BASE_URL, EIA_DEFAULT_SERIES } from "../../constants.ts";
 import rateLimiter from "../../services/RateLimiterService.ts";
@@ -20,24 +21,10 @@ import { errorMessage } from "../../utilities.ts";
 
 // ─── In-Memory Cache ───────────────────────────────────────────────
 
-interface EiaDataResult {
-  route: string;
-  total: number;
-  dateFormat: string | null;
-  frequency: string | null;
-  count: number;
-  data: Record<string, unknown>[];
-  warning: string | null;
-  fetchedAt: string;
-}
-
-const dataCache = new Map<
-  string,
-  { data: EiaDataResult | Record<string, unknown>; fetchedAt: number }
->();
+const dataCache = createTtlCache();
 const DATA_CACHE_TTL_MS = 3_600_000; // 1 hour — energy data updates infrequently
 
-const metaCache = new Map<string, { data: unknown; fetchedAt: number }>();
+const metaCache = createTtlCache();
 const META_CACHE_TTL_MS = 86_400_000; // 24 hours — routes/metadata rarely change
 
 // ─── Helpers ───────────────────────────────────────────────────────
@@ -95,66 +82,52 @@ async function eiaFetch(route: string, params: Record<string, unknown> = {}) {
  * Returns child routes, available facets, frequencies, and data columns.
  */
 export async function browseRoute(route: string = "") {
-  const cacheKey = `meta:${route}`;
-  const cached = metaCache.get(cacheKey);
-  if (cached && Date.now() - cached.fetchedAt < META_CACHE_TTL_MS) {
-    return cached.data;
-  }
+  return metaCache.get(`meta:${route}`, META_CACHE_TTL_MS, async () => {
+    const path = route ? `v2/${route}` : "v2";
+    const json = await eiaFetch(path);
+    const resp = json.response || json;
 
-  const path = route ? `v2/${route}` : "v2";
-  const json = await eiaFetch(path);
-  const resp = json.response || json;
-
-  const result = {
-    id: resp.id,
-    name: resp.name,
-    description: resp.description || null,
-    routes: (resp.routes || []).map(
-      (routeItem: { id?: string; name?: string; description?: string }) => ({
-        id: routeItem.id,
-        name: routeItem.name,
-        description: routeItem.description || null,
-      }),
-    ),
-    frequency: resp.frequency || [],
-    facets: resp.facets || [],
-    data: resp.data || null, // available data columns
-    startPeriod: resp.startPeriod || null,
-    endPeriod: resp.endPeriod || null,
-  };
-
-  metaCache.set(cacheKey, { data: result, fetchedAt: Date.now() });
-  return result;
+    return {
+      id: resp.id,
+      name: resp.name,
+      description: resp.description || null,
+      routes: (resp.routes || []).map(
+        (routeItem: { id?: string; name?: string; description?: string }) => ({
+          id: routeItem.id,
+          name: routeItem.name,
+          description: routeItem.description || null,
+        }),
+      ),
+      frequency: resp.frequency || [],
+      facets: resp.facets || [],
+      data: resp.data || null, // available data columns
+      startPeriod: resp.startPeriod || null,
+      endPeriod: resp.endPeriod || null,
+    };
+  });
 }
 
 /**
  * Get available facet values for a route + facet.
  */
 export async function getFacetValues(route: string, facetId: string) {
-  const cacheKey = `facet:${route}:${facetId}`;
-  const cached = metaCache.get(cacheKey);
-  if (cached && Date.now() - cached.fetchedAt < META_CACHE_TTL_MS) {
-    return cached.data;
-  }
+  return metaCache.get(`facet:${route}:${facetId}`, META_CACHE_TTL_MS, async () => {
+    const json = await eiaFetch(`v2/${route}/facet/${facetId}`);
+    const resp = json.response || json;
 
-  const json = await eiaFetch(`v2/${route}/facet/${facetId}`);
-  const resp = json.response || json;
-
-  const result = {
-    route,
-    facetId,
-    totalFacets: resp.totalFacets || 0,
-    facets: (resp.facets || []).map(
-      (facet: { id?: string; name?: string; alias?: string }) => ({
-        id: facet.id,
-        name: facet.name,
-        alias: facet.alias || null,
-      }),
-    ),
-  };
-
-  metaCache.set(cacheKey, { data: result, fetchedAt: Date.now() });
-  return result;
+    return {
+      route,
+      facetId,
+      totalFacets: resp.totalFacets || 0,
+      facets: (resp.facets || []).map(
+        (facet: { id?: string; name?: string; alias?: string }) => ({
+          id: facet.id,
+          name: facet.name,
+          alias: facet.alias || null,
+        }),
+      ),
+    };
+  });
 }
 
 // ─── Data Retrieval ────────────────────────────────────────────────
@@ -187,78 +160,72 @@ export async function getData(route: string, options: EiaGetDataOptions = {}) {
 
   // Build cache key from all parameters
   const cacheKey = `data:${route}:${JSON.stringify(options)}`;
-  const cached = dataCache.get(cacheKey);
-  if (cached && Date.now() - cached.fetchedAt < DATA_CACHE_TTL_MS) {
-    return cached.data;
-  }
+  return dataCache.get(cacheKey, DATA_CACHE_TTL_MS, async () => {
+    // Build query params
+    const params: Record<string, unknown> = {
+      length: Math.min(length, 5000),
+      offset,
+    };
 
-  // Build query params
-  const params: Record<string, unknown> = {
-    length: Math.min(length, 5000),
-    offset,
-  };
-
-  if (frequency) params.frequency = frequency;
-  if (start) params.start = start;
-  if (end) params.end = end;
-  if (sort) {
-    const [collection, dir] = sort.split(":");
-    params["sort[0][column]"] = collection;
-    params["sort[0][direction]"] = dir || "desc";
-  }
-
-  // Build the URL manually for array params (data[] and facets[][])
-  let url = buildUrl(`v2/${route}/data`, params);
-
-  // Append data columns
-  if (dataColumns?.length) {
-    const dataParams = dataColumns
-      .map((dataColumn: string) => `data[]=${encodeURIComponent(dataColumn)}`)
-      .join("&");
-    url += `&${dataParams}`;
-  }
-
-  // Append facets
-  if (facets) {
-    for (const [facetId, values] of Object.entries(facets)) {
-      const facetParams = (Array.isArray(values) ? values : [values])
-        .map(
-          (facetValue: string) =>
-            `facets[${encodeURIComponent(facetId)}][]=${encodeURIComponent(facetValue)}`,
-        )
-        .join("&");
-      url += `&${facetParams}`;
+    if (frequency) params.frequency = frequency;
+    if (start) params.start = start;
+    if (end) params.end = end;
+    if (sort) {
+      const [collection, dir] = sort.split(":");
+      params["sort[0][column]"] = collection;
+      params["sort[0][direction]"] = dir || "desc";
     }
-  }
 
-  // Direct fetch since we've manually built the URL
-  await rateLimiter.wait("EIA");
-  const response = await fetch(url);
-  if (!response.ok) {
-    const body = await response.text().catch(() => "");
-    throw new Error(
-      `EIA API → ${response.status} ${response.statusText}: ${body}`,
-    );
-  }
+    // Build the URL manually for array params (data[] and facets[][])
+    let url = buildUrl(`v2/${route}/data`, params);
 
-  const json = await response.json();
-  if (json.error) throw new Error(`EIA API error: ${json.error}`);
+    // Append data columns
+    if (dataColumns?.length) {
+      const dataParams = dataColumns
+        .map((dataColumn: string) => `data[]=${encodeURIComponent(dataColumn)}`)
+        .join("&");
+      url += `&${dataParams}`;
+    }
 
-  const resp = json.response || json;
+    // Append facets
+    if (facets) {
+      for (const [facetId, values] of Object.entries(facets)) {
+        const facetParams = (Array.isArray(values) ? values : [values])
+          .map(
+            (facetValue: string) =>
+              `facets[${encodeURIComponent(facetId)}][]=${encodeURIComponent(facetValue)}`,
+          )
+          .join("&");
+        url += `&${facetParams}`;
+      }
+    }
 
-  const result = {
-    route,
-    total: parseInt(resp.total, 10) || 0,
-    dateFormat: resp.dateFormat || null,
-    frequency: resp.frequency || null,
-    count: (resp.data || []).length,
-    data: resp.data || [],
-    warning: resp.warning || null,
-    fetchedAt: new Date().toISOString(),
-  };
+    // Direct fetch since we've manually built the URL
+    await rateLimiter.wait("EIA");
+    const response = await fetch(url);
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      throw new Error(
+        `EIA API → ${response.status} ${response.statusText}: ${body}`,
+      );
+    }
 
-  dataCache.set(cacheKey, { data: result, fetchedAt: Date.now() });
-  return result;
+    const json = await response.json();
+    if (json.error) throw new Error(`EIA API error: ${json.error}`);
+
+    const resp = json.response || json;
+
+    return {
+      route,
+      total: parseInt(resp.total, 10) || 0,
+      dateFormat: resp.dateFormat || null,
+      frequency: resp.frequency || null,
+      count: (resp.data || []).length,
+      data: resp.data || [],
+      warning: resp.warning || null,
+      fetchedAt: new Date().toISOString(),
+    };
+  });
 }
 
 // ─── Curated Energy Snapshots ──────────────────────────────────────
@@ -278,12 +245,10 @@ interface EiaIndicator {
  * Fetches the most recent data point for each series in EIA_DEFAULT_SERIES.
  */
 export async function getEnergyIndicators() {
-  const cacheKey = "energy-indicators";
-  const cached = dataCache.get(cacheKey);
-  if (cached && Date.now() - cached.fetchedAt < DATA_CACHE_TTL_MS) {
-    return cached.data;
-  }
+  return dataCache.get("energy-indicators", DATA_CACHE_TTL_MS, fetchEnergyIndicators);
+}
 
+async function fetchEnergyIndicators() {
   const entries = Object.entries(EIA_DEFAULT_SERIES);
   const results = await Promise.allSettled(
     entries.map(async ([key, meta]) => {
@@ -330,12 +295,9 @@ export async function getEnergyIndicators() {
     );
   }
 
-  const result = {
+  return {
     count: indicators.length,
     indicators,
     fetchedAt: new Date().toISOString(),
   };
-
-  dataCache.set(cacheKey, { data: result, fetchedAt: Date.now() });
-  return result;
 }

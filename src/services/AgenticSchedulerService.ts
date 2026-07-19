@@ -1,4 +1,4 @@
-import { AGENT_IDS, IDENTITY_HEADERS } from "@rodrigo-barraza/utilities-library/taxonomy";
+import { AGENT_IDS, IDENTITY_HEADERS, MODEL_IDS } from "@rodrigo-barraza/utilities-library/taxonomy";
 // ─── Cron + Remote Trigger System ───────────────────────────
 
 import CONFIG from "../config.ts";
@@ -104,7 +104,7 @@ export async function agenticScheduleCreate(data: ScheduleCreateData, username?:
     prompt,
     agent: agent === AGENT_IDS.NONE ? null : agent || AGENT_IDS.CODING,
     provider: provider || "anthropic",
-    model: model || "claude-sonnet-4-5-20250929",
+    model: model || MODEL_IDS.claudeSonnet,
     scheduleType: sType,
     scheduleTime,
     scheduleDay,

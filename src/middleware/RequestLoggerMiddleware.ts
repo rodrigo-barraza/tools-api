@@ -3,10 +3,10 @@ import type { Request, Response, NextFunction } from "express";
 import { formatBytes } from "@rodrigo-barraza/utilities-library";
 import logger from "../logger.ts";
 import { getDatabase } from "@rodrigo-barraza/utilities-library/service/mongo";
-import { IDENTITY_HEADERS } from "@rodrigo-barraza/utilities-library/taxonomy";
+import { COLLECTIONS, IDENTITY_HEADERS } from "@rodrigo-barraza/utilities-library/taxonomy";
 import { errorMessage } from "../utilities.ts";
 
-const COLLECTION = "requests";
+const COLLECTION = COLLECTIONS.requests;
 
 // ─── Interfaces ──────────────────────────────────────────────
 

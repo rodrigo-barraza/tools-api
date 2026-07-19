@@ -105,12 +105,7 @@ async function writeAuthDocument(
 
 class SpotifyNotAuthorizedError extends Error {}
 
-let userTokenCache: { token: string; expiry: number } | null = null;
-
-async function getUserAccessToken(): Promise<string> {
-  if (userTokenCache && Date.now() < userTokenCache.expiry) {
-    return userTokenCache.token;
-  }
+const userTokenManager = new TokenManager(async () => {
   const stored = await readAuthDocument();
   if (!stored?.refreshToken) {
     throw new SpotifyNotAuthorizedError(
@@ -139,12 +134,12 @@ async function getUserAccessToken(): Promise<string> {
       logger.warn(`[Spotify] failed to persist rotated refresh token: ${errorMessage(error)}`),
     );
   }
-  userTokenCache = {
+  return {
     token: data.access_token,
-    expiry: Date.now() + Math.max((data.expires_in ?? 3600) - 60, 60) * 1000,
+    // Refresh a minute before Spotify's expiry (typically 3600s)
+    expiresInMilliseconds: Math.max((data.expires_in ?? 3600) - 60, 60) * 1000,
   };
-  return userTokenCache.token;
-}
+});
 
 // ─── OAuth Flow (login / callback / status) ────────────────────────
 
@@ -219,10 +214,9 @@ export async function handleAuthCallback(
       scope: data.scope ?? null,
       account,
     });
-    userTokenCache = {
-      token: data.access_token,
-      expiry: Date.now() + Math.max((data.expires_in ?? 3600) - 60, 60) * 1000,
-    };
+    // Drop any previously cached token; the next user-tier request will
+    // refresh against the newly persisted refresh token.
+    userTokenManager.invalidate();
     logger.info(`[Spotify] account connected: ${account?.displayName ?? account?.id ?? "unknown"}`);
     return { account: account?.displayName ?? account?.id ?? null };
   } catch (error: unknown) {
@@ -261,7 +255,7 @@ async function spotifyRequest(
   } = {},
 ): Promise<{ status: number; data: any }> {
   await rateLimiter.wait("SPOTIFY");
-  const token = tier === "user" ? await getUserAccessToken() : await appTokenManager.getToken();
+  const token = tier === "user" ? await userTokenManager.getToken() : await appTokenManager.getToken();
   const url = new URL(`${API_URL}${path}`);
   for (const [key, value] of Object.entries(query ?? {})) {
     if (value !== undefined) url.searchParams.set(key, value);

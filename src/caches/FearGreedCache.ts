@@ -1,48 +1,48 @@
+import { createSimpleCache } from "./createSimpleCache.ts";
 import { FEAR_GREED_TTL_MS } from "../constants.ts";
 import type { FearGreedEntry } from "../fetchers/finance/FearGreedFetcher.ts";
 
-interface FearGreedCacheState {
+interface FearGreedData {
   current: FearGreedEntry | null;
   history: FearGreedEntry[];
-  lastFetch: Date | null;
-  error: { message: string; time: string } | null;
 }
 
-const cache: FearGreedCacheState = {
-  current: null,
-  history: [],
-  lastFetch: null,
-  error: null,
-};
+const cache = createSimpleCache<FearGreedData>();
 
-export function getCachedFearGreed(): FearGreedCacheState {
-  return { ...cache };
+export function getCachedFearGreed() {
+  const data = cache.getData();
+  return {
+    current: data?.current ?? null,
+    history: data?.history ?? [],
+    lastFetch: cache.getLastFetch(),
+    error: cache.getHealth().error,
+  };
 }
 
 export function isFearGreedStale(): boolean {
-  if (!cache.lastFetch) return true;
-  return Date.now() - cache.lastFetch.getTime() > FEAR_GREED_TTL_MS;
+  const lastFetch = cache.getLastFetch();
+  if (!lastFetch) return true;
+  return Date.now() - new Date(lastFetch).getTime() > FEAR_GREED_TTL_MS;
 }
 
 export function updateFearGreed(
   current: FearGreedEntry | null,
   history: FearGreedEntry[],
 ) {
-  cache.current = current;
-  cache.history = history;
-  cache.lastFetch = new Date();
-  cache.error = null;
+  cache.update({ current, history });
 }
 
 export function setFearGreedError(error: { message: string }) {
-  cache.error = { message: error.message, time: new Date().toISOString() };
+  cache.setError(new Error(error.message));
 }
 
 export function getFearGreedHealth() {
+  const health = cache.getHealth();
+  const data = cache.getData();
   return {
-    lastFetch: cache.lastFetch,
-    error: cache.error,
-    hasCurrent: cache.current != null,
-    historyCount: cache.history.length,
+    lastFetch: health.lastFetch,
+    error: health.error,
+    hasCurrent: data?.current != null,
+    historyCount: data?.history.length ?? 0,
   };
 }

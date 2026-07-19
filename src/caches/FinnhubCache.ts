@@ -1,3 +1,4 @@
+import { createSimpleCache } from "./createSimpleCache.ts";
 import {
   FINNHUB_QUOTE_TTL_MS,
   FINNHUB_PROFILE_TTL_MS,
@@ -18,22 +19,27 @@ interface CacheEntry<T> {
   fetchedAt: number;
 }
 
+// The on-demand maps stay hand-rolled: routes need the split
+// "fresh-or-null get" + separate set API (to report `cached: true/false`)
+// and health reports per-map entry counts — neither is expressible with
+// the library's createTtlCache (peek ignores TTL; no size accessor).
 const cache = {
   // ── On-demand data (TTL-based) ──
   quotes: new Map<string, CacheEntry<unknown>>(), // symbol → { data, fetchedAt }
   profiles: new Map<string, CacheEntry<unknown>>(), // symbol → { data, fetchedAt }
   recommendations: new Map<string, CacheEntry<unknown>>(), // symbol → { data, fetchedAt }
   financials: new Map<string, CacheEntry<unknown>>(), // symbol → { data, fetchedAt }
-
-  // ── Polled general data ──
-  marketNews: [] as unknown[],
-  newsLastFetch: null as Date | null,
-  newsError: null as { message: string; time: string } | null,
-
-  earnings: [] as unknown[],
-  earningsLastFetch: null as Date | null,
-  earningsError: null as { message: string; time: string } | null,
 };
+
+// ── Polled general data ──
+const newsCache = createSimpleCache<unknown[]>({
+  type: "array",
+  itemsKey: "articles",
+});
+const earningsCache = createSimpleCache<unknown[]>({
+  type: "array",
+  itemsKey: "earnings",
+});
 
 // ─── TTL Helper ────────────────────────────────────────────────────
 
@@ -107,53 +113,48 @@ export function cacheFinancials(symbol: string, data: unknown) {
 // ─── Market News (polled) ──────────────────────────────────────────
 
 export function getMarketNews() {
-  return cache.marketNews;
+  return newsCache.getData();
 }
 
 export function updateMarketNews(articles: unknown[]) {
-  cache.marketNews = articles;
-  cache.newsLastFetch = new Date();
-  cache.newsError = null;
+  newsCache.update(articles);
 }
 
 export function setNewsError(error: { message: string }) {
-  cache.newsError = { message: error.message, time: new Date().toISOString() };
+  newsCache.setError(new Error(error.message));
 }
 
 // ─── Earnings Calendar (polled) ────────────────────────────────────
 
 export function getEarnings() {
-  return cache.earnings;
+  return earningsCache.getData();
 }
 
 export function updateEarnings(earningsData: unknown[]) {
-  cache.earnings = earningsData;
-  cache.earningsLastFetch = new Date();
-  cache.earningsError = null;
+  earningsCache.update(earningsData);
 }
 
 export function setEarningsError(error: { message: string }) {
-  cache.earningsError = {
-    message: error.message,
-    time: new Date().toISOString(),
-  };
+  earningsCache.setError(new Error(error.message));
 }
 
 // ─── Health ────────────────────────────────────────────────────────
 
 export function getFinanceHealth() {
+  const newsHealth = newsCache.getHealth();
+  const earningsHealth = earningsCache.getHealth();
   return {
     cachedQuotes: cache.quotes.size,
     cachedProfiles: cache.profiles.size,
     news: {
-      lastFetch: cache.newsLastFetch,
-      error: cache.newsError,
-      articleCount: cache.marketNews.length,
+      lastFetch: newsHealth.lastFetch,
+      error: newsHealth.error,
+      articleCount: newsHealth.count ?? 0,
     },
     earnings: {
-      lastFetch: cache.earningsLastFetch,
-      error: cache.earningsError,
-      entryCount: cache.earnings.length,
+      lastFetch: earningsHealth.lastFetch,
+      error: earningsHealth.error,
+      entryCount: earningsHealth.count ?? 0,
     },
   };
 }

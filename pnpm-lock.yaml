@@ -22,7 +22,7 @@ importers:
         version: 1.29.0(zod@4.4.3)
       '@rodrigo-barraza/utilities-library':
         specifier: github:rodrigo-barraza/utilities-library#master
-        version: https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/0bc45d7c931ee65bcd6744540385efb176ea1b22(express@5.2.1)(socks@2.8.9)
+        version: https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/4ab40ec567d179fec8e9209d9b67d960547469f7(express@5.2.1)(socks@2.8.9)
       ajv:
         specifier: ^8.20.0
         version: 8.20.0
@@ -951,9 +951,9 @@ packages:
   '@pinojs/redact@0.4.0':
     resolution: {integrity: sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg==}
 
-  '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/0bc45d7c931ee65bcd6744540385efb176ea1b22':
-    resolution: {gitHosted: true, integrity: sha512-kZhpanKVhA5tiW9Q0mmR/pyX88kfgVmTnX4WCmiAWoHCITFqNN+FNxsyoge8fHm7hbTJiYHZDDtnqspyCv54ow==, tarball: https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/0bc45d7c931ee65bcd6744540385efb176ea1b22}
-    version: 0.6.0
+  '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/4ab40ec567d179fec8e9209d9b67d960547469f7':
+    resolution: {gitHosted: true, integrity: sha512-hhzTK9bpEe7T4SOzOuVGYebVsrw4bkQyv0+kRbgqhdWHPVF/2InrRbjvYeWsFvsXNUA1a94rrkzX2XqjL+zIDw==, tarball: https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/4ab40ec567d179fec8e9209d9b67d960547469f7}
+    version: 0.7.0
     peerDependencies:
       express: '>=5.0.0'
     peerDependenciesMeta:
@@ -5202,7 +5202,7 @@ snapshots:
 
   '@pinojs/redact@0.4.0': {}
 
-  '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/0bc45d7c931ee65bcd6744540385efb176ea1b22(express@5.2.1)(socks@2.8.9)':
+  '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/4ab40ec567d179fec8e9209d9b67d960547469f7(express@5.2.1)(socks@2.8.9)':
     dependencies:
       mongodb: 7.3.0(socks@2.8.9)
       nanoid: 5.1.16

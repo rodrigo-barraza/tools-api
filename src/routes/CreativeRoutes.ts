@@ -1,5 +1,5 @@
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
-import { IDENTITY_HEADERS } from "@rodrigo-barraza/utilities-library/taxonomy";
+import { IDENTITY_HEADERS, MODEL_IDS } from "@rodrigo-barraza/utilities-library/taxonomy";
 import PromptLocaleService from "../services/PromptLocaleService.ts";
 // ─── Image Generation & Vision ──────────────────────────────
 
@@ -97,10 +97,10 @@ async function getCreativeSettings() {
       imageModel:
         creative.imageModel ||
         CONFIG.TOOLS_IMAGE_MODEL ||
-        "gemini-3-pro-image-preview",
+        MODEL_IDS.geminiImagePro,
       visionProvider: creative.visionProvider || "google",
       visionModel:
-        creative.visionModel || CONFIG.TOOLS_VISION_MODEL || "gemini-3.5-flash",
+        creative.visionModel || CONFIG.TOOLS_VISION_MODEL || MODEL_IDS.geminiFlashVision,
       textToSpeechProvider: creative.textToSpeechProvider || "elevenlabs",
       textToSpeechModel: creative.textToSpeechModel || "",
       speechToTextProvider: creative.speechToTextProvider || "openai",
@@ -112,9 +112,9 @@ async function getCreativeSettings() {
     );
     return {
       imageProvider: "google",
-      imageModel: CONFIG.TOOLS_IMAGE_MODEL || "gemini-3-pro-image-preview",
+      imageModel: CONFIG.TOOLS_IMAGE_MODEL || MODEL_IDS.geminiImagePro,
       visionProvider: "google",
-      visionModel: CONFIG.TOOLS_VISION_MODEL || "gemini-3.5-flash",
+      visionModel: CONFIG.TOOLS_VISION_MODEL || MODEL_IDS.geminiFlashVision,
       textToSpeechProvider: "elevenlabs",
       textToSpeechModel: "",
       speechToTextProvider: "openai",

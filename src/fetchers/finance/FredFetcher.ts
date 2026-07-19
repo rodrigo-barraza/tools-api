@@ -1,3 +1,4 @@
+import { createTtlCache } from "@rodrigo-barraza/utilities-library/cache";
 import CONFIG from "../../config.ts";
 import { FRED_BASE_URL, FRED_DEFAULT_SERIES } from "../../constants.ts";
 import logger from "../../logger.ts";
@@ -15,10 +16,10 @@ import { errorMessage } from "../../utilities.ts";
 
 // ─── In-Memory Cache ───────────────────────────────────────────────
 
-const seriesCache = new Map<string, { data: unknown; fetchedAt: number }>();
+const seriesCache = createTtlCache();
 const SERIES_CACHE_TTL_MS = 3_600_000; // 1 hour — macro data updates infrequently
 
-const searchCache = new Map<string, { data: unknown; fetchedAt: number }>();
+const searchCache = createTtlCache();
 const SEARCH_CACHE_TTL_MS = 1_800_000; // 30 minutes
 
 // ─── Helpers ───────────────────────────────────────────────────────
@@ -106,42 +107,35 @@ export async function getSeriesObservations(
     observationEnd,
   } = options;
 
-  // Check cache
   const cacheKey = `${seriesId}:${limit}:${sortOrder}:${observationStart || ""}:${observationEnd || ""}`;
-  const cached = seriesCache.get(cacheKey);
-  if (cached && Date.now() - cached.fetchedAt < SERIES_CACHE_TTL_MS) {
-    return cached.data;
-  }
+  return seriesCache.get(cacheKey, SERIES_CACHE_TTL_MS, async () => {
+    const params: Record<string, unknown> = {
+      series_id: seriesId,
+      limit,
+      sort_order: sortOrder,
+    };
+    if (observationStart) params.observation_start = observationStart;
+    if (observationEnd) params.observation_end = observationEnd;
 
-  const params: Record<string, unknown> = {
-    series_id: seriesId,
-    limit,
-    sort_order: sortOrder,
-  };
-  if (observationStart) params.observation_start = observationStart;
-  if (observationEnd) params.observation_end = observationEnd;
+    const [seriesInfo, obsData] = await Promise.all([
+      getSeriesInfo(seriesId),
+      fredFetch("series/observations", params),
+    ]);
 
-  const [seriesInfo, obsData] = await Promise.all([
-    getSeriesInfo(seriesId),
-    fredFetch("series/observations", params),
-  ]);
+    const observations = (obsData.observations || [])
+      .filter((observation: Record<string, string>) => observation.value !== ".")
+      .map((observation: Record<string, string>) => ({
+        date: observation.date,
+        value: parseFloat(observation.value),
+      }));
 
-  const observations = (obsData.observations || [])
-    .filter((observation: Record<string, string>) => observation.value !== ".")
-    .map((observation: Record<string, string>) => ({
-      date: observation.date,
-      value: parseFloat(observation.value),
-    }));
-
-  const result = {
-    series: seriesInfo,
-    count: observations.length,
-    observations,
-    fetchedAt: new Date().toISOString(),
-  };
-
-  seriesCache.set(cacheKey, { data: result, fetchedAt: Date.now() });
-  return result;
+    return {
+      series: seriesInfo,
+      count: observations.length,
+      observations,
+      fetchedAt: new Date().toISOString(),
+    };
+  });
 }
 
 // ─── Search Series ─────────────────────────────────────────────────
@@ -163,51 +157,54 @@ export async function searchSeries(
   const { limit = 10, orderBy = "search_rank" } = options;
 
   const cacheKey = `search:${query}:${limit}:${orderBy}`;
-  const cached = searchCache.get(cacheKey);
-  if (cached && Date.now() - cached.fetchedAt < SEARCH_CACHE_TTL_MS) {
-    return cached.data;
-  }
+  return searchCache.get(cacheKey, SEARCH_CACHE_TTL_MS, async () => {
+    const data = await fredFetch("series/search", {
+      search_text: query,
+      limit,
+      order_by: orderBy,
+    });
 
-  const data = await fredFetch("series/search", {
-    search_text: query,
-    limit,
-    order_by: orderBy,
+    interface FredSeriesResult {
+      id: string;
+      title: string;
+      frequency_short?: string;
+      units_short?: string;
+      seasonal_adjustment_short?: string;
+      last_updated?: string;
+      popularity?: number;
+      notes?: string;
+    }
+
+    const series = (data.seriess || []).map((seriesItem: FredSeriesResult) => ({
+      id: seriesItem.id,
+      title: seriesItem.title,
+      frequency: seriesItem.frequency_short,
+      units: seriesItem.units_short,
+      seasonalAdjustment: seriesItem.seasonal_adjustment_short,
+      lastUpdated: seriesItem.last_updated,
+      popularity: seriesItem.popularity,
+      notes: seriesItem.notes ? seriesItem.notes.slice(0, 200) : null,
+    }));
+
+    return {
+      query,
+      count: series.length,
+      totalResults: data.count || series.length,
+      series,
+    };
   });
-
-  interface FredSeriesResult {
-    id: string;
-    title: string;
-    frequency_short?: string;
-    units_short?: string;
-    seasonal_adjustment_short?: string;
-    last_updated?: string;
-    popularity?: number;
-    notes?: string;
-  }
-
-  const series = (data.seriess || []).map((seriesItem: FredSeriesResult) => ({
-    id: seriesItem.id,
-    title: seriesItem.title,
-    frequency: seriesItem.frequency_short,
-    units: seriesItem.units_short,
-    seasonalAdjustment: seriesItem.seasonal_adjustment_short,
-    lastUpdated: seriesItem.last_updated,
-    popularity: seriesItem.popularity,
-    notes: seriesItem.notes ? seriesItem.notes.slice(0, 200) : null,
-  }));
-
-  const result = {
-    query,
-    count: series.length,
-    totalResults: data.count || series.length,
-    series,
-  };
-
-  searchCache.set(cacheKey, { data: result, fetchedAt: Date.now() });
-  return result;
 }
 
 // ─── Key Indicators (Curated Macro Snapshot) ───────────────────────
+
+interface FredIndicator {
+  id: string;
+  name: string;
+  category: string;
+  value: number | null;
+  date: string | null;
+  unit: string;
+}
 
 /**
  * Get the latest values for a curated set of key economic indicators.
@@ -215,12 +212,10 @@ export async function searchSeries(
 
  */
 export async function getKeyIndicators() {
-  const cacheKey = "key-indicators";
-  const cached = seriesCache.get(cacheKey);
-  if (cached && Date.now() - cached.fetchedAt < SERIES_CACHE_TTL_MS) {
-    return cached.data;
-  }
+  return seriesCache.get("key-indicators", SERIES_CACHE_TTL_MS, fetchKeyIndicators);
+}
 
+async function fetchKeyIndicators() {
   const entries = Object.entries(FRED_DEFAULT_SERIES);
   const results = await Promise.allSettled(
     entries.map(async ([seriesId, meta]) => {
@@ -245,15 +240,6 @@ export async function getKeyIndicators() {
     }),
   );
 
-  interface FredIndicator {
-    id: string;
-    name: string;
-    category: string;
-    value: number | null;
-    date: string | null;
-    unit: string;
-  }
-
   const indicators = results
     .filter(
       (resultItem): resultItem is PromiseFulfilledResult<FredIndicator> =>
@@ -275,12 +261,9 @@ export async function getKeyIndicators() {
     );
   }
 
-  const result = {
+  return {
     count: indicators.length,
     indicators,
     fetchedAt: new Date().toISOString(),
   };
-
-  seriesCache.set(cacheKey, { data: result, fetchedAt: Date.now() });
-  return result;
 }

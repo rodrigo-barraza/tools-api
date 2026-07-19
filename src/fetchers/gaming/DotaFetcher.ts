@@ -1,6 +1,7 @@
 // ─── OpenDota API Client ────────────────────────────────────
 
 import { MILLISECONDS_PER_DAY } from "@rodrigo-barraza/utilities-library";
+import { createTtlCache } from "@rodrigo-barraza/utilities-library/cache";
 
 const BASE_URL = "https://api.opendota.com/api";
 
@@ -116,8 +117,8 @@ interface OpenDotaProMatch {
 }
 
 // Cache hero list in memory (static data, changes only on patches)
-let heroCache: TransformedHero[] | null = null;
-let heroCacheTime = 0;
+const heroCache = createTtlCache();
+const HERO_CACHE_KEY = "heroes";
 const HERO_CACHE_TTL = MILLISECONDS_PER_DAY;
 
 async function fetchJson<T = Record<string, unknown>>(
@@ -170,51 +171,48 @@ interface TransformedMatchup {
  * Get all heroes with stats.
  */
 export async function getHeroes(): Promise<TransformedHero[]> {
-  const now = Date.now();
-  if (heroCache && now - heroCacheTime < HERO_CACHE_TTL) return heroCache;
+  return heroCache.get<TransformedHero[]>(HERO_CACHE_KEY, HERO_CACHE_TTL, async () => {
+    const [heroes, stats] = await Promise.all([
+      fetchJson<OpenDotaHero[]>("/heroes"),
+      fetchJson<OpenDotaHeroStats[]>("/heroStats"),
+    ]);
 
-  const [heroes, stats] = await Promise.all([
-    fetchJson<OpenDotaHero[]>("/heroes"),
-    fetchJson<OpenDotaHeroStats[]>("/heroStats"),
-  ]);
-
-  // Merge stats into hero objects
-  const statsMap = new Map(stats.map((statEntry) => [statEntry.id, statEntry]));
-  heroCache = heroes.map((hero) => {
-    const heroStats =
-      statsMap.get(hero.id) || ({} as Partial<OpenDotaHeroStats>);
-    return {
-      id: hero.id,
-      name: hero.localized_name,
-      internalName: hero.name,
-      primaryAttr: hero.primary_attr,
-      attackType: hero.attack_type,
-      roles: hero.roles,
-      img: `https://cdn.cloudflare.steamstatic.com${heroStats.img || ""}`,
-      icon: `https://cdn.cloudflare.steamstatic.com${heroStats.icon || ""}`,
-      baseHealth: heroStats.base_health || 0,
-      baseMana: heroStats.base_mana || 0,
-      baseArmor: heroStats.base_armor || 0,
-      baseAttackMin: heroStats.base_attack_min || 0,
-      baseAttackMax: heroStats.base_attack_max || 0,
-      moveSpeed: heroStats.move_speed || 0,
-      legs: hero.legs,
-      // Win rates across brackets
-      proWinRate: heroStats.pro_pick
-        ? (((heroStats.pro_win || 0) / heroStats.pro_pick) * 100).toFixed(1) +
-          "%"
-        : null,
-      proPick: heroStats.pro_pick || 0,
-      turboPick: heroStats.turbo_picks || 0,
-      turboWinRate: heroStats.turbo_picks
-        ? (((heroStats.turbo_wins || 0) / heroStats.turbo_picks) * 100).toFixed(
-            1,
-          ) + "%"
-        : null,
-    };
+    // Merge stats into hero objects
+    const statsMap = new Map(stats.map((statEntry) => [statEntry.id, statEntry]));
+    return heroes.map((hero) => {
+      const heroStats =
+        statsMap.get(hero.id) || ({} as Partial<OpenDotaHeroStats>);
+      return {
+        id: hero.id,
+        name: hero.localized_name,
+        internalName: hero.name,
+        primaryAttr: hero.primary_attr,
+        attackType: hero.attack_type,
+        roles: hero.roles,
+        img: `https://cdn.cloudflare.steamstatic.com${heroStats.img || ""}`,
+        icon: `https://cdn.cloudflare.steamstatic.com${heroStats.icon || ""}`,
+        baseHealth: heroStats.base_health || 0,
+        baseMana: heroStats.base_mana || 0,
+        baseArmor: heroStats.base_armor || 0,
+        baseAttackMin: heroStats.base_attack_min || 0,
+        baseAttackMax: heroStats.base_attack_max || 0,
+        moveSpeed: heroStats.move_speed || 0,
+        legs: hero.legs,
+        // Win rates across brackets
+        proWinRate: heroStats.pro_pick
+          ? (((heroStats.pro_win || 0) / heroStats.pro_pick) * 100).toFixed(1) +
+            "%"
+          : null,
+        proPick: heroStats.pro_pick || 0,
+        turboPick: heroStats.turbo_picks || 0,
+        turboWinRate: heroStats.turbo_picks
+          ? (((heroStats.turbo_wins || 0) / heroStats.turbo_picks) * 100).toFixed(
+              1,
+            ) + "%"
+          : null,
+      };
+    });
   });
-  heroCacheTime = now;
-  return heroCache;
 }
 
 /**

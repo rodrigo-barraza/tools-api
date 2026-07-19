@@ -1,6 +1,7 @@
 // ─── Field Projection Middleware (Sparse Fieldsets) ─────────
 
 import type { Request, Response, NextFunction } from "express";
+import { COLLECTIONS } from "@rodrigo-barraza/utilities-library/taxonomy";
 
 /**
  * Known wrapper keys that contain arrays of domain objects.
@@ -16,7 +17,7 @@ const ARRAY_WRAPPER_KEYS = new Set([
   "snapshots",
   "commodities",
   "predictions",
-  "requests",
+  COLLECTIONS.requests,
   "foods",
   "comparison",
   "places",

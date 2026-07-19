@@ -1,4 +1,3 @@
-import { TokenManager } from "@rodrigo-barraza/utilities-library/node";
 import { normalizeName } from "@rodrigo-barraza/utilities-library";
 import CONFIG from "../../config.ts";
 import {
@@ -11,31 +10,11 @@ import rateLimiter from "../../services/RateLimiterService.ts";
 import logger from "../../logger.ts";
 import { errorMessage } from "../../utilities.ts";
 import type { RawRedditPost } from "../../types/trend.ts";
+import {
+  redditTokenManager,
+  redditRequestHeaders,
+} from "../shared/RedditAuth.ts";
 
-const redditTokenManager = new TokenManager(async () => {
-  const credentials = Buffer.from(
-    `${CONFIG.REDDIT_CLIENT_ID}:${CONFIG.REDDIT_CLIENT_SECRET}`,
-  ).toString("base64");
-  const response = await fetch("https://www.reddit.com/api/v1/access_token", {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${credentials}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-      "User-Agent": CONFIG.REDDIT_USER_AGENT || "",
-    },
-    body: "grant_type=client_credentials",
-  });
-  if (!response.ok) {
-    throw new Error(
-      `Reddit auth failed: ${response.status} ${response.statusText}`,
-    );
-  }
-  const data = await response.json();
-  return {
-    token: data.access_token,
-    expiresInMilliseconds: (data.expires_in - 60) * 1000,
-  };
-});
 /**
  * Fetches hot posts from a given subreddit.
 
@@ -44,10 +23,7 @@ const redditTokenManager = new TokenManager(async () => {
 async function fetchSubreddit(subreddit: string, token: string, limit: number) {
   const url = `https://oauth.reddit.com/r/${subreddit}/hot.json?limit=${limit}&raw_json=1`;
   const response = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "User-Agent": CONFIG.REDDIT_USER_AGENT || "",
-    },
+    headers: redditRequestHeaders(token),
   });
   if (!response.ok) {
     throw new Error(

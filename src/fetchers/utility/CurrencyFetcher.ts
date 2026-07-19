@@ -1,3 +1,4 @@
+import { createTtlCache } from "@rodrigo-barraza/utilities-library/cache";
 import { EXCHANGE_RATE_BASE_URL } from "../../constants.ts";
 
 export interface CachedExchangeRates {
@@ -7,49 +8,41 @@ export interface CachedExchangeRates {
   exchangeRates: Record<string, number>;
 }
 
-const exchangeRateCache = new Map<string, { data: CachedExchangeRates; fetchedAt: number }>();
+const exchangeRateCache = createTtlCache();
 const EXCHANGE_RATE_CACHE_TTL_MILLISECONDS = 3_600_000;
 
 export async function fetchExchangeRates(baseCurrency: string = "USD"): Promise<CachedExchangeRates> {
   const uppercaseBaseCurrency = baseCurrency.toUpperCase();
 
-  const cachedExchangeRates = exchangeRateCache.get(uppercaseBaseCurrency);
-  if (
-    cachedExchangeRates &&
-    Date.now() - cachedExchangeRates.fetchedAt < EXCHANGE_RATE_CACHE_TTL_MILLISECONDS
-  ) {
-    return cachedExchangeRates.data;
-  }
+  return exchangeRateCache.get<CachedExchangeRates>(
+    uppercaseBaseCurrency,
+    EXCHANGE_RATE_CACHE_TTL_MILLISECONDS,
+    async () => {
+      const apiUrl = `${EXCHANGE_RATE_BASE_URL}/${uppercaseBaseCurrency}`;
+      const apiResponse = await fetch(apiUrl);
 
-  const apiUrl = `${EXCHANGE_RATE_BASE_URL}/${uppercaseBaseCurrency}`;
-  const apiResponse = await fetch(apiUrl);
+      if (!apiResponse.ok) {
+        throw new Error(
+          `Exchange Rate API → ${apiResponse.status} ${apiResponse.statusText}`,
+        );
+      }
 
-  if (!apiResponse.ok) {
-    throw new Error(
-      `Exchange Rate API → ${apiResponse.status} ${apiResponse.statusText}`,
-    );
-  }
+      const apiResponseBody = await apiResponse.json();
 
-  const apiResponseBody = await apiResponse.json();
+      if (apiResponseBody.result !== "success") {
+        throw new Error(
+          `Exchange Rate API → ${apiResponseBody["error-type"] || "unknown error"}`,
+        );
+      }
 
-  if (apiResponseBody.result !== "success") {
-    throw new Error(
-      `Exchange Rate API → ${apiResponseBody["error-type"] || "unknown error"}`,
-    );
-  }
-
-  const exchangeRateResult = {
-    baseCurrency: apiResponseBody.base_code,
-    lastUpdate: apiResponseBody.time_last_update_utc,
-    nextUpdate: apiResponseBody.time_next_update_utc,
-    exchangeRates: apiResponseBody.rates,
-  };
-
-  exchangeRateCache.set(uppercaseBaseCurrency, {
-    data: exchangeRateResult,
-    fetchedAt: Date.now(),
-  });
-  return exchangeRateResult;
+      return {
+        baseCurrency: apiResponseBody.base_code,
+        lastUpdate: apiResponseBody.time_last_update_utc,
+        nextUpdate: apiResponseBody.time_next_update_utc,
+        exchangeRates: apiResponseBody.rates,
+      };
+    },
+  );
 }
 
 export async function convertCurrency(

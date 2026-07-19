@@ -1,17 +1,16 @@
 // ─── Shared Reddit OAuth2 Client + Rate Limiter ────────────
 
-import CONFIG from "../../config.ts";
-import { USER_AGENT } from "../../constants.ts";
 import logger from "../../logger.ts";
 import { sleep } from "@rodrigo-barraza/utilities-library";
-import { TokenManager } from "@rodrigo-barraza/utilities-library/node";
+import { createTtlCache } from "@rodrigo-barraza/utilities-library/cache";
+import {
+  redditTokenManager,
+  redditRequestHeaders,
+} from "../shared/RedditAuth.ts";
 
 // ─── Constants ─────────────────────────────────────────────────────
 
-const OAUTH_TOKEN_URL = "https://www.reddit.com/api/v1/access_token";
 const OAUTH_API_BASE = "https://oauth.reddit.com";
-
-const TOKEN_REFRESH_BUFFER_SECONDS = 300;
 
 /**
  * Reddit enforces 100 QPM (queries per minute) for authenticated OAuth apps.
@@ -20,60 +19,6 @@ const TOKEN_REFRESH_BUFFER_SECONDS = 300;
  */
 const RATE_LIMIT_WINDOW_MILLISECONDS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 80;
-
-// ─── OAuth2 Token Manager (Client Credentials Grant) ──────────────
-
-export function buildUserAgent(): string {
-  return CONFIG.REDDIT_USER_AGENT || USER_AGENT;
-}
-
-// Token expiry is shortened by the refresh buffer so a fresh token is
-// acquired TOKEN_REFRESH_BUFFER_SECONDS before Reddit's actual expiry —
-// same semantics as the previous hand-rolled cachedToken check.
-const redditTokenManager = new TokenManager(async () => {
-  const clientId = CONFIG.REDDIT_CLIENT_ID;
-  const clientSecret = CONFIG.REDDIT_CLIENT_SECRET;
-
-  if (!clientId || !clientSecret) {
-    throw new Error(
-      "Reddit OAuth2 credentials not configured (REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET)",
-    );
-  }
-
-  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString(
-    "base64",
-  );
-
-  const response = await fetch(OAUTH_TOKEN_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${credentials}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-      "User-Agent": buildUserAgent(),
-    },
-    body: "grant_type=client_credentials",
-  });
-
-  if (!response.ok) {
-    throw new Error(`Reddit OAuth2 token request failed: ${response.status}`);
-  }
-
-  const tokenData = (await response.json()) as {
-    access_token: string;
-    expires_in: number;
-  };
-
-  logger.info(
-    "Reddit OAuth2 token acquired (expires in %ds)",
-    tokenData.expires_in,
-  );
-
-  return {
-    token: tokenData.access_token,
-    expiresInMilliseconds:
-      tokenData.expires_in * 1_000 - TOKEN_REFRESH_BUFFER_SECONDS * 1_000,
-  };
-});
 
 // ─── Rate Limiter (Sliding Window) ─────────────────────────────────
 
@@ -123,22 +68,8 @@ async function waitForRateLimit(): Promise<void> {
 
 // ─── Cache Layer ───────────────────────────────────────────────────
 
-interface CacheEntry {
-  data: unknown;
-  timestamp: number;
-}
-
-const apiCache = new Map<string, CacheEntry>();
+const apiCache = createTtlCache();
 const CACHE_TTL_MILLISECONDS = 120_000; // 2 minutes
-
-function pruneCache(): void {
-  const now = Date.now();
-  for (const [key, entry] of apiCache.entries()) {
-    if (now - entry.timestamp > CACHE_TTL_MILLISECONDS) {
-      apiCache.delete(key);
-    }
-  }
-}
 
 // ─── Public: Authenticated API Request ─────────────────────────────
 
@@ -147,16 +78,18 @@ export async function redditApiRequest<T>(
   parameters: Record<string, string> = {},
   bypassCache = false,
 ): Promise<T> {
+  if (bypassCache) return fetchFromRedditApi<T>(endpoint, parameters);
+
   const cacheKey = `${endpoint}?${new URLSearchParams(parameters).toString()}`;
+  return apiCache.get<T>(cacheKey, CACHE_TTL_MILLISECONDS, () =>
+    fetchFromRedditApi<T>(endpoint, parameters),
+  );
+}
 
-  if (!bypassCache) {
-    pruneCache();
-    const cached = apiCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MILLISECONDS) {
-      return cached.data as T;
-    }
-  }
-
+async function fetchFromRedditApi<T>(
+  endpoint: string,
+  parameters: Record<string, string>,
+): Promise<T> {
   await waitForRateLimit();
 
   const token = await redditTokenManager.getToken();
@@ -168,10 +101,7 @@ export async function redditApiRequest<T>(
   const url = `${OAUTH_API_BASE}${endpoint}?${queryString}`;
 
   const response = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "User-Agent": buildUserAgent(),
-    },
+    headers: redditRequestHeaders(token),
   });
 
   if (response.status === 404) {
@@ -191,16 +121,7 @@ export async function redditApiRequest<T>(
     throw new Error(`Reddit API error: ${response.status}`);
   }
 
-  const result = (await response.json()) as T;
-
-  if (!bypassCache) {
-    apiCache.set(cacheKey, {
-      data: result,
-      timestamp: Date.now(),
-    });
-  }
-
-  return result;
+  return (await response.json()) as T;
 }
 
 // ─── Public: Inter-Request Delay Helper ────────────────────────────
