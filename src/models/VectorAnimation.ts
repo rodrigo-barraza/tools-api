@@ -1,7 +1,7 @@
 import type { Collection } from "mongodb";
 import { getDatabase } from "@rodrigo-barraza/utilities-library/service/mongo";
 import logger from "../logger.ts";
-import type { VectorLayer } from "../utilities/VectorAnimationEngine.ts";
+import type { VectorLayer, SymbolMap } from "../utilities/VectorAnimationEngine.ts";
 
 export interface VectorAnimationConfig {
   width?: number;
@@ -10,6 +10,7 @@ export interface VectorAnimationConfig {
   fps?: number;
   background?: string;
   layers: VectorLayer[];
+  symbols?: SymbolMap;
 }
 
 export interface VectorAnimationOptions {
@@ -29,7 +30,18 @@ export interface VectorAnimationDocument {
   updatedAt: Date;
 }
 
+export interface VectorAnimationSessionDocument {
+  sessionId: string;
+  animation: VectorAnimationConfig;
+  options: VectorAnimationOptions;
+  updatedAt: Date;
+}
+
+/** Sessions are the agent's iterative working state — keep them for a week. */
+const SESSION_TTL_SECONDS = 7 * 24 * 3600;
+
 let collection: Collection<VectorAnimationDocument> | null = null;
+let sessionCollection: Collection<VectorAnimationSessionDocument> | null = null;
 
 export async function setupVectorAnimationCollection() {
   const database = getDatabase();
@@ -42,7 +54,41 @@ export async function setupVectorAnimationCollection() {
   await collectionInstance.createIndex({ createdAt: -1 });
 
   collection = collectionInstance;
+
+  const sessionCollectionInstance = database.collection<VectorAnimationSessionDocument>("vector_animation_sessions") as unknown as Collection<VectorAnimationSessionDocument>;
+  await sessionCollectionInstance.createIndex({ sessionId: 1 }, { unique: true });
+  await sessionCollectionInstance.createIndex(
+    { updatedAt: 1 },
+    { expireAfterSeconds: SESSION_TTL_SECONDS },
+  );
+  sessionCollection = sessionCollectionInstance;
+
   logger.info("🎬 Vector animation collection indexes ready");
+}
+
+export async function saveVectorAnimationSession(
+  sessionId: string,
+  animation: VectorAnimationConfig,
+  options: VectorAnimationOptions,
+): Promise<void> {
+  if (!sessionCollection) return;
+  await sessionCollection.updateOne(
+    { sessionId },
+    { $set: { animation, options, updatedAt: new Date() } },
+    { upsert: true },
+  );
+}
+
+export async function getVectorAnimationSession(
+  sessionId: string,
+): Promise<{ animation: VectorAnimationConfig; options: VectorAnimationOptions } | null> {
+  if (!sessionCollection) return null;
+  const document = await sessionCollection.findOne(
+    { sessionId },
+    { projection: { _id: 0, animation: 1, options: 1 } },
+  );
+  if (!document) return null;
+  return { animation: document.animation, options: document.options };
 }
 
 export async function saveVectorAnimation(

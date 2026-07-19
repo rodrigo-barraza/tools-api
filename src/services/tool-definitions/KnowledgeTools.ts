@@ -110,6 +110,43 @@ export function getKnowledgeTools(
     },
   },
   {
+    name: "search_library_docs",
+    dataSource: onDemand("Context7 API"),
+    description: translate("search_library_docs.description"),
+    endpoint: {
+      path: "/knowledge/library-docs",
+      queryParams: ["libraryName", "libraryId", "topic", "tokens"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        libraryName: {
+          type: "string",
+          description: translate("search_library_docs.params.libraryName"),
+        },
+        libraryId: {
+          type: "string",
+          description: translate("search_library_docs.params.libraryId"),
+        },
+        topic: {
+          type: "string",
+          description: translate("search_library_docs.params.topic"),
+        },
+        tokens: {
+          type: "number",
+          description: translate("search_library_docs.params.tokens"),
+        },
+      },
+      required: [],
+    },
+    display: {
+      activeVerb: "Reading docs for",
+      completedVerb: "Read docs for",
+      subjectParam: "libraryName",
+      subjectFormat: "quoted",
+    },
+  },
+  {
     name: "get_country",
     dataSource: onDemand("REST Countries + World Bank"),
     description: translate("get_country.description"),

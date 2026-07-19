@@ -3,6 +3,7 @@ import { promisify } from "node:util";
 import { writeFile, readFile, rm, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { assertNoUnresolvedAttachedSentinel } from "./AttachedMediaSentinel.ts";
 
 const execFileAsync = promisify(execFile);
 
@@ -15,15 +16,12 @@ const FFMPEG_TIMEOUT_MS = 30_000;
  * tool (remix_audio, generate_audio sampler channels).
  */
 export async function resolveAudioInput(input: string): Promise<Buffer> {
-  // The 'attached' sentinel is normally substituted by the agent harness
-  // with the conversation's attached audio before the request reaches us.
-  // Seeing it here means no attached audio could be resolved.
-  if (input.trim().toLowerCase() === "attached") {
-    throw new Error(
-      "No attached audio was found in the conversation to substitute for 'attached'. " +
-        "Ask the user to (re-)upload the audio, or pass an explicit URL or data URI.",
-    );
-  }
+  // Unresolved harness sentinel — no attached audio existed to substitute.
+  assertNoUnresolvedAttachedSentinel(
+    input,
+    "audio",
+    "an explicit URL or data URI",
+  );
 
   if (input.startsWith("data:")) {
     const commaIndex = input.indexOf(",");

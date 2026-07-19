@@ -44,6 +44,9 @@ interface ToolsServiceConfig {
   ETSY_API_KEY: string | undefined;
   ETSY_SHARED_SECRET: string | undefined;
 
+  // Knowledge
+  CONTEXT7_API_KEY: string | undefined;
+
   // Music
   SPOTIFY_CLIENT_ID: string | undefined;
   SPOTIFY_CLIENT_SECRET: string | undefined;
@@ -176,6 +179,9 @@ const CONFIG: ToolsServiceConfig = {
   EBAY_CLIENT_SECRET: process.env.EBAY_CLIENT_SECRET,
   ETSY_API_KEY: process.env.ETSY_API_KEY,
   ETSY_SHARED_SECRET: process.env.ETSY_SHARED_SECRET,
+
+  // ─── Knowledge ───────────────────────────────────────────────────
+  CONTEXT7_API_KEY: process.env.CONTEXT7_API_KEY,
 
   // ─── Music ───────────────────────────────────────────────────────
   SPOTIFY_CLIENT_ID: process.env.SPOTIFY_CLIENT_ID,

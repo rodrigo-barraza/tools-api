@@ -23,9 +23,11 @@ import {
 } from "../services/AudioTrackerSessionManager.ts";
 import {
   validateVectorAnimationInput,
+  validateMergedAnimation,
   normalizeEasing,
   findKeyframeBeyondDuration,
   type VectorLayer as VectorLayerInput,
+  type VectorSymbolInput,
 } from "../services/VectorAnimationValidation.ts";
 import { synthesizeSpeech, getSupportedVoices, isEspeakAvailable } from "../services/TextToSpeechService.ts";
 import {
@@ -38,16 +40,34 @@ import {
   toVisionDataUri,
 } from "../services/ImageService.ts";
 import { PersistentStore } from "../models/EmbedAsset.ts";
+import {
+  isUnresolvedAttachedSentinel,
+  buildAttachedSentinelError,
+} from "../services/AttachedMediaSentinel.ts";
+import { imageStore } from "./ComputeRoutes.ts";
 import MinioService from "../services/MinioService.ts";
 import logger from "../logger.ts";
 import { extractCallerContext, errorMessage, buildDisplay, buildLocalUrl, buildEmbedHtml, escapeHtml, sanitizeCssColor, toEmbedScriptJson } from "../utilities.ts";
-import { saveVectorAnimation, getVectorAnimation, type VectorAnimationConfig, type VectorAnimationOptions } from "../models/VectorAnimation.ts";
+import {
+  saveVectorAnimation,
+  getVectorAnimation,
+  saveVectorAnimationSession,
+  getVectorAnimationSession,
+  type VectorAnimationConfig,
+  type VectorAnimationOptions,
+} from "../models/VectorAnimation.ts";
+import {
+  renderAnimationFrames,
+  buildFilmstripImage,
+  encodeAnimationVideo,
+} from "../services/VectorAnimationRenderService.ts";
 import crypto from "node:crypto";
 import CONFIG from "../config.ts";
 import {
   buildEngineEmbedScript,
   type VectorLayer,
   type Keyframe,
+  type SymbolMap,
 } from "../utilities/VectorAnimationEngine.ts";
 import {
   queryEmojiCombination,
@@ -100,6 +120,39 @@ async function getCreativeSettings() {
 }
 
 const MAX_SAFETY_RETRIES = 3;
+
+// ────────────────────────────────────────────────────────────
+// Audio Hosting — audio as first-class media
+// ────────────────────────────────────────────────────────────
+// Audio-producing tools keep their inline base64 audio:{data,mimeType}
+// envelope (downstream consumers like lupos-bot rely on it) and ALSO
+// upload the clip to MinIO, mirroring the image/video asset pattern, so
+// clients can render a native player via display{kind:"audio",url} plus
+// a downloadUrl. Hosting is strictly best-effort: when the upload fails
+// the tool still succeeds with the base64-only response.
+
+async function buildAudioHosting(
+  audioBase64: string,
+  mimeType: string,
+  title?: string,
+): Promise<{ downloadUrl: string; display: ReturnType<typeof buildDisplay> } | Record<string, never>> {
+  try {
+    const url = await MinioService.uploadToolAsset(
+      Buffer.from(audioBase64, "base64"),
+      mimeType,
+    );
+    if (!url) return {};
+    return {
+      downloadUrl: url,
+      display: buildDisplay("audio", url, title ? { title } : {}),
+    };
+  } catch (error: unknown) {
+    logger.warn(
+      `[CreativeRoutes] Audio hosting upload failed (returning base64 only): ${errorMessage(error)}`,
+    );
+    return {};
+  }
+}
 
 // ────────────────────────────────────────────────────────────
 // Prompt Softening — graceful degradation for content safety
@@ -435,17 +488,17 @@ router.post(
 
     if (!image || typeof image !== "string") {
       return res.status(400).json({
-        error: "Missing required parameter: image (URL or base64 data URI)",
+        error: "Missing required parameter: image (URL, base64 data URI, or imageId)",
       });
     }
-    if (image.trim().toLowerCase() === "attached") {
-      // Normally substituted by the agent harness with the conversation's
-      // attached image — reaching us unresolved means there wasn't one.
-      return res.status(400).json({
-        error:
-          "No attached image was found in the conversation to substitute for 'attached'. " +
-          "Ask the user to (re-)upload the image, or pass an explicit URL or data URI.",
-      });
+
+    // Shared resolver: URL, data URI, ephemeral imageId, workspace path —
+    // and the standard unresolved-'attached' sentinel error.
+    let inputBuffer: Buffer;
+    try {
+      inputBuffer = await resolveImageInput(image, imageStore);
+    } catch (error: unknown) {
+      return res.status(400).json({ error: errorMessage(error) });
     }
 
     const objectLimit = Math.min(
@@ -472,10 +525,12 @@ router.post(
         { target, max: String(objectLimit) },
       );
 
+      const visionImage = await toVisionDataUri(inputBuffer);
+
       const result = await PrismService.chat({
         provider: creativeSettings.visionProvider,
         model: creativeSettings.visionModel,
-        messages: [{ role: "user", content: detectionPrompt, images: [image] }],
+        messages: [{ role: "user", content: detectionPrompt, images: [visionImage] }],
         responseMimeType: "application/json",
         project: callerProject,
         username: callerUsername,
@@ -497,7 +552,6 @@ router.post(
         });
       }
 
-      const inputBuffer = await resolveImageInput(image);
       const { width, height, objects, annotatedPng } = await annotateDetections(
         inputBuffer,
         detections,
@@ -565,17 +619,17 @@ router.post(
 
     if (!image || typeof image !== "string") {
       return res.status(400).json({
-        error: "Missing required parameter: image (URL or base64 data URI)",
+        error: "Missing required parameter: image (URL, base64 data URI, or imageId)",
       });
     }
-    if (image.trim().toLowerCase() === "attached") {
-      // Normally substituted by the agent harness with the conversation's
-      // attached image — reaching us unresolved means there wasn't one.
-      return res.status(400).json({
-        error:
-          "No attached image was found in the conversation to substitute for 'attached'. " +
-          "Ask the user to (re-)upload the image, or pass an explicit URL or data URI.",
-      });
+
+    // Shared resolver: URL, data URI, ephemeral imageId, workspace path —
+    // and the standard unresolved-'attached' sentinel error.
+    let inputBuffer: Buffer;
+    try {
+      inputBuffer = await resolveImageInput(image, imageStore);
+    } catch (error: unknown) {
+      return res.status(400).json({ error: errorMessage(error) });
     }
 
     const target =
@@ -592,7 +646,6 @@ router.post(
 
     try {
       const creativeSettings = await getCreativeSettings();
-      const inputBuffer = await resolveImageInput(image);
       const visionImage = await toVisionDataUri(inputBuffer);
 
       const segmentationPrompt = PromptLocaleService.get(
@@ -683,7 +736,23 @@ router.post(
 
     if (!imageUrls || !Array.isArray(imageUrls) || imageUrls.length === 0) {
       return res.status(400).json({
-        error: "Missing required parameter: imageUrls (array of URLs)",
+        error:
+          "Missing required parameter: imageUrls (array of image URLs, data URIs, or imageIds)",
+      });
+    }
+    if (imageUrls.some((entry) => typeof entry !== "string" || !entry.trim())) {
+      return res.status(400).json({
+        error:
+          "Every imageUrls entry must be a non-empty string (URL, data URI, or imageId)",
+      });
+    }
+    // Unresolved harness sentinel — no attached image existed to substitute.
+    if (imageUrls.some((entry) => isUnresolvedAttachedSentinel(entry))) {
+      return res.status(400).json({
+        error: buildAttachedSentinelError(
+          "image",
+          "an explicit URL, data URI, or imageId",
+        ),
       });
     }
 
@@ -716,15 +785,21 @@ router.post(
       }
       const urlCache = visionCache.get(requestId);
 
-      // Deduplicate URLs within this call
-      const uniqueUrls = [...new Set(imageUrls)];
+      // Deduplicate entries within this call
+      const uniqueUrls = [...new Set(imageUrls as string[])];
+
+      // Echo data URIs back as a short label instead of megabytes of base64
+      const sourceLabel = (entry: string) =>
+        entry.startsWith("data:")
+          ? `${entry.slice(0, entry.indexOf(",") + 1)}… (${entry.length} chars)`
+          : entry;
 
       for (const url of uniqueUrls) {
-        // Singleflight: if a request for this URL is already in-flight,
+        // Singleflight: if a request for this entry is already in-flight,
         // await it instead of firing a duplicate.
         if (urlCache.has(url)) {
           const cached = await urlCache.get(url);
-          descriptions.push({ url, description: cached });
+          descriptions.push({ url: sourceLabel(url), description: cached });
           logger.info(
             `[CreativeRoutes] describe-image: cache hit for ${url.slice(0, 60)}…`,
           );
@@ -734,11 +809,16 @@ router.post(
         // Store the promise IMMEDIATELY so parallel calls can await it
         const descriptionPromise = (async () => {
           try {
+            // Shared resolver: URL, data URI, ephemeral imageId, workspace
+            // path — all normalized to a bounded-size vision data URI.
+            const inputBuffer = await resolveImageInput(url, imageStore);
+            const visionImage = await toVisionDataUri(inputBuffer);
+
             const result = await PrismService.chat({
               provider: creativeSettings.visionProvider,
               model: creativeSettings.visionModel,
               messages: [
-                { role: "user", content: visionPrompt, images: [url] },
+                { role: "user", content: visionPrompt, images: [visionImage] },
               ],
               project: callerProject,
               username: callerUsername,
@@ -759,7 +839,7 @@ router.post(
         urlCache.set(url, descriptionPromise);
 
         const text = await descriptionPromise;
-        descriptions.push({ url, description: text });
+        descriptions.push({ url: sourceLabel(url), description: text });
       }
 
       logger.info(
@@ -823,6 +903,7 @@ router.post(
           mimeType: result.contentType,
         },
         textLength: text.length,
+        ...(await buildAudioHosting(result.audioBase64, result.contentType, "Text-to-speech")),
       });
     } catch (error: unknown) {
       logger.error(
@@ -880,6 +961,7 @@ router.post(
         voice: result.voice,
         textLength: result.textLength,
         durationEstimate: result.durationEstimateSeconds,
+        ...(await buildAudioHosting(result.audioBase64, result.mimeType, "Text-to-speech (local)")),
       });
     } catch (error: unknown) {
       logger.error(
@@ -913,13 +995,10 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const { audioUrl, audio, provider, model, language } = req.body;
 
-    if (typeof audioUrl === "string" && audioUrl.trim().toLowerCase() === "attached") {
-      // Normally substituted by the agent harness with the conversation's
-      // attached audio — reaching us unresolved means there wasn't one.
+    // Unresolved harness sentinel — no attached audio existed to substitute.
+    if (isUnresolvedAttachedSentinel(audioUrl) || isUnresolvedAttachedSentinel(audio)) {
       return res.status(400).json({
-        error:
-          "No attached audio was found in the conversation to substitute for 'attached'. " +
-          "Ask the user to (re-)upload the audio, or pass an explicit URL.",
+        error: buildAttachedSentinelError("audio", "an explicit URL or data URI"),
       });
     }
 
@@ -1048,11 +1127,13 @@ router.post(
     // far. Previews are NOT looped or padded to the target duration — they
     // play exactly what has been authored. Returns null if nothing is
     // renderable yet.
-    const tryRenderPreview = (sessionId: string): {
+    const tryRenderPreview = async (sessionId: string): Promise<{
       audio: { data: string; mimeType: string };
       duration: number;
       sampleCount: number;
-    } | null => {
+      downloadUrl?: string;
+      display?: ReturnType<typeof buildDisplay>;
+    } | null> => {
       const conversionResult = toSynthesizerConfig(sessionId, { forPreview: true });
       if (!conversionResult.config) return null;
       const validationError = validateSynthesizerInput(conversionResult.config);
@@ -1064,6 +1145,7 @@ router.post(
           audio: { data: renderResult.audioBase64, mimeType: "audio/wav" },
           duration: renderResult.sampleCount / sampleRate,
           sampleCount: renderResult.sampleCount,
+          ...(await buildAudioHosting(renderResult.audioBase64, "audio/wav", "Tracker preview")),
         };
       } catch {
         return null;
@@ -1248,7 +1330,7 @@ router.post(
         previewNotation = writeResult.previewNotation;
       }
 
-      const preview = tryRenderPreview(session.sessionId);
+      const preview = await tryRenderPreview(session.sessionId);
       return res.json({
         success: true,
         message:
@@ -1273,11 +1355,7 @@ router.post(
         channelCount: result.channelCount,
         allChannels: session.channels.map((channel) => channel.channelId),
         ...(previewNotation && { totalRows: writtenRows, previewNotation }),
-        ...(preview && {
-          audio: preview.audio,
-          duration: preview.duration,
-          sampleCount: preview.sampleCount,
-        }),
+        ...(preview ?? {}),
         ...buildDurationProgress(session),
       });
     }
@@ -1307,7 +1385,7 @@ router.post(
       if (!writeResult.success) {
         return res.status(400).json({ error: writeResult.error });
       }
-      const preview = tryRenderPreview(session.sessionId);
+      const preview = await tryRenderPreview(session.sessionId);
       return res.json({
         success: true,
         message:
@@ -1319,11 +1397,7 @@ router.post(
         channelId,
         totalRows: writeResult.totalRows,
         previewNotation: writeResult.previewNotation,
-        ...(preview && {
-          audio: preview.audio,
-          duration: preview.duration,
-          sampleCount: preview.sampleCount,
-        }),
+        ...(preview ?? {}),
         ...buildDurationProgress(session),
       });
     }
@@ -1377,6 +1451,7 @@ router.post(
           authoredDuration: Math.round(authoredDuration * 100) / 100,
           sampleCount: result.sampleCount,
           sessionCleared: !!clearSession,
+          ...(await buildAudioHosting(result.audioBase64, "audio/wav", "Tracker composition")),
         });
       } catch (error: unknown) {
         logger.error(
@@ -1450,6 +1525,7 @@ router.post(
         appliedOperations: result.appliedOperations,
         ...(preset && { preset }),
         availablePresets: getAvailablePresets(),
+        ...(await buildAudioHosting(audioBase64, result.mimeType, "Remixed audio")),
       });
     } catch (error: unknown) {
       logger.error(
@@ -1565,6 +1641,8 @@ function cleanupVectorAnimationSessions() {
 function normalizeVectorLayers(layers: VectorLayerInput[]): VectorLayerInput[] {
   return layers.map((layer) => {
     const normalized: VectorLayerInput = { ...layer };
+    // Shorthand: a layer with a symbol reference is an instance layer.
+    if (layer.symbol && !layer.shapeType) normalized.shapeType = "instance";
     if (Array.isArray(layer.keyframes)) {
       normalized.keyframes = layer.keyframes
         .map((keyframe) => {
@@ -1596,14 +1674,66 @@ function toRenderableLayers(layers: VectorLayerInput[]): VectorLayer[] {
     .map(stripLayerMarkers);
 }
 
-function buildVectorAnimationEmbedHtml(
+/**
+ * Non-structural layer fields the session merge copies verbatim when
+ * present; an explicit null clears the field (e.g. parent: null unparents).
+ */
+const MERGEABLE_LAYER_FIELDS = [
+  "opacity",
+  "fillColor",
+  "strokeColor",
+  "strokeWidth",
+  "imageUrl",
+  "parent",
+  "zIndex",
+  "isMask",
+  "maskedBy",
+  "symbol",
+  "timeScale",
+  "timeOffset",
+  "symbolLoop",
+  "blur",
+  "shadowColor",
+  "shadowBlur",
+  "shadowOffsetX",
+  "shadowOffsetY",
+] as const;
+
+/**
+ * Split an incoming symbols map into normalized upserts and removals.
+ * Symbols replace whole per name (their layer lists are small and
+ * self-contained; per-layer merging inside symbols isn't supported).
+ */
+function normalizeSymbolsInput(
+  symbolsInput: Record<string, VectorSymbolInput | null> | undefined,
+): { set: SymbolMap; remove: string[] } {
+  const set: SymbolMap = {};
+  const remove: string[] = [];
+  for (const [symbolName, definition] of Object.entries(symbolsInput || {})) {
+    if (definition === null || definition.action === "delete") {
+      remove.push(symbolName);
+      continue;
+    }
+    if (definition && typeof definition === "object" && Array.isArray(definition.layers)) {
+      set[symbolName] = {
+        layers: toRenderableLayers(normalizeVectorLayers(definition.layers)),
+        ...(definition.duration != null ? { duration: Number(definition.duration) } : {}),
+      };
+    }
+  }
+  return { set, remove };
+}
+
+export function buildVectorAnimationEmbedHtml(
   animation: VectorAnimationConfig,
   options: VectorAnimationOptions = {},
+  mode: { headless?: boolean } = {},
 ) {
   const {
     loop = true,
     autoplay = true,
   } = options;
+  const headless = mode.headless === true;
   const width = Number(animation.width) || 800;
   const height = Number(animation.height) || 600;
   const background = sanitizeCssColor(animation.background, "#ffffff");
@@ -1780,7 +1910,7 @@ function buildVectorAnimationEmbedHtml(
 
         let duration = Number(animation.duration) || 5;
         const fps = Number(animation.fps) || 24;
-        let isPlaying = ${autoplay};
+        let isPlaying = ${autoplay && !headless};
         let isLooping = ${loop};
         let currentTime = 0;
         let lastFrameTime = performance.now();
@@ -1811,16 +1941,129 @@ function buildVectorAnimationEmbedHtml(
           return null;
         }
 
-        // ── Render Frame at specific time ──
+        // ── Display-list render: parent/child tree, zIndex order, symbol
+        // instances with their own timelines, mask clipping ──
+        const treeIndex = buildTreeIndex(animation.layers || []);
+        const symbols = animation.symbols || {};
+        const symbolIndices = {};
+        for (const symbolName in symbols) {
+          symbolIndices[symbolName] = buildTreeIndex((symbols[symbolName] && symbols[symbolName].layers) || []);
+        }
+
         function renderFrame(t) {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
-          
-          if (!animation.layers || !Array.isArray(animation.layers)) return;
+          drawLayerList(treeIndex, t, 1, 0);
+        }
 
-          for (const layer of animation.layers) {
-            const interpolatedProps = resolveAnimatedProperties(layer, t);
-            drawShape(layer, interpolatedProps);
+        function drawLayerList(index, t, inheritedAlpha, depth) {
+          const baseTransform = ctx.getTransform();
+          for (const layer of index.roots) {
+            drawLayerNode(layer, index, t, inheritedAlpha, depth, baseTransform);
           }
+        }
+
+        // Compose a layer's ancestor-chain matrix within its scope — used to
+        // express mask clip paths in the scope's base coordinate space.
+        function getScopeMatrix(layerId, index, t) {
+          const chain = [];
+          const seen = {};
+          let current = index.byId[layerId];
+          while (current && !seen[current.id]) {
+            seen[current.id] = true;
+            chain.unshift(current);
+            current = current.parent ? index.byId[current.parent] : null;
+          }
+          let matrix = new DOMMatrix();
+          for (const chainLayer of chain) {
+            const chainProps = resolveAnimatedProperties(chainLayer, t);
+            matrix = matrix
+              .translate(chainProps.x || 0, chainProps.y || 0)
+              .rotate(chainProps.rotation || 0)
+              .scale(chainProps.scaleX ?? 1, chainProps.scaleY ?? 1);
+          }
+          return matrix;
+        }
+
+        function buildLocalShapePath(layer, props) {
+          const shapeData = layer.shapeData || {};
+          const type = layer.shapeType;
+          const path = new Path2D();
+          if (type === "rectangle") {
+            const width = props.width ?? shapeData.width ?? 100;
+            const height = props.height ?? shapeData.height ?? 100;
+            path.rect(-width / 2, -height / 2, width, height);
+            return path;
+          }
+          if (type === "circle") {
+            const radius = props.radius ?? shapeData.radius ?? 50;
+            path.arc(0, 0, radius, 0, Math.PI * 2);
+            return path;
+          }
+          if (type === "ellipse") {
+            const rx = props.rx ?? shapeData.rx ?? 50;
+            const ry = props.ry ?? shapeData.ry ?? 30;
+            path.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+            return path;
+          }
+          if (type === "polygon") {
+            const points = props.points || shapeData.points || [];
+            if (points.length === 0) return null;
+            path.moveTo(points[0][0], points[0][1]);
+            for (let i = 1; i < points.length; i++) path.lineTo(points[i][0], points[i][1]);
+            path.closePath();
+            return path;
+          }
+          if (type === "path") {
+            const pathStr = props.path || shapeData.path || "";
+            return pathStr ? new Path2D(pathStr) : null;
+          }
+          return null;
+        }
+
+        function applyMaskClip(layer, index, t, baseTransform) {
+          const maskLayer = index.byId[layer.maskedBy];
+          if (!maskLayer) return;
+          const maskProps = resolveAnimatedProperties(maskLayer, t);
+          const localPath = buildLocalShapePath(maskLayer, maskProps);
+          if (!localPath) return;
+          const worldPath = new Path2D();
+          worldPath.addPath(localPath, getScopeMatrix(maskLayer.id, index, t));
+          const savedTransform = ctx.getTransform();
+          ctx.setTransform(baseTransform);
+          ctx.clip(worldPath);
+          ctx.setTransform(savedTransform);
+        }
+
+        function drawLayerNode(layer, index, t, inheritedAlpha, depth, baseTransform) {
+          if (layer.isMask) return;
+          const props = resolveAnimatedProperties(layer, t);
+          ctx.save();
+          if (layer.maskedBy) applyMaskClip(layer, index, t, baseTransform);
+          ctx.translate(props.x || 0, props.y || 0);
+          ctx.rotate((props.rotation || 0) * Math.PI / 180);
+          ctx.scale(props.scaleX ?? 1, props.scaleY ?? 1);
+
+          const hasKeyframes = Array.isArray(layer.keyframes) && layer.keyframes.length > 0;
+          const nodeAlpha = inheritedAlpha * (props.opacity ?? 1) * (hasKeyframes ? (layer.opacity ?? 1) : 1);
+
+          if (layer.shapeType === "instance") {
+            const symbolDefinition = symbols[layer.symbol];
+            const symbolIndex = symbolIndices[layer.symbol];
+            if (symbolDefinition && symbolIndex && depth < 8) {
+              const localTime = getInstanceLocalTime(layer, t, getSymbolDuration(symbolDefinition, duration));
+              drawLayerList(symbolIndex, localTime, nodeAlpha, depth + 1);
+            }
+          } else if (layer.shapeType !== "group") {
+            drawShape(layer, props, nodeAlpha);
+          }
+
+          const children = index.childrenOf[layer.id];
+          if (children) {
+            for (const child of children) {
+              drawLayerNode(child, index, t, nodeAlpha, depth, baseTransform);
+            }
+          }
+          ctx.restore();
         }
 
         function resolveStyle(ctx, value) {
@@ -1851,16 +2094,30 @@ function buildVectorAnimationEmbedHtml(
           return "transparent";
         }
 
-        function drawShape(layer, props) {
+        function drawShape(layer, props, alpha) {
           ctx.save();
-          
-          ctx.translate(props.x || 0, props.y || 0);
-          ctx.rotate((props.rotation || 0) * Math.PI / 180);
-          ctx.scale(props.scaleX ?? 1, props.scaleY ?? 1);
-          ctx.globalAlpha = (props.opacity ?? 1) * (layer.opacity ?? 1);
+          ctx.globalAlpha = alpha;
 
-          ctx.fillStyle = resolveStyle(ctx, props.fillColor || layer.fillColor);
-          ctx.strokeStyle = resolveStyle(ctx, props.strokeColor || layer.strokeColor);
+          // Filters apply to this layer's own geometry only — child layers
+          // draw in their own drawShape scope.
+          const blurAmount = props.blur ?? layer.blur;
+          if (typeof blurAmount === "number" && blurAmount > 0) {
+            ctx.filter = "blur(" + blurAmount + "px)";
+          }
+          const shadowColor = props.shadowColor ?? layer.shadowColor;
+          if (shadowColor && shadowColor !== "transparent") {
+            ctx.shadowColor = shadowColor;
+            ctx.shadowBlur = props.shadowBlur ?? layer.shadowBlur ?? 8;
+            ctx.shadowOffsetX = props.shadowOffsetX ?? layer.shadowOffsetX ?? 0;
+            ctx.shadowOffsetY = props.shadowOffsetY ?? layer.shadowOffsetY ?? 0;
+          }
+
+          const fillValue = props.fillColor || layer.fillColor;
+          const strokeValue = props.strokeColor || layer.strokeColor;
+          const hasFill = !!fillValue && fillValue !== "transparent";
+          const hasStroke = !!strokeValue && strokeValue !== "transparent";
+          ctx.fillStyle = resolveStyle(ctx, fillValue);
+          ctx.strokeStyle = resolveStyle(ctx, strokeValue);
           ctx.lineWidth = props.strokeWidth ?? layer.strokeWidth ?? 1;
 
           ctx.beginPath();
@@ -1911,10 +2168,10 @@ function buildVectorAnimationEmbedHtml(
                 ctx.clip(path2d);
                 ctx.drawImage(imageElement, -canvas.width, -canvas.height, canvas.width * 2, canvas.height * 2);
                 ctx.restore();
-              } else if (ctx.fillStyle !== "transparent") {
+              } else if (hasFill) {
                 ctx.fill(path2d);
               }
-              if (ctx.strokeStyle !== "transparent") ctx.stroke(path2d);
+              if (hasStroke) ctx.stroke(path2d);
               ctx.restore();
               return;
             }
@@ -1925,8 +2182,8 @@ function buildVectorAnimationEmbedHtml(
             ctx.font = fontSize + "px " + fontFamily;
             ctx.textAlign = shapeData.textAlign || "center";
             ctx.textBaseline = shapeData.textBaseline || "middle";
-            if (ctx.fillStyle !== "transparent") ctx.fillText(textVal, 0, 0);
-            if (ctx.strokeStyle !== "transparent") ctx.strokeText(textVal, 0, 0);
+            if (hasFill) ctx.fillText(textVal, 0, 0);
+            if (hasStroke) ctx.strokeText(textVal, 0, 0);
           }
 
           const imageUrl = props.imageUrl || layer.imageUrl;
@@ -1974,11 +2231,11 @@ function buildVectorAnimationEmbedHtml(
             }
             ctx.drawImage(imageElement, xValue, yValue, widthValue, heightValue);
             ctx.restore();
-          } else if (ctx.fillStyle !== "transparent" && type !== "line" && type !== "path") {
+          } else if (hasFill && type !== "line" && type !== "path") {
             ctx.fill();
           }
-          
-          if (ctx.strokeStyle !== "transparent" && type !== "path") {
+
+          if (hasStroke && type !== "path") {
             ctx.stroke();
           }
 
@@ -2050,8 +2307,47 @@ function buildVectorAnimationEmbedHtml(
         document.addEventListener("mousemove", resetControlsTimer);
         document.addEventListener("click", resetControlsTimer);
 
-        updateUI();
-        requestAnimationFrame(loop);
+        // ── Headless/snapshot hooks: deterministic frame rendering for the
+        // server-side snapshot filmstrip and video export pipelines ──
+        function collectImageUrls() {
+          const urls = [];
+          const addFromLayers = (layers) => {
+            for (const layer of layers || []) {
+              if (typeof layer.imageUrl === "string" && /^(https?:|data:)/.test(layer.imageUrl)) urls.push(layer.imageUrl);
+              for (const keyframe of layer.keyframes || []) {
+                const kfUrl = keyframe.properties && keyframe.properties.imageUrl;
+                if (typeof kfUrl === "string" && /^(https?:|data:)/.test(kfUrl)) urls.push(kfUrl);
+              }
+            }
+          };
+          addFromLayers(animation.layers);
+          for (const symbolName in symbols) addFromLayers(symbols[symbolName].layers);
+          return urls;
+        }
+
+        window.__vaReady = Promise.all(
+          collectImageUrls().map((url) => new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => { imageCache.set(url, img); resolve(true); };
+            img.onerror = () => resolve(false);
+            img.src = url;
+            setTimeout(() => resolve(false), 4000);
+          })),
+        ).then(() => true);
+
+        window.__vaRenderAt = function(t) {
+          renderFrame(Math.max(0, Math.min(duration, t)));
+          return canvas.toDataURL("image/png");
+        };
+
+        if (${headless}) {
+          controls.style.display = "none";
+          renderFrame(0);
+        } else {
+          updateUI();
+          requestAnimationFrame(loop);
+        }
       })();
       </script>
     `
@@ -2067,6 +2363,28 @@ function cleanupVectorAnimationEmbeds() {
     if (now - embed.updatedAt > EMBED_CACHE_TTL_MS)
       vectorAnimationEmbeds.delete(id);
   }
+}
+
+// Snapshot filmstrips / exported videos when MinIO is unavailable — served
+// by GET /vector-animation/asset with the same TTL as embeds.
+const vectorAnimationAssets = new Map<string, { buffer: Buffer; mimeType: string; updatedAt: number }>();
+
+function cleanupVectorAnimationAssets() {
+  const now = Date.now();
+  for (const [id, asset] of vectorAnimationAssets) {
+    if (now - asset.updatedAt > EMBED_CACHE_TTL_MS)
+      vectorAnimationAssets.delete(id);
+  }
+}
+
+/** Store a rendered asset: MinIO when available, else the in-memory map. */
+async function storeVectorAnimationAsset(buffer: Buffer, mimeType: string): Promise<string> {
+  const minioUrl = await MinioService.uploadToolAsset(buffer, mimeType);
+  if (minioUrl) return minioUrl;
+  const assetId = crypto.randomUUID().slice(0, 12);
+  vectorAnimationAssets.set(assetId, { buffer, mimeType, updatedAt: Date.now() });
+  cleanupVectorAnimationAssets();
+  return buildLocalUrl("creative/vector-animation/asset", { id: assetId });
 }
 
 router.post("/vector-animation", asyncHandler(async (req: Request, res: Response) => {
@@ -2114,12 +2432,27 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
       });
     }
     if (!vectorAnimationSessions.has(trimmedSessionId)) {
+      // Sessions survive restarts via Mongo — hydrate on miss.
+      try {
+        const storedSession = await getVectorAnimationSession(trimmedSessionId);
+        if (storedSession) {
+          vectorAnimationSessions.set(trimmedSessionId, {
+            animation: storedSession.animation,
+            options: storedSession.options || {},
+            updatedAt: Date.now(),
+          });
+        }
+      } catch {
+        // DB unavailable — fall through to the not-found error below.
+      }
+    }
+    if (!vectorAnimationSessions.has(trimmedSessionId)) {
       return res.status(400).json({
         error:
-          `Session '${trimmedSessionId}' not found or expired (sessions expire after 30 ` +
-          `minutes of inactivity). Omit sessionId to create a new animation — the response ` +
-          `returns a server-assigned sessionId for later edits — and resend the complete ` +
-          `animation, not just the changes.`,
+          `Session '${trimmedSessionId}' not found or expired (sessions are kept for 7 ` +
+          `days after the last edit). Omit sessionId to create a new animation — the ` +
+          `response returns a server-assigned sessionId for later edits — and resend the ` +
+          `complete animation, not just the changes.`,
       });
     }
   }
@@ -2149,6 +2482,7 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
     fps: animation.fps != null ? Number(animation.fps) : 24,
     background: animation.background || "#ffffff",
     layers: [] as VectorLayer[],
+    symbols: {} as SymbolMap,
   };
 
   const animationOptions: { loop: boolean; autoplay: boolean; title?: string } = {
@@ -2165,6 +2499,8 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
 
   const normalizedLayers = normalizeVectorLayers(animation.layers || []);
   sessionAnimation.layers = toRenderableLayers(normalizedLayers);
+  const symbolsPatch = normalizeSymbolsInput(animation.symbols);
+  sessionAnimation.symbols = symbolsPatch.set;
 
   // Keyframes past the effective duration would never play — reject with
   // guidance instead of counting them toward totalKeyframes.
@@ -2192,8 +2528,9 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
       return res.status(400).json({
         error:
           `Layer '${layer.id}' is new, so it needs a 'shapeType' (rectangle, circle, ` +
-          `ellipse, line, polygon, path, or text). shapeType may only be omitted when ` +
-          `updating a layer that already exists in the session.`,
+          `ellipse, line, polygon, path, text, group, or instance — instance is implied ` +
+          `when 'symbol' is set). shapeType may only be omitted when updating a layer ` +
+          `that already exists in the session.`,
       });
     }
   }
@@ -2201,35 +2538,45 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
   if (isExistingSession) {
     const session = vectorAnimationSessions.get(trimmedSessionId);
 
+    // Merge into a clone and validate the merged result before committing,
+    // so a bad reference (parent cycle, unknown symbol) never corrupts the
+    // session state the agent keeps building on.
+    let nextAnimation: VectorAnimationConfig;
     if (options?.clearSession === true || animation.clearSession === true) {
-      session.animation = { ...sessionAnimation };
+      nextAnimation = { ...sessionAnimation };
     } else {
-      if (animation.width) session.animation.width = sessionAnimation.width;
-      if (animation.height) session.animation.height = sessionAnimation.height;
-      if (animation.duration) session.animation.duration = sessionAnimation.duration;
-      if (animation.fps) session.animation.fps = sessionAnimation.fps;
-      if (animation.background) session.animation.background = animation.background;
+      nextAnimation = structuredClone(session.animation) as VectorAnimationConfig;
+      if (animation.width) nextAnimation.width = sessionAnimation.width;
+      if (animation.height) nextAnimation.height = sessionAnimation.height;
+      if (animation.duration) nextAnimation.duration = sessionAnimation.duration;
+      if (animation.fps) nextAnimation.fps = sessionAnimation.fps;
+      if (animation.background) nextAnimation.background = animation.background;
+
+      if (!nextAnimation.symbols) nextAnimation.symbols = {};
+      for (const symbolName of symbolsPatch.remove) delete nextAnimation.symbols[symbolName];
+      Object.assign(nextAnimation.symbols, symbolsPatch.set);
 
       for (const newLayer of normalizedLayers) {
         // Support layer deletion
         if (newLayer.action === "delete" || newLayer.deleted === true) {
-          session.animation.layers = session.animation.layers.filter((layer: VectorLayer) => layer.id !== newLayer.id);
+          nextAnimation.layers = nextAnimation.layers.filter((layer: VectorLayer) => layer.id !== newLayer.id);
           continue;
         }
 
-        const existingLayer = session.animation.layers.find((layer: VectorLayer) => layer.id === newLayer.id);
+        const existingLayer = nextAnimation.layers.find((layer: VectorLayer) => layer.id === newLayer.id);
         if (existingLayer) {
-          if (newLayer.shapeType) existingLayer.shapeType = newLayer.shapeType;
-          if (newLayer.shapeData) existingLayer.shapeData = { ...existingLayer.shapeData, ...newLayer.shapeData };
-          if (newLayer.opacity !== undefined) existingLayer.opacity = newLayer.opacity;
-          if (newLayer.fillColor !== undefined) existingLayer.fillColor = newLayer.fillColor;
-          if (newLayer.strokeColor !== undefined) existingLayer.strokeColor = newLayer.strokeColor;
-          if (newLayer.strokeWidth !== undefined) existingLayer.strokeWidth = newLayer.strokeWidth;
-          if (newLayer.imageUrl !== undefined) existingLayer.imageUrl = newLayer.imageUrl;
+          if (newLayer.shapeType) existingLayer.shapeType = newLayer.shapeType as VectorLayer["shapeType"];
+          if (newLayer.shapeData) existingLayer.shapeData = { ...existingLayer.shapeData, ...newLayer.shapeData } as VectorLayer["shapeData"];
+          for (const field of MERGEABLE_LAYER_FIELDS) {
+            const value = (newLayer as unknown as Record<string, unknown>)[field];
+            if (value === undefined) continue;
+            if (value === null) delete (existingLayer as unknown as Record<string, unknown>)[field];
+            else (existingLayer as unknown as Record<string, unknown>)[field] = value;
+          }
 
           if (newLayer.keyframes && Array.isArray(newLayer.keyframes)) {
             if (newLayer.replaceKeyframes === true) {
-              existingLayer.keyframes = [...newLayer.keyframes];
+              existingLayer.keyframes = [...newLayer.keyframes] as Keyframe[];
             } else {
               if (!existingLayer.keyframes) existingLayer.keyframes = [];
               for (const newKf of newLayer.keyframes) {
@@ -2238,21 +2585,27 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
                   existingLayer.keyframes[existingKfIndex].properties = {
                     ...existingLayer.keyframes[existingKfIndex].properties,
                     ...newKf.properties,
-                  };
+                  } as Keyframe["properties"];
                   if (newKf.easing) existingLayer.keyframes[existingKfIndex].easing = newKf.easing;
-                  if (newKf.motionPath) existingLayer.keyframes[existingKfIndex].motionPath = newKf.motionPath;
+                  if (newKf.motionPath) existingLayer.keyframes[existingKfIndex].motionPath = newKf.motionPath as Keyframe["motionPath"];
                 } else {
-                  existingLayer.keyframes.push(newKf);
+                  existingLayer.keyframes.push(newKf as unknown as Keyframe);
                 }
               }
             }
             existingLayer.keyframes.sort((keyframeA: Keyframe, keyframeB: Keyframe) => keyframeA.time - keyframeB.time);
           }
         } else {
-          session.animation.layers.push(stripLayerMarkers(newLayer));
+          nextAnimation.layers.push(stripLayerMarkers(newLayer));
         }
       }
     }
+
+    const mergedError = validateMergedAnimation(nextAnimation as Parameters<typeof validateMergedAnimation>[0]);
+    if (mergedError) {
+      return res.status(400).json({ error: mergedError });
+    }
+    session.animation = nextAnimation;
 
     if (options) {
       if (options.loop !== undefined) session.options.loop = options.loop;
@@ -2265,6 +2618,10 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
     session.updatedAt = Date.now();
     sessionAnimation = session.animation;
   } else {
+    const mergedError = validateMergedAnimation(sessionAnimation as Parameters<typeof validateMergedAnimation>[0]);
+    if (mergedError) {
+      return res.status(400).json({ error: mergedError });
+    }
     vectorAnimationSessions.set(activeSessionId, {
       animation: sessionAnimation,
       options: animationOptions,
@@ -2297,6 +2654,17 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
     }
   }
 
+  // Persist the working session so iteration survives restarts and long
+  // gaps (Mongo TTL: 7 days). Failure is non-fatal — memory still works.
+  {
+    const activeSession = vectorAnimationSessions.get(activeSessionId);
+    if (activeSession) {
+      saveVectorAnimationSession(activeSessionId, activeSession.animation, activeSession.options).catch((error: unknown) => {
+        logger.warn(`[CreativeRoutes] vector-animation session persist failed: ${errorMessage(error)}`);
+      });
+    }
+  }
+
   const embedId = crypto.randomUUID().slice(0, 12);
   await saveVectorAnimation(embedId, sessionAnimation, animationOptions, activeSessionId, callerUsername);
   
@@ -2310,30 +2678,107 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
   const embedUrl = buildLocalUrl("creative/vector-animation/embed", { id: embedId });
   const totalKeyframes = sessionAnimation.layers.reduce((sum: number, layer: VectorLayer) => sum + (layer.keyframes?.length || 0), 0);
   const layerIds = sessionAnimation.layers.map((layer: VectorLayer) => layer.id);
+  const symbolNames = Object.keys(sessionAnimation.symbols || {});
 
-  const warningSuffix = clampWarnings.length > 0 ? ` Note: ${clampWarnings.join("; ")}.` : "";
+  // ── Optional server-side rendering: snapshot filmstrip (agent
+  // self-inspection via describe_image) and mp4/gif export ──
+  let snapshotInfo: { url: string; times: number[] } | null = null;
+  let exportInfo: { url: string; format: "mp4" | "gif" } | null = null;
+  const featureNotes: string[] = [...clampWarnings];
+
+  const wantsSnapshot =
+    options?.snapshot === true ||
+    (Array.isArray(options?.snapshotTimes) && options.snapshotTimes.length > 0);
+  const exportFormat: "mp4" | "gif" | null =
+    options?.export === "mp4" || options?.export === "gif" ? options.export : null;
+
+  if (wantsSnapshot || exportFormat) {
+    const durationSeconds = Number(sessionAnimation.duration) || 5;
+    const headlessHtml = buildVectorAnimationEmbedHtml(
+      sessionAnimation,
+      { ...animationOptions, autoplay: false },
+      { headless: true },
+    );
+
+    if (wantsSnapshot) {
+      try {
+        const requestedTimes: unknown[] =
+          Array.isArray(options?.snapshotTimes) && options.snapshotTimes.length > 0
+            ? options.snapshotTimes
+            : [0, 0.25, 0.5, 0.75, 1].map((fraction) => fraction * durationSeconds);
+        const times = requestedTimes
+          .slice(0, 8)
+          .map((time) => Math.max(0, Math.min(durationSeconds, Number(time) || 0)));
+        const frames = await renderAnimationFrames(headlessHtml, times);
+        const filmstrip = await buildFilmstripImage(frames, times);
+        snapshotInfo = { url: await storeVectorAnimationAsset(filmstrip, "image/png"), times };
+      } catch (error: unknown) {
+        featureNotes.push(`snapshot rendering failed (${errorMessage(error)})`);
+        logger.warn(`[CreativeRoutes] vector-animation snapshot failed: ${errorMessage(error)}`);
+      }
+    }
+
+    if (exportFormat) {
+      try {
+        const fpsValue = Number(sessionAnimation.fps) || 24;
+        const MAX_EXPORT_FRAMES = 600;
+        const frameCount = Math.max(2, Math.min(Math.round(durationSeconds * fpsValue) + 1, MAX_EXPORT_FRAMES));
+        const effectiveFps = (frameCount - 1) / durationSeconds;
+        const times = Array.from({ length: frameCount }, (_, index) => index / effectiveFps);
+        const frames = await renderAnimationFrames(headlessHtml, times);
+        const encoded = await encodeAnimationVideo(frames, effectiveFps, exportFormat);
+        exportInfo = {
+          url: await storeVectorAnimationAsset(encoded.buffer, encoded.mimeType),
+          format: exportFormat,
+        };
+      } catch (error: unknown) {
+        featureNotes.push(`${exportFormat} export failed (${errorMessage(error)})`);
+        logger.warn(`[CreativeRoutes] vector-animation export failed: ${errorMessage(error)}`);
+      }
+    }
+  }
+
+  const noteSuffix = featureNotes.length > 0 ? ` Note: ${featureNotes.join("; ")}.` : "";
+  const snapshotSuffix = snapshotInfo
+    ? ` Filmstrip snapshot rendered at [${snapshotInfo.times.map((time) => time.toFixed(2)).join(", ")}]s — ` +
+      `pass snapshot.url to describe_image to visually inspect your work before continuing.`
+    : "";
+  const exportSuffix = exportInfo
+    ? ` Exported ${exportInfo.format} is attached for the user.`
+    : "";
   const message =
     `Animation ${isExistingSession ? "updated" : "created"}: ${sessionAnimation.layers.length} ` +
-    `layer(s) [${layerIds.join(", ")}], ${totalKeyframes} keyframe(s), ` +
-    `${sessionAnimation.duration}s at ${sessionAnimation.fps}fps. The user can see this ` +
+    `layer(s) [${layerIds.join(", ")}], ${totalKeyframes} keyframe(s)` +
+    (symbolNames.length > 0 ? `, ${symbolNames.length} symbol(s) [${symbolNames.join(", ")}]` : "") +
+    `, ${sessionAnimation.duration}s at ${sessionAnimation.fps}fps. The user can see this ` +
     `version now. To keep building on it, call again with sessionId '${activeSessionId}' and ` +
     `only the layers you are adding or changing — layers merge by id, keyframes merge by time, ` +
-    `layers with {"action": "delete"} are removed, and the session expires after 30 minutes ` +
-    `of inactivity.` +
-    warningSuffix;
+    `layers with {"action": "delete"} are removed, and the session is kept for 7 days.` +
+    snapshotSuffix +
+    exportSuffix +
+    noteSuffix;
+
+  const display = exportInfo
+    ? buildDisplay(exportInfo.format === "mp4" ? "video" : "image", exportInfo.url, {
+        title: `Vector Animation (${exportInfo.format})`,
+      })
+    : buildDisplay("embed", embedUrl, { height: 420, title: "Vector Animation" });
 
   res.json({
     message,
     embedUrl,
-    display: buildDisplay("embed", embedUrl, { height: 420, title: "Vector Animation" }),
+    display,
     sessionId: activeSessionId,
     animationId: embedId,
     duration: sessionAnimation.duration,
     layerCount: sessionAnimation.layers.length,
     layerIds,
+    ...(symbolNames.length > 0 && { symbolNames }),
     totalKeyframes,
     canvasSize: `${sessionAnimation.width}x${sessionAnimation.height}`,
     isAppend: isExistingSession,
+    ...(snapshotInfo && { snapshot: snapshotInfo }),
+    ...(exportInfo && { export: exportInfo }),
   });
 }));
 
@@ -2352,6 +2797,17 @@ router.get("/vector-animation/embed", asyncHandler(async (req: Request, res: Res
 
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(buildVectorAnimationEmbedHtml(entry.animation, entry.options));
+}));
+
+// Serves snapshot filmstrips / exports when MinIO is unavailable.
+router.get("/vector-animation/asset", asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.query as Record<string, string>;
+  if (!id) return res.status(400).send("Missing 'id' parameter");
+  const asset = vectorAnimationAssets.get(id);
+  if (!asset) return res.status(404).send("Vector animation asset not found or expired");
+  res.setHeader("Content-Type", asset.mimeType);
+  res.setHeader("Cache-Control", "public, max-age=1800");
+  res.send(asset.buffer);
 }));
 
 // ────────────────────────────────────────────────────────────

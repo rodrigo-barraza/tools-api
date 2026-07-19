@@ -187,6 +187,7 @@ const TOOL_DOMAINS = {
 
   // Knowledge
   search_books: "Knowledge",
+  search_library_docs: "Knowledge",
   get_country: "Knowledge",
   get_element: "Knowledge",
   get_exoplanet: "Knowledge",
@@ -356,6 +357,7 @@ const TOOL_DOMAINS = {
   read_image_text: "Web",
   read_docx: "Web",
   read_spreadsheet: "Web",
+  read_csv: "Web",
   search_web: "Core Harness Tools",
   search_news: "Web",
   search_images: "Web",
@@ -658,6 +660,7 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   get_sec_filings: "🏛️",
   get_sector_performance: ["📊", "🗺️"],
   search_books: ["📚", "💻"],
+  search_library_docs: ["📖", "💻"],
   get_country: ["🌐", "🗺️"],
   get_element: "⚛️",
   get_exoplanet: ["🪐", "💻"],
@@ -807,6 +810,7 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   read_image_text: ["📷", "📝"],
   read_docx: ["📝", "📄"],
   read_spreadsheet: ["📄", "📊"],
+  read_csv: ["🧾", "📊"],
   search_web: ["🌐", "🔍"],
   search_news: ["📰", "🔍"],
   search_images: ["🖼️", "🔍"],

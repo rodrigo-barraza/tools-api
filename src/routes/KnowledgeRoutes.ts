@@ -1,7 +1,12 @@
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { parseIntParam } from "@rodrigo-barraza/utilities-library";
 import { Request, Response, Router } from "express";
+import {
+  isUnresolvedAttachedSentinel,
+  buildAttachedSentinelError,
+} from "../services/AttachedMediaSentinel.ts";
 import { fetchDefinition } from "../fetchers/knowledge/DictionaryFetcher.ts";
+import { searchLibraryDocs } from "../fetchers/knowledge/Context7Fetcher.ts";
 import {
   searchBooks,
   getBookDetails,
@@ -165,6 +170,27 @@ router.get(
     (req: Request) => getAuthorInfo(req.params.authorKey as string),
     "Author info",
   ),
+);
+// ─── Library docs (Context7) ───────────────────────────────────────
+router.get(
+  "/library-docs",
+  asyncHandler(async (req: Request, res: Response) => {
+    const libraryName = req.query.libraryName as string | undefined;
+    const libraryId = req.query.libraryId as string | undefined;
+    if (!libraryName && !libraryId) {
+      return res
+        .status(400)
+        .json({ error: "Provide either 'libraryName' or 'libraryId'" });
+    }
+    res.json(
+      await searchLibraryDocs({
+        libraryName,
+        libraryId,
+        topic: req.query.topic as string | undefined,
+        tokens: parseIntParam(req.query.tokens as string | undefined, 2500),
+      }),
+    );
+  }),
 );
 // ─── Countries ─────────────────────────────────────────────────────
 router.get(
@@ -1061,13 +1087,12 @@ router.post(
         error: "Body parameter 'url' is required (video URL to trim)",
       });
     }
-    if (url.trim().toLowerCase() === "attached") {
-      // Normally substituted by the agent harness with the conversation's
-      // attached video — reaching us unresolved means there wasn't one.
+    // Unresolved harness sentinel — no attached video existed to substitute.
+    // (The URL passes straight to download/ffmpeg logic, so only the shared
+    // sentinel check applies here — not a full media resolve.)
+    if (isUnresolvedAttachedSentinel(url)) {
       return res.status(400).json({
-        error:
-          "No attached video was found in the conversation to substitute for 'attached'. " +
-          "Ask the user to (re-)upload the video, or pass an explicit URL.",
+        error: buildAttachedSentinelError("video", "an explicit URL"),
       });
     }
 

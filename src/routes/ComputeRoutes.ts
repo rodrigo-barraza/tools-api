@@ -2680,7 +2680,9 @@ router.post("/synthetic-output", (req: Request, res: Response) => {
   res.json(result);
 });
 // ─── Image Processing (Sharp + ImageMagick) ─────────────────
-const imageStore = new PersistentStore<{ buffer: Buffer; mimeType: string }>("image");
+// Exported so other routes (e.g. describe-image in CreativeRoutes) can
+// resolve the ephemeral imageIds returned by manipulate_image.
+export const imageStore = new PersistentStore<{ buffer: Buffer; mimeType: string }>("image");
 router.post(
   "/image/process",
   asyncHandler(async (req: Request, res: Response) => {

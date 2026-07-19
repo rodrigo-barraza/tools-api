@@ -1426,6 +1426,20 @@ export function getCreativeTools(
               type: "string",
               description: translate("create_vector_animation.params.options.params.title"),
             },
+            snapshot: {
+              type: "boolean",
+              description: translate("create_vector_animation.params.options.params.snapshot"),
+            },
+            snapshotTimes: {
+              type: "array",
+              items: { type: "number" },
+              description: translate("create_vector_animation.params.options.params.snapshotTimes"),
+            },
+            export: {
+              type: "string",
+              enum: ["mp4", "gif"],
+              description: translate("create_vector_animation.params.options.params.export"),
+            },
           },
         },
         animation: {
@@ -1456,6 +1470,10 @@ export function getCreativeTools(
               type: "string",
               description: translate("create_vector_animation.params.animation.params.background"),
             },
+            symbols: {
+              type: "object",
+              description: translate("create_vector_animation.params.animation.params.symbols"),
+            },
             layers: {
               type: "array",
               description: translate("create_vector_animation.params.animation.params.layers"),
@@ -1485,12 +1503,58 @@ export function getCreativeTools(
                       "polygon",
                       "path",
                       "text",
+                      "group",
+                      "instance",
                     ],
                     description: translate("create_vector_animation.params.animation.params.layers.items.params.shapeType"),
                   },
                   shapeData: {
                     type: "object",
                     description: translate("create_vector_animation.params.animation.params.layers.items.params.shapeData"),
+                  },
+                  parent: {
+                    type: "string",
+                    description: translate("create_vector_animation.params.animation.params.layers.items.params.parent"),
+                  },
+                  zIndex: {
+                    type: "number",
+                    description: translate("create_vector_animation.params.animation.params.layers.items.params.zIndex"),
+                  },
+                  isMask: {
+                    type: "boolean",
+                    description: translate("create_vector_animation.params.animation.params.layers.items.params.isMask"),
+                  },
+                  maskedBy: {
+                    type: "string",
+                    description: translate("create_vector_animation.params.animation.params.layers.items.params.maskedBy"),
+                  },
+                  symbol: {
+                    type: "string",
+                    description: translate("create_vector_animation.params.animation.params.layers.items.params.symbol"),
+                  },
+                  timeScale: {
+                    type: "number",
+                    description: translate("create_vector_animation.params.animation.params.layers.items.params.timeScale"),
+                  },
+                  timeOffset: {
+                    type: "number",
+                    description: translate("create_vector_animation.params.animation.params.layers.items.params.timeOffset"),
+                  },
+                  symbolLoop: {
+                    type: "boolean",
+                    description: translate("create_vector_animation.params.animation.params.layers.items.params.symbolLoop"),
+                  },
+                  blur: {
+                    type: "number",
+                    description: translate("create_vector_animation.params.animation.params.layers.items.params.blur"),
+                  },
+                  shadowColor: {
+                    type: "string",
+                    description: translate("create_vector_animation.params.animation.params.layers.items.params.shadowColor"),
+                  },
+                  shadowBlur: {
+                    type: "number",
+                    description: translate("create_vector_animation.params.animation.params.layers.items.params.shadowBlur"),
                   },
                   fillColor: {
                     anyOf: [

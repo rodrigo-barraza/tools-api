@@ -2,17 +2,25 @@ import { describe, it, expect } from "vitest";
 import {
   solveCubicBezier,
   ease,
+  easeOutBounce,
   parseColorToRgba,
   parseColor,
   interpolateColor,
   isGradient,
   interpolateGradient,
   interpolate,
+  isSvgPathString,
+  interpolatePath,
   getDefaultValue,
   resolveAnimatedProperties,
   getPathPointAt,
   buildEngineEmbedScript,
+  buildTreeIndex,
+  sortLayersForRender,
+  getSymbolDuration,
+  getInstanceLocalTime,
   VectorLayer,
+  VectorSymbol,
   LinearGradient,
 } from "../../utilities/VectorAnimationEngine.ts";
 
@@ -41,6 +49,26 @@ describe("VectorAnimationEngine Calculations", () => {
       const easeResult = ease(0.5, "cubic-bezier(0.25, 0.1, 0.25, 1.0)");
       const directResult = solveCubicBezier(0.5, 0.25, 0.1, 0.25, 1.0);
       expect(easeResult).toBe(directResult);
+    });
+
+    it("anchors the Flash-style easing presets at their endpoints", () => {
+      for (const preset of ["bounce", "bounce-in", "elastic", "elastic-in", "back", "back-in", "spring"]) {
+        expect(ease(0, preset)).toBeCloseTo(0, 5);
+        expect(ease(1, preset)).toBeCloseTo(1, 5);
+      }
+    });
+
+    it("bounce eases through the canonical Penner segments", () => {
+      expect(easeOutBounce(0.2)).toBeCloseTo(7.5625 * 0.2 * 0.2, 5);
+      expect(ease(0.2, "bounce")).toBe(easeOutBounce(0.2));
+      expect(ease(0.8, "bounce-in")).toBeCloseTo(1 - easeOutBounce(0.2), 10);
+    });
+
+    it("back overshoots past 1 on the way out, elastic oscillates past 1", () => {
+      const backSamples = [0.6, 0.7, 0.8].map((t) => ease(t, "back"));
+      expect(Math.max(...backSamples)).toBeGreaterThan(1);
+      const elasticSamples = [0.2, 0.3, 0.4, 0.5].map((t) => ease(t, "elastic"));
+      expect(Math.max(...elasticSamples)).toBeGreaterThan(1);
     });
   });
 
@@ -275,6 +303,126 @@ describe("VectorAnimationEngine Calculations", () => {
     });
   });
 
+  describe("SVG Path Shape Tweens", () => {
+    it("detects SVG path strings", () => {
+      expect(isSvgPathString("M 0 0 L 100 100")).toBe(true);
+      expect(isSvgPathString("M10,20 C 30 40, 50 60, 70 80 Z")).toBe(true);
+      expect(isSvgPathString("hello")).toBe(false);
+      expect(isSvgPathString("#ff0000")).toBe(false);
+      expect(isSvgPathString(42)).toBe(false);
+    });
+
+    it("falls back to a discrete midpoint swap without a DOM", () => {
+      expect(interpolate("M 0 0 L 10 10", "M 5 5 L 20 20", 0.25)).toBe("M 0 0 L 10 10");
+      expect(interpolate("M 0 0 L 10 10", "M 5 5 L 20 20", 0.75)).toBe("M 5 5 L 20 20");
+    });
+
+    it("morphs between sampled paths when path measurement is available", () => {
+      const globalObject = globalThis as unknown as { document: unknown };
+      const originalDocument = globalObject.document;
+      // Two mock paths: one along y=0, one along y=100; both length 100.
+      globalObject.document = {
+        createElementNS: () => {
+          let assignedPath = "";
+          return {
+            setAttribute: (_name: string, value: string) => { assignedPath = value; },
+            getTotalLength: () => 100,
+            getPointAtLength: (targetLength: number) => ({
+              x: targetLength,
+              y: assignedPath.startsWith("M 0 100") ? 100 : 0,
+            }),
+          };
+        },
+      };
+      try {
+        const halfway = interpolatePath("M 0 0 L 100 0", "M 0 100 L 100 100", 0.5);
+        expect(halfway.startsWith("M ")).toBe(true);
+        // Every sampled point should sit at y=50 at progress 0.5
+        const segments = halfway.match(/[ML] [\d.]+ ([\d.]+)/g) || [];
+        expect(segments.length).toBeGreaterThan(10);
+        for (const segment of segments) {
+          expect(segment.endsWith(" 50.00")).toBe(true);
+        }
+      } finally {
+        globalObject.document = originalDocument;
+      }
+    });
+  });
+
+  describe("Display Tree (parenting, zIndex, masks)", () => {
+    const layers: VectorLayer[] = [
+      { id: "bg", shapeType: "rectangle", zIndex: -10 },
+      { id: "body", shapeType: "group" },
+      { id: "arm", shapeType: "rectangle", parent: "body" },
+      { id: "hand", shapeType: "circle", parent: "arm" },
+      { id: "maskShape", shapeType: "circle", isMask: true },
+      { id: "spotlit", shapeType: "rectangle", maskedBy: "maskShape", zIndex: 5 },
+      { id: "orphan", shapeType: "circle", parent: "missing-layer" },
+    ];
+
+    it("builds roots/children with zIndex ordering and excludes masks from the draw tree", () => {
+      const index = buildTreeIndex(layers);
+      expect(index.roots.map((layer) => layer.id)).toEqual(["bg", "body", "orphan", "spotlit"]);
+      expect(index.childrenOf["body"].map((layer) => layer.id)).toEqual(["arm"]);
+      expect(index.childrenOf["arm"].map((layer) => layer.id)).toEqual(["hand"]);
+      expect(index.byId["maskShape"].isMask).toBe(true);
+      expect(index.roots.find((layer) => layer.id === "maskShape")).toBeUndefined();
+    });
+
+    it("treats self-parenting as a root instead of hiding the layer", () => {
+      const index = buildTreeIndex([{ id: "loop", shapeType: "circle", parent: "loop" } as VectorLayer]);
+      expect(index.roots.map((layer) => layer.id)).toEqual(["loop"]);
+    });
+
+    it("sorts stably by zIndex", () => {
+      const sorted = sortLayersForRender([
+        { id: "a", shapeType: "circle", zIndex: 1 },
+        { id: "b", shapeType: "circle" },
+        { id: "c", shapeType: "circle", zIndex: 1 },
+        { id: "d", shapeType: "circle", zIndex: -1 },
+      ] as VectorLayer[]);
+      expect(sorted.map((layer) => layer.id)).toEqual(["d", "b", "a", "c"]);
+    });
+  });
+
+  describe("Symbols (nested timelines)", () => {
+    const walkCycle: VectorSymbol = {
+      layers: [
+        {
+          id: "leg",
+          shapeType: "rectangle",
+          keyframes: [
+            { time: 0, properties: { rotation: -20 } },
+            { time: 0.6, properties: { rotation: 20 } },
+          ],
+        },
+      ],
+    };
+
+    it("derives symbol duration from the last keyframe when unset", () => {
+      expect(getSymbolDuration(walkCycle, 5)).toBe(0.6);
+      expect(getSymbolDuration({ ...walkCycle, duration: 2 }, 5)).toBe(2);
+      expect(getSymbolDuration({ layers: [] }, 5)).toBe(5);
+    });
+
+    it("loops instance local time over the symbol duration", () => {
+      const instance = { id: "walker", shapeType: "instance", symbol: "walk" } as VectorLayer;
+      expect(getInstanceLocalTime(instance, 0.3, 0.6)).toBeCloseTo(0.3, 10);
+      expect(getInstanceLocalTime(instance, 0.9, 0.6)).toBeCloseTo(0.3, 10);
+      expect(getInstanceLocalTime(instance, 1.2, 0.6)).toBeCloseTo(0, 10);
+    });
+
+    it("applies timeScale and timeOffset, and clamps when symbolLoop is false", () => {
+      const fast = { id: "w", shapeType: "instance", symbol: "walk", timeScale: 2 } as VectorLayer;
+      expect(getInstanceLocalTime(fast, 0.4, 0.6)).toBeCloseTo(0.2, 10);
+      const staggered = { id: "w", shapeType: "instance", symbol: "walk", timeOffset: 0.3 } as VectorLayer;
+      expect(getInstanceLocalTime(staggered, 0.4, 0.6)).toBeCloseTo(0.1, 10);
+      const once = { id: "w", shapeType: "instance", symbol: "walk", symbolLoop: false } as VectorLayer;
+      expect(getInstanceLocalTime(once, 5, 0.6)).toBe(0.6);
+      expect(getInstanceLocalTime(once, -1, 0.6)).toBe(0);
+    });
+  });
+
   // The embed player is built by serializing engine functions with
   // Function.toString(), which drops closures over module-level symbols
   // (NAMED_COLORS, pathCache, interpolateNumber). These tests execute the
@@ -287,12 +435,18 @@ describe("VectorAnimationEngine Calculations", () => {
       interpolateGradient: typeof interpolateGradient;
       resolveAnimatedProperties: typeof resolveAnimatedProperties;
       getPathPointAt: typeof getPathPointAt;
+      ease: typeof ease;
+      interpolatePath: typeof interpolatePath;
+      buildTreeIndex: typeof buildTreeIndex;
+      getSymbolDuration: typeof getSymbolDuration;
+      getInstanceLocalTime: typeof getInstanceLocalTime;
+      sortLayersForRender: typeof sortLayersForRender;
     };
 
     function evaluateEmbedScript(): EmbedEngine {
       const script = buildEngineEmbedScript();
       return new Function(
-        `"use strict"; ${script}; return { interpolate, parseColorToRgba, interpolateGradient, resolveAnimatedProperties, getPathPointAt };`,
+        `"use strict"; ${script}; return { interpolate, parseColorToRgba, interpolateGradient, resolveAnimatedProperties, getPathPointAt, ease, interpolatePath, buildTreeIndex, getSymbolDuration, getInstanceLocalTime, sortLayersForRender };`,
       )() as EmbedEngine;
     }
 
@@ -336,6 +490,37 @@ describe("VectorAnimationEngine Calculations", () => {
       const point = engine.getPathPointAt("M 0 0 L 100 100", 0.5);
       expect(point.x).toBe(50);
       expect(point.y).toBe(50);
+    });
+
+    it("evaluates the Flash-style easing presets via the serialized easeOutBounce helper", () => {
+      const engine = evaluateEmbedScript();
+      expect(engine.ease(0.2, "bounce")).toBe(easeOutBounce(0.2));
+      expect(engine.ease(1, "elastic")).toBe(1);
+      expect(engine.ease(1, "spring")).toBe(1);
+    });
+
+    it("morphs SVG paths via the serialized samplePathPoints helper (non-DOM fallback)", () => {
+      const engine = evaluateEmbedScript();
+      expect(engine.interpolatePath("M 0 0 L 10 10", "M 5 5 L 20 20", 0.75)).toBe("M 5 5 L 20 20");
+    });
+
+    it("builds display trees and instance timelines from the serialized helpers", () => {
+      const engine = evaluateEmbedScript();
+      const index = engine.buildTreeIndex([
+        { id: "group", shapeType: "group" },
+        { id: "child", shapeType: "circle", parent: "group" },
+        { id: "mask", shapeType: "circle", isMask: true },
+      ] as VectorLayer[]);
+      expect(index.roots.map((layer) => layer.id)).toEqual(["group"]);
+      expect(index.childrenOf["group"].map((layer) => layer.id)).toEqual(["child"]);
+
+      const symbol: VectorSymbol = {
+        layers: [{ id: "leg", shapeType: "rectangle", keyframes: [{ time: 0, properties: {} }, { time: 0.5, properties: {} }] }],
+      };
+      expect(engine.getSymbolDuration(symbol, 5)).toBe(0.5);
+      expect(
+        engine.getInstanceLocalTime({ id: "w", shapeType: "instance", symbol: "s" } as VectorLayer, 1.25, 0.5),
+      ).toBeCloseTo(0.25, 10);
     });
   });
 });

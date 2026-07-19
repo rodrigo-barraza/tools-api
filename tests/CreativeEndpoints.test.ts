@@ -719,7 +719,7 @@ describe("POST /creative/vector-animation input validation", () => {
               id: "eased",
               shapeType: "circle",
               keyframes: [
-                { time: 0, properties: { x: 0 }, easing: "bounce" },
+                { time: 0, properties: { x: 0 }, easing: "wobble" },
                 { time: 1, properties: { x: 10 } },
               ],
             },

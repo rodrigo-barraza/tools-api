@@ -1,9 +1,14 @@
-// ─── Download and Extract Text from PDF URLs ────────────────
+// ─── Download and Extract Text from PDF URLs / Data URIs ─────
 
 import { PDFParse } from "pdf-parse";
 import { errorMessage } from "../../utilities.ts";
+import {
+  isUnresolvedAttachedSentinel,
+  buildAttachedSentinelError,
+} from "../../services/AttachedMediaSentinel.ts";
 
-const MAX_PDF_BYTES = 10_485_760; // 10 MB
+const MAX_PDF_BYTES = 26_214_400; // 25 MB — aligned with the other media input caps
+const MAX_PDF_MEGABYTES = MAX_PDF_BYTES / 1_048_576;
 const MAX_TEXT_CHARS = 100_000;
 const FETCH_TIMEOUT_MS = 30_000;
 
@@ -17,12 +22,106 @@ export interface PdfOptions {
   endPage?: number | string;
 }
 
+/** Short echo label for a source — avoids returning megabytes of base64. */
+function describeSource(url: string): string {
+  return url.startsWith("data:") ? `data: URI (${url.length} chars)` : url;
+}
+
 /**
- * Download a PDF from a URL and extract its text content.
+ * Resolve a PDF source (http(s) URL or base64 data: URI) to raw bytes.
+ * Returns an error object in the same shape the reader responses use.
+ */
+async function resolvePdfBytes(
+  url: string,
+): Promise<{ data: Uint8Array } | { error: string; url: string }> {
+  const sourceLabel = describeSource(url);
+
+  if (url.startsWith("data:")) {
+    const match = url.match(/^data:[^;,]*(?:;base64)?,(.*)$/s);
+    if (!match) {
+      return {
+        error: "Invalid data URI format. Expected: data:application/pdf;base64,<data>",
+        url: sourceLabel,
+      };
+    }
+    const data = new Uint8Array(Buffer.from(match[1], "base64"));
+    if (data.length > MAX_PDF_BYTES) {
+      return {
+        error: `PDF too large: ${(data.length / 1_048_576).toFixed(1)} MB (max: ${MAX_PDF_MEGABYTES} MB)`,
+        url: sourceLabel,
+      };
+    }
+    return { data };
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+  const response = await fetch(url, {
+    signal: controller.signal,
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+      Accept: "application/pdf,*/*",
+    },
+  });
+  clearTimeout(timeout);
+
+  if (!response.ok) {
+    return { error: `HTTP ${response.status}: ${response.statusText}`, url };
+  }
+
+  // Verify content type
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("pdf") && !contentType.includes("octet-stream")) {
+    return {
+      error: `URL does not point to a PDF (content-type: ${contentType})`,
+      url,
+    };
+  }
+
+  // Check content length
+  const contentLength = parseInt(
+    response.headers.get("content-length") || "0",
+    10,
+  );
+  if (contentLength > MAX_PDF_BYTES) {
+    return {
+      error: `PDF too large: ${(contentLength / 1_048_576).toFixed(1)} MB (max: ${MAX_PDF_MEGABYTES} MB)`,
+      url,
+    };
+  }
+
+  const arrayBuffer = await response.arrayBuffer();
+  const data = new Uint8Array(arrayBuffer);
+
+  if (data.length > MAX_PDF_BYTES) {
+    return {
+      error: `PDF too large: ${(data.length / 1_048_576).toFixed(1)} MB (max: ${MAX_PDF_MEGABYTES} MB)`,
+      url,
+    };
+  }
+
+  return { data };
+}
+
+/**
+ * Read a PDF from an http(s) URL or a base64 data: URI and extract its
+ * text content.
  */
 export async function readPdfUrl(url: string, options: PdfOptions = {}) {
   if (!url || typeof url !== "string") {
     return { error: "URL is required" };
+  }
+
+  // Unresolved harness sentinel — no attached document existed to substitute.
+  if (isUnresolvedAttachedSentinel(url)) {
+    return {
+      error: buildAttachedSentinelError(
+        "document",
+        "an explicit URL or data: URI",
+      ),
+    };
   }
 
   // pdf-parse v2 types mark .load()/.getInfo()/.getText()/.destroy() as private,
@@ -37,53 +136,11 @@ export async function readPdfUrl(url: string, options: PdfOptions = {}) {
   }
   let parser: PdfParser | undefined;
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-        Accept: "application/pdf,*/*",
-      },
-    });
-    clearTimeout(timeout);
-
-    if (!response.ok) {
-      return { error: `HTTP ${response.status}: ${response.statusText}`, url };
+    const resolved = await resolvePdfBytes(url);
+    if ("error" in resolved) {
+      return resolved;
     }
-
-    // Verify content type
-    const contentType = response.headers.get("content-type") || "";
-    if (!contentType.includes("pdf") && !contentType.includes("octet-stream")) {
-      return {
-        error: `URL does not point to a PDF (content-type: ${contentType})`,
-        url,
-      };
-    }
-
-    // Check content length
-    const contentLength = parseInt(
-      response.headers.get("content-length") || "0",
-      10,
-    );
-    if (contentLength > MAX_PDF_BYTES) {
-      return {
-        error: `PDF too large: ${(contentLength / 1_048_576).toFixed(1)} MB (max: 10 MB)`,
-        url,
-      };
-    }
-
-    const arrayBuffer = await response.arrayBuffer();
-    const data = new Uint8Array(arrayBuffer);
-
-    if (data.length > MAX_PDF_BYTES) {
-      return {
-        error: `PDF too large: ${(data.length / 1_048_576).toFixed(1)} MB (max: 10 MB)`,
-        url,
-      };
-    }
+    const { data } = resolved;
 
     // pdf-parse v2: pass data in constructor, then load + extract
     parser = new PDFParse({ data }) as unknown as PdfParser;
@@ -125,7 +182,7 @@ export async function readPdfUrl(url: string, options: PdfOptions = {}) {
     }
 
     return {
-      url,
+      url: describeSource(url),
       pageCount,
       info: {
         title: info.info?.Title || null,
@@ -143,10 +200,13 @@ export async function readPdfUrl(url: string, options: PdfOptions = {}) {
     if (error instanceof Error && error.name === "AbortError") {
       return {
         error: `PDF download timed out after ${FETCH_TIMEOUT_MS / 1000}s`,
-        url,
+        url: describeSource(url),
       };
     }
-    return { error: `PDF extraction failed: ${errorMessage(error)}`, url };
+    return {
+      error: `PDF extraction failed: ${errorMessage(error)}`,
+      url: describeSource(url),
+    };
   } finally {
     if (parser) {
       await parser.destroy().catch(() => {});

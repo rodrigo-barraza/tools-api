@@ -39,6 +39,7 @@ import {
 import { readPdfUrl } from "../fetchers/web/PdfFetcher.ts";
 import { readDocxUrl } from "../fetchers/web/DocxFetcher.ts";
 import { readSpreadsheetUrl } from "../fetchers/web/SpreadsheetFetcher.ts";
+import { readCsvSource } from "../fetchers/web/CsvFetcher.ts";
 import {
   executeCommand,
   executeCommandStreaming,
@@ -497,6 +498,20 @@ router.post(
       return { error: "Request body must include 'url' (string)" };
     }
     return readSpreadsheetUrl(url, { maxRows, maxChars, sheet, includeHeaders, outputFormat });
+  }),
+);
+// ── Read CSV ──────────────────────────────────────────────────
+router.post(
+  "/web/csv-read",
+  agenticHandler(async (req: Request) => {
+    const { source, delimiter, maxRows, columns } = req.body;
+    if (!source || typeof source !== "string") {
+      return {
+        error:
+          "Request body must include 'source' (http(s) URL or base64 data: URI)",
+      };
+    }
+    return readCsvSource(source, { delimiter, maxRows, columns });
   }),
 );
 // ── Web Search ────────────────────────────────────────────────

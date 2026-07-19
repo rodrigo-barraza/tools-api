@@ -86,7 +86,7 @@ export interface ShapeData {
 
 export interface VectorLayer {
   id: string;
-  shapeType: "rectangle" | "circle" | "ellipse" | "line" | "polygon" | "path" | "text";
+  shapeType: "rectangle" | "circle" | "ellipse" | "line" | "polygon" | "path" | "text" | "group" | "instance";
   shapeData?: ShapeData;
   x?: number;
   y?: number;
@@ -99,6 +99,42 @@ export interface VectorLayer {
   strokeWidth?: number;
   imageUrl?: string;
   keyframes?: Keyframe[];
+  /** Layer id this layer's transform is parented to (same scope only). */
+  parent?: string;
+  /** Draw order within a scope; higher draws on top. Ties keep array order. */
+  zIndex?: number;
+  /** Mask-source layers are never drawn; other layers clip to them via maskedBy. */
+  isMask?: boolean;
+  /** Id of an isMask layer in the same scope whose shape clips this layer. */
+  maskedBy?: string;
+  /** For shapeType "instance": the symbol name this layer stamps. */
+  symbol?: string;
+  /** Instance playback-rate multiplier over the symbol's own timeline. */
+  timeScale?: number;
+  /** Instance timeline offset in seconds. */
+  timeOffset?: number;
+  /** Instance timeline looping (default true). */
+  symbolLoop?: boolean;
+  blur?: number;
+  shadowColor?: string;
+  shadowBlur?: number;
+  shadowOffsetX?: number;
+  shadowOffsetY?: number;
+}
+
+/** A reusable, independently-timed set of layers ("movie clip"). */
+export interface VectorSymbol {
+  layers: VectorLayer[];
+  /** Symbol timeline length in seconds; defaults to the last keyframe time. */
+  duration?: number;
+}
+
+export type SymbolMap = Record<string, VectorSymbol>;
+
+export interface LayerTreeIndex {
+  byId: Record<string, VectorLayer>;
+  childrenOf: Record<string, VectorLayer[]>;
+  roots: VectorLayer[];
 }
 
 export interface ColorRgba {
@@ -281,6 +317,51 @@ function interpolateNumber(valueA: number, valueB: number, progress: number): nu
   return valueA + (valueB - valueA) * progress;
 }
 
+export function isSvgPathString(value: unknown): value is string {
+  return typeof value === "string" && /^[Mm]\s*[-.\d]/.test(value.trim());
+}
+
+export function samplePathPoints(pathString: string, sampleCount: number): Array<[number, number]> | null {
+  if (typeof document === "undefined") return null;
+  let pathObject = pathCache[pathString];
+  if (!pathObject) {
+    const svgPath = document.createElementNS("http://www.w3.org/2000/svg", "path") as SVGPathElement;
+    svgPath.setAttribute("d", pathString);
+    const totalLength = typeof svgPath.getTotalLength === "function" ? svgPath.getTotalLength() : 100;
+    pathObject = { svgPath, totalLength };
+    pathCache[pathString] = pathObject;
+  }
+  if (typeof pathObject.svgPath.getPointAtLength !== "function") return null;
+  const points: Array<[number, number]> = [];
+  for (let index = 0; index < sampleCount; index++) {
+    const length = (index / (sampleCount - 1)) * pathObject.totalLength;
+    const point = pathObject.svgPath.getPointAtLength(length);
+    points.push([point.x, point.y]);
+  }
+  return points;
+}
+
+/**
+ * Flash-style shape tween between two arbitrary SVG paths: both are sampled
+ * to the same point count and the polyline between them is interpolated.
+ * Falls back to a discrete midpoint swap where path measurement is
+ * unavailable (no DOM).
+ */
+export function interpolatePath(pathA: string, pathB: string, progress: number): string {
+  const SAMPLE_COUNT = 64;
+  const pointsA = samplePathPoints(pathA, SAMPLE_COUNT);
+  const pointsB = samplePathPoints(pathB, SAMPLE_COUNT);
+  if (!pointsA || !pointsB) return progress < 0.5 ? pathA : pathB;
+  let pathString = "";
+  for (let index = 0; index < SAMPLE_COUNT; index++) {
+    const x = pointsA[index][0] + (pointsB[index][0] - pointsA[index][0]) * progress;
+    const y = pointsA[index][1] + (pointsB[index][1] - pointsA[index][1]) * progress;
+    pathString += (index === 0 ? "M " : " L ") + x.toFixed(2) + " " + y.toFixed(2);
+  }
+  if (/z\s*$/i.test(pathA.trim()) || /z\s*$/i.test(pathB.trim())) pathString += " Z";
+  return pathString;
+}
+
 export function interpolate(valueA: InterpolatableValue, valueB: InterpolatableValue, progress: number): InterpolatableValue {
   if (typeof valueA === "number" && typeof valueB === "number") {
     return interpolateNumber(valueA, valueB, progress);
@@ -291,6 +372,9 @@ export function interpolate(valueA: InterpolatableValue, valueB: InterpolatableV
   if (typeof valueA === "string" && typeof valueB === "string") {
     if (valueA.startsWith("#") || valueA.startsWith("rgb") || valueA.startsWith("hsl") || valueA.startsWith("rgba")) {
       return interpolateColor(valueA, valueB, progress);
+    }
+    if (isSvgPathString(valueA) && isSvgPathString(valueB) && valueA !== valueB) {
+      return interpolatePath(valueA, valueB, progress);
     }
   }
   if (Array.isArray(valueA) && Array.isArray(valueB)) {
@@ -323,6 +407,23 @@ export function solveCubicBezier(time: number, x1: number, y1: number, x2: numbe
   return getY(estimatedTime);
 }
 
+export function easeOutBounce(progress: number): number {
+  const n1 = 7.5625;
+  const d1 = 2.75;
+  let t = progress;
+  if (t < 1 / d1) return n1 * t * t;
+  if (t < 2 / d1) {
+    t -= 1.5 / d1;
+    return n1 * t * t + 0.75;
+  }
+  if (t < 2.5 / d1) {
+    t -= 2.25 / d1;
+    return n1 * t * t + 0.9375;
+  }
+  t -= 2.625 / d1;
+  return n1 * t * t + 0.984375;
+}
+
 export function ease(progress: number, easing: string | undefined): number {
   if (!easing) return progress;
   if (easing === "linear") return progress;
@@ -330,6 +431,26 @@ export function ease(progress: number, easing: string | undefined): number {
   if (easing === "ease-out") return progress * (2 - progress);
   if (easing === "ease-in-out") return progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress;
   if (easing === "step" || easing === "discrete") return Math.floor(progress);
+  if (easing === "bounce" || easing === "bounce-out") return easeOutBounce(progress);
+  if (easing === "bounce-in") return 1 - easeOutBounce(1 - progress);
+  if (easing === "elastic" || easing === "elastic-out") {
+    if (progress === 0 || progress === 1) return progress;
+    return Math.pow(2, -10 * progress) * Math.sin((progress * 10 - 0.75) * ((2 * Math.PI) / 3)) + 1;
+  }
+  if (easing === "elastic-in") {
+    if (progress === 0 || progress === 1) return progress;
+    return -Math.pow(2, 10 * progress - 10) * Math.sin((progress * 10 - 10.75) * ((2 * Math.PI) / 3));
+  }
+  if (easing === "back" || easing === "back-out") {
+    return 1 + 2.70158 * Math.pow(progress - 1, 3) + 1.70158 * Math.pow(progress - 1, 2);
+  }
+  if (easing === "back-in") {
+    return 2.70158 * progress * progress * progress - 1.70158 * progress * progress;
+  }
+  if (easing === "spring") {
+    if (progress >= 1) return 1;
+    return 1 - Math.exp(-6 * progress) * Math.cos(12 * progress);
+  }
   if (easing.startsWith("cubic-bezier")) {
     const match = easing.match(/cubic-bezier\(([^,]+),([^,]+),([^,]+),([^)]+)\)/);
     if (match) {
@@ -442,6 +563,62 @@ export function resolveAnimatedProperties(layer: VectorLayer, time: number): Key
   return interpolatedProperties;
 }
 
+/** Stable draw-order sort: higher zIndex on top, ties keep array order. */
+export function sortLayersForRender(layers: VectorLayer[]): VectorLayer[] {
+  return layers.slice().sort((layerA, layerB) => (layerA.zIndex || 0) - (layerB.zIndex || 0));
+}
+
+/**
+ * Build the render tree for one scope (the top-level layer list or one
+ * symbol's layer list). Mask-source layers are indexed but never enter the
+ * draw tree; layers whose parent is missing or self-referential render as
+ * roots so a bad reference degrades visibly instead of hiding the layer.
+ */
+export function buildTreeIndex(layers: VectorLayer[]): LayerTreeIndex {
+  const byId: Record<string, VectorLayer> = {};
+  for (const layer of layers || []) byId[layer.id] = layer;
+  const childrenOf: Record<string, VectorLayer[]> = {};
+  const roots: VectorLayer[] = [];
+  for (const layer of layers || []) {
+    if (layer.isMask) continue;
+    const parentId =
+      layer.parent && layer.parent !== layer.id && byId[layer.parent] && !byId[layer.parent].isMask
+        ? layer.parent
+        : null;
+    if (parentId) {
+      if (!childrenOf[parentId]) childrenOf[parentId] = [];
+      childrenOf[parentId].push(layer);
+    } else {
+      roots.push(layer);
+    }
+  }
+  for (const parentId in childrenOf) childrenOf[parentId] = sortLayersForRender(childrenOf[parentId]);
+  return { byId, childrenOf, roots: sortLayersForRender(roots) };
+}
+
+export function getSymbolDuration(symbol: VectorSymbol | undefined, fallbackDuration: number): number {
+  if (symbol && typeof symbol.duration === "number" && symbol.duration > 0) return symbol.duration;
+  let maxKeyframeTime = 0;
+  for (const layer of (symbol && symbol.layers) || []) {
+    for (const keyframe of layer.keyframes || []) {
+      const time = Number(keyframe.time) || 0;
+      if (time > maxKeyframeTime) maxKeyframeTime = time;
+    }
+  }
+  return maxKeyframeTime > 0 ? maxKeyframeTime : fallbackDuration || 1;
+}
+
+/** Map scene time onto an instance's symbol timeline (loop by default). */
+export function getInstanceLocalTime(layer: VectorLayer, time: number, symbolDuration: number): number {
+  const timeScale = typeof layer.timeScale === "number" ? layer.timeScale : 1;
+  const timeOffset = typeof layer.timeOffset === "number" ? layer.timeOffset : 0;
+  const localTime = time * timeScale + timeOffset;
+  if (layer.symbolLoop === false) return Math.max(0, Math.min(localTime, symbolDuration));
+  if (!(symbolDuration > 0)) return 0;
+  const wrapped = localTime % symbolDuration;
+  return wrapped < 0 ? wrapped + symbolDuration : wrapped;
+}
+
 /**
  * Serialized engine source for the browser embed player. Function.toString()
  * does not carry closures, so every module-level symbol these functions
@@ -461,11 +638,19 @@ export function buildEngineEmbedScript(): string {
     const interpolateColor = ${interpolateColor.toString()};
     const isGradient = ${isGradient.toString()};
     const interpolateGradient = ${interpolateGradient.toString()};
+    const isSvgPathString = ${isSvgPathString.toString()};
+    const samplePathPoints = ${samplePathPoints.toString()};
+    const interpolatePath = ${interpolatePath.toString()};
     const interpolate = ${interpolate.toString()};
     const solveCubicBezier = ${solveCubicBezier.toString()};
+    const easeOutBounce = ${easeOutBounce.toString()};
     const ease = ${ease.toString()};
     const getPathPointAt = ${getPathPointAt.toString()};
     const getDefaultValue = ${getDefaultValue.toString()};
     const resolveAnimatedProperties = ${resolveAnimatedProperties.toString()};
+    const sortLayersForRender = ${sortLayersForRender.toString()};
+    const buildTreeIndex = ${buildTreeIndex.toString()};
+    const getSymbolDuration = ${getSymbolDuration.toString()};
+    const getInstanceLocalTime = ${getInstanceLocalTime.toString()};
   `;
 }

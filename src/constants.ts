@@ -2149,6 +2149,7 @@ export const USER_AGENTS = [
 export const DICTIONARY_BASE_URL =
   "https://api.dictionaryapi.dev/api/v2/entries/en";
 export const OPEN_LIBRARY_BASE_URL = "https://openlibrary.org";
+export const CONTEXT7_BASE_URL = "https://context7.com/api/v1";
 export const REST_COUNTRIES_BASE_URL = "https://restcountries.com/v3.1";
 export const ARXIV_BASE_URL = "http://export.arxiv.org/api/query";
 export const WIKIPEDIA_SUMMARY_BASE_URL =

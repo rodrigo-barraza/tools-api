@@ -221,7 +221,7 @@ describe("PdfFetcher & Web PDF Read Endpoint", () => {
           get: (headerName: string) => {
             const normalized = headerName.toLowerCase();
             if (normalized === "content-type") return "application/pdf";
-            if (normalized === "content-length") return "20000000"; // ~20MB
+            if (normalized === "content-length") return "30000000"; // ~30MB (cap is 25MB)
             return null;
           },
         },
@@ -231,6 +231,33 @@ describe("PdfFetcher & Web PDF Read Endpoint", () => {
 
       expect(result.error).toContain("PDF too large");
       fetchSpy.mockRestore();
+    });
+
+    it("reads a PDF from a base64 data: URI without any fetch", async () => {
+      const fetchSpy = vi.spyOn(global, "fetch");
+      const dataUri = `data:application/pdf;base64,${Buffer.from(
+        "%PDF-1.4 mock pdf data",
+      ).toString("base64")}`;
+
+      const result = await readPdfUrl(dataUri);
+
+      expect(result.error).toBeUndefined();
+      expect(result.text).toBe("Mocked PDF content text.");
+      // Echoes a short label, never the base64 payload
+      expect(result.url).toMatch(/^data: URI \(\d+ chars\)$/);
+      expect(fetchSpy).not.toHaveBeenCalled();
+      fetchSpy.mockRestore();
+    });
+
+    it("rejects a malformed data: URI", async () => {
+      const result = await readPdfUrl("data:application/pdf-no-comma");
+      expect(result.error).toContain("Invalid data URI");
+    });
+
+    it("returns the standard re-attach error for the unresolved 'attached' sentinel", async () => {
+      const result = await readPdfUrl("attached");
+      expect(result.error).toContain("No attached document was found");
+      expect(result.error).toContain("re-)upload");
     });
   });
 

@@ -148,6 +148,48 @@ export function getWebTools(
       required: ["url"],
     },
   },
+  // Counterpart to generate_csv: reads + profiles delimited text instead
+  // of dumping it. read_spreadsheet handles binary Excel workbooks; this
+  // handles plain CSV/TSV text (URL, data URI, or user attachment).
+  {
+    name: "read_csv",
+    dataSource: compute("CSV parser"),
+    description: translate("read_csv.description"),
+    endpoint: {
+      method: "POST",
+      path: "/agentic/web/csv-read",
+      bodyParams: ["source", "delimiter", "maxRows", "columns"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        source: {
+          type: "string",
+          description: translate("read_csv.params.source"),
+        },
+        delimiter: {
+          type: "string",
+          description: translate("read_csv.params.delimiter"),
+        },
+        maxRows: {
+          type: "integer",
+          description: translate("read_csv.params.maxRows"),
+        },
+        columns: {
+          type: "array",
+          items: { type: "string" },
+          description: translate("read_csv.params.columns"),
+        },
+      },
+      required: ["source"],
+    },
+    display: {
+      activeVerb: "Reading",
+      completedVerb: "Read",
+      subjectParam: "source",
+      subjectFormat: "truncate",
+    },
+  },
   {
     name: "read_spreadsheet",
     dataSource: onDemand("exceljs"),

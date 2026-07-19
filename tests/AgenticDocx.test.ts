@@ -181,6 +181,33 @@ describe("DocxFetcher & Web DOCX Read Endpoint", () => {
 
       fetchSpy.mockRestore();
     });
+
+    it("reads a DOCX from a base64 data: URI without any fetch", async () => {
+      const fetchSpy = vi.spyOn(global, "fetch");
+      const dataUri =
+        "data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64," +
+        Buffer.from("mock docx bytes").toString("base64");
+
+      const result = await readDocxUrl(dataUri);
+
+      expect(result.error).toBeUndefined();
+      expect(result.content).toContain("Mocked Document Heading");
+      // Echoes a short label, never the base64 payload
+      expect(result.url).toMatch(/^data: URI \(\d+ chars\)$/);
+      expect(fetchSpy).not.toHaveBeenCalled();
+      fetchSpy.mockRestore();
+    });
+
+    it("rejects a malformed data: URI", async () => {
+      const result = await readDocxUrl("data:application/msword-no-comma");
+      expect(result.error).toContain("Invalid data URI");
+    });
+
+    it("returns the standard re-attach error for the unresolved 'attached' sentinel", async () => {
+      const result = await readDocxUrl("attached");
+      expect(result.error).toContain("No attached document was found");
+      expect(result.error).toContain("re-)upload");
+    });
   });
 
   describe("Integration Tests — Express /agentic/web/docx-read Endpoint", () => {
