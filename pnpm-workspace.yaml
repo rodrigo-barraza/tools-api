@@ -37,5 +37,6 @@ allowBuilds:
   '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/82a2f6ac75423f5212b7d2a52429f6181406ab71': true
   '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/7db68856081cfc7a78de94e69811cfeae542e12a': true
   '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/772feb4cfa8721c3e3eb9164a0b1b6866d262ed1': true
+  '@rodrigo-barraza/utilities-library@https://codeload.github.com/rodrigo-barraza/utilities-library/tar.gz/ef70da8952b9062ec86092b9b7a214204cf02393': true
 overrides:
   '@rodrigo-barraza/utilities-library': github:rodrigo-barraza/utilities-library#master

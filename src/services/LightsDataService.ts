@@ -1,3 +1,4 @@
+import { createApiClient } from "@rodrigo-barraza/utilities-library/http";
 import CONFIG from "../config.ts";
 
 // ═══════════════════════════════════════════════════════════════
@@ -10,40 +11,25 @@ import CONFIG from "../config.ts";
 
 const TIMEOUT_MS = 10_000;
 
+// Non-2xx responses throw ApiError whose message prefers the server's
+// `body.error` (same body.error-first semantics as the old hand-rolled
+// fetch wrapper).
+const lightsClient = createApiClient(CONFIG.LIGHTS_SERVICE_URL ?? "", {
+  timeoutMilliseconds: TIMEOUT_MS,
+});
+
 /**
  * Fetch JSON from the Lights API with timeout.
-
-
  */
 async function lightsApiFetch(
   method: string,
   path: string,
   body: Record<string, unknown> | null = null,
-) {
-  const url = `${CONFIG.LIGHTS_SERVICE_URL}${path}`;
-  const options: RequestInit = {
+): Promise<unknown> {
+  return lightsClient.request(path, {
     method,
-    headers: { "Content-Type": "application/json" },
-    signal: AbortSignal.timeout(TIMEOUT_MS),
-  };
-
-  if (body) {
-    options.body = JSON.stringify(body);
-  }
-
-  const response = await fetch(url, options);
-
-  if (!response.ok) {
-    const errorBody = (await response.json().catch(() => ({}))) as {
-      error?: string;
-    };
-    throw new Error(
-      errorBody.error ||
-        `Lights API returned ${response.status}: ${response.statusText}`,
-    );
-  }
-
-  return response.json();
+    body: body ? JSON.stringify(body) : undefined,
+  });
 }
 
 interface LifxLight {

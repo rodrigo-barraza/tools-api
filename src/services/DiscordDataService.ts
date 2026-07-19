@@ -1,4 +1,5 @@
 import { days as daysToMs } from "@rodrigo-barraza/utilities-library";
+import { discordAvatarUrl, discordMessageUrl } from "@rodrigo-barraza/utilities-library/discord";
 import type { Document } from "mongodb";
 import { getMessagesCollection } from "../models/LuposMessage.ts";
 
@@ -175,15 +176,12 @@ function buildAvatarUrl(
   guildId?: string,
 ) {
   if (!author) return null;
-  if (member?.avatar && author.id && guildId) {
-    const fileExtension = member.avatar.startsWith("a_") ? "gif" : "png";
-    return `https://cdn.discordapp.com/guilds/${guildId}/users/${author.id}/avatars/${member.avatar}.${fileExtension}?size=128`;
-  }
-  if (author.avatar && author.id) {
-    const fileExtension = author.avatar.startsWith("a_") ? "gif" : "png";
-    return `https://cdn.discordapp.com/avatars/${author.id}/${author.avatar}.${fileExtension}?size=128`;
-  }
-  return author.defaultAvatarURL || null;
+  return discordAvatarUrl(author.id, author.avatar, {
+    size: 128,
+    guildId,
+    guildAvatarHash: member?.avatar,
+    fallbackUrl: author.defaultAvatarURL || null,
+  });
 }
 
 /**
@@ -572,7 +570,7 @@ const DiscordDataService = {
         // Direct link to the message in Discord
         messageUrl:
           messageDoc.guildId && messageDoc.channelId && messageDoc.id
-            ? `https://discord.com/channels/${messageDoc.guildId}/${messageDoc.channelId}/${messageDoc.id}`
+            ? discordMessageUrl(messageDoc.guildId, messageDoc.channelId, messageDoc.id)
             : null,
         // Reply reference — so Lupos can follow conversation threads
         replyTo: messageDoc.reference?.messageId || null,

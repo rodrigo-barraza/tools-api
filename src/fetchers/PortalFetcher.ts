@@ -3,6 +3,7 @@
 // infrastructure observability: service health, container
 // stats, metrics history, system info, and log snapshots.
 
+import { createApiClient, type ApiClient } from "@rodrigo-barraza/utilities-library/http";
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
 
@@ -16,36 +17,30 @@ function resolvePortalBaseUrl(): string {
   if (!baseUrl) {
     throw new Error("PORTAL_SERVICE_URL is not configured");
   }
-  return baseUrl.replace(/\/+$/, "");
+  return baseUrl;
 }
 
-async function portalGet(path: string, timeoutMs = REQUEST_TIMEOUT_MS): Promise<unknown> {
+// Lazily created so an unconfigured PORTAL_SERVICE_URL throws at call time
+// (not import time) and runtime CONFIG changes are picked up. The fetch
+// wrapper defers to the current global fetch (honors test spies).
+let cachedPortalClient: ApiClient | null = null;
+let cachedPortalBaseUrl: string | null = null;
+
+function portalClient(): ApiClient {
   const baseUrl = resolvePortalBaseUrl();
-  const fullUrl = `${baseUrl}${path}`;
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const response = await fetch(fullUrl, {
-      signal: controller.signal,
+  if (!cachedPortalClient || cachedPortalBaseUrl !== baseUrl) {
+    cachedPortalClient = createApiClient(baseUrl, {
       headers: { Accept: "application/json" },
+      timeoutMilliseconds: REQUEST_TIMEOUT_MS,
+      fetchImplementation: (input, init) => fetch(input, init),
     });
-    clearTimeout(timeout);
-
-    if (!response.ok) {
-      const errorBody = await response.text().catch(() => "");
-      throw new Error(`Portal API ${response.status}: ${errorBody || response.statusText}`);
-    }
-
-    return await response.json();
-  } catch (error: unknown) {
-    clearTimeout(timeout);
-    if (error instanceof Error && error.name === "AbortError") {
-      throw new Error(`Portal API timeout after ${timeoutMs}ms: ${fullUrl}`);
-    }
-    throw error;
+    cachedPortalBaseUrl = baseUrl;
   }
+  return cachedPortalClient;
+}
+
+async function portalGet(path: string): Promise<unknown> {
+  return portalClient().get(path);
 }
 
 export async function fetchServiceStatuses(refreshHealthChecks = false): Promise<unknown> {
@@ -98,7 +93,6 @@ export async function fetchContainerLogs(
   truncated: boolean;
   meta?: { totalLines: number; emittedLines: number; filteredOutLines: number; level: string | null; search: string | null; since: string | null };
 }> {
-  const baseUrl = resolvePortalBaseUrl();
   const tailCount = Math.min(Math.max(options.tail || LOG_DEFAULT_TAIL, 1), LOG_MAX_TAIL);
 
   const queryParameters = new URLSearchParams({
@@ -110,17 +104,15 @@ export async function fetchContainerLogs(
   if (options.search) queryParameters.set("search", options.search);
   if (options.since) queryParameters.set("since", options.since);
 
-  const fullUrl = `${baseUrl}/logs/${encodeURIComponent(containerName)}?${queryParameters.toString()}`;
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), LOG_SNAPSHOT_TIMEOUT_MS);
-
   try {
-    const response = await fetch(fullUrl, {
-      signal: controller.signal,
-      headers: { Accept: "text/event-stream" },
-    });
-    clearTimeout(timeout);
+    // requestRaw: no throw on !ok, body left unconsumed for SSE streaming.
+    const response = await portalClient().requestRaw(
+      `/logs/${encodeURIComponent(containerName)}?${queryParameters.toString()}`,
+      {
+        headers: { Accept: "text/event-stream" },
+        timeoutMilliseconds: LOG_SNAPSHOT_TIMEOUT_MS,
+      },
+    );
 
     if (!response.ok) {
       const errorBody = await response.text().catch(() => "");
@@ -208,8 +200,10 @@ export async function fetchContainerLogs(
       meta: filterMeta,
     };
   } catch (error: unknown) {
-    clearTimeout(timeout);
-    if (error instanceof Error && error.name === "AbortError") {
+    if (
+      error instanceof Error &&
+      (error.name === "AbortError" || error.name === "TimeoutError")
+    ) {
       logger.warn(`[PortalFetcher] Log snapshot timed out for ${containerName}`);
       throw new Error(`Log snapshot timed out for container: ${containerName}`);
     }

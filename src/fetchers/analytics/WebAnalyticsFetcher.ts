@@ -28,6 +28,7 @@
 import CONFIG from "../../config.ts";
 import logger from "../../logger.ts";
 import { getErrorMessage } from "@rodrigo-barraza/utilities-library";
+import { createApiClient, type ApiClient } from "@rodrigo-barraza/utilities-library/http";
 
 const REQUEST_TIMEOUT_MS = 15_000;
 
@@ -59,49 +60,38 @@ function resolvePortalBaseUrl(): string {
   if (!baseUrl) {
     throw new Error("PORTAL_SERVICE_URL is not configured");
   }
-  return baseUrl.replace(/\/+$/, "");
+  return baseUrl;
 }
 
 export function isAnalyticsConfigured(): boolean {
   return Boolean(CONFIG.PORTAL_SERVICE_URL);
 }
 
-async function portalGet<T = unknown>(path: string): Promise<T> {
-  const fullUrl = `${resolvePortalBaseUrl()}${path}`;
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+// Lazily created so an unconfigured PORTAL_SERVICE_URL throws at call time
+// (inside safeGet's catch) rather than at import time, and runtime CONFIG
+// changes are picked up. Both GA and sessions analytics flow through
+// portal-service, so a single client covers both sources.
+let cachedPortalClient: ApiClient | null = null;
+let cachedPortalBaseUrl: string | null = null;
 
-  try {
-    const response = await fetch(fullUrl, {
-      signal: controller.signal,
+function portalClient(): ApiClient {
+  const baseUrl = resolvePortalBaseUrl();
+  if (!cachedPortalClient || cachedPortalBaseUrl !== baseUrl) {
+    cachedPortalClient = createApiClient(baseUrl, {
       headers: { Accept: "application/json" },
+      timeoutMilliseconds: REQUEST_TIMEOUT_MS,
+      fetchImplementation: (input, init) => fetch(input, init),
     });
-    clearTimeout(timeout);
-
-    if (!response.ok) {
-      const errorBody = await response.text().catch(() => "");
-      throw new Error(
-        `Portal API ${response.status}: ${errorBody || response.statusText}`,
-      );
-    }
-
-    return (await response.json()) as T;
-  } catch (error: unknown) {
-    clearTimeout(timeout);
-    if (error instanceof Error && error.name === "AbortError") {
-      throw new Error(
-        `Portal API timeout after ${REQUEST_TIMEOUT_MS}ms: ${fullUrl}`,
-      );
-    }
-    throw error;
+    cachedPortalBaseUrl = baseUrl;
   }
+  return cachedPortalClient;
 }
 
 // A single failing source must not break the whole tool — callers
 // treat null as "no data from this source for this property".
 async function safeGet<T = unknown>(path: string): Promise<T | null> {
   try {
-    return await portalGet<T>(path);
+    return await portalClient().get<T>(path);
   } catch (error: unknown) {
     logger.warn(`[WebAnalytics] GET ${path} failed: ${getErrorMessage(error)}`);
     return null;

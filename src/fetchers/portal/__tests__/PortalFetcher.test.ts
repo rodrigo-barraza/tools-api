@@ -43,7 +43,7 @@ describe("PortalFetcher & SSE Log Parser", () => {
       const mockResponse = { services: [{ id: "test", name: "test-service", healthy: true }] };
       const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
         ok: true,
-        json: async () => mockResponse,
+        text: async () => JSON.stringify(mockResponse),
       } as Response);
 
       const result = await fetchServiceStatuses(true);
@@ -56,7 +56,7 @@ describe("PortalFetcher & SSE Log Parser", () => {
       const mockResponse = { containers: [] };
       const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
         ok: true,
-        json: async () => mockResponse,
+        text: async () => JSON.stringify(mockResponse),
       } as Response);
 
       const result = await fetchContainerStats("synology");
@@ -69,7 +69,7 @@ describe("PortalFetcher & SSE Log Parser", () => {
       const mockResponse = { metrics: [] };
       const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
         ok: true,
-        json: async () => mockResponse,
+        text: async () => JSON.stringify(mockResponse),
       } as Response);
 
       const result = await fetchContainerMetrics({
