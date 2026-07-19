@@ -1770,7 +1770,10 @@ export function buildVectorAnimationEmbedHtml(
         margin: 0 !important;
         padding: 0 !important;
         overflow: hidden !important;
-        background: #090d16 !important;
+        /* Neutral editor grey around the canvas (Flash/3D-viewport
+           convention, matches the daylight embed palette) — the canvas
+           keeps the animation's own background color. */
+        background: #4c4c4c !important;
         font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       }
       #player-container {
@@ -1874,7 +1877,7 @@ export function buildVectorAnimationEmbedHtml(
         color: #94a3b8;
         font-size: 11px;
         font-family: monospace;
-        min-width: 80px;
+        min-width: 148px;
         text-align: right;
       }
       #loop-btn.active {
@@ -1910,7 +1913,7 @@ export function buildVectorAnimationEmbedHtml(
           <button id="loop-btn" class="${loop ? "active" : ""}" title="Toggle Loop">
             <svg viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg>
           </button>
-          <div id="time-display">0.00 / ${duration.toFixed(2)}s</div>
+          <div id="time-display">f1/${Math.max(1, Math.round(duration * (Number(animation.fps) || 24)))} · 0.00 / ${duration.toFixed(2)}s</div>
         </div>
       </div>
     `,
@@ -1971,7 +1974,11 @@ export function buildVectorAnimationEmbedHtml(
         }
 
         function renderFrame(t) {
+          // Paint the stage color into the bitmap (not just CSS) so
+          // snapshots, filmstrips, and video exports keep the background.
           ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = ${JSON.stringify(background)};
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
           drawLayerList(treeIndex, t, 1, 0);
         }
 
@@ -2264,7 +2271,12 @@ export function buildVectorAnimationEmbedHtml(
 
         function updateUI() {
           timelineSlider.value = Math.round((currentTime / duration) * 1000);
-          timeDisplay.textContent = currentTime.toFixed(2) + " / " + duration.toFixed(2) + "s";
+          // Flash-style readout: current frame alongside the timecode.
+          const totalFrames = Math.max(1, Math.round(duration * fps));
+          const currentFrame = Math.min(totalFrames, Math.floor(currentTime * fps) + 1);
+          timeDisplay.textContent =
+            "f" + currentFrame + "/" + totalFrames + " · " +
+            currentTime.toFixed(2) + " / " + duration.toFixed(2) + "s";
           if (isPlaying) {
             playIcon.style.display = "none";
             pauseIcon.style.display = "block";
@@ -2800,24 +2812,30 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
   if (referenceImageUrl && typeof referenceImageUrl === "string") {
     const imageFillShapeTypes = ["rectangle", "circle", "ellipse", "polygon", "path"];
     const imagePlaceholderValues = ["placeholder", "reference"];
-    for (const layer of sessionAnimation.layers) {
-      if (layer && typeof layer === "object") {
-        const isCompatibleShape = imageFillShapeTypes.includes(layer.shapeType);
-        if (isCompatibleShape && typeof layer.imageUrl === "string" && imagePlaceholderValues.includes(layer.imageUrl)) {
-          layer.imageUrl = referenceImageUrl;
+    const substituteReferenceImages = (layers: VectorLayer[]) => {
+      for (const layer of layers) {
+        if (layer && typeof layer === "object") {
+          const isCompatibleShape = imageFillShapeTypes.includes(layer.shapeType);
+          if (isCompatibleShape && typeof layer.imageUrl === "string" && imagePlaceholderValues.includes(layer.imageUrl)) {
+            layer.imageUrl = referenceImageUrl;
 
-          if (layer.keyframes && Array.isArray(layer.keyframes)) {
-            for (const keyframe of layer.keyframes) {
-              if (keyframe?.properties && typeof keyframe.properties === "object") {
-                const keyframeProperties = keyframe.properties;
-                if (typeof keyframeProperties.imageUrl === "string" && imagePlaceholderValues.includes(keyframeProperties.imageUrl)) {
-                  keyframeProperties.imageUrl = referenceImageUrl;
+            if (layer.keyframes && Array.isArray(layer.keyframes)) {
+              for (const keyframe of layer.keyframes) {
+                if (keyframe?.properties && typeof keyframe.properties === "object") {
+                  const keyframeProperties = keyframe.properties;
+                  if (typeof keyframeProperties.imageUrl === "string" && imagePlaceholderValues.includes(keyframeProperties.imageUrl)) {
+                    keyframeProperties.imageUrl = referenceImageUrl;
+                  }
                 }
               }
             }
           }
         }
       }
+    };
+    substituteReferenceImages(sessionAnimation.layers);
+    for (const symbolDefinition of Object.values(sessionAnimation.symbols || {})) {
+      substituteReferenceImages(symbolDefinition.layers || []);
     }
   }
 
