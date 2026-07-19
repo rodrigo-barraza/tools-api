@@ -1782,13 +1782,17 @@ export function buildVectorAnimationEmbedHtml(
         width: 100%;
         height: 100%;
         overflow: hidden;
+        /* Reserve the title zone (top) and floating-controls zone (bottom)
+           so the centered canvas never slides underneath them. */
+        box-sizing: border-box;
+        padding: ${headless ? "16px" : options.title ? "56px" : "16px"} 16px ${headless ? "16px" : "78px"};
       }
       canvas {
         background: ${background};
         box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         border-radius: 12px;
         max-width: 100%;
-        max-height: calc(100% - 70px);
+        max-height: 100%;
         object-fit: contain;
       }
       #controls {
@@ -2948,7 +2952,7 @@ router.post("/vector-animation", asyncHandler(async (req: Request, res: Response
     ? buildDisplay(exportInfo.format === "mp4" ? "video" : "image", exportInfo.url, {
         title: `Vector Animation (${exportInfo.format})`,
       })
-    : buildDisplay("embed", embedUrl, { height: 420, title: "Vector Animation" });
+    : buildDisplay("embed", embedUrl, { height: 480, title: "Vector Animation" });
 
   res.json({
     message,
