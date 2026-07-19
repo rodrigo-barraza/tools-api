@@ -35,6 +35,20 @@ export interface TrackerChannelEffects {
   distortion?: { algorithm?: "soft_clip" | "hard_clip" | "bitcrush"; drive?: number; bitDepth?: number };
 }
 
+/**
+ * A decoded PCM sample bound to a channel — the tracker's sampler
+ * instrument. `pcm` is mono float PCM at `sourceSampleRate`; notes repitch
+ * it relative to `rootNote` at render time.
+ */
+export interface TrackerChannelSample {
+  pcm: Float32Array;
+  sourceSampleRate: number;
+  rootNote: string | number;
+  loop: boolean;
+  durationSeconds: number;
+  sourceLabel: string;
+}
+
 export interface TrackerChannel {
   channelId: string;
   instrument?: string;
@@ -43,6 +57,7 @@ export interface TrackerChannel {
   effects: TrackerChannelEffects;
   nodes?: Record<string, NodeConfig>;
   nodeChain?: string[];
+  sample?: TrackerChannelSample;
   pattern: TrackerRow[];
 }
 
@@ -78,6 +93,7 @@ export interface AddChannelOptions {
   effects?: TrackerChannelEffects;
   nodes?: Record<string, NodeConfig>;
   nodeChain?: string[];
+  sample?: TrackerChannelSample;
 }
 
 export interface WritePatternOptions {
@@ -216,15 +232,19 @@ export function addTrackerChannel(
     effects: options.effects ?? {},
     nodes: options.nodes,
     nodeChain: options.nodeChain,
+    sample: options.sample,
     pattern: [],
   };
 
   session.channels.push(channel);
   session.updatedAt = Date.now();
 
+  const instrumentLabel = options.sample
+    ? `sample(${options.sample.sourceLabel}, ${options.sample.durationSeconds.toFixed(2)}s, root=${options.sample.rootNote})`
+    : options.instrument ?? "custom";
   logger.info(
     `[AudioTrackerSessionManager] Added channel '${options.channelId}' to session ${sessionId} — ` +
-    `instrument=${options.instrument ?? "custom"}, channels=${session.channels.length}`,
+    `instrument=${instrumentLabel}, channels=${session.channels.length}`,
   );
 
   return { success: true, channelCount: session.channels.length };
@@ -350,7 +370,33 @@ export function toSynthesizerConfig(
     // Build the node chain for this channel
     const channelNodeChain: string[] = [];
 
-    if (channel.nodes && channel.nodeChain) {
+    if (channel.sample) {
+      // Sampler mode: the channel plays a decoded PCM sample repitched per
+      // note — the classic tracker instrument. The envelope is a click
+      // guard only (instant attack, full sustain, 10ms release), so the
+      // sample's own dynamics pass through unshaped.
+      const samplerId = `${channelPrefix}_sampler`;
+      nodes[samplerId] = {
+        type: "sampler",
+        samplePcm: channel.sample.pcm,
+        sampleSourceRate: channel.sample.sourceSampleRate,
+        rootNote: channel.sample.rootNote,
+        loop: channel.sample.loop,
+      };
+      channelNodeChain.push(samplerId);
+
+      const envelopeId = `${channelPrefix}_env`;
+      nodes[envelopeId] = {
+        type: "envelope",
+        attack: 0.002,
+        decay: 0,
+        sustain: 1.0,
+        release: 0.01,
+      };
+      channelNodeChain.push(envelopeId);
+
+      appendEffectChainNodes(channel.effects, channelPrefix, nodes, channelNodeChain);
+    } else if (channel.nodes && channel.nodeChain) {
       // Advanced mode: user provided custom nodes
       for (const [nodeId, nodeConfig] of Object.entries(channel.nodes)) {
         const qualifiedNodeId = `${channelPrefix}_${nodeId}`;
@@ -387,57 +433,27 @@ export function toSynthesizerConfig(
         : { type: "envelope", attack: 0.005, decay: 0.2, sustain: 0.5, release: 0.15 };
       channelNodeChain.push(envelopeId);
 
-      // Effects chain
-      if (channel.effects.filter) {
-        const filterId = `${channelPrefix}_filter`;
-        nodes[filterId] = {
-          type: "biquad_filter",
-          filterType: channel.effects.filter.type ?? "lowpass",
-          cutoff: channel.effects.filter.cutoff ?? 2000,
-          Q: channel.effects.filter.Q ?? 1,
-        };
-        channelNodeChain.push(filterId);
-      }
-
-      if (channel.effects.distortion) {
-        const distortionId = `${channelPrefix}_dist`;
-        nodes[distortionId] = {
-          type: "distortion",
-          algorithm: channel.effects.distortion.algorithm ?? "soft_clip",
-          drive: channel.effects.distortion.drive ?? 4,
-          bitDepth: channel.effects.distortion.bitDepth,
-        };
-        channelNodeChain.push(distortionId);
-      }
-
-      if (channel.effects.delay) {
-        const delayId = `${channelPrefix}_delay`;
-        nodes[delayId] = {
-          type: "delay",
-          delayTime: channel.effects.delay.delayTime as number ?? 0.25,
-          feedback: channel.effects.delay.feedback ?? 0.3,
-          pingPong: channel.effects.delay.pingPong,
-        };
-        channelNodeChain.push(delayId);
-      }
-
-      if (channel.effects.reverb) {
-        const reverbId = `${channelPrefix}_reverb`;
-        nodes[reverbId] = {
-          type: "reverb",
-          wet: channel.effects.reverb.wet ?? 0.3,
-          decayTime: channel.effects.reverb.decayTime ?? 0.5,
-        };
-        channelNodeChain.push(reverbId);
-      }
+      appendEffectChainNodes(channel.effects, channelPrefix, nodes, channelNodeChain);
     }
 
     // Convert pattern rows to NoteConfig[]
-    const convertedNotes: NoteConfig[] = convertPatternToNotes(
+    let convertedNotes: NoteConfig[] = convertPatternToNotes(
       channel.pattern,
       session.tempo,
       session.linesPerBeat,
     );
+
+    // On sampler channels, drum trigger symbols (KICK/SNARE/HAT) mean
+    // "play the sample at its natural pitch" — the intuitive way to
+    // sequence a one-shot drum sample without knowing its root note.
+    if (channel.sample) {
+      const rootNote = channel.sample.rootNote;
+      convertedNotes = convertedNotes.map((note) =>
+        DRUM_TRIGGER_SYMBOLS.has(String(note.note).toUpperCase().trim())
+          ? { ...note, note: rootNote }
+          : note,
+      );
+    }
 
     // Auto-repeat: when a target duration is set and the pattern is shorter,
     // calculate how many repetitions are needed to fill the target duration
@@ -498,6 +514,61 @@ function patternHasDrumTriggers(pattern: TrackerRow[]): boolean {
   return pattern.some((row) =>
     DRUM_TRIGGER_SYMBOLS.has(row.note.toUpperCase().trim()),
   );
+}
+
+/**
+ * Appends the channel's per-channel effect nodes (filter → distortion →
+ * delay → reverb) to its node chain. Shared by the oscillator/preset and
+ * sampler channel builders.
+ */
+function appendEffectChainNodes(
+  effects: TrackerChannelEffects,
+  channelPrefix: string,
+  nodes: Record<string, NodeConfig>,
+  channelNodeChain: string[],
+): void {
+  if (effects.filter) {
+    const filterId = `${channelPrefix}_filter`;
+    nodes[filterId] = {
+      type: "biquad_filter",
+      filterType: effects.filter.type ?? "lowpass",
+      cutoff: effects.filter.cutoff ?? 2000,
+      Q: effects.filter.Q ?? 1,
+    };
+    channelNodeChain.push(filterId);
+  }
+
+  if (effects.distortion) {
+    const distortionId = `${channelPrefix}_dist`;
+    nodes[distortionId] = {
+      type: "distortion",
+      algorithm: effects.distortion.algorithm ?? "soft_clip",
+      drive: effects.distortion.drive ?? 4,
+      bitDepth: effects.distortion.bitDepth,
+    };
+    channelNodeChain.push(distortionId);
+  }
+
+  if (effects.delay) {
+    const delayId = `${channelPrefix}_delay`;
+    nodes[delayId] = {
+      type: "delay",
+      delayTime: effects.delay.delayTime as number ?? 0.25,
+      feedback: effects.delay.feedback ?? 0.3,
+      pingPong: effects.delay.pingPong,
+    };
+    channelNodeChain.push(delayId);
+  }
+
+  if (effects.reverb) {
+    const reverbId = `${channelPrefix}_reverb`;
+    nodes[reverbId] = {
+      type: "reverb",
+      wet: effects.reverb.wet ?? 0.3,
+      decayTime: effects.reverb.decayTime ?? 0.5,
+    };
+    channelNodeChain.push(reverbId);
+  }
 }
 
 

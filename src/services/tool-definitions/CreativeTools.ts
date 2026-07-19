@@ -1660,6 +1660,9 @@ export function getCreativeTools(
         "volume",
         "effects",
         "nodeChain",
+        "sampleSource",
+        "sampleRootNote",
+        "sampleLoop",
       ],
     },
     parameters: {
@@ -1681,6 +1684,18 @@ export function getCreativeTools(
         volume: {
           type: "number",
           description: translate("generate_audio.params.volume"),
+        },
+        sampleSource: {
+          type: "string",
+          description: translate("generate_audio.params.sampleSource"),
+        },
+        sampleRootNote: {
+          type: "string",
+          description: translate("generate_audio.params.sampleRootNote"),
+        },
+        sampleLoop: {
+          type: "boolean",
+          description: translate("generate_audio.params.sampleLoop"),
         },
         linesPerBeat: {
           type: "integer",

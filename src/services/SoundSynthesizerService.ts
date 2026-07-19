@@ -367,7 +367,8 @@ export interface NodeConfig {
     | "gain"
     | "reverb"
     | "drum_synth"
-    | "distortion";
+    | "distortion"
+    | "sampler";
   waveform?: NodeWaveformType;
   detune?: number; // in cents
   frequency?: number | string;
@@ -392,6 +393,12 @@ export interface NodeConfig {
   drive?: number;
   bitDepth?: number;
   downsample?: number;
+  // Sampler-specific fields. `samplePcm` is attached server-side (decoded
+  // mono PCM) — it never arrives through the tool-call JSON schema.
+  samplePcm?: Float32Array;
+  sampleSourceRate?: number;
+  rootNote?: string | number;
+  loop?: boolean;
 }
 
 export interface PitchBendConfig {
@@ -927,6 +934,62 @@ export class DrumSynthNode {
   }
 }
 
+/**
+ * Sample-playback node — the classic tracker instrument. Plays a decoded
+ * mono PCM buffer repitched by frequency ratio against a root note, exactly
+ * how ProTracker-lineage samplers repitch: faster/slower playback, no
+ * formant preservation. Linear interpolation between source samples.
+ * Playback position is per-voice, so each note trigger restarts the sample
+ * (tracker retrigger semantics).
+ */
+export class SamplerNode {
+  pcm: Float32Array;
+  sourceRate: number;
+  rootFrequency: number;
+  loop: boolean;
+  outputRate: number;
+  position = 0.0;
+
+  constructor(
+    pcm: Float32Array,
+    sourceRate: number,
+    rootFrequency: number,
+    loop: boolean,
+    outputRate: number,
+  ) {
+    this.pcm = pcm;
+    this.sourceRate = sourceRate;
+    this.rootFrequency = rootFrequency > 0 ? rootFrequency : 440.0;
+    this.loop = loop;
+    this.outputRate = outputRate;
+  }
+
+  process(frequency: number): number {
+    if (this.pcm.length === 0 || frequency <= 0) return 0.0;
+
+    if (!this.loop && this.position >= this.pcm.length) return 0.0;
+
+    const wrappedPosition = this.loop
+      ? this.position % this.pcm.length
+      : this.position;
+    const lowerIndex = Math.floor(wrappedPosition);
+    const upperIndex = this.loop
+      ? (lowerIndex + 1) % this.pcm.length
+      : Math.min(lowerIndex + 1, this.pcm.length - 1);
+    const fraction = wrappedPosition - lowerIndex;
+
+    const sample =
+      this.pcm[lowerIndex] * (1.0 - fraction) + this.pcm[upperIndex] * fraction;
+
+    // Advance through the source at pitch ratio × rate ratio, so a note at
+    // the root plays back verbatim and each octave doubles the speed.
+    this.position +=
+      (frequency / this.rootFrequency) * (this.sourceRate / this.outputRate);
+
+    return sample;
+  }
+}
+
 export class ModularVoice {
   noteConfig: NoteConfig;
   elapsedTime = 0.0;
@@ -942,6 +1005,7 @@ export class ModularVoice {
   envelopes: Record<string, EnvelopeNode> = {};
   drumSynths: Record<string, DrumSynthNode> = {};
   distortions: Record<string, DistortionNode> = {};
+  samplers: Record<string, SamplerNode> = {};
 
   constructor(
     noteConfig: NoteConfig,
@@ -993,6 +1057,14 @@ export class ModularVoice {
           nodeConfig.drive || 4.0,
           nodeConfig.bitDepth || 8,
           nodeConfig.downsample || 1,
+        );
+      } else if (nodeConfig.type === "sampler") {
+        this.samplers[nodeName] = new SamplerNode(
+          nodeConfig.samplePcm ?? new Float32Array(0),
+          nodeConfig.sampleSourceRate || sampleRate,
+          noteToFreq(nodeConfig.rootNote ?? "C4"),
+          nodeConfig.loop ?? false,
+          sampleRate,
         );
       }
     }
@@ -1064,6 +1136,11 @@ export class ModularVoice {
         const drum = this.drumSynths[nodeName];
         if (drum) {
           currentSignal = drum.process(this.elapsedTime);
+        }
+      } else if (nodeConfig.type === "sampler") {
+        const sampler = this.samplers[nodeName];
+        if (sampler) {
+          currentSignal = sampler.process(currentFrequency);
         }
       } else if (nodeConfig.type === "envelope") {
         const envelopeValue = envelopeValues[nodeName] ?? 0.0;

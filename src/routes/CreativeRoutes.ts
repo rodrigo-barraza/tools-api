@@ -5,7 +5,8 @@ import PromptLocaleService from "../services/PromptLocaleService.ts";
 
 import { Request, Response, Router } from "express";
 import PrismService from "../services/PrismService.ts";
-import { generateAudioWav, INSTRUMENT_PRESETS } from "../services/SoundSynthesizerService.ts";
+import { generateAudioWav, INSTRUMENT_PRESETS, noteToFreq } from "../services/SoundSynthesizerService.ts";
+import { resolveAudioInput, decodeAudioToPcm } from "../services/AudioInputService.ts";
 import { validateSynthesizerInput } from "../services/SoundSynthesizerValidation.ts";
 import { processAudio, getAvailablePresets } from "../services/AudioRemixService.ts";
 import { validateAudioRemixInput } from "../services/AudioRemixValidation.ts";
@@ -18,6 +19,7 @@ import {
   deleteTrackerSession,
   getActiveSessionCount,
   getAuthoredDurationSeconds,
+  type TrackerChannelSample,
 } from "../services/AudioTrackerSessionManager.ts";
 import {
   validateVectorAnimationInput,
@@ -987,6 +989,10 @@ router.post(
 // POST /creative/generate-audio
 // ────────────────────────────────────────────────────────────
 
+// Sampler channels hold decoded PCM in session memory (mono float32 at the
+// session rate), so per-sample length is bounded: 15s @ 48kHz ≈ 2.8 MB.
+const MAX_SAMPLE_SECONDS = 15;
+
 router.post(
   "/generate-audio",
   asyncHandler(async (req: Request, res: Response) => {
@@ -1129,7 +1135,10 @@ router.post(
     }
 
     if (action === "add_channel") {
-      const { sessionId, channelId, instrument, waveform, volume, effects, nodes, nodeChain, rows } = req.body;
+      const {
+        sessionId, channelId, instrument, waveform, volume, effects,
+        nodes, nodeChain, rows, sampleSource, sampleRootNote, sampleLoop,
+      } = req.body;
       const sessionResult = requireSession(sessionId);
       if ("error" in sessionResult) {
         return res.status(sessionResult.errorStatus).json({ error: sessionResult.error });
@@ -1148,6 +1157,54 @@ router.post(
             `rows — drum synthesis is automatic.`,
         });
       }
+
+      let sample: TrackerChannelSample | undefined;
+      if (sampleSource != null) {
+        if (typeof sampleSource !== "string" || sampleSource.trim() === "") {
+          return res.status(400).json({
+            error:
+              "Invalid sampleSource: pass 'attached' (conversation audio), an audio URL, " +
+              "or a data URI. Omit it entirely for a synthesized channel.",
+          });
+        }
+        if (instrument || waveform || nodes || nodeChain) {
+          return res.status(400).json({
+            error:
+              "sampleSource makes this a sampler channel — it cannot be combined with " +
+              "instrument, waveform, or custom nodes/nodeChain. Effects and volume still apply.",
+          });
+        }
+        const rootNote = sampleRootNote ?? "C4";
+        if (!(noteToFreq(rootNote) > 0)) {
+          return res.status(400).json({
+            error:
+              `Invalid sampleRootNote '${rootNote}'. Use a pitch name like 'C4' or 'A#3' — ` +
+              `the pitch the recording is assumed to be at, so pattern notes repitch relative to it.`,
+          });
+        }
+        try {
+          const encodedAudio = await resolveAudioInput(sampleSource);
+          const decoded = await decodeAudioToPcm(encodedAudio, {
+            sampleRate: session.sampleRate,
+            maxDurationSeconds: MAX_SAMPLE_SECONDS,
+          });
+          sample = {
+            pcm: decoded.pcm,
+            sourceSampleRate: decoded.sampleRate,
+            rootNote,
+            loop: sampleLoop === true,
+            durationSeconds: decoded.durationSeconds,
+            sourceLabel: sampleSource.startsWith("data:")
+              ? "attached audio"
+              : sampleSource.slice(0, 80),
+          };
+        } catch (error: unknown) {
+          return res.status(400).json({
+            error: `Could not load sample for channel '${channelId}': ${errorMessage(error)}`,
+          });
+        }
+      }
+
       const result = addTrackerChannel(session.sessionId, {
         channelId,
         instrument,
@@ -1156,6 +1213,7 @@ router.post(
         effects,
         nodes,
         nodeChain,
+        sample,
       });
       if (!result.success) {
         return res.status(400).json({ error: result.error });
@@ -1196,8 +1254,16 @@ router.post(
         message:
           `Channel '${channelId}' added` +
           (instrument ? ` with instrument preset '${instrument}'` : "") +
+          (sample
+            ? ` as a SAMPLER channel (${sample.durationSeconds.toFixed(2)}s sample, root note ${sample.rootNote}` +
+              `${sample.loop ? ", looped" : ""})`
+            : "") +
           (writtenRows > 0 ? ` and ${writtenRows} pattern row(s) written` : "") +
           `. ${result.channelCount} channel(s) in session.` +
+          (sample
+            ? ` Pattern notes repitch the sample relative to ${sample.rootNote}; ` +
+              `KICK/SNARE/HAT rows play it at natural pitch.`
+            : "") +
           describeDurationProgress(session) +
           (writtenRows > 0
             ? ` Add more channels, write more rows, or call action: "render".`

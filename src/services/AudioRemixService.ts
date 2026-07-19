@@ -4,10 +4,10 @@ import { writeFile, readFile, unlink, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import logger from "../logger.ts";
+import { resolveAudioInput } from "./AudioInputService.ts";
 
 const execFileAsync = promisify(execFile);
 
-const MAX_INPUT_BYTES = 25 * 1024 * 1024;
 const MAX_OUTPUT_DURATION_SECONDS = 60;
 const FFMPEG_TIMEOUT_MS = 30_000;
 
@@ -124,60 +124,6 @@ const PRESET_DEFINITIONS: Record<string, AudioRemixOperation[]> = {
 
 export function getAvailablePresets(): string[] {
   return Object.keys(PRESET_DEFINITIONS);
-}
-
-async function resolveAudioInput(input: string): Promise<Buffer> {
-  // The 'attached' sentinel is normally substituted by the agent harness
-  // with the conversation's attached audio before the request reaches us.
-  // Seeing it here means no attached audio could be resolved.
-  if (input.trim().toLowerCase() === "attached") {
-    throw new Error(
-      "No attached audio was found in the conversation to substitute for 'attached'. " +
-        "Ask the user to (re-)upload the audio, or pass an explicit URL or data URI.",
-    );
-  }
-
-  if (input.startsWith("data:")) {
-    const commaIndex = input.indexOf(",");
-    if (commaIndex === -1) {
-      throw new Error("Invalid data URI: missing comma separator");
-    }
-    const base64Data = input.slice(commaIndex + 1);
-    const buffer = Buffer.from(base64Data, "base64");
-    if (buffer.length > MAX_INPUT_BYTES) {
-      throw new Error(`Input audio exceeds maximum size of ${MAX_INPUT_BYTES / (1024 * 1024)}MB`);
-    }
-    return buffer;
-  }
-
-  if (input.startsWith("http://") || input.startsWith("https://")) {
-    const response = await fetch(input);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch audio from URL: HTTP ${response.status}`);
-    }
-    const contentLength = response.headers.get("content-length");
-    if (contentLength && parseInt(contentLength, 10) > MAX_INPUT_BYTES) {
-      throw new Error(`Remote audio exceeds maximum size of ${MAX_INPUT_BYTES / (1024 * 1024)}MB`);
-    }
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    if (buffer.length > MAX_INPUT_BYTES) {
-      throw new Error(`Downloaded audio exceeds maximum size of ${MAX_INPUT_BYTES / (1024 * 1024)}MB`);
-    }
-    return buffer;
-  }
-
-  if (input.startsWith("/")) {
-    const buffer = await readFile(input);
-    if (buffer.length > MAX_INPUT_BYTES) {
-      throw new Error(`Local audio file exceeds maximum size of ${MAX_INPUT_BYTES / (1024 * 1024)}MB`);
-    }
-    return buffer;
-  }
-
-  throw new Error(
-    "Invalid input: must be a URL (http/https), base64 data URI (data:audio/...), or absolute file path",
-  );
 }
 
 function buildTempoFilterChain(factor: number): string[] {
