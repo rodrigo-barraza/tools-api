@@ -530,5 +530,96 @@ export function getDiscordTools(
       required: ["guildId"],
     },
   },
+  {
+    name: "get_discord_gold_balance",
+    dataSource: onDemand("Lupos MongoDB"),
+    description: translate("get_discord_gold_balance.description"),
+    endpoint: {
+      path: "/discord/gold/balance",
+      queryParams: ["guildId", "userId"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        guildId: {
+          type: "string",
+          description: translate("get_discord_gold_balance.params.guildId"),
+        },
+        userId: {
+          type: "string",
+          description: translate("get_discord_gold_balance.params.userId"),
+        },
+      },
+      required: ["guildId", "userId"],
+    },
+  },
+  {
+    name: "give_discord_gold",
+    dataSource: onDemand("Discord Live API"),
+    description: translate("give_discord_gold.description"),
+    endpoint: {
+      path: "/discord/gold/give",
+      method: "POST",
+      bodyParams: ["guildId", "targetUserId", "amount", "note"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        guildId: {
+          type: "string",
+          description: translate("give_discord_gold.params.guildId"),
+        },
+        targetUserId: {
+          type: "string",
+          description: translate("give_discord_gold.params.targetUserId"),
+        },
+        amount: {
+          type: "number",
+          description: translate("give_discord_gold.params.amount"),
+        },
+        note: {
+          type: "string",
+          description: translate("give_discord_gold.params.note"),
+        },
+      },
+      required: ["guildId", "targetUserId", "amount"],
+    },
+  },
+  {
+    name: "mug_discord_gold",
+    dataSource: onDemand("Discord Live API"),
+    description: translate("mug_discord_gold.description"),
+    endpoint: {
+      path: "/discord/gold/mug",
+      method: "POST",
+      bodyParams: ["guildId", "channelId", "targetUserId", "amount", "note"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        guildId: {
+          type: "string",
+          description: translate("mug_discord_gold.params.guildId"),
+        },
+        channelId: {
+          type: "string",
+          description: translate("mug_discord_gold.params.channelId"),
+        },
+        targetUserId: {
+          type: "string",
+          description: translate("mug_discord_gold.params.targetUserId"),
+        },
+        amount: {
+          type: "number",
+          description: translate("mug_discord_gold.params.amount"),
+        },
+        note: {
+          type: "string",
+          description: translate("mug_discord_gold.params.note"),
+        },
+      },
+      required: ["guildId", "targetUserId", "amount"],
+    },
+  },
   ];
 }

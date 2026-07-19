@@ -459,6 +459,45 @@ router.post(
   ),
 );
 
+// ─── GET /gold/balance ──────────────────────────────────────────
+router.get(
+  "/gold/balance",
+  asyncHandler(
+    (req: Request) => {
+      return forwardToLuposBot("/gold/balance", {
+        guildId: req.query.guildId,
+        userId: req.query.userId,
+      });
+    },
+    "Get discord gold balance",
+    options,
+  ),
+);
+
+// ─── POST /gold/give ────────────────────────────────────────────
+router.post(
+  "/gold/give",
+  asyncHandler(
+    (req: Request) => {
+      return forwardPostToLuposBot("/gold/give", req.body);
+    },
+    "Give discord gold",
+    options,
+  ),
+);
+
+// ─── POST /gold/mug ─────────────────────────────────────────────
+router.post(
+  "/gold/mug",
+  asyncHandler(
+    (req: Request) => {
+      return forwardPostToLuposBot("/gold/mug", req.body);
+    },
+    "Mug discord gold",
+    options,
+  ),
+);
+
 // ─── GET /guild/voice-members ───────────────────────────────────
 router.get(
   "/guild/voice-members",

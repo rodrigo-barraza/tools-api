@@ -463,6 +463,9 @@ const TOOL_DOMAINS = {
   get_discord_voice_channel_members: "Discord",
   get_discord_user_profile: "Discord",
   get_discord_channel_activity_stats: "Discord",
+  get_discord_gold_balance: "Discord",
+  give_discord_gold: "Discord",
+  mug_discord_gold: "Discord",
 
   // Smart Home (LIFX Lights)
   list_lights: "Smart Home",
@@ -869,6 +872,9 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   get_discord_voice_channel_members: ["🔊", "👥"],
   get_discord_user_profile: ["👤", "💬"],
   get_discord_channel_activity_stats: ["📁", "📊"],
+  get_discord_gold_balance: ["🪙", "💬"],
+  give_discord_gold: ["🪙", "🎁"],
+  mug_discord_gold: ["🪙", "🐺"],
   list_lights: ["💡", "📋"],
   set_light_state: "🎚️",
   toggle_light_power: ["🔌", "💡"],
