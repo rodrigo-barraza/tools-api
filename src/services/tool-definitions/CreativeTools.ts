@@ -1214,6 +1214,11 @@ export function getCreativeTools(
           type: "string",
           description: translate("generate_image.params.prompt"),
         },
+        referenceImages: {
+          type: "array",
+          items: { type: "string" },
+          description: translate("generate_image.params.referenceImages"),
+        },
         transparentBackground: {
           type: "boolean",
           description: translate("generate_image.params.transparentBackground"),
