@@ -1353,7 +1353,12 @@ router.post(
           describeDurationProgress(session) +
           (writtenRows > 0
             ? ` Add more channels, write more rows, or call action: "render".`
-            : ` Now write its pattern with action: "write_pattern".`),
+            : sample
+              ? ` IMPORTANT: this sampler channel is SILENT until pattern rows trigger it — ` +
+                `the render will NOT contain the sample yet. Write rows with action: ` +
+                `"write_pattern" (e.g. {note: "${sample.rootNote}", duration: 8} at each point ` +
+                `the sample should play), then action: "render" for the final mix.`
+              : ` Now write its pattern with action: "write_pattern".`),
         sessionId: session.sessionId,
         channelId,
         channelCount: result.channelCount,

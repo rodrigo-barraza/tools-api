@@ -61,6 +61,14 @@ export async function resolveAudioInput(input: string): Promise<Buffer> {
     return buffer;
   }
 
+  if (input.startsWith("minio://")) {
+    throw new Error(
+      "minio:// references are internal storage refs and cannot be fetched. " +
+        "Use the public https URL from the earlier tool result instead " +
+        "(its downloadUrl or display.url field).",
+    );
+  }
+
   throw new Error(
     "Invalid input: must be a URL (http/https), base64 data URI (data:audio/...), or absolute file path",
   );

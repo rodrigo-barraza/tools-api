@@ -13,7 +13,7 @@ import {
   noteToFreq,
   type SynthesizerConfig,
 } from "../SoundSynthesizerService.ts";
-import { decodeAudioToPcm } from "../AudioInputService.ts";
+import { decodeAudioToPcm, resolveAudioInput } from "../AudioInputService.ts";
 
 const createdSessions: string[] = [];
 
@@ -327,5 +327,13 @@ describe("decodeAudioToPcm", () => {
         maxDurationSeconds: 15,
       }),
     ).rejects.toThrow();
+  });
+});
+
+describe("resolveAudioInput", () => {
+  it("rejects internal minio:// refs with guidance to use the public URL", async () => {
+    await expect(
+      resolveAudioInput("minio://generations/a.wav"),
+    ).rejects.toThrow(/public https URL/);
   });
 });
