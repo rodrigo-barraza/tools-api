@@ -1967,7 +1967,10 @@ export function getCreativeTools(
     endpoint: {
       path: "/creative/remix-audio",
       method: "POST",
-      bodyParams: ["input", "operations", "preset", "outputFormat", "sampleRate"],
+      bodyParams: [
+        "input", "operations", "preset", "outputFormat", "sampleRate",
+        "overlays", "concatenate", "mixDuration",
+      ],
     },
     parameters: {
       type: "object",
@@ -1975,6 +1978,38 @@ export function getCreativeTools(
         input: {
           type: "string",
           description: translate("remix_audio.params.input"),
+        },
+        overlays: {
+          type: "array",
+          description: translate("remix_audio.params.overlays"),
+          items: {
+            type: "object",
+            properties: {
+              source: {
+                type: "string",
+                description: translate("remix_audio.params.overlays.items.params.source"),
+              },
+              offset: {
+                type: "number",
+                description: translate("remix_audio.params.overlays.items.params.offset"),
+              },
+              volume: {
+                type: "number",
+                description: translate("remix_audio.params.overlays.items.params.volume"),
+              },
+            },
+            required: ["source"],
+          },
+        },
+        concatenate: {
+          type: "array",
+          items: { type: "string" },
+          description: translate("remix_audio.params.concatenate"),
+        },
+        mixDuration: {
+          type: "string",
+          enum: ["first", "longest"],
+          description: translate("remix_audio.params.mixDuration"),
         },
         operations: {
           type: "array",

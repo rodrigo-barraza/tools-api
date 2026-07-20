@@ -45,18 +45,58 @@ const SUPPORTED_PRESETS = new Set([
 
 const SUPPORTED_OUTPUT_FORMATS = new Set(["wav", "mp3", "ogg", "opus"]);
 
+const MAX_OVERLAYS = 8;
+const MAX_CONCAT_SEGMENTS = 8;
+const MAX_OVERLAY_OFFSET_SECONDS = 300;
+
 interface AudioRemixValidationInput {
   input?: string;
   operations?: Array<Record<string, unknown>>;
   preset?: string;
   outputFormat?: string;
   sampleRate?: number;
+  overlays?: Array<Record<string, unknown>>;
+  concatenate?: string[];
+  mixDuration?: string;
+}
+
+/**
+ * Validates a secondary audio source (overlay/concat). Unlike the main
+ * 'input', these are never substituted by the harness, so the 'attached'
+ * sentinel gets a targeted explanation instead of the generic prefix error.
+ */
+function validateSecondarySource(
+  source: unknown,
+  label: string,
+): string | null {
+  if (!source || typeof source !== "string" || source.trim().length === 0) {
+    return `${label}: missing 'source' (URL, base64 data URI, or file path)`;
+  }
+  const trimmed = source.trim();
+  if (trimmed.toLowerCase() === "attached") {
+    return (
+      `${label}: 'attached' only works for the main 'input'. Pass the explicit ` +
+      `https URL of the audio (e.g. the downloadUrl/audioRef of a previous tool result).`
+    );
+  }
+  const isValid =
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("data:") ||
+    trimmed.startsWith("/");
+  if (!isValid) {
+    return `${label}: must be a URL (http/https), base64 data URI (data:audio/...), or absolute file path`;
+  }
+  return null;
 }
 
 export function validateAudioRemixInput(
   validationInput: AudioRemixValidationInput,
 ): string | null {
-  const { input, operations, preset, outputFormat, sampleRate } = validationInput;
+  const {
+    input, operations, preset, outputFormat, sampleRate,
+    overlays, concatenate, mixDuration,
+  } = validationInput;
 
   if (!input || typeof input !== "string" || input.trim().length === 0) {
     return "Missing required parameter: 'input' (URL, base64 data URI, or file path)";
@@ -89,6 +129,58 @@ export function validateAudioRemixInput(
     const numericSampleRate = Number(sampleRate);
     if (isNaN(numericSampleRate) || numericSampleRate < 8000 || numericSampleRate > 48000) {
       return "Invalid sampleRate: must be between 8000 and 48000 Hz";
+    }
+  }
+
+  if (overlays !== undefined && overlays !== null) {
+    if (!Array.isArray(overlays)) {
+      return "'overlays' must be an array of { source, offset?, volume? } objects";
+    }
+    if (overlays.length > MAX_OVERLAYS) {
+      return `Too many overlays: ${overlays.length} (maximum ${MAX_OVERLAYS})`;
+    }
+    for (let index = 0; index < overlays.length; index++) {
+      const overlay = overlays[index];
+      const overlayLabel = `overlays[${index}]`;
+      if (!overlay || typeof overlay !== "object") {
+        return `${overlayLabel}: must be an object with at least a 'source' property`;
+      }
+      const sourceError = validateSecondarySource(overlay.source, overlayLabel);
+      if (sourceError) return sourceError;
+      if (overlay.offset !== undefined && overlay.offset !== null) {
+        const offset = Number(overlay.offset);
+        if (isNaN(offset) || offset < 0 || offset > MAX_OVERLAY_OFFSET_SECONDS) {
+          return `${overlayLabel}: 'offset' must be 0-${MAX_OVERLAY_OFFSET_SECONDS} seconds`;
+        }
+      }
+      if (overlay.volume !== undefined && overlay.volume !== null) {
+        const volume = Number(overlay.volume);
+        if (isNaN(volume) || volume < 0 || volume > 4) {
+          return `${overlayLabel}: 'volume' must be 0-4`;
+        }
+      }
+    }
+  }
+
+  if (concatenate !== undefined && concatenate !== null) {
+    if (!Array.isArray(concatenate)) {
+      return "'concatenate' must be an array of audio source strings";
+    }
+    if (concatenate.length > MAX_CONCAT_SEGMENTS) {
+      return `Too many concatenate segments: ${concatenate.length} (maximum ${MAX_CONCAT_SEGMENTS})`;
+    }
+    for (let index = 0; index < concatenate.length; index++) {
+      const sourceError = validateSecondarySource(
+        concatenate[index],
+        `concatenate[${index}]`,
+      );
+      if (sourceError) return sourceError;
+    }
+  }
+
+  if (mixDuration !== undefined && mixDuration !== null) {
+    if (mixDuration !== "first" && mixDuration !== "longest") {
+      return `Invalid mixDuration '${mixDuration}'. Use 'first' (output = base track length) or 'longest'.`;
     }
   }
 

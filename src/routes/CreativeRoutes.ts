@@ -1492,6 +1492,9 @@ router.post(
       preset,
       outputFormat = "wav",
       sampleRate,
+      overlays,
+      concatenate,
+      mixDuration,
     } = req.body;
 
     const validationError = validateAudioRemixInput({
@@ -1500,6 +1503,9 @@ router.post(
       preset,
       outputFormat,
       sampleRate,
+      overlays,
+      concatenate,
+      mixDuration,
     });
 
     if (validationError) {
@@ -1513,6 +1519,9 @@ router.post(
         preset,
         outputFormat,
         sampleRate: sampleRate ? Number(sampleRate) : undefined,
+        overlays,
+        concatenate,
+        mixDuration,
       });
 
       const audioBase64 = result.buffer.toString("base64");

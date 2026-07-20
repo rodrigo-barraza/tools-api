@@ -337,3 +337,34 @@ describe("resolveAudioInput", () => {
     ).rejects.toThrow(/public https URL/);
   });
 });
+
+describe("per-session sample budget", () => {
+  it("supports multiple sampler channels within the budget", () => {
+    const session = makeSession();
+    for (const channelId of ["kick", "snare", "vox"]) {
+      const result = addTrackerChannel(session.sessionId, {
+        channelId,
+        sample: { ...makeRampSample(), durationSeconds: 10 },
+      });
+      expect(result.success).toBe(true);
+    }
+  });
+
+  it("rejects a sample that would exceed the 60s total budget", () => {
+    const session = makeSession();
+    addTrackerChannel(session.sessionId, {
+      channelId: "a",
+      sample: { ...makeRampSample(), durationSeconds: 30 },
+    });
+    addTrackerChannel(session.sessionId, {
+      channelId: "b",
+      sample: { ...makeRampSample(), durationSeconds: 25 },
+    });
+    const rejected = addTrackerChannel(session.sessionId, {
+      channelId: "c",
+      sample: { ...makeRampSample(), durationSeconds: 10 },
+    });
+    expect(rejected.success).toBe(false);
+    expect(rejected.error).toMatch(/total sample budget/);
+  });
+});

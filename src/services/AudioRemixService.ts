@@ -39,12 +39,24 @@ interface AudioRemixOperation {
   intensity?: number;
 }
 
+export interface AudioOverlayInput {
+  source: string;
+  /** Seconds into the base track where the overlay starts (default 0). */
+  offset?: number;
+  /** Overlay gain 0–4 (default 1.0). */
+  volume?: number;
+}
+
 interface AudioRemixInput {
   input: string;
   operations?: AudioRemixOperation[];
   preset?: string;
   outputFormat?: string;
   sampleRate?: number;
+  overlays?: AudioOverlayInput[];
+  concatenate?: string[];
+  /** 'first' (default): output length = base track. 'longest': extend to the longest overlay. */
+  mixDuration?: "first" | "longest";
 }
 
 interface AudioRemixResult {
@@ -472,6 +484,9 @@ export async function processAudio(
     preset,
     outputFormat = "wav",
     sampleRate: outputSampleRate,
+    overlays = [],
+    concatenate = [],
+    mixDuration = "first",
   } = remixInput;
 
   const inputBuffer = await resolveAudioInput(input);
@@ -480,9 +495,26 @@ export async function processAudio(
   const inputPath = join(temporaryDirectory, "input.audio");
   const outputExtension = getOutputExtension(outputFormat);
   const outputPath = join(temporaryDirectory, `output${outputExtension}`);
+  const extraInputPaths: string[] = [];
 
   try {
     await writeFile(inputPath, inputBuffer);
+
+    // Resolve and stage secondary sources (overlays first, then concat
+    // segments) so ffmpeg input indices line up: 0 = base, 1..N = overlays,
+    // N+1.. = concat segments.
+    for (let index = 0; index < overlays.length; index++) {
+      const overlayBuffer = await resolveAudioInput(overlays[index].source);
+      const overlayPath = join(temporaryDirectory, `overlay-${index}.audio`);
+      await writeFile(overlayPath, overlayBuffer);
+      extraInputPaths.push(overlayPath);
+    }
+    for (let index = 0; index < concatenate.length; index++) {
+      const segmentBuffer = await resolveAudioInput(concatenate[index]);
+      const segmentPath = join(temporaryDirectory, `concat-${index}.audio`);
+      await writeFile(segmentPath, segmentBuffer);
+      extraInputPaths.push(segmentPath);
+    }
 
     const probeResult = await probeAudio(inputPath);
     const sourceSampleRate = probeResult.sampleRate;
@@ -501,16 +533,76 @@ export async function processAudio(
       appliedOperationLabels.push(operation.type);
     }
 
-    if (allOperations.length === 0) {
+    if (overlays.length > 0) {
+      appliedOperationLabels.push(`overlay×${overlays.length}`);
+    }
+    if (concatenate.length > 0) {
+      appliedOperationLabels.push(`concat×${concatenate.length}`);
+    }
+    if (appliedOperationLabels.length === 0) {
       appliedOperationLabels.push("passthrough");
     }
 
     const filterGraph = compileFilterGraph(allOperations, sourceSampleRate);
 
     const ffmpegArguments: string[] = ["-y", "-i", inputPath];
+    for (const extraPath of extraInputPaths) {
+      ffmpegArguments.push("-i", extraPath);
+    }
 
-    if (filterGraph.length > 0) {
-      ffmpegArguments.push("-af", filterGraph.join(","));
+    if (extraInputPaths.length === 0) {
+      // Single-input fast path — identical to the original behavior.
+      if (filterGraph.length > 0) {
+        ffmpegArguments.push("-af", filterGraph.join(","));
+      }
+    } else {
+      // Multi-input graph: normalize every stream to a common rate/layout,
+      // mix overlays over the (effects-processed) base, then append concat
+      // segments end-to-end.
+      const normalize = `aresample=${sourceSampleRate},aformat=channel_layouts=stereo`;
+      const graphParts: string[] = [];
+
+      const baseChain = [...filterGraph, normalize].join(",");
+      graphParts.push(`[0:a]${baseChain}[base]`);
+
+      const overlayLabels: string[] = [];
+      overlays.forEach((overlay, index) => {
+        const delayMilliseconds = Math.max(0, Math.round((overlay.offset ?? 0) * 1000));
+        const overlayVolume = Math.min(Math.max(overlay.volume ?? 1.0, 0), 4);
+        const label = `ov${index}`;
+        graphParts.push(
+          `[${1 + index}:a]${normalize},volume=${overlayVolume},` +
+            `adelay=${delayMilliseconds}|${delayMilliseconds}[${label}]`,
+        );
+        overlayLabels.push(label);
+      });
+
+      let currentLabel = "base";
+      if (overlayLabels.length > 0) {
+        const mixInputs = ["[base]", ...overlayLabels.map((label) => `[${label}]`)].join("");
+        graphParts.push(
+          `${mixInputs}amix=inputs=${overlayLabels.length + 1}:` +
+            `duration=${mixDuration === "longest" ? "longest" : "first"}:normalize=0[mixed]`,
+        );
+        currentLabel = "mixed";
+      }
+
+      if (concatenate.length > 0) {
+        const segmentLabels: string[] = [];
+        concatenate.forEach((_, index) => {
+          const label = `cat${index}`;
+          graphParts.push(`[${1 + overlays.length + index}:a]${normalize}[${label}]`);
+          segmentLabels.push(label);
+        });
+        const concatInputs = [`[${currentLabel}]`, ...segmentLabels.map((label) => `[${label}]`)].join("");
+        graphParts.push(
+          `${concatInputs}concat=n=${concatenate.length + 1}:v=0:a=1[joined]`,
+        );
+        currentLabel = "joined";
+      }
+
+      ffmpegArguments.push("-filter_complex", graphParts.join(";"));
+      ffmpegArguments.push("-map", `[${currentLabel}]`);
     }
 
     ffmpegArguments.push("-t", String(MAX_OUTPUT_DURATION_SECONDS));
@@ -523,7 +615,8 @@ export async function processAudio(
     ffmpegArguments.push(outputPath);
 
     logger.info(
-      `[AudioRemixService] Running FFmpeg with ${filterGraph.length} filters: ${filterGraph.join(", ").slice(0, 200)}`,
+      `[AudioRemixService] Running FFmpeg — ${filterGraph.length} filters, ` +
+        `${overlays.length} overlay(s), ${concatenate.length} concat segment(s)`,
     );
 
     await execFileAsync("ffmpeg", ffmpegArguments, {
@@ -544,6 +637,9 @@ export async function processAudio(
     try {
       await unlink(inputPath).catch(() => {});
       await unlink(outputPath).catch(() => {});
+      for (const extraPath of extraInputPaths) {
+        await unlink(extraPath).catch(() => {});
+      }
       const { rmdir } = await import("node:fs/promises");
       await rmdir(temporaryDirectory).catch(() => {});
     } catch {

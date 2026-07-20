@@ -113,6 +113,9 @@ const CLEANUP_INTERVAL_MS = 5 * 60_000;
 const MAX_SESSIONS = 100;
 const MAX_CHANNELS_PER_SESSION = 16;
 const MAX_ROWS_PER_CHANNEL = 512;
+// Decoded sampler PCM lives in session memory (~190KB/s at 48kHz mono), so
+// the combined length across a session's sampler channels is bounded.
+const MAX_TOTAL_SAMPLE_SECONDS_PER_SESSION = 60;
 
 // ────────────────────────────────────────────────────────────
 // Session Store
@@ -222,6 +225,26 @@ export function addTrackerChannel(
       success: false,
       error: `Channel '${options.channelId}' already exists. Use a unique channelId.`,
     };
+  }
+
+  if (options.sample) {
+    const existingSampleSeconds = session.channels.reduce(
+      (total, channel) => total + (channel.sample?.durationSeconds ?? 0),
+      0,
+    );
+    if (
+      existingSampleSeconds + options.sample.durationSeconds >
+      MAX_TOTAL_SAMPLE_SECONDS_PER_SESSION
+    ) {
+      return {
+        success: false,
+        error:
+          `Adding this ${options.sample.durationSeconds.toFixed(1)}s sample would exceed the ` +
+          `${MAX_TOTAL_SAMPLE_SECONDS_PER_SESSION}s total sample budget per session ` +
+          `(${existingSampleSeconds.toFixed(1)}s already used). Use shorter samples — ` +
+          `drum hits and chops only need a fraction of a second.`,
+      };
+    }
   }
 
   const channel: TrackerChannel = {
