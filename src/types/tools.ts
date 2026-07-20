@@ -130,4 +130,12 @@ export interface ToolSearchMatch {
   domain: string | null;
   parameters: ToolParameters | null;
   isEnabled?: boolean;
+  /** Present on "recipe:*" matches — a multi-tool plan for a goal. */
+  recipe?: {
+    title: string;
+    steps: string;
+    tools: string[];
+    /** Subset of tools the recipe cannot work without (availability gate). */
+    requiredTools: string[];
+  };
 }

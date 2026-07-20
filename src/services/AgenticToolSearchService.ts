@@ -9,6 +9,10 @@ import { DOMAINS } from "@rodrigo-barraza/utilities-library/taxonomy";
 import { Bm25ToolIndex } from "@rodrigo-barraza/utilities-library/search";
 import type { ToolSearchMatch, ToolParameters } from "../types/tools.ts";
 import PromptLocaleService from "./PromptLocaleService.ts";
+import { getRecipeSearchDocuments, isRecipeAvailable } from "./ToolRecipeService.ts";
+
+/** Max recipe entries prepended to a search result. */
+const MAX_RECIPE_MATCHES = 2;
 
 type InferredToolSchema = ReturnType<typeof getToolSchemas>[number];
 
@@ -130,6 +134,73 @@ export function agenticToolSearch(
       }),
     }),
   );
+
+  // ── Recipe matches ─────────────────────────────────────────
+  // Goal-phrased queries ("combine audio", "make a gif from a video")
+  // often describe an OUTCOME that spans several tools. Recipes are
+  // indexed alongside the catalog; a matching recipe is prepended as the
+  // plan, and its constituent tools are appended as ordinary matches so
+  // the standard discovery nudge/auto-enable machinery activates them.
+  if (queryText) {
+    const recipeDocuments = getRecipeSearchDocuments(
+      PromptLocaleService.getDefaultLocale(),
+    );
+    const recipeIndex = new Bm25ToolIndex(recipeDocuments);
+    const catalogToolNames = new Set(
+      allToolSchemas.map((toolSchema) => toolSchema.name),
+    );
+    const recipeResults = recipeIndex
+      .search(queryText, MAX_RECIPE_MATCHES)
+      .filter((result) => result.score > 0)
+      // Availability gate: a recipe whose required tools are missing
+      // (API-key-gated, runtime-disabled) would be a plan the agent
+      // cannot execute — hide it entirely.
+      .filter((result) => isRecipeAvailable(result.document.recipe, catalogToolNames));
+
+    if (recipeResults.length > 0) {
+      const matchedToolNames = new Set(matches.map((match) => match.name));
+      const schemasByName = new Map(
+        allToolSchemas.map((toolSchema) => [toolSchema.name, toolSchema]),
+      );
+
+      const recipeMatches: ToolSearchMatch[] = [];
+      for (const result of recipeResults) {
+        const recipe = result.document.recipe;
+        recipeMatches.push({
+          name: recipe.name,
+          description: `${recipe.title}: ${recipe.description}`,
+          domain: "Recipes",
+          parameters: null,
+          recipe: {
+            title: recipe.title,
+            steps: recipe.steps,
+            tools: recipe.tools,
+            requiredTools: recipe.requiredTools,
+          },
+        });
+
+        // Ride-along constituent tools (deduped against existing matches)
+        for (const toolName of recipe.tools) {
+          if (matchedToolNames.has(toolName)) continue;
+          const toolSchema = schemasByName.get(toolName);
+          if (!toolSchema) continue;
+          matchedToolNames.add(toolName);
+          matches.push({
+            name: toolSchema.name,
+            description: toolSchema.description,
+            domain: toolSchema.domain || null,
+            parameters: toolSchema.parameters
+              ? (toolSchema.parameters as unknown as ToolParameters)
+              : null,
+            ...(hasEnabledContext && {
+              isEnabled: enabledToolsSet.has(toolSchema.name),
+            }),
+          });
+        }
+      }
+      matches.unshift(...recipeMatches);
+    }
+  }
 
   const hasDisabledMatches = hasEnabledContext && matches.some(
     (matchResultEntry) => matchResultEntry.isEnabled === false,
