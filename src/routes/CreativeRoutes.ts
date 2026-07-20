@@ -7,6 +7,7 @@ import { Request, Response, Router } from "express";
 import PrismService from "../services/PrismService.ts";
 import { generateAudioWav, INSTRUMENT_PRESETS, noteToFreq } from "../services/SoundSynthesizerService.ts";
 import { resolveAudioInput, decodeAudioToPcm } from "../services/AudioInputService.ts";
+import { isSamplePresetRef, resolveSamplePreset, listSamplePresets } from "../services/SampleLibraryService.ts";
 import { validateSynthesizerInput } from "../services/SoundSynthesizerValidation.ts";
 import { processAudio, getAvailablePresets } from "../services/AudioRemixService.ts";
 import { validateAudioRemixInput } from "../services/AudioRemixValidation.ts";
@@ -1240,7 +1241,8 @@ router.post(
           error:
             `Invalid instrument '${instrument}'. Valid: ${Object.keys(INSTRUMENT_PRESETS).join(", ")}. ` +
             `For drum beats, omit the instrument entirely and write KICK/SNARE/HAT ` +
-            `rows — drum synthesis is automatic.`,
+            `rows — drum synthesis is automatic. For NATURAL sampled instruments, use ` +
+            `sampleSource: "preset:<name>" instead (${listSamplePresets().map((name) => `preset:${name}`).join(", ")}).`,
         });
       }
 
@@ -1260,30 +1262,43 @@ router.post(
               "instrument, waveform, or custom nodes/nodeChain. Effects and volume still apply.",
           });
         }
-        const rootNote = sampleRootNote ?? "C4";
-        if (!(noteToFreq(rootNote) > 0)) {
+        if (sampleRootNote != null && !(noteToFreq(sampleRootNote) > 0)) {
           return res.status(400).json({
             error:
-              `Invalid sampleRootNote '${rootNote}'. Use a pitch name like 'C4' or 'A#3' — ` +
+              `Invalid sampleRootNote '${sampleRootNote}'. Use a pitch name like 'C4' or 'A#3' — ` +
               `the pitch the recording is assumed to be at, so pattern notes repitch relative to it.`,
           });
         }
         try {
-          const encodedAudio = await resolveAudioInput(sampleSource);
-          const decoded = await decodeAudioToPcm(encodedAudio, {
-            sampleRate: session.sampleRate,
-            maxDurationSeconds: MAX_SAMPLE_SECONDS,
-          });
-          sample = {
-            pcm: decoded.pcm,
-            sourceSampleRate: decoded.sampleRate,
-            rootNote,
-            loop: sampleLoop === true,
-            durationSeconds: decoded.durationSeconds,
-            sourceLabel: sampleSource.startsWith("data:")
-              ? "attached audio"
-              : sampleSource.slice(0, 80),
-          };
+          if (isSamplePresetRef(sampleSource)) {
+            // Built-in library one-shot — pre-rendered, cached, with its own
+            // natural root note (overridable).
+            const presetSample = await resolveSamplePreset(
+              sampleSource,
+              session.sampleRate,
+            );
+            sample = {
+              ...presetSample,
+              rootNote: sampleRootNote ?? presetSample.rootNote,
+              loop: sampleLoop === true,
+            };
+          } else {
+            const encodedAudio = await resolveAudioInput(sampleSource);
+            const decoded = await decodeAudioToPcm(encodedAudio, {
+              sampleRate: session.sampleRate,
+              maxDurationSeconds: MAX_SAMPLE_SECONDS,
+            });
+            sample = {
+              pcm: decoded.pcm,
+              sourceSampleRate: decoded.sampleRate,
+              rootNote: sampleRootNote ?? "C4",
+              loop: sampleLoop === true,
+              durationSeconds: decoded.durationSeconds,
+              sourceLabel: sampleSource.startsWith("data:")
+                ? "attached audio"
+                : sampleSource.slice(0, 80),
+            };
+          }
         } catch (error: unknown) {
           return res.status(400).json({
             error: `Could not load sample for channel '${channelId}': ${errorMessage(error)}`,
