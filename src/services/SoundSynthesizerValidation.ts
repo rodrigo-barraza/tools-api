@@ -37,6 +37,7 @@ const VALID_NODE_TYPES = new Set([
   "reverb",
   "drum_synth",
   "distortion",
+  "sampler",
 ]);
 
 export function validateSynthesizerInput(config: SynthesizerConfig): string | null {

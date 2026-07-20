@@ -14,6 +14,7 @@ import {
   type SynthesizerConfig,
 } from "../SoundSynthesizerService.ts";
 import { decodeAudioToPcm, resolveAudioInput } from "../AudioInputService.ts";
+import { validateSynthesizerInput } from "../SoundSynthesizerValidation.ts";
 
 const createdSessions: string[] = [];
 
@@ -151,6 +152,25 @@ describe("toSynthesizerConfig with sampler channels", () => {
       "vox_env",
       "vox_reverb",
     ]);
+  });
+
+  it("passes route-level validation for sampler channels", () => {
+    // Regression: render 400'd with "invalid type 'sampler'" because
+    // VALID_NODE_TYPES lagged the synthesizer's node types, and unit tests
+    // called toSynthesizerConfig directly without the validation layer.
+    const session = makeSession();
+    addTrackerChannel(session.sessionId, {
+      channelId: "vox",
+      sample: makeRampSample(),
+    });
+    writeTrackerPattern({
+      sessionId: session.sessionId,
+      channelId: "vox",
+      rows: [{ note: "C4" }],
+    });
+
+    const { config } = toSynthesizerConfig(session.sessionId);
+    expect(validateSynthesizerInput(config!)).toBeNull();
   });
 
   it("remaps drum trigger rows to the sample's root note", () => {
