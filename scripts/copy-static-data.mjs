@@ -1,13 +1,15 @@
-// Copies static dataset directories (src/fetchers/**/data) into dist/.
-// tsc only emits compiled .ts outputs, so without this step the runtime
-// image ships no CSV datasets and every static-dataset tool returns
-// empty results (or 500s) in production.
+// Copies static dataset directories (src/fetchers/**/data and
+// src/services/data) into dist/. tsc only emits compiled .ts outputs, so
+// without this step the runtime image ships no CSV datasets (static-dataset
+// tools return empty results) and no sample-library WAVs (generate_audio
+// 'preset:' sampleSources 500 in production).
 import { cpSync, globSync, statSync } from "fs";
 import { join, sep } from "path";
 
-const dataDirectories = globSync(join("src", "fetchers", "**", "data")).filter(
-  (entry) => statSync(entry).isDirectory(),
-);
+const dataDirectories = [
+  ...globSync(join("src", "fetchers", "**", "data")),
+  ...globSync(join("src", "services", "data")),
+].filter((entry) => statSync(entry).isDirectory());
 
 if (dataDirectories.length === 0) {
   console.error(
