@@ -1,5 +1,5 @@
 import { createSimpleCache } from "./createSimpleCache.ts";
-import { Launch } from "../types/weather.ts";
+import { type Launch } from "../types/weather.ts";
 
 const cache = createSimpleCache<Launch[]>({
   type: "array",

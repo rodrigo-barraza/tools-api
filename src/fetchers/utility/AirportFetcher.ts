@@ -2,7 +2,7 @@ import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import logger from "../../logger.ts";
-import { AirportInfo, FormattedAirport } from "../../types/utility.ts";
+import { type AirportInfo, type FormattedAirport } from "../../types/utility.ts";
 import { errorMessage } from "../../utilities.ts";
 import { normalizeSearchText } from "@rodrigo-barraza/utilities-library";
 

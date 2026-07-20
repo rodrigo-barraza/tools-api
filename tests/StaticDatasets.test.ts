@@ -1,15 +1,11 @@
 // ============================================================
 // Static Dataset Integrity
 //
-// Guards the two failure modes that shipped a dataset-less build
-// to production (2026-07): the build step not copying
-// src/fetchers/**/data into dist/, and fetchers silently
-// returning empty results when their CSVs are missing.
-//
-// The dist/ checks mirror PromptLocaleService.test.ts: they skip
-// when dist/ is absent (plain `vitest` run without a build) and
-// run during deploys, where deploy.sh's PRE_TEST hook builds the
-// host dist/ first.
+// Guards the failure mode that shipped a dataset-less build to
+// production (2026-07): fetchers silently returning empty results
+// when their CSVs are missing. The runtime now executes src/
+// directly, so the datasets under src/fetchers/**/data are the
+// ones production reads — no dist/ copy step to verify.
 // ============================================================
 import fs from "fs";
 import path from "path";
@@ -22,7 +18,6 @@ import { getFoodCategories } from "../src/fetchers/health/NutritionFetcher.ts";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, "..");
 const SOURCE_FETCHERS = path.join(ROOT, "src", "fetchers");
-const DIST_FETCHERS = path.join(ROOT, "dist", "fetchers");
 
 function listDataFiles(baseDirectory: string): string[] {
   if (!fs.existsSync(baseDirectory)) return [];
@@ -55,23 +50,5 @@ describe("Static datasets — source", () => {
     const categories = getFoodCategories();
     expect(categories.totalFoods).toBeGreaterThan(10000);
     expect(categories.kingdoms).toContain("plantae");
-  });
-});
-
-describe("Static datasets — dist/ Production Build", () => {
-  it("copies every src data file into dist with identical size", () => {
-    if (!fs.existsSync(DIST_FETCHERS)) return; // no build present — skip
-
-    const sourceFiles = listDataFiles(SOURCE_FETCHERS);
-    const distFiles = listDataFiles(DIST_FETCHERS);
-    expect(distFiles).toEqual(sourceFiles);
-
-    for (const relativePath of sourceFiles) {
-      const sourceSize = fs.statSync(
-        path.join(SOURCE_FETCHERS, relativePath),
-      ).size;
-      const distSize = fs.statSync(path.join(DIST_FETCHERS, relativePath)).size;
-      expect(distSize, relativePath).toBe(sourceSize);
-    }
   });
 });

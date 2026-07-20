@@ -4,7 +4,7 @@ import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 // torrent management via installed community search plugins.
 // ─────────────────────────────────────────────────────────────
 
-import { Request, Response, Router } from "express";
+import { type Request, type Response, Router } from "express";
 import * as qbt from "../services/QBittorrentService.ts";
 import {
   TORRENT_SEARCH_TIMEOUT_MS,

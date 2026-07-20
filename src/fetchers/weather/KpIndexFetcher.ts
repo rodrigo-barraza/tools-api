@@ -1,4 +1,4 @@
-import { KpReading } from "../../types/weather.ts";
+import { type KpReading } from "../../types/weather.ts";
 
 /**
  * Fetch NOAA Planetary K-index (Kp) — 7-day rolling data.

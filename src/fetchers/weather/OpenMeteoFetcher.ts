@@ -1,9 +1,9 @@
 import CONFIG from "../../config.ts";
 import { WMO_WEATHER_CODES } from "../../constants.ts";
 import {
-  OpenMeteoResponse,
-  OpenMeteoHourlyForecast,
-  OpenMeteoDailyForecast,
+  type OpenMeteoResponse,
+  type OpenMeteoHourlyForecast,
+  type OpenMeteoDailyForecast,
 } from "../../types/weather.ts";
 
 const { LATITUDE, LONGITUDE, TIMEZONE } = CONFIG;

@@ -1,7 +1,7 @@
 import { createSimpleCache } from "./createSimpleCache.ts";
 import { MILLISECONDS_PER_DAY } from "@rodrigo-barraza/utilities-library";
 import { KP_STORM_SCALE } from "../constants.ts";
-import { KpReading } from "../types/weather.ts";
+import { type KpReading } from "../types/weather.ts";
 
 const cache = createSimpleCache<KpReading[]>({
   type: "array",

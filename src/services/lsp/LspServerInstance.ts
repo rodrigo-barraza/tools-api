@@ -4,11 +4,11 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import {
   createLspClient,
-  LspClient,
-  LspParams,
-  LspParamValue,
+  type LspClient,
+  type LspParams,
+  type LspParamValue,
 } from "./LspClient.ts";
-import { LspServerConfig } from "./LspConfig.ts";
+import { type LspServerConfig } from "./LspConfig.ts";
 import logger from "../../logger.ts";
 import { errorMessage } from "../../utilities.ts";
 

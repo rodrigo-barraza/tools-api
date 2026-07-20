@@ -1,4 +1,4 @@
-import { RawWildfireEvent, WildfireEvent } from "../../types/weather.ts";
+import { type RawWildfireEvent, type WildfireEvent } from "../../types/weather.ts";
 
 const EONET_URL =
   "https://eonet.gsfc.nasa.gov/api/v3/events?category=wildfires&limit=25&days=7";

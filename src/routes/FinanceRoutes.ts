@@ -1,6 +1,6 @@
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { parseIntParam, toISODate } from "@rodrigo-barraza/utilities-library";
-import { Request, Response, Router } from "express";
+import { type Request, type Response, Router } from "express";
 import {
   getCachedQuote,
   cacheQuote,

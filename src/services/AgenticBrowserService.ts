@@ -1,6 +1,6 @@
 // ─── Headless Playwright Automation ─────────────────────────
 
-import { chromium, Browser, BrowserContext, Page, Locator } from "playwright";
+import { chromium, type Browser, type BrowserContext, type Page, type Locator } from "playwright";
 import { writeFile, unlink, mkdtemp } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";

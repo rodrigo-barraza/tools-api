@@ -1,9 +1,9 @@
 import CONFIG from "../../config.ts";
 import {
-  GoogleAirQuality,
-  GoogleAirQualityPollutant,
-  RawGoogleAirQualityResponse,
-  RawGoogleAqiIndex,
+  type GoogleAirQuality,
+  type GoogleAirQualityPollutant,
+  type RawGoogleAirQualityResponse,
+  type RawGoogleAqiIndex,
 } from "../../types/weather.ts";
 
 const API_URL = "https://airquality.googleapis.com/v1/currentConditions:lookup";

@@ -4,9 +4,9 @@ import { extname, resolve, basename } from "node:path";
 import { pathToFileURL } from "node:url";
 import {
   createLspServerInstance,
-  LspServerInstance,
+  type LspServerInstance,
 } from "./LspServerInstance.ts";
-import { LspParams } from "./LspClient.ts";
+import { type LspParams } from "./LspClient.ts";
 import { getLspServerConfigs } from "./LspConfig.ts";
 import logger from "../../logger.ts";
 import { errorMessage } from "../../utilities.ts";

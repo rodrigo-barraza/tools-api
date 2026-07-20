@@ -2,7 +2,7 @@ import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import logger from "../../logger.ts";
-import { PeriodicElement, FormattedElement } from "../../types/knowledge.ts";
+import { type PeriodicElement, type FormattedElement } from "../../types/knowledge.ts";
 import { normalizeSearchText } from "@rodrigo-barraza/utilities-library";
 
 /**

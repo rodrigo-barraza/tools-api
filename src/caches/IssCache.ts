@@ -1,6 +1,6 @@
 import {
-  IssPosition,
-  AstronautsResponse,
+  type IssPosition,
+  type AstronautsResponse,
 } from "../fetchers/weather/IssFetcher.ts";
 
 const TRAJECTORY_BUFFER_SIZE = 100;

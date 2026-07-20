@@ -1,5 +1,5 @@
 import { upsertNeos } from "../models/Neo.ts";
-import { NearEarthObject } from "../fetchers/weather/NeoFetcher.ts";
+import { type NearEarthObject } from "../fetchers/weather/NeoFetcher.ts";
 
 interface CacheError {
   message: string;

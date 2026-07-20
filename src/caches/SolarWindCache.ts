@@ -1,5 +1,5 @@
 import { createSimpleCache } from "./createSimpleCache.ts";
-import { SolarWindResponse } from "../types/weather.ts";
+import { type SolarWindResponse } from "../types/weather.ts";
 
 const cache = createSimpleCache<SolarWindResponse>();
 

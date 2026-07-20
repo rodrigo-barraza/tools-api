@@ -1,15 +1,15 @@
 import CONFIG from "../../config.ts";
 import { TMDB_BASE_URL, TMDB_IMAGE_BASE_URL } from "../../constants.ts";
 import {
-  MovieResult,
-  TvShowResult,
-  CastMember,
-  CrewMember,
-  TvSeason,
-  PersonResult,
-  PersonCreditEntry,
-  WatchProviderEntry,
-  WatchProviderResult,
+  type MovieResult,
+  type TvShowResult,
+  type CastMember,
+  type CrewMember,
+  type TvSeason,
+  type PersonResult,
+  type PersonCreditEntry,
+  type WatchProviderEntry,
+  type WatchProviderResult,
 } from "../../types/knowledge.ts";
 
 /**

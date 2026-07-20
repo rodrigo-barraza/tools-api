@@ -1,5 +1,5 @@
 import { JIKAN_BASE_URL } from "../../constants.ts";
-import { JikanAnime, RawJikanAnime } from "../../types/knowledge.ts";
+import { type JikanAnime, type RawJikanAnime } from "../../types/knowledge.ts";
 
 /**
  * Jikan API Fetcher (MyAnimeList unofficial API v4)

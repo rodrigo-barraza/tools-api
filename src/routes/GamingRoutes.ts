@@ -1,7 +1,7 @@
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 // ─── Video Game Data Endpoints ──────────────────────────────
 
-import { Request, Response, Router } from "express";
+import { type Request, type Response, Router } from "express";
 import { createBonfire, bonfireStore } from "../services/BonfireService.ts";
 import {
   getHeroes,

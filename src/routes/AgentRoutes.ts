@@ -1,11 +1,11 @@
 // ─── Workspace Agent Status Endpoints ───────────────────────
 
-import { Request, Response, Router } from "express";
+import { type Request, type Response, Router } from "express";
 import { getErrorMessage } from "@rodrigo-barraza/utilities-library";
 import { getConnectedAgents, disconnectAgent } from "../services/AgentConnectionManager.ts";
 import MinioService from "../services/MinioService.ts";
 import logger from "../logger.ts";
-import AgentCompilerService, { CompilationTarget } from "../services/AgentCompilerService.ts";
+import AgentCompilerService, { type CompilationTarget } from "../services/AgentCompilerService.ts";
 import { createReadStream } from "node:fs";
 
 const router = Router();

@@ -29,8 +29,8 @@ RUN --mount=type=ssh \
 # Copy application source
 COPY . .
 
-# Build TypeScript
-RUN pnpm run build
+# Typecheck TypeScript (runtime executes src/ directly via Node type stripping)
+RUN pnpm run typecheck
 
 # Prune devDependencies to save space in the final image
 RUN pnpm prune --prod
@@ -67,9 +67,9 @@ WORKDIR /app
 RUN groupadd --system --gid 1001 toolsapi && \
     useradd --system --uid 1001 --gid toolsapi toolsapi
 
-# Copy pre-built node_modules and dist from build stage
+# Copy node_modules and source from build stage
 COPY --chown=toolsapi:toolsapi --from=build /app/node_modules ./node_modules
-COPY --chown=toolsapi:toolsapi --from=build /app/dist ./dist
+COPY --chown=toolsapi:toolsapi --from=build /app/src ./src
 COPY --chown=toolsapi:toolsapi package.json ./package.json
 
 # Workspace-agent standalone files (copied by PRE_BUILD hook in deploy.sh)
@@ -83,4 +83,4 @@ EXPOSE 5590
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD wget --no-verbose --tries=1 -O /dev/null http://127.0.0.1:5590/health || exit 1
 
-CMD ["node", "dist/boot.js"]
+CMD ["node", "src/boot.ts"]

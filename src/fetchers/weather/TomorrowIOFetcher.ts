@@ -1,9 +1,9 @@
 import CONFIG from "../../config.ts";
 import { TOMORROWIO_WEATHER_CODES } from "../../constants.ts";
 import {
-  TomorrowIORealtimeResponse,
-  TomorrowIODailyForecastResponse,
-  TomorrowIODailyForecast,
+  type TomorrowIORealtimeResponse,
+  type TomorrowIODailyForecastResponse,
+  type TomorrowIODailyForecast,
 } from "../../types/weather.ts";
 
 const { LATITUDE, LONGITUDE, TOMORROWIO_API_KEY } = CONFIG;

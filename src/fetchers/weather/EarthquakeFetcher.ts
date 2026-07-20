@@ -1,5 +1,5 @@
 import { EARTHQUAKE_MAGNITUDE_SCALE } from "../../constants.ts";
-import { EarthquakeRecord } from "../../types/weather.ts";
+import { type EarthquakeRecord } from "../../types/weather.ts";
 
 const EARTHQUAKE_FEED_URL =
   "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson";

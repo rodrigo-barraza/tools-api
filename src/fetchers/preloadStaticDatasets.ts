@@ -12,7 +12,7 @@ import { ensureLoaded as loadAirports } from "./utility/AirportFetcher.ts";
 /**
  * Eagerly load every static CSV-backed dataset at server startup.
  *
- * These datasets ship inside the build (dist/fetchers/x/data); if any file
+ * These datasets ship with the source (src/fetchers/x/data); if any file
  * is missing the load throws, startup aborts, and the Docker healthcheck
  * fails the deploy. Lazy loading instead surfaced a missing dataset as one
  * 500 followed by silent empty results on every subsequent request.

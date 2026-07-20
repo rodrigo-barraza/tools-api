@@ -1,8 +1,8 @@
 import { MILLISECONDS_PER_DAY } from "@rodrigo-barraza/utilities-library";
 import {
-  SolarWindResponse,
-  SolarWindPlasmaReading,
-  SolarWindMagReading,
+  type SolarWindResponse,
+  type SolarWindPlasmaReading,
+  type SolarWindMagReading,
 } from "../../types/weather.ts";
 
 const PLASMA_URL =

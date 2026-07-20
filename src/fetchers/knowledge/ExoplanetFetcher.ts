@@ -2,7 +2,7 @@ import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import logger from "../../logger.ts";
-import { ExoplanetRecord, FormattedPlanet } from "../../types/knowledge.ts";
+import { type ExoplanetRecord, type FormattedPlanet } from "../../types/knowledge.ts";
 
 /**
  * Exoplanet Fetcher — Static In-Memory NASA Exoplanet Archive Database

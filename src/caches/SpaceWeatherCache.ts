@@ -3,9 +3,9 @@ import { upsertCmes } from "../models/Cme.ts";
 import { upsertGeomagneticStorms } from "../models/GeomagneticStorm.ts";
 import { SOLAR_FLARE_CLASSES } from "../constants.ts";
 import {
-  SolarFlare,
-  Cme,
-  GeomagneticStorm,
+  type SolarFlare,
+  type Cme,
+  type GeomagneticStorm,
 } from "../fetchers/weather/DonkiFetcher.ts";
 
 interface CacheError {

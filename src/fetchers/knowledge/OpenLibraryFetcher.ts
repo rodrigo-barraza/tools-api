@@ -1,14 +1,14 @@
 import { stripHtml } from "@rodrigo-barraza/utilities-library";
 import { OPEN_LIBRARY_BASE_URL } from "../../constants.ts";
 import {
-  OpenLibraryAuthor,
-  OpenLibraryBookDetails,
-  OpenLibrarySearchResponse,
-  RawOpenLibraryAuthor,
-  RawOpenLibraryDoc,
-  RawOpenLibraryLink,
-  RawOpenLibrarySearchResponse,
-  RawOpenLibraryWork,
+  type OpenLibraryAuthor,
+  type OpenLibraryBookDetails,
+  type OpenLibrarySearchResponse,
+  type RawOpenLibraryAuthor,
+  type RawOpenLibraryDoc,
+  type RawOpenLibraryLink,
+  type RawOpenLibrarySearchResponse,
+  type RawOpenLibraryWork,
 } from "../../types/knowledge.ts";
 
 /**

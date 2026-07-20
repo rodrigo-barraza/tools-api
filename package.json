@@ -3,11 +3,10 @@
   "version": "0.2.0",
   "description": "Unified data aggregator API — events, market, products, trends, weather",
   "type": "module",
-  "main": "dist/boot.js",
+  "main": "src/boot.ts",
   "scripts": {
-    "start": "node dist/boot.js",
-    "dev": "tsx watch src/boot.ts",
-    "build": "rm -rf dist && tsc && cp -r src/locales dist/locales && node scripts/copy-static-data.mjs",
+    "start": "node src/boot.ts",
+    "dev": "node --watch src/boot.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
@@ -89,7 +88,6 @@
     "globals": "^17.6.0",
     "prettier": "^3.8.3",
     "supertest": "^7.2.2",
-    "tsx": "^4.22.0",
     "typescript-eslint": "^8.33.0",
     "vitest": "^4.1.5"
   },

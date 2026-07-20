@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import logger from "../../logger.ts";
-import { Exercise } from "../../types/health.ts";
+import { type Exercise } from "../../types/health.ts";
 import { normalizeSearchText } from "@rodrigo-barraza/utilities-library";
 
 /**

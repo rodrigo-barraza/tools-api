@@ -4,7 +4,7 @@
 // first-party sessions-service, both reached through portal-service,
 // joined per property so each site is reported once.
 
-import { Router, Request, Response } from "express";
+import { Router, type Request, type Response } from "express";
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import {
   getWebAnalytics,

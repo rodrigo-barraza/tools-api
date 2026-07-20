@@ -2,7 +2,7 @@ import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import logger from "../../logger.ts";
-import { WorldBankCountry, FormattedCountry } from "../../types/knowledge.ts";
+import { type WorldBankCountry, type FormattedCountry } from "../../types/knowledge.ts";
 import { normalizeSearchText } from "@rodrigo-barraza/utilities-library";
 
 /**

@@ -1,5 +1,5 @@
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
-import { Request, Response, Router } from "express";
+import { type Request, type Response, Router } from "express";
 import { stat } from "node:fs/promises";
 import { ObjectId } from "mongodb";
 import {

@@ -11,7 +11,7 @@ import {
   hslToRgb,
 } from "@rodrigo-barraza/utilities-library/color";
 // ─── Process-Based Tool Endpoints ───────────────────────────
-import { Request, Response, Router } from "express";
+import { type Request, type Response, Router } from "express";
 import {
   executeJavaScript,
   getJsInterpreterInfo,

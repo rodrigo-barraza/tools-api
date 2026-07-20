@@ -1,5 +1,5 @@
 import { createSimpleCache } from "./createSimpleCache.ts";
-import { WildfireEvent } from "../types/weather.ts";
+import { type WildfireEvent } from "../types/weather.ts";
 
 const cache = createSimpleCache<WildfireEvent[]>({
   type: "array",

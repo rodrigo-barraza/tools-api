@@ -1,7 +1,7 @@
 // ─── Music Metadata API Client ──────────────────────────────
 
 import { formatMediaTimestamp } from "@rodrigo-barraza/utilities-library";
-import { MusicArtist, MusicAlbum, MusicTrack } from "../../types/knowledge.ts";
+import { type MusicArtist, type MusicAlbum, type MusicTrack } from "../../types/knowledge.ts";
 import { USER_AGENT } from "../../constants.ts";
 
 const BASE_URL = "https://musicbrainz.org/ws/2";

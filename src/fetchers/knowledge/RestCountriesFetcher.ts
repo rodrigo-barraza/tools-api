@@ -1,5 +1,5 @@
 import { REST_COUNTRIES_BASE_URL } from "../../constants.ts";
-import { RawRestCountry, RestCountry } from "../../types/knowledge.ts";
+import { type RawRestCountry, type RestCountry } from "../../types/knowledge.ts";
 
 /**
  * Rest Countries API fetcher.

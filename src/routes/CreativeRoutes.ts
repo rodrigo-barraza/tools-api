@@ -3,7 +3,7 @@ import { IDENTITY_HEADERS, MODEL_IDS } from "@rodrigo-barraza/utilities-library/
 import PromptLocaleService from "../services/PromptLocaleService.ts";
 // ─── Image Generation & Vision ──────────────────────────────
 
-import { Request, Response, Router } from "express";
+import { type Request, type Response, Router } from "express";
 import PrismService from "../services/PrismService.ts";
 import { generateAudioWav, INSTRUMENT_PRESETS, noteToFreq } from "../services/SoundSynthesizerService.ts";
 import { resolveAudioInput, decodeAudioToPcm } from "../services/AudioInputService.ts";

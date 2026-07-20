@@ -6,7 +6,7 @@ import {
   createMessageConnection,
   StreamMessageReader,
   StreamMessageWriter,
-  MessageConnection,
+  type MessageConnection,
 } from "vscode-jsonrpc/node.js";
 import { errorMessage } from "../../utilities.ts";
 

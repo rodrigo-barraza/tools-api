@@ -952,7 +952,7 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
 // in-memory datasets, compute tools, scrapers, etc.).
 // ────────────────────────────────────────────────────────────
 
-import CONFIG, { ToolsServiceConfig } from "../config.ts";
+import CONFIG, { type ToolsServiceConfig } from "../config.ts";
 import logger from "../logger.ts";
 import { existsSync } from "fs";
 import { fileURLToPath } from "url";
@@ -1085,7 +1085,7 @@ const TOOL_REQUIRED_KEYS = {
 // ────────────────────────────────────────────────────────────
 // Static Data File Gating — disables tools whose backing
 // CSV/data files are missing at runtime (e.g. when the Docker
-// build fails to copy the data/ directories into dist/).
+// image ships without the src/**/data directories).
 // Paths are relative to the project src/ root.
 // ────────────────────────────────────────────────────────────
 

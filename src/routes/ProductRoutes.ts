@@ -1,6 +1,6 @@
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { parseIntParam } from "@rodrigo-barraza/utilities-library";
-import { Request, Response, Router } from "express";
+import { type Request, type Response, Router } from "express";
 import logger from "../logger.ts";
 import { getRecentProducts, searchProducts } from "../models/Product.ts";
 import {

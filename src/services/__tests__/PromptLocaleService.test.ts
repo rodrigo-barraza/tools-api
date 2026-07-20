@@ -9,22 +9,14 @@ import { fileURLToPath } from "url";
 // Verifies that:
 //   1. All locale JSON files are valid JSON and load without errors
 //   2. Tool descriptions and parameter descriptions have locale keys
-//   3. The dist/ output contains locale files after build
-//   4. Critical prompt keys exist and are non-empty
+//   3. Critical prompt keys exist and are non-empty
+// (The runtime executes src/ directly — locales are read from
+// src/locales, so there is no dist/ copy to verify.)
 
 const LOCALES_DIRECTORY = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "..",
   "..",
-  "locales",
-);
-
-const DIST_LOCALES_DIRECTORY = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "..",
-  "..",
-  "..",
-  "dist",
   "locales",
 );
 
@@ -213,32 +205,6 @@ describe("PromptLocaleService — No Value Contains [MISSING:]", () => {
       }
     }
     expect(missingValueKeys).toEqual([]);
-  });
-});
-
-describe("PromptLocaleService — dist/ Production Build", () => {
-  it("should have locale files copied to dist/locales/en/ after build", () => {
-    if (!fs.existsSync(DIST_LOCALES_DIRECTORY)) {
-      return;
-    }
-    const distEnglishLocaleDirectory = path.join(DIST_LOCALES_DIRECTORY, "en");
-    expect(fs.existsSync(distEnglishLocaleDirectory)).toBe(true);
-
-    const distLocaleKeys = loadAllLocaleKeys(distEnglishLocaleDirectory);
-    expect(distLocaleKeys.size).toBeGreaterThan(0);
-
-    // Verify critical keys exist in the dist build
-    expect(distLocaleKeys.has("tools.read_url.description")).toBe(true);
-    expect(distLocaleKeys.has("tools.search_web.description")).toBe(true);
-    expect(distLocaleKeys.has("prompts.creative.image.result-success")).toBe(true);
-  });
-
-  it("should have identical key counts between src and dist locales", () => {
-    if (!fs.existsSync(DIST_LOCALES_DIRECTORY)) return;
-
-    const sourceKeys = loadAllLocaleKeys(path.join(LOCALES_DIRECTORY, "en"));
-    const distKeys = loadAllLocaleKeys(path.join(DIST_LOCALES_DIRECTORY, "en"));
-    expect(distKeys.size).toBe(sourceKeys.size);
   });
 });
 

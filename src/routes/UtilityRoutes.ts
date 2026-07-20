@@ -3,7 +3,7 @@ import {
   setupStreamingServerSentEvents,
 } from "@rodrigo-barraza/utilities-library/express";
 import { validateMaxLength, MILLISECONDS_PER_HOUR } from "@rodrigo-barraza/utilities-library";
-import { Request, Response, Router } from "express";
+import { type Request, type Response, Router } from "express";
 import BigNumber from "bignumber.js";
 import CONFIG from "../config.ts";
 import {

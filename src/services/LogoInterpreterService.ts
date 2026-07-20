@@ -69,18 +69,19 @@ const LOGO_COLOR_PALETTE: Record<number, string> = {
 
 // ─── Tokenizer ──────────────────────────────────────────────────────
 
-enum LogoTokenType {
-  Word = "word",
-  Number = "number",
-  Variable = "variable",       // :varname
-  QuotedWord = "quoted",       // "word
-  OpenBracket = "open_bracket",
-  CloseBracket = "close_bracket",
-  OpenParen = "open_paren",
-  CloseParen = "close_paren",
-  Operator = "operator",       // + - * / = < > <= >= <>
-  Newline = "newline",
-}
+const LogoTokenType = {
+  Word: "word",
+  Number: "number",
+  Variable: "variable",       // :varname
+  QuotedWord: "quoted",       // "word
+  OpenBracket: "open_bracket",
+  CloseBracket: "close_bracket",
+  OpenParen: "open_paren",
+  CloseParen: "close_paren",
+  Operator: "operator",       // + - * / = < > <= >= <>
+  Newline: "newline",
+} as const;
+type LogoTokenType = (typeof LogoTokenType)[keyof typeof LogoTokenType];
 
 interface LogoToken {
   type: LogoTokenType;
@@ -299,9 +300,11 @@ function isDelimiterCharacter(character: string): boolean {
 // ─── Errors ─────────────────────────────────────────────────────────
 
 class LogoSyntaxError extends Error {
-  constructor(message: string, public readonly line: number) {
+  public readonly line: number;
+  constructor(message: string, line: number) {
     super(`Syntax error on line ${line}: ${message}`);
     this.name = "LogoSyntaxError";
+    this.line = line;
   }
 }
 
@@ -317,7 +320,10 @@ class LogoStopSignal {
 }
 
 class LogoOutputSignal {
-  constructor(public readonly value: number | string) {}
+  public readonly value: number | string;
+  constructor(value: number | string) {
+    this.value = value;
+  }
 }
 
 // ─── Executor ───────────────────────────────────────────────────────

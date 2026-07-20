@@ -1,4 +1,4 @@
-import { Launch, RawLaunch } from "../../types/weather.ts";
+import { type Launch, type RawLaunch } from "../../types/weather.ts";
 
 const LL2_URL =
   "https://ll.thespacedevs.com/2.3.0/launches/upcoming/?format=json&limit=10&mode=list";

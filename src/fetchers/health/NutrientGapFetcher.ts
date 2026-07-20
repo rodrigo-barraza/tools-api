@@ -16,7 +16,7 @@
 import { searchFoods } from "./NutritionFetcher.ts";
 import {
   calculateTargetProfile,
-  TargetProfileResult,
+  type TargetProfileResult,
 } from "./NutritionRequirementFetcher.ts";
 import {
   NUTRITION_MACRO_FIELDS,

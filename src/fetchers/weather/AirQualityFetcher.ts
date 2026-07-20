@@ -1,5 +1,5 @@
 import CONFIG from "../../config.ts";
-import { AirQuality } from "../../types/weather.ts";
+import { type AirQuality } from "../../types/weather.ts";
 
 const { LATITUDE, LONGITUDE, TIMEZONE } = CONFIG;
 

@@ -2,7 +2,7 @@ import { AGENT_IDS, DEFAULT_PROJECT, IDENTITY_HEADERS } from "@rodrigo-barraza/u
 import { asyncHandler } from "@rodrigo-barraza/utilities-library/express";
 import { parseIntParam } from "@rodrigo-barraza/utilities-library";
 // ─── File System & Web Interaction Endpoints ────────────────
-import { Request, Response, Router } from "express";
+import { type Request, type Response, Router } from "express";
 import CONFIG from "../config.ts";
 import logger from "../logger.ts";
 import { agenticHandler, errorMessage } from "../utilities.ts";

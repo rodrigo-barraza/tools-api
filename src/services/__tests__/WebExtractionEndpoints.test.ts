@@ -4,7 +4,7 @@ describe("ToolSchemaService", () => {
   let getToolSchemas: any;
 
   it("loads tool schemas", async () => {
-    const mod = await import("../ToolSchemaService.js") as any;
+    const mod = await import("../ToolSchemaService.ts") as any;
     getToolSchemas = mod.getToolSchemas;
     const tools = getToolSchemas();
     expect(tools.length > 100, `expected >100 tools, got ${tools.length}`).toBeTruthy();

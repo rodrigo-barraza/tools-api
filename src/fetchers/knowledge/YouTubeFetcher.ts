@@ -2,11 +2,11 @@
 
 import { YoutubeTranscript } from "youtube-transcript";
 import {
-  YouTubeVideoInfo,
-  YouTubeOembed,
-  YouTubePageMetadata,
-  YouTubeTranscriptResult,
-  YouTubeTranscriptSegment,
+  type YouTubeVideoInfo,
+  type YouTubeOembed,
+  type YouTubePageMetadata,
+  type YouTubeTranscriptResult,
+  type YouTubeTranscriptSegment,
 } from "../../types/knowledge.ts";
 import { errorMessage, randomUserAgent } from "../../utilities.ts";
 

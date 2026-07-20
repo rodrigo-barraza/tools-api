@@ -2,7 +2,7 @@ import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import logger from "../../logger.ts";
-import { DrugProduct, RawDrugRow } from "../../types/health.ts";
+import { type DrugProduct, type RawDrugRow } from "../../types/health.ts";
 import { errorMessage } from "../../utilities.ts";
 import { normalizeSearchText } from "@rodrigo-barraza/utilities-library";
 
