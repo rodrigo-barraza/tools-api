@@ -50,7 +50,7 @@ describe("sample preset library", () => {
     expect(isSamplePresetRef(" Preset:BELL ")).toBe(true);
     expect(isSamplePresetRef("https://example.com/a.wav")).toBe(false);
 
-    await expect(resolveSamplePreset("preset:banjo", 44100)).rejects.toThrow(
+    await expect(resolveSamplePreset("preset:didgeridoo", 44100)).rejects.toThrow(
       /Valid presets: .*guitar_pluck/,
     );
   });

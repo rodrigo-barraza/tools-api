@@ -27,6 +27,7 @@ interface SamplePresetDefinition {
 }
 
 export const SAMPLE_PRESETS: Record<string, SamplePresetDefinition> = {
+  // Drum kit
   kick: { file: "kick.wav", rootNote: "C4", kind: "drum" },
   snare: { file: "snare.wav", rootNote: "C4", kind: "drum" },
   hat: { file: "hat.wav", rootNote: "C4", kind: "drum" },
@@ -35,12 +36,62 @@ export const SAMPLE_PRESETS: Record<string, SamplePresetDefinition> = {
   tom: { file: "tom.wav", rootNote: "C4", kind: "drum" },
   rim: { file: "rim.wav", rootNote: "C4", kind: "drum" },
   crash: { file: "crash.wav", rootNote: "C4", kind: "drum" },
+  ride: { file: "ride.wav", rootNote: "C4", kind: "drum" },
+  // Auxiliary percussion
+  tambourine: { file: "tambourine.wav", rootNote: "C4", kind: "drum" },
+  shaker: { file: "shaker.wav", rootNote: "C4", kind: "drum" },
+  cowbell: { file: "cowbell.wav", rootNote: "C4", kind: "drum" },
+  woodblock: { file: "woodblock.wav", rootNote: "C4", kind: "drum" },
+  triangle: { file: "triangle.wav", rootNote: "C4", kind: "drum" },
+  conga: { file: "conga.wav", rootNote: "C4", kind: "drum" },
+  bongo: { file: "bongo.wav", rootNote: "C4", kind: "drum" },
+  claves: { file: "claves.wav", rootNote: "C4", kind: "drum" },
+  // Plucked & struck strings
   guitar_pluck: { file: "guitar_pluck.wav", rootNote: "C3", kind: "melodic" },
+  nylon_guitar: { file: "nylon_guitar.wav", rootNote: "C3", kind: "melodic" },
   bass_pluck: { file: "bass_pluck.wav", rootNote: "C2", kind: "melodic" },
+  harp: { file: "harp.wav", rootNote: "C4", kind: "melodic" },
+  banjo: { file: "banjo.wav", rootNote: "C3", kind: "melodic" },
+  mandolin: { file: "mandolin.wav", rootNote: "C4", kind: "melodic" },
+  harpsichord: { file: "harpsichord.wav", rootNote: "C4", kind: "melodic" },
+  piano: { file: "piano.wav", rootNote: "C4", kind: "melodic" },
   epiano: { file: "epiano.wav", rootNote: "C4", kind: "melodic" },
+  // Mallets, bells & tuned percussion
   marimba: { file: "marimba.wav", rootNote: "C4", kind: "melodic" },
+  vibraphone: { file: "vibraphone.wav", rootNote: "C4", kind: "melodic" },
+  xylophone: { file: "xylophone.wav", rootNote: "C5", kind: "melodic" },
+  glockenspiel: { file: "glockenspiel.wav", rootNote: "C6", kind: "melodic" },
+  kalimba: { file: "kalimba.wav", rootNote: "C4", kind: "melodic" },
   bell: { file: "bell.wav", rootNote: "C5", kind: "melodic" },
+  tubular_bell: { file: "tubular_bell.wav", rootNote: "C5", kind: "melodic" },
+  music_box: { file: "music_box.wav", rootNote: "C6", kind: "melodic" },
+  steel_drum: { file: "steel_drum.wav", rootNote: "C4", kind: "melodic" },
+  timpani: { file: "timpani.wav", rootNote: "C2", kind: "melodic" },
+  // Bowed strings & voices
+  violin: { file: "violin.wav", rootNote: "C5", kind: "melodic" },
+  cello: { file: "cello.wav", rootNote: "C3", kind: "melodic" },
+  strings: { file: "strings.wav", rootNote: "C4", kind: "melodic" },
+  choir: { file: "choir.wav", rootNote: "C4", kind: "melodic" },
+  // Winds & brass
+  flute: { file: "flute.wav", rootNote: "C5", kind: "melodic" },
+  clarinet: { file: "clarinet.wav", rootNote: "C4", kind: "melodic" },
+  trumpet: { file: "trumpet.wav", rootNote: "C4", kind: "melodic" },
+  brass: { file: "brass.wav", rootNote: "C3", kind: "melodic" },
+  // Organs & reeds
+  organ: { file: "organ.wav", rootNote: "C4", kind: "melodic" },
+  church_organ: { file: "church_organ.wav", rootNote: "C3", kind: "melodic" },
+  accordion: { file: "accordion.wav", rootNote: "C4", kind: "melodic" },
 };
+
+/** Preset names grouped by kind — for docs and error messages. */
+export function samplePresetSummary(): string {
+  const drums = Object.keys(SAMPLE_PRESETS).filter((name) => SAMPLE_PRESETS[name].kind === "drum");
+  const melodic = Object.keys(SAMPLE_PRESETS).filter((name) => SAMPLE_PRESETS[name].kind === "melodic");
+  return (
+    `Drums/percussion (play with KICK-style trigger rows or any note): ${drums.join(", ")}. ` +
+    `Melodic (repitched by note rows): ${melodic.join(", ")}.`
+  );
+}
 
 export function listSamplePresets(): string[] {
   return Object.keys(SAMPLE_PRESETS);
@@ -69,9 +120,7 @@ export async function resolveSamplePreset(
   if (!definition) {
     throw new Error(
       `Unknown sample preset '${presetName}'. Valid presets: ${listSamplePresets().join(", ")}. ` +
-        `Drums (play with KICK-style trigger rows or any note): kick, snare, hat, hat_open, ` +
-        `clap, tom, rim, crash. Melodic (repitched by note rows): guitar_pluck, bass_pluck, ` +
-        `epiano, marimba, bell.`,
+        samplePresetSummary(),
     );
   }
 
