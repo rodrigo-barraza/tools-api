@@ -1205,7 +1205,10 @@ export function getCreativeTools(
     endpoint: {
       method: "POST",
       path: "/creative/generate-image",
-      bodyParams: ["prompt", "referenceImages", "transparentBackground", "aspectRatio", "size"],
+      // referenceLabels is orchestrator-injected (parsed from the message's
+      // attached-reference-images block), never agent-supplied — so it is a
+      // body param but not an LLM-schema parameter.
+      bodyParams: ["prompt", "referenceImages", "referenceLabels", "transparentBackground", "aspectRatio", "size"],
     },
     parameters: {
       type: "object",

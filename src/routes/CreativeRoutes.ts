@@ -276,7 +276,7 @@ const VISION_CACHE_TTL_MS = 5 * 60 * 1000;
 router.post(
   "/generate-image",
   asyncHandler(async (req: Request, res: Response) => {
-    const { prompt, referenceImages, transparentBackground, aspectRatio, size } = req.body;
+    const { prompt, referenceImages, referenceLabels, transparentBackground, aspectRatio, size } = req.body;
 
     if (!prompt) {
       return res
@@ -325,13 +325,44 @@ router.post(
         ? PromptLocaleService.get("en", "prompts.creative.image.greenscreen-directive")
         : null;
 
+      // Ordinal manifest binding each reference image to its label (who or
+      // what it is). The images arrive as anonymous inline parts in attach
+      // order — without this the model binds prompt names to faces by
+      // guesswork. Prepended at message-build time so safety softening
+      // still sees the raw prompt.
+      const labels: string[] = Array.isArray(referenceLabels)
+        ? referenceLabels.map((label: unknown) =>
+            typeof label === "string" ? label.trim() : "",
+          )
+        : [];
+      const referenceManifest =
+        referenceImages?.length > 0 && labels.some((label) => label)
+          ? [
+              PromptLocaleService.get(
+                "en",
+                "prompts.creative.image.reference-manifest-header",
+              ),
+              ...(referenceImages as string[]).map(
+                (_reference, index) =>
+                  `${index + 1}. ${
+                    labels[index] ||
+                    PromptLocaleService.get(
+                      "en",
+                      "prompts.creative.image.reference-manifest-unlabeled",
+                    )
+                  }`,
+              ),
+            ].join("\n")
+          : null;
+
       for (let attempt = 0; attempt <= MAX_SAFETY_RETRIES; attempt++) {
+        const promptWithDirectives = `${
+          referenceManifest ? `${referenceManifest}\n\n` : ""
+        }${currentPrompt}${greenscreenDirective ? `\n\n${greenscreenDirective}` : ""}`;
         const messages = [
           {
             role: "user",
-            content: greenscreenDirective
-              ? `${currentPrompt}\n\n${greenscreenDirective}`
-              : currentPrompt,
+            content: promptWithDirectives,
             ...(referenceImages?.length > 0 && { images: referenceImages }),
           },
         ];
