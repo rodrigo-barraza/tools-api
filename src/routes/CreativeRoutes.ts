@@ -325,24 +325,52 @@ router.post(
         ? PromptLocaleService.get("en", "prompts.creative.image.greenscreen-directive")
         : null;
 
+      // referenceImages entries may be bare URL strings or {url, label}
+      // objects (the agent-facing schema); the orchestrator normally
+      // resolves them to an aligned string[] + referenceLabels, but
+      // normalize here too so the route stands alone for direct callers.
+      // An explicit referenceLabels[i] wins over an entry's own label.
+      const rawLabels: unknown[] = Array.isArray(referenceLabels)
+        ? referenceLabels
+        : [];
+      const referenceUrls: string[] = [];
+      const labels: string[] = [];
+      if (Array.isArray(referenceImages)) {
+        referenceImages.forEach((entry: unknown, index: number) => {
+          let url: string | null = null;
+          let entryLabel = "";
+          if (typeof entry === "string") {
+            url = entry;
+          } else if (entry && typeof entry === "object") {
+            const candidate = entry as { url?: unknown; label?: unknown };
+            if (typeof candidate.url === "string") url = candidate.url;
+            if (typeof candidate.label === "string")
+              entryLabel = candidate.label.trim();
+          }
+          if (!url) return;
+          const explicitLabel = rawLabels[index];
+          referenceUrls.push(url);
+          labels.push(
+            typeof explicitLabel === "string" && explicitLabel.trim()
+              ? explicitLabel.trim()
+              : entryLabel,
+          );
+        });
+      }
+
       // Ordinal manifest binding each reference image to its label (who or
       // what it is). The images arrive as anonymous inline parts in attach
       // order — without this the model binds prompt names to faces by
       // guesswork. Prepended at message-build time so safety softening
       // still sees the raw prompt.
-      const labels: string[] = Array.isArray(referenceLabels)
-        ? referenceLabels.map((label: unknown) =>
-            typeof label === "string" ? label.trim() : "",
-          )
-        : [];
       const referenceManifest =
-        referenceImages?.length > 0 && labels.some((label) => label)
+        referenceUrls.length > 0 && labels.some((label) => label)
           ? [
               PromptLocaleService.get(
                 "en",
                 "prompts.creative.image.reference-manifest-header",
               ),
-              ...(referenceImages as string[]).map(
+              ...referenceUrls.map(
                 (_reference, index) =>
                   `${index + 1}. ${
                     labels[index] ||
@@ -363,14 +391,14 @@ router.post(
           {
             role: "user",
             content: promptWithDirectives,
-            ...(referenceImages?.length > 0 && { images: referenceImages }),
+            ...(referenceUrls.length > 0 && { images: referenceUrls }),
           },
         ];
 
         // When reference images are present, instruct the image model to
         // preserve and edit them rather than re-imagining from scratch.
         const systemPrompt =
-          referenceImages?.length > 0
+          referenceUrls.length > 0
             ? PromptLocaleService.get("en", "prompts.creative.image.editing-system-prompt")
             : undefined;
 

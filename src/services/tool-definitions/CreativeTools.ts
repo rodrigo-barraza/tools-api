@@ -1219,7 +1219,24 @@ export function getCreativeTools(
         },
         referenceImages: {
           type: "array",
-          items: { type: "string" },
+          items: {
+            type: "object",
+            properties: {
+              url: {
+                type: "string",
+                description: translate(
+                  "generate_image.params.referenceImages.url",
+                ),
+              },
+              label: {
+                type: "string",
+                description: translate(
+                  "generate_image.params.referenceImages.label",
+                ),
+              },
+            },
+            required: ["url"],
+          },
           description: translate("generate_image.params.referenceImages"),
         },
         transparentBackground: {
