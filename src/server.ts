@@ -7,6 +7,11 @@ import express, {
 import logger from "./logger.ts";
 import CONFIG, { applyLocation } from "./config.ts";
 import { connectDatabase } from "@rodrigo-barraza/utilities-library/service/mongo";
+import {
+  installExternalApiUsageTracking,
+  setupExternalApiUsageCollection,
+  flushExternalApiUsageNow,
+} from "./services/ExternalApiUsageService.ts";
 import { initLocation } from "./services/LocationService.ts";
 import {
   requestLoggerMiddleware,
@@ -215,6 +220,10 @@ app.get("/health", async (_req: Request, res: Response) => {
 // ─── Startup ───────────────────────────────────────────────────────
 
 async function start() {
+  // Count outbound third-party calls from the very first fetch — counts
+  // buffer in memory until Mongo connects, then flush on an interval.
+  installExternalApiUsageTracking();
+
   // Fail fast if the static CSV datasets didn't ship with the build — a
   // missing file must abort startup (the healthcheck fails the deploy),
   // not surface later as empty tool results.
@@ -262,6 +271,7 @@ async function start() {
       setupToolCallsCollection(),
 
       setupRequestsCollection(),
+      setupExternalApiUsageCollection(),
       setupAgenticTaskCollection(),
       setupAgenticDatastoreCollection(),
       setupAgenticScheduleCollection(),
@@ -330,9 +340,14 @@ async function start() {
 
 import { killAll as killAllBackgroundProcesses } from "./services/BackgroundProcessRegistry.ts";
 
-function gracefulShutdown(signal: string) {
+async function gracefulShutdown(signal: string) {
   logger.info(`[Server] Received ${signal}, terminating active background tasks...`);
   killAllBackgroundProcesses();
+  // Best-effort: persist buffered external-API usage counts (2s cap).
+  await Promise.race([
+    flushExternalApiUsageNow().catch(() => undefined),
+    new Promise((resolve) => setTimeout(resolve, 2_000)),
+  ]);
   process.exit(0);
 }
 
