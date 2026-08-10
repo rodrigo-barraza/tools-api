@@ -339,10 +339,18 @@ async function start() {
 // ─── Graceful Shutdown Hooks ────────────────────────────────────────
 
 import { killAll as killAllBackgroundProcesses } from "./services/BackgroundProcessRegistry.ts";
+import { agenticLspShutdown } from "./services/AgenticLspService.ts";
+import { agenticDebugShutdown } from "./services/AgenticDebugService.ts";
 
 async function gracefulShutdown(signal: string) {
   logger.info(`[Server] Received ${signal}, terminating active background tasks...`);
   killAllBackgroundProcesses();
+  // Language servers and debug adapters are child processes — reap them so a
+  // restart never leaves orphaned tsserver/debugpy processes behind (2s cap).
+  await Promise.race([
+    Promise.allSettled([agenticLspShutdown(), agenticDebugShutdown()]),
+    new Promise((resolve) => setTimeout(resolve, 2_000)),
+  ]);
   // Best-effort: persist buffered external-API usage counts (2s cap).
   await Promise.race([
     flushExternalApiUsageNow().catch(() => undefined),

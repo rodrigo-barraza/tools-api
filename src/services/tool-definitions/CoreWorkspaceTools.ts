@@ -81,16 +81,17 @@ export function getCoreWorkspaceTools(
       filePathParam: "path",
     },
   },
-  // Batch mode (edits[]) follows Claude Code's MultiEdit contract: ordered
-  // string replacements applied as one all-or-nothing transaction.
+  // Hash-anchored edits (oh-my-pi hashline contract): every edit references
+  // a `line:hash` anchor from a hashline read; drifted anchors reject the
+  // whole batch with fresh context, replacing brittle str_replace matching.
   {
     name: "replace_in_file",
     dataSource: compute("sandboxed fs"),
     description: translate("replace_in_file.description"),
     endpoint: {
       method: "POST",
-      path: "/agentic/file/str-replace",
-      bodyParams: ["path", "oldString", "newString", "allowMultiple", "edits"],
+      path: "/agentic/file/edit",
+      bodyParams: ["path", "edits"],
     },
     parameters: {
       type: "object",
@@ -99,42 +100,35 @@ export function getCoreWorkspaceTools(
           type: "string",
           description: translate("replace_in_file.params.path"),
         },
-        oldString: {
-          type: "string",
-          description: translate("replace_in_file.params.oldString"),
-        },
-        newString: {
-          type: "string",
-          description: translate("replace_in_file.params.newString"),
-        },
-        allowMultiple: {
-          type: "boolean",
-          description: translate("replace_in_file.params.allowMultiple"),
-        },
         edits: {
           type: "array",
           items: {
             type: "object",
             properties: {
-              oldString: {
+              anchor: {
                 type: "string",
-                description: translate("replace_in_file.params.oldString"),
+                description: translate("replace_in_file.params.anchor"),
               },
-              newString: {
+              endAnchor: {
                 type: "string",
-                description: translate("replace_in_file.params.newString"),
+                description: translate("replace_in_file.params.endAnchor"),
               },
-              allowMultiple: {
-                type: "boolean",
-                description: translate("replace_in_file.params.allowMultiple"),
+              op: {
+                type: "string",
+                enum: ["replace", "insert_after", "delete"],
+                description: translate("replace_in_file.params.op"),
+              },
+              content: {
+                type: "string",
+                description: translate("replace_in_file.params.content"),
               },
             },
-            required: ["oldString", "newString"],
+            required: ["anchor"],
           },
           description: translate("replace_in_file.params.edits"),
         },
       },
-      required: ["path"],
+      required: ["path", "edits"],
     },
     display: {
       activeVerb: "Editing",
@@ -609,7 +603,7 @@ export function getCoreWorkspaceTools(
     endpoint: {
       method: "POST",
       path: "/agentic/lsp/action",
-      bodyParams: ["operation", "filePath", "line", "character"],
+      bodyParams: ["operation", "filePath", "line", "character", "newName"],
     },
     parameters: {
       type: "object",
@@ -623,6 +617,7 @@ export function getCoreWorkspaceTools(
             "hover",
             "documentSymbol",
             "goToImplementation",
+            "rename",
           ],
           description: translate("code_intel.params.operation"),
         },
@@ -638,6 +633,10 @@ export function getCoreWorkspaceTools(
           type: "integer",
           description: translate("code_intel.params.character"),
         },
+        newName: {
+          type: "string",
+          description: translate("code_intel.params.newName"),
+        },
       },
       required: ["operation", "filePath"],
     },
@@ -647,6 +646,141 @@ export function getCoreWorkspaceTools(
       subjectParam: "filePath",
       subjectFormat: "basename",
       filePathParam: "filePath",
+    },
+  },
+  // Minimal Debug Adapter Protocol client (debugpy). Sessions are keyed by
+  // id with a hard lifetime timeout; launch → inspect → terminate.
+  {
+    name: "debug",
+    dataSource: compute("DAP debug adapter (debugpy)"),
+    description: translate("debug.description"),
+    endpoint: {
+      method: "POST",
+      path: "/agentic/debug/action",
+      bodyParams: [
+        "action",
+        "sessionId",
+        "program",
+        "args",
+        "cwd",
+        "breakpoints",
+        "expression",
+        "frameId",
+        "variablesReference",
+      ],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        action: {
+          type: "string",
+          enum: [
+            "launch",
+            "continue",
+            "next",
+            "stepIn",
+            "stepOut",
+            "stackTrace",
+            "evaluate",
+            "variables",
+            "terminate",
+            "list",
+          ],
+          description: translate("debug.params.action"),
+        },
+        sessionId: {
+          type: "string",
+          description: translate("debug.params.sessionId"),
+        },
+        program: {
+          type: "string",
+          description: translate("debug.params.program"),
+        },
+        args: {
+          type: "array",
+          items: { type: "string" },
+          description: translate("debug.params.args"),
+        },
+        cwd: {
+          type: "string",
+          description: translate("debug.params.cwd"),
+        },
+        breakpoints: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              file: {
+                type: "string",
+                description: translate("debug.params.breakpoints.file"),
+              },
+              line: {
+                type: "integer",
+                description: translate("debug.params.breakpoints.line"),
+              },
+            },
+            required: ["file", "line"],
+          },
+          description: translate("debug.params.breakpoints"),
+        },
+        expression: {
+          type: "string",
+          description: translate("debug.params.expression"),
+        },
+        frameId: {
+          type: "integer",
+          description: translate("debug.params.frameId"),
+        },
+        variablesReference: {
+          type: "integer",
+          description: translate("debug.params.variablesReference"),
+        },
+      },
+      required: ["action"],
+    },
+    display: {
+      activeVerb: "Debugging",
+      completedVerb: "Debugged",
+      subjectParam: "action",
+      subjectFormat: "full",
+    },
+  },
+  // Two-step atomic commit splitting: propose groups the dirty worktree into
+  // independent commits; confirm executes them. Never commits on first call.
+  {
+    name: "commit_split",
+    dataSource: compute("git subprocess"),
+    description: translate("commit_split.description"),
+    endpoint: {
+      method: "POST",
+      path: "/agentic/git/commit-split",
+      bodyParams: ["action", "path", "proposalId"],
+    },
+    parameters: {
+      type: "object",
+      properties: {
+        action: {
+          type: "string",
+          enum: ["propose", "confirm"],
+          description: translate("commit_split.params.action"),
+        },
+        path: {
+          type: "string",
+          description: translate("commit_split.params.path"),
+        },
+        proposalId: {
+          type: "string",
+          description: translate("commit_split.params.proposalId"),
+        },
+      },
+      required: ["action", "path"],
+    },
+    display: {
+      activeVerb: "Splitting",
+      completedVerb: "Split",
+      subjectParam: "path",
+      subjectFormat: "basename",
+      filePathParam: "path",
     },
   },
   {

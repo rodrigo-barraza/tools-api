@@ -22,6 +22,12 @@ import type {
 export type { DirectoryEntry, TreeEntry, GlobMatch, FileInfoEntry };
 import { requestLocalStorage } from "@rodrigo-barraza/utilities-library/service";
 import PromptLocaleService from "./PromptLocaleService.ts";
+import {
+  lineHash,
+  formatHashline,
+  formatHashlines,
+  parseAnchor,
+} from "../utilities/hashline.ts";
 // ─── Sandboxed File Operations ──────────────────────────────
 
 import {
@@ -430,6 +436,14 @@ export async function agenticReadFile(
       };
     }
 
+    // Summarized read by default for large files: a whole-file read of a file
+    // exceeding the per-read line cap returns head + tail + a structural
+    // outline instead of the first 800 lines. Explicit ranges are always
+    // served exactly.
+    if (!startLine && !endLine && totalLines > WORKSPACE_MAX_LINES_PER_READ) {
+      return summarizedRead(resolved, allLines, stats.size);
+    }
+
     // Apply line range
     const start = startLine ? Math.max(1, startLine) : 1;
     let end = endLine ? Math.min(totalLines, endLine) : totalLines;
@@ -442,9 +456,7 @@ export async function agenticReadFile(
     }
 
     const selectedLines = allLines.slice(start - 1, end);
-    const numberedContent = selectedLines
-      .map((line: string, i: number) => `${start + i}: ${line}`)
-      .join("\n");
+    const hashlineContent = formatHashlines(selectedLines, start);
 
     const truncated = end < totalLines;
     return {
@@ -454,6 +466,7 @@ export async function agenticReadFile(
       startLine: start,
       endLine: Math.min(end, totalLines),
       linesReturned: selectedLines.length,
+      lineFormat: "hashline",
       truncated,
       ...(truncated
         ? {
@@ -463,7 +476,7 @@ export async function agenticReadFile(
             nextStartLine: end + 1,
           }
         : {}),
-      content: numberedContent,
+      content: hashlineContent,
     };
   } catch (error: unknown) {
     const nodeError = error as NodeJS.ErrnoException;
@@ -472,6 +485,76 @@ export async function agenticReadFile(
     }
     return { error: `Read failed: ${errorMessage(error)}` };
   }
+}
+
+// ── Summarized reads ─────────────────────────────────────────
+
+const SUMMARY_HEAD_LINES = 200;
+const SUMMARY_TAIL_LINES = 100;
+const SUMMARY_MAX_OUTLINE_LINES = 200;
+
+// Column-0 declaration starts across the languages the workspace tools see.
+// Deliberately conservative: an outline that misses a symbol still points the
+// model at the right region; one that drowns in noise does not.
+const OUTLINE_PATTERN =
+  /^(export\s|import\s|function\s|async function\s|class\s|interface\s|type\s+[\w$]+\s*=|enum\s|const\s+[\w$]+|def\s+[\w$]|async def\s+[\w$]|fn\s+[\w$]|pub\s|impl[\s<]|struct\s+[\w$]|trait\s+[\w$]|func\s+[\w$]|package\s|namespace\s|module\s|router\.|describe\(|#{1,6}\s)/;
+
+/**
+ * Default whole-file read for files larger than the per-read cap: exact head
+ * and tail plus a structural outline of the omitted middle, all in hashline
+ * format so any shown line is a valid edit anchor. Deterministic for a given
+ * file content. Explicit startLine/endLine re-reads serve exact ranges.
+ */
+function summarizedRead(
+  resolved: string,
+  allLines: string[],
+  sizeBytes: number,
+) {
+  const totalLines = allLines.length;
+  const headEnd = SUMMARY_HEAD_LINES;
+  const tailStart = totalLines - SUMMARY_TAIL_LINES + 1;
+
+  const head = formatHashlines(allLines.slice(0, headEnd), 1);
+  const tail = formatHashlines(
+    allLines.slice(tailStart - 1),
+    tailStart,
+  );
+
+  // Outline of the omitted middle region only
+  const outline: string[] = [];
+  let outlineTruncated = false;
+  for (let index = headEnd; index < tailStart - 1; index++) {
+    if (!OUTLINE_PATTERN.test(allLines[index])) continue;
+    if (outline.length >= SUMMARY_MAX_OUTLINE_LINES) {
+      outlineTruncated = true;
+      break;
+    }
+    outline.push(formatHashline(index + 1, allLines[index]));
+  }
+
+  const omittedStart = headEnd + 1;
+  const omittedEnd = tailStart - 1;
+  const separatorTop = `⋯ [lines ${omittedStart}–${omittedEnd} omitted (${omittedEnd - omittedStart + 1} lines) — structural outline below; re-read any range with startLine/endLine] ⋯`;
+  const separatorBottom = outlineTruncated
+    ? `⋯ [outline capped at ${SUMMARY_MAX_OUTLINE_LINES} entries — tail follows] ⋯`
+    : "⋯ [end of outline — tail follows] ⋯";
+
+  return {
+    filePath: resolved,
+    totalLines,
+    totalBytes: sizeBytes,
+    startLine: 1,
+    endLine: totalLines,
+    lineFormat: "hashline",
+    summarized: true,
+    omitted: { startLine: omittedStart, endLine: omittedEnd },
+    outlineLines: outline.length,
+    outlineTruncated,
+    message: PromptLocaleService.get("en", "prompts.file.summarized-read"),
+    content: [head, separatorTop, outline.join("\n"), separatorBottom, tail]
+      .filter((part) => part.length > 0)
+      .join("\n"),
+  };
 }
 
 /**
@@ -506,7 +589,7 @@ async function readOversizedRange(
         reachedEof = false;
         break;
       }
-      collected.push(`${lineNo}: ${line}`);
+      collected.push(formatHashline(lineNo, line));
     }
   } finally {
     rl.close();
@@ -516,6 +599,7 @@ async function readOversizedRange(
     totalLines: reachedEof ? lineNo : null,
     totalBytes: sizeBytes,
     oversized: true,
+    lineFormat: "hashline",
     startLine: start,
     endLine: Math.min(end, lineNo),
     linesReturned: collected.length,
@@ -590,125 +674,57 @@ export async function agenticWriteFile(
   }
 }
 
-/**
- * Perform a targeted string replacement in a file.
- * The `oldString` must match exactly (including whitespace).
- */
-export async function agenticStringReplace(
-  filePath: string,
-  oldString: string,
-  newString: string,
-  { allowMultiple = false }: { allowMultiple?: boolean } = {},
-) {
-  // Agent routing
-  const agentResult = await tryAgentRoute(
-    "file.strReplace",
-    { path: filePath, oldString, newString, allowMultiple },
-    filePath,
-  );
-  if (agentResult !== NO_AGENT) return agentResult as Record<string, unknown>;
+// ── Hash-anchored editing ────────────────────────────────────
 
-  const validation = validatePath(filePath);
-  if (!validation.safe) {
-    return { error: validation.error };
-  }
+export type HashlineEditOp = "replace" | "insert_after" | "delete";
 
-  if (!oldString || typeof oldString !== "string") {
-    return { error: "'oldString' is required and must be a non-empty string" };
-  }
-  if (typeof newString !== "string") {
-    return { error: "'newString' must be a string" };
-  }
-
-  const resolved = validation.resolved;
-
-  try {
-    const content = await readFile(resolved, "utf-8");
-
-    // Count occurrences. Advance by oldString.length (NOT index+1) so
-    // overlapping matches aren't double-counted — otherwise a single-match
-    // edit like replacing "\n\n" inside "\n\n\n" is spuriously rejected as
-    // ambiguous, and replacementsApplied over-reports. (Mirrors the remote
-    // FileHandler fix.)
-    let count = 0;
-    let index = content.indexOf(oldString);
-    while (index !== -1) {
-      count++;
-      index = content.indexOf(oldString, index + oldString.length);
-    }
-
-    if (count === 0) {
-      return {
-        error: PromptLocaleService.get("en", "prompts.file.replace-no-match"),
-        filePath: resolved,
-        matchCount: 0,
-      };
-    }
-
-    if (count > 1 && !allowMultiple) {
-      return {
-        error: `Found ${count} occurrences of 'oldString' but allowMultiple is false. Set allowMultiple=true to replace all, or provide more context to make the match unique.`,
-        filePath: resolved,
-        matchCount: count,
-      };
-    }
-
-    // Perform replacement
-    let updated: string;
-    if (allowMultiple) {
-      updated = content.split(oldString).join(newString);
-    } else {
-      updated = content.replace(oldString, newString);
-    }
-
-    await writeFileAtomic(resolved, updated);
-
-    // Compute a simple diff summary
-    const oldLines = oldString.split("\n").length;
-    const newLines = newString.split("\n").length;
-
-    return {
-      filePath: resolved,
-      matchCount: count,
-      replacementsApplied: allowMultiple ? count : 1,
-      oldLines,
-      newLines,
-      lineDelta: newLines - oldLines,
-    };
-  } catch (error: unknown) {
-    const nodeError = error as NodeJS.ErrnoException;
-    if (nodeError.code === "ENOENT") {
-      return { error: `File not found: ${resolved}` };
-    }
-    return {
-      error: `str_replace failed: ${errorMessage(error)}`,
-    };
-  }
+export interface HashlineEdit {
+  /** `line:hash` anchor from a hashline read. Line 0 = start of file (insert_after only). */
+  anchor: string;
+  /** Inclusive range end (`line:hash`) for replace/delete spanning multiple lines. */
+  endAnchor?: string;
+  /** Operation — defaults to "replace". */
+  op?: HashlineEditOp;
+  /** New text for replace/insert_after. May be multi-line. */
+  content?: string;
 }
 
-export interface MultiEditOperation {
-  oldString: string;
-  newString: string;
-  allowMultiple?: boolean;
+interface ResolvedHashlineEdit {
+  index: number;
+  op: HashlineEditOp;
+  startLine: number;
+  endLine: number; // for insert_after: same as startLine (span is the boundary)
+  content?: string;
+  /** `line:hash` pairs whose hashes must match the current file. */
+  anchorsToCheck: Array<{ line: number; hash: string }>;
+}
+
+const MAX_HASHLINE_EDITS = 50;
+const STALE_ANCHOR_WINDOW = 3; // lines of fresh context on each side
+
+/** Fresh hashline window around a line, for stale-anchor recovery. */
+function hashlineWindow(lines: string[], line: number): string {
+  const start = Math.max(1, line - STALE_ANCHOR_WINDOW);
+  const end = Math.min(lines.length, line + STALE_ANCHOR_WINDOW);
+  return formatHashlines(lines.slice(start - 1, end), start);
 }
 
 /**
- * Apply an ordered batch of string replacements as ONE all-or-nothing
- * transaction (Claude Code MultiEdit semantics,
- * https://docs.anthropic.com/en/docs/claude-code — the `edits[]` shape):
- * every edit is validated and folded against an in-memory buffer
- * sequentially, so later edits see earlier edits' output, and the file is
- * written exactly once at the end. Any failed match aborts the whole batch
- * with zero changes on disk — killing the half-applied-batch failure class
- * of issuing several replace_in_file calls in a row.
+ * Apply hash-anchored edits as ONE all-or-nothing transaction. Every edit
+ * references lines by `line:hash` anchors from a prior hashline read; all
+ * anchors are validated against the CURRENT file first, and any drifted
+ * anchor rejects the whole batch with the fresh hashlines around it — the
+ * model re-anchors from the error window instead of re-reading the file.
+ * Line numbers refer to the file as read: edits are applied bottom-up, so
+ * earlier edits never shift later anchors.
  */
-export async function agenticMultiEdit(
+export async function agenticHashlineEdit(
   filePath: string,
-  edits: MultiEditOperation[],
+  edits: HashlineEdit[],
 ) {
   // Agent routing
   const agentResult = await tryAgentRoute(
-    "file.multiEdit",
+    "file.hashEdit",
     { path: filePath, edits },
     filePath,
   );
@@ -721,92 +737,210 @@ export async function agenticMultiEdit(
   if (!Array.isArray(edits) || edits.length === 0) {
     return {
       error:
-        "'edits' must be a non-empty array of { oldString, newString } operations",
+        "'edits' must be a non-empty array of { anchor, endAnchor?, op?, content? } operations",
     };
   }
-  if (edits.length > 50) {
-    return { error: `Maximum 50 edits per call. Received ${edits.length}.` };
+  if (edits.length > MAX_HASHLINE_EDITS) {
+    return {
+      error: `Maximum ${MAX_HASHLINE_EDITS} edits per call. Received ${edits.length}.`,
+    };
   }
 
   const resolved = validation.resolved;
 
   try {
     const original = await readFile(resolved, "utf-8");
-    let working = original;
-    let totalReplacements = 0;
+    const lines = original.split("\n");
+    const totalLines = lines.length;
 
+    // ── 1. Parse + structurally validate every edit ──────────
+    const resolvedEdits: ResolvedHashlineEdit[] = [];
     for (let editIndex = 0; editIndex < edits.length; editIndex++) {
-      const edit = edits[editIndex] ?? ({} as MultiEditOperation);
-      const { oldString, newString, allowMultiple = false } = edit;
+      const edit = edits[editIndex] ?? ({} as HashlineEdit);
       const editLabel = `Edit ${editIndex + 1}/${edits.length}`;
+      const op = edit.op ?? "replace";
 
-      if (!oldString || typeof oldString !== "string") {
+      if (!["replace", "insert_after", "delete"].includes(op)) {
         return {
-          error: `${editLabel}: 'oldString' is required (non-empty string). No changes were made.`,
+          error: `${editLabel}: unknown op '${String(edit.op)}'. Supported: replace, insert_after, delete. No changes were made.`,
         };
       }
-      if (typeof newString !== "string") {
+      if (op !== "delete" && typeof edit.content !== "string") {
         return {
-          error: `${editLabel}: 'newString' must be a string. No changes were made.`,
+          error: `${editLabel}: '${op}' requires 'content' (string). No changes were made.`,
         };
       }
-      if (oldString === newString) {
+      if (op === "delete" && edit.content !== undefined) {
         return {
-          error: `${editLabel}: 'oldString' and 'newString' are identical. No changes were made.`,
-        };
-      }
-
-      // Count non-overlapping occurrences (same advance-by-length rule as
-      // agenticStringReplace so overlapping matches aren't double-counted).
-      let count = 0;
-      let index = working.indexOf(oldString);
-      while (index !== -1) {
-        count++;
-        index = working.indexOf(oldString, index + oldString.length);
-      }
-
-      if (count === 0) {
-        return {
-          error:
-            `${editLabel}: oldString not found. Edits apply in order — this edit sees the ` +
-            `output of the previous ones, so an earlier edit may have altered this text. ` +
-            `No changes were made.`,
-          failedEditIndex: editIndex + 1,
-          filePath: resolved,
-        };
-      }
-      if (count > 1 && !allowMultiple) {
-        return {
-          error:
-            `${editLabel}: found ${count} occurrences of oldString but allowMultiple is false. ` +
-            `Add more surrounding context to make it unique, or set allowMultiple on that edit. ` +
-            `No changes were made.`,
-          failedEditIndex: editIndex + 1,
-          matchCount: count,
-          filePath: resolved,
+          error: `${editLabel}: 'delete' takes no 'content'. Use 'replace' to substitute text. No changes were made.`,
         };
       }
 
-      working = allowMultiple
-        ? working.split(oldString).join(newString)
-        : working.replace(oldString, newString);
-      totalReplacements += allowMultiple ? count : 1;
+      const anchor = parseAnchor(edit.anchor);
+      if (!anchor.ok) {
+        return { error: `${editLabel}: ${anchor.error}. No changes were made.` };
+      }
+      if (anchor.line === 0 && op !== "insert_after") {
+        return {
+          error: `${editLabel}: anchor line 0 (start of file) is only valid for 'insert_after'. No changes were made.`,
+        };
+      }
+
+      let endLine = anchor.line;
+      let endHash: string | null = null;
+      if (edit.endAnchor !== undefined) {
+        if (op === "insert_after") {
+          return {
+            error: `${editLabel}: 'insert_after' takes no 'endAnchor'. No changes were made.`,
+          };
+        }
+        const endAnchor = parseAnchor(edit.endAnchor);
+        if (!endAnchor.ok) {
+          return {
+            error: `${editLabel}: endAnchor: ${endAnchor.error}. No changes were made.`,
+          };
+        }
+        if (endAnchor.line < anchor.line) {
+          return {
+            error: `${editLabel}: endAnchor line (${endAnchor.line}) precedes anchor line (${anchor.line}). No changes were made.`,
+          };
+        }
+        endLine = endAnchor.line;
+        endHash = endAnchor.hash;
+      }
+
+      // Range + hash validation is collected below so ALL stale anchors are
+      // reported at once; structural errors above still fail fast.
+      const anchorsToCheck: Array<{ line: number; hash: string }> = [];
+      if (anchor.line > 0) anchorsToCheck.push({ line: anchor.line, hash: anchor.hash });
+      if (endHash !== null && endLine !== anchor.line) {
+        anchorsToCheck.push({ line: endLine, hash: endHash });
+      }
+
+      resolvedEdits.push({
+        index: editIndex,
+        op,
+        startLine: anchor.line,
+        endLine,
+        content: edit.content,
+        anchorsToCheck,
+      });
     }
 
-    await writeFileAtomic(resolved, working);
+    // ── 2. Validate anchors against the current file ─────────
+    const outOfRange: Array<Record<string, unknown>> = [];
+    const staleAnchors: Array<Record<string, unknown>> = [];
+    for (const resolvedEdit of resolvedEdits) {
+      for (const { line, hash } of resolvedEdit.anchorsToCheck) {
+        if (line > totalLines) {
+          outOfRange.push({
+            edit: resolvedEdit.index + 1,
+            line,
+            totalLines,
+          });
+          continue;
+        }
+        const actualHash = lineHash(lines[line - 1]);
+        if (actualHash !== hash) {
+          staleAnchors.push({
+            edit: resolvedEdit.index + 1,
+            anchor: `${line}:${hash}`,
+            line,
+            expectedHash: hash,
+            actualHash,
+            currentWindow: hashlineWindow(lines, line),
+          });
+        }
+      }
+    }
+
+    if (outOfRange.length > 0) {
+      return {
+        error: `${outOfRange.length} anchor(s) point past the end of the file (${totalLines} lines). Re-read the tail of the file and re-anchor. No changes were made.`,
+        code: "line_out_of_range",
+        filePath: resolved,
+        totalLines,
+        outOfRange,
+      };
+    }
+
+    if (staleAnchors.length > 0) {
+      return {
+        error: PromptLocaleService.get("en", "prompts.file.stale-anchor"),
+        code: "stale_anchor",
+        filePath: resolved,
+        totalLines,
+        staleAnchors,
+      };
+    }
+
+    // ── 3. Reject overlapping edits ───────────────────────────
+    // insert_after occupies the boundary AFTER its line; model it as the
+    // half-open point (line, line+1) so it conflicts with a replace/delete
+    // covering that line but not with one ending at line-1.
+    const spans = resolvedEdits
+      .map((resolvedEdit) => ({
+        edit: resolvedEdit.index + 1,
+        start:
+          resolvedEdit.op === "insert_after"
+            ? resolvedEdit.startLine + 0.5
+            : resolvedEdit.startLine,
+        end:
+          resolvedEdit.op === "insert_after"
+            ? resolvedEdit.startLine + 0.5
+            : resolvedEdit.endLine,
+      }))
+      .sort((a, b) => a.start - b.start);
+    for (let spanIndex = 0; spanIndex < spans.length - 1; spanIndex++) {
+      if (spans[spanIndex].end >= spans[spanIndex + 1].start) {
+        return {
+          error: `Edits ${spans[spanIndex].edit} and ${spans[spanIndex + 1].edit} overlap (lines ${spans[spanIndex].start}–${spans[spanIndex].end} vs ${spans[spanIndex + 1].start}–${spans[spanIndex + 1].end}). Merge them into one edit. No changes were made.`,
+          code: "overlapping_edits",
+          filePath: resolved,
+        };
+      }
+    }
+
+    // ── 4. Apply bottom-up ────────────────────────────────────
+    let working = lines;
+    const applyOrder = [...resolvedEdits].sort(
+      (a, b) => b.startLine - a.startLine,
+    );
+    for (const resolvedEdit of applyOrder) {
+      if (resolvedEdit.op === "insert_after") {
+        const inserted = resolvedEdit.content!.split("\n");
+        working = [
+          ...working.slice(0, resolvedEdit.startLine),
+          ...inserted,
+          ...working.slice(resolvedEdit.startLine),
+        ];
+      } else {
+        const replacement =
+          resolvedEdit.op === "delete"
+            ? []
+            : resolvedEdit.content!.split("\n");
+        working = [
+          ...working.slice(0, resolvedEdit.startLine - 1),
+          ...replacement,
+          ...working.slice(resolvedEdit.endLine),
+        ];
+      }
+    }
+
+    await writeFileAtomic(resolved, working.join("\n"));
 
     return {
       filePath: resolved,
       editsApplied: edits.length,
-      totalReplacements,
-      lineDelta: working.split("\n").length - original.split("\n").length,
+      totalLines: working.length,
+      lineDelta: working.length - totalLines,
     };
   } catch (error: unknown) {
     const nodeError = error as NodeJS.ErrnoException;
     if (nodeError.code === "ENOENT") {
       return { error: `File not found: ${resolved}` };
     }
-    return { error: `multi_edit failed: ${errorMessage(error)}` };
+    return { error: `edit failed: ${errorMessage(error)}` };
   }
 }
 

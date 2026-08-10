@@ -68,6 +68,8 @@ export interface LspServerManager {
   ): Promise<FileDiagnostics | undefined>;
   getHealth(): Record<string, string>;
   getAllServers(): Map<string, LspServerInstance>;
+  /** Timestamp of the last request/file-sync on this manager (idle-shutdown). */
+  getLastActivity(): number;
   shutdown(): Promise<void>;
 }
 
@@ -95,6 +97,13 @@ export function createLspServerManager(
     Array<(entry: FileDiagnostics) => void>
   >();
   let initialized = false;
+  // Bumped on every request/file-sync so the idle sweeper can shut down
+  // managers whose language servers nobody has talked to in a while.
+  let lastActivityAt = Date.now();
+
+  function touchActivity(): void {
+    lastActivityAt = Date.now();
+  }
 
   // ── Initialization ─────────────────────────────────────────
 
@@ -227,6 +236,7 @@ export function createLspServerManager(
     method: string,
     params?: LspParams,
   ): Promise<unknown> {
+    touchActivity();
     const server = await ensureServerStarted(filePath);
     if (!server) return undefined;
 
@@ -247,6 +257,7 @@ export function createLspServerManager(
    * Skips if already open on the same server.
    */
   async function openFile(filePath: string, content: string): Promise<void> {
+    touchActivity();
     const server = await ensureServerStarted(filePath);
     if (!server) return;
 
@@ -282,6 +293,7 @@ export function createLspServerManager(
    * Notify the server of file content changes.
    */
   async function changeFile(filePath: string, content: string): Promise<void> {
+    touchActivity();
     const server = getServerForFile(filePath);
     if (!server || server.state !== "running") {
       return openFile(filePath, content);
@@ -369,6 +381,7 @@ export function createLspServerManager(
       settleMs = 400,
     }: WaitForDiagnosticsOptions = {},
   ): Promise<FileDiagnostics | undefined> {
+    touchActivity();
     const fileUri = pathToFileURL(resolve(filePath)).href;
 
     const stored = fileDiagnostics.get(fileUri);
@@ -474,6 +487,7 @@ export function createLspServerManager(
     waitForDiagnostics,
     getHealth,
     getAllServers,
+    getLastActivity: () => lastActivityAt,
     shutdown,
   };
 }
@@ -483,6 +497,33 @@ export function createLspServerManager(
 // overridden per-request via AgenticLspService.
 
 const managers = new Map<string, LspServerManager>();
+
+// ── Idle shutdown ────────────────────────────────────────────
+// Language servers are heavyweight (tsserver alone can hold hundreds of MB).
+// A manager whose servers have not been queried in LSP_IDLE_SHUTDOWN_MS is
+// shut down and dropped; the next request for that workspace lazily respawns.
+const LSP_IDLE_SHUTDOWN_MS = 10 * 60 * 1000;
+const LSP_IDLE_SWEEP_INTERVAL_MS = 60 * 1000;
+let idleSweeper: NodeJS.Timeout | null = null;
+
+function ensureIdleSweeper(): void {
+  if (idleSweeper) return;
+  idleSweeper = setInterval(() => {
+    const now = Date.now();
+    for (const [key, manager] of managers) {
+      if (now - manager.getLastActivity() < LSP_IDLE_SHUTDOWN_MS) continue;
+      managers.delete(key);
+      manager.shutdown().catch((error: unknown) => {
+        logger.error(
+          `[LSP Manager] Idle shutdown of '${key}' failed: ${errorMessage(error)}`,
+        );
+      });
+      logger.info(`[LSP Manager] Shut down idle workspace manager '${key}'`);
+    }
+  }, LSP_IDLE_SWEEP_INTERVAL_MS);
+  // Never keep the process alive just to sweep idle language servers.
+  idleSweeper.unref();
+}
 
 /**
  * Get or create the LSP server manager for a workspace.
@@ -495,6 +536,7 @@ export function getLspManager(workspaceFolder?: string): LspServerManager {
     manager.initialize();
     managers.set(key, manager);
   }
+  ensureIdleSweeper();
 
   return managers.get(key)!;
 }

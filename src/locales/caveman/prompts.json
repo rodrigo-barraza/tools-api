@@ -24,10 +24,12 @@
   "creative.audio.result-local-tts": "sound made and given to human (local espeak-ng TTS).",
   "tool-search.action-nudge-disabled": "IMPORTANT: some found tool NOT turned on (isEnabled: false). you MUST call enable_tools with tool name you need before can use. after turn on, tool available next round.",
   "tool-search.action-nudge-enabled": "all matched tool already on — use them directly.",
-  "file.replace-no-match": "no match found for 'oldString'. exact string not found in file. make sure whitespace and indent match exactly.",
+  "file.stale-anchor": "one or more anchor stale — file changed since read. each staleAnchors entry include CURRENT hashline window around that line: re-anchor from window (or re-read just that range) and retry. no retry with same anchor.",
+  "file.summarized-read": "big file — summary read: exact head and tail, outline of skipped middle. every shown line good edit anchor. re-read any skipped range with startLine/endLine for exact content.",
   "file.patch-context-mismatch": "patch no apply — file content no match diff context. make sure patch made against current file version.",
   "lsp.implementations-label": "find concrete implementation of interface or abstract class",
   "lsp.server-not-installed-hint": "language server maybe not installed. check that npx can find server binary.",
   "lsp.no-results-hint": "no result found — symbol may be external, unresolvable, or server not finish indexing. try again in few second.",
+  "lsp.rename-not-applied": "edit list made but NOT applied. look at edits, apply ones you want with replace_in_file.",
   "compute.cron-hint": "standard cron: minute(0-59) hour(0-23) day(1-31) month(1-12) weekday(0-6, 0=Sun)"
 }

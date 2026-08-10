@@ -142,6 +142,10 @@ export function createLspServerInstance(
               dynamicRegistration: false,
               hierarchicalDocumentSymbolSupport: true,
             },
+            rename: {
+              dynamicRegistration: false,
+              prepareSupport: false,
+            },
             callHierarchy: {
               dynamicRegistration: false,
             },

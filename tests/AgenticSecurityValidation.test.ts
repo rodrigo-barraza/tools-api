@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from "vitest";
 import request from "supertest";
 import { createTestApp } from "./testApp.ts";
 import { ALLOWED_ROOTS } from "../src/services/AgenticFileService.ts";
+import { formatHashline } from "../src/utilities/hashline.ts";
 import { Express } from "express";
 import fs from "fs";
 import path from "node:path";
@@ -64,7 +65,9 @@ describe("Agentic Security and Worktree Validation", () => {
           absolutePath: filePath
         });
       expect(readRes.status).toBe(200);
-      expect(readRes.body.content).toBe("1: isolated worktree write");
+      expect(readRes.body.content).toBe(
+        formatHashline(1, "isolated worktree write"),
+      );
 
       // Verify that access without override header is rejected
       const noHeaderRes = await request(app)

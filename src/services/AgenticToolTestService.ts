@@ -11,7 +11,7 @@ import {
   agenticFileInfo,
   agenticWriteFile,
   agenticDeleteFile,
-  agenticStringReplace,
+  agenticHashlineEdit,
   agenticPatchFile,
   agenticFileDiff,
   agenticMoveFile,
@@ -24,6 +24,7 @@ import { executeCommand } from "./AgenticCommandService.ts";
 import { agenticProjectSummary } from "./AgenticProjectService.ts";
 import { agenticToolSearch } from "./AgenticToolSearchService.ts";
 import { ALLOWED_ROOTS } from "./AgenticFileService.ts";
+import { lineHash } from "../utilities/hashline.ts";
 import { errorMessage } from "../utilities.ts";
 
 // ── Test Fixture ─────────────────────────────────────────────
@@ -187,7 +188,15 @@ const TESTS = {
       // Create a dedicated copy for this test
       const testFile = join(getFixtureDir(), "str_replace_test.js");
       await writeFile(testFile, FIXTURE_CONTENT, "utf-8");
-      const result = await agenticStringReplace(testFile, "3.14159", "3.14");
+      // Hash-anchored edit: anchor line 6 (`export const PI = 3.14159;`)
+      // by its content hash, exactly as a hashline read would return it.
+      const piLine = FIXTURE_CONTENT.split("\n")[5];
+      const result = await agenticHashlineEdit(testFile, [
+        {
+          anchor: `6:${lineHash(piLine)}`,
+          content: piLine.replace("3.14159", "3.14"),
+        },
+      ]);
       try {
         await unlink(testFile);
       } catch {

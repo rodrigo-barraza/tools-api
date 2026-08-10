@@ -65,9 +65,25 @@ interface LspActionParams {
   line?: number;
   character?: number;
   workspacePath?: string;
+  /** New symbol name — required by (and only used by) the 'rename' operation. */
+  newName?: string;
   // Optional locale for error/hint prompts. Defaults to "en" when absent, so
   // this is backward compatible with callers that never pass it.
   locale?: string;
+}
+
+// LSP WorkspaceEdit (subset) — result shape of textDocument/rename
+interface LspTextEdit {
+  range: LspRange;
+  newText: string;
+}
+
+interface LspWorkspaceEdit {
+  changes?: Record<string, LspTextEdit[]>;
+  documentChanges?: Array<{
+    textDocument?: { uri: string; version?: number | null };
+    edits?: LspTextEdit[];
+  }>;
 }
 
 // ────────────────────────────────────────────────────────────
@@ -142,6 +158,12 @@ const OPERATIONS: Record<string, LspOperation> = {
     needsPosition: true,
     description: PromptLocaleService.get("en", "prompts.lsp.implementations-label"),
   },
+  rename: {
+    // Returns the workspace edit set — applying it is the CALLER's choice.
+    method: "textDocument/rename",
+    needsPosition: true,
+    description: "Compute the edit set for renaming a symbol everywhere",
+  },
 };
 
 // ────────────────────────────────────────────────────────────
@@ -181,6 +203,7 @@ export async function agenticLspAction({
   line,
   character,
   workspacePath,
+  newName,
   locale = "en",
 }: LspActionParams) {
   // ── 1. Validate operation ──────────────────────────────────
@@ -219,6 +242,15 @@ export async function agenticLspAction({
     }
     if (typeof character !== "number" || character < 1) {
       return { error: "'character' must be a positive integer (1-based)" };
+    }
+  }
+
+  // ── 3b. Validate newName (rename only) ────────────────────
+  if (operation === "rename") {
+    if (!newName || typeof newName !== "string" || !newName.trim()) {
+      return {
+        error: "Operation 'rename' requires 'newName' (non-empty string)",
+      };
     }
   }
 
@@ -318,6 +350,11 @@ export async function agenticLspAction({
     if (operation === "findReferences") {
       lspParams.context = { includeDeclaration: true };
     }
+
+    // rename carries the new symbol name
+    if (operation === "rename") {
+      lspParams.newName = newName!.trim();
+    }
   } else {
     // documentSymbol — no position needed
     lspParams = {
@@ -387,6 +424,13 @@ function formatResult(
       return formatHover(result as LspHoverResult, filePath);
     case "documentSymbol":
       return formatSymbols(result as LspSymbol[], filePath, workspaceRoot);
+    case "rename":
+      return formatRenameEdits(
+        result as LspWorkspaceEdit,
+        filePath,
+        workspaceRoot,
+        locale,
+      );
     default:
       return { operation, filePath, result };
   }
@@ -523,6 +567,82 @@ function formatHover(result: LspHoverResult, filePath: string) {
     filePath,
     result: result.contents,
     contentKind: "unknown",
+  };
+}
+
+/**
+ * Format a textDocument/rename WorkspaceEdit into a per-file edit set.
+ * Edits are RETURNED, never applied — the caller decides whether to apply
+ * them (e.g. via replace_in_file / write_file), keeping rename side-effect
+ * free on the server.
+ */
+function formatRenameEdits(
+  result: LspWorkspaceEdit,
+  filePath: string,
+  workspaceRoot: string,
+  locale: string,
+) {
+  // Normalize both WorkspaceEdit encodings into uri → TextEdit[]
+  const editsByUri = new Map<string, LspTextEdit[]>();
+
+  for (const [uri, edits] of Object.entries(result?.changes ?? {})) {
+    if (Array.isArray(edits) && edits.length > 0) {
+      editsByUri.set(uri, [...(editsByUri.get(uri) ?? []), ...edits]);
+    }
+  }
+  for (const documentChange of result?.documentChanges ?? []) {
+    const uri = documentChange?.textDocument?.uri;
+    const edits = documentChange?.edits;
+    if (uri && Array.isArray(edits) && edits.length > 0) {
+      editsByUri.set(uri, [...(editsByUri.get(uri) ?? []), ...edits]);
+    }
+  }
+
+  if (editsByUri.size === 0) {
+    return {
+      operation: "rename",
+      filePath,
+      result: null,
+      message: PromptLocaleService.get(locale, "prompts.lsp.no-results-hint"),
+    };
+  }
+
+  let totalEdits = 0;
+  const files = [...editsByUri.entries()].map(([uri, edits]) => {
+    let targetPath: string;
+    try {
+      targetPath = fileURLToPath(uri);
+    } catch {
+      targetPath = uri;
+    }
+    const formattedEdits = edits
+      .map((edit) => ({
+        line: (edit.range?.start?.line ?? 0) + 1, // 0-based → 1-based
+        character: (edit.range?.start?.character ?? 0) + 1,
+        endLine: (edit.range?.end?.line ?? 0) + 1,
+        endCharacter: (edit.range?.end?.character ?? 0) + 1,
+        newText: edit.newText,
+      }))
+      .sort((a, b) => a.line - b.line || a.character - b.character);
+    totalEdits += formattedEdits.length;
+    return {
+      file: targetPath,
+      relativePath: workspaceRoot
+        ? relative(workspaceRoot, targetPath)
+        : targetPath,
+      editCount: formattedEdits.length,
+      edits: formattedEdits,
+    };
+  });
+
+  return {
+    operation: "rename",
+    filePath,
+    applied: false,
+    fileCount: files.length,
+    totalEdits,
+    files,
+    message: PromptLocaleService.get(locale, "prompts.lsp.rename-not-applied"),
   };
 }
 
@@ -724,6 +844,71 @@ function resolvedWorkspace(
   }
 
   return dirname(filePath);
+}
+
+// ────────────────────────────────────────────────────────────
+// Batch Diagnostics
+// ────────────────────────────────────────────────────────────
+
+const MAX_FILES_PER_DIAGNOSTICS_BATCH = 20;
+
+interface LspDiagnosticsBatchParams {
+  files: string[];
+  workspacePath?: string;
+  locale?: string;
+}
+
+/**
+ * Diagnostics for a batch of files in ONE call. Files are synced and awaited
+ * concurrently; the per-workspace manager dedupe means all files sharing a
+ * workspace root reuse a single language-server process. This is the endpoint
+ * post-edit validation loops should hit instead of running a whole-project
+ * compiler once per edited file.
+ */
+export async function agenticLspDiagnosticsBatch({
+  files,
+  workspacePath,
+  locale = "en",
+}: LspDiagnosticsBatchParams) {
+  if (!Array.isArray(files) || files.length === 0) {
+    return { error: "'files' must be a non-empty array of absolute paths" };
+  }
+  if (files.length > MAX_FILES_PER_DIAGNOSTICS_BATCH) {
+    return {
+      error: `Maximum ${MAX_FILES_PER_DIAGNOSTICS_BATCH} files per diagnostics batch. Received ${files.length}.`,
+    };
+  }
+
+  // De-dupe while preserving order so a repeated path is analyzed once.
+  const uniqueFiles = [...new Set(files.filter((f) => typeof f === "string"))];
+
+  const results = await Promise.all(
+    uniqueFiles.map(async (filePath) => {
+      const result = await agenticLspAction({
+        operation: "diagnostics",
+        filePath,
+        workspacePath,
+        locale,
+      });
+      return { filePath, ...result };
+    }),
+  );
+
+  const counts: Record<string, number> = {};
+  for (const fileResult of results) {
+    const fileCounts = (fileResult as { counts?: Record<string, number> })
+      .counts;
+    for (const [severity, count] of Object.entries(fileCounts ?? {})) {
+      counts[severity] = (counts[severity] ?? 0) + count;
+    }
+  }
+
+  return {
+    operation: "diagnostics",
+    fileCount: results.length,
+    counts,
+    files: results,
+  };
 }
 
 // ────────────────────────────────────────────────────────────

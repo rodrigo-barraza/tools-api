@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import request from "supertest";
 import { createTestApp } from "./testApp.ts";
 import { ALLOWED_ROOTS } from "../src/services/AgenticFileService.ts";
+import { lineHash } from "../src/utilities/hashline.ts";
 import fs from "fs";
 import path from "path";
 import { Express } from "express";
@@ -185,17 +186,21 @@ describe("Agentic File Operations Router — block-replace and multi-replace", (
     });
   });
 
-  describe("POST /agentic/file/str-replace with edits[] (atomic multi-edit)", () => {
-    it("applies an ordered batch where later edits see earlier output", async () => {
-      resetFileContent("const a = 1;\nconst b = 2;\n");
+  describe("POST /agentic/file/edit (hash-anchored edits[])", () => {
+    /** `line:hash` anchor for a 1-based line of the given content. */
+    const anchorFor = (content: string, line: number): string =>
+      `${line}:${lineHash(content.split("\n")[line - 1])}`;
+
+    it("applies an anchored batch as one transaction (line numbers as read)", async () => {
+      const original = "const a = 1;\nconst b = 2;\n";
+      resetFileContent(original);
       const res = await request(app)
-        .post("/agentic/file/str-replace")
+        .post("/agentic/file/edit")
         .send({
           path: testFilePath,
           edits: [
-            { oldString: "const a = 1;", newString: "const a = 10;" },
-            // Only matches AFTER the first edit ran
-            { oldString: "const a = 10;\nconst b = 2;", newString: "const a = 10;\nconst b = 20;" },
+            { anchor: anchorFor(original, 1), content: "const a = 10;" },
+            { anchor: anchorFor(original, 2), content: "const b = 20;" },
           ],
         });
 
@@ -206,61 +211,76 @@ describe("Agentic File Operations Router — block-replace and multi-replace", (
       );
     });
 
-    it("aborts the WHOLE batch when any edit fails to match", async () => {
-      resetFileContent("alpha\nbeta\ngamma\n");
+    it("rejects the WHOLE batch when any anchor is stale, with a fresh window", async () => {
+      const original = "alpha\nbeta\ngamma\n";
+      resetFileContent(original);
       const res = await request(app)
-        .post("/agentic/file/str-replace")
+        .post("/agentic/file/edit")
         .send({
           path: testFilePath,
           edits: [
-            { oldString: "alpha", newString: "ALPHA" },
-            { oldString: "does-not-exist", newString: "x" },
+            { anchor: anchorFor(original, 1), content: "ALPHA" },
+            // Stale: hash of text that is not on line 2
+            { anchor: `2:${lineHash("drifted content")}`, content: "x" },
           ],
         });
 
       expect(res.status).toBe(400);
-      expect(res.body.failedEditIndex).toBe(2);
+      expect(res.body.code).toBe("stale_anchor");
+      expect(res.body.staleAnchors).toHaveLength(1);
+      expect(res.body.staleAnchors[0].line).toBe(2);
+      expect(res.body.staleAnchors[0].currentWindow).toContain("beta");
       // First edit must NOT have been written
-      expect(fs.readFileSync(testFilePath, "utf8")).toBe("alpha\nbeta\ngamma\n");
+      expect(fs.readFileSync(testFilePath, "utf8")).toBe(original);
     });
 
-    it("rejects ambiguous matches without allowMultiple, atomically", async () => {
-      resetFileContent("x\nx\n");
+    it("supports delete and insert_after ops with endAnchor ranges", async () => {
+      const original = "one\ntwo\nthree\nfour\n";
+      resetFileContent(original);
       const res = await request(app)
-        .post("/agentic/file/str-replace")
+        .post("/agentic/file/edit")
         .send({
           path: testFilePath,
-          edits: [{ oldString: "x", newString: "y" }],
-        });
-      expect(res.status).toBe(400);
-      expect(res.body.matchCount).toBe(2);
-      expect(fs.readFileSync(testFilePath, "utf8")).toBe("x\nx\n");
-    });
-
-    it("supports allowMultiple per edit", async () => {
-      resetFileContent("x x x\n");
-      const res = await request(app)
-        .post("/agentic/file/str-replace")
-        .send({
-          path: testFilePath,
-          edits: [{ oldString: "x", newString: "y", allowMultiple: true }],
+          edits: [
+            {
+              anchor: anchorFor(original, 2),
+              endAnchor: anchorFor(original, 3),
+              op: "delete",
+            },
+            { anchor: anchorFor(original, 4), op: "insert_after", content: "five" },
+          ],
         });
       expect(res.status).toBe(200);
-      expect(res.body.totalReplacements).toBe(3);
-      expect(fs.readFileSync(testFilePath, "utf8")).toBe("y y y\n");
+      expect(fs.readFileSync(testFilePath, "utf8")).toBe("one\nfour\nfive\n");
     });
 
-    it("rejects mixing edits[] with top-level oldString/newString", async () => {
+    it("rejects overlapping edits atomically", async () => {
+      const original = "x\ny\nz\n";
+      resetFileContent(original);
       const res = await request(app)
-        .post("/agentic/file/str-replace")
+        .post("/agentic/file/edit")
         .send({
           path: testFilePath,
-          oldString: "a",
-          newString: "b",
-          edits: [{ oldString: "a", newString: "b" }],
+          edits: [
+            {
+              anchor: anchorFor(original, 1),
+              endAnchor: anchorFor(original, 2),
+              content: "a",
+            },
+            { anchor: anchorFor(original, 2), content: "b" },
+          ],
         });
       expect(res.status).toBe(400);
-      expect(res.body.error).toContain("not both");
+      expect(res.body.code).toBe("overlapping_edits");
+      expect(fs.readFileSync(testFilePath, "utf8")).toBe(original);
+    });
+
+    it("rejects an edits-less body", async () => {
+      const res = await request(app)
+        .post("/agentic/file/edit")
+        .send({ path: testFilePath });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain("edits");
     });
   });
 

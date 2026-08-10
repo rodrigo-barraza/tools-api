@@ -24,10 +24,12 @@
   "creative.audio.result-local-tts": "Audio generated and delivered to the user (local espeak-ng TTS).",
   "tool-search.action-nudge-disabled": "IMPORTANT: Some discovered tools are NOT currently enabled (isEnabled: false). You MUST call enable_tools with the tool names you need before you can use them. After enabling, the tools become available on your next iteration.",
   "tool-search.action-nudge-enabled": "All matched tools are already enabled — you can call them directly.",
-  "file.replace-no-match": "No match found for 'oldString'. The exact string was not found in the file. Ensure whitespace and indentation match exactly.",
+  "file.stale-anchor": "One or more anchors are stale — the file changed since it was read. Each staleAnchors entry includes the CURRENT hashline window around that line: re-anchor from that window (or re-read just that range) and retry. Do not retry with the same anchors.",
+  "file.summarized-read": "Large file — summarized read: exact head and tail, structural outline of the omitted middle. Every shown line is a valid edit anchor. Re-read any omitted range with startLine/endLine for exact content.",
   "file.patch-context-mismatch": "Patch could not be applied — the file content does not match the diff context. Ensure the patch was generated against the current file version.",
   "lsp.implementations-label": "Find concrete implementations of an interface or abstract class",
   "lsp.server-not-installed-hint": "The language server may not be installed. Check that npx can find the server binary.",
   "lsp.no-results-hint": "No results found — the symbol may be external, unresolvable, or the server hasn't finished indexing. Try again in a few seconds.",
+  "lsp.rename-not-applied": "Edit set computed but NOT applied. Review the edits and apply the ones you want with replace_in_file.",
   "compute.cron-hint": "Standard cron: minute(0-59) hour(0-23) day(1-31) month(1-12) weekday(0-6, 0=Sun)"
 }

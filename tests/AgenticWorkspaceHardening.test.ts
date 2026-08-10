@@ -3,6 +3,7 @@ import request from "supertest";
 import { createTestApp } from "./testApp.ts";
 import { ALLOWED_ROOTS } from "../src/services/AgenticFileService.ts";
 import { coerceInt, coerceBool } from "../src/utilities/agenticCoercion.ts";
+import { formatHashline, lineHash } from "../src/utilities/hashline.ts";
 import fs from "fs";
 import path from "path";
 import { Express } from "express";
@@ -57,7 +58,7 @@ describe("Agentic workspace router hardening", () => {
     expect(res.status).toBe(200);
     expect(res.body.startLine).toBe(2);
     expect(res.body.endLine).toBe(3);
-    expect(res.body.content).toContain("2: two");
+    expect(res.body.content).toContain(formatHashline(2, "two"));
   });
 
   it("read_file rejects a degenerate range instead of returning 0 lines", async () => {
@@ -102,15 +103,22 @@ describe("Agentic workspace router hardening", () => {
     expect(JSON.stringify(res.body.results)).not.toContain("readme.md");
   });
 
-  it("replace_in_file does not spuriously reject a single overlapping-run match", async () => {
-    const file = path.join(testRoot, "overlap.txt");
-    // "\n\n\n" contains overlapping "\n\n" — old code counted 2 and rejected.
-    fs.writeFileSync(file, "x\n\n\ny");
+  it("replace_in_file round-trips a hashline read anchor through /file/edit", async () => {
+    const file = path.join(testRoot, "anchored.txt");
+    fs.writeFileSync(file, "keep\nchange me\nkeep too\n");
+    // Read through the route to get the real anchor for line 2…
+    const read = await request(app)
+      .post("/agentic/file/read")
+      .send({ absolutePath: file });
+    expect(read.status).toBe(200);
+    const anchor = read.body.content.split("\n")[1].split("|")[0];
+    expect(anchor).toBe(`2:${lineHash("change me")}`);
+    // …and edit that line by its anchor.
     const res = await request(app)
-      .post("/agentic/file/str-replace")
-      .send({ path: file, oldString: "\n\n", newString: "\n" });
+      .post("/agentic/file/edit")
+      .send({ path: file, edits: [{ anchor, content: "changed" }] });
     expect(res.status).toBe(200);
-    expect(res.body.matchCount).toBe(1);
+    expect(fs.readFileSync(file, "utf8")).toBe("keep\nchanged\nkeep too\n");
   });
 
   it("execute_command rejects a sub-second numeric timeout as probable seconds", async () => {

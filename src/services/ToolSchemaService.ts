@@ -411,6 +411,10 @@ const TOOL_DOMAINS = {
   // Agentic — Notebook Editing
   edit_notebook: "Core Workspace Tools",
 
+  // Agentic — Debugging & Commit Splitting
+  debug: "Core Workspace Tools",
+  commit_split: "Core Workspace Tools",
+
   // Communication (Twilio)
   send_email: "Communication",
   search_email: "Communication",
@@ -801,6 +805,8 @@ const TOOL_EMOJIS: Record<string, string | [string, string]> = {
   move_file: "📂",
   delete_file: ["💻", "🗑️"],
   edit_notebook: "📓",
+  debug: ["🐛", "💻"],
+  commit_split: ["📦", "✂️"],
   list_directory: "📁",
   search_file_contents: ["📄", "🔍"],
   find_files: ["💻", "🔎"],

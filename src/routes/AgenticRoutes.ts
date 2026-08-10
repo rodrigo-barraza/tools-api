@@ -14,8 +14,7 @@ import { extname } from "node:path";
 import {
   agenticReadFile,
   agenticWriteFile,
-  agenticStringReplace,
-  agenticMultiEdit,
+  agenticHashlineEdit,
   agenticPatchFile,
   agenticListDirectory,
   agenticGrepSearch,
@@ -65,9 +64,15 @@ import {
 } from "../services/AgenticBrowserService.ts";
 import {
   agenticLspAction,
+  agenticLspDiagnosticsBatch,
   agenticLspShutdown,
   agenticLspHealth,
 } from "../services/AgenticLspService.ts";
+import {
+  agenticDebugAction,
+  agenticDebugHealth,
+} from "../services/AgenticDebugService.ts";
+import { agenticCommitSplit } from "../services/AgenticCommitSplitService.ts";
 import {
   testTool,
   testAllTools,
@@ -240,41 +245,23 @@ router.post(
     });
   }),
 );
-// ── String Replace (single edit, or atomic edits[] batch) ────
+// ── Hash-Anchored Edit (atomic edits[] batch) ────────────────
+// Edits reference lines by `line:hash` anchors from hashline reads; a drifted
+// anchor rejects the whole batch with fresh context around the stale line.
 router.post(
-  "/file/str-replace",
+  "/file/edit",
   agenticHandler(async (req: Request) => {
-    const { path, oldString, newString, allowMultiple, edits } = req.body;
+    const { path, edits } = req.body;
     if (!path || typeof path !== "string") {
       return { error: "Request body must include 'path' (string)" };
     }
-    // Batch mode: ordered edits applied as one all-or-nothing transaction
-    if (edits !== undefined) {
-      if (!Array.isArray(edits) || edits.length === 0) {
-        return {
-          error:
-            "'edits' must be a non-empty array of { oldString, newString, allowMultiple? }",
-        };
-      }
-      if (oldString !== undefined || newString !== undefined) {
-        return {
-          error:
-            "Pass EITHER top-level oldString/newString (single edit) OR 'edits' (batch), not both",
-        };
-      }
-      return agenticMultiEdit(path, edits);
+    if (!Array.isArray(edits) || edits.length === 0) {
+      return {
+        error:
+          "'edits' must be a non-empty array of { anchor, endAnchor?, op?, content? }",
+      };
     }
-    if (!oldString || typeof oldString !== "string") {
-      return { error: "Request body must include 'oldString' (non-empty string)" };
-    }
-    if (typeof newString !== "string") {
-      return { error: "Request body must include 'newString' (string)" };
-    }
-    const am = coerceBool(allowMultiple, "allowMultiple", false);
-    if (!am.ok) return { error: am.error };
-    return agenticStringReplace(path, oldString, newString, {
-      allowMultiple: am.value,
-    });
+    return agenticHashlineEdit(path, edits);
   }),
 );
 // ── Patch File (unified diff) ─────────────────────────────────
@@ -1043,7 +1030,8 @@ router.post(
 router.post(
   "/lsp/action",
   agenticHandler(async (req: Request) => {
-    const { operation, filePath, line, character, workspacePath } = req.body;
+    const { operation, filePath, line, character, workspacePath, newName } =
+      req.body;
     if (!operation || typeof operation !== "string") {
       return { error: "Request body must include 'operation' (string)" };
     }
@@ -1060,6 +1048,74 @@ router.post(
       line: ln.value || undefined,
       character: ch.value || undefined,
       workspacePath,
+      newName: typeof newName === "string" ? newName : undefined,
+    });
+  }),
+);
+// ── LSP Batch Diagnostics ─────────────────────────────────────
+// One call per edited-file batch — files sharing a workspace root reuse one
+// language-server process, replacing the per-file whole-project compile.
+router.post(
+  "/lsp/diagnostics",
+  agenticHandler(async (req: Request) => {
+    const { files, workspacePath } = req.body;
+    if (!Array.isArray(files) || files.length === 0) {
+      return {
+        error: "Request body must include 'files' (non-empty array of paths)",
+      };
+    }
+    return agenticLspDiagnosticsBatch({
+      files,
+      workspacePath: typeof workspacePath === "string" ? workspacePath : undefined,
+    });
+  }),
+);
+// ─── 10b. Interactive Debugging (DAP) ───────────────────────
+router.post(
+  "/debug/action",
+  agenticHandler(async (req: Request) => {
+    const {
+      action,
+      sessionId,
+      program,
+      args,
+      cwd,
+      breakpoints,
+      expression,
+      frameId,
+      variablesReference,
+    } = req.body;
+    if (!action || typeof action !== "string") {
+      return { error: "Request body must include 'action' (string)" };
+    }
+    return agenticDebugAction({
+      action,
+      sessionId,
+      program,
+      args,
+      cwd,
+      breakpoints,
+      expression,
+      frameId,
+      variablesReference,
+    });
+  }),
+);
+// ─── 10c. Atomic Commit Splitting ───────────────────────────
+router.post(
+  "/git/commit-split",
+  agenticHandler(async (req: Request) => {
+    const { action, path, proposalId } = req.body;
+    if (!action || typeof action !== "string") {
+      return { error: "Request body must include 'action' ('propose' | 'confirm')" };
+    }
+    if (!path || typeof path !== "string") {
+      return { error: "Request body must include 'path' (repo root)" };
+    }
+    return agenticCommitSplit({
+      action: action as "propose" | "confirm",
+      path,
+      proposalId,
     });
   }),
 );
@@ -1083,9 +1139,9 @@ router.post(
 // ─── Health ─────────────────────────────────────────────────
 export function getAgenticHealth() {
   return {
-    readFile: "on-demand (sandboxed fs)",
+    readFile: "on-demand (sandboxed fs, hashline format)",
     writeFile: "on-demand (sandboxed fs)",
-    stringReplace: "on-demand (sandboxed fs)",
+    hashlineEdit: "on-demand (sandboxed fs, hash-anchored)",
     blockReplace: "on-demand (sandboxed fs)",
     multiReplace: "on-demand (sandboxed fs)",
     patchFile: "on-demand (sandboxed fs + diff)",
@@ -1116,8 +1172,10 @@ export function getAgenticHealth() {
     browserAction: getBrowserHealth(),
     browserScript: "on-demand (Playwright subprocess)",
     lspAction: "on-demand (LSP stdio JSON-RPC)",
-    lspDiagnostics: "on-demand (publishDiagnostics capture)",
+    lspDiagnostics: "on-demand (publishDiagnostics capture, batched)",
     lspServers: agenticLspHealth(),
+    debugAction: agenticDebugHealth(),
+    commitSplit: "on-demand (git subprocess, propose/confirm)",
     taskManagement: "on-demand (MongoDB agent_tasks)",
     memoryUpsert: "on-demand (Prism MemoryService post-processing)",
     customAgentCreate: "on-demand (Prism CustomAgentService)",

@@ -177,7 +177,7 @@ describe("PromptLocaleService — Prompt Keys (prompts.json)", () => {
     "prompts.creative.image.result-success",
     "prompts.tool-search.action-nudge-disabled",
     "prompts.tool-search.action-nudge-enabled",
-    "prompts.file.replace-no-match",
+    "prompts.file.stale-anchor",
   ];
 
   for (const key of PROMPT_CRITICAL_KEYS) {
