@@ -14,7 +14,7 @@ import type {
   LspRawDiagnostic,
 } from "./lsp/LspServerManager.ts";
 import type { LspParams } from "./lsp/LspClient.ts";
-import { ALLOWED_ROOTS } from "./AgenticFileService.ts";
+import { ALLOWED_ROOTS, validatePath } from "./AgenticFileService.ts";
 import { errorMessage } from "../utilities.ts";
 import PromptLocaleService from "./PromptLocaleService.ts";
 
@@ -175,19 +175,15 @@ function validateLspPath(inputPath: string | undefined) {
     return { safe: false as const, error: "'filePath' is required (string)" };
   }
 
-  const resolved = resolve(inputPath);
-  const inAllowedRoot = ALLOWED_ROOTS.some(
-    (root: string) => resolved.startsWith(root + "/") || resolved === root,
-  );
-
-  if (!inAllowedRoot) {
-    return {
-      safe: false as const,
-      error: `Path '${resolved}' is outside allowed roots`,
-    };
+  // Same sandbox rules as every other file tool — including the
+  // request-scoped X-Workspace-Override (worktree) that the plain
+  // ALLOWED_ROOTS check used to ignore, denying LSP requests for files the
+  // file tools could freely read and edit.
+  const validation = validatePath(inputPath);
+  if (!validation.safe) {
+    return { safe: false as const, error: validation.error! };
   }
-
-  return { safe: true as const, resolved };
+  return { safe: true as const, resolved: validation.resolved };
 }
 
 // ────────────────────────────────────────────────────────────
@@ -283,19 +279,14 @@ export async function agenticLspAction({
     if (typeof workspacePath !== "string") {
       return { error: "'workspacePath' must be a string" };
     }
-    const resolvedWorkspacePath = resolve(workspacePath);
-    const workspaceInRoot = ALLOWED_ROOTS.some(
-      (root: string) =>
-        resolvedWorkspacePath.startsWith(root + "/") ||
-        resolvedWorkspacePath === root,
-    );
-    if (!workspaceInRoot) {
+    const workspaceValidation = validatePath(workspacePath);
+    if (!workspaceValidation.safe) {
       return {
-        error: `workspacePath '${resolvedWorkspacePath}' is outside allowed roots`,
+        error: `workspacePath: ${workspaceValidation.error}`,
       };
     }
     // Normalized (resolved) path is used as the manager key downstream.
-    workspaceRoot = resolvedWorkspacePath;
+    workspaceRoot = workspaceValidation.resolved;
   } else {
     workspaceRoot = resolvedWorkspace(resolvedPath, undefined);
   }

@@ -273,7 +273,10 @@ function validatePath(inputPath: string | unknown) {
     // User-selected workspace root — validate it's within an allowed root
     const resolvedWorkspaceRoot = resolve(workspaceRoot);
     const isWorkspaceRootAllowed = ALLOWED_ROOTS.some(
-      (root: string) => resolvedWorkspaceRoot.startsWith(root + "/") || resolvedWorkspaceRoot === root,
+      (root: string) =>
+        root === "/" ||
+        resolvedWorkspaceRoot.startsWith(root + "/") ||
+        resolvedWorkspaceRoot === root,
     );
     baseRoot = isWorkspaceRootAllowed ? resolvedWorkspaceRoot : ALLOWED_ROOTS[0];
   } else {
@@ -297,7 +300,11 @@ function validatePath(inputPath: string | unknown) {
 
   // Check against allowed roots — both as configured and symlink-resolved,
   // so a root that is itself a symlink (or contains one) still matches.
+  // A root of "/" means everything: without the special case, "/" + "/"
+  // builds "//" which no resolved path starts with, silently denying every
+  // request under an allow-all configuration.
   const isWithin = (root: string) =>
+    root === "/" ||
     resolved.startsWith(root + "/") ||
     resolved === root ||
     resolved.startsWith(realRoot(root) + "/") ||

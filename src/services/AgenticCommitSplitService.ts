@@ -217,7 +217,10 @@ function groupMessage(files: string[], kinds: FileKind[]): string {
   const directories = [
     ...new Set(files.map((file) => dirname(file).split("/")[0])),
   ];
-  const area = directories.length === 1 ? `${directories[0]}: ` : "";
+  const area =
+    directories.length === 1 && directories[0] !== "."
+      ? `${directories[0]}: `
+      : "";
   return `feat: ${area}update ${summarizeFiles(files)}`;
 }
 
@@ -344,7 +347,13 @@ function pruneProposals(): void {
 async function collectChangedFiles(
   repoPath: string,
 ): Promise<{ files: ChangedFileInfo[] } | { error: string }> {
-  const status = await runGit(["status", "--porcelain=v1"], repoPath);
+  // --untracked-files=all: expand untracked DIRECTORIES into their files —
+  // the default collapses a new directory to "?? dir/", which would make the
+  // grouping heuristic reason about directory entries instead of files.
+  const status = await runGit(
+    ["status", "--porcelain=v1", "--untracked-files=all"],
+    repoPath,
+  );
   if (status.code !== 0) {
     return { error: `git status failed: ${status.stderr.trim() || status.stdout.trim()}` };
   }

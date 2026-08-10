@@ -336,10 +336,24 @@ async function evaluateExpression(
     return { error: "'expression' is required (string) for evaluate" };
   }
   try {
+    // Without an explicit frameId, evaluate in the TOP stack frame (as the
+    // tool docs promise) — debugpy otherwise evaluates in the global scope,
+    // where locals of the paused function raise NameError.
+    let effectiveFrameId = typeof frameId === "number" ? frameId : undefined;
+    if (effectiveFrameId === undefined) {
+      const threadId = session.threadId ?? 1;
+      const stackResponse = await session.client.sendRequest("stackTrace", {
+        threadId,
+        startFrame: 0,
+        levels: 1,
+      });
+      const topFrame = (stackResponse.body?.stackFrames as DapStackFrame[])?.[0];
+      if (topFrame) effectiveFrameId = topFrame.id;
+    }
     const response = await session.client.sendRequest("evaluate", {
       expression,
       context: "repl",
-      ...(typeof frameId === "number" ? { frameId } : {}),
+      ...(effectiveFrameId !== undefined ? { frameId: effectiveFrameId } : {}),
     });
     if (!response.success) {
       return {
